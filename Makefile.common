@@ -1,0 +1,13 @@
+CC		= vc +small -warn=2
+AS		= vc +small -warn=2
+CFLAGS	= -O2 -cpu=68020 -fpu=68882
+ASFLAGS = -O2 -cpu=68020 -fpu=68882
+
+%.o: %.s
+	$(AS) $(ASFLAGS) -c -o $@ $<
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+%.s: %.c
+	$(CC) $(CFLAGS) -S -o $@ $<
