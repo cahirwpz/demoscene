@@ -1,11 +1,11 @@
-TOPDIR = $(CURDIR)
+TOPDIR	= $(CURDIR)
 
 include $(TOPDIR)/Makefile.common
 
 export TOPDIR
 
-BINS = main
-SUBDIRS = p61
+BINS	= main
+SUBDIRS	= p61
 
 all: $(SUBDIRS) $(BINS)
 
@@ -28,3 +28,5 @@ clean:
 	$(RM) *~ *.o $(BINS)
 
 .PHONY: all p61
+
+# vim: sw=8 ts=8

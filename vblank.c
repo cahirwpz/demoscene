@@ -7,34 +7,34 @@
 static int VBlankCounter = 0;
 
 __amigainterrupt __saveds static int VBlankServer(void) {
-	VBlankCounter++;
-	return 0;
+  VBlankCounter++;
+  return 0;
 }
 
 static struct Interrupt VBlankInt = {
-	{
-		NULL,
-		NULL,
-		NT_INTERRUPT,
-		-60,
-		"VBlankCounter"
-	},
-	(APTR)&VBlankCounter,
-	(APTR)VBlankServer
+  {
+    NULL,
+    NULL,
+    NT_INTERRUPT,
+    -60,
+    "VBlankCounter"
+  },
+  (APTR)&VBlankCounter,
+  (APTR)VBlankServer
 };
 
 void InstallVBlankIntServer() {
-	AddIntServer(INTB_VERTB, &VBlankInt);
+  AddIntServer(INTB_VERTB, &VBlankInt);
 }
 
 void RemoveVBlankIntServer() {
-	RemIntServer(INTB_VERTB, &VBlankInt);
+  RemIntServer(INTB_VERTB, &VBlankInt);
 }
 
 int GetVBlankCounter() {
-	return VBlankCounter;
+  return VBlankCounter;
 }
 
 void SetVBlankCounter(int value) {
-	VBlankCounter = value;
+  VBlankCounter = value;
 }

@@ -1,5 +1,5 @@
-CC		= vc +small -warn=2
-AS		= vc +small -warn=2
+CC	= vc +small -warn=2
+AS	= vc +small -warn=2
 CFLAGS	= -O2 -cpu=68020 -fpu=68882
 ASFLAGS = -O2 -cpu=68020 -fpu=68882
 
@@ -11,3 +11,5 @@ ASFLAGS = -O2 -cpu=68020 -fpu=68882
 
 %.s: %.c
 	$(CC) $(CFLAGS) -S -o $@ $<
+
+# vim: sw=8 ts=8
