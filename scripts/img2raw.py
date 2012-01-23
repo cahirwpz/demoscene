@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from array import array
+
 import Image
 import argparse
 import os
@@ -18,30 +20,44 @@ def main():
   inputPath = os.path.abspath(args.input)
   outputPath = os.path.abspath(args.output)
 
-  rawFilePath = '%s.raw' % outputPath
-  palFilePath = '%s.pal' % outputPath
-
   if not os.path.isfile(inputPath):
     raise SystemExit('Input file does not exists!')
-
-  if any(map(os.path.isfile, [rawFilePath, palFilePath])) and not args.force:
-    raise SystemExit('Will not overwrite output files!')
 
   try:
     image = Image.open(inputPath)
   except IOError as ex:
     raise SystemExit('Error: %s.' % ex)
-  else:
+
+  if image.mode not in ['P', 'RGB']:
+    raise SystemExit('Unknown color space: %s.' % image.mode)
+
+  if image.mode == 'P':
+    rawFilePath = '%s.8' % outputPath
+    palFilePath = '%s.pal' % outputPath
+
+    if any(map(os.path.isfile, [rawFilePath, palFilePath])) and not args.force:
+      raise SystemExit('Will not overwrite output files!')
+
     with open(palFilePath, 'w') as palFile:
-      pal = map(chr, image.getpalette())
-      palFile.write("".join(pal))
+      pal = array('B', image.getpalette())
+      palFile.write(pal.tostring())
 
     with open(rawFilePath, 'w') as rawFile:
-      w, h = image.size
-      for y in range(h):
-        for x in range(w):
-          pixel = image.getpixel((x,y))
-          rawFile.write(chr(pixel))
+      data = array('B', image.getdata())
+      rawFile.write(data.tostring())
+  else:
+    rawFilePath = '%s.24' % outputPath
+
+    if os.path.isfile(rawFilePath) and not args.force:
+      raise SystemExit('Will not overwrite output file!')
+
+    with open(rawFilePath, 'w') as rawFile:
+      data = array('B')
+
+      for rgb in image.getdata():
+        data.extend(rgb)
+
+      rawFile.write(data.tostring())
 
 if __name__ == '__main__':
   main()
