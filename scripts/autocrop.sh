@@ -5,13 +5,13 @@
 
 (( $# == 2 )) || exit 1
 
-declare -r input=`cd $(dirname "$1") && pwd`/`basename "$1"`
-declare -r output=`cd $(dirname "$2") && pwd`/`basename "$2"`
+declare -r input=$(cd $(dirname "$1") && pwd)/$(basename "$1")
+declare -r output=$(cd $(dirname "$2") && pwd)/$(basename "$2")
 
 [ ${input} != ${output} ] || exit 1
 
-echo "input: `identify $1`"
+echo "Input: $(identify $1)"
 
 convert ${input} -fuzz 10% -trim ${output}
 
-echo "output: `identify $2`"
+echo "Output: $(identify $2)"
