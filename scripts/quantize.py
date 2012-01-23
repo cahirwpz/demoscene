@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-import Image
 import argparse
 import os
+import subprocess
+import sys
 
 def main():
   parser = argparse.ArgumentParser(
@@ -31,18 +32,16 @@ def main():
   if inputPath == outputPath:
     raise SystemExit('Input and output files have to be different!')
 
-  try:
-    image = Image.open(inputPath)
-  except IOError as ex:
-    raise SystemExit('Error: %s.' % ex)
+  command = ['convert', inputPath]
+
+  if args.dithering:
+    command.extend(['-dither', 'FloydSteinberg'])
   else:
-    image = image.convert('RGB')
-    output = image.convert('P', palette=Image.ADAPTIVE, colors=args.colors)
+    command.append('+dither')
 
-    if args.dithering:
-      output = image.quantize(palette=output)
+  command.extend(['-colors', str(args.colors), outputPath])
 
-    output.save(outputPath)
+  subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
 
 if __name__ == '__main__':
   main()
