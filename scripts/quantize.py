@@ -3,7 +3,6 @@
 import Image
 import argparse
 import os
-import sys
 
 def main():
   parser = argparse.ArgumentParser(
