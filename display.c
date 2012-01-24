@@ -4,41 +4,6 @@
 #include "common.h"
 #include "display.h"
 
-struct BitMap *NewBitMap(SHORT width, SHORT height, SHORT depth) {
-  struct BitMap *bitmap;
-
-  if ((bitmap = NEW_SZ(struct BitMap))) {
-    InitBitMap(bitmap, depth, width, height);
-
-    int i;
-
-    for (i = 0; i < depth; i++)
-      bitmap->Planes[i] = (PLANEPTR)AllocRaster(width, height);
-
-    for (i = 0; i < depth; i++) {
-      if (bitmap->Planes[i]) {
-        BltClear(bitmap->Planes[i], (bitmap->BytesPerRow * bitmap->Rows), 1L);
-      } else {
-        DeleteBitMap(bitmap, width, height, depth);
-        bitmap = NULL;
-      }
-    }
-  }
-
-  return bitmap;
-}
-
-void DeleteBitMap(struct BitMap *bitmap, SHORT width, SHORT height, SHORT depth) {
-  int i;
-
-  for (i = 0; i < depth; i++) {
-    if (bitmap->Planes[i])
-      FreeRaster(bitmap->Planes[i], width, height);
-  }
-
-  DELETE(bitmap);
-}
-
 struct ViewPort *NewViewPort(struct ColorMap *colormap, struct BitMap *bitmap,
                              SHORT width, SHORT height) {
   struct ViewPort *viewPort;

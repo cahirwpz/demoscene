@@ -132,8 +132,8 @@ void start() {
   struct View *oldView = GfxBase->ActiView;
 
   struct View *view = NewView();
-  struct BitMap *bm1 = NewBitMap(WIDTH, HEIGHT, DEPTH);
-  struct BitMap *bm2 = NewBitMap(WIDTH, HEIGHT, DEPTH);
+  struct BitMap *bm1 = AllocBitMap(WIDTH, HEIGHT, DEPTH, BMF_DISPLAYABLE|BMF_CLEAR, NULL);
+  struct BitMap *bm2 = AllocBitMap(WIDTH, HEIGHT, DEPTH, BMF_DISPLAYABLE|BMF_CLEAR, NULL); 
   struct ColorMap *cm = GetColorMap(1<<DEPTH);
   struct ViewPort *vp = NewViewPort(cm, bm1, WIDTH, HEIGHT);
   struct DBufInfo *dbi = AllocDBufInfo(vp);
@@ -163,8 +163,8 @@ void start() {
   FreeDBufInfo(dbi);
   DeleteViewPort(vp);
   FreeColorMap(cm);
-  DeleteBitMap(bm2, WIDTH, HEIGHT, DEPTH);
-  DeleteBitMap(bm1, WIDTH, HEIGHT, DEPTH);
+  FreeBitMap(bm2);
+  FreeBitMap(bm1);
   DeleteView(view);
 }
 
