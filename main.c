@@ -51,12 +51,21 @@ void RenderFrameNumber(struct BitMap *bm) {
   Text(&rastPort, number, 4);
 }
 
-void Render(struct BitMap *bm, struct ViewPort *vp) {
+void Render(struct DBufInfo *dbi, struct ViewPort *vp) {
   APTR modMusic = ReadFileSimple("data/tempest-acidjazzed_evening.p61", MEMF_CHIP);
   UBYTE *txtData = ReadFileSimple("data/texture-01.raw", MEMF_PUBLIC);
   UBYTE *txtPal = ReadFileSimple("data/texture-01.pal", MEMF_PUBLIC);
   UBYTE *chunky = NEW_A(UBYTE, WIDTH * HEIGHT);
   struct DistortionMap *tunnel = NewDistortionMap(WIDTH, HEIGHT);
+
+  BOOL SafeToChange = TRUE;
+  BOOL SafeToWrite = TRUE;
+  int CurrentBuffer = 1;
+
+  struct BitMap *bm = (struct BitMap *)dbi->dbi_UserData2;
+
+  dbi->dbi_SafeMessage.mn_ReplyPort = CreateMsgPort();
+  dbi->dbi_DispMessage.mn_ReplyPort = CreateMsgPort();
 
   if (txtData && txtPal && chunky && tunnel) {
     ViewPortLoadPalette(vp, (UBYTE *)txtPal, 0, HEIGHT);
@@ -69,16 +78,46 @@ void Render(struct BitMap *bm, struct ViewPort *vp) {
     SetVBlankCounter(0);
 
     while (GetVBlankCounter() < 500) {
-      int offset = GetVBlankCounter();
+      if (!SafeToWrite) {
+        struct MsgPort *SafeMsgPort = dbi->dbi_SafeMessage.mn_ReplyPort;
 
-      RenderDistortion(chunky, tunnel, txtData, 0, offset / 10);
-      c2p1x1_8_c5_bm(chunky, bm, WIDTH, HEIGHT, 0, 0);
+        while (!GetMsg(SafeMsgPort))
+          Wait(1L << SafeMsgPort->mp_SigBit);
 
-      RenderFrameNumber(bm);
+        SafeToWrite = TRUE;
+      }
+
+      {
+        int offset = GetVBlankCounter();
+
+        RenderDistortion(chunky, tunnel, txtData, 0, offset);
+        c2p1x1_8_c5_bm(chunky, bm, WIDTH, HEIGHT, 0, 0);
+        RenderFrameNumber(bm);
+      }
+
+      if (!SafeToChange) {
+        struct MsgPort *DispMsgPort = dbi->dbi_DispMessage.mn_ReplyPort;
+
+        while (!GetMsg(DispMsgPort))
+          Wait(1L << DispMsgPort->mp_SigBit);
+
+        SafeToChange = TRUE;
+      }
+
+      ChangeVPBitMap(vp, bm, dbi);
+
+      bm = (struct BitMap *)(CurrentBuffer ? dbi->dbi_UserData2 : dbi->dbi_UserData1);
+
+      SafeToChange = FALSE;
+      SafeToWrite = FALSE;
+      CurrentBuffer ^= 1;
     }
 
     P61_End();
   }
+
+  DeleteMsgPort(dbi->dbi_SafeMessage.mn_ReplyPort);
+  DeleteMsgPort(dbi->dbi_DispMessage.mn_ReplyPort);
 
   if (tunnel)
     DeleteDistortionMap(tunnel);
@@ -93,9 +132,14 @@ void start() {
   struct View *oldView = GfxBase->ActiView;
 
   struct View *view = NewView();
-  struct BitMap *bm = NewBitMap(WIDTH, HEIGHT, DEPTH);
+  struct BitMap *bm1 = NewBitMap(WIDTH, HEIGHT, DEPTH);
+  struct BitMap *bm2 = NewBitMap(WIDTH, HEIGHT, DEPTH);
   struct ColorMap *cm = GetColorMap(1<<DEPTH);
-  struct ViewPort *vp = NewViewPort(cm, bm, WIDTH, HEIGHT);
+  struct ViewPort *vp = NewViewPort(cm, bm1, WIDTH, HEIGHT);
+  struct DBufInfo *dbi = AllocDBufInfo(vp);
+
+  dbi->dbi_UserData1 = (APTR)bm1;
+  dbi->dbi_UserData2 = (APTR)bm2;
 
   view->ViewPort = vp;
 
@@ -111,14 +155,16 @@ void start() {
   for (i=0; i<8; i++)
     FreeSprite(i);
 
-  Render(bm, vp);
+  Render(dbi, vp);
 
   LoadView(oldView);
   WaitTOF();
 
+  FreeDBufInfo(dbi);
   DeleteViewPort(vp);
   FreeColorMap(cm);
-  DeleteBitMap(bm, WIDTH, HEIGHT, DEPTH);
+  DeleteBitMap(bm2, WIDTH, HEIGHT, DEPTH);
+  DeleteBitMap(bm1, WIDTH, HEIGHT, DEPTH);
   DeleteView(view);
 }
 
