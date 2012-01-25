@@ -4,8 +4,8 @@
 #include <graphics/gfx.h>
 #include <graphics/view.h>
 
-struct ViewPort *NewViewPort(struct ColorMap *colormap, struct BitMap *bitmap,
-                             SHORT width, SHORT height);
+struct ViewPort *NewViewPort(struct BitMap *bitmap,
+                             SHORT width, SHORT height, SHORT depth);
 void DeleteViewPort(struct ViewPort *viewPort);
 void ViewPortLoadPalette(struct ViewPort *viewPort, UBYTE *components,
                          UWORD start, UWORD count);

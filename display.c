@@ -4,31 +4,33 @@
 #include "common.h"
 #include "display.h"
 
-struct ViewPort *NewViewPort(struct ColorMap *colormap, struct BitMap *bitmap,
-                             SHORT width, SHORT height) {
+struct ViewPort *NewViewPort(struct BitMap *bitmap,
+                             SHORT width, SHORT height, SHORT depth) {
   struct ViewPort *viewPort;
-  struct RasInfo *rasInfo;
+  struct ColorMap *colorMap;
 
   if ((viewPort = NEW_SZ(struct ViewPort))) {
-    if ((rasInfo = NEW_SZ(struct RasInfo))) {
-      rasInfo->BitMap = bitmap;
+    InitVPort(viewPort);
 
-      InitVPort(viewPort);
+    viewPort->DWidth = width;
+    viewPort->DHeight = height;
+    viewPort->RasInfo = NEW_SZ(struct RasInfo);
+    viewPort->ColorMap = GetColorMap(1 << depth);
 
-      viewPort->ColorMap = colormap;
-      viewPort->RasInfo = rasInfo;
-      viewPort->DWidth  = width;
-      viewPort->DHeight = height;
+    if (viewPort->RasInfo && viewPort->ColorMap) {
+      viewPort->RasInfo->BitMap = bitmap;
     } else {
-      DELETE(viewPort);
+      DeleteViewPort(viewPort);
       viewPort = NULL;
     }
   }
+
   return viewPort;
 }
 
 void DeleteViewPort(struct ViewPort *viewPort) {
   FreeVPortCopLists(viewPort);
+  FreeColorMap(viewPort->ColorMap);
   DELETE(viewPort->RasInfo);
   DELETE(viewPort);
 }

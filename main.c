@@ -134,8 +134,7 @@ void start() {
   struct View *view = NewView();
   struct BitMap *bm1 = AllocBitMap(WIDTH, HEIGHT, DEPTH, BMF_DISPLAYABLE|BMF_CLEAR, NULL);
   struct BitMap *bm2 = AllocBitMap(WIDTH, HEIGHT, DEPTH, BMF_DISPLAYABLE|BMF_CLEAR, NULL); 
-  struct ColorMap *cm = GetColorMap(1<<DEPTH);
-  struct ViewPort *vp = NewViewPort(cm, bm1, WIDTH, HEIGHT);
+  struct ViewPort *vp = NewViewPort(bm1, WIDTH, HEIGHT, DEPTH);
   struct DBufInfo *dbi = AllocDBufInfo(vp);
 
   dbi->dbi_UserData1 = (APTR)bm1;
@@ -144,7 +143,7 @@ void start() {
   view->ViewPort = vp;
 
   vcTags[0].ti_Data = (ULONG)vp;
-  VideoControl(cm, vcTags);
+  VideoControl(vp->ColorMap, vcTags);
 
   MakeVPort(view, vp);
   MrgCop(view);
@@ -162,7 +161,6 @@ void start() {
 
   FreeDBufInfo(dbi);
   DeleteViewPort(vp);
-  FreeColorMap(cm);
   FreeBitMap(bm2);
   FreeBitMap(bm1);
   DeleteView(view);
