@@ -58,15 +58,6 @@ void Render(struct DBufRaster *raster) {
   UBYTE *chunky = NEW_A(UBYTE, WIDTH * HEIGHT);
   struct DistortionMap *tunnel = NewDistortionMap(WIDTH, HEIGHT);
 
-  BOOL SafeToChange = TRUE;
-  BOOL SafeToWrite = TRUE;
-  int CurrentBuffer = 1;
-
-  struct BitMap *bm = (struct BitMap *)raster->DBufInfo->dbi_UserData2;
-
-  raster->DBufInfo->dbi_SafeMessage.mn_ReplyPort = CreateMsgPort();
-  raster->DBufInfo->dbi_DispMessage.mn_ReplyPort = CreateMsgPort();
-
   if (txtData && txtPal && chunky && tunnel) {
     ViewPortLoadPalette(raster->ViewPort, (UBYTE *)txtPal, 0, HEIGHT);
 
@@ -78,46 +69,20 @@ void Render(struct DBufRaster *raster) {
     SetVBlankCounter(0);
 
     while (GetVBlankCounter() < 500) {
-      if (!SafeToWrite) {
-        struct MsgPort *SafeMsgPort = raster->DBufInfo->dbi_SafeMessage.mn_ReplyPort;
+      WaitForSafeToWrite(raster);
 
-        while (!GetMsg(SafeMsgPort))
-          Wait(1L << SafeMsgPort->mp_SigBit);
+      int offset = GetVBlankCounter();
 
-        SafeToWrite = TRUE;
-      }
+      RenderDistortion(chunky, tunnel, txtData, 0, offset);
+      c2p1x1_8_c5_bm(chunky, raster->BitMap, WIDTH, HEIGHT, 0, 0);
+      RenderFrameNumber(raster->BitMap);
 
-      {
-        int offset = GetVBlankCounter();
-
-        RenderDistortion(chunky, tunnel, txtData, 0, offset);
-        c2p1x1_8_c5_bm(chunky, bm, WIDTH, HEIGHT, 0, 0);
-        RenderFrameNumber(bm);
-      }
-
-      if (!SafeToChange) {
-        struct MsgPort *DispMsgPort = raster->DBufInfo->dbi_DispMessage.mn_ReplyPort;
-
-        while (!GetMsg(DispMsgPort))
-          Wait(1L << DispMsgPort->mp_SigBit);
-
-        SafeToChange = TRUE;
-      }
-
-      ChangeVPBitMap(raster->ViewPort, bm, raster->DBufInfo);
-
-      bm = (struct BitMap *)(CurrentBuffer ? raster->DBufInfo->dbi_UserData2 : raster->DBufInfo->dbi_UserData1);
-
-      SafeToChange = FALSE;
-      SafeToWrite = FALSE;
-      CurrentBuffer ^= 1;
+      WaitForSafeToSwap(raster);
+      DBufRasterSwap(raster);
     }
 
     P61_End();
   }
-
-  DeleteMsgPort(raster->DBufInfo->dbi_SafeMessage.mn_ReplyPort);
-  DeleteMsgPort(raster->DBufInfo->dbi_DispMessage.mn_ReplyPort);
 
   if (tunnel)
     DeleteDistortionMap(tunnel);

@@ -31,10 +31,19 @@ struct DBufRaster *NewDBufRaster(SHORT width, SHORT height, SHORT depth) {
                                                     BMF_DISPLAYABLE|BMF_CLEAR,
                                                     NULL); 
 
-        viewPort->RasInfo->BitMap = (struct BitMap *)dbufInfo->dbi_UserData1;
+        dbufInfo->dbi_SafeMessage.mn_ReplyPort = CreateMsgPort();
+        dbufInfo->dbi_DispMessage.mn_ReplyPort = CreateMsgPort();
 
-        if (dbufInfo->dbi_UserData1 && dbufInfo->dbi_UserData2)
+        viewPort->RasInfo->BitMap = (struct BitMap *)dbufInfo->dbi_UserData1;
+        raster->BitMap = (struct BitMap *)raster->DBufInfo->dbi_UserData2;
+
+        if (dbufInfo->dbi_UserData1 && dbufInfo->dbi_UserData2) {
+          raster->SafeToSwap = TRUE;
+          raster->SafeToWrite = TRUE;
+          raster->CurrentBitMap = 1;
+
           return raster;
+        }
       }
     }
 
@@ -50,6 +59,10 @@ void DeleteDBufRaster(struct DBufRaster *raster) {
 
     FreeBitMap(dbufInfo->dbi_UserData1);
     FreeBitMap(dbufInfo->dbi_UserData2);
+
+    DeleteMsgPort(dbufInfo->dbi_SafeMessage.mn_ReplyPort);
+    DeleteMsgPort(dbufInfo->dbi_DispMessage.mn_ReplyPort);
+
     FreeDBufInfo(dbufInfo);
   }
 
@@ -61,6 +74,39 @@ void DeleteDBufRaster(struct DBufRaster *raster) {
     DELETE(viewPort->RasInfo);
     DELETE(viewPort);
   }
+}
+
+void WaitForSafeToWrite(struct DBufRaster *raster) {
+  if (!raster->SafeToWrite) {
+    struct MsgPort *SafeMsgPort = raster->DBufInfo->dbi_SafeMessage.mn_ReplyPort;
+
+    while (!GetMsg(SafeMsgPort))
+      Wait(1L << SafeMsgPort->mp_SigBit);
+
+    raster->SafeToWrite = TRUE;
+  }
+}
+
+void WaitForSafeToSwap(struct DBufRaster *raster) {
+  if (!raster->SafeToSwap) {
+    struct MsgPort *DispMsgPort = raster->DBufInfo->dbi_DispMessage.mn_ReplyPort;
+
+    while (!GetMsg(DispMsgPort))
+      Wait(1L << DispMsgPort->mp_SigBit);
+
+    raster->SafeToSwap = TRUE;
+  }
+}
+
+void DBufRasterSwap(struct DBufRaster *raster) {
+  ChangeVPBitMap(raster->ViewPort, raster->BitMap, raster->DBufInfo);
+
+  raster->BitMap = (struct BitMap *)(raster->CurrentBitMap ?
+                                     raster->DBufInfo->dbi_UserData2 :
+                                     raster->DBufInfo->dbi_UserData1);
+  raster->SafeToSwap = FALSE;
+  raster->SafeToWrite = FALSE;
+  raster->CurrentBitMap ^= 1;
 }
 
 struct View *NewView()

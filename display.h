@@ -7,10 +7,18 @@
 struct DBufRaster {
   struct ViewPort *ViewPort;
   struct DBufInfo *DBufInfo;
+  struct BitMap *BitMap;
+
+  LONG CurrentBitMap;
+  BOOL SafeToWrite;
+  BOOL SafeToSwap;
 };
 
 struct DBufRaster *NewDBufRaster(SHORT width, SHORT height, SHORT depth);
 void DeleteDBufRaster(struct DBufRaster *raster);
+void WaitForSafeToWrite(struct DBufRaster *raster);
+void WaitForSafeToSwap(struct DBufRaster *raster);
+void DBufRasterSwap(struct DBufRaster *raster);
 
 void ViewPortLoadPalette(struct ViewPort *viewPort, UBYTE *components,
                          UWORD start, UWORD count);
