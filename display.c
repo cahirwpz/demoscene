@@ -4,35 +4,63 @@
 #include "common.h"
 #include "display.h"
 
-struct ViewPort *NewViewPort(struct BitMap *bitmap,
-                             SHORT width, SHORT height, SHORT depth) {
-  struct ViewPort *viewPort;
-  struct ColorMap *colorMap;
+struct DBufRaster *NewDBufRaster(SHORT width, SHORT height, SHORT depth) {
+  struct DBufRaster *raster = NEW_SZ(struct DBufRaster);
 
-  if ((viewPort = NEW_SZ(struct ViewPort))) {
-    InitVPort(viewPort);
+  if (raster) {
+    struct ViewPort *viewPort = NEW_SZ(struct ViewPort);
 
-    viewPort->DWidth = width;
-    viewPort->DHeight = height;
-    viewPort->RasInfo = NEW_SZ(struct RasInfo);
-    viewPort->ColorMap = GetColorMap(1 << depth);
+    if (viewPort) {
+      InitVPort(viewPort);
 
-    if (viewPort->RasInfo && viewPort->ColorMap) {
-      viewPort->RasInfo->BitMap = bitmap;
-    } else {
-      DeleteViewPort(viewPort);
-      viewPort = NULL;
+      viewPort->DWidth = width;
+      viewPort->DHeight = height;
+      viewPort->RasInfo = NEW_SZ(struct RasInfo);
+      viewPort->ColorMap = GetColorMap(1 << depth);
+
+      struct DBufInfo *dbufInfo = AllocDBufInfo(viewPort);
+
+      raster->DBufInfo = dbufInfo;
+      raster->ViewPort = viewPort;
+
+      if (dbufInfo && viewPort->RasInfo && viewPort->ColorMap) {
+        dbufInfo->dbi_UserData1 = (APTR)AllocBitMap(width, height, depth,
+                                                    BMF_DISPLAYABLE|BMF_CLEAR,
+                                                    NULL);
+        dbufInfo->dbi_UserData2 = (APTR)AllocBitMap(width, height, depth,
+                                                    BMF_DISPLAYABLE|BMF_CLEAR,
+                                                    NULL); 
+
+        viewPort->RasInfo->BitMap = (struct BitMap *)dbufInfo->dbi_UserData1;
+
+        if (dbufInfo->dbi_UserData1 && dbufInfo->dbi_UserData2)
+          return raster;
+      }
     }
+
+    DeleteDBufRaster(raster);
   }
 
-  return viewPort;
+  return NULL;
 }
 
-void DeleteViewPort(struct ViewPort *viewPort) {
-  FreeVPortCopLists(viewPort);
-  FreeColorMap(viewPort->ColorMap);
-  DELETE(viewPort->RasInfo);
-  DELETE(viewPort);
+void DeleteDBufRaster(struct DBufRaster *raster) {
+  if (raster->DBufInfo) {
+    struct DBufInfo *dbufInfo = raster->DBufInfo;
+
+    FreeBitMap(dbufInfo->dbi_UserData1);
+    FreeBitMap(dbufInfo->dbi_UserData2);
+    FreeDBufInfo(dbufInfo);
+  }
+
+  if (raster->ViewPort) {
+    struct ViewPort *viewPort = raster->ViewPort;
+
+    FreeVPortCopLists(viewPort);
+    FreeColorMap(viewPort->ColorMap);
+    DELETE(viewPort->RasInfo);
+    DELETE(viewPort);
+  }
 }
 
 struct View *NewView()

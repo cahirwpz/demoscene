@@ -51,7 +51,7 @@ void RenderFrameNumber(struct BitMap *bm) {
   Text(&rastPort, number, 4);
 }
 
-void Render(struct DBufInfo *dbi, struct ViewPort *vp) {
+void Render(struct DBufRaster *raster) {
   APTR modMusic = ReadFileSimple("data/tempest-acidjazzed_evening.p61", MEMF_CHIP);
   UBYTE *txtData = ReadFileSimple("data/texture-01.raw", MEMF_PUBLIC);
   UBYTE *txtPal = ReadFileSimple("data/texture-01.pal", MEMF_PUBLIC);
@@ -62,13 +62,13 @@ void Render(struct DBufInfo *dbi, struct ViewPort *vp) {
   BOOL SafeToWrite = TRUE;
   int CurrentBuffer = 1;
 
-  struct BitMap *bm = (struct BitMap *)dbi->dbi_UserData2;
+  struct BitMap *bm = (struct BitMap *)raster->DBufInfo->dbi_UserData2;
 
-  dbi->dbi_SafeMessage.mn_ReplyPort = CreateMsgPort();
-  dbi->dbi_DispMessage.mn_ReplyPort = CreateMsgPort();
+  raster->DBufInfo->dbi_SafeMessage.mn_ReplyPort = CreateMsgPort();
+  raster->DBufInfo->dbi_DispMessage.mn_ReplyPort = CreateMsgPort();
 
   if (txtData && txtPal && chunky && tunnel) {
-    ViewPortLoadPalette(vp, (UBYTE *)txtPal, 0, HEIGHT);
+    ViewPortLoadPalette(raster->ViewPort, (UBYTE *)txtPal, 0, HEIGHT);
 
     GenerateTunnel(tunnel, 8192, WIDTH/2, HEIGHT/2);
 
@@ -79,7 +79,7 @@ void Render(struct DBufInfo *dbi, struct ViewPort *vp) {
 
     while (GetVBlankCounter() < 500) {
       if (!SafeToWrite) {
-        struct MsgPort *SafeMsgPort = dbi->dbi_SafeMessage.mn_ReplyPort;
+        struct MsgPort *SafeMsgPort = raster->DBufInfo->dbi_SafeMessage.mn_ReplyPort;
 
         while (!GetMsg(SafeMsgPort))
           Wait(1L << SafeMsgPort->mp_SigBit);
@@ -96,7 +96,7 @@ void Render(struct DBufInfo *dbi, struct ViewPort *vp) {
       }
 
       if (!SafeToChange) {
-        struct MsgPort *DispMsgPort = dbi->dbi_DispMessage.mn_ReplyPort;
+        struct MsgPort *DispMsgPort = raster->DBufInfo->dbi_DispMessage.mn_ReplyPort;
 
         while (!GetMsg(DispMsgPort))
           Wait(1L << DispMsgPort->mp_SigBit);
@@ -104,9 +104,9 @@ void Render(struct DBufInfo *dbi, struct ViewPort *vp) {
         SafeToChange = TRUE;
       }
 
-      ChangeVPBitMap(vp, bm, dbi);
+      ChangeVPBitMap(raster->ViewPort, bm, raster->DBufInfo);
 
-      bm = (struct BitMap *)(CurrentBuffer ? dbi->dbi_UserData2 : dbi->dbi_UserData1);
+      bm = (struct BitMap *)(CurrentBuffer ? raster->DBufInfo->dbi_UserData2 : raster->DBufInfo->dbi_UserData1);
 
       SafeToChange = FALSE;
       SafeToWrite = FALSE;
@@ -116,8 +116,8 @@ void Render(struct DBufInfo *dbi, struct ViewPort *vp) {
     P61_End();
   }
 
-  DeleteMsgPort(dbi->dbi_SafeMessage.mn_ReplyPort);
-  DeleteMsgPort(dbi->dbi_DispMessage.mn_ReplyPort);
+  DeleteMsgPort(raster->DBufInfo->dbi_SafeMessage.mn_ReplyPort);
+  DeleteMsgPort(raster->DBufInfo->dbi_DispMessage.mn_ReplyPort);
 
   if (tunnel)
     DeleteDistortionMap(tunnel);
@@ -129,23 +129,17 @@ void Render(struct DBufInfo *dbi, struct ViewPort *vp) {
 }
 
 void start() {
+  struct DBufRaster *raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH);
+
+  vcTags[0].ti_Data = (ULONG)raster->ViewPort;
+  VideoControl(raster->ViewPort->ColorMap, vcTags);
+
   struct View *oldView = GfxBase->ActiView;
-
   struct View *view = NewView();
-  struct BitMap *bm1 = AllocBitMap(WIDTH, HEIGHT, DEPTH, BMF_DISPLAYABLE|BMF_CLEAR, NULL);
-  struct BitMap *bm2 = AllocBitMap(WIDTH, HEIGHT, DEPTH, BMF_DISPLAYABLE|BMF_CLEAR, NULL); 
-  struct ViewPort *vp = NewViewPort(bm1, WIDTH, HEIGHT, DEPTH);
-  struct DBufInfo *dbi = AllocDBufInfo(vp);
 
-  dbi->dbi_UserData1 = (APTR)bm1;
-  dbi->dbi_UserData2 = (APTR)bm2;
+  view->ViewPort = raster->ViewPort;
 
-  view->ViewPort = vp;
-
-  vcTags[0].ti_Data = (ULONG)vp;
-  VideoControl(vp->ColorMap, vcTags);
-
-  MakeVPort(view, vp);
+  MakeVPort(view, raster->ViewPort);
   MrgCop(view);
   LoadView(view);
 
@@ -154,15 +148,12 @@ void start() {
   for (i=0; i<8; i++)
     FreeSprite(i);
 
-  Render(dbi, vp);
+  Render(raster);
 
   LoadView(oldView);
   WaitTOF();
 
-  FreeDBufInfo(dbi);
-  DeleteViewPort(vp);
-  FreeBitMap(bm2);
-  FreeBitMap(bm1);
+  DeleteDBufRaster(raster);
   DeleteView(view);
 }
 
