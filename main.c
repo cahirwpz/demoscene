@@ -7,7 +7,6 @@
 #include <inline/dos_protos.h>
 #include <inline/graphics_protos.h>
 
-#include <graphics/videocontrol.h>
 #include <graphics/gfxbase.h>
 
 #include "fileio.h"
@@ -25,14 +24,6 @@ struct GfxBase *GfxBase;
 const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
-
-struct TagItem vcTags[] = {
-  { VTAG_ATTACH_CM_SET, NULL },
-  { VTAG_BORDERBLANK_SET, TRUE },
-  { VTAG_BORDERSPRITE_SET, TRUE },
-  { VTAG_SPRITERESN_SET, SPRITERESN_ECS },
-  { VTAG_END_CM, NULL }
-};
 
 void RenderFrameNumber(struct BitMap *bm) {
   struct RastPort rastPort;
@@ -95,16 +86,14 @@ void Render(struct DBufRaster *raster) {
 
 void start() {
   struct DBufRaster *raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH);
-
-  vcTags[0].ti_Data = (ULONG)raster->ViewPort;
-  VideoControl(raster->ViewPort->ColorMap, vcTags);
-
   struct View *oldView = GfxBase->ActiView;
   struct View *view = NewView();
 
-  view->ViewPort = raster->ViewPort;
+  ConfigureViewPort(raster->ViewPort);
 
+  view->ViewPort = raster->ViewPort;
   MakeVPort(view, raster->ViewPort);
+
   MrgCop(view);
   LoadView(view);
 

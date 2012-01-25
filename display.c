@@ -1,3 +1,4 @@
+#include <graphics/videocontrol.h>
 #include <proto/graphics.h>
 #include <inline/graphics_protos.h>
 
@@ -107,6 +108,19 @@ void DBufRasterSwap(struct DBufRaster *raster) {
   raster->SafeToSwap = FALSE;
   raster->SafeToWrite = FALSE;
   raster->CurrentBitMap ^= 1;
+}
+
+static struct TagItem VideoCtrlTags[] = {
+  { VTAG_ATTACH_CM_SET, NULL },
+  { VTAG_BORDERBLANK_SET, TRUE },
+  { VTAG_BORDERSPRITE_SET, TRUE },
+  { VTAG_SPRITERESN_SET, SPRITERESN_ECS },
+  { VTAG_END_CM, NULL }
+};
+
+void ConfigureViewPort(struct ViewPort *viewPort) {
+  VideoCtrlTags[0].ti_Data = (ULONG)viewPort;
+  VideoControl(viewPort->ColorMap, VideoCtrlTags);
 }
 
 struct View *NewView()

@@ -20,6 +20,7 @@ void WaitForSafeToWrite(struct DBufRaster *raster);
 void WaitForSafeToSwap(struct DBufRaster *raster);
 void DBufRasterSwap(struct DBufRaster *raster);
 
+void ConfigureViewPort(struct ViewPort *viewPort);
 void ViewPortLoadPalette(struct ViewPort *viewPort, UBYTE *components,
                          UWORD start, UWORD count);
 
