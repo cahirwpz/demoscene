@@ -22,6 +22,6 @@
 #define NEW_AZ(TYPE, NUM) \
     INTERNAL_NEW(TYPE *, sizeof(TYPE) * NUM, MEMF_PUBLIC|MEMF_CLEAR)
 
-#define DELETE(PTR) { if (PTR) FreeVec(PTR); }
+#define DELETE(PTR) FreeVec(PTR)
 
 #endif
