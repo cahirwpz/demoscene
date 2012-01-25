@@ -148,7 +148,7 @@ static struct Palette {
   ULONG Components[768];
 } Palette;
 
-void ViewPortLoadPalette(struct ViewPort *viewPort, UBYTE *components,
+void LoadPalette(struct ViewPort *viewPort, UBYTE *components,
                          UWORD start, UWORD count) {
   int i;
 

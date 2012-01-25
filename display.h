@@ -21,8 +21,8 @@ void WaitForSafeToSwap(struct DBufRaster *raster);
 void DBufRasterSwap(struct DBufRaster *raster);
 
 void ConfigureViewPort(struct ViewPort *viewPort);
-void ViewPortLoadPalette(struct ViewPort *viewPort, UBYTE *components,
-                         UWORD start, UWORD count);
+void LoadPalette(struct ViewPort *viewPort, UBYTE *components,
+                 UWORD start, UWORD count);
 
 struct View *NewView();
 void DeleteView(struct View *view);
