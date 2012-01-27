@@ -9,6 +9,7 @@
 
 #include <graphics/gfxbase.h>
 
+#include "input.h"
 #include "fileio.h"
 #include "display.h"
 #include "vblank.h"
@@ -119,10 +120,12 @@ void SetupDisplayAndRun() {
 int main() {
   if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 40))) {
     if ((GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 40))) {
-      InstallVBlankIntServer();
-      SetupDisplayAndRun();
-      RemoveVBlankIntServer();
-
+      if (InitEventHandler()) {
+        InstallVBlankIntServer();
+        SetupDisplayAndRun();
+        RemoveVBlankIntServer();
+        KillEventHandler();
+      }
       CloseLibrary((struct Library *)GfxBase);
     }
     CloseLibrary((struct Library *)DOSBase);

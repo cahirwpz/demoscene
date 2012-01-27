@@ -12,10 +12,11 @@ all: $(SUBDIRS) $(BINS)
 p61:
 	$(MAKE) -C p61
 
-main: main.o vblank.o display.o fileio.o c2p1x1_8_c5_bm.o distortion.o distortion_opt.o p61/p61.o
+main: main.o vblank.o display.o input.o fileio.o c2p1x1_8_c5_bm.o distortion.o distortion_opt.o p61/p61.o
 	$(CC) $(CFLAGS) -lamigas -o $@ $^
 
 main.o:	main.c
+input.o: input.c input.h common.h
 vblank.o: vblank.c vblank.h
 display.o: display.c display.h common.h
 fileio.o: fileio.c fileio.h
