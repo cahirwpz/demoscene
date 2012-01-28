@@ -14,6 +14,7 @@
 #include "display.h"
 #include "vblank.h"
 #include "c2p.h"
+#include "resource.h"
 
 #include "p61/p61.h"
 #include "common.h"
@@ -44,45 +45,31 @@ void RenderFrameNumber(struct BitMap *bm) {
 }
 
 void MainLoop(struct DBufRaster *raster) {
-  APTR modMusic = ReadFileSimple("data/tempest-acidjazzed_evening.p61", MEMF_CHIP);
-  UBYTE *txtData = ReadFileSimple("data/texture-01.raw", MEMF_PUBLIC);
-  UBYTE *txtPal = ReadFileSimple("data/texture-01.pal", MEMF_PUBLIC);
-  UBYTE *chunky = NEW_A(UBYTE, WIDTH * HEIGHT);
-  struct DistortionMap *tunnel = NewDistortionMap(WIDTH, HEIGHT);
+  LoadPalette(raster->ViewPort, (UBYTE *)GetResource("palette"), 0, 256);
 
-  if (txtData && txtPal && chunky && tunnel) {
-    GenerateTunnel(tunnel, 8192, WIDTH/2, HEIGHT/2);
+  P61_Init(GetResource("module"), NULL, NULL);
+  P61_ControlBlock.Play = 1;
 
-    LoadPalette(raster->ViewPort, (UBYTE *)txtPal, 0, 256);
+  SetVBlankCounter(0);
 
-    P61_Init(modMusic, NULL, NULL);
-    P61_ControlBlock.Play = 1;
+  struct DistortionMap *tunnelMap = GetResource("tunnel_map");
+  APTR chunky = GetResource("chunky");
+  APTR texture = GetResource("texture");
 
-    SetVBlankCounter(0);
+  while (GetVBlankCounter() < 500) {
+    WaitForSafeToWrite(raster);
 
-    while (GetVBlankCounter() < 500) {
-      WaitForSafeToWrite(raster);
+    int offset = GetVBlankCounter();
 
-      int offset = GetVBlankCounter();
+    RenderDistortion(chunky, tunnelMap, texture, 0, offset);
+    c2p1x1_8_c5_bm(chunky, raster->BitMap, WIDTH, HEIGHT, 0, 0);
+    RenderFrameNumber(raster->BitMap);
 
-      RenderDistortion(chunky, tunnel, txtData, 0, offset);
-      c2p1x1_8_c5_bm(chunky, raster->BitMap, WIDTH, HEIGHT, 0, 0);
-      RenderFrameNumber(raster->BitMap);
-
-      WaitForSafeToSwap(raster);
-      DBufRasterSwap(raster);
-    }
-
-    P61_End();
+    WaitForSafeToSwap(raster);
+    DBufRasterSwap(raster);
   }
 
-  if (tunnel)
-    DeleteDistortionMap(tunnel);
-
-  DELETE(modMusic);
-  DELETE(chunky);
-  DELETE(txtData);
-  DELETE(txtPal);
+  P61_End();
 }
 
 void SetupDisplayAndRun() {
@@ -120,12 +107,15 @@ void SetupDisplayAndRun() {
 int main() {
   if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 40))) {
     if ((GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 40))) {
-      if (InitEventHandler()) {
-        InstallVBlankIntServer();
-        SetupDisplayAndRun();
-        RemoveVBlankIntServer();
-        KillEventHandler();
+      if (ResourcesAlloc() && ResourcesInit()) {
+        if (InitEventHandler()) {
+          InstallVBlankIntServer();
+          SetupDisplayAndRun();
+          RemoveVBlankIntServer();
+          KillEventHandler();
+        }
       }
+      ResourcesFree();
       CloseLibrary((struct Library *)GfxBase);
     }
     CloseLibrary((struct Library *)DOSBase);
