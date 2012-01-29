@@ -147,21 +147,20 @@ void DeleteView(struct View *view) {
   DELETE(view);
 }
 
-static struct Palette {
-  UWORD Count;
-  UWORD Start;
-  ULONG Components[768];
-} Palette;
-
 void LoadPalette(struct ViewPort *viewPort, UBYTE *components,
                          UWORD start, UWORD count) {
-  int i;
+  ULONG *palette;
 
-  Palette.Count = count;
-  Palette.Start = start;
+  if ((palette = NEW_A(ULONG, count * 3 + 1))) {
+    int i;
 
-  for (i = 0; i < count * 3; i++)
-    Palette.Components[i] = (ULONG)components[i] << 24;
+    palette[0] = (count << 16) | start;
 
-  LoadRGB32(viewPort, (ULONG *)&Palette);
+    for (i = 0; i < count * 3; i++)
+      palette[i+1] = (ULONG)components[i] << 24;
+
+    LoadRGB32(viewPort, palette);
+
+    DELETE(palette);
+  }
 }
