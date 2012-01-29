@@ -4,7 +4,6 @@ include $(TOPDIR)/Makefile.common
 
 export TOPDIR
 
-CFLAGS += -Isystem -Ip61
 LIBS += -Lsystem -Lp61
 
 BINS	= tunnel

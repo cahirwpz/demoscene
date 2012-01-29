@@ -9,15 +9,14 @@
 
 #include <graphics/gfxbase.h>
 
-#include "input.h"
-#include "fileio.h"
-#include "display.h"
-#include "vblank.h"
-#include "c2p.h"
-#include "resource.h"
-
 #include "p61/p61.h"
-#include "common.h"
+#include "system/c2p.h"
+#include "system/common.h"
+#include "system/display.h"
+#include "system/input.h"
+#include "system/resource.h"
+#include "system/vblank.h"
+
 #include "distortion.h"
 
 struct DosLibrary *DOSBase;

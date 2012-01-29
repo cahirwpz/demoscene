@@ -1,8 +1,8 @@
 #include <clib/exec_protos.h>
 
-#include "resource_internal.h"
+#include "system/resource_internal.h"
+#include "system/fileio.h"
 #include "distortion.h"
-#include "fileio.h"
 
 #define RSC_FILE(NAME, FILENAME, MEMTYPE) \
   RSC_ADD(NAME, ReadFileSimple(FILENAME, MEMTYPE))

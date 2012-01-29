@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "common.h"
+#include "system/common.h"
 #include "distortion.h"
 
 #define M_PI 3.14159265f
