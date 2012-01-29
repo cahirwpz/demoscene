@@ -1,8 +1,6 @@
-#include <clib/debug_protos.h>
-#include <exec/lists.h>
-#include <exec/nodes.h>
 #include <string.h>
 
+#include "debug.h"
 #include "common.h"
 #include "resource.h"
 
@@ -16,7 +14,7 @@ BOOL ResourcesAlloc()
     if (!(res->Ptr = res->AllocFunc()))
       return FALSE;
 
-    KPrintF("Allocated resource '%s' at $%lx.\n", res->Name, res->Ptr);
+    LOG("Allocated resource '%s' at $%lx.\n", res->Name, res->Ptr);
   }
 
   return TRUE;
@@ -29,7 +27,7 @@ BOOL ResourcesInit() {
     if (!res->InitFunc)
       continue;
 
-    KPrintF("Initiating resource '%s'.\n", res->Name);
+    LOG("Initiating resource '%s'.\n", res->Name);
 
     if (!res->InitFunc(res->Ptr))
       return FALSE;
@@ -42,7 +40,7 @@ void ResourcesFree() {
   struct Resource *res;
 
   for (res = ResourceList; res->Name; res++) {
-    KPrintF("Freeing resource '%s' at $%lx.\n", res->Name, res->Ptr);
+    LOG("Freeing resource '%s' at $%lx.\n", res->Name, res->Ptr);
 
     if (res->FreeFunc)
       res->FreeFunc(res->Ptr);
@@ -56,12 +54,12 @@ APTR GetResource(const char *name) {
 
   for (res = ResourceList; res->Name; res++) {
     if (strcmp(res->Name, name) == 0) {
-      KPrintF("Fetched resource '%s' at $%lx.\n", res->Name, res->Ptr);
+      LOG("Fetched resource '%s' at $%lx.\n", res->Name, res->Ptr);
       return res->Ptr;
     }
   }
 
-  KPrintF("Resource '%s' not found.\n", name);
+  LOG("Resource '%s' not found.\n", name);
   
   return NULL;
 }
