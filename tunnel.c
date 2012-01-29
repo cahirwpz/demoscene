@@ -17,7 +17,7 @@ const int HEIGHT = 256;
 const int DEPTH = 8;
 
 static struct DistortionMap *TunnelMap;
-statuc UBYTE *Texture;
+static UBYTE *Texture;
 
 void RenderTunnel(int frameNumber, struct DBufRaster *raster) {
   RenderDistortion(raster->Chunky, TunnelMap, Texture, 0, frameNumber);
