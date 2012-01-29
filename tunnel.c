@@ -16,13 +16,11 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-struct TunnelData {
-  struct DistortionMap *TunnelMap;
-  UBYTE *Texture;
-} tunnel;
+static struct DistortionMap *TunnelMap;
+statuc UBYTE *Texture;
 
 void RenderTunnel(int frameNumber, struct DBufRaster *raster) {
-  RenderDistortion(raster->Chunky, tunnel.TunnelMap, tunnel.Texture, 0, frameNumber);
+  RenderDistortion(raster->Chunky, TunnelMap, Texture, 0, frameNumber);
 }
 
 void RenderChunky(int frameNumber, struct DBufRaster *raster) {
@@ -30,13 +28,11 @@ void RenderChunky(int frameNumber, struct DBufRaster *raster) {
 }
 
 void MainLoop(struct DBufRaster *raster) {
-  LoadPalette(raster->ViewPort, (UBYTE *)GetResource("palette"), 0, 256);
-
   P61_Init(GetResource("module"), NULL, NULL);
   P61_ControlBlock.Play = 1;
 
-  tunnel.TunnelMap = GetResource("tunnel_map");
-  tunnel.Texture = GetResource("texture");
+  TunnelMap = GetResource("tunnel_map");
+  Texture = GetResource("texture");
 
   SetVBlankCounter(0);
 
@@ -61,6 +57,7 @@ void SetupDisplayAndRun() {
  
   if ((raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH))) {
     ConfigureViewPort(raster->ViewPort);
+    LoadPalette(raster->ViewPort, (UBYTE *)GetResource("palette"), 0, 256);
 
     struct View *view;
 
