@@ -1,12 +1,14 @@
 #include <devices/input.h>
+#include <devices/inputevent.h>
 #include <exec/interrupts.h>
 #include <exec/ports.h>
 
-#include <proto/exec.h>
 #include <clib/alib_protos.h>
+#include <proto/exec.h>
 #include <inline/exec_protos.h>
 
 #include "common.h"
+#include "debug.h"
 #include "input.h"
 
 struct InputDev {
@@ -18,7 +20,38 @@ struct InputDev {
 
 static struct InputDev InputDev = { NULL, NULL, NULL, FALSE};
 
-static APTR EventHandler() {
+static __saveds APTR EventHandler(__reg("a0") struct InputEvent *event,
+                                  __reg("a1") APTR data) {
+
+  for (; event; event = event->ie_NextEvent) {
+    switch (event->ie_Class) {
+      case IECLASS_RAWKEY:
+        LOG("Key %ld %s (%04lx)\n",
+            (LONG)(event->ie_Code & ~IECODE_UP_PREFIX),
+            (event->ie_Code & IECODE_UP_PREFIX) ? "up" : "down",
+            (LONG)event->ie_Qualifier);
+        break;
+
+      case IECLASS_RAWMOUSE:
+        if (event->ie_Code == IECODE_NOBUTTON) {
+          LOG("Mouse move: (%ld,%ld)\n", (LONG)event->ie_X, (LONG)event->ie_Y);
+        } else {
+          const char *name[] = {"left", "right", "middle"};
+
+          LOG("Mouse %s key %s.\n",
+              name[(event->ie_Code & ~IECODE_UP_PREFIX) - IECODE_LBUTTON],
+              (event->ie_Code & IECODE_UP_PREFIX) ? "up" : "down");
+        }
+        break;
+
+      case IECLASS_TIMER:
+        continue;
+
+      default:
+        break;
+    }
+  }
+
   return NULL;
 }
 
@@ -26,6 +59,7 @@ BOOL InitEventHandler() {
   if (!InputDev.Open) {
     if ((InputDev.IntHandler = NEW_SZ(struct Interrupt))) {
       InputDev.IntHandler->is_Code = (APTR)EventHandler;
+      InputDev.IntHandler->is_Data = NULL;
       InputDev.IntHandler->is_Node.ln_Pri = 100;
 
       if ((InputDev.MsgPort = CreatePort(NULL, 0))) {
