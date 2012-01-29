@@ -4,8 +4,6 @@ include $(TOPDIR)/Makefile.common
 
 export TOPDIR
 
-LIBS += -Lsystem -Lp61
-
 BINS	= tunnel
 SUBDIRS	= p61 system
 
@@ -18,8 +16,8 @@ system:
 	$(MAKE) -C $@
 
 tunnel: startup_effect.o tunnel.o tunnel_res.o distortion.o distortion_opt.o \
-	frame_tools.o
-	$(CC) $(CFLAGS) $(LIBS) -lp61 -lsystem -o $@ $^
+	frame_tools.o p61/p61.lib system/system.lib
+	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
 
 tunnel.o: tunnel.c
 distortion.o: distortion.c distortion.h system/common.h
