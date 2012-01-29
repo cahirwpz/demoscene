@@ -19,17 +19,18 @@
 
 #define RSC(NAME) \
   {#NAME, \
+   NULL, \
    (AllocFuncType)NAME ## _alloc, \
    (FreeFuncType)NAME ## _free, \
    (InitFuncType)NAME ## _init},
 
 #define RSC_STD(NAME) \
-  {#NAME, (AllocFuncType)NAME ## _alloc, NULL, NULL},
+  {#NAME, NULL, (AllocFuncType)NAME ## _alloc, NULL, NULL},
 
 #define RSC_START \
-  struct ResourceDesc ResourceDescList[] = {
+  struct Resource ResourceList[] = {
 
 #define RSC_END \
-  {NULL, NULL, NULL, NULL}};
+  {NULL, NULL, NULL, NULL, NULL}};
 
 #endif

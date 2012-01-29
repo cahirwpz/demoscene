@@ -7,17 +7,12 @@ typedef APTR (*AllocFuncType)();
 typedef VOID (*FreeFuncType)(APTR);
 typedef BOOL (*InitFuncType)(APTR);
 
-struct ResourceDesc {
+struct Resource {
   const char *Name;
+  APTR Ptr;
   AllocFuncType AllocFunc;
   FreeFuncType FreeFunc;
   InitFuncType InitFunc;
-};
-
-struct ResourceNode {
-  struct MinNode Node;
-  struct ResourceDesc *Desc;
-  APTR Ptr;
 };
 
 BOOL ResourcesAlloc();

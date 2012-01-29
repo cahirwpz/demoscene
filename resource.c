@@ -1,4 +1,3 @@
-#include <clib/alib_protos.h>
 #include <clib/debug_protos.h>
 #include <exec/lists.h>
 #include <exec/nodes.h>
@@ -7,46 +6,32 @@
 #include "common.h"
 #include "resource.h"
 
-extern struct ResourceDesc ResourceDescList[];
-static struct MinList ResourceList;
+extern struct Resource ResourceList[];
 
 BOOL ResourcesAlloc()
 {
-  NewList((struct List *)&ResourceList);
+  struct Resource *res;
 
-  struct ResourceDesc *resDesc;
-
-  for (resDesc = ResourceDescList; resDesc->Name; resDesc++) {
-    APTR res = resDesc->AllocFunc();
-
-    if (!res)
+  for (res = ResourceList; res->Name; res++) {
+    if (!(res->Ptr = res->AllocFunc()))
       return FALSE;
 
-    struct ResourceNode *resNode = NEW_SZ(struct ResourceNode);
-
-    resNode->Desc = resDesc;
-    resNode->Ptr = res;
-
-    KPrintF("Allocated resource '%s' at $%lx.\n", resDesc->Name, res);
-
-    AddTail((struct List *)&ResourceList, (struct Node *)resNode);
+    KPrintF("Allocated resource '%s' at $%lx.\n", res->Name, res->Ptr);
   }
 
   return TRUE;
 }
 
 BOOL ResourcesInit() {
-  struct MinNode *node;
+  struct Resource *res;
 
-  for (node = ResourceList.mlh_Head; node->mln_Succ; node = node->mln_Succ) {
-    struct ResourceNode *resNode = (struct ResourceNode *)node;
-
-    if (!resNode->Desc->InitFunc)
+  for (res = ResourceList; res->Name; res++) {
+    if (!res->InitFunc)
       continue;
 
-    KPrintF("Initiating resource '%s'.\n", resNode->Desc->Name);
+    KPrintF("Initiating resource '%s'.\n", res->Name);
 
-    if (!resNode->Desc->InitFunc(resNode->Ptr))
+    if (!res->InitFunc(res->Ptr))
       return FALSE;
   }
 
@@ -54,30 +39,25 @@ BOOL ResourcesInit() {
 }
 
 void ResourcesFree() {
-  while (!IsListEmpty((struct List *)&ResourceList)) {
-    struct ResourceNode *resNode = (struct ResourceNode *)
-      RemHead((struct List *)&ResourceList);
+  struct Resource *res;
 
-    KPrintF("Freeing resource '%s' at $%lx.\n", resNode->Desc->Name, resNode->Ptr);
+  for (res = ResourceList; res->Name; res++) {
+    KPrintF("Freeing resource '%s' at $%lx.\n", res->Name, res->Ptr);
 
-    if (resNode->Desc->FreeFunc)
-      resNode->Desc->FreeFunc(resNode->Ptr);
+    if (res->FreeFunc)
+      res->FreeFunc(res->Ptr);
     else
-      DELETE(resNode->Ptr);
-
-    DELETE(resNode);
+      DELETE(res->Ptr);
   }
 }
 
 APTR GetResource(const char *name) {
-  struct MinNode *node;
+  struct Resource *res;
 
-  for (node = ResourceList.mlh_Head; node->mln_Succ; node = node->mln_Succ) {
-    struct ResourceNode *resNode = (struct ResourceNode *)node;
-
-    if (strcmp(resNode->Desc->Name, name) == 0) {
-      KPrintF("Fetched resource '%s' at $%lx.\n", resNode->Desc->Name, resNode->Ptr);
-      return resNode->Ptr;
+  for (res = ResourceList; res->Name; res++) {
+    if (strcmp(res->Name, name) == 0) {
+      KPrintF("Fetched resource '%s' at $%lx.\n", res->Name, res->Ptr);
+      return res->Ptr;
     }
   }
 
