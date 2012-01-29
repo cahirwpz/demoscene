@@ -16,6 +16,7 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
+static struct DBufRaster *Raster;
 static struct DistortionMap *TunnelMap;
 static UBYTE *Texture;
 
@@ -27,12 +28,8 @@ void RenderChunky(int frameNumber, struct DBufRaster *raster) {
   c2p1x1_8_c5_bm(raster->Chunky, raster->BitMap, WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop(struct DBufRaster *raster) {
-  P61_Init(GetResource("module"), NULL, NULL);
-  P61_ControlBlock.Play = 1;
-
-  TunnelMap = GetResource("tunnel_map");
-  Texture = GetResource("texture");
+void MainLoop() {
+  struct DBufRaster *raster = Raster;
 
   SetVBlankCounter(0);
 
@@ -48,27 +45,31 @@ void MainLoop(struct DBufRaster *raster) {
     WaitForSafeToSwap(raster);
     DBufRasterSwap(raster);
   }
+}
 
+void SetupEffect() {
+  TunnelMap = GetResource("tunnel_map");
+  Texture = GetResource("texture");
+
+  P61_Init(GetResource("module"), NULL, NULL);
+  P61_ControlBlock.Play = 1;
+}
+
+void TearDownEffect() {
   P61_End();
 }
 
-void SetupDisplayAndRun() {
-  struct DBufRaster *raster;
- 
-  if ((raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH))) {
-    ConfigureViewPort(raster->ViewPort);
-    LoadPalette(raster->ViewPort, (UBYTE *)GetResource("palette"), 0, 256);
+struct ViewPort *SetupDisplay() {
+  if ((Raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH))) {
+    ConfigureViewPort(Raster->ViewPort);
+    LoadPalette(Raster->ViewPort, (UBYTE *)GetResource("palette"), 0, 256);
 
-    struct View *view;
-
-    if ((view = NewView())) {
-      SaveOrigView();
-      ApplyView(view, raster->ViewPort);
-      MainLoop(raster);
-      RestoreOrigView();
-      DeleteView(view);
-    }
-
-    DeleteDBufRaster(raster);
+    return Raster->ViewPort;
   }
+
+  return NULL;
+}
+
+void TearDownDisplay() {
+  DeleteDBufRaster(Raster);
 }

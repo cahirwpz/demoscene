@@ -2,6 +2,7 @@
 #include <inline/exec_protos.h>
 #include <proto/exec.h>
 
+#include "system/display.h"
 #include "system/input.h"
 #include "system/resource.h"
 #include "system/vblank.h"
@@ -9,7 +10,11 @@
 struct DosLibrary *DOSBase;
 struct GfxBase *GfxBase;
 
-extern void SetupDisplayAndRun();
+extern void MainLoop();
+extern void TearDownDisplay();
+extern void TearDownEffect();
+extern struct ViewPort *SetupDisplay();
+extern void SetupEffect();
 
 int main() {
   if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 40))) {
@@ -17,9 +22,26 @@ int main() {
       if (ResourcesAlloc()) {
         if (ResourcesInit()) {
           if (InitEventHandler()) {
-            InstallVBlankIntServer();
-            SetupDisplayAndRun();
-            RemoveVBlankIntServer();
+            struct View *view;
+            struct ViewPort *viewPort;
+
+            if ((view = NewView())) {
+              SaveOrigView();
+
+              if ((viewPort = SetupDisplay())) {
+                ApplyView(view, viewPort);
+
+                InstallVBlankIntServer();
+                SetupEffect();
+                MainLoop();
+                TearDownEffect();
+                RemoveVBlankIntServer();
+
+                RestoreOrigView();
+                DeleteView(view);
+                TearDownDisplay();
+              }
+            }
             KillEventHandler();
           }
         }
