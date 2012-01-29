@@ -3,3 +3,4 @@ artwork/
 data/
 *~
 *.o
+*.lib
