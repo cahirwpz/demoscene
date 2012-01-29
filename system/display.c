@@ -2,6 +2,8 @@
 #include <proto/graphics.h>
 #include <inline/graphics_protos.h>
 
+#include <graphics/gfxbase.h>
+
 #include "common.h"
 #include "display.h"
 
@@ -128,28 +130,38 @@ void ConfigureViewPort(struct ViewPort *viewPort) {
   VideoControl(viewPort->ColorMap, VideoCtrlTags);
 }
 
-struct View *NewView(struct ViewPort *viewPort)
-{
+struct View *NewView(struct ViewPort *viewPort) {
   struct View *view;
   
-  if ((view = NEW_SZ(struct View))) {
+  if ((view = NEW_SZ(struct View)))
     InitView(view);
 
-    view->ViewPort = viewPort;
-    MakeVPort(view, viewPort);
-
-    /* Load new View */
-    MrgCop(view);
-    LoadView(view);
-
-    /* Clean-up Intuition sprites */
-    int i;
-
-    for (i=0; i<8; i++)
-      FreeSprite(i);
-  }
-
   return view;
+}
+
+void ApplyView(struct View *view, struct ViewPort *viewPort) {
+  view->ViewPort = viewPort;
+
+  MakeVPort(view, viewPort);
+  MrgCop(view);
+  LoadView(view);
+}
+
+static struct View *OrigView;
+
+void SaveOrigView() {
+  OrigView = GfxBase->ActiView;
+
+  /* Clean-up Intuition sprites */
+  int i;
+
+  for (i = 0; i < 8; i++)
+    FreeSprite(i);
+}
+
+void RestoreOrigView() {
+  LoadView(OrigView);
+  WaitTOF();
 }
 
 void DeleteView(struct View *view) {

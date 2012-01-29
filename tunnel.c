@@ -2,8 +2,6 @@
 #include <inline/graphics_protos.h>
 #include <proto/graphics.h>
 
-#include <graphics/gfxbase.h>
-
 #include "p61/p61.h"
 #include "system/c2p.h"
 #include "system/common.h"
@@ -59,20 +57,21 @@ void MainLoop(struct DBufRaster *raster) {
 }
 
 void SetupDisplayAndRun() {
-  struct DBufRaster *raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH);
+  struct DBufRaster *raster;
+ 
+  if ((raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH))) {
+    ConfigureViewPort(raster->ViewPort);
 
-  ConfigureViewPort(raster->ViewPort);
+    struct View *view;
 
-  struct View *oldView = GfxBase->ActiView;
-  struct View *view = NewView(raster->ViewPort);
+    if ((view = NewView())) {
+      SaveOrigView();
+      ApplyView(view, raster->ViewPort);
+      MainLoop(raster);
+      RestoreOrigView();
+      DeleteView(view);
+    }
 
-  MainLoop(raster);
-
-  /* Restore old View */
-  LoadView(oldView);
-  WaitTOF();
-
-  /* Deinitialize display related structures */
-  DeleteDBufRaster(raster);
-  DeleteView(view);
+    DeleteDBufRaster(raster);
+  }
 }
