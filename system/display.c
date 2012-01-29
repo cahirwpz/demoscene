@@ -128,12 +128,26 @@ void ConfigureViewPort(struct ViewPort *viewPort) {
   VideoControl(viewPort->ColorMap, VideoCtrlTags);
 }
 
-struct View *NewView()
+struct View *NewView(struct ViewPort *viewPort)
 {
   struct View *view;
   
-  if ((view = NEW_SZ(struct View)))
+  if ((view = NEW_SZ(struct View))) {
     InitView(view);
+
+    view->ViewPort = viewPort;
+    MakeVPort(view, viewPort);
+
+    /* Load new View */
+    MrgCop(view);
+    LoadView(view);
+
+    /* Clean-up Intuition sprites */
+    int i;
+
+    for (i=0; i<8; i++)
+      FreeSprite(i);
+  }
 
   return view;
 }

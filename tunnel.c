@@ -60,24 +60,11 @@ void MainLoop(struct DBufRaster *raster) {
 
 void SetupDisplayAndRun() {
   struct DBufRaster *raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH);
-  struct View *oldView = GfxBase->ActiView;
-  struct View *view = NewView();
 
   ConfigureViewPort(raster->ViewPort);
 
-  /* Attach ViewPort to View */
-  view->ViewPort = raster->ViewPort;
-  MakeVPort(view, raster->ViewPort);
-
-  /* Load new View */
-  MrgCop(view);
-  LoadView(view);
-
-  /* TODO: Prevent intution from grabbing input */
-  int i;
-
-  for (i=0; i<8; i++)
-    FreeSprite(i);
+  struct View *oldView = GfxBase->ActiView;
+  struct View *view = NewView(raster->ViewPort);
 
   MainLoop(raster);
 

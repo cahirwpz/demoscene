@@ -26,7 +26,7 @@ void ConfigureViewPort(struct ViewPort *viewPort);
 void LoadPalette(struct ViewPort *viewPort, UBYTE *components,
                  UWORD start, UWORD count);
 
-struct View *NewView();
+struct View *NewView(struct ViewPort *viewPort);
 void DeleteView(struct View *view);
 
 #endif
