@@ -9,6 +9,8 @@ struct DBufRaster {
   struct DBufInfo *DBufInfo;
   struct BitMap *BitMap;
 
+  UBYTE *Chunky;
+
   LONG CurrentBitMap;
   BOOL SafeToWrite;
   BOOL SafeToSwap;
