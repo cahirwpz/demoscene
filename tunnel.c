@@ -1,4 +1,3 @@
-#include <clib/alib_stdio_protos.h>
 #include <clib/graphics_protos.h>
 #include <inline/graphics_protos.h>
 #include <proto/graphics.h>
@@ -12,26 +11,12 @@
 #include "system/resource.h"
 #include "system/vblank.h"
 
+#include "frame_tools.h"
 #include "distortion.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
-
-void RenderFrameNumber(int frameNumber, struct DBufRaster *raster) {
-  struct RastPort rastPort;
-
-  InitRastPort(&rastPort);
-  rastPort.BitMap = raster->BitMap;
-  SetDrMd(&rastPort, JAM1);
-
-  char number[4];
-
-  sprintf(number, "%04d", frameNumber);
-
-  Move(&rastPort, 2, 8);
-  Text(&rastPort, number, 4);
-}
 
 struct TunnelData {
   struct DistortionMap *TunnelMap;
