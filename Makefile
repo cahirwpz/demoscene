@@ -4,32 +4,32 @@ include $(TOPDIR)/Makefile.common
 
 export TOPDIR
 
-BINS	= main
-SUBDIRS	= p61
-OBJS	= $(patsubst %.c, %.o, $(wildcard *.c))
+CFLAGS += -Isystem -Ip61
+LIBS += -Lsystem -Lp61
+
+BINS	= tunnel
+SUBDIRS	= p61 system
 
 all: $(SUBDIRS) $(BINS)
 
 p61:
-	$(MAKE) -C p61
+	$(MAKE) -C $@
 
-main: $(OBJS) p61/p61.o c2p1x1_8_c5_bm.o distortion_opt.o
-	$(CC) $(CFLAGS) -ldebug -lamigas -o $@ $^
+system:
+	$(MAKE) -C $@
 
-main.o:	main.c
-input.o: input.c input.h common.h
-vblank.o: vblank.c vblank.h
-display.o: display.c display.h common.h
-fileio.o: fileio.c fileio.h
-c2p1x1_8_c5_bm.o: c2p1x1_8_c5_bm.s c2p.h
-distortion.o: distortion.c distortion.h common.h
+tunnel: tunnel.o tunnel_res.o distortion.o distortion_opt.o
+	$(CC) $(CFLAGS) $(LIBS) -lp61 -lsystem -o $@ $^
+
+tunnel.o: tunnel.c
+distortion.o: distortion.c distortion.h system/common.h
 distortion_opt.o: distortion_opt.s distortion.h
-resource.o: resource.c resource.h resource_internal.h debug.h common.h
 
 clean:
 	$(MAKE) -C p61 clean
+	$(MAKE) -C system clean
 	$(RM) *~ *.o $(BINS)
 
-.PHONY: all p61
+.PHONY: all p61 system
 
 # vim: sw=8 ts=8

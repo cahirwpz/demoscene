@@ -2,6 +2,7 @@ CC	= vc +small -warn=2
 AS	= vc +small -warn=2
 CFLAGS	= -O2 -cpu=68020 -fpu=68882
 ASFLAGS = -O2 -cpu=68020 -fpu=68882
+LIBS	= -ldebug -lamigas 
 
 %.o: %.s
 	$(AS) $(ASFLAGS) -c -o $@ $<

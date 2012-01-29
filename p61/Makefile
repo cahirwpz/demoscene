@@ -4,10 +4,10 @@
 AS = vasmm68k_mot
 ASFLAGS	= -Fhunk -m68000 -nosym
 
-p61.o: p61.s p61.h Player61.i
+p61.lib: p61.s p61.h Player61.i
 	$(AS) $(ASFLAGS) -o $@ $<
 
 clean:
-	$(RM) *.o *~
+	$(RM) *.lib *.o *~
 
 .PHONY: clean
