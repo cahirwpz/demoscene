@@ -17,7 +17,7 @@ p61:
 system:
 	$(MAKE) -C $@
 
-tunnel: tunnel.o tunnel_res.o distortion.o distortion_opt.o
+tunnel: startup_effect.o tunnel.o tunnel_res.o distortion.o distortion_opt.o
 	$(CC) $(CFLAGS) $(LIBS) -lp61 -lsystem -o $@ $^
 
 tunnel.o: tunnel.c

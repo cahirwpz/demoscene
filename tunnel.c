@@ -1,11 +1,7 @@
-#include <proto/exec.h>
-#include <proto/dos.h>
-#include <proto/graphics.h>
 #include <clib/alib_stdio_protos.h>
-
-#include <inline/exec_protos.h>
-#include <inline/dos_protos.h>
+#include <clib/graphics_protos.h>
 #include <inline/graphics_protos.h>
+#include <proto/graphics.h>
 
 #include <graphics/gfxbase.h>
 
@@ -13,14 +9,10 @@
 #include "system/c2p.h"
 #include "system/common.h"
 #include "system/display.h"
-#include "system/input.h"
 #include "system/resource.h"
 #include "system/vblank.h"
 
 #include "distortion.h"
-
-struct DosLibrary *DOSBase;
-struct GfxBase *GfxBase;
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -111,24 +103,4 @@ void SetupDisplayAndRun() {
   /* Deinitialize display related structures */
   DeleteDBufRaster(raster);
   DeleteView(view);
-}
-
-int main() {
-  if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 40))) {
-    if ((GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 40))) {
-      if (ResourcesAlloc() && ResourcesInit()) {
-        if (InitEventHandler()) {
-          InstallVBlankIntServer();
-          SetupDisplayAndRun();
-          RemoveVBlankIntServer();
-          KillEventHandler();
-        }
-      }
-      ResourcesFree();
-      CloseLibrary((struct Library *)GfxBase);
-    }
-    CloseLibrary((struct Library *)DOSBase);
-  }
-
-  return 0;
 }
