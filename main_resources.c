@@ -7,9 +7,6 @@
 #define RSC_FILE(NAME, FILENAME, MEMTYPE) \
   RSC_ADD(NAME, ReadFileSimple(FILENAME, MEMTYPE))
 
-#define RSC_ARRAY(NAME, TYPE, SIZE) \
-  RSC_ADD(NAME, AllocVec(sizeof(TYPE) * SIZE, MEMF_PUBLIC))
-
 #define WIDTH 320
 #define HEIGHT 256
 
@@ -21,9 +18,6 @@ RSC_FILE(texture, "data/texture-01.raw", MEMF_PUBLIC)
 
 RSC_TYPE(palette, APTR)
 RSC_FILE(palette, "data/texture-01.pal", MEMF_PUBLIC)
-
-RSC_TYPE(chunky, UBYTE *)
-RSC_ARRAY(chunky, UBYTE, WIDTH * HEIGHT)
 
 RSC_TYPE(tunnel_map, struct DistortionMap *)
 RSC_ADD(tunnel_map, NewDistortionMap(WIDTH, HEIGHT))
@@ -37,6 +31,5 @@ RSC_START
 RSC_STD(module)
 RSC_STD(texture)
 RSC_STD(palette)
-RSC_STD(chunky)
 RSC(tunnel_map)
 RSC_END

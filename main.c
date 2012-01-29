@@ -27,14 +27,12 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-void RenderFrameNumber(struct BitMap *bm) {
+void RenderFrameNumber(int frameNumber, struct DBufRaster *raster) {
   struct RastPort rastPort;
 
   InitRastPort(&rastPort);
-  rastPort.BitMap = bm;
+  rastPort.BitMap = raster->BitMap;
   SetDrMd(&rastPort, JAM1);
-
-  int frameNumber = GetVBlankCounter();
 
   char number[4];
 
@@ -44,26 +42,38 @@ void RenderFrameNumber(struct BitMap *bm) {
   Text(&rastPort, number, 4);
 }
 
+struct TunnelData {
+  struct DistortionMap *TunnelMap;
+  UBYTE *Texture;
+} tunnel;
+
+void RenderTunnel(int frameNumber, struct DBufRaster *raster) {
+  RenderDistortion(raster->Chunky, tunnel.TunnelMap, tunnel.Texture, 0, frameNumber);
+}
+
+void RenderChunky(int frameNumber, struct DBufRaster *raster) {
+  c2p1x1_8_c5_bm(raster->Chunky, raster->BitMap, WIDTH, HEIGHT, 0, 0);
+}
+
 void MainLoop(struct DBufRaster *raster) {
   LoadPalette(raster->ViewPort, (UBYTE *)GetResource("palette"), 0, 256);
 
   P61_Init(GetResource("module"), NULL, NULL);
   P61_ControlBlock.Play = 1;
 
-  SetVBlankCounter(0);
+  tunnel.TunnelMap = GetResource("tunnel_map");
+  tunnel.Texture = GetResource("texture");
 
-  struct DistortionMap *tunnelMap = GetResource("tunnel_map");
-  APTR chunky = GetResource("chunky");
-  APTR texture = GetResource("texture");
+  SetVBlankCounter(0);
 
   while (GetVBlankCounter() < 500) {
     WaitForSafeToWrite(raster);
 
-    int offset = GetVBlankCounter();
+    int frameNumber = GetVBlankCounter();
 
-    RenderDistortion(chunky, tunnelMap, texture, 0, offset);
-    c2p1x1_8_c5_bm(chunky, raster->BitMap, WIDTH, HEIGHT, 0, 0);
-    RenderFrameNumber(raster->BitMap);
+    RenderTunnel(frameNumber, raster);
+    RenderChunky(frameNumber, raster);
+    RenderFrameNumber(frameNumber, raster);
 
     WaitForSafeToSwap(raster);
     DBufRasterSwap(raster);
