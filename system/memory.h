@@ -13,6 +13,10 @@
 #define INTERNAL_NEW(_type_, _size_, _flags_) \
     (_type_)AllocVec(_size_, _flags_)
 
+#define NEW(TYPE, SIZE) \
+    INTERNAL_NEW(TYPE *, SIZE, MEMF_PUBLIC)
+#define NEW_Z(TYPE, SIZE) \
+    INTERNAL_NEW(TYPE *, SIZE, MEMF_PUBLIC|MEMF_CLEAR)
 #define NEW_S(TYPE) \
     INTERNAL_NEW(TYPE *, sizeof(TYPE), MEMF_PUBLIC)
 #define NEW_SZ(TYPE) \
