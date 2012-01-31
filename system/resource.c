@@ -1,7 +1,7 @@
 #include <string.h>
 
 #include "debug.h"
-#include "common.h"
+#include "memory.h"
 #include "resource.h"
 
 extern struct Resource ResourceList[];

@@ -20,8 +20,9 @@ tunnel: startup_effect.o tunnel.o tunnel_res.o distortion.o distortion_opt.o \
 	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
 
 tunnel.o: tunnel.c
-distortion.o: distortion.c distortion.h system/common.h
+distortion.o: distortion.c distortion.h system/memory.h
 distortion_opt.o: distortion_opt.s distortion.h
+gentab_sincos.o: gentab_sincos.s
 
 clean:
 	$(MAKE) -C p61 clean

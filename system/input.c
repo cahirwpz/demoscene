@@ -7,9 +7,9 @@
 #include <proto/exec.h>
 #include <inline/exec_protos.h>
 
-#include "common.h"
 #include "debug.h"
 #include "input.h"
+#include "memory.h"
 
 struct InputDev {
   struct MsgPort *MsgPort;

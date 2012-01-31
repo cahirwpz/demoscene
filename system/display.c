@@ -4,8 +4,8 @@
 
 #include <graphics/gfxbase.h>
 
-#include "common.h"
 #include "display.h"
+#include "memory.h"
 
 struct DBufRaster *NewDBufRaster(SHORT width, SHORT height, SHORT depth) {
   struct DBufRaster *raster = NEW_SZ(struct DBufRaster);

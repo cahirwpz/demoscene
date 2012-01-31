@@ -1,6 +1,7 @@
 #include <math.h>
 
-#include "system/common.h"
+#include "system/memory.h"
+
 #include "distortion.h"
 
 #define M_PI 3.14159265f

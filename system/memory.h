@@ -1,5 +1,5 @@
-#ifndef __COMMON_H__
-#define __COMMON_H__
+#ifndef __SYSTEM_MEMORY_H__
+#define __SYSTEM_MEMORY_H__
 
 #include <proto/exec.h>
 #include <inline/exec_protos.h>

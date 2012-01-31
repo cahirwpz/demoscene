@@ -8,6 +8,8 @@
 ; d0.b offsetX
 ; d1.b offsetY
 
+        machine 68040
+
 RenderDistortionRegs    reg     d2-d5/a2/a3/a5
 
         XDEF    _RenderDistortion
