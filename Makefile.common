@@ -13,4 +13,7 @@ LIBS	= -ldebug -lamigas
 %.s: %.c
 	$(CC) $(CFLAGS) -S -o $@ $<
 
+%.lib:
+	cat $^ > $@
+
 # vim: sw=8 ts=8
