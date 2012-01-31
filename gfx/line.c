@@ -27,28 +27,28 @@ void draw_line(canvas_t *canvas, int xs, int ys, int xe, int ye)
    *
    */
 
-  int q = ((xe < xs) << 1) | (dx < dy);
+  int step = (xe < xs) ? -1 : 1;
 
-  int dg, dg1, dg2, db1, db2, steps;
+  int dg, dg1, dg2, db1, db2, n;
 
-  if (q & 1) {
+  if (dx < dy) {
     dg1 = (dx - dy) << 1;
     dg2 = (dx << 1);
     dg  = dg2 - dy;
 
-    db1 = (q & 2) ? -1 : 1;
+    db1 = step;
     db2 = stride;
 
-    steps = dy;
+    n = dy;
   } else {
     dg1 = (dy - dx) << 1;
     dg2 = (dy << 1);
     dg  = dg2 - dx;
 
     db1 = stride;
-    db2 = (q & 2) ? -1 : 1;
+    db2 = step;
 
-    steps = dx;
+    n = dx;
   }
 
   uint8_t color = canvas->fg_col;
@@ -56,7 +56,7 @@ void draw_line(canvas_t *canvas, int xs, int ys, int xe, int ye)
   for (;;) {
     *bitmap = color;
 
-    if (!steps--)
+    if (!n--)
       break;
 
     if (dg > 0) {
