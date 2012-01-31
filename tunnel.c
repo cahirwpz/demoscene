@@ -1,11 +1,7 @@
-#include <clib/graphics_protos.h>
-#include <inline/graphics_protos.h>
-#include <proto/graphics.h>
-
 #include "p61/p61.h"
 #include "system/c2p.h"
-#include "system/common.h"
 #include "system/display.h"
+#include "system/memory.h"
 #include "system/resource.h"
 #include "system/vblank.h"
 
@@ -20,14 +16,59 @@ static struct DBufRaster *Raster;
 static struct DistortionMap *TunnelMap;
 static UBYTE *Texture;
 
+/*
+ * Set up display function.
+ */
+struct ViewPort *SetupDisplay() {
+  if ((Raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH))) {
+    ConfigureViewPort(Raster->ViewPort);
+    LoadPalette(Raster->ViewPort, (UBYTE *)GetResource("palette"), 0, 256);
+
+    return Raster->ViewPort;
+  }
+
+  return NULL;
+}
+
+/*
+ * Tear down display function.
+ */
+void TearDownDisplay() {
+  DeleteDBufRaster(Raster);
+}
+
+/*
+ * Set up effect function.
+ */
+void SetupEffect() {
+  TunnelMap = GetResource("tunnel_map");
+  Texture = GetResource("texture");
+
+  P61_Init(GetResource("module"), NULL, NULL);
+  P61_ControlBlock.Play = 1;
+}
+
+/*
+ * Tear down effect function.
+ */
+void TearDownEffect() {
+  P61_End();
+}
+
+/*
+ * Rendering functions.
+ */
 void RenderTunnel(int frameNumber, struct DBufRaster *raster) {
-  RenderDistortion(raster->Chunky, TunnelMap, Texture, 0, frameNumber);
+  RenderDistortion(&raster->Canvas->bitmap->data, TunnelMap, Texture, 0, frameNumber);
 }
 
 void RenderChunky(int frameNumber, struct DBufRaster *raster) {
-  c2p1x1_8_c5_bm(raster->Chunky, raster->BitMap, WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(&raster->Canvas->bitmap->data, raster->BitMap, WIDTH, HEIGHT, 0, 0);
 }
 
+/*
+ * Main loop.
+ */
 void MainLoop() {
   struct DBufRaster *raster = Raster;
 
@@ -45,31 +86,4 @@ void MainLoop() {
     WaitForSafeToSwap(raster);
     DBufRasterSwap(raster);
   }
-}
-
-void SetupEffect() {
-  TunnelMap = GetResource("tunnel_map");
-  Texture = GetResource("texture");
-
-  P61_Init(GetResource("module"), NULL, NULL);
-  P61_ControlBlock.Play = 1;
-}
-
-void TearDownEffect() {
-  P61_End();
-}
-
-struct ViewPort *SetupDisplay() {
-  if ((Raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH))) {
-    ConfigureViewPort(Raster->ViewPort);
-    LoadPalette(Raster->ViewPort, (UBYTE *)GetResource("palette"), 0, 256);
-
-    return Raster->ViewPort;
-  }
-
-  return NULL;
-}
-
-void TearDownDisplay() {
-  DeleteDBufRaster(Raster);
 }

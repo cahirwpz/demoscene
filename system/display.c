@@ -23,11 +23,11 @@ struct DBufRaster *NewDBufRaster(SHORT width, SHORT height, SHORT depth) {
 
       struct DBufInfo *dbufInfo = AllocDBufInfo(viewPort);
 
-      raster->Chunky = NEW_AZ(UBYTE, width * height);
+      raster->Canvas = canvas_new(width, height);
       raster->DBufInfo = dbufInfo;
       raster->ViewPort = viewPort;
 
-      if (dbufInfo && raster->Chunky &&
+      if (dbufInfo && raster->Canvas &&
           viewPort->RasInfo && viewPort->ColorMap) {
         dbufInfo->dbi_UserData1 = (APTR)AllocBitMap(width, height, depth,
                                                     BMF_DISPLAYABLE|BMF_CLEAR,
@@ -80,7 +80,7 @@ void DeleteDBufRaster(struct DBufRaster *raster) {
     DELETE(viewPort);
   }
 
-  DELETE(raster->Chunky);
+  canvas_delete(raster->Canvas);
   DELETE(raster);
 }
 

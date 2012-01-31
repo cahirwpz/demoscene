@@ -1,15 +1,17 @@
-#ifndef __DISPLAY_H__
-#define __DISPLAY_H__
+#ifndef __SYSTEM_DISPLAY_H__
+#define __SYSTEM_DISPLAY_H__
 
 #include <graphics/gfx.h>
 #include <graphics/view.h>
+
+#include "gfx/canvas.h"
 
 struct DBufRaster {
   struct ViewPort *ViewPort;
   struct DBufInfo *DBufInfo;
   struct BitMap *BitMap;
 
-  UBYTE *Chunky;
+  canvas_t *Canvas;
 
   LONG CurrentBitMap;
   BOOL SafeToWrite;

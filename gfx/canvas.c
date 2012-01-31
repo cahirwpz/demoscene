@@ -25,8 +25,10 @@ canvas_t *canvas_new(int width, int height) {
 }
 
 void canvas_delete(canvas_t *canvas) {
-  if (canvas->flags & CANVAS_BITMAP_MANAGED)
-    bitmap_delete(canvas->bitmap);
+  if (canvas) {
+    if (canvas->flags & CANVAS_BITMAP_MANAGED)
+      bitmap_delete(canvas->bitmap);
 
-  DELETE(canvas);
+    DELETE(canvas);
+  }
 }

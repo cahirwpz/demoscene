@@ -19,7 +19,7 @@ gfx:
 	$(MAKE) -C $@
 
 tunnel: startup_effect.o tunnel.o tunnel_res.o distortion.o distortion_opt.o \
-	frame_tools.o p61/p61.lib system/system.lib
+	frame_tools.o p61/p61.lib system/system.lib gfx/gfx.lib
 	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
 
 tunnel.o: tunnel.c
