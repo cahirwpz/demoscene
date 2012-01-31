@@ -1,4 +1,4 @@
-TOPDIR = ..
+TOPDIR = $(CURDIR)/..
 
 include $(TOPDIR)/Makefile.common
 
