@@ -1,14 +1,14 @@
 #include "gfx/line.h"
 
-void draw_line(canvas_t *canvas, int xs, int ys, int xe, int ye)
-{
+void draw_line(canvas_t *canvas, int xs, int ys, int xe, int ye) {
   int stride = canvas->bitmap->width;
-  uint8_t *bitmap = &canvas->bitmap->data[ys * stride + xs];
 
   if (ys > ye) {
     swapi(xs, xe);
     swapi(ys, ye);
   }
+
+  uint8_t *bitmap = canvas->bitmap->data + ys * stride + xs;
 
   int dx = abs(xe - xs);
   int dy = ye - ys;
@@ -68,4 +68,14 @@ void draw_line(canvas_t *canvas, int xs, int ys, int xe, int ye)
 
     bitmap += db2;
   }
+}
+
+void draw_poly_line(canvas_t *canvas, point_t *points, int n, bool closed) {
+  int i;
+
+  for (i = 0; i < (n - 1); i++)
+    draw_line(canvas, points[i].x, points[i].y, points[i+1].x, points[i+1].y);
+
+  if (closed)
+    draw_line(canvas, points[i].x, points[i].y, points[0].x, points[0].y);
 }
