@@ -48,6 +48,8 @@ void mx3_load_identity(mx3_t *m) {
 void mx3_load_rotation(mx3_t *m, float angle) {
   mx3_load_identity(m);
 
+  angle *= 3.14159265 / 180.0;
+
   MX3(m,0,0) = cos(angle);
   MX3(m,1,0) = -sin(angle);
   MX3(m,0,1) = sin(angle);
