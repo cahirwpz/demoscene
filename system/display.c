@@ -1,7 +1,7 @@
-#include <graphics/videocontrol.h>
 #include <proto/graphics.h>
 #include <inline/graphics_protos.h>
 
+#include <graphics/videocontrol.h>
 #include <graphics/gfxbase.h>
 
 #include "display.h"
@@ -14,35 +14,15 @@
 struct View *NewView() {
   struct View *view = NEW_SZ(struct View);
 
-  if (view) {
-    struct ViewExtra *viewExtra = GfxNew(VIEW_EXTRA_TYPE);
+  if (view)
+    InitView(view);
 
-    if (viewExtra) {
-      InitView(view);
-      GfxAssociate(view, viewExtra);
-
-      viewExtra->Monitor = OpenMonitor(NULL, DEFAULT_MONITOR_ID);
-
-      if (viewExtra->Monitor)
-        return view;
-    }
-
-    DeleteView(view);
-  }
-
-  return NULL;
+  return view;
 }
 
 void DeleteView(struct View *view) {
   if (view) {
-    struct ViewExtra *viewExtra = GfxLookUp(view);
-
-    if (viewExtra) {
-      CloseMonitor(viewExtra->Monitor);
-      GfxFree(viewExtra);
-    }
-
-    FreeCprList(view->LOFCprList);
+    FreeCprList(view->LOFCprList);                                                                                                                                                  
 
     if (view->SHFCprList)
       FreeCprList(view->SHFCprList);
@@ -91,8 +71,10 @@ struct ViewPort *NewViewPort(int width, int height, int depth) {
     viewPort->RasInfo = NEW_SZ(struct RasInfo);
     viewPort->ColorMap = GetColorMap(1 << depth);
 
-    if (viewPort->RasInfo && viewPort->ColorMap)
+    if (viewPort->RasInfo && viewPort->ColorMap) {
+      AttachPalExtra(viewPort->ColorMap, viewPort);
       return viewPort;
+    }
 
     DeleteViewPort(viewPort);
   }
@@ -111,7 +93,6 @@ void DeleteViewPort(struct ViewPort *viewPort) {
 }
 
 static struct TagItem VideoCtrlTags[] = {
-  { VTAG_ATTACH_CM_SET, NULL },
   { VTAG_BORDERBLANK_SET, TRUE },
   { VTAG_BORDERSPRITE_SET, TRUE },
   { VTAG_SPRITERESN_SET, SPRITERESN_ECS },
@@ -119,25 +100,19 @@ static struct TagItem VideoCtrlTags[] = {
 };
 
 void ConfigureViewPort(struct ViewPort *viewPort) {
-  VideoCtrlTags[0].ti_Data = (ULONG)viewPort;
   VideoControl(viewPort->ColorMap, VideoCtrlTags);
 }
 
-void LoadPalette(struct ViewPort *viewPort, UBYTE *components, UWORD start,
-                 UWORD count) {
-  ULONG *palette;
+void LoadPalette(struct ViewPort *viewPort, UBYTE *components,
+                 int start, int count) {
+  int i;
 
-  if ((palette = NEW_A(ULONG, count * 3 + 1))) {
-    int i;
+  for (i = 0; i < count; i++) {
+    int r = *components++;
+    int g = *components++;
+    int b = *components++;
 
-    palette[0] = (count << 16) | start;
-
-    for (i = 0; i < count * 3; i++)
-      palette[i+1] = (ULONG)components[i] << 24;
-
-    LoadRGB32(viewPort, palette);
-
-    DELETE(palette);
+    SetRGB32CM(viewPort->ColorMap, start + i, r << 24, g << 24, b << 24);
   }
 }
 

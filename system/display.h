@@ -28,7 +28,7 @@ struct ViewPort *NewViewPort(int width, int height, int depth);
 void DeleteViewPort(struct ViewPort *viewPort);
 void ConfigureViewPort(struct ViewPort *viewPort);
 void LoadPalette(struct ViewPort *viewPort, UBYTE *components,
-                 UWORD start, UWORD count);
+                 int start, int count);
 
 struct DBufInfo *NewDBufInfo(struct ViewPort *viewPort, int width, int height, int depth);
 void DeleteDBufInfo(struct DBufInfo *dbufInfo);
