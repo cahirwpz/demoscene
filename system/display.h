@@ -18,15 +18,20 @@ struct DBufRaster {
   BOOL SafeToSwap;
 };
 
-struct DBufRaster *NewDBufRaster(SHORT width, SHORT height, SHORT depth);
+struct DBufRaster *NewDBufRaster(int width, int height, int depth);
 void DeleteDBufRaster(struct DBufRaster *raster);
 void WaitForSafeToWrite(struct DBufRaster *raster);
 void WaitForSafeToSwap(struct DBufRaster *raster);
 void DBufRasterSwap(struct DBufRaster *raster);
 
+struct ViewPort *NewViewPort(int width, int height, int depth);
+void DeleteViewPort(struct ViewPort *viewPort);
 void ConfigureViewPort(struct ViewPort *viewPort);
 void LoadPalette(struct ViewPort *viewPort, UBYTE *components,
                  UWORD start, UWORD count);
+
+struct DBufInfo *NewDBufInfo(struct ViewPort *viewPort, int width, int height, int depth);
+void DeleteDBufInfo(struct DBufInfo *dbufInfo);
 
 struct View *NewView();
 void DeleteView(struct View *view);
