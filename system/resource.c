@@ -44,7 +44,7 @@ void ResourcesFree() {
 
     if (res->FreeFunc)
       res->FreeFunc(res->Ptr);
-    else
+    else if (res->AllocFunc)
       DELETE(res->Ptr);
   }
 }

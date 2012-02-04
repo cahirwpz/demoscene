@@ -8,6 +8,9 @@
 #define RSC_TYPE(NAME, TYPE) \
     typedef TYPE _T(NAME);
 
+#define RSC_ARRAY(NAME) \
+    static _T(NAME) NAME ## _const[]
+
 #define RSC_ADD(NAME, ALLOC_FUNC) \
     static _T(NAME) NAME ## _alloc(void) { return ALLOC_FUNC; }
 
@@ -26,6 +29,9 @@
 
 #define RSC_STD(NAME) \
   {#NAME, NULL, (AllocFuncType)NAME ## _alloc, NULL, NULL},
+
+#define RSC_CONST(NAME) \
+  {#NAME, (APTR)NAME ## _const, NULL, NULL, NULL},
 
 #define RSC_START \
   struct Resource ResourceList[] = {

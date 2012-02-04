@@ -2,6 +2,7 @@
 
 #include "system/resource_internal.h"
 #include "system/fileio.h"
+#include "gfx/common.h"
 #include "distortion.h"
 
 #define RSC_FILE(NAME, FILENAME, MEMTYPE) \
@@ -27,9 +28,15 @@ RSC_INIT(tunnel_map) {
   return TRUE;
 }
 
+RSC_TYPE(cross, PointT)
+RSC_ARRAY(cross) = {
+  {1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {2, 2}, {2, 3}, {1, 3}, {1, 2}, {0, 2}, {0, 1}, {1, 1}
+};
+
 RSC_START
 RSC_STD(module)
 RSC_STD(texture)
 RSC_STD(palette)
+RSC_CONST(cross)
 RSC(tunnel_map)
 RSC_END
