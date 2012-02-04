@@ -1,8 +1,8 @@
 #include "system/memory.h"
 #include "gfx/canvas.h"
 
-static canvas_t *canvas_new_internal(bitmap_t *bitmap, bool managed) {
-  canvas_t *canvas = NEW_SZ(canvas_t);
+static CanvasT *NewCanvasInternal(BitmapT *bitmap, bool managed) {
+  CanvasT *canvas = NEW_SZ(CanvasT);
 
   if (canvas) {
     canvas->bitmap = bitmap;
@@ -15,19 +15,19 @@ static canvas_t *canvas_new_internal(bitmap_t *bitmap, bool managed) {
   return canvas;
 }
 
-canvas_t *canvas_new(int width, int height) {
-  bitmap_t *bitmap = bitmap_new(width, height);
+CanvasT *NewCanvas(int width, int height) {
+  BitmapT *bitmap = NewBitmap(width, height);
 
   if (bitmap)
-    return canvas_new_internal(bitmap, TRUE);
+    return NewCanvasInternal(bitmap, TRUE);
 
   return NULL;
 }
 
-void canvas_delete(canvas_t *canvas) {
+void DeleteCanvas(CanvasT *canvas) {
   if (canvas) {
     if (canvas->flags & CANVAS_BITMAP_MANAGED)
-      bitmap_delete(canvas->bitmap);
+      DeleteBitmap(canvas->bitmap);
 
     DELETE(canvas);
   }

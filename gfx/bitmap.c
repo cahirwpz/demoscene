@@ -1,8 +1,8 @@
 #include "gfx/bitmap.h"
 #include "system/memory.h"
 
-bitmap_t *bitmap_new(int width, int height) {
-  bitmap_t *bitmap = NEW_Z(bitmap_t, (width * height + sizeof(bitmap_t)));
+BitmapT *NewBitmap(int width, int height) {
+  BitmapT *bitmap = NEW_Z(BitmapT, (width * height + sizeof(BitmapT)));
 
   if (bitmap) {
     bitmap->width = width;
@@ -12,6 +12,6 @@ bitmap_t *bitmap_new(int width, int height) {
   return bitmap;
 }
 
-void bitmap_delete(bitmap_t *bitmap) {
+void DeleteBitmap(BitmapT *bitmap) {
   DELETE(bitmap);
 }

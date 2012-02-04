@@ -17,12 +17,12 @@ typedef enum { FALSE, TRUE } bool;
 #define swapi(a,b)	{ (a)^=(b); (b)^=(a); (a)^=(b); }
 #define swapf(a,b)	{ float t; t = (b); (b) = (a); (a) = t; }
 
-typedef struct point {
+typedef struct Point {
   int16_t x, y;
-} point_t;
+} PointT;
 
-typedef struct rectangle {
-  point_t tl, br;
-} rectangle_t;
+typedef struct Rectangle {
+  PointT tl, br;
+} RectangleT;
 
 #endif

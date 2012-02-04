@@ -1,6 +1,6 @@
 #include "gfx/line.h"
 
-void draw_line(canvas_t *canvas, int xs, int ys, int xe, int ye) {
+void DrawLine(CanvasT *canvas, int xs, int ys, int xe, int ye) {
   int stride = canvas->bitmap->width;
 
   if (ys > ye) {
@@ -70,12 +70,12 @@ void draw_line(canvas_t *canvas, int xs, int ys, int xe, int ye) {
   }
 }
 
-void draw_poly_line(canvas_t *canvas, point_t *points, int n, bool closed) {
+void DrawPolyLine(CanvasT *canvas, PointT *points, int n, bool closed) {
   int i;
 
   for (i = 0; i < (n - 1); i++)
-    draw_line(canvas, points[i].x, points[i].y, points[i+1].x, points[i+1].y);
+    DrawLine(canvas, points[i].x, points[i].y, points[i+1].x, points[i+1].y);
 
   if (closed)
-    draw_line(canvas, points[i].x, points[i].y, points[0].x, points[0].y);
+    DrawLine(canvas, points[i].x, points[i].y, points[0].x, points[0].y);
 }

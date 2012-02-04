@@ -6,18 +6,18 @@
 
 #define CANVAS_BITMAP_MANAGED 0x8000
 
-typedef struct canvas {
-  bitmap_t *bitmap;
+typedef struct Canvas {
+  BitmapT *bitmap;
   uint16_t flags;
   uint8_t fg_col;
   uint8_t bg_col;
-  point_t pen_pos;
-  rectangle_t clip_area;
-} canvas_t;
+  PointT pen_pos;
+  RectangleT clip_area;
+} CanvasT;
 
-#define canvas_pen_move_to(CANVAS, X, Y) { (CANVAS)->pen_pos.x = (X); (CANVAS)->pen_pos.y = (Y); }
+#define CanvasPenMoveTo(CANVAS, X, Y) { (CANVAS)->pen_pos.x = (X); (CANVAS)->pen_pos.y = (Y); }
 
-canvas_t *canvas_new(int width, int height);
-void canvas_delete(canvas_t *canvas);
+CanvasT *NewCanvas(int width, int height);
+void DeleteCanvas(CanvasT *canvas);
 
 #endif

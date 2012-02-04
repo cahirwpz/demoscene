@@ -3,7 +3,7 @@
 
 #include "gfx/canvas.h"
 
-void draw_line(canvas_t *canvas, int x1, int y1, int x2, int y2);
-void draw_poly_line(canvas_t *canvas, point_t *points, int n, bool closed);
+void DrawLine(CanvasT *canvas, int x1, int y1, int x2, int y2);
+void DrawPolyLine(CanvasT *canvas, PointT *points, int n, bool closed);
 
 #endif

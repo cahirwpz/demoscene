@@ -3,12 +3,12 @@
 
 #include "gfx/common.h"
 
-typedef struct bitmap {
+typedef struct Bitmap {
   uint16_t width, height;
   uint8_t data[];
-} bitmap_t;
+} BitmapT;
 
-bitmap_t *bitmap_new(int width, int height);
-void bitmap_delete(bitmap_t *bitmap);
+BitmapT *NewBitmap(int width, int height);
+void DeleteBitmap(BitmapT *bitmap);
 
 #endif
