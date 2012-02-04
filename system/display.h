@@ -6,37 +6,41 @@
 
 #include "gfx/canvas.h"
 
-struct DBufRaster {
-  struct ViewPort *ViewPort;
-  struct DBufInfo *DBufInfo;
-  struct BitMap *BitMap;
+typedef struct BitMap BitMapT;
+typedef struct DBufInfo DBufInfoT;
+typedef struct View ViewT;
+typedef struct ViewPort ViewPortT;
 
-  canvas_t *Canvas;
+ViewT *NewView();
+void DeleteView(ViewT *view);
+void ApplyView(ViewT *view, ViewPortT *viewPort);
+void SaveOrigView();
+void RestoreOrigView();
+
+ViewPortT *NewViewPort(int width, int height, int depth);
+void DeleteViewPort(ViewPortT *viewPort);
+void ConfigureViewPort(ViewPortT *viewPort);
+void LoadPalette(ViewPortT *viewPort, UBYTE *components, int start, int count);
+
+DBufInfoT *NewDBufInfo(ViewPortT *viewPort, int width, int height, int depth);
+void DeleteDBufInfo(DBufInfoT *dbufInfo);
+
+typedef struct DBufRaster {
+  ViewPortT *ViewPort;
+  DBufInfoT *DBufInfo;
+  BitMapT *BitMap;
+
+  CanvasT *Canvas;
 
   LONG CurrentBitMap;
   BOOL SafeToWrite;
   BOOL SafeToSwap;
-};
+} DBufRasterT;
 
-struct DBufRaster *NewDBufRaster(int width, int height, int depth);
-void DeleteDBufRaster(struct DBufRaster *raster);
-void WaitForSafeToWrite(struct DBufRaster *raster);
-void WaitForSafeToSwap(struct DBufRaster *raster);
-void DBufRasterSwap(struct DBufRaster *raster);
-
-struct ViewPort *NewViewPort(int width, int height, int depth);
-void DeleteViewPort(struct ViewPort *viewPort);
-void ConfigureViewPort(struct ViewPort *viewPort);
-void LoadPalette(struct ViewPort *viewPort, UBYTE *components,
-                 int start, int count);
-
-struct DBufInfo *NewDBufInfo(struct ViewPort *viewPort, int width, int height, int depth);
-void DeleteDBufInfo(struct DBufInfo *dbufInfo);
-
-struct View *NewView();
-void DeleteView(struct View *view);
-void ApplyView(struct View *view, struct ViewPort *viewPort);
-void SaveOrigView();
-void RestoreOrigView();
+DBufRasterT *NewDBufRaster(int width, int height, int depth);
+void DeleteDBufRaster(DBufRasterT *raster);
+void WaitForSafeToWrite(DBufRasterT *raster);
+void WaitForSafeToSwap(DBufRasterT *raster);
+void DBufRasterSwap(DBufRasterT *raster);
 
 #endif

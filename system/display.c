@@ -11,8 +11,8 @@
  * View handling functions.
  */
 
-struct View *NewView() {
-  struct View *view = NEW_SZ(struct View);
+ViewT *NewView() {
+  ViewT *view = NEW_SZ(ViewT);
 
   if (view)
     InitView(view);
@@ -20,7 +20,7 @@ struct View *NewView() {
   return view;
 }
 
-void DeleteView(struct View *view) {
+void DeleteView(ViewT *view) {
   if (view) {
     FreeCprList(view->LOFCprList);                                                                                                                                                  
 
@@ -31,7 +31,7 @@ void DeleteView(struct View *view) {
   }
 }
 
-static struct View *OrigView;
+static ViewT *OrigView;
 
 void SaveOrigView() {
   OrigView = GfxBase->ActiView;
@@ -48,7 +48,7 @@ void RestoreOrigView() {
   WaitTOF();
 }
 
-void ApplyView(struct View *view, struct ViewPort *viewPort) {
+void ApplyView(ViewT *view, ViewPortT *viewPort) {
   view->ViewPort = viewPort;
 
   MakeVPort(view, viewPort);
@@ -60,8 +60,8 @@ void ApplyView(struct View *view, struct ViewPort *viewPort) {
  * ViewPort handling functions.
  */
 
-struct ViewPort *NewViewPort(int width, int height, int depth) {
-  struct ViewPort *viewPort = NEW_SZ(struct ViewPort);
+ViewPortT *NewViewPort(int width, int height, int depth) {
+  ViewPortT *viewPort = NEW_SZ(ViewPortT);
 
   if (viewPort) {
     InitVPort(viewPort);
@@ -82,7 +82,7 @@ struct ViewPort *NewViewPort(int width, int height, int depth) {
   return NULL;
 }
 
-void DeleteViewPort(struct ViewPort *viewPort) {
+void DeleteViewPort(ViewPortT *viewPort) {
   if (viewPort) {
     FreeVPortCopLists(viewPort);
     FreeColorMap(viewPort->ColorMap);
@@ -99,12 +99,11 @@ static struct TagItem VideoCtrlTags[] = {
   { VTAG_END_CM, NULL }
 };
 
-void ConfigureViewPort(struct ViewPort *viewPort) {
+void ConfigureViewPort(ViewPortT *viewPort) {
   VideoControl(viewPort->ColorMap, VideoCtrlTags);
 }
 
-void LoadPalette(struct ViewPort *viewPort, UBYTE *components,
-                 int start, int count) {
+void LoadPalette(ViewPortT *viewPort, UBYTE *components, int start, int count) {
   int i;
 
   for (i = 0; i < count; i++) {
@@ -120,8 +119,8 @@ void LoadPalette(struct ViewPort *viewPort, UBYTE *components,
  * DBufInfo handling functions.
  */
 
-struct DBufInfo *NewDBufInfo(struct ViewPort *viewPort, int width, int height, int depth) {
-  struct DBufInfo *dbufInfo = AllocDBufInfo(viewPort);
+DBufInfoT *NewDBufInfo(ViewPortT *viewPort, int width, int height, int depth) {
+  DBufInfoT *dbufInfo = AllocDBufInfo(viewPort);
 
   if (dbufInfo) {
     dbufInfo->dbi_UserData1 = (APTR)
@@ -144,7 +143,7 @@ struct DBufInfo *NewDBufInfo(struct ViewPort *viewPort, int width, int height, i
   return NULL;
 }
 
-void DeleteDBufInfo(struct DBufInfo *dbufInfo) {
+void DeleteDBufInfo(DBufInfoT *dbufInfo) {
   if (dbufInfo) {
     FreeBitMap(dbufInfo->dbi_UserData1);
     FreeBitMap(dbufInfo->dbi_UserData2);
@@ -160,14 +159,14 @@ void DeleteDBufInfo(struct DBufInfo *dbufInfo) {
  * DBufRaster handling functions.
  */
 
-struct DBufRaster *NewDBufRaster(int width, int height, int depth) {
-  struct DBufRaster *raster = NEW_SZ(struct DBufRaster);
+DBufRasterT *NewDBufRaster(int width, int height, int depth) {
+  DBufRasterT *raster = NEW_SZ(DBufRasterT);
 
   if (raster) {
-    struct ViewPort *viewPort = NewViewPort(width, height, depth);
+    ViewPortT *viewPort = NewViewPort(width, height, depth);
 
     if (viewPort) {
-      raster->Canvas = canvas_new(width, height);
+      raster->Canvas = NewCanvas(width, height);
       raster->ViewPort = viewPort;
       raster->DBufInfo = NewDBufInfo(viewPort, width, height, depth);
       raster->SafeToSwap = TRUE;
@@ -175,8 +174,8 @@ struct DBufRaster *NewDBufRaster(int width, int height, int depth) {
       raster->CurrentBitMap = 1;
 
       if (raster->Canvas && raster->DBufInfo) {
-        viewPort->RasInfo->BitMap = (struct BitMap *)raster->DBufInfo->dbi_UserData1;
-        raster->BitMap = (struct BitMap *)raster->DBufInfo->dbi_UserData2;
+        viewPort->RasInfo->BitMap = (BitMapT *)raster->DBufInfo->dbi_UserData1;
+        raster->BitMap = (BitMapT *)raster->DBufInfo->dbi_UserData2;
 
         return raster;
       }
@@ -188,14 +187,14 @@ struct DBufRaster *NewDBufRaster(int width, int height, int depth) {
   return NULL;
 }
 
-void DeleteDBufRaster(struct DBufRaster *raster) {
-  canvas_delete(raster->Canvas);
+void DeleteDBufRaster(DBufRasterT *raster) {
+  DeleteCanvas(raster->Canvas);
   DeleteDBufInfo(raster->DBufInfo);
   DeleteViewPort(raster->ViewPort);
   DELETE(raster);
 }
 
-void WaitForSafeToWrite(struct DBufRaster *raster) {
+void WaitForSafeToWrite(DBufRasterT *raster) {
   if (!raster->SafeToWrite) {
     struct MsgPort *SafeMsgPort = raster->DBufInfo->dbi_SafeMessage.mn_ReplyPort;
 
@@ -206,7 +205,7 @@ void WaitForSafeToWrite(struct DBufRaster *raster) {
   }
 }
 
-void WaitForSafeToSwap(struct DBufRaster *raster) {
+void WaitForSafeToSwap(DBufRasterT *raster) {
   if (!raster->SafeToSwap) {
     struct MsgPort *DispMsgPort = raster->DBufInfo->dbi_DispMessage.mn_ReplyPort;
 
@@ -217,14 +216,13 @@ void WaitForSafeToSwap(struct DBufRaster *raster) {
   }
 }
 
-void DBufRasterSwap(struct DBufRaster *raster) {
+void DBufRasterSwap(DBufRasterT *raster) {
   ChangeVPBitMap(raster->ViewPort, raster->BitMap, raster->DBufInfo);
 
-  raster->BitMap = (struct BitMap *)(raster->CurrentBitMap ?
-                                     raster->DBufInfo->dbi_UserData2 :
-                                     raster->DBufInfo->dbi_UserData1);
+  raster->BitMap = (BitMapT *)(raster->CurrentBitMap ?
+                               raster->DBufInfo->dbi_UserData2 :
+                               raster->DBufInfo->dbi_UserData1);
   raster->SafeToSwap = FALSE;
   raster->SafeToWrite = FALSE;
   raster->CurrentBitMap ^= 1;
 }
-
