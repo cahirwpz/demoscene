@@ -13,7 +13,7 @@ struct Resource {
   AllocFuncType AllocFunc;
   FreeFuncType FreeFunc;
   InitFuncType InitFunc;
-};
+} ResourceT;
 
 BOOL ResourcesAlloc();
 BOOL ResourcesInit();

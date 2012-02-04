@@ -4,11 +4,10 @@
 #include "memory.h"
 #include "resource.h"
 
-extern struct Resource ResourceList[];
+extern ResourceT ResourceList[];
 
-BOOL ResourcesAlloc()
-{
-  struct Resource *res;
+BOOL ResourcesAlloc() {
+  ResourceT *res;
 
   for (res = ResourceList; res->Name; res++) {
     if (!(res->Ptr = res->AllocFunc()))
@@ -21,7 +20,7 @@ BOOL ResourcesAlloc()
 }
 
 BOOL ResourcesInit() {
-  struct Resource *res;
+  ResourceT *res;
 
   for (res = ResourceList; res->Name; res++) {
     if (!res->InitFunc)
@@ -37,7 +36,7 @@ BOOL ResourcesInit() {
 }
 
 void ResourcesFree() {
-  struct Resource *res;
+  ResourceT *res;
 
   for (res = ResourceList; res->Name; res++) {
     LOG("Freeing resource '%s' at $%lx.\n", res->Name, res->Ptr);
