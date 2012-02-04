@@ -21,8 +21,8 @@ typedef struct Point {
   int16_t x, y;
 } PointT;
 
-typedef struct Rectangle {
+typedef struct Rect {
   PointT tl, br;
-} RectangleT;
+} RectT;
 
 #endif

@@ -12,7 +12,7 @@ typedef struct Canvas {
   uint8_t fg_col;
   uint8_t bg_col;
   PointT pen_pos;
-  RectangleT clip_area;
+  RectT clip_area;
 } CanvasT;
 
 #define CanvasPenMoveTo(CANVAS, X, Y) { (CANVAS)->pen_pos.x = (X); (CANVAS)->pen_pos.y = (Y); }
