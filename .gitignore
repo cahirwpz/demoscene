@@ -1,6 +1,8 @@
 .DS_Store
+_UAEFSDB.___
 artwork/
 data/
 *~
 *.o
 *.lib
+*.info
