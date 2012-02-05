@@ -5,7 +5,7 @@ include $(TOPDIR)/Makefile.common
 export TOPDIR
 
 BINS	= tunnel
-SUBDIRS	= p61 system gfx
+SUBDIRS	= p61 system gfx std
 
 all: $(SUBDIRS) $(BINS)
 
