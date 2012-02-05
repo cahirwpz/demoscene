@@ -2,7 +2,7 @@
 
 #include "gfx/matrix2d.h"
 
-#define M2D_FOREACH(I, J)         \
+#define M_FOREACH(I, J)           \
   for ((I) = 0; (I) < 3; (I)++)   \
     for ((J) = 0; (J) < 3; (J)++)
 
@@ -11,7 +11,7 @@
 void M2D_Multiply(Matrix2D *d, Matrix2D *a, Matrix2D *b) {
   int i, j, k;
 
-  M2D_FOREACH(i, j) {
+  M_FOREACH(i, j) {
     M(d,i,j) = 0.0f;
 
     for (k = 0; k < 3; k++)
@@ -22,21 +22,21 @@ void M2D_Multiply(Matrix2D *d, Matrix2D *a, Matrix2D *b) {
 void M2D_Transpose(Matrix2D *d, Matrix2D *a) {
   int i, j; 
 
-  M2D_FOREACH(i, j)
+  M_FOREACH(i, j)
     M(d,i,j) = M(a,j,i);
 }
 
 void M2D_LoadIdentity(Matrix2D *d) {
   int i, j; 
 
-  M2D_FOREACH(i, j)
+  M_FOREACH(i, j)
     M(d,i,j) = (i == j) ? 1.0f : 0.0f;
 }
 
 void M2D_LoadRotation(Matrix2D *d, float angle) {
   M2D_LoadIdentity(d);
 
-  angle *= 3.14159265 / 180.0;
+  angle *= 3.14159265f / 180.0f;
 
   M(d,0,0) = cos(angle);
   M(d,1,0) = -sin(angle);
