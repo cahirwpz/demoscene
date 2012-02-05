@@ -5,6 +5,7 @@
 
 typedef struct Color {
   uint8_t r,g,b;
+  uint8_t pad;
 } ColorT;
 
 typedef struct Point {

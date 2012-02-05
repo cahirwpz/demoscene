@@ -5,12 +5,12 @@
 #include "system/debug.h"
 #include "gfx/palette.h"
 
-PaletteT *NewPalette(size_t num) {
+PaletteT *NewPalette(size_t count) {
   PaletteT *palette = NEW_S(PaletteT);
 
   if (palette) {
-    palette->num = num;
-    palette->colors = NEW_A(ColorT, num);
+    palette->count = count;
+    palette->colors = NEW_A(ColorT, count);
 
     if (palette->colors)
       return palette;
@@ -27,15 +27,23 @@ PaletteT *NewPaletteFromFile(const char *fileName, uint32_t memFlags) {
   if (!data)
     return NULL;
 
-  uint16_t num = data[0];
+  uint16_t count = data[0];
 
-  PaletteT *palette = NewPalette(num);
+  PaletteT *palette = NewPalette(count);
 
-  if (palette)
-    memcpy(palette->colors, &data[1], num);
+  if (palette) {
+    uint8_t *raw = &data[1];
 
-  LOG("Palette '%s' has %ld colors.\n",
-      fileName, (ULONG)num);
+    int i;
+
+    for (i = 0; i < count; i++) {
+      palette->colors[i].r = raw[i*3];
+      palette->colors[i].g = raw[i*3+1];
+      palette->colors[i].b = raw[i*3+2];
+    }
+  }
+
+  LOG("Palette '%s' has %ld colors.\n", fileName, (ULONG)count);
 
   DELETE(data);
 
