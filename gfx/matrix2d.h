@@ -10,8 +10,8 @@ void M2D_Transpose(Matrix2D *d, Matrix2D *a);
 
 void M2D_LoadIdentity(Matrix2D *d);
 void M2D_LoadRotation(Matrix2D *d, float angle);
-void M2D_LoadScaling(Matrix2D *d, float sx, float sy);
-void M2D_LoadTranslation(Matrix2D *d, float tx, float ty);
+void M2D_LoadScaling(Matrix2D *d, float scaleX, float scaleY);
+void M2D_LoadTranslation(Matrix2D *d, float moveX, float moveY);
 
 void M2D_Transform(PointT *dst, PointT *src, int n, Matrix2D *m);
 

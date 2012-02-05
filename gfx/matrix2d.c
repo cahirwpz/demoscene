@@ -44,18 +44,18 @@ void M2D_LoadRotation(Matrix2D *d, float angle) {
   M(d,1,1) = cos(angle);
 }
 
-void M2D_LoadScaling(Matrix2D *d, float sx, float sy) {
+void M2D_LoadScaling(Matrix2D *d, float scaleX, float scaleY) {
   M2D_LoadIdentity(d);
 
-  M(d,0,0) = sx;
-  M(d,1,1) = sy;
+  M(d,0,0) = scaleX;
+  M(d,1,1) = scaleY;
 }
 
-void M2D_LoadTranslation(Matrix2D *d, float tx, float ty) {
+void M2D_LoadTranslation(Matrix2D *d, float moveX, float moveY) {
   M2D_LoadIdentity(d);
 
-  M(d,2,0) = tx;
-  M(d,2,1) = ty;
+  M(d,2,0) = moveX;
+  M(d,2,1) = moveY;
 }
 
 void M2D_Transform(PointT *dst, PointT *src, int n, Matrix2D *m) {
