@@ -9,6 +9,7 @@ typedef struct PixBuf {
 } PixBufT;
 
 PixBufT *NewPixBuf(int width, int height);
+PixBufT *NewPixBufFromFile(const char *fileName, uint32_t memFlags);
 void DeletePixBuf(PixBufT *pixbuf);
 
 #endif

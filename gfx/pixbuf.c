@@ -1,4 +1,8 @@
+#include <string.h>
+
 #include "system/memory.h"
+#include "system/fileio.h"
+#include "system/debug.h"
 #include "gfx/pixbuf.h"
 
 PixBufT *NewPixBuf(int width, int height) {
@@ -16,6 +20,28 @@ PixBufT *NewPixBuf(int width, int height) {
   }
 
   return NULL;
+}
+
+PixBufT *NewPixBufFromFile(const char *fileName, uint32_t memFlags) {
+  uint16_t *data = ReadFileSimple(fileName, memFlags);
+
+  if (!data)
+    return NULL;
+
+  uint16_t width = data[0];
+  uint16_t height = data[1];
+
+  PixBufT *pixbuf = NewPixBuf(width, height);
+
+  if (pixbuf)
+    memcpy(pixbuf->data, &data[2], width * height);
+
+  LOG("Image '%s' has size (%ld,%ld).\n",
+      fileName, (ULONG)width, (ULONG)height);
+
+  DELETE(data);
+
+  return pixbuf;
 }
 
 void DeletePixBuf(PixBufT *pixbuf) {
