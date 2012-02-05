@@ -4,6 +4,7 @@ from array import array
 
 import Image
 import argparse
+import struct
 import os
 
 def main():
@@ -44,6 +45,7 @@ def main():
 
     with open(rawFilePath, 'w') as rawFile:
       data = array('B', image.getdata())
+      rawFile.write(struct.pack('>HH', *image.size))
       rawFile.write(data.tostring())
   else:
     rawFilePath = '%s.24' % outputPath
@@ -57,6 +59,7 @@ def main():
       for rgb in image.getdata():
         data.extend(rgb)
 
+      rawFile.write(struct.pack('>HH', *image.size))
       rawFile.write(data.tostring())
 
 if __name__ == '__main__':
