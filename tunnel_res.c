@@ -1,6 +1,8 @@
 #include <clib/exec_protos.h>
 
 #include "gfx/common.h"
+#include "gfx/pixbuf.h"
+#include "gfx/palette.h"
 #include "std/resource_internal.h"
 #include "system/fileio.h"
 #include "distortion.h"
@@ -19,8 +21,10 @@ RSC_ADD(texture, NewPixBufFromFile("data/texture-01.8", MEMF_PUBLIC))
 RSC_FREE(texture, DeletePixBuf)
 #define texture_init NULL
 
-RSC_TYPE(palette, uint8_t *)
-RSC_FILE(palette, "data/texture-01.pal", MEMF_PUBLIC)
+RSC_TYPE(palette, PaletteT *)
+RSC_ADD(palette, NewPaletteFromFile("data/texture-01.pal", MEMF_PUBLIC))
+RSC_FREE(palette, DeletePalette)
+#define palette_init NULL
 
 RSC_TYPE(tunnel_map, struct DistortionMap *)
 RSC_ADD(tunnel_map, NewDistortionMap(WIDTH, HEIGHT))

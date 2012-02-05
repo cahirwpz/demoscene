@@ -3,6 +3,7 @@
 #include "p61/p61.h"
 
 #include "gfx/line.h"
+#include "gfx/palette.h"
 #include "gfx/transformations.h"
 #include "std/resource.h"
 
@@ -23,6 +24,7 @@ static CanvasT *Canvas;
 static DBufRasterT *Raster;
 static DistortionMapT *TunnelMap;
 static PixBufT *Texture;
+static PaletteT *Palette;
 
 static PointT *Cross;
 static PointT CrossToDraw[12];
@@ -33,7 +35,6 @@ static PointT CrossToDraw[12];
 struct ViewPort *SetupDisplay() {
   if ((Raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH))) {
     ConfigureViewPort(Raster->ViewPort);
-    LoadPalette(Raster->ViewPort, (UBYTE *)GetResource("palette"), 0, 256);
 
     return Raster->ViewPort;
   }
@@ -52,11 +53,15 @@ void TearDownDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  Canvas = NewCanvas(WIDTH, HEIGHT);
-
+  Palette = GetResource("palette");
   TunnelMap = GetResource("tunnel_map");
   Texture = GetResource("texture");
   Cross = GetResource("cross");
+
+  Canvas = NewCanvas(WIDTH, HEIGHT);
+
+  LoadPalette(Raster->ViewPort, Palette);
+  SetColor(Raster->ViewPort, 255, 255, 255, 255);
 
   TS_Init();
 
