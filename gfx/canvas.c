@@ -1,25 +1,25 @@
 #include "system/memory.h"
 #include "gfx/canvas.h"
 
-static CanvasT *NewCanvasInternal(BitmapT *bitmap, bool managed) {
+static CanvasT *NewCanvasInternal(PixBufT *pixbuf, bool managed) {
   CanvasT *canvas = NEW_SZ(CanvasT);
 
   if (canvas) {
-    canvas->bitmap = bitmap;
+    canvas->_pixbuf = pixbuf;
     canvas->flags = managed ? CANVAS_BITMAP_MANAGED : 0;
     canvas->fg_col = 255;
-    canvas->clip_area.br.x = bitmap->width;
-    canvas->clip_area.br.y = bitmap->height;
+    canvas->clip_area.br.x = pixbuf->width;
+    canvas->clip_area.br.y = pixbuf->height;
   }
 
   return canvas;
 }
 
 CanvasT *NewCanvas(int width, int height) {
-  BitmapT *bitmap = NewBitmap(width, height);
+  PixBufT *pixbuf = NewPixBuf(width, height);
 
-  if (bitmap)
-    return NewCanvasInternal(bitmap, TRUE);
+  if (pixbuf)
+    return NewCanvasInternal(pixbuf, TRUE);
 
   return NULL;
 }
@@ -27,7 +27,7 @@ CanvasT *NewCanvas(int width, int height) {
 void DeleteCanvas(CanvasT *canvas) {
   if (canvas) {
     if (canvas->flags & CANVAS_BITMAP_MANAGED)
-      DeleteBitmap(canvas->bitmap);
+      DeletePixBuf(canvas->_pixbuf);
 
     DELETE(canvas);
   }

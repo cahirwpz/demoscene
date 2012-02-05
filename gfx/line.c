@@ -1,14 +1,14 @@
 #include "gfx/line.h"
 
 void DrawLine(CanvasT *canvas, int xs, int ys, int xe, int ye) {
-  int stride = canvas->bitmap->width;
+  int stride = GetCanvasWidth(canvas);
 
   if (ys > ye) {
     swapi(xs, xe);
     swapi(ys, ye);
   }
 
-  uint8_t *bitmap = canvas->bitmap->data + ys * stride + xs;
+  uint8_t *pixels = GetCanvasPixelData(canvas) + ys * stride + xs;
 
   int dx = abs(xe - xs);
   int dy = ye - ys;
@@ -54,19 +54,19 @@ void DrawLine(CanvasT *canvas, int xs, int ys, int xe, int ye) {
   uint8_t color = canvas->fg_col;
 
   for (;;) {
-    *bitmap = color;
+    *pixels = color;
 
     if (!n--)
       break;
 
     if (dg > 0) {
-      bitmap += db1;
+      pixels += db1;
       dg += dg1;
     } else {
       dg += dg2;
     }
 
-    bitmap += db2;
+    pixels += db2;
   }
 }
 
