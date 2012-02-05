@@ -11,13 +11,15 @@
 #define WIDTH 320
 #define HEIGHT 256
 
-RSC_TYPE(module, APTR)
+RSC_TYPE(module, void *)
 RSC_FILE(module, "data/tempest-acidjazzed_evening.p61", MEMF_CHIP)
 
-RSC_TYPE(texture, APTR)
-RSC_FILE(texture, "data/texture-01.raw", MEMF_PUBLIC)
+RSC_TYPE(texture, PixBufT *)
+RSC_ADD(texture, NewPixBufFromFile("data/texture-01.8", MEMF_PUBLIC))
+RSC_FREE(texture, DeletePixBuf)
+#define texture_init NULL
 
-RSC_TYPE(palette, APTR)
+RSC_TYPE(palette, uint8_t *)
 RSC_FILE(palette, "data/texture-01.pal", MEMF_PUBLIC)
 
 RSC_TYPE(tunnel_map, struct DistortionMap *)
@@ -35,7 +37,7 @@ RSC_ARRAY(cross) = {
 
 RSC_START
 RSC_STD(module)
-RSC_STD(texture)
+RSC(texture)
 RSC_STD(palette)
 RSC_CONST(cross)
 RSC(tunnel_map)
