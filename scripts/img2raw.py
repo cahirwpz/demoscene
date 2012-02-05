@@ -40,7 +40,10 @@ def main():
       raise SystemExit('Will not overwrite output files!')
 
     with open(palFilePath, 'w') as palFile:
-      pal = array('B', image.getpalette())
+      uniqueColors = len(image.getcolors())
+
+      pal = array('B', image.getpalette()[:3*uniqueColors])
+      palFile.write(struct.pack('>H', uniqueColors))
       palFile.write(pal.tostring())
 
     with open(rawFilePath, 'w') as rawFile:
