@@ -53,7 +53,7 @@ void *SL_GetNth(SListT *list, size_t index) {
   return node->item;
 }
 
-void SL_PushFrontLink(SListT *list, SNodeT *node) {
+void SL_PushFrontNode(SListT *list, SNodeT *node) {
   node->next = list->first;
   
   if (!list->first)
@@ -69,13 +69,13 @@ bool SL_PushFront(SListT *list, void *item) {
   if (node) {
     node->item = item;
 
-    SL_PushFrontLink(list, node);
+    SL_PushFrontNode(list, node);
   }
 
   return (node) ? TRUE : FALSE;
 }
 
-SNodeT *SL_PopFrontLink(SListT *list) {
+SNodeT *SL_PopFrontNode(SListT *list) {
   SNodeT *node = list->first;
 
   if (node) {
@@ -90,7 +90,7 @@ SNodeT *SL_PopFrontLink(SListT *list) {
 }
 
 void *SL_PopFront(SListT *list) {
-  SNodeT *node = SL_PopFrontLink(list);
+  SNodeT *node = SL_PopFrontNode(list);
 
   void *item = (node) ? (node->item) : NULL;
 
