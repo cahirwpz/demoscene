@@ -1,7 +1,11 @@
-#ifndef __GFX2D_COMMON_H__
-#define __GFX2D_COMMON_H__
+#ifndef __GFX_COMMON_H__
+#define __GFX_COMMON_H__
 
 #include "std/types.h"
+
+typedef struct Color {
+  uint8_t r,g,b;
+} ColorT;
 
 typedef struct Point {
   int16_t x, y;
