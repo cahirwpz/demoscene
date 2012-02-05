@@ -21,6 +21,8 @@ void DeleteSList(SListT *list, FreeFuncT func) {
 
     node = next;
   }
+
+  DELETE(list);
 }
 
 void SL_Concat(SListT *dst, SListT *src) {
