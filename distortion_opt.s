@@ -29,7 +29,9 @@ _RenderDistortion
 
         ; prepare temporary pointers
         move.l  4(a3),a0
-        move.l  a2,a1
+        move.l  (a2),a2   ; CanvasT.pixbuf
+        move.l  4(a2),a1  ; PixBufT.data
+        move.l  4(a5),a5
 
         ; clear offset registers
         clr.l   d2
