@@ -23,18 +23,18 @@
 #define RSC(NAME) \
   {#NAME, \
    NULL, \
-   (AllocFuncType)NAME ## _alloc, \
-   (FreeFuncType)NAME ## _free, \
-   (InitFuncType)NAME ## _init},
+   (AllocFuncT)NAME ## _alloc, \
+   (FreeFuncT)NAME ## _free, \
+   (InitFuncT)NAME ## _init},
 
 #define RSC_STD(NAME) \
-  {#NAME, NULL, (AllocFuncType)NAME ## _alloc, NULL, NULL},
+  {#NAME, NULL, (AllocFuncT)NAME ## _alloc, NULL, NULL},
 
 #define RSC_CONST(NAME) \
-  {#NAME, (APTR)NAME ## _const, NULL, NULL, NULL},
+  {#NAME, (void *)NAME ## _const, NULL, NULL, NULL},
 
 #define RSC_START \
-  struct Resource ResourceList[] = {
+  ResourceT ResourceList[] = {
 
 #define RSC_END \
   {NULL, NULL, NULL, NULL, NULL}};

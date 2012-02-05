@@ -4,12 +4,12 @@
 
 #include "gfx/line.h"
 #include "gfx/transformations.h"
+#include "std/resource.h"
 
 #include "system/c2p.h"
 #include "system/debug.h"
 #include "system/display.h"
 #include "system/memory.h"
-#include "system/resource.h"
 #include "system/vblank.h"
 
 #include "frame_tools.h"

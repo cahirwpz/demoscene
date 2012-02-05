@@ -2,9 +2,9 @@
 #include <inline/exec_protos.h>
 #include <proto/exec.h>
 
+#include "std/resource.h"
 #include "system/display.h"
 #include "system/input.h"
-#include "system/resource.h"
 #include "system/vblank.h"
 
 struct DosLibrary *DOSBase;

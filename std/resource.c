@@ -1,12 +1,12 @@
 #include <string.h>
 
-#include "debug.h"
-#include "memory.h"
-#include "resource.h"
+#include "system/debug.h"
+#include "system/memory.h"
+#include "std/resource.h"
 
 extern ResourceT ResourceList[];
 
-BOOL ResourcesAlloc() {
+bool ResourcesAlloc() {
   ResourceT *res;
 
   for (res = ResourceList; res->Name; res++) {
@@ -24,7 +24,7 @@ BOOL ResourcesAlloc() {
   return TRUE;
 }
 
-BOOL ResourcesInit() {
+bool ResourcesInit() {
   ResourceT *res;
 
   for (res = ResourceList; res->Name; res++) {
@@ -53,7 +53,7 @@ void ResourcesFree() {
   }
 }
 
-APTR GetResource(const char *name) {
+void *GetResource(const char *name) {
   struct Resource *res;
 
   for (res = ResourceList; res->Name; res++) {

@@ -1,8 +1,8 @@
 #include <clib/exec_protos.h>
 
-#include "system/resource_internal.h"
-#include "system/fileio.h"
 #include "gfx/common.h"
+#include "std/resource_internal.h"
+#include "system/fileio.h"
 #include "distortion.h"
 
 #define RSC_FILE(NAME, FILENAME, MEMTYPE) \
