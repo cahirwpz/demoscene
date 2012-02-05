@@ -10,6 +10,9 @@ BOOL ResourcesAlloc() {
   ResourceT *res;
 
   for (res = ResourceList; res->Name; res++) {
+    if (!res->AllocFunc)
+      continue;
+
     if (!(res->Ptr = res->AllocFunc()))
       return FALSE;
 
