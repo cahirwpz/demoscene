@@ -44,7 +44,7 @@ void SL_Concat(SListT *dst, SListT *src) {
 }
 
 void *SL_GetNth(SListT *list, size_t index) {
-  if (index > list->items)
+  if (index >= list->items)
     return NULL;
 
   SNodeT *node = list->first;
