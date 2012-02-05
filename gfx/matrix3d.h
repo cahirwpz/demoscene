@@ -14,6 +14,8 @@ void M3D_LoadIdentity(Matrix3D *d);
 void M3D_LoadRotation(Matrix3D *d, float angleX, float angleY, float angleZ);
 void M3D_LoadScaling(Matrix3D *d, float scaleX, float scaleY, float scaleZ);
 void M3D_LoadTranslation(Matrix3D *d, float moveX, float moveY, float moveZ);
+void M3D_LoadPerspective(Matrix3D *d,
+                         float viewerX, float viewerY, float viewerZ);
 
 void M3D_Transform(VertexT *dst, VertexT *src, int n, Matrix3D *m);
 void M3D_Project2D(PointT *dst, VertexT *src, int n, Matrix3D *m);
