@@ -101,16 +101,20 @@ void ConfigureViewPort(ViewPortT *viewPort) {
   VideoControl(viewPort->ColorMap, VideoCtrlTags);
 }
 
-void LoadPalette(ViewPortT *viewPort, UBYTE *components, int start, int count) {
-  int i;
+void LoadPalette(ViewPortT *viewPort, PaletteT *palette) {
+  size_t i;
 
-  for (i = 0; i < count; i++) {
-    int r = *components++;
-    int g = *components++;
-    int b = *components++;
+  for (i = 0; i < palette->count; i++) {
+    uint32_t r = palette->colors[i].r;
+    uint32_t g = palette->colors[i].g;
+    uint32_t b = palette->colors[i].b;
 
-    SetRGB32CM(viewPort->ColorMap, start + i, r << 24, g << 24, b << 24);
+    SetRGB32(viewPort, palette->start + i, r << 24, g << 24, b << 24);
   }
+}
+
+void SetColor(ViewPortT *viewPort, size_t num, uint8_t r, uint8_t g, uint8_t b) {
+  SetRGB32(viewPort, num, (ULONG)r << 24, (ULONG)g << 24, (ULONG)b << 24);
 }
 
 /*

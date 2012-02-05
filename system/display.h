@@ -4,7 +4,7 @@
 #include <graphics/gfx.h>
 #include <graphics/view.h>
 
-#include "gfx/canvas.h"
+#include "gfx/palette.h"
 
 typedef struct BitMap BitMapT;
 typedef struct DBufInfo DBufInfoT;
@@ -20,7 +20,8 @@ void RestoreOrigView();
 ViewPortT *NewViewPort(int width, int height, int depth);
 void DeleteViewPort(ViewPortT *viewPort);
 void ConfigureViewPort(ViewPortT *viewPort);
-void LoadPalette(ViewPortT *viewPort, UBYTE *components, int start, int count);
+void LoadPalette(ViewPortT *viewPort, PaletteT *palette);
+void SetColor(ViewPortT *viewPort, size_t num, uint8_t r, uint8_t g, uint8_t b);
 
 DBufInfoT *NewDBufInfo(ViewPortT *viewPort, int width, int height, int depth);
 void DeleteDBufInfo(DBufInfoT *dbufInfo);
