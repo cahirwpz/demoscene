@@ -13,8 +13,10 @@ BOOL ResourcesAlloc() {
     if (!res->AllocFunc)
       continue;
 
-    if (!(res->Ptr = res->AllocFunc()))
+    if (!(res->Ptr = res->AllocFunc())) {
+      LOG("Failed to Allocate resource '%s'.\n", res->Name);
       return FALSE;
+    }
 
     LOG("Allocated resource '%s' at $%lx.\n", res->Name, res->Ptr);
   }
