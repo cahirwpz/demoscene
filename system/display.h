@@ -30,8 +30,6 @@ typedef struct DBufRaster {
   DBufInfoT *DBufInfo;
   BitMapT *BitMap;
 
-  CanvasT *Canvas;
-
   LONG CurrentBitMap;
   BOOL SafeToWrite;
   BOOL SafeToSwap;

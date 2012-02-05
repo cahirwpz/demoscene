@@ -166,14 +166,13 @@ DBufRasterT *NewDBufRaster(int width, int height, int depth) {
     ViewPortT *viewPort = NewViewPort(width, height, depth);
 
     if (viewPort) {
-      raster->Canvas = NewCanvas(width, height);
       raster->ViewPort = viewPort;
       raster->DBufInfo = NewDBufInfo(viewPort, width, height, depth);
       raster->SafeToSwap = TRUE;
       raster->SafeToWrite = TRUE;
       raster->CurrentBitMap = 1;
 
-      if (raster->Canvas && raster->DBufInfo) {
+      if (raster->DBufInfo) {
         viewPort->RasInfo->BitMap = (BitMapT *)raster->DBufInfo->dbi_UserData1;
         raster->BitMap = (BitMapT *)raster->DBufInfo->dbi_UserData2;
 
@@ -188,7 +187,6 @@ DBufRasterT *NewDBufRaster(int width, int height, int depth) {
 }
 
 void DeleteDBufRaster(DBufRasterT *raster) {
-  DeleteCanvas(raster->Canvas);
   DeleteDBufInfo(raster->DBufInfo);
   DeleteViewPort(raster->ViewPort);
   DELETE(raster);
