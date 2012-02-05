@@ -71,10 +71,8 @@ ViewPortT *NewViewPort(int width, int height, int depth) {
     viewPort->RasInfo = NEW_SZ(struct RasInfo);
     viewPort->ColorMap = GetColorMap(1 << depth);
 
-    if (viewPort->RasInfo && viewPort->ColorMap) {
-      AttachPalExtra(viewPort->ColorMap, viewPort);
+    if (viewPort->RasInfo && viewPort->ColorMap)
       return viewPort;
-    }
 
     DeleteViewPort(viewPort);
   }
@@ -187,9 +185,11 @@ DBufRasterT *NewDBufRaster(int width, int height, int depth) {
 }
 
 void DeleteDBufRaster(DBufRasterT *raster) {
-  DeleteDBufInfo(raster->DBufInfo);
-  DeleteViewPort(raster->ViewPort);
-  DELETE(raster);
+  if (raster) {
+    DeleteDBufInfo(raster->DBufInfo);
+    DeleteViewPort(raster->ViewPort);
+    DELETE(raster);
+  }
 }
 
 void WaitForSafeToWrite(DBufRasterT *raster) {
