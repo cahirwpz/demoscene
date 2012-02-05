@@ -51,3 +51,7 @@ void TS_PushScaling2D(float sx, float sy) {
 void TS_PushTranslation2D(float tx, float ty) {
   M2D_LoadTranslation((Matrix2D *)StackPush(Matrices), tx, ty);
 }
+
+Matrix2D *TS_GetMatrix2D(size_t num) {
+  return (Matrix2D *)StackGet(Matrices, num);
+}
