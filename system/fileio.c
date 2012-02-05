@@ -6,16 +6,18 @@
 #include <inline/exec_protos.h>
 #include <inline/dos_protos.h>
 
-APTR ReadFileSimple(STRPTR fileName, ULONG memFlags) {
+#include "system/fileio.h"
+
+void *ReadFileSimple(const char *fileName, uint32_t memFlags) {
   BPTR fh;
-  APTR data = NULL;
+  void *data = NULL;
   
   if ((fh = Open(fileName, MODE_OLDFILE))) {
     struct FileInfoBlock *infoBlock;
 
     if ((infoBlock = (struct FileInfoBlock *) AllocDosObject(DOS_FIB, NULL))) {
       if (ExamineFH(fh, infoBlock)) {
-        ULONG dataLen = infoBlock->fib_Size;
+        size_t dataLen = infoBlock->fib_Size;
 
         if ((data = AllocVec(dataLen, memFlags))) {
           if (dataLen =! Read(fh, data, dataLen)) {

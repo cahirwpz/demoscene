@@ -1,8 +1,8 @@
-#ifndef __FILEIO_H__
-#define __FILEIO_H__
+#ifndef __SYSTEM_FILEIO_H__
+#define __SYSTEM_FILEIO_H__
 
-#include <exec/types.h>
+#include "std/types.h"
 
-APTR ReadFileSimple(STRPTR fileName, ULONG memFlags);
+void *ReadFileSimple(const char *fileName, uint32_t memFlags);
 
 #endif
