@@ -18,8 +18,11 @@ system:
 gfx:
 	$(MAKE) -C $@
 
+std:
+	$(MAKE) -C $@
+
 tunnel: startup_effect.o tunnel.o tunnel_res.o distortion.o distortion_opt.o \
-	frame_tools.o p61/p61.lib system/system.lib gfx/gfx.lib
+	frame_tools.o p61/p61.lib system/system.lib gfx/gfx.lib std/std.lib
 	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
 
 tunnel.o: tunnel.c
@@ -31,8 +34,9 @@ clean:
 	$(MAKE) -C p61 clean
 	$(MAKE) -C system clean
 	$(MAKE) -C gfx clean
+	$(MAKE) -C std clean
 	$(RM) *~ *.o $(BINS)
 
-.PHONY: all p61 system gfx
+.PHONY: all p61 system gfx std
 
 # vim: sw=8 ts=8
