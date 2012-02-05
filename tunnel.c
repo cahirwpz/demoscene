@@ -21,7 +21,7 @@ const int DEPTH = 8;
 
 static CanvasT *Canvas;
 static DBufRasterT *Raster;
-static struct DistortionMap *TunnelMap;
+static DistortionMapT *TunnelMap;
 static PixBufT *Texture;
 
 static PointT *Cross;
@@ -77,7 +77,7 @@ void TearDownEffect() {
 /*
  * Rendering functions.
  */
-void RenderTunnel(int frameNumber, struct DBufRaster *raster) {
+void RenderTunnel(int frameNumber, DBufRasterT *raster) {
   RenderDistortion(Canvas, TunnelMap, Texture, 0, frameNumber);
 
   float s = sin(frameNumber * 3.14159265f / 45.0f);
@@ -97,7 +97,7 @@ void RenderTunnel(int frameNumber, struct DBufRaster *raster) {
   DrawPolyLine(Canvas, CrossToDraw, 12, TRUE);
 }
 
-void RenderChunky(int frameNumber, struct DBufRaster *raster) {
+void RenderChunky(int frameNumber, DBufRasterT *raster) {
   c2p1x1_8_c5_bm(GetCanvasPixelData(Canvas), raster->BitMap, WIDTH, HEIGHT, 0, 0);
 }
 
@@ -105,20 +105,18 @@ void RenderChunky(int frameNumber, struct DBufRaster *raster) {
  * Main loop.
  */
 void MainLoop() {
-  struct DBufRaster *raster = Raster;
-
   SetVBlankCounter(0);
 
   while (GetVBlankCounter() < 500) {
-    WaitForSafeToWrite(raster);
+    WaitForSafeToWrite(Raster);
 
     int frameNumber = GetVBlankCounter();
 
-    RenderTunnel(frameNumber, raster);
-    RenderChunky(frameNumber, raster);
-    RenderFrameNumber(frameNumber, raster);
+    RenderTunnel(frameNumber, Raster);
+    RenderChunky(frameNumber, Raster);
+    RenderFrameNumber(frameNumber, Raster);
 
-    WaitForSafeToSwap(raster);
-    DBufRasterSwap(raster);
+    WaitForSafeToSwap(Raster);
+    DBufRasterSwap(Raster);
   }
 }
