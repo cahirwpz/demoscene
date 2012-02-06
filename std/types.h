@@ -15,6 +15,8 @@
 typedef enum { FALSE, TRUE } bool;
 
 #define abs(a) ((a) > 0 ? (a) : -(a))
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#define min(a,b) ((a) < (b) ? (a) : (b))
 #define swapi(a,b)	{ (a)^=(b); (b)^=(a); (a)^=(b); }
 #define swapf(a,b)	{ float t; t = (b); (b) = (a); (a) = t; }
 
