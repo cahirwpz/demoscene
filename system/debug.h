@@ -3,7 +3,7 @@
 
 #include <clib/debug_protos.h>
 
-#ifdef NDBEUG
+#ifdef NDEBUG
 #define LOG(...)
 #else
 #define LOG(...) KPrintF(__VA_ARGS__)
