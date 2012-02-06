@@ -2,6 +2,7 @@
 
 #include "p61/p61.h"
 
+#include "gfx/blit.h"
 #include "gfx/line.h"
 #include "gfx/palette.h"
 #include "gfx/transformations.h"
@@ -24,7 +25,9 @@ static CanvasT *Canvas;
 static DBufRasterT *Raster;
 static DistortionMapT *TunnelMap;
 static PixBufT *Texture;
-static PaletteT *Palette;
+static PixBufT *CreditsCode;
+static PixBufT *CreditsMusic;
+static PixBufT *Anniversary;
 
 static PointT *Cross;
 static PointT CrossToDraw[12];
@@ -53,15 +56,30 @@ void TearDownDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  Palette = GetResource("palette");
+  Texture = GetResource("txt_img");
+  CreditsCode = GetResource("code_img");
+  CreditsMusic = GetResource("music_img");
+  Anniversary = GetResource("anniversary_img");
   TunnelMap = GetResource("tunnel_map");
-  Texture = GetResource("texture");
   Cross = GetResource("cross");
 
   Canvas = NewCanvas(WIDTH, HEIGHT);
 
-  LoadPalette(Raster->ViewPort, Palette);
-  SetColor(Raster->ViewPort, 255, 255, 255, 255);
+  {
+    PaletteT *texturePal = GetResource("txt_pal");
+    PaletteT *codePal = GetResource("code_pal");
+    PaletteT *musicPal = GetResource("music_pal");
+    PaletteT *anniversaryPal = GetResource("anniversary_pal");
+
+    LinkPalettes(4, texturePal, codePal, anniversaryPal, musicPal);
+
+    LoadPalette(Raster->ViewPort, texturePal);
+    SetColor(Raster->ViewPort, 255, 255, 255, 255);
+
+    PixBufRemap(CreditsCode, codePal);
+    PixBufRemap(CreditsMusic, musicPal);
+    PixBufRemap(Anniversary, anniversaryPal);
+  }
 
   TS_Init();
 
@@ -76,6 +94,7 @@ void TearDownEffect() {
   P61_End();
   TS_End();
 
+  UnlinkPalettes(GetResource("txt_pal"));
   DeleteCanvas(Canvas);
 }
 
@@ -92,14 +111,18 @@ void RenderTunnel(int frameNumber, DBufRasterT *raster) {
   TS_PushTranslation2D(-1.5f, -1.5f);
   TS_PushScaling2D(20.0f + 10.0f * s, 20.0f + 10.0f * s);
   TS_Compose2D();
-  TS_PushRotation2D((float)(frameNumber*-2));
+  TS_PushRotation2D((float)(frameNumber * -2));
   TS_Compose2D();
-  TS_PushTranslation2D((float)(WIDTH/2) + c * (WIDTH/4), (float)(HEIGHT/2));
+  TS_PushTranslation2D((float)(WIDTH/2) + c * (WIDTH/4), (float)(HEIGHT/2 + 40));
   TS_Compose2D();
 
   M2D_Transform(CrossToDraw, Cross, 12, TS_GetMatrix2D(1));
 
   DrawPolyLine(Canvas, CrossToDraw, 12, TRUE);
+
+  PixBufBlitTransparent(Canvas->pixbuf, 20, 200, CreditsCode);
+  PixBufBlitTransparent(Canvas->pixbuf, 100, 10, Anniversary);
+  PixBufBlitTransparent(Canvas->pixbuf, 230, 200, CreditsMusic);
 }
 
 void RenderChunky(int frameNumber, DBufRasterT *raster) {
