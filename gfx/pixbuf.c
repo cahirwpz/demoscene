@@ -66,5 +66,7 @@ void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {
 
     for (i = 0; i < pixbuf->width * pixbuf->height; i++)
       pixbuf->data[i] += color;
+
+    pixbuf->baseColor = palette->start;
   }
 }
