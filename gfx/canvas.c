@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "system/memory.h"
 #include "gfx/canvas.h"
 
@@ -25,4 +27,9 @@ void DeleteCanvas(CanvasT *canvas) {
 
     DELETE(canvas);
   }
+}
+
+void CanvasFill(CanvasT *canvas, uint8_t color) {
+  memset(canvas->pixbuf->data, color,
+         canvas->clip_area.br.x * canvas->clip_area.br.y);
 }
