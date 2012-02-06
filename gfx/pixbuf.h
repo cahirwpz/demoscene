@@ -2,14 +2,18 @@
 #define __GFX_PIXBUF_H__
 
 #include "std/types.h"
+#include "gfx/palette.h"
 
 typedef struct PixBuf {
-  uint16_t width, height;
   uint8_t *data;
+  uint16_t width, height, colors;
+  uint8_t baseColor;
 } PixBufT;
 
-PixBufT *NewPixBuf(int width, int height);
+PixBufT *NewPixBuf(size_t width, size_t height);
 PixBufT *NewPixBufFromFile(const char *fileName, uint32_t memFlags);
 void DeletePixBuf(PixBufT *pixbuf);
+
+void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
 
 #endif
