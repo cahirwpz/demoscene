@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdarg.h>
 
 #include "system/memory.h"
 #include "system/fileio.h"
@@ -6,7 +7,7 @@
 #include "gfx/palette.h"
 
 PaletteT *NewPalette(size_t count) {
-  PaletteT *palette = NEW_S(PaletteT);
+  PaletteT *palette = NEW_SZ(PaletteT);
 
   if (palette) {
     palette->count = count;
@@ -32,7 +33,7 @@ PaletteT *NewPaletteFromFile(const char *fileName, uint32_t memFlags) {
   PaletteT *palette = NewPalette(count);
 
   if (palette) {
-    uint8_t *raw = &data[1];
+    uint8_t *raw = (uint8_t *)&data[1];
 
     int i;
 
@@ -51,9 +52,47 @@ PaletteT *NewPaletteFromFile(const char *fileName, uint32_t memFlags) {
 }
 
 void DeletePalette(PaletteT *palette) {
-  if (palette)
-    DELETE(palette->colors);
+  while (palette) {
+    PaletteT *next = palette->next;
 
-  DELETE(palette);
+    DELETE(palette->colors);
+    DELETE(palette);
+
+    palette = palette->next;
+  }
 }
 
+bool LinkPalettes(size_t count, ...) {
+  va_list ap;
+
+  va_start(ap, count);
+
+  PaletteT *prev = NULL;
+  int start = 0;
+
+  while (count--) {
+    PaletteT *palette = va_arg(ap, PaletteT *);
+
+    palette->start = start;
+
+    if (prev)
+      prev->next = palette;
+
+    prev = palette;
+    start += palette->count;
+  }
+
+  va_end(ap);
+
+  return (start <= 256) ? TRUE : FALSE;
+}
+
+void UnlinkPalettes(PaletteT *palette) {
+  while (palette) {
+    PaletteT *next = palette->next;
+
+    palette->next = NULL;
+
+    palette = next;
+  }
+}
