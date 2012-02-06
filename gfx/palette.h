@@ -14,6 +14,7 @@ typedef struct Palette {
 PaletteT *NewPalette(size_t count);
 PaletteT *NewPaletteFromFile(const char *fileName, uint32_t memFlags);
 void DeletePalette(PaletteT *palette);
+PaletteT *CopyPalette(PaletteT *palette);
 
 bool LinkPalettes(size_t count, ...);
 void UnlinkPalettes(PaletteT *palette);

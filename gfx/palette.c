@@ -62,6 +62,17 @@ void DeletePalette(PaletteT *palette) {
   }
 }
 
+PaletteT *CopyPalette(PaletteT *palette) {
+  PaletteT *copy = NewPalette(palette->count);
+
+  if (copy) {
+    copy->start = palette->start;
+    memcpy(copy->colors, palette->colors, sizeof(ColorT) * palette->count);
+  }
+
+  return copy;
+}
+
 bool LinkPalettes(size_t count, ...) {
   va_list ap;
 
