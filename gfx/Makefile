@@ -7,7 +7,7 @@ OBJS = blit.o canvas.o hsl.o line.o matrix2d.o matrix3d.o palette.o pixbuf.o  \
 
 all: gfx.lib
 
-blit.o: blit.c blit.h pixmap.h
+blit.o: blit.c blit.h pixbuf.h
 canvas.o: canvas.c canvas.h
 hsl.o: hsl.c hsl.h
 line.o: line.c line.h
