@@ -3,9 +3,9 @@
 #include "p61/p61.h"
 
 #include "gfx/blit.h"
+#include "gfx/hsl.h"
 #include "gfx/line.h"
 #include "gfx/palette.h"
-#include "gfx/transformations.h"
 #include "std/resource.h"
 
 #include "system/c2p.h"
@@ -25,12 +25,8 @@ static CanvasT *Canvas;
 static DBufRasterT *Raster;
 static DistortionMapT *TunnelMap;
 static PixBufT *Texture;
-static PixBufT *CreditsCode;
-static PixBufT *CreditsMusic;
-static PixBufT *Anniversary;
-
-static PointT *Cross;
-static PointT CrossToDraw[12];
+static PixBufT *Credits;
+static PixBufT *Whelpz;
 
 /*
  * Set up display function.
@@ -57,31 +53,25 @@ void TearDownDisplay() {
  */
 void SetupEffect() {
   Texture = GetResource("txt_img");
-  CreditsCode = GetResource("code_img");
-  CreditsMusic = GetResource("music_img");
-  Anniversary = GetResource("anniversary_img");
+  Credits = GetResource("code_img");
+  Whelpz = GetResource("whelpz_img");
   TunnelMap = GetResource("tunnel_map");
-  Cross = GetResource("cross");
 
   Canvas = NewCanvas(WIDTH, HEIGHT);
 
   {
     PaletteT *texturePal = GetResource("txt_pal");
-    PaletteT *codePal = GetResource("code_pal");
-    PaletteT *musicPal = GetResource("music_pal");
-    PaletteT *anniversaryPal = GetResource("anniversary_pal");
+    PaletteT *creditsPal = GetResource("code_pal");
+    PaletteT *whelpzPal = GetResource("whelpz_pal");
 
-    LinkPalettes(4, texturePal, codePal, anniversaryPal, musicPal);
+    LinkPalettes(3, texturePal, creditsPal, whelpzPal);
 
     LoadPalette(Raster->ViewPort, texturePal);
     SetColor(Raster->ViewPort, 255, 255, 255, 255);
 
-    PixBufRemap(CreditsCode, codePal);
-    PixBufRemap(CreditsMusic, musicPal);
-    PixBufRemap(Anniversary, anniversaryPal);
+    PixBufRemap(Credits, creditsPal);
+    PixBufRemap(Whelpz, whelpzPal);
   }
-
-  TS_Init();
 
   P61_Init(GetResource("module"), NULL, NULL);
   P61_ControlBlock.Play = 1;
@@ -92,37 +82,60 @@ void SetupEffect() {
  */
 void TearDownEffect() {
   P61_End();
-  TS_End();
 
   UnlinkPalettes(GetResource("txt_pal"));
   DeleteCanvas(Canvas);
 }
 
 /*
- * Rendering functions.
+ * Effect rendering functions.
  */
+typedef void (*PaletteFunctorT)(int frameNumber, ColorVectorT *hsl);
+
+void CyclicHue(int frameNumber, ColorVectorT *hsl) {
+  hsl->h += (float)(frameNumber & 255) / 256.0f;
+
+  if (hsl->h > 1.0f)
+    hsl->h -= 1.0f;
+}
+
+void PulsingSaturation(int frameNumber, ColorVectorT *hsl) {
+  float s = sin(frameNumber * 3.14159265f / 50.0f) * 1.00f;
+  float change = (s > 0.0f) ? (1.0f - hsl->s) : (hsl->s);
+
+  hsl->s += change * s;
+}
+
+void PulsingLuminosity(int frameNumber, ColorVectorT *hsl) {
+  float s = sin(frameNumber * 3.14159265f / 12.5f) * 0.66f;
+  float change = (s > 0.0f) ? (1.0f - hsl->l) : (hsl->l);
+
+  hsl->l += change * s;
+}
+
+void PaletteEffect(int frameNumber, DBufRasterT *raster,
+                   const char *name, PaletteFunctorT fun) {
+  PaletteT *pal = CopyPalette(GetResource(name));
+
+  int i;
+
+  for (i = 0; i < pal->count; i++) {
+    ColorVectorT hsl;
+
+    RGB2HSL(&pal->colors[i], &hsl);
+    fun(frameNumber, &hsl);
+    HSL2RGB(&hsl, &pal->colors[i]);
+  }
+
+  LoadPalette(raster->ViewPort, pal);
+  DeletePalette(pal);
+}
+
 void RenderTunnel(int frameNumber, DBufRasterT *raster) {
   RenderDistortion(Canvas, TunnelMap, Texture, 0, frameNumber);
 
-  float s = sin(frameNumber * 3.14159265f / 45.0f);
-  float c = cos(frameNumber * 3.14159265f / 90.0f);
-
-  TS_Reset();
-  TS_PushTranslation2D(-1.5f, -1.5f);
-  TS_PushScaling2D(20.0f + 10.0f * s, 20.0f + 10.0f * s);
-  TS_Compose2D();
-  TS_PushRotation2D((float)(frameNumber * -2));
-  TS_Compose2D();
-  TS_PushTranslation2D((float)(WIDTH/2) + c * (WIDTH/4), (float)(HEIGHT/2 + 40));
-  TS_Compose2D();
-
-  M2D_Transform(CrossToDraw, Cross, 12, TS_GetMatrix2D(1));
-
-  DrawPolyLine(Canvas, CrossToDraw, 12, TRUE);
-
-  PixBufBlitTransparent(Canvas->pixbuf, 20, 200, CreditsCode);
-  PixBufBlitTransparent(Canvas->pixbuf, 100, 10, Anniversary);
-  PixBufBlitTransparent(Canvas->pixbuf, 230, 200, CreditsMusic);
+  PixBufBlitTransparent(Canvas->pixbuf, 200, 20, Credits);
+  PixBufBlitTransparent(Canvas->pixbuf, 0, 137, Whelpz);
 }
 
 void RenderChunky(int frameNumber, DBufRasterT *raster) {
@@ -135,10 +148,14 @@ void RenderChunky(int frameNumber, DBufRasterT *raster) {
 void MainLoop() {
   SetVBlankCounter(0);
 
-  while (GetVBlankCounter() < 500) {
+  while (GetVBlankCounter() < 50*60*2) {
     WaitForSafeToWrite(Raster);
 
     int frameNumber = GetVBlankCounter();
+
+    PaletteEffect(frameNumber, Raster, "txt_pal", CyclicHue);
+    PaletteEffect(frameNumber, Raster, "whelpz_pal", PulsingSaturation);
+    PaletteEffect(frameNumber, Raster, "code_pal", PulsingLuminosity);
 
     RenderTunnel(frameNumber, Raster);
     RenderChunky(frameNumber, Raster);
