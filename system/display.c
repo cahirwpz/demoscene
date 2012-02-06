@@ -4,6 +4,7 @@
 #include <graphics/videocontrol.h>
 #include <graphics/gfxbase.h>
 
+#include "debug.h"
 #include "display.h"
 #include "memory.h"
 
@@ -104,12 +105,15 @@ void ConfigureViewPort(ViewPortT *viewPort) {
 void LoadPalette(ViewPortT *viewPort, PaletteT *palette) {
   size_t i;
 
-  for (i = 0; i < palette->count; i++) {
-    uint32_t r = palette->colors[i].r;
-    uint32_t g = palette->colors[i].g;
-    uint32_t b = palette->colors[i].b;
+  while (palette) {
+    for (i = 0; i < palette->count; i++)
+      SetColor(viewPort,
+               palette->start + i,
+               palette->colors[i].r,
+               palette->colors[i].g,
+               palette->colors[i].b);
 
-    SetRGB32(viewPort, palette->start + i, r << 24, g << 24, b << 24);
+    palette = palette->next;
   }
 }
 
