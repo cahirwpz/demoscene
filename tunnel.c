@@ -26,6 +26,8 @@ static DistortionMapT *TunnelMap;
 static PixBufT *Texture;
 static PixBufT *Credits;
 static PixBufT *Whelpz;
+static PaletteT *OrigPal;
+static PaletteT *EffectPal;
 
 /*
  * Set up display function.
@@ -50,8 +52,11 @@ void SetupEffect() {
     PaletteT *creditsPal = GetResource("code_pal");
     PaletteT *whelpzPal = GetResource("whelpz_pal");
 
-    LinkPalettes(3, texturePal, creditsPal, whelpzPal);
+    LinkPalettes(3, texturePal, whelpzPal, creditsPal);
     LoadPalette(texturePal);
+
+    OrigPal = texturePal;
+    EffectPal = CopyPalette(OrigPal);
 
     PixBufRemap(Credits, creditsPal);
     PixBufRemap(Whelpz, whelpzPal);
@@ -67,7 +72,8 @@ void SetupEffect() {
 void TearDownEffect() {
   P61_End();
 
-  UnlinkPalettes(GetResource("txt_pal"));
+  DeletePalette(EffectPal);
+  UnlinkPalettes(OrigPal);
   DeleteCanvas(Canvas);
 }
 
@@ -97,21 +103,31 @@ void PulsingLuminosity(int frameNumber, ColorVectorT *hsl) {
   hsl->l += change * s;
 }
 
-void PaletteEffect(int frameNumber, const char *name, PaletteFunctorT fun) {
-  PaletteT *pal = CopyPalette(GetResource(name));
+static PaletteFunctorT PalEffects[] = {
+  CyclicHue,
+  PulsingSaturation,
+  PulsingLuminosity
+};
 
-  int i;
+void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst, PaletteFunctorT *func) {
+  while (src) {
+    if (!(dst && func && src->count == dst->count && src->start == dst->start))
+      break;
 
-  for (i = 0; i < pal->count; i++) {
-    ColorVectorT hsl;
+    int i;
 
-    RGB2HSL(&pal->colors[i], &hsl);
-    fun(frameNumber, &hsl);
-    HSL2RGB(&hsl, &pal->colors[i]);
+    for (i = 0; i < src->count; i++) {
+      ColorVectorT hsl;
+
+      RGB2HSL(&src->colors[i], &hsl);
+      (*func)(frameNumber, &hsl);
+      HSL2RGB(&hsl, &dst->colors[i]);
+    }
+
+    src = src->next;
+    dst = dst->next;
+    func++;
   }
-
-  LoadPalette(pal);
-  DeletePalette(pal);
 }
 
 void RenderTunnel(int frameNumber) {
@@ -134,9 +150,8 @@ void MainLoop() {
   while (GetVBlankCounter() < 50*60*2) {
     int frameNumber = GetVBlankCounter();
 
-    PaletteEffect(frameNumber, "txt_pal", CyclicHue);
-    PaletteEffect(frameNumber, "whelpz_pal", PulsingSaturation);
-    PaletteEffect(frameNumber, "code_pal", PulsingLuminosity);
+    PaletteEffect(frameNumber, OrigPal, EffectPal, PalEffects);
+    LoadPalette(EffectPal);
 
     RenderTunnel(frameNumber);
     RenderChunky(frameNumber);
