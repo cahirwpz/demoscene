@@ -3,6 +3,7 @@
 #include <proto/exec.h>
 
 #include "std/resource.h"
+#include "system/check.h"
 #include "system/display.h"
 #include "system/input.h"
 #include "system/vblank.h"
@@ -19,11 +20,11 @@ extern void TearDownEffect();
 extern void SetupEffect();
 
 int main() {
-  DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 40);
-  GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 40);
-  IntuitionBase = (struct IntuitionBase *)OpenLibrary("intuition.library", 40);
+  DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 39);
+  GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 39);
+  IntuitionBase = (struct IntuitionBase *)OpenLibrary("intuition.library", 39);
 
-  if (DOSBase && GfxBase && IntuitionBase) {
+  if (DOSBase && GfxBase && IntuitionBase && SystemCheck()) {
     if (ResourcesAlloc() && ResourcesInit()) {
       if (InitEventHandler()) {
         if (SetupDisplay()) {
