@@ -58,7 +58,7 @@ void DeletePalette(PaletteT *palette) {
     DELETE(palette->colors);
     DELETE(palette);
 
-    palette = palette->next;
+    palette = next;
   }
 }
 
