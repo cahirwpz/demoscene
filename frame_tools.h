@@ -3,6 +3,6 @@
 
 #include "system/display.h"
 
-void RenderFrameNumber(int frameNumber, struct DBufRaster *raster);
+void RenderFrameNumber(int frameNumber);
 
 #endif

@@ -22,7 +22,6 @@ const int HEIGHT = 256;
 const int DEPTH = 8;
 
 static CanvasT *Canvas;
-static DBufRasterT *Raster;
 static DistortionMapT *TunnelMap;
 static PixBufT *Texture;
 static PixBufT *Credits;
@@ -31,21 +30,8 @@ static PixBufT *Whelpz;
 /*
  * Set up display function.
  */
-struct ViewPort *SetupDisplay() {
-  if ((Raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH))) {
-    ConfigureViewPort(Raster->ViewPort);
-
-    return Raster->ViewPort;
-  }
-
-  return NULL;
-}
-
-/*
- * Tear down display function.
- */
-void TearDownDisplay() {
-  DeleteDBufRaster(Raster);
+bool SetupDisplay() {
+  return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 /*
@@ -65,9 +51,7 @@ void SetupEffect() {
     PaletteT *whelpzPal = GetResource("whelpz_pal");
 
     LinkPalettes(3, texturePal, creditsPal, whelpzPal);
-
-    LoadPalette(Raster->ViewPort, texturePal);
-    SetColor(Raster->ViewPort, 255, 255, 255, 255);
+    LoadPalette(texturePal);
 
     PixBufRemap(Credits, creditsPal);
     PixBufRemap(Whelpz, whelpzPal);
@@ -113,8 +97,7 @@ void PulsingLuminosity(int frameNumber, ColorVectorT *hsl) {
   hsl->l += change * s;
 }
 
-void PaletteEffect(int frameNumber, DBufRasterT *raster,
-                   const char *name, PaletteFunctorT fun) {
+void PaletteEffect(int frameNumber, const char *name, PaletteFunctorT fun) {
   PaletteT *pal = CopyPalette(GetResource(name));
 
   int i;
@@ -127,19 +110,19 @@ void PaletteEffect(int frameNumber, DBufRasterT *raster,
     HSL2RGB(&hsl, &pal->colors[i]);
   }
 
-  LoadPalette(raster->ViewPort, pal);
+  LoadPalette(pal);
   DeletePalette(pal);
 }
 
-void RenderTunnel(int frameNumber, DBufRasterT *raster) {
+void RenderTunnel(int frameNumber) {
   RenderDistortion(Canvas, TunnelMap, Texture, 0, frameNumber);
 
   PixBufBlitTransparent(Canvas->pixbuf, 200, 20, Credits);
   PixBufBlitTransparent(Canvas->pixbuf, 0, 137, Whelpz);
 }
 
-void RenderChunky(int frameNumber, DBufRasterT *raster) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(Canvas), raster->BitMap, WIDTH, HEIGHT, 0, 0);
+void RenderChunky(int frameNumber) {
+  c2p1x1_8_c5_bm(GetCanvasPixelData(Canvas), GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -149,19 +132,16 @@ void MainLoop() {
   SetVBlankCounter(0);
 
   while (GetVBlankCounter() < 50*60*2) {
-    WaitForSafeToWrite(Raster);
-
     int frameNumber = GetVBlankCounter();
 
-    PaletteEffect(frameNumber, Raster, "txt_pal", CyclicHue);
-    PaletteEffect(frameNumber, Raster, "whelpz_pal", PulsingSaturation);
-    PaletteEffect(frameNumber, Raster, "code_pal", PulsingLuminosity);
+    PaletteEffect(frameNumber, "txt_pal", CyclicHue);
+    PaletteEffect(frameNumber, "whelpz_pal", PulsingSaturation);
+    PaletteEffect(frameNumber, "code_pal", PulsingLuminosity);
 
-    RenderTunnel(frameNumber, Raster);
-    RenderChunky(frameNumber, Raster);
-    RenderFrameNumber(frameNumber, Raster);
+    RenderTunnel(frameNumber);
+    RenderChunky(frameNumber);
+    RenderFrameNumber(frameNumber);
 
-    WaitForSafeToSwap(Raster);
-    DBufRasterSwap(Raster);
+    DisplaySwap();
   }
 }

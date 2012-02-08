@@ -17,7 +17,6 @@ const int HEIGHT = 256;
 const int DEPTH = 8;
 
 static CanvasT *Canvas;
-static DBufRasterT *Raster;
 
 static PointT *Cross;
 static PointT CrossToDraw[12];
@@ -25,21 +24,8 @@ static PointT CrossToDraw[12];
 /*
  * Set up display function.
  */
-struct ViewPort *SetupDisplay() {
-  if ((Raster = NewDBufRaster(WIDTH, HEIGHT, DEPTH))) {
-    ConfigureViewPort(Raster->ViewPort);
-
-    return Raster->ViewPort;
-  }
-
-  return NULL;
-}
-
-/*
- * Tear down display function.
- */
-void TearDownDisplay() {
-  DeleteDBufRaster(Raster);
+bool SetupDisplay() {
+  return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 /*
@@ -47,13 +33,7 @@ void TearDownDisplay() {
  */
 void SetupEffect() {
   Cross = GetResource("cross");
-
   Canvas = NewCanvas(WIDTH, HEIGHT);
-
-  int i = 0;
-
-  for (i = 0; i < 256; i++)
-    SetColor(Raster->ViewPort, i, i, i, i);
 
   TS_Init();
 }
@@ -70,7 +50,7 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
-void RenderVector(int frameNumber, DBufRasterT *raster) {
+void RenderVector(int frameNumber) {
   float s = sin(frameNumber * 3.14159265f / 45.0f);
   float c = cos(frameNumber * 3.14159265f / 90.0f);
 
@@ -89,8 +69,8 @@ void RenderVector(int frameNumber, DBufRasterT *raster) {
   DrawPolyLine(Canvas, CrossToDraw, 12, TRUE);
 }
 
-void RenderChunky(int frameNumber, DBufRasterT *raster) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(Canvas), raster->BitMap, WIDTH, HEIGHT, 0, 0);
+void RenderChunky(int frameNumber) {
+  c2p1x1_8_c5_bm(GetCanvasPixelData(Canvas), GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -100,15 +80,12 @@ void MainLoop() {
   SetVBlankCounter(0);
 
   while (GetVBlankCounter() < 500) {
-    WaitForSafeToWrite(Raster);
-
     int frameNumber = GetVBlankCounter();
 
-    RenderVector(frameNumber, Raster);
-    RenderChunky(frameNumber, Raster);
-    RenderFrameNumber(frameNumber, Raster);
+    RenderVector(frameNumber);
+    RenderChunky(frameNumber);
+    RenderFrameNumber(frameNumber);
 
-    WaitForSafeToSwap(Raster);
-    DBufRasterSwap(Raster);
+    DisplaySwap();
   }
 }
