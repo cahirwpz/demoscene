@@ -9,10 +9,14 @@
 #include <graphics/videocontrol.h>
 #include <graphics/gfxbase.h>
 #include <intuition/screens.h>
+#include <hardware/custom.h>
+#include <hardware/dmabits.h>
 
 #include "debug.h"
 #include "display.h"
 #include "memory.h"
+
+extern __far struct Custom custom;
 
 typedef struct ViewPort ViewPortT;
 typedef struct Screen ScreenT;
@@ -147,6 +151,7 @@ void DisplaySwap() {
 
   MakeScreen(Display->Screen);
   RethinkDisplay();
+  custom.dmacon = BITCLR|DMAF_SPRITE;
 }
 
 BitMapT *GetCurrentBitMap() {
