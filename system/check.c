@@ -9,10 +9,10 @@
 #include "system/check.h"
 
 bool SystemCheck() {
-  bool kickv40 = (SysBase->LibNode.lib_Version >= 40) ? TRUE : FALSE;
-  bool chipaga = (GfxBase->ChipRevBits0 & (GFXF_AA_ALICE|GFXF_AA_LISA)) ? TRUE : FALSE;
-  bool cpu68040 = (SysBase->AttnFlags & AFF_68040) ? TRUE : FALSE;
-  bool fpu68882 = (SysBase->AttnFlags & AFF_68882) ? TRUE : FALSE;
+  bool kickv40 = SysBase->LibNode.lib_Version >= 40;
+  bool chipaga = GfxBase->ChipRevBits0 & (GFXF_AA_ALICE|GFXF_AA_LISA);
+  bool cpu68040 = SysBase->AttnFlags & AFF_68040;
+  bool fpu68882 = SysBase->AttnFlags & AFF_68882;
 
   Printf("System check:\n");
   Printf(" - Kickstart v40 : %s\n", kickv40 ? "yes" : "no");
