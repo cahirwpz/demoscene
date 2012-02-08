@@ -63,10 +63,20 @@ void DeletePalette(PaletteT *palette) {
 }
 
 PaletteT *CopyPalette(PaletteT *palette) {
+  PaletteT *rec_copy = NULL;
+
+  if (palette->next) {
+    rec_copy = CopyPalette(palette->next);
+
+    if (!rec_copy)
+      return NULL;
+  }
+
   PaletteT *copy = NewPalette(palette->count);
 
   if (copy) {
     copy->start = palette->start;
+    copy->next = rec_copy;
     memcpy(copy->colors, palette->colors, sizeof(ColorT) * palette->count);
   }
 
