@@ -141,11 +141,9 @@ void KillDisplay() {
 }
 
 void DisplaySwap() {
-  BitMapT *bitmap = GetCurrentBitMap();
-
-  Display->Screen->RastPort.BitMap = bitmap;
-  Display->Screen->ViewPort.RasInfo->BitMap = bitmap;
+  Display->Screen->ViewPort.RasInfo->BitMap = GetCurrentBitMap();
   Display->CurrentBitMap ^= 1;
+  Display->Screen->RastPort.BitMap = GetCurrentBitMap();
 
   MakeScreen(Display->Screen);
   RethinkDisplay();
