@@ -10,7 +10,7 @@ void RenderFrameNumber(int frameNumber) {
 
   SetDrMd(rastPort, JAM1);
 
-  char number[4];
+  char number[5];
 
   sprintf(number, "%04d", frameNumber);
 
