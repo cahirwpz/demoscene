@@ -3,7 +3,7 @@ TOPDIR = $(CURDIR)/..
 include $(TOPDIR)/Makefile.common
 
 OBJS = blit.o canvas.o hsl.o line.o matrix2d.o matrix3d.o palette.o pixbuf.o  \
-			 transformations.o
+			 transformations.o triangle.o
 
 all: gfx.lib
 
@@ -16,6 +16,7 @@ matrix3d.o: matrix3d.c matrix3d.h
 palette.o: palette.c palette.h common.h
 pixbuf.o: pixbuf.c pixbuf.h
 transformations.o: transformations.c transformations.h matrix2d.h matrix3d.h
+triangle.o: triangle.c triangle.h canvas.h
 
 gfx.lib: $(OBJS)
 
