@@ -3,6 +3,7 @@ _UAEFSDB.___
 artwork/
 data/
 *~
+*.pyc
 *.o
 *.lib
 *.info
