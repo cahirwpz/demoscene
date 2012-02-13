@@ -15,7 +15,7 @@ class Parser(object):
     with open(filename) as iff:
       chunk = Chunk(iff)
 
-      logging.error('Reading file "%s"' % filename)
+      logging.info('Reading file "%s"' % filename)
 
       if chunk.getname() == 'FORM' and chunk.read(4) == self._kind:
         iff.seek(12)
@@ -30,7 +30,7 @@ class Parser(object):
           size = chunk.getsize()
           data = chunk.read()
 
-          logging.info('Encountered %s chunk of size %d' % (name, size))
+          logging.debug('Encountered %s chunk of size %d' % (name, size))
 
           self._chunks.append(self._parseChunk(name, data))
       else:
