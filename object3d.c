@@ -19,6 +19,9 @@ const int HEIGHT = 256;
 const int DEPTH = 8;
 
 static CanvasT *Canvas;
+static ObjectT *Object;
+static VertexT *Vertices;
+static PointT *Points;
 
 /*
  * Set up display function.
@@ -34,6 +37,12 @@ void SetupEffect() {
   Canvas = NewCanvas(WIDTH, HEIGHT);
   CanvasFill(Canvas, 0);
 
+  Object = GetResource("object");
+  CenterObjectPosition(Object);
+  NormalizeObject(Object);
+  Points = NEW_A(PointT, Object->vertex_count);
+  Vertices = NEW_A(VertexT, Object->vertex_count);
+
   TS_Init();
 }
 
@@ -43,13 +52,41 @@ void SetupEffect() {
 void TearDownEffect() {
   TS_End();
 
+  DELETE(Points);
+  DELETE(Vertices);
   DeleteCanvas(Canvas);
 }
 
 /*
  * Effect rendering functions.
  */
-void RenderVector(int frameNumber) {
+void RenderObject(int frameNumber) {
+  size_t i;
+
+  TS_Reset();
+  TS_PushIdentity3D();
+  TS_PushRotation3D((float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
+  TS_Compose3D();
+  TS_PushTranslation3D(0.0f, 0.0f, 2.0f);
+  TS_Compose3D();
+  TS_PushScaling3D(60.0f, 60.0f, 60.0f);
+  TS_Compose3D();
+  TS_PushPerspective(0, 0, 160.0f);
+  TS_Compose3D();
+
+  M3D_Project2D(WIDTH/2, HEIGHT/2, Points, Object->vertex, Object->vertex_count, TS_GetMatrix3D(1));
+
+  CanvasFill(Canvas, 0);
+
+  for (i = 0; i < Object->triangle_count; i++) {
+    size_t p1 = Object->triangle[i].p1;
+    size_t p2 = Object->triangle[i].p2;
+    size_t p3 = Object->triangle[i].p3;
+
+    DrawLine(Canvas, Points[p1].x, Points[p1].y, Points[p2].x, Points[p2].y);
+    DrawLine(Canvas, Points[p2].x, Points[p2].y, Points[p3].x, Points[p3].y);
+    DrawLine(Canvas, Points[p3].x, Points[p3].y, Points[p1].x, Points[p1].y);
+  }
 }
 
 void RenderChunky(int frameNumber) {
@@ -62,10 +99,10 @@ void RenderChunky(int frameNumber) {
 void MainLoop() {
   SetVBlankCounter(0);
 
-  while (GetVBlankCounter() < 500) {
+  while (GetVBlankCounter() < 2500) {
     int frameNumber = GetVBlankCounter();
 
-    RenderVector(frameNumber);
+    RenderObject(frameNumber);
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
