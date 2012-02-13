@@ -101,9 +101,9 @@ void M3D_Transform(VertexT *dst, VertexT *src, int n, Matrix3D *m) {
     float y = src[i].y;
     float z = src[i].z;
 
-    dst[i].x = (int16_t)(M(m,0,0) * x + M(m,1,0) * y + M(m,2,0) * z + M(m,3,0));
-    dst[i].y = (int16_t)(M(m,0,1) * x + M(m,1,1) * y + M(m,2,1) * z + M(m,3,1));
-    dst[i].z = (int16_t)(M(m,0,2) * x + M(m,1,2) * y + M(m,2,2) * z + M(m,3,2));
+    dst[i].x = M(m,0,0) * x + M(m,1,0) * y + M(m,2,0) * z + M(m,3,0);
+    dst[i].y = M(m,0,1) * x + M(m,1,1) * y + M(m,2,1) * z + M(m,3,1);
+    dst[i].z = M(m,0,2) * x + M(m,1,2) * y + M(m,2,2) * z + M(m,3,2);
   }
 }
 

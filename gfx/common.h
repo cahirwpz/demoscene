@@ -13,7 +13,7 @@ typedef struct Point {
 } PointT;
 
 typedef struct Vertex {
-  int16_t x, y, z;
+  float x, y, z;
 } VertexT;
 
 typedef struct Rect {
