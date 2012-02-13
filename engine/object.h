@@ -19,5 +19,7 @@ typedef struct Object {
 ObjectT *NewObject(size_t vertices, size_t triangles);
 ObjectT *NewObjectFromFile(const char *fileName, uint32_t memFlags);
 void DeleteObject(ObjectT *object);
+void NormalizeObject(ObjectT *object);
+void CenterObjectPosition(ObjectT *object);
 
 #endif

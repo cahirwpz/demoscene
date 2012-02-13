@@ -58,3 +58,41 @@ void DeleteObject(ObjectT *object) {
 
   DELETE(object);
 }
+
+void CenterObjectPosition(ObjectT *object) {
+  VertexT med = { 0.0f, 0.0f, 0.0f };
+  int i;
+
+  for (i = 0; i < object->vertex_count; i++) {
+    med.x += object->vertex[i].x;
+    med.y += object->vertex[i].y;
+    med.z += object->vertex[i].z;
+  }
+
+  med.x /= object->vertex_count;
+  med.y /= object->vertex_count;
+  med.z /= object->vertex_count;
+
+  for (i = 0; i < object->vertex_count; i++) {
+    object->vertex[i].x -= med.x;
+    object->vertex[i].y -= med.y; 
+    object->vertex[i].z -= med.z; 
+  }
+}
+
+void NormalizeObject(ObjectT *object) {
+  float m = 0.0f;
+  int i;
+
+  for (i = 0; i < object->vertex_count; i++) {
+    m = max(abs(object->vertex[i].x), m); 
+    m = max(abs(object->vertex[i].y), m); 
+    m = max(abs(object->vertex[i].z), m); 
+  }
+
+  for (i = 0; i < object->vertex_count; i++) {
+    object->vertex[i].x /= m;
+    object->vertex[i].y /= m; 
+    object->vertex[i].z /= m; 
+  }
+}
