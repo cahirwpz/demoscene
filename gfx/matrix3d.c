@@ -90,7 +90,7 @@ void M3D_LoadPerspective(Matrix3D *d, float viewerX, float viewerY, float viewer
   M(d,3,0) = -viewerX;
   M(d,3,1) = -viewerY;
   M(d,2,3) = 1.0f / viewerZ;
-  M(d,3,3) = 0;
+  M(d,3,3) = 0.0f;
 }
 
 void M3D_Transform(VertexT *dst, VertexT *src, int n, Matrix3D *m) {
@@ -107,7 +107,8 @@ void M3D_Transform(VertexT *dst, VertexT *src, int n, Matrix3D *m) {
   }
 }
 
-void M3D_Project2D(PointT *dst, VertexT *src, int n, Matrix3D *m) {
+void M3D_Project2D(int centerX, int centerY,
+                   PointT *dst, VertexT *src, int n, Matrix3D *m) {
   int i;
 
   for (i = 0; i < n; i++) {
@@ -117,9 +118,9 @@ void M3D_Project2D(PointT *dst, VertexT *src, int n, Matrix3D *m) {
 
     float pX = M(m,0,0) * x + M(m,1,0) * y + M(m,2,0) * z + M(m,3,0);
     float pY = M(m,0,1) * x + M(m,1,1) * y + M(m,2,1) * z + M(m,3,1);
-    float pZ = M(m,0,3) * x + M(m,1,3) * y + M(m,2,3) * z + M(m,3,3);
+    float pW = M(m,0,3) * x + M(m,1,3) * y + M(m,2,3) * z + M(m,3,3);
 
-    dst[i].x = (int16_t)(pX / pZ);
-    dst[i].y = (int16_t)(pY / pZ);
+    dst[i].x = pX / pW + centerX;
+    dst[i].y = pY / pW + centerY;
   }
 }

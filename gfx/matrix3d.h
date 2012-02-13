@@ -18,6 +18,7 @@ void M3D_LoadPerspective(Matrix3D *d,
                          float viewerX, float viewerY, float viewerZ);
 
 void M3D_Transform(VertexT *dst, VertexT *src, int n, Matrix3D *m);
-void M3D_Project2D(PointT *dst, VertexT *src, int n, Matrix3D *m);
+void M3D_Project2D(int centerX, int centerY,
+                   PointT *dst, VertexT *src, int n, Matrix3D *m);
 
 #endif
