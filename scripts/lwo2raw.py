@@ -117,7 +117,7 @@ def main():
 
   if not args.output.endswith('.robj'):
     try:
-      name = args.input.rsplit('.', 1)[0]
+      name = args.output.rsplit('.', 1)[0]
     except:
       pass
     args.output = os.path.join(name + '.robj')
@@ -130,22 +130,23 @@ def main():
         ' "-f" to override).' % args.output)
 
   lwob = LWOB()
-  lwob.loadFile(args.input)
 
-  logging.info('Object has %d points, and %d polygons.',
-      len(lwob.points), len(lwob.polygons))
+  if lwob.loadFile(args.input):
+    logging.info('Object has %d points, and %d polygons.',
+        len(lwob.points), len(lwob.polygons))
 
-  with open(args.output, 'w') as robj:
-    robj.write(struct.pack('>HH', len(lwob.points), len(lwob.polygons)))
+    with open(args.output, 'w') as robj:
+      robj.write(struct.pack('>HH', len(lwob.points), len(lwob.polygons)))
 
-    for x, y, z in lwob.points:
-      robj.write(struct.pack('>fff', x, y, z))
+      for x, y, z in lwob.points:
+        robj.write(struct.pack('>fff', x, y, z))
 
-    for points, _ in lwob.polygons:
-      assert len(points) == 3
-      robj.write(struct.pack('>HHH', *points))
+      for points, _ in lwob.polygons:
+        if len(points) != 3:
+          raise SystemExit('Polygon triangulation not yet supported.')
+        robj.write(struct.pack('>HHH', *points))
 
-  logging.info('Wrote Raw Object file to: "%s"', args.output)
+    logging.info('Wrote Raw Object file to: "%s"', args.output)
 
 
 if __name__ == '__main__':
