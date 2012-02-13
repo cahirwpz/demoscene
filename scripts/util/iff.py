@@ -55,13 +55,13 @@ class Parser(object):
 
     return (orig_name, data)
 
-  def _getChunk(self, name):
+  def _getChunk(self, name, always_list=False):
     chunks = [c for n, c in self._chunks if n == name]
 
     if not chunks:
       raise ValueError('No chunk named %s.' % name)
 
-    if len(chunks) == 1:
+    if len(chunks) == 1 and not always_list:
       return chunks[0]
     else:
       return chunks

@@ -65,7 +65,7 @@ class LWOB(iff.Parser):
     name = data[:i]
     data = data[i:].lstrip('\0')
 
-    return (name, self._parseMiniChunks(data))
+    return (name, dict(self._parseMiniChunks(data)))
 
   def handleFloat(self, data):
     return struct.unpack('>f', data)[0]
@@ -92,6 +92,14 @@ class LWOB(iff.Parser):
   @property
   def points(self):
     return self._getChunk('PNTS')
+
+  @property
+  def surfaceNames(self):
+    return self._getChunk('SRFS')
+
+  @property
+  def surfaces(self):
+    return dict(self._getChunk('SURF', always_list=True))
 
 
 def main():
