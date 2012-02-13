@@ -87,15 +87,11 @@ class LWOB(iff.Parser):
 
   @property
   def polygons(self):
-    for name, chunk in self._chunks:
-      if name == 'POLS':
-        return chunk
+    return self._getChunk('POLS')
         
   @property
   def points(self):
-    for name, chunk in self._chunks:
-      if name == 'PNTS':
-        return chunk
+    return self._getChunk('PNTS')
 
 
 def main():

@@ -54,3 +54,14 @@ class Parser(object):
       logging.warning('No handler for %s chunk.' % orig_name)
 
     return (orig_name, data)
+
+  def _getChunk(self, name):
+    chunks = [c for n, c in self._chunks if n == name]
+
+    if not chunks:
+      raise ValueError('No chunk named %s.' % name)
+
+    if len(chunks) == 1:
+      return chunks[0]
+    else:
+      return chunks
