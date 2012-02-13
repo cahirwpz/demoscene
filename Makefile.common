@@ -1,8 +1,8 @@
-CC	= vc +small -warn=2
-AS	= vc +small -warn=2
+CC	= vc +small
+AS	= vc +small
 CFLAGS	= -O2 -cpu=68020 -fpu=68882 -I$(realpath $(TOPDIR))
 ASFLAGS = -O2 -cpu=68020 -fpu=68882 -I$(realpath $(TOPDIR))
-LIBS	= -ldebug -lamigas 
+LIBS	= -lamigas -ldebug 
 
 %.o: %.s
 	$(AS) $(ASFLAGS) -c -o $@ $<
