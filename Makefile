@@ -20,11 +20,11 @@ std:
 engine:
 	$(MAKE) -C $@
 
-tunnel: startup_effect.o tunnel.o tunnel_res.o distortion.o distortion_opt.o \
+tunnel: startup_effect.o tunnel.o res_tunnel.o distortion.o distortion_opt.o \
 	frame_tools.o p61/p61.lib system/system.lib gfx/gfx.lib std/std.lib
 	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
 
-vector2d: startup_effect.o vector2d.o vector2d_res.o frame_tools.o \
+vector2d: startup_effect.o vector2d.o res_vector2d.o frame_tools.o \
 	system/system.lib gfx/gfx.lib std/std.lib
 	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
 
