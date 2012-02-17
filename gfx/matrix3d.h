@@ -2,6 +2,7 @@
 #define __GFX_MATRIX3D_H__
 
 #include "gfx/common.h"
+#include "gfx/vector3d.h"
 
 typedef float Matrix3D[4][4];
 
@@ -17,8 +18,8 @@ void M3D_LoadTranslation(Matrix3D *d, float moveX, float moveY, float moveZ);
 void M3D_LoadPerspective(Matrix3D *d,
                          float viewerX, float viewerY, float viewerZ);
 
-void M3D_Transform(VertexT *dst, VertexT *src, int n, Matrix3D *m);
+void M3D_Transform(Vector3D *dst, Vector3D *src, int n, Matrix3D *m);
 void M3D_Project2D(int centerX, int centerY,
-                   PointT *dst, VertexT *src, int n, Matrix3D *m);
+                   PointT *dst, Vector3D *src, int n, Matrix3D *m);
 
 #endif

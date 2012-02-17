@@ -93,7 +93,7 @@ void M3D_LoadPerspective(Matrix3D *d, float viewerX, float viewerY, float viewer
   M(d,3,3) = 0.0f;
 }
 
-void M3D_Transform(VertexT *dst, VertexT *src, int n, Matrix3D *m) {
+void M3D_Transform(Vector3D *dst, Vector3D *src, int n, Matrix3D *m) {
   int i;
 
   for (i = 0; i < n; i++) {
@@ -108,7 +108,7 @@ void M3D_Transform(VertexT *dst, VertexT *src, int n, Matrix3D *m) {
 }
 
 void M3D_Project2D(int centerX, int centerY,
-                   PointT *dst, VertexT *src, int n, Matrix3D *m) {
+                   PointT *dst, Vector3D *src, int n, Matrix3D *m) {
   int i;
 
   for (i = 0; i < n; i++) {
