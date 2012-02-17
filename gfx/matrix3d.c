@@ -28,6 +28,17 @@ void M3D_Multiply(Matrix3D *d, Matrix3D *a, Matrix3D *b) {
   }
 }
 
+void M3D_InvMultiply(Matrix3D *d, Matrix3D *a, Matrix3D *b) {
+  int i, j, k;
+
+  M_FOREACH(i, j) {
+    M(d,i,j) = 0.0f;
+
+    for (k = 0; k < 4; k++)
+      M(d,i,j) += M(a,k,i) * M(b,k,j);
+  }
+}
+
 void M3D_Transpose(Matrix3D *d, Matrix3D *a) {
   int i, j; 
 
