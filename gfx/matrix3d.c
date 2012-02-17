@@ -124,3 +124,53 @@ void M3D_Project2D(int centerX, int centerY,
     dst[i].y = pY / pW + centerY;
   }
 }
+
+void M3D_LoadCameraFromVector(
+    Matrix3D *camera, Vector3D *direction, Vector3D *position)
+{
+    // unit vector pointing to focal point
+    Vector3D d;
+
+    V3D_Normalize(&d, direction, 1.0f);
+
+    // unit vector pointed upwards
+    float t = V3D_Dot(position, &d);
+
+    Vector3D u;
+
+    V3D_Scale(&u, &d, t);
+    V3D_Sub(&u, position, &u);
+    V3D_Normalize(&u, &u, 1.0f);
+
+    // unit vector pointer to the right 
+    Vector3D r;
+
+    V3D_Cross(&r, &u, &d);
+
+    M3D_LoadIdentity(camera);
+
+    M(camera,0,0) = r.x;
+    M(camera,1,0) = r.y;
+    M(camera,2,0) = r.z;
+    M(camera,3,0) = position->x;
+    M(camera,0,1) = u.x;
+    M(camera,1,1) = u.y;
+    M(camera,2,1) = u.z;
+    M(camera,3,1) = position->y;
+    M(camera,0,2) = d.x;
+    M(camera,1,2) = d.y;
+    M(camera,2,2) = d.z;
+    M(camera,3,2) = position->z;
+}
+
+void M3D_LoadCameraFromAngles(
+    Matrix3D *camera, float azimuth, float elevation, Vector3D *position)
+{
+  Vector3D direction = {
+    sin(elevation) * cos(azimuth),
+    sin(elevation) * sin(azimuth),
+    cos(elevation),
+    1.0f };
+
+  M3D_LoadCameraFromVector(camera, &direction, position);
+}

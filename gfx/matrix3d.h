@@ -21,5 +21,9 @@ void M3D_LoadPerspective(Matrix3D *d,
 void M3D_Transform(Vector3D *dst, Vector3D *src, int n, Matrix3D *m);
 void M3D_Project2D(int centerX, int centerY,
                    PointT *dst, Vector3D *src, int n, Matrix3D *m);
+void M3D_LoadCameraFromVector(
+    Matrix3D *camera, Vector3D *direction, Vector3D *position);
+void M3D_LoadCameraFromAngles(
+    Matrix3D *camera, float azimuth, float elevation, Vector3D *position);
 
 #endif
