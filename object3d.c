@@ -20,7 +20,7 @@ const int DEPTH = 8;
 
 static CanvasT *Canvas;
 static ObjectT *Object;
-static VertexT *Vertices;
+static Vector3D *Vertices;
 static PointT *Points;
 
 /*
@@ -41,7 +41,7 @@ void SetupEffect() {
   CenterObjectPosition(Object);
   NormalizeObject(Object);
   Points = NEW_A(PointT, Object->vertex_count);
-  Vertices = NEW_A(VertexT, Object->vertex_count);
+  Vertices = NEW_A(Vector3D, Object->vertex_count);
 
   TS_Init();
 }

@@ -2,7 +2,7 @@
 #define __ENGINE_OBJECT_H__
 
 #include "std/types.h"
-#include "gfx/common.h"
+#include "gfx/vector3d.h"
 
 typedef struct Triangle {
   uint16_t p1, p2, p3;
@@ -12,7 +12,7 @@ typedef struct Object {
   size_t vertex_count;
   size_t triangle_count;
 
-  VertexT *vertex;
+  Vector3D *vertex;
   TriangleT *triangle;
 } ObjectT;
 

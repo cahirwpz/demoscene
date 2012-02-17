@@ -12,10 +12,6 @@ typedef struct Point {
   int16_t x, y;
 } PointT;
 
-typedef struct Vertex {
-  float x, y, z;
-} VertexT;
-
 typedef struct Rect {
   PointT tl, br;
 } RectT;

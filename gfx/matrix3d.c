@@ -180,8 +180,7 @@ void M3D_LoadCameraFromAngles(
   Vector3D direction = {
     sin(elevation) * cos(azimuth),
     sin(elevation) * sin(azimuth),
-    cos(elevation),
-    1.0f };
+    cos(elevation) };
 
   M3D_LoadCameraFromVector(camera, &direction, position);
 }
