@@ -4,7 +4,7 @@
 #include "std/types.h"
 
 typedef struct {
-  float x, y, z, w;
+  float x, y, z;
 } Vector3D;
 
 void V3D_Add(Vector3D *d, Vector3D *a, Vector3D *b);
