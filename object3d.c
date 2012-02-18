@@ -19,7 +19,7 @@ const int HEIGHT = 256;
 const int DEPTH = 8;
 
 static CanvasT *Canvas;
-static ObjectT *Object;
+static ObjectT *MyObject;
 static Vector3D *Vertices;
 static PointT *Points;
 
@@ -37,11 +37,11 @@ void SetupEffect() {
   Canvas = NewCanvas(WIDTH, HEIGHT);
   CanvasFill(Canvas, 0);
 
-  Object = GetResource("object");
-  CenterObjectPosition(Object);
-  NormalizeObject(Object);
-  Points = NEW_A(PointT, Object->vertex_count);
-  Vertices = NEW_A(Vector3D, Object->vertex_count);
+  MyObject = GetResource("object");
+  CenterObjectPosition(MyObject);
+  NormalizeObject(MyObject);
+  Points = NEW_A(PointT, MyObject->vertex_count);
+  Vertices = NEW_A(Vector3D, MyObject->vertex_count);
 
   TS_Init();
 }
@@ -74,14 +74,14 @@ void RenderObject(int frameNumber) {
   TS_PushPerspective(0, 0, 160.0f);
   TS_Compose3D();
 
-  M3D_Project2D(WIDTH/2, HEIGHT/2, Points, Object->vertex, Object->vertex_count, TS_GetMatrix3D(1));
+  M3D_Project2D(WIDTH/2, HEIGHT/2, Points, MyObject->vertex, MyObject->vertex_count, TS_GetMatrix3D(1));
 
   CanvasFill(Canvas, 0);
 
-  for (i = 0; i < Object->triangle_count; i++) {
-    size_t p1 = Object->triangle[i].p1;
-    size_t p2 = Object->triangle[i].p2;
-    size_t p3 = Object->triangle[i].p3;
+  for (i = 0; i < MyObject->triangle_count; i++) {
+    size_t p1 = MyObject->triangle[i].p1;
+    size_t p2 = MyObject->triangle[i].p2;
+    size_t p3 = MyObject->triangle[i].p3;
 
     DrawLine(Canvas, Points[p1].x, Points[p1].y, Points[p2].x, Points[p2].y);
     DrawLine(Canvas, Points[p2].x, Points[p2].y, Points[p3].x, Points[p3].y);
