@@ -1,6 +1,6 @@
 CC	= m68k-amigaos-gcc -noixemul -std=gnu9x
 AS	= vasm
-CFLAGS	= -O2 -Wall -m68020-60 -fbaserel -I$(realpath $(TOPDIR)) -DNDEBUG
+CFLAGS	= -O2 -Werror -m68020-60 -fbaserel -I$(realpath $(TOPDIR)) -DNDEBUG
 ASFLAGS = -m68020 -m68882 -I$(realpath $(TOPDIR))
 LIBS	= -lamiga -lm
 
