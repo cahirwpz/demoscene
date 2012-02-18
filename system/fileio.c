@@ -16,7 +16,7 @@ void *ReadFileSimple(const char *fileName, uint32_t memFlags) {
         size_t dataLen = infoBlock->fib_Size;
 
         if ((data = AllocVec(dataLen, memFlags))) {
-          if (dataLen =! Read(fh, data, dataLen)) {
+          if (dataLen != Read(fh, data, dataLen)) {
             FreeVec(data);
             data = NULL;
           }

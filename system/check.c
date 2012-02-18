@@ -13,10 +13,10 @@ bool SystemCheck() {
   bool fpu68882 = SysBase->AttnFlags & AFF_68882;
 
   Printf("System check:\n");
-  Printf(" - Kickstart v40 : %s\n", kickv40 ? "yes" : "no");
-  Printf(" - ChipSet AGA : %s\n", chipaga ? "yes" : "no");
-  Printf(" - CPU 68040 : %s\n", cpu68040 ? "yes" : "no");
-  Printf(" - FPU 68882 : %s\n", fpu68882 ? "yes" : "no");
+  Printf(" - Kickstart v40 : %s\n", (ULONG)(kickv40 ? "yes" : "no"));
+  Printf(" - ChipSet AGA : %s\n", (ULONG)(chipaga ? "yes" : "no"));
+  Printf(" - CPU 68040 : %s\n", (ULONG)(cpu68040 ? "yes" : "no"));
+  Printf(" - FPU 68882 : %s\n", (ULONG)(fpu68882 ? "yes" : "no"));
 
   return (kickv40 && cpu68040 && fpu68882 && chipaga);
 }
