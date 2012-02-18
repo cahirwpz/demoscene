@@ -2,12 +2,12 @@
 #include <hardware/intbits.h>
 #include <proto/exec.h>
 
-static int VBlankCounter = 0;
-
-__interrupt __saveds static int VBlankServer(void) {
-  VBlankCounter++;
+__interrupt static int VBlankServer(int *counter asm("a1")) {
+  (*counter)++;
   return 0;
 }
+
+static int VBlankCounter = 0;
 
 static struct Interrupt VBlankInt = {
   {
