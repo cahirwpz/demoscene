@@ -4,13 +4,11 @@ include $(TOPDIR)/Makefile.common
 
 OBJS = object.o
 
-all: engine.lib
+libengine.a: $(OBJS)
 
 object.o: object.c object.h
 
-engine.lib: $(OBJS)
-
 clean:
-	$(RM) *.lib *.o *~
+	$(RM) *.a *.o *~
 
 .PHONY: clean

@@ -20,25 +20,24 @@ static void DrawEllipseSegment(SegmentT *seg, int x) {
 }
 
 void DrawEllipse(CanvasT *canvas, int xc, int yc, int a, int b) {
+  int a2 = a * a;
+  int b2 = b * b;
+  int x = 0;
+  int y = b;
+
+  /* kryterium przejscia z stałego przyrostu X na staly przyrost Y */
+  int dx = 2 * b2 * x;
+  int dy = 2 * a2 * y;
+
+  /* poczatkowa wartosc (b - a/2) ^ 2 */
+  int d = b2 - a2 * b + a2 / 4;
+
   SegmentT seg;
 
   seg.stride = GetCanvasWidth(canvas);
   seg.color = GetCanvasFgCol(canvas);
   seg.upper = GetCanvasPixelData(canvas) + (yc - b) * seg.stride + xc;
   seg.lower = GetCanvasPixelData(canvas) + (yc + b) * seg.stride + xc;
-
-  int a2 = a * a;
-  int b2 = b * b;
-
-  int x = 0;
-  int y = b;
-
-  // kryterium przejścia z stałego przyrostu X na stały przyrost Y
-  int dx = 2 * b2 * x;
-  int dy = 2 * a2 * y;
-
-  // początkowa wartość (b - a/2) ^ 2
-  int d = b2 - a2 * b + a2 / 4;
 
   while (dx < dy) {
     if (d > 0) {

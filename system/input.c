@@ -1,11 +1,9 @@
+#include <clib/alib_protos.h>
 #include <devices/input.h>
 #include <devices/inputevent.h>
 #include <exec/interrupts.h>
 #include <exec/ports.h>
-
-#include <clib/alib_protos.h>
 #include <proto/exec.h>
-#include <inline/exec_protos.h>
 
 #include "debug.h"
 #include "input.h"
@@ -20,8 +18,8 @@ struct InputDev {
 
 static struct InputDev InputDev = { NULL, NULL, NULL, FALSE};
 
-static __saveds APTR EventHandler(__reg("a0") struct InputEvent *event,
-                                  __reg("a1") APTR data) {
+static __saveds APTR EventHandler(struct InputEvent *event asm("a0"),
+                                  APTR data asm("a1")) {
 
   for (; event; event = event->ie_NextEvent) {
     switch (event->ie_Class) {

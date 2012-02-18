@@ -1,12 +1,10 @@
 #include <exec/interrupts.h>
 #include <hardware/intbits.h>
-
 #include <proto/exec.h>
-#include <inline/exec_protos.h>
 
 static int VBlankCounter = 0;
 
-__amigainterrupt __saveds static int VBlankServer(void) {
+__interrupt __saveds static int VBlankServer(void) {
   VBlankCounter++;
   return 0;
 }

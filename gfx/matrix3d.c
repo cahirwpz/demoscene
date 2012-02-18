@@ -61,22 +61,24 @@ void M3D_LoadRotation(Matrix3D *d, float angleX, float angleY, float angleZ) {
   angleY *= 3.14159265f / 180.0f;
   angleZ *= 3.14159265f / 180.0f;
 
-  float sinX = sin(angleX);
-  float cosX = cos(angleX);
-  float sinY = sin(angleY);
-  float cosY = cos(angleY);
-  float sinZ = sin(angleZ);
-  float cosZ = cos(angleZ);
+  {
+    float sinX = sin(angleX);
+    float cosX = cos(angleX);
+    float sinY = sin(angleY);
+    float cosY = cos(angleY);
+    float sinZ = sin(angleZ);
+    float cosZ = cos(angleZ);
 
-  M(d,0,0) = cosY * cosZ;
-  M(d,0,1) = cosY * sinZ;
-  M(d,0,2) = -sinY;
-  M(d,1,0) = sinX * sinY * cosZ - cosX * sinZ;
-  M(d,1,1) = sinX * sinY * sinZ + cosX * cosZ;
-  M(d,1,2) = sinX * cosY;
-  M(d,2,0) = cosX * sinY * cosZ + sinX * sinZ;
-  M(d,2,1) = cosX * sinY * sinZ - sinX * cosZ;
-  M(d,2,2) = cosX * cosY;
+    M(d,0,0) = cosY * cosZ;
+    M(d,0,1) = cosY * sinZ;
+    M(d,0,2) = -sinY;
+    M(d,1,0) = sinX * sinY * cosZ - cosX * sinZ;
+    M(d,1,1) = sinX * sinY * sinZ + cosX * cosZ;
+    M(d,1,2) = sinX * cosY;
+    M(d,2,0) = cosX * sinY * cosZ + sinX * sinZ;
+    M(d,2,1) = cosX * sinY * sinZ - sinX * cosZ;
+    M(d,2,2) = cosX * cosY;
+  }
 }
 
 void M3D_LoadScaling(Matrix3D *d, float scaleX, float scaleY, float scaleZ) {
@@ -139,23 +141,17 @@ void M3D_Project2D(int centerX, int centerY,
 void M3D_LoadCameraFromVector(
     Matrix3D *camera, Vector3D *direction, Vector3D *position)
 {
-    // unit vector pointing to focal point
-    Vector3D d;
+    Vector3D d, u, r;
 
+    // unit vector pointing to focal point
     V3D_Normalize(&d, direction, 1.0f);
 
     // unit vector pointed upwards
-    float t = V3D_Dot(position, &d);
-
-    Vector3D u;
-
-    V3D_Scale(&u, &d, t);
+    V3D_Scale(&u, &d, V3D_Dot(position, &d));
     V3D_Sub(&u, position, &u);
     V3D_Normalize(&u, &u, 1.0f);
 
     // unit vector pointer to the right 
-    Vector3D r;
-
     V3D_Cross(&r, &u, &d);
 
     M3D_LoadIdentity(camera);

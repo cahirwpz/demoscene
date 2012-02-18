@@ -1,5 +1,4 @@
 #include <clib/exec_protos.h>
-#include <inline/exec_protos.h>
 #include <proto/exec.h>
 
 #include "std/resource.h"

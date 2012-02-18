@@ -111,10 +111,10 @@ static PaletteFunctorT PalEffects[] = {
 
 void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst, PaletteFunctorT *func) {
   while (src) {
+    int i;
+
     if (!(dst && func && src->count == dst->count && src->start == dst->start))
       break;
-
-    int i;
 
     for (i = 0; i < src->count; i++) {
       ColorVectorT hsl;

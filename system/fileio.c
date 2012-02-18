@@ -1,10 +1,6 @@
 #include <dos/dos.h>
-
 #include <proto/exec.h>
 #include <proto/dos.h>
-
-#include <inline/exec_protos.h>
-#include <inline/dos_protos.h>
 
 #include "system/fileio.h"
 

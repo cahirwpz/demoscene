@@ -18,11 +18,13 @@ void RGB2HSL(ColorT *src, ColorVectorT *dst) {
     s = diff;
 
     if (s > 0.0f) {
+      float r2, g2, b2;
+
       s /= (l <= 0.5f) ? (lo + hi) : (2.0f - (lo + hi));
 
-      float r2 = (hi - r) / diff;
-      float g2 = (hi - g) / diff;
-      float b2 = (hi - b) / diff;
+      r2 = (hi - r) / diff;
+      g2 = (hi - g) / diff;
+      b2 = (hi - b) / diff;
 
       if (r == hi) {
         h = (g == lo) ? (5.0f + b2) : (1.0f - g2);
@@ -42,7 +44,9 @@ void RGB2HSL(ColorT *src, ColorVectorT *dst) {
 }
 
 void HSL2RGB(ColorVectorT *src, ColorT *dst) {
-  float r,g,b;
+  float r = 0.0f;
+  float g = 0.0f;
+  float b = 0.0f;
 
   float s = src->s;
   float l = src->l;

@@ -1,3 +1,5 @@
+//#define NDEBUG
+
 #include <string.h>
 
 #include "system/debug.h"

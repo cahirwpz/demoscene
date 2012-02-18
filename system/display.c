@@ -1,11 +1,7 @@
 #include "std/types.h"
 
-#include <clib/intuition_protos.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
-#include <inline/graphics_protos.h>
-#include <inline/intuition_protos.h>
-
 #include <graphics/videocontrol.h>
 #include <graphics/gfxbase.h>
 #include <intuition/screens.h>
@@ -15,8 +11,6 @@
 #include "debug.h"
 #include "display.h"
 #include "memory.h"
-
-extern __far struct Custom custom;
 
 typedef struct ViewPort ViewPortT;
 typedef struct Screen ScreenT;
@@ -145,13 +139,15 @@ void KillDisplay() {
 }
 
 void DisplaySwap() {
+  struct Custom *custom = (void *)0xdff000;
+
   Display->Screen->ViewPort.RasInfo->BitMap = GetCurrentBitMap();
   Display->CurrentBitMap ^= 1;
   Display->Screen->RastPort.BitMap = GetCurrentBitMap();
 
   MakeScreen(Display->Screen);
   RethinkDisplay();
-  custom.dmacon = BITCLR|DMAF_SPRITE;
+  custom->dmacon = BITCLR|DMAF_SPRITE;
 }
 
 BitMapT *GetCurrentBitMap() {

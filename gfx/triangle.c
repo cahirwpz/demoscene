@@ -13,9 +13,9 @@ typedef struct Segment {
 
 static void DrawTriangleSegment(EdgeScanT *xs, EdgeScanT *xe, SegmentT *seg,
                                 int y1, int y2) {
-  LOG("Line: (%ld, %ld..%ld)\n", y1, (int)xs->v, (int)xe->v);
-
   bool same = ((int)xs->v == (int)xe->v);
+
+  LOG("Line: (%ld, %ld..%ld)\n", y1, (int)xs->v, (int)xe->v);
 
   for (; y1 <= y2; y1++) {
     int x1 = xs->v;
@@ -58,53 +58,52 @@ void DrawTriangle(CanvasT *canvas,
 
   if (x1 == x2 && x2 == x3) {
     LOG("Triangle is too thin.\n");
-    return;
-  }
+  } else {
+    float dx12 = x2 - x1;
+    float dx13 = x3 - x1;
+    float dx23 = x3 - x2;
+    float dy12 = y2 - y1;
+    float dy13 = y3 - y1;
+    float dy23 = y3 - y2;
 
-  SegmentT seg;
+    SegmentT seg;
 
-  seg.color = GetCanvasFgCol(canvas);
-  seg.stride = GetCanvasWidth(canvas);
-  seg.pixels = GetCanvasPixelData(canvas) + y1 * seg.stride;
+    seg.color = GetCanvasFgCol(canvas);
+    seg.stride = GetCanvasWidth(canvas);
+    seg.pixels = GetCanvasPixelData(canvas) + y1 * seg.stride;
 
-  float dx12 = x2 - x1;
-  float dx13 = x3 - x1;
-  float dx23 = x3 - x2;
-  float dy12 = y2 - y1;
-  float dy13 = y3 - y1;
-  float dy23 = y3 - y2;
+    if (y1 == y2) {
+      EdgeScanT l13 = { dx13 / dy13, x1 };
+      EdgeScanT l23 = { dx23 / dy23, x2 };
 
-  if (y1 == y2) {
-    EdgeScanT l13 = { dx13 / dy13, x1 };
-    EdgeScanT l23 = { dx23 / dy23, x2 };
+      if (x1 < x2)
+        DrawTriangleSegment(&l13, &l23, &seg, y2, y3);
+      else
+        DrawTriangleSegment(&l23, &l13, &seg, y2, y3);
+    }
+    else if (y2 == y3)
+    {
+      EdgeScanT l12 = { dx12 / dy12, x1 };
+      EdgeScanT l13 = { dx13 / dy13, x1 };
 
-    if (x1 < x2)
-      DrawTriangleSegment(&l13, &l23, &seg, y2, y3);
+      if (x2 < x3)
+        DrawTriangleSegment(&l12, &l13, &seg, y1, y2);
+      else
+        DrawTriangleSegment(&l13, &l12, &seg, y1, y2);
+    }
     else
-      DrawTriangleSegment(&l23, &l13, &seg, y2, y3);
-  }
-  else if (y2 == y3)
-  {
-    EdgeScanT l12 = { dx12 / dy12, x1 };
-    EdgeScanT l13 = { dx13 / dy13, x1 };
+    {
+      EdgeScanT l12 = { dx12 / dy12, x1 };
+      EdgeScanT l13 = { dx13 / dy13, x1 };
+      EdgeScanT l23 = { dx23 / dy23, x2 };
 
-    if (x2 < x3)
-      DrawTriangleSegment(&l12, &l13, &seg, y1, y2);
-    else
-      DrawTriangleSegment(&l13, &l12, &seg, y1, y2);
-  }
-  else
-  {
-    EdgeScanT l12 = { dx12 / dy12, x1 };
-    EdgeScanT l13 = { dx13 / dy13, x1 };
-    EdgeScanT l23 = { dx23 / dy23, x2 };
-
-    if (l12.d < l13.d) {
-      DrawTriangleSegment(&l12, &l13, &seg, y1, y2);
-      DrawTriangleSegment(&l23, &l13, &seg, y2 + 1, y3);
-    } else {
-      DrawTriangleSegment(&l13, &l12, &seg, y1, y2);
-      DrawTriangleSegment(&l13, &l23, &seg, y2 + 1, y3);
+      if (l12.d < l13.d) {
+        DrawTriangleSegment(&l12, &l13, &seg, y1, y2);
+        DrawTriangleSegment(&l23, &l13, &seg, y2 + 1, y3);
+      } else {
+        DrawTriangleSegment(&l13, &l12, &seg, y1, y2);
+        DrawTriangleSegment(&l13, &l23, &seg, y2 + 1, y3);
+      }
     }
   }
 }

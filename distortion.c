@@ -1,10 +1,7 @@
 #include <math.h>
 
 #include "system/memory.h"
-
 #include "distortion.h"
-
-#define M_PI 3.14159265f
 
 struct DistortionMap *NewDistortionMap(uint16_t width, uint16_t height) {
   struct DistortionMap *map = NEW_S(struct DistortionMap);

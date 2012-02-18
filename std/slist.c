@@ -6,23 +6,22 @@ SListT *NewSList() {
 }
 
 void DeleteSList(SListT *list, FreeFuncT func) {
-  if (!list)
-    return;
+  if (list) {
+    SNodeT *node = list->first;
 
-  SNodeT *node = list->first;
+    while (node) {
+      SNodeT *next = node->next;
 
-  while (node) {
-    SNodeT *next = node->next;
+      if (func)
+        func(node->item);
 
-    if (func)
-      func(node->item);
+      DELETE(node);
 
-    DELETE(node);
+      node = next;
+    }
 
-    node = next;
+    DELETE(list);
   }
-
-  DELETE(list);
 }
 
 void SL_Concat(SListT *dst, SListT *src) {
@@ -44,15 +43,16 @@ void SL_Concat(SListT *dst, SListT *src) {
 }
 
 void *SL_GetNth(SListT *list, size_t index) {
-  if (index >= list->items)
-    return NULL;
+  if (index < list->items) {
+    SNodeT *node = list->first;
 
-  SNodeT *node = list->first;
+    while (index--)
+      node = node->next;
 
-  while (index--)
-    node = node->next;
+    return node->item;
+  }
 
-  return node->item;
+  return NULL;
 }
 
 void SL_PushFrontNode(SListT *list, SNodeT *node) {

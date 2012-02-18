@@ -1,13 +1,17 @@
+TOPDIR = $(CURDIR)/..
+
+include $(TOPDIR)/Makefile.common
+
 # Warning: P61 player is extremely fragile to changing assembler options. These
 # were the only ones that I was able to run the player without crashes.
+ASFLAGS	= -m68000 -nosym
 
-AS = vasmm68k_mot
-ASFLAGS	= -Fhunk -m68000 -nosym
+libp61.a: p61.o
 
-p61.lib: p61.s p61.h Player61.i
+p61.o: p61.s p61.h Player61.i
 	$(AS) $(ASFLAGS) -o $@ $<
 
 clean:
-	$(RM) *.lib *.o *~
+	$(RM) *.a *.o *~
 
 .PHONY: clean

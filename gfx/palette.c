@@ -25,30 +25,31 @@ PaletteT *NewPalette(size_t count) {
 PaletteT *NewPaletteFromFile(const char *fileName, uint32_t memFlags) {
   uint16_t *data = ReadFileSimple(fileName, memFlags);
 
-  if (!data)
-    return NULL;
+  if (data) {
+    uint16_t count = data[0];
 
-  uint16_t count = data[0];
+    PaletteT *palette = NewPalette(count);
 
-  PaletteT *palette = NewPalette(count);
+    if (palette) {
+      uint8_t *raw = (uint8_t *)&data[1];
 
-  if (palette) {
-    uint8_t *raw = (uint8_t *)&data[1];
+      int i;
 
-    int i;
-
-    for (i = 0; i < count; i++) {
-      palette->colors[i].r = raw[i*3];
-      palette->colors[i].g = raw[i*3+1];
-      palette->colors[i].b = raw[i*3+2];
+      for (i = 0; i < count; i++) {
+        palette->colors[i].r = raw[i*3];
+        palette->colors[i].g = raw[i*3+1];
+        palette->colors[i].b = raw[i*3+2];
+      }
     }
+
+    LOG("Palette '%s' has %ld colors.\n", fileName, (ULONG)count);
+
+    DELETE(data);
+
+    return palette;
   }
 
-  LOG("Palette '%s' has %ld colors.\n", fileName, (ULONG)count);
-
-  DELETE(data);
-
-  return palette;
+  return NULL;
 }
 
 void DeletePalette(PaletteT *palette) {
@@ -64,6 +65,7 @@ void DeletePalette(PaletteT *palette) {
 
 PaletteT *CopyPalette(PaletteT *palette) {
   PaletteT *rec_copy = NULL;
+  PaletteT *copy;
 
   if (palette->next) {
     rec_copy = CopyPalette(palette->next);
@@ -72,7 +74,7 @@ PaletteT *CopyPalette(PaletteT *palette) {
       return NULL;
   }
 
-  PaletteT *copy = NewPalette(palette->count);
+  copy = NewPalette(palette->count);
 
   if (copy) {
     copy->start = palette->start;
@@ -84,12 +86,11 @@ PaletteT *CopyPalette(PaletteT *palette) {
 }
 
 bool LinkPalettes(size_t count, ...) {
+  PaletteT *prev = NULL;
+  int start = 0;
   va_list ap;
 
   va_start(ap, count);
-
-  PaletteT *prev = NULL;
-  int start = 0;
 
   while (count--) {
     PaletteT *palette = va_arg(ap, PaletteT *);

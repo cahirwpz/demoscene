@@ -2,16 +2,12 @@
 
 void DrawLine(CanvasT *canvas, int xs, int ys, int xe, int ye) {
   int stride = GetCanvasWidth(canvas);
+  int dx, dy, step, dg, dg1, dg2, db1, db2, n;
 
   if (ys > ye) {
     swapi(xs, xe);
     swapi(ys, ye);
   }
-
-  uint8_t *pixels = GetCanvasPixelData(canvas) + ys * stride + xs;
-
-  int dx = abs(xe - xs);
-  int dy = ye - ys;
 
   /*  quarters:
    *
@@ -27,9 +23,9 @@ void DrawLine(CanvasT *canvas, int xs, int ys, int xe, int ye) {
    *
    */
 
-  int step = (xe < xs) ? -1 : 1;
-
-  int dg, dg1, dg2, db1, db2, n;
+  dx = abs(xe - xs);
+  dy = ye - ys;
+  step = (xe < xs) ? -1 : 1;
 
   if (dx < dy) {
     dg1 = (dx - dy) << 1;
@@ -51,22 +47,25 @@ void DrawLine(CanvasT *canvas, int xs, int ys, int xe, int ye) {
     n = dx;
   }
 
-  uint8_t color = canvas->fg_col;
+  {
+    uint8_t *pixels = GetCanvasPixelData(canvas) + ys * stride + xs;
+    uint8_t color = canvas->fg_col;
 
-  for (;;) {
-    *pixels = color;
+    for (;;) {
+      *pixels = color;
 
-    if (!n--)
-      break;
+      if (!n--)
+        break;
 
-    if (dg > 0) {
-      pixels += db1;
-      dg += dg1;
-    } else {
-      dg += dg2;
+      if (dg > 0) {
+        pixels += db1;
+        dg += dg1;
+      } else {
+        dg += dg2;
+      }
+
+      pixels += db2;
     }
-
-    pixels += db2;
   }
 }
 

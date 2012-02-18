@@ -1,5 +1,3 @@
-#include <clib/dos_protos.h>
-#include <inline/dos_protos.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/graphics.h>

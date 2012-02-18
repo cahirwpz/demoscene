@@ -1,11 +1,11 @@
-CC	= vc +small
-AS	= vc +small
-CFLAGS	= -O2 -cpu=68020 -fpu=68882 -I$(realpath $(TOPDIR))
-ASFLAGS = -O2 -cpu=68020 -fpu=68882 -I$(realpath $(TOPDIR))
-LIBS	= -lamigas -ldebug 
+CC	= m68k-amigaos-gcc -noixemul -std=gnu9x
+AS	= vasm
+CFLAGS	= -O2 -Wall -m68020-60 -fbaserel -I$(realpath $(TOPDIR)) -DNDEBUG
+ASFLAGS = -m68020 -m68882 -I$(realpath $(TOPDIR))
+LIBS	= -lamiga -lm
 
 %.o: %.s
-	$(AS) $(ASFLAGS) -c -o $@ $<
+	$(AS) $(ASFLAGS) -o $@ $<
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -13,7 +13,8 @@ LIBS	= -lamigas -ldebug
 %.s: %.c
 	$(CC) $(CFLAGS) -S -o $@ $<
 
-%.lib:
-	cat $^ > $@
+%.a:
+	m68k-amigaos-ar cr $@ $^
+	m68k-amigaos-ranlib $@
 
 # vim: sw=8 ts=8

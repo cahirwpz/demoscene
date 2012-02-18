@@ -14,9 +14,9 @@
  * @result 0 if success, non-zero otherwise
  */
 
-int P61_Init(__reg("a0") APTR Module,
-             __reg("a1") APTR Samples,
-             __reg("a2") APTR Buffer);
+int P61_Init(APTR Module asm("a0"),
+             APTR Samples asm("a1"),
+             APTR Buffer asm("a2"));
 
 /**
  * @brief Jump to a specific position in the song. Starts from the beginning if
@@ -26,7 +26,7 @@ int P61_Init(__reg("a0") APTR Module,
  *                 limits)
  */
 
-void P61_SetPosition(__reg("d0") LONG Position);
+void P61_SetPosition(LONG Position asm("d0"));
 
 /**
  * @brief Stop the music.

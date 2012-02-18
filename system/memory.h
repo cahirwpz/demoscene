@@ -2,7 +2,6 @@
 #define __SYSTEM_MEMORY_H__
 
 #include <proto/exec.h>
-#include <inline/exec_protos.h>
 
 /*
  * NEW_xx, where x equals to:

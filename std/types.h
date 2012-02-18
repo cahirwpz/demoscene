@@ -1,8 +1,8 @@
 #ifndef __STD_TYPES_H__
 #define __STD_TYPES_H__
 
-#include <stdint.h>
 #include <stddef.h>
+#include <sys/types.h>
 
 #ifdef FALSE
 #undef FALSE
@@ -10,6 +10,18 @@
 
 #ifdef TRUE
 #undef TRUE
+#endif
+
+#ifndef uint8_t
+typedef unsigned char uint8_t;
+#endif
+
+#ifndef uint16_t
+typedef unsigned short uint16_t;
+#endif
+
+#ifndef uint32_t
+typedef unsigned long uint32_t;
 #endif
 
 typedef enum { FALSE, TRUE } bool;

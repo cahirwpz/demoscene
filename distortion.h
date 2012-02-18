@@ -15,10 +15,10 @@ void DeleteDistortionMap(DistortionMapT *map);
 void GenerateTunnel(DistortionMapT *tunnel, int16_t radius, int16_t centerX,
                     int16_t centerY);
 
-void RenderDistortion(__reg("a2") CanvasT *chunky,
-                      __reg("a3") DistortionMapT *map,
-                      __reg("a5") PixBufT *texture,
-                      __reg("d0") uint8_t offsetX,
-                      __reg("d1") uint8_t offsetY);
+void RenderDistortion(CanvasT *chunky asm("a2"),
+                      DistortionMapT *map asm("a3"),
+                      PixBufT *texture asm("a5"),
+                      uint8_t offsetX asm("d0"),
+                      uint8_t offsetY asm("d1"));
 
 #endif

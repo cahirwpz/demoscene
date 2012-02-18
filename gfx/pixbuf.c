@@ -27,26 +27,27 @@ PixBufT *NewPixBuf(size_t width, size_t height) {
 PixBufT *NewPixBufFromFile(const char *fileName, uint32_t memFlags) {
   uint16_t *data = ReadFileSimple(fileName, memFlags);
 
-  if (!data)
-    return NULL;
+  if (data) {
+    uint16_t width = data[0];
+    uint16_t height = data[1];
+    uint16_t colors = data[2];
 
-  uint16_t width = data[0];
-  uint16_t height = data[1];
-  uint16_t colors = data[2];
+    PixBufT *pixbuf = NewPixBuf(width, height);
 
-  PixBufT *pixbuf = NewPixBuf(width, height);
+    if (pixbuf) {
+      pixbuf->colors = colors;
+      memcpy(pixbuf->data, &data[3], width * height);
+    }
 
-  if (pixbuf) {
-    pixbuf->colors = colors;
-    memcpy(pixbuf->data, &data[3], width * height);
+    LOG("Image '%s' has size (%ld,%ld) and %ld colors.\n",
+        fileName, (ULONG)width, (ULONG)height, (ULONG)colors);
+
+    DELETE(data);
+
+    return pixbuf;
   }
 
-  LOG("Image '%s' has size (%ld,%ld) and %ld colors.\n",
-      fileName, (ULONG)width, (ULONG)height, (ULONG)colors);
-
-  DELETE(data);
-
-  return pixbuf;
+  return NULL;
 }
 
 void DeletePixBuf(PixBufT *pixbuf) {
