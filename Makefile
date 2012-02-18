@@ -36,10 +36,13 @@ tunnel.o: tunnel.c
 distortion.o: distortion.c distortion.h system/memory.h
 distortion_opt.o: distortion_opt.s distortion.h
 
+archive:
+	7z a "bins-$$(date +%F).7z" $(BINS) data
+
 clean:
 	for subdir in $(SUBDIRS); do $(MAKE) -C $$subdir clean; done
 	$(RM) *~ *.o $(BINS)
 
-.PHONY: all $(SUBDIRS)
+.PHONY: all 7z $(SUBDIRS)
 
 # vim: sw=8 ts=8
