@@ -1,16 +1,24 @@
-#include <clib/alib_stdio_protos.h>
 #include <proto/graphics.h>
 
 #include "frame_tools.h"
 
 void RenderFrameNumber(int frameNumber) {
   struct RastPort *rastPort = GetCurrentRastPort();
-  char number[5];
 
   SetDrMd(rastPort, JAM1);
 
-  sprintf(number, "%04d", frameNumber);
+  {
+    char number[5];
+    int i = sizeof(number) - 1;
 
-  Move(rastPort, 2, 8);
-  Text(rastPort, number, 4);
+    number[i--] = '\0';
+
+    while (i >= 0) {
+      number[i--] = (frameNumber % 10) + '0';
+      frameNumber /= 10;
+    }
+
+    Move(rastPort, 2, 8);
+    Text(rastPort, number, 4);
+  }
 }
