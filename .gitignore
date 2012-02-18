@@ -5,5 +5,5 @@ data/
 *~
 *.pyc
 *.o
-*.lib
+*.a
 *.info
