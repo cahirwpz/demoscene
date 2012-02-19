@@ -4,7 +4,7 @@
 #include "gfx/matrix2d.h"
 #include "gfx/matrix3d.h"
 
-bool TS_Init();
+void TS_Init();
 void TS_End();
 
 void TS_Reset();
