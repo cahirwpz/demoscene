@@ -64,11 +64,8 @@ void RenderVector(int frameNumber) {
   TS_Reset();
   TS_PushTranslation2D(-1.5f, -1.5f);
   TS_PushScaling2D(20.0f + 10.0f * s, 20.0f + 10.0f * s);
-  TS_Compose2D();
   TS_PushRotation2D((float)(frameNumber * -3));
-  TS_Compose2D();
   TS_PushTranslation2D((float)(WIDTH/2) + c * (WIDTH/4), (float)(HEIGHT/2));
-  TS_Compose2D();
 
   M2D_Transform(CrossToDraw, Cross, 12, TS_GetMatrix2D(1));
 
@@ -78,11 +75,8 @@ void RenderVector(int frameNumber) {
   TS_Reset();
   TS_PushTranslation2D(5.0f, 10.0f);
   TS_PushScaling2D(2.5f, 2.5f);
-  TS_Compose2D();
   TS_PushRotation2D((float)(frameNumber*5*c));
-  TS_Compose2D();
   TS_PushTranslation2D(WIDTH/2 + c * 50, HEIGHT/2 + s * 20);
-  TS_Compose2D();
 
   M2D_Transform(TriangleToDraw, Triangle, 3, TS_GetMatrix2D(0));
 

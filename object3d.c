@@ -67,13 +67,9 @@ void RenderMesh(int frameNumber) {
   TS_Reset();
   TS_PushIdentity3D();
   TS_PushRotation3D((float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
-  TS_Compose3D();
   TS_PushTranslation3D(0.0f, 0.0f, 2.0f);
-  TS_Compose3D();
   TS_PushScaling3D(60.0f, 60.0f, 60.0f);
-  TS_Compose3D();
   TS_PushPerspective(0, 0, 160.0f);
-  TS_Compose3D();
 
   M3D_Project2D(WIDTH/2, HEIGHT/2, Points, Mesh->vertex, Mesh->vertex_count, TS_GetMatrix3D(0));
 
