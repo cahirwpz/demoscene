@@ -42,7 +42,7 @@ PaletteT *NewPaletteFromFile(const char *fileName, uint32_t memFlags) {
       }
     }
 
-    LOG("Palette '%s' has %ld colors.\n", fileName, (ULONG)count);
+    LOG("Palette '%s' has %d colors.\n", fileName, count);
 
     DELETE(data);
 

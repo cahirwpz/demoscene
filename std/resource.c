@@ -20,7 +20,7 @@ bool ResourcesAlloc() {
       return FALSE;
     }
 
-    LOG("Allocated resource '%s' at $%lx.\n", res->Name, res->Ptr);
+    LOG("Allocated resource '%s' at %p.\n", res->Name, res->Ptr);
   }
 
   return TRUE;
@@ -46,7 +46,7 @@ void ResourcesFree() {
   ResourceT *res;
 
   for (res = ResourceList; res->Name; res++) {
-    LOG("Freeing resource '%s' at $%lx.\n", res->Name, res->Ptr);
+    LOG("Freeing resource '%s' at %p.\n", res->Name, res->Ptr);
 
     if (res->FreeFunc)
       res->FreeFunc(res->Ptr);
@@ -60,7 +60,7 @@ void *GetResource(const char *name) {
 
   for (res = ResourceList; res->Name; res++) {
     if (strcmp(res->Name, name) == 0) {
-      LOG("Fetched resource '%s' at $%lx.\n", res->Name, res->Ptr);
+      LOG("Fetched resource '%s' at %p.\n", res->Name, res->Ptr);
       return res->Ptr;
     }
   }

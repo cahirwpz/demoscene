@@ -40,8 +40,8 @@ ObjectT *NewObjectFromFile(const char *fileName, uint32_t memFlags) {
       memcpy(object->triangle, trianglePtr, sizeof(TriangleT) * triangles);
     }
 
-    LOG("Object '%s' has %ld vertices and %ld triangles.\n",
-        fileName, (ULONG)vertices, (ULONG)triangles);
+    LOG("Object '%s' has %d vertices and %d triangles.\n",
+        fileName, vertices, triangles);
 
     DELETE(data);
 

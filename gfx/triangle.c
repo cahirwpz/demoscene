@@ -15,7 +15,7 @@ static void DrawTriangleSegment(EdgeScanT *xs, EdgeScanT *xe, SegmentT *seg,
                                 int y1, int y2) {
   bool same = ((int)xs->v == (int)xe->v);
 
-  LOG("Line: (%ld, %ld..%ld)\n", y1, (int)xs->v, (int)xe->v);
+  LOG("Line: (%d, %f..%f)\n", y1, xs->v, xe->v);
 
   for (; y1 <= y2; y1++) {
     int x1 = xs->v;
@@ -32,7 +32,7 @@ static void DrawTriangleSegment(EdgeScanT *xs, EdgeScanT *xe, SegmentT *seg,
   }
 
   if (!same && abs((int)xs->v - (int)xe->v) > 1)
-    LOG("Line: (%ld, %ld..%ld)\n", y2, (int)xs->v, (int)xe->v);
+    LOG("Line: (%d, %f..%f)\n", y2, xs->v, xe->v);
 }
 
 void DrawTriangle(CanvasT *canvas,
@@ -53,8 +53,8 @@ void DrawTriangle(CanvasT *canvas,
   }
 
   /*
-  LOG("Triangle: (%ld, %ld) (%ld, %ld) (%ld, %ld)\n",
-      (int)x1, (int)y1, (int)x2, (int)y2, (int)x3, (int)y3); */
+  LOG("Triangle: (%d, %d) (%d, %d) (%d, %d)\n", x1, y1, x2, y2, x3, y3);
+  */
 
   if (x1 == x2 && x2 == x3) {
     LOG("Triangle is too thin.\n");

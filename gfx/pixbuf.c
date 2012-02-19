@@ -39,8 +39,8 @@ PixBufT *NewPixBufFromFile(const char *fileName, uint32_t memFlags) {
       memcpy(pixbuf->data, &data[3], width * height);
     }
 
-    LOG("Image '%s' has size (%ld,%ld) and %ld colors.\n",
-        fileName, (ULONG)width, (ULONG)height, (ULONG)colors);
+    LOG("Image '%s' has size (%d,%d) and %d colors.\n",
+        fileName, width, height, colors);
 
     DELETE(data);
 
@@ -59,8 +59,8 @@ void DeletePixBuf(PixBufT *pixbuf) {
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {
   if (palette->count != pixbuf->colors) {
-    LOG("PixBuf color number doesn't match palette (%ld != %ld).\n",
-        (ULONG)pixbuf->colors, (ULONG)palette->count);
+    LOG("PixBuf color number doesn't match palette (%d != %d).\n",
+        pixbuf->colors, palette->count);
   } else {
     int color = palette->start - pixbuf->baseColor;
     int i;
