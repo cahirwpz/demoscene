@@ -33,7 +33,7 @@ void ResetSList(SListT *list) {
 
 void DeleteSList(SListT *list) {
   if (list) {
-    DELETE(list->pool);
+    DeleteAtomPool(list->pool);
     DELETE(list);
   }
 }
