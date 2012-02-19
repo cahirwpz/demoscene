@@ -3,7 +3,7 @@
 
 #include "std/memory.h"
 
-void *g_new(size_t n) {
+void *MemNew(size_t n) {
   void *p = NULL;
 
   if (n) {
@@ -14,7 +14,7 @@ void *g_new(size_t n) {
   return p;
 }
 
-void *g_new0(size_t n) {
+void *MemNew0(size_t n) {
   void *p = NULL;
 
   if (n) {
@@ -25,14 +25,14 @@ void *g_new0(size_t n) {
   return p;
 }
 
-void *g_memdup(const void *p, size_t s) {
-  return memcpy(g_new(s), p, s);
+void *MemDup(const void *p, size_t s) {
+  return memcpy(MemNew(s), p, s);
 }
 
-char *g_strdup(const char *s) {
-  return g_memdup(s, strlen(s) + 1);
+char *StrDup(const char *s) {
+  return MemDup(s, strlen(s) + 1);
 }
 
-void g_free(void *p) {
+void MemFree(void *p) {
   FreeVec(p);
 }
