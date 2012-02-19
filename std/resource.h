@@ -11,9 +11,12 @@ typedef struct Resource {
   InitFuncT InitFunc;
 } ResourceT;
 
+void StartResourceManager();
+void StopResourceManager();
+
 bool ResourcesAlloc();
 bool ResourcesInit();
-void ResourcesFree();
+
 void *GetResource(const char *name);
 
 #endif

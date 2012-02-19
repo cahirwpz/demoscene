@@ -24,6 +24,8 @@ int main() {
   IntuitionBase = (struct IntuitionBase *)OpenLibrary("intuition.library", 39);
 
   if (DOSBase && GfxBase && IntuitionBase && SystemCheck()) {
+    StartResourceManager();
+
     if (ResourcesAlloc() && ResourcesInit()) {
       if (InitEventHandler()) {
         if (SetupDisplay()) {
@@ -38,7 +40,7 @@ int main() {
       }
     }
 
-    ResourcesFree();
+    StopResourceManager();
   }
 
   CloseLibrary((struct Library *)IntuitionBase);
