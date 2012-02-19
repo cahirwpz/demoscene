@@ -11,7 +11,7 @@ void ResetSList(SListT *list);
 
 void SL_Concat(SListT *dst, SListT *src);
 void *SL_GetNth(SListT *list, size_t index);
-void SL_ForEach(SListT *list, IterFuncT func, void *data);
+void *SL_ForEach(SListT *list, IterFuncT func, void *data);
 void *SL_PopFront(SListT *list);
 void SL_PushFront(SListT *list, void *item);
 size_t SL_Size(SListT *list);

@@ -56,7 +56,7 @@ void SL_Concat(SListT *dst, SListT *src) {
   }
 }
 
-void SL_ForEach(SListT *list, IterFuncT func, void *data) {
+void *SL_ForEach(SListT *list, IterFuncT func, void *data) {
   SNodeT *node = list->first;
 
   while (node) {
@@ -65,6 +65,8 @@ void SL_ForEach(SListT *list, IterFuncT func, void *data) {
 
     node = node->next;
   }
+
+  return node;
 }
 
 void *SL_GetNth(SListT *list, size_t index) {
