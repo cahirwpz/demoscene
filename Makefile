@@ -22,14 +22,13 @@ std:
 engine:
 	$(MAKE) -C $@
 
-tunnel: startup_effect.o tunnel.o res_tunnel.o distortion.o distortion_opt.o \
-	frame_tools.o
+tunnel: startup_effect.o tunnel.o distortion.o distortion_opt.o frame_tools.o
 	$(CC) $(CFLAGS) -o $@ $^ -lp61 $(LIBS)
 
-vector2d: startup_effect.o vector2d.o res_vector2d.o frame_tools.o
+vector2d: startup_effect.o vector2d.o frame_tools.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
-object3d: startup_effect.o object3d.o res_object3d.o frame_tools.o
+object3d: startup_effect.o object3d.o frame_tools.o
 	$(CC) $(CFLAGS) -o $@ $^ -lengine $(LIBS)
 
 tunnel.o: tunnel.c

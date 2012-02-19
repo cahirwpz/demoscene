@@ -21,7 +21,7 @@ void UnlinkPalettes(PaletteT *palette);
 
 #define RSC_PALETTE_FILE(NAME, FILENAME) { \
   void *_alloc() { return NewPaletteFromFile(FILENAME); } \
-  AddSimpleResource(NAME, _alloc, (FreeFuncT)DeletePalette); \
+  AddLazyRscSimple(NAME, _alloc, (FreeFuncT)DeletePalette); \
 }
 
 #endif

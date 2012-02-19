@@ -13,6 +13,7 @@
 
 #include "system/c2p.h"
 #include "system/display.h"
+#include "system/fileio.h"
 #include "system/vblank.h"
 
 #include "frame_tools.h"
@@ -29,6 +30,25 @@ static PixBufT *Credits;
 static PixBufT *Whelpz;
 static PaletteT *OrigPal;
 static PaletteT *EffectPal;
+
+/*
+ * Set up resources.
+ */
+bool TunnelMapInit(DistortionMapT *tunnel_map) {
+  GenerateTunnel(tunnel_map, 8192, WIDTH/2, HEIGHT/2);
+  return TRUE;
+}
+
+void AddInitialResources() {
+  RSC_CHIPMEM_FILE("module", "data/tempest-acidjazzed_evening.p61");
+  RSC_PIXBUF_FILE("txt_img", "data/texture-01.8");
+  RSC_PALETTE_FILE("txt_pal", "data/texture-01.pal");
+  RSC_PIXBUF_FILE("code_img", "data/code.8");
+  RSC_PALETTE_FILE("code_pal", "data/code.pal");
+  RSC_PIXBUF_FILE("whelpz_img", "data/whelpz.8");
+  RSC_PALETTE_FILE("whelpz_pal", "data/whelpz.pal");
+  RSC_DISTORTION_MAP("tunnel_map", WIDTH, HEIGHT, TunnelMapInit);
+}
 
 /*
  * Set up display function.

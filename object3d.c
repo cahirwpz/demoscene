@@ -25,6 +25,13 @@ static Vector3D *Vertices;
 static PointT *Points;
 
 /*
+ * Set up resources.
+ */
+void AddInitialResources() {
+  RSC_MESH_FILE("mesh", "data/whelpz.robj");
+}
+
+/*
  * Set up display function.
  */
 bool SetupDisplay() {

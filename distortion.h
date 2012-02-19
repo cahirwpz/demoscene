@@ -21,4 +21,10 @@ void RenderDistortion(DistortionMapT *map asm("a0"),
                       uint8_t offsetX asm("d0"),
                       uint8_t offsetY asm("d1"));
 
+#define RSC_DISTORTION_MAP(NAME, WIDTH, HEIGHT, INIT_FUNC) { \
+  void *_alloc() { return NewDistortionMap(WIDTH, HEIGHT); } \
+  AddLazyRscSimple(NAME, _alloc, (FreeFuncT)DeleteDistortionMap); \
+}
+
+
 #endif

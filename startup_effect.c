@@ -17,6 +17,7 @@ extern void MainLoop();
 extern bool SetupDisplay();
 extern void TearDownEffect();
 extern void SetupEffect();
+extern void AddInitialResources();
 
 int main() {
   DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 39);
@@ -25,6 +26,7 @@ int main() {
 
   if (DOSBase && GfxBase && IntuitionBase && SystemCheck()) {
     StartResourceManager();
+    AddInitialResources();
 
     if (ResourcesAlloc() && ResourcesInit()) {
       if (InitEventHandler()) {

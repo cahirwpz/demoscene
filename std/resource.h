@@ -3,20 +3,18 @@
 
 #include "std/types.h"
 
-typedef struct Resource {
-  const char *Name;
-  void *Ptr;
-  AllocFuncT AllocFunc;
-  FreeFuncT FreeFunc;
-  InitFuncT InitFunc;
-} ResourceT;
-
 void StartResourceManager();
 void StopResourceManager();
 
 bool ResourcesAlloc();
 bool ResourcesInit();
 
+void AddLazyRscSimple(const char *name,
+                      AllocFuncT allocFunc, FreeFuncT freeFunc);
+void AddLazyRscWithInit(const char *name,
+                        AllocFuncT allocFunc, FreeFuncT freeFunc,
+                        InitFuncT initFunc);
+void AddRscStatic(const char *name, void *ptr);
 void *GetResource(const char *name);
 
 #endif

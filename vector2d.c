@@ -21,11 +21,20 @@ const int DEPTH = 8;
 
 static CanvasT *Canvas;
 
-static PointT *Cross;
+static PointT Cross[] = {
+  {1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {2, 2}, {2, 3}, {1, 3}, {1, 2}, {0, 2}, {0, 1}, {1, 1}
+};
 static PointT CrossToDraw[12];
 
 static PointT Triangle[] = { {-15, -10}, {10, -5}, {0, 20} };
 static PointT TriangleToDraw[3];
+
+/*
+ * Set up resources.
+ */
+void AddInitialResources() {
+  AddRscStatic("cross", Cross);
+}
 
 /*
  * Set up display function.
@@ -38,7 +47,6 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  Cross = GetResource("cross");
   Canvas = NewCanvas(WIDTH, HEIGHT);
   CanvasFill(Canvas, 0);
 

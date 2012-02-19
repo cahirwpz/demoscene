@@ -8,7 +8,13 @@
 #include "std/resource.h"
 #include "std/slist.h"
 
-extern ResourceT ResourceList[];
+typedef struct Resource {
+  const char *Name;
+  void *Ptr;
+  AllocFuncT AllocFunc;
+  FreeFuncT FreeFunc;
+  InitFuncT InitFunc;
+} ResourceT;
 
 static SListT *ResList;
 static AtomPoolT *ResPool;
@@ -54,16 +60,8 @@ static bool FindByName(ResourceT *res, const char *name) {
 }
 
 void StartResourceManager() {
-  ResourceT *res;
-
   ResList = NewSList();
   ResPool = NewAtomPool(sizeof(ResourceT), 16);
-
-  for (res = ResourceList; res->Name; res++) {
-    ResourceT *newRes = AtomNew(ResPool);
-
-    memcpy(newRes, res, sizeof(ResourceT)); 
-  }
 }
 
 void StopResourceManager() {
@@ -79,6 +77,36 @@ bool ResourcesAlloc() {
 
 bool ResourcesInit() {
   return SL_ForEach(ResList, (IterFuncT)Initialize, NULL) ? TRUE : FALSE;
+}
+
+static void AddResource(const char *name, void *ptr, 
+                        AllocFuncT allocFunc, FreeFuncT freeFunc,
+                        InitFuncT initFunc)
+{
+  ResourceT *res = AtomNew(ResPool);
+
+  res->Name = StrDup(name);
+  res->Ptr = ptr;
+  res->AllocFunc = allocFunc;
+  res->InitFunc = initFunc;
+  res->FreeFunc = freeFunc;
+
+  SL_PushFront(ResList, res);
+}
+
+void AddLazyRscSimple(const char *name,
+                      AllocFuncT allocFunc, FreeFuncT freeFunc) {
+  AddResource(name, NULL, allocFunc, freeFunc, NULL);
+}
+
+void AddLazyRscWithInit(const char *name,
+                        AllocFuncT allocFunc, FreeFuncT freeFunc,
+                        InitFuncT initFunc) {
+  AddResource(name, NULL, allocFunc, freeFunc, initFunc);
+}
+
+void AddRscStatic(const char *name, void *ptr) {
+  AddResource(name, ptr, NULL, NULL, NULL);
 }
 
 void *GetResource(const char *name) {
