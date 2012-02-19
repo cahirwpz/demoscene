@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "engine/object.h"
+#include "engine/mesh.h"
 #include "gfx/line.h"
 #include "gfx/transformations.h"
 #include "gfx/triangle.h"
@@ -19,7 +19,7 @@ const int HEIGHT = 256;
 const int DEPTH = 8;
 
 static CanvasT *Canvas;
-static ObjectT *MyObject;
+static MeshT *Mesh;
 static Vector3D *Vertices;
 static PointT *Points;
 
@@ -37,11 +37,11 @@ void SetupEffect() {
   Canvas = NewCanvas(WIDTH, HEIGHT);
   CanvasFill(Canvas, 0);
 
-  MyObject = GetResource("object");
-  CenterObjectPosition(MyObject);
-  NormalizeObject(MyObject);
-  Points = NEW_A(PointT, MyObject->vertex_count);
-  Vertices = NEW_A(Vector3D, MyObject->vertex_count);
+  Mesh = GetResource("mesh");
+  CenterMeshPosition(Mesh);
+  NormalizeMesh(Mesh);
+  Points = NEW_A(PointT, Mesh->vertex_count);
+  Vertices = NEW_A(Vector3D, Mesh->vertex_count);
 
   TS_Init();
 }
@@ -60,7 +60,7 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
-void RenderObject(int frameNumber) {
+void RenderMesh(int frameNumber) {
   size_t i;
 
   TS_Reset();
@@ -74,14 +74,14 @@ void RenderObject(int frameNumber) {
   TS_PushPerspective(0, 0, 160.0f);
   TS_Compose3D();
 
-  M3D_Project2D(WIDTH/2, HEIGHT/2, Points, MyObject->vertex, MyObject->vertex_count, TS_GetMatrix3D(1));
+  M3D_Project2D(WIDTH/2, HEIGHT/2, Points, Mesh->vertex, Mesh->vertex_count, TS_GetMatrix3D(1));
 
   CanvasFill(Canvas, 0);
 
-  for (i = 0; i < MyObject->triangle_count; i++) {
-    size_t p1 = MyObject->triangle[i].p1;
-    size_t p2 = MyObject->triangle[i].p2;
-    size_t p3 = MyObject->triangle[i].p3;
+  for (i = 0; i < Mesh->triangle_count; i++) {
+    size_t p1 = Mesh->triangle[i].p1;
+    size_t p2 = Mesh->triangle[i].p2;
+    size_t p3 = Mesh->triangle[i].p3;
 
     DrawLine(Canvas, Points[p1].x, Points[p1].y, Points[p2].x, Points[p2].y);
     DrawLine(Canvas, Points[p2].x, Points[p2].y, Points[p3].x, Points[p3].y);
@@ -99,10 +99,10 @@ void RenderChunky(int frameNumber) {
 void MainLoop() {
   SetVBlankCounter(0);
 
-  while (GetVBlankCounter() < 2500) {
+  while (GetVBlankCounter() < 500) {
     int frameNumber = GetVBlankCounter();
 
-    RenderObject(frameNumber);
+    RenderMesh(frameNumber);
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 

@@ -2,11 +2,11 @@ TOPDIR = $(CURDIR)/..
 
 include $(TOPDIR)/Makefile.common
 
-OBJS = object.o
+OBJS = mesh.o
 
 libengine.a: $(OBJS)
 
-object.o: object.c object.h
+mesh.o: mesh.c mesh.h
 
 clean:
 	$(RM) *.a *.o *~
