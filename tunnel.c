@@ -131,7 +131,7 @@ void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst, PaletteFunctor
 }
 
 void RenderTunnel(int frameNumber) {
-  RenderDistortion(Canvas, TunnelMap, Texture, 0, frameNumber);
+  RenderDistortion(TunnelMap, Canvas, Texture, 0, frameNumber);
 
   PixBufBlitTransparent(Canvas->pixbuf, 200, 20, Credits);
   PixBufBlitTransparent(Canvas->pixbuf, 0, 137, Whelpz);

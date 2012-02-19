@@ -2,15 +2,15 @@
 
         section "distortion_opt", code
 
-; a2   chunky buffer
-; a3   struct DistortionMap
-; a5   texture 256x256x8
+; a0   DistortionMapT
+; a1   CanvasT
+; a2   PixBufT 256x256x8 (texture)
 ; d0.b offsetX
 ; d1.b offsetY
 
         machine 68040
 
-RenderDistortionRegs    reg     d2-d5/a2/a3/a5
+RenderDistortionRegs    reg     d2-d5/a2
 
         XDEF    _RenderDistortion
 
@@ -18,20 +18,20 @@ _RenderDistortion
         movem.l RenderDistortionRegs,-(sp)
 
         ; calculate offset
-        and.l   #$ff,d1
+        and.l   #255,d1
         lsl.l   #8,d1
         or.l    d1,d0
 
         ; calculate number of iterations
-        move.w  (a3),d1
-        mulu.w  2(a3),d1
+        move.w  (a0),d1
+        mulu.w  2(a0),d1
         lsr.l   #2,d1
 
         ; prepare temporary pointers
-        move.l  4(a3),a0
-        move.l  (a2),a1   ; CanvasT.pixbuf
+        move.l  4(a0),a0
+        move.l  (a1),a1   ; CanvasT.pixbuf
         move.l  (a1),a1   ; PixBufT.data
-        move.l  (a5),a5
+        move.l  (a2),a2
 
         ; clear offset registers
         clr.l   d2
@@ -47,10 +47,10 @@ _RenderDistortion
         add.w   d0,d3
         add.w   d0,d4
         add.w   d0,d5
-        move.b  (a5,d2.l),(a1)+
-        move.b  (a5,d3.l),(a1)+
-        move.b  (a5,d4.l),(a1)+
-        move.b  (a5,d5.l),(a1)+
+        move.b  (a2,d2.l),(a1)+
+        move.b  (a2,d3.l),(a1)+
+        move.b  (a2,d4.l),(a1)+
+        move.b  (a2,d5.l),(a1)+
         subq.w  #1,d1
         bne.b   .loop
 
