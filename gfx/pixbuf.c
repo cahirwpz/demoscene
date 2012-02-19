@@ -50,7 +50,7 @@ void DeletePixBuf(PixBufT *pixbuf) {
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {
   if (palette->count != pixbuf->colors) {
-    LOG("PixBuf color number doesn't match palette (%d != %d).\n",
+    LOG("PixBuf color number doesn't match palette (%d != %ld).\n",
         pixbuf->colors, palette->count);
   } else {
     int color = palette->start - pixbuf->baseColor;

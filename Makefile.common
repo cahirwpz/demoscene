@@ -1,7 +1,7 @@
 CC	= m68k-amigaos-gcc -noixemul -std=gnu9x
 AS	= vasm
 OPTFLAGS = -O3 -ffast-math 
-CFLAGS	= -Werror -m68020-60 -fbaserel -msmall-code -fomit-frame-pointer -I$(realpath $(TOPDIR))
+CFLAGS	= -Werror -Wall -m68020-60 -fbaserel -msmall-code -fomit-frame-pointer -I$(realpath $(TOPDIR))
 ASFLAGS = -m68020 -m68882 -I$(realpath $(TOPDIR))
 LIBS	= -lamiga -lm
 

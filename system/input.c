@@ -36,7 +36,9 @@ static __saveds APTR EventHandler(struct InputEvent *event asm("a0"),
         if (event->ie_Code == IECODE_NOBUTTON) {
           LOG("Mouse move: (%ld,%ld)\n", (LONG)event->ie_X, (LONG)event->ie_Y);
         } else {
+#ifndef NDEBUG
           const char *name[] = {"left", "right", "middle"};
+#endif
 
           LOG("Mouse %s key %s.\n",
               name[(event->ie_Code & ~IECODE_UP_PREFIX) - IECODE_LBUTTON],
