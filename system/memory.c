@@ -3,7 +3,7 @@
 
 #include "system/memory.h"
 
-void *xmalloc(size_t n) {
+void *g_new(size_t n) {
   void *p = NULL;
 
   if (n) {
@@ -14,7 +14,7 @@ void *xmalloc(size_t n) {
   return p;
 }
 
-void *xzalloc(size_t n) {
+void *g_new0(size_t n) {
   void *p = NULL;
 
   if (n) {
@@ -25,14 +25,14 @@ void *xzalloc(size_t n) {
   return p;
 }
 
-void *xmemdup(const void *p, size_t s) {
-  return memcpy(xmalloc(s), p, s);
+void *g_memdup(const void *p, size_t s) {
+  return memcpy(g_new(s), p, s);
 }
 
-char *xstrdup(const char *s) {
-  return xmemdup(s, strlen(s) + 1);
+char *g_strdup(const char *s) {
+  return g_memdup(s, strlen(s) + 1);
 }
 
-void xfree(void *p) {
+void g_free(void *p) {
   FreeVec(p);
 }
