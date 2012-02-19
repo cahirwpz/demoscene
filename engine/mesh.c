@@ -31,7 +31,7 @@ MeshT *NewMeshFromFile(const char *fileName, uint32_t memFlags) {
     memcpy(mesh->vertex, vertexPtr, sizeof(Vector3D) * vertices);
     memcpy(mesh->triangle, trianglePtr, sizeof(TriangleT) * triangles);
 
-    LOG("Mesh '%s' has %d vertices and %d triangles.\n",
+    LOG("Mesh '%s' has %d vertices and %d triangles.",
         fileName, vertices, triangles);
 
     DELETE(data);

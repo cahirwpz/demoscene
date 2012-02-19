@@ -30,7 +30,7 @@ PaletteT *NewPaletteFromFile(const char *fileName, uint32_t memFlags) {
       palette->colors[i].b = raw[i*3+2];
     }
 
-    LOG("Palette '%s' has %d colors.\n", fileName, count);
+    LOG("Palette '%s' has %d colors.", fileName, count);
 
     DELETE(data);
 

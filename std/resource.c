@@ -16,11 +16,11 @@ bool ResourcesAlloc() {
       continue;
 
     if (!(res->Ptr = res->AllocFunc())) {
-      LOG("Failed to Allocate resource '%s'.\n", res->Name);
+      LOG("Failed to Allocate resource '%s'.", res->Name);
       return FALSE;
     }
 
-    LOG("Allocated resource '%s' at %p.\n", res->Name, res->Ptr);
+    LOG("Allocated resource '%s' at %p.", res->Name, res->Ptr);
   }
 
   return TRUE;
@@ -33,7 +33,7 @@ bool ResourcesInit() {
     if (!res->InitFunc)
       continue;
 
-    LOG("Initiating resource '%s'.\n", res->Name);
+    LOG("Initiating resource '%s'.", res->Name);
 
     if (!res->InitFunc(res->Ptr))
       return FALSE;
@@ -46,7 +46,7 @@ void ResourcesFree() {
   ResourceT *res;
 
   for (res = ResourceList; res->Name; res++) {
-    LOG("Freeing resource '%s' at %p.\n", res->Name, res->Ptr);
+    LOG("Freeing resource '%s' at %p.", res->Name, res->Ptr);
 
     if (res->FreeFunc)
       res->FreeFunc(res->Ptr);
@@ -60,12 +60,12 @@ void *GetResource(const char *name) {
 
   for (res = ResourceList; res->Name; res++) {
     if (strcmp(res->Name, name) == 0) {
-      LOG("Fetched resource '%s' at %p.\n", res->Name, res->Ptr);
+      LOG("Fetched resource '%s' at %p.", res->Name, res->Ptr);
       return res->Ptr;
     }
   }
 
-  LOG("Resource '%s' not found.\n", name);
+  LOG("Resource '%s' not found.", name);
   
   return NULL;
 }

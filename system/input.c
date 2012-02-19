@@ -26,7 +26,7 @@ static __saveds APTR EventHandler(struct InputEvent *event asm("a0"),
   for (; event; event = event->ie_NextEvent) {
     switch (event->ie_Class) {
       case IECLASS_RAWKEY:
-        LOG("Key %ld %s (%04lx)\n",
+        LOG("Key %ld %s (%04lx).",
             (LONG)(event->ie_Code & ~IECODE_UP_PREFIX),
             (event->ie_Code & IECODE_UP_PREFIX) ? "up" : "down",
             (LONG)event->ie_Qualifier);
@@ -34,13 +34,13 @@ static __saveds APTR EventHandler(struct InputEvent *event asm("a0"),
 
       case IECLASS_RAWMOUSE:
         if (event->ie_Code == IECODE_NOBUTTON) {
-          LOG("Mouse move: (%ld,%ld)\n", (LONG)event->ie_X, (LONG)event->ie_Y);
+          LOG("Mouse move: (%ld,%ld).", (LONG)event->ie_X, (LONG)event->ie_Y);
         } else {
 #ifndef NDEBUG
           const char *name[] = {"left", "right", "middle"};
 #endif
 
-          LOG("Mouse %s key %s.\n",
+          LOG("Mouse %s key %s.",
               name[(event->ie_Code & ~IECODE_UP_PREFIX) - IECODE_LBUTTON],
               (event->ie_Code & IECODE_UP_PREFIX) ? "up" : "down");
         }
