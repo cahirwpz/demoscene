@@ -1,50 +1,51 @@
 #include "std/memory.h"
 #include "std/stack.h"
 
-static void StackAddItem(StackT *stack) {
-  SL_PushFront(stack->used, stack->allocFunc());
-}
+struct Stack {
+  SListT *list;
+  AtomPoolT *pool;
+};
 
-StackT *NewStack(AllocFuncT allocFunc, FreeFuncT freeFunc) {
+StackT *NewStack(AtomPoolT *pool) {
   StackT *stack = NEW_S(StackT);
 
-  stack->used = NewSList();
-  stack->free = NewSList();
-  stack->allocFunc = allocFunc;
-  stack->freeFunc = freeFunc;
+  stack->list = NewSList();
+  stack->pool = pool;
 
-  StackAddItem(stack);
+  StackPushNew(stack);
 
   return stack;
 }
 
 void DeleteStack(StackT *stack) {
   if (stack) {
-    DeleteSList(stack->used, stack->freeFunc);
-    DeleteSList(stack->free, stack->freeFunc);
+    DeleteSList(stack->list);
+    DeleteAtomPool(stack->pool);
     DELETE(stack);
   }
 }
 
 void StackReset(StackT *stack) {
-  SL_Concat(stack->free, stack->used);
-  SL_PushFrontNode(stack->used, SL_PopFrontNode(stack->free));
+  ResetSList(stack->list);
+  ResetAtomPool(stack->pool);
 }
 
-void *StackGet(StackT *stack, size_t index) {
-  return SL_GetNth(stack->used, index);
+void *StackPeek(StackT *stack, size_t index) {
+  return SL_GetNth(stack->list, index);
 }
 
-void *StackPush(StackT *stack) {
-  void *item = SL_GetNth(stack->used, 0);
+void *StackTop(StackT *stack) {
+  return SL_GetNth(stack->list, 0);
+}
 
-  SNodeT *link = SL_PopFrontNode(stack->free);
+void *StackPushNew(StackT *stack) {
+  void *item = AtomNew0(stack->pool);
 
-  if (link) {
-    SL_PushFrontNode(stack->used, link);
-  } else {
-    StackAddItem(stack);
-  }
+  SL_PushFront(stack->list, item);
 
   return item;
+}
+
+size_t StackSize(StackT *stack) {
+  return SL_Size(stack->list);
 }

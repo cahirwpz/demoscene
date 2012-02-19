@@ -1,27 +1,39 @@
 #include "std/memory.h"
 #include "std/slist.h"
 
+typedef struct SNode {
+  struct SNode *next;
+  void *item;
+} SNodeT;
+
+struct SList {
+  SNodeT *first;
+  SNodeT *last;
+  int items;
+};
+
 SListT *NewSList() {
   return NEW_S(SListT);
 }
 
-void DeleteSList(SListT *list, FreeFuncT func) {
-  if (list) {
-    SNodeT *node = list->first;
+void ResetSList(SListT *list) {
+  SNodeT *node = list->first;
 
-    while (node) {
-      SNodeT *next = node->next;
+  while (node) {
+    SNodeT *next = node->next;
 
-      if (func)
-        func(node->item);
+    DELETE(node);
 
-      DELETE(node);
-
-      node = next;
-    }
-
-    DELETE(list);
+    node = next;
   }
+
+  list->first = NULL;
+  list->last = NULL;
+  list->items = 0;
+}
+
+void DeleteSList(SListT *list) {
+  DELETE_S(list, ResetSList);
 }
 
 void SL_Concat(SListT *dst, SListT *src) {
@@ -55,7 +67,7 @@ void *SL_GetNth(SListT *list, size_t index) {
   return NULL;
 }
 
-void SL_PushFrontNode(SListT *list, SNodeT *node) {
+static void SL_PushFrontNode(SListT *list, SNodeT *node) {
   node->next = list->first;
   
   if (!list->first)
@@ -65,15 +77,7 @@ void SL_PushFrontNode(SListT *list, SNodeT *node) {
   list->items++;
 }
 
-void SL_PushFront(SListT *list, void *item) {
-  SNodeT *node = NEW_S(SNodeT);
-
-  node->item = item;
-
-  SL_PushFrontNode(list, node);
-}
-
-SNodeT *SL_PopFrontNode(SListT *list) {
+static SNodeT *SL_PopFrontNode(SListT *list) {
   SNodeT *node = list->first;
 
   if (node) {
@@ -87,6 +91,14 @@ SNodeT *SL_PopFrontNode(SListT *list) {
   return node;
 }
 
+void SL_PushFront(SListT *list, void *item) {
+  SNodeT *node = NEW_S(SNodeT);
+
+  node->item = item;
+
+  SL_PushFrontNode(list, node);
+}
+
 void *SL_PopFront(SListT *list) {
   SNodeT *node = SL_PopFrontNode(list);
 
@@ -95,4 +107,8 @@ void *SL_PopFront(SListT *list) {
   DELETE(node);
 
   return item;
+}
+
+size_t SL_Size(SListT *list) {
+  return list->items;
 }

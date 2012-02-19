@@ -11,7 +11,7 @@ void *MemNew(size_t n) {
     p = AllocVec(n, MEMF_PUBLIC);
 
     if (!p)
-      PANIC("AllocVec(%d) failed.", n);
+      PANIC("AllocVec(%ld) failed.", n);
   }
 
   return p;
@@ -24,7 +24,7 @@ void *MemNew0(size_t n) {
     p = AllocVec(n, MEMF_PUBLIC|MEMF_CLEAR);
 
     if (!p)
-      PANIC("AllocVec(%d) failed.", n);
+      PANIC("AllocVec(%ld) failed.", n);
   }
 
   return p;

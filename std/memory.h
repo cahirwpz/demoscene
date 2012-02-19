@@ -15,5 +15,6 @@ void MemFree(void *p);
     (TYPE *)MemNew(sizeof(TYPE) * (NUM))
 
 #define DELETE(PTR) MemFree(PTR)
+#define DELETE_S(PTR, FUNC) { if (PTR) FUNC(PTR); MemFree(PTR); }
 
 #endif
