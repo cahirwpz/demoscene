@@ -36,4 +36,13 @@ typedef void* (*AllocFuncT)();
 typedef void (*FreeFuncT)(void *);
 typedef bool (*InitFuncT)(void *);
 
+/**
+ * @brief Type of iterator function (can be used with lists, trees, etc.)
+ *
+ * @param Item  Element of iterable data structure.
+ * @param Data	Auxiliary data that can be used during iteration.
+ * @result TRUE to request to continue iteration, FALSE otherwise.
+ */
+typedef bool (*IterFuncT)(void *Item, void *Data);
+
 #endif
