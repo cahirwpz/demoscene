@@ -1,5 +1,6 @@
 #include "std/memory.h"
 #include "std/slist.h"
+#include "std/atompool.h"
 
 typedef struct SNode {
   struct SNode *next;
@@ -10,22 +11,20 @@ struct SList {
   SNodeT *first;
   SNodeT *last;
   int items;
+
+  AtomPoolT *pool;
 };
 
 SListT *NewSList() {
-  return NEW_S(SListT);
+  SListT *list = NEW_S(SListT);
+
+  list->pool = NewAtomPool(sizeof(SNodeT), 32);
+  
+  return list;
 }
 
 void ResetSList(SListT *list) {
-  SNodeT *node = list->first;
-
-  while (node) {
-    SNodeT *next = node->next;
-
-    DELETE(node);
-
-    node = next;
-  }
+  ResetAtomPool(list->pool);
 
   list->first = NULL;
   list->last = NULL;
@@ -33,7 +32,10 @@ void ResetSList(SListT *list) {
 }
 
 void DeleteSList(SListT *list) {
-  DELETE_S(list, ResetSList);
+  if (list) {
+    DELETE(list->pool);
+    DELETE(list);
+  }
 }
 
 void SL_Concat(SListT *dst, SListT *src) {
@@ -92,7 +94,7 @@ static SNodeT *SL_PopFrontNode(SListT *list) {
 }
 
 void SL_PushFront(SListT *list, void *item) {
-  SNodeT *node = NEW_S(SNodeT);
+  SNodeT *node = AtomNew(list->pool);
 
   node->item = item;
 
@@ -104,7 +106,7 @@ void *SL_PopFront(SListT *list) {
 
   void *item = (node) ? (node->item) : NULL;
 
-  DELETE(node);
+  AtomFree(list->pool, node);
 
   return item;
 }
