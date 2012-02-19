@@ -22,7 +22,7 @@ void SL_PushFrontNode(SListT *list, SNodeT *node);
 SNodeT *SL_PopFrontNode(SListT *list);
 
 void *SL_GetNth(SListT *list, size_t index);
-bool SL_PushFront(SListT *list, void *item);
+void SL_PushFront(SListT *list, void *item);
 void *SL_PopFront(SListT *list);
 
 #endif

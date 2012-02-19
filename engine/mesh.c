@@ -8,19 +8,12 @@
 MeshT *NewMesh(size_t vertices, size_t triangles) {
   MeshT *mesh = NEW_S(MeshT);
 
-  if (mesh) {
-    mesh->vertex_count = vertices;
-    mesh->triangle_count = triangles;
-    mesh->vertex = NEW_A(Vector3D, vertices);
-    mesh->triangle = NEW_A(TriangleT, triangles);
+  mesh->vertex_count = vertices;
+  mesh->triangle_count = triangles;
+  mesh->vertex = NEW_A(Vector3D, vertices);
+  mesh->triangle = NEW_A(TriangleT, triangles);
 
-    if (mesh->vertex && mesh->triangle)
-      return mesh;
-
-    DeleteMesh(mesh);
-  }
-
-  return NULL;
+  return mesh;
 }
 
 MeshT *NewMeshFromFile(const char *fileName, uint32_t memFlags) {
@@ -32,13 +25,11 @@ MeshT *NewMeshFromFile(const char *fileName, uint32_t memFlags) {
 
     MeshT *mesh = NewMesh(vertices, triangles);
 
-    if (mesh) {
-      Vector3D *vertexPtr = (Vector3D *)&data[2];
-      TriangleT *trianglePtr = (TriangleT *)&vertexPtr[vertices];
+    Vector3D *vertexPtr = (Vector3D *)&data[2];
+    TriangleT *trianglePtr = (TriangleT *)&vertexPtr[vertices];
 
-      memcpy(mesh->vertex, vertexPtr, sizeof(Vector3D) * vertices);
-      memcpy(mesh->triangle, trianglePtr, sizeof(TriangleT) * triangles);
-    }
+    memcpy(mesh->vertex, vertexPtr, sizeof(Vector3D) * vertices);
+    memcpy(mesh->triangle, trianglePtr, sizeof(TriangleT) * triangles);
 
     LOG("Mesh '%s' has %d vertices and %d triangles.\n",
         fileName, vertices, triangles);
@@ -55,9 +46,8 @@ void DeleteMesh(MeshT *mesh) {
   if (mesh) {
     DELETE(mesh->triangle);
     DELETE(mesh->vertex);
+    DELETE(mesh);
   }
-
-  DELETE(mesh);
 }
 
 void CenterMeshPosition(MeshT *mesh) {
@@ -73,7 +63,7 @@ void CenterMeshPosition(MeshT *mesh) {
     V3D_Sub(&mesh->vertex[i], &mesh->vertex[i], &med);
 }
 
-void NormalizeMesh(MeshT *mesh) {
+void NormalizeMeshSize(MeshT *mesh) {
   float m = 0.0f;
   int i;
 

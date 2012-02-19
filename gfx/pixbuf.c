@@ -8,20 +8,13 @@
 PixBufT *NewPixBuf(size_t width, size_t height) {
   PixBufT *pixbuf = NEW_S(PixBufT);
 
-  if (pixbuf) {
-    pixbuf->width = width;
-    pixbuf->height = height;
-    pixbuf->baseColor = 0;
-    pixbuf->colors = 256;
-    pixbuf->data = NEW_A(uint8_t, width * height);
+  pixbuf->width = width;
+  pixbuf->height = height;
+  pixbuf->baseColor = 0;
+  pixbuf->colors = 256;
+  pixbuf->data = NEW_A(uint8_t, width * height);
 
-    if (pixbuf->data)
-      return pixbuf;
-
-    DeletePixBuf(pixbuf);
-  }
-
-  return NULL;
+  return pixbuf;
 }
 
 PixBufT *NewPixBufFromFile(const char *fileName, uint32_t memFlags) {
@@ -34,10 +27,8 @@ PixBufT *NewPixBufFromFile(const char *fileName, uint32_t memFlags) {
 
     PixBufT *pixbuf = NewPixBuf(width, height);
 
-    if (pixbuf) {
-      pixbuf->colors = colors;
-      memcpy(pixbuf->data, &data[3], width * height);
-    }
+    pixbuf->colors = colors;
+    memcpy(pixbuf->data, &data[3], width * height);
 
     LOG("Image '%s' has size (%d,%d) and %d colors.\n",
         fileName, width, height, colors);
@@ -51,10 +42,10 @@ PixBufT *NewPixBufFromFile(const char *fileName, uint32_t memFlags) {
 }
 
 void DeletePixBuf(PixBufT *pixbuf) {
-  if (pixbuf)
+  if (pixbuf) {
     DELETE(pixbuf->data);
-
-  DELETE(pixbuf);
+    DELETE(pixbuf);
+  }
 }
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {

@@ -39,7 +39,7 @@ void SetupEffect() {
 
   Mesh = GetResource("mesh");
   CenterMeshPosition(Mesh);
-  NormalizeMesh(Mesh);
+  NormalizeMeshSize(Mesh);
   Points = NEW_A(PointT, Mesh->vertex_count);
   Vertices = NEW_A(Vector3D, Mesh->vertex_count);
 

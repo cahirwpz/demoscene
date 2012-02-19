@@ -7,19 +7,12 @@
 #include "gfx/palette.h"
 
 PaletteT *NewPalette(size_t count) {
-  PaletteT *palette = NEW_SZ(PaletteT);
+  PaletteT *palette = NEW_S(PaletteT);
 
-  if (palette) {
-    palette->count = count;
-    palette->colors = NEW_A(ColorT, count);
+  palette->count = count;
+  palette->colors = NEW_A(ColorT, count);
 
-    if (palette->colors)
-      return palette;
-
-    DeletePalette(palette);
-  }
-
-  return NULL;
+  return palette;
 }
 
 PaletteT *NewPaletteFromFile(const char *fileName, uint32_t memFlags) {
@@ -27,19 +20,14 @@ PaletteT *NewPaletteFromFile(const char *fileName, uint32_t memFlags) {
 
   if (data) {
     uint16_t count = data[0];
-
     PaletteT *palette = NewPalette(count);
+    uint8_t *raw = (uint8_t *)&data[1];
+    int i;
 
-    if (palette) {
-      uint8_t *raw = (uint8_t *)&data[1];
-
-      int i;
-
-      for (i = 0; i < count; i++) {
-        palette->colors[i].r = raw[i*3];
-        palette->colors[i].g = raw[i*3+1];
-        palette->colors[i].b = raw[i*3+2];
-      }
+    for (i = 0; i < count; i++) {
+      palette->colors[i].r = raw[i*3];
+      palette->colors[i].g = raw[i*3+1];
+      palette->colors[i].b = raw[i*3+2];
     }
 
     LOG("Palette '%s' has %d colors.\n", fileName, count);
@@ -76,11 +64,10 @@ PaletteT *CopyPalette(PaletteT *palette) {
 
   copy = NewPalette(palette->count);
 
-  if (copy) {
-    copy->start = palette->start;
-    copy->next = rec_copy;
-    memcpy(copy->colors, palette->colors, sizeof(ColorT) * palette->count);
-  }
+  copy->start = palette->start;
+  copy->next = rec_copy;
+
+  memcpy(copy->colors, palette->colors, sizeof(ColorT) * palette->count);
 
   return copy;
 }
@@ -114,7 +101,6 @@ void UnlinkPalettes(PaletteT *palette) {
     PaletteT *next = palette->next;
 
     palette->next = NULL;
-
     palette = next;
   }
 }

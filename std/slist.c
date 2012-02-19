@@ -2,7 +2,7 @@
 #include "std/slist.h"
 
 SListT *NewSList() {
-  return NEW_SZ(SListT);
+  return NEW_S(SListT);
 }
 
 void DeleteSList(SListT *list, FreeFuncT func) {
@@ -65,16 +65,12 @@ void SL_PushFrontNode(SListT *list, SNodeT *node) {
   list->items++;
 }
 
-bool SL_PushFront(SListT *list, void *item) {
-  SNodeT *node = NEW_SZ(SNodeT);
+void SL_PushFront(SListT *list, void *item) {
+  SNodeT *node = NEW_S(SNodeT);
 
-  if (node) {
-    node->item = item;
+  node->item = item;
 
-    SL_PushFrontNode(list, node);
-  }
-
-  return (node) ? TRUE : FALSE;
+  SL_PushFrontNode(list, node);
 }
 
 SNodeT *SL_PopFrontNode(SListT *list) {

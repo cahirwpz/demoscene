@@ -1,34 +1,21 @@
 #include "system/memory.h"
 #include "std/stack.h"
 
-static bool StackAddItem(StackT *stack) {
-  void *item = stack->allocFunc();
-
-  if (item && SL_PushFront(stack->used, item))
-    return TRUE;
-
-  DELETE(item);
-
-  return FALSE;
+static void StackAddItem(StackT *stack) {
+  SL_PushFront(stack->used, stack->allocFunc());
 }
 
 StackT *NewStack(AllocFuncT allocFunc, FreeFuncT freeFunc) {
-  StackT *stack = NEW_SZ(StackT);
+  StackT *stack = NEW_S(StackT);
 
-  if (stack) {
-    stack->used = NewSList();
-    stack->free = NewSList();
-    stack->allocFunc = allocFunc;
-    stack->freeFunc = freeFunc;
+  stack->used = NewSList();
+  stack->free = NewSList();
+  stack->allocFunc = allocFunc;
+  stack->freeFunc = freeFunc;
 
-    if (stack->used && stack->free)
-      if (StackAddItem(stack))
-        return stack;
+  StackAddItem(stack);
 
-    DeleteStack(stack);
-  }
-
-  return NULL;
+  return stack;
 }
 
 void DeleteStack(StackT *stack) {
@@ -56,8 +43,7 @@ void *StackPush(StackT *stack) {
   if (link) {
     SL_PushFrontNode(stack->used, link);
   } else {
-    if (!StackAddItem(stack))
-      return NULL;
+    StackAddItem(stack);
   }
 
   return item;

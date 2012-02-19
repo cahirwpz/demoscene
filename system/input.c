@@ -57,25 +57,21 @@ static __saveds APTR EventHandler(struct InputEvent *event asm("a0"),
 
 BOOL InitEventHandler() {
   if (!InputDev.Open) {
-    if ((InputDev.IntHandler = NEW_SZ(struct Interrupt))) {
-      InputDev.IntHandler->is_Code = (APTR)EventHandler;
-      InputDev.IntHandler->is_Data = NULL;
-      InputDev.IntHandler->is_Node.ln_Pri = 100;
+    InputDev.IntHandler = NEW_S(struct Interrupt);
+    InputDev.IntHandler->is_Code = (APTR)EventHandler;
+    InputDev.IntHandler->is_Data = NULL;
+    InputDev.IntHandler->is_Node.ln_Pri = 100;
 
-      if ((InputDev.MsgPort = CreatePort(NULL, 0))) {
-        if ((InputDev.IoReq = CreateExtIO(InputDev.MsgPort,
-                                          sizeof(struct IOStdReq)))) {
-          InputDev.Open = (OpenDevice("input.device", 0L,
-                                      InputDev.IoReq, 0) == 0);
-        }
-      }
-    }
+    if ((InputDev.MsgPort = CreatePort(NULL, 0)))
+      if ((InputDev.IoReq = CreateExtIO(InputDev.MsgPort,
+                                        sizeof(struct IOStdReq))))
+        InputDev.Open = !OpenDevice("input.device", 0L, InputDev.IoReq, 0);
 
     if (InputDev.Open) {
       struct IOStdReq *ioReq = (struct IOStdReq *)InputDev.IoReq;
-
       ioReq->io_Data = (APTR)InputDev.IntHandler;
       ioReq->io_Command = IND_ADDHANDLER;
+
       DoIO((struct IORequest *)ioReq);
     } else {
       KillEventHandler();

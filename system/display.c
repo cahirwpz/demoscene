@@ -86,37 +86,36 @@ static struct TagItem ScreenTags[] = {
 };
 
 bool InitDisplay(int width, int height, int depth) {
-  if (Display)
-    return TRUE;
- 
-  if ((Display = NEW_SZ(DisplayT))) {
+  if (!Display) {
     size_t i, j;
+
+    Display = NEW_S(DisplayT);
 
     for (i = 0; i < 2; i++)
       Display->Bitmap[i] = AllocBitMap(width, height, depth,
                                        BMF_DISPLAYABLE|BMF_CLEAR, NULL);
 
-    if ((Display->Palette = NEW_SZ(ScreenPaletteT))) {
-      Display->Palette->Count = 256;
+    Display->Palette = NEW_S(ScreenPaletteT);
+    Display->Palette->Count = 256;
 
-      for (i = 0, j = 0; i < 256; i++) {
-        Display->Palette->Colors[j++] = i << 24;
-        Display->Palette->Colors[j++] = i << 24;
-        Display->Palette->Colors[j++] = i << 24;
-      }
-
-      ScreenTags[0].ti_Data = width;
-      ScreenTags[1].ti_Data = height;
-      ScreenTags[2].ti_Data = depth;
-      ScreenTags[3].ti_Data = (ULONG)Display->Bitmap[0];
-      ScreenTags[4].ti_Data = (ULONG)Display->Palette;
-
-      if ((Display->Screen = OpenScreenTagList(0L, ScreenTags))) {
-        Display->CurrentBitMap = 1;
-        return TRUE;
-      }
+    for (i = 0, j = 0; i < 256; i++) {
+      Display->Palette->Colors[j++] = i << 24;
+      Display->Palette->Colors[j++] = i << 24;
+      Display->Palette->Colors[j++] = i << 24;
     }
-    KillDisplay();
+
+    ScreenTags[0].ti_Data = width;
+    ScreenTags[1].ti_Data = height;
+    ScreenTags[2].ti_Data = depth;
+    ScreenTags[3].ti_Data = (ULONG)Display->Bitmap[0];
+    ScreenTags[4].ti_Data = (ULONG)Display->Palette;
+
+    if ((Display->Screen = OpenScreenTagList(0L, ScreenTags))) {
+      Display->CurrentBitMap = 1;
+      return TRUE;
+    } else {
+      KillDisplay();
+    }
   }
 
   return FALSE;

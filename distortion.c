@@ -3,28 +3,22 @@
 #include "system/memory.h"
 #include "distortion.h"
 
-struct DistortionMap *NewDistortionMap(uint16_t width, uint16_t height) {
-  struct DistortionMap *map = NEW_S(struct DistortionMap);
+DistortionMapT *NewDistortionMap(uint16_t width, uint16_t height) {
+  DistortionMapT *map = NEW_S(DistortionMapT);
 
-  if (map) {
-    map->Width = width;
-    map->Height = height;
-
-    if (!(map->Map = NEW_AZ(uint16_t, width * height))) {
-      DeleteDistortionMap(map);
-      map = NULL;
-    }
-  }
+  map->Width = width;
+  map->Height = height;
+  map->Map = NEW_A(uint16_t, width * height);
 
   return map;
 }
 
-void DeleteDistortionMap(struct DistortionMap *map) {
+void DeleteDistortionMap(DistortionMapT *map) {
   DELETE(map->Map);
   DELETE(map);
 }
 
-void GenerateTunnel(struct DistortionMap *tunnel,
+void GenerateTunnel(DistortionMapT *tunnel,
                     int16_t radius, int16_t centerX, int16_t centerY) {
   int minX = -centerX;
   int minY = -centerY;

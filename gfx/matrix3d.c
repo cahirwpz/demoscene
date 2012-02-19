@@ -10,7 +10,7 @@
 #define M(A,I,J) (*A)[I][J]
 
 Matrix3D *NewMatrix3D() {
-  return NEW_SZ(Matrix3D);
+  return NEW_S(Matrix3D);
 }
 
 void DeleteMatrix3D(Matrix3D *matrix) {

@@ -1,3 +1,5 @@
+#include <proto/exec.h>
+
 #include "engine/mesh.h"
 #include "std/resource_internal.h"
 #include "system/memory.h"
