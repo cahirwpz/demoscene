@@ -22,17 +22,16 @@ AtomPoolT *NewAtomPool(size_t atomSize, size_t perChunk) {
   return atomPool;
 }
 
-static void FreeAtomPool(AtomPoolT *atomPool) {
-  DeletePool(atomPool->pool);
-}
-
 void DeleteAtomPool(AtomPoolT *atomPool) {
-  DELETE_S(atomPool, FreeAtomPool);
+  if (atomPool) {
+    DeletePool(atomPool->pool);
+    DELETE(atomPool);
+  }
 }
 
 void ResetAtomPool(AtomPoolT *atomPool) {
   if (atomPool->pool)
-    FreeAtomPool(atomPool);
+    DeletePool(atomPool->pool);
 
   atomPool->pool = CreatePool(MEMF_PUBLIC,
                               atomPool->atomSize * atomPool->perChunk,
