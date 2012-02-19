@@ -1,14 +1,17 @@
 #include <string.h>
 #include <proto/exec.h>
 
+#include "std/debug.h"
 #include "std/memory.h"
 
 void *MemNew(size_t n) {
   void *p = NULL;
 
   if (n) {
-    if (!(p = AllocVec(n, MEMF_PUBLIC)))
-      _exit();
+    p = AllocVec(n, MEMF_PUBLIC);
+
+    if (!p)
+      PANIC("AllocVec(%d) failed.", n);
   }
 
   return p;
@@ -18,8 +21,10 @@ void *MemNew0(size_t n) {
   void *p = NULL;
 
   if (n) {
-    if (!(p = AllocVec(n, MEMF_PUBLIC|MEMF_CLEAR)))
-      _exit();
+    p = AllocVec(n, MEMF_PUBLIC|MEMF_CLEAR);
+
+    if (!p)
+      PANIC("AllocVec(%d) failed.", n);
   }
 
   return p;
