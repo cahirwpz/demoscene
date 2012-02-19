@@ -11,6 +11,7 @@ blit.o: blit.c blit.h pixbuf.h
 canvas.o: canvas.c canvas.h
 ellipse.o: ellipse.c ellipse.h canvas.h
 hsl.o: hsl.c hsl.h
+	$(CC) $(CFLAGS) -O0 -c -o $@ $<
 line.o: line.c line.h
 matrix2d.o: matrix2d.c matrix2d.h
 matrix3d.o: matrix3d.c matrix3d.h

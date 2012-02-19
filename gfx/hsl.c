@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "hsl.h"
 
 void RGB2HSL(ColorT *src, ColorVectorT *dst) {
@@ -59,7 +61,7 @@ void HSL2RGB(ColorVectorT *src, ColorT *dst) {
 
     float h = src->h * 6.0f;
 
-    int sextant = (int)h;
+    int sextant = (int)floor(h);
 
     float fract = h - sextant;
     float vsf = v * sv * fract;
