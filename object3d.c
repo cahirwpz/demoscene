@@ -75,7 +75,7 @@ void RenderMesh(int frameNumber) {
   TS_PushPerspective(0, 0, 160.0f);
   TS_Compose3D();
 
-  M3D_Project2D(WIDTH/2, HEIGHT/2, Points, Mesh->vertex, Mesh->vertex_count, TS_GetMatrix3D(1));
+  M3D_Project2D(WIDTH/2, HEIGHT/2, Points, Mesh->vertex, Mesh->vertex_count, TS_GetMatrix3D(0));
 
   CanvasFill(Canvas, 0);
 

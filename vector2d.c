@@ -84,7 +84,7 @@ void RenderVector(int frameNumber) {
   TS_PushTranslation2D(WIDTH/2 + c * 50, HEIGHT/2 + s * 20);
   TS_Compose2D();
 
-  M2D_Transform(TriangleToDraw, Triangle, 3, TS_GetMatrix2D(1));
+  M2D_Transform(TriangleToDraw, Triangle, 3, TS_GetMatrix2D(0));
 
   frameNumber &= 255;
 
