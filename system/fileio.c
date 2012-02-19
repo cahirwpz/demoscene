@@ -4,7 +4,7 @@
 
 #include "system/fileio.h"
 
-void *ReadFileSimple(const char *fileName, uint32_t memFlags) {
+void *ReadFileToCustomMemory(const char *fileName, uint32_t memFlags) {
   BPTR fh;
   void *data = NULL;
   
@@ -28,4 +28,8 @@ void *ReadFileSimple(const char *fileName, uint32_t memFlags) {
   }
 
   return data;
+}
+
+void *ReadFileSimple(const char *fileName) {
+  return ReadFileToCustomMemory(fileName, MEMF_PUBLIC);
 }

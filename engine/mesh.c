@@ -16,8 +16,8 @@ MeshT *NewMesh(size_t vertices, size_t triangles) {
   return mesh;
 }
 
-MeshT *NewMeshFromFile(const char *fileName, uint32_t memFlags) {
-  uint16_t *data = ReadFileSimple(fileName, memFlags);
+MeshT *NewMeshFromFile(const char *fileName) {
+  uint16_t *data = ReadFileSimple(fileName);
 
   if (data) {
     uint16_t vertices = data[0];

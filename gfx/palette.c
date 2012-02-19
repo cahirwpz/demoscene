@@ -15,8 +15,8 @@ PaletteT *NewPalette(size_t count) {
   return palette;
 }
 
-PaletteT *NewPaletteFromFile(const char *fileName, uint32_t memFlags) {
-  uint16_t *data = ReadFileSimple(fileName, memFlags);
+PaletteT *NewPaletteFromFile(const char *fileName) {
+  uint16_t *data = ReadFileSimple(fileName);
 
   if (data) {
     uint16_t count = data[0];

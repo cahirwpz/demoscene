@@ -11,9 +11,14 @@ typedef struct PixBuf {
 } PixBufT;
 
 PixBufT *NewPixBuf(size_t width, size_t height);
-PixBufT *NewPixBufFromFile(const char *fileName, uint32_t memFlags);
+PixBufT *NewPixBufFromFile(const char *fileName);
 void DeletePixBuf(PixBufT *pixbuf);
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
+
+#define RSC_PIXBUF_FILE(NAME, FILENAME) { \
+  void *_alloc() { return NewPixBufFromFile(FILENAME); } \
+  AddSimpleResource(NAME, _alloc, (FreeFuncT)DeletePixBuf); \
+}
 
 #endif

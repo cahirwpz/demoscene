@@ -12,11 +12,16 @@ typedef struct Palette {
 } PaletteT;
 
 PaletteT *NewPalette(size_t count);
-PaletteT *NewPaletteFromFile(const char *fileName, uint32_t memFlags);
+PaletteT *NewPaletteFromFile(const char *fileName);
 void DeletePalette(PaletteT *palette);
 PaletteT *CopyPalette(PaletteT *palette);
 
 bool LinkPalettes(size_t count, ...);
 void UnlinkPalettes(PaletteT *palette);
+
+#define RSC_PALETTE_FILE(NAME, FILENAME) { \
+  void *_alloc() { return NewPaletteFromFile(FILENAME); } \
+  AddSimpleResource(NAME, _alloc, (FreeFuncT)DeletePalette); \
+}
 
 #endif

@@ -17,8 +17,8 @@ PixBufT *NewPixBuf(size_t width, size_t height) {
   return pixbuf;
 }
 
-PixBufT *NewPixBufFromFile(const char *fileName, uint32_t memFlags) {
-  uint16_t *data = ReadFileSimple(fileName, memFlags);
+PixBufT *NewPixBufFromFile(const char *fileName) {
+  uint16_t *data = ReadFileSimple(fileName);
 
   if (data) {
     uint16_t width = data[0];
