@@ -1,8 +1,8 @@
 #include <string.h>
 
-#include "system/memory.h"
+#include "std/debug.h"
+#include "std/memory.h"
 #include "system/fileio.h"
-#include "system/debug.h"
 #include "engine/mesh.h"
 
 MeshT *NewMesh(size_t vertices, size_t triangles) {

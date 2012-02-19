@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "system/memory.h"
+#include "std/memory.h"
 #include "gfx/matrix3d.h"
 
 #define M_FOREACH(I, J)           \

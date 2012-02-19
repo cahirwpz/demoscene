@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include "system/memory.h"
+#include "std/memory.h"
 #include "gfx/canvas.h"
 
 CanvasT *NewCanvas(int width, int height) {

@@ -1,8 +1,8 @@
 #include <proto/exec.h>
 
 #include "engine/mesh.h"
+#include "std/memory.h"
 #include "std/resource_internal.h"
-#include "system/memory.h"
 
 RSC_TYPE(mesh, MeshT *)
 RSC_ADD(mesh, NewMeshFromFile("data/whelpz.robj", MEMF_PUBLIC))

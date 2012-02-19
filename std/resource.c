@@ -2,8 +2,8 @@
 
 #include <string.h>
 
-#include "system/debug.h"
-#include "system/memory.h"
+#include "std/debug.h"
+#include "std/memory.h"
 #include "std/resource.h"
 
 extern ResourceT ResourceList[];

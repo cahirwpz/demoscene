@@ -1,9 +1,9 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "system/memory.h"
+#include "std/debug.h"
+#include "std/memory.h"
 #include "system/fileio.h"
-#include "system/debug.h"
 #include "gfx/palette.h"
 
 PaletteT *NewPalette(size_t count) {

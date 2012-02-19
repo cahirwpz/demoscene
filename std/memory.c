@@ -1,7 +1,7 @@
 #include <string.h>
 #include <proto/exec.h>
 
-#include "system/memory.h"
+#include "std/memory.h"
 
 void *g_new(size_t n) {
   void *p = NULL;

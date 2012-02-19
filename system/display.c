@@ -8,9 +8,9 @@
 #include <hardware/custom.h>
 #include <hardware/dmabits.h>
 
-#include "debug.h"
+#include "std/debug.h"
+#include "std/memory.h"
 #include "display.h"
-#include "memory.h"
 
 typedef struct ViewPort ViewPortT;
 typedef struct Screen ScreenT;

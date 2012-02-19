@@ -1,15 +1,16 @@
 #include <math.h>
 
+#include "std/debug.h"
+#include "std/memory.h"
+#include "std/resource.h"
+
 #include "gfx/ellipse.h"
 #include "gfx/line.h"
 #include "gfx/transformations.h"
 #include "gfx/triangle.h"
-#include "std/resource.h"
 
 #include "system/c2p.h"
-#include "system/debug.h"
 #include "system/display.h"
-#include "system/memory.h"
 #include "system/vblank.h"
 
 #include "frame_tools.h"
@@ -113,7 +114,7 @@ void RenderChunky(int frameNumber) {
 void MainLoop() {
   SetVBlankCounter(0);
 
-  while (GetVBlankCounter() < 2500) {
+  while (GetVBlankCounter() < 500) {
     int frameNumber = GetVBlankCounter();
 
     RenderVector(frameNumber);

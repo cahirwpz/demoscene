@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "system/memory.h"
+#include "std/memory.h"
 #include "distortion.h"
 
 DistortionMapT *NewDistortionMap(uint16_t width, uint16_t height) {

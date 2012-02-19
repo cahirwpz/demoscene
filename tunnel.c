@@ -2,16 +2,17 @@
 
 #include "p61/p61.h"
 
+#include "std/debug.h"
+#include "std/memory.h"
+#include "std/resource.h"
+
 #include "gfx/blit.h"
 #include "gfx/hsl.h"
 #include "gfx/line.h"
 #include "gfx/palette.h"
-#include "std/resource.h"
 
 #include "system/c2p.h"
-#include "system/debug.h"
 #include "system/display.h"
-#include "system/memory.h"
 #include "system/vblank.h"
 
 #include "frame_tools.h"

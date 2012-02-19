@@ -1,5 +1,5 @@
 #include "gfx/triangle.h"
-#include "system/debug.h"
+#include "std/debug.h"
 
 typedef struct EdgeScan {
   float d, v;

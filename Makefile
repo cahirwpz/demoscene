@@ -33,7 +33,7 @@ object3d: startup_effect.o object3d.o res_object3d.o frame_tools.o
 	$(CC) $(CFLAGS) -o $@ $^ -lengine $(LIBS)
 
 tunnel.o: tunnel.c
-distortion.o: distortion.c distortion.h system/memory.h
+distortion.o: distortion.c distortion.h
 distortion_opt.o: distortion_opt.s distortion.h
 
 archive:
@@ -43,6 +43,6 @@ clean:
 	for subdir in $(SUBDIRS); do $(MAKE) -C $$subdir clean; done
 	$(RM) *~ *.o $(BINS)
 
-.PHONY: all 7z $(SUBDIRS)
+.PHONY: all 7z $(SUBDIRS) $(BINS)
 
 # vim: sw=8 ts=8

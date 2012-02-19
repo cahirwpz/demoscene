@@ -1,8 +1,8 @@
+#include "std/debug.h"
 #include "std/stack.h"
 #include "gfx/transformations.h"
 #include "gfx/matrix2d.h"
 #include "gfx/matrix3d.h"
-#include "system/debug.h"
 
 static StackT *Matrices = NULL;
 

@@ -1,7 +1,7 @@
-#ifndef __SYSTEM_MEMORY_H__
-#define __SYSTEM_MEMORY_H__
+#ifndef __STD_MEMORY_H__
+#define __STD_MEMORY_H__
 
-#include <std/types.h>
+#include "std/types.h"
 
 void *g_new(size_t n);
 void *g_new0(size_t n);

@@ -1,8 +1,8 @@
 #include <string.h>
 
-#include "system/memory.h"
+#include "std/debug.h"
+#include "std/memory.h"
 #include "system/fileio.h"
-#include "system/debug.h"
 #include "gfx/pixbuf.h"
 
 PixBufT *NewPixBuf(size_t width, size_t height) {
