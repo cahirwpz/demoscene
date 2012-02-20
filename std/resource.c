@@ -100,6 +100,13 @@ static void AddResource(const char *name, void *ptr,
   SL_PushFront(ResList, res);
 }
 
+void AddRscSimple(const char *name, void *ptr, FreeFuncT freeFunc) {
+  if (!ptr)
+    PANIC("Missing content for resource '%s'.", name);
+
+  AddResource(name, ptr, NULL, freeFunc, NULL);
+}
+
 void AddLazyRscSimple(const char *name,
                       AllocFuncT allocFunc, FreeFuncT freeFunc) {
   AddResource(name, NULL, allocFunc, freeFunc, NULL);

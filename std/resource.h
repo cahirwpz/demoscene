@@ -9,6 +9,7 @@ void StopResourceManager();
 bool ResourcesAlloc();
 bool ResourcesInit();
 
+void AddRscSimple(const char *name, void *ptr, FreeFuncT freeFunc);
 void AddLazyRscSimple(const char *name,
                       AllocFuncT allocFunc, FreeFuncT freeFunc);
 void AddLazyRscWithInit(const char *name,
