@@ -10,7 +10,7 @@ Matrix3D *NewMatrix3D();
 void DeleteMatrix3D(Matrix3D *matrix);
 
 void Multiply3D(Matrix3D *d, Matrix3D *a, Matrix3D *b);
-void InvMultiply3D(Matrix3D *d, Matrix3D *a, Matrix3D *b);
+void InverseMultiply3D(Matrix3D *d, Matrix3D *a, Matrix3D *b);
 void Transpose3D(Matrix3D *d, Matrix3D *a);
 void LoadIdentity3D(Matrix3D *d);
 void LoadRotation3D(Matrix3D *d, float angleX, float angleY, float angleZ);
