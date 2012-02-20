@@ -108,14 +108,12 @@ void *SL_PopFront(SListT *list) {
   return item;
 }
 
-void *SL_PushBack(SListT *list, void *item) {
+void SL_PushBack(SListT *list, void *item) {
   SNodeT *node = AtomNew(list->pool);
 
   node->item = item;
 
   NodePushBack(list, node);
-
-  return node;
 }
 
 void SL_PushFront(SListT *list, void *item) {
