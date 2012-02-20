@@ -27,9 +27,10 @@ static bool Acquire(ResourceT *res) {
       LOG("Failed to Allocate resource '%s'.", res->Name);
       return FALSE;
     }
+
+    LOG("Allocated resource '%s' at %p.", res->Name, res->Ptr);
   }
 
-  LOG("Allocated resource '%s' at %p.", res->Name, res->Ptr);
   return TRUE;
 }
 
@@ -45,12 +46,17 @@ static bool Initialize(ResourceT *res) {
 }
 
 static bool Relinquish(ResourceT *res) {
-  LOG("Freeing resource '%s' at %p.", res->Name, res->Ptr);
+  bool needFree = TRUE;
 
   if (res->FreeFunc)
     res->FreeFunc(res->Ptr);
   else if (res->AllocFunc)
     DELETE(res->Ptr);
+  else
+    needFree = FALSE;
+
+  if (needFree)
+    LOG("Freeing resource '%s' at %p.", res->Name, res->Ptr);
 
   return TRUE;
 }
@@ -72,11 +78,11 @@ void StopResourceManager() {
 }
 
 bool ResourcesAlloc() {
-  return SL_ForEach(ResList, (IterFuncT)Acquire, NULL) ? TRUE : FALSE;
+  return SL_ForEach(ResList, (IterFuncT)Acquire, NULL) ? FALSE : TRUE;
 }
 
 bool ResourcesInit() {
-  return SL_ForEach(ResList, (IterFuncT)Initialize, NULL) ? TRUE : FALSE;
+  return SL_ForEach(ResList, (IterFuncT)Initialize, NULL) ? FALSE : TRUE;
 }
 
 static void AddResource(const char *name, void *ptr, 
@@ -112,11 +118,10 @@ void AddRscStatic(const char *name, void *ptr) {
 void *GetResource(const char *name) {
   ResourceT *res = SL_ForEach(ResList, (IterFuncT)FindByName, (void *)name);
 
-  if (res) {
-    LOG("Fetched resource '%s' at %p.", res->Name, res->Ptr);
-  } else {
-    LOG("Resource '%s' not found.", name);
-  }
+  if (!res)
+    PANIC("Resource '%s' not found.", name);
+
+  LOG("Fetched resource '%s' located at %p.", res->Name, res->Ptr);
   
-  return res;
+  return res->Ptr;
 }
