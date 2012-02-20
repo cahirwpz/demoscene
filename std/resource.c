@@ -9,36 +9,36 @@
 #include "std/slist.h"
 
 typedef struct Resource {
-  const char *Name;
-  void *Ptr;
-  AllocFuncT AllocFunc;
-  FreeFuncT FreeFunc;
-  InitFuncT InitFunc;
+  const char *name;
+  void *ptr;
+  AllocFuncT allocFunc;
+  InitFuncT initFunc;
+  FreeFuncT freeFunc;
 } ResourceT;
 
 static SListT *ResList;
 static AtomPoolT *ResPool;
 
 static bool Acquire(ResourceT *res) {
-  if (res->AllocFunc) {
-    res->Ptr = res->AllocFunc();
+  if (res->allocFunc) {
+    res->ptr = res->allocFunc();
 
-    if (!res->Ptr) {
-      LOG("Failed to Allocate resource '%s'.", res->Name);
+    if (!res->ptr) {
+      LOG("Failed to Allocate resource '%s'.", res->name);
       return FALSE;
     }
 
-    LOG("Allocated resource '%s' at %p.", res->Name, res->Ptr);
+    LOG("Allocated resource '%s' at %p.", res->name, res->ptr);
   }
 
   return TRUE;
 }
 
 static bool Initialize(ResourceT *res) {
-  if (res->InitFunc) {
-    LOG("Initiating resource '%s'.", res->Name);
+  if (res->initFunc) {
+    LOG("Initiating resource '%s'.", res->name);
 
-    if (!res->InitFunc(res->Ptr))
+    if (!res->initFunc(res->ptr))
       return FALSE;
   }
 
@@ -48,21 +48,21 @@ static bool Initialize(ResourceT *res) {
 static bool Relinquish(ResourceT *res) {
   bool needFree = TRUE;
 
-  if (res->FreeFunc)
-    res->FreeFunc(res->Ptr);
-  else if (res->AllocFunc)
-    DELETE(res->Ptr);
+  if (res->freeFunc)
+    res->freeFunc(res->ptr);
+  else if (res->allocFunc)
+    DELETE(res->ptr);
   else
     needFree = FALSE;
 
   if (needFree)
-    LOG("Freeing resource '%s' at %p.", res->Name, res->Ptr);
+    LOG("Freeing resource '%s' at %p.", res->name, res->ptr);
 
   return TRUE;
 }
 
 static bool FindByName(ResourceT *res, const char *name) {
-  return strcmp(res->Name, name);
+  return strcmp(res->name, name);
 }
 
 void StartResourceManager() {
@@ -91,11 +91,11 @@ static void AddResource(const char *name, void *ptr,
 {
   ResourceT *res = AtomNew(ResPool);
 
-  res->Name = StrDup(name);
-  res->Ptr = ptr;
-  res->AllocFunc = allocFunc;
-  res->InitFunc = initFunc;
-  res->FreeFunc = freeFunc;
+  res->name = StrDup(name);
+  res->ptr = ptr;
+  res->allocFunc = allocFunc;
+  res->initFunc = initFunc;
+  res->freeFunc = freeFunc;
 
   SL_PushFront(ResList, res);
 }
@@ -121,7 +121,7 @@ void *GetResource(const char *name) {
   if (!res)
     PANIC("Resource '%s' not found.", name);
 
-  LOG("Fetched resource '%s' located at %p.", res->Name, res->Ptr);
+  LOG("Fetched resource '%s' located at %p.", res->name, res->ptr);
   
-  return res->Ptr;
+  return res->ptr;
 }
