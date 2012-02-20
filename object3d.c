@@ -76,8 +76,8 @@ void RenderMesh(int frameNumber) {
     PointT *points = R_("Points");
     CanvasT *canvas = R_("Canvas");
 
-    M3D_Project2D(WIDTH/2, HEIGHT/2, points, mesh->vertex, mesh->vertex_count,
-                  GetMatrix3D(ms, 0));
+    ProjectTo2D(WIDTH/2, HEIGHT/2, points, mesh->vertex, mesh->vertex_count,
+                GetMatrix3D(ms, 0));
 
     CanvasFill(canvas, 0);
 

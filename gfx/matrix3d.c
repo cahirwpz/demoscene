@@ -17,7 +17,7 @@ void DeleteMatrix3D(Matrix3D *matrix) {
   DELETE(matrix);
 }
 
-void M3D_Multiply(Matrix3D *d, Matrix3D *a, Matrix3D *b) {
+void Multiply3D(Matrix3D *d, Matrix3D *a, Matrix3D *b) {
   int i, j, k;
 
   M_FOREACH(i, j) {
@@ -28,7 +28,7 @@ void M3D_Multiply(Matrix3D *d, Matrix3D *a, Matrix3D *b) {
   }
 }
 
-void M3D_InvMultiply(Matrix3D *d, Matrix3D *a, Matrix3D *b) {
+void InverseMultiply3D(Matrix3D *d, Matrix3D *a, Matrix3D *b) {
   int i, j, k;
 
   M_FOREACH(i, j) {
@@ -39,7 +39,7 @@ void M3D_InvMultiply(Matrix3D *d, Matrix3D *a, Matrix3D *b) {
   }
 }
 
-void M3D_Transpose(Matrix3D *d, Matrix3D *a) {
+void Transpose3D(Matrix3D *d, Matrix3D *a) {
   int i, j; 
 
   M_FOREACH(i, j)
@@ -47,15 +47,15 @@ void M3D_Transpose(Matrix3D *d, Matrix3D *a) {
 }
 
 
-void M3D_LoadIdentity(Matrix3D *d) {
+void LoadIdentity3D(Matrix3D *d) {
   int i, j; 
 
   M_FOREACH(i, j)
     M(d,i,j) = (i == j) ? 1.0f : 0.0f;
 }
 
-void M3D_LoadRotation(Matrix3D *d, float angleX, float angleY, float angleZ) {
-  M3D_LoadIdentity(d);
+void LoadRotation3D(Matrix3D *d, float angleX, float angleY, float angleZ) {
+  LoadIdentity3D(d);
 
   angleX *= 3.14159265f / 180.0f;
   angleY *= 3.14159265f / 180.0f;
@@ -81,24 +81,26 @@ void M3D_LoadRotation(Matrix3D *d, float angleX, float angleY, float angleZ) {
   }
 }
 
-void M3D_LoadScaling(Matrix3D *d, float scaleX, float scaleY, float scaleZ) {
-  M3D_LoadIdentity(d);
+void LoadScaling3D(Matrix3D *d, float scaleX, float scaleY, float scaleZ) {
+  LoadIdentity3D(d);
 
   M(d,0,0) = scaleX;
   M(d,1,1) = scaleY;
   M(d,2,2) = scaleZ;
 }
 
-void M3D_LoadTranslation(Matrix3D *d, float moveX, float moveY, float moveZ) {
-  M3D_LoadIdentity(d);
+void LoadTranslation3D(Matrix3D *d, float moveX, float moveY, float moveZ) {
+  LoadIdentity3D(d);
 
   M(d,3,0) = moveX;
   M(d,3,1) = moveY;
   M(d,3,2) = moveZ;
 }
 
-void M3D_LoadPerspective(Matrix3D *d, float viewerX, float viewerY, float viewerZ) {
-  M3D_LoadIdentity(d);
+void LoadPerspective3D(Matrix3D *d,
+                       float viewerX, float viewerY, float viewerZ)
+{
+  LoadIdentity3D(d);
 
   M(d,3,0) = -viewerX;
   M(d,3,1) = -viewerY;
@@ -106,7 +108,7 @@ void M3D_LoadPerspective(Matrix3D *d, float viewerX, float viewerY, float viewer
   M(d,3,3) = 0.0f;
 }
 
-void M3D_Transform(Vector3D *dst, Vector3D *src, int n, Matrix3D *m) {
+void Transform3D(Vector3D *dst, Vector3D *src, int n, Matrix3D *m) {
   int i;
 
   for (i = 0; i < n; i++) {
@@ -120,8 +122,9 @@ void M3D_Transform(Vector3D *dst, Vector3D *src, int n, Matrix3D *m) {
   }
 }
 
-void M3D_Project2D(int centerX, int centerY,
-                   PointT *dst, Vector3D *src, int n, Matrix3D *m) {
+void ProjectTo2D(int centerX, int centerY,
+                 PointT *dst, Vector3D *src, int n, Matrix3D *m)
+{
   int i;
 
   for (i = 0; i < n; i++) {
@@ -138,8 +141,8 @@ void M3D_Project2D(int centerX, int centerY,
   }
 }
 
-void M3D_LoadCameraFromVector(
-    Matrix3D *camera, Vector3D *direction, Vector3D *position)
+void LoadCameraFromVector(Matrix3D *camera,
+                          Vector3D *direction, Vector3D *position)
 {
     Vector3D d, u, r;
 
@@ -154,7 +157,7 @@ void M3D_LoadCameraFromVector(
     // unit vector pointer to the right 
     V3D_Cross(&r, &u, &d);
 
-    M3D_LoadIdentity(camera);
+    LoadIdentity3D(camera);
 
     M(camera,0,0) = r.x;
     M(camera,1,0) = r.y;
@@ -170,13 +173,13 @@ void M3D_LoadCameraFromVector(
     M(camera,3,2) = position->z;
 }
 
-void M3D_LoadCameraFromAngles(
-    Matrix3D *camera, float azimuth, float elevation, Vector3D *position)
+void LoadCameraFromAngles(Matrix3D *camera,
+                          float azimuth, float elevation, Vector3D *position)
 {
   Vector3D direction = {
     sin(elevation) * cos(azimuth),
     sin(elevation) * sin(azimuth),
     cos(elevation) };
 
-  M3D_LoadCameraFromVector(camera, &direction, position);
+  LoadCameraFromVector(camera, &direction, position);
 }

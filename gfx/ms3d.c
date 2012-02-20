@@ -19,39 +19,39 @@ static void Compose3D(MatrixStack3D *ms) {
     Matrix3D *a = (Matrix3D *)StackPeek(ms, 2);
     Matrix3D *b = (Matrix3D *)StackPeek(ms, 1);
 
-    M3D_Multiply(d, a, b);
+    Multiply3D(d, a, b);
   }
 }
 
 void PushIdentity3D(MatrixStack3D *ms) {
-  M3D_LoadIdentity((Matrix3D *)StackPushNew(ms));
+  LoadIdentity3D((Matrix3D *)StackPushNew(ms));
 }
 
 void PushRotation3D(MatrixStack3D *ms,
                     float angleX, float angleY, float angleZ)
 {
-  M3D_LoadRotation((Matrix3D *)StackPushNew(ms), angleX, angleY, angleZ);
+  LoadRotation3D((Matrix3D *)StackPushNew(ms), angleX, angleY, angleZ);
   Compose3D(ms);
 }
 
 void PushScaling3D(MatrixStack3D *ms,
                    float scaleX, float scaleY, float scaleZ)
 {
-  M3D_LoadScaling((Matrix3D *)StackPushNew(ms), scaleX, scaleY, scaleZ);
+  LoadScaling3D((Matrix3D *)StackPushNew(ms), scaleX, scaleY, scaleZ);
   Compose3D(ms);
 }
 
 void PushTranslation3D(MatrixStack3D *ms,
                        float moveX, float moveY, float moveZ)
 {
-  M3D_LoadTranslation((Matrix3D *)StackPushNew(ms), moveX, moveY, moveZ);
+  LoadTranslation3D((Matrix3D *)StackPushNew(ms), moveX, moveY, moveZ);
   Compose3D(ms);
 }
 
 void PushPerspective3D(MatrixStack3D *ms,
                        float viewerX, float viewerY, float viewerZ)
 {
-  M3D_LoadPerspective((Matrix3D *)StackPushNew(ms), viewerX, viewerY, viewerZ);
+  LoadPerspective3D((Matrix3D *)StackPushNew(ms), viewerX, viewerY, viewerZ);
   Compose3D(ms);
 }
 
