@@ -72,23 +72,24 @@ PaletteT *CopyPalette(PaletteT *palette) {
   return copy;
 }
 
-bool LinkPalettes(size_t count, ...) {
-  PaletteT *prev = NULL;
+bool LinkPalettes(PaletteT *palette, ...) {
   int start = 0;
   va_list ap;
 
-  va_start(ap, count);
+  va_start(ap, palette);
 
-  while (count--) {
-    PaletteT *palette = va_arg(ap, PaletteT *);
+  for (;;) {
+    PaletteT *next = va_arg(ap, PaletteT *);
 
     palette->start = start;
+    palette->next = next;
 
-    if (prev)
-      prev->next = palette;
-
-    prev = palette;
     start += palette->count;
+
+    if (!next)
+      break;
+
+    palette = next;
   }
 
   va_end(ap);

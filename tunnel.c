@@ -51,7 +51,7 @@ bool SetupDisplay() {
 void SetupEffect() {
   GenerateTunnel(R_("TunnelMap"), 8192, WIDTH/2, HEIGHT/2);
 
-  LinkPalettes(3, R_("TexturePal"), R_("WhelpzPal"), R_("CreditsPal"));
+  LinkPalettes(R_("TexturePal"), R_("WhelpzPal"), R_("CreditsPal"), NULL);
   LoadPalette(R_("TexturePal"));
 
   RSC_PALETTE("EffectPal", CopyPalette(R_("TexturePal")));

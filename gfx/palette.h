@@ -16,7 +16,7 @@ PaletteT *NewPaletteFromFile(const char *fileName);
 void DeletePalette(PaletteT *palette);
 PaletteT *CopyPalette(PaletteT *palette);
 
-bool LinkPalettes(size_t count, ...);
+bool LinkPalettes(PaletteT *palette, ...);
 void UnlinkPalettes(PaletteT *palette);
 
 #define RSC_PALETTE_FILE(NAME, FILENAME) \
