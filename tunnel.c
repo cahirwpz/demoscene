@@ -34,11 +34,6 @@ static PaletteT *EffectPal;
 /*
  * Set up resources.
  */
-bool TunnelMapInit(DistortionMapT *tunnel_map) {
-  GenerateTunnel(tunnel_map, 8192, WIDTH/2, HEIGHT/2);
-  return TRUE;
-}
-
 void AddInitialResources() {
   RSC_CHIPMEM_FILE("module", "data/tempest-acidjazzed_evening.p61");
   RSC_PIXBUF_FILE("txt_img", "data/texture-01.8");
@@ -47,7 +42,9 @@ void AddInitialResources() {
   RSC_PALETTE_FILE("code_pal", "data/code.pal");
   RSC_PIXBUF_FILE("whelpz_img", "data/whelpz.8");
   RSC_PALETTE_FILE("whelpz_pal", "data/whelpz.pal");
-  RSC_DISTORTION_MAP("tunnel_map", WIDTH, HEIGHT, TunnelMapInit);
+  RSC_DISTORTION_MAP("tunnel_map", WIDTH, HEIGHT);
+
+  GenerateTunnel(GetResource("tunnel_map"), 8192, WIDTH/2, HEIGHT/2);
 }
 
 /*

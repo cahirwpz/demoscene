@@ -19,9 +19,7 @@ PaletteT *CopyPalette(PaletteT *palette);
 bool LinkPalettes(size_t count, ...);
 void UnlinkPalettes(PaletteT *palette);
 
-#define RSC_PALETTE_FILE(NAME, FILENAME) { \
-  void *_alloc() { return NewPaletteFromFile(FILENAME); } \
-  AddLazyRscSimple(NAME, _alloc, (FreeFuncT)DeletePalette); \
-}
+#define RSC_PALETTE_FILE(NAME, FILENAME) \
+  AddRscSimple(NAME, NewPaletteFromFile(FILENAME), (FreeFuncT)DeletePalette)
 
 #endif

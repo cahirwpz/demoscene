@@ -22,9 +22,7 @@ void DeleteMesh(MeshT *mesh);
 void NormalizeMeshSize(MeshT *mesh);
 void CenterMeshPosition(MeshT *mesh);
 
-#define RSC_MESH_FILE(NAME, FILENAME) { \
-  void *_alloc() { return NewMeshFromFile(FILENAME); } \
-  AddLazyRscSimple(NAME, _alloc, (FreeFuncT)DeleteMesh); \
-}
+#define RSC_MESH_FILE(NAME, FILENAME) \
+  AddRscSimple(NAME, NewMeshFromFile(FILENAME), (FreeFuncT)DeleteMesh)
 
 #endif

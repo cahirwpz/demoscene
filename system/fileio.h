@@ -7,9 +7,8 @@
 void *ReadFileToCustomMemory(const char *fileName, uint32_t memFlags);
 void *ReadFileSimple(const char *fileName);
 
-#define RSC_CHIPMEM_FILE(NAME, FILENAME) { \
-  void *_alloc() { return ReadFileToCustomMemory(FILENAME, MEMF_CHIP); } \
-  AddLazyRscSimple(NAME, _alloc, (FreeFuncT)MemFree); \
-}
+#define RSC_CHIPMEM_FILE(NAME, FILENAME) \
+  AddRscSimple(NAME, ReadFileToCustomMemory(FILENAME, MEMF_CHIP), \
+               (FreeFuncT)MemFree)
 
 #endif

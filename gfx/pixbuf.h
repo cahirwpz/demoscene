@@ -16,9 +16,7 @@ void DeletePixBuf(PixBufT *pixbuf);
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
 
-#define RSC_PIXBUF_FILE(NAME, FILENAME) { \
-  void *_alloc() { return NewPixBufFromFile(FILENAME); } \
-  AddLazyRscSimple(NAME, _alloc, (FreeFuncT)DeletePixBuf); \
-}
+#define RSC_PIXBUF_FILE(NAME, FILENAME) \
+  AddRscSimple(NAME, NewPixBufFromFile(FILENAME), (FreeFuncT)DeletePixBuf)
 
 #endif
