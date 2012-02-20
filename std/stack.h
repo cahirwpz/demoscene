@@ -10,6 +10,7 @@ StackT *NewStack(AtomPoolT *pool);
 void DeleteStack(StackT *stack);
 
 void StackReset(StackT *stack);
+void StackRemove(StackT *stack);
 void *StackPeek(StackT *stack, size_t index);
 void *StackTop(StackT *stack);
 void *StackPushNew(StackT *stack);

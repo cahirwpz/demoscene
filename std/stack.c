@@ -30,6 +30,10 @@ void StackReset(StackT *stack) {
   ResetAtomPool(stack->pool);
 }
 
+void StackRemove(StackT *stack) {
+  AtomFree(stack->pool, SL_PopFront(stack->list));
+}
+
 void *StackPeek(StackT *stack, size_t index) {
   return SL_GetNth(stack->list, index);
 }
