@@ -9,7 +9,6 @@ SListT *NewSList();
 void DeleteSList(SListT *list);
 void ResetSList(SListT *list);
 
-void SL_Concat(SListT *dst, SListT *src);
 void *SL_GetNth(SListT *list, size_t index);
 void *SL_ForEach(SListT *list, IterFuncT func, void *data);
 void *SL_PopFront(SListT *list);

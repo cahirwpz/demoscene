@@ -38,24 +38,6 @@ void DeleteSList(SListT *list) {
   }
 }
 
-void SL_Concat(SListT *dst, SListT *src) {
-  if (src->first) {
-    if (dst->first) {
-      dst->last->next = src->first;
-      dst->last = src->last;
-    } else {
-      dst->first = src->first;
-      dst->last = src->last;
-    }
-
-    dst->items += src->items;
-
-    src->first = NULL;
-    src->last = NULL;
-    src->items = 0;
-  }
-}
-
 void *SL_ForEach(SListT *list, IterFuncT func, void *data) {
   SNodeT *node = list->first;
 
