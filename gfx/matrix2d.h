@@ -5,14 +5,14 @@
 
 typedef float Matrix2D[3][3];
 
-void M2D_Multiply(Matrix2D *d, Matrix2D *a, Matrix2D *b);
-void M2D_Transpose(Matrix2D *d, Matrix2D *a);
+void Multiply2D(Matrix2D *d, Matrix2D *a, Matrix2D *b);
+void Transpose2D(Matrix2D *d, Matrix2D *a);
 
-void M2D_LoadIdentity(Matrix2D *d);
-void M2D_LoadRotation(Matrix2D *d, float angle);
-void M2D_LoadScaling(Matrix2D *d, float scaleX, float scaleY);
-void M2D_LoadTranslation(Matrix2D *d, float moveX, float moveY);
+void LoadIdentity2D(Matrix2D *d);
+void LoadRotation2D(Matrix2D *d, float angle);
+void LoadScaling2D(Matrix2D *d, float scaleX, float scaleY);
+void LoadTranslation2D(Matrix2D *d, float moveX, float moveY);
 
-void M2D_Transform(PointT *dst, PointT *src, int n, Matrix2D *m);
+void Transform2D(PointT *dst, PointT *src, int n, Matrix2D *m);
 
 #endif

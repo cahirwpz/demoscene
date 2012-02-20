@@ -76,7 +76,7 @@ void RenderVector(int frameNumber) {
     PushRotation2D(ms, (float)(frameNumber * -3));
     PushTranslation2D(ms, (float)(WIDTH/2) + c * (WIDTH/4), (float)(HEIGHT/2));
 
-    M2D_Transform(R_("CrossToDraw"), R_("Cross"), 12, GetMatrix2D(ms, 0));
+    Transform2D(R_("CrossToDraw"), R_("Cross"), 12, GetMatrix2D(ms, 0));
 
     //CanvasFill(Canvas, 0);
     //DrawPolyLine(Canvas, CrossToDraw, 12, TRUE);
@@ -87,7 +87,7 @@ void RenderVector(int frameNumber) {
     PushRotation2D(ms, (float)(frameNumber*5*c));
     PushTranslation2D(ms, WIDTH/2 + c * 50, HEIGHT/2 + s * 20);
 
-    M2D_Transform(R_("TriangleToDraw"), R_("Triangle"), 3, GetMatrix2D(ms, 0));
+    Transform2D(R_("TriangleToDraw"), R_("Triangle"), 3, GetMatrix2D(ms, 0));
   }
 
   {

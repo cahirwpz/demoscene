@@ -19,26 +19,26 @@ static void Compose2D(MatrixStack2D *ms) {
     Matrix2D *a = (Matrix2D *)StackPeek(ms, 2);
     Matrix2D *b = (Matrix2D *)StackPeek(ms, 1);
 
-    M2D_Multiply(d, a, b);
+    Multiply2D(d, a, b);
   }
 }
 
 void PushIdentity2D(MatrixStack2D *ms) {
-  M2D_LoadIdentity((Matrix2D *)StackPushNew(ms));
+  LoadIdentity2D((Matrix2D *)StackPushNew(ms));
 }
 
 void PushRotation2D(MatrixStack2D *ms, float angle) {
-  M2D_LoadRotation((Matrix2D *)StackPushNew(ms), angle);
+  LoadRotation2D((Matrix2D *)StackPushNew(ms), angle);
   Compose2D(ms);
 }
 
 void PushScaling2D(MatrixStack2D *ms, float scaleX, float scaleY) {
-  M2D_LoadScaling((Matrix2D *)StackPushNew(ms), scaleX, scaleY);
+  LoadScaling2D((Matrix2D *)StackPushNew(ms), scaleX, scaleY);
   Compose2D(ms);
 }
 
 void PushTranslation2D(MatrixStack2D *ms, float moveX, float moveY) {
-  M2D_LoadTranslation((Matrix2D *)StackPushNew(ms), moveX, moveY);
+  LoadTranslation2D((Matrix2D *)StackPushNew(ms), moveX, moveY);
   Compose2D(ms);
 }
 

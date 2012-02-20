@@ -8,7 +8,7 @@
 
 #define M(A,I,J) (*A)[I][J]
 
-void M2D_Multiply(Matrix2D *d, Matrix2D *a, Matrix2D *b) {
+void Multiply2D(Matrix2D *d, Matrix2D *a, Matrix2D *b) {
   int i, j, k;
 
   M_FOREACH(i, j) {
@@ -19,22 +19,22 @@ void M2D_Multiply(Matrix2D *d, Matrix2D *a, Matrix2D *b) {
   }
 }
 
-void M2D_Transpose(Matrix2D *d, Matrix2D *a) {
+void Transpose2D(Matrix2D *d, Matrix2D *a) {
   int i, j; 
 
   M_FOREACH(i, j)
     M(d,i,j) = M(a,j,i);
 }
 
-void M2D_LoadIdentity(Matrix2D *d) {
+void LoadIdentity2D(Matrix2D *d) {
   int i, j; 
 
   M_FOREACH(i, j)
     M(d,i,j) = (i == j) ? 1.0f : 0.0f;
 }
 
-void M2D_LoadRotation(Matrix2D *d, float angle) {
-  M2D_LoadIdentity(d);
+void LoadRotation2D(Matrix2D *d, float angle) {
+  LoadIdentity2D(d);
 
   angle *= 3.14159265f / 180.0f;
 
@@ -44,21 +44,21 @@ void M2D_LoadRotation(Matrix2D *d, float angle) {
   M(d,1,1) = cos(angle);
 }
 
-void M2D_LoadScaling(Matrix2D *d, float scaleX, float scaleY) {
-  M2D_LoadIdentity(d);
+void LoadScaling2D(Matrix2D *d, float scaleX, float scaleY) {
+  LoadIdentity2D(d);
 
   M(d,0,0) = scaleX;
   M(d,1,1) = scaleY;
 }
 
-void M2D_LoadTranslation(Matrix2D *d, float moveX, float moveY) {
-  M2D_LoadIdentity(d);
+void LoadTranslation2D(Matrix2D *d, float moveX, float moveY) {
+  LoadIdentity2D(d);
 
   M(d,2,0) = moveX;
   M(d,2,1) = moveY;
 }
 
-void M2D_Transform(PointT *dst, PointT *src, int n, Matrix2D *m) {
+void Transform2D(PointT *dst, PointT *src, int n, Matrix2D *m) {
   int i;
 
   for (i = 0; i < n; i++) {
