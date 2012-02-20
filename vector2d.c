@@ -19,21 +19,24 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-static CanvasT *Canvas;
-
-static PointT Cross[] = {
-  {1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {2, 2}, {2, 3}, {1, 3}, {1, 2}, {0, 2}, {0, 1}, {1, 1}
-};
-static PointT CrossToDraw[12];
-
-static PointT Triangle[] = { {-15, -10}, {10, -5}, {0, 20} };
-static PointT TriangleToDraw[3];
-
 /*
  * Set up resources.
  */
 void AddInitialResources() {
-  AddRscStatic("cross", Cross);
+  static PointT Cross[] = {
+    {1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {2, 2}, {2, 3}, {1, 3}, {1, 2}, {0, 2}, {0, 1}, {1, 1}
+  };
+  static PointT CrossToDraw[12];
+
+  static PointT Triangle[] = { {-15, -10}, {10, -5}, {0, 20} };
+  static PointT TriangleToDraw[3];
+
+  RSC_STATIC("Cross", Cross);
+  RSC_STATIC("CrossToDraw", CrossToDraw);
+  RSC_STATIC("Triangle", Triangle);
+  RSC_STATIC("TriangleToDraw", TriangleToDraw);
+
+  RSC_CANVAS("Canvas", WIDTH, HEIGHT);
 }
 
 /*
@@ -47,8 +50,7 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  Canvas = NewCanvas(WIDTH, HEIGHT);
-  CanvasFill(Canvas, 0);
+  CanvasFill(R_("Canvas"), 0);
 
   TS_Init();
 }
@@ -58,8 +60,6 @@ void SetupEffect() {
  */
 void TearDownEffect() {
   TS_End();
-
-  DeleteCanvas(Canvas);
 }
 
 /*
@@ -75,7 +75,7 @@ void RenderVector(int frameNumber) {
   TS_PushRotation2D((float)(frameNumber * -3));
   TS_PushTranslation2D((float)(WIDTH/2) + c * (WIDTH/4), (float)(HEIGHT/2));
 
-  M2D_Transform(CrossToDraw, Cross, 12, TS_GetMatrix2D(1));
+  M2D_Transform(R_("CrossToDraw"), R_("Cross"), 12, TS_GetMatrix2D(1));
 
   //CanvasFill(Canvas, 0);
   //DrawPolyLine(Canvas, CrossToDraw, 12, TRUE);
@@ -86,28 +86,35 @@ void RenderVector(int frameNumber) {
   TS_PushRotation2D((float)(frameNumber*5*c));
   TS_PushTranslation2D(WIDTH/2 + c * 50, HEIGHT/2 + s * 20);
 
-  M2D_Transform(TriangleToDraw, Triangle, 3, TS_GetMatrix2D(0));
+  M2D_Transform(R_("TriangleToDraw"), R_("Triangle"), 3, TS_GetMatrix2D(0));
 
-  frameNumber &= 255;
+  {
+    CanvasT *canvas = R_("Canvas");
+    PointT *toDraw = R_("TriangleToDraw");
 
-  if (frameNumber < 128)
-    Canvas->fg_col = frameNumber * 2;
-  else 
-    Canvas->fg_col = (255 - frameNumber) * 2;
+    frameNumber &= 255;
 
-  /*
-  DrawTriangle(Canvas,
-               TriangleToDraw[0].x, TriangleToDraw[0].y,
-               TriangleToDraw[1].x, TriangleToDraw[1].y,
-               TriangleToDraw[2].x, TriangleToDraw[2].y);
-               */
-  DrawEllipse(Canvas,
-              TriangleToDraw[1].x, TriangleToDraw[1].y,
-              30 + c * 15, 30 + s * 15);
+    if (frameNumber < 128)
+      canvas->fg_col = frameNumber * 2;
+    else 
+      canvas->fg_col = (255 - frameNumber) * 2;
+
+#if 0 
+    DrawTriangle(canvas,
+                 toDraw[0].x, toDraw[0].y,
+                 toDraw[1].x, toDraw[1].y,
+                 toDraw[2].x, toDraw[2].y);
+#else
+    DrawEllipse(canvas,
+                toDraw[1].x, toDraw[1].y,
+                30 + c * 15, 30 + s * 15);
+#endif
+  }
 }
 
 void RenderChunky(int frameNumber) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(Canvas), GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
+                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*

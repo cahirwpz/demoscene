@@ -23,28 +23,19 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-static CanvasT *Canvas;
-static DistortionMapT *TunnelMap;
-static PixBufT *Texture;
-static PixBufT *Credits;
-static PixBufT *Whelpz;
-static PaletteT *OrigPal;
-static PaletteT *EffectPal;
-
 /*
  * Set up resources.
  */
 void AddInitialResources() {
-  RSC_CHIPMEM_FILE("module", "data/tempest-acidjazzed_evening.p61");
-  RSC_PIXBUF_FILE("txt_img", "data/texture-01.8");
-  RSC_PALETTE_FILE("txt_pal", "data/texture-01.pal");
-  RSC_PIXBUF_FILE("code_img", "data/code.8");
-  RSC_PALETTE_FILE("code_pal", "data/code.pal");
-  RSC_PIXBUF_FILE("whelpz_img", "data/whelpz.8");
-  RSC_PALETTE_FILE("whelpz_pal", "data/whelpz.pal");
-  RSC_DISTORTION_MAP("tunnel_map", WIDTH, HEIGHT);
-
-  GenerateTunnel(GetResource("tunnel_map"), 8192, WIDTH/2, HEIGHT/2);
+  RSC_CHIPMEM_FILE("Module", "data/tempest-acidjazzed_evening.p61");
+  RSC_PIXBUF_FILE("Texture", "data/texture-01.8");
+  RSC_PALETTE_FILE("TexturePal", "data/texture-01.pal");
+  RSC_PIXBUF_FILE("CreditsImg", "data/code.8");
+  RSC_PALETTE_FILE("CreditsPal", "data/code.pal");
+  RSC_PIXBUF_FILE("WhelpzImg", "data/whelpz.8");
+  RSC_PALETTE_FILE("WhelpzPal", "data/whelpz.pal");
+  RSC_DISTORTION_MAP("TunnelMap", WIDTH, HEIGHT);
+  RSC_CANVAS("Canvas", WIDTH, HEIGHT);
 }
 
 /*
@@ -58,29 +49,17 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  Texture = GetResource("txt_img");
-  Credits = GetResource("code_img");
-  Whelpz = GetResource("whelpz_img");
-  TunnelMap = GetResource("tunnel_map");
+  GenerateTunnel(R_("TunnelMap"), 8192, WIDTH/2, HEIGHT/2);
 
-  Canvas = NewCanvas(WIDTH, HEIGHT);
+  LinkPalettes(3, R_("TexturePal"), R_("WhelpzPal"), R_("CreditsPal"));
+  LoadPalette(R_("TexturePal"));
 
-  {
-    PaletteT *texturePal = GetResource("txt_pal");
-    PaletteT *creditsPal = GetResource("code_pal");
-    PaletteT *whelpzPal = GetResource("whelpz_pal");
+  RSC_PALETTE("EffectPal", CopyPalette(R_("TexturePal")));
 
-    LinkPalettes(3, texturePal, whelpzPal, creditsPal);
-    LoadPalette(texturePal);
+  PixBufRemap(R_("CreditsImg"), R_("CreditsPal"));
+  PixBufRemap(R_("WhelpzImg"), R_("WhelpzPal"));
 
-    OrigPal = texturePal;
-    EffectPal = CopyPalette(OrigPal);
-
-    PixBufRemap(Credits, creditsPal);
-    PixBufRemap(Whelpz, whelpzPal);
-  }
-
-  P61_Init(GetResource("module"), NULL, NULL);
+  P61_Init(R_("Module"), NULL, NULL);
   P61_ControlBlock.Play = 1;
 }
 
@@ -90,9 +69,7 @@ void SetupEffect() {
 void TearDownEffect() {
   P61_End();
 
-  DeletePalette(EffectPal);
-  UnlinkPalettes(OrigPal);
-  DeleteCanvas(Canvas);
+  UnlinkPalettes(R_("TexturePal"));
 }
 
 /*
@@ -149,14 +126,17 @@ void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst, PaletteFunctor
 }
 
 void RenderTunnel(int frameNumber) {
-  RenderDistortion(TunnelMap, Canvas, Texture, 0, frameNumber);
+  CanvasT *canvas = R_("Canvas");
 
-  PixBufBlitTransparent(Canvas->pixbuf, 200, 20, Credits);
-  PixBufBlitTransparent(Canvas->pixbuf, 0, 137, Whelpz);
+  RenderDistortion(R_("TunnelMap"), canvas, R_("Texture"), 0, frameNumber);
+
+  PixBufBlitTransparent(canvas->pixbuf, 200, 20, R_("CreditsImg"));
+  PixBufBlitTransparent(canvas->pixbuf, 0, 137, R_("WhelpzImg"));
 }
 
 void RenderChunky(int frameNumber) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(Canvas), GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
+                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -168,8 +148,8 @@ void MainLoop() {
   while (GetVBlankCounter() < 50*60*2) {
     int frameNumber = GetVBlankCounter();
 
-    PaletteEffect(frameNumber, OrigPal, EffectPal, PalEffects);
-    LoadPalette(EffectPal);
+    PaletteEffect(frameNumber, R_("TexturePal"), R_("EffectPal"), PalEffects);
+    LoadPalette(R_("EffectPal"));
 
     RenderTunnel(frameNumber);
     RenderChunky(frameNumber);

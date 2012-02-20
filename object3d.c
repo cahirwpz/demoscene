@@ -19,16 +19,21 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-static CanvasT *Canvas;
-static MeshT *Mesh;
-static Vector3D *Vertices;
-static PointT *Points;
-
 /*
  * Set up resources.
  */
 void AddInitialResources() {
-  RSC_MESH_FILE("mesh", "data/whelpz.robj");
+  RSC_MESH_FILE("Mesh", "data/whelpz.robj");
+  RSC_CANVAS("Canvas", WIDTH, HEIGHT);
+
+  {
+    MeshT *mesh = R_("Mesh");
+
+    CenterMeshPosition(mesh);
+    NormalizeMeshSize(mesh);
+
+    RSC_ARRAY("Points", PointT, mesh->vertex_count);
+  }
 }
 
 /*
@@ -42,14 +47,7 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  Canvas = NewCanvas(WIDTH, HEIGHT);
-  CanvasFill(Canvas, 0);
-
-  Mesh = GetResource("mesh");
-  CenterMeshPosition(Mesh);
-  NormalizeMeshSize(Mesh);
-  Points = NEW_A(PointT, Mesh->vertex_count);
-  Vertices = NEW_A(Vector3D, Mesh->vertex_count);
+  CanvasFill(R_("Canvas"), 0);
 
   TS_Init();
 }
@@ -59,10 +57,6 @@ void SetupEffect() {
  */
 void TearDownEffect() {
   TS_End();
-
-  DELETE(Points);
-  DELETE(Vertices);
-  DeleteCanvas(Canvas);
 }
 
 /*
@@ -78,23 +72,31 @@ void RenderMesh(int frameNumber) {
   TS_PushScaling3D(60.0f, 60.0f, 60.0f);
   TS_PushPerspective(0, 0, 160.0f);
 
-  M3D_Project2D(WIDTH/2, HEIGHT/2, Points, Mesh->vertex, Mesh->vertex_count, TS_GetMatrix3D(0));
+  {
+    MeshT *mesh = R_("Mesh");
+    PointT *points = R_("Points");
+    CanvasT *canvas = R_("Canvas");
 
-  CanvasFill(Canvas, 0);
+    M3D_Project2D(WIDTH/2, HEIGHT/2, points, mesh->vertex, mesh->vertex_count,
+                  TS_GetMatrix3D(0));
 
-  for (i = 0; i < Mesh->triangle_count; i++) {
-    size_t p1 = Mesh->triangle[i].p1;
-    size_t p2 = Mesh->triangle[i].p2;
-    size_t p3 = Mesh->triangle[i].p3;
+    CanvasFill(canvas, 0);
 
-    DrawLine(Canvas, Points[p1].x, Points[p1].y, Points[p2].x, Points[p2].y);
-    DrawLine(Canvas, Points[p2].x, Points[p2].y, Points[p3].x, Points[p3].y);
-    DrawLine(Canvas, Points[p3].x, Points[p3].y, Points[p1].x, Points[p1].y);
+    for (i = 0; i < mesh->triangle_count; i++) {
+      size_t p1 = mesh->triangle[i].p1;
+      size_t p2 = mesh->triangle[i].p2;
+      size_t p3 = mesh->triangle[i].p3;
+
+      DrawLine(canvas, points[p1].x, points[p1].y, points[p2].x, points[p2].y);
+      DrawLine(canvas, points[p2].x, points[p2].y, points[p3].x, points[p3].y);
+      DrawLine(canvas, points[p3].x, points[p3].y, points[p1].x, points[p1].y);
+    }
   }
 }
 
 void RenderChunky(int frameNumber) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(Canvas), GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
+                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*

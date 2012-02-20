@@ -22,4 +22,7 @@ static inline size_t GetCanvasWidth(CanvasT *canvas) { return canvas->pixbuf->wi
 static inline uint8_t *GetCanvasPixelData(CanvasT *canvas) { return canvas->pixbuf->data; }
 static inline void CanvasPenMoveTo(CanvasT *canvas, int16_t x, int16_t y) { canvas->pen_pos.x = x; canvas->pen_pos.y = y; }
 
+#define RSC_CANVAS(NAME, WIDTH, HEIGHT) \
+  AddRscSimple(NAME, NewCanvas(WIDTH, HEIGHT), (FreeFuncT)DeleteCanvas)
+
 #endif

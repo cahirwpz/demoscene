@@ -22,4 +22,7 @@ void UnlinkPalettes(PaletteT *palette);
 #define RSC_PALETTE_FILE(NAME, FILENAME) \
   AddRscSimple(NAME, NewPaletteFromFile(FILENAME), (FreeFuncT)DeletePalette)
 
+#define RSC_PALETTE(NAME, PALETTE) \
+  AddRscSimple(NAME, PALETTE, (FreeFuncT)DeletePalette)
+
 #endif

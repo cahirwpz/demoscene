@@ -66,8 +66,6 @@ void *GetResource(const char *name) {
 
   if (!res)
     PANIC("Resource '%s' not found.", name);
-
-  LOG("Fetched resource '%s' located at %p.", res->name, res->ptr);
   
   return res->ptr;
 }
