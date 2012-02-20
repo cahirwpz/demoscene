@@ -6,7 +6,7 @@
 
 #include "engine/mesh.h"
 #include "gfx/line.h"
-#include "gfx/transformations.h"
+#include "gfx/ms3d.h"
 #include "gfx/triangle.h"
 
 #include "system/c2p.h"
@@ -25,6 +25,7 @@ const int DEPTH = 8;
 void AddInitialResources() {
   RSC_MESH_FILE("Mesh", "data/whelpz.robj");
   RSC_CANVAS("Canvas", WIDTH, HEIGHT);
+  RSC_MS3D("ms3d");
 
   {
     MeshT *mesh = R_("Mesh");
@@ -48,37 +49,35 @@ bool SetupDisplay() {
  */
 void SetupEffect() {
   CanvasFill(R_("Canvas"), 0);
-
-  TS_Init();
 }
 
 /*
  * Tear down effect function.
  */
 void TearDownEffect() {
-  TS_End();
 }
 
 /*
  * Effect rendering functions.
  */
 void RenderMesh(int frameNumber) {
-  size_t i;
+  MatrixStack3D *ms = R_("ms3d");
 
-  TS_Reset();
-  TS_PushIdentity3D();
-  TS_PushRotation3D((float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
-  TS_PushTranslation3D(0.0f, 0.0f, 2.0f);
-  TS_PushScaling3D(60.0f, 60.0f, 60.0f);
-  TS_PushPerspective(0, 0, 160.0f);
+  Reset3D(ms);
+  PushIdentity3D(ms);
+  PushRotation3D(ms, (float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
+  PushTranslation3D(ms, 0.0f, 0.0f, 2.0f);
+  PushScaling3D(ms, 60.0f, 60.0f, 60.0f);
+  PushPerspective3D(ms, 0, 0, 160.0f);
 
   {
+    size_t i;
     MeshT *mesh = R_("Mesh");
     PointT *points = R_("Points");
     CanvasT *canvas = R_("Canvas");
 
     M3D_Project2D(WIDTH/2, HEIGHT/2, points, mesh->vertex, mesh->vertex_count,
-                  TS_GetMatrix3D(0));
+                  GetMatrix3D(ms, 0));
 
     CanvasFill(canvas, 0);
 

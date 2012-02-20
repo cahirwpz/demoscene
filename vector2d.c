@@ -6,7 +6,7 @@
 
 #include "gfx/ellipse.h"
 #include "gfx/line.h"
-#include "gfx/transformations.h"
+#include "gfx/ms2d.h"
 #include "gfx/triangle.h"
 
 #include "system/c2p.h"
@@ -37,6 +37,7 @@ void AddInitialResources() {
   RSC_STATIC("TriangleToDraw", TriangleToDraw);
 
   RSC_CANVAS("Canvas", WIDTH, HEIGHT);
+  RSC_MS2D("ms2d");
 }
 
 /*
@@ -51,15 +52,12 @@ bool SetupDisplay() {
  */
 void SetupEffect() {
   CanvasFill(R_("Canvas"), 0);
-
-  TS_Init();
 }
 
 /*
  * Tear down effect function.
  */
 void TearDownEffect() {
-  TS_End();
 }
 
 /*
@@ -69,24 +67,28 @@ void RenderVector(int frameNumber) {
   float s = sin(frameNumber * 3.14159265f / 45.0f);
   float c = cos(frameNumber * 3.14159265f / 90.0f);
 
-  TS_Reset();
-  TS_PushTranslation2D(-1.5f, -1.5f);
-  TS_PushScaling2D(20.0f + 10.0f * s, 20.0f + 10.0f * s);
-  TS_PushRotation2D((float)(frameNumber * -3));
-  TS_PushTranslation2D((float)(WIDTH/2) + c * (WIDTH/4), (float)(HEIGHT/2));
+  {
+    MatrixStack2D *ms = R_("ms2d");
 
-  M2D_Transform(R_("CrossToDraw"), R_("Cross"), 12, TS_GetMatrix2D(1));
+    Reset2D(ms);
+    PushTranslation2D(ms, -1.5f, -1.5f);
+    PushScaling2D(ms, 20.0f + 10.0f * s, 20.0f + 10.0f * s);
+    PushRotation2D(ms, (float)(frameNumber * -3));
+    PushTranslation2D(ms, (float)(WIDTH/2) + c * (WIDTH/4), (float)(HEIGHT/2));
 
-  //CanvasFill(Canvas, 0);
-  //DrawPolyLine(Canvas, CrossToDraw, 12, TRUE);
+    M2D_Transform(R_("CrossToDraw"), R_("Cross"), 12, GetMatrix2D(ms, 0));
 
-  TS_Reset();
-  TS_PushTranslation2D(5.0f, 10.0f);
-  TS_PushScaling2D(2.5f, 2.5f);
-  TS_PushRotation2D((float)(frameNumber*5*c));
-  TS_PushTranslation2D(WIDTH/2 + c * 50, HEIGHT/2 + s * 20);
+    //CanvasFill(Canvas, 0);
+    //DrawPolyLine(Canvas, CrossToDraw, 12, TRUE);
 
-  M2D_Transform(R_("TriangleToDraw"), R_("Triangle"), 3, TS_GetMatrix2D(0));
+    Reset2D(ms);
+    PushTranslation2D(ms, 5.0f, 10.0f);
+    PushScaling2D(ms, 2.5f, 2.5f);
+    PushRotation2D(ms, (float)(frameNumber*5*c));
+    PushTranslation2D(ms, WIDTH/2 + c * 50, HEIGHT/2 + s * 20);
+
+    M2D_Transform(R_("TriangleToDraw"), R_("Triangle"), 3, GetMatrix2D(ms, 0));
+  }
 
   {
     CanvasT *canvas = R_("Canvas");
