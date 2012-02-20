@@ -1,5 +1,3 @@
-//#define NDEBUG
-
 #include <string.h>
 
 #include "std/atompool.h"
@@ -11,52 +9,17 @@
 typedef struct Resource {
   const char *name;
   void *ptr;
-  AllocFuncT allocFunc;
-  InitFuncT initFunc;
   FreeFuncT freeFunc;
 } ResourceT;
 
 static SListT *ResList;
 static AtomPoolT *ResPool;
 
-static bool Acquire(ResourceT *res) {
-  if (res->allocFunc) {
-    res->ptr = res->allocFunc();
-
-    if (!res->ptr) {
-      LOG("Failed to Allocate resource '%s'.", res->name);
-      return FALSE;
-    }
-
-    LOG("Allocated resource '%s' at %p.", res->name, res->ptr);
-  }
-
-  return TRUE;
-}
-
-static bool Initialize(ResourceT *res) {
-  if (res->initFunc) {
-    LOG("Initiating resource '%s'.", res->name);
-
-    if (!res->initFunc(res->ptr))
-      return FALSE;
-  }
-
-  return TRUE;
-}
-
 static bool Relinquish(ResourceT *res) {
-  bool needFree = TRUE;
-
-  if (res->freeFunc)
-    res->freeFunc(res->ptr);
-  else if (res->allocFunc)
-    DELETE(res->ptr);
-  else
-    needFree = FALSE;
-
-  if (needFree)
+  if (res->freeFunc) {
     LOG("Freeing resource '%s' at %p.", res->name, res->ptr);
+    res->freeFunc(res->ptr);
+  }
 
   return TRUE;
 }
@@ -77,24 +40,11 @@ void StopResourceManager() {
   DeleteAtomPool(ResPool);
 }
 
-bool ResourcesAlloc() {
-  return SL_ForEach(ResList, (IterFuncT)Acquire, NULL) ? FALSE : TRUE;
-}
-
-bool ResourcesInit() {
-  return SL_ForEach(ResList, (IterFuncT)Initialize, NULL) ? FALSE : TRUE;
-}
-
-static void AddResource(const char *name, void *ptr, 
-                        AllocFuncT allocFunc, FreeFuncT freeFunc,
-                        InitFuncT initFunc)
-{
+static void AddResource(const char *name, void *ptr, FreeFuncT freeFunc) {
   ResourceT *res = AtomNew(ResPool);
 
   res->name = StrDup(name);
   res->ptr = ptr;
-  res->allocFunc = allocFunc;
-  res->initFunc = initFunc;
   res->freeFunc = freeFunc;
 
   SL_PushFront(ResList, res);
@@ -104,22 +54,11 @@ void AddRscSimple(const char *name, void *ptr, FreeFuncT freeFunc) {
   if (!ptr)
     PANIC("Missing content for resource '%s'.", name);
 
-  AddResource(name, ptr, NULL, freeFunc, NULL);
-}
-
-void AddLazyRscSimple(const char *name,
-                      AllocFuncT allocFunc, FreeFuncT freeFunc) {
-  AddResource(name, NULL, allocFunc, freeFunc, NULL);
-}
-
-void AddLazyRscWithInit(const char *name,
-                        AllocFuncT allocFunc, FreeFuncT freeFunc,
-                        InitFuncT initFunc) {
-  AddResource(name, NULL, allocFunc, freeFunc, initFunc);
+  AddResource(name, ptr, freeFunc);
 }
 
 void AddRscStatic(const char *name, void *ptr) {
-  AddResource(name, ptr, NULL, NULL, NULL);
+  AddResource(name, ptr, NULL);
 }
 
 void *GetResource(const char *name) {

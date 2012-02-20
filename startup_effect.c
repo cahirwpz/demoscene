@@ -28,18 +28,16 @@ int main() {
     StartResourceManager();
     AddInitialResources();
 
-    if (ResourcesAlloc() && ResourcesInit()) {
-      if (InitEventHandler()) {
-        if (SetupDisplay()) {
-          InstallVBlankIntServer();
-          SetupEffect();
-          MainLoop();
-          TearDownEffect();
-          RemoveVBlankIntServer();
-          KillDisplay();
-        }
-        KillEventHandler();
+    if (InitEventHandler()) {
+      if (SetupDisplay()) {
+        InstallVBlankIntServer();
+        SetupEffect();
+        MainLoop();
+        TearDownEffect();
+        RemoveVBlankIntServer();
+        KillDisplay();
       }
+      KillEventHandler();
     }
 
     StopResourceManager();
