@@ -66,7 +66,7 @@ void *SL_ForEach(SListT *list, IterFuncT func, void *data) {
     node = node->next;
   }
 
-  return node;
+  return node ? node->item : NULL;
 }
 
 void *SL_GetNth(SListT *list, size_t index) {
