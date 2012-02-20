@@ -64,17 +64,7 @@ void *SL_GetNth(SListT *list, size_t index) {
   return NULL;
 }
 
-static void SL_PushFrontNode(SListT *list, SNodeT *node) {
-  node->next = list->first;
-  
-  if (!list->first)
-    list->last = node;
-
-  list->first = node;
-  list->items++;
-}
-
-static SNodeT *SL_PopFrontNode(SListT *list) {
+static SNodeT *NodePopFront(SListT *list) {
   SNodeT *node = list->first;
 
   if (node) {
@@ -88,22 +78,52 @@ static SNodeT *SL_PopFrontNode(SListT *list) {
   return node;
 }
 
-void SL_PushFront(SListT *list, void *item) {
-  SNodeT *node = AtomNew(list->pool);
+static void NodePushBack(SListT *list, SNodeT *node) {
+  node->next = NULL;
 
-  node->item = item;
+  if (!list->first)
+    list->first = node;
 
-  SL_PushFrontNode(list, node);
+  list->last = node;
+  list->items++;
+}
+
+static void NodePushFront(SListT *list, SNodeT *node) {
+  node->next = list->first;
+  
+  if (!list->first)
+    list->last = node;
+
+  list->first = node;
+  list->items++;
 }
 
 void *SL_PopFront(SListT *list) {
-  SNodeT *node = SL_PopFrontNode(list);
+  SNodeT *node = NodePopFront(list);
 
   void *item = (node) ? (node->item) : NULL;
 
   AtomFree(list->pool, node);
 
   return item;
+}
+
+void *SL_PushBack(SListT *list, void *item) {
+  SNodeT *node = AtomNew(list->pool);
+
+  node->item = item;
+
+  NodePushBack(list, node);
+
+  return node;
+}
+
+void SL_PushFront(SListT *list, void *item) {
+  SNodeT *node = AtomNew(list->pool);
+
+  node->item = item;
+
+  NodePushFront(list, node);
 }
 
 size_t SL_Size(SListT *list) {
