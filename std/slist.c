@@ -3,6 +3,7 @@
 #include "std/atompool.h"
 
 typedef struct SNode {
+  struct SNode *prev;
   struct SNode *next;
   void *item;
 } SNodeT;
@@ -64,12 +65,30 @@ void *SL_GetNth(SListT *list, size_t index) {
   return NULL;
 }
 
+static SNodeT *NodePopBack(SListT *list) {
+  SNodeT *node = list->last;
+
+  if (node) {
+    if (list->first == node)
+      list->first = NULL;
+    else
+      node->prev->next = NULL;
+
+    list->last = node->prev;
+    list->items--;
+  }
+
+  return node;
+}
+
 static SNodeT *NodePopFront(SListT *list) {
   SNodeT *node = list->first;
 
   if (node) {
-    if (list->first == list->last)
+    if (list->last == node)
       list->last = NULL;
+    else
+      node->next->prev = NULL;
 
     list->first = node->next;
     list->items--;
@@ -79,6 +98,7 @@ static SNodeT *NodePopFront(SListT *list) {
 }
 
 static void NodePushBack(SListT *list, SNodeT *node) {
+  node->prev = list->last;
   node->next = NULL;
 
   if (!list->first)
@@ -89,13 +109,24 @@ static void NodePushBack(SListT *list, SNodeT *node) {
 }
 
 static void NodePushFront(SListT *list, SNodeT *node) {
+  node->prev = NULL;
   node->next = list->first;
   
-  if (!list->first)
+  if (!list->last)
     list->last = node;
 
   list->first = node;
   list->items++;
+}
+
+void *SL_PopBack(SListT *list) {
+  SNodeT *node = NodePopBack(list);
+
+  void *item = (node) ? (node->item) : NULL;
+
+  AtomFree(list->pool, node);
+
+  return item;
 }
 
 void *SL_PopFront(SListT *list) {
