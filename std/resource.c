@@ -21,6 +21,8 @@ static bool Relinquish(ResourceT *res) {
     res->freeFunc(res->ptr);
   }
 
+  MemFree((void *)res->name);
+
   return TRUE;
 }
 
