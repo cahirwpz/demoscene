@@ -11,6 +11,7 @@
 
 #include "system/c2p.h"
 #include "system/display.h"
+#include "system/input.h"
 #include "system/vblank.h"
 
 #include "frame_tools.h"
@@ -127,6 +128,8 @@ void MainLoop() {
 
   while (GetVBlankCounter() < 500) {
     int frameNumber = GetVBlankCounter();
+
+    EventQueueReset();
 
     RenderVector(frameNumber);
     RenderChunky(frameNumber);

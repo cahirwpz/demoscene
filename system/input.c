@@ -2,109 +2,150 @@
 
 #include <clib/alib_protos.h>
 #include <devices/input.h>
-#include <devices/inputevent.h>
 #include <exec/interrupts.h>
 #include <exec/ports.h>
 #include <proto/exec.h>
 
+#include "std/atompool.h"
 #include "std/debug.h"
 #include "std/memory.h"
-#include "input.h"
+#include "std/slist.h"
+#include "system/input.h"
 
-struct InputDev {
-  struct MsgPort *MsgPort;
-  struct IORequest *IoReq;
-  struct Interrupt *IntHandler;
-  BOOL Open;
-};
+typedef struct IOStdReq IOStdReqT;
+typedef struct IORequest IORequestT;
+typedef struct Interrupt InterruptT;
+typedef struct SignalSemaphore SemaphoreT;
 
-static struct InputDev InputDev = { NULL, NULL, NULL, FALSE};
+typedef struct EventQueue {
+  struct MsgPort *msgPort;
+  struct IORequest *ioReq;
+  InterruptT handler;
+  SemaphoreT eventListLock;
 
-static __saveds APTR EventHandler(struct InputEvent *event asm("a0"),
-                                  APTR data asm("a1")) {
+  AtomPoolT *eventPool;
+  SListT *eventList;
+} EventQueueT;
 
+static __saveds APTR EventHandler(InputEventT *event asm("a0"),
+                                  EventQueueT *queue asm("a1"))
+{
+  ObtainSemaphore(&queue->eventListLock);
+
+#if 1
   for (; event; event = event->ie_NextEvent) {
-    switch (event->ie_Class) {
-      case IECLASS_RAWKEY:
-        LOG("Key %ld %s (%04lx).",
-            (LONG)(event->ie_Code & ~IECODE_UP_PREFIX),
-            (event->ie_Code & IECODE_UP_PREFIX) ? "up" : "down",
-            (LONG)event->ie_Qualifier);
-        break;
+    InputEventT *copy = AtomNew(queue->eventPool);
 
-      case IECLASS_RAWMOUSE:
-        if (event->ie_Code == IECODE_NOBUTTON) {
-          LOG("Mouse move: (%ld,%ld).", (LONG)event->ie_X, (LONG)event->ie_Y);
-        } else {
-#ifndef NDEBUG
-          const char *name[] = {"left", "right", "middle"};
+    memcpy(copy, event, sizeof(InputEventT));
+
+    SL_PushBack(queue->eventList, copy);
+  }
 #endif
 
-          LOG("Mouse %s key %s.",
-              name[(event->ie_Code & ~IECODE_UP_PREFIX) - IECODE_LBUTTON],
-              (event->ie_Code & IECODE_UP_PREFIX) ? "up" : "down");
-        }
-        break;
-
-      case IECLASS_TIMER:
-        continue;
-
-      default:
-        break;
-    }
-  }
+  ReleaseSemaphore(&queue->eventListLock);
 
   return NULL;
 }
 
-BOOL InitEventHandler() {
-  if (!InputDev.Open) {
-    InputDev.IntHandler = NEW_S(struct Interrupt);
-    InputDev.IntHandler->is_Code = (APTR)EventHandler;
-    InputDev.IntHandler->is_Data = NULL;
-    InputDev.IntHandler->is_Node.ln_Pri = 100;
+static EventQueueT *EventQueue = NULL;
 
-    if ((InputDev.MsgPort = CreatePort(NULL, 0)))
-      if ((InputDev.IoReq = CreateExtIO(InputDev.MsgPort,
-                                        sizeof(struct IOStdReq))))
-        InputDev.Open = !OpenDevice("input.device", 0L, InputDev.IoReq, 0);
+void StartEventQueue() {
+  if (!EventQueue) {
+    EventQueueT *queue = NEW_S(EventQueueT);
 
-    if (InputDev.Open) {
-      struct IOStdReq *ioReq = (struct IOStdReq *)InputDev.IoReq;
-      ioReq->io_Data = (APTR)InputDev.IntHandler;
+    queue->eventPool = NewAtomPool(sizeof(InputEventT), 32);
+    queue->eventList = NewSList();
+
+    InitSemaphore(&queue->eventListLock);
+
+    queue->msgPort = CreatePort(NULL, 0);
+    if (!queue->msgPort)
+      PANIC("CreatePort(...) failed.");
+
+    queue->ioReq = CreateExtIO(queue->msgPort, sizeof(IOStdReqT));
+    if (!queue->ioReq)
+      PANIC("CreateExtIO(...) failed.");
+
+    if (OpenDevice("input.device", 0L, queue->ioReq, 0))
+      PANIC("OpenDevice(...) failed.");
+   
+    {
+      InterruptT *handler;
+      IOStdReqT *ioReq;
+
+      handler = &queue->handler;
+      handler->is_Code = (APTR)EventHandler;
+      handler->is_Data = (APTR)queue;
+      handler->is_Node.ln_Pri = 100;
+
+      ioReq = (IOStdReqT *)queue->ioReq;
+      ioReq->io_Data = (APTR)&queue->handler;
       ioReq->io_Command = IND_ADDHANDLER;
-
-      DoIO((struct IORequest *)ioReq);
-    } else {
-      KillEventHandler();
+      DoIO((IORequestT *)ioReq);
     }
-  }
 
-  return InputDev.Open;
+    EventQueue = queue;
+  }
 }
 
-void KillEventHandler() {
-  if (InputDev.Open) {
-    struct IOStdReq *ioReq = (struct IOStdReq *)InputDev.IoReq;
+void StopEventQueue() {
+  EventQueueT *queue = EventQueue;
 
-    ioReq->io_Data = (APTR)InputDev.IntHandler;
+  EventQueue = NULL;
+
+  if (queue) {
+    IOStdReqT *ioReq;
+
+    ioReq = (IOStdReqT *)queue->ioReq;
+    ioReq->io_Data = (APTR)&queue->handler;
     ioReq->io_Command = IND_REMHANDLER;
-    DoIO((struct IORequest *)ioReq);
+    DoIO((IORequestT *)ioReq);
 
     /* Ask device to abort request, if pending */
-    if (!CheckIO(InputDev.IoReq))
-      AbortIO(InputDev.IoReq);
+    if (!CheckIO(queue->ioReq))
+      AbortIO(queue->ioReq);
     /* Wait for abort, then clean up */
-    WaitIO(InputDev.IoReq);
+    WaitIO(queue->ioReq);
+
+    CloseDevice(queue->ioReq);
+    DeleteExtIO(queue->ioReq);
+    DeleteMsgPort(queue->msgPort);
+
+    DeleteAtomPool(queue->eventPool);
+    DeleteSList(queue->eventList);
+    DELETE(queue);
+  }
+}
+
+void EventQueueReset() {
+  EventQueueT *queue = EventQueue;
+
+  ObtainSemaphore(&queue->eventListLock);
+
+  ResetAtomPool(queue->eventPool);
+  ResetSList(queue->eventList);
+
+  ReleaseSemaphore(&queue->eventListLock);
+}
+
+bool EventQueuePop(InputEventT *event) {
+  EventQueueT *queue = EventQueue;
+  bool result;
+
+  ObtainSemaphore(&queue->eventListLock);
+
+  {
+    InputEventT *head = SL_PopFront(queue->eventList);
+
+    result = head ? TRUE : FALSE;
+
+    if (result)
+      memcpy(event, head, sizeof(InputEventT));
+
+    AtomFree(queue->eventPool, head);
   }
 
-  CloseDevice(InputDev.IoReq);
-  DeleteExtIO(InputDev.IoReq);
-  DeleteMsgPort(InputDev.MsgPort);
-  DELETE(InputDev.IntHandler);
+  ReleaseSemaphore(&queue->eventListLock);
 
-  InputDev.IoReq = NULL;
-  InputDev.MsgPort = NULL;
-  InputDev.IntHandler = NULL;
-  InputDev.Open = FALSE;
+  return result;
 }

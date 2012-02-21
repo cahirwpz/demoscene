@@ -11,6 +11,7 @@
 
 #include "system/c2p.h"
 #include "system/display.h"
+#include "system/input.h"
 #include "system/vblank.h"
 
 #include "frame_tools.h"
@@ -98,6 +99,39 @@ void RenderChunky(int frameNumber) {
                  GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
+void PrintAllEvents() {
+  InputEventT event; 
+
+  while (EventQueuePop(&event)) {
+    switch (event.ie_Class) {
+      case IECLASS_RAWKEY:
+        LOG("Key %ld %s (%04lx).",
+            (LONG)(event.ie_Code & ~IECODE_UP_PREFIX),
+            (event.ie_Code & IECODE_UP_PREFIX) ? "up" : "down",
+            (LONG)event.ie_Qualifier);
+        break;
+
+      case IECLASS_RAWMOUSE:
+        if (event.ie_Code == IECODE_NOBUTTON) {
+          LOG("Mouse move: (%ld,%ld).", (LONG)event.ie_X, (LONG)event.ie_Y);
+        } else {
+          const char *name[] = {"left", "right", "middle"};
+
+          LOG("Mouse %s key %s.",
+              name[(event.ie_Code & ~IECODE_UP_PREFIX) - IECODE_LBUTTON],
+              (event.ie_Code & IECODE_UP_PREFIX) ? "up" : "down");
+        }
+        break;
+
+      case IECLASS_TIMER:
+        continue;
+
+      default:
+        break;
+    }
+  }
+}
+
 /*
  * Main loop.
  */
@@ -106,6 +140,8 @@ void MainLoop() {
 
   while (GetVBlankCounter() < 500) {
     int frameNumber = GetVBlankCounter();
+
+    PrintAllEvents();
 
     RenderMesh(frameNumber);
     RenderChunky(frameNumber);

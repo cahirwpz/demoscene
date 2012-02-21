@@ -14,6 +14,7 @@
 #include "system/c2p.h"
 #include "system/display.h"
 #include "system/fileio.h"
+#include "system/input.h"
 #include "system/vblank.h"
 
 #include "frame_tools.h"
@@ -147,6 +148,8 @@ void MainLoop() {
 
   while (GetVBlankCounter() < 50*60*2) {
     int frameNumber = GetVBlankCounter();
+
+    EventQueueReset();
 
     PaletteEffect(frameNumber, R_("TexturePal"), R_("EffectPal"), PalEffects);
     LoadPalette(R_("EffectPal"));

@@ -27,19 +27,18 @@ int main() {
   if (DOSBase && GfxBase && IntuitionBase && SystemCheck()) {
     StartResourceManager();
     AddInitialResources();
+    StartEventQueue();
 
-    if (InitEventHandler()) {
-      if (SetupDisplay()) {
-        InstallVBlankIntServer();
-        SetupEffect();
-        MainLoop();
-        TearDownEffect();
-        RemoveVBlankIntServer();
-        KillDisplay();
-      }
-      KillEventHandler();
+    if (SetupDisplay()) {
+      InstallVBlankIntServer();
+      SetupEffect();
+      MainLoop();
+      TearDownEffect();
+      RemoveVBlankIntServer();
+      KillDisplay();
     }
 
+    StopEventQueue();
     StopResourceManager();
   }
 

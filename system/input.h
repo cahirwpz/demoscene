@@ -1,9 +1,16 @@
-#ifndef __EVENT_H__
-#define __EVENT_H__
+#ifndef __SYSTEM_EVENT_QUEUE_H__
+#define __SYSTEM_EVENT_QUEUE_H__
 
-#include <exec/types.h>
+#include <devices/inputevent.h>
 
-BOOL InitEventHandler();
-void KillEventHandler();
+#include "std/types.h"
+
+typedef struct InputEvent InputEventT;
+
+void StartEventQueue();
+void StopEventQueue();
+
+void EventQueueReset();
+bool EventQueuePop(InputEventT *eventPtr);
 
 #endif
