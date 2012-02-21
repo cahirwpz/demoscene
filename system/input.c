@@ -1,6 +1,6 @@
-#define NDEBUG
-
+#define NewList alib_NewList
 #include <clib/alib_protos.h>
+#undef NewList
 #include <devices/input.h>
 #include <exec/interrupts.h>
 #include <exec/ports.h>
@@ -8,8 +8,9 @@
 
 #include "std/atompool.h"
 #include "std/debug.h"
+#include "std/list.h"
 #include "std/memory.h"
-#include "std/slist.h"
+
 #include "system/input.h"
 
 typedef struct IOStdReq IOStdReqT;
@@ -24,7 +25,7 @@ typedef struct EventQueue {
   SemaphoreT eventListLock;
 
   AtomPoolT *eventPool;
-  SListT *eventList;
+  ListT *eventList;
 } EventQueueT;
 
 static __saveds APTR EventHandler(InputEventT *event asm("a0"),
@@ -32,15 +33,13 @@ static __saveds APTR EventHandler(InputEventT *event asm("a0"),
 {
   ObtainSemaphore(&queue->eventListLock);
 
-#if 1
   for (; event; event = event->ie_NextEvent) {
     InputEventT *copy = AtomNew(queue->eventPool);
 
     memcpy(copy, event, sizeof(InputEventT));
 
-    SL_PushBack(queue->eventList, copy);
+    ListPushBack(queue->eventList, copy);
   }
-#endif
 
   ReleaseSemaphore(&queue->eventListLock);
 
@@ -54,7 +53,7 @@ void StartEventQueue() {
     EventQueueT *queue = NEW_S(EventQueueT);
 
     queue->eventPool = NewAtomPool(sizeof(InputEventT), 32);
-    queue->eventList = NewSList();
+    queue->eventList = NewList();
 
     InitSemaphore(&queue->eventListLock);
 
@@ -112,7 +111,7 @@ void StopEventQueue() {
     DeleteMsgPort(queue->msgPort);
 
     DeleteAtomPool(queue->eventPool);
-    DeleteSList(queue->eventList);
+    DeleteList(queue->eventList);
     DELETE(queue);
   }
 }
@@ -123,7 +122,7 @@ void EventQueueReset() {
   ObtainSemaphore(&queue->eventListLock);
 
   ResetAtomPool(queue->eventPool);
-  ResetSList(queue->eventList);
+  ResetList(queue->eventList);
 
   ReleaseSemaphore(&queue->eventListLock);
 }
@@ -135,7 +134,7 @@ bool EventQueuePop(InputEventT *event) {
   ObtainSemaphore(&queue->eventListLock);
 
   {
-    InputEventT *head = SL_PopFront(queue->eventList);
+    InputEventT *head = ListPopFront(queue->eventList);
 
     result = head ? TRUE : FALSE;
 

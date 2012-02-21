@@ -1,30 +1,30 @@
-#include "std/memory.h"
-#include "std/slist.h"
 #include "std/atompool.h"
+#include "std/list.h"
+#include "std/memory.h"
 
-typedef struct SNode {
-  struct SNode *prev;
-  struct SNode *next;
+typedef struct Node {
+  struct Node *prev;
+  struct Node *next;
   void *item;
-} SNodeT;
+} NodeT;
 
-struct SList {
-  SNodeT *first;
-  SNodeT *last;
+struct List {
+  NodeT *first;
+  NodeT *last;
   int items;
 
   AtomPoolT *pool;
 };
 
-SListT *NewSList() {
-  SListT *list = NEW_S(SListT);
+ListT *NewList() {
+  ListT *list = NEW_S(ListT);
 
-  list->pool = NewAtomPool(sizeof(SNodeT), 32);
+  list->pool = NewAtomPool(sizeof(NodeT), 32);
   
   return list;
 }
 
-void ResetSList(SListT *list) {
+void ResetList(ListT *list) {
   ResetAtomPool(list->pool);
 
   list->first = NULL;
@@ -32,15 +32,15 @@ void ResetSList(SListT *list) {
   list->items = 0;
 }
 
-void DeleteSList(SListT *list) {
+void DeleteList(ListT *list) {
   if (list) {
     DeleteAtomPool(list->pool);
     DELETE(list);
   }
 }
 
-void *SL_ForEach(SListT *list, IterFuncT func, void *data) {
-  SNodeT *node = list->first;
+void *ListForEach(ListT *list, IterFuncT func, void *data) {
+  NodeT *node = list->first;
 
   while (node) {
     if (!func(node->item, data))
@@ -52,9 +52,9 @@ void *SL_ForEach(SListT *list, IterFuncT func, void *data) {
   return node ? node->item : NULL;
 }
 
-void *SL_GetNth(SListT *list, size_t index) {
+void *ListGetNth(ListT *list, size_t index) {
   if (index < list->items) {
-    SNodeT *node = list->first;
+    NodeT *node = list->first;
 
     while (index--)
       node = node->next;
@@ -65,8 +65,8 @@ void *SL_GetNth(SListT *list, size_t index) {
   return NULL;
 }
 
-static SNodeT *NodePopBack(SListT *list) {
-  SNodeT *node = list->last;
+static NodeT *NodePopBack(ListT *list) {
+  NodeT *node = list->last;
 
   if (node) {
     if (list->first == node)
@@ -81,8 +81,8 @@ static SNodeT *NodePopBack(SListT *list) {
   return node;
 }
 
-static SNodeT *NodePopFront(SListT *list) {
-  SNodeT *node = list->first;
+static NodeT *NodePopFront(ListT *list) {
+  NodeT *node = list->first;
 
   if (node) {
     if (list->last == node)
@@ -97,7 +97,7 @@ static SNodeT *NodePopFront(SListT *list) {
   return node;
 }
 
-static void NodePushBack(SListT *list, SNodeT *node) {
+static void NodePushBack(ListT *list, NodeT *node) {
   node->prev = list->last;
   node->next = NULL;
 
@@ -108,7 +108,7 @@ static void NodePushBack(SListT *list, SNodeT *node) {
   list->items++;
 }
 
-static void NodePushFront(SListT *list, SNodeT *node) {
+static void NodePushFront(ListT *list, NodeT *node) {
   node->prev = NULL;
   node->next = list->first;
   
@@ -119,8 +119,8 @@ static void NodePushFront(SListT *list, SNodeT *node) {
   list->items++;
 }
 
-void *SL_PopBack(SListT *list) {
-  SNodeT *node = NodePopBack(list);
+void *ListPopBack(ListT *list) {
+  NodeT *node = NodePopBack(list);
 
   void *item = (node) ? (node->item) : NULL;
 
@@ -129,8 +129,8 @@ void *SL_PopBack(SListT *list) {
   return item;
 }
 
-void *SL_PopFront(SListT *list) {
-  SNodeT *node = NodePopFront(list);
+void *ListPopFront(ListT *list) {
+  NodeT *node = NodePopFront(list);
 
   void *item = (node) ? (node->item) : NULL;
 
@@ -139,22 +139,22 @@ void *SL_PopFront(SListT *list) {
   return item;
 }
 
-void SL_PushBack(SListT *list, void *item) {
-  SNodeT *node = AtomNew(list->pool);
+void ListPushBack(ListT *list, void *item) {
+  NodeT *node = AtomNew(list->pool);
 
   node->item = item;
 
   NodePushBack(list, node);
 }
 
-void SL_PushFront(SListT *list, void *item) {
-  SNodeT *node = AtomNew(list->pool);
+void ListPushFront(ListT *list, void *item) {
+  NodeT *node = AtomNew(list->pool);
 
   node->item = item;
 
   NodePushFront(list, node);
 }
 
-size_t SL_Size(SListT *list) {
+size_t ListSize(ListT *list) {
   return list->items;
 }

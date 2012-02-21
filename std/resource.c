@@ -4,7 +4,7 @@
 #include "std/debug.h"
 #include "std/memory.h"
 #include "std/resource.h"
-#include "std/slist.h"
+#include "std/list.h"
 
 typedef struct Resource {
   const char *name;
@@ -12,7 +12,7 @@ typedef struct Resource {
   FreeFuncT freeFunc;
 } ResourceT;
 
-static SListT *ResList;
+static ListT *ResList;
 static AtomPoolT *ResPool;
 
 static bool Relinquish(ResourceT *res) {
@@ -31,14 +31,14 @@ static bool FindByName(ResourceT *res, const char *name) {
 }
 
 void StartResourceManager() {
-  ResList = NewSList();
+  ResList = NewList();
   ResPool = NewAtomPool(sizeof(ResourceT), 16);
 }
 
 void StopResourceManager() {
-  SL_ForEach(ResList, (IterFuncT)Relinquish, NULL);
+  ListForEach(ResList, (IterFuncT)Relinquish, NULL);
 
-  DeleteSList(ResList);
+  DeleteList(ResList);
   DeleteAtomPool(ResPool);
 }
 
@@ -49,7 +49,7 @@ static void AddResource(const char *name, void *ptr, FreeFuncT freeFunc) {
   res->ptr = ptr;
   res->freeFunc = freeFunc;
 
-  SL_PushFront(ResList, res);
+  ListPushFront(ResList, res);
 }
 
 void AddRscSimple(const char *name, void *ptr, FreeFuncT freeFunc) {
@@ -64,7 +64,7 @@ void AddRscStatic(const char *name, void *ptr) {
 }
 
 void *GetResource(const char *name) {
-  ResourceT *res = SL_ForEach(ResList, (IterFuncT)FindByName, (void *)name);
+  ResourceT *res = ListForEach(ResList, (IterFuncT)FindByName, (void *)name);
 
   if (!res)
     PANIC("Resource '%s' not found.", name);

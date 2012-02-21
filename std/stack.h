@@ -2,7 +2,6 @@
 #define __STD_STACK_H__
 
 #include "std/atompool.h"
-#include "std/slist.h"
 
 typedef struct Stack StackT;
 
