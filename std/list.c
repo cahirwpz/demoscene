@@ -1,4 +1,7 @@
+#include <strings.h>
+
 #include "std/atompool.h"
+#include "std/debug.h"
 #include "std/list.h"
 #include "std/memory.h"
 
@@ -69,10 +72,10 @@ static NodeT *NodePopBack(ListT *list) {
   NodeT *node = list->last;
 
   if (node) {
-    if (list->first == node)
-      list->first = NULL;
-    else
+    if (node->prev)
       node->prev->next = NULL;
+    else
+      list->first = NULL;
 
     list->last = node->prev;
     list->items--;
@@ -85,10 +88,10 @@ static NodeT *NodePopFront(ListT *list) {
   NodeT *node = list->first;
 
   if (node) {
-    if (list->last == node)
-      list->last = NULL;
-    else
+    if (node->next)
       node->next->prev = NULL;
+    else
+      list->last = NULL;
 
     list->first = node->next;
     list->items--;
@@ -121,20 +124,26 @@ static void NodePushFront(ListT *list, NodeT *node) {
 
 void *ListPopBack(ListT *list) {
   NodeT *node = NodePopBack(list);
+  void *item = NULL;
 
-  void *item = (node) ? (node->item) : NULL;
+  if (node) {
+    item = node->item;
 
-  AtomFree(list->pool, node);
+    AtomFree(list->pool, node);
+  }
 
   return item;
 }
 
 void *ListPopFront(ListT *list) {
   NodeT *node = NodePopFront(list);
+  void *item = NULL;
 
-  void *item = (node) ? (node->item) : NULL;
+  if (node) {
+    item = node->item;
 
-  AtomFree(list->pool, node);
+    AtomFree(list->pool, node);
+  }
 
   return item;
 }

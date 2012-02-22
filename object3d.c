@@ -123,9 +123,6 @@ void PrintAllEvents() {
         }
         break;
 
-      case IECLASS_TIMER:
-        continue;
-
       default:
         break;
     }

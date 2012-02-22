@@ -28,17 +28,32 @@ typedef struct EventQueue {
   ListT *eventList;
 } EventQueueT;
 
+/*
+ * Strangely enough this mechanism is not reliable under heavy load.  Whereas
+ * it seems to be perfectly reasonable, under certain condition (in
+ * contradiction to common sense) it generates memory leaks. Maybe looking
+ * through AROS sources would help to understand what really happens here.
+ */
+
 static __saveds APTR EventHandler(InputEventT *event asm("a0"),
                                   EventQueueT *queue asm("a1"))
 {
   ObtainSemaphore(&queue->eventListLock);
 
   for (; event; event = event->ie_NextEvent) {
-    InputEventT *copy = AtomNew(queue->eventPool);
+    InputEventT *copy;
 
-    memcpy(copy, event, sizeof(InputEventT));
+    switch (event->ie_Class) {
+      case IECLASS_RAWKEY:
+      case IECLASS_RAWMOUSE:
+        copy = AtomNew(queue->eventPool);
+        memcpy(copy, event, sizeof(InputEventT));
+        ListPushBack(queue->eventList, copy);
+        break;
 
-    ListPushBack(queue->eventList, copy);
+      default:
+        break;
+    }
   }
 
   ReleaseSemaphore(&queue->eventListLock);
@@ -90,8 +105,6 @@ void StartEventQueue() {
 void StopEventQueue() {
   EventQueueT *queue = EventQueue;
 
-  EventQueue = NULL;
-
   if (queue) {
     IOStdReqT *ioReq;
 
@@ -114,6 +127,8 @@ void StopEventQueue() {
     DeleteList(queue->eventList);
     DELETE(queue);
   }
+
+  EventQueue = NULL;
 }
 
 void EventQueueReset() {
@@ -129,22 +144,19 @@ void EventQueueReset() {
 
 bool EventQueuePop(InputEventT *event) {
   EventQueueT *queue = EventQueue;
-  bool result;
+  InputEventT *head;
 
   ObtainSemaphore(&queue->eventListLock);
 
-  {
-    InputEventT *head = ListPopFront(queue->eventList);
+  head = ListPopFront(queue->eventList);
 
-    result = head ? TRUE : FALSE;
-
-    if (result)
-      memcpy(event, head, sizeof(InputEventT));
+  if (head) {
+    memcpy(event, head, sizeof(InputEventT));
 
     AtomFree(queue->eventPool, head);
   }
 
   ReleaseSemaphore(&queue->eventListLock);
 
-  return result;
+  return head ? TRUE : FALSE;
 }
