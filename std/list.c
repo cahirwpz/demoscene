@@ -1,5 +1,3 @@
-#include <strings.h>
-
 #include "std/atompool.h"
 #include "std/debug.h"
 #include "std/list.h"
