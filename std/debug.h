@@ -7,7 +7,7 @@
 #else
 #include <stdio.h>
 #define _LINE() printf("%s:%d: ", __FILE__, __LINE__)
-#define _EOL() putchar('\n')
+#define _EOL() printf("\r\n")
 #define LOG(...) { _LINE(); printf(__VA_ARGS__); _EOL(); }
 #define PANIC(...) { LOG(__VA_ARGS__); _exit(); }
 #endif
