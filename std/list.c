@@ -53,12 +53,21 @@ void *ListForEach(ListT *list, IterFuncT func, void *data) {
   return node ? node->item : NULL;
 }
 
-void *ListGetNth(ListT *list, size_t index) {
-  if (index < list->items) {
-    NodeT *node = list->first;
+void *ListGetNth(ListT *list, ssize_t index) {
+  if ((index < list->items) && (index >= -list->items)) {
+    NodeT *node;
 
-    while (index--)
-      node = node->next;
+    if (index >= 0) {
+      node = list->first;
+
+      while (index--)
+        node = node->next;
+    } else {
+      node = list->last;
+
+      while (++index < 0)
+        node = node->prev;
+    }
 
     return node->item;
   }

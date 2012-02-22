@@ -9,7 +9,7 @@ ListT *NewList();
 void DeleteList(ListT *list);
 void ResetList(ListT *list);
 
-void *ListGetNth(ListT *list, size_t index);
+void *ListGetNth(ListT *list, ssize_t index);
 void *ListForEach(ListT *list, IterFuncT func, void *data);
 void *ListPopBack(ListT *list);
 void *ListPopFront(ListT *list);
