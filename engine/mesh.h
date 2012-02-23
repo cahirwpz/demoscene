@@ -25,10 +25,12 @@ typedef struct Mesh {
   Vector3D *vertex;
   TriangleT *polygon;
 
+  /* map from vertex index to list of polygon indices */
+  IndexMapT vertexToPoly;
+
+  /* useful for lighting and backface culling */
   Vector3D *surfaceNormal;
   Vector3D *vertexNormal;
-
-  IndexMapT vertexToPoly;
 } MeshT;
 
 MeshT *NewMesh(size_t vertices, size_t triangles);
