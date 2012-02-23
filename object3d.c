@@ -34,7 +34,7 @@ void AddInitialResources() {
     CenterMeshPosition(mesh);
     NormalizeMeshSize(mesh);
 
-    RSC_ARRAY("Points", PointT, mesh->vertex_count);
+    RSC_ARRAY("Points", PointT, mesh->vertexNum);
   }
 }
 
@@ -77,15 +77,15 @@ void RenderMesh(int frameNumber) {
     PointT *points = R_("Points");
     CanvasT *canvas = R_("Canvas");
 
-    ProjectTo2D(WIDTH/2, HEIGHT/2, points, mesh->vertex, mesh->vertex_count,
+    ProjectTo2D(WIDTH/2, HEIGHT/2, points, mesh->vertex, mesh->vertexNum,
                 GetMatrix3D(ms, 0));
 
     CanvasFill(canvas, 0);
 
-    for (i = 0; i < mesh->triangle_count; i++) {
-      size_t p1 = mesh->triangle[i].p1;
-      size_t p2 = mesh->triangle[i].p2;
-      size_t p3 = mesh->triangle[i].p3;
+    for (i = 0; i < mesh->polygonNum; i++) {
+      size_t p1 = mesh->polygon[i].p1;
+      size_t p2 = mesh->polygon[i].p2;
+      size_t p3 = mesh->polygon[i].p3;
 
       DrawLine(canvas, points[p1].x, points[p1].y, points[p2].x, points[p2].y);
       DrawLine(canvas, points[p2].x, points[p2].y, points[p3].x, points[p3].y);

@@ -8,12 +8,27 @@ typedef struct Triangle {
   uint16_t p1, p2, p3;
 } TriangleT;
 
+typedef struct IndexArray {
+  uint16_t count;
+  uint16_t *index;
+} IndexArrayT;
+
+typedef struct IndexMap {
+  IndexArrayT *vertex;
+  uint16_t *indices;
+} IndexMapT;
+
 typedef struct Mesh {
-  size_t vertex_count;
-  size_t triangle_count;
+  size_t vertexNum;
+  size_t polygonNum;
 
   Vector3D *vertex;
-  TriangleT *triangle;
+  TriangleT *polygon;
+
+  Vector3D *surfaceNormal;
+  Vector3D *vertexNormal;
+
+  IndexMapT vertexToPoly;
 } MeshT;
 
 MeshT *NewMesh(size_t vertices, size_t triangles);
@@ -21,6 +36,10 @@ MeshT *NewMeshFromFile(const char *fileName);
 void DeleteMesh(MeshT *mesh);
 void NormalizeMeshSize(MeshT *mesh);
 void CenterMeshPosition(MeshT *mesh);
+
+void AddSurfaceNormals(MeshT *mesh);
+void AddVertexToPolygonMap(MeshT *mesh);
+void AddVertexNormals(MeshT *mesh);
 
 #define RSC_MESH_FILE(NAME, FILENAME) \
   AddRscSimple(NAME, NewMeshFromFile(FILENAME), (FreeFuncT)DeleteMesh)
