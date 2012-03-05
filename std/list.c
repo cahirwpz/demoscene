@@ -3,11 +3,11 @@
 #include "std/list.h"
 #include "std/memory.h"
 
-typedef struct Node {
-  struct Node *prev;
-  struct Node *next;
+struct Node {
+  NodeT *prev;
+  NodeT *next;
   void *item;
-} NodeT;
+};
 
 struct List {
   NodeT *first;
@@ -41,16 +41,7 @@ void DeleteList(ListT *list) {
 }
 
 void *ListForEach(ListT *list, IterFuncT func, void *data) {
-  NodeT *node = list->first;
-
-  while (node) {
-    if (!func(node->item, data))
-      break;
-
-    node = node->next;
-  }
-
-  return node ? node->item : NULL;
+  return NodeGetItem(ListSearch(list, func, data));
 }
 
 void *ListGetNth(ListT *list, ssize_t index) {
@@ -173,4 +164,21 @@ void ListPushFront(ListT *list, void *item) {
 
 size_t ListSize(ListT *list) {
   return list->items;
+}
+
+NodeT *ListSearch(ListT *list, IterFuncT func, void *data) {
+  NodeT *node = list->first;
+
+  while (node) {
+    if (!func(node->item, data))
+      break;
+
+    node = node->next;
+  }
+
+  return node;
+}
+
+void *NodeGetItem(NodeT *node) {
+  return node ? node->item : NULL;
 }

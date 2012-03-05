@@ -4,6 +4,7 @@
 #include "std/types.h"
 
 typedef struct List ListT;
+typedef struct Node NodeT;
 
 ListT *NewList();
 void DeleteList(ListT *list);
@@ -16,5 +17,8 @@ void *ListPopFront(ListT *list);
 void ListPushBack(ListT *list, void *item);
 void ListPushFront(ListT *list, void *item);
 size_t ListSize(ListT *list);
+
+NodeT *ListSearch(ListT *list, IterFuncT func, void *data);
+void *NodeGetItem(NodeT *node);
 
 #endif
