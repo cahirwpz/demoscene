@@ -20,25 +20,38 @@ TreeNodeT *NewTreeNode(TreeNodeT *parent, bool isLeaf, void *item) {
   return node;
 }
 
-static bool DeleteTreeNodeRecursive(TreeNodeT *node) {
-  if (node->children) {
-    ListForEach(node->children, (IterFuncT)DeleteTreeNodeRecursive, NULL);
+void DeleteTreeNode(TreeNodeT *node) {
+  if (node) {
     DeleteList(node->children);
+    DELETE(node);
   }
-  DELETE(node);
+}
+
+static bool TreeNodeRecursiveDelete(TreeNodeT *node) {
+  if (node->children)
+    ListForEach(node->children, (IterFuncT)TreeNodeRecursiveDelete, NULL);
+  DeleteList(node->children);
+  DeleteTreeNode(node);
   return TRUE;
 }
 
-void DeleteTreeNode(TreeNodeT *node) {
-  if (node->parent) {
-    /* TODO */
-  }
-
-  DeleteTreeNodeRecursive(node);
+void DeleteTreeNodeRecursive(TreeNodeT *node) {
+  if (node->parent)
+    ListRemove(node->parent->children, node);
+  TreeNodeRecursiveDelete(node);
+  DeleteTreeNode(node);
 }
 
 bool TreeNodeIsLeaf(TreeNodeT *node) {
   return BOOL(!node->children);
+}
+
+TreeNodeT *TreeNodeGetParent(TreeNodeT *node) {
+  return node->parent;
+}
+
+ListT *TreeNodeGetChildren(TreeNodeT *node) {
+  return node->children;
 }
 
 typedef void* (*TreeRecursiveFuncT)(TreeNodeT *node, IterFuncT func, void *data);
@@ -81,4 +94,15 @@ void *TreeForEachBottomUp(TreeNodeT *node, IterFuncT func, void *data) {
   }
 
   return item;
+}
+
+void *TreeForEachToRoot(TreeNodeT *node, IterFuncT func, void *data) {
+  while (node) {
+    if (!func(node->item, data))
+      break;
+
+    node = node->parent;
+  }
+
+  return node;
 }
