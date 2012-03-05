@@ -80,36 +80,44 @@ void *ListGetNth(ListT *list, ssize_t index) {
   return NULL;
 }
 
-static NodeT *NodePopBack(ListT *list) {
-  NodeT *node = list->last;
-
-  if (node) {
-    if (node->prev)
-      node->prev->next = NULL;
-    else
-      list->first = NULL;
-
-    list->last = node->prev;
-    list->items--;
-  }
-
-  return node;
+static void *NodeGetItem(NodeT *node) {
+  return node ? node->item : NULL;
 }
 
-static NodeT *NodePopFront(ListT *list) {
-  NodeT *node = list->first;
+static void* NodeUnlink(ListT *list, NodeT *node) {
+  void *item = NULL;
 
   if (node) {
-    if (node->next)
-      node->next->prev = NULL;
-    else
-      list->last = NULL;
+    if (!node->prev) {
+      /* unlink first node */
+      if (node->next)
+        node->next->prev = NULL;
+      else
+        list->last = NULL;
 
-    list->first = node->next;
+      list->first = node->next;
+    } else if (!node->next) {
+      /* unlink last node */
+      if (node->prev)
+        node->prev->next = NULL;
+      else
+        list->first = NULL;
+
+      list->last = node->prev;
+    } else {
+      /* unlink internal node */
+      node->prev->next = node->next;
+      node->next->prev = node->prev;
+    }
+
     list->items--;
+
+    item = NodeGetItem(node);
+
+    AtomFree(list->pool, node);
   }
 
-  return node;
+  return item;
 }
 
 static void NodePushBack(ListT *list, NodeT *node) {
@@ -135,29 +143,11 @@ static void NodePushFront(ListT *list, NodeT *node) {
 }
 
 void *ListPopBack(ListT *list) {
-  NodeT *node = NodePopBack(list);
-  void *item = NULL;
-
-  if (node) {
-    item = node->item;
-
-    AtomFree(list->pool, node);
-  }
-
-  return item;
+  return NodeUnlink(list, list->last);
 }
 
 void *ListPopFront(ListT *list) {
-  NodeT *node = NodePopFront(list);
-  void *item = NULL;
-
-  if (node) {
-    item = node->item;
-
-    AtomFree(list->pool, node);
-  }
-
-  return item;
+  return NodeUnlink(list, list->first);
 }
 
 void ListPushBack(ListT *list, void *item) {
@@ -193,10 +183,12 @@ static NodeT *ListSearchNode(ListT *list, SearchFuncT func, void *data) {
   return node;
 }
 
-static void *NodeGetItem(NodeT *node) {
-  return node ? node->item : NULL;
-}
-
 void *ListSearch(ListT *list, SearchFuncT func, void *data) {
   return NodeGetItem(ListSearchNode(list, func, data));
+}
+
+void *ListRemove(ListT *list, SearchFuncT func, void *data) {
+  NodeT *node = ListSearchNode(list, func, data);
+
+  return NodeUnlink(list, node);
 }

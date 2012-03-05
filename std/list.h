@@ -19,5 +19,6 @@ void ListPushBack(ListT *list, void *item);
 void ListPushFront(ListT *list, void *item);
 size_t ListSize(ListT *list);
 void *ListSearch(ListT *list, SearchFuncT func, void *data);
+void *ListRemove(ListT *list, SearchFuncT func, void *data);
 
 #endif
