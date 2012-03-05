@@ -12,6 +12,8 @@
 #undef TRUE
 #endif
 
+#define BOOL(a) ((a) ? TRUE : FALSE)
+
 #ifndef uint8_t
 typedef unsigned char uint8_t;
 #endif

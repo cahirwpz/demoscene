@@ -158,5 +158,5 @@ bool EventQueuePop(InputEventT *event) {
 
   ReleaseSemaphore(&queue->eventListLock);
 
-  return head ? TRUE : FALSE;
+  return BOOL(head);
 }

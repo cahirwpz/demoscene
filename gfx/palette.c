@@ -94,7 +94,7 @@ bool LinkPalettes(PaletteT *palette, ...) {
 
   va_end(ap);
 
-  return (start <= 256) ? TRUE : FALSE;
+  return BOOL(start <= 256);
 }
 
 void UnlinkPalettes(PaletteT *palette) {
