@@ -8,17 +8,16 @@ typedef struct Node NodeT;
 
 ListT *NewList();
 void DeleteList(ListT *list);
+void DeleteListDeep(ListT *list, FreeFuncT func);
 void ResetList(ListT *list);
 
 void *ListGetNth(ListT *list, ssize_t index);
-void *ListForEach(ListT *list, IterFuncT func, void *data);
+void ListForEach(ListT *list, IterFuncT func, void *data);
 void *ListPopBack(ListT *list);
 void *ListPopFront(ListT *list);
 void ListPushBack(ListT *list, void *item);
 void ListPushFront(ListT *list, void *item);
 size_t ListSize(ListT *list);
-
-NodeT *ListSearch(ListT *list, IterFuncT func, void *data);
-void *NodeGetItem(NodeT *node);
+void *ListSearch(ListT *list, SearchFuncT func, void *data);
 
 #endif

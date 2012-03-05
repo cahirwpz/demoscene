@@ -40,8 +40,22 @@ void DeleteList(ListT *list) {
   }
 }
 
-void *ListForEach(ListT *list, IterFuncT func, void *data) {
-  return NodeGetItem(ListSearch(list, func, data));
+void DeleteListDeep(ListT *list, FreeFuncT delete) {
+  if (list) {
+    ListForEach(list, (IterFuncT)delete, NULL);
+    DeleteAtomPool(list->pool);
+    DELETE(list);
+  }
+}
+
+void ListForEach(ListT *list, IterFuncT func, void *data) {
+  NodeT *node = list->first;
+
+  while (node) {
+    func(node->item, data);
+
+    node = node->next;
+  }
 }
 
 void *ListGetNth(ListT *list, ssize_t index) {
@@ -166,7 +180,7 @@ size_t ListSize(ListT *list) {
   return list->items;
 }
 
-NodeT *ListSearch(ListT *list, IterFuncT func, void *data) {
+static NodeT *ListSearchNode(ListT *list, SearchFuncT func, void *data) {
   NodeT *node = list->first;
 
   while (node) {
@@ -179,6 +193,10 @@ NodeT *ListSearch(ListT *list, IterFuncT func, void *data) {
   return node;
 }
 
-void *NodeGetItem(NodeT *node) {
+static void *NodeGetItem(NodeT *node) {
   return node ? node->item : NULL;
+}
+
+void *ListSearch(ListT *list, SearchFuncT func, void *data) {
+  return NodeGetItem(ListSearchNode(list, func, data));
 }

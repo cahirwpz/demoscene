@@ -41,10 +41,18 @@ typedef bool (*InitFuncT)(void *);
 /**
  * @brief Type of iterator function (can be used with lists, trees, etc.)
  *
- * @param Item  Element of iterable data structure.
- * @param Data	Auxiliary data that can be used during iteration.
- * @result TRUE to request to continue iteration, FALSE otherwise.
+ * @param item  Element of iterable data structure.
+ * @param data	Auxiliary data that can be used during iteration.
  */
-typedef bool (*IterFuncT)(void *Item, void *Data);
+typedef void (*IterFuncT)(void *item, void *data);
+
+/**
+ * @brief Type of search function (can be used with lists, trees, etc.)
+ *
+ * @param item  Element of iterable data structure.
+ * @param data	Auxiliary data that can be used during iteration.
+ * @result TRUE if the element matches (i.e. was found), FALSE otherwise.
+ */
+typedef bool (*SearchFuncT)(void *item, void *data);
 
 #endif

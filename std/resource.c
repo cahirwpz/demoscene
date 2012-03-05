@@ -15,15 +15,13 @@ typedef struct Resource {
 static ListT *ResList;
 static AtomPoolT *ResPool;
 
-static bool Relinquish(ResourceT *res) {
+static void Relinquish(ResourceT *res) {
   if (res->freeFunc) {
     LOG("Freeing resource '%s' at %p.", res->name, res->ptr);
     res->freeFunc(res->ptr);
   }
 
   MemFree((void *)res->name);
-
-  return TRUE;
 }
 
 static bool FindByName(ResourceT *res, const char *name) {
@@ -36,9 +34,7 @@ void StartResourceManager() {
 }
 
 void StopResourceManager() {
-  ListForEach(ResList, (IterFuncT)Relinquish, NULL);
-
-  DeleteList(ResList);
+  DeleteListDeep(ResList, (FreeFuncT)Relinquish);
   DeleteAtomPool(ResPool);
 }
 
@@ -64,7 +60,7 @@ void AddRscStatic(const char *name, void *ptr) {
 }
 
 void *GetResource(const char *name) {
-  ResourceT *res = ListForEach(ResList, (IterFuncT)FindByName, (void *)name);
+  ResourceT *res = ListSearch(ResList, (SearchFuncT)FindByName, (void *)name);
 
   if (!res)
     PANIC("Resource '%s' not found.", name);
