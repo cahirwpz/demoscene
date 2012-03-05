@@ -1,5 +1,12 @@
 #include "std/memory.h"
+#include "std/list.h"
 #include "std/tree.h"
+
+struct TreeNode {
+  TreeNodeT *parent;
+  ListT *children;
+  void *item;
+};
 
 TreeNodeT *NewTreeNode(TreeNodeT *parent, bool isLeaf, void *item) {
   TreeNodeT *node = NEW_S(TreeNodeT);
@@ -22,13 +29,16 @@ static bool DeleteTreeNodeRecursive(TreeNodeT *node) {
   return TRUE;
 }
 
-
 void DeleteTreeNode(TreeNodeT *node) {
   if (node->parent) {
     /* TODO */
   }
 
   DeleteTreeNodeRecursive(node);
+}
+
+bool TreeNodeIsLeaf(TreeNodeT *node) {
+  return BOOL(!node->children);
 }
 
 typedef void* (*TreeRecursiveFuncT)(TreeNodeT *node, IterFuncT func, void *data);
