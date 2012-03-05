@@ -2,7 +2,7 @@ TOPDIR = $(CURDIR)/..
 
 include $(TOPDIR)/Makefile.common
 
-OBJS = atompool.o list.o memory.o resource.o stack.o
+OBJS = atompool.o list.o memory.o resource.o stack.o tree.o
 
 libstd.a: $(OBJS)
 
@@ -11,6 +11,7 @@ list.o: list.c list.h types.h
 memory.o: memory.c memory.h types.h
 resource.o: resource.c resource.h types.h
 stack.o: stack.c stack.h list.h types.h
+tree.o: tree.c tree.h list.h types.h
 
 clean:
 	$(RM) *.a *.o *~
