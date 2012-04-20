@@ -34,7 +34,7 @@ void StartResourceManager() {
 }
 
 void StopResourceManager() {
-  DeleteListDeep(ResList, (FreeFuncT)Relinquish);
+  DeleteListFull(ResList, (FreeFuncT)Relinquish);
   DeleteAtomPool(ResPool);
 }
 

@@ -8,7 +8,7 @@ typedef struct Node NodeT;
 
 ListT *NewList();
 void DeleteList(ListT *list);
-void DeleteListDeep(ListT *list, FreeFuncT func);
+void DeleteListFull(ListT *list, FreeFuncT func);
 void ResetList(ListT *list);
 
 void *ListGetNth(ListT *list, ssize_t index);

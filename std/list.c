@@ -40,7 +40,7 @@ void DeleteList(ListT *list) {
   }
 }
 
-void DeleteListDeep(ListT *list, FreeFuncT delete) {
+void DeleteListFull(ListT *list, FreeFuncT delete) {
   if (list) {
     ListForEach(list, (IterFuncT)delete, NULL);
     DeleteAtomPool(list->pool);
