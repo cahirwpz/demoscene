@@ -84,7 +84,7 @@ static PtrT NodeGetItem(NodeT *node) {
   return node ? node->item : NULL;
 }
 
-static void* NodeUnlink(ListT *list, NodeT *node) {
+static PtrT NodeUnlink(ListT *list, NodeT *node) {
   PtrT item = NULL;
 
   if (node) {
