@@ -35,16 +35,16 @@ void StackRemove(StackT *stack) {
   AtomFree(stack->pool, ListPopFront(stack->list));
 }
 
-void *StackPeek(StackT *stack, size_t index) {
+PtrT StackPeek(StackT *stack, size_t index) {
   return ListGetNth(stack->list, index);
 }
 
-void *StackTop(StackT *stack) {
+PtrT StackTop(StackT *stack) {
   return ListGetNth(stack->list, 0);
 }
 
-void *StackPushNew(StackT *stack) {
-  void *item = AtomNew0(stack->pool);
+PtrT StackPushNew(StackT *stack) {
+  PtrT item = AtomNew0(stack->pool);
 
   ListPushFront(stack->list, item);
 

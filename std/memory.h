@@ -3,11 +3,11 @@
 
 #include "std/types.h"
 
-void *MemNew(size_t n);
-void *MemNew0(size_t n);
-void *MemDup(const void *p, size_t s);
+PtrT MemNew(size_t n);
+PtrT MemNew0(size_t n);
+PtrT MemDup(const void *p, size_t s);
 char *StrDup(const char *s);
-void MemFree(void *p);
+void MemFree(PtrT p);
 
 #define NEW_S(TYPE) \
     (TYPE *)MemNew0(sizeof(TYPE))

@@ -6,7 +6,7 @@
 #include "std/debug.h"
 
 struct AtomPool {
-  void *pool;
+  PtrT pool;
   size_t atomSize;
   size_t perChunk;
 };
@@ -42,8 +42,8 @@ void ResetAtomPool(AtomPoolT *atomPool) {
           atomPool->atomSize * atomPool->perChunk, atomPool->atomSize);
 }
 
-void *AtomNew(AtomPoolT *atomPool) {
-  void *ptr = AllocPooled(atomPool->pool, atomPool->atomSize);
+PtrT AtomNew(AtomPoolT *atomPool) {
+  PtrT ptr = AllocPooled(atomPool->pool, atomPool->atomSize);
 
   if (!ptr)
     PANIC("AllocPooled(%p, %ld) failed.", atomPool->pool, atomPool->atomSize);
@@ -51,14 +51,14 @@ void *AtomNew(AtomPoolT *atomPool) {
   return ptr;
 }
 
-void *AtomNew0(AtomPoolT *atomPool) {
-  void *ptr = AtomNew(atomPool);
+PtrT AtomNew0(AtomPoolT *atomPool) {
+  PtrT ptr = AtomNew(atomPool);
 
   bzero(ptr, atomPool->atomSize);
 
   return ptr;
 }
 
-void AtomFree(AtomPoolT *atomPool, void *atom) {
+void AtomFree(AtomPoolT *atomPool, PtrT atom) {
   FreePooled(atomPool->pool, atom, atomPool->atomSize);
 }

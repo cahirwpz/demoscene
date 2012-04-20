@@ -4,9 +4,9 @@
 
 #include "system/fileio.h"
 
-void *ReadFileToCustomMemory(const char *fileName, uint32_t memFlags) {
+PtrT ReadFileToCustomMemory(const char *fileName, uint32_t memFlags) {
   BPTR fh;
-  void *data = NULL;
+  PtrT data = NULL;
   
   if ((fh = Open(fileName, MODE_OLDFILE))) {
     struct FileInfoBlock *infoBlock;
@@ -30,6 +30,6 @@ void *ReadFileToCustomMemory(const char *fileName, uint32_t memFlags) {
   return data;
 }
 
-void *ReadFileSimple(const char *fileName) {
+PtrT ReadFileSimple(const char *fileName) {
   return ReadFileToCustomMemory(fileName, MEMF_PUBLIC);
 }

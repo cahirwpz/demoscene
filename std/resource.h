@@ -6,9 +6,9 @@
 void StartResourceManager();
 void StopResourceManager();
 
-void AddRscSimple(const char *name, void *ptr, FreeFuncT freeFunc);
-void AddRscStatic(const char *name, void *ptr);
-void *GetResource(const char *name);
+void AddRscSimple(const char *name, PtrT ptr, FreeFuncT freeFunc);
+void AddRscStatic(const char *name, PtrT ptr);
+PtrT GetResource(const char *name);
 
 #define RSC_STATIC(NAME, PTR) \
   AddRscStatic(NAME, PTR)

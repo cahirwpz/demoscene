@@ -34,9 +34,11 @@ typedef enum { FALSE, TRUE } bool;
 #define swapi(a,b)	{ (a)^=(b); (b)^=(a); (a)^=(b); }
 #define swapf(a,b)	{ float t; t = (b); (b) = (a); (a) = t; }
 
-typedef void* (*AllocFuncT)();
-typedef void (*FreeFuncT)(void *);
-typedef bool (*InitFuncT)(void *);
+typedef void* PtrT;
+
+typedef PtrT (*AllocFuncT)();
+typedef void (*FreeFuncT)(PtrT);
+typedef bool (*InitFuncT)(PtrT);
 
 /**
  * @brief Type of iterator function (can be used with lists, trees, etc.)
@@ -44,7 +46,7 @@ typedef bool (*InitFuncT)(void *);
  * @param item  Element of iterable data structure.
  * @param data	Auxiliary data that can be used during iteration.
  */
-typedef void (*IterFuncT)(void *item, void *data);
+typedef void (*IterFuncT)(PtrT item, PtrT data);
 
 /**
  * @brief Type of search function (can be used with lists, trees, etc.)
@@ -53,6 +55,6 @@ typedef void (*IterFuncT)(void *item, void *data);
  * @param data	Auxiliary data that can be used during iteration.
  * @result TRUE if the element matches (i.e. was found), FALSE otherwise.
  */
-typedef bool (*SearchFuncT)(void *item, void *data);
+typedef bool (*SearchFuncT)(PtrT item, PtrT data);
 
 #endif

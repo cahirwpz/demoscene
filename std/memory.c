@@ -4,8 +4,8 @@
 #include "std/debug.h"
 #include "std/memory.h"
 
-void *MemNew(size_t n) {
-  void *p = NULL;
+PtrT MemNew(size_t n) {
+  PtrT p = NULL;
 
   if (n) {
     p = AllocVec(n, MEMF_PUBLIC);
@@ -17,8 +17,8 @@ void *MemNew(size_t n) {
   return p;
 }
 
-void *MemNew0(size_t n) {
-  void *p = NULL;
+PtrT MemNew0(size_t n) {
+  PtrT p = NULL;
 
   if (n) {
     p = AllocVec(n, MEMF_PUBLIC|MEMF_CLEAR);
@@ -30,7 +30,7 @@ void *MemNew0(size_t n) {
   return p;
 }
 
-void *MemDup(const void *p, size_t s) {
+PtrT MemDup(const void *p, size_t s) {
   return memcpy(MemNew(s), p, s);
 }
 
@@ -38,6 +38,6 @@ char *StrDup(const char *s) {
   return MemDup(s, strlen(s) + 1);
 }
 
-void MemFree(void *p) {
+void MemFree(PtrT p) {
   FreeVec(p);
 }

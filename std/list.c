@@ -6,7 +6,7 @@
 struct Node {
   NodeT *prev;
   NodeT *next;
-  void *item;
+  PtrT item;
 };
 
 struct List {
@@ -48,7 +48,7 @@ void DeleteListFull(ListT *list, FreeFuncT delete) {
   }
 }
 
-void ListForEach(ListT *list, IterFuncT func, void *data) {
+void ListForEach(ListT *list, IterFuncT func, PtrT data) {
   NodeT *node = list->first;
 
   while (node) {
@@ -58,7 +58,7 @@ void ListForEach(ListT *list, IterFuncT func, void *data) {
   }
 }
 
-void *ListGetNth(ListT *list, ssize_t index) {
+PtrT ListGetNth(ListT *list, ssize_t index) {
   if ((index < list->items) && (index >= -list->items)) {
     NodeT *node;
 
@@ -80,12 +80,12 @@ void *ListGetNth(ListT *list, ssize_t index) {
   return NULL;
 }
 
-static void *NodeGetItem(NodeT *node) {
+static PtrT NodeGetItem(NodeT *node) {
   return node ? node->item : NULL;
 }
 
 static void* NodeUnlink(ListT *list, NodeT *node) {
-  void *item = NULL;
+  PtrT item = NULL;
 
   if (node) {
     if (!node->prev) {
@@ -142,15 +142,15 @@ static void NodePushFront(ListT *list, NodeT *node) {
   list->items++;
 }
 
-void *ListPopBack(ListT *list) {
+PtrT ListPopBack(ListT *list) {
   return NodeUnlink(list, list->last);
 }
 
-void *ListPopFront(ListT *list) {
+PtrT ListPopFront(ListT *list) {
   return NodeUnlink(list, list->first);
 }
 
-void ListPushBack(ListT *list, void *item) {
+void ListPushBack(ListT *list, PtrT item) {
   NodeT *node = AtomNew(list->pool);
 
   node->item = item;
@@ -158,7 +158,7 @@ void ListPushBack(ListT *list, void *item) {
   NodePushBack(list, node);
 }
 
-void ListPushFront(ListT *list, void *item) {
+void ListPushFront(ListT *list, PtrT item) {
   NodeT *node = AtomNew(list->pool);
 
   node->item = item;
@@ -170,7 +170,7 @@ size_t ListSize(ListT *list) {
   return list->items;
 }
 
-static NodeT *ListSearchNode(ListT *list, SearchFuncT func, void *data) {
+static NodeT *ListSearchNode(ListT *list, SearchFuncT func, PtrT data) {
   NodeT *node = list->first;
 
   while (node) {
@@ -183,11 +183,11 @@ static NodeT *ListSearchNode(ListT *list, SearchFuncT func, void *data) {
   return node;
 }
 
-void *ListSearch(ListT *list, SearchFuncT func, void *data) {
+PtrT ListSearch(ListT *list, SearchFuncT func, PtrT data) {
   return NodeGetItem(ListSearchNode(list, func, data));
 }
 
-void *ListRemove(ListT *list, SearchFuncT func, void *data) {
+PtrT ListRemove(ListT *list, SearchFuncT func, PtrT data) {
   NodeT *node = ListSearchNode(list, func, data);
 
   return NodeUnlink(list, node);

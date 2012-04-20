@@ -8,7 +8,7 @@
 
 typedef struct Resource {
   const char *name;
-  void *ptr;
+  PtrT ptr;
   FreeFuncT freeFunc;
 } ResourceT;
 
@@ -21,7 +21,7 @@ static void Relinquish(ResourceT *res) {
     res->freeFunc(res->ptr);
   }
 
-  MemFree((void *)res->name);
+  MemFree((PtrT)res->name);
 }
 
 static bool FindByName(ResourceT *res, const char *name) {
@@ -38,7 +38,7 @@ void StopResourceManager() {
   DeleteAtomPool(ResPool);
 }
 
-static void AddResource(const char *name, void *ptr, FreeFuncT freeFunc) {
+static void AddResource(const char *name, PtrT ptr, FreeFuncT freeFunc) {
   ResourceT *res = AtomNew(ResPool);
 
   res->name = StrDup(name);
@@ -48,19 +48,19 @@ static void AddResource(const char *name, void *ptr, FreeFuncT freeFunc) {
   ListPushFront(ResList, res);
 }
 
-void AddRscSimple(const char *name, void *ptr, FreeFuncT freeFunc) {
+void AddRscSimple(const char *name, PtrT ptr, FreeFuncT freeFunc) {
   if (!ptr)
     PANIC("Missing content for resource '%s'.", name);
 
   AddResource(name, ptr, freeFunc);
 }
 
-void AddRscStatic(const char *name, void *ptr) {
+void AddRscStatic(const char *name, PtrT ptr) {
   AddResource(name, ptr, NULL);
 }
 
-void *GetResource(const char *name) {
-  ResourceT *res = ListSearch(ResList, (SearchFuncT)FindByName, (void *)name);
+PtrT GetResource(const char *name) {
+  ResourceT *res = ListSearch(ResList, (SearchFuncT)FindByName, (PtrT)name);
 
   if (!res)
     PANIC("Resource '%s' not found.", name);

@@ -138,7 +138,7 @@ void KillDisplay() {
 }
 
 void DisplaySwap() {
-  struct Custom *custom = (void *)0xdff000;
+  struct Custom *custom = (PtrT)0xdff000;
 
   Display->Screen->ViewPort.RasInfo->BitMap = GetCurrentBitMap();
   Display->CurrentBitMap ^= 1;

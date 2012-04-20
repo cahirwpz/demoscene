@@ -5,10 +5,10 @@
 struct TreeNode {
   TreeNodeT *parent;
   ListT *children;
-  void *item;
+  PtrT item;
 };
 
-TreeNodeT *NewTreeNode(TreeNodeT *parent, bool isLeaf, void *item) {
+TreeNodeT *NewTreeNode(TreeNodeT *parent, bool isLeaf, PtrT item) {
   TreeNodeT *node = NEW_S(TreeNodeT);
 
   node->parent = parent;
@@ -22,7 +22,7 @@ TreeNodeT *NewTreeNode(TreeNodeT *parent, bool isLeaf, void *item) {
 
 void* DeleteTreeNode(TreeNodeT *node) {
   if (node) {
-    void *item = node->item;
+    PtrT item = node->item;
     DeleteList(node->children);
     DELETE(node);
     return item;
@@ -52,7 +52,7 @@ bool TreeNodeIsLeaf(TreeNodeT *node) {
   return BOOL(!node->children);
 }
 
-static void *TreeNodeGetItem(TreeNodeT *node) {
+static PtrT TreeNodeGetItem(TreeNodeT *node) {
   return node->item;
 }
 
@@ -64,9 +64,9 @@ ListT *TreeNodeGetChildren(TreeNodeT *node) {
   return node->children;
 }
 
-typedef void (*TreeRecursiveFuncT)(TreeNodeT *node, IterFuncT func, void *data);
+typedef void (*TreeRecursiveFuncT)(TreeNodeT *node, IterFuncT func, PtrT data);
 
-static void TreeForEachRecursive(TreeNodeT *node, IterFuncT func, void *data, TreeRecursiveFuncT recurse) {
+static void TreeForEachRecursive(TreeNodeT *node, IterFuncT func, PtrT data, TreeRecursiveFuncT recurse) {
   void NodeRecurse(TreeNodeT *child) {
     recurse(child, func, data);
   }
@@ -74,17 +74,17 @@ static void TreeForEachRecursive(TreeNodeT *node, IterFuncT func, void *data, Tr
   ListForEach(TreeNodeGetChildren(node), (IterFuncT)NodeRecurse, NULL);
 }
 
-void TreeForEachTopDown(TreeNodeT *node, IterFuncT func, void *data) {
+void TreeForEachTopDown(TreeNodeT *node, IterFuncT func, PtrT data) {
   func(TreeNodeGetItem(node), data);
   TreeForEachRecursive(node, func, data, TreeForEachTopDown);
 }
 
-void TreeForEachBottomUp(TreeNodeT *node, IterFuncT func, void *data) {
+void TreeForEachBottomUp(TreeNodeT *node, IterFuncT func, PtrT data) {
   TreeForEachRecursive(node, func, data, TreeForEachBottomUp);
   func(TreeNodeGetItem(node), data);
 }
 
-void TreeForEachToRoot(TreeNodeT *node, IterFuncT func, void *data) {
+void TreeForEachToRoot(TreeNodeT *node, IterFuncT func, PtrT data) {
   while (node) {
     func(TreeNodeGetItem(node), data);
     node = TreeNodeGetParent(node);
