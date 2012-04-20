@@ -10,7 +10,7 @@
 typedef struct TreeNode TreeNodeT;
 
 TreeNodeT *NewTreeNode(TreeNodeT *parent, bool isLeaf, void *item);
-void DeleteTreeNode(TreeNodeT *node);
+void* DeleteTreeNode(TreeNodeT *node);
 
 bool TreeNodeIsLeaf(TreeNodeT *node);
 TreeNodeT *TreeNodeGetParent(TreeNodeT *node);

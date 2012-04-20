@@ -20,11 +20,15 @@ TreeNodeT *NewTreeNode(TreeNodeT *parent, bool isLeaf, void *item) {
   return node;
 }
 
-void DeleteTreeNode(TreeNodeT *node) {
+void* DeleteTreeNode(TreeNodeT *node) {
   if (node) {
+    void *item = node->item;
     DeleteList(node->children);
     DELETE(node);
+    return item;
   }
+
+  return NULL;
 }
 
 static void TreeNodeRecursiveDelete(TreeNodeT *node) {
