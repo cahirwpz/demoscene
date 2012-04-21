@@ -13,6 +13,7 @@ void ResetList(ListT *list);
 
 PtrT ListGetNth(ListT *list, ssize_t index);
 void ListForEach(ListT *list, IterFuncT func, PtrT data);
+void ListForEachNode(ListT *list, IterFuncT func, PtrT data);
 PtrT ListPopBack(ListT *list);
 PtrT ListPopFront(ListT *list);
 void ListPushBack(ListT *list, PtrT item);

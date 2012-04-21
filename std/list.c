@@ -1,4 +1,3 @@
-#include "std/atompool.h"
 #include "std/debug.h"
 #include "std/list.h"
 #include "std/memory.h"
@@ -13,20 +12,14 @@ struct List {
   NodeT *first;
   NodeT *last;
   int items;
-
-  AtomPoolT *pool;
 };
 
 ListT *NewList() {
-  ListT *list = NEW_S(ListT);
-
-  list->pool = NewAtomPool(sizeof(NodeT), 32);
-  
-  return list;
+  return NEW_S(ListT);
 }
 
 void ResetList(ListT *list) {
-  ResetAtomPool(list->pool);
+  ListForEachNode(list, (IterFuncT)MemFree, NULL);
 
   list->first = NULL;
   list->last = NULL;
@@ -35,7 +28,7 @@ void ResetList(ListT *list) {
 
 void DeleteList(ListT *list) {
   if (list) {
-    DeleteAtomPool(list->pool);
+    ListForEachNode(list, (IterFuncT)MemFree, NULL);
     DELETE(list);
   }
 }
@@ -43,8 +36,17 @@ void DeleteList(ListT *list) {
 void DeleteListFull(ListT *list, FreeFuncT delete) {
   if (list) {
     ListForEach(list, (IterFuncT)delete, NULL);
-    DeleteAtomPool(list->pool);
+    ListForEachNode(list, (IterFuncT)MemFree, NULL);
     DELETE(list);
+  }
+}
+
+void ListForEachNode(ListT *list, IterFuncT func, PtrT data) {
+  NodeT *node = list->first;
+
+  while (node) {
+    func(node, data);
+    node = node->next;
   }
 }
 
@@ -114,7 +116,7 @@ static PtrT NodeUnlink(ListT *list, NodeT *node) {
 
     item = NodeGetItem(node);
 
-    AtomFree(list->pool, node);
+    DELETE(node);
   }
 
   return item;
@@ -151,7 +153,7 @@ PtrT ListPopFront(ListT *list) {
 }
 
 void ListPushBack(ListT *list, PtrT item) {
-  NodeT *node = AtomNew(list->pool);
+  NodeT *node = NEW_S(NodeT);
 
   node->item = item;
 
@@ -159,7 +161,7 @@ void ListPushBack(ListT *list, PtrT item) {
 }
 
 void ListPushFront(ListT *list, PtrT item) {
-  NodeT *node = AtomNew(list->pool);
+  NodeT *node = NEW_S(NodeT);
 
   node->item = item;
 
