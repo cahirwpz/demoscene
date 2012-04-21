@@ -3,23 +3,34 @@
 
 #include "std/types.h"
 
-typedef struct List ListT;
 typedef struct Node NodeT;
 
-ListT *NewList();
-void DeleteList(ListT *list);
-void DeleteListFull(ListT *list, FreeFuncT func);
-void ResetList(ListT *list);
+struct Node {
+  NodeT *prev;
+  NodeT *next;
+  PtrT data;
+};
 
-PtrT ListGetNth(ListT *list, ssize_t index);
-void ListForEach(ListT *list, IterFuncT func, PtrT data);
-void ListForEachNode(ListT *list, IterFuncT func, PtrT data);
-PtrT ListPopBack(ListT *list);
-PtrT ListPopFront(ListT *list);
-void ListPushBack(ListT *list, PtrT item);
-void ListPushFront(ListT *list, PtrT item);
-size_t ListSize(ListT *list);
-PtrT ListSearch(ListT *list, SearchFuncT func, PtrT data);
-PtrT ListRemove(ListT *list, SearchFuncT func, PtrT data);
+NodeT *NewNode(PtrT data);
+void NodePrepend(NodeT *cursor, NodeT *node);
+void NodeAppend(NodeT *cursor, NodeT *node);
+NodeT *NodeUnlink(NodeT *node);
+void NodeForEach(NodeT *guard, IterFuncT iterator, PtrT data);
+NodeT *NodeSearch(NodeT *guard, SearchFuncT func, PtrT data);
+
+NodeT *NewList();
+void DeleteList(NodeT *guard);
+void DeleteListFull(NodeT *guard, FreeFuncT deleter);
+
+void ListForEach(NodeT *guard, IterFuncT iterator, PtrT data);
+PtrT ListSearch(NodeT *guard, SearchFuncT func, PtrT data);
+PtrT ListRemove(NodeT *guard, SearchFuncT func, PtrT data);
+
+NodeT *ListGetNth(NodeT *guard, ssize_t index);
+PtrT ListPopBack(NodeT *guard);
+PtrT ListPopFront(NodeT *guard);
+void ListPushBack(NodeT *guard, PtrT data);
+void ListPushFront(NodeT *guard, PtrT data);
+size_t ListSize(NodeT *guard);
 
 #endif

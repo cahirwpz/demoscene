@@ -2,195 +2,180 @@
 #include "std/list.h"
 #include "std/memory.h"
 
-struct Node {
-  NodeT *prev;
-  NodeT *next;
-  PtrT item;
-};
+/*
+ * Node handling related functions.
+ */
 
-struct List {
-  NodeT *first;
-  NodeT *last;
-  int items;
-};
+NodeT *NewNode(PtrT data) {
+  NodeT *node = MemNew0(sizeof(NodeT));
 
-ListT *NewList() {
-  return NEW_S(ListT);
+  node->data = data;
+
+  return node;
 }
 
-void ResetList(ListT *list) {
-  ListForEachNode(list, (IterFuncT)MemFree, NULL);
-
-  list->first = NULL;
-  list->last = NULL;
-  list->items = 0;
+static PtrT NodeGetData(NodeT *node) {
+    return node ? node->data : NULL;
 }
 
-void DeleteList(ListT *list) {
-  if (list) {
-    ListForEachNode(list, (IterFuncT)MemFree, NULL);
-    DELETE(list);
-  }
+void NodePrepend(NodeT *cursor, NodeT *node) {
+  node->prev = cursor;
+  node->next = cursor->next;
+  
+  cursor->next->prev = node;
+  cursor->next = node;
 }
 
-void DeleteListFull(ListT *list, FreeFuncT delete) {
-  if (list) {
-    ListForEach(list, (IterFuncT)delete, NULL);
-    ListForEachNode(list, (IterFuncT)MemFree, NULL);
-    DELETE(list);
-  }
+void NodeAppend(NodeT *cursor, NodeT *node) {
+  node->prev = cursor->prev;
+  node->next = cursor;
+
+  cursor->prev->next = node;
+  cursor->prev = node;
 }
 
-void ListForEachNode(ListT *list, IterFuncT func, PtrT data) {
-  NodeT *node = list->first;
-
-  while (node) {
-    func(node, data);
-    node = node->next;
-  }
-}
-
-void ListForEach(ListT *list, IterFuncT func, PtrT data) {
-  NodeT *node = list->first;
-
-  while (node) {
-    func(node->item, data);
-
-    node = node->next;
-  }
-}
-
-PtrT ListGetNth(ListT *list, ssize_t index) {
-  if ((index < list->items) && (index >= -list->items)) {
-    NodeT *node;
-
-    if (index >= 0) {
-      node = list->first;
-
-      while (index--)
-        node = node->next;
-    } else {
-      node = list->last;
-
-      while (++index < 0)
-        node = node->prev;
-    }
-
-    return node->item;
-  }
-
-  return NULL;
-}
-
-static PtrT NodeGetItem(NodeT *node) {
-  return node ? node->item : NULL;
-}
-
-static PtrT NodeUnlink(ListT *list, NodeT *node) {
-  PtrT item = NULL;
-
+NodeT *NodeUnlink(NodeT *node) {
   if (node) {
-    if (!node->prev) {
-      /* unlink first node */
-      if (node->next)
-        node->next->prev = NULL;
-      else
-        list->last = NULL;
-
-      list->first = node->next;
-    } else if (!node->next) {
-      /* unlink last node */
-      if (node->prev)
-        node->prev->next = NULL;
-      else
-        list->first = NULL;
-
-      list->last = node->prev;
+    if (node->prev == node->next) {
+      node = NULL;
     } else {
-      /* unlink internal node */
       node->prev->next = node->next;
       node->next->prev = node->prev;
     }
-
-    list->items--;
-
-    item = NodeGetItem(node);
-
-    DELETE(node);
-  }
-
-  return item;
-}
-
-static void NodePushBack(ListT *list, NodeT *node) {
-  node->prev = list->last;
-  node->next = NULL;
-
-  if (!list->first)
-    list->first = node;
-
-  list->last = node;
-  list->items++;
-}
-
-static void NodePushFront(ListT *list, NodeT *node) {
-  node->prev = NULL;
-  node->next = list->first;
-  
-  if (!list->last)
-    list->last = node;
-
-  list->first = node;
-  list->items++;
-}
-
-PtrT ListPopBack(ListT *list) {
-  return NodeUnlink(list, list->last);
-}
-
-PtrT ListPopFront(ListT *list) {
-  return NodeUnlink(list, list->first);
-}
-
-void ListPushBack(ListT *list, PtrT item) {
-  NodeT *node = NEW_S(NodeT);
-
-  node->item = item;
-
-  NodePushBack(list, node);
-}
-
-void ListPushFront(ListT *list, PtrT item) {
-  NodeT *node = NEW_S(NodeT);
-
-  node->item = item;
-
-  NodePushFront(list, node);
-}
-
-size_t ListSize(ListT *list) {
-  return list->items;
-}
-
-static NodeT *ListSearchNode(ListT *list, SearchFuncT func, PtrT data) {
-  NodeT *node = list->first;
-
-  while (node) {
-    if (!func(node->item, data))
-      break;
-
-    node = node->next;
   }
 
   return node;
 }
 
-PtrT ListSearch(ListT *list, SearchFuncT func, PtrT data) {
-  return NodeGetItem(ListSearchNode(list, func, data));
+void NodeForEach(NodeT *guard, IterFuncT func, PtrT data) {
+  NodeT *node = guard->next;
+
+  while (node != guard) {
+    func(node, data);
+    node = node->next;
+  }
 }
 
-PtrT ListRemove(ListT *list, SearchFuncT func, PtrT data) {
-  NodeT *node = ListSearchNode(list, func, data);
+NodeT *NodeSearch(NodeT *guard, SearchFuncT func, PtrT data) {
+  NodeT *node = guard->next;
 
-  return NodeUnlink(list, node);
+  while (node != guard) {
+    if (!func(node, data))
+      break;
+
+    node = node->next;
+  }
+
+  return (node != guard) ? node : NULL;
+}
+
+/*
+ * List related functions.
+ */
+
+NodeT *NewList() {
+  NodeT *node = MemNew0(sizeof(NodeT));
+
+  node->next = node;
+  node->prev = node;
+
+  return node;
+}
+
+void DeleteList(NodeT *guard) {
+  if (guard) {
+    NodeT *node = guard->next;
+
+    while (node != guard) {
+      MemFree(node);
+      node = node->next;
+    }
+
+    MemFree(guard);
+  }
+}
+
+void DeleteListFull(NodeT *guard, FreeFuncT deleter) {
+  if (guard) {
+    ListForEach(guard, (IterFuncT)deleter, NULL);
+    DeleteList(guard);
+  }
+}
+
+void ListForEach(NodeT *guard, IterFuncT iterator, PtrT data) {
+  NodeT *node = guard->next;
+
+  while (node != guard) {
+    iterator(node->data, data);
+    node = node->next;
+  }
+}
+
+PtrT ListSearch(NodeT *guard, SearchFuncT func, PtrT data) {
+  NodeT *node = guard->next;
+
+  while (node != guard) {
+    if (!func(node->data, data))
+      break;
+
+    node = node->next;
+  }
+
+  return (node == guard) ? NULL : NodeGetData(node);
+}
+
+static PtrT NodeRelinquish(NodeT *node) {
+  PtrT data = NodeGetData(node);
+  MemFree(node);
+  return data;
+}
+
+PtrT ListRemove(NodeT *guard, SearchFuncT func, PtrT data) {
+  return NodeRelinquish(NodeUnlink(ListSearch(guard, func, data)));
+}
+
+NodeT *ListGetNth(NodeT *guard, ssize_t index) {
+  NodeT *node;
+
+  if (index >= 0) {
+    node = guard->next;
+
+    while (node != guard && index--)
+      node = node->next;
+  } else {
+    node = guard->prev;
+
+    while (node != guard && ++index < 0)
+      node = node->prev;
+  }
+
+  return (node == guard) ? NULL : node;
+}
+
+PtrT ListPopBack(NodeT *guard) {
+  return NodeRelinquish(NodeUnlink(guard->prev));
+}
+
+PtrT ListPopFront(NodeT *guard) {
+  return NodeRelinquish(NodeUnlink(guard->next));
+}
+
+void ListPushFront(NodeT *guard, PtrT data) {
+  NodeAppend(guard, NewNode(data));
+}
+
+void ListPushBack(NodeT *guard, PtrT data) {
+  NodePrepend(guard, NewNode(data));
+}
+
+size_t ListSize(NodeT *guard) {
+  NodeT *node = guard->next;
+  size_t size = 0;
+
+  while (node != guard) {
+    node = node->next;
+    size++;
+  }
+
+  return size;
 }
