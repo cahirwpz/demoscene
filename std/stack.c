@@ -3,7 +3,7 @@
 #include "std/stack.h"
 
 struct Stack {
-  ListT *list;
+  NodeT *list;
   AtomPoolT *pool;
 };
 

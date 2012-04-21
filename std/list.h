@@ -19,6 +19,7 @@ void NodeForEach(NodeT *guard, IterFuncT iterator, PtrT data);
 NodeT *NodeSearch(NodeT *guard, SearchFuncT func, PtrT data);
 
 NodeT *NewList();
+void ResetList(NodeT *guard);
 void DeleteList(NodeT *guard);
 void DeleteListFull(NodeT *guard, FreeFuncT deleter);
 
