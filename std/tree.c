@@ -20,7 +20,7 @@ TreeNodeT *NewTreeNode(TreeNodeT *parent, bool isLeaf, PtrT item) {
   return node;
 }
 
-void* DeleteTreeNode(TreeNodeT *node) {
+PtrT DeleteTreeNode(TreeNodeT *node) {
   if (node) {
     PtrT item = node->item;
     DeleteList(node->children);
@@ -31,37 +31,28 @@ void* DeleteTreeNode(TreeNodeT *node) {
   return NULL;
 }
 
-static void TreeNodeRecursiveDelete(TreeNodeT *node) {
-  if (node->children)
-    ListForEach(node->children, (IterFuncT)TreeNodeRecursiveDelete, NULL);
-  DeleteList(node->children);
-  DeleteTreeNode(node);
-}
-
-void DeleteTreeNodeRecursive(TreeNodeT *node) {
+void TreeNodeDetachFromParent(TreeNodeT *node) {
   if (node->parent) {
     bool FindItem(TreeNodeT *this) { return this == node; }
 
     ListRemove(node->parent->children, (SearchFuncT)FindItem, NULL);
   }
-  TreeNodeRecursiveDelete(node);
+}
+
+static void RecursiveDeleter(TreeNodeT *node) {
+  if (node->children)
+    ListForEach(node->children, (IterFuncT)DeleteTreeNode, NULL);
+  DeleteList(node->children);
   DeleteTreeNode(node);
+}
+
+void DeleteTreeNodeRecursive(TreeNodeT *node) {
+  TreeNodeDetachFromParent(node);
+  RecursiveDeleter(node);
 }
 
 bool TreeNodeIsLeaf(TreeNodeT *node) {
   return BOOL(!node->children);
-}
-
-static PtrT TreeNodeGetItem(TreeNodeT *node) {
-  return node->item;
-}
-
-TreeNodeT *TreeNodeGetParent(TreeNodeT *node) {
-  return node->parent;
-}
-
-ListT *TreeNodeGetChildren(TreeNodeT *node) {
-  return node->children;
 }
 
 typedef void (*TreeRecursiveFuncT)(TreeNodeT *node, IterFuncT func, PtrT data);
@@ -71,22 +62,22 @@ static void TreeForEachRecursive(TreeNodeT *node, IterFuncT func, PtrT data, Tre
     recurse(child, func, data);
   }
 
-  ListForEach(TreeNodeGetChildren(node), (IterFuncT)NodeRecurse, NULL);
+  ListForEach(node->children, (IterFuncT)NodeRecurse, NULL);
 }
 
 void TreeForEachTopDown(TreeNodeT *node, IterFuncT func, PtrT data) {
-  func(TreeNodeGetItem(node), data);
+  func(node->item, data);
   TreeForEachRecursive(node, func, data, TreeForEachTopDown);
 }
 
 void TreeForEachBottomUp(TreeNodeT *node, IterFuncT func, PtrT data) {
   TreeForEachRecursive(node, func, data, TreeForEachBottomUp);
-  func(TreeNodeGetItem(node), data);
+  func(node->item, data);
 }
 
 void TreeForEachToRoot(TreeNodeT *node, IterFuncT func, PtrT data) {
   while (node) {
-    func(TreeNodeGetItem(node), data);
-    node = TreeNodeGetParent(node);
+    func(node->item, data);
+    node = node->parent;
   }
 }
