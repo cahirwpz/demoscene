@@ -2,144 +2,83 @@
 #include "std/list.h"
 #include "std/memory.h"
 
-/*
- * Node handling related functions.
- */
-
-NodeT *NewNode(PtrT data) {
-  NodeT *node = MemNew0(sizeof(NodeT));
-
-  node->data = data;
-
-  return node;
+static NodeT *GetNode(ListT *list) {
+  return list ? (&list->node) : NULL;
 }
 
-static PtrT NodeGetData(NodeT *node) {
-  return node ? node->data : NULL;
+static PtrT GetData(NodeT *node) {
+  return node ? ((ListT *)node)->data : NULL;
 }
 
-void NodePrepend(NodeT *cursor, NodeT *node) {
-  node->prev = cursor;
-  node->next = cursor->next;
-  
-  cursor->next->prev = node;
-  cursor->next = node;
+static NodeT *NodeAlloc(PtrT data) {
+  ListT *item = MemNew0(sizeof(ListT));
+  item->data = data;
+  return GetNode(item);
 }
 
-void NodeAppend(NodeT *cursor, NodeT *node) {
-  node->prev = cursor->prev;
-  node->next = cursor;
-
-  cursor->prev->next = node;
-  cursor->prev = node;
-}
-
-NodeT *NodeUnlink(NodeT *node) {
-  if (node) {
-    if (node->prev == node->next) {
-      node = NULL;
-    } else {
-      node->prev->next = node->next;
-      node->next->prev = node->prev;
-    }
-  }
-
-  return node;
-}
-
-void NodeForEach(NodeT *guard, IterFuncT func, PtrT data) {
-  NodeT *node = guard->next;
-
-  while (node != guard) {
-    NodeT *next = node->next;
-
-    func(node, data);
-    node = next;
-  }
-}
-
-NodeT *NodeSearch(NodeT *guard, SearchFuncT func, PtrT data) {
-  NodeT *node = guard->next;
-
-  while (node != guard) {
-    if (!func(node, data))
-      break;
-
-    node = node->next;
-  }
-
-  return (node != guard) ? node : NULL;
-}
-
-/*
- * List related functions.
- */
-
-NodeT *NewList() {
-  NodeT *node = MemNew0(sizeof(NodeT));
-
-  node->next = node;
-  node->prev = node;
-
-  return node;
-}
-
-void ResetList(NodeT *guard) {
-  if (guard) {
-    NodeForEach(guard, (IterFuncT)MemFree, NULL);
-
-    guard->next = guard;
-    guard->prev = guard;
-  }
-}
-
-void DeleteList(NodeT *guard) {
-  if (guard) {
-    NodeForEach(guard, (IterFuncT)MemFree, NULL);
-    MemFree(guard);
-  }
-}
-
-void DeleteListFull(NodeT *guard, FreeFuncT deleter) {
-  if (guard) {
-    ListForEach(guard, (IterFuncT)deleter, NULL);
-    DeleteList(guard);
-  }
-}
-
-void ListForEach(NodeT *guard, IterFuncT iterator, PtrT data) {
-  NodeT *node = guard->next;
-
-  while (node != guard) {
-    iterator(node->data, data);
-    node = node->next;
-  }
-}
-
-PtrT ListSearch(NodeT *guard, SearchFuncT func, PtrT data) {
-  NodeT *node = guard->next;
-
-  while (node != guard) {
-    if (!func(node->data, data))
-      break;
-
-    node = node->next;
-  }
-
-  return (node != guard) ? NodeGetData(node) : NULL;
-}
-
-static PtrT NodeRelinquish(NodeT *node) {
-  PtrT data = NodeGetData(node);
+static PtrT NodeFree(NodeT *node) {
+  PtrT data = GetData(node);
   MemFree(node);
   return data;
 }
 
-PtrT ListRemove(NodeT *guard, SearchFuncT func, PtrT data) {
-  return NodeRelinquish(NodeUnlink(ListSearch(guard, func, data)));
+ListT *NewList() {
+  ListT *list = MemNew0(sizeof(ListT));
+  NodeInitGuard(GetNode(list));
+  return list;
 }
 
-NodeT *ListGetNth(NodeT *guard, ssize_t index) {
+void ResetList(ListT *list) {
+  if (list) {
+    NodeForEach(GetNode(list), (IterFuncT)MemFree, NULL);
+    NodeInitGuard(GetNode(list));
+  }
+}
+
+void DeleteList(ListT *list) {
+  if (list) {
+    NodeForEach(GetNode(list), (IterFuncT)MemFree, NULL);
+    MemFree(list);
+  }
+}
+
+void DeleteListFull(ListT *list, FreeFuncT func) {
+  if (list) {
+    ListForEach(list, (IterFuncT)func, NULL);
+    DeleteList(list);
+  }
+}
+
+void ListForEach(ListT *list, IterFuncT func, PtrT data) {
+  NodeT *guard = GetNode(list);
+  NodeT *node = guard->next;
+
+  while (node != guard) {
+    func(GetData(node), data);
+    node = node->next;
+  }
+}
+
+PtrT ListSearch(ListT *list, SearchFuncT func, PtrT data) {
+  NodeT *guard = GetNode(list);
+  NodeT *node = guard->next;
+
+  while (node != guard) {
+    if (!func(GetData(node), data))
+      break;
+
+    node = node->next;
+  }
+
+  return (node != guard) ? GetData(node) : NULL;
+}
+
+PtrT ListRemove(ListT *list, SearchFuncT func, PtrT data) {
+  return NodeFree(NodeUnlink(ListSearch(list, func, data)));
+}
+
+PtrT ListGetNth(ListT *list, ssize_t index) {
+  NodeT *guard = GetNode(list);
   NodeT *node;
 
   if (index >= 0) {
@@ -157,23 +96,24 @@ NodeT *ListGetNth(NodeT *guard, ssize_t index) {
   return (node != guard) ? node : NULL;
 }
 
-PtrT ListPopBack(NodeT *guard) {
-  return NodeRelinquish(NodeUnlink(guard->prev));
+PtrT ListPopBack(ListT *list) {
+  return NodeFree(NodeUnlink(GetNode(list)));
 }
 
-PtrT ListPopFront(NodeT *guard) {
-  return NodeRelinquish(NodeUnlink(guard->next));
+PtrT ListPopFront(ListT *list) {
+  return NodeFree(NodeUnlink(GetNode(list)));
 }
 
-void ListPushFront(NodeT *guard, PtrT data) {
-  NodeAppend(guard, NewNode(data));
+void ListPushFront(ListT *list, PtrT data) {
+  NodeAppend(GetNode(list), NodeAlloc(data));
 }
 
-void ListPushBack(NodeT *guard, PtrT data) {
-  NodePrepend(guard, NewNode(data));
+void ListPushBack(ListT *list, PtrT data) {
+  NodePrepend(GetNode(list), NodeAlloc(data));
 }
 
-size_t ListSize(NodeT *guard) {
+size_t ListSize(ListT *list) {
+  NodeT *guard = GetNode(list);
   NodeT *node = guard->next;
   size_t size = 0;
 
