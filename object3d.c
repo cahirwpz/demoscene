@@ -60,17 +60,18 @@ void TearDownEffect() {
  */
 void RenderMesh(int frameNumber) {
   SceneObjectT *obj = R_("Object");
+  MatrixStack3D *ms = obj->ms;
+  CanvasT *canvas = R_("Canvas");
 
-  Reset3D(obj->ms);
-  PushIdentity3D(obj->ms);
-  PushRotation3D(obj->ms, (float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
-  PushTranslation3D(obj->ms, 0.0f, 0.0f, 2.0f);
-  PushScaling3D(obj->ms, 60.0f, 60.0f, 60.0f);
-  PushPerspective3D(obj->ms, 0, 0, 160.0f);
+  Reset3D(ms);
+  PushIdentity3D(ms);
+  PushRotation3D(ms, (float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
+  PushTranslation3D(ms, 0.0f, 0.0f, 2.0f);
+  PushScaling3D(ms, 60.0f, 60.0f, 60.0f);
+  PushPerspective3D(ms, 0, 0, 160.0f);
 
-  CanvasFill(R_("Canvas"), 0);
-
-  RenderSceneObject(obj, R_("Canvas"));
+  CanvasFill(canvas, 0);
+  RenderSceneObject(obj, canvas);
 }
 
 void RenderChunky(int frameNumber) {

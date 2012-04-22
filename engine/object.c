@@ -3,23 +3,22 @@
 #include "gfx/line.h"
 
 SceneObjectT *NewSceneObject(const char *name, MeshT *mesh) {
-  SceneObjectT *object = MemNew(sizeof(SceneObjectT));
+  SceneObjectT *self = MemNew(sizeof(SceneObjectT));
 
-  object->name = StrDup(name);
-  object->mesh = mesh;
-  object->ms = NewMatrixStack3D();
+  self->name = StrDup(name);
+  self->mesh = mesh;
+  self->ms = NewMatrixStack3D();
+  self->points = MemNew(sizeof(PointT) * mesh->vertexNum);
 
-  object->points = MemNew(sizeof(PointT) * mesh->vertexNum);
-
-  return object;
+  return self;
 }
 
-void DeleteSceneObject(SceneObjectT *this) {
-  if (this) {
-    DeleteMatrixStack3D(this->ms);
-    MemFree(this->points);
-    MemFree(this->name);
-    MemFree(this);
+void DeleteSceneObject(SceneObjectT *self) {
+  if (self) {
+    DeleteMatrixStack3D(self->ms);
+    MemFree(self->points);
+    MemFree(self->name);
+    MemFree(self);
   }
 }
 
