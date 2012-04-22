@@ -16,10 +16,6 @@ typedef struct SceneObject {
 SceneObjectT *NewSceneObject(const char *name, MeshT *mesh);
 void DeleteSceneObject(SceneObjectT *object);
 
-void ApplyTransformation(SceneObjectT *self, int width, int height);
 void RenderSceneObject(SceneObjectT *self, CanvasT *canvas);
-
-#define RSC_SCENE_OBJECT(NAME, MESH) \
-  AddRscSimple(NAME, NewSceneObject(NAME, MESH), (FreeFuncT)DeleteSceneObject)
 
 #endif

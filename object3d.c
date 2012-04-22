@@ -4,7 +4,7 @@
 #include "std/memory.h"
 #include "std/resource.h"
 
-#include "engine/object.h"
+#include "engine/scene.h"
 #include "gfx/canvas.h"
 #include "gfx/ms3d.h"
 
@@ -23,8 +23,8 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
+  RSC_SCENE("Scene");
   RSC_MESH_FILE("Mesh", "data/whelpz.robj");
-  RSC_SCENE_OBJECT("Object", R_("Mesh"));
   RSC_CANVAS("Canvas", WIDTH, HEIGHT);
 
   {
@@ -33,6 +33,8 @@ void AddInitialResources() {
     CenterMeshPosition(mesh);
     NormalizeMeshSize(mesh);
   }
+
+  SceneAddObject(R_("Scene"), NewSceneObject("Object", R_("Mesh")));
 }
 
 /*
@@ -59,19 +61,23 @@ void TearDownEffect() {
  * Effect rendering functions.
  */
 void RenderMesh(int frameNumber) {
-  SceneObjectT *obj = R_("Object");
-  MatrixStack3D *ms = obj->ms;
   CanvasT *canvas = R_("Canvas");
+  SceneT *scene = R_("Scene");
 
-  Reset3D(ms);
-  PushIdentity3D(ms);
-  PushRotation3D(ms, (float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
-  PushTranslation3D(ms, 0.0f, 0.0f, 2.0f);
-  PushScaling3D(ms, 60.0f, 60.0f, 60.0f);
-  PushPerspective3D(ms, 0, 0, 160.0f);
+  {
+    SceneObjectT *obj = SceneFindByName(scene, "Object");
+    MatrixStack3D *ms = obj->ms;
+
+    Reset3D(ms);
+    PushIdentity3D(ms);
+    PushRotation3D(ms, (float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
+    PushTranslation3D(ms, 0.0f, 0.0f, 2.0f);
+    PushScaling3D(ms, 60.0f, 60.0f, 60.0f);
+    PushPerspective3D(ms, 0, 0, 160.0f);
+  }
 
   CanvasFill(canvas, 0);
-  RenderSceneObject(obj, canvas);
+  RenderScene(scene, canvas);
 }
 
 void RenderChunky(int frameNumber) {
