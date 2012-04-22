@@ -7,7 +7,7 @@ void NodeInitGuard(NodeT *guard) {
   guard->prev = guard;
 }
 
-void NodePrepend(NodeT *cursor, NodeT *node) {
+void NodeAppend(NodeT *cursor, NodeT *node) {
   node->prev = cursor;
   node->next = cursor->next;
   
@@ -15,7 +15,7 @@ void NodePrepend(NodeT *cursor, NodeT *node) {
   cursor->next = node;
 }
 
-void NodeAppend(NodeT *cursor, NodeT *node) {
+void NodePrepend(NodeT *cursor, NodeT *node) {
   node->prev = cursor->prev;
   node->next = cursor;
 
