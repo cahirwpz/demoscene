@@ -19,6 +19,7 @@ void CanvasFill(CanvasT *canvas, uint8_t color);
 
 static inline uint8_t GetCanvasFgCol(CanvasT *canvas) { return canvas->fg_col; }
 static inline size_t GetCanvasWidth(CanvasT *canvas) { return canvas->pixbuf->width; }
+static inline size_t GetCanvasHeight(CanvasT *canvas) { return canvas->pixbuf->height; }
 static inline uint8_t *GetCanvasPixelData(CanvasT *canvas) { return canvas->pixbuf->data; }
 static inline void CanvasPenMoveTo(CanvasT *canvas, int16_t x, int16_t y) { canvas->pen_pos.x = x; canvas->pen_pos.y = y; }
 

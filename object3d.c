@@ -4,10 +4,9 @@
 #include "std/memory.h"
 #include "std/resource.h"
 
-#include "engine/mesh.h"
-#include "gfx/line.h"
+#include "engine/object.h"
+#include "gfx/canvas.h"
 #include "gfx/ms3d.h"
-#include "gfx/triangle.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
@@ -25,16 +24,14 @@ const int DEPTH = 8;
  */
 void AddInitialResources() {
   RSC_MESH_FILE("Mesh", "data/whelpz.robj");
+  RSC_SCENE_OBJECT("Object", R_("Mesh"));
   RSC_CANVAS("Canvas", WIDTH, HEIGHT);
-  RSC_MS3D("ms3d");
 
   {
     MeshT *mesh = R_("Mesh");
 
     CenterMeshPosition(mesh);
     NormalizeMeshSize(mesh);
-
-    RSC_ARRAY("Points", PointT, mesh->vertexNum);
   }
 }
 
@@ -62,36 +59,18 @@ void TearDownEffect() {
  * Effect rendering functions.
  */
 void RenderMesh(int frameNumber) {
-  MatrixStack3D *ms = R_("ms3d");
+  SceneObjectT *obj = R_("Object");
 
-  Reset3D(ms);
-  PushIdentity3D(ms);
-  PushRotation3D(ms, (float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
-  PushTranslation3D(ms, 0.0f, 0.0f, 2.0f);
-  PushScaling3D(ms, 60.0f, 60.0f, 60.0f);
-  PushPerspective3D(ms, 0, 0, 160.0f);
+  Reset3D(obj->ms);
+  PushIdentity3D(obj->ms);
+  PushRotation3D(obj->ms, (float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
+  PushTranslation3D(obj->ms, 0.0f, 0.0f, 2.0f);
+  PushScaling3D(obj->ms, 60.0f, 60.0f, 60.0f);
+  PushPerspective3D(obj->ms, 0, 0, 160.0f);
 
-  {
-    size_t i;
-    MeshT *mesh = R_("Mesh");
-    PointT *points = R_("Points");
-    CanvasT *canvas = R_("Canvas");
+  CanvasFill(R_("Canvas"), 0);
 
-    ProjectTo2D(WIDTH/2, HEIGHT/2, points, mesh->vertex, mesh->vertexNum,
-                GetMatrix3D(ms, 0));
-
-    CanvasFill(canvas, 0);
-
-    for (i = 0; i < mesh->polygonNum; i++) {
-      size_t p1 = mesh->polygon[i].p1;
-      size_t p2 = mesh->polygon[i].p2;
-      size_t p3 = mesh->polygon[i].p3;
-
-      DrawLine(canvas, points[p1].x, points[p1].y, points[p2].x, points[p2].y);
-      DrawLine(canvas, points[p2].x, points[p2].y, points[p3].x, points[p3].y);
-      DrawLine(canvas, points[p3].x, points[p3].y, points[p1].x, points[p1].y);
-    }
-  }
+  RenderSceneObject(obj, R_("Canvas"));
 }
 
 void RenderChunky(int frameNumber) {
