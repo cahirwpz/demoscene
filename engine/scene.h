@@ -8,7 +8,7 @@ typedef struct Scene SceneT;
 SceneT *NewScene();
 void DeleteScene(SceneT *self);
 void SceneAddObject(SceneT *self, SceneObjectT *object);
-SceneObjectT *SceneFindByName(SceneT *self, const char *name);
+MatrixStack3D *GetObjectTranslation(SceneT *self, const char *name);
 void RenderScene(SceneT *self, CanvasT *canvas);
 
 #define RSC_SCENE(NAME) \

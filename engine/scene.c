@@ -23,12 +23,14 @@ void SceneAddObject(SceneT *self, SceneObjectT *object) {
   ListPushBack(self->objects, object);
 }
 
-SceneObjectT *SceneFindByName(SceneT *self, const char *name) {
+MatrixStack3D *GetObjectTranslation(SceneT *self, const char *name) {
   bool CmpName(SceneObjectT *obj) {
     return strcmp(obj->name, name);
   }
 
-  return ListSearch(self->objects, (SearchFuncT)CmpName, NULL);
+  SceneObjectT *object = ListSearch(self->objects, (SearchFuncT)CmpName, NULL);
+
+  return object ? object->ms : NULL;
 }
 
 void RenderScene(SceneT *self, CanvasT *canvas) {

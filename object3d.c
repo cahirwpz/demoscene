@@ -34,7 +34,8 @@ void AddInitialResources() {
     NormalizeMeshSize(mesh);
   }
 
-  SceneAddObject(R_("Scene"), NewSceneObject("Object", R_("Mesh")));
+  SceneAddObject(R_("Scene"), NewSceneObject("Object1", R_("Mesh")));
+  SceneAddObject(R_("Scene"), NewSceneObject("Object2", R_("Mesh")));
 }
 
 /*
@@ -63,16 +64,25 @@ void TearDownEffect() {
 void RenderMesh(int frameNumber) {
   CanvasT *canvas = R_("Canvas");
   SceneT *scene = R_("Scene");
+  float s = sin(frameNumber * 3.14159265f / 90.0f);
 
   {
-    SceneObjectT *obj = SceneFindByName(scene, "Object");
-    MatrixStack3D *ms = obj->ms;
+    MatrixStack3D *ms = GetObjectTranslation(scene, "Object1");
 
     Reset3D(ms);
-    PushIdentity3D(ms);
+    PushScaling3D(ms, 0.6f + 0.25 * s, 0.6f + 0.25f * s, 0.6f + 0.25f * s);
     PushRotation3D(ms, (float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
-    PushTranslation3D(ms, 0.0f, 0.0f, 2.0f);
-    PushScaling3D(ms, 60.0f, 60.0f, 60.0f);
+    PushTranslation3D(ms, -0.75f, 0.0f, 2.0f);
+    PushPerspective3D(ms, 0, 0, 160.0f);
+  }
+
+  {
+    MatrixStack3D *ms = GetObjectTranslation(scene, "Object2");
+
+    Reset3D(ms);
+    PushScaling3D(ms, 0.6f - 0.25f * s, 0.6f - 0.25f * s, 0.6f - 0.25f * s);
+    PushRotation3D(ms, (float)(-frameNumber), (float)(-frameNumber * 2), (float)(frameNumber * 3));
+    PushTranslation3D(ms, 0.75f, 0.0f, 2.0f);
     PushPerspective3D(ms, 0, 0, 160.0f);
   }
 
