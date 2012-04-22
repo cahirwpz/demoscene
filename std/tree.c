@@ -1,83 +1,85 @@
 #include "std/memory.h"
-#include "std/list.h"
 #include "std/tree.h"
 
-struct TreeNode {
-  TreeNodeT *parent;
-  ListT *children;
-  PtrT item;
-};
-
-TreeNodeT *NewTreeNode(TreeNodeT *parent, bool isLeaf, PtrT item) {
-  TreeNodeT *node = NEW_S(TreeNodeT);
-
-  node->parent = parent;
-  node->item = item;
-
-  if (!isLeaf)
-    node->children = NewList();
-
-  return node;
+static NodeT *GetNode(TreeT *tree) {
+  return tree ? (&tree->node) : NULL;
 }
 
-PtrT DeleteTreeNode(TreeNodeT *node) {
-  if (node) {
-    PtrT item = node->item;
-    DeleteList(node->children);
-    DELETE(node);
-    return item;
-  }
-
-  return NULL;
+static NodeT *GetChildren(TreeT *tree) {
+  return tree ? (&tree->children) : NULL;
 }
 
-void TreeNodeDetachFromParent(TreeNodeT *node) {
-  if (node->parent) {
-    bool FindItem(TreeNodeT *this) { return this == node; }
-
-    ListRemove(node->parent->children, (SearchFuncT)FindItem, NULL);
-  }
+static PtrT GetData(NodeT *node) {
+  return node ? ((TreeT *)node)->data : NULL;
 }
 
-static void RecursiveDeleter(TreeNodeT *node) {
-  if (node->children)
-    ListForEach(node->children, (IterFuncT)DeleteTreeNode, NULL);
-  DeleteList(node->children);
-  DeleteTreeNode(node);
+static NodeT *NodeAlloc(TreeT *parent, PtrT data) {
+  TreeT *item = MemNew0(sizeof(TreeT));
+  NodeInitGuard(GetChildren(item));
+  item->parent = parent;
+  item->data = data;
+  return GetNode(item);
 }
 
-void DeleteTreeNodeRecursive(TreeNodeT *node) {
-  TreeNodeDetachFromParent(node);
-  RecursiveDeleter(node);
+static PtrT NodeFree(NodeT *node) {
+  PtrT data = GetData(node);
+  MemFree(node);
+  return data;
 }
 
-bool TreeNodeIsLeaf(TreeNodeT *node) {
-  return BOOL(!node->children);
+TreeT *NewTree(PtrT data) {
+  TreeT *tree = MemNew0(sizeof(TreeT));
+  NodeInitGuard(GetChildren(tree));
+  tree->data = data;
+  return data;
 }
 
-typedef void (*TreeRecursiveFuncT)(TreeNodeT *node, IterFuncT func, PtrT data);
+static void TreeDeleter(TreeT *tree, FreeFuncT func) {
+  NodeForEach(GetChildren(tree), (IterFuncT)TreeDeleter, (PtrT)func);
+  func(tree);
+}
 
-static void TreeForEachRecursive(TreeNodeT *node, IterFuncT func, PtrT data, TreeRecursiveFuncT recurse) {
-  void NodeRecurse(TreeNodeT *child) {
+void DeleteTree(TreeT *tree) {
+  if (tree)
+    DeleteTreeFull(tree, (FreeFuncT)MemFree);
+}
+
+void DeleteTreeFull(TreeT *tree, FreeFuncT func) {
+  TreeDeleter(tree, func);
+  func(NodeUnlink(GetNode(tree)));
+}
+
+typedef void (*TreeRecursiveFuncT)(TreeT *node, IterFuncT func, PtrT data);
+
+static void TreeForEachRecursive(TreeT *node, IterFuncT func, PtrT data, TreeRecursiveFuncT recurse) {
+  void NodeRecurse(TreeT *child) {
     recurse(child, func, data);
   }
 
-  ListForEach(node->children, (IterFuncT)NodeRecurse, NULL);
+  NodeForEach(GetChildren(node), (IterFuncT)NodeRecurse, NULL);
 }
 
-void TreeForEachTopDown(TreeNodeT *node, IterFuncT func, PtrT data) {
-  func(node->item, data);
-  TreeForEachRecursive(node, func, data, TreeForEachTopDown);
+void TreeForEachNode(TreeT *tree, IterFuncT func, PtrT data) {
+  func(tree->data, data);
+  TreeForEachRecursive(tree, func, data, TreeForEachNode);
 }
 
-void TreeForEachBottomUp(TreeNodeT *node, IterFuncT func, PtrT data) {
-  TreeForEachRecursive(node, func, data, TreeForEachBottomUp);
-  func(node->item, data);
+void TreeForEachChild(TreeT *tree, IterFuncT func, PtrT data) {
+  return NodeForEach(GetChildren(tree), func, data);
 }
 
-void TreeForEachToRoot(TreeNodeT *node, IterFuncT func, PtrT data) {
-  while (node) {
-    func(node->item, data);
-    node = node->parent;
-  }
+PtrT TreeGetChild(TreeT *parent, ssize_t index) {
+  return GetData(NodeGet(GetNode(parent), index));
+}
+
+PtrT TreePopChild(TreeT *parent, ssize_t index) {
+  return NodeFree(NodeGet(GetNode(parent), index));
+}
+
+void TreeInsertAt(TreeT *parent, PtrT data, ssize_t index) {
+  NodePrepend(NodeGet(GetNode(parent), index), NodeAlloc(parent, data));
+}
+
+bool TreeIsLeaf(TreeT *tree) {
+  return IsGuardEmpty(GetChildren(tree));
 }

@@ -2,22 +2,32 @@
 #define __STD_TREE_H__
 
 #include "std/types.h"
-#include "std/list.h"
+#include "std/node.h"
 
 /**
  * A tree is useful for expressing hierarchical structures like filesystems and
  * three-dimensional scenes.
  */
-typedef struct TreeNode TreeNodeT;
+typedef struct Tree TreeT;
 
-TreeNodeT *NewTreeNode(TreeNodeT *parent, bool isLeaf, PtrT item);
-PtrT DeleteTreeNode(TreeNodeT *node);
-void DeleteTreeNodeRecursive(TreeNodeT *node);
+struct Tree {
+  NodeT node;
+  NodeT children;
+  TreeT *parent;
+  PtrT data;
+};
 
-bool TreeNodeIsLeaf(TreeNodeT *node);
+TreeT *NewTree(PtrT data);
+void DeleteTree(TreeT *tree);
+void DeleteTreeFull(TreeT *tree, FreeFuncT func);
 
-void TreeForEachTopDown(TreeNodeT *node, IterFuncT func, PtrT data);
-void TreeForEachBottomUp(TreeNodeT *node, IterFuncT func, PtrT data);
-void TreeForEachToRoot(TreeNodeT *node, IterFuncT func, PtrT data);
+void TreeForEachNode(TreeT *tree, IterFuncT func, PtrT data);
+void TreeForEachChild(TreeT *tree, IterFuncT func, PtrT data);
+
+PtrT TreeGetChild(TreeT *parent, ssize_t index);
+PtrT TreePopChild(TreeT *parent, ssize_t index);
+void TreeInsertAt(TreeT *parent, PtrT data, ssize_t index);
+
+bool TreeIsLeaf(TreeT *parent);
 
 #endif
