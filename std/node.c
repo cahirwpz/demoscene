@@ -78,6 +78,18 @@ NodeT *NodeGet(NodeT *guard, ssize_t index) {
   return (node != guard) ? node : NULL;
 }
 
+size_t NodeCount(NodeT *guard) {
+  NodeT *node = guard->next;
+  size_t size = 0;
+
+  while (node != guard) {
+    node = node->next;
+    size++;
+  }
+
+  return size;
+}
+
 bool IsGuardEmpty(NodeT *node) {
   return (node->prev == node->next);
 }

@@ -17,6 +17,7 @@ NodeT *NodeUnlink(NodeT *node);
 void NodeForEach(NodeT *guard, IterFuncT func, PtrT data);
 NodeT *NodeSearch(NodeT *guard, SearchFuncT func, PtrT data);
 NodeT *NodeGet(NodeT *guard, ssize_t index);
+size_t NodeCount(NodeT *guard);
 
 bool IsGuardEmpty(NodeT *node);
 

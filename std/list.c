@@ -106,14 +106,5 @@ void ListPushBack(ListT *list, PtrT data) {
 }
 
 size_t ListSize(ListT *list) {
-  NodeT *guard = GetNode(list);
-  NodeT *node = guard->next;
-  size_t size = 0;
-
-  while (node != guard) {
-    node = node->next;
-    size++;
-  }
-
-  return size;
+  return NodeCount(GetNode(list));
 }
