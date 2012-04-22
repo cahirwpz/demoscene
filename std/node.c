@@ -60,7 +60,7 @@ NodeT *NodeSearch(NodeT *guard, SearchFuncT func, PtrT data) {
   return (node != guard) ? node : NULL;
 }
 
-NodeT *NodeGetNth(NodeT *guard, ssize_t index) {
+NodeT *NodeGet(NodeT *guard, ssize_t index) {
   NodeT *node;
 
   if (index >= 0) {

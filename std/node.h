@@ -16,7 +16,7 @@ void NodeAppend(NodeT *cursor, NodeT *node);
 NodeT *NodeUnlink(NodeT *node);
 void NodeForEach(NodeT *guard, IterFuncT func, PtrT data);
 NodeT *NodeSearch(NodeT *guard, SearchFuncT func, PtrT data);
-NodeT *NodeGetNth(NodeT *guard, ssize_t index);
+NodeT *NodeGet(NodeT *guard, ssize_t index);
 
 bool IsGuardEmpty(NodeT *node);
 
