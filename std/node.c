@@ -59,3 +59,25 @@ NodeT *NodeSearch(NodeT *guard, SearchFuncT func, PtrT data) {
 
   return (node != guard) ? node : NULL;
 }
+
+NodeT *NodeGetNth(NodeT *guard, ssize_t index) {
+  NodeT *node;
+
+  if (index >= 0) {
+    node = guard->next;
+
+    while (node != guard && index--)
+      node = node->next;
+  } else {
+    node = guard->prev;
+
+    while (node != guard && ++index < 0)
+      node = node->prev;
+  }
+
+  return (node != guard) ? node : NULL;
+}
+
+bool IsGuardEmpty(NodeT *node) {
+  return (node->prev == node->next);
+}

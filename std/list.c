@@ -78,22 +78,15 @@ PtrT ListRemove(ListT *list, SearchFuncT func, PtrT data) {
 }
 
 PtrT ListGetNth(ListT *list, ssize_t index) {
-  NodeT *guard = GetNode(list);
-  NodeT *node;
+  return GetData(NodeGetNth(GetNode(list), index));
+}
 
-  if (index >= 0) {
-    node = guard->next;
+PtrT ListPopNth(ListT *list, ssize_t index) {
+  return NodeFree(NodeGetNth(GetNode(list), index));
+}
 
-    while (node != guard && index--)
-      node = node->next;
-  } else {
-    node = guard->prev;
-
-    while (node != guard && ++index < 0)
-      node = node->prev;
-  }
-
-  return (node != guard) ? node : NULL;
+void ListInsertAt(ListT *list, PtrT data, ssize_t index) {
+  NodePrepend(NodeGetNth(GetNode(list), index), NodeAlloc(data));
 }
 
 PtrT ListPopBack(ListT *list) {
