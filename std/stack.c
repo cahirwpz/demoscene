@@ -3,7 +3,7 @@
 #include "std/stack.h"
 
 struct Stack {
-  NodeT *list;
+  ListT *list;
   AtomPoolT *pool;
 };
 
@@ -36,11 +36,11 @@ void StackRemove(StackT *stack) {
 }
 
 PtrT StackPeek(StackT *stack, size_t index) {
-  return ListGetNth(stack->list, index);
+  return ListGet(stack->list, index);
 }
 
 PtrT StackTop(StackT *stack) {
-  return ListGetNth(stack->list, 0);
+  return ListGet(stack->list, 0);
 }
 
 PtrT StackPushNew(StackT *stack) {
