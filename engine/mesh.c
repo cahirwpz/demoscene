@@ -6,12 +6,12 @@
 #include "engine/mesh.h"
 
 MeshT *NewMesh(size_t vertices, size_t polygons) {
-  MeshT *mesh = NEW_S(MeshT);
+  MeshT *mesh = NewRecord(MeshT);
 
   mesh->vertexNum = vertices;
   mesh->polygonNum = polygons;
-  mesh->vertex = NEW_A(Vector3D, vertices);
-  mesh->polygon = NEW_A(TriangleT, polygons);
+  mesh->vertex = NewTable(Vector3D, vertices);
+  mesh->polygon = NewTable(TriangleT, polygons);
 
   return mesh;
 }
@@ -106,7 +106,7 @@ void CalculateSurfaceNormals(MeshT *mesh) {
   if (mesh->surfaceNormal)
     PANIC("Already added surface normals to mesh %p.", mesh);
 
-  mesh->surfaceNormal = NEW_A(Vector3D, mesh->polygonNum);
+  mesh->surfaceNormal = NewTable(Vector3D, mesh->polygonNum);
 
   for (i = 0; i < mesh->polygonNum; i++) {
     Vector3D *normal = &mesh->surfaceNormal[i];
@@ -133,8 +133,8 @@ void CalculateVertexToPolygonMap(MeshT *mesh) {
   IndexMapT *map = &mesh->vertexToPoly;
   size_t i, j;
 
-  map->vertex = NEW_A(IndexArrayT, mesh->vertexNum);
-  map->indices = NEW_A(uint16_t, mesh->vertexNum * 3);
+  map->vertex = NewTable(IndexArrayT, mesh->vertexNum);
+  map->indices = NewTable(uint16_t, mesh->vertexNum * 3);
 
   for (i = 0; i < mesh->polygonNum; i++) {
     size_t p1 = mesh->polygon[i].p1;
@@ -173,7 +173,7 @@ void CalculateVertexToPolygonMap(MeshT *mesh) {
 void CalculateVertexNormals(MeshT *mesh) {
   size_t i, j;
 
-  mesh->vertexNormal = NEW_A(Vector3D, mesh->vertexNum);
+  mesh->vertexNormal = NewTable(Vector3D, mesh->vertexNum);
 
   for (i = 0; i < mesh->vertexNum; i++) {
     Vector3D normal = { 0.0f, 0.0f, 0.0f };

@@ -4,11 +4,11 @@
 #include "distortion.h"
 
 DistortionMapT *NewDistortionMap(uint16_t width, uint16_t height) {
-  DistortionMapT *map = NEW_S(DistortionMapT);
+  DistortionMapT *map = NewRecord(DistortionMapT);
 
   map->Width = width;
   map->Height = height;
-  map->Map = NEW_A(uint16_t, width * height);
+  map->Map = NewTable(uint16_t, width * height);
 
   return map;
 }

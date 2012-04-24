@@ -11,7 +11,7 @@ static PtrT GetData(NodeT *node) {
 }
 
 static NodeT *NodeAlloc(PtrT data) {
-  ListT *item = MemNew0(sizeof(ListT));
+  ListT *item = NewRecord(ListT);
   item->data = data;
   return GetNode(item);
 }
@@ -23,7 +23,7 @@ static PtrT NodeFree(NodeT *node) {
 }
 
 ListT *NewList() {
-  ListT *list = MemNew0(sizeof(ListT));
+  ListT *list = NewRecord(ListT);
   NodeInitGuard(GetNode(list));
   return list;
 }

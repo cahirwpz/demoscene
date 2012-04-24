@@ -8,7 +8,7 @@ struct Stack {
 };
 
 StackT *NewStack(AtomPoolT *pool) {
-  StackT *stack = NEW_S(StackT);
+  StackT *stack = NewRecord(StackT);
 
   stack->list = NewList();
   stack->pool = pool;

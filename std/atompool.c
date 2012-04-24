@@ -12,7 +12,7 @@ struct AtomPool {
 };
 
 AtomPoolT *NewAtomPool(size_t atomSize, size_t perChunk) {
-  AtomPoolT *atomPool = NEW_S(AtomPoolT);
+  AtomPoolT *atomPool = NewRecord(AtomPoolT);
 
   atomPool->atomSize = atomSize;
   atomPool->perChunk = perChunk;

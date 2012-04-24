@@ -13,7 +13,7 @@
  */
 
 ViewT *NewView() {
-  ViewT *view = NEW_SZ(ViewT);
+  ViewT *view = NewRecord(ViewT);
 
   if (view)
     InitView(view);
@@ -62,14 +62,14 @@ void ApplyView(ViewT *view, ViewPortT *viewPort) {
  */
 
 ViewPortT *NewViewPort(int width, int height, int depth) {
-  ViewPortT *viewPort = NEW_SZ(ViewPortT);
+  ViewPortT *viewPort = NewRecord(ViewPortT);
 
   if (viewPort) {
     InitVPort(viewPort);
 
     viewPort->DWidth = width;
     viewPort->DHeight = height;
-    viewPort->RasInfo = NEW_SZ(struct RasInfo);
+    viewPort->RasInfo = NewRecord(struct RasInfo);
     viewPort->ColorMap = GetColorMap(1 << depth);
 
     if (viewPort->RasInfo && viewPort->ColorMap)
@@ -166,7 +166,7 @@ void DeleteDBufInfo(DBufInfoT *dbufInfo) {
  */
 
 DBufRasterT *NewDBufRaster(int width, int height, int depth) {
-  DBufRasterT *raster = NEW_SZ(DBufRasterT);
+  DBufRasterT *raster = NewRecord(DBufRasterT);
 
   if (raster) {
     ViewPortT *viewPort = NewViewPort(width, height, depth);

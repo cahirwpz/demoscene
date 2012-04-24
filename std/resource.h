@@ -13,7 +13,7 @@ PtrT GetResource(const StrT name);
 #define RSC_STATIC(NAME, PTR) \
   AddRscStatic(NAME, PTR)
 #define RSC_ARRAY(NAME, TYPE, SIZE) \
-  AddRscSimple(NAME, NEW_A(TYPE, SIZE), (FreeFuncT)MemFree)
+  AddRscSimple(NAME, NewTable(TYPE, SIZE), (FreeFuncT)MemFree)
 #define R_(NAME) GetResource(NAME)
 
 #endif

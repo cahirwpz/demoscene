@@ -3,12 +3,12 @@
 #include "gfx/line.h"
 
 SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh) {
-  SceneObjectT *self = MemNew(sizeof(SceneObjectT));
+  SceneObjectT *self = NewRecord(SceneObjectT);
 
   self->name = StrDup(name);
   self->mesh = mesh;
   self->ms = NewMatrixStack3D();
-  self->points = MemNew(sizeof(PointT) * mesh->vertexNum);
+  self->points = NewTable(PointT, mesh->vertexNum);
 
   return self;
 }

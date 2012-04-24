@@ -89,13 +89,13 @@ bool InitDisplay(int width, int height, int depth) {
   if (!Display) {
     size_t i, j;
 
-    Display = NEW_S(DisplayT);
+    Display = NewRecord(DisplayT);
 
     for (i = 0; i < 2; i++)
       Display->Bitmap[i] = AllocBitMap(width, height, depth,
                                        BMF_DISPLAYABLE|BMF_CLEAR, NULL);
 
-    Display->Palette = NEW_S(ScreenPaletteT);
+    Display->Palette = NewRecord(ScreenPaletteT);
     Display->Palette->Count = 256;
 
     for (i = 0, j = 0; i < 256; i++) {

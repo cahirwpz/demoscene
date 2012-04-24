@@ -7,10 +7,10 @@
 #include "gfx/palette.h"
 
 PaletteT *NewPalette(size_t count) {
-  PaletteT *palette = NEW_S(PaletteT);
+  PaletteT *palette = NewRecord(PaletteT);
 
   palette->count = count;
-  palette->colors = NEW_A(ColorT, count);
+  palette->colors = NewTable(ColorT, count);
 
   return palette;
 }

@@ -7,7 +7,7 @@ struct Scene {
 };
 
 SceneT *NewScene() {
-  SceneT *self = MemNew0(sizeof(SceneT));
+  SceneT *self = NewRecord(SceneT);
   self->objects = NewList();
   return self;
 }

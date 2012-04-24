@@ -6,13 +6,13 @@
 #include "gfx/pixbuf.h"
 
 PixBufT *NewPixBuf(size_t width, size_t height) {
-  PixBufT *pixbuf = NEW_S(PixBufT);
+  PixBufT *pixbuf = NewRecord(PixBufT);
 
   pixbuf->width = width;
   pixbuf->height = height;
   pixbuf->baseColor = 0;
   pixbuf->colors = 256;
-  pixbuf->data = NEW_A(uint8_t, width * height);
+  pixbuf->data = NewTable(uint8_t, width * height);
 
   return pixbuf;
 }

@@ -9,7 +9,7 @@ struct Lock {
 };
 
 LockT *NewLock() {
-  LockT *lock = NEW_S(LockT);
+  LockT *lock = NewRecord(LockT);
 
   InitSemaphore(&lock->semaphore);
 

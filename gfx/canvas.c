@@ -4,7 +4,7 @@
 #include "gfx/canvas.h"
 
 CanvasT *NewCanvas(int width, int height) {
-  CanvasT *canvas = NEW_S(CanvasT);
+  CanvasT *canvas = NewRecord(CanvasT);
 
   canvas->pixbuf = NewPixBuf(width, height);
   canvas->fg_col = 255;

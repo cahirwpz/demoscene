@@ -14,9 +14,9 @@ PtrT MemUnref(PtrT mem);
 PtrT MemDup(const void *p, size_t s);
 StrT StrDup(const StrT s);
 
-#define NEW_S(TYPE) \
+#define NewRecord(TYPE) \
     (TYPE *)MemNew0(sizeof(TYPE))
-#define NEW_A(TYPE, NUM) \
+#define NewTable(TYPE, NUM) \
     (TYPE *)MemNew(sizeof(TYPE) * (NUM))
 
 #endif

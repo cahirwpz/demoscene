@@ -14,7 +14,7 @@ static PtrT GetData(NodeT *node) {
 }
 
 static NodeT *NodeAlloc(TreeT *parent, PtrT data) {
-  TreeT *item = MemNew0(sizeof(TreeT));
+  TreeT *item = NewRecord(TreeT);
   NodeInitGuard(GetChildren(item));
   item->parent = parent;
   item->data = data;
@@ -28,7 +28,7 @@ static PtrT NodeFree(NodeT *node) {
 }
 
 TreeT *NewTree(PtrT data) {
-  TreeT *tree = MemNew0(sizeof(TreeT));
+  TreeT *tree = NewRecord(TreeT);
   NodeInitGuard(GetChildren(tree));
   tree->data = data;
   return data;

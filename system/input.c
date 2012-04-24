@@ -65,7 +65,7 @@ static EventQueueT *EventQueue = NULL;
 
 void StartEventQueue() {
   if (!EventQueue) {
-    EventQueueT *queue = NEW_S(EventQueueT);
+    EventQueueT *queue = NewRecord(EventQueueT);
 
     queue->eventPool = NewAtomPool(sizeof(InputEventT), 32);
     queue->eventList = NewList();
