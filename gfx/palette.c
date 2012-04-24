@@ -6,8 +6,15 @@
 #include "system/fileio.h"
 #include "gfx/palette.h"
 
+static void DeletePalette(PaletteT *palette) {
+  MemUnref(palette->colors);
+
+  if (palette->next)
+    MemUnref(palette->next);
+}
+
 PaletteT *NewPalette(size_t count) {
-  PaletteT *palette = NewRecord(PaletteT);
+  PaletteT *palette = NewRecordGC(PaletteT, (FreeFuncT)DeletePalette);
 
   palette->count = count;
   palette->colors = NewTable(ColorT, count);
@@ -38,17 +45,6 @@ PaletteT *NewPaletteFromFile(const StrT fileName) {
   }
 
   return NULL;
-}
-
-void DeletePalette(PaletteT *palette) {
-  while (palette) {
-    PaletteT *next = palette->next;
-
-    MemUnref(palette->colors);
-    MemUnref(palette);
-
-    palette = next;
-  }
 }
 
 PaletteT *CopyPalette(PaletteT *palette) {

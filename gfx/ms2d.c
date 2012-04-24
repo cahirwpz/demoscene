@@ -5,10 +5,6 @@ MatrixStack2D *NewMatrixStack2D() {
   return NewStack(NewAtomPool(sizeof(Matrix2D), 20));
 }
 
-void DeleteMatrixStack2D(MatrixStack2D *ms) {
-  DeleteStack(ms);
-}
-
 void Reset2D(MatrixStack2D *ms) {
   StackReset(ms);
 }

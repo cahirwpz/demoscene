@@ -23,9 +23,9 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
-  RSC_SCENE("Scene");
-  RSC_MESH_FILE("Mesh", "data/whelpz.robj");
-  RSC_CANVAS("Canvas", WIDTH, HEIGHT);
+  ResAdd("Scene", NewScene());
+  ResAdd("Mesh", NewMeshFromFile("data/whelpz.robj"));
+  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
 
   {
     MeshT *mesh = R_("Mesh");

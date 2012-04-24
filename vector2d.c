@@ -32,13 +32,13 @@ void AddInitialResources() {
   static PointT Triangle[] = { {-15, -10}, {10, -5}, {0, 20} };
   static PointT TriangleToDraw[3];
 
-  RSC_STATIC("Cross", Cross);
-  RSC_STATIC("CrossToDraw", CrossToDraw);
-  RSC_STATIC("Triangle", Triangle);
-  RSC_STATIC("TriangleToDraw", TriangleToDraw);
+  ResAddStatic("Cross", Cross);
+  ResAddStatic("CrossToDraw", CrossToDraw);
+  ResAddStatic("Triangle", Triangle);
+  ResAddStatic("TriangleToDraw", TriangleToDraw);
 
-  RSC_CANVAS("Canvas", WIDTH, HEIGHT);
-  RSC_MS2D("ms2d");
+  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("ms2d", NewMatrixStack2D());
 }
 
 /*

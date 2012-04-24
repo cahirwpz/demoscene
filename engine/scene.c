@@ -6,17 +6,14 @@ struct Scene {
   ListT *objects;
 };
 
-SceneT *NewScene() {
-  SceneT *self = NewRecord(SceneT);
-  self->objects = NewList();
-  return self;
+static void DeleteScene(SceneT *self) {
+  DeleteListFull(self->objects, (FreeFuncT)MemUnref);
 }
 
-void DeleteScene(SceneT *self) {
-  if (self) {
-    DeleteListFull(self->objects, (FreeFuncT)DeleteSceneObject);
-    MemUnref(self);
-  }
+SceneT *NewScene() {
+  SceneT *self = NewRecordGC(SceneT, (FreeFuncT)DeleteScene);
+  self->objects = NewList();
+  return self;
 }
 
 void SceneAddObject(SceneT *self, SceneObjectT *object) {

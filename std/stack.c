@@ -7,8 +7,13 @@ struct Stack {
   AtomPoolT *pool;
 };
 
+static void DeleteStack(StackT *stack) {
+  DeleteList(stack->list);
+  DeleteAtomPool(stack->pool);
+}
+
 StackT *NewStack(AtomPoolT *pool) {
-  StackT *stack = NewRecord(StackT);
+  StackT *stack = NewRecordGC(StackT, (FreeFuncT)DeleteStack);
 
   stack->list = NewList();
   stack->pool = pool;
@@ -16,14 +21,6 @@ StackT *NewStack(AtomPoolT *pool) {
   StackPushNew(stack);
 
   return stack;
-}
-
-void DeleteStack(StackT *stack) {
-  if (stack) {
-    DeleteList(stack->list);
-    DeleteAtomPool(stack->pool);
-    MemUnref(stack);
-  }
 }
 
 void StackReset(StackT *stack) {

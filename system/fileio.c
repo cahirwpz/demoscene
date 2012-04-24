@@ -1,10 +1,12 @@
 #include <dos/dos.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
+#include <exec/memory.h>
 
+#include "std/memory.h"
 #include "system/fileio.h"
 
-PtrT ReadFileToCustomMemory(const StrT fileName, uint32_t memFlags) {
+static PtrT ReadFileToCustomMemory(const StrT fileName, uint32_t memFlags) {
   BPTR fh;
   PtrT data = NULL;
   
@@ -28,6 +30,10 @@ PtrT ReadFileToCustomMemory(const StrT fileName, uint32_t memFlags) {
   }
 
   return data;
+}
+
+PtrT ReadFileToChipMem(const StrT fileName) {
+  return ReadFileToCustomMemory(fileName, MEMF_CHIP);
 }
 
 PtrT ReadFileSimple(const StrT fileName) {

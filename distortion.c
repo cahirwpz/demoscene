@@ -3,28 +3,27 @@
 #include "std/memory.h"
 #include "distortion.h"
 
-DistortionMapT *NewDistortionMap(uint16_t width, uint16_t height) {
-  DistortionMapT *map = NewRecord(DistortionMapT);
-
-  map->Width = width;
-  map->Height = height;
-  map->Map = NewTable(uint16_t, width * height);
-
-  return map;
+static void DeleteDistortionMap(DistortionMapT *map) {
+  MemUnref(map->map);
 }
 
-void DeleteDistortionMap(DistortionMapT *map) {
-  MemUnref(map->Map);
-  MemUnref(map);
+DistortionMapT *NewDistortionMap(uint16_t width, uint16_t height) {
+  DistortionMapT *map = NewRecordGC(DistortionMapT, (FreeFuncT)DeleteDistortionMap);
+
+  map->width = width;
+  map->height = height;
+  map->map = NewTable(uint16_t, width * height);
+
+  return map;
 }
 
 void GenerateTunnel(DistortionMapT *tunnel,
                     int16_t radius, int16_t centerX, int16_t centerY) {
   int minX = -centerX;
   int minY = -centerY;
-  int maxX = minX + tunnel->Width;
-  int maxY = minY + tunnel->Height;
-  uint16_t *map = tunnel->Map;
+  int maxX = minX + tunnel->width;
+  int maxY = minY + tunnel->height;
+  uint16_t *map = tunnel->map;
 
   int xi, yi;
 

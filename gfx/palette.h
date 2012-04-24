@@ -13,16 +13,9 @@ typedef struct Palette {
 
 PaletteT *NewPalette(size_t count);
 PaletteT *NewPaletteFromFile(const StrT fileName);
-void DeletePalette(PaletteT *palette);
 PaletteT *CopyPalette(PaletteT *palette);
 
 bool LinkPalettes(PaletteT *palette, ...);
 void UnlinkPalettes(PaletteT *palette);
-
-#define RSC_PALETTE_FILE(NAME, FILENAME) \
-  AddRscSimple(NAME, NewPaletteFromFile(FILENAME), (FreeFuncT)DeletePalette)
-
-#define RSC_PALETTE(NAME, PALETTE) \
-  AddRscSimple(NAME, PALETTE, (FreeFuncT)DeletePalette)
 
 #endif

@@ -5,10 +5,6 @@ MatrixStack3D *NewMatrixStack3D() {
   return NewStack(NewAtomPool(sizeof(Matrix3D), 20));
 }
 
-void DeleteMatrixStack3D(MatrixStack3D *ms) {
-  DeleteStack(ms);
-}
-
 void Reset3D(MatrixStack3D *ms) {
   StackReset(ms);
 }

@@ -5,8 +5,12 @@
 #include "system/fileio.h"
 #include "gfx/pixbuf.h"
 
+static void DeletePixBuf(PixBufT *pixbuf) {
+  MemUnref(pixbuf->data);
+}
+
 PixBufT *NewPixBuf(size_t width, size_t height) {
-  PixBufT *pixbuf = NewRecord(PixBufT);
+  PixBufT *pixbuf = NewRecordGC(PixBufT, (FreeFuncT)DeletePixBuf);
 
   pixbuf->width = width;
   pixbuf->height = height;
@@ -39,13 +43,6 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
   }
 
   return NULL;
-}
-
-void DeletePixBuf(PixBufT *pixbuf) {
-  if (pixbuf) {
-    MemUnref(pixbuf->data);
-    MemUnref(pixbuf);
-  }
 }
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {

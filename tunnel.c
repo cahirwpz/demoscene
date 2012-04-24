@@ -28,15 +28,15 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
-  RSC_CHIPMEM_FILE("Module", "data/tempest-acidjazzed_evening.p61");
-  RSC_PIXBUF_FILE("Texture", "data/texture-01.8");
-  RSC_PALETTE_FILE("TexturePal", "data/texture-01.pal");
-  RSC_PIXBUF_FILE("CreditsImg", "data/code.8");
-  RSC_PALETTE_FILE("CreditsPal", "data/code.pal");
-  RSC_PIXBUF_FILE("WhelpzImg", "data/whelpz.8");
-  RSC_PALETTE_FILE("WhelpzPal", "data/whelpz.pal");
-  RSC_DISTORTION_MAP("TunnelMap", WIDTH, HEIGHT);
-  RSC_CANVAS("Canvas", WIDTH, HEIGHT);
+  ResAdd("Module", ReadFileToChipMem("data/tempest-acidjazzed_evening.p61"));
+  ResAdd("Texture", NewPixBufFromFile("data/texture-01.8"));
+  ResAdd("TexturePal", NewPaletteFromFile("data/texture-01.pal"));
+  ResAdd("CreditsImg", NewPixBufFromFile("data/code.8"));
+  ResAdd("CreditsPal", NewPaletteFromFile("data/code.pal"));
+  ResAdd("WhelpzImg", NewPixBufFromFile("data/whelpz.8"));
+  ResAdd("WhelpzPal", NewPaletteFromFile("data/whelpz.pal"));
+  ResAdd("TunnelMap", NewDistortionMap(WIDTH, HEIGHT));
+  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
 }
 
 /*
@@ -55,7 +55,7 @@ void SetupEffect() {
   LinkPalettes(R_("TexturePal"), R_("WhelpzPal"), R_("CreditsPal"), NULL);
   LoadPalette(R_("TexturePal"));
 
-  RSC_PALETTE("EffectPal", CopyPalette(R_("TexturePal")));
+  ResAdd("EffectPal", CopyPalette(R_("TexturePal")));
 
   PixBufRemap(R_("CreditsImg"), R_("CreditsPal"));
   PixBufRemap(R_("WhelpzImg"), R_("WhelpzPal"));

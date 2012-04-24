@@ -5,8 +5,17 @@
 #include "system/fileio.h"
 #include "engine/mesh.h"
 
+static void DeleteMesh(MeshT *mesh) {
+  MemUnref(mesh->vertexToPoly.vertex);
+  MemUnref(mesh->vertexToPoly.indices);
+  MemUnref(mesh->surfaceNormal);
+  MemUnref(mesh->vertexNormal);
+  MemUnref(mesh->polygon);
+  MemUnref(mesh->vertex);
+}
+
 MeshT *NewMesh(size_t vertices, size_t polygons) {
-  MeshT *mesh = NewRecord(MeshT);
+  MeshT *mesh = NewRecordGC(MeshT, (FreeFuncT)DeleteMesh);
 
   mesh->vertexNum = vertices;
   mesh->polygonNum = polygons;
@@ -40,18 +49,6 @@ MeshT *NewMeshFromFile(const StrT fileName) {
   }
 
   return NULL;
-}
-
-void DeleteMesh(MeshT *mesh) {
-  if (mesh) {
-    MemUnref(mesh->vertexToPoly.vertex);
-    MemUnref(mesh->vertexToPoly.indices);
-    MemUnref(mesh->surfaceNormal);
-    MemUnref(mesh->vertexNormal);
-    MemUnref(mesh->polygon);
-    MemUnref(mesh->vertex);
-    MemUnref(mesh);
-  }
 }
 
 /*

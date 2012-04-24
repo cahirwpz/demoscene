@@ -2,8 +2,14 @@
 #include "engine/object.h"
 #include "gfx/line.h"
 
+static void DeleteSceneObject(SceneObjectT *self) {
+  MemUnref(self->ms);
+  MemUnref(self->points);
+  MemUnref(self->name);
+}
+
 SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh) {
-  SceneObjectT *self = NewRecord(SceneObjectT);
+  SceneObjectT *self = NewRecordGC(SceneObjectT, (FreeFuncT)DeleteSceneObject);
 
   self->name = StrDup(name);
   self->mesh = mesh;
@@ -11,15 +17,6 @@ SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh) {
   self->points = NewTable(PointT, mesh->vertexNum);
 
   return self;
-}
-
-void DeleteSceneObject(SceneObjectT *self) {
-  if (self) {
-    DeleteMatrixStack3D(self->ms);
-    MemUnref(self->points);
-    MemUnref(self->name);
-    MemUnref(self);
-  }
 }
 
 void RenderSceneObject(SceneObjectT *self, CanvasT *canvas) {

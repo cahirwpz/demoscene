@@ -14,7 +14,6 @@ typedef struct SceneObject {
 } SceneObjectT;
 
 SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh);
-void DeleteSceneObject(SceneObjectT *object);
 
 void RenderSceneObject(SceneObjectT *self, CanvasT *canvas);
 

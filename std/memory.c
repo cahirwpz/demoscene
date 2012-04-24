@@ -74,12 +74,12 @@ PtrT MemNewInternal(size_t n, uint32_t flags, FreeFuncT func) {
   return p;
 }
 
-PtrT MemNew(size_t n) {
-  return MemNewInternal(n, MEMF_PUBLIC, NULL);
+PtrT MemNew(size_t n, FreeFuncT func) {
+  return MemNewInternal(n, MEMF_PUBLIC, func);
 }
 
-PtrT MemNew0(size_t n) {
-  return MemNewInternal(n, MEMF_PUBLIC|MEMF_CLEAR, NULL);
+PtrT MemNew0(size_t n, FreeFuncT func) {
+  return MemNewInternal(n, MEMF_PUBLIC|MEMF_CLEAR, func);
 }
 
 PtrT MemRef(PtrT mem) {
@@ -121,7 +121,7 @@ PtrT MemUnref(PtrT mem) {
 }
 
 PtrT MemDup(const void *p, size_t s) {
-  return memcpy(MemNew(s), p, s);
+  return memcpy(MemNew(s, NULL), p, s);
 }
 
 StrT StrDup(const StrT s) {

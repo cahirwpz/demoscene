@@ -13,7 +13,6 @@ typedef struct Canvas {
 } CanvasT;
 
 CanvasT *NewCanvas(int width, int height);
-void DeleteCanvas(CanvasT *canvas);
 
 void CanvasFill(CanvasT *canvas, uint8_t color);
 
@@ -22,8 +21,5 @@ static inline size_t GetCanvasWidth(CanvasT *canvas) { return canvas->pixbuf->wi
 static inline size_t GetCanvasHeight(CanvasT *canvas) { return canvas->pixbuf->height; }
 static inline uint8_t *GetCanvasPixelData(CanvasT *canvas) { return canvas->pixbuf->data; }
 static inline void CanvasPenMoveTo(CanvasT *canvas, int16_t x, int16_t y) { canvas->pen_pos.x = x; canvas->pen_pos.y = y; }
-
-#define RSC_CANVAS(NAME, WIDTH, HEIGHT) \
-  AddRscSimple(NAME, NewCanvas(WIDTH, HEIGHT), (FreeFuncT)DeleteCanvas)
 
 #endif

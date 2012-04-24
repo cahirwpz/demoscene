@@ -6,7 +6,6 @@
 typedef struct Stack StackT;
 
 StackT *NewStack(AtomPoolT *pool);
-void DeleteStack(StackT *stack);
 
 void StackReset(StackT *stack);
 void StackRemove(StackT *stack);

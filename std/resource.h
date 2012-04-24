@@ -6,14 +6,12 @@
 void StartResourceManager();
 void StopResourceManager();
 
-void AddRscSimple(const StrT name, PtrT ptr, FreeFuncT freeFunc);
-void AddRscStatic(const StrT name, PtrT ptr);
-PtrT GetResource(const StrT name);
+void ResAdd(const StrT name, PtrT ptr);
+void ResAddStatic(const StrT name, PtrT ptr);
+PtrT ResGet(const StrT name);
 
-#define RSC_STATIC(NAME, PTR) \
-  AddRscStatic(NAME, PTR)
-#define RSC_ARRAY(NAME, TYPE, SIZE) \
-  AddRscSimple(NAME, NewTable(TYPE, SIZE), (FreeFuncT)MemFree)
-#define R_(NAME) GetResource(NAME)
+#define ResAddTable(NAME, TYPE, SIZE) \
+  ResAdd(NAME, NewTable(TYPE, SIZE))
+#define R_(NAME) ResGet(NAME)
 
 #endif

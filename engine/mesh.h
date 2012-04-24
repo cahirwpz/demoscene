@@ -35,15 +35,11 @@ typedef struct Mesh {
 
 MeshT *NewMesh(size_t vertices, size_t triangles);
 MeshT *NewMeshFromFile(const StrT fileName);
-void DeleteMesh(MeshT *mesh);
 void NormalizeMeshSize(MeshT *mesh);
 void CenterMeshPosition(MeshT *mesh);
 
 void CalculateSurfaceNormals(MeshT *mesh);
 void CalculateVertexToPolygonMap(MeshT *mesh);
 void CalculateVertexNormals(MeshT *mesh);
-
-#define RSC_MESH_FILE(NAME, FILENAME) \
-  AddRscSimple(NAME, NewMeshFromFile(FILENAME), (FreeFuncT)DeleteMesh)
 
 #endif

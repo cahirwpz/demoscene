@@ -9,16 +9,16 @@
 typedef struct Resource {
   StrT name;
   PtrT ptr;
-  FreeFuncT freeFunc;
+  bool dynamic;
 } ResourceT;
 
 static ListT *ResList;
 static AtomPoolT *ResPool;
 
 static void Relinquish(ResourceT *res) {
-  if (res->freeFunc) {
+  if (res->dynamic) {
     LOG("Freeing resource '%s' at %p.", res->name, res->ptr);
-    res->freeFunc(res->ptr);
+    MemUnref(res->ptr);
   }
 
   MemUnref(res->name);
@@ -38,28 +38,30 @@ void StopResourceManager() {
   DeleteAtomPool(ResPool);
 }
 
-static void AddResource(const StrT name, PtrT ptr, FreeFuncT freeFunc) {
-  ResourceT *res = AtomNew(ResPool);
-
-  res->name = StrDup(name);
-  res->ptr = ptr;
-  res->freeFunc = freeFunc;
-
-  ListPushFront(ResList, res);
-}
-
-void AddRscSimple(const StrT name, PtrT ptr, FreeFuncT freeFunc) {
+static void ResAddInternal(const StrT name, PtrT ptr, bool dynamic) {
   if (!ptr)
     PANIC("Missing content for resource '%s'.", name);
 
-  AddResource(name, ptr, freeFunc);
+  {
+    ResourceT *res = AtomNew(ResPool);
+
+    res->name = StrDup(name);
+    res->ptr = ptr;
+    res->dynamic = dynamic;
+
+    ListPushFront(ResList, res);
+  }
 }
 
-void AddRscStatic(const StrT name, PtrT ptr) {
-  AddResource(name, ptr, NULL);
+void ResAddStatic(const StrT name, PtrT ptr) {
+  ResAddInternal(name, ptr, FALSE);
 }
 
-PtrT GetResource(const StrT name) {
+void ResAdd(const StrT name, PtrT ptr) {
+  ResAddInternal(name, ptr, TRUE);
+}
+
+PtrT ResGet(const StrT name) {
   ResourceT *res = ListSearch(ResList, (CompareFuncT)FindByName, (PtrT)name);
 
   if (!res)
