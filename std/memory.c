@@ -94,26 +94,30 @@ PtrT RefInc(PtrT mem) {
 }
 
 PtrT RefDec(PtrT mem) {
-  uint8_t *refcnt = (uint8_t *)(mem - 4);
+  if (mem) {
+    uint8_t *refcnt = (uint8_t *)(mem - 4);
 
-  if (*refcnt == 0)
-    PANIC("Cannot decrese reference count below zero: %08lx.", *(uint32_t *)(mem - 4));
+    if (*refcnt == 0)
+      PANIC("Cannot decrese reference count below zero: %08lx.", *(uint32_t *)(mem - 4));
 
-  (*refcnt)--;
+    (*refcnt)--;
 
-  if (*refcnt == 0) {
-    FreeFuncT clear = MemBlkGetClearFunc(mem);
-    size_t size = MemBlkGetSize(mem);
+    if (*refcnt == 0) {
+      FreeFuncT clear = MemBlkGetClearFunc(mem);
+      size_t size = MemBlkGetSize(mem);
 
-    if (clear)
-      clear(mem);
+      if (clear)
+        clear(mem);
 
-    mem -= MemBlkHeaderSize(BOOL(clear));
+      mem -= MemBlkHeaderSize(BOOL(clear));
 
-    FreeMem(mem, size);
+      FreeMem(mem, size);
+
+      mem = NULL;
+    }
   }
 
-  return (*refcnt) ? mem : NULL;
+  return mem;
 }
 
 void MemFree(PtrT mem) {

@@ -2,7 +2,6 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 
-#include "std/memory.h"
 #include "system/fileio.h"
 
 PtrT ReadFileToCustomMemory(const StrT fileName, uint32_t memFlags) {
@@ -18,7 +17,7 @@ PtrT ReadFileToCustomMemory(const StrT fileName, uint32_t memFlags) {
 
         if ((data = MemNewInternal(dataLen, memFlags, NULL))) {
           if (dataLen != Read(fh, data, dataLen)) {
-            FreeVec(data);
+            RefDec(data);
             data = NULL;
           }
         }
