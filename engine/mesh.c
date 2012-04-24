@@ -54,6 +54,10 @@ void DeleteMesh(MeshT *mesh) {
   }
 }
 
+/*
+ * Calculates the center of mesh and repositions it.  The center of a mesh is a
+ * center of its mass using uniform weights for each vertex.
+ */
 void CenterMeshPosition(MeshT *mesh) {
   Vector3D med = { 0.0f, 0.0f, 0.0f };
   int i;
@@ -67,6 +71,10 @@ void CenterMeshPosition(MeshT *mesh) {
     V3D_Sub(&mesh->vertex[i], &mesh->vertex[i], &med);
 }
 
+/*
+ * Scales the mesh so that it fits into a sphere of radius 1.0 at origin of
+ * (0.0, 0.0, 0.0).
+ */
 void NormalizeMeshSize(MeshT *mesh) {
   float m = 0.0f;
   size_t i;
@@ -81,7 +89,18 @@ void NormalizeMeshSize(MeshT *mesh) {
     V3D_Scale(&mesh->vertex[i], &mesh->vertex[i], 1.0f / m);
 }
 
-void AddSurfaceNormals(MeshT *mesh) {
+/*
+ * For given triangle T with vertices A, B and C, surface normal N is a cross
+ * product between vectors AB and BC.
+ *
+ * Ordering of vertices in polygon description is meaningful - depending on
+ * that the normal vector will be directed inwards or outwards.
+ *
+ * Lightwave convention is used:
+ * "The vertex list for each polygon should begin at a convex vertex and
+ * proceed clockwise as seen from the visible side of the polygon."
+ */
+void CalculateSurfaceNormals(MeshT *mesh) {
   size_t i;
 
   if (mesh->surfaceNormal)
@@ -91,16 +110,26 @@ void AddSurfaceNormals(MeshT *mesh) {
 
   for (i = 0; i < mesh->polygonNum; i++) {
     Vector3D *normal = &mesh->surfaceNormal[i];
+    Vector3D u, v;
 
     size_t p1 = mesh->polygon[i].p1;
     size_t p2 = mesh->polygon[i].p2;
+    size_t p3 = mesh->polygon[i].p3;
 
-    V3D_Cross(normal, &mesh->vertex[p1], &mesh->vertex[p2]);
+    V3D_Sub(&u, &mesh->vertex[p1], &mesh->vertex[p2]);
+    V3D_Sub(&v, &mesh->vertex[p2], &mesh->vertex[p3]);
+
+    V3D_Cross(normal, &u, &v);
     V3D_Normalize(normal, normal, 1.0f);
   }
 }
 
-void AddVertexToPolygonMap(MeshT *mesh) {
+/*
+ * Calculates a map from vertex index into a list of polygon the vertex belongs
+ * to.  mesh->polygon can be considered as a map from polygon number to polygon
+ * vertices, so this procedure calculates a reverse map.
+ */
+void CalculateVertexToPolygonMap(MeshT *mesh) {
   IndexMapT *map = &mesh->vertexToPoly;
   size_t i, j;
 
@@ -137,7 +166,11 @@ void AddVertexToPolygonMap(MeshT *mesh) {
   }
 }
 
-void AddVertexNormals(MeshT *mesh) {
+/*
+ * Vertex normal vector is defined as averaged normal of all adjacent polygons.
+ * Assumption is made that each vertex belong to at least one polygon.
+ */
+void CalculateVertexNormals(MeshT *mesh) {
   size_t i, j;
 
   mesh->vertexNormal = NEW_A(Vector3D, mesh->vertexNum);
