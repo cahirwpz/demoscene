@@ -22,7 +22,7 @@ void DeleteStack(StackT *stack) {
   if (stack) {
     DeleteList(stack->list);
     DeleteAtomPool(stack->pool);
-    DELETE(stack);
+    MemUnref(stack);
   }
 }
 

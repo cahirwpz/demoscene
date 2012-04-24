@@ -17,7 +17,7 @@ CanvasT *NewCanvas(int width, int height) {
 void DeleteCanvas(CanvasT *canvas) {
   if (canvas) {
     DeletePixBuf(canvas->pixbuf);
-    DELETE(canvas);
+    MemUnref(canvas);
   }
 }
 

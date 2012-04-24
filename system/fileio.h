@@ -9,6 +9,6 @@ PtrT ReadFileSimple(const StrT fileName);
 
 #define RSC_CHIPMEM_FILE(NAME, FILENAME) \
   AddRscSimple(NAME, ReadFileToCustomMemory(FILENAME, MEMF_CHIP), \
-               (FreeFuncT)RefDec)
+               (FreeFuncT)MemUnref)
 
 #endif

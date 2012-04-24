@@ -125,7 +125,7 @@ void StopEventQueue() {
 
     DeleteAtomPool(queue->eventPool);
     DeleteList(queue->eventList);
-    DELETE(queue);
+    MemUnref(queue);
   }
 
   EventQueue = NULL;

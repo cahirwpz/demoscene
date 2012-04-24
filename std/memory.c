@@ -82,7 +82,7 @@ PtrT MemNew0(size_t n) {
   return MemNewInternal(n, MEMF_PUBLIC|MEMF_CLEAR, NULL);
 }
 
-PtrT RefInc(PtrT mem) {
+PtrT MemRef(PtrT mem) {
   uint8_t *refcnt = (uint8_t *)(mem - 4);
 
   if (*refcnt == 255)
@@ -93,7 +93,7 @@ PtrT RefInc(PtrT mem) {
   return mem;
 }
 
-PtrT RefDec(PtrT mem) {
+PtrT MemUnref(PtrT mem) {
   if (mem) {
     uint8_t *refcnt = (uint8_t *)(mem - 4);
 
@@ -118,10 +118,6 @@ PtrT RefDec(PtrT mem) {
   }
 
   return mem;
-}
-
-void MemFree(PtrT mem) {
-  (void)RefDec(mem);
 }
 
 PtrT MemDup(const void *p, size_t s) {

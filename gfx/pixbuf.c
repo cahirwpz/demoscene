@@ -33,7 +33,7 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
     LOG("Image '%s' has size (%d,%d) and %d colors.",
         fileName, width, height, colors);
 
-    DELETE(data);
+    MemUnref(data);
 
     return pixbuf;
   }
@@ -43,8 +43,8 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
 
 void DeletePixBuf(PixBufT *pixbuf) {
   if (pixbuf) {
-    DELETE(pixbuf->data);
-    DELETE(pixbuf);
+    MemUnref(pixbuf->data);
+    MemUnref(pixbuf);
   }
 }
 

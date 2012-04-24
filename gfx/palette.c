@@ -32,7 +32,7 @@ PaletteT *NewPaletteFromFile(const StrT fileName) {
 
     LOG("Palette '%s' has %d colors.", fileName, count);
 
-    DELETE(data);
+    MemUnref(data);
 
     return palette;
   }
@@ -44,8 +44,8 @@ void DeletePalette(PaletteT *palette) {
   while (palette) {
     PaletteT *next = palette->next;
 
-    DELETE(palette->colors);
-    DELETE(palette);
+    MemUnref(palette->colors);
+    MemUnref(palette);
 
     palette = next;
   }

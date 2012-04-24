@@ -25,7 +25,7 @@ AtomPoolT *NewAtomPool(size_t atomSize, size_t perChunk) {
 void DeleteAtomPool(AtomPoolT *atomPool) {
   if (atomPool) {
     DeletePool(atomPool->pool);
-    DELETE(atomPool);
+    MemUnref(atomPool);
   }
 }
 

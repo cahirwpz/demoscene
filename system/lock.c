@@ -17,7 +17,7 @@ LockT *NewLock() {
 }
 
 void LockDelete(LockT *lock) {
-  DELETE(lock);
+  MemUnref(lock);
 }
 
 void LockShared(LockT *lock) {

@@ -28,7 +28,7 @@ void DeleteView(ViewT *view) {
     if (view->SHFCprList)
       FreeCprList(view->SHFCprList);
 
-    DELETE(view);
+    MemUnref(view);
   }
 }
 
@@ -86,8 +86,8 @@ void DeleteViewPort(ViewPortT *viewPort) {
     FreeVPortCopLists(viewPort);
     FreeColorMap(viewPort->ColorMap);
 
-    DELETE(viewPort->RasInfo);
-    DELETE(viewPort);
+    MemUnref(viewPort->RasInfo);
+    MemUnref(viewPort);
   }
 }
 
@@ -196,7 +196,7 @@ void DeleteDBufRaster(DBufRasterT *raster) {
   if (raster) {
     DeleteDBufInfo(raster->DBufInfo);
     DeleteViewPort(raster->ViewPort);
-    DELETE(raster);
+    MemUnref(raster);
   }
 }
 

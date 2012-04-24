@@ -21,7 +21,7 @@ static void Relinquish(ResourceT *res) {
     res->freeFunc(res->ptr);
   }
 
-  MemFree((PtrT)res->name);
+  MemUnref(res->name);
 }
 
 static CmpT FindByName(const ResourceT *res, const StrT name) {

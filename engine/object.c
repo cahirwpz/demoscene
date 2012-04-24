@@ -16,9 +16,9 @@ SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh) {
 void DeleteSceneObject(SceneObjectT *self) {
   if (self) {
     DeleteMatrixStack3D(self->ms);
-    MemFree(self->points);
-    MemFree(self->name);
-    MemFree(self);
+    MemUnref(self->points);
+    MemUnref(self->name);
+    MemUnref(self);
   }
 }
 

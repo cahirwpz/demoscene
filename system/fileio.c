@@ -17,7 +17,7 @@ PtrT ReadFileToCustomMemory(const StrT fileName, uint32_t memFlags) {
 
         if ((data = MemNewInternal(dataLen, memFlags, NULL))) {
           if (dataLen != Read(fh, data, dataLen)) {
-            RefDec(data);
+            MemUnref(data);
             data = NULL;
           }
         }

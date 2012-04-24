@@ -18,7 +18,7 @@ static NodeT *NodeAlloc(PtrT data) {
 
 static PtrT NodeFree(NodeT *node) {
   PtrT data = GetData(node);
-  MemFree(node);
+  MemUnref(node);
   return data;
 }
 
@@ -30,15 +30,15 @@ ListT *NewList() {
 
 void ResetList(ListT *list) {
   if (list) {
-    NodeForEach(GetNode(list), (IterFuncT)MemFree, NULL);
+    NodeForEach(GetNode(list), (IterFuncT)MemUnref, NULL);
     NodeInitGuard(GetNode(list));
   }
 }
 
 void DeleteList(ListT *list) {
   if (list) {
-    NodeForEach(GetNode(list), (IterFuncT)MemFree, NULL);
-    MemFree(list);
+    NodeForEach(GetNode(list), (IterFuncT)MemUnref, NULL);
+    MemUnref(list);
   }
 }
 

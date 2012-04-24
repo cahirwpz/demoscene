@@ -15,7 +15,7 @@ SceneT *NewScene() {
 void DeleteScene(SceneT *self) {
   if (self) {
     DeleteListFull(self->objects, (FreeFuncT)DeleteSceneObject);
-    MemFree(self);
+    MemUnref(self);
   }
 }
 

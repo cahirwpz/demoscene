@@ -34,7 +34,7 @@ MeshT *NewMeshFromFile(const StrT fileName) {
     LOG("Mesh '%s' has %d vertices and %d polygons.",
         fileName, vertices, polygons);
 
-    DELETE(data);
+    MemUnref(data);
 
     return mesh;
   }
@@ -44,13 +44,13 @@ MeshT *NewMeshFromFile(const StrT fileName) {
 
 void DeleteMesh(MeshT *mesh) {
   if (mesh) {
-    DELETE(mesh->vertexToPoly.vertex);
-    DELETE(mesh->vertexToPoly.indices);
-    DELETE(mesh->surfaceNormal);
-    DELETE(mesh->vertexNormal);
-    DELETE(mesh->polygon);
-    DELETE(mesh->vertex);
-    DELETE(mesh);
+    MemUnref(mesh->vertexToPoly.vertex);
+    MemUnref(mesh->vertexToPoly.indices);
+    MemUnref(mesh->surfaceNormal);
+    MemUnref(mesh->vertexNormal);
+    MemUnref(mesh->polygon);
+    MemUnref(mesh->vertex);
+    MemUnref(mesh);
   }
 }
 

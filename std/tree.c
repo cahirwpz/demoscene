@@ -23,7 +23,7 @@ static NodeT *NodeAlloc(TreeT *parent, PtrT data) {
 
 static PtrT NodeFree(NodeT *node) {
   PtrT data = GetData(node);
-  MemFree(node);
+  MemUnref(node);
   return data;
 }
 
@@ -41,7 +41,7 @@ static void TreeDeleter(TreeT *tree, FreeFuncT func) {
 
 void DeleteTree(TreeT *tree) {
   if (tree)
-    DeleteTreeFull(tree, (FreeFuncT)MemFree);
+    DeleteTreeFull(tree, (FreeFuncT)MemUnref);
 }
 
 void DeleteTreeFull(TreeT *tree, FreeFuncT func) {

@@ -130,8 +130,8 @@ void KillDisplay() {
     for (i = 0; i < 2; i++)
       FreeBitMap(Display->Bitmap[i]);
 
-    DELETE(Display->Palette);
-    DELETE(Display);
+    MemUnref(Display->Palette);
+    MemUnref(Display);
 
     Display = NULL;
   }
