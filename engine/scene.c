@@ -23,12 +23,12 @@ void SceneAddObject(SceneT *self, SceneObjectT *object) {
   ListPushBack(self->objects, object);
 }
 
-MatrixStack3D *GetObjectTranslation(SceneT *self, const char *name) {
-  CmpT CompareName(SceneObjectT *obj) {
-    return strcmp(obj->name, name);
-  }
+static CmpT CompareName(const SceneObjectT *obj, const StrT name) {
+  return strcmp(obj->name, name);
+}
 
-  SceneObjectT *object = ListSearch(self->objects, (CompareFuncT)CompareName, NULL);
+MatrixStack3D *GetObjectTranslation(SceneT *self, const StrT name) {
+  SceneObjectT *object = ListSearch(self->objects, (CompareFuncT)CompareName, name);
 
   return object ? object->ms : NULL;
 }

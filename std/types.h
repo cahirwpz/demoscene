@@ -37,6 +37,7 @@ typedef unsigned long uint32_t;
 /* Auxiliary types */
 typedef enum { CMP_LT = -1, CMP_EQ = 0, CMP_GT = 1 } CmpT;
 typedef void* PtrT;
+typedef char* StrT;
 
 /* Function types definition */
 typedef PtrT (*AllocFuncT)();
@@ -54,10 +55,10 @@ typedef void (*IterFuncT)(PtrT item, PtrT data);
 /**
  * @brief Type of comparison function.
  *
- * @param item  Element of iterable data structure.
- * @param data	Auxiliary data that can be used during iteration.
+ * @param lhs Value representing left-hand side of comparison.
+ * @param rhs Value representing right-hand side of comparison.
  * @result CmpT value that depends on comparison result.
  */
-typedef CmpT (*CompareFuncT)(PtrT item, PtrT data);
+typedef CmpT (*CompareFuncT)(const PtrT lhs, const PtrT rhs);
 
 #endif

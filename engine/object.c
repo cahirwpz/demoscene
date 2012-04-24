@@ -2,7 +2,7 @@
 #include "engine/object.h"
 #include "gfx/line.h"
 
-SceneObjectT *NewSceneObject(const char *name, MeshT *mesh) {
+SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh) {
   SceneObjectT *self = MemNew(sizeof(SceneObjectT));
 
   self->name = StrDup(name);

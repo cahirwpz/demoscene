@@ -11,7 +11,7 @@ typedef struct PixBuf {
 } PixBufT;
 
 PixBufT *NewPixBuf(size_t width, size_t height);
-PixBufT *NewPixBufFromFile(const char *fileName);
+PixBufT *NewPixBufFromFile(const StrT fileName);
 void DeletePixBuf(PixBufT *pixbuf);
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);

@@ -6,7 +6,7 @@
 PtrT MemNew(size_t n);
 PtrT MemNew0(size_t n);
 PtrT MemDup(const void *p, size_t s);
-char *StrDup(const char *s);
+StrT StrDup(const StrT s);
 void MemFree(PtrT p);
 
 #define NEW_S(TYPE) \

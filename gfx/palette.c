@@ -15,7 +15,7 @@ PaletteT *NewPalette(size_t count) {
   return palette;
 }
 
-PaletteT *NewPaletteFromFile(const char *fileName) {
+PaletteT *NewPaletteFromFile(const StrT fileName) {
   uint16_t *data = ReadFileSimple(fileName);
 
   if (data) {

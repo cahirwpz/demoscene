@@ -6,14 +6,14 @@
 #include "engine/mesh.h"
 
 typedef struct SceneObject {
-  char *name;
+  StrT name;
   MeshT *mesh;
 
   MatrixStack3D *ms;
   PointT *points;
 } SceneObjectT;
 
-SceneObjectT *NewSceneObject(const char *name, MeshT *mesh);
+SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh);
 void DeleteSceneObject(SceneObjectT *object);
 
 void RenderSceneObject(SceneObjectT *self, CanvasT *canvas);

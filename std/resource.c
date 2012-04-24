@@ -7,7 +7,7 @@
 #include "std/list.h"
 
 typedef struct Resource {
-  const char *name;
+  StrT name;
   PtrT ptr;
   FreeFuncT freeFunc;
 } ResourceT;
@@ -24,7 +24,7 @@ static void Relinquish(ResourceT *res) {
   MemFree((PtrT)res->name);
 }
 
-static CmpT FindByName(ResourceT *res, const char *name) {
+static CmpT FindByName(const ResourceT *res, const StrT name) {
   return strcmp(res->name, name);
 }
 
@@ -38,7 +38,7 @@ void StopResourceManager() {
   DeleteAtomPool(ResPool);
 }
 
-static void AddResource(const char *name, PtrT ptr, FreeFuncT freeFunc) {
+static void AddResource(const StrT name, PtrT ptr, FreeFuncT freeFunc) {
   ResourceT *res = AtomNew(ResPool);
 
   res->name = StrDup(name);
@@ -48,18 +48,18 @@ static void AddResource(const char *name, PtrT ptr, FreeFuncT freeFunc) {
   ListPushFront(ResList, res);
 }
 
-void AddRscSimple(const char *name, PtrT ptr, FreeFuncT freeFunc) {
+void AddRscSimple(const StrT name, PtrT ptr, FreeFuncT freeFunc) {
   if (!ptr)
     PANIC("Missing content for resource '%s'.", name);
 
   AddResource(name, ptr, freeFunc);
 }
 
-void AddRscStatic(const char *name, PtrT ptr) {
+void AddRscStatic(const StrT name, PtrT ptr) {
   AddResource(name, ptr, NULL);
 }
 
-PtrT GetResource(const char *name) {
+PtrT GetResource(const StrT name) {
   ResourceT *res = ListSearch(ResList, (CompareFuncT)FindByName, (PtrT)name);
 
   if (!res)

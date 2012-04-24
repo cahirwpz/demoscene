@@ -111,7 +111,7 @@ void PrintAllEvents() {
         if (event.ie_Code == IECODE_NOBUTTON) {
           LOG("Mouse move: (%ld,%ld).", (LONG)event.ie_X, (LONG)event.ie_Y);
         } else {
-          const char *name[] = {"left", "right", "middle"};
+          const StrT name[] = {"left", "right", "middle"};
 
           LOG("Mouse %s key %s.",
               name[(event.ie_Code & ~IECODE_UP_PREFIX) - IECODE_LBUTTON],

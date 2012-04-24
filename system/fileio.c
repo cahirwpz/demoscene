@@ -4,7 +4,7 @@
 
 #include "system/fileio.h"
 
-PtrT ReadFileToCustomMemory(const char *fileName, uint32_t memFlags) {
+PtrT ReadFileToCustomMemory(const StrT fileName, uint32_t memFlags) {
   BPTR fh;
   PtrT data = NULL;
   
@@ -30,6 +30,6 @@ PtrT ReadFileToCustomMemory(const char *fileName, uint32_t memFlags) {
   return data;
 }
 
-PtrT ReadFileSimple(const char *fileName) {
+PtrT ReadFileSimple(const StrT fileName) {
   return ReadFileToCustomMemory(fileName, MEMF_PUBLIC);
 }

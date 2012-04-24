@@ -34,7 +34,7 @@ PtrT MemDup(const void *p, size_t s) {
   return memcpy(MemNew(s), p, s);
 }
 
-char *StrDup(const char *s) {
+StrT StrDup(const StrT s) {
   return MemDup(s, strlen(s) + 1);
 }
 
