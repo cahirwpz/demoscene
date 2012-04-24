@@ -3,11 +3,17 @@
 
 #include "std/types.h"
 
+/* Think twice before you use it. */
+PtrT MemNewInternal(size_t n, uint32_t flags, FreeFuncT func);
+
 PtrT MemNew(size_t n);
 PtrT MemNew0(size_t n);
+void MemFree(PtrT p);
+PtrT RefInc(PtrT mem);
+PtrT RefDec(PtrT mem);
+
 PtrT MemDup(const void *p, size_t s);
 StrT StrDup(const StrT s);
-void MemFree(PtrT p);
 
 #define NEW_S(TYPE) \
     (TYPE *)MemNew0(sizeof(TYPE))

@@ -14,7 +14,7 @@
 
 typedef enum { FALSE, TRUE } bool;
 
-#define BOOL(a) ((a != 0) ? TRUE : FALSE)
+#define BOOL(a) ((a) != 0 ? TRUE : FALSE)
 
 #ifndef uint8_t
 typedef unsigned char uint8_t;
