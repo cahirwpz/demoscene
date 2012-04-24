@@ -47,11 +47,11 @@ void NodeForEach(NodeT *guard, IterFuncT func, PtrT data) {
   }
 }
 
-NodeT *NodeSearch(NodeT *guard, SearchFuncT func, PtrT data) {
+NodeT *NodeSearch(NodeT *guard, CompareFuncT func, PtrT data) {
   NodeT *node = guard->next;
 
   while (node != guard) {
-    if (!func(node, data))
+    if (func(node, data) == CMP_EQ)
       break;
 
     node = node->next;

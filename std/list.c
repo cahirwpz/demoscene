@@ -59,12 +59,12 @@ void ListForEach(ListT *list, IterFuncT func, PtrT data) {
   }
 }
 
-PtrT ListSearch(ListT *list, SearchFuncT func, PtrT data) {
+PtrT ListSearch(ListT *list, CompareFuncT func, PtrT data) {
   NodeT *guard = GetNode(list);
   NodeT *node = guard->next;
 
   while (node != guard) {
-    if (!func(GetData(node), data))
+    if (func(GetData(node), data) == CMP_EQ)
       break;
 
     node = node->next;
@@ -73,7 +73,7 @@ PtrT ListSearch(ListT *list, SearchFuncT func, PtrT data) {
   return (node != guard) ? GetData(node) : NULL;
 }
 
-PtrT ListRemove(ListT *list, SearchFuncT func, PtrT data) {
+PtrT ListRemove(ListT *list, CompareFuncT func, PtrT data) {
   return NodeFree(NodeUnlink(ListSearch(list, func, data)));
 }
 

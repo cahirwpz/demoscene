@@ -24,7 +24,7 @@ static void Relinquish(ResourceT *res) {
   MemFree((PtrT)res->name);
 }
 
-static bool FindByName(ResourceT *res, const char *name) {
+static CmpT FindByName(ResourceT *res, const char *name) {
   return strcmp(res->name, name);
 }
 
@@ -60,7 +60,7 @@ void AddRscStatic(const char *name, PtrT ptr) {
 }
 
 PtrT GetResource(const char *name) {
-  ResourceT *res = ListSearch(ResList, (SearchFuncT)FindByName, (PtrT)name);
+  ResourceT *res = ListSearch(ResList, (CompareFuncT)FindByName, (PtrT)name);
 
   if (!res)
     PANIC("Resource '%s' not found.", name);

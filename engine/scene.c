@@ -24,11 +24,11 @@ void SceneAddObject(SceneT *self, SceneObjectT *object) {
 }
 
 MatrixStack3D *GetObjectTranslation(SceneT *self, const char *name) {
-  bool CmpName(SceneObjectT *obj) {
+  CmpT CompareName(SceneObjectT *obj) {
     return strcmp(obj->name, name);
   }
 
-  SceneObjectT *object = ListSearch(self->objects, (SearchFuncT)CmpName, NULL);
+  SceneObjectT *object = ListSearch(self->objects, (CompareFuncT)CompareName, NULL);
 
   return object ? object->ms : NULL;
 }

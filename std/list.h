@@ -15,8 +15,8 @@ void DeleteList(ListT *list);
 void DeleteListFull(ListT *list, FreeFuncT deleter);
 
 void ListForEach(ListT *list, IterFuncT func, PtrT data);
-PtrT ListSearch(ListT *list, SearchFuncT func, PtrT data);
-PtrT ListRemove(ListT *list, SearchFuncT func, PtrT data);
+PtrT ListSearch(ListT *list, CompareFuncT func, PtrT data);
+PtrT ListRemove(ListT *list, CompareFuncT func, PtrT data);
 
 PtrT ListGet(ListT *list, ssize_t index);
 PtrT ListPop(ListT *list, ssize_t index);
