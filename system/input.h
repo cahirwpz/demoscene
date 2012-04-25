@@ -11,6 +11,6 @@ void StartEventQueue();
 void StopEventQueue();
 
 void EventQueueReset();
-bool EventQueuePop(InputEventT *eventPtr);
+bool EventQueuePop(InputEventT *event);
 
 #endif

@@ -6,9 +6,8 @@
 #include <exec/ports.h>
 #include <proto/exec.h>
 
-#include "std/atompool.h"
 #include "std/debug.h"
-#include "std/list.h"
+#include "std/queue.h"
 #include "std/memory.h"
 
 #include "system/input.h"
@@ -18,14 +17,14 @@ typedef struct IORequest IORequestT;
 typedef struct Interrupt InterruptT;
 typedef struct SignalSemaphore SemaphoreT;
 
+#define MAX_EVENTS 32
+
 typedef struct EventQueue {
   struct MsgPort *msgPort;
   struct IORequest *ioReq;
   InterruptT handler;
-  SemaphoreT eventListLock;
-
-  AtomPoolT *eventPool;
-  ListT *eventList;
+  SemaphoreT lock;
+  QueueT *events;
 } EventQueueT;
 
 /*
@@ -38,17 +37,13 @@ typedef struct EventQueue {
 static __saveds APTR EventHandler(InputEventT *event asm("a0"),
                                   EventQueueT *queue asm("a1"))
 {
-  ObtainSemaphore(&queue->eventListLock);
+  ObtainSemaphore(&queue->lock);
 
   for (; event; event = event->ie_NextEvent) {
-    InputEventT *copy;
-
     switch (event->ie_Class) {
       case IECLASS_RAWKEY:
       case IECLASS_RAWMOUSE:
-        copy = AtomNew(queue->eventPool);
-        memcpy(copy, event, sizeof(InputEventT));
-        ListPushBack(queue->eventList, copy);
+        QueuePushBack(queue->events, event);
         break;
 
       default:
@@ -56,107 +51,94 @@ static __saveds APTR EventHandler(InputEventT *event asm("a0"),
     }
   }
 
-  ReleaseSemaphore(&queue->eventListLock);
+  ReleaseSemaphore(&queue->lock);
 
   return NULL;
 }
 
 static EventQueueT *EventQueue = NULL;
 
-void StartEventQueue() {
-  if (!EventQueue) {
-    EventQueueT *queue = NewRecord(EventQueueT);
+static void DeleteEventQueue(EventQueueT *queue) {
+  IOStdReqT *ioReq;
 
-    queue->eventPool = NewAtomPool(sizeof(InputEventT), 32);
-    queue->eventList = NewList();
+  ioReq = (IOStdReqT *)queue->ioReq;
+  ioReq->io_Data = (APTR)&queue->handler;
+  ioReq->io_Command = IND_REMHANDLER;
+  DoIO((IORequestT *)ioReq);
 
-    InitSemaphore(&queue->eventListLock);
+  /* Ask device to abort request, if pending */
+  if (!CheckIO(queue->ioReq))
+    AbortIO(queue->ioReq);
+  /* Wait for abort, then clean up */
+  WaitIO(queue->ioReq);
 
-    queue->msgPort = CreatePort(NULL, 0);
-    if (!queue->msgPort)
-      PANIC("CreatePort(...) failed.");
+  CloseDevice(queue->ioReq);
+  DeleteExtIO(queue->ioReq);
+  DeleteMsgPort(queue->msgPort);
 
-    queue->ioReq = CreateExtIO(queue->msgPort, sizeof(IOStdReqT));
-    if (!queue->ioReq)
-      PANIC("CreateExtIO(...) failed.");
-
-    if (OpenDevice("input.device", 0L, queue->ioReq, 0))
-      PANIC("OpenDevice(...) failed.");
-   
-    {
-      InterruptT *handler;
-      IOStdReqT *ioReq;
-
-      handler = &queue->handler;
-      handler->is_Code = (APTR)EventHandler;
-      handler->is_Data = (APTR)queue;
-      handler->is_Node.ln_Pri = 100;
-
-      ioReq = (IOStdReqT *)queue->ioReq;
-      ioReq->io_Data = (APTR)&queue->handler;
-      ioReq->io_Command = IND_ADDHANDLER;
-      DoIO((IORequestT *)ioReq);
-    }
-
-    EventQueue = queue;
-  }
+  MemUnref(queue->events);
 }
 
-void StopEventQueue() {
-  EventQueueT *queue = EventQueue;
+static EventQueueT *NewEventQueue(size_t size) {
+  EventQueueT *queue = NewRecordGC(EventQueueT, (FreeFuncT)DeleteEventQueue);
 
-  if (queue) {
+  queue->events = NewQueue(size, sizeof(InputEventT));
+
+  InitSemaphore(&queue->lock);
+
+  queue->msgPort = CreatePort(NULL, 0);
+  if (!queue->msgPort)
+    PANIC("CreatePort(...) failed.");
+
+  queue->ioReq = CreateExtIO(queue->msgPort, sizeof(IOStdReqT));
+  if (!queue->ioReq)
+    PANIC("CreateExtIO(...) failed.");
+
+  if (OpenDevice("input.device", 0L, queue->ioReq, 0))
+    PANIC("OpenDevice(...) failed.");
+
+  {
+    InterruptT *handler;
     IOStdReqT *ioReq;
+
+    handler = &queue->handler;
+    handler->is_Code = (APTR)EventHandler;
+    handler->is_Data = (APTR)queue;
+    handler->is_Node.ln_Pri = 100;
 
     ioReq = (IOStdReqT *)queue->ioReq;
     ioReq->io_Data = (APTR)&queue->handler;
-    ioReq->io_Command = IND_REMHANDLER;
+    ioReq->io_Command = IND_ADDHANDLER;
     DoIO((IORequestT *)ioReq);
-
-    /* Ask device to abort request, if pending */
-    if (!CheckIO(queue->ioReq))
-      AbortIO(queue->ioReq);
-    /* Wait for abort, then clean up */
-    WaitIO(queue->ioReq);
-
-    CloseDevice(queue->ioReq);
-    DeleteExtIO(queue->ioReq);
-    DeleteMsgPort(queue->msgPort);
-
-    MemUnref(queue->eventPool);
-    DeleteList(queue->eventList);
-    MemUnref(queue);
   }
 
-  EventQueue = NULL;
+  return queue;
+}
+
+void StartEventQueue() {
+  if (!EventQueue)
+    EventQueue = NewEventQueue(MAX_EVENTS);
+}
+
+void StopEventQueue() {
+  if (EventQueue) {
+    MemUnref(EventQueue);
+    EventQueue = NULL;
+  }
 }
 
 void EventQueueReset() {
-  EventQueueT *queue = EventQueue;
-
-  ObtainSemaphore(&queue->eventListLock);
-
-  ResetAtomPool(queue->eventPool);
-  ResetList(queue->eventList);
-
-  ReleaseSemaphore(&queue->eventListLock);
+  ObtainSemaphore(&EventQueue->lock);
+  QueueReset(EventQueue->events);
+  ReleaseSemaphore(&EventQueue->lock);
 }
 
 bool EventQueuePop(InputEventT *event) {
-  EventQueueT *queue = EventQueue;
-  InputEventT *head;
+  bool nonEmpty;
 
-  ObtainSemaphore(&queue->eventListLock);
+  ObtainSemaphore(&EventQueue->lock);
+  nonEmpty = QueuePopFront(EventQueue->events, event);
+  ReleaseSemaphore(&EventQueue->lock);
 
-  head = ListPopFront(queue->eventList);
-
-  if (head) {
-    memcpy(event, head, sizeof(InputEventT));
-
-    AtomFree(queue->eventPool, head);
-  }
-
-  ReleaseSemaphore(&queue->eventListLock);
-
-  return BOOL(head);
+  return nonEmpty;
 }

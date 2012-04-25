@@ -7,6 +7,7 @@ typedef struct Queue QueueT;
 
 QueueT *NewQueue(size_t size, size_t elemSize);
 
+void QueueReset(QueueT *self);
 bool QueuePushBack(QueueT *self, PtrT data);
 bool QueuePopFront(QueueT *self, PtrT data);
 

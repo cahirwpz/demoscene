@@ -1,3 +1,5 @@
+#include <strings.h>
+
 #include "std/queue.h"
 #include "std/memory.h"
 
@@ -36,6 +38,12 @@ static inline bool QueueIsEmpty(QueueT *self) {
   return (self->first == self->last);
 }
 
+void QueueReset(QueueT *self) {
+  self->first = 0;
+  self->last = 0;
+  bzero(&self->data, self->elemSize * self->size);
+}
+
 bool QueuePushBack(QueueT *self, PtrT data) {
   if (!QueueIsFull(self)) {
     PtrT *elem = QueueGet(self, self->last);
@@ -51,6 +59,7 @@ bool QueuePopFront(QueueT *self, PtrT data) {
   if (!QueueIsEmpty(self)) {
     PtrT *elem = QueueGet(self, self->first);
     memcpy(data, elem, self->elemSize);
+    bzero(elem, self->elemSize);
     self->first = Next(self, self->first);
     return TRUE;
   }
