@@ -4,7 +4,6 @@
 typedef struct Lock LockT;
 
 LockT *NewLock();
-void LockDelete(LockT *lock);
 
 void LockShared(LockT *lock);
 void LockExclusive(LockT *lock);

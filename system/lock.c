@@ -16,10 +16,6 @@ LockT *NewLock() {
   return lock;
 }
 
-void LockDelete(LockT *lock) {
-  MemUnref(lock);
-}
-
 void LockShared(LockT *lock) {
   ObtainSemaphoreShared(&lock->semaphore);
 }

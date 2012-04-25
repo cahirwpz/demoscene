@@ -11,8 +11,12 @@ struct AtomPool {
   size_t perChunk;
 };
 
+static void DeleteAtomPool(AtomPoolT *self) {
+  DeletePool(self->pool);
+}
+
 AtomPoolT *NewAtomPool(size_t atomSize, size_t perChunk) {
-  AtomPoolT *atomPool = NewRecord(AtomPoolT);
+  AtomPoolT *atomPool = NewRecordGC(AtomPoolT, (FreeFuncT)DeleteAtomPool);
 
   atomPool->atomSize = atomSize;
   atomPool->perChunk = perChunk;
@@ -20,13 +24,6 @@ AtomPoolT *NewAtomPool(size_t atomSize, size_t perChunk) {
   ResetAtomPool(atomPool);
 
   return atomPool;
-}
-
-void DeleteAtomPool(AtomPoolT *atomPool) {
-  if (atomPool) {
-    DeletePool(atomPool->pool);
-    MemUnref(atomPool);
-  }
 }
 
 void ResetAtomPool(AtomPoolT *atomPool) {

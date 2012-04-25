@@ -6,7 +6,6 @@
 typedef struct AtomPool AtomPoolT;
 
 AtomPoolT *NewAtomPool(size_t atomSize, size_t perChunk);
-void DeleteAtomPool(AtomPoolT *atomPool);
 void ResetAtomPool(AtomPoolT *atomPool);
 
 PtrT AtomNew(AtomPoolT *atomPool);

@@ -123,7 +123,7 @@ void StopEventQueue() {
     DeleteExtIO(queue->ioReq);
     DeleteMsgPort(queue->msgPort);
 
-    DeleteAtomPool(queue->eventPool);
+    MemUnref(queue->eventPool);
     DeleteList(queue->eventList);
     MemUnref(queue);
   }

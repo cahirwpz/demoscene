@@ -35,7 +35,7 @@ void StartResourceManager() {
 
 void StopResourceManager() {
   DeleteListFull(ResList, (FreeFuncT)Relinquish);
-  DeleteAtomPool(ResPool);
+  MemUnref(ResPool);
 }
 
 static void ResAddInternal(const StrT name, PtrT ptr, bool dynamic) {

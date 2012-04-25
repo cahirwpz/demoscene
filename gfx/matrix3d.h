@@ -7,7 +7,6 @@
 typedef float Matrix3D[4][4];
 
 Matrix3D *NewMatrix3D();
-void DeleteMatrix3D(Matrix3D *matrix);
 
 void Multiply3D(Matrix3D *d, Matrix3D *a, Matrix3D *b);
 void InverseMultiply3D(Matrix3D *d, Matrix3D *a, Matrix3D *b);

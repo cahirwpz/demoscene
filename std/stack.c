@@ -9,7 +9,7 @@ struct Stack {
 
 static void DeleteStack(StackT *stack) {
   DeleteList(stack->list);
-  DeleteAtomPool(stack->pool);
+  MemUnref(stack->pool);
 }
 
 StackT *NewStack(AtomPoolT *pool) {

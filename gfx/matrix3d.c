@@ -13,10 +13,6 @@ Matrix3D *NewMatrix3D() {
   return NewRecord(Matrix3D);
 }
 
-void DeleteMatrix3D(Matrix3D *matrix) {
-  MemUnref(matrix);
-}
-
 void Multiply3D(Matrix3D *d, Matrix3D *a, Matrix3D *b) {
   int i, j, k;
 
