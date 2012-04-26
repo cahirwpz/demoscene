@@ -1,53 +1,50 @@
-#include "std/list.h"
+#include <strings.h>
+
 #include "std/memory.h"
 #include "std/stack.h"
 
 struct Stack {
-  ListT *list;
-  AtomPoolT *pool;
+  int top;
+  size_t size;
+  size_t elemSize;
+  uint8_t data[0];
 };
 
-static void DeleteStack(StackT *stack) {
-  DeleteList(stack->list);
-  MemUnref(stack->pool);
-}
+StackT *NewStack(size_t size, size_t elemSize) {
+  StackT *stack = MemNew0(sizeof(StackT) + elemSize * size, NULL);
 
-StackT *NewStack(AtomPoolT *pool) {
-  StackT *stack = NewRecordGC(StackT, (FreeFuncT)DeleteStack);
-
-  stack->list = NewList();
-  stack->pool = pool;
-
-  StackPushNew(stack);
+  stack->top = -1;
+  stack->size = size;
+  stack->elemSize = elemSize;
 
   return stack;
 }
 
-void StackReset(StackT *stack) {
-  ResetList(stack->list);
-  ResetAtomPool(stack->pool);
+static inline PtrT StackGet(StackT *self, size_t index) {
+  return self->data + (self->top - index) * self->elemSize;
 }
 
-void StackRemove(StackT *stack) {
-  AtomFree(stack->pool, ListPopFront(stack->list));
+void StackReset(StackT *self) {
+  self->top = -1;
+  bzero(&self->data, self->elemSize * self->size);
 }
 
-PtrT StackPeek(StackT *stack, size_t index) {
-  return ListGet(stack->list, index);
+PtrT StackPeek(StackT *self, size_t index) {
+  return (self->top >= index) ? StackGet(self, index) : NULL;
 }
 
-PtrT StackTop(StackT *stack) {
-  return ListGet(stack->list, 0);
+PtrT StackTop(StackT *self) {
+  return StackPeek(self, 0);
 }
 
-PtrT StackPushNew(StackT *stack) {
-  PtrT item = AtomNew0(stack->pool);
-
-  ListPushFront(stack->list, item);
-
-  return item;
+PtrT StackPushNew(StackT *self) {
+  if (self->top < (int)self->size) {
+    self->top++;
+    return StackGet(self, 0);
+  }
+  return NULL;
 }
 
-size_t StackSize(StackT *stack) {
-  return ListSize(stack->list);
+size_t StackSize(StackT *self) {
+  return self->top + 1;
 }

@@ -2,11 +2,7 @@
 #include "gfx/ms3d.h"
 
 MatrixStack3D *NewMatrixStack3D() {
-  return NewStack(NewAtomPool(sizeof(Matrix3D), 20));
-}
-
-void Reset3D(MatrixStack3D *ms) {
-  StackReset(ms);
+  return NewStack(32, sizeof(Matrix3D));
 }
 
 static void Compose3D(MatrixStack3D *ms) {

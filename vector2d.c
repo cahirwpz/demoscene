@@ -71,7 +71,7 @@ void RenderVector(int frameNumber) {
   {
     MatrixStack2D *ms = R_("ms2d");
 
-    Reset2D(ms);
+    StackReset(ms);
     PushTranslation2D(ms, -1.5f, -1.5f);
     PushScaling2D(ms, 20.0f + 10.0f * s, 20.0f + 10.0f * s);
     PushRotation2D(ms, (float)(frameNumber * -3));
@@ -82,7 +82,7 @@ void RenderVector(int frameNumber) {
     //CanvasFill(Canvas, 0);
     //DrawPolyLine(Canvas, CrossToDraw, 12, TRUE);
 
-    Reset2D(ms);
+    StackReset(ms);
     PushTranslation2D(ms, 5.0f, 10.0f);
     PushScaling2D(ms, 2.5f, 2.5f);
     PushRotation2D(ms, (float)(frameNumber*5*c));

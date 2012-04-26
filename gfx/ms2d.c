@@ -2,11 +2,7 @@
 #include "gfx/ms2d.h"
 
 MatrixStack2D *NewMatrixStack2D() {
-  return NewStack(NewAtomPool(sizeof(Matrix2D), 20));
-}
-
-void Reset2D(MatrixStack2D *ms) {
-  StackReset(ms);
+  return NewStack(32, sizeof(Matrix2D));
 }
 
 static void Compose2D(MatrixStack2D *ms) {
