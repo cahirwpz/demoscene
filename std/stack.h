@@ -1,7 +1,7 @@
 #ifndef __STD_STACK_H__
 #define __STD_STACK_H__
 
-#include "std/atompool.h"
+#include "std/types.h"
 
 typedef struct Stack StackT;
 

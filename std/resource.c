@@ -1,10 +1,9 @@
 #include <string.h>
 
-#include "std/atompool.h"
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/resource.h"
 #include "std/list.h"
+#include "std/resource.h"
 
 typedef struct Resource {
   StrT name;
@@ -13,9 +12,8 @@ typedef struct Resource {
 } ResourceT;
 
 static ListT *ResList;
-static AtomPoolT *ResPool;
 
-static void Relinquish(ResourceT *res) {
+static void DeleteResource(ResourceT *res) {
   if (res->dynamic) {
     LOG("Freeing resource '%s' at %p.", res->name, res->ptr);
     MemUnref(res->ptr);
@@ -24,41 +22,37 @@ static void Relinquish(ResourceT *res) {
   MemUnref(res->name);
 }
 
-static CmpT FindByName(const ResourceT *res, const StrT name) {
-  return strcmp(res->name, name);
+static ResourceT *NewResource(const StrT name, PtrT ptr, bool dynamic) {
+  ResourceT *res;
+
+  if (!ptr)
+    PANIC("Missing content for resource '%s'.", name);
+
+  res = NewRecordGC(ResourceT, (FreeFuncT)DeleteResource);
+  res->name = StrDup(name);
+  res->ptr = ptr;
+  res->dynamic = dynamic;
+  return res;
 }
 
 void StartResourceManager() {
   ResList = NewList();
-  ResPool = NewAtomPool(sizeof(ResourceT), 16);
 }
 
 void StopResourceManager() {
-  DeleteListFull(ResList, (FreeFuncT)Relinquish);
-  MemUnref(ResPool);
-}
-
-static void ResAddInternal(const StrT name, PtrT ptr, bool dynamic) {
-  if (!ptr)
-    PANIC("Missing content for resource '%s'.", name);
-
-  {
-    ResourceT *res = AtomNew(ResPool);
-
-    res->name = StrDup(name);
-    res->ptr = ptr;
-    res->dynamic = dynamic;
-
-    ListPushFront(ResList, res);
-  }
+  DeleteListFull(ResList, (FreeFuncT)MemUnref);
 }
 
 void ResAddStatic(const StrT name, PtrT ptr) {
-  ResAddInternal(name, ptr, FALSE);
+  ListPushFront(ResList, NewResource(name, ptr, FALSE));
 }
 
 void ResAdd(const StrT name, PtrT ptr) {
-  ResAddInternal(name, ptr, TRUE);
+  ListPushFront(ResList, NewResource(name, ptr, TRUE));
+}
+
+static CmpT FindByName(const ResourceT *res, const StrT name) {
+  return strcmp(res->name, name);
 }
 
 PtrT ResGet(const StrT name) {

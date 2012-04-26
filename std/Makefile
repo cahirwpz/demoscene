@@ -12,7 +12,7 @@ list.o: list.c list.h node.h types.h
 memory.o: memory.c memory.h types.h
 queue.o: queue.c memory.h types.h
 resource.o: resource.c resource.h types.h
-stack.o: stack.c stack.h list.h types.h
+stack.o: stack.c stack.h memory.h types.h
 tree.o: tree.c tree.h list.h types.h
 
 clean:
