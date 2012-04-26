@@ -8,18 +8,9 @@
  * A tree is useful for expressing hierarchical structures like filesystems and
  * three-dimensional scenes.
  */
-typedef struct Tree TreeT;
-
-struct Tree {
-  NodeT node;
-  NodeT children;
-  TreeT *parent;
-  PtrT data;
-};
+typedef struct _Tree TreeT;
 
 TreeT *NewTree(PtrT data);
-void DeleteTree(TreeT *tree);
-void DeleteTreeFull(TreeT *tree, FreeFuncT func);
 
 void TreeForEachNode(TreeT *tree, IterFuncT func, PtrT data);
 void TreeForEachChild(TreeT *tree, IterFuncT func, PtrT data);

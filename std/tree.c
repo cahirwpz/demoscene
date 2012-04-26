@@ -1,6 +1,13 @@
 #include "std/memory.h"
 #include "std/tree.h"
 
+struct _Tree {
+  NodeT node;
+  NodeT children;
+  TreeT *parent;
+  PtrT data;
+};
+
 static NodeT *GetNode(TreeT *tree) {
   return tree ? (&tree->node) : NULL;
 }
@@ -13,8 +20,23 @@ static PtrT GetData(NodeT *node) {
   return node ? ((TreeT *)node)->data : NULL;
 }
 
+static void DeleteTree(TreeT *tree) {
+  NodeUnlink(GetNode(tree));
+  MemUnref(tree->data);
+}
+
+static void TreeDeleter(TreeT *tree) {
+  NodeForEach(GetChildren(tree), (IterFuncT)TreeDeleter, NULL);
+  MemUnref(tree);
+}
+
+static void RecursiveDeleteTree(TreeT *tree) {
+  DeleteTree(tree);
+  NodeForEach(GetChildren(tree), (IterFuncT)TreeDeleter, NULL);
+}
+
 static NodeT *NodeAlloc(TreeT *parent, PtrT data) {
-  TreeT *item = NewRecord(TreeT);
+  TreeT *item = NewRecordGC(TreeT, (FreeFuncT)DeleteTree);
   NodeInitGuard(GetChildren(item));
   item->parent = parent;
   item->data = data;
@@ -28,30 +50,16 @@ static PtrT NodeFree(NodeT *node) {
 }
 
 TreeT *NewTree(PtrT data) {
-  TreeT *tree = NewRecord(TreeT);
+  TreeT *tree = NewRecordGC(TreeT, (FreeFuncT)RecursiveDeleteTree);
   NodeInitGuard(GetChildren(tree));
   tree->data = data;
   return data;
 }
 
-static void TreeDeleter(TreeT *tree, FreeFuncT func) {
-  NodeForEach(GetChildren(tree), (IterFuncT)TreeDeleter, (PtrT)func);
-  func(tree);
-}
-
-void DeleteTree(TreeT *tree) {
-  if (tree)
-    DeleteTreeFull(tree, (FreeFuncT)MemUnref);
-}
-
-void DeleteTreeFull(TreeT *tree, FreeFuncT func) {
-  TreeDeleter(tree, func);
-  func(NodeUnlink(GetNode(tree)));
-}
-
 typedef void (*TreeRecursiveFuncT)(TreeT *node, IterFuncT func, PtrT data);
 
-static void TreeForEachRecursive(TreeT *node, IterFuncT func, PtrT data, TreeRecursiveFuncT recurse) {
+static void TreeForEachRecursive(TreeT *node, IterFuncT func, PtrT data,
+                                 TreeRecursiveFuncT recurse) {
   void NodeRecurse(TreeT *child) {
     recurse(child, func, data);
   }
