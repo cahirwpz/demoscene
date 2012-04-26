@@ -2,6 +2,11 @@
 #include "std/list.h"
 #include "std/memory.h"
 
+struct _List {
+  NodeT node;
+  PtrT data;
+};
+
 static NodeT *GetNode(ListT *list) {
   return list ? (&list->node) : NULL;
 }

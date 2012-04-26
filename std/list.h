@@ -4,10 +4,7 @@
 #include "std/types.h"
 #include "std/node.h"
 
-typedef struct _List {
-  NodeT node;
-  PtrT data;
-} ListT;
+typedef struct _List ListT;
 
 ListT *NewList();
 
