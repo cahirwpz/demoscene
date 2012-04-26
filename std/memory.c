@@ -5,22 +5,24 @@
 #include "std/memory.h"
 
 /*
- * Memory block can be described with on of the following structures:
+ * Memory block can be described with one of the following structures:
  *
- * 1) for simple block (without ClearFunc)
+ * 1) for simple block (without FreeFunc)
  * struct MemBlk {
  *   uint32_t refCnt : 8;
- *   uint32_t hasClearFunc : 1;  // equals to 0
- *   uint32_t size : 23;
+ *   uint32_t size : 21;        // size in quadwords 
+ *   uint32_t unused : 2;
+ *   uint32_t hasFreeFunc : 1;  // equals to 0
  *   uint8_t data[0];
  * };
  *
- * 2) for extended block (with ClearFunc)
+ * 2) for extended block (with FreeFunc)
  * struct ExtMemBlk {
- *   ClearFuncT clearFunc;
+ *   FreeFuncT freeFunc;
  *   uint32_t refCnt : 8;
- *   uint32_t hasClearFunc : 1;  // equals to 1
- *   uint32_t size : 23;
+ *   uint32_t size : 21;        // size in quadwords 
+ *   uint32_t unused : 2;
+ *   uint32_t hasFreeFunc : 1;  // equals to 1
  *   uint8_t data[0];
  * };
  *
@@ -28,11 +30,11 @@
  */
 
 static inline bool MemBlkGetSize(PtrT mem) {
-  return (*(uint32_t *)(mem - 4)) & 0x7fffff;
+  return (*(uint32_t *)(mem - 4)) & 0xfffff8;
 }
 
 static inline FreeFuncT MemBlkGetClearFunc(PtrT mem) {
-  bool hasClearFunc = BOOL(*(uint8_t *)(mem - 3) & 0x80);
+  bool hasClearFunc = BOOL(*(uint32_t *)(mem - 4) & 1);
 
   return hasClearFunc ? *(FreeFuncT *)(mem - 8) : NULL;
 }
@@ -47,7 +49,7 @@ static PtrT MemBlkInit(PtrT mem, uint8_t refCnt, size_t size, FreeFuncT func) {
   if (func)
     *ptr++ = (uint32_t)func;
 
-  *ptr++ = (refCnt << 24) | (BOOL(func) << 23) | (size & 0x7fffff);
+  *ptr++ = (refCnt << 24) | (size & 0xfffff8) | (func ? 1 : 0);
 
   return ptr;
 }
@@ -55,7 +57,9 @@ static PtrT MemBlkInit(PtrT mem, uint8_t refCnt, size_t size, FreeFuncT func) {
 /*
  * Memory allocation & reference counting functions.
  *
- * WARNING: Memory allocation doesn't support block larger that 8MB!
+ * Caveats:
+ * 1) Memory allocation doesn't support block larger that 16MB!
+ * 2) Returned memory block is aligned to 4 bytes boundary.
  */
 
 PtrT MemNewInternal(size_t n, uint32_t flags, FreeFuncT func) {
@@ -63,6 +67,7 @@ PtrT MemNewInternal(size_t n, uint32_t flags, FreeFuncT func) {
 
   if (n) {
     n += MemBlkHeaderSize(BOOL(func));
+    n = (n + MEM_BLOCKMASK) & -MEM_BLOCKSIZE;
     p = AllocMem(n, flags);
 
     if (!p)
