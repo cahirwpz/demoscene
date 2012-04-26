@@ -10,9 +10,6 @@ typedef struct _List {
 } ListT;
 
 ListT *NewList();
-void ResetList(ListT *list);
-void DeleteList(ListT *list);
-void DeleteListFull(ListT *list, FreeFuncT deleter);
 
 void ListForEach(ListT *list, IterFuncT func, PtrT data);
 PtrT ListSearch(ListT *list, CompareFuncT func, PtrT data);

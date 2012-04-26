@@ -22,31 +22,15 @@ static PtrT NodeFree(NodeT *node) {
   return data;
 }
 
+static void DeleteList(ListT *list) {
+  ListForEach(list, (IterFuncT)MemUnref, NULL);
+  NodeForEach(GetNode(list), (IterFuncT)MemUnref, NULL);
+}
+
 ListT *NewList() {
-  ListT *list = NewRecord(ListT);
+  ListT *list = NewRecordGC(ListT, (FreeFuncT)DeleteList);
   NodeInitGuard(GetNode(list));
   return list;
-}
-
-void ResetList(ListT *list) {
-  if (list) {
-    NodeForEach(GetNode(list), (IterFuncT)MemUnref, NULL);
-    NodeInitGuard(GetNode(list));
-  }
-}
-
-void DeleteList(ListT *list) {
-  if (list) {
-    NodeForEach(GetNode(list), (IterFuncT)MemUnref, NULL);
-    MemUnref(list);
-  }
-}
-
-void DeleteListFull(ListT *list, FreeFuncT func) {
-  if (list) {
-    ListForEach(list, (IterFuncT)func, NULL);
-    DeleteList(list);
-  }
 }
 
 void ListForEach(ListT *list, IterFuncT func, PtrT data) {

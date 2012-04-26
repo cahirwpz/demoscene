@@ -7,7 +7,7 @@ struct Scene {
 };
 
 static void DeleteScene(SceneT *self) {
-  DeleteListFull(self->objects, (FreeFuncT)MemUnref);
+  MemUnref(self->objects);
 }
 
 SceneT *NewScene() {

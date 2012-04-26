@@ -11,14 +11,11 @@ typedef struct Resource {
   bool dynamic;
 } ResourceT;
 
-static ListT *ResList;
-
 static void DeleteResource(ResourceT *res) {
   if (res->dynamic) {
     LOG("Freeing resource '%s' at %p.", res->name, res->ptr);
     MemUnref(res->ptr);
   }
-
   MemUnref(res->name);
 }
 
@@ -35,12 +32,14 @@ static ResourceT *NewResource(const StrT name, PtrT ptr, bool dynamic) {
   return res;
 }
 
+static ListT *ResList;
+
 void StartResourceManager() {
   ResList = NewList();
 }
 
 void StopResourceManager() {
-  DeleteListFull(ResList, (FreeFuncT)MemUnref);
+  MemUnref(ResList);
 }
 
 void ResAddStatic(const StrT name, PtrT ptr) {
