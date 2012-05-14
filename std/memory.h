@@ -11,6 +11,7 @@ PtrT MemNew0(size_t n, FreeFuncT func);
 PtrT MemRef(PtrT mem);
 PtrT MemUnref(PtrT mem);
 
+PtrT MemDupGC(PtrT mem, size_t s, CopyFuncT copy);
 PtrT MemDup(const void *p, size_t s);
 StrT StrDup(const StrT s);
 

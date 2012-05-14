@@ -45,6 +45,16 @@ typedef void (*FreeFuncT)(PtrT);
 typedef bool (*InitFuncT)(PtrT);
 
 /**
+ * @brief Type of copy function.
+ *
+ * @param dst Destination for the copy.
+ * @param src Memory fragment to be copied.
+ * @param size Size of memory fragment.
+ * @result original value of dst
+ */
+typedef void *(*CopyFuncT)(void *dst, const void *src, size_t size);
+
+/**
  * @brief Type of iterator function.
  *
  * @param item  Element of iterable data structure.

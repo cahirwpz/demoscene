@@ -125,6 +125,15 @@ PtrT MemUnref(PtrT mem) {
   return mem;
 }
 
+PtrT MemDupGC(PtrT mem, size_t s, CopyFuncT copy) {
+  PtrT newMem = MemNewInternal(s, TypeOfMem(mem), MemBlkGetClearFunc(mem)); 
+
+  if (!copy)
+    copy = memcpy;
+
+  return copy(newMem, mem, s);
+}
+
 PtrT MemDup(const void *p, size_t s) {
   return memcpy(MemNew(s, NULL), p, s);
 }
