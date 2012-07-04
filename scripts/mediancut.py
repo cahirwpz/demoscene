@@ -38,9 +38,6 @@ class Color(namedtuple('Color', 'r g b')):
     hs = s >> 1
     return Color((self.r + hs) / s, (self.g + hs) / s, (self.b + hs) / s)
 
-  def __len__(self):
-    return self.r * self.r + self.g * self.g + self.b * self.b
-
 
 class Box(object):
   __slots__ = ('data', 'begin', 'end', 'count', 'average', 'weight', 'color', 'axis')
@@ -51,17 +48,14 @@ class Box(object):
     self.data = data
     self.begin = begin
     self.end = end
-    self.count = self.end - self.begin
     self.average = average or self.CalcAverage()
+    self.count = self.end - self.begin
+    self.color = self.average / self.count
 
     variance = self.CalcVariance()
 
     self.weight = max(variance)
     self.axis = variance.index(self.weight)
-
-  @property
-  def color(self):
-    return self.average / self.count
 
   def __repr__(self):
     return '[%d..%d], count: %d, weight: %s' % (self.begin, self.end, self.count, self.weight)
@@ -123,10 +117,6 @@ class KDNode(object):
   def __cmp__(self, other):
     return cmp(other.box.weight, self.box.weight)
 
-  @property
-  def isLeaf(self):
-    return self.box != None
-
   def Split(self):
     self.axis, self.median, left, right = self.box.Split()
     self.left = KDNode(left)
@@ -135,26 +125,25 @@ class KDNode(object):
 
   def Search(self, color):
     def Recurse(node):
-      if node.isLeaf:
-        diff = color - node.box.color
-        return node.number, diff, sqrt(len(diff))
+      if node.box:
+        avg = node.box.color
+        r, g, b = color[0] - avg.r, color[1] - avg.g, color[2] - avg.b
+        return node.number, Color(r, g, b), sqrt(r*r + g*g + b*b)
 
-      side = int(color[node.axis] >= node.median)
-      child = (node.left, node.right)[side]
+      dist = color[node.axis] - node.median
+
+      if dist < 0:
+        child, alt_child = node.left, node.right
+      else:
+        child, alt_child = node.right, node.left
+
       n, diff, error = Recurse(child)
 
-      if error > abs(color[node.axis] - node.median):
-        if child is node.left:
-          alternative = node.right
-        else:
-          alternative = node.left
-
-        alt_n, alt_diff, alt_error = Recurse(alternative)
+      if error > abs(dist):
+        alt_n, alt_diff, alt_error = Recurse(alt_child)
 
         if alt_error < error:
-          n = alt_n
-          diff = alt_diff
-          error = alt_error
+          n, diff, error = alt_n, alt_diff, alt_error
 
       return n, diff, error
 
@@ -188,7 +177,7 @@ def QuantizeImage(image, kdtree, dithering):
 
   for y in range(height):
     for x in range(width):
-      n, diff, error = kdtree.Search(Color(*pixels[x, y]))
+      n, diff, error = kdtree.Search(pixels[x, y])
       errors += error
       quantized[x, y] = n
 
@@ -205,7 +194,7 @@ def Quantize(inputPath, outputPath, colors=256, dithering=False):
 
   image = Image.open(inputPath)
 
-  logging.info('Splitting colorspace using median-cut algorithm.')
+  logging.info('Quantizing colorspace using median-cut algorithm.')
 
   data = [Color(r, g, b) for r, g, b in image.getdata()]
   kdtree = KDNode(Box(data, 0, len(data)))
@@ -224,7 +213,7 @@ def Quantize(inputPath, outputPath, colors=256, dithering=False):
 
   candidates = [leaf.box.color for leaf in leaves]
 
-  logging.info('Quantizing colors (%s dithering) in the original image.',
+  logging.info('Remapping colors (%s dithering) from the original image.',
                ('without', 'with')[dithering])
 
   output = QuantizeImage(image, kdtree, dithering)
