@@ -25,15 +25,6 @@ class Color(namedtuple('Color', 'r g b')):
 
     return Color(r, g, b)
 
-  def MaxIndex(self):
-    return self.index(max(self))
-
-  def Square(self):
-    return Color(self.r * self.r, self.g * self.g, self.b * self.b)
-
-  def __neg__(self):
-    return Color(-self.r, -self.g, -self.b)
-
   def __add__(self, other):
     return Color(self.r + other.r, self.g + other.g, self.b + other.b)
 
@@ -52,21 +43,28 @@ class Color(namedtuple('Color', 'r g b')):
 
 
 class Box(object):
-  __slots__ = ('data', 'begin', 'end', 'count', 'variance', 'average', 'weight')
+  __slots__ = ('data', 'begin', 'end', 'count', 'average', 'weight', 'color', 'axis')
 
-  def __init__(self, data, begin, end):
+  def __init__(self, data, begin, end, average=None):
     assert begin < end
 
     self.data = data
     self.begin = begin
     self.end = end
     self.count = self.end - self.begin
-    self.average = self.CalcAverage()
-    self.variance = self.CalcVariance()
-    self.weight = max(self.variance) * self.count
+    self.average = average or self.CalcAverage()
+
+    variance = self.CalcVariance()
+
+    self.weight = max(variance)
+    self.axis = variance.index(self.weight)
+
+  @property
+  def color(self):
+    return self.average / self.count
 
   def __repr__(self):
-    return '[%d..%d], count: %d, weight: %s, variance: %r' % (self.begin, self.end, self.count, self.weight, self.variance)
+    return '[%d..%d], count: %d, weight: %s' % (self.begin, self.end, self.count, self.weight)
 
   def CalcAverage(self):
     r, g, b = 0, 0, 0
@@ -76,22 +74,24 @@ class Box(object):
       g += pixel.g
       b += pixel.b
 
-    return Color(r, g, b) / self.count
+    return Color(r, g, b)
 
   def CalcVariance(self):
     r, g, b = 0, 0, 0
+    avg = self.color
 
     for pixel in self.data[self.begin:self.end]:
-      d = (pixel - self.average).Square()
-      r += d.r
-      g += d.g
-      b += d.b
+      d = pixel - avg
+      dr, dg, db = d.r * d.r, d.g * d.g, d.b * d.b
+      r += dr
+      g += dg
+      b += db
 
-    return Color(r, g, b) / self.count
+    return Color(r, g, b)
 
   def Split(self):
-    axis = self.variance.MaxIndex()
-    median = self.average[axis]
+    axis = self.axis
+    median = self.color[axis]
     data = self.data
 
     i = self.begin
@@ -107,11 +107,10 @@ class Box(object):
       data[i] = data[j]
       data[j] = tmp
 
-    assert i == j
+    boxL = Box(self.data, self.begin, i + 1)
+    boxR = Box(self.data, i + 1, self.end, average=(self.average - boxL.average))
 
-    return (axis, median,
-            Box(self.data, self.begin, i + 1),
-            Box(self.data, i + 1, self.end))
+    return (axis, median, boxL, boxR)
 
 
 class KDNode(object):
@@ -137,7 +136,7 @@ class KDNode(object):
   def Search(self, color):
     def Recurse(node):
       if node.isLeaf:
-        diff = color - node.box.average
+        diff = color - node.box.color
         return node.number, diff, sqrt(len(diff))
 
       side = int(color[node.axis] >= node.median)
@@ -218,12 +217,12 @@ def Quantize(inputPath, outputPath, colors=256, dithering=False):
     heappush(leaves, leaf.left)
     heappush(leaves, leaf.right)
 
-  leaves = sorted(leaves, key=lambda l: sum(l.box.average))
+  leaves = sorted(leaves, key=lambda l: sum(l.box.color))
 
   for number, leaf in enumerate(leaves):
     leaf.number = number
 
-  candidates = [leaf.box.average for leaf in leaves]
+  candidates = [leaf.box.color for leaf in leaves]
 
   logging.info('Quantizing colors (%s dithering) in the original image.',
                ('without', 'with')[dithering])
