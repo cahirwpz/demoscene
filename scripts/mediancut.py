@@ -107,30 +107,39 @@ class KDNode(object):
     self.box = None
 
   def Search(self, color):
-    def Recurse(node):
-      if node.box:
-        avg = node.box.color
-        r, g, b = color[0] - avg.r, color[1] - avg.g, color[2] - avg.b
-        return node.number, Color(r, g, b), sqrt(r*r + g*g + b*b)
+    if self.box:
+      avg = self.box.color
+      r, g, b = color[0] - avg.r, color[1] - avg.g, color[2] - avg.b
+      return self, Color(r, g, b), sqrt(r*r + g*g + b*b)
 
-      dist = color[node.axis] - node.median
+    dist = color[self.axis] - self.median
 
-      if dist < 0:
-        child, alt_child = node.left, node.right
-      else:
-        child, alt_child = node.right, node.left
+    if dist < 0:
+      child, alt_child = self.left, self.right
+    else:
+      child, alt_child = self.right, self.left
 
-      n, diff, error = Recurse(child)
+    node, diff, error = child.Search(color)
 
-      if error > abs(dist):
-        alt_n, alt_diff, alt_error = Recurse(alt_child)
+    if error > abs(dist):
+      alt_node, alt_diff, alt_error = alt_child.Search(color)
 
-        if alt_error < error:
-          n, diff, error = alt_n, alt_diff, alt_error
+      if alt_error < error:
+        node, diff, error = alt_node, alt_diff, alt_error
 
-      return n, diff, error
+    return node, diff, error
 
-    return Recurse(self)
+
+def SplitKDTree(kdtree, leavesNum):
+  leaves = [kdtree]
+
+  while len(leaves) < leavesNum:
+    leaf = heappop(leaves)
+    leaf.Split()
+    heappush(leaves, leaf.left)
+    heappush(leaves, leaf.right)
+
+  return sorted(leaves, key=lambda l: sum(l.box.color))
 
 
 def AddErrorAndClamp(pixel, error, coeff):
@@ -177,9 +186,9 @@ def QuantizeImage(image, kdtree, dithering):
 
   for y in range(height):
     for x in range(width):
-      n, diff, error = kdtree.Search(pixels[x, y])
+      node, diff, error = kdtree.Search(pixels[x, y])
       errors += error
-      quantized[x, y] = n
+      quantized[x, y] = node.number
 
       if dithering:
         FloydSteinberg(pixels, (x, y), image.size, diff)
@@ -196,28 +205,22 @@ def Quantize(inputPath, outputPath, colors=256, dithering=False):
 
   logging.info('Quantizing colorspace using median-cut algorithm.')
 
-  data = [Color(r, g, b) for r, g, b in image.getdata()]
-  kdtree = KDNode(Box(data, 0, len(data)))
-  leaves = [kdtree]
+  pixels = [Color(r, g, b) for r, g, b in image.getdata()]
+  space = Box(pixels, 0, len(pixels))
+  kdtree = KDNode(space)
+  leaves = SplitKDTree(kdtree, colors)
 
-  while len(leaves) < colors:
-    leaf = heappop(leaves)
-    leaf.Split()
-    heappush(leaves, leaf.left)
-    heappush(leaves, leaf.right)
-
-  leaves = sorted(leaves, key=lambda l: sum(l.box.color))
+  palette = []
 
   for number, leaf in enumerate(leaves):
     leaf.number = number
-
-  candidates = [leaf.box.color for leaf in leaves]
+    palette.extend(leaf.box.color)
 
   logging.info('Remapping colors (%s dithering) from the original image.',
                ('without', 'with')[dithering])
 
   output = QuantizeImage(image, kdtree, dithering)
-  output.putpalette(reduce(lambda x, y: x + y, map(list, candidates)))
+  output.putpalette(palette)
 
   logging.info('Saving quantized image to: "%s".', outputPath)
 
