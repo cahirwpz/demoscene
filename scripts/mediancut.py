@@ -13,26 +13,8 @@ from PIL import Image
 class Color(namedtuple('Color', 'r g b')):
   __slots__ = ()
 
-  def Clamp(self):
-    r, g, b = self.r, self.g, self.b
-
-    if r < 0:   r = 0
-    if r > 255: r = 255
-    if g < 0:   g = 0
-    if g > 255: g = 255
-    if b < 0:   b = 0
-    if b > 255: b = 255
-
-    return Color(r, g, b)
-
-  def __add__(self, other):
-    return Color(self.r + other.r, self.g + other.g, self.b + other.b)
-
   def __sub__(self, other):
     return Color(self.r - other.r, self.g - other.g, self.b - other.b)
-
-  def __mul__(self, s):
-    return Color(self.r * s, self.g * s, self.b * s) 
 
   def __div__(self, s):
     hs = s >> 1
@@ -75,11 +57,10 @@ class Box(object):
     avg = self.color
 
     for pixel in self.data[self.begin:self.end]:
-      d = pixel - avg
-      dr, dg, db = d.r * d.r, d.g * d.g, d.b * d.b
-      r += dr
-      g += dg
-      b += db
+      dr, dg, db = pixel.r - avg.r, pixel.g - avg.g, pixel.b - avg.b
+      r += dr * dr
+      g += dg * dg
+      b += db * db
 
     return Color(r, g, b)
 
@@ -102,7 +83,9 @@ class Box(object):
       data[j] = tmp
 
     boxL = Box(self.data, self.begin, i + 1)
-    boxR = Box(self.data, i + 1, self.end, average=(self.average - boxL.average))
+
+    averageR = self.average - boxL.average
+    boxR = Box(self.data, i + 1, self.end, averageR)
 
     return (axis, median, boxL, boxR)
 
@@ -150,21 +133,38 @@ class KDNode(object):
     return Recurse(self)
 
 
-def FloydSteinberg(pixels, pos, size, diff):
+def AddErrorAndClamp(pixel, error, coeff):
+  r, g, b = pixel
+
+  r += (error.r * coeff + 7) / 16
+  g += (error.g * coeff + 7) / 16
+  b += (error.b * coeff + 7) / 16
+
+  if r < 0:   r = 0
+  if r > 255: r = 255
+  if g < 0:   g = 0
+  if g > 255: g = 255
+  if b < 0:   b = 0
+  if b > 255: b = 255
+
+  return r, g, b
+
+
+def FloydSteinberg(pixels, pos, size, error):
   x, y = pos
   width, height = size
 
   if x < width - 1:
-    pixels[x+1, y] = (Color(*pixels[x+1, y]) + diff * 7 / 16).Clamp()
+    pixels[x+1, y] = AddErrorAndClamp(pixels[x+1, y], error, 7)
 
   if y < height - 1:
     if x > 0:
-      pixels[x-1, y+1] = (Color(*pixels[x-1, y+1]) + diff * 3 / 16).Clamp()
+      pixels[x-1, y+1] = AddErrorAndClamp(pixels[x-1, y+1], error, 3)
 
-    pixels[x, y+1] = (Color(*pixels[x, y+1]) + diff * 5 / 16).Clamp()
+    pixels[x, y+1] = AddErrorAndClamp(pixels[x, y+1], error, 5)
 
     if x < width - 1:
-      pixels[x+1, y+1] = (Color(*pixels[x+1, y+1]) + diff / 16).Clamp()
+      pixels[x+1, y+1] = AddErrorAndClamp(pixels[x+1, y+1], error, 1)
 
 
 def QuantizeImage(image, kdtree, dithering):
