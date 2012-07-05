@@ -130,8 +130,8 @@ class KDNode(object):
     return node, diff, error
 
 
-def Luminosity709(color):
-  return 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b
+def LumaCCIR601(color):
+  return 0.299 * color.r + 0.587 * color.g + 0.114 * color.b
 
 
 def SplitKDTree(kdtree, leavesNum):
@@ -143,7 +143,7 @@ def SplitKDTree(kdtree, leavesNum):
     heappush(leaves, leaf.left)
     heappush(leaves, leaf.right)
 
-  return sorted(leaves, key=lambda l: Luminosity709(l.box.color))
+  return sorted(leaves, key=lambda l: LumaCCIR601(l.box.color))
 
 
 def AddErrorAndClamp(pixel, error, coeff):
