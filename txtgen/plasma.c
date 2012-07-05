@@ -3,7 +3,7 @@
 #include "std/memory.h"
 #include "gfx/pixbuf.h"
 
-static int *CreateSinTable(int n, int sines, int phase) {
+static int *CreateSinTable(int n asm("d0"), int sines asm("d1"), int phase asm("d2")) {
   int *table = NewTable(int, n);
   float c = M_PI * sines / n;
   int i;
