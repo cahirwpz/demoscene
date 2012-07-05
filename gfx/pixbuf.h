@@ -15,4 +15,9 @@ PixBufT *NewPixBufFromFile(const StrT fileName);
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
 
+void PutPixel(PixBufT *pixbuf asm("a0"),
+              size_t x asm("d1"), size_t y asm("d2"), uint32_t c asm("d0"));
+uint32_t GetPixel(PixBufT *pixbuf asm("a0"),
+                  size_t x asm("d1"), size_t y asm("d2"));
+
 #endif
