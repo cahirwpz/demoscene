@@ -28,6 +28,10 @@ typedef unsigned short uint16_t;
 typedef unsigned long uint32_t;
 #endif
 
+#ifndef AMIGA
+#define asm(a)
+#endif
+
 #define abs(a) ((a) > 0 ? (a) : -(a))
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #define min(a,b) ((a) < (b) ? (a) : (b))
