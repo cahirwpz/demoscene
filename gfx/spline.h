@@ -3,8 +3,29 @@
 
 #include "std/types.h"
 
-float HermiteCubicPolynomial(float t asm("fp0"),
-                             float p0 asm("fp1"), float p1 asm("fp2"),
-                             float m0 asm("fp3"), float m1 asm("fp4"));
+typedef struct SplineKnot {
+  float value;
+  float tangent;
+} SplineKnotT;
+
+typedef struct Spline {
+  size_t knots;
+  SplineKnotT knot[0];
+} SplineT;
+
+SplineT *NewSpline(size_t knots);
+
+typedef struct SplineEval SplineEvalT;
+
+SplineEvalT *NewSplineEval(SplineT *spline);
+bool SplineEvalMoveTo(SplineEvalT *eval, ssize_t point);
+bool SplineEvalAt(SplineEvalT *eval, float step, float *value);
+bool SplineEvalStepBy(SplineEvalT *eval, float step, float *value);
+
+typedef struct SplineIter SplineIterT;
+
+SplineIterT *NewSplineIter(SplineT *spline, size_t steps);
+void SplineIterReset(SplineIterT *iter);
+bool SplineIterNext(SplineIterT *iter, float *value);
 
 #endif
