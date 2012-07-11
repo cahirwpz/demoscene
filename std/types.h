@@ -49,7 +49,7 @@ typedef void (*FreeFuncT)(PtrT);
 typedef bool (*InitFuncT)(PtrT);
 
 /**
- * @brief Type of copy function.
+ * @brief Type of a copy function.
  *
  * @param dst Destination for the copy.
  * @param src Memory fragment to be copied.
@@ -59,7 +59,7 @@ typedef bool (*InitFuncT)(PtrT);
 typedef void *(*CopyFuncT)(void *dst, const void *src, size_t size);
 
 /**
- * @brief Type of iterator function.
+ * @brief Type of an iterator function.
  *
  * @param item  Element of iterable data structure.
  * @param data	Auxiliary data that can be used during iteration.
@@ -67,12 +67,21 @@ typedef void *(*CopyFuncT)(void *dst, const void *src, size_t size);
 typedef void (*IterFuncT)(PtrT item, PtrT data);
 
 /**
- * @brief Type of comparison function.
+ * @brief Type of a comparison function.
  *
  * @param lhs Value representing left-hand side of comparison.
  * @param rhs Value representing right-hand side of comparison.
  * @result CmpT value that depends on comparison result.
  */
 typedef CmpT (*CompareFuncT)(const PtrT lhs, const PtrT rhs);
+
+/**
+ * @brief Type of an array's item setting function
+ *
+ * @param array Array of arbitrary elements.
+ * @param index Number of an element in aforementioned array.
+ * @param value A pointer to value to be written into the element.
+ */
+typedef void (*SetItemFuncT)(PtrT array, size_t index, PtrT value);
 
 #endif
