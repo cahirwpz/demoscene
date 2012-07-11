@@ -58,7 +58,7 @@ static void HermiteCubicPolynomial(float t asm("fp0"),
  * Spline implementation.
  */
 
-SplineT *NewSpline(size_t knots) {
+SplineT *NewSpline(size_t knots, bool cyclic) {
   size_t size = sizeof(SplineT) + sizeof(SplineKnotT) * knots;
   SplineT *spline = (SplineT *)MemNew0(size, NULL);
 
@@ -76,6 +76,25 @@ static float SplineEvalUnsafe(SplineT *spline, float t, size_t knot) {
 
   return poly.h00 * p0->value + poly.h10 * p0->tangent +
          poly.h01 * p1->value + poly.h11 * p1->tangent;
+}
+
+void SplineInterpolate(SplineT *spline, size_t steps, PtrT array, SetItemFuncT writer) {
+  float stride = (float)spline->knots / steps;
+  size_t step, knot;
+  float t;
+
+  for (step = 0, knot = 0, t = 0.0f; step < steps; step++) {
+    float value = SplineEvalUnsafe(spline, t, knot);
+
+    writer(array, step, &value);
+
+    t += stride;
+
+    while (t >= 1.0f) {
+      t -= 1.0f;
+      knot++;
+    }
+  }
 }
 
 /*
@@ -146,83 +165,6 @@ bool SplineEvalStepBy(SplineEvalT *eval, float value, float *result) {
   eval->t = nt;
 
   *result = SplineEvalUnsafe(eval->spline, nt, eval->p);
-
-  return TRUE;
-}
-
-/*
- * Spline iterator implementation.
- */
-
-struct SplineIter {
-  SplineT *spline;
-  size_t steps;    /* steps per unit interval */
-
-  /* cached values */
-  float step;
-  CubicPolynomialT *polyCache;
-
-  /* internal state */
-  size_t i; /* i-th step between two points */
-  size_t p; /* current point */
-  float t;  /* Hermite's polynomial parameter */
-};
-
-static void DeleteSplineIter(SplineIterT *iter) {
-  MemUnref(iter->spline);
-  MemUnref(iter->polyCache);
-}
-
-SplineIterT *NewSplineIter(SplineT *spline, size_t steps) {
-  SplineIterT *iter = NewRecordGC(SplineIterT, (FreeFuncT)DeleteSplineIter);
-
-  iter->spline = spline;
-  iter->steps = steps;
-
-  SplineIterReset(iter);
-
-  if (steps > 1) {
-    size_t i;
-
-    iter->step = 1.0f / iter->steps;
-    iter->polyCache = NewTable(CubicPolynomialT, iter->steps);
-
-    for (i = 0; i < iter->steps; i++)
-      HermiteCubicPolynomial(iter->step * i, &iter->polyCache[i]);
-  }
-
-  return iter;
-}
-
-void SplineIterReset(SplineIterT *iter) {
-  iter->i = 0;
-  iter->t = 0;
-  iter->p = 0;
-}
-
-static float SplineIterEval(SplineIterT *iter) {
-  CubicPolynomialT *poly = &iter->polyCache[iter->i];
-  SplineKnotT *p0 = &iter->spline->knot[iter->p];
-  SplineKnotT *p1 = &iter->spline->knot[iter->p + 1];
-
-  return poly->h00 * p0->value + poly->h10 * p0->tangent +
-         poly->h01 * p1->value + poly->h11 * p1->tangent;
-}
-
-bool SplineIterNext(SplineIterT *iter, float *result) {
-  if (iter->p >= iter->spline->knots)
-    return FALSE;
-
-  *result = SplineIterEval(iter);
-
-  iter->t += iter->step;
-  iter->i++;
-
-  if (iter->i == iter->steps) {
-    iter->i = 0;
-    iter->t = 0;
-    iter->p++;
-  }
 
   return TRUE;
 }
