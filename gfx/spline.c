@@ -1,4 +1,5 @@
-#include <math.h>
+#include "std/debug.h"
+#include "std/math.h"
 #include "std/memory.h"
 #include "gfx/spline.h"
 
@@ -58,18 +59,35 @@ static void HermiteCubicPolynomial(float t asm("fp0"),
  * Spline implementation.
  */
 
-SplineT *NewSpline(size_t knots, bool cyclic) {
-  size_t size = sizeof(SplineT) + sizeof(SplineKnotT) * knots;
+SplineT *NewSpline(size_t knots, bool closed) {
+  size_t size = sizeof(SplineT) + sizeof(SplineKnotT) * knots; 
   SplineT *spline = (SplineT *)MemNew0(size, NULL);
 
   spline->knots = knots;
+  spline->closed = closed;
 
   return spline;
 }
 
-static float SplineEvalUnsafe(SplineT *spline, float t, size_t knot) {
-  SplineKnotT *p0 = &spline->knot[knot];
-  SplineKnotT *p1 = &spline->knot[knot + 1];
+static SplineKnotT *SplineGetKnot(SplineT *spline asm("a0"), size_t knot asm("d0")) {
+  if (knot < 0) {
+    knot = spline->closed ? (knot + spline->knots) : 0;
+  } else if (knot >= spline->knots) {
+    knot = spline->closed ? (knot - spline->knots) : spline->knots - 1;
+  }
+
+  ASSERT((knot >= 0) && (knot < spline->knots), "Knot number (%d) out of range.", (int)knot);
+
+  return &spline->knot[knot];
+}
+
+static size_t SplineKnots(SplineT *spline asm("a0")) {
+  return spline->knots + spline->closed ? 1 : 0;
+}
+
+static float SplineEvalWithinInterval(SplineT *spline asm("a0"), float t asm("fp0"), size_t knot asm("d0")) {
+  SplineKnotT *p0 = SplineGetKnot(spline, knot);
+  SplineKnotT *p1 = SplineGetKnot(spline, knot + 1);
   CubicPolynomialT poly;
 
   HermiteCubicPolynomial(t, &poly);
@@ -78,93 +96,36 @@ static float SplineEvalUnsafe(SplineT *spline, float t, size_t knot) {
          poly.h01 * p1->value + poly.h11 * p1->tangent;
 }
 
+float SplineEval(SplineT *spline asm("a0"), float t asm("fp0")) {
+  float interval = truncf(t * (int)SplineKnots(spline));
+
+  return SplineEvalWithinInterval(spline, t - interval, lroundf(interval));
+}
+
 void SplineInterpolate(SplineT *spline, size_t steps, PtrT array, SetItemFuncT writer) {
-  float stride = (float)spline->knots / steps;
+  float t, value, stride, knotf;
   size_t step, knot;
-  float t;
+
+  stride = (float)(int)SplineKnots(spline) / (int)steps;
 
   for (step = 0, knot = 0, t = 0.0f; step < steps; step++) {
-    float value = SplineEvalUnsafe(spline, t, knot);
+    value = SplineEvalWithinInterval(spline, t, knot);
 
     writer(array, step, &value);
 
-    t += stride;
-
-    while (t >= 1.0f) {
-      t -= 1.0f;
-      knot++;
-    }
+    t = modff(t + stride, &knotf);
+    knot += lroundf(knotf);
   }
 }
 
-/*
- * Spline evaluator implementation.
- */
+void SplineAttachCatmullRomTangents(SplineT *spline) {
+  size_t knot;
 
-struct SplineEval {
-  SplineT *spline;
+  for (knot = 0; knot < spline->knots; knot++) {
+    SplineKnotT *pA = SplineGetKnot(spline, knot - 1);
+    SplineKnotT *pB = SplineGetKnot(spline, knot);
+    SplineKnotT *pC = SplineGetKnot(spline, knot + 1);
 
-  /* internal state */
-  size_t p; /* current point */
-  float t;  /* Hermite's polynomial parameter */
-};
-
-static void DeleteSplineEval(SplineEvalT *eval) {
-  MemUnref(eval->spline);
-}
-
-SplineEvalT *NewSplineEval(SplineT *spline) {
-  SplineEvalT *iter = NewRecordGC(SplineEvalT, (FreeFuncT)DeleteSplineEval);
-
-  iter->spline = spline;
-  iter->p = 0;
-  iter->t = 0.0f;
-
-  return iter;
-}
-
-bool SplineEvalMoveTo(SplineEvalT *eval, ssize_t knot) {
-  size_t knots = eval->spline->knots - 1;
-
-  if ((knot < -knots) || (knot >= knots))
-    return FALSE;
-
-  if (knot < 0)
-    knot += knots;
-
-  eval->p = knot;
-  eval->t = 0.0f;
-
-  return TRUE;
-}
-
-bool SplineEvalAt(SplineEvalT *eval, float value, float *result) {
-  size_t p = eval->p;
-  float t = eval->t;
-
-  bool success = SplineEvalStepBy(eval, value - (t + (float)p), result);
-
-  eval->p = p;
-  eval->t = t;
-
-  return success;
-}
-
-bool SplineEvalStepBy(SplineEvalT *eval, float value, float *result) {
-  float nt = eval->t + value;
-
-  if ((nt >= 1.0f) || (nt < 0.0f)) {
-    float nt_int = floor(nt);
-
-    nt -= nt_int;
-
-    if (!SplineEvalMoveTo(eval, eval->p + (int)nt_int))
-      return FALSE;
+    pB->tangent = 0.5f * (pA->value + pC->value);
   }
-
-  eval->t = nt;
-
-  *result = SplineEvalUnsafe(eval->spline, nt, eval->p);
-
-  return TRUE;
 }

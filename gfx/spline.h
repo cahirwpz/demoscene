@@ -10,23 +10,13 @@ typedef struct SplineKnot {
 
 typedef struct Spline {
   size_t knots;
+  bool closed;
   SplineKnotT knot[0];
 } SplineT;
 
 SplineT *NewSpline(size_t knots, bool closed);
-void SplineAttachCatmullRomTangents(SplineT *spline);
+float SplineEval(SplineT *spline asm("a0"), float t asm("fp0"));
 void SplineInterpolate(SplineT *spline, size_t steps, PtrT array, SetItemFuncT writer);
-
-typedef struct SplineEval SplineEvalT;
-
-SplineEvalT *NewSplineEval(SplineT *spline);
-bool SplineEvalMoveTo(SplineEvalT *eval, ssize_t point);
-bool SplineEvalAt(SplineEvalT *eval, float value, float *result);
-bool SplineEvalStepBy(SplineEvalT *eval, float value, float *result);
-
-/*
- * TODO:
- *  - automatic tangent calculation
- */
+void SplineAttachCatmullRomTangents(SplineT *spline);
 
 #endif
