@@ -9,5 +9,6 @@ typedef struct Random {
 } RandomT;
 
 int NextRandom(RandomT *random asm("a0"));
+float NextRandomFloat(RandomT *random asm("a0"), float lo asm("fp0"), float hi asm("fp1"));
 
 #endif
