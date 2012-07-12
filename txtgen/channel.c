@@ -1,44 +1,4 @@
-#include "gfx/colors.h"
-#include "gfx/pixbuf.h"
 #include "txtgen/txtgen.h"
-
-struct Channel {
-  PixBufT *pixbuf;
-  ComponentT component;
-
-  /* private */
-  size_t offset;
-};
-
-void ChannelSetActiveComponent(ChannelT *channel, ComponentT component) {
-  channel->component = component;
-
-  switch (component) {
-    case COMPONENT_R:
-      channel->offset = offsetof(ColorT, r);
-      break;
-    case COMPONENT_G:
-      channel->offset = offsetof(ColorT, g);
-      break;
-    case COMPONENT_B:
-      channel->offset = offsetof(ColorT, b);
-      break;
-  }
-}
-
-static size_t GetSample(ChannelT *channel, size_t index) {
-  uint32_t *data = (uint32_t *)&channel->pixbuf->data[channel->offset];
-  return *((uint8_t *)&data[index]);
-}
-
-static void SetSample(ChannelT *channel, size_t index, size_t value) {
-  uint32_t *data = (uint32_t *)&channel->pixbuf->data[channel->offset];
-  *((uint8_t *)&data[index]) = value;
-}
-
-static size_t GetChannelSize(ChannelT *channel) {
-  return channel->pixbuf->width * channel->pixbuf->height;
-}
 
 void ChannelClear(ChannelT *D, uint8_t value) {
   size_t size = GetChannelSize(D);
