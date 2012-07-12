@@ -2,16 +2,14 @@ TOPDIR = $(CURDIR)/..
 
 include $(TOPDIR)/Makefile.common
 
-OBJS = blit.o canvas.o colors.o convolution2d.o ellipse.o hsl.o line.o \
-       matrix2d.o matrix3d.o ms2d.o ms3d.o palette.o pixbuf.o procedural.o \
-       spline.o triangle.o vector3d.o
+OBJS = blit.o canvas.o colors.o ellipse.o hsl.o line.o matrix2d.o matrix3d.o \
+			 ms2d.o ms3d.o palette.o pixbuf.o procedural.o spline.o triangle.o vector3d.o
 
 libgfx.a: $(OBJS)
 
 blit.o: blit.c blit.h pixbuf.h
 canvas.o: canvas.c canvas.h
 colors.o: colors.c colors.h
-convolution2d.o: convolution2d.c convolution2d.h pixbuf.h
 ellipse.o: ellipse.c ellipse.h canvas.h
 hsl.o: hsl.c hsl.h
 	$(CC) $(CFLAGS) -O0 -c -o $@ $<

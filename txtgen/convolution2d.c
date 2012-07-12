@@ -1,5 +1,5 @@
 #include "std/debug.h"
-#include "gfx/convolution2d.h"
+#include "txtgen/convolution2d.h"
 
 static inline void ClampAndPutPixel(PixBufT *dst, size_t x, size_t y, int32_t value) {
   if (value < 0)
