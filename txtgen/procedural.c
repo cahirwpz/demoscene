@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "gfx/procedural.h"
+#include "txtgen/procedural.h"
 
 static float DistanceFromCenter(PixBufT *pixbuf, size_t x, size_t y, float radius) {
   float radiusX = (int)pixbuf->width / 2;
