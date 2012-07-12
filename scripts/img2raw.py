@@ -7,6 +7,10 @@ import argparse
 import struct
 import os
 
+IMG_GRAY  = 0
+IMG_CLUT  = 1
+IMG_RGB24 = 2
+
 def main():
   parser = argparse.ArgumentParser(
       description='Converts input image to raw image and palette data.')
@@ -29,42 +33,46 @@ def main():
   except IOError as ex:
     raise SystemExit('Error: %s.' % ex)
 
-  if image.mode not in ['P', 'RGB']:
+  imgTypeMap = {'L' : IMG_GRAY, 'P' : IMG_CLUT, 'RGB' : IMG_RGB24}
+  imgType = imgTypeMap.get(image.mode, None)
+
+  if not imgType:
     raise SystemExit('Unknown color space: %s.' % image.mode)
 
-  if image.mode == 'P':
-    rawFilePath = '%s.8' % outputPath
+  if imgType is IMG_CLUT:
     palFilePath = '%s.pal' % outputPath
-
-    if any(map(os.path.isfile, [rawFilePath, palFilePath])) and not args.force:
-      raise SystemExit('Will not overwrite output files!')
-
     uniqueColors = len(image.getcolors())
-    width, height = image.size
+
+    if os.path.isfile(palFilePath) and not args.force:
+      raise SystemExit('Will not overwrite output file!')
 
     with open(palFilePath, 'w') as palFile:
       pal = array('B', image.getpalette()[:3*uniqueColors])
       palFile.write(struct.pack('>H', uniqueColors))
       palFile.write(pal.tostring())
 
-    with open(rawFilePath, 'w') as rawFile:
-      data = array('B', image.getdata())
-      rawFile.write(struct.pack('>HHH', width, height, uniqueColors))
-      rawFile.write(data.tostring())
-  else:
+  data = array('B')
+
+  if imgType is IMG_RGB24:
     rawFilePath = '%s.24' % outputPath
+    uniqueColors = len(set(image.getdata()))
 
-    if os.path.isfile(rawFilePath) and not args.force:
-      raise SystemExit('Will not overwrite output file!')
+    for rgb in image.getdata():
+      data.extend(rgb)
+  else:
+    rawFilePath = '%s.8' % outputPath
+    uniqueColors = len(image.getcolors())
 
-    with open(rawFilePath, 'w') as rawFile:
-      data = array('B')
+    data.extend(image.getdata())
 
-      for rgb in image.getdata():
-        data.extend(rgb)
+  width, height = image.size
 
-      rawFile.write(struct.pack('>HH', *image.size))
-      rawFile.write(data.tostring())
+  if os.path.isfile(rawFilePath) and not args.force:
+    raise SystemExit('Will not overwrite output file!')
+
+  with open(rawFilePath, 'w') as rawFile:
+    rawFile.write(struct.pack('>HHHI', imgType, width, height, uniqueColors))
+    rawFile.write(data.tostring())
 
 if __name__ == '__main__':
   main()

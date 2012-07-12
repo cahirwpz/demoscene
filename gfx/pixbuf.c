@@ -12,6 +12,7 @@ static void DeletePixBuf(PixBufT *pixbuf) {
 PixBufT *NewPixBuf(size_t width, size_t height) {
   PixBufT *pixbuf = NewRecordGC(PixBufT, (FreeFuncT)DeletePixBuf);
 
+  pixbuf->type = PIXBUF_CLUT;
   pixbuf->width = width;
   pixbuf->height = height;
   pixbuf->baseColor = 0;
@@ -21,23 +22,29 @@ PixBufT *NewPixBuf(size_t width, size_t height) {
   return pixbuf;
 }
 
+typedef struct DiskPixBuf {
+  uint16_t type;
+  uint16_t width;
+  uint16_t height;
+  uint32_t colors;
+  uint8_t  data[0];
+} DiskPixBufT;
+
 PixBufT *NewPixBufFromFile(const StrT fileName) {
-  uint16_t *data = ReadFileSimple(fileName);
+  DiskPixBufT *file = (DiskPixBufT *)ReadFileSimple(fileName);
 
-  if (data) {
-    uint16_t width = data[0];
-    uint16_t height = data[1];
-    uint16_t colors = data[2];
+  if (file) {
+    PixBufT *pixbuf = NewPixBuf(file->width, file->height);
 
-    PixBufT *pixbuf = NewPixBuf(width, height);
+    pixbuf->type = file->type;
+    pixbuf->colors = file->colors;
 
-    pixbuf->colors = colors;
-    memcpy(pixbuf->data, &data[3], width * height);
+    memcpy(pixbuf->data, file->data, file->width * file->height);
 
     LOG("Image '%s' has size (%d,%d) and %d colors.",
-        fileName, width, height, colors);
+        fileName, (int)file->width, (int)file->height, (int)file->colors);
 
-    MemUnref(data);
+    MemUnref(file);
 
     return pixbuf;
   }
@@ -46,9 +53,11 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
 }
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {
+  ASSERT(pixbuf->type == PIXBUF_CLUT, "Cannot remap non-CLUT image!");
+
   if (palette->count != pixbuf->colors) {
-    LOG("PixBuf color number doesn't match palette (%d != %ld).",
-        pixbuf->colors, palette->count);
+    LOG("PixBuf color number doesn't match palette (%d != %d).",
+        (int)pixbuf->colors, (int)palette->count);
   } else {
     int color = palette->start - pixbuf->baseColor;
     int i;
@@ -60,18 +69,34 @@ void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {
   }
 }
 
-void PutPixel(PixBufT *pixbuf asm("a0"),
-              size_t x asm("d1"), size_t y asm("d2"), uint32_t c asm("d0"))
-{
-  ASSERT(x < pixbuf->width, "x out of bound");
-  ASSERT(y < pixbuf->height, "y out of bound");
-  pixbuf->data[x + pixbuf->width * y] = c;
+static const size_t inline GetPixelIndex(PixBufT *pixbuf, ssize_t x, ssize_t y) {
+  ASSERT((x >= 0) && (x < pixbuf->width), "x (%d) out of bound!", x);
+  ASSERT((y >= 0) && (y < pixbuf->height), "y (%d) out of bound!", y);
+  return x + pixbuf->width * y;
 }
 
-uint32_t GetPixel(PixBufT *pixbuf asm("a0"),
-                  size_t x asm("d1"), size_t y asm("d2"))
+void PutPixel(PixBufT *pixbuf asm("a0"),
+              ssize_t x asm("a1"), ssize_t y asm("d1"), uint8_t c asm("d0"))
 {
-  ASSERT(x < pixbuf->width, "x out of bound");
-  ASSERT(y < pixbuf->height, "y out of bound");
-  return pixbuf->data[x + pixbuf->width * y];
+  size_t index = GetPixelIndex(pixbuf, x, y);
+  pixbuf->data[index] = c;
+}
+
+uint8_t GetPixel(PixBufT *pixbuf asm("a0"),
+                 ssize_t x asm("d0"), ssize_t y asm("d1"))
+{
+  return pixbuf->data[GetPixelIndex(pixbuf, x, y)];
+}
+
+void PutPixelRGB(PixBufT *pixbuf asm("a0"),
+                 ssize_t x asm("a1"), ssize_t y asm("d1"), ColorT c asm("d0"))
+{
+  size_t index = GetPixelIndex(pixbuf, x, y);
+  ((uint32_t *)pixbuf->data)[index] = *(uint32_t *)&c;
+}
+
+ColorT GetPixelRGB(PixBufT *pixbuf asm("a0"),
+                   ssize_t x asm("d0"), ssize_t y asm("d1"))
+{
+  return *(ColorT *)&pixbuf->data[GetPixelIndex(pixbuf, x, y)];
 }
