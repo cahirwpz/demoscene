@@ -2,7 +2,7 @@
 #define __GFX_PALETTE_H__
 
 #include "std/types.h"
-#include "gfx/common.h"
+#include "gfx/colors.h"
 
 typedef struct Palette {
   ColorT *colors;
