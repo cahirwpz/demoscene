@@ -92,7 +92,7 @@ void ChannelShade(ChannelT *D, ChannelT *A, ChannelT *B) {
     }
 
     SetSample(D, i, value);
-	}
+  }
 }
 
 void ChannelMixWithMap(ChannelT *D, ChannelT *A, ChannelT *B, ChannelT *C) {
@@ -105,5 +105,5 @@ void ChannelMixWithMap(ChannelT *D, ChannelT *A, ChannelT *B, ChannelT *C) {
                    ((GetSample(B, i) * (255 - percent)) >> 8);
 
     SetSample(D, i, value);
-	}
+  }
 }
