@@ -44,12 +44,6 @@ typedef enum {
 } TxtGenOpT;
 
 typedef enum {COMPONENT_R, COMPONENT_G, COMPONENT_B} ComponentT;
-typedef struct Channel ChannelT;
-
-size_t GetSample(ChannelT *channel asm("a0"), size_t index asm("d0"));
-void SetSample(ChannelT *channel asm("a0"), size_t index asm("d0"), size_t value asm("d1"));
-size_t GetChannelSize(ChannelT *channel asm("a0"));
-void ChannelSetActiveComponent(ChannelT *channel, ComponentT component);
 
 void ChannelClear(PixBufT *dst asm("a0"), uint8_t value asm("d0"));
 void ChannelAdd(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
