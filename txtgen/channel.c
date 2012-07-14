@@ -1,109 +1,113 @@
 #include "txtgen/txtgen.h"
 
-void ChannelClear(ChannelT *D, uint8_t value) {
-  size_t size = GetChannelSize(D);
+void ChannelClear(PixBufT *dst asm("a0"), uint8_t value asm("d0")) {
+  memset(dst->data, value, dst->width * dst->height);
+}
+
+void ChannelAdd(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                PixBufT *src2 asm("a2"))
+{
+  uint8_t *a = src1->data;
+  uint8_t *b = src2->data;
+  uint8_t *d = dst->data;
+  size_t size = dst->width * dst->height;
+  size_t i;
+
+  for (i = 0; i < size; i++) {
+    d[i] = min(a[i] + b[i], 255);
+  }
+}
+
+void ChannelMul(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                PixBufT *src2 asm("a2"))
+{
+  uint8_t *a = src1->data;
+  uint8_t *b = src2->data;
+  uint8_t *d = dst->data;
+  size_t size = dst->width * dst->height;
   size_t i;
 
   for (i = 0; i < size; i++)
-    SetSample(D, i, value);
+    d[i] = (a[i] * b[i]) >> 8;
 }
 
-void ChannelAdd(ChannelT *D, ChannelT *A, ChannelT *B) {
-  size_t size = GetChannelSize(D);
-  size_t i;
-
-  for (i = 0; i < size; i++) {
-    size_t value = GetSample(A, i) + GetSample(B, i);
-
-    if (value > 255)
-      value = 255;
-
-    SetSample(D, i, value);
-  }
-}
-
-void ChannelMul(ChannelT *D, ChannelT *A, ChannelT *B) {
-  size_t size = GetChannelSize(D);
-  size_t i;
-
-  for (i = 0; i < size; i++) {
-    size_t value = (GetSample(A, i) * GetSample(B, i)) >> 8;
-
-    SetSample(D, i, value);
-  }
-}
-
-void ChannelMix(ChannelT *D, ChannelT *A, ChannelT *B, size_t percent) {
-  size_t size = GetChannelSize(D);
-  size_t i;
-
-  for (i = 0; i < size; i++) {
-    size_t value = ((GetSample(A, i) * percent) >> 8) +
-                   ((GetSample(B, i) * (256 - percent)) >> 8);
-
-    SetSample(D, i, value);
-  }
-}
-
-void ChannelCopy(ChannelT *D, ChannelT *A) {
-  size_t size = GetChannelSize(D);
+void ChannelMix(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                PixBufT *src2 asm("a2"), size_t percent asm("d0"))
+{
+  uint8_t *a = src1->data;
+  uint8_t *b = src2->data;
+  uint8_t *d = dst->data;
+  size_t size = dst->width * dst->height;
   size_t i;
 
   for (i = 0; i < size; i++)
-    SetSample(D, i, GetSample(A, i));
+    d[i] = ((a[i] * percent) >> 8) + ((b[i] * (256 - percent)) >> 8);
 }
 
-void ChannelSwap(ChannelT *D, ChannelT *A) {
-  size_t size = GetChannelSize(D);
+void ChannelCopy(PixBufT *dst asm("a0"), PixBufT *src asm("a1")) {
+  memcpy(dst->data, src->data, dst->width * dst->height);
+}
+
+void ChannelSwap(PixBufT *dst asm("a0"), PixBufT *src asm("a1")) {
+  uint8_t *a = src->data;
+  uint8_t *d = dst->data;
+  size_t size = dst->width * dst->height;
   size_t i;
+  uint8_t temp;
 
   for (i = 0; i < size; i++) {
-    size_t d = GetSample(D, i);
-    size_t a = GetSample(A, i);
-
-    SetSample(A, i, d);
-    SetSample(D, i, a);
+    temp = d[i];
+    d[i] = a[i];
+    a[i] = temp;
   }
 }
 
-void ChannelMax(ChannelT *D, ChannelT *A) {
-  size_t size = GetChannelSize(D);
+void ChannelMax(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                PixBufT *src2 asm("a2"))
+{
+  uint8_t *a = src1->data;
+  uint8_t *b = src2->data;
+  uint8_t *d = dst->data;
+  size_t size = dst->width * dst->height;
   size_t i;
 
-  for (i = 0; i < size; i++) {
-    size_t value = max(GetSample(D, i), GetSample(A, i));
-
-    SetSample(D, i, value);
-  }
+  for (i = 0; i < size; i++) 
+    d[i] = max(a[i], b[i]);
 }
 
-void ChannelShade(ChannelT *D, ChannelT *A, ChannelT *B) {
-  size_t size = GetChannelSize(D);
+void ChannelShade(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                  PixBufT *src2 asm("a2"))
+{
+  uint8_t *a = src1->data;
+  uint8_t *b = src2->data;
+  uint8_t *d = dst->data;
+  size_t size = dst->width * dst->height;
   size_t i;
 
   for (i = 0; i < size; i++) {
-    size_t shade = GetSample(A, i) * 2;
-    size_t value = GetSample(B, i);
+    size_t shade = a[i];
+    size_t value = b[i];
 
-    if (shade < 256) {
-      value = (value * shade) >> 8;
+    if (shade < 128) {
+      value = (value * shade) >> 7;
     } else {
-      value += (((255 - value) * (shade - 256)) >> 8);
+      value += (((255 - value) * (shade - 128)) >> 7);
     }
 
-    SetSample(D, i, value);
+    d[i] = value;
   }
 }
 
-void ChannelMixWithMap(ChannelT *D, ChannelT *A, ChannelT *B, ChannelT *C) {
-  size_t size = GetChannelSize(D);
+void ChannelMixWithMap(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                       PixBufT *src2 asm("a2"), PixBufT *map asm("a3"))
+{
+  uint8_t *a = src1->data;
+  uint8_t *b = src2->data;
+  uint8_t *m = map->data;
+  uint8_t *d = dst->data;
+  size_t size = dst->width * dst->height;
   size_t i;
 
-  for (i = 0; i < size; i++) {
-    size_t percent = GetSample(C, i);
-    size_t value = ((GetSample(A, i) * percent) >> 8) +
-                   ((GetSample(B, i) * (255 - percent)) >> 8);
-
-    SetSample(D, i, value);
-  }
+  for (i = 0; i < size; i++)
+    d[i] = ((a[i] * m[i]) >> 8) + ((b[i] * (255 - m[i])) >> 8);
 }

@@ -1,6 +1,7 @@
 #ifndef __TXTGEN_H__
 #define __TXTGEN_H__
 
+#include "std/types.h"
 #include "gfx/pixbuf.h"
 
 typedef enum {
@@ -50,14 +51,20 @@ void SetSample(ChannelT *channel asm("a0"), size_t index asm("d0"), size_t value
 size_t GetChannelSize(ChannelT *channel asm("a0"));
 void ChannelSetActiveComponent(ChannelT *channel, ComponentT component);
 
-void ChannelClear(ChannelT *D, uint8_t value);
-void ChannelAdd(ChannelT *D, ChannelT *A, ChannelT *B);
-void ChannelMul(ChannelT *D, ChannelT *A, ChannelT *B);
-void ChannelMix(ChannelT *D, ChannelT *A, ChannelT *B, size_t percent);
-void ChannelCopy(ChannelT *D, ChannelT *A);
-void ChannelSwap(ChannelT *D, ChannelT *A);
-void ChannelMax(ChannelT *D, ChannelT *A);
-void ChannelShade(ChannelT *D, ChannelT *A, ChannelT *B);
-void ChannelMixWithMap(ChannelT *D, ChannelT *A, ChannelT *B, ChannelT *C);
+void ChannelClear(PixBufT *dst asm("a0"), uint8_t value asm("d0"));
+void ChannelAdd(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                PixBufT *src2 asm("a2"));
+void ChannelMul(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                PixBufT *src2 asm("a2"));
+void ChannelMix(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                PixBufT *src2 asm("a2"), size_t percent asm("d0"));
+void ChannelCopy(PixBufT *dst asm("a0"), PixBufT *src asm("a1"));
+void ChannelSwap(PixBufT *dst asm("a0"), PixBufT *src asm("a1"));
+void ChannelMax(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                PixBufT *src2 asm("a2"));
+void ChannelShade(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                  PixBufT *src2 asm("a2"));
+void ChannelMixWithMap(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
+                       PixBufT *src2 asm("a2"), PixBufT *map asm("a3"));
 
 #endif
