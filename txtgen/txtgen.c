@@ -1,24 +1,26 @@
-#include "std/math.h"
 #include "std/debug.h"
 #include "gfx/colors.h"
 #include "gfx/pixbuf.h"
 #include "txtgen/txtgen.h"
 
-int GetFilteredPixel(PixBufT *pixbuf asm("d0"),
-                     float x asm("fp0"), float y asm("fp1"))
+int GetFilteredPixel(PixBufT *pixbuf asm("a0"),
+                     int x asm("d0"), int y asm("d1"))
 {
-	float xf = modff(x, &x);
-	float yf = modff(y, &x);
+	int xf = x & 0xffff;
+	int yf = y & 0xffff;
 
-  uint8_t *data = &pixbuf->data[pixbuf->width * lroundf(y) + lroundf(x)];
+  int xi = x >> 16;
+  int yi = y >> 16;
 
-  float p1 = data[0];
-  float p2 = data[1];
-  float p3 = data[pixbuf->width];
-  float p4 = data[pixbuf->width + 1];
+  uint8_t *data = &pixbuf->data[pixbuf->width * yi + xi];
 
-  float d31 = (p3 - p1) * yf + p1;
-  float d42 = (p4 - p2) * yf + p2;
+  int p1 = data[0];
+  int p2 = data[1];
+  int p3 = data[pixbuf->width];
+  int p4 = data[pixbuf->width + 1];
 
-	return (d42 - d31) * xf + d31;
+  int d31 = p1 + ((p3 - p1) * yf >> 16);
+  int d42 = p2 + ((p4 - p2) * yf >> 16);
+
+	return d31 + ((d42 - d31) * xf >> 16);
 }
