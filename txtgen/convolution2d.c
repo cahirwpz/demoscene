@@ -10,10 +10,10 @@ static inline void ClampAndPutPixel(PixBufT *dst, size_t x, size_t y, int32_t va
   dst->data[x + y * dst->width] = value + dst->baseColor;
 }
 
-void Convolution2D(PixBufT *dst, PixBufT *src, CvlKernelT *kernel) {
+void Convolution2D(PixBufT *dst, PixBufT *src, CvltKernelT *kernel) {
   size_t m = (kernel->n + 1) / 2;
 
-  int16_t height = dst->height;
+  size_t height = dst->height;
   size_t y;
 
   ASSERT((dst->width == src->width) && (dst->height == src->height),
@@ -33,11 +33,11 @@ void Convolution2D(PixBufT *dst, PixBufT *src, CvlKernelT *kernel) {
       size_t minI = (x < m - 1) ? (m - 1 - x) : 0;
       size_t maxI = (width - x < m) ? (m - 1 + (width - x)) : kernel->n;
 
-      float sum = 0;
+      int sum = 0;
 
-      int16_t py = y + minJ - m;
-      int16_t px = x + minI - m;
-      int16_t i, j;
+      int py = y + minJ - m;
+      int px = x + minI - m;
+      int i, j;
 
       for (j = minJ; j < maxJ; j++, py++)
         for (i = minI; i < maxI; i++, px++) {

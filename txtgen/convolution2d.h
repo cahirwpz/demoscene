@@ -3,12 +3,12 @@
 
 #include "gfx/pixbuf.h"
 
-typedef struct CvlKernel {
+typedef struct CvltKernel {
   size_t n;
-  float k;
-  float matrix[0];
-} CvlKernelT;
+  int k;
+  int matrix[0];
+} CvltKernelT;
 
-void Convolution2D(PixBufT *dst, PixBufT *src, CvlKernelT *kernel);
+void Convolution2D(PixBufT *dst, PixBufT *src, CvltKernelT *kernel);
 
 #endif
