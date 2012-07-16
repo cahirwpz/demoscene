@@ -8,7 +8,7 @@ void RenderDistortionsOptimized(DistortionMapT *map asm("a0"),
                                 int offsetU asm("d0"),
                                 int offsetV asm("d1"));
 #else
-void RenderDistortionsOptimized2(DistortionMapT *map,
+void RenderDistortionsOptimized(DistortionMapT *map,
                                 CanvasT *canvas, PixBufT *texture,
                                 int offsetU, int offsetV)
 {
