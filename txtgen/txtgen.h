@@ -45,9 +45,6 @@ typedef enum {
 
 typedef enum {COMPONENT_R, COMPONENT_G, COMPONENT_B} ComponentT;
 
-int GetFilteredPixel(PixBufT *pixbuf asm("a0"),
-                     int x asm("d0"), int y asm("d1"));
-
 void ChannelClear(PixBufT *dst asm("a0"), uint8_t value asm("d0"));
 void ChannelAdd(PixBufT *dst asm("a0"), PixBufT *src1 asm("a1"),
                 PixBufT *src2 asm("a2"));

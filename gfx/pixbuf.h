@@ -3,6 +3,7 @@
 
 #include "std/types.h"
 #include "gfx/palette.h"
+#include "std/fp16.h"
 
 #define PIXBUF_GRAY  0
 #define PIXBUF_CLUT  1
@@ -21,14 +22,16 @@ PixBufT *NewPixBufFromFile(const StrT fileName);
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
 
-void PutPixel(PixBufT *pixbuf asm("a0"),
-              ssize_t x asm("a1"), ssize_t y asm("d1"), uint8_t c asm("d0"));
-uint8_t GetPixel(PixBufT *pixbuf asm("a0"),
-                 ssize_t x asm("d0"), ssize_t y asm("d1"));
+void PutPixel(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),
+              int c asm("d0"));
+int GetPixel(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"));
 
-void PutPixelRGB(PixBufT *pixbuf asm("a0"),
-                 ssize_t x asm("a1"), ssize_t y asm("d1"), ColorT c asm("d0"));
+void PutPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),
+                 ColorT c asm("d0"));
 ColorT GetPixelRGB(PixBufT *pixbuf asm("a0"),
-                   ssize_t x asm("d0"), ssize_t y asm("d1"));
+                   int x asm("d0"), int y asm("d1"));
+
+int GetFilteredPixel(PixBufT *pixbuf asm("a0"),
+                     Q16T x asm("d0"), Q16T y asm("d1"));
 
 #endif

@@ -75,28 +75,42 @@ static const size_t inline GetPixelIndex(PixBufT *pixbuf, ssize_t x, ssize_t y) 
   return x + pixbuf->width * y;
 }
 
-void PutPixel(PixBufT *pixbuf asm("a0"),
-              ssize_t x asm("a1"), ssize_t y asm("d1"), uint8_t c asm("d0"))
+void PutPixel(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),
+              int c asm("d0"))
 {
   size_t index = GetPixelIndex(pixbuf, x, y);
   pixbuf->data[index] = c;
 }
 
-uint8_t GetPixel(PixBufT *pixbuf asm("a0"),
-                 ssize_t x asm("d0"), ssize_t y asm("d1"))
+int GetPixel(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"))
 {
   return pixbuf->data[GetPixelIndex(pixbuf, x, y)];
 }
 
-void PutPixelRGB(PixBufT *pixbuf asm("a0"),
-                 ssize_t x asm("a1"), ssize_t y asm("d1"), ColorT c asm("d0"))
+void PutPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),
+                 ColorT c asm("d0"))
 {
   size_t index = GetPixelIndex(pixbuf, x, y);
   ((uint32_t *)pixbuf->data)[index] = *(uint32_t *)&c;
 }
 
-ColorT GetPixelRGB(PixBufT *pixbuf asm("a0"),
-                   ssize_t x asm("d0"), ssize_t y asm("d1"))
+ColorT GetPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"))
 {
   return *(ColorT *)&pixbuf->data[GetPixelIndex(pixbuf, x, y)];
+}
+
+int GetFilteredPixel(PixBufT *pixbuf asm("a0"),
+                     Q16T x asm("d0"), Q16T y asm("d1"))
+{
+  uint8_t *data = &pixbuf->data[pixbuf->width * y.integer + x.integer];
+
+  int p1 = data[0];
+  int p2 = data[1];
+  int p3 = data[pixbuf->width];
+  int p4 = data[pixbuf->width + 1];
+
+  int d31 = p1 + ((p3 - p1) * y.fraction >> 16);
+  int d42 = p2 + ((p4 - p2) * y.fraction >> 16);
+
+	return d31 + ((d42 - d31) * x.fraction >> 16);
 }
