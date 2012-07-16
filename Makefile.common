@@ -1,6 +1,6 @@
 CC	= m68k-amigaos-gcc -noixemul -std=gnu9x
 AS	= vasm
-OPTFLAGS = -O2 -ffast-math 
+OPTFLAGS = -O2 -ffast-math -freg-struct-return
 CFLAGS	= -Werror -Wall -m68020-60 -fbaserel -msmall-code -fomit-frame-pointer -I$(realpath $(TOPDIR))
 ASFLAGS = -m68020 -m68882 -I$(realpath $(TOPDIR))
 LIBS	= -lamiga -lm
