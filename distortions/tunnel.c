@@ -1,21 +1,5 @@
 #include <math.h>
-
-#include "std/memory.h"
-#include "distortion.h"
-
-static void DeleteDistortionMap(DistortionMapT *map) {
-  MemUnref(map->map);
-}
-
-DistortionMapT *NewDistortionMap(uint16_t width, uint16_t height) {
-  DistortionMapT *map = NewRecordGC(DistortionMapT, (FreeFuncT)DeleteDistortionMap);
-
-  map->width = width;
-  map->height = height;
-  map->map = NewTable(uint16_t, width * height);
-
-  return map;
-}
+#include "distortions/map.h"
 
 void GenerateTunnel(DistortionMapT *tunnel,
                     int16_t radius, int16_t centerX, int16_t centerY) {
