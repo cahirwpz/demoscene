@@ -1,22 +1,22 @@
 #include "std/fp16.h"
 #include "std/math.h"
+#include "std/memory.h"
 
-void CastFloatQ16(Q16T *result asm("a0"), float value asm("fp0")) {
+Q16T CastFloatQ16(float value asm("fp0")) {
   float fraction;
   float integer = modff(value, &fraction);
-
-  result->integer = lroundf(integer);
-  result->fraction = lroundf(fraction * 65536);
+  Q16T result = { lroundf(integer), lroundf(fraction * 65536) };
+  return result;
 }
 
-void CastIntQ16(Q16T *result asm("a0"), int value asm("d0")) {
-  result->integer = value;
-  result->fraction = 0;
+Q16T CastIntQ16(int value asm("d0")) {
+  Q16T result = { value, 0 };
+  return result;
 }
 
 void IAddQ16(Q16T *result asm("a0"), Q16T value asm("d0")) {
-  uint32_t *a = (uint32_t *)&value;
-  uint32_t *b = (uint32_t *)result;
+  int32_t *a = (int32_t *)&value;
+  int32_t *b = (int32_t *)result;
 
   (*b) += (*a);
 }

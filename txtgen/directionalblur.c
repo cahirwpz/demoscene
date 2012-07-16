@@ -10,8 +10,8 @@ void GenerateDirectionTables(Q16T *dxs, Q16T *dys) {
   for (i = 0; i < 256; i++) {
     float radians = i * 2 * M_PI / 256;
 
-    CastFloatQ16(&dxs[i], -sin(radians));
-    CastFloatQ16(&dys[i], -cos(radians));
+    dxs[i] = CastFloatQ16(-sin(radians));
+    dys[i] = CastFloatQ16(-cos(radians));
   }
 }
 
@@ -31,12 +31,10 @@ void DirectionalBlur(PixBufT *dst, PixBufT *src, PixBufT *map, int radius) {
       Q16T dx = dxs[direction];
       Q16T dy = dys[direction];
 
-      Q16T px, py;
+      Q16T px = CastIntQ16(x);
+      Q16T py = CastIntQ16(y);
 
       int value = 0;
-
-      CastIntQ16(&px, x);
-      CastIntQ16(&py, y);
 
       for (j = 0; j <= radius; j++) {
         value += GetFilteredPixel(src, px, py);
