@@ -18,7 +18,8 @@
 #include "system/vblank.h"
 
 #include "frame_tools.h"
-#include "distortions/distortion.h"
+#include "distortions/map.h"
+#include "distortions/generate.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -35,7 +36,7 @@ void AddInitialResources() {
   ResAdd("CreditsPal", NewPaletteFromFile("data/code.pal"));
   ResAdd("WhelpzImg", NewPixBufFromFile("data/whelpz.8"));
   ResAdd("WhelpzPal", NewPaletteFromFile("data/whelpz.pal"));
-  ResAdd("TunnelMap", NewDistortionMap(WIDTH, HEIGHT));
+  ResAdd("TunnelMap", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
   ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
 }
 
