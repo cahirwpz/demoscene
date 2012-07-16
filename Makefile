@@ -5,7 +5,7 @@ include $(TOPDIR)/Makefile.common
 export TOPDIR
 
 BINS	= tunnel vector2d object3d
-SUBDIRS	= p61 system gfx std engine
+SUBDIRS	= p61 system gfx std engine txtgen
 
 LIBS := $(foreach dir,$(SUBDIRS),-L$(TOPDIR)/$(dir)) -lgfx -lsystem -lstd $(LIBS)
 
@@ -20,6 +20,8 @@ gfx:
 std:
 	$(MAKE) -C $@
 engine:
+	$(MAKE) -C $@
+txtgen:
 	$(MAKE) -C $@
 
 tunnel: startup_effect.o tunnel.o distortion.o distortion_opt.o frame_tools.o
