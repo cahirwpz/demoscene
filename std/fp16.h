@@ -1,6 +1,8 @@
 #ifndef __STD_FP16_H__
 #define __STD_FP16_H__
 
+#include "std/types.h"
+
 typedef struct {
   int16_t integer;
   uint16_t fraction;
