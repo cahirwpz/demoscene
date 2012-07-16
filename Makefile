@@ -5,7 +5,7 @@ include $(TOPDIR)/Makefile.common
 export TOPDIR
 
 BINS	= tunnel vector2d object3d
-SUBDIRS	= p61 system gfx std engine txtgen
+SUBDIRS	= p61 system gfx std engine txtgen distortions
 
 LIBS := $(foreach dir,$(SUBDIRS),-L$(TOPDIR)/$(dir)) -lgfx -lsystem -lstd $(LIBS)
 
@@ -23,19 +23,17 @@ engine:
 	$(MAKE) -C $@
 txtgen:
 	$(MAKE) -C $@
+distortions:
+	$(MAKE) -C $@
 
-tunnel: startup_effect.o tunnel.o distortion.o distortion_opt.o frame_tools.o
-	$(CC) $(CFLAGS) -o $@ $^ -lp61 $(LIBS)
+tunnel: startup_effect.o tunnel.o frame_tools.o
+	$(CC) $(CFLAGS) -o $@ $^ -lp61 -ldistortions $(LIBS)
 
 vector2d: startup_effect.o vector2d.o frame_tools.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 object3d: startup_effect.o object3d.o frame_tools.o
 	$(CC) $(CFLAGS) -o $@ $^ -lengine $(LIBS)
-
-tunnel.o: tunnel.c
-distortion.o: distortion.c distortion.h
-distortion_opt.o: distortion_opt.s distortion.h
 
 archive:
 	7z a "bins-$$(date +%F).7z" $(BINS) data

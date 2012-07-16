@@ -18,7 +18,7 @@
 #include "system/vblank.h"
 
 #include "frame_tools.h"
-#include "distortion.h"
+#include "distortions/distortion.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
