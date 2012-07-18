@@ -2,6 +2,7 @@
 #define __DISTORTIONS_MAP_H__
 
 #include "std/types.h"
+#include "std/fp16.h"
 #include "gfx/pixbuf.h"
 #include "gfx/canvas.h"
 
@@ -21,6 +22,8 @@ typedef struct DistortionMap {
 DistortionMapT *NewDistortionMap(size_t width, size_t height,
                                  DistortionMapTypeT type,
                                  size_t textureW, size_t textureH);
+
+void DistortionMapSet(DistortionMapT *map, size_t i, Q16T u, Q16T v);
 
 void RenderDistortion(DistortionMapT *map, CanvasT *canvas, PixBufT *texture,
                       size_t offsetU, size_t offsetV);

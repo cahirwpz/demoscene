@@ -14,7 +14,7 @@ Q16T CastIntQ16(int value asm("d0")) {
   return result;
 }
 
-int CoerceIntQ16(Q16T value asm("d0")) {
+int IntRoundQ16(Q16T value asm("d0")) {
   int v = AsInt(value);
 
   if (v < 0)

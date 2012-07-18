@@ -29,3 +29,23 @@ DistortionMapT *NewDistortionMap(size_t width, size_t height,
 
   return map;
 }
+
+void DistortionMapSet(DistortionMapT *map, size_t i, Q16T u, Q16T v) {
+  switch (map->type) {
+    case DMAP_OPTIMIZED:
+      {
+        uint16_t *data = (uint16_t *)map->map;
+
+        data[i] = ((IntRoundQ16(v) & 0xff) << 8) | (IntRoundQ16(u) & 0xff);
+      }
+      break;
+    case DMAP_ACCURATE:
+      {
+        TextureUV_Q16T *data = (TextureUV_Q16T *)map->map;
+
+        data[i].u = u;
+        data[i].v = v;
+      }
+      break;
+  }
+}

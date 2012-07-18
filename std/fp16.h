@@ -13,7 +13,7 @@ typedef struct {
 
 Q16T CastFloatQ16(float value asm("fp0"));
 Q16T CastIntQ16(int value asm("d0"));
-int CoerceIntQ16(Q16T value asm("d0"));
+int IntRoundQ16(Q16T value asm("d0"));
 
 static inline void IAddQ16(Q16T *result asm("a0"), Q16T value asm("d0")) {
   (*(int *)result) += AsInt(value);
