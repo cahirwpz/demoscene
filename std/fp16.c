@@ -14,6 +14,19 @@ Q16T CastIntQ16(int value asm("d0")) {
   return result;
 }
 
+Q16T ReciprocalIntQ16(int value asm("d0")) {
+  Q16T result = { 0, 0 };
+
+  if (value > 1)
+    result.fraction = 0x10000 / value;
+  else if (value == 1)
+    result.integer = 1;
+
+  /* don't handle reciprocal of zero */
+
+  return result;
+}
+
 Q16T *CalcSineTableQ16(size_t n asm("d0"), size_t frequency asm("d1"),
                        float amplitude asm("fp0"), float shift asm("fp1"))
 {

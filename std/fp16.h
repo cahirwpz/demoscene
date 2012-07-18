@@ -20,6 +20,8 @@ static inline Q16T AddQ16(Q16T a asm("d0"), Q16T b asm("d1")) {
   return *(Q16T *)&c;
 }
 
+Q16T ReciprocalIntQ16(int value asm("d0"));
+
 Q16T *CalcSineTableQ16(size_t n asm("d0"), size_t frequency asm("d1"),
                        float amplitude asm("fp0"), float shift asm("fp1"));
 
