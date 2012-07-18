@@ -4,29 +4,16 @@
 #include "gfx/pixbuf.h"
 #include "txtgen/txtgen.h"
 
-void GenerateDirectionTables(Q16T *dxs, Q16T *dys) {
-  size_t i;
-
-  for (i = 0; i < 256; i++) {
-    float radians = i * 2 * M_PI / 256;
-
-    dxs[i] = CastFloatQ16(-sin(radians));
-    dys[i] = CastFloatQ16(-cos(radians));
-  }
-}
-
 void DirectionalBlur(PixBufT *dst, PixBufT *src, PixBufT *map, int radius) {
-  uint8_t *d = dst->data;
-  uint8_t *m = src->data;
-  Q16T *dxs = NewTable(Q16T, 256);
-  Q16T *dys = NewTable(Q16T, 256);
-  size_t x, y, i, j;
+  Q16T *dxs = CalcSineTableQ16(256, 1, 1.0f, 0.5f);  /* -sin(x) */
+  Q16T *dys = CalcSineTableQ16(256, 1, 1.0f, 0.75f); /* -cos(x) */
+  size_t x, y, i;
 
-  GenerateDirectionTables(dxs, dys);
+  radius++;
 
   for (y = 0, i = 0; y < src->height; y++) {
     for (x = 0; x < src->width; x++, i++) {
-      size_t direction = m[i];
+      size_t direction = src->data[i];
 
       Q16T dx = dxs[direction];
       Q16T dy = dys[direction];
@@ -36,14 +23,16 @@ void DirectionalBlur(PixBufT *dst, PixBufT *src, PixBufT *map, int radius) {
 
       int value = 0;
 
-      for (j = 0; j <= radius; j++) {
+      size_t j;
+
+      for (j = 0; j < radius; j++) {
         value += GetFilteredPixel(src, px, py);
 
-        IAddQ16(&px, dx);
-        IAddQ16(&py, dy);
+        px = AddQ16(px, dx);
+        py = AddQ16(py, dy);
       }
 
-      d[i] = value / (radius + 1);
+      dst->data[i] = value / radius;
     }
   }
 
