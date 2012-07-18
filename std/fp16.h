@@ -20,12 +20,7 @@ static inline Q16T AddQ16(Q16T a asm("d0"), Q16T b asm("d1")) {
   return *(Q16T *)&c;
 }
 
-typedef struct WaveDesc {
-  size_t frequency;
-  float amplitude;
-  float shift;
-} WaveDescT;
-
-Q16T *CalcSineTableQ16(size_t n asm("d0"), WaveDescT *sine asm("a0"));
+Q16T *CalcSineTableQ16(size_t n asm("d0"), size_t frequency asm("d1"),
+                       float amplitude asm("fp0"), float shift asm("fp1"));
 
 #endif
