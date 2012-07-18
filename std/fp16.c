@@ -14,9 +14,15 @@ Q16T CastIntQ16(int value asm("d0")) {
   return result;
 }
 
-void IAddQ16(Q16T *result asm("a0"), Q16T value asm("d0")) {
-  int32_t *a = (int32_t *)&value;
-  int32_t *b = (int32_t *)result;
+Q16T *CalcSineTableQ16(size_t n, size_t sines, float amplitude, float shift) {
+  Q16T *table = NewTable(Q16T, n);
+  float iter = 2 * (float)M_PI * shift;
+  float step = 2 * (float)M_PI * (int)sines / (int)n;
+  size_t i;
 
-  (*b) += (*a);
+  for (i = 0; i < n; i++, iter += step) {
+    table[i] = CastFloatQ16(sin(iter) * amplitude);
+  }
+
+  return table;
 }
