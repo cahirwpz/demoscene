@@ -2,6 +2,7 @@
 #define __STD_MATH__
 
 #include <math.h>
+#include "std/types.h"
 
 #ifdef AMIGA
 inline static float truncf(float x) {
@@ -40,5 +41,8 @@ inline static float modff(float x, float *ip) {
   return x - temp;
 }
 #endif
+
+float *CalcSineTable(size_t n asm("d0"), size_t frequency asm("d1"),
+                     float amplitude asm("fp0"), float shift asm("fp1"));
 
 #endif
