@@ -3,29 +3,68 @@
 #include "distort/common.h"
 
 #ifdef AMIGA
-void RenderDistortionOptimized(DistortionMapT *map asm("a0"),
-                               CanvasT *canvas asm("a1"),
-                               PixBufT *texture asm("a2"),
-                               int offsetU asm("d0"),
-                               int offsetV asm("d1"));
-#else
-void RenderDistortionsOptimized(DistortionMapT *map,
-                                CanvasT *canvas, PixBufT *texture,
-                                int offsetU, int offsetV)
+#define LOAD(i) asm("move.w (%1)+,%0" : "+d" (i) : "a>" (data));
+#define ADD(i) asm("add.w %1,%0" : "+d" (i) : "a" (offset));
+
+void RenderDistortionOptimized(DistortionMapT *map,
+                               CanvasT *canvas, PixBufT *texture,
+                               int offsetU, int offsetV)
 {
   uint16_t *data = (uint16_t *)map->map;
+  uint16_t *end = &data[map->width * map->height];
   uint8_t *d = GetCanvasPixelData(canvas);
   uint8_t *t = texture->data;
-  size_t i;
+  uint16_t offset = ((offsetV & 0xff) << 8) | (offsetU & 0xff);
 
-  offsetU <<= 8;
+  uint32_t i0 = 0;
+  uint32_t i1 = 0;
+  uint32_t i2 = 0;
+  uint32_t i3 = 0;
+  uint32_t i4 = 0;
+  uint32_t i5 = 0;
+  uint32_t i6 = 0;
+  uint32_t i7 = 0;
 
-  for (i = 0; i < map->width * map->height; i++) {
-    size_t uv = data[i];
-    size_t index = ((uv + offsetV) & 0xff) | ((uv + offsetU) & 0xff00);
-
-    d[i] = t[index];
+  while (data < end) {
+    LOAD(i0);
+    LOAD(i1);
+    LOAD(i2);
+    LOAD(i3);
+    LOAD(i4);
+    LOAD(i5);
+    LOAD(i6);
+    LOAD(i7);
+    ADD(i0);
+    ADD(i1);
+    ADD(i2);
+    ADD(i3);
+    ADD(i4);
+    ADD(i5);
+    ADD(i6);
+    ADD(i7);
+    *d++ = t[i0];
+    *d++ = t[i1];
+    *d++ = t[i2];
+    *d++ = t[i3];
+    *d++ = t[i4];
+    *d++ = t[i5];
+    *d++ = t[i6];
+    *d++ = t[i7];
   }
+}
+#else
+void RenderDistortionOptimized(DistortionMapT *map,
+                               CanvasT *canvas, PixBufT *texture,
+                               int offsetU, int offsetV)
+{
+  uint16_t *data = (uint16_t *)map->map;
+  uint16_t *end = &data[map->width * map->height];
+  uint8_t *d = GetCanvasPixelData(canvas);
+  uint8_t *t = texture->data;
+  uint16_t offset = ((offsetV & 0xff) << 8) | (offsetU & 0xff);
+
+  while (data < end)
+    *d++ = t[(*data++ + offset) & 0xffff];
 }
 #endif
 
