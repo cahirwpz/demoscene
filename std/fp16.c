@@ -14,6 +14,17 @@ Q16T CastIntQ16(int value asm("d0")) {
   return result;
 }
 
+int CoerceIntQ16(Q16T value asm("d0")) {
+  int v = AsInt(value);
+
+  if (v < 0)
+    v -= 0x7fff;
+  else
+    v += 0x8000;
+
+  return v / 65536;
+}
+
 Q16T ReciprocalIntQ16(int value asm("d0")) {
   Q16T result = { 0, 0 };
 
