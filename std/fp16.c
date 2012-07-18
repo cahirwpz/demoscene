@@ -14,15 +14,14 @@ Q16T CastIntQ16(int value asm("d0")) {
   return result;
 }
 
-Q16T *CalcSineTableQ16(size_t n, size_t sines, float amplitude, float shift) {
+Q16T *CalcSineTableQ16(size_t n asm("d0"), WaveDescT *sine asm("a0")) {
   Q16T *table = NewTable(Q16T, n);
-  float iter = 2 * (float)M_PI * shift;
-  float step = 2 * (float)M_PI * (int)sines / (int)n;
+  float iter = 2 * (float)M_PI * sine->shift;
+  float step = 2 * (float)M_PI * (int)sine->frequency / (int)n;
   size_t i;
 
-  for (i = 0; i < n; i++, iter += step) {
-    table[i] = CastFloatQ16(sin(iter) * amplitude);
-  }
+  for (i = 0; i < n; i++, iter += step)
+    table[i] = CastFloatQ16(sin(iter) * sine->amplitude);
 
   return table;
 }

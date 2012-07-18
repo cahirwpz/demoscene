@@ -4,9 +4,12 @@
 #include "gfx/pixbuf.h"
 #include "txtgen/txtgen.h"
 
+static WaveDescT minusSine = { 1, 1.0f, 0.5f };
+static WaveDescT minusCosine = { 1, 1.0f, 0.75f };
+
 void DirectionalBlur(PixBufT *dst, PixBufT *src, PixBufT *map, int radius) {
-  Q16T *dxs = CalcSineTableQ16(256, 1, 1.0f, 0.5f);  /* -sin(x) */
-  Q16T *dys = CalcSineTableQ16(256, 1, 1.0f, 0.75f); /* -cos(x) */
+  Q16T *dxs = CalcSineTableQ16(256, &minusSine);
+  Q16T *dys = CalcSineTableQ16(256, &minusCosine);
   size_t x, y, i;
 
   radius++;
