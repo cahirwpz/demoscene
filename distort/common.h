@@ -1,5 +1,5 @@
-#ifndef __DISTORTIONS_MAP_H__
-#define __DISTORTIONS_MAP_H__
+#ifndef __DISTORT_COMMON_H__
+#define __DISTORT_COMMON_H__
 
 #include "std/types.h"
 #include "std/fp16.h"

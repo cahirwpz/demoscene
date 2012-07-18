@@ -1,6 +1,6 @@
 #include "std/math.h"
 #include "std/memory.h"
-#include "distortions/map.h"
+#include "distort/common.h"
 
 static void DeleteDistortionMap(DistortionMapT *map) {
   MemUnref(map->map);

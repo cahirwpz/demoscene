@@ -1,10 +1,10 @@
-#ifndef __DISTORTIONS_GENERATE_H__
-#define __DISTORTIONS_GENERATE_H__
+#ifndef __DISTORT_GENERATE_H__
+#define __DISTORT_GENERATE_H__
 
-#include "distortions/map.h"
+#include "distort/common.h"
 
-void GenerateTunnel(DistortionMapT *tunnel,
-                    int16_t radius, int16_t centerX, int16_t centerY);
+void GenerateTunnelDistortion(DistortionMapT *tunnel,
+                              int radius, int centerX, int centerY);
 void GenerateSineDistortion(DistortionMapT *map,
                             size_t xFreq, float xAmp, float xShift,
                             size_t yFreq, float yAmp, float yShift);

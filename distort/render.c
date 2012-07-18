@@ -1,5 +1,5 @@
 #include "std/debug.h"
-#include "distortions/map.h"
+#include "distort/common.h"
 
 #ifdef AMIGA
 void RenderDistortionsOptimized(DistortionMapT *map asm("a0"),

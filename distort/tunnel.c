@@ -1,8 +1,8 @@
-#include <math.h>
-#include "distortions/map.h"
+#include "std/math.h"
+#include "distort/generate.h"
 
-void GenerateTunnel(DistortionMapT *map,
-                    int radius, int centerX, int centerY)
+void GenerateTunnelDistortion(DistortionMapT *map,
+                              int radius, int centerX, int centerY)
 {
   float scaleU = (int)map->textureW / (2 * M_PI);
   size_t x, y, i;

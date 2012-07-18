@@ -18,8 +18,7 @@
 #include "system/vblank.h"
 
 #include "frame_tools.h"
-#include "distortions/map.h"
-#include "distortions/generate.h"
+#include "distort/generate.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -51,7 +50,7 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  GenerateTunnel(R_("TunnelMap"), 8192, WIDTH/2, HEIGHT/2);
+  GenerateTunnelDistortion(R_("TunnelMap"), 8192, WIDTH/2, HEIGHT/2);
 
   LinkPalettes(R_("TexturePal"), R_("WhelpzPal"), R_("CreditsPal"), NULL);
   LoadPalette(R_("TexturePal"));

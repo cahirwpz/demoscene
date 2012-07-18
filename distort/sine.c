@@ -1,6 +1,6 @@
 #include "std/math.h"
 #include "std/memory.h"
-#include "distortions/generate.h"
+#include "distort/generate.h"
 
 void GenerateSineDistortion(DistortionMapT *map,
                             size_t xFreq, float xAmp, float xShift,

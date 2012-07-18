@@ -1,4 +1,4 @@
-#include "distortions/generate.h"
+#include "distort/generate.h"
 
 void GenerateOffsetDistortion(DistortionMapT *map,
                               float uOffset, float vOffset)

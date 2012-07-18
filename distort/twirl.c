@@ -1,5 +1,5 @@
 #include "std/math.h"
-#include "distortions/generate.h"
+#include "distort/generate.h"
 
 void GenerateTwirlDistortion(DistortionMapT *map, float strenght) {
   float dy = 2.0f / (int)map->height;
