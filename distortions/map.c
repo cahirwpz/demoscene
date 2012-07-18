@@ -31,7 +31,9 @@ DistortionMapT *NewDistortionMap(size_t width, size_t height,
   return map;
 }
 
-void DistortionMapSet(DistortionMapT *map, size_t i, float u, float v) {
+void DistortionMapSet(DistortionMapT *map asm("a0"), size_t i asm("d0"),
+                      float u asm("fp0"), float v asm("fp1"))
+{
   switch (map->type) {
     case DMAP_OPTIMIZED:
       {
