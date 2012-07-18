@@ -1,12 +1,13 @@
+#define NDEBUG
 #include "std/debug.h"
 #include "distort/common.h"
 
 #ifdef AMIGA
-void RenderDistortionsOptimized(DistortionMapT *map asm("a0"),
-                                CanvasT *canvas asm("a1"),
-                                PixBufT *texture asm("a2"),
-                                int offsetU asm("d0"),
-                                int offsetV asm("d1"));
+void RenderDistortionOptimized(DistortionMapT *map asm("a0"),
+                               CanvasT *canvas asm("a1"),
+                               PixBufT *texture asm("a2"),
+                               int offsetU asm("d0"),
+                               int offsetV asm("d1"));
 #else
 void RenderDistortionsOptimized(DistortionMapT *map,
                                 CanvasT *canvas, PixBufT *texture,
@@ -28,9 +29,9 @@ void RenderDistortionsOptimized(DistortionMapT *map,
 }
 #endif
 
-void RenderDistortionsAccurate(DistortionMapT *map,
-                               CanvasT *canvas, PixBufT *texture,
-                               int offsetU, int offsetV)
+void RenderDistortionAccurate(DistortionMapT *map,
+                              CanvasT *canvas, PixBufT *texture,
+                              int offsetU, int offsetV)
 {
   TextureUV_Q16T *data = (TextureUV_Q16T *)map->map;
   uint8_t *d = GetCanvasPixelData(canvas);
@@ -57,8 +58,8 @@ void RenderDistortionsAccurate(DistortionMapT *map,
   }
 }
 
-void RenderDistortions(DistortionMapT *map, CanvasT *canvas, PixBufT *texture,
-                       int offsetU, int offsetV)
+void RenderDistortion(DistortionMapT *map, CanvasT *canvas, PixBufT *texture,
+                      int offsetU, int offsetV)
 {
   ASSERT(texture->width == map->textureW, "Texture width mismatch %d != %d.",
          (int)texture->width, (int)map->textureW);
@@ -73,10 +74,10 @@ void RenderDistortions(DistortionMapT *map, CanvasT *canvas, PixBufT *texture,
     case DMAP_OPTIMIZED:
       ASSERT(texture->width == texture->height == 256,
              "In optimized mode texture size has to be 256x256.");
-      RenderDistortionsOptimized(map, canvas, texture, offsetU, offsetV);
+      RenderDistortionOptimized(map, canvas, texture, offsetU, offsetV);
       break;
     case DMAP_ACCURATE:
-      RenderDistortionsAccurate(map, canvas, texture, offsetU, offsetV);
+      RenderDistortionAccurate(map, canvas, texture, offsetU, offsetV);
       break;
   }
 }

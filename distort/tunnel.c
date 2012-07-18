@@ -13,12 +13,8 @@ void GenerateTunnelDistortion(DistortionMapT *map,
       int xi = (int)x - centerX;
       int d2 = xi * xi + yi * yi;
 
-      float u = 0.0f, v = 0.0f;
-
-      if (yi != 0)
-        u = atan((float)xi / yi) / (2 * M_PI);
-      if (d2 != 0)
-        v = (float)radius / sqrt(d2);
+      float u = atan2(xi, yi) / (2 * M_PI);
+      float v = (d2) ? ((float)radius / sqrt(d2)) : 0;
 
       DistortionMapSet(map, i, u, v);
     }

@@ -12,26 +12,27 @@
 
 RenderDistortionRegs    reg     d2-d5/a2
 
-        XDEF    _RenderDistortion
+        XDEF    _RenderDistortionOptimized
 
-_RenderDistortion
+_RenderDistortionOptimized
         movem.l RenderDistortionRegs,-(sp)
 
         ; calculate offset
+        and.l   #255,d0
         and.l   #255,d1
         lsl.l   #8,d1
         or.l    d1,d0
 
         ; calculate number of iterations
-        move.w  (a0),d1
-        mulu.w  2(a0),d1
+        move.l  4(a0),d1
+        mulu.l  8(a0),d1
         lsr.l   #2,d1
 
         ; prepare temporary pointers
-        move.l  4(a0),a0
+        move.l  20(a0),a0
         move.l  (a1),a1   ; CanvasT.pixbuf
-        move.l  (a1),a1   ; PixBufT.data
-        move.l  (a2),a2
+        move.l  4(a1),a1  ; PixBufT.data
+        move.l  4(a2),a2
 
         ; clear offset registers
         clr.l   d2
@@ -51,7 +52,7 @@ _RenderDistortion
         move.b  (a2,d3.l),(a1)+
         move.b  (a2,d4.l),(a1)+
         move.b  (a2,d5.l),(a1)+
-        subq.w  #1,d1
+        subq.l  #1,d1
         bne.b   .loop
 
         movem.l (sp)+,RenderDistortionRegs

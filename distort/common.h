@@ -27,6 +27,6 @@ void DistortionMapSet(DistortionMapT *map asm("a0"), size_t i asm("d0"),
                       float u asm("fp0"), float v asm("fp1"));
 
 void RenderDistortion(DistortionMapT *map, CanvasT *canvas, PixBufT *texture,
-                      size_t offsetU, size_t offsetV);
+                      int offsetU, int offsetV);
 
 #endif
