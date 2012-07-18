@@ -14,9 +14,7 @@ void GenerateMapDistortion(DistortionMapT *map,
       float cu = (float)((int)mapU->data[i] - 128) / 128;
       float cv = (float)((int)mapV->data[i] - 128) / 128;
 
-      DistortionMapSet(map, i,
-                       (u + cu) * (int)map->textureW,
-                       (v + cv) * (int)map->textureH);
+      DistortionMapSet(map, i, u + cu, v + cv);
     }
   }
 }

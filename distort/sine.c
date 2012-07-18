@@ -6,13 +6,11 @@ void GenerateSineDistortion(DistortionMapT *map,
                             size_t xFreq, float xAmp, float xShift,
                             size_t yFreq, float yAmp, float yShift)
 {
-  float *sinX = CalcSineTable(map->width,
-                              xFreq, xAmp * (int)map->textureW, xShift);
-  float *sinY = CalcSineTable(map->height,
-                              yFreq, yAmp * (int)map->textureH, yShift);
+  float *sinX = CalcSineTable(map->width, xFreq, xAmp, xShift);
+  float *sinY = CalcSineTable(map->height, yFreq, yAmp, yShift);
 
-  float dy = (float)map->textureH / (int)map->height;
-  float dx = (float)map->textureW / (int)map->width;
+  float dy = 1.0f / (int)map->height;
+  float dx = 1.0f / (int)map->width;
   float fx, fy;
 
   size_t x, y, i;

@@ -4,7 +4,6 @@
 void GenerateTunnelDistortion(DistortionMapT *map,
                               int radius, int centerX, int centerY)
 {
-  float scaleU = (int)map->textureW / (2 * M_PI);
   size_t x, y, i;
 
   for (y = 0, i = 0; y < map->height; y++) {
@@ -17,7 +16,7 @@ void GenerateTunnelDistortion(DistortionMapT *map,
       float u = 0.0f, v = 0.0f;
 
       if (yi != 0)
-        u = atan((float)xi / yi) * scaleU;
+        u = atan((float)xi / yi) / (2 * M_PI);
       if (d2 != 0)
         v = (float)radius / sqrt(d2);
 
