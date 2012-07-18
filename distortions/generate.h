@@ -9,5 +9,7 @@ void GenerateSineDistortion(DistortionMapT *map,
                             size_t xFreq, float xAmp, float xShift,
                             size_t yFreq, float yAmp, float yShift);
 void GenerateTwirlDistortion(DistortionMapT *map, float strenght);
+void GenerateOffsetDistortion(DistortionMapT *map,
+                              float uOffset, float vOffset);
 
 #endif
