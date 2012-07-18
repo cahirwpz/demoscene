@@ -23,7 +23,7 @@ DistortionMapT *NewDistortionMap(size_t width, size_t height,
                                  DistortionMapTypeT type,
                                  size_t textureW, size_t textureH);
 
-void DistortionMapSet(DistortionMapT *map, size_t i, Q16T u, Q16T v);
+void DistortionMapSet(DistortionMapT *map, size_t i, float u, float v);
 
 void RenderDistortion(DistortionMapT *map, CanvasT *canvas, PixBufT *texture,
                       size_t offsetU, size_t offsetV);
