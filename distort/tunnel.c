@@ -22,14 +22,12 @@ void GenerateTunnelDistortion(DistortionMapT *map,
     for (x = 0, fx = 0; x < map->width; x++, fx += dx, i++) {
       float yc = (fy - centerY) * aspectRatio;
       float xc = (fx - centerX);
-      float u, v, d, z;
 
-      u = atan2(xc, yc) / (2 * M_PI);
-      d = sqrt(xc * xc + yc * yc) * scaleD;
-      z = (d) ? tan(d) : 0;
-      v = radius / (log2f(z + 1.0f) * z);
+      float a = atan2(xc, yc);
+      float d = sqrt(xc * xc + yc * yc) * scaleD;
+      float z = (d) ? -log2f(1.0f - d) : 0;
 
-      DistortionMapSet(map, i, u, v);
+      DistortionMapSet(map, i, a / (2 * M_PI), radius / z);
     }
   }
 }

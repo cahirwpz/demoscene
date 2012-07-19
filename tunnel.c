@@ -50,7 +50,7 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  GenerateTunnelDistortion(R_("TunnelMap"), 4.0f, 16.0f / 9.0f, 0.5f, 0.5f);
+  GenerateTunnelDistortion(R_("TunnelMap"), 64.0f, 16.0f / 9.0f, 0.5f, 0.5f);
 
   LinkPalettes(R_("TexturePal"), R_("WhelpzPal"), R_("CreditsPal"), NULL);
   LoadPalette(R_("TexturePal"));
