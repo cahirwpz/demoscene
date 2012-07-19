@@ -5,6 +5,16 @@
 #include "std/types.h"
 
 #ifdef AMIGA
+inline static double log2f(float x) {
+  float value;
+
+  asm("flog2%.x %1,%0"
+      : "=f" (value)
+      : "f" (x));
+
+  return value;
+}
+
 inline static float truncf(float x) {
   float value;
 

@@ -50,7 +50,7 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  GenerateTunnelDistortion(R_("TunnelMap"), 32, 1.5f, WIDTH/2, HEIGHT/2);
+  GenerateTunnelDistortion(R_("TunnelMap"), 4.0f, 16.0f / 9.0f, 0.5f, 0.5f);
 
   LinkPalettes(R_("TexturePal"), R_("WhelpzPal"), R_("CreditsPal"), NULL);
   LoadPalette(R_("TexturePal"));
@@ -146,7 +146,7 @@ void RenderChunky(int frameNumber) {
 void MainLoop() {
   SetVBlankCounter(0);
 
-  while (GetVBlankCounter() < 50*60*2) {
+  while (GetVBlankCounter() < 1000) {
     int frameNumber = GetVBlankCounter();
 
     EventQueueReset();
