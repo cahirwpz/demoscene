@@ -135,8 +135,13 @@ void RenderTunnel(int frameNumber) {
 
   RenderDistortion(R_("TunnelMap"), canvas, R_("Texture"), 0, frameNumber);
 
-  PixBufBlit(canvas->pixbuf, 200, 20, R_("CreditsImg"));
   PixBufBlit(canvas->pixbuf, 0, 137, R_("WhelpzImg"));
+
+  {
+    float rad = (float)(frameNumber % 150) / 150 * 2 * M_PI;
+    int w = sin(rad) * 80;
+    PixBufBlitScaled(canvas->pixbuf, 200 + (80 - abs(w)) / 2, 20, w, 33, R_("CreditsImg"));
+  }
 }
 
 void RenderChunky(int frameNumber) {

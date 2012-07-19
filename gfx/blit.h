@@ -4,5 +4,7 @@
 #include "gfx/pixbuf.h"
 
 void PixBufBlit(PixBufT *dstBuf, size_t x, size_t y, PixBufT *srcBuf);
+void PixBufBlitScaled(PixBufT *dstBuf, size_t x, size_t y, int w, int h,
+                      PixBufT *srcBuf);
 
 #endif

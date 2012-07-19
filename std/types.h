@@ -35,6 +35,7 @@ typedef unsigned long uint32_t;
 #define abs(a) ((a) > 0 ? (a) : -(a))
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #define min(a,b) ((a) < (b) ? (a) : (b))
+#define sign(a) ((a) >= 0 ? 1 : -1)
 #define swapi(a,b)	{ (a)^=(b); (b)^=(a); (a)^=(b); }
 #define swapf(a,b)	{ float t; t = (b); (b) = (a); (a) = t; }
 
