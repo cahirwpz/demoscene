@@ -3,9 +3,17 @@
 
 #include "distort/common.h"
 
+typedef struct {
+  size_t petals;
+  float petalStart;
+  float force;
+} TunnelPetalsT;
+
 void GenerateTunnelDistortion(DistortionMapT *tunnel,
                               float radius, float aspectRatio,
-                              float centerX, float centerY);
+                              float centerX, float centerY,
+                              TunnelPetalsT *petals);
+
 void GenerateSineDistortion(DistortionMapT *map,
                             size_t xFreq, float xAmp, float xShift,
                             size_t yFreq, float yAmp, float yShift);

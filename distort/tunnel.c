@@ -3,7 +3,8 @@
 
 void GenerateTunnelDistortion(DistortionMapT *map,
                               float radius, float aspectRatio,
-                              float centerX, float centerY)
+                              float centerX, float centerY,
+                              TunnelPetalsT *petals)
 {
   float dx = 1.0f / (int)map->width;
   float dy = 1.0f / (int)map->height;
@@ -11,7 +12,7 @@ void GenerateTunnelDistortion(DistortionMapT *map,
 
   float maxX = max(fabs(centerX), fabs(1 + centerX)) * aspectRatio;
   float maxY = max(fabs(centerY), fabs(1 + centerY));
-  float scaleD = (M_PI / 2) / sqrt(maxX * maxX + maxY * maxY);
+  float scaleD = 1.0f / sqrt(maxX * maxX + maxY * maxY);
 
   size_t x, y, i;
 
@@ -25,7 +26,16 @@ void GenerateTunnelDistortion(DistortionMapT *map,
 
       float a = atan2(xc, yc);
       float d = sqrt(xc * xc + yc * yc) * scaleD;
-      float z = (d) ? -log2f(1.0f - d) : 0;
+      float z;
+
+      if (petals) {
+        float petal = sin((int)petals->petals * a +
+                          petals->petalStart * 2 * M_PI);
+
+        d *= 1.0f + petal * petals->force;
+      }
+
+      z = -log2f(1.0f - d);
 
       DistortionMapSet(map, i, a / (2 * M_PI), radius / z);
     }
