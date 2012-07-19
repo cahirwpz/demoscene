@@ -61,6 +61,8 @@ void SetupEffect() {
 
   PixBufRemap(R_("CreditsImg"), R_("CreditsPal"));
   PixBufRemap(R_("WhelpzImg"), R_("WhelpzPal"));
+  PixBufSetTransparent(R_("CreditsImg"), TRUE);
+  PixBufSetTransparent(R_("WhelpzImg"), TRUE);
 
   P61_Init(R_("Module"), NULL, NULL);
   P61_ControlBlock.Play = 1;
@@ -133,8 +135,8 @@ void RenderTunnel(int frameNumber) {
 
   RenderDistortion(R_("TunnelMap"), canvas, R_("Texture"), 0, frameNumber);
 
-  PixBufBlitTransparent(canvas->pixbuf, 200, 20, R_("CreditsImg"));
-  PixBufBlitTransparent(canvas->pixbuf, 0, 137, R_("WhelpzImg"));
+  PixBufBlit(canvas->pixbuf, 200, 20, R_("CreditsImg"));
+  PixBufBlit(canvas->pixbuf, 0, 137, R_("WhelpzImg"));
 }
 
 void RenderChunky(int frameNumber) {

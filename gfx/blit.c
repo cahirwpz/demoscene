@@ -1,7 +1,30 @@
 #include "gfx/blit.h"
 
-void PixBufBlitTransparent(PixBufT *dstBuf asm("a0"), size_t x asm("d0"),
-                           size_t y asm("d1"), PixBufT *srcBuf asm("a1"))
+void PixBufBlitNormal(PixBufT *dstBuf asm("a0"),
+                      size_t x asm("d0"), size_t y asm("d1"),
+                      PixBufT *srcBuf asm("a1"))
+{
+  size_t stride = dstBuf->width - srcBuf->width;
+
+  uint8_t *src = srcBuf->data;
+  uint8_t *dst = &dstBuf->data[y * dstBuf->width + x];
+
+  y = srcBuf->height;
+
+  do {
+    x = srcBuf->width;
+
+    do {
+      *dst++ = *src++;
+    } while (--x > 0);
+
+    dst += stride;
+  } while (--y > 0);
+}
+
+void PixBufBlitTransparent(PixBufT *dstBuf asm("a0"),
+                           size_t x asm("d0"), size_t y asm("d1"),
+                           PixBufT *srcBuf asm("a1"))
 {
   size_t stride = dstBuf->width - srcBuf->width;
 
@@ -26,4 +49,13 @@ void PixBufBlitTransparent(PixBufT *dstBuf asm("a0"), size_t x asm("d0"),
 
     dst += stride;
   } while (--y > 0);
+}
+
+void PixBufBlit(PixBufT *dstBuf, size_t x, size_t y, PixBufT *srcBuf)
+{
+  if (srcBuf->flags & PIXBUF_TRANSPARENT) {
+    PixBufBlitTransparent(dstBuf, x, y, srcBuf);
+  } else {
+    PixBufBlitNormal(dstBuf, x, y, srcBuf);
+  }
 }

@@ -9,8 +9,11 @@
 #define PIXBUF_CLUT  1
 #define PIXBUF_RGB24 2
 
+#define PIXBUF_TRANSPARENT 1
+
 typedef struct PixBuf {
-  uint32_t type;
+  uint16_t type;
+  uint16_t flags;
   uint8_t  *data;
   size_t   width, height;
   size_t   colors;        /* stores number of unique colors in the image */
@@ -20,6 +23,7 @@ typedef struct PixBuf {
 PixBufT *NewPixBuf(size_t width, size_t height);
 PixBufT *NewPixBufFromFile(const StrT fileName);
 
+bool PixBufSetTransparent(PixBufT *pixbuf, bool transparent);
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
 
 void PutPixel(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),

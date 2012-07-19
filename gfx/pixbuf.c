@@ -52,6 +52,17 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
   return NULL;
 }
 
+bool PixBufSetTransparent(PixBufT *pixbuf, bool transparent) {
+  bool previous = pixbuf->flags & PIXBUF_TRANSPARENT;
+
+  if (transparent)
+    pixbuf->flags |= PIXBUF_TRANSPARENT;
+  else
+    pixbuf->flags &= ~PIXBUF_TRANSPARENT;
+
+  return previous;
+}
+
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {
   ASSERT(pixbuf->type == PIXBUF_CLUT, "Cannot remap non-CLUT image!");
 
