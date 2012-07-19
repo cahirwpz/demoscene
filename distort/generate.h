@@ -4,7 +4,8 @@
 #include "distort/common.h"
 
 void GenerateTunnelDistortion(DistortionMapT *tunnel,
-                              int radius, int centerX, int centerY);
+                              int radius, float aspectRatio,
+                              int centerX, int centerY);
 void GenerateSineDistortion(DistortionMapT *map,
                             size_t xFreq, float xAmp, float xShift,
                             size_t yFreq, float yAmp, float yShift);
