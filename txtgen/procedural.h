@@ -4,15 +4,15 @@
 #include "std/types.h"
 #include "gfx/pixbuf.h"
 
-typedef float (*GenPixelFuncT)(PixBufT *pixbuf, size_t x, size_t y, PtrT data);
+typedef float (*GenPixelFuncT)(float x asm("fp0"), float y asm("fp1"),
+                               PtrT data asm("a0"));
 
-typedef struct LightData {
-  float radius;
-} LightDataT;
-
-float Light1(PixBufT *pixbuf, size_t x, size_t y, LightDataT *data);
-float Light2(PixBufT *pixbuf, size_t x, size_t y, LightDataT *data);
-float Light3(PixBufT *pixbuf, size_t x, size_t y, LightDataT *data);
+float LightLinearFalloff(float x asm("fp0"), float y asm("fp1"),
+                         float *radius asm("a0"));
+float LightLogarithmicFalloff(float x asm("fp0"), float y asm("fp1"),
+                              float *radius asm("a0"));
+float LightGaussianFalloff(float x asm("fp0"), float y asm("fp1"),
+                           float *radius asm("a0"));
 
 void GeneratePixels(PixBufT *dst, GenPixelFuncT func, PtrT data);
 

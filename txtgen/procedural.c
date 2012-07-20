@@ -1,41 +1,40 @@
-#include <math.h>
-
+#include "std/math.h"
 #include "txtgen/procedural.h"
 
-static float DistanceFromCenter(PixBufT *pixbuf, size_t x, size_t y, float radius) {
-  float radiusX = (int)pixbuf->width / 2;
-  float radiusY = (int)pixbuf->height / 2;
-  float distX = (x - radiusX) / radiusX;
-  float distY = (y - radiusY) / radiusY;
+static float DistanceFromCenter(float x asm("fp0"), float y asm("fp1"), float radius asm("d0")) {
+  x = (x - 0.5f) * 2.0f;
+  y = (y - 0.5f) * 2.0f;
 
-  return __builtin_sqrtf(distX * distX + distY * distY) * radius;
+  return sqrtf(x * x + y * y) / radius;
 }
 
-float Light1(PixBufT *pixbuf, size_t x, size_t y, LightDataT *data) {
-  return 1.0f - DistanceFromCenter(pixbuf, x, y, data->radius);
+float LightLinearFalloff(float x asm("fp0"), float y asm("fp1"), float *radius asm("a0")) {
+  return 1.0f - DistanceFromCenter(x, y, *radius);
 }
 
-float Light2(PixBufT *pixbuf, size_t x, size_t y, LightDataT *data) {
-  float d = DistanceFromCenter(pixbuf, x, y, data->radius);
-  
-  if (d == 0.0f)
-    return 1.0f;
-
-  return log(d * 0.5f) / log(0.1f);
+float LightLogarithmicFalloff(float x asm("fp0"), float y asm("fp1"), float *radius asm("a0")) {
+  return -0.5f * logf(DistanceFromCenter(x, y, *radius));
 }
 
-float Light3(PixBufT *pixbuf, size_t x, size_t y, LightDataT *data) {
-  float d = DistanceFromCenter(pixbuf, x, y, data->radius);
+float LightGaussianFalloff(float x asm("fp0"), float y asm("fp1"), float *radius asm("a0")) {
+  float d = DistanceFromCenter(x, y, *radius);
 
-  return exp(-d * d / 0.25f) - 4.75f;
+  return (1.0f - exp(1.0f - d * d)) / (1 - M_E);
 }
 
 void GeneratePixels(PixBufT *dst, GenPixelFuncT func, PtrT data) {
-  size_t x, y;
+  uint8_t *pixels = dst->data;
 
-  for (y = 0; y < dst->height; y++) {
-    for (x = 0; x < dst->width; x++) {
-      float value = func(dst, x, y, data);
+  float dx = 1.0f / dst->width;
+  float dy = 1.0f / dst->height;
+  float x, y;
+
+  int colors = dst->colors - 1;
+  int baseColor = dst->baseColor;
+
+  for (y = 0.0f; y < 1.0f; y += dy) {
+    for (x = 0.0f; x < 1.0f; x += dx) {
+      float value = func(x, y, data);
 
       if (value < 0.0f)
         value = 0.0f;
@@ -43,7 +42,7 @@ void GeneratePixels(PixBufT *dst, GenPixelFuncT func, PtrT data) {
       if (value > 1.0f)
         value = 1.0f;
       
-      dst->data[x + y * dst->width] = value * (dst->colors - 1) + dst->baseColor;
+      *pixels++ = (int)(value * colors) + baseColor;
     }
   }
 }
