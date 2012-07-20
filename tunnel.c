@@ -6,19 +6,18 @@
 #include "std/memory.h"
 #include "std/resource.h"
 
+#include "distort/generate.h"
 #include "gfx/blit.h"
 #include "gfx/hsl.h"
 #include "gfx/line.h"
 #include "gfx/palette.h"
+#include "tools/frame.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
 #include "system/fileio.h"
 #include "system/input.h"
 #include "system/vblank.h"
-
-#include "frame_tools.h"
-#include "distort/generate.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;

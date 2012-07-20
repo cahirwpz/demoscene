@@ -8,13 +8,12 @@
 #include "gfx/line.h"
 #include "gfx/ms2d.h"
 #include "gfx/triangle.h"
+#include "tools/frame.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
 #include "system/input.h"
 #include "system/vblank.h"
-
-#include "frame_tools.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;

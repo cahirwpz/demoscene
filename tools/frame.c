@@ -1,6 +1,6 @@
 #include <proto/graphics.h>
 
-#include "frame_tools.h"
+#include "tools/frame.h"
 
 void RenderFrameNumber(int frameNumber) {
   struct RastPort *rastPort = GetCurrentRastPort();

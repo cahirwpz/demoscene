@@ -7,13 +7,12 @@
 #include "engine/scene.h"
 #include "gfx/canvas.h"
 #include "gfx/ms3d.h"
+#include "tools/frame.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
 #include "system/input.h"
 #include "system/vblank.h"
-
-#include "frame_tools.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
