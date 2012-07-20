@@ -8,6 +8,12 @@ static float DistanceFromCenter(float x asm("fp0"), float y asm("fp1"), float ra
   return sqrtf(x * x + y * y) / radius;
 }
 
+float LightNormalFalloff(float x asm("fp0"), float y asm("fp1"), float *radius asm("a0")) {
+  float d = DistanceFromCenter(x, y, *radius);
+
+  return 1.0f / 16.0f * (1.0f / (d * d) - 1.0f);
+}
+
 float LightLinearFalloff(float x asm("fp0"), float y asm("fp1"), float *radius asm("a0")) {
   return 1.0f - DistanceFromCenter(x, y, *radius);
 }

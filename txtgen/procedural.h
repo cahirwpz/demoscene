@@ -7,6 +7,8 @@
 typedef float (*GenPixelFuncT)(float x asm("fp0"), float y asm("fp1"),
                                PtrT data asm("a0"));
 
+float LightNormalFalloff(float x asm("fp0"), float y asm("fp1"),
+                         float *radius asm("a0"));
 float LightLinearFalloff(float x asm("fp0"), float y asm("fp1"),
                          float *radius asm("a0"));
 float LightLogarithmicFalloff(float x asm("fp0"), float y asm("fp1"),
