@@ -20,7 +20,7 @@ typedef struct PixBuf {
   uint8_t  baseColor;     /* valid only in GRAY or CLUT mode */
 } PixBufT;
 
-PixBufT *NewPixBuf(size_t width, size_t height);
+PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height);
 PixBufT *NewPixBufFromFile(const StrT fileName);
 
 bool PixBufSetTransparent(PixBufT *pixbuf, bool transparent);

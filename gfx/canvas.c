@@ -10,7 +10,7 @@ static void DeleteCanvas(CanvasT *canvas) {
 CanvasT *NewCanvas(int width, int height) {
   CanvasT *canvas = NewRecordGC(CanvasT, (FreeFuncT)DeleteCanvas);
 
-  canvas->pixbuf = NewPixBuf(width, height);
+  canvas->pixbuf = NewPixBuf(PIXBUF_CLUT, width, height);
   canvas->fg_col = 255;
   canvas->clip_area.br.x = canvas->pixbuf->width;
   canvas->clip_area.br.y = canvas->pixbuf->height;

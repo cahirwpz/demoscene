@@ -9,10 +9,10 @@ static void DeletePixBuf(PixBufT *pixbuf) {
   MemUnref(pixbuf->data);
 }
 
-PixBufT *NewPixBuf(size_t width, size_t height) {
+PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
   PixBufT *pixbuf = NewRecordGC(PixBufT, (FreeFuncT)DeletePixBuf);
 
-  pixbuf->type = PIXBUF_CLUT;
+  pixbuf->type = type;
   pixbuf->width = width;
   pixbuf->height = height;
   pixbuf->baseColor = 0;
@@ -34,9 +34,8 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
   DiskPixBufT *file = (DiskPixBufT *)ReadFileSimple(fileName);
 
   if (file) {
-    PixBufT *pixbuf = NewPixBuf(file->width, file->height);
+    PixBufT *pixbuf = NewPixBuf(file->type, file->width, file->height);
 
-    pixbuf->type = file->type;
     pixbuf->colors = file->colors;
 
     memcpy(pixbuf->data, file->data, file->width * file->height);
