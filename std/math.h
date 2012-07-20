@@ -1,14 +1,46 @@
 #ifndef __STD_MATH__
 #define __STD_MATH__
 
+#define __HAVE_68881__
+
 #include <math.h>
 #include "std/types.h"
 
 #ifdef AMIGA
-inline static double log2f(float x) {
+inline static float log2f(float x) {
   float value;
 
   asm("flog2%.x %1,%0"
+      : "=f" (value)
+      : "f" (x));
+
+  return value;
+}
+
+inline static double log2(double x) {
+  double value;
+
+  asm("flog2%.x %1,%0"
+      : "=f" (value)
+      : "f" (x));
+
+  return value;
+}
+
+inline static float logf(float x) {
+  float value;
+
+  asm("flogn%.x %1,%0"
+      : "=f" (value)
+      : "f" (x));
+
+  return value;
+}
+
+inline static float sqrtf(float x) {
+  float value;
+
+  asm("fsqrt%.x %1,%0"
       : "=f" (value)
       : "f" (x));
 
