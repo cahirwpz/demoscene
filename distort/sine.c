@@ -11,8 +11,8 @@ void GenerateSineDistortion(DistortionMapT *map,
   float *sinV = CalcSineTable(map->height,
                               yFreq, yAmp / (int)map->textureH, yShift);
 
-  float du = 1.0f / (int)map->height;
-  float dv = 1.0f / (int)map->width;
+  float du = 1.0f / (int)map->width;
+  float dv = 1.0f / (int)map->height;
   float u, v;
 
   size_t x, y, i;
