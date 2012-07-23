@@ -10,6 +10,7 @@ struct _Array {
   size_t reserved;
   bool zeroed;
   FreeFuncT freeFunc;
+  CompareFuncT compareFunc; 
 };
 
 static void DeleteArray(ArrayT *self) {
@@ -39,11 +40,15 @@ ArrayT *NewPtrArray(size_t reserved, bool autoFree) {
   return array;
 }
 
+void ArraySetCompareFunc(ArrayT *self, CompareFuncT func) {
+  self->compareFunc = func;
+}
+
 void ArraySetFreeFunc(ArrayT *self, FreeFuncT func) {
   self->freeFunc = func;
 }
 
-ArrayDataT *ArrayGetData(ArrayT *self) {
+ArrayDataT *ArrayGetData(ArrayT *self asm("a0")) {
   return self->array;
 }
 
@@ -52,7 +57,7 @@ ArrayDataT *ArrayGetData(ArrayT *self) {
  *
  * Assumes that index is non-negative.  Can return an invalid pointer.
  */
-PtrT ArrayGetFast(ArrayT *self, size_t index) {
+PtrT ArrayGetFast(ArrayT *self asm("a0"), size_t index asm("d0")) {
   return &self->array->data[self->elemSize * index];
 }
 
@@ -63,7 +68,7 @@ PtrT ArrayGetFast(ArrayT *self, size_t index) {
  * 1) fst != snd
  * 2) there's one unoccupied element at the end of array
  */
-void ArraySwapFast(ArrayT *self, PtrT fst, PtrT snd) {
+static void ArraySwapFast(ArrayT *self asm("a0"), PtrT fst asm("a1"), PtrT snd asm("a2")) {
   PtrT tmp = ArrayGetFast(self, self->array->size - 1);
 
   memcpy(tmp, fst, self->elemSize);
@@ -172,7 +177,7 @@ static size_t ArrayCheckIndex(ArrayT *self, ssize_t index) {
   return (index < 0) ? (self->array->size - index) : index;
 }
 
-PtrT ArrayGet(ArrayT *self, ssize_t index) {
+PtrT ArrayGet(ArrayT *self asm("a0"), ssize_t index asm("d0")) {
   return ArrayGetFast(self, ArrayCheckIndex(self, index));
 }
 
@@ -298,5 +303,51 @@ void ArrayAppendElements(ArrayT *self, PtrT data, size_t count) {
   }
 }
 
-void ArraySort(ArrayT *self, CompareFuncT func, ssize_t first, ssize_t last) {
+static inline PtrT ArrayPartition(ArrayT *self, size_t elemSize,
+                                  PtrT left, PtrT right, PtrT pivot)
+{
+  CompareFuncT cmp = self->compareFunc;
+
+  while (left < right) {
+    while ((cmp(left, pivot) < 0) && (left < right))
+      left += elemSize;
+
+    while ((cmp(pivot, right) < 0) && (left < right))
+      right -= elemSize;
+
+    ArraySwapFast(self, left, right);
+    left += elemSize;
+    right -= elemSize;
+  }
+
+  return left + elemSize;
+}
+
+static void ArrayQuickSort(ArrayT *self, PtrT left, PtrT right) {
+  size_t elemSize = self->elemSize;
+
+  while (left < right) {
+    size_t pivotIndex = ((size_t)right + (size_t)left) / (2 * elemSize);
+    PtrT pivot = ArrayGetFast(self, pivotIndex);
+
+    pivot = ArrayPartition(self, elemSize, left, right, pivot);
+
+    if (pivot - left <= right - pivot) {
+      ArrayQuickSort(self, left, pivot);
+      left = pivot;
+    } else {
+      ArrayQuickSort(self, pivot, right);
+      right = pivot + elemSize;
+    }
+  }
+}
+
+void ArraySort(ArrayT *self, ssize_t first, ssize_t last) {
+  PtrT left = ArrayGet(self, first);
+  PtrT right = ArrayGet(self, last);
+
+  ASSERT(self->compareFunc, "Compare function not set!");
+
+  ArrayMaybeGrow(self, 1);
+  ArrayQuickSort(self, left, right);
 }

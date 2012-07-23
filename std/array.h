@@ -12,6 +12,7 @@ typedef struct _ArrayData {
 
 ArrayT *NewArray(size_t size, size_t elemSize, bool zeroed);
 ArrayT *NewPtrArray(size_t reserved, bool autoFree);
+void ArraySetCompareFunc(ArrayT *self, CompareFuncT func);
 void ArraySetFreeFunc(ArrayT *self, FreeFuncT func);
 void ArrayResize(ArrayT *self, size_t newSize);
 
@@ -19,11 +20,11 @@ void ArrayResize(ArrayT *self, size_t newSize);
  * Use with caution! After the size of the array is changed a pointer obtained
  * with this function becomes invalid!
  */
-ArrayDataT *ArrayGetData(ArrayT *self);
+ArrayDataT *ArrayGetData(ArrayT *self asm("a0"));
 
-PtrT ArrayGet(ArrayT *self, ssize_t index);
-PtrT ArrayGetFast(ArrayT *self, size_t index);
-void ArraySet(ArrayT *self, ssize_t index, PtrT data);
+PtrT ArrayGet(ArrayT *self asm("a0"), ssize_t index asm("d0"));
+PtrT ArrayGetFast(ArrayT *self asm("a0"), size_t index asm("d0"));
+void ArraySet(ArrayT *self asm("a0"), ssize_t index asm("d0"), PtrT data asm("a1"));
 void ArrayForEach(ArrayT *self, IterFuncT func, PtrT data);
 
 void ArrayRemove(ArrayT *self, ssize_t index);
@@ -38,6 +39,6 @@ void ArrayInsertElements(ArrayT *self, ssize_t index, PtrT data, size_t count);
 PtrT ArrayAppend(ArrayT *self);
 void ArrayAppendElements(ArrayT *self, PtrT data, size_t count);
 
-void ArraySort(ArrayT *self, CompareFuncT func, ssize_t first, ssize_t last);
+void ArraySort(ArrayT *self, ssize_t first, ssize_t last);
 
 #endif
