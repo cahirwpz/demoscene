@@ -1,5 +1,5 @@
 #include "std/debug.h"
-#include "gfx/ms3d.h"
+#include "engine/ms3d.h"
 
 MatrixStack3D *NewMatrixStack3D() {
   return NewStack(32, sizeof(Matrix3D));

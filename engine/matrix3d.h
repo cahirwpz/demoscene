@@ -1,8 +1,8 @@
-#ifndef __GFX_MATRIX3D_H__
-#define __GFX_MATRIX3D_H__
+#ifndef __ENGINE_MATRIX3D_H__
+#define __ENGINE_MATRIX3D_H__
 
+#include "engine/vector3d.h"
 #include "gfx/common.h"
-#include "gfx/vector3d.h"
 
 typedef float Matrix3D[4][4];
 

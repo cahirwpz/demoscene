@@ -1,5 +1,5 @@
-#ifndef __GFX_VECTOR3D_H__
-#define __GFX_VECTOR3D_H__
+#ifndef __ENGINE_VECTOR3D_H__
+#define __ENGINE_VECTOR3D_H__
 
 #include "std/types.h"
 

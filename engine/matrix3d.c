@@ -1,7 +1,6 @@
-#include <math.h>
-
+#include "std/math.h"
 #include "std/memory.h"
-#include "gfx/matrix3d.h"
+#include "engine/matrix3d.h"
 
 #define M_FOREACH(I, J)           \
   for ((I) = 0; (I) < 4; (I)++)   \

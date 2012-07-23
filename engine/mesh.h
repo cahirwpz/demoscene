@@ -2,7 +2,7 @@
 #define __ENGINE_MESH_H__
 
 #include "std/types.h"
-#include "gfx/vector3d.h"
+#include "engine/vector3d.h"
 
 typedef struct Triangle {
   uint16_t p1, p2, p3;

@@ -1,8 +1,8 @@
-#ifndef __GFX_MS3D_H__
-#define __GFX_MS3D_H__
+#ifndef __ENGINE_MS3D_H__
+#define __ENGINE_MS3D_H__
 
 #include "std/stack.h"
-#include "gfx/matrix3d.h"
+#include "engine/matrix3d.h"
 
 typedef StackT MatrixStack3D;
 

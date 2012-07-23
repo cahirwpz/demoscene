@@ -1,7 +1,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "gfx/vector3d.h"
+#include "engine/vector3d.h"
 
 void V3D_Add(Vector3D *d, Vector3D *a, Vector3D *b) {
   d->x = a->x + b->x;

@@ -4,9 +4,9 @@
 #include "std/memory.h"
 #include "std/resource.h"
 
+#include "engine/ms3d.h"
 #include "engine/scene.h"
 #include "gfx/canvas.h"
-#include "gfx/ms3d.h"
 #include "tools/frame.h"
 
 #include "system/c2p.h"

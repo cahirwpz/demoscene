@@ -12,6 +12,6 @@ void PlaneFromPointAndVector(PlaneT *plane, Vector3D *point, Vector3D *vector) {
   plane->d = -V3D_Dot(&plane->v, point);
 }
 
-float PointDistanceFromPlane(Vector3D *point, PlaneT *plane) {
+float PointDistanceFromPlane(PlaneT *plane, Vector3D *point) {
   return V3D_Dot(&plane->v, point) + plane->d;
 }
