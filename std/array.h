@@ -30,6 +30,8 @@ void ArrayRemove(ArrayT *self, ssize_t index);
 void ArrayRemoveRange(ArrayT *self, ssize_t first, ssize_t last);
 void ArrayRemoveFast(ArrayT *self, size_t index);
 
+void ArrayFilterFast(ArrayT *self, PredicateT func);
+
 PtrT ArrayInsert(ArrayT *self, ssize_t index);
 PtrT ArrayInsertFast(ArrayT *self, ssize_t index);
 void ArrayInsertElements(ArrayT *self, ssize_t index, PtrT data, size_t count);

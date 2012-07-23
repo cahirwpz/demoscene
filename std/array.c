@@ -237,6 +237,20 @@ void ArrayRemoveFast(ArrayT *self, size_t index) {
     bzero(last, self->elemSize);
 }
 
+void ArrayFilterFast(ArrayT *self, PredicateT func) {
+  PtrT item = ArrayGetFast(self, 0);
+  size_t index = 0;
+
+  while (index < self->array->size) {
+    if (func(item)) {
+      item += self->elemSize;
+      index++;
+    } else {
+      ArrayRemoveFast(self, index);
+    }
+  }
+}
+
 PtrT ArrayInsert(ArrayT *self, ssize_t index) {
   index = ArrayCheckIndex(self, index);
 
