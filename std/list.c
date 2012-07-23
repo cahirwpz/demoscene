@@ -48,6 +48,20 @@ void ListForEach(ListT *list, IterFuncT func, PtrT data) {
   }
 }
 
+void ListFilter(ListT *list, PredicateT func) {
+  NodeT *guard = GetNode(list);
+  NodeT *node = guard->next;
+
+  while (node != guard) {
+    NodeT *current = node;
+
+    node = node->next;
+
+    if (!func(GetData(current)))
+      MemUnref(NodeFree(NodeUnlink(current)));
+  }
+}
+
 PtrT ListSearch(ListT *list, CompareFuncT func, PtrT data) {
   NodeT *guard = GetNode(list);
   NodeT *node = guard->next;

@@ -50,6 +50,14 @@ typedef void (*FreeFuncT)(PtrT);
 typedef bool (*InitFuncT)(PtrT);
 
 /**
+ * @brief Type of a predicate checking function.
+ *
+ * @param item Item for which the predicate is to be checked.
+ * @result Value of the predicate.
+ */
+typedef bool (*PredicateT)(PtrT item);
+
+/**
  * @brief Type of a copy function.
  *
  * @param dst Destination for the copy.

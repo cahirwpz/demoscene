@@ -9,6 +9,7 @@ typedef struct _List ListT;
 ListT *NewList();
 
 void ListForEach(ListT *list, IterFuncT func, PtrT data);
+void ListFilter(ListT *list, PredicateT func);
 PtrT ListSearch(ListT *list, CompareFuncT func, PtrT data);
 PtrT ListRemove(ListT *list, CompareFuncT func, PtrT data);
 
