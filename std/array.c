@@ -30,6 +30,15 @@ ArrayT *NewArray(size_t reserved, size_t elemSize, bool zeroed) {
   return array;
 }
 
+ArrayT *NewPtrArray(size_t reserved, bool autoFree) {
+  ArrayT *array = NewArray(reserved, sizeof(PtrT), TRUE);
+
+  if (autoFree)
+    ArraySetFreeFunc(array, (FreeFuncT)MemUnref);
+  
+  return array;
+}
+
 void ArraySetFreeFunc(ArrayT *self, FreeFuncT func) {
   self->freeFunc = func;
 }
@@ -132,7 +141,7 @@ size_t NearestPow2(size_t num) {
   while (num > i)
     i += i;
 
-  return i;
+  return max(i, MIN_SIZE);
 }
 
 /*

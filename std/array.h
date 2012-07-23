@@ -11,6 +11,7 @@ typedef struct _ArrayData {
 } ArrayDataT;
 
 ArrayT *NewArray(size_t size, size_t elemSize, bool zeroed);
+ArrayT *NewPtrArray(size_t reserved, bool autoFree);
 void ArraySetFreeFunc(ArrayT *self, FreeFuncT func);
 void ArrayResize(ArrayT *self, size_t newSize);
 
