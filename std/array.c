@@ -10,7 +10,9 @@ struct _Array {
   size_t reserved;
   bool zeroed;
   FreeFuncT freeFunc;
-  CompareFuncT compareFunc; 
+  CompareFuncT compareFunc;
+
+  PtrT temporary;
 };
 
 static void DeleteArray(ArrayT *self) {
@@ -24,14 +26,9 @@ ArrayT *NewArray(size_t reserved, size_t elemSize, bool zeroed) {
 
   array->elemSize = elemSize;
   array->zeroed = zeroed;
-  array->reserved = reserved;
+  array->reserved = 0;
 
-  /*
-   * Allocate one more element that will serve the purpose of temporary element
-   * for some operations (i.e. sort, swap).
-   */
-  array->array = MemNew0(sizeof(ArrayDataT) + (reserved + 1) * elemSize, NULL);
-  array->array->size = 0;
+  ArrayResize(array, reserved);
 
   return array;
 }
@@ -72,11 +69,12 @@ PtrT ArrayGetFast(ArrayT *self asm("a0"), size_t index asm("d0")) {
  * Assumes that fst != snd.
  */
 static void ArraySwapFast(ArrayT *self asm("a0"), PtrT fst asm("a1"), PtrT snd asm("a2")) {
-  PtrT tmp = ArrayGetFast(self, self->array->size);
+  PtrT tmp = self->temporary;
+  size_t elemSize = self->elemSize;
 
-  memcpy(tmp, fst, self->elemSize);
-  memcpy(fst, snd, self->elemSize);
-  memcpy(snd, tmp, self->elemSize);
+  memcpy(tmp, fst, elemSize);
+  memcpy(fst, snd, elemSize);
+  memcpy(snd, tmp, elemSize);
 }
 
 static void ArrayClearRange(ArrayT *self, size_t first, size_t last) {
@@ -109,36 +107,40 @@ static void ArrayMoveRange(ArrayT *self, size_t index, size_t first, size_t last
  * 1) newSize > current size => extra space will be allocated.
  * 2) newSize < current size => some elements will be removed and
  *    reserved space will be shrinked.
+ *
+ * Note: Allocates one more element that will serve the purpose of temporary
+ * element for some operations (i.e. sort, swap).
  */
-static void ArrayDataResize(ArrayT *self, size_t newSize) {
-  size_t newReserved = sizeof(ArrayDataT) + (newSize + 1) * self->elemSize;
-  ArrayDataT *array = MemDupGC(self->array, newReserved, NULL);
-
-  MemUnref(self->array);
-  self->array = array;
-}
-
 void ArrayResize(ArrayT *self, size_t newSize) {
-  if (!self->array) {
-    self->array = MemNew(sizeof(ArrayDataT) + newSize * self->elemSize, NULL);
-    self->array->size = 0;
-    ArrayClearRange(self, 0, newSize - 1);
-  } else {
-    if (newSize > self->reserved) {
-      ArrayDataResize(self, newSize);
-      ArrayClearRange(self, self->reserved, newSize - 1);
-    }
-   
-    if (newSize < self->reserved) {
-      if (newSize < self->array->size) {
-        ArrayFreeRange(self, newSize, self->array->size - 1);
-        self->array->size = newSize;
-      }
-      ArrayDataResize(self, newSize);
+  if (self->array) {
+    if (newSize == self->array->size)
+      return;
+
+    if (newSize < self->array->size) {
+      ArrayFreeRange(self, newSize, self->array->size - 1);
+      self->array->size = newSize;
     }
   }
 
-  self->reserved = newSize;
+  {
+    size_t elemSize = self->elemSize;
+    size_t bytes = sizeof(ArrayDataT) + (newSize + 1) * elemSize;
+
+    if (!self->array) {
+      self->array = MemNew(bytes, NULL);
+      self->array->size = 0;
+    } else {
+      ArrayDataT *oldArray = self->array;
+      self->array = MemDupGC(oldArray, bytes, NULL);
+      MemUnref(oldArray);
+    }
+
+    if (newSize > self->reserved)
+      ArrayClearRange(self, self->reserved, newSize);
+
+    self->reserved = newSize;
+    self->temporary = &self->array->data[newSize * elemSize];
+  }
 }
 
 #define MIN_SIZE 16
