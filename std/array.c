@@ -143,7 +143,11 @@ size_t NearestPow2(size_t num) {
  * @brief Check if array can accomodate extra elements and resize if needed.
  */
 static void ArrayMaybeGrow(ArrayT *self, size_t count) {
-  self->size += count;
+  if (self->size + count <= self->reserved) {
+    self->size += count;
+  } else {
+    ArrayResize(self, NearestPow2(self->size));
+  }
 }
 
 /*
