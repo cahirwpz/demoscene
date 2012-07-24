@@ -236,6 +236,8 @@ void ArrayRemoveFast(ArrayT *self, size_t index) {
 
   if (self->zeroed)
     bzero(last, self->elemSize);
+
+  self->size--;
 }
 
 void ArrayFilterFast(ArrayT *self, PredicateT func) {
