@@ -3,24 +3,25 @@
 
 #include "std/types.h"
 
-typedef struct _Array ArrayT;
+typedef struct Array {
+  uint8_t *data;
 
-typedef struct _ArrayData {
   size_t size;
-  uint8_t data[0];
-} ArrayDataT;
+  size_t elemSize;
+  size_t reserved;
+
+  bool zeroed;
+  FreeFuncT freeFunc;
+  CompareFuncT compareFunc;
+
+  PtrT temporary;
+} ArrayT;
 
 ArrayT *NewArray(size_t size, size_t elemSize, bool zeroed);
 ArrayT *NewPtrArray(size_t reserved, bool autoFree);
 void ArraySetCompareFunc(ArrayT *self, CompareFuncT func);
 void ArraySetFreeFunc(ArrayT *self, FreeFuncT func);
 void ArrayResize(ArrayT *self, size_t newSize);
-
-/*
- * Use with caution! After the size of the array is changed a pointer obtained
- * with this function becomes invalid!
- */
-ArrayDataT *ArrayGetData(ArrayT *self asm("a0"));
 
 PtrT ArrayGet(ArrayT *self asm("a0"), ssize_t index asm("d0"));
 PtrT ArrayGetFast(ArrayT *self asm("a0"), size_t index asm("d0"));

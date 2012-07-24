@@ -4,21 +4,10 @@
 #include "std/memory.h"
 #include "std/array.h"
 
-struct _Array {
-  ArrayDataT *array;
-  size_t elemSize;
-  size_t reserved;
-  bool zeroed;
-  FreeFuncT freeFunc;
-  CompareFuncT compareFunc;
-
-  PtrT temporary;
-};
-
 static void DeleteArray(ArrayT *self) {
   if (self->freeFunc)
     ArrayForEach(self, (IterFuncT)self->freeFunc, NULL);
-  MemUnref(self->array);
+  MemUnref(self->data);
 }
 
 ArrayT *NewArray(size_t reserved, size_t elemSize, bool zeroed) {
@@ -50,17 +39,13 @@ void ArraySetFreeFunc(ArrayT *self, FreeFuncT func) {
   self->freeFunc = func;
 }
 
-ArrayDataT *ArrayGetData(ArrayT *self asm("a0")) {
-  return self->array;
-}
-
 /*
  * @brief Get a pointer to an element without extra checks.
  *
  * Assumes that index is non-negative.  Can return an invalid pointer.
  */
 PtrT ArrayGetFast(ArrayT *self asm("a0"), size_t index asm("d0")) {
-  return &self->array->data[self->elemSize * index];
+  return &self->data[self->elemSize * index];
 }
 
 /*
@@ -112,34 +97,34 @@ static void ArrayMoveRange(ArrayT *self, size_t index, size_t first, size_t last
  * element for some operations (i.e. sort, swap).
  */
 void ArrayResize(ArrayT *self, size_t newSize) {
-  if (self->array) {
-    if (newSize == self->array->size)
+  if (self->data) {
+    if (newSize == self->size)
       return;
 
-    if (newSize < self->array->size) {
-      ArrayFreeRange(self, newSize, self->array->size - 1);
-      self->array->size = newSize;
+    if (newSize < self->size) {
+      ArrayFreeRange(self, newSize, self->size - 1);
+      self->size = newSize;
     }
   }
 
   {
     size_t elemSize = self->elemSize;
-    size_t bytes = sizeof(ArrayDataT) + (newSize + 1) * elemSize;
+    size_t bytes = (newSize + 1) * elemSize;
 
-    if (!self->array) {
-      self->array = MemNew(bytes, NULL);
-      self->array->size = 0;
+    if (!self->data) {
+      self->data = MemNew(bytes, NULL);
+      self->size = 0;
     } else {
-      ArrayDataT *oldArray = self->array;
-      self->array = MemDupGC(oldArray, bytes, NULL);
-      MemUnref(oldArray);
+      PtrT oldData = self->data;
+      self->data = MemDupGC(oldData, bytes, NULL);
+      MemUnref(oldData);
     }
 
     if (newSize > self->reserved)
       ArrayClearRange(self, self->reserved, newSize);
 
     self->reserved = newSize;
-    self->temporary = &self->array->data[newSize * elemSize];
+    self->temporary = &self->data[newSize * elemSize];
   }
 }
 
@@ -158,14 +143,14 @@ size_t NearestPow2(size_t num) {
  * @brief Check if array can accomodate extra elements and resize if needed.
  */
 static void ArrayMaybeGrow(ArrayT *self, size_t count) {
-  self->array->size += count;
+  self->size += count;
 }
 
 /*
  * @brief Check if array doesn't have too much of an extra space and shrink.
  */
 static void ArrayMaybeShrink(ArrayT *self, size_t count) {
-  self->array->size -= count;
+  self->size -= count;
 }
 
 /*
@@ -176,10 +161,10 @@ static void ArrayMaybeShrink(ArrayT *self, size_t count) {
  */
 
 static size_t ArrayCheckIndex(ArrayT *self, ssize_t index) {
-  ASSERT((index < self->array->size) && (index <= -self->array->size),
+  ASSERT((index < self->size) && (index <= -self->size),
          "Index %d out of bound.", index);
 
-  return (index < 0) ? (self->array->size - index) : index;
+  return (index < 0) ? (self->size - index) : index;
 }
 
 PtrT ArrayGet(ArrayT *self asm("a0"), ssize_t index asm("d0")) {
@@ -196,7 +181,7 @@ void ArrayForEach(ArrayT *self, IterFuncT func, PtrT data) {
   PtrT item = ArrayGetFast(self, 0);
   size_t index = 0;
 
-  while (index++ < self->array->size) {
+  while (index++ < self->size) {
     func(item, data);
     item += self->elemSize;
   }
@@ -210,8 +195,8 @@ static void ArrayRemoveInternal(ArrayT *self, size_t first, size_t last) {
   size_t count = last - first + 1;
 
   ArrayFreeRange(self, first, last);
-  ArrayMoveRange(self, first, last + 1, self->array->size - 1);
-  ArrayClearRange(self, self->array->size - count, self->array->size - 1);
+  ArrayMoveRange(self, first, last + 1, self->size - 1);
+  ArrayClearRange(self, self->size - count, self->size - 1);
   ArrayMaybeShrink(self, count);
 }
 
@@ -237,7 +222,7 @@ void ArrayRemoveRange(ArrayT *self, ssize_t first, ssize_t last) {
  */
 void ArrayRemoveFast(ArrayT *self, size_t index) {
   PtrT item = ArrayGetFast(self, index);
-  PtrT last = ArrayGetFast(self, self->array->size - 1);
+  PtrT last = ArrayGetFast(self, self->size - 1);
 
   if (self->freeFunc)
       self->freeFunc(item);
@@ -253,7 +238,7 @@ void ArrayFilterFast(ArrayT *self, PredicateT func) {
   PtrT item = ArrayGetFast(self, 0);
   size_t index = 0;
 
-  while (index < self->array->size) {
+  while (index < self->size) {
     if (func(item)) {
       item += self->elemSize;
       index++;
@@ -267,7 +252,7 @@ PtrT ArrayInsert(ArrayT *self, ssize_t index) {
   index = ArrayCheckIndex(self, index);
 
   ArrayMaybeGrow(self, 1);
-  ArrayMoveRange(self, index + 1, index, self->array->size - 2);
+  ArrayMoveRange(self, index + 1, index, self->size - 2);
   return ArrayGetFast(self, index);
 }
 
@@ -276,7 +261,7 @@ PtrT ArrayInsertFast(ArrayT *self, ssize_t index) {
 
   {
     PtrT item = ArrayGetFast(self, 0);
-    PtrT last = ArrayGetFast(self, self->array->size - 1);
+    PtrT last = ArrayGetFast(self, self->size - 1);
 
     memcpy(last, item, self->elemSize);
 
@@ -291,21 +276,21 @@ void ArrayInsertElements(ArrayT *self, ssize_t index, PtrT data, size_t count) {
   index = ArrayCheckIndex(self, index);
 
   ArrayMaybeGrow(self, count);
-  ArrayMoveRange(self, index + count, index, self->array->size - count - 1);
+  ArrayMoveRange(self, index + count, index, self->size - count - 1);
   memcpy(ArrayGetFast(self, index), data, count * self->elemSize);
 }
 
 PtrT ArrayAppend(ArrayT *self) {
   ArrayMaybeGrow(self, 1);
 
-  return ArrayGetFast(self, self->array->size - 1);
+  return ArrayGetFast(self, self->size - 1);
 }
 
 void ArrayAppendElements(ArrayT *self, PtrT data, size_t count) {
   ArrayMaybeGrow(self, count);
 
   {
-    PtrT last = ArrayGetFast(self, self->array->size - count);
+    PtrT last = ArrayGetFast(self, self->size - count);
     memcpy(last, data, count * self->elemSize);
   }
 }
@@ -322,7 +307,7 @@ void ArrayInsertionSort(ArrayT *self, ssize_t begin, ssize_t end) {
   {
     PtrT left = ArrayGetFast(self, begin);
     PtrT right = ArrayGetFast(self, end);
-    PtrT tmp = ArrayGetFast(self, self->array->size);
+    PtrT tmp = ArrayGetFast(self, self->size);
 
     size_t elemSize = self->elemSize;
 
