@@ -93,7 +93,7 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
-const int CURVE = 6;
+const int CURVE = 4;
 
 void RenderFlares(int frameNumber) {
   CanvasT *canvas = R_("Canvas");
@@ -156,7 +156,7 @@ void RenderFlares(int frameNumber) {
       DrawLine(canvas, points[i-1].x, points[i-1].y, points[i].x, points[i].y);
     }
 
-    for (i = 0; i < FLARES; i++) {
+    for (i = 2; i < FLARES; i++) {
       size_t p = SEGMENTS * i / (FLARES - 1);
 
       PixBufBlitFlare(canvas->pixbuf, points[p].x, points[p].y, R_("Flare"));
