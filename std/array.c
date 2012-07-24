@@ -25,7 +25,12 @@ ArrayT *NewArray(size_t reserved, size_t elemSize, bool zeroed) {
   array->elemSize = elemSize;
   array->zeroed = zeroed;
   array->reserved = reserved;
-  array->array = MemNew0(sizeof(ArrayDataT) + reserved * elemSize, NULL);
+
+  /*
+   * Allocate one more element that will serve the purpose of temporary element
+   * for some operations (i.e. sort, swap).
+   */
+  array->array = MemNew0(sizeof(ArrayDataT) + (reserved + 1) * elemSize, NULL);
   array->array->size = 0;
 
   return array;
@@ -64,12 +69,10 @@ PtrT ArrayGetFast(ArrayT *self asm("a0"), size_t index asm("d0")) {
 /*
  * @brief Swap two elements without extra checks.
  *
- * Assumes that:
- * 1) fst != snd
- * 2) there's one unoccupied element at the end of array
+ * Assumes that fst != snd.
  */
 static void ArraySwapFast(ArrayT *self asm("a0"), PtrT fst asm("a1"), PtrT snd asm("a2")) {
-  PtrT tmp = ArrayGetFast(self, self->array->size - 1);
+  PtrT tmp = ArrayGetFast(self, self->array->size);
 
   memcpy(tmp, fst, self->elemSize);
   memcpy(fst, snd, self->elemSize);
@@ -108,9 +111,9 @@ static void ArrayMoveRange(ArrayT *self, size_t index, size_t first, size_t last
  *    reserved space will be shrinked.
  */
 static void ArrayDataResize(ArrayT *self, size_t newSize) {
-  ArrayDataT *array = MemDupGC(self->array,
-                               sizeof(ArrayDataT) + newSize * self->elemSize,
-                               NULL);
+  size_t newReserved = sizeof(ArrayDataT) + (newSize + 1) * self->elemSize;
+  ArrayDataT *array = MemDupGC(self->array, newReserved, NULL);
+
   MemUnref(self->array);
   self->array = array;
 }
@@ -181,7 +184,9 @@ PtrT ArrayGet(ArrayT *self asm("a0"), ssize_t index asm("d0")) {
   return ArrayGetFast(self, ArrayCheckIndex(self, index));
 }
 
-void ArraySet(ArrayT *self, ssize_t index, PtrT data) {
+void ArraySet(ArrayT *self asm("a0"), ssize_t index asm("d0"),
+              PtrT data asm("a1"))
+{
   memcpy(ArrayGet(self, index), data, self->elemSize);
 }
 
@@ -303,51 +308,87 @@ void ArrayAppendElements(ArrayT *self, PtrT data, size_t count) {
   }
 }
 
-static inline PtrT ArrayPartition(ArrayT *self, size_t elemSize,
-                                  PtrT left, PtrT right, PtrT pivot)
-{
+void ArrayInsertionSort(ArrayT *self, ssize_t begin, ssize_t end) {
   CompareFuncT cmp = self->compareFunc;
 
+  begin = ArrayCheckIndex(self, begin);
+  end = ArrayCheckIndex(self, end);
+
+  ASSERT(self->compareFunc, "Compare function not set!");
+  ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!", begin, end);
+
+  {
+    PtrT left = ArrayGetFast(self, begin);
+    PtrT right = ArrayGetFast(self, end);
+    PtrT tmp = ArrayGetFast(self, self->array->size);
+
+    size_t elemSize = self->elemSize;
+
+    PtrT pivot = left + elemSize;
+
+    while (pivot <= right) {
+      PtrT insert = left;
+
+      while ((insert < pivot) && (cmp(insert, pivot) > 0))
+        insert += elemSize;
+
+      if (insert < pivot) {
+        memcpy(tmp, pivot, elemSize);
+        memmove(insert + elemSize, insert, pivot - insert);
+        memcpy(insert, tmp, elemSize);
+      }
+
+      pivot += elemSize;
+    }
+  }
+}
+
+size_t ArrayPartition(ArrayT *self, size_t begin, size_t end, PtrT pivot) {
+  CompareFuncT cmp = self->compareFunc;
+  PtrT left = ArrayGetFast(self, begin);
+  PtrT right = ArrayGetFast(self, end);
+  size_t elemSize = self->elemSize;
+  size_t partition = begin;
+
   while (left < right) {
-    while ((cmp(left, pivot) < 0) && (left < right))
+    while ((cmp(left, pivot) < 0) && (left < right)) {
       left += elemSize;
+      partition++;
+    }
 
     while ((cmp(pivot, right) < 0) && (left < right))
       right -= elemSize;
 
     ArraySwapFast(self, left, right);
     left += elemSize;
+    partition++;
     right -= elemSize;
   }
 
-  return left + elemSize;
+  return partition;
 }
 
-static void ArrayQuickSort(ArrayT *self, PtrT left, PtrT right) {
-  size_t elemSize = self->elemSize;
+static void QuickSort(ArrayT *self, size_t l, size_t r) {
+  while (l < r) {
+    PtrT pivot = ArrayGetFast(self, (l + r) / 2);
+    size_t i = ArrayPartition(self, l, r, pivot);
 
-  while (left < right) {
-    size_t pivotIndex = ((size_t)right + (size_t)left) / (2 * elemSize);
-    PtrT pivot = ArrayGetFast(self, pivotIndex);
-
-    pivot = ArrayPartition(self, elemSize, left, right, pivot);
-
-    if (pivot - left <= right - pivot) {
-      ArrayQuickSort(self, left, pivot);
-      left = pivot;
+    if (i - l <= r - i) {
+      ArrayQuickSort(self, l, i);
+      l = i + 1;
     } else {
-      ArrayQuickSort(self, pivot, right);
-      right = pivot + elemSize;
+      ArrayQuickSort(self, i + 1, r);
+      r = i;
     }
   }
 }
 
-void ArraySort(ArrayT *self, ssize_t first, ssize_t last) {
-  PtrT left = ArrayGet(self, first);
-  PtrT right = ArrayGet(self, last);
+void ArrayQuickSort(ArrayT *self, ssize_t begin, ssize_t end) {
+  begin = ArrayCheckIndex(self, begin);
+  end = ArrayCheckIndex(self, end);
 
   ASSERT(self->compareFunc, "Compare function not set!");
+  ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!", begin, end);
 
-  ArrayMaybeGrow(self, 1);
-  ArrayQuickSort(self, left, right);
+  QuickSort(self, begin, end);
 }

@@ -39,6 +39,8 @@ void ArrayInsertElements(ArrayT *self, ssize_t index, PtrT data, size_t count);
 PtrT ArrayAppend(ArrayT *self);
 void ArrayAppendElements(ArrayT *self, PtrT data, size_t count);
 
-void ArraySort(ArrayT *self, ssize_t first, ssize_t last);
+void ArrayInsertionSort(ArrayT *self, ssize_t begin, ssize_t end);
+size_t ArrayPartition(ArrayT *self, size_t begin, size_t end, PtrT pivot);
+void ArrayQuickSort(ArrayT *self, ssize_t begin, ssize_t end);
 
 #endif
