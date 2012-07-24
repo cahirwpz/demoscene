@@ -7,6 +7,16 @@
 #include "std/types.h"
 
 #ifdef AMIGA
+inline static float fabsf(float x) {
+  float value;
+
+  asm("fabs%.x %1,%0"
+      : "=f" (value)
+      : "f" (x));
+
+  return value;
+}
+
 inline static float log2f(float x) {
   float value;
 
