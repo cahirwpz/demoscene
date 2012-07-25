@@ -27,6 +27,8 @@ PtrT ArrayGet(ArrayT *self asm("a0"), ssize_t index asm("d0"));
 PtrT ArrayGetFast(ArrayT *self asm("a0"), size_t index asm("d0"));
 void ArraySet(ArrayT *self asm("a0"), ssize_t index asm("d0"), PtrT data asm("a1"));
 void ArrayForEach(ArrayT *self, IterFuncT func, PtrT data);
+void ArrayForEachInRange(ArrayT *self, ssize_t begin, ssize_t end,
+                         IterFuncT func, PtrT data);
 
 void ArrayRemove(ArrayT *self, ssize_t index);
 void ArrayRemoveRange(ArrayT *self, ssize_t first, ssize_t last);

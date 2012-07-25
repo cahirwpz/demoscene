@@ -183,11 +183,30 @@ void ArraySet(ArrayT *self asm("a0"), ssize_t index asm("d0"),
 
 void ArrayForEach(ArrayT *self, IterFuncT func, PtrT data) {
   PtrT item = ArrayGetFast(self, 0);
-  size_t index = 0;
+  PtrT last = ArrayGetFast(self, self->size - 1);
 
-  while (index++ < self->size) {
+  while (item < last) {
     func(item, data);
     item += self->elemSize;
+  }
+}
+
+void ArrayForEachInRange(ArrayT *self, ssize_t begin, ssize_t end,
+                         IterFuncT func, PtrT data)
+{
+  begin = ArrayCheckIndex(self, begin);
+  end = ArrayCheckIndex(self, end);
+
+  ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!", begin, end);
+
+  {
+    PtrT item = ArrayGetFast(self, begin);
+    PtrT last = ArrayGetFast(self, end);
+
+    while (item <= last) {
+      func(item, data);
+      item += self->elemSize;
+    }
   }
 }
 
