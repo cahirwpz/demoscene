@@ -11,16 +11,29 @@ typedef struct {
   uint16_t fraction;
 } Q16T;
 
-Q16T CastFloatQ16(float value asm("fp0"));
-Q16T CastIntQ16(int value asm("d0"));
+static inline Q16T CastFloatQ16(float value) {
+  int integer = (int)(value * 65536);
+  return AsQ16(integer);
+}
+
+static inline Q16T CastIntQ16(int value) {
+  Q16T result = { value, 0 };
+  return result;
+}
+
 int IntRoundQ16(Q16T value asm("d0"));
 
-static inline void IAddQ16(Q16T *result asm("a0"), Q16T value asm("d0")) {
+static inline void IAddQ16(Q16T *result, Q16T value) {
   (*(int *)result) += AsInt(value);
 }
 
-static inline Q16T AddQ16(Q16T a asm("d0"), Q16T b asm("d1")) {
+static inline Q16T AddQ16(Q16T a, Q16T b) {
   int c = AsInt(a) + AsInt(b);
+  return AsQ16(c);
+}
+
+static inline Q16T SubQ16(Q16T a, Q16T b) {
+  int c = AsInt(a) - AsInt(b);
   return AsQ16(c);
 }
 
