@@ -3,7 +3,7 @@
 
 #include "gfx/colors.h"
 
-void RGB2HSL(ColorT *src, ColorVectorT *dst);
-void HSL2RGB(ColorVectorT *src, ColorT *dst);
+void RGB2HSL(RGB *src, HSL *dst);
+void HSL2RGB(HSL *src, RGB *dst);
 
 #endif

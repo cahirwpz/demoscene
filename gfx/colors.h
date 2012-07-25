@@ -3,17 +3,17 @@
 
 #include "std/types.h"
 
-typedef struct Color {
-  uint8_t r, g, b, alpha;
-} ColorT;
+typedef struct {
+  uint8_t r, g, b;
+} RGB;
 
-typedef struct ColorVector {
+typedef struct {
   float h, s, l;
-} ColorVectorT;
+} HSL;
 
-void ColorsInvert(ColorT *dst, ColorT *src, size_t count);
-void ColorsAverage(uint8_t *dst, ColorT *src, size_t count);
-void ColorsContrast(ColorT *dst, ColorT *src, size_t count);
-void ColorsChangeHSL(ColorT *dst, ColorT *src, size_t count, ColorVectorT *d);
+void ColorsInvert(RGB *dst, RGB *src, size_t count);
+void ColorsAverage(uint8_t *dst, RGB *src, size_t count);
+void ColorsContrast(RGB *dst, RGB *src, size_t count);
+void ColorsChangeHSL(RGB *dst, RGB *src, size_t count, HSL *d);
 
 #endif

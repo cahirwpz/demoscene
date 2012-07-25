@@ -2,7 +2,7 @@
 
 #include "hsl.h"
 
-void RGB2HSL(ColorT *src, ColorVectorT *dst) {
+void RGB2HSL(RGB *src, HSL *dst) {
   float r = src->r / 255.0f;
   float g = src->g / 255.0f;
   float b = src->b / 255.0f;
@@ -45,7 +45,7 @@ void RGB2HSL(ColorT *src, ColorVectorT *dst) {
   dst->l = l;
 }
 
-void HSL2RGB(ColorVectorT *src, ColorT *dst) {
+void HSL2RGB(HSL *src, RGB *dst) {
   float r = 0.0f;
   float g = 0.0f;
   float b = 0.0f;

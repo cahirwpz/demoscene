@@ -98,15 +98,15 @@ int GetPixel(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"))
 }
 
 void PutPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),
-                 ColorT c asm("d0"))
+                 RGB c asm("d0"))
 {
   size_t index = GetPixelIndex(pixbuf, x, y);
   ((uint32_t *)pixbuf->data)[index] = *(uint32_t *)&c;
 }
 
-ColorT GetPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"))
+RGB GetPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"))
 {
-  return *(ColorT *)&pixbuf->data[GetPixelIndex(pixbuf, x, y)];
+  return *(RGB *)&pixbuf->data[GetPixelIndex(pixbuf, x, y)];
 }
 
 int GetFilteredPixel(PixBufT *pixbuf asm("a0"),

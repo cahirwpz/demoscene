@@ -17,7 +17,7 @@ PaletteT *NewPalette(size_t count) {
   PaletteT *palette = NewRecordGC(PaletteT, (FreeFuncT)DeletePalette);
 
   palette->count = count;
-  palette->colors = NewTable(ColorT, count);
+  palette->colors = NewTable(RGB, count);
 
   return palette;
 }
@@ -63,7 +63,7 @@ PaletteT *CopyPalette(PaletteT *palette) {
   copy->start = palette->start;
   copy->next = rec_copy;
 
-  memcpy(copy->colors, palette->colors, sizeof(ColorT) * palette->count);
+  memcpy(copy->colors, palette->colors, sizeof(RGB) * palette->count);
 
   return copy;
 }

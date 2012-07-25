@@ -79,23 +79,23 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
-typedef void (*PaletteFunctorT)(int frameNumber, ColorVectorT *hsl);
+typedef void (*PaletteFunctorT)(int frameNumber, HSL *hsl);
 
-void CyclicHue(int frameNumber, ColorVectorT *hsl) {
+void CyclicHue(int frameNumber, HSL *hsl) {
   hsl->h += (float)(frameNumber & 255) / 256.0f;
 
   if (hsl->h > 1.0f)
     hsl->h -= 1.0f;
 }
 
-void PulsingSaturation(int frameNumber, ColorVectorT *hsl) {
+void PulsingSaturation(int frameNumber, HSL *hsl) {
   float s = sin(frameNumber * 3.14159265f / 50.0f) * 1.00f;
   float change = (s > 0.0f) ? (1.0f - hsl->s) : (hsl->s);
 
   hsl->s += change * s;
 }
 
-void PulsingLuminosity(int frameNumber, ColorVectorT *hsl) {
+void PulsingLuminosity(int frameNumber, HSL *hsl) {
   float s = sin(frameNumber * 3.14159265f / 12.5f) * 0.66f;
   float change = (s > 0.0f) ? (1.0f - hsl->l) : (hsl->l);
 
@@ -116,7 +116,7 @@ void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst, PaletteFunctor
       break;
 
     for (i = 0; i < src->count; i++) {
-      ColorVectorT hsl;
+      HSL hsl;
 
       RGB2HSL(&src->colors[i], &hsl);
       (*func)(frameNumber, &hsl);

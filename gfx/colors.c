@@ -6,7 +6,7 @@ typedef struct ColorAcc {
   int r, g, b, n;
 } ColorAccT;
 
-void ColorsInvert(ColorT *dst, ColorT *src, size_t count) {
+void ColorsInvert(RGB *dst, RGB *src, size_t count) {
   size_t i;
 
   for (i = 0; i < count; i++) {
@@ -16,7 +16,7 @@ void ColorsInvert(ColorT *dst, ColorT *src, size_t count) {
   }
 }
 
-void ColorsFindMinMax(ColorT *colors, size_t count,
+void ColorsFindMinMax(RGB *colors, size_t count,
                       ColorAccT *cmin, ColorAccT *cmax)
 {
   size_t i;
@@ -40,7 +40,7 @@ void ColorsFindMinMax(ColorT *colors, size_t count,
   }
 }
 
-void ColorsCalcAvg(ColorT *colors, size_t count, ColorAccT *cavg) {
+void ColorsCalcAvg(RGB *colors, size_t count, ColorAccT *cavg) {
   size_t i;
 
   cavg->r = cavg->g = cavg->b = 0;
@@ -56,7 +56,7 @@ void ColorsCalcAvg(ColorT *colors, size_t count, ColorAccT *cavg) {
   cavg->b /= count;
 }
 
-void ColorsContrast(ColorT *dst, ColorT *src, size_t count) {
+void ColorsContrast(RGB *dst, RGB *src, size_t count) {
   size_t i;
   ColorAccT cmin, cmax, cdinv;
 
@@ -73,7 +73,7 @@ void ColorsContrast(ColorT *dst, ColorT *src, size_t count) {
   }
 }
 
-void ColorsAverage(uint8_t *dst, ColorT *src, size_t count) {
+void ColorsAverage(uint8_t *dst, RGB *src, size_t count) {
   size_t i;
 
   /* Conversion according to CCIR601 standard. */
@@ -93,7 +93,7 @@ void ColorsAverage(uint8_t *dst, ColorT *src, size_t count) {
 /*
  * @param change: all coefficient have to be in range [-1.0, 1.0f]
  */
-void ColorsChangeHSL(ColorT *dst, ColorT *src, size_t count, ColorVectorT *d) {
+void ColorsChangeHSL(RGB *dst, RGB *src, size_t count, HSL *d) {
   size_t i;
 
   if (d->s > 0.0f)
@@ -107,7 +107,7 @@ void ColorsChangeHSL(ColorT *dst, ColorT *src, size_t count, ColorVectorT *d) {
     d->l += 1.0f;
 
   for (i = 0; i < count; i++) {
-    ColorVectorT hsl;
+    HSL hsl;
 
     RGB2HSL(&src[i], &hsl);
 

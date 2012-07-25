@@ -5,7 +5,7 @@
 #include "gfx/colors.h"
 
 typedef struct Palette {
-  ColorT *colors;
+  RGB *colors;
   size_t start;
   size_t count;
   struct Palette *next;

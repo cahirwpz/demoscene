@@ -31,9 +31,8 @@ void PutPixel(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),
 int GetPixel(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"));
 
 void PutPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),
-                 ColorT c asm("d0"));
-ColorT GetPixelRGB(PixBufT *pixbuf asm("a0"),
-                   int x asm("d0"), int y asm("d1"));
+                 RGB c asm("d0"));
+RGB GetPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"));
 
 int GetFilteredPixel(PixBufT *pixbuf asm("a0"),
                      Q16T x asm("d0"), Q16T y asm("d1"));
