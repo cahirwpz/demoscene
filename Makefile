@@ -4,7 +4,7 @@ include $(TOPDIR)/Makefile.common
 
 export TOPDIR
 
-BINS	= flares tunnel vector2d object3d
+BINS	= flares particles raytunnel tunnel vector2d object3d
 SUBDIRS	= p61 system gfx std engine txtgen distort tools
 
 LIBS := $(foreach dir,$(SUBDIRS),-L$(TOPDIR)/$(dir)) -lgfx -lsystem -lstd $(LIBS)
@@ -30,6 +30,12 @@ tools:
 
 flares: startup_effect.o flares.o
 	$(CC) $(CFLAGS) -o $@ $^ -ltxtgen -ltools $(LIBS)
+
+particles: startup_effect.o particles.o
+	$(CC) $(CFLAGS) -o $@ $^ -ltxtgen -lengine -ltools $(LIBS)
+
+raytunnel: startup_effect.o raytunnel.o
+	$(CC) $(CFLAGS) -o $@ $^ -ldistort -lengine -ltools $(LIBS)
 
 tunnel: startup_effect.o tunnel.o
 	$(CC) $(CFLAGS) -o $@ $^ -lp61 -ldistort -ltools $(LIBS)
