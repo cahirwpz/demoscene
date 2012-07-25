@@ -18,15 +18,16 @@ DistortionMapT *NewDistortionMap(size_t width, size_t height,
       size = sizeof(uint16_t);
       break;
     case DMAP_ACCURATE:
-      size = sizeof(TextureUV_Q16T);
+      size = sizeof(UV16T);
       break;
   }
 
+  map->map = MemNew0(size * width * height, NULL);
+  map->type = type;
   map->width = width;
   map->height = height;
   map->textureW = textureW;
   map->textureH = textureH;
-  map->map = MemNew0(size * width * height, NULL);
 
   return map;
 }
@@ -34,8 +35,8 @@ DistortionMapT *NewDistortionMap(size_t width, size_t height,
 void DistortionMapSet(DistortionMapT *map asm("a0"), size_t i asm("d0"),
                       float u asm("fp0"), float v asm("fp1"))
 {
-  u *= map->textureW;
-  v *= map->textureH;
+  u *= (int)map->textureW;
+  v *= (int)map->textureH;
 
   switch (map->type) {
     case DMAP_OPTIMIZED:
@@ -47,7 +48,7 @@ void DistortionMapSet(DistortionMapT *map asm("a0"), size_t i asm("d0"),
       break;
     case DMAP_ACCURATE:
       {
-        TextureUV_Q16T *data = (TextureUV_Q16T *)map->map;
+        UV16T *data = (UV16T *)map->map;
 
         data[i].u = CastFloatQ16(u);
         data[i].v = CastFloatQ16(v);

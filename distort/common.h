@@ -8,7 +8,7 @@
 
 typedef struct {
   Q16T u, v;
-} TextureUV_Q16T;
+} UV16T;
 
 typedef enum {DMAP_OPTIMIZED, DMAP_ACCURATE} DistortionMapTypeT;
 

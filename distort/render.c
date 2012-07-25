@@ -72,7 +72,7 @@ void RenderDistortionAccurate(DistortionMapT *map,
                               CanvasT *canvas, PixBufT *texture,
                               int offsetU, int offsetV)
 {
-  TextureUV_Q16T *data = (TextureUV_Q16T *)map->map;
+  UV16T *data = (UV16T *)map->map;
   uint8_t *d = GetCanvasPixelData(canvas);
   size_t i;
 
