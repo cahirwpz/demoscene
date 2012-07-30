@@ -28,14 +28,14 @@ PtrArrayT *NewPtrArray(size_t reserved, bool managed) {
 static void MaybeGrow(PtrArrayT *self, size_t count);
 static void MaybeShrink(PtrArrayT *self, size_t count);
 
-static void ClearRange(PtrArrayT *self, size_t begin, size_t end) {
+static inline void ClearRange(PtrArrayT *self, size_t begin, size_t end) {
   PtrT *item = &self->data[begin]; 
   PtrT *last = &self->data[end]; 
 
   do { *item++ = NULL; } while (item <= last);
 }
 
-static void FreeRange(PtrArrayT *self, size_t begin, size_t end) {
+static inline void FreeRange(PtrArrayT *self, size_t begin, size_t end) {
   if (self->managed) {
     PtrT *item = &self->data[begin];
     PtrT *last = &self->data[end];
@@ -44,7 +44,7 @@ static void FreeRange(PtrArrayT *self, size_t begin, size_t end) {
   }
 }
 
-static void ShiftRangeLeft(PtrArrayT *self, size_t first, size_t last, size_t by) {
+static inline void ShiftRangeLeft(PtrArrayT *self, size_t first, size_t last, size_t by) {
   size_t count = last - first + 1;
 
   PtrT *item = &self->data[first];
@@ -53,7 +53,9 @@ static void ShiftRangeLeft(PtrArrayT *self, size_t first, size_t last, size_t by
   do { *dest++ = *item++; } while (--count);
 }
 
-static void ShiftRangeRight(PtrArrayT *self, size_t first, size_t last, size_t by) {
+static inline void ShiftRangeRight(PtrArrayT *self,
+                                   size_t first, size_t last, size_t by)
+{
   size_t count = last - first + 1;
 
   PtrT *item = &self->data[last];
@@ -62,15 +64,17 @@ static void ShiftRangeRight(PtrArrayT *self, size_t first, size_t last, size_t b
   do { *dest-- = *item--; } while (--count);
 }
 
-static void CopyIntoRange(PtrArrayT *self, size_t index,
-                          PtrT *data, size_t count)
+static inline void CopyIntoRange(PtrArrayT *self,
+                                 size_t index, PtrT *data, size_t count)
 {
   PtrT *item = &self->data[index];
 
   do { *item++ = *data++; } while (--count);
 }
 
-static void RemoveRange(PtrArrayT *self, size_t begin, size_t end) {
+static void RemoveRange(PtrArrayT *self asm("a0"),
+                        size_t begin asm("d0"), size_t end asm("d1"))
+{
   size_t first = end + 1;
   size_t last = self->size - 1;
   size_t toFree = end - begin + 1;
@@ -81,7 +85,7 @@ static void RemoveRange(PtrArrayT *self, size_t begin, size_t end) {
   MaybeShrink(self, toFree);
 }
 
-static void RemoveFast(PtrArrayT *self asm("a0"), PtrT *item asm("a1")) {
+static inline void RemoveFast(PtrArrayT *self asm("a0"), PtrT *item asm("a1")) {
   PtrT *last = &self->data[self->size - 1];
 
   if (self->managed)
@@ -102,7 +106,7 @@ static void RemoveFast(PtrArrayT *self asm("a0"), PtrT *item asm("a1")) {
  * array (eg. -1 is the last element).  Terminates program if index is invalid.
  */
 
-static size_t CheckIndex(PtrArrayT *self, ssize_t index) {
+static size_t CheckIndex(PtrArrayT *self asm("a0"), ssize_t index asm("d0")) {
   ASSERT((index < self->size) && (index <= -self->size),
          "Index %d out of bound.", index);
 
@@ -128,22 +132,24 @@ void PtrArraySet(PtrArrayT *self asm("a0"), ssize_t index asm("d0"),
  */
 
 void PtrArrayForEach(PtrArrayT *self, IterFuncT func, PtrT data) {
-  PtrT *item = &self->data[0];
-  PtrT *last = &self->data[self->size - 1];
-
-  do { func(*item++, data); } while (item <= last);
+  PtrArrayForEachInRange(self, 0, self->size - 1, func, data);
 }
 
 void PtrArrayForEachInRange(PtrArrayT *self, ssize_t begin, ssize_t end,
                             IterFuncT func, PtrT data)
 {
-  PtrT *item = &self->data[CheckIndex(self, begin)];
-  PtrT *last = &self->data[CheckIndex(self, end)];
+  begin = CheckIndex(self, begin);
+  end = CheckIndex(self, end);
 
-  ASSERT(item < last, "Invalid range of elements specified [%d..%d]!",
+  ASSERT(begin <= end, "Invalid range of elements specified [%d..%d]!",
          begin, end);
 
-  do { func(*item++, data); } while (item <= last);
+  {
+    PtrT *item = &self->data[begin];
+    PtrT *last = &self->data[end];
+
+    do { func(*item++, data); } while (item <= last);
+  }
 }
 
 /*
@@ -162,28 +168,20 @@ void PtrArrayInsertFast(PtrArrayT *self, ssize_t index, PtrT data) {
 }
 
 void PtrArrayInsert(PtrArrayT *self, ssize_t index, PtrT data) {
-  index = CheckIndex(self, index);
-
-  MaybeGrow(self, 1);
-  ShiftRangeRight(self, index, self->size - 2, 1);
-
-  self->data[index] = data;
+  PtrArrayInsertElements(self, index, &data, 1);
 }
 
 void PtrArrayInsertElements(PtrArrayT *self, ssize_t index,
                             PtrT *data, size_t count)
 {
   index = CheckIndex(self, index);
-
   MaybeGrow(self, count);
   ShiftRangeRight(self, index, self->size - count - 1, count);
   CopyIntoRange(self, index, data, count);
 }
 
 void PtrArrayAppend(PtrArrayT *self, PtrT data) {
-  MaybeGrow(self, 1);
-
-  self->data[self->size - 1] = data;
+  PtrArrayAppendElements(self, &data, 1);
 }
 
 void PtrArrayAppendElements(PtrArrayT *self, PtrT *data, size_t count) {
@@ -209,9 +207,7 @@ void PtrArrayRemoveFast(PtrArrayT *self, size_t index) {
 }
 
 void PtrArrayRemove(PtrArrayT *self, ssize_t index) {
-  size_t first = CheckIndex(self, index);
-
-  RemoveRange(self, first, first);
+  PtrArrayRemoveRange(self, index, index);
 }
 
 void PtrArrayRemoveRange(PtrArrayT *self, ssize_t first, ssize_t last) {
@@ -275,7 +271,7 @@ void PtrArrayResize(PtrArrayT *self, size_t newSize) {
 
 #define MIN_SIZE 16
 
-static size_t NearestPow2(size_t num) {
+static inline size_t NearestPow2(size_t num) {
   size_t i = 1;
 
   while (num > i)
@@ -336,7 +332,9 @@ void PtrArrayInsertionSort(PtrArrayT *self, ssize_t begin, ssize_t end) {
   }
 }
 
-size_t PtrArrayPartition(PtrArrayT *self, size_t left, size_t right, PtrT pivot) {
+size_t PtrArrayPartition(PtrArrayT *self,
+                         size_t left, size_t right, PtrT pivot)
+{
   CompareFuncT cmp = self->compareFunc;
 
   ASSERT(cmp, "Compare function not set!");
@@ -366,7 +364,9 @@ size_t PtrArrayPartition(PtrArrayT *self, size_t left, size_t right, PtrT pivot)
   }
 }
 
-static void QuickSort(PtrArrayT *self, size_t left, size_t right) {
+static void QuickSort(PtrArrayT *self asm("a0"),
+                      size_t left asm("d0"), size_t right asm("d1"))
+{
   while (left < right) {
     PtrT pivot = PtrArrayGetFast(self, (left + right) / 2);
     size_t i = PtrArrayPartition(self, left, right, pivot);

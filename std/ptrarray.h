@@ -94,7 +94,7 @@ void PtrArrayResize(PtrArrayT *self, size_t newSize);
  */
 void PtrArrayInsertionSort(PtrArrayT *self, ssize_t begin, ssize_t end);
 size_t PtrArrayPartition(PtrArrayT *self,
-                         size_t begin, size_t end, PtrT pivot);
+                         size_t left, size_t right, PtrT pivot);
 void PtrArrayQuickSort(PtrArrayT *self, ssize_t begin, ssize_t end);
 
 #endif
