@@ -9,10 +9,10 @@
 #include "gfx/ms2d.h"
 #include "gfx/triangle.h"
 #include "tools/frame.h"
+#include "tools/loopevent.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
-#include "system/input.h"
 #include "system/vblank.h"
 
 const int WIDTH = 320;
@@ -125,15 +125,13 @@ void RenderChunky(int frameNumber) {
 void MainLoop() {
   SetVBlankCounter(0);
 
-  while (GetVBlankCounter() < 500) {
+  do {
     int frameNumber = GetVBlankCounter();
-
-    EventQueueReset();
 
     RenderVector(frameNumber);
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();
-  }
+  } while (ReadLoopEvent() != LOOP_EXIT);
 }

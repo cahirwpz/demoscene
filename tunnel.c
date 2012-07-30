@@ -12,11 +12,11 @@
 #include "gfx/line.h"
 #include "gfx/palette.h"
 #include "tools/frame.h"
+#include "tools/loopevent.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
 #include "system/fileio.h"
-#include "system/input.h"
 #include "system/vblank.h"
 
 const int WIDTH = 320;
@@ -154,10 +154,8 @@ void RenderChunky(int frameNumber) {
 void MainLoop() {
   SetVBlankCounter(0);
 
-  while (GetVBlankCounter() < 1000) {
+  do {
     int frameNumber = GetVBlankCounter();
-
-    EventQueueReset();
 
     PaletteEffect(frameNumber, R_("TexturePal"), R_("EffectPal"), PalEffects);
     LoadPalette(R_("EffectPal"));
@@ -167,5 +165,5 @@ void MainLoop() {
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();
-  }
+  } while (ReadLoopEvent() != LOOP_EXIT);
 }

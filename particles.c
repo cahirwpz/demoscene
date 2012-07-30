@@ -13,11 +13,11 @@
 #include "gfx/canvas.h"
 #include "gfx/ellipse.h"
 #include "tools/frame.h"
+#include "tools/loopevent.h"
 #include "txtgen/procedural.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
-#include "system/input.h"
 #include "system/vblank.h"
 
 const int WIDTH = 320;
@@ -233,15 +233,13 @@ void RenderChunky(int frameNumber) {
 void MainLoop() {
   SetVBlankCounter(0);
 
-  while (GetVBlankCounter() < 600) {
+  do {
     int frameNumber = GetVBlankCounter();
-
-    EventQueueReset();
 
     RenderFlares(frameNumber);
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();
-  }
+  } while (ReadLoopEvent() != LOOP_EXIT);
 }

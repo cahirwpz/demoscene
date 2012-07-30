@@ -9,11 +9,11 @@
 #include "gfx/line.h"
 #include "tools/curves.h"
 #include "tools/frame.h"
+#include "tools/loopevent.h"
 #include "txtgen/procedural.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
-#include "system/input.h"
 #include "system/vblank.h"
 
 const int WIDTH = 320;
@@ -93,7 +93,7 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
-const int CURVE = 4;
+static int CURVE = 4;
 
 void RenderFlares(int frameNumber) {
   CanvasT *canvas = R_("Canvas");
@@ -109,7 +109,7 @@ void RenderFlares(int frameNumber) {
     for (i = 0; i <= SEGMENTS; i++) {
       float x, y;
 
-      switch (CURVE) {
+      switch (CURVE % 8) {
         case 0: /* LineSegment */
           CurveLineSegment(t + (float)i / POINTS, -80, -64, 80, 64, &x, &y);
           break;
@@ -175,15 +175,22 @@ void RenderChunky(int frameNumber) {
 void MainLoop() {
   SetVBlankCounter(0);
 
-  while (GetVBlankCounter() < CYCLEFRAMES * 4) {
+  do {
     int frameNumber = GetVBlankCounter();
-
-    EventQueueReset();
 
     RenderFlares(frameNumber);
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();
-  }
+
+    {
+      LoopEventT event = ReadLoopEvent();
+
+      if (event == LOOP_TRIGGER)
+        CURVE++;
+      if (event == LOOP_EXIT)
+        break;
+    }
+  } while (1);
 }

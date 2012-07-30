@@ -10,9 +10,9 @@
 
 #include "system/c2p.h"
 #include "system/display.h"
-#include "system/input.h"
 #include "system/vblank.h"
 #include "tools/frame.h"
+#include "tools/loopevent.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -138,15 +138,13 @@ void RenderChunky(int frameNumber) {
 void MainLoop() {
   SetVBlankCounter(0);
 
-  while (GetVBlankCounter() < 1000) {
+  do {
     int frameNumber = GetVBlankCounter();
-
-    EventQueueReset();
 
     RenderEffect(frameNumber);
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();
-  }
+  } while (ReadLoopEvent() != LOOP_EXIT);
 }
