@@ -14,6 +14,9 @@ typedef struct PtrArray {
   CompareFuncT compareFunc;
 } PtrArrayT;
 
+/*
+ * @brief Array of pointers constructor.
+ */
 PtrArrayT *NewPtrArray(size_t reserved, bool managed);
 
 /*
@@ -24,6 +27,10 @@ static inline void PtrArraySetCompareFunc(PtrArrayT *self, CompareFuncT func) {
 }
 
 /*
+ * @brief Getter & setter & swapper functions.
+ */
+
+/*
  * @brief Get a pointer to an element without extra checks.
  *
  * Assumes that index is non-negative.  Can return an invalid pointer.
@@ -31,6 +38,10 @@ static inline void PtrArraySetCompareFunc(PtrArrayT *self, CompareFuncT func) {
 static inline PtrT PtrArrayGetFast(PtrArrayT *self, size_t index) {
   return self->data[index];
 }
+
+PtrT PtrArrayGet(PtrArrayT *self asm("a0"), ssize_t index asm("d0"));
+void PtrArraySet(PtrArrayT *self asm("a0"), ssize_t index asm("d0"),
+                 PtrT data asm("a1"));
 
 /*
  * @brief Swap two elements without extra checks.
@@ -45,13 +56,6 @@ static inline void PtrArraySwapFast(PtrArrayT *self, size_t i, size_t j) {
   data[i] = data[j];
   data[j] = tmp;
 }
-
-/*
- * @brief Getter & setter functions.
- */
-PtrT PtrArrayGet(PtrArrayT *self asm("a0"), ssize_t index asm("d0"));
-void PtrArraySet(PtrArrayT *self asm("a0"), ssize_t index asm("d0"),
-                 PtrT data asm("a1"));
 
 /*
  * @brief Iteration functions.
