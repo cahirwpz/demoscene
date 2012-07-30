@@ -31,7 +31,7 @@ static void MaybeShrink(ArrayT *self, size_t count);
 
 static inline void ClearRange(ArrayT *self, size_t begin, size_t end) {
   if (self->zeroed)
-    bzero(ArrayGetFast(self, begin), (end - begin + 1) * self->elemSize);
+    bzero(ArrayGet(self, begin), (end - begin + 1) * self->elemSize);
 }
 
 static inline void FreeRange(ArrayT *self, size_t begin, size_t end) {
@@ -44,8 +44,8 @@ static inline void MoveRange(ArrayT *self,
 {
   size_t remainding = last - first + 1;
 
-  memmove(ArrayGetFast(self, to),
-          ArrayGetFast(self, first),
+  memmove(ArrayGet(self, to),
+          ArrayGet(self, first),
           self->elemSize * remainding);
 }
 
@@ -61,7 +61,7 @@ static void RemoveRange(ArrayT *self asm("a0"),
 }
 
 static inline void RemoveFast(ArrayT *self, PtrT item) {
-  PtrT last = ArrayGetFast(self, self->size - 1);
+  PtrT last = ArrayGet(self, self->size - 1);
 
   if (self->freeFunc)
     self->freeFunc(item);
@@ -90,35 +90,6 @@ static size_t CheckIndex(ArrayT *self asm("a0"), ssize_t index asm("d0")) {
 }
 
 /*
- * Getter & setter & swapper.
- */
-
-PtrT ArrayGet(ArrayT *self asm("a0"), ssize_t index asm("d0")) {
-  return ArrayGetFast(self, CheckIndex(self, index));
-}
-
-void ArraySet(ArrayT *self asm("a0"), ssize_t index asm("d0"),
-              PtrT data asm("a1"))
-{
-  memcpy(ArrayGet(self, index), data, self->elemSize);
-}
-
-/*
- * @brief Swap two elements without extra checks.
- *
- * Assumes that fst != snd.
- */
-
-void ArraySwapFast(ArrayT *self asm("a0"), PtrT fst asm("a1"), PtrT snd asm("a2")) {
-  PtrT tmp = self->temporary;
-  size_t elemSize = self->elemSize;
-
-  memcpy(tmp, fst, elemSize);
-  memcpy(fst, snd, elemSize);
-  memcpy(snd, tmp, elemSize);
-}
-
-/*
  * Iteration functions.
  */
 
@@ -136,8 +107,8 @@ void ArrayForEachInRange(ArrayT *self, ssize_t begin, ssize_t end,
          begin, end);
 
   {
-    PtrT item = ArrayGetFast(self, begin);
-    PtrT last = ArrayGetFast(self, end);
+    PtrT item = ArrayGet(self, begin);
+    PtrT last = ArrayGet(self, end);
 
     do {
       func(item, data);
@@ -154,8 +125,8 @@ PtrT ArrayInsertFast(ArrayT *self, ssize_t index, PtrT data) {
   MaybeGrow(self, 1);
 
   {
-    PtrT item = ArrayGetFast(self, 0);
-    PtrT last = ArrayGetFast(self, self->size - 1);
+    PtrT item = ArrayGet(self, 0);
+    PtrT last = ArrayGet(self, self->size - 1);
     size_t elemSize = self->elemSize;
 
     memcpy(last, item, elemSize);
@@ -182,7 +153,7 @@ PtrT ArrayInsertElements(ArrayT *self, ssize_t index,
   MaybeGrow(self, count);
   MoveRange(self, index + count, index, self->size - count - 1);
 
-  item = ArrayGetFast(self, self->size - count);
+  item = ArrayGet(self, self->size - count);
 
   if (data)
     memcpy(item, data, count * self->elemSize);
@@ -199,7 +170,7 @@ PtrT ArrayAppendElements(ArrayT *self, PtrT data, size_t count) {
 
   MaybeGrow(self, count);
 
-  item = ArrayGetFast(self, self->size - count);
+  item = ArrayGet(self, self->size - count);
 
   if (data)
     memcpy(item, data, count * self->elemSize);
@@ -212,7 +183,7 @@ PtrT ArrayAppendElements(ArrayT *self, PtrT data, size_t count) {
  */
 
 void ArrayRemoveFast(ArrayT *self, size_t index) {
-  PtrT item = ArrayGetFast(self, index);
+  PtrT item = ArrayGet(self, index);
 
   RemoveFast(self, item);
 }
@@ -232,8 +203,8 @@ void ArrayRemoveRange(ArrayT *self, ssize_t first, ssize_t last) {
 }
 
 void ArrayFilterFast(ArrayT *self, PredicateT func) {
-  PtrT item = ArrayGetFast(self, 0);
-  PtrT last = ArrayGetFast(self, self->size - 1);
+  PtrT item = ArrayGet(self, 0);
+  PtrT last = ArrayGet(self, self->size - 1);
 
   while (item <= last) {
     if (func(item)) {
@@ -328,9 +299,9 @@ void ArrayInsertionSort(ArrayT *self, ssize_t begin, ssize_t end) {
          begin, end);
 
   {
-    PtrT left = ArrayGetFast(self, begin);
-    PtrT right = ArrayGetFast(self, end);
-    PtrT tmp = ArrayGetFast(self, self->size);
+    PtrT left = ArrayGet(self, begin);
+    PtrT right = ArrayGet(self, end);
+    PtrT tmp = ArrayGet(self, self->size);
 
     size_t elemSize = self->elemSize;
 
@@ -355,8 +326,8 @@ void ArrayInsertionSort(ArrayT *self, ssize_t begin, ssize_t end) {
 
 size_t ArrayPartition(ArrayT *self, size_t begin, size_t end, PtrT pivot) {
   CompareFuncT cmp = self->compareFunc;
-  PtrT left = ArrayGetFast(self, begin);
-  PtrT right = ArrayGetFast(self, end);
+  PtrT left = ArrayGet(self, begin);
+  PtrT right = ArrayGet(self, end);
   size_t elemSize = self->elemSize;
   size_t partition = begin;
 
@@ -373,7 +344,14 @@ size_t ArrayPartition(ArrayT *self, size_t begin, size_t end, PtrT pivot) {
     while ((cmp(pivot, right) < 0) && (left < right))
       right -= elemSize;
 
-    ArraySwapFast(self, left, right);
+    {
+      PtrT tmp = self->temporary;
+
+      memcpy(tmp, left, elemSize);
+      memcpy(left, right, elemSize);
+      memcpy(right, tmp, elemSize);
+    }
+
     left += elemSize;
     partition++;
     right -= elemSize;
@@ -386,7 +364,7 @@ static void QuickSort(ArrayT *self asm("a0"),
                       size_t left asm("d0"), size_t right asm("d1"))
 {
   while (left < right) {
-    PtrT pivot = ArrayGetFast(self, (left + right) / 2);
+    PtrT pivot = ArrayGet(self, (left + right) / 2);
     size_t i = ArrayPartition(self, left, right, pivot);
 
     if (i - left <= right - i) {

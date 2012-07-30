@@ -27,7 +27,7 @@ static inline void PtrArraySetCompareFunc(PtrArrayT *self, CompareFuncT func) {
 }
 
 /*
- * @brief Getter & setter & swapper functions.
+ * @brief Getter & setter functions.
  */
 
 /*
@@ -35,26 +35,14 @@ static inline void PtrArraySetCompareFunc(PtrArrayT *self, CompareFuncT func) {
  *
  * Assumes that index is non-negative.  Can return an invalid pointer.
  */
-static inline PtrT PtrArrayGetFast(PtrArrayT *self, size_t index) {
+static inline PtrT PtrArrayGet(PtrArrayT *self, size_t index) {
   return self->data[index];
 }
 
-PtrT PtrArrayGet(PtrArrayT *self asm("a0"), ssize_t index asm("d0"));
-void PtrArraySet(PtrArrayT *self asm("a0"), ssize_t index asm("d0"),
-                 PtrT data asm("a1"));
-
-/*
- * @brief Swap two elements without extra checks.
- *
- * Assumes that fst != snd.
- */
-static inline void PtrArraySwapFast(PtrArrayT *self, size_t i, size_t j) {
-  PtrT *data = self->data;
-  PtrT tmp;
- 
-  tmp = data[i];
-  data[i] = data[j];
-  data[j] = tmp;
+static inline PtrT PtrArraySet(PtrArrayT *self, size_t index, PtrT data) {
+  PtrT *item = self->data[index];
+  *item = data;
+  return item;
 }
 
 /*

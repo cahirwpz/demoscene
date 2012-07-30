@@ -34,7 +34,7 @@ static inline void ArraySetFreeFunc(ArrayT *self, FreeFuncT func) {
 }
 
 /*
- * @brief Getter & setter & swapper functions.
+ * @brief Getter & setter functions.
  */
 
 /*
@@ -42,19 +42,13 @@ static inline void ArraySetFreeFunc(ArrayT *self, FreeFuncT func) {
  *
  * Assumes that index is non-negative.  Can return an invalid pointer.
  */
-static inline PtrT ArrayGetFast(ArrayT *self, size_t index) {
+static inline PtrT ArrayGet(ArrayT *self, size_t index) {
   return &self->data[self->elemSize * index];
 }
 
-PtrT ArrayGet(ArrayT *self asm("a0"), ssize_t index asm("d0"));
-void ArraySet(ArrayT *self asm("a0"), ssize_t index asm("d0"), PtrT data asm("a1"));
-
-/*
- * @brief Swap two elements without extra checks.
- *
- * Assumes that fst != snd.
- */
-void ArraySwapFast(ArrayT *self asm("a0"), PtrT fst asm("a1"), PtrT snd asm("a2"));
+static inline PtrT ArraySet(ArrayT *self, size_t index, PtrT data) {
+  return memcpy(ArrayGet(self, index), data, self->elemSize);
+}
 
 /*
  * @brief Iteration functions.

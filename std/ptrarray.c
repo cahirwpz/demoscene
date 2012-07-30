@@ -87,20 +87,6 @@ static size_t CheckIndex(PtrArrayT *self asm("a0"), ssize_t index asm("d0")) {
 }
 
 /*
- * Getter & setter & swapper.
- */
-
-PtrT PtrArrayGet(PtrArrayT *self asm("a0"), ssize_t index asm("d0")) {
-  return PtrArrayGetFast(self, CheckIndex(self, index));
-}
-
-void PtrArraySet(PtrArrayT *self asm("a0"), ssize_t index asm("d0"),
-              PtrT data asm("a1"))
-{
-  self->data[CheckIndex(self, index)] = data;
-}
-
-/*
  * Iteration functions.
  */
 
@@ -343,7 +329,14 @@ size_t PtrArrayPartition(PtrArrayT *self,
       while ((cmp(pivot, data[right]) < 0) && (left < right))
         right--;
 
-      PtrArraySwapFast(self, left, right);
+      {
+        PtrT tmp;
+      
+        tmp = data[left];
+        data[left] = data[right];
+        data[right] = tmp;
+      }
+
       left++;
       right--;
       partition++;
@@ -357,7 +350,7 @@ static void QuickSort(PtrArrayT *self asm("a0"),
                       size_t left asm("d0"), size_t right asm("d1"))
 {
   while (left < right) {
-    PtrT pivot = PtrArrayGetFast(self, (left + right) / 2);
+    PtrT pivot = PtrArrayGet(self, (left + right) / 2);
     size_t i = PtrArrayPartition(self, left, right, pivot);
 
     if (i - left <= right - i) {
