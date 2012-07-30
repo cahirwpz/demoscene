@@ -67,12 +67,12 @@ void PtrArrayForEachInRange(PtrArrayT *self, ssize_t begin, ssize_t end,
 /*
  * @brief Element adding functions.
  */
-void PtrArrayInsertFast(PtrArrayT *self, ssize_t index, PtrT data);
-void PtrArrayInsert(PtrArrayT *self, ssize_t index, PtrT data);
-void PtrArrayInsertElements(PtrArrayT *self, ssize_t index,
-                            PtrT *data, size_t count);
-void PtrArrayAppend(PtrArrayT *self, PtrT data);
-void PtrArrayAppendElements(PtrArrayT *self, PtrT *data, size_t count);
+PtrT *PtrArrayInsertFast(PtrArrayT *self, ssize_t index, PtrT data);
+PtrT *PtrArrayInsert(PtrArrayT *self, ssize_t index, PtrT data);
+PtrT *PtrArrayInsertElements(PtrArrayT *self, ssize_t index,
+                             PtrT *data, size_t count);
+PtrT *PtrArrayAppend(PtrArrayT *self, PtrT data);
+PtrT *PtrArrayAppendElements(PtrArrayT *self, PtrT *data, size_t count);
 
 /*
  * @brief Remove a pointer and fill in the gap with last pointer in the array.

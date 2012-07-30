@@ -49,7 +49,9 @@ static inline void MoveRange(ArrayT *self,
           self->elemSize * remainding);
 }
 
-static void RemoveRange(ArrayT *self, size_t first, size_t last) {
+static void RemoveRange(ArrayT *self asm("a0"),
+                        size_t first asm("d0"), size_t last asm("d1"))
+{
   size_t count = last - first + 1;
 
   FreeRange(self, first, last);
@@ -58,6 +60,20 @@ static void RemoveRange(ArrayT *self, size_t first, size_t last) {
   MaybeShrink(self, count);
 }
 
+static inline void RemoveFast(ArrayT *self, PtrT item) {
+  PtrT last = ArrayGetFast(self, self->size - 1);
+
+  if (self->freeFunc)
+    self->freeFunc(item);
+
+  if (item != last)
+    memcpy(item, last, self->elemSize);
+
+  if (self->zeroed)
+    bzero(last, self->elemSize);
+
+  self->size--;
+}
 
 /*
  * @brief Check if index is valid and normalise it.
@@ -134,78 +150,71 @@ void ArrayForEachInRange(ArrayT *self, ssize_t begin, ssize_t end,
  * Element adding functions.
  */
 
-PtrT ArrayInsertFast(ArrayT *self, ssize_t index) {
+PtrT ArrayInsertFast(ArrayT *self, ssize_t index, PtrT data) {
   MaybeGrow(self, 1);
 
   {
     PtrT item = ArrayGetFast(self, 0);
     PtrT last = ArrayGetFast(self, self->size - 1);
+    size_t elemSize = self->elemSize;
 
-    memcpy(last, item, self->elemSize);
-
-    if (self->zeroed)
-      bzero(item, self->elemSize);
+    memcpy(last, item, elemSize);
+    
+    if (data)
+      memcpy(item, data, elemSize);
+    else if (self->zeroed)
+      bzero(item, elemSize);
 
     return item;
   }
 }
 
-PtrT ArrayInsert(ArrayT *self, ssize_t index) {
-  index = CheckIndex(self, index);
-
-  MaybeGrow(self, 1);
-  MoveRange(self, index + 1, index, self->size - 2);
-  return ArrayGetFast(self, index);
+PtrT ArrayInsert(ArrayT *self, ssize_t index, PtrT data) {
+  return ArrayInsertElements(self, index, data, 1);
 }
 
-void ArrayInsertElements(ArrayT *self, ssize_t index,
+PtrT ArrayInsertElements(ArrayT *self, ssize_t index,
                          PtrT data, size_t count)
 {
+  PtrT item;
+
   index = CheckIndex(self, index);
   MaybeGrow(self, count);
   MoveRange(self, index + count, index, self->size - count - 1);
-  memcpy(ArrayGetFast(self, index), data, count * self->elemSize);
+
+  item = ArrayGetFast(self, self->size - count);
+
+  if (data)
+    memcpy(item, data, count * self->elemSize);
+
+  return item;
 }
 
-PtrT ArrayAppend(ArrayT *self) {
-  MaybeGrow(self, 1);
-
-  return ArrayGetFast(self, self->size - 1);
+PtrT ArrayAppend(ArrayT *self, PtrT data) {
+  return ArrayAppendElements(self, data, 1);
 }
 
-void ArrayAppendElements(ArrayT *self, PtrT data, size_t count) {
+PtrT ArrayAppendElements(ArrayT *self, PtrT data, size_t count) {
+  PtrT item;
+
   MaybeGrow(self, count);
 
-  {
-    PtrT last = ArrayGetFast(self, self->size - count);
-    memcpy(last, data, count * self->elemSize);
-  }
+  item = ArrayGetFast(self, self->size - count);
+
+  if (data)
+    memcpy(item, data, count * self->elemSize);
+
+  return item;
 }
 
 /*
  * Element removal functions.
  */
 
-/*
- * @brief Remove an element and fill in the gap with last element of array.
- *
- * Assumes that index is non-negative.
- */
-
 void ArrayRemoveFast(ArrayT *self, size_t index) {
   PtrT item = ArrayGetFast(self, index);
-  PtrT last = ArrayGetFast(self, self->size - 1);
 
-  if (self->freeFunc)
-      self->freeFunc(item);
-
-  if (item != last)
-    memcpy(item, last, self->elemSize);
-
-  if (self->zeroed)
-    bzero(last, self->elemSize);
-
-  self->size--;
+  RemoveFast(self, item);
 }
 
 void ArrayRemove(ArrayT *self, ssize_t index) {
@@ -224,14 +233,13 @@ void ArrayRemoveRange(ArrayT *self, ssize_t first, ssize_t last) {
 
 void ArrayFilterFast(ArrayT *self, PredicateT func) {
   PtrT item = ArrayGetFast(self, 0);
-  size_t index = 0;
+  PtrT last = ArrayGetFast(self, self->size - 1);
 
-  while (index < self->size) {
+  while (item <= last) {
     if (func(item)) {
       item += self->elemSize;
-      index++;
     } else {
-      ArrayRemoveFast(self, index);
+      RemoveFast(self, item);
     }
   }
 }
@@ -247,6 +255,9 @@ void ArrayFilterFast(ArrayT *self, PredicateT func) {
  * element for some operations (i.e. sort, swap).
  */
 void ArrayResize(ArrayT *self, size_t newSize) {
+  size_t elemSize = self->elemSize;
+  size_t bytes = (newSize + 1) * elemSize;
+
   if (self->data) {
     if (newSize == self->size)
       return;
@@ -257,25 +268,20 @@ void ArrayResize(ArrayT *self, size_t newSize) {
     }
   }
 
-  {
-    size_t elemSize = self->elemSize;
-    size_t bytes = (newSize + 1) * elemSize;
-
-    if (!self->data) {
-      self->data = MemNew(bytes, NULL);
-      self->size = 0;
-    } else {
-      PtrT oldData = self->data;
-      self->data = MemDupGC(oldData, bytes, NULL);
-      MemUnref(oldData);
-    }
-
-    if (newSize > self->reserved)
-      ClearRange(self, self->reserved, newSize);
-
-    self->reserved = newSize;
-    self->temporary = &self->data[newSize * elemSize];
+  if (!self->data) {
+    self->data = MemNew(bytes, NULL);
+    self->size = 0;
+  } else {
+    PtrT oldData = self->data;
+    self->data = MemDupGC(oldData, bytes, NULL);
+    MemUnref(oldData);
   }
+
+  if (newSize > self->reserved)
+    ClearRange(self, self->reserved, newSize);
+
+  self->reserved = newSize;
+  self->temporary = &self->data[newSize * elemSize];
 }
 
 #define MIN_SIZE 16
@@ -353,6 +359,10 @@ size_t ArrayPartition(ArrayT *self, size_t begin, size_t end, PtrT pivot) {
   PtrT right = ArrayGetFast(self, end);
   size_t elemSize = self->elemSize;
   size_t partition = begin;
+
+  ASSERT(cmp, "Compare function not set!");
+  ASSERT(left < right, "Invalid range of elements specified [%d..%d]!",
+         (int)left, (int)right);
 
   while (left < right) {
     while ((cmp(left, pivot) < 0) && (left < right)) {

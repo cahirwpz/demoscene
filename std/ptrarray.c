@@ -47,7 +47,6 @@ static inline void MoveRange(PtrArrayT *self,
           remainding * sizeof(PtrT));
 }
 
-
 static void RemoveRange(PtrArrayT *self asm("a0"),
                         size_t first asm("d0"), size_t last asm("d1"))
 {
@@ -59,7 +58,7 @@ static void RemoveRange(PtrArrayT *self asm("a0"),
   MaybeShrink(self, count);
 }
 
-static inline void RemoveFast(PtrArrayT *self asm("a0"), PtrT *item asm("a1")) {
+static inline void RemoveFast(PtrArrayT *self, PtrT *item) {
   PtrT *last = &self->data[self->size - 1];
 
   if (self->managed)
@@ -130,7 +129,7 @@ void PtrArrayForEachInRange(PtrArrayT *self, ssize_t begin, ssize_t end,
  * Element adding functions.
  */
 
-void PtrArrayInsertFast(PtrArrayT *self, ssize_t index, PtrT data) {
+PtrT *PtrArrayInsertFast(PtrArrayT *self, ssize_t index, PtrT data) {
   MaybeGrow(self, 1);
 
   {
@@ -139,36 +138,47 @@ void PtrArrayInsertFast(PtrArrayT *self, ssize_t index, PtrT data) {
 
     *last = *item;
     *item = data;
+
+    return item;
   }
 }
 
-void PtrArrayInsert(PtrArrayT *self, ssize_t index, PtrT data) {
-  PtrArrayInsertElements(self, index, &data, 1);
+PtrT *PtrArrayInsert(PtrArrayT *self, ssize_t index, PtrT data) {
+  return PtrArrayInsertElements(self, index, data ? &data : NULL, 1);
 }
 
-void PtrArrayInsertElements(PtrArrayT *self, ssize_t index,
-                            PtrT *data, size_t count)
+PtrT *PtrArrayInsertElements(PtrArrayT *self, ssize_t index,
+                             PtrT *data, size_t count)
 {
+  PtrT *item;
+
   index = CheckIndex(self, index);
   MaybeGrow(self, count);
   MoveRange(self, index + count, index, self->size - count - 1);
-  memcpy(&self->data[index], data, count * sizeof(PtrT));
+
+  item = &self->data[index];
+
+  if (data)
+    memcpy(item, data, count * sizeof(PtrT));
+
+  return item;
 }
 
-void PtrArrayAppend(PtrArrayT *self, PtrT data) {
-  PtrArrayAppendElements(self, &data, 1);
+PtrT *PtrArrayAppend(PtrArrayT *self, PtrT data) {
+  return PtrArrayAppendElements(self, data ? &data : NULL, 1);
 }
 
-void PtrArrayAppendElements(PtrArrayT *self, PtrT *data, size_t count) {
-  size_t last = self->size - 1;
+PtrT *PtrArrayAppendElements(PtrArrayT *self, PtrT *data, size_t count) {
+  PtrT *item;
 
   MaybeGrow(self, count);
 
-  {
-    PtrT *item = &self->data[last];
+  item = &self->data[self->size - count];
 
-    do { *item++ = *data++; } while (--count);
-  }
+  if (data)
+    memcpy(item, data, count * sizeof(PtrT));
+
+  return item;
 }
 
 /*
@@ -219,6 +229,8 @@ void PtrArrayFilterFast(PtrArrayT *self, PredicateT func) {
  * element for some operations (i.e. sort, swap).
  */
 void PtrArrayResize(PtrArrayT *self, size_t newSize) {
+  size_t bytes = newSize * sizeof(PtrT);
+
   if (self->data) {
     if (newSize == self->size)
       return;
@@ -230,11 +242,11 @@ void PtrArrayResize(PtrArrayT *self, size_t newSize) {
   }
 
   if (!self->data) {
-    self->data = MemNew(newSize * sizeof(PtrT), NULL);
+    self->data = MemNew(bytes, NULL);
     self->size = 0;
   } else {
     PtrT oldData = self->data;
-    self->data = MemDupGC(oldData, newSize * sizeof(PtrT), NULL);
+    self->data = MemDupGC(oldData, bytes, NULL);
     MemUnref(oldData);
   }
 
@@ -284,7 +296,8 @@ void PtrArrayInsertionSort(PtrArrayT *self, ssize_t begin, ssize_t end) {
   end = CheckIndex(self, end);
 
   ASSERT(cmp, "Compare function not set!");
-  ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!", begin, end);
+  ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!",
+         begin, end);
 
   {
     PtrT *data = self->data;
@@ -293,7 +306,8 @@ void PtrArrayInsertionSort(PtrArrayT *self, ssize_t begin, ssize_t end) {
     while (toInsert <= end) {
       size_t index = begin;
 
-      while ((index < toInsert) && (cmp(data[index], data[toInsert]) <= 0))
+      while ((index < toInsert) &&
+             (cmp(data[index], data[toInsert]) <= 0))
         index++;
 
       if (index < toInsert) {

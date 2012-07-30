@@ -42,8 +42,7 @@ static inline void ArraySetFreeFunc(ArrayT *self, FreeFuncT func) {
  *
  * Assumes that index is non-negative.  Can return an invalid pointer.
  */
-static inline PtrT ArrayGetFast(ArrayT *self asm("a0"), size_t index asm("d0"))
-{
+static inline PtrT ArrayGetFast(ArrayT *self, size_t index) {
   return &self->data[self->elemSize * index];
 }
 
@@ -67,11 +66,11 @@ void ArrayForEachInRange(ArrayT *self, ssize_t begin, ssize_t end,
 /*
  * @brief Element adding functions.
  */
-PtrT ArrayInsert(ArrayT *self, ssize_t index);
-PtrT ArrayInsertFast(ArrayT *self, ssize_t index);
-void ArrayInsertElements(ArrayT *self, ssize_t index, PtrT data, size_t count);
-PtrT ArrayAppend(ArrayT *self);
-void ArrayAppendElements(ArrayT *self, PtrT data, size_t count);
+PtrT ArrayInsertFast(ArrayT *self, ssize_t index, PtrT data);
+PtrT ArrayInsert(ArrayT *self, ssize_t index, PtrT data);
+PtrT ArrayInsertElements(ArrayT *self, ssize_t index, PtrT data, size_t count);
+PtrT ArrayAppend(ArrayT *self, PtrT data);
+PtrT ArrayAppendElements(ArrayT *self, PtrT data, size_t count);
 
 /*
  * @brief Remove a pointer and fill in the gap with last pointer in the array.
