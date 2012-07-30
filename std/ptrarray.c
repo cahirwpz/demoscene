@@ -29,60 +29,34 @@ static void MaybeGrow(PtrArrayT *self, size_t count);
 static void MaybeShrink(PtrArrayT *self, size_t count);
 
 static inline void ClearRange(PtrArrayT *self, size_t begin, size_t end) {
-  PtrT *item = &self->data[begin]; 
-  PtrT *last = &self->data[end]; 
-
-  do { *item++ = NULL; } while (item <= last);
+  bzero(&self->data[begin], (end - begin + 1) * sizeof(PtrT));
 }
 
 static inline void FreeRange(PtrArrayT *self, size_t begin, size_t end) {
-  if (self->managed) {
-    PtrT *item = &self->data[begin];
-    PtrT *last = &self->data[end];
-
-    do { MemUnref(*item++); } while (item <= last);
-  }
+  if (self->managed)
+    PtrArrayForEachInRange(self, begin, end, (IterFuncT)MemUnref, NULL);
 }
 
-static inline void ShiftRangeLeft(PtrArrayT *self, size_t first, size_t last, size_t by) {
-  size_t count = last - first + 1;
-
-  PtrT *item = &self->data[first];
-  PtrT *dest = item - by;
-
-  do { *dest++ = *item++; } while (--count);
-}
-
-static inline void ShiftRangeRight(PtrArrayT *self,
-                                   size_t first, size_t last, size_t by)
+static inline void MoveRange(PtrArrayT *self,
+                             size_t to, size_t first, size_t last)
 {
-  size_t count = last - first + 1;
+  size_t remainding = last - first + 1;
 
-  PtrT *item = &self->data[last];
-  PtrT *dest = item + by;
-
-  do { *dest-- = *item--; } while (--count);
+  memmove(&self->data[to],
+          &self->data[first],
+          remainding * sizeof(PtrT));
 }
 
-static inline void CopyIntoRange(PtrArrayT *self,
-                                 size_t index, PtrT *data, size_t count)
-{
-  PtrT *item = &self->data[index];
-
-  do { *item++ = *data++; } while (--count);
-}
 
 static void RemoveRange(PtrArrayT *self asm("a0"),
-                        size_t begin asm("d0"), size_t end asm("d1"))
+                        size_t first asm("d0"), size_t last asm("d1"))
 {
-  size_t first = end + 1;
-  size_t last = self->size - 1;
-  size_t toFree = end - begin + 1;
+  size_t count = last - first + 1;
 
-  FreeRange(self, begin, end);
-  ShiftRangeLeft(self, first, last, toFree);
-  ClearRange(self, first, last);
-  MaybeShrink(self, toFree);
+  FreeRange(self, first, last);
+  MoveRange(self, first, last + 1, self->size - 1);
+  ClearRange(self, self->size - count, self->size - 1);
+  MaybeShrink(self, count);
 }
 
 static inline void RemoveFast(PtrArrayT *self asm("a0"), PtrT *item asm("a1")) {
@@ -177,8 +151,8 @@ void PtrArrayInsertElements(PtrArrayT *self, ssize_t index,
 {
   index = CheckIndex(self, index);
   MaybeGrow(self, count);
-  ShiftRangeRight(self, index, self->size - count - 1, count);
-  CopyIntoRange(self, index, data, count);
+  MoveRange(self, index + count, index, self->size - count - 1);
+  memcpy(&self->data[index], data, count * sizeof(PtrT));
 }
 
 void PtrArrayAppend(PtrArrayT *self, PtrT data) {
@@ -324,7 +298,7 @@ void PtrArrayInsertionSort(PtrArrayT *self, ssize_t begin, ssize_t end) {
 
       if (index < toInsert) {
         PtrT tmp = data[toInsert];
-        ShiftRangeRight(self, index, toInsert - 1, 1);
+        MoveRange(self, index + 1, index, toInsert - 1);
         data[index] = tmp;
       }
 

@@ -31,25 +31,20 @@ static void MaybeShrink(ArrayT *self, size_t count);
 
 static inline void ClearRange(ArrayT *self, size_t begin, size_t end) {
   if (self->zeroed)
-    bzero(ArrayGetFast(self, begin), self->elemSize * (end - begin + 1));
+    bzero(ArrayGetFast(self, begin), (end - begin + 1) * self->elemSize);
 }
 
 static inline void FreeRange(ArrayT *self, size_t begin, size_t end) {
-  if (self->freeFunc) {
-    PtrT item = ArrayGetFast(self, begin);
-    PtrT last = ArrayGetFast(self, end);
-
-    do {
-      self->freeFunc(item);
-      item += self->elemSize;
-    } while (item <= last);
-  }
+  if (self->freeFunc)
+    ArrayForEachInRange(self, begin, end, (IterFuncT)self->freeFunc, NULL);
 }
 
-static inline void MoveRange(ArrayT *self, size_t index, size_t first, size_t last) {
+static inline void MoveRange(ArrayT *self,
+                             size_t to, size_t first, size_t last)
+{
   size_t remainding = last - first + 1;
 
-  memmove(ArrayGetFast(self, index),
+  memmove(ArrayGetFast(self, to),
           ArrayGetFast(self, first),
           self->elemSize * remainding);
 }
@@ -322,7 +317,7 @@ void ArrayInsertionSort(ArrayT *self, ssize_t begin, ssize_t end) {
   begin = CheckIndex(self, begin);
   end = CheckIndex(self, end);
 
-  ASSERT(self->compareFunc, "Compare function not set!");
+  ASSERT(cmp, "Compare function not set!");
   ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!",
          begin, end);
 
