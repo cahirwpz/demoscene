@@ -22,30 +22,74 @@ ArrayT *NewArray(size_t reserved, size_t elemSize, bool zeroed) {
   return array;
 }
 
-ArrayT *NewPtrArray(size_t reserved, bool autoFree) {
-  ArrayT *array = NewArray(reserved, sizeof(PtrT), TRUE);
+/*
+ * Helper functions.
+ */
 
-  if (autoFree)
-    ArraySetFreeFunc(array, (FreeFuncT)MemUnref);
-  
-  return array;
+static void MaybeGrow(ArrayT *self, size_t count);
+static void MaybeShrink(ArrayT *self, size_t count);
+
+static inline void ClearRange(ArrayT *self, size_t begin, size_t end) {
+  if (self->zeroed)
+    bzero(ArrayGetFast(self, begin), self->elemSize * (end - begin + 1));
 }
 
-void ArraySetCompareFunc(ArrayT *self, CompareFuncT func) {
-  self->compareFunc = func;
+static inline void FreeRange(ArrayT *self, size_t begin, size_t end) {
+  if (self->freeFunc) {
+    PtrT item = ArrayGetFast(self, begin);
+    PtrT last = ArrayGetFast(self, end);
+
+    do {
+      self->freeFunc(item);
+      item += self->elemSize;
+    } while (item <= last);
+  }
 }
 
-void ArraySetFreeFunc(ArrayT *self, FreeFuncT func) {
-  self->freeFunc = func;
+static inline void MoveRange(ArrayT *self, size_t index, size_t first, size_t last) {
+  size_t remainding = last - first + 1;
+
+  memmove(ArrayGetFast(self, index),
+          ArrayGetFast(self, first),
+          self->elemSize * remainding);
+}
+
+static void RemoveRange(ArrayT *self, size_t first, size_t last) {
+  size_t count = last - first + 1;
+
+  FreeRange(self, first, last);
+  MoveRange(self, first, last + 1, self->size - 1);
+  ClearRange(self, self->size - count, self->size - 1);
+  MaybeShrink(self, count);
+}
+
+
+/*
+ * @brief Check if index is valid and normalise it.
+ *
+ * Accepts negative indices which point to elements starting from the end of
+ * array (eg. -1 is the last element).  Terminates program if index is invalid.
+ */
+
+static size_t CheckIndex(ArrayT *self asm("a0"), ssize_t index asm("d0")) {
+  ASSERT((index < self->size) && (index <= -self->size),
+         "Index %d out of bound.", index);
+
+  return (index < 0) ? (self->size - index) : index;
 }
 
 /*
- * @brief Get a pointer to an element without extra checks.
- *
- * Assumes that index is non-negative.  Can return an invalid pointer.
+ * Getter & setter & swapper.
  */
-PtrT ArrayGetFast(ArrayT *self asm("a0"), size_t index asm("d0")) {
-  return &self->data[self->elemSize * index];
+
+PtrT ArrayGet(ArrayT *self asm("a0"), ssize_t index asm("d0")) {
+  return ArrayGetFast(self, CheckIndex(self, index));
+}
+
+void ArraySet(ArrayT *self asm("a0"), ssize_t index asm("d0"),
+              PtrT data asm("a1"))
+{
+  memcpy(ArrayGet(self, index), data, self->elemSize);
 }
 
 /*
@@ -53,7 +97,8 @@ PtrT ArrayGetFast(ArrayT *self asm("a0"), size_t index asm("d0")) {
  *
  * Assumes that fst != snd.
  */
-static void ArraySwapFast(ArrayT *self asm("a0"), PtrT fst asm("a1"), PtrT snd asm("a2")) {
+
+void ArraySwapFast(ArrayT *self asm("a0"), PtrT fst asm("a1"), PtrT snd asm("a2")) {
   PtrT tmp = self->temporary;
   size_t elemSize = self->elemSize;
 
@@ -62,28 +107,138 @@ static void ArraySwapFast(ArrayT *self asm("a0"), PtrT fst asm("a1"), PtrT snd a
   memcpy(snd, tmp, elemSize);
 }
 
-static void ArrayClearRange(ArrayT *self, size_t first, size_t last) {
-  if (self->zeroed)
-    bzero(ArrayGetFast(self, first), self->elemSize * (last - first + 1));
+/*
+ * Iteration functions.
+ */
+
+void ArrayForEach(ArrayT *self, IterFuncT func, PtrT data) {
+  ArrayForEachInRange(self, 0, self->size - 1, func, data);
 }
 
-static void ArrayFreeRange(ArrayT *self, size_t first, size_t last) {
-  if (self->freeFunc) {
-    PtrT item = ArrayGetFast(self, first);
+void ArrayForEachInRange(ArrayT *self, ssize_t begin, ssize_t end,
+                         IterFuncT func, PtrT data)
+{
+  begin = CheckIndex(self, begin);
+  end = CheckIndex(self, end);
 
-    while (first++ <= last) {
-      self->freeFunc(item);
+  ASSERT(begin <= end, "Invalid range of elements specified [%d..%d]!",
+         begin, end);
+
+  {
+    PtrT item = ArrayGetFast(self, begin);
+    PtrT last = ArrayGetFast(self, end);
+
+    do {
+      func(item, data);
       item += self->elemSize;
-    }
+    } while (item <= last);
   }
 }
 
-static void ArrayMoveRange(ArrayT *self, size_t index, size_t first, size_t last) {
-  size_t remainding = last - first + 1;
+/*
+ * Element adding functions.
+ */
 
-  memmove(ArrayGetFast(self, index),
-          ArrayGetFast(self, first),
-          self->elemSize * remainding);
+PtrT ArrayInsertFast(ArrayT *self, ssize_t index) {
+  MaybeGrow(self, 1);
+
+  {
+    PtrT item = ArrayGetFast(self, 0);
+    PtrT last = ArrayGetFast(self, self->size - 1);
+
+    memcpy(last, item, self->elemSize);
+
+    if (self->zeroed)
+      bzero(item, self->elemSize);
+
+    return item;
+  }
+}
+
+PtrT ArrayInsert(ArrayT *self, ssize_t index) {
+  index = CheckIndex(self, index);
+
+  MaybeGrow(self, 1);
+  MoveRange(self, index + 1, index, self->size - 2);
+  return ArrayGetFast(self, index);
+}
+
+void ArrayInsertElements(ArrayT *self, ssize_t index,
+                         PtrT data, size_t count)
+{
+  index = CheckIndex(self, index);
+  MaybeGrow(self, count);
+  MoveRange(self, index + count, index, self->size - count - 1);
+  memcpy(ArrayGetFast(self, index), data, count * self->elemSize);
+}
+
+PtrT ArrayAppend(ArrayT *self) {
+  MaybeGrow(self, 1);
+
+  return ArrayGetFast(self, self->size - 1);
+}
+
+void ArrayAppendElements(ArrayT *self, PtrT data, size_t count) {
+  MaybeGrow(self, count);
+
+  {
+    PtrT last = ArrayGetFast(self, self->size - count);
+    memcpy(last, data, count * self->elemSize);
+  }
+}
+
+/*
+ * Element removal functions.
+ */
+
+/*
+ * @brief Remove an element and fill in the gap with last element of array.
+ *
+ * Assumes that index is non-negative.
+ */
+
+void ArrayRemoveFast(ArrayT *self, size_t index) {
+  PtrT item = ArrayGetFast(self, index);
+  PtrT last = ArrayGetFast(self, self->size - 1);
+
+  if (self->freeFunc)
+      self->freeFunc(item);
+
+  if (item != last)
+    memcpy(item, last, self->elemSize);
+
+  if (self->zeroed)
+    bzero(last, self->elemSize);
+
+  self->size--;
+}
+
+void ArrayRemove(ArrayT *self, ssize_t index) {
+  ArrayRemoveRange(self, index, index);
+}
+
+void ArrayRemoveRange(ArrayT *self, ssize_t first, ssize_t last) {
+  first = CheckIndex(self, first);
+  last = CheckIndex(self, last);
+
+  ASSERT(first <= last, "Invalid range of elements specified [%d..%d]!",
+         first, last);
+
+  RemoveRange(self, first, last);
+}
+
+void ArrayFilterFast(ArrayT *self, PredicateT func) {
+  PtrT item = ArrayGetFast(self, 0);
+  size_t index = 0;
+
+  while (index < self->size) {
+    if (func(item)) {
+      item += self->elemSize;
+      index++;
+    } else {
+      ArrayRemoveFast(self, index);
+    }
+  }
 }
 
 /*
@@ -102,7 +257,7 @@ void ArrayResize(ArrayT *self, size_t newSize) {
       return;
 
     if (newSize < self->size) {
-      ArrayFreeRange(self, newSize, self->size - 1);
+      FreeRange(self, newSize, self->size - 1);
       self->size = newSize;
     }
   }
@@ -121,7 +276,7 @@ void ArrayResize(ArrayT *self, size_t newSize) {
     }
 
     if (newSize > self->reserved)
-      ArrayClearRange(self, self->reserved, newSize);
+      ClearRange(self, self->reserved, newSize);
 
     self->reserved = newSize;
     self->temporary = &self->data[newSize * elemSize];
@@ -130,7 +285,7 @@ void ArrayResize(ArrayT *self, size_t newSize) {
 
 #define MIN_SIZE 16
 
-size_t NearestPow2(size_t num) {
+static inline size_t NearestPow2(size_t num) {
   size_t i = 1;
 
   while (num > i)
@@ -142,7 +297,7 @@ size_t NearestPow2(size_t num) {
 /*
  * @brief Check if array can accomodate extra elements and resize if needed.
  */
-static void ArrayMaybeGrow(ArrayT *self, size_t count) {
+static void MaybeGrow(ArrayT *self, size_t count) {
   if (self->size + count <= self->reserved) {
     self->size += count;
   } else {
@@ -153,181 +308,23 @@ static void ArrayMaybeGrow(ArrayT *self, size_t count) {
 /*
  * @brief Check if array doesn't have too much of an extra space and shrink.
  */
-static void ArrayMaybeShrink(ArrayT *self, size_t count) {
+static void MaybeShrink(ArrayT *self, size_t count) {
   self->size -= count;
 }
 
 /*
- * @brief Check if index is valid and normalise it.
- *
- * Accepts negative indices which point to elements starting from the end of
- * array (eg. -1 is the last element).  Terminates program if index is invalid.
+ * Sorting functions.
  */
-
-static size_t ArrayCheckIndex(ArrayT *self, ssize_t index) {
-  ASSERT((index < self->size) && (index <= -self->size),
-         "Index %d out of bound.", index);
-
-  return (index < 0) ? (self->size - index) : index;
-}
-
-PtrT ArrayGet(ArrayT *self asm("a0"), ssize_t index asm("d0")) {
-  return ArrayGetFast(self, ArrayCheckIndex(self, index));
-}
-
-void ArraySet(ArrayT *self asm("a0"), ssize_t index asm("d0"),
-              PtrT data asm("a1"))
-{
-  memcpy(ArrayGet(self, index), data, self->elemSize);
-}
-
-void ArrayForEach(ArrayT *self, IterFuncT func, PtrT data) {
-  PtrT item = ArrayGetFast(self, 0);
-  PtrT last = ArrayGetFast(self, self->size - 1);
-
-  while (item < last) {
-    func(item, data);
-    item += self->elemSize;
-  }
-}
-
-void ArrayForEachInRange(ArrayT *self, ssize_t begin, ssize_t end,
-                         IterFuncT func, PtrT data)
-{
-  begin = ArrayCheckIndex(self, begin);
-  end = ArrayCheckIndex(self, end);
-
-  ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!", begin, end);
-
-  {
-    PtrT item = ArrayGetFast(self, begin);
-    PtrT last = ArrayGetFast(self, end);
-
-    while (item <= last) {
-      func(item, data);
-      item += self->elemSize;
-    }
-  }
-}
-
-/*
- * Element removal functions.
- */
-
-static void ArrayRemoveInternal(ArrayT *self, size_t first, size_t last) {
-  size_t count = last - first + 1;
-
-  ArrayFreeRange(self, first, last);
-  ArrayMoveRange(self, first, last + 1, self->size - 1);
-  ArrayClearRange(self, self->size - count, self->size - 1);
-  ArrayMaybeShrink(self, count);
-}
-
-void ArrayRemove(ArrayT *self, ssize_t index) {
-  size_t first = ArrayCheckIndex(self, index);
-
-  ArrayRemoveInternal(self, first, first);
-}
-
-void ArrayRemoveRange(ArrayT *self, ssize_t first, ssize_t last) {
-  first = ArrayCheckIndex(self, first);
-  last = ArrayCheckIndex(self, last);
-
-  ASSERT(first <= last, "Range must start with lesser index.");
-
-  ArrayRemoveInternal(self, first, last);
-}
-
-/*
- * @brief Remove an element and fill in the gap with last element of array.
- *
- * Assumes that index is non-negative.
- */
-void ArrayRemoveFast(ArrayT *self, size_t index) {
-  PtrT item = ArrayGetFast(self, index);
-  PtrT last = ArrayGetFast(self, self->size - 1);
-
-  if (self->freeFunc)
-      self->freeFunc(item);
-
-  if (item != last)
-    memcpy(item, last, self->elemSize);
-
-  if (self->zeroed)
-    bzero(last, self->elemSize);
-
-  self->size--;
-}
-
-void ArrayFilterFast(ArrayT *self, PredicateT func) {
-  PtrT item = ArrayGetFast(self, 0);
-  size_t index = 0;
-
-  while (index < self->size) {
-    if (func(item)) {
-      item += self->elemSize;
-      index++;
-    } else {
-      ArrayRemoveFast(self, index);
-    }
-  }
-}
-
-PtrT ArrayInsert(ArrayT *self, ssize_t index) {
-  index = ArrayCheckIndex(self, index);
-
-  ArrayMaybeGrow(self, 1);
-  ArrayMoveRange(self, index + 1, index, self->size - 2);
-  return ArrayGetFast(self, index);
-}
-
-PtrT ArrayInsertFast(ArrayT *self, ssize_t index) {
-  ArrayMaybeGrow(self, 1);
-
-  {
-    PtrT item = ArrayGetFast(self, 0);
-    PtrT last = ArrayGetFast(self, self->size - 1);
-
-    memcpy(last, item, self->elemSize);
-
-    if (self->zeroed)
-      bzero(item, self->elemSize);
-
-    return item;
-  }
-}
-
-void ArrayInsertElements(ArrayT *self, ssize_t index, PtrT data, size_t count) {
-  index = ArrayCheckIndex(self, index);
-
-  ArrayMaybeGrow(self, count);
-  ArrayMoveRange(self, index + count, index, self->size - count - 1);
-  memcpy(ArrayGetFast(self, index), data, count * self->elemSize);
-}
-
-PtrT ArrayAppend(ArrayT *self) {
-  ArrayMaybeGrow(self, 1);
-
-  return ArrayGetFast(self, self->size - 1);
-}
-
-void ArrayAppendElements(ArrayT *self, PtrT data, size_t count) {
-  ArrayMaybeGrow(self, count);
-
-  {
-    PtrT last = ArrayGetFast(self, self->size - count);
-    memcpy(last, data, count * self->elemSize);
-  }
-}
 
 void ArrayInsertionSort(ArrayT *self, ssize_t begin, ssize_t end) {
   CompareFuncT cmp = self->compareFunc;
 
-  begin = ArrayCheckIndex(self, begin);
-  end = ArrayCheckIndex(self, end);
+  begin = CheckIndex(self, begin);
+  end = CheckIndex(self, end);
 
   ASSERT(self->compareFunc, "Compare function not set!");
-  ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!", begin, end);
+  ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!",
+         begin, end);
 
   {
     PtrT left = ArrayGetFast(self, begin);
@@ -380,27 +377,30 @@ size_t ArrayPartition(ArrayT *self, size_t begin, size_t end, PtrT pivot) {
   return partition;
 }
 
-static void QuickSort(ArrayT *self, size_t l, size_t r) {
-  while (l < r) {
-    PtrT pivot = ArrayGetFast(self, (l + r) / 2);
-    size_t i = ArrayPartition(self, l, r, pivot);
+static void QuickSort(ArrayT *self asm("a0"),
+                      size_t left asm("d0"), size_t right asm("d1"))
+{
+  while (left < right) {
+    PtrT pivot = ArrayGetFast(self, (left + right) / 2);
+    size_t i = ArrayPartition(self, left, right, pivot);
 
-    if (i - l <= r - i) {
-      ArrayQuickSort(self, l, i);
-      l = i + 1;
+    if (i - left <= right - i) {
+      QuickSort(self, left, i);
+      left = i + 1;
     } else {
-      ArrayQuickSort(self, i + 1, r);
-      r = i;
+      QuickSort(self, i + 1, right);
+      right = i;
     }
   }
 }
 
 void ArrayQuickSort(ArrayT *self, ssize_t begin, ssize_t end) {
-  begin = ArrayCheckIndex(self, begin);
-  end = ArrayCheckIndex(self, end);
+  begin = CheckIndex(self, begin);
+  end = CheckIndex(self, end);
 
   ASSERT(self->compareFunc, "Compare function not set!");
-  ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!", begin, end);
+  ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!",
+         begin, end);
 
   QuickSort(self, begin, end);
 }

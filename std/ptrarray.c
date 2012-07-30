@@ -114,7 +114,7 @@ static size_t CheckIndex(PtrArrayT *self asm("a0"), ssize_t index asm("d0")) {
 }
 
 /*
- * Getter & setter.
+ * Getter & setter & swapper.
  */
 
 PtrT PtrArrayGet(PtrArrayT *self asm("a0"), ssize_t index asm("d0")) {
@@ -155,6 +155,7 @@ void PtrArrayForEachInRange(PtrArrayT *self, ssize_t begin, ssize_t end,
 /*
  * Element adding functions.
  */
+
 void PtrArrayInsertFast(PtrArrayT *self, ssize_t index, PtrT data) {
   MaybeGrow(self, 1);
 
