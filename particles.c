@@ -153,7 +153,7 @@ static void AddParticles(ParticleEngineT *engine) {
   static uint16_t seed[3] = { 0xDEAD, 0x1EE7, 0xC0DE };
 
   if (engine->particles->size < engine->particles->reserved) {
-    ParticleT *p = ArrayAppend(engine->particles);
+    ParticleT *p = ArrayAppend(engine->particles, NULL);
 
     float radian = erand48(seed) * 4 * M_PI;
     float radius = erand48(seed) * 3 + 1;
