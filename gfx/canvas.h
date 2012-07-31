@@ -16,6 +16,7 @@ CanvasT *NewCanvas(int width, int height);
 
 void CanvasFill(CanvasT *canvas, uint8_t color);
 
+static inline void CanvasSetFgCol(CanvasT *canvas, uint8_t color) { canvas->fg_col = color; }
 static inline uint8_t GetCanvasFgCol(CanvasT *canvas) { return canvas->fg_col; }
 static inline size_t GetCanvasWidth(CanvasT *canvas) { return canvas->pixbuf->width; }
 static inline size_t GetCanvasHeight(CanvasT *canvas) { return canvas->pixbuf->height; }

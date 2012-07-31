@@ -5,12 +5,19 @@
 #include "engine/mesh.h"
 #include "engine/ms3d.h"
 
+typedef struct PolygonExt {
+  uint16_t index;
+  uint16_t flags;
+  float depth;
+} PolygonExtT;
+
 typedef struct SceneObject {
   StrT name;
   MeshT *mesh;
 
   MatrixStack3D *ms;
-  PointT *points;
+  Vector3D *vertex;
+  PolygonExtT *polygonExt;
 } SceneObjectT;
 
 SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh);

@@ -2,7 +2,6 @@
 #define __ENGINE_MATRIX3D_H__
 
 #include "engine/vector3d.h"
-#include "gfx/common.h"
 
 typedef float Matrix3D[4][4];
 
@@ -19,7 +18,7 @@ void LoadPerspective3D(Matrix3D *d,
                        float viewerX, float viewerY, float viewerZ);
 void Transform3D(Vector3D *dst, Vector3D *src, int n, Matrix3D *m);
 void ProjectTo2D(int centerX, int centerY,
-                 PointT *dst, Vector3D *src, int n, Matrix3D *m);
+                 Vector3D *dst, Vector3D *src, int n, Matrix3D *m);
 void LoadCameraFromVector(Matrix3D *camera,
                           Vector3D *direction, Vector3D *position);
 void LoadCameraFromAngles(Matrix3D *camera,

@@ -118,7 +118,7 @@ void Transform3D(Vector3D *dst, Vector3D *src, int n, Matrix3D *m) {
 }
 
 void ProjectTo2D(int centerX, int centerY,
-                 PointT *dst, Vector3D *src, int n, Matrix3D *m)
+                 Vector3D *dst, Vector3D *src, int n, Matrix3D *m)
 {
   int i;
 
@@ -129,10 +129,12 @@ void ProjectTo2D(int centerX, int centerY,
 
     float pX = M(m,0,0) * x + M(m,1,0) * y + M(m,2,0) * z + M(m,3,0);
     float pY = M(m,0,1) * x + M(m,1,1) * y + M(m,2,1) * z + M(m,3,1);
+    float pZ = M(m,0,2) * x + M(m,1,2) * y + M(m,2,2) * z + M(m,3,2);
     float pW = M(m,0,3) * x + M(m,1,3) * y + M(m,2,3) * z + M(m,3,3);
 
     dst[i].x = pX / pW + centerX;
     dst[i].y = pY / pW + centerY;
+    dst[i].z = pZ;
   }
 }
 
