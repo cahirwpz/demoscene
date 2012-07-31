@@ -94,7 +94,8 @@ static size_t CheckIndex(ArrayT *self asm("a0"), ssize_t index asm("d0")) {
  */
 
 void ArrayForEach(ArrayT *self, IterFuncT func, PtrT data) {
-  ArrayForEachInRange(self, 0, self->size - 1, func, data);
+  if (self->size)
+    ArrayForEachInRange(self, 0, self->size - 1, func, data);
 }
 
 void ArrayForEachInRange(ArrayT *self, ssize_t begin, ssize_t end,
@@ -204,11 +205,12 @@ void ArrayRemoveRange(ArrayT *self, ssize_t first, ssize_t last) {
 
 void ArrayFilterFast(ArrayT *self, PredicateT func) {
   PtrT item = ArrayGet(self, 0);
-  PtrT last = ArrayGet(self, self->size - 1);
+  size_t index = 0;
 
-  while (item <= last) {
+  while (index < self->size) {
     if (func(item)) {
       item += self->elemSize;
+      index++;
     } else {
       RemoveFast(self, item);
     }

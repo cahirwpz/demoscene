@@ -91,7 +91,8 @@ static size_t CheckIndex(PtrArrayT *self asm("a0"), ssize_t index asm("d0")) {
  */
 
 void PtrArrayForEach(PtrArrayT *self, IterFuncT func, PtrT data) {
-  PtrArrayForEachInRange(self, 0, self->size - 1, func, data);
+  if (self->size)
+    PtrArrayForEachInRange(self, 0, self->size - 1, func, data);
 }
 
 void PtrArrayForEachInRange(PtrArrayT *self, ssize_t begin, ssize_t end,
@@ -193,11 +194,12 @@ void PtrArrayRemoveRange(PtrArrayT *self, ssize_t first, ssize_t last) {
 
 void PtrArrayFilterFast(PtrArrayT *self, PredicateT func) {
   PtrT *item = self->data;
-  PtrT *last = &self->data[self->size - 1];
+  size_t index = 0;
 
-  while (item <= last) {
+  while (index < self->size) {
     if (func(*item)) {
       item++;
+      index++;
     } else {
       RemoveFast(self, item);
     }
