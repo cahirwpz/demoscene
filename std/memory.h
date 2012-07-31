@@ -4,22 +4,22 @@
 #include "std/types.h"
 
 /* Think twice before you use it. */
-PtrT MemNewInternal(size_t n, uint32_t flags, FreeFuncT func);
+PtrT MemNewInternal(size_t n, uint32_t flags, const TypeT *type);
 
-PtrT MemNew(size_t n, FreeFuncT func);
-PtrT MemNew0(size_t n, FreeFuncT func);
+PtrT MemNew(size_t n);
+PtrT MemNewObject(const TypeT *type);
 PtrT MemRef(PtrT mem);
 PtrT MemUnref(PtrT mem);
 
-PtrT MemDupGC(PtrT mem, size_t s, CopyFuncT copy);
+PtrT MemDupGC(PtrT mem, size_t s);
 PtrT MemDup(const void *p, size_t s);
 StrT StrDup(const StrT s);
 
 #define NewRecord(TYPE) \
-    (TYPE *)MemNew0(sizeof(TYPE), NULL)
-#define NewRecordGC(TYPE, FUNC) \
-    (TYPE *)MemNew0(sizeof(TYPE), (FUNC))
+    (TYPE *)MemNew(sizeof(TYPE))
+#define NewInstance(TYPE) \
+    (TYPE *)MemNewObject(&Type##TYPE)
 #define NewTable(TYPE, NUM) \
-    (TYPE *)MemNew(sizeof(TYPE) * (NUM), NULL)
+    (TYPE *)MemNew(sizeof(TYPE) * (NUM))
 
 #endif

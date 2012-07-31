@@ -10,8 +10,10 @@ static void DeleteSceneObject(SceneObjectT *self) {
   MemUnref(self->name);
 }
 
+TYPEDECL(SceneObjectT, (FreeFuncT)DeleteSceneObject);
+
 SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh) {
-  SceneObjectT *self = NewRecordGC(SceneObjectT, (FreeFuncT)DeleteSceneObject);
+  SceneObjectT *self = NewInstance(SceneObjectT);
   size_t i;
 
   self->name = StrDup(name);

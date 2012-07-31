@@ -12,7 +12,7 @@ struct Queue {
 };
 
 QueueT *NewQueue(size_t size, size_t elemSize) {
-  QueueT *queue = MemNew0(sizeof(QueueT) + elemSize * size, NULL);
+  QueueT *queue = MemNew(sizeof(QueueT) + elemSize * size);
 
   queue->size = size;
   queue->elemSize = elemSize;

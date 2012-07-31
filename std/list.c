@@ -32,8 +32,10 @@ static void DeleteList(ListT *list) {
   NodeForEach(GetNode(list), (IterFuncT)MemUnref, NULL);
 }
 
+TYPEDECL(ListT, (FreeFuncT)DeleteList);
+
 ListT *NewList() {
-  ListT *list = NewRecordGC(ListT, (FreeFuncT)DeleteList);
+  ListT *list = NewInstance(ListT);
   NodeInitGuard(GetNode(list));
   return list;
 }

@@ -15,8 +15,10 @@ static void DeleteAtomPool(AtomPoolT *self) {
   DeletePool(self->pool);
 }
 
+TYPEDECL(AtomPoolT, (FreeFuncT)DeleteAtomPool);
+
 AtomPoolT *NewAtomPool(size_t atomSize, size_t perChunk) {
-  AtomPoolT *atomPool = NewRecordGC(AtomPoolT, (FreeFuncT)DeleteAtomPool);
+  AtomPoolT *atomPool = NewInstance(AtomPoolT);
 
   atomPool->atomSize = atomSize;
   atomPool->perChunk = perChunk;

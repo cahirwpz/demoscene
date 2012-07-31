@@ -11,7 +11,7 @@ struct Stack {
 };
 
 StackT *NewStack(size_t size, size_t elemSize) {
-  StackT *stack = MemNew0(sizeof(StackT) + elemSize * size, NULL);
+  StackT *stack = MemNew(sizeof(StackT) + elemSize * size);
 
   stack->top = -1;
   stack->size = size;

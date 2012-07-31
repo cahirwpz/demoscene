@@ -10,8 +10,10 @@ static void DeleteArray(ArrayT *self) {
   MemUnref(self->data);
 }
 
+TYPEDECL(ArrayT, (FreeFuncT)DeleteArray);
+
 ArrayT *NewArray(size_t reserved, size_t elemSize, bool zeroed) {
-  ArrayT *array = NewRecordGC(ArrayT, (FreeFuncT)DeleteArray);
+  ArrayT *array = NewInstance(ArrayT);
 
   array->elemSize = elemSize;
   array->zeroed = zeroed;
@@ -242,11 +244,11 @@ void ArrayResize(ArrayT *self, size_t newSize) {
   }
 
   if (!self->data) {
-    self->data = MemNew(bytes, NULL);
+    self->data = MemNew(bytes);
     self->size = 0;
   } else {
     PtrT oldData = self->data;
-    self->data = MemDupGC(oldData, bytes, NULL);
+    self->data = MemDupGC(oldData, bytes);
     MemUnref(oldData);
   }
 

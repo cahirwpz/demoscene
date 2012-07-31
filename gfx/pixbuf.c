@@ -9,8 +9,10 @@ static void DeletePixBuf(PixBufT *pixbuf) {
   MemUnref(pixbuf->data);
 }
 
+TYPEDECL(PixBufT, (FreeFuncT)DeletePixBuf);
+
 PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
-  PixBufT *pixbuf = NewRecordGC(PixBufT, (FreeFuncT)DeletePixBuf);
+  PixBufT *pixbuf = NewInstance(PixBufT);
 
   pixbuf->type = type;
   pixbuf->width = width;

@@ -30,13 +30,15 @@ static void TreeDeleter(TreeT *tree) {
   MemUnref(tree);
 }
 
-static void RecursiveDeleteTree(TreeT *tree) {
+void RecursiveDeleteTree(TreeT *tree) {
   DeleteTree(tree);
   NodeForEach(GetChildren(tree), (IterFuncT)TreeDeleter, NULL);
 }
 
+TYPEDECL(TreeT, (FreeFuncT)DeleteTree);
+
 static NodeT *NodeAlloc(TreeT *parent, PtrT data) {
-  TreeT *item = NewRecordGC(TreeT, (FreeFuncT)DeleteTree);
+  TreeT *item = NewInstance(TreeT);
   NodeInitGuard(GetChildren(item));
   item->parent = parent;
   item->data = data;
@@ -50,7 +52,7 @@ static PtrT NodeFree(NodeT *node) {
 }
 
 TreeT *NewTree(PtrT data) {
-  TreeT *tree = NewRecordGC(TreeT, (FreeFuncT)RecursiveDeleteTree);
+  TreeT *tree = NewInstance(TreeT); /* TODO: Delete it recursively. */
   NodeInitGuard(GetChildren(tree));
   tree->data = data;
   return data;

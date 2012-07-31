@@ -46,7 +46,7 @@ static void ColorBoxCalcAverage(ColorBoxT *box);
 static void ColorBoxCalcVariance(ColorBoxT *box);
 
 ColorBoxT *NewColorBox(ArrayT *colors, size_t begin, size_t end, ColorT *average) {
-  ColorBoxT *box = NewRecordGC(ColorBoxT, NULL);
+  ColorBoxT *box = NewRecord(ColorBoxT);
 
   box->colors = colors;
   box->begin  = begin;

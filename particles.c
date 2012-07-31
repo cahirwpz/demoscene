@@ -49,8 +49,10 @@ static void DeleteParticleEngine(ParticleEngineT *self) {
   MemUnref(self->particles);
 }
 
+TYPEDECL(ParticleEngineT, (FreeFuncT)DeleteParticleEngine);
+
 ParticleEngineT *NewParticleEngine(size_t maxParticles, ParticleEngineFuncT adder) {
-  ParticleEngineT *engine = NewRecordGC(ParticleEngineT, (FreeFuncT)DeleteParticleEngine);
+  ParticleEngineT *engine = NewInstance(ParticleEngineT);
 
   engine->particles = NewArray(maxParticles, sizeof(ParticleT), TRUE);
   engine->adder = adder;

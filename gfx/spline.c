@@ -61,7 +61,7 @@ static void HermiteCubicPolynomial(float t asm("fp0"),
 
 SplineT *NewSpline(size_t knots, bool closed) {
   size_t size = sizeof(SplineT) + sizeof(SplineKnotT) * knots; 
-  SplineT *spline = (SplineT *)MemNew0(size, NULL);
+  SplineT *spline = (SplineT *)MemNew(size);
 
   spline->knots = knots;
   spline->closed = closed;

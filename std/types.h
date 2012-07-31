@@ -44,10 +44,33 @@ typedef enum { CMP_LT = -1, CMP_EQ = 0, CMP_GT = 1 } CmpT;
 typedef void* PtrT;
 typedef char* StrT;
 
-/* Function types definition */
-typedef PtrT (*AllocFuncT)();
-typedef void (*FreeFuncT)(PtrT);
-typedef bool (*InitFuncT)(PtrT);
+/**
+ * @brief Type of resource release function.
+ *
+ * @param rsc Resource to be released.
+ */
+typedef void (*FreeFuncT)(PtrT rsc);
+
+/**
+ * @brief Type of resource copy function.
+ *
+ * @param dst Destination for the copy.
+ * @param src Structure to be copied.
+ * @result original value of dst
+ */
+typedef PtrT (*CopyFuncT)(PtrT dst, PtrT src);
+
+typedef struct Type {
+  size_t size;
+  FreeFuncT free;
+  CopyFuncT copy;
+} TypeT;
+
+#define TYPEDECL(type, ...) \
+  const TypeT Type##type = {sizeof(type),__VA_ARGS__}
+
+#define TYPEDEF(type) \
+  extern const TypeT Type##type;
 
 /**
  * @brief Type of a predicate checking function.
@@ -56,16 +79,6 @@ typedef bool (*InitFuncT)(PtrT);
  * @result Value of the predicate.
  */
 typedef bool (*PredicateT)(PtrT item);
-
-/**
- * @brief Type of a copy function.
- *
- * @param dst Destination for the copy.
- * @param src Memory fragment to be copied.
- * @param size Size of memory fragment.
- * @result original value of dst
- */
-typedef void *(*CopyFuncT)(void *dst, const void *src, size_t size);
 
 /**
  * @brief Type of an iterator function.

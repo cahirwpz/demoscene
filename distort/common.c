@@ -6,11 +6,13 @@ static void DeleteDistortionMap(DistortionMapT *map) {
   MemUnref(map->map);
 }
 
+TYPEDECL(DistortionMapT, (FreeFuncT)DeleteDistortionMap);
+
 DistortionMapT *NewDistortionMap(size_t width, size_t height,
                                  DistortionMapTypeT type,
                                  size_t textureW, size_t textureH)
 {
-  DistortionMapT *map = NewRecordGC(DistortionMapT, (FreeFuncT)DeleteDistortionMap);
+  DistortionMapT *map = NewInstance(DistortionMapT);
   size_t size = 0;
 
   switch (type) {
@@ -22,7 +24,7 @@ DistortionMapT *NewDistortionMap(size_t width, size_t height,
       break;
   }
 
-  map->map = MemNew0(size * width * height, NULL);
+  map->map = MemNew(size * width * height);
   map->type = type;
   map->width = width;
   map->height = height;

@@ -7,8 +7,10 @@ static void DeleteCanvas(CanvasT *canvas) {
   MemUnref(canvas->pixbuf);
 }
 
+TYPEDECL(CanvasT, (FreeFuncT)DeleteCanvas);
+
 CanvasT *NewCanvas(int width, int height) {
-  CanvasT *canvas = NewRecordGC(CanvasT, (FreeFuncT)DeleteCanvas);
+  CanvasT *canvas = NewInstance(CanvasT);
 
   canvas->pixbuf = NewPixBuf(PIXBUF_CLUT, width, height);
   canvas->fg_col = 255;

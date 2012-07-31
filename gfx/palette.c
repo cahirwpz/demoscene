@@ -13,8 +13,10 @@ static void DeletePalette(PaletteT *palette) {
     MemUnref(palette->next);
 }
 
+TYPEDECL(PaletteT, (FreeFuncT)DeletePalette);
+
 PaletteT *NewPalette(size_t count) {
-  PaletteT *palette = NewRecordGC(PaletteT, (FreeFuncT)DeletePalette);
+  PaletteT *palette = NewInstance(PaletteT);
 
   palette->count = count;
   palette->colors = NewTable(RGB, count);

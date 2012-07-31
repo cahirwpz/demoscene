@@ -19,13 +19,15 @@ static void DeleteResource(ResourceT *res) {
   MemUnref(res->name);
 }
 
+TYPEDECL(ResourceT, (FreeFuncT)DeleteResource);
+
 static ResourceT *NewResource(const StrT name, PtrT ptr, bool dynamic) {
   ResourceT *res;
 
   if (!ptr)
     PANIC("Missing content for resource '%s'.", name);
 
-  res = NewRecordGC(ResourceT, (FreeFuncT)DeleteResource);
+  res = NewInstance(ResourceT);
   res->name = StrDup(name);
   res->ptr = ptr;
   res->dynamic = dynamic;

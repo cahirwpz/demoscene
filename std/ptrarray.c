@@ -10,8 +10,10 @@ static void DeletePtrArray(PtrArrayT *self) {
   MemUnref(self->data);
 }
 
+TYPEDECL(PtrArrayT, (FreeFuncT)DeletePtrArray);
+
 PtrArrayT *NewPtrArray(size_t reserved, bool managed) {
-  PtrArrayT *array = NewRecordGC(PtrArrayT, (FreeFuncT)DeletePtrArray);
+  PtrArrayT *array = NewInstance(PtrArrayT);
 
   array->managed = managed;
   array->reserved = 0;
@@ -230,11 +232,11 @@ void PtrArrayResize(PtrArrayT *self, size_t newSize) {
   }
 
   if (!self->data) {
-    self->data = MemNew(bytes, NULL);
+    self->data = MemNew(bytes);
     self->size = 0;
   } else {
     PtrT oldData = self->data;
-    self->data = MemDupGC(oldData, bytes, NULL);
+    self->data = MemDupGC(oldData, bytes);
     MemUnref(oldData);
   }
 

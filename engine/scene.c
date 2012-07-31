@@ -10,8 +10,10 @@ static void DeleteScene(SceneT *self) {
   MemUnref(self->objects);
 }
 
+TYPEDECL(SceneT, (FreeFuncT)DeleteScene);
+
 SceneT *NewScene() {
-  SceneT *self = NewRecordGC(SceneT, (FreeFuncT)DeleteScene);
+  SceneT *self = NewInstance(SceneT);
   self->objects = NewList();
   return self;
 }

@@ -79,8 +79,10 @@ static void DeleteEventQueue(EventQueueT *queue) {
   MemUnref(queue->events);
 }
 
+TYPEDECL(EventQueueT, (FreeFuncT)DeleteEventQueue);
+
 static EventQueueT *NewEventQueue(size_t size) {
-  EventQueueT *queue = NewRecordGC(EventQueueT, (FreeFuncT)DeleteEventQueue);
+  EventQueueT *queue = NewInstance(EventQueueT);
 
   queue->events = NewQueue(size, sizeof(InputEventT));
 

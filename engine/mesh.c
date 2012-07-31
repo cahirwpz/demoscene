@@ -14,8 +14,10 @@ static void DeleteMesh(MeshT *mesh) {
   MemUnref(mesh->vertex);
 }
 
+TYPEDECL(MeshT, (FreeFuncT)DeleteMesh);
+
 MeshT *NewMesh(size_t vertices, size_t polygons) {
-  MeshT *mesh = NewRecordGC(MeshT, (FreeFuncT)DeleteMesh);
+  MeshT *mesh = NewInstance(MeshT);
 
   mesh->vertexNum = vertices;
   mesh->polygonNum = polygons;
