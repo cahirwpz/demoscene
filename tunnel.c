@@ -56,7 +56,7 @@ void SetupEffect() {
   LinkPalettes(R_("TexturePal"), R_("WhelpzPal"), R_("CreditsPal"), NULL);
   LoadPalette(R_("TexturePal"));
 
-  ResAdd("EffectPal", CopyPalette(R_("TexturePal")));
+  ResAdd("EffectPal", MemClone(R_("TexturePal")));
 
   PixBufRemap(R_("CreditsImg"), R_("CreditsPal"));
   PixBufRemap(R_("WhelpzImg"), R_("WhelpzPal"));

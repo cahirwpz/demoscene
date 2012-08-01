@@ -13,7 +13,14 @@ static void DeletePalette(PaletteT *palette) {
     MemUnref(palette->next);
 }
 
-TYPEDECL(PaletteT, (FreeFuncT)DeletePalette);
+static void CopyPalette(PaletteT *dst, PaletteT *src) {
+  dst->colors = MemClone(src->colors);
+  dst->start = src->start;
+  dst->count = src->count;
+  dst->next = (src->next) ? MemClone(src->next) : NULL;
+}
+
+TYPEDECL(PaletteT, (FreeFuncT)DeletePalette, (CopyFuncT)CopyPalette);
 
 PaletteT *NewPalette(size_t count) {
   PaletteT *palette = NewInstance(PaletteT);
@@ -47,27 +54,6 @@ PaletteT *NewPaletteFromFile(const StrT fileName) {
   }
 
   return NULL;
-}
-
-PaletteT *CopyPalette(PaletteT *palette) {
-  PaletteT *rec_copy = NULL;
-  PaletteT *copy;
-
-  if (palette->next) {
-    rec_copy = CopyPalette(palette->next);
-
-    if (!rec_copy)
-      return NULL;
-  }
-
-  copy = NewPalette(palette->count);
-
-  copy->start = palette->start;
-  copy->next = rec_copy;
-
-  memcpy(copy->colors, palette->colors, sizeof(RGB) * palette->count);
-
-  return copy;
 }
 
 bool LinkPalettes(PaletteT *palette, ...) {

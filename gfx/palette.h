@@ -13,7 +13,6 @@ typedef struct Palette {
 
 PaletteT *NewPalette(size_t count);
 PaletteT *NewPaletteFromFile(const StrT fileName);
-PaletteT *CopyPalette(PaletteT *palette);
 
 bool LinkPalettes(PaletteT *palette, ...);
 void UnlinkPalettes(PaletteT *palette);
