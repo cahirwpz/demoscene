@@ -61,13 +61,21 @@ typedef void (*FreeFuncT)(PtrT rsc);
 typedef PtrT (*CopyFuncT)(PtrT dst, PtrT src);
 
 typedef struct Type {
+#ifndef NDEBUG
+  const char *name;
+#endif
   size_t size;
   FreeFuncT free;
   CopyFuncT copy;
 } TypeT;
 
+#ifndef NDEBUG
+#define TYPEDECL(type, ...) \
+  const TypeT Type##type = {#type,sizeof(type),__VA_ARGS__}
+#else
 #define TYPEDECL(type, ...) \
   const TypeT Type##type = {sizeof(type),__VA_ARGS__}
+#endif
 
 #define TYPEDEF(type) \
   extern const TypeT Type##type;
