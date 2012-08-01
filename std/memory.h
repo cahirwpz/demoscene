@@ -17,7 +17,10 @@ PtrT MemNewTableOfType(const TypeT *type, size_t n);
 PtrT MemRef(PtrT mem);
 PtrT MemUnref(PtrT mem);
 
-PtrT TableResize(PtrT mem, size_t);
+size_t TableElemSize(PtrT mem asm("a0"));
+size_t TableLength(PtrT mem asm("a0"));
+PtrT TableResize(PtrT mem, size_t count);
+
 PtrT MemClone(PtrT mem);
 PtrT MemDup(const void *p, size_t s);
 StrT StrDup(const StrT s);

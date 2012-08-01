@@ -225,6 +225,25 @@ PtrT MemUnref(PtrT mem) {
   return mem;
 }
 
+size_t TableLength(PtrT mem asm("a0")) {
+  uint32_t blk = MemBlkData(mem);
+
+  return (blk & IS_TABLE) ? (blk & SIZE_MASK) / MEM_BLOCKSIZE : 1;
+}
+
+size_t TableElemSize(PtrT mem asm("a0")) {
+  uint32_t blk = MemBlkData(mem);
+  size_t size;
+
+  if (blk & IS_TABLE) {
+    size = (blk & IS_TYPED) ? (MemBlkType(mem)->size) : MemBlkDataExt(mem);
+  } else {
+    size = blk & SIZE_MASK;
+  }
+
+  return size;
+}
+
 PtrT TableResize(PtrT mem, size_t newCount) {
   const TypeT *type = TypeOf(mem);
   uint32_t flags = TypeOfMem(mem);
