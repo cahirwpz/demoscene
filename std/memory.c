@@ -1,3 +1,4 @@
+#define NDEBUG
 #include <string.h>
 #include <proto/exec.h>
 
@@ -5,63 +6,72 @@
 #include "std/memory.h"
 
 /*
- * Memory block can be described with one of the following structures:
+ * Memory block can be described with following structure:
  *
- * 1) for untyped block (without TypeT)
  * struct MemBlk {
  *   uint32_t refCnt      :  8;
- *   uint32_t size        : 22;  // size in quadwords 
+ *   uint32_t size        : 21;  // size in quadwords or elements iff a table
+ *   uint32_t unused      :  1;
  *   uint32_t isTable     :  1;
  *   uint32_t hasTypeDesc :  1;  // equals to 0
- *   uint8_t data[0];
- * };
- *
- * 2) for untyped array block (without TypeT)
- * struct ArrayMemBlk {
- *   uint32_t elemSize;
- *   uint32_t refCnt      :  8;
- *   uint32_t size        : 22;  // size in elements
- *   uint32_t isTable     :  1;  // equals to 1
- *   uint32_t hasTypeDesc :  1;  // equals to 0
- *   uint8_t data[0];
- * };
- *
- * 3) for typed (non-)array block (with TypeT)
- * struct TypedMemBlk {
- *   TypeT    *typeDesc;
- *   uint32_t refCnt      :  8;
- *   uint32_t size        : 22;  // size in quadwords or elements iff a table
- *   uint32_t isTable     :  1;  // 0 or 1
- *   uint32_t hasTypeDesc :  1;  // equals to 1
- *   uint8_t data[0];
  * };
  *
  * This allows primitive reference counting and memory collection.
  */
 
-static inline bool MemBlkGetSize(PtrT mem) {
-  return (*(uint32_t *)(mem - 4)) & 0xfffff8;
+#define IS_TYPED  1
+#define IS_TABLE  2
+#define SIZE_MASK 0xffff80
+
+static inline const TypeT *MemBlkType(PtrT mem) {
+  return (const TypeT *)(mem - 8);
 }
 
-static inline const TypeT *MemBlkGetType(PtrT mem) {
-  bool hasTypeDesc = BOOL(*(uint32_t *)(mem - 4) & 1);
-
-  return hasTypeDesc ? (const TypeT *)(*(uint32_t *)(mem - 8)) : NULL;
+static inline uint32_t MemBlkDataExt(PtrT mem) {
+  return *(uint32_t *)(mem - 8);
 }
 
-static inline size_t MemBlkHeaderSize(bool hasTypeDesc) {
-  return (hasTypeDesc ? 8 : 4);
+static inline uint32_t MemBlkData(PtrT mem) {
+  return *(uint32_t *)(mem - 4);
 }
 
-static PtrT MemBlkInit(PtrT mem, uint8_t refCnt, size_t size, const TypeT *type) {
-  uint32_t *ptr = (uint32_t *)mem;
+static inline int IsTyped(PtrT mem) {
+  return MemBlkData(mem) & IS_TYPED;
+}
 
-  if (type)
-    *ptr++ = (uint32_t)type;
+static inline int IsTable(PtrT mem) {
+  return MemBlkData(mem) & IS_TABLE;
+}
 
-  *ptr++ = (refCnt << 24) | (size & 0xfffff8) | (type ? 1 : 0);
+static inline size_t HeaderSize(bool isExt) {
+  return isExt ? 8 : 4;
+}
 
-  return ptr;
+static inline PtrT StartAddressOf(PtrT mem) {
+  return mem - HeaderSize(MemBlkData(mem) & (IS_TABLE | IS_TYPED));
+}
+
+static inline void SizeOf(PtrT mem, size_t *sizePtr, size_t *countPtr) {
+  uint32_t blk = MemBlkData(mem);
+  size_t size = blk & SIZE_MASK;
+  size_t count = 1;
+
+  if (blk & IS_TABLE) {
+    count = size / MEM_BLOCKSIZE;
+
+    if (blk & IS_TYPED) {
+      size = (MemBlkType(mem))->size;
+    } else {
+      size = MemBlkDataExt(mem);
+    }
+  }
+
+  *sizePtr = size;
+  *countPtr = count;
+}
+
+static inline const TypeT *TypeOf(PtrT mem) {
+  return IsTyped(mem) ? MemBlkType(mem) : NULL;
 }
 
 /*
@@ -72,29 +82,86 @@ static PtrT MemBlkInit(PtrT mem, uint8_t refCnt, size_t size, const TypeT *type)
  * 2) Returned memory block is aligned to 4 bytes boundary.
  */
 
-PtrT MemNewInternal(size_t n, uint32_t flags, const TypeT *type) {
-  PtrT p = NULL;
+static inline size_t MemBlkSize(size_t size, size_t count, bool isExt) {
+  size_t bytes = size * count + HeaderSize(isExt);
 
-  if (n) {
-    n += MemBlkHeaderSize(BOOL(type));
-    n = (n + MEM_BLOCKMASK) & -MEM_BLOCKSIZE;
-    p = AllocMem(n, flags);
+  return (bytes + MEM_BLOCKMASK) & -MEM_BLOCKSIZE;
+}
 
-    if (!p)
-      PANIC("AllocMem(%ld) failed.", n);
-    
-    p = MemBlkInit(p, 1, n, type);
+static PtrT MemBlkInit(PtrT mem, size_t size, bool isTable, bool isTyped) {
+  *(uint32_t *)mem = (1 << 24)
+                   | ((isTable ? (size << 3) : size) & SIZE_MASK)
+                   | ((isTable & 1) << 1)
+                   | (isTyped & 1);
+
+  return mem + 4;
+}
+
+static inline PtrT MemBlkAlloc(size_t n, uint32_t flags) {
+  PtrT ptr = AllocMem(n, flags);
+
+  if (!ptr)
+    PANIC("AllocMem(%ld) failed.", n);
+
+  return ptr;
+}
+
+PtrT MemNewCustom(size_t size, uint32_t flags, const TypeT *type) {
+  PtrT ptr = NULL;
+
+  if (size) {
+    size_t bytes = MemBlkSize(size, 1, BOOL(type));
+
+    ptr = MemBlkAlloc(bytes, flags);
+
+    if (type) {
+      *(const TypeT **)ptr = type;
+      ptr += 4;
+    }
+
+    ptr = MemBlkInit(ptr, size, FALSE, BOOL(type));
   }
 
-  return p;
+  return ptr;
 }
 
-PtrT MemNew(size_t n) {
-  return MemNewInternal(n, MEMF_PUBLIC|MEMF_CLEAR, NULL);
+PtrT MemNewCustomTable(size_t size, size_t count, uint32_t flags,
+                       const TypeT *type)
+{
+  PtrT ptr = NULL;
+
+  if (size) {
+    size_t bytes = MemBlkSize(size, count, BOOL(type));
+
+    ptr = MemBlkAlloc(bytes, flags);
+
+    if (type)
+      *(const TypeT **)ptr = type;
+    else
+      *(size_t *)ptr = size;
+
+    ptr += 4;
+
+    ptr = MemBlkInit(ptr, count, TRUE, BOOL(type));
+  }
+
+  return ptr;
 }
 
-PtrT MemNewObject(const TypeT *type) {
-  return MemNewInternal(type->size, MEMF_PUBLIC|MEMF_CLEAR, type);
+PtrT MemNew(size_t size) {
+  return MemNewCustom(size, MEMF_PUBLIC|MEMF_CLEAR, NULL);
+}
+
+PtrT MemNewOfType(const TypeT *type) {
+  return MemNewCustom(type->size, MEMF_PUBLIC|MEMF_CLEAR, type);
+}
+
+PtrT MemNewTable(size_t size, size_t count) {
+  return MemNewCustomTable(size, count, MEMF_PUBLIC|MEMF_CLEAR, NULL);
+}
+
+PtrT MemNewTableOfType(const TypeT *type, size_t count) {
+  return MemNewCustomTable(type->size, count, MEMF_PUBLIC|MEMF_CLEAR, type);
 }
 
 PtrT MemRef(PtrT mem) {
@@ -118,15 +185,15 @@ PtrT MemUnref(PtrT mem) {
     (*refcnt)--;
 
     if (*refcnt == 0) {
-      const TypeT *type = MemBlkGetType(mem);
-      size_t size = MemBlkGetSize(mem);
+      const TypeT *type = TypeOf(mem);
+      size_t size, count;
+
+      SizeOf(mem, &size, &count);
 
       if (type && type->free)
-        type->free(mem);
+          type->free(mem);
 
-      mem -= MemBlkHeaderSize(BOOL(type));
-
-      FreeMem(mem, size);
+      FreeMem(StartAddressOf(mem), MemBlkSize(size, count, BOOL(type)));
 
       mem = NULL;
     }
@@ -135,10 +202,61 @@ PtrT MemUnref(PtrT mem) {
   return mem;
 }
 
-PtrT MemDupGC(PtrT mem, size_t s) {
-  PtrT newMem = MemNewInternal(s, TypeOfMem(mem), MemBlkGetType(mem)); 
+PtrT TableResize(PtrT mem, size_t newCount) {
+  const TypeT *type = TypeOf(mem);
+  uint32_t flags = TypeOfMem(mem);
+  size_t size, count;
+  PtrT newMem;
 
-  return memcpy(newMem, mem, s);
+  ASSERT(IsTable(mem), "Object at $.8x is not a table.", newMem);
+
+  SizeOf(mem, &size, &count);
+
+  if (newCount > 0)
+    count = newCount;
+
+  newMem = MemNewCustomTable(size, count, flags, type);
+
+  if (type && type->copy) {
+    PtrT src = mem;
+    PtrT dst = newMem;
+
+    do {
+      type->copy(dst, src);
+      src += size;
+      dst += size;
+    } while (--count);
+  } else {
+    memcpy(newMem, mem, size * count);
+  }
+
+  /* If not cloning, release the old table. */
+  if (newCount > 0)
+    MemUnref(mem);
+
+  return newMem;
+}
+
+PtrT MemClone(PtrT mem) {
+  const TypeT *type = TypeOf(mem);
+  uint32_t flags = TypeOfMem(mem);
+  size_t size, count;
+  PtrT newMem;
+
+  SizeOf(mem, &size, &count);
+
+  if (IsTable(mem)) {
+    newMem = TableResize(mem, 0);
+  } else {
+    newMem = MemNewCustom(size, flags, type);
+
+    if (type && type->copy)
+      type->copy(newMem, mem);
+    else
+      memcpy(newMem, mem, size);
+  }
+
+  return newMem;
 }
 
 PtrT MemDup(const void *p, size_t s) {

@@ -17,7 +17,7 @@ static PtrT ReadFileToCustomMemory(const StrT fileName, uint32_t memFlags) {
       if (ExamineFH(fh, infoBlock)) {
         size_t dataLen = infoBlock->fib_Size;
 
-        if ((data = MemNewInternal(dataLen, memFlags, NULL))) {
+        if ((data = MemNewCustom(dataLen, memFlags, NULL))) {
           if (dataLen != Read(fh, data, dataLen)) {
             MemUnref(data);
             data = NULL;

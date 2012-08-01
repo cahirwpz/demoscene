@@ -219,8 +219,6 @@ void PtrArrayFilterFast(PtrArrayT *self, PredicateT func) {
  * element for some operations (i.e. sort, swap).
  */
 void PtrArrayResize(PtrArrayT *self, size_t newSize) {
-  size_t bytes = newSize * sizeof(PtrT);
-
   if (self->data) {
     if (newSize == self->size)
       return;
@@ -232,12 +230,10 @@ void PtrArrayResize(PtrArrayT *self, size_t newSize) {
   }
 
   if (!self->data) {
-    self->data = MemNew(bytes);
+    self->data = MemNewTable(sizeof(PtrT), newSize);
     self->size = 0;
   } else {
-    PtrT oldData = self->data;
-    self->data = MemDupGC(oldData, bytes);
-    MemUnref(oldData);
+    self->data = TableResize(self->data, newSize);
   }
 
   if (newSize > self->reserved)
