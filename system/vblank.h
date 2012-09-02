@@ -1,7 +1,7 @@
 #ifndef __VBLANK_H__
 #define __VBLANK_H__
 
-#define FRAMERATE 50
+#define FRAMERATE 25
 
 void InstallVBlankIntServer();
 void RemoveVBlankIntServer();

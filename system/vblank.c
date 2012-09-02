@@ -2,6 +2,8 @@
 #include <hardware/intbits.h>
 #include <proto/exec.h>
 
+/* TODO: Change implementation to use software interrupts and timer.device */
+
 __interrupt static int VBlankServer(int *counter asm("a1")) {
   (*counter)++;
   return 0;
@@ -30,14 +32,16 @@ void RemoveVBlankIntServer() {
 }
 
 int GetVBlankCounter() {
-  return VBlankCounter;
+  return VBlankCounter / 2;
 }
 
 void SetVBlankCounter(int value) {
-  VBlankCounter = value;
+  VBlankCounter = value / 2;
 }
 
 void ChangeVBlankCounter(int value) {
+  value /= 2;
+
   if ((value < 0) && (VBlankCounter < -value))
     VBlankCounter = 0;
   else
