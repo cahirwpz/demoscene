@@ -178,10 +178,6 @@ AudioStreamT *AudioStreamOpen(const char *filename) {
   }
 }
 
-uint32_t AudioStreamGetSignal(AudioStreamT *audio) {
-  return audio->signal;
-}
-
 size_t AudioStreamFeed(AudioStreamT *audio) {
   size_t requested = audio->sampleLen * audio->sampleWidth;
   size_t obtained = Read(audio->file,
@@ -241,4 +237,15 @@ void AudioStreamClose(AudioStreamT *audio) {
   DeleteMsgPort(audio->msgPort);
   FreeSignal(audio->signal);
   Close(audio->file);
+}
+
+uint32_t AudioStreamHungryWait(AudioStreamT *audio, uint32_t extraSignals) {
+  return Wait((1L << audio->signal) | extraSignals);
+}
+
+bool AudioStreamIsHungry(AudioStreamT *audio) {
+  uint32_t signal = 1L << audio->signal;
+
+  /* Check and clear the signal if was set. */
+  return (SetSignal(0, signal) & signal);
 }
