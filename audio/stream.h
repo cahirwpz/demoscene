@@ -7,10 +7,10 @@ typedef struct AudioStream AudioStreamT;
 
 AudioStreamT *AudioStreamOpen(const char *filename);
 size_t AudioStreamFeed(AudioStreamT *audio);
+ssize_t AudioStreamFeedIfHungry(AudioStreamT *audio);
 bool AudioStreamPlay(AudioStreamT *audio);
 void AudioStreamStop(AudioStreamT *audio);
 
 uint32_t AudioStreamHungryWait(AudioStreamT *audio, uint32_t extraSignals);
-bool AudioStreamIsHungry(AudioStreamT *audio);
 
 #endif

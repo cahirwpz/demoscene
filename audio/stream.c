@@ -191,6 +191,15 @@ size_t AudioStreamFeed(AudioStreamT *audio) {
   return obtained / audio->sampleWidth;
 }
 
+ssize_t AudioStreamFeedIfHungry(AudioStreamT *audio) {
+  uint32_t signal = 1L << audio->signal;
+
+  /* Check and clear the signal if was set. */
+  bool isHungry = SetSignal(0, signal) & signal;
+
+  return isHungry ? AudioStreamFeed(audio) : -1;
+}
+
 bool AudioStreamPlay(AudioStreamT *audio) {
   if (AHI_ControlAudio(audio->ctrl,
                        AHIC_Play, 1,
@@ -241,11 +250,4 @@ void AudioStreamClose(AudioStreamT *audio) {
 
 uint32_t AudioStreamHungryWait(AudioStreamT *audio, uint32_t extraSignals) {
   return Wait((1L << audio->signal) | extraSignals);
-}
-
-bool AudioStreamIsHungry(AudioStreamT *audio) {
-  uint32_t signal = 1L << audio->signal;
-
-  /* Check and clear the signal if was set. */
-  return (SetSignal(0, signal) & signal);
 }
