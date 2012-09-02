@@ -36,3 +36,10 @@ int GetVBlankCounter() {
 void SetVBlankCounter(int value) {
   VBlankCounter = value;
 }
+
+void ChangeVBlankCounter(int value) {
+  if ((value < 0) && (VBlankCounter < -value))
+    VBlankCounter = 0;
+  else
+    VBlankCounter += value;
+}
