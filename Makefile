@@ -40,7 +40,7 @@ raytunnel: startup_effect.o raytunnel.o
 	$(CC) $(CFLAGS) -o $@ $^ -ldistort -lengine -ltools $(LIBS)
 
 tunnel: startup_effect.o tunnel.o
-	$(CC) $(CFLAGS) -o $@ $^ -lp61 -ldistort -ltools $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ -lp61 -ldistort -ltools -laudio $(LIBS)
 
 vector2d: startup_effect.o vector2d.o
 	$(CC) $(CFLAGS) -o $@ $^ -ltools $(LIBS)
@@ -48,8 +48,8 @@ vector2d: startup_effect.o vector2d.o
 object3d: startup_effect.o object3d.o
 	$(CC) $(CFLAGS) -o $@ $^ -lengine -ltools $(LIBS)
 
-playaudio: playaudio.o
-	$(CC) $(CFLAGS) -o $@ $^ -laudio $(LIBS)
+playaudio: startup_effect.o playaudio.o
+	$(CC) $(CFLAGS) -o $@ $^ -laudio -ltools $(LIBS)
 
 archive:
 	7z a "bins-$$(date +%F).7z" $(BINS) data

@@ -1,31 +1,78 @@
-#include <exec/exec.h>
-#include <proto/dos.h>
-#include <proto/exec.h>
-
-#include "audio/stream.h"
 #include "std/debug.h"
 #include "std/memory.h"
+#include "std/resource.h"
 
-int main() {
-  AudioStreamT *audio = AudioStreamOpen("data/chembro.snd");
+#include "audio/stream.h"
+#include "gfx/hsl.h"
+#include "gfx/line.h"
+#include "gfx/palette.h"
+#include "tools/frame.h"
+#include "tools/loopevent.h"
 
-  if (AudioStreamPlay(audio)) {
-    uint32_t signals;
+#include "system/c2p.h"
+#include "system/display.h"
+#include "system/vblank.h"
 
-    do {
-      Write(Output(), ".", 1);
+const int WIDTH = 320;
+const int HEIGHT = 256;
+const int DEPTH = 8;
 
-      signals = AudioStreamHungryWait(audio, SIGBREAKF_CTRL_C);
-    } while (!(signals & SIGBREAKF_CTRL_C) && AudioStreamFeed(audio));
+/*
+ * Set up resources.
+ */
+void AddInitialResources() {
+  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("Audio", AudioStreamOpen("data/chembro.snd"));
+}
 
-    if (signals & SIGBREAKF_CTRL_C) {
-      LOG("***Break\n");
-    } else {
-      AudioStreamHungryWait(audio, 0);
-    }
+/*
+ * Set up display function.
+ */
+bool SetupDisplay() {
+  return InitDisplay(WIDTH, HEIGHT, DEPTH);
+}
 
-    AudioStreamStop(audio);
-  }
+/*
+ * Set up effect function.
+ */
+void SetupEffect() {
+}
 
-  MemUnref(audio);
+/*
+ * Tear down effect function.
+ */
+void TearDownEffect() {
+}
+
+/*
+ * Effect rendering functions.
+ */
+
+void RenderChunky(int frameNumber) {
+  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
+                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+}
+
+/*
+ * Main loop.
+ */
+void MainLoop() {
+  AudioStreamT *audio = R_("Audio");
+
+  AudioStreamPlay(audio);
+
+  SetVBlankCounter(0);
+
+  do {
+    int frameNumber = GetVBlankCounter();
+
+    RenderChunky(frameNumber);
+    RenderFrameNumber(frameNumber);
+
+    DisplaySwap();
+
+    AudioStreamFeedIfHungry(audio);
+  } while (ReadLoopEvent() != LOOP_EXIT);
+
+  AudioStreamStop(audio);
 }

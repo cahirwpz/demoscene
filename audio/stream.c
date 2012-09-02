@@ -139,7 +139,7 @@ AudioStreamT *AudioStreamOpen(const char *filename) {
   ASSERT(Read(file, &sample, sizeof(DiskSampleT)) == 8,
          "File is missing a header.");
 
-  LOG("Audio stream '%s' info: %d bit, %s, %dHz, %ld samples.\n",
+  LOG("Audio stream '%s' info: %d bit, %s, %dHz, %ld samples.",
       filename,
       sample.b16 ? 16 : 8,
       sample.stereo ? "stereo" : "mono",
