@@ -29,14 +29,14 @@ def main():
   except IOError as ex:
     raise SystemExit('Error: %s.' % ex)
 
-  bps = sound.getsampwidth() * 8
+  bit = sound.getsampwidth()
   stereo = (sound.getnchannels() == 2)
   frameRate = sound.getframerate()
   frames = sound.getnframes()
 
   info = ["%.1f s" % (float(frames) / frameRate),
           "stereo" if stereo else "mono",
-          "%d bps" % bps,
+          "%d bit" % (bit * 8),
           "%d Hz" % frameRate]
 
   print "%s:" % inputPath, ", ".join(info)
@@ -47,7 +47,7 @@ def main():
     raise SystemExit('Will not overwrite output file!')
 
   with open(rawSoundFile, 'w') as soundFile:
-    fmt = 'b' if bps <= 8 else 'h'
+    fmt = 'h' if bit == 2 else 'b'
 
     samples = array(fmt)
 
@@ -57,7 +57,13 @@ def main():
     samples.fromstring(sound.readframes(frames))
     samples.byteswap()
 
-    soundFile.write(struct.pack('>BBHI', bps, stereo, frameRate, frames))
+    flags = 0
+    if stereo:
+      flags |= 1 
+    if bit == 2:
+      flags |= 2
+
+    soundFile.write(struct.pack('>HHI', flags, frameRate, frames))
     soundFile.write(samples.tostring())
 
 if __name__ == '__main__':
