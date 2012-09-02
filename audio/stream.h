@@ -12,5 +12,6 @@ bool AudioStreamPlay(AudioStreamT *audio);
 void AudioStreamStop(AudioStreamT *audio);
 
 uint32_t AudioStreamHungryWait(AudioStreamT *audio, uint32_t extraSignals);
+void AudioStreamRewind(AudioStreamT *audio);
 
 #endif

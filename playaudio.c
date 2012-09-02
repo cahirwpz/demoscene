@@ -7,10 +7,10 @@
 #include "gfx/line.h"
 #include "gfx/palette.h"
 #include "tools/frame.h"
-#include "tools/loopevent.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
+#include "system/input.h"
 #include "system/vblank.h"
 
 const int WIDTH = 320;
@@ -58,6 +58,7 @@ void RenderChunky(int frameNumber) {
  */
 void MainLoop() {
   AudioStreamT *audio = R_("Audio");
+  bool finish = FALSE;
 
   AudioStreamPlay(audio);
 
@@ -72,7 +73,45 @@ void MainLoop() {
     DisplaySwap();
 
     AudioStreamFeedIfHungry(audio);
-  } while (ReadLoopEvent() != LOOP_EXIT);
+
+    {
+      InputEventT event; 
+
+      while (EventQueuePop(&event)) {
+        switch (event.ie_Class) {
+          case IECLASS_RAWKEY:
+            if (event.ie_Code & IECODE_UP_PREFIX) {
+              switch (event.ie_Code & ~IECODE_UP_PREFIX) {
+                case KEY_UP:
+                  ChangeVBlankCounter(-10 * FRAMERATE);
+                  AudioStreamRewind(audio);
+                  break;
+                case KEY_DOWN:
+                  ChangeVBlankCounter(10 * FRAMERATE);
+                  AudioStreamRewind(audio);
+                  break;
+                case KEY_LEFT:
+                  ChangeVBlankCounter(-FRAMERATE);
+                  AudioStreamRewind(audio);
+                  break;
+                case KEY_RIGHT:
+                  ChangeVBlankCounter(FRAMERATE);
+                  AudioStreamRewind(audio);
+                  break;
+                case KEY_ESCAPE:
+                  finish = TRUE;
+                  break;
+                default:
+                  break;
+              }
+            }
+
+          default:
+            break;
+        }
+      }
+    }
+  } while (!finish);
 
   AudioStreamStop(audio);
 }

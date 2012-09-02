@@ -7,6 +7,7 @@
 #include "audio/stream.h"
 #include "std/debug.h"
 #include "std/memory.h"
+#include "system/vblank.h"
 
 struct AudioStream {
   /* structures used by AHI */
@@ -25,9 +26,10 @@ struct AudioStream {
 
   /* audio buffers data */
   struct AHISampleInfo sample[2];
-  size_t sampleLen;
+  size_t bufLen;
   size_t sampleFreq;
   size_t sampleWidth;
+  size_t sampleLength;
 };
 
 typedef struct DiskSample {
@@ -114,14 +116,15 @@ static void AllocSampleBuffers(AudioStreamT *audio, DiskSampleT *sample) {
   }
 
   /* Buffer lenght is half a second. */
-  audio->sampleLen = sample->rate / 2;
+  audio->bufLen = sample->rate / 2;
   audio->sampleFreq = sample->rate;
   audio->sampleWidth = sampleWidth;
+  audio->sampleLength = sample->length;
 
   for (i = 0; i < 2; i++) {
     audio->sample[i].ahisi_Type = sampleType;
-    audio->sample[i].ahisi_Length = audio->sampleLen;
-    audio->sample[i].ahisi_Address = MemNew(audio->sampleLen * sampleWidth);
+    audio->sample[i].ahisi_Length = audio->bufLen;
+    audio->sample[i].ahisi_Address = MemNew(audio->bufLen * sampleWidth);
     AHI_LoadSound(i, AHIST_DYNAMICSAMPLE, &audio->sample[i], audio->ctrl);
   }
 }
@@ -179,7 +182,7 @@ AudioStreamT *AudioStreamOpen(const char *filename) {
 }
 
 size_t AudioStreamFeed(AudioStreamT *audio) {
-  size_t requested = audio->sampleLen * audio->sampleWidth;
+  size_t requested = audio->bufLen * audio->sampleWidth;
   size_t obtained = Read(audio->file,
                          audio->sample[audio->buffer].ahisi_Address,
                          requested);
@@ -250,4 +253,17 @@ void AudioStreamClose(AudioStreamT *audio) {
 
 uint32_t AudioStreamHungryWait(AudioStreamT *audio, uint32_t extraSignals) {
   return Wait((1L << audio->signal) | extraSignals);
+}
+
+void AudioStreamRewind(AudioStreamT *audio) {
+  int frame = GetVBlankCounter();
+  int offset = sizeof(DiskSampleT);
+  
+  offset += (frame * audio->sampleFreq / FRAMERATE) * audio->sampleWidth;
+
+  AudioStreamStop(audio);
+
+  Seek(audio->file, offset, OFFSET_BEGINNING);
+
+  AudioStreamPlay(audio);
 }
