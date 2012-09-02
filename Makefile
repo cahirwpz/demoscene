@@ -5,7 +5,7 @@ include $(TOPDIR)/Makefile.common
 export TOPDIR
 
 BINS	= flares particles raytunnel tunnel vector2d object3d playaudio
-SUBDIRS	= p61 system gfx std engine txtgen distort tools
+SUBDIRS	= p61 system gfx std engine txtgen distort tools audio
 
 LIBS := $(foreach dir,$(SUBDIRS),-L$(TOPDIR)/$(dir)) -lgfx -lsystem -lstd $(LIBS)
 
@@ -27,6 +27,8 @@ distort:
 	$(MAKE) -C $@
 tools:
 	$(MAKE) -C $@
+audio:
+	$(MAKE) -C $@
 
 flares: startup_effect.o flares.o
 	$(CC) $(CFLAGS) -o $@ $^ -ltxtgen -ltools $(LIBS)
@@ -47,7 +49,7 @@ object3d: startup_effect.o object3d.o
 	$(CC) $(CFLAGS) -o $@ $^ -lengine -ltools $(LIBS)
 
 playaudio: playaudio.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ -laudio $(LIBS)
 
 archive:
 	7z a "bins-$$(date +%F).7z" $(BINS) data
