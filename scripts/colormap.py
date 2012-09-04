@@ -84,7 +84,7 @@ def main():
           r += r * a
           g += g * a
           b += b * a
-      colorMapData.append((int(r), int(g), int(b)))
+        colorMapData.append((int(r), int(g), int(b)))
 
   elif args.map == 'transparency':
     size = (colors, colors)
