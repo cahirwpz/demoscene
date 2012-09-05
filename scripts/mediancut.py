@@ -17,8 +17,8 @@ class Color(namedtuple('Color', 'r g b')):
     return Color(self.r - other.r, self.g - other.g, self.b - other.b)
 
   def __div__(self, s):
-    hs = s >> 1
-    return Color((self.r + hs) / s, (self.g + hs) / s, (self.b + hs) / s)
+    s = float(s)
+    return Color(int(self.r / s), int(self.g / s), int(self.b / s))
 
 
 class Box(object):
@@ -69,6 +69,15 @@ class Box(object):
     median = self.color[axis]
     data = self.data
 
+    # Sometimes average color is not a good median (ie. when a single value
+    # dominates).  In such cases we need to take the other value.
+    values = sorted(set(item[axis] for item in data[self.begin:self.end]))
+
+    if median == values[-1]:
+      median = values[-2]
+    if median == values[0]:
+      median = values[1]
+
     i = self.begin
     j = self.end - 1
 
@@ -82,10 +91,10 @@ class Box(object):
       data[i] = data[j]
       data[j] = tmp
 
-    boxL = Box(self.data, self.begin, i + 1)
+    boxL = Box(self.data, self.begin, i)
 
     averageR = self.average - boxL.average
-    boxR = Box(self.data, i + 1, self.end, averageR)
+    boxR = Box(self.data, i, self.end)
 
     return (axis, median, boxL, boxR)
 
@@ -99,6 +108,9 @@ class KDNode(object):
 
   def __cmp__(self, other):
     return cmp(other.box.weight, self.box.weight)
+
+  def __repr__(self):
+    return repr(self.box)
 
   def Split(self):
     self.axis, self.median, left, right = self.box.Split()
@@ -205,7 +217,7 @@ def QuantizeImage(image, kdtree, dithering):
 def Quantize(inputPath, outputPath, colors=256, dithering=False):
   logging.info('Reading input file: "%s".', inputPath)
 
-  image = Image.open(inputPath)
+  image = Image.open(inputPath).convert("RGB")
 
   logging.info('Quantizing colorspace using median-cut algorithm.')
 
