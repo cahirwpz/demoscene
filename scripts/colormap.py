@@ -41,7 +41,7 @@ def main():
 
   rawPal = image.getpalette() 
   colors = len(set(image.getdata()))
-  pal = sorted([tuple(rawPal[3*i:3*(i+1)]) for i in range(colors)])
+  pal = [tuple(rawPal[3*i:3*(i+1)]) for i in range(colors)]
 
   colorMapData = []
 
@@ -97,9 +97,31 @@ def main():
         b = (b + pal[x][2]) / 2
         colorMapData.append((int(r), int(g), int(b)))
 
-  colorMap = Image.new('RGB', size)
-  colorMap.putdata(colorMapData)
-  colorMap = colorMap._new(colorMap.im.convert('P', 0, image.im))
+  data = []
+
+  for color in colorMapData:
+    pixel = 0
+    dist = 3 * 255 * 255
+    r, g, b = color
+
+    for i, neighbour in enumerate(pal):
+      nr, ng, nb = neighbour
+
+      nr = r - nr
+      ng = g - ng
+      nb = b - nb
+
+      d = nr * nr + ng * ng + nb * nb
+
+      if d < dist:
+        dist = d
+        pixel = i
+    
+    data.append(pixel)
+
+  colorMap = Image.new('P', size)
+  colorMap.putpalette(image.getpalette())
+  colorMap.putdata(data)
 
   if os.path.isfile(outputPath) and not args.force:
     raise SystemExit('Will not overwrite output file!')
