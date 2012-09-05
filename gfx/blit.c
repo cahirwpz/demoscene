@@ -9,7 +9,11 @@ void PixBufBlitNormal(PixBufT *dstBuf asm("a0"),
   uint8_t *src = srcBuf->data;
   uint8_t *dst = &dstBuf->data[y * dstBuf->width + x];
 
-  y = srcBuf->height;
+  /* If source image is longer, then copy only visible area. */
+  if (y + srcBuf->height > dstBuf->height)
+    y = dstBuf->height - y;
+  else
+    y = srcBuf->height;
 
   do {
     x = srcBuf->width;
