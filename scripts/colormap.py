@@ -26,7 +26,7 @@ def main():
   args = parser.parse_args()
 
   inputPath = os.path.abspath(args.input)
-  outputPath = os.path.abspath(args.output) + '.png'
+  outputPath = os.path.abspath(args.output)
 
   if not os.path.isfile(inputPath):
     raise SystemExit('Input file does not exists!')
