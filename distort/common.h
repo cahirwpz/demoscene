@@ -23,6 +23,8 @@ DistortionMapT *NewDistortionMap(size_t width, size_t height,
                                  DistortionMapTypeT type,
                                  size_t textureW, size_t textureH);
 
+DistortionMapT *NewDistortionMapFromFile(const StrT fileName);
+
 void DistortionMapSet(DistortionMapT *map asm("a0"), size_t i asm("d0"),
                       float u asm("fp0"), float v asm("fp1"));
 

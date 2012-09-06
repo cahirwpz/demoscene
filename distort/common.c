@@ -1,5 +1,7 @@
+#include "std/debug.h"
 #include "std/math.h"
 #include "std/memory.h"
+#include "system/fileio.h"
 #include "distort/common.h"
 
 static void DeleteDistortionMap(DistortionMapT *map) {
@@ -32,6 +34,33 @@ DistortionMapT *NewDistortionMap(size_t width, size_t height,
   map->textureH = textureH;
 
   return map;
+}
+
+typedef struct DiskDistortionMap {
+  uint16_t width;
+  uint16_t height;
+  uint16_t data[0];
+} DiskDistortionMapT;
+
+DistortionMapT *NewDistortionMapFromFile(const StrT fileName) {
+  DiskDistortionMapT *file = (DiskDistortionMapT *)ReadFileSimple(fileName);
+
+  if (file) {
+    DistortionMapT *map =
+      NewDistortionMap(DMAP_OPTIMIZED, file->width, file->height, 256, 256);
+
+    memcpy(map->map, file->data,
+           file->width * file->height * sizeof(uint16_t));
+
+    LOG("Distortion map '%s' has size (%d,%d).",
+        fileName, (int)file->width, (int)file->height);
+
+    MemUnref(file);
+
+    return map;
+  }
+
+  return NULL;
 }
 
 void DistortionMapSet(DistortionMapT *map asm("a0"), size_t i asm("d0"),
