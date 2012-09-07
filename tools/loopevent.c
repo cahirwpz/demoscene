@@ -11,6 +11,10 @@ LoopEventT ReadLoopEvent() {
           switch (event.ie_Code & ~IECODE_UP_PREFIX) {
             case KEY_SPACE:
               return LOOP_TRIGGER;
+            case KEY_RIGHT:
+              return LOOP_NEXT;
+            case KEY_LEFT:
+              return LOOP_PREV;
             case KEY_ESCAPE:
               return LOOP_EXIT;
             default:
