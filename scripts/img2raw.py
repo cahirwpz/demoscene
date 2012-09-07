@@ -47,10 +47,6 @@ def Main():
     palFilePath = '%s.pal' % outputPath
     uniqueColors = len(image.getcolors())
 
-    if isTransparent:
-      # Don't forget about transparency color.
-      uniqueColors += 1
-
     if os.path.isfile(palFilePath) and not args.force:
       raise SystemExit('Will not overwrite output file!')
 
