@@ -4,6 +4,7 @@ from array import array
 
 import Image
 import argparse
+import logging
 import struct
 import os
 
@@ -11,7 +12,7 @@ IMG_GRAY  = 0
 IMG_CLUT  = 1
 IMG_RGB24 = 2
 
-def main():
+def Main():
   parser = argparse.ArgumentParser(
       description='Converts input image to raw image and palette data.')
   parser.add_argument('-f', '--force', action='store_true',
@@ -36,6 +37,9 @@ def main():
   imgTypeMap = {'L' : IMG_GRAY, 'P' : IMG_CLUT, 'RGB' : IMG_RGB24}
   imgType = imgTypeMap.get(image.mode, None)
 
+  # Assumes that color #0 is transparency color (for 8-bit images).
+  isTransparent = image.info.has_key('transparency')
+
   if not imgType:
     raise SystemExit('Unknown color space: %s.' % image.mode)
 
@@ -43,11 +47,17 @@ def main():
     palFilePath = '%s.pal' % outputPath
     uniqueColors = len(image.getcolors())
 
+    if isTransparent:
+      # Don't forget about transparency color.
+      uniqueColors += 1
+
     if os.path.isfile(palFilePath) and not args.force:
       raise SystemExit('Will not overwrite output file!')
 
     with open(palFilePath, 'w') as palFile:
       pal = array('B', image.getpalette()[:3*uniqueColors])
+      logging.info('Saving palette of %d colors to "%s".',
+                   uniqueColors, palFilePath)
       palFile.write(struct.pack('>H', uniqueColors))
       palFile.write(pal.tostring())
 
@@ -71,8 +81,13 @@ def main():
     raise SystemExit('Will not overwrite output file!')
 
   with open(rawFilePath, 'w') as rawFile:
-    rawFile.write(struct.pack('>HHHI', imgType, width, height, uniqueColors))
+    logging.info('Saving image of (%d, %d) size to "%s".',
+                 width, height, rawFilePath)
+    rawFile.write(struct.pack(
+      '>BBHHI', isTransparent, imgType, width, height, uniqueColors))
     rawFile.write(data.tostring())
 
 if __name__ == '__main__':
-  main()
+  logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
+
+  Main()
