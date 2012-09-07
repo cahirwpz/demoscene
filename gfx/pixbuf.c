@@ -25,7 +25,8 @@ PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
 }
 
 typedef struct DiskPixBuf {
-  uint16_t type;
+  uint8_t  flags;
+  uint8_t  type;
   uint16_t width;
   uint16_t height;
   uint32_t colors;
@@ -38,6 +39,7 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
   if (file) {
     PixBufT *pixbuf = NewPixBuf(file->type, file->width, file->height);
 
+    pixbuf->flags = file->flags;
     pixbuf->colors = file->colors;
 
     memcpy(pixbuf->data, file->data, file->width * file->height);
