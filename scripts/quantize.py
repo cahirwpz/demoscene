@@ -192,7 +192,7 @@ def FloydSteinberg(pixels, pos, size, error):
       pixels[x+1, y+1] = AddErrorAndClamp(pixels[x+1, y+1], error, 1)
 
 
-def QuantizeImage(image, kdtree, dithering):
+def QuantizeImage(image, kdtree, dithering, is_transparent):
   output = Image.new('P', image.size)
 
   pixels = image.load()
@@ -200,14 +200,21 @@ def QuantizeImage(image, kdtree, dithering):
   width, height = image.size
   errors = 0.0
 
+  if is_transparent:
+    alpha = image.split()[-1].load()
+    image = image.convert('RGB')
+
   for y in range(height):
     for x in range(width):
-      node, diff, error = kdtree.Search(pixels[x, y])
-      errors += error
-      quantized[x, y] = node.number
+      if is_transparent and alpha[x, y] < 128:
+        quantized[x, y] = 0
+      else:
+        node, diff, error = kdtree.Search(pixels[x, y])
+        errors += error
+        quantized[x, y] = node.number
 
-      if dithering:
-        FloydSteinberg(pixels, (x, y), image.size, diff)
+        if dithering:
+          FloydSteinberg(pixels, (x, y), image.size, diff)
 
   logging.info('Quantization error: %.3f.', errors / (width * height))
 
@@ -217,11 +224,22 @@ def QuantizeImage(image, kdtree, dithering):
 def Quantize(inputPath, outputPath, colors=256, dithering=False):
   logging.info('Reading input file: "%s".', inputPath)
 
-  image = Image.open(inputPath).convert("RGB")
+  image = Image.open(inputPath)
+
+  assert image.mode in ['RGB', 'RGBA']
 
   logging.info('Quantizing colorspace using median-cut algorithm.')
 
-  pixels = [Color(r, g, b) for r, g, b in image.getdata()]
+  is_transparent = image.mode is 'RGBA'
+
+  if is_transparent:
+    # Exclude pixels which are deemed to be transparent.
+    pixels = [Color(r, g, b) for r, g, b, a in image.getdata() if a >= 128]
+    # Remember to reserve one color for transparency.
+    colors -= 1
+  else:
+    pixels = [Color(r, g, b) for r, g, b in image.getdata()]
+
   space = Box(pixels, 0, len(pixels))
   kdtree = KDNode(space)
   leaves = SplitKDTree(kdtree, colors)
@@ -230,17 +248,23 @@ def Quantize(inputPath, outputPath, colors=256, dithering=False):
 
   for number, leaf in enumerate(leaves):
     leaf.number = number
+
+    # Reserve color #0 for transparency.
+    if is_transparent:
+      leaf.number += 1
+
     palette.extend(leaf.box.color)
 
   logging.info('Remapping colors (%s dithering) from the original image.',
                ('without', 'with')[dithering])
 
-  output = QuantizeImage(image, kdtree, dithering)
+  output = QuantizeImage(image, kdtree, dithering, is_transparent)
   output.putpalette(palette)
 
   logging.info('Saving quantized image to: "%s".', outputPath)
 
-  output.save(outputPath)
+  attributes = {'transparency': 0} if is_transparent else {}
+  output.save(outputPath, **attributes)
 
 
 def Main():
