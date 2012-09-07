@@ -22,4 +22,23 @@ void GenerateTwirlDistortion(DistortionMapT *map,
 void GenerateOffsetDistortion(DistortionMapT *map,
                               float uOffset, float vOffset);
 
+#define GenerateMiscDistortion(NUM, U, V)                   \
+void GenerateMisc ## NUM ## Distortion(DistortionMapT *map) \
+{                                                           \
+  float dx = 2.0f / (int)map->width;                        \
+  float dy = 2.0f / (int)map->height;                       \
+  int i, j, k;                                              \
+                                                            \
+  for (i = 0, k = 0; i < map->height; i++)                  \
+    for (j = 0; j < map->width; j++, k++) {                 \
+      float x = (float)(j - (int)map->width / 2) * dx;      \
+      float y = (float)(i - (int)map->height / 2) * dy;     \
+      float a = atan2(x, y);                                \
+      float r = sqrt(x * x + y * y);                        \
+      float u = (U);                                        \
+      float v = (V);                                        \
+      DistortionMapSet(map, k, u, v);                       \
+    }                                                       \
+}
+
 #endif
