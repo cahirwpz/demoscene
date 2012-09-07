@@ -244,7 +244,10 @@ def Quantize(inputPath, outputPath, colors=256, dithering=False):
   kdtree = KDNode(space)
   leaves = SplitKDTree(kdtree, colors)
 
-  palette = []
+  if is_transparent:
+    palette = [0, 0, 0]
+  else:
+    palette = []
 
   for number, leaf in enumerate(leaves):
     leaf.number = number
