@@ -4,22 +4,19 @@ include $(TOPDIR)/Makefile.common
 
 export TOPDIR
 
-BINS	= flares particles raytunnel tunnel vector2d object3d playaudio colormap deformations
-
-all: effects
-
-libs:
+all: 
 	for subdir in $(SUBDIRS); do $(MAKE) -C $$subdir || exit 1; done
-
-effects: libs
 	$(MAKE) -C effects
+	$(MAKE) -C demo
 
 archive:
 	$(MAKE) -C effects archive
 
 clean:
 	for subdir in $(SUBDIRS); do $(MAKE) -C $$subdir clean; done
-	$(RM) *~ *.o $(BINS)
+	$(MAKE) -C effects clean
+	$(MAKE) -C demo clean
+	$(RM) *~ *.o
 
 .PHONY: all archive libs $(BINS)
 
