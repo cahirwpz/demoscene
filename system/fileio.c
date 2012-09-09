@@ -6,6 +6,14 @@
 #include "std/memory.h"
 #include "system/fileio.h"
 
+bool InitFileIo() {
+  BPTR lock = GetProgramDir();
+
+  /* Change current directory to the program's directory, to ensure that
+   * relative paths work the same way. */
+  return CurrentDir(lock) != -1;
+}
+
 static PtrT ReadFileToCustomMemory(const StrT fileName, uint32_t memFlags) {
   BPTR fh;
   PtrT data = NULL;
