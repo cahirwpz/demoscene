@@ -14,18 +14,15 @@ struct GfxBase *GfxBase;
 struct IntuitionBase *IntuitionBase;
 
 void RunEffects(TimeSliceT *slice, int thisFrame) {
-  static int lastFrame = 0;
+  static int globalLastFrame = 0;
 
   while (slice->func) {
     bool invoke = FALSE;
 
-    int rLastFrame = lastFrame - slice->start;
-    int rThisFrame = thisFrame - slice->start;
-
     switch (slice->step) {
       case 0:
         /* Do it only once. */
-        invoke = (slice->start >= lastFrame) && (slice->start <= thisFrame);
+        invoke = (slice->start >= globalLastFrame) && (slice->start <= thisFrame);
         break;
 
       case 1:
@@ -36,8 +33,15 @@ void RunEffects(TimeSliceT *slice, int thisFrame) {
       default:
         /* Do it every n-th frame. */
         if ((slice->start <= thisFrame) && (thisFrame < slice->end)) {
-          invoke = (thisFrame - lastFrame >= slice->step) ||
-                   (rLastFrame % slice->step < rThisFrame % slice->step);
+          if (slice->last == -1) {
+            slice->last = slice->start;
+            invoke = TRUE;
+          } else {
+            if (thisFrame - slice->last >= slice->step) {
+              slice->last = thisFrame - ((thisFrame - slice->start) % slice->step);
+              invoke = TRUE;
+            }
+          }
         }
         break;
     }
@@ -48,7 +52,7 @@ void RunEffects(TimeSliceT *slice, int thisFrame) {
     slice++;
   }
 
-  lastFrame = thisFrame + 1;
+  globalLastFrame = thisFrame + 1;
 }
 
 int main() {
