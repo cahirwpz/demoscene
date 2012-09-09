@@ -195,7 +195,6 @@ def FloydSteinberg(pixels, pos, size, error):
 def QuantizeImage(image, kdtree, dithering, is_transparent):
   output = Image.new('P', image.size)
 
-  pixels = image.load()
   quantized = output.load()
   width, height = image.size
   errors = 0.0
@@ -203,6 +202,8 @@ def QuantizeImage(image, kdtree, dithering, is_transparent):
   if is_transparent:
     alpha = image.split()[-1].load()
     image = image.convert('RGB')
+
+  pixels = image.load()
 
   for y in range(height):
     for x in range(width):
