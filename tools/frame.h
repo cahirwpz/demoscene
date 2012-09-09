@@ -4,5 +4,6 @@
 #include "system/display.h"
 
 void RenderFrameNumber(int frameNumber);
+void RenderFramesPerSecond(int frameNumber);
 
 #endif
