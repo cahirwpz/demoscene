@@ -27,6 +27,8 @@ typedef struct Display {
   ScreenT *Screen;
 
   LONG CurrentBitMap;
+
+  PaletteT *PaletteToSet;
 } DisplayT;
 
 static DisplayT *Display = NULL;
@@ -34,8 +36,11 @@ static DisplayT *Display = NULL;
 /*
  * Screen handling functions.
  */
-
 void LoadPalette(PaletteT *palette) {
+  Display->PaletteToSet = palette;
+}
+
+static void SetPalette(PaletteT *palette) {
   size_t j = 0;
 
   Display->Palette->Start = palette->start;
@@ -111,7 +116,6 @@ bool InitDisplay(int width, int height, int depth) {
     ScreenTags[4].ti_Data = (ULONG)Display->Palette;
 
     if ((Display->Screen = OpenScreenTagList(0L, ScreenTags))) {
-      Display->CurrentBitMap = 1;
       return TRUE;
     } else {
       KillDisplay();
@@ -147,6 +151,11 @@ void DisplaySwap() {
   MakeScreen(Display->Screen);
   RethinkDisplay();
   custom->dmacon = BITCLR|DMAF_SPRITE;
+
+  if (Display->PaletteToSet) {
+    SetPalette(Display->PaletteToSet);
+    Display->PaletteToSet = NULL;
+  }
 }
 
 BitMapT *GetCurrentBitMap() {
