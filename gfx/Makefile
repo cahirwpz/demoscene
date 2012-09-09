@@ -12,7 +12,6 @@ canvas.o: canvas.c canvas.h
 colors.o: colors.c colors.h
 ellipse.o: ellipse.c ellipse.h canvas.h
 hsl.o: hsl.c hsl.h
-	$(CC) $(CFLAGS) -O0 -c -o $@ $<
 line.o: line.c line.h
 matrix2d.o: matrix2d.c matrix2d.h
 ms2d.o: ms2d.c ms2d.h matrix2d.h

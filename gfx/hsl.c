@@ -6,24 +6,55 @@ void RGB2HSL(RGB *src, HSL *dst) {
   float g = src->g / 255.0f;
   float b = src->b / 255.0f;
 
-  float hi = max(max(r, g), b);
-  float lo = min(min(r, g), b);
-
   float h = 0.0f;
   float s = 0.0f;
-  float l = (lo + hi) / 2.0f;
+  float l, hi, lo;
+
+  int i;
+
+  if (r < g) {
+    if (b < r) {
+      lo = b; hi = g; i = 1;
+    } else {
+      lo = r; 
+      if (g < b) {
+        hi = b; i = 2;
+      } else {
+        hi = g; i = 1;
+      }
+    }
+  } else {
+    if (g > b) {
+      lo = b; hi = r; i = 0;
+    } else {
+      lo = g;
+      if (r < b) {
+        hi = b; i = 2;
+      } else {
+        hi = r; i = 0;
+      }
+    }
+  }
+ 
+  l = (lo + hi) / 2.0f;
 
   if (l > 0.0f) {
     float diff = hi - lo;
     
     s = diff / ((l < 0.5f) ? (hi + lo) : (2.0f - (hi + lo)));
 
-    if (r == hi) {
-      h = (g - b) / diff;
-    } else if (g == hi) {
-      h = 2.0f + (b - r) / diff;
-    } else {
-      h = 4.0f + (r - g) / diff;
+    switch (i) {
+      case 0:
+        h = (g - b) / diff;
+        break;
+      case 1:
+        h = 2.0f + (b - r) / diff;
+        break;
+      case 2:
+        h = 4.0f + (r - g) / diff;
+        break;
+      default:
+        break;
     }
 
     h /= 6.0f;
