@@ -3,7 +3,11 @@ AS	= vasm
 OPTFLAGS = -O2 -ffast-math -freg-struct-return
 CFLAGS	= -Werror -Wall -m68020-60 -fbaserel -msmall-code -fomit-frame-pointer -I$(realpath $(TOPDIR))
 ASFLAGS = -m68020 -m68882 -I$(realpath $(TOPDIR))
-LIBS	= -lamiga -lm
+
+SUBDIRS	= audio distort engine gfx p61 system std txtgen tools
+
+LIBDIR := $(foreach dir,$(SUBDIRS),-L$(realpath $(TOPDIR)/$(dir)))
+LIBS := -lamiga -lm
 
 %.o: %.s
 	$(AS) $(ASFLAGS) -o $@ $<

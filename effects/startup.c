@@ -7,7 +7,7 @@
 #include "system/input.h"
 #include "system/vblank.h"
 
-#include "startup_effect.h"
+#include "startup.h"
 
 struct DosLibrary *DOSBase;
 struct GfxBase *GfxBase;
