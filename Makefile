@@ -9,7 +9,7 @@ BINS	= flares particles raytunnel tunnel vector2d object3d playaudio colormap de
 all: effects
 
 libs:
-	for subdir in $(SUBDIRS); do $(MAKE) -C $$subdir; done
+	for subdir in $(SUBDIRS); do $(MAKE) -C $$subdir || exit 1; done
 
 effects: libs
 	$(MAKE) -C effects
