@@ -95,6 +95,10 @@ void HSL2RGB(HSL *src, RGB *dst) {
         b = mid2;
         break;
     }
+  } else {
+    r = l;
+    g = l;
+    b = l;
   }
 
   dst->r = (uint8_t)(r * 255.0f);  
