@@ -1,46 +1,30 @@
 #include "gfx/blit.h"
 
-void PixBufBlitNormal(PixBufT *dstBuf asm("a0"),
-                      size_t x asm("d0"), size_t y asm("d1"),
-                      PixBufT *srcBuf asm("a1"))
+static void PixBufBlitNormal(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
+                             size_t width asm("d2"), size_t height asm("d3"),
+                             size_t stride asm("d4"))
 {
-  size_t stride = dstBuf->width - srcBuf->width;
-
-  uint8_t *src = srcBuf->data;
-  uint8_t *dst = &dstBuf->data[y * dstBuf->width + x];
-
-  /* If source image is longer, then copy only visible area. */
-  if (y + srcBuf->height > dstBuf->height)
-    y = dstBuf->height - y;
-  else
-    y = srcBuf->height;
+  int16_t y = height - 1;
 
   do {
-    x = srcBuf->width;
+    int16_t x = width - 1;
 
     do {
       *dst++ = *src++;
-    } while (--x);
+    } while (--x != -1);
 
     dst += stride;
-  } while (--y);
+  } while (--y >= 0);
 }
 
-void PixBufBlitTransparent(PixBufT *dstBuf asm("a0"),
-                           size_t x asm("d0"), size_t y asm("d1"),
-                           PixBufT *srcBuf asm("a1"))
+static void PixBufBlitTransparent(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
+                                  size_t width asm("d2"), size_t height asm("d3"),
+                                  size_t stride asm("d4"), uint8_t transparent asm("d5"))
 {
-  size_t stride = dstBuf->width - srcBuf->width;
-
-  uint8_t *src = srcBuf->data;
-  uint8_t *dst = &dstBuf->data[y * dstBuf->width + x];
-
-  uint8_t transparent = srcBuf->baseColor;
-
-  y = srcBuf->height;
+  int16_t y = height - 1;
 
   do {
-    x = srcBuf->width;
+    int16_t x = width - 1;
 
     do {
       uint8_t c = *src++;
@@ -49,11 +33,12 @@ void PixBufBlitTransparent(PixBufT *dstBuf asm("a0"),
         *dst = c;
 
       dst++;
-    } while (--x);
+    } while (--x != -1);
 
     dst += stride;
-  } while (--y);
+  } while (--y >= 0);
 }
+
 
 static inline void ScaleLine(uint8_t *dst, uint8_t *src, int w, const int du2, bool check, uint8_t transparency) {
   const int sx = sign(w);
@@ -114,11 +99,25 @@ void PixBufBlitScaled(PixBufT *dstBuf, size_t x, size_t y, int w, int h,
   }
 }
 
-void PixBufBlit(PixBufT *dstBuf, size_t x, size_t y, PixBufT *srcBuf)
-{
-  if (srcBuf->flags & PIXBUF_TRANSPARENT) {
-    PixBufBlitTransparent(dstBuf, x, y, srcBuf);
-  } else {
-    PixBufBlitNormal(dstBuf, x, y, srcBuf);
-  }
+void PixBufBlit(PixBufT *dstBuf, size_t x, size_t y, PixBufT *srcBuf) {
+  size_t stride = dstBuf->width - srcBuf->width;
+  size_t w = srcBuf->width;
+  size_t h = srcBuf->height;
+
+  uint8_t *src = srcBuf->data;
+  uint8_t *dst = &dstBuf->data[y * dstBuf->width + x];
+
+  /* If source image is longer, then copy only visible area. */
+  if (y + h > dstBuf->height)
+    h = dstBuf->height - y;
+
+  switch (srcBuf->flags) {
+    case PIXBUF_TRANSPARENT:
+      PixBufBlitTransparent(dst, src, w, h, stride, srcBuf->baseColor);
+      break;
+
+    default:
+      PixBufBlitNormal(dst, src, w, h, stride);
+      break;
+  } 
 }
