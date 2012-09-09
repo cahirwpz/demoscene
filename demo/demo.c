@@ -13,17 +13,42 @@ struct DosLibrary *DOSBase;
 struct GfxBase *GfxBase;
 struct IntuitionBase *IntuitionBase;
 
-void RunEffects(TimeSliceT *slice, int frameNumber) {
-  for (; slice->func; slice++) {
-    if (frameNumber < slice->start)
-      continue;
-    if ((slice->end > 0) && (slice->end >= frameNumber))
-      continue;
-    if ((frameNumber % slice->step) != 0)
-      continue;
+void RunEffects(TimeSliceT *slice, int thisFrame) {
+  static int lastFrame = 0;
 
-    slice->func(frameNumber);
+  while (slice->func) {
+    bool invoke = FALSE;
+
+    int rLastFrame = lastFrame - slice->start;
+    int rThisFrame = thisFrame - slice->start;
+
+    switch (slice->step) {
+      case 0:
+        /* Do it only once. */
+        invoke = (slice->start >= lastFrame) && (slice->start <= thisFrame);
+        break;
+
+      case 1:
+        /* Do it every frame. */
+        invoke = (slice->start <= thisFrame) && (thisFrame < slice->end);
+        break;
+
+      default:
+        /* Do it every n-th frame. */
+        if ((slice->start <= thisFrame) && (thisFrame < slice->end)) {
+          invoke = (thisFrame - lastFrame >= slice->step) ||
+                   (rLastFrame % slice->step < rThisFrame % slice->step);
+        }
+        break;
+    }
+
+    if (invoke)
+      slice->func(thisFrame - slice->start);
+
+    slice++;
   }
+
+  lastFrame = thisFrame + 1;
 }
 
 int main() {

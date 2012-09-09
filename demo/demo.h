@@ -7,11 +7,12 @@ typedef void (*TimeFuncT)(int frameNumber);
 
 typedef struct TimeSlice {
   TimeFuncT func;
-  ssize_t start, end, step;
+  int start, end, step;
 } TimeSliceT;
 
-#define TIME_END -1
-#define EACH_FRAME(FUNC, START, END) { &FUNC, START, END, -1 }
+#define TIME_END ((1UL << 31) - 1)
+#define DO_ONCE(FUNC, WHEN) { &FUNC, WHEN, 0, 0 }
+#define EACH_FRAME(FUNC, START, END) { &FUNC, START, END, 1 }
 #define EACH_NTH_FRAME(FUNC, START, END, STEP) { &FUNC, START, END, STEP }
 
 extern TimeSliceT Timeline[];
