@@ -7,6 +7,7 @@
 #include "audio/stream.h"
 #include "std/debug.h"
 #include "std/memory.h"
+#include "system/fileio.h"
 #include "system/vblank.h"
 
 struct AudioStream {
@@ -129,12 +130,15 @@ static void AllocSampleBuffers(AudioStreamT *audio, DiskSampleT *sample) {
   }
 }
 
-AudioStreamT *AudioStreamOpen(const char *filename) {
+AudioStreamT *AudioStreamOpen(const StrT filename) {
   DiskSampleT sample;
-  BPTR file;
+  StrT path = AbsPath(filename);
+  BPTR file = Open(path, MODE_OLDFILE);
+
+  MemUnref(path);
 
   /* Open audio stream file and read the header. */
-  if (!(file = Open(filename, MODE_OLDFILE))) {
+  if (!file) {
     LOG("File '%s' not found.", filename);
     return NULL;
   }

@@ -3,7 +3,7 @@
 
 #include "std/types.h"
 
-bool InitFileIo();
+StrT AbsPath(const StrT fileName);
 PtrT ReadFileToChipMem(const StrT fileName);
 PtrT ReadFileSimple(const StrT fileName);
 

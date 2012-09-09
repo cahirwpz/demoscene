@@ -3,7 +3,6 @@
 
 #include "std/resource.h"
 #include "system/check.h"
-#include "system/fileio.h"
 #include "system/display.h"
 #include "system/input.h"
 #include "system/vblank.h"
@@ -25,7 +24,7 @@ int main() {
   GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 39);
   IntuitionBase = (struct IntuitionBase *)OpenLibrary("intuition.library", 39);
 
-  if (DOSBase && GfxBase && IntuitionBase && SystemCheck() && InitFileIo()) {
+  if (DOSBase && GfxBase && IntuitionBase && SystemCheck()) {
     StartResourceManager();
     AddInitialResources();
     StartEventQueue();

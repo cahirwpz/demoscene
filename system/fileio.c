@@ -2,23 +2,24 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <exec/memory.h>
+#include <string.h>
 
 #include "std/memory.h"
 #include "system/fileio.h"
 
-bool InitFileIo() {
-  BPTR lock = GetProgramDir();
-
-  /* Change current directory to the program's directory, to ensure that
-   * relative paths work the same way. */
-  return CurrentDir(lock) != -1;
+StrT AbsPath(const StrT fileName) {
+  StrT path = MemNew(sizeof("PROGDIR:") + strlen(fileName) + 1);
+  strcpy(path, "PROGDIR:");
+  strcat(path, fileName);
+  return path;
 }
 
 static PtrT ReadFileToCustomMemory(const StrT fileName, uint32_t memFlags) {
   BPTR fh;
   PtrT data = NULL;
+  PtrT path = AbsPath(fileName);
   
-  if ((fh = Open(fileName, MODE_OLDFILE))) {
+  if ((fh = Open(path, MODE_OLDFILE))) {
     struct FileInfoBlock *infoBlock;
 
     if ((infoBlock = (struct FileInfoBlock *) AllocDosObject(DOS_FIB, NULL))) {
@@ -36,6 +37,8 @@ static PtrT ReadFileToCustomMemory(const StrT fileName, uint32_t memFlags) {
     }
     Close(fh);
   }
+
+  MemUnref(path);
 
   return data;
 }
