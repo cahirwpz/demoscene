@@ -63,54 +63,56 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
+int effect = 0;
+const int lastEffect = 3;
+
 void RenderVector(int frameNumber) {
-  float s = sin(frameNumber * 3.14159265f / 45.0f);
-  float c = cos(frameNumber * 3.14159265f / 90.0f);
+  CanvasT *canvas = R_("Canvas");
+  PointT *toDraw = R_("TriangleToDraw");
+  MatrixStack2D *ms = R_("ms2d");
 
-  {
-    MatrixStack2D *ms = R_("ms2d");
+  float s = sin(frameNumber * 3.14159265f / 22.5f);
+  float c = cos(frameNumber * 3.14159265f / 45.0f);
 
-    StackReset(ms);
-    PushTranslation2D(ms, -1.5f, -1.5f);
-    PushScaling2D(ms, 20.0f + 10.0f * s, 20.0f + 10.0f * s);
-    PushRotation2D(ms, (float)(frameNumber * -3));
-    PushTranslation2D(ms, (float)(WIDTH/2) + c * (WIDTH/4), (float)(HEIGHT/2));
+  StackReset(ms);
+  PushTranslation2D(ms, -1.5f, -1.5f);
+  PushScaling2D(ms, 20.0f + 10.0f * s, 20.0f + 10.0f * s);
+  PushRotation2D(ms, (float)(frameNumber * -3));
+  PushTranslation2D(ms, (float)(WIDTH/2) + c * (WIDTH/4), (float)(HEIGHT/2));
 
-    Transform2D(R_("CrossToDraw"), R_("Cross"), 12, GetMatrix2D(ms, 0));
+  Transform2D(R_("CrossToDraw"), R_("Cross"), 12, GetMatrix2D(ms, 0));
 
-    //CanvasFill(Canvas, 0);
-    //DrawPolyLine(Canvas, CrossToDraw, 12, TRUE);
-
-    StackReset(ms);
-    PushTranslation2D(ms, 5.0f, 10.0f);
-    PushScaling2D(ms, 2.5f, 2.5f);
-    PushRotation2D(ms, (float)(frameNumber*5*c));
-    PushTranslation2D(ms, WIDTH/2 + c * 50, HEIGHT/2 + s * 20);
-
-    Transform2D(R_("TriangleToDraw"), R_("Triangle"), 3, GetMatrix2D(ms, 0));
+  if (effect == 0) {
+    CanvasFill(canvas, 0);
+    DrawPolyLine(canvas, R_("CrossToDraw"), 12, TRUE);
   }
 
-  {
-    CanvasT *canvas = R_("Canvas");
-    PointT *toDraw = R_("TriangleToDraw");
+  StackReset(ms);
+  PushTranslation2D(ms, 5.0f, 10.0f);
+  PushScaling2D(ms, 2.5f, 2.5f);
+  PushRotation2D(ms, (float)(frameNumber*5*c));
+  PushTranslation2D(ms, WIDTH/2 + c * 50, HEIGHT/2 + s * 20);
 
-    frameNumber &= 255;
+  Transform2D(R_("TriangleToDraw"), R_("Triangle"), 3, GetMatrix2D(ms, 0));
 
-    if (frameNumber < 128)
-      canvas->fg_col = frameNumber * 2;
-    else 
-      canvas->fg_col = (255 - frameNumber) * 2;
+  frameNumber &= 255;
 
-#if 0 
+  if (frameNumber < 128)
+    canvas->fg_col = frameNumber * 2;
+  else 
+    canvas->fg_col = (255 - frameNumber) * 2;
+
+  if (effect == 1) {
     DrawTriangle(canvas,
                  toDraw[0].x, toDraw[0].y,
                  toDraw[1].x, toDraw[1].y,
                  toDraw[2].x, toDraw[2].y);
-#else
+  }
+
+  if (effect == 2) {
     DrawEllipse(canvas,
                 toDraw[1].x, toDraw[1].y,
                 30 + c * 15, 30 + s * 15);
-#endif
   }
 }
 
@@ -123,15 +125,29 @@ void RenderChunky(int frameNumber) {
  * Main loop.
  */
 void MainLoop() {
+  LoopEventT event = LOOP_CONTINUE;
+
   SetVBlankCounter(0);
 
   do {
     int frameNumber = GetVBlankCounter();
+
+    if (event != LOOP_CONTINUE) {
+      CanvasFill(R_("Canvas"), 0);
+
+      if (event == LOOP_NEXT)
+        effect = (effect + 1) % lastEffect;
+      if (event == LOOP_PREV) {
+        effect--;
+        if (effect < 0)
+          effect += lastEffect;
+      }
+    }
 
     RenderVector(frameNumber);
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();
-  } while (ReadLoopEvent() != LOOP_EXIT);
+  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
