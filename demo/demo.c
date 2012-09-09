@@ -62,7 +62,6 @@ int main() {
 
   if (DOSBase && GfxBase && IntuitionBase && SystemCheck()) {
     StartResourceManager();
-    AddDemoResources();
     StartEventQueue();
 
     if (SetupDemo()) {

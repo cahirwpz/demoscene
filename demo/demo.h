@@ -19,7 +19,6 @@ extern TimeSliceT Timeline[];
 
 bool SetupDemo();
 void KillDemo();
-void AddDemoResources();
 bool HandleEvents(int frameNumber);
 
 #endif
