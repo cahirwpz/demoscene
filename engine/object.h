@@ -15,6 +15,8 @@ typedef struct SceneObject {
   StrT name;
   MeshT *mesh;
 
+  bool wireframe;
+
   MatrixStack3D *ms;
   Vector3D *vertex;
   PolygonExtT *polygonExt;

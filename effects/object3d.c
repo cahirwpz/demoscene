@@ -8,6 +8,7 @@
 #include "engine/scene.h"
 #include "gfx/canvas.h"
 #include "tools/frame.h"
+#include "tools/loopevent.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
@@ -33,8 +34,7 @@ void AddInitialResources() {
     NormalizeMeshSize(mesh);
   }
 
-  SceneAddObject(R_("Scene"), NewSceneObject("Object1", R_("Mesh")));
-  SceneAddObject(R_("Scene"), NewSceneObject("Object2", R_("Mesh")));
+  SceneAddObject(R_("Scene"), NewSceneObject("Object", R_("Mesh")));
 }
 
 /*
@@ -66,22 +66,12 @@ void RenderMesh(int frameNumber) {
   float s = sin(frameNumber * 3.14159265f / 90.0f);
 
   {
-    MatrixStack3D *ms = GetObjectTranslation(scene, "Object1");
+    MatrixStack3D *ms = GetObjectTranslation(scene, "Object");
 
     StackReset(ms);
-    PushScaling3D(ms, 0.6f + 0.25 * s, 0.6f + 0.25f * s, 0.6f + 0.25f * s);
+    PushScaling3D(ms, 0.6f + 0.25f * s, 0.6f + 0.25f * s, 0.6f + 0.25f * s);
     PushRotation3D(ms, (float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
-    PushTranslation3D(ms, -0.75f, 0.0f, 2.0f);
-    PushPerspective3D(ms, 0, 0, 160.0f);
-  }
-
-  {
-    MatrixStack3D *ms = GetObjectTranslation(scene, "Object2");
-
-    StackReset(ms);
-    PushScaling3D(ms, 0.6f - 0.25f * s, 0.6f - 0.25f * s, 0.6f - 0.25f * s);
-    PushRotation3D(ms, (float)(-frameNumber), (float)(-frameNumber * 2), (float)(frameNumber * 3));
-    PushTranslation3D(ms, 0.75f, 0.0f, 2.0f);
+    PushTranslation3D(ms, 0.0f, 0.0f, 2.0f);
     PushPerspective3D(ms, 0, 0, 160.0f);
   }
 
@@ -94,51 +84,28 @@ void RenderChunky(int frameNumber) {
                  GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void PrintAllEvents() {
-  InputEventT event; 
-
-  while (EventQueuePop(&event)) {
-    switch (event.ie_Class) {
-      case IECLASS_RAWKEY:
-        LOG("Key %ld %s (%04lx).",
-            (LONG)(event.ie_Code & ~IECODE_UP_PREFIX),
-            (event.ie_Code & IECODE_UP_PREFIX) ? "up" : "down",
-            (LONG)event.ie_Qualifier);
-        break;
-
-      case IECLASS_RAWMOUSE:
-        if (event.ie_Code == IECODE_NOBUTTON) {
-          LOG("Mouse move: (%ld,%ld).", (LONG)event.ie_X, (LONG)event.ie_Y);
-        } else {
-          const StrT name[] = {"left", "right", "middle"};
-
-          LOG("Mouse %s key %s.",
-              name[(event.ie_Code & ~IECODE_UP_PREFIX) - IECODE_LBUTTON],
-              (event.ie_Code & IECODE_UP_PREFIX) ? "up" : "down");
-        }
-        break;
-
-      default:
-        break;
-    }
-  }
-}
-
 /*
  * Main loop.
  */
 void MainLoop() {
+  LoopEventT event = LOOP_CONTINUE;
+
   SetVBlankCounter(0);
 
-  while (GetVBlankCounter() < 500) {
+  do {
     int frameNumber = GetVBlankCounter();
 
-    PrintAllEvents();
+    if (event == LOOP_TRIGGER) {
+      SceneObjectT *object = GetObject(R_("Scene"), "Object");
+
+      object->wireframe = !object->wireframe;
+    }
 
     RenderMesh(frameNumber);
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
+    RenderFramesPerSecond(frameNumber);
 
     DisplaySwap();
-  }
+  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }

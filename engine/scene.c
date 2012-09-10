@@ -32,6 +32,10 @@ MatrixStack3D *GetObjectTranslation(SceneT *self, const StrT name) {
   return object ? object->ms : NULL;
 }
 
+SceneObjectT *GetObject(SceneT *self, const StrT name) {
+  return ListSearch(self->objects, (CompareFuncT)CompareName, name);
+}
+
 void RenderScene(SceneT *self, CanvasT *canvas) {
   void RenderObject(SceneObjectT *obj) {
     RenderSceneObject(obj, canvas);
