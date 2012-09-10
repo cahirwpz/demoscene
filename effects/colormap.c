@@ -1,6 +1,5 @@
 #include <stdlib.h>
 
-#include "std/array.h"
 #include "std/debug.h"
 #include "std/fastmath.h"
 #include "std/math.h"
