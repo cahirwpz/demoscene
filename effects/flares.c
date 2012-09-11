@@ -6,6 +6,7 @@
 
 #include "gfx/blit.h"
 #include "gfx/canvas.h"
+#include "gfx/spline.h"
 #include "gfx/line.h"
 #include "tools/curves.h"
 #include "tools/frame.h"
@@ -52,7 +53,7 @@ void PixBufBlitFlare(PixBufT *dstBuf asm("a0"),
   } while (--y);
 }
 
-const int CYCLEFRAMES = 150;
+const int CYCLEFRAMES = 100;
 const int POINTS = 64;
 const int SEGMENTS = 16;
 const int FLARES = 6;
@@ -64,6 +65,8 @@ void AddInitialResources() {
   ResAdd("Points", NewTable(PointT, SEGMENTS + 1));
   ResAdd("Flare", NewPixBuf(PIXBUF_GRAY, 32, 32));
   ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("SplineX", NewSpline(4, TRUE));
+  ResAdd("SplineY", NewSpline(4, TRUE));
 }
 
 /*
@@ -82,6 +85,26 @@ void SetupEffect() {
   CanvasFill(R_("Canvas"), 0);
   GeneratePixels(R_("Flare"),
                  (GenPixelFuncT)LightNormalFalloff, &lightRadius);
+
+  {
+    SplineT *splineX = R_("SplineX");
+    SplineT *splineY = R_("SplineY");
+
+    splineX->knot[0].value = 64;
+    splineY->knot[0].value = 128;
+
+    splineX->knot[1].value = 128;
+    splineY->knot[1].value = 64;
+
+    splineX->knot[2].value = 192;
+    splineY->knot[2].value = 192;
+
+    splineX->knot[3].value = 256;
+    splineY->knot[3].value = 128;
+
+    SplineAttachCatmullRomTangents(splineX);
+    SplineAttachCatmullRomTangents(splineY);
+  }
 }
 
 /*
@@ -93,7 +116,8 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
-static int CURVE = 4;
+static int Curve = 8;
+static const int LastCurve = 9;
 
 void RenderFlares(int frameNumber) {
   CanvasT *canvas = R_("Canvas");
@@ -109,7 +133,7 @@ void RenderFlares(int frameNumber) {
     for (i = 0; i <= SEGMENTS; i++) {
       float x, y;
 
-      switch (CURVE % 8) {
+      switch (Curve) {
         case 0: /* LineSegment */
           CurveLineSegment(t + (float)i / POINTS, -80, -64, 80, 64, &x, &y);
           break;
@@ -140,6 +164,16 @@ void RenderFlares(int frameNumber) {
 
         case 7: /* Hypotrochoid 2 */
           CurveHypotrochoid(t + (float)i / POINTS, 80, 20, 0.5f, &x, &y);
+          break;
+
+        case 8: /* Spline */
+          {
+            float nt = t + (float)i / POINTS;
+
+            nt = fmod(nt, 1.0);
+            x = SplineEval(R_("SplineX"), nt) - WIDTH / 2;
+            y = SplineEval(R_("SplineY"), nt) - HEIGHT / 2;
+          }
           break;
 
         default:
@@ -173,24 +207,25 @@ void RenderChunky(int frameNumber) {
  * Main loop.
  */
 void MainLoop() {
+  LoopEventT event = LOOP_CONTINUE;
+
   SetVBlankCounter(0);
 
   do {
     int frameNumber = GetVBlankCounter();
+
+    if (event == LOOP_NEXT)
+      Curve = (Curve + 1) % LastCurve;
+    if (event == LOOP_PREV) {
+      Curve--;
+      if (Curve < 0)
+        Curve += LastCurve;
+    }
 
     RenderFlares(frameNumber);
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();
-
-    {
-      LoopEventT event = ReadLoopEvent();
-
-      if (event == LOOP_TRIGGER)
-        CURVE++;
-      if (event == LOOP_EXIT)
-        break;
-    }
-  } while (1);
+  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
