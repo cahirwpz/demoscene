@@ -69,11 +69,11 @@ SplineT *NewSpline(size_t knots, bool closed) {
   return spline;
 }
 
-static SplineKnotT *SplineGetKnot(SplineT *spline asm("a0"), size_t knot asm("d0")) {
+static SplineKnotT *SplineGetKnot(SplineT *spline asm("a0"), ssize_t knot asm("d0")) {
   if (knot < 0) {
     knot = spline->closed ? (knot + spline->knots) : 0;
   } else if (knot >= spline->knots) {
-    knot = spline->closed ? (knot - spline->knots) : spline->knots - 1;
+    knot = spline->closed ? (knot - spline->knots) : (spline->knots - 1);
   }
 
   ASSERT((knot >= 0) && (knot < spline->knots), "Knot number (%d) out of range.", (int)knot);
@@ -82,7 +82,7 @@ static SplineKnotT *SplineGetKnot(SplineT *spline asm("a0"), size_t knot asm("d0
 }
 
 static size_t SplineKnots(SplineT *spline asm("a0")) {
-  return spline->knots + spline->closed ? 1 : 0;
+  return spline->knots + (spline->closed ? 1 : 0);
 }
 
 static float SplineEvalWithinInterval(SplineT *spline asm("a0"), float t asm("fp0"), size_t knot asm("d0")) {
@@ -97,9 +97,11 @@ static float SplineEvalWithinInterval(SplineT *spline asm("a0"), float t asm("fp
 }
 
 float SplineEval(SplineT *spline asm("a0"), float t asm("fp0")) {
-  float interval = truncf(t * (int)SplineKnots(spline));
+  float interval;
 
-  return SplineEvalWithinInterval(spline, t - interval, lroundf(interval));
+  t = modff(t * (int)(SplineKnots(spline) - 1), &interval);
+
+  return SplineEvalWithinInterval(spline, t, (int)interval);
 }
 
 void SplineInterpolate(SplineT *spline, size_t steps, PtrT array, SetItemFuncT writer) {
@@ -120,8 +122,10 @@ void SplineInterpolate(SplineT *spline, size_t steps, PtrT array, SetItemFuncT w
 
 void SplineAttachCatmullRomTangents(SplineT *spline) {
   size_t knot;
+  size_t first = spline->closed ? 0 : 1;
+  size_t last = spline->knots - first;
 
-  for (knot = 0; knot < spline->knots; knot++) {
+  for (knot = first; knot < last; knot++) {
     SplineKnotT *pA = SplineGetKnot(spline, knot - 1);
     SplineKnotT *pB = SplineGetKnot(spline, knot);
     SplineKnotT *pC = SplineGetKnot(spline, knot + 1);
