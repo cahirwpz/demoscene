@@ -274,6 +274,10 @@ PtrT TableResize(PtrT mem, size_t newCount) {
   return newMem;
 }
 
+void MemCopy(PtrT dst asm("a1"), PtrT src asm("a0"), size_t n asm("d0")) {
+  CopyMem(src, dst, n);
+}
+
 PtrT MemClone(PtrT mem) {
   const TypeT *type = TypeOf(mem);
   uint32_t flags = TypeOfMem(mem);

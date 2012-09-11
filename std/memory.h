@@ -1,6 +1,7 @@
 #ifndef __STD_MEMORY_H__
 #define __STD_MEMORY_H__
 
+#include <proto/exec.h>
 #include "std/types.h"
 
 /* Think twice before you use them. */
@@ -21,6 +22,7 @@ size_t TableElemSize(PtrT mem asm("a0"));
 size_t TableLength(PtrT mem asm("a0"));
 PtrT TableResize(PtrT mem, size_t count);
 
+void MemCopy(PtrT dst asm("a1"), PtrT src asm("a0"), size_t n asm("d0"));
 PtrT MemClone(PtrT mem);
 PtrT MemDup(const void *p, size_t s);
 StrT StrDup(const StrT s);
