@@ -18,7 +18,6 @@ queue.o: queue.c memory.h types.h
 resource.o: resource.c resource.h types.h
 stack.o: stack.c stack.h memory.h types.h
 table.o: table.c table.h memory.h types.h
-tree.o: tree.c tree.h list.h types.h
 
 clean:
 	$(RM) *.a *.o *~
