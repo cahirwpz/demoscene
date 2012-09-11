@@ -14,13 +14,13 @@ CanvasT *NewCanvas(int width, int height) {
 
   canvas->pixbuf = NewPixBuf(PIXBUF_CLUT, width, height);
   canvas->fg_col = 255;
-  canvas->clip_area.br.x = canvas->pixbuf->width;
-  canvas->clip_area.br.y = canvas->pixbuf->height;
+  canvas->clip_area.w = canvas->pixbuf->width;
+  canvas->clip_area.h = canvas->pixbuf->height;
 
   return canvas;
 }
 
 void CanvasFill(CanvasT *canvas, uint8_t color) {
   memset(canvas->pixbuf->data, color,
-         canvas->clip_area.br.x * canvas->clip_area.br.y);
+         canvas->clip_area.w * canvas->clip_area.h);
 }

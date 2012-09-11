@@ -134,7 +134,7 @@ void RenderTunnel(int frameNumber) {
 
   RenderDistortion(R_("TunnelMap"), canvas, R_("Texture"), 0, frameNumber);
 
-  PixBufBlit(canvas->pixbuf, 0, 137, R_("WhelpzImg"));
+  PixBufBlit(canvas->pixbuf, 0, 137, R_("WhelpzImg"), NULL);
 
   {
     float rad = (float)(frameNumber % 150) / 150 * 2 * M_PI;

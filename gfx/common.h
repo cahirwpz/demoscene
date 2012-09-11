@@ -4,11 +4,16 @@
 #include "std/types.h"
 
 typedef struct Point {
-  int16_t x, y;
+  size_t x, y;
 } PointT;
 
+typedef struct FPoint {
+  float x, y;
+} FPointT;
+
 typedef struct Rect {
-  PointT tl, br;
+  size_t x, y;
+  size_t w, h;
 } RectT;
 
 #endif
