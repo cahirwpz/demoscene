@@ -30,7 +30,8 @@ const int DEPTH = 8;
  */
 void AddInitialResources() {
   ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
-  ResAdd("Map", NewTable(int, WIDTH * HEIGHT));
+  ResAdd("Map1", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
+  ResAdd("Map2", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Image", NewPixBufFromFile("data/samkaat-absinthe.8"));
   ResAdd("ImagePal", NewPaletteFromFile("data/samkaat-absinthe.pal"));
   ResAdd("ColorMap", NewPixBufFromFile("data/samkaat-absinthe.map"));
@@ -62,30 +63,64 @@ void FLineInitFromPoints(FLineT *line, FPointT *p0, FPointT *p1) {
   line->invNormalLength = FastInvSqrt(dx * dx + dy * dy);
 }
 
-static inline float PointToLineDistance(FLineT *line, float px, float py) {
+static inline float PointToLineDistance(const FLineT *line, float px, float py) {
   return fabsf((px - line->x) * line->dy - (py - line->x) * line->dx) *
     line->invNormalLength;
 }
 
-void RenderLine() {
-  int *map = R_("Map");
-  float x, y;
-  FLineT line;
+void RenderLinearGradient(PixBufT *map, const FLineT *line) {
+  uint8_t *data = map->data;
+  int x, y;
 
-  {
-    FPointT pa = { 40, 60 };
-    FPointT pb = { 200, 140 };
+  for (y = 0; y < map->height; y++) {
+    for (x = 0; x < map->width; x++) {
+      int d = (uint8_t)lroundf(PointToLineDistance(line, (float)x, (float)y));
 
-    FLineInitFromPoints(&line, &pa, &pb);
+      if (d < 0)
+        d = 0;
+      if (d >= 255)
+        d = 255;
+
+      *data++ = d;
+    }
   }
+}
 
-  for (y = 0; y < HEIGHT; y += 1.0f)
-    for (x = 0; x < WIDTH; x += 1.0f)
-      *map++ = lroundf(PointToLineDistance(&line, x, y));
+void RenderCircularGradient(PixBufT *map, const FPointT *point) {
+  uint8_t *data = map->data;
+  int x, y;
+
+  for (y = 0; y < map->height; y++) {
+    for (x = 0; x < map->width; x++) {
+      int xc = x - point->x;
+      int yc = y - point->y;
+      int d = (uint8_t)lroundf(sqrtf((float)(xc * xc + yc * yc)));
+
+      if (d < 0)
+        d = 0;
+      if (d >= 255)
+        d = 255;
+
+      *data++ = d;
+    }
+  }
 }
 
 void SetupEffect() {
-  RenderLine();
+  {
+    FLineT line;
+    FPointT pa = { 0, 0 };
+    FPointT pb = { WIDTH, HEIGHT };
+
+    FLineInitFromPoints(&line, &pa, &pb);
+    RenderLinearGradient(R_("Map1"), &line);
+  }
+
+  {
+    FPointT center = { WIDTH / 2, HEIGHT / 2 };
+    RenderCircularGradient(R_("Map2"), &center);
+  }
+
   LoadPalette(R_("ImagePal"));
 }
 
@@ -98,34 +133,79 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
+void Emerge(PixBufT *dst, PixBufT *image, PixBufT *map, int change, int threshold) {
+  uint8_t *d = dst->data;
+  uint8_t *s = image->data;
+  uint8_t *m = map->data;
+  uint8_t bgcol = image->baseColor;
+
+  int pixels = WIDTH * HEIGHT;
+
+  do {
+    int shade = (*m++) + change;
+
+    if (shade > threshold) {
+      *d++ = *s++;
+    } else {
+      *d++ = bgcol;
+      s++;
+    }
+  } while (pixels-- > 0);
+}
+
+void Shade(PixBufT *dst, PixBufT *image, PixBufT *map, PixBufT *colorMap, int change) {
+  uint8_t *s = image->data;
+  uint8_t *d = dst->data;
+  uint8_t *m = map->data;
+  uint8_t *c = colorMap->data;
+
+  int pixels = WIDTH * HEIGHT;
+
+  do {
+    int pixel = *s++;
+    int shade = (*m++) + change;
+
+    if (shade < 0)
+      shade = 0;
+    if (shade > 255)
+      shade = 255;
+
+    *d++ = c[pixel * 256 + shade];
+  } while (pixels-- > 0);
+}
+
+static int Effect = 0;
+static const int LastEffect = 4;
+
 void RenderChunky(int frameNumber) {
   CanvasT *canvas = R_("Canvas");
-  int *map = R_("Map");
   PixBufT *image = R_("Image");
   PixBufT *colorMap = R_("ColorMap");
 
-  {
-    uint8_t *img = image->data;
-    uint8_t *c = colorMap->data;
-    uint8_t *d = GetCanvasPixelData(canvas);
-    int i;
+  int change = (frameNumber * 2) % 256;
 
-    for (i = 0; i < WIDTH * HEIGHT; i++) {
-      int pixel = img[i];
-      int shade = map[i];
+  switch (Effect) {
+    case 0:
+      Emerge(canvas->pixbuf, image, R_("Map1"), change, 192);
+      break;
+    
+    case 1:
+      Shade(canvas->pixbuf, image, R_("Map1"), colorMap, change);
+      break;
 
-      shade += (frameNumber * 2) % 256;
+    case 2:
+      Emerge(canvas->pixbuf, image, R_("Map2"), change, 192);
+      break;
+    
+    case 3:
+      Shade(canvas->pixbuf, image, R_("Map2"), colorMap, change);
+      break;
 
-      if (shade < 0)
-        shade = 0;
-      if (shade > 255)
-        shade = 255;
-
-      d[i] = c[pixel * 256 + shade];
-    }
+    default:
+      break;
   }
 
-  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
+  c2p1x1_8_c5_bm(GetCanvasPixelData(canvas),
                  GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
@@ -133,14 +213,24 @@ void RenderChunky(int frameNumber) {
  * Main loop.
  */
 void MainLoop() {
+  LoopEventT event = LOOP_CONTINUE;
+
   SetVBlankCounter(0);
 
   do {
     int frameNumber = GetVBlankCounter();
 
+    if (event == LOOP_NEXT)
+      Effect = (Effect + 1) % LastEffect;
+    if (event == LOOP_PREV) {
+      Effect--;
+      if (Effect < 0)
+        Effect += LastEffect;
+    }
+
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();
-  } while (ReadLoopEvent() != LOOP_EXIT);
+  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
