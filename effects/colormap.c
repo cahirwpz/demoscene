@@ -34,7 +34,8 @@ void AddInitialResources() {
   ResAdd("Map2", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Image", NewPixBufFromFile("data/samkaat-absinthe.8"));
   ResAdd("ImagePal", NewPaletteFromFile("data/samkaat-absinthe.pal"));
-  ResAdd("ColorMap", NewPixBufFromFile("data/samkaat-absinthe.map"));
+  ResAdd("Darken", NewPixBufFromFile("data/samkaat-absinthe-darken.8"));
+  ResAdd("Lighten", NewPixBufFromFile("data/samkaat-absinthe-lighten.8"));
 }
 
 /*
@@ -175,12 +176,11 @@ void Shade(PixBufT *dst, PixBufT *image, PixBufT *map, PixBufT *colorMap, int ch
 }
 
 static int Effect = 0;
-static const int LastEffect = 4;
+static const int LastEffect = 6;
 
 void RenderChunky(int frameNumber) {
   CanvasT *canvas = R_("Canvas");
   PixBufT *image = R_("Image");
-  PixBufT *colorMap = R_("ColorMap");
 
   int change = (frameNumber * 2) % 256;
 
@@ -190,15 +190,23 @@ void RenderChunky(int frameNumber) {
       break;
     
     case 1:
-      Shade(canvas->pixbuf, image, R_("Map1"), colorMap, change);
+      Shade(canvas->pixbuf, image, R_("Map1"), R_("Lighten"), change);
       break;
 
     case 2:
+      Shade(canvas->pixbuf, image, R_("Map1"), R_("Darken"), change - 64);
+      break;
+
+    case 3:
       Emerge(canvas->pixbuf, image, R_("Map2"), change, 192);
       break;
     
-    case 3:
-      Shade(canvas->pixbuf, image, R_("Map2"), colorMap, change);
+    case 4:
+      Shade(canvas->pixbuf, image, R_("Map2"), R_("Lighten"), change);
+      break;
+
+    case 5:
+      Shade(canvas->pixbuf, image, R_("Map2"), R_("Darken"), change - 64);
       break;
 
     default:
