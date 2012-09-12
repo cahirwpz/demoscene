@@ -40,8 +40,8 @@ def Main():
   # Assumes that color #0 is transparency color (for 8-bit images).
   isTransparent = image.info.has_key('transparency')
 
-  if not imgType:
-    raise SystemExit('Unknown color space: %s.' % image.mode)
+  if imgType is None:
+    raise SystemExit('Unknown color space: "%s".' % image.mode)
 
   if imgType is IMG_CLUT:
     palFilePath = '%s.pal' % outputPath
