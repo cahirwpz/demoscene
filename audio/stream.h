@@ -10,6 +10,7 @@ size_t AudioStreamFeed(AudioStreamT *audio);
 ssize_t AudioStreamFeedIfHungry(AudioStreamT *audio);
 bool AudioStreamPlay(AudioStreamT *audio);
 void AudioStreamStop(AudioStreamT *audio);
+void AudioStreamSetVolume(AudioStreamT *audio, float volume);
 
 uint32_t AudioStreamHungryWait(AudioStreamT *audio, uint32_t extraSignals);
 void AudioStreamRewind(AudioStreamT *audio);

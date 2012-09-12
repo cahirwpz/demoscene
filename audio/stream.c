@@ -6,6 +6,7 @@
 
 #include "audio/stream.h"
 #include "std/debug.h"
+#include "std/math.h"
 #include "std/memory.h"
 #include "system/fileio.h"
 #include "system/vblank.h"
@@ -253,6 +254,10 @@ void AudioStreamClose(AudioStreamT *audio) {
   DeleteMsgPort(audio->msgPort);
   FreeSignal(audio->signal);
   Close(audio->file);
+}
+
+void AudioStreamSetVolume(AudioStreamT *audio, float volume) {
+  AHI_SetVol(0, (int)(clampf(volume) * 65536), 0x8000, audio->ctrl, AHISF_IMM);
 }
 
 uint32_t AudioStreamHungryWait(AudioStreamT *audio, uint32_t extraSignals) {
