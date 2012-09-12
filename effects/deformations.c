@@ -4,6 +4,7 @@
 
 #include "std/debug.h"
 #include "std/memory.h"
+#include "std/math.h"
 #include "std/resource.h"
 
 #include "distort/generate.h"
@@ -20,17 +21,9 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-float clamp(float x) {
-  if (x < 0.0f)
-    x = 0.0f;
-  if (x > 1.0f)
-    x = 1.0f;
-  return x;
-}
-
 float smoothstep(float edge0, float edge1, float x) {
   // Scale, bias and saturate x to 0..1 range
-  x = clamp((x - edge0) / (edge1 - edge0)); 
+  x = clampf((x - edge0) / (edge1 - edge0)); 
   // Evaluate polynomial
   return x * x * (3.0f - 2.0f * x);
 }

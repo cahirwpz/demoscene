@@ -6,6 +6,14 @@
 #include <math.h>
 #include "std/types.h"
 
+inline static float clampf(float x) {
+  if (x < 0.0f)
+    x = 0.0f;
+  if (x > 1.0f)
+    x = 1.0f;
+  return x;
+}
+
 #ifdef AMIGA
 inline static float fabsf(float x) {
   float value;
