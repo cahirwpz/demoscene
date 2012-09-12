@@ -119,8 +119,7 @@ def main():
     
     data.append(pixel)
 
-  colorMap = Image.new('P', size)
-  colorMap.putpalette(image.getpalette())
+  colorMap = Image.new('L', size)
   colorMap.putdata(data)
 
   if os.path.isfile(outputPath) and not args.force:
