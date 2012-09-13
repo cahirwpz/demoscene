@@ -15,5 +15,6 @@ void ColorsInvert(RGB *dst, RGB *src, size_t count);
 void ColorsAverage(uint8_t *dst, RGB *src, size_t count);
 void ColorsContrast(RGB *dst, RGB *src, size_t count);
 void ColorsChangeHSL(RGB *dst, RGB *src, size_t count, HSL *d);
+RGB MakeRGB(int r, int g, int b);
 
 #endif
