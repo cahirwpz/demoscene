@@ -3,22 +3,40 @@
 
 #include "std/types.h"
 
-typedef void (*TimeFuncT)(int frameNumber);
+typedef struct Frame {
+  int16_t first, last;
+  int16_t number;
+} FrameT;
 
-typedef struct TimeSlice {
+typedef void (*TimeFuncT)(FrameT *frame);
+
+typedef struct TimeSlice TimeSliceT;
+
+typedef union TimeSliceData {
   TimeFuncT func;
-  int start, end, step, last;
-} TimeSliceT;
+  TimeSliceT *slice;
+} TimeSliceDataT;
 
-#define TIME_END ((1UL << 31) - 1)
-#define DO_ONCE(FUNC, WHEN) { &FUNC, WHEN, 0, 0, -1 }
-#define EACH_FRAME(FUNC, START, END) { &FUNC, START, END, 1, -1 }
-#define EACH_NTH_FRAME(FUNC, START, END, STEP) { &FUNC, START, END, STEP, -1 }
+struct TimeSlice {
+  TimeSliceDataT data;
+  int16_t type;
+  int16_t start, end;
+  int16_t last;
+};
 
-extern TimeSliceT Timeline[];
+#define TIME_END ((1 << 15) - 1)
+#define DO_ONCE(FUNC, WHEN, END) { (TimeSliceDataT)&FUNC, 0, WHEN, END, -1 }
+#define EACH_FRAME(FUNC, START, END) { (TimeSliceDataT)&FUNC, 1, START, END, -1 }
+#define EACH_NTH_FRAME(FUNC, START, END, STEP) { (TimeSliceDataT)&FUNC, STEP, START, END, -1 }
+#define TIMESLICE(SLICE, START, END) { (TimeSliceDataT)SLICE, -1, START, END, -1 }
+#define THE_END { (TimeSliceDataT)(TimeFuncT)NULL, 0, 0, 0, 0 }
+
+extern TimeSliceT TheDemo[];
+
+extern bool ExitDemo;
 
 bool SetupDemo();
 void KillDemo();
-bool HandleEvents(int frameNumber);
+void HandleEvents(int frameNumber);
 
 #endif
