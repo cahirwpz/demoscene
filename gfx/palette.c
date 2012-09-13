@@ -65,6 +65,9 @@ bool LinkPalettes(PaletteT *palette, ...) {
   for (;;) {
     PaletteT *next = va_arg(ap, PaletteT *);
 
+    /* Just for safety. */
+    UnlinkPalettes(palette);
+
     palette->start = start;
     palette->next = next;
 
