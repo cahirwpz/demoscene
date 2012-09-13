@@ -101,30 +101,58 @@ void PixBufBlitScaled(PixBufT *dstBuf, size_t x, size_t y, int w, int h,
   }
 }
 
-void PixBufBlit(PixBufT *dbuf, size_t x, size_t y,
+void PixBufBlit(PixBufT *dbuf, int x, int y,
                 PixBufT *sbuf, const RectT *srect)
 {
-  size_t w = min(srect ? min(srect->w, sbuf->width) : sbuf->width,
-                 dbuf->width);
-  size_t h = min(srect ? min(srect->h, sbuf->height) : sbuf->height,
-                 dbuf->height);
-  size_t sstride = sbuf->width - w;
-  size_t dstride = dbuf->width - w;
+  int sx, sy, w, h;
 
-  uint8_t *src = sbuf->data;
-  uint8_t *dst = &dbuf->data[y * dbuf->width + x];
+  if (srect) {
+    sx = srect->x;
+    sy = srect->y;
+    w = min(srect->w, sbuf->width);
+    h = min(srect->h, sbuf->height);
+  } else {
+    sx = 0;
+    sy = 0;
+    w = sbuf->width;
+    h = sbuf->height;
+  }
 
-  if (srect)
-    src += srect->y * sbuf->width + srect->x;
+  w = min(w, dbuf->width);
+  h = min(h, dbuf->height);
 
-  switch (sbuf->flags) {
-    case PIXBUF_TRANSPARENT:
-      PixBufBlitTransparent(dst, src, w, h, sstride, dstride,
-                            sbuf->baseColor);
-      break;
+  /* clipping */
+  if (x < 0) {
+    w += x; sx -= x; x = 0;
+  }
+  
+  if (y < 0) {
+    h += y; sy -= y; y = 0;
+  }
 
-    default:
-      PixBufBlitNormal(dst, src, w, h, sstride, dstride);
-      break;
-  } 
+  if (x + w > dbuf->width)
+    w = dbuf->width - x;
+
+  if (y + h > dbuf->height)
+    h = dbuf->height - y;
+
+  /* blit */
+  if (w > 0 && h > 0) {
+    size_t sstride = sbuf->width - w;
+    size_t dstride = dbuf->width - w;
+
+    uint8_t *src = &sbuf->data[sy * sbuf->width + sx];
+    uint8_t *dst = &dbuf->data[y * dbuf->width + x];
+
+    switch (sbuf->flags) {
+      case PIXBUF_TRANSPARENT:
+        PixBufBlitTransparent(dst, src, w, h, sstride, dstride,
+                              sbuf->baseColor);
+        break;
+
+      default:
+        PixBufBlitNormal(dst, src, w, h, sstride, dstride);
+        break;
+    } 
+  }
 }
