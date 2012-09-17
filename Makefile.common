@@ -9,11 +9,7 @@ CFLAGS   = $(LDFLAGS) $(OFLAGS) $(WFLAGS)
 
 OFLAGS := -O2 -ffast-math -freg-struct-return -fomit-frame-pointer
 WFLAGS := -Werror -Wall
-
-SUBDIRS	= audio distort engine gfx p61 system std txtgen tools
-
-LIBDIR := $(foreach dir,$(SUBDIRS),-L$(realpath $(TOPDIR)/$(dir)))
-LDLIBS = $(LIBDIR) $(LIBS) -lamiga -lm
+LDLIBS = -lamiga -lm
 
 NODEPS := clean
 DEPFILES := $(patsubst %.o,.deps/%.P,$(OBJS))
@@ -24,28 +20,35 @@ endif
 
 %.o: %.s
 	@echo "AS   $(subst $(TOPDIR)/,,$(realpath $<))"
-	@$(AS) $(ASFLAGS) -o $@ $<
+	$(AS) $(ASFLAGS) -o $@ $<
 
 .deps/%.P: %.c
 	@echo "DEP  $(subst $(TOPDIR)/,,$(realpath $<))"
 	@mkdir -p .deps
-	@$(CC) $(CPPFLAGS) -MM -o $@ $(realpath $<)
+	$(CC) $(CPPFLAGS) -MM -o $@ $(realpath $<)
 
 %.o: %.c .deps/%.P 
 	@echo "CC   $(subst $(TOPDIR)/,,$(realpath $<))"
-	@$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $(realpath $<)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $(realpath $<)
 
 %.s: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -S -o $@ $(realpath $<)
 
 %: %.o
 	@echo "LINK $@"
-	@$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(filter-out lib%.a,$^) \
+		$(foreach lib,$(patsubst lib%.a,%,$(filter lib%a,$^)),\
+		-L$(TOPDIR)/$(lib) -l$(lib)) $(LDLIBS)
 
-%.a:
+LIB := lib$(notdir $(CURDIR)).a
+
+$(LIB):
 	@echo "LIB  $@"
 	@m68k-amigaos-ar cr $@ $^
 	@m68k-amigaos-ranlib $@
+
+%.a:
+	make -C $(TOPDIR)/$(patsubst lib%.a,%,$@)
 
 clean::
 	@$(RM) -v -r .deps
@@ -53,6 +56,10 @@ clean::
 clean::
 	@$(RM) -v *.a *.o *~
 
-.PHONY: clean all
+.PHONY: all clean
+
+ifneq ($(VERBOSE), 1)
+.SILENT:
+endif
 
 # vim: sw=8 ts=8

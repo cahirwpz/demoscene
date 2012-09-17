@@ -4,36 +4,22 @@ OBJS := colormap.o deformations.o flares.o object3d.o particles.o playaudio.o \
 	raytunnel.o tunnel.o vector2d.o startup.o
 BINS := colormap deformations flares object3d particles playaudio raytunnel \
 	tunnel vector2d
-LIBS = $(EXTRALIBS) -lgfx -ltools -lsystem -lstd
+LIBS := libgfx.a libtools.a libsystem.a libstd.a
 
 all:: $(BINS)
 
-colormap: EXTRALIBS := -ldistort
-colormap: startup.o colormap.o
+colormap: startup.o colormap.o libdistort.a $(LIBS)
 
-deformations: EXTRALIBS := -ldistort
 deformations: CFLAGS += -Wno-unused
-deformations: startup.o deformations.o
+deformations: startup.o deformations.o libdistort.a $(LIBS)
 
-flares: EXTRALIBS := -ltxtgen
-flares: startup.o flares.o
-
-object3d: EXTRALIBS := -lengine
-object3d: startup.o object3d.o
-
-playaudio: EXTRALIBS := -laudio
-playaudio: startup.o playaudio.o
-
-particles: EXTRALIBS := -ltxtgen -lengine
-particles: startup.o particles.o
-
-raytunnel: EXTRALIBS := -ldistort -lengine
-raytunnel: startup.o raytunnel.o
-
-tunnel: EXTRALIBS := -lp61 -ldistort -laudio
-tunnel: startup.o tunnel.o
-
-vector2d: startup.o vector2d.o
+flares: startup.o flares.o libtxtgen.a $(LIBS)
+object3d: startup.o object3d.o libengine.a $(LIBS)
+playaudio: startup.o playaudio.o libaudio.a $(LIBS)
+particles: startup.o particles.o libtxtgen.a libengine.a $(LIBS)
+raytunnel: startup.o raytunnel.o libdistort.a libengine.a $(LIBS)
+tunnel: startup.o tunnel.o libp61.a libdistort.a libaudio.a $(LIBS)
+vector2d: startup.o vector2d.o $(LIBS)
 
 archive:
 	7z a "bins-$$(date +%F).7z" $(BINS) data
