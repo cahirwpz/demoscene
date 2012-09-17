@@ -70,11 +70,13 @@ void AllocHardware(AudioStreamT *audio, DiskSampleT *sample) {
 
   LOG("Chosen 0x%.8lx AHI AudioID.", id);
 
-  ASSERT(id != AHI_INVALID_ID,
-         "Is Paula AHI driver installed?");
+  if (id == AHI_INVALID_ID)
+    PANIC("Is Paula AHI driver installed?");
 
   /* WinUAE hack */
   id = 0x1A0000;
+  /* Amiga Paula hack */
+  id = 0x20005;
 
   /* Allocate audio hardware. */
   audio->ctrl = AHI_AllocAudio(AHIA_AudioID,   id,
@@ -85,7 +87,8 @@ void AllocHardware(AudioStreamT *audio, DiskSampleT *sample) {
                                AHIA_UserData,  (ULONG)audio,
                                TAG_DONE);
 
-  ASSERT(audio->ctrl, "Could not initialize audio hardware.");
+  if (!audio->ctrl)
+    PANIC("Could not initialize audio hardware.");
 }
 
 /* Set-up sample buffers. */
@@ -143,9 +146,9 @@ AudioStreamT *AudioStreamOpen(const StrT filename) {
     LOG("File '%s' not found.", filename);
     return NULL;
   }
-
-  ASSERT(Read(file, &sample, sizeof(DiskSampleT)) == 8,
-         "File is missing a header.");
+  
+  if (Read(file, &sample, sizeof(DiskSampleT)) != 8)
+    PANIC("File is missing a header.");
 
   LOG("Audio stream '%s' info: %d bit, %s, %dHz, %ld samples.",
       filename,
@@ -174,8 +177,8 @@ AudioStreamT *AudioStreamOpen(const StrT filename) {
       CreateIORequest(audio->msgPort, sizeof(struct AHIRequest));
     audio->ioReq->ahir_Version = 4;
 
-    ASSERT(OpenDevice(AHINAME, AHI_NO_UNIT, (struct IORequest *)audio->ioReq, 0) == 0,
-           "Cannot open 'ahi.device' with version not lesser than 4.0.");
+    if (OpenDevice(AHINAME, AHI_NO_UNIT, (struct IORequest *)audio->ioReq, 0) != 0)
+      PANIC("Cannot open 'ahi.device' with version not lesser than 4.0.");
 
     AHIBase = (struct Library *)audio->ioReq->ahir_Std.io_Device;
 
