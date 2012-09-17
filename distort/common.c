@@ -47,13 +47,13 @@ DistortionMapT *NewDistortionMapFromFile(const StrT fileName) {
 
   if (file) {
     DistortionMapT *map =
-      NewDistortionMap(DMAP_OPTIMIZED, file->width, file->height, 256, 256);
-
-    memcpy(map->map, file->data,
-           file->width * file->height * sizeof(uint16_t));
+      NewDistortionMap(file->width, file->height, DMAP_OPTIMIZED, 256, 256);
 
     LOG("Distortion map '%s' has size (%d,%d).",
         fileName, (int)file->width, (int)file->height);
+
+    memcpy(map->map, file->data,
+           (int)file->width * (int)file->height * sizeof(uint16_t));
 
     MemUnref(file);
 
@@ -61,6 +61,17 @@ DistortionMapT *NewDistortionMapFromFile(const StrT fileName) {
   }
 
   return NULL;
+}
+
+void DistortionMapWriteToFile(DistortionMapT *map, const StrT fileName) {
+  size_t mapLen = sizeof(uint16_t) * map->width * map->height;
+  size_t length = sizeof(int16_t) * 2 + mapLen;
+  DiskDistortionMapT *diskMap = MemNew(length);
+
+  diskMap->width = map->width;
+  diskMap->height = map->height;
+  memcpy(diskMap->data, map->map, mapLen);
+  WriteFileSimple(fileName, diskMap, length);
 }
 
 void DistortionMapSet(DistortionMapT *map asm("a0"), size_t i asm("d0"),
