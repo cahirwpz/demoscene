@@ -50,3 +50,13 @@ PtrT ReadFileToChipMem(const StrT fileName) {
 PtrT ReadFileSimple(const StrT fileName) {
   return ReadFileToCustomMemory(fileName, MEMF_PUBLIC);
 }
+
+void WriteFileSimple(const StrT fileName, PtrT data, size_t length) {
+  BPTR fh;
+  PtrT path = AbsPath(fileName);
+
+  if ((fh = Open(path, MODE_NEWFILE))) {
+    Write(fh, data, length);
+    Close(fh);
+  }
+}
