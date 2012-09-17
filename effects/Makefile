@@ -1,49 +1,48 @@
-TOPDIR = $(CURDIR)/..
+TOPDIR = $(realpath $(CURDIR)/..)
 
-include $(TOPDIR)/Makefile.common
+OBJS := colormap.o deformations.o flares.o object3d.o particles.o playaudio.o \
+	raytunnel.o tunnel.o vector2d.o startup.o
+BINS := colormap deformations flares object3d particles playaudio raytunnel \
+	tunnel vector2d
+LIBS = $(EXTRALIBS) -lgfx -ltools -lsystem -lstd
 
-BINS = colormap deformations flares object3d particles playaudio raytunnel tunnel vector2d
+all:: $(BINS)
 
-LIBS := $(LIBDIR) -lgfx -ltools -lsystem -lstd $(LIBS)
-
-all: $(BINS)
-
+colormap: EXTRALIBS := -ldistort
 colormap: startup.o colormap.o
-	$(CC) $(CFLAGS) -o $@ $^ -ldistort $(LIBS)
 
+deformations: EXTRALIBS := -ldistort
+deformations: CFLAGS += -Wno-unused
 deformations: startup.o deformations.o
-	$(CC) $(CFLAGS) -o $@ $^ -ldistort $(LIBS)
 
-deformations.o: deformations.c
-	$(CC) $(CFLAGS) -Wno-unused $(OPTFLAGS) -c -o $@ $<
-
+flares: EXTRALIBS := -ltxtgen
 flares: startup.o flares.o
-	$(CC) $(CFLAGS) -o $@ $^ -ltxtgen $(LIBS)
 
+object3d: EXTRALIBS := -lengine
 object3d: startup.o object3d.o
-	$(CC) $(CFLAGS) -o $@ $^ -lengine $(LIBS)
 
+playaudio: EXTRALIBS := -laudio
 playaudio: startup.o playaudio.o
-	$(CC) $(CFLAGS) -o $@ $^ -laudio $(LIBS)
 
+particles: EXTRALIBS := -ltxtgen -lengine
 particles: startup.o particles.o
-	$(CC) $(CFLAGS) -o $@ $^ -ltxtgen -lengine $(LIBS)
 
+raytunnel: EXTRALIBS := -ldistort -lengine
 raytunnel: startup.o raytunnel.o
-	$(CC) $(CFLAGS) -o $@ $^ -ldistort -lengine $(LIBS)
 
+tunnel: EXTRALIBS := -lp61 -ldistort -laudio
 tunnel: startup.o tunnel.o
-	$(CC) $(CFLAGS) -o $@ $^ -lp61 -ldistort -laudio $(LIBS)
 
 vector2d: startup.o vector2d.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 archive:
 	7z a "bins-$$(date +%F).7z" $(BINS) data
 
-clean:
-	$(RM) *~ *.o $(BINS)
+clean::
+	@$(RM) -v $(BINS)
 
-.PHONY: all archive $(BINS)
+include $(TOPDIR)/Makefile.common
+
+.PHONY: all archive
 
 # vim: sw=8 ts=8
