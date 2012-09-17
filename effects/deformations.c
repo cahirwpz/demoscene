@@ -126,13 +126,12 @@ void ChangeMap(int newMap) {
   }
 }
 
-
 /*
  * Set up resources.
  */
 void AddInitialResources() {
-  ResAdd("Texture", NewPixBufFromFile("data/texture-08.8"));
-  ResAdd("TexturePal", NewPaletteFromFile("data/texture-08.pal"));
+  ResAdd("Texture", NewPixBufFromFile("data/texture.8"));
+  ResAdd("TexturePal", NewPaletteFromFile("data/texture.pal"));
   ResAdd("Map", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
   ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
 }
@@ -141,7 +140,7 @@ void AddInitialResources() {
  * Set up display function.
  */
 bool SetupDisplay() {
-  ChangeMap(maps - 1);
+  ChangeMap(0);
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
