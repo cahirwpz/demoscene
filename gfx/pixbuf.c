@@ -17,19 +17,34 @@ PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
   pixbuf->type = type;
   pixbuf->width = width;
   pixbuf->height = height;
-  pixbuf->baseColor = 0;
-  pixbuf->colors = 256;
-  pixbuf->data = NewTable(uint8_t, width * height);
+
+  switch (type) {
+    case PIXBUF_CLUT:
+    case PIXBUF_GRAY:
+      pixbuf->data = NewTable(uint8_t, width * height);
+      pixbuf->lastColor = 255;
+      break;
+
+    case PIXBUF_RGB24:
+      pixbuf->data = (uint8_t *)NewTable(RGB, width * height);
+      break;
+
+    default:
+      PANIC("Unknown PixBuf type: %d", type);
+      break;
+  }
 
   return pixbuf;
 }
 
 typedef struct DiskPixBuf {
-  uint8_t  flags;
   uint8_t  type;
+  uint8_t  flags;
   uint16_t width;
   uint16_t height;
-  uint32_t colors;
+  uint32_t uniqueColors;
+  uint8_t  baseColor;
+  uint8_t  lastColor;
   uint8_t  data[0];
 } DiskPixBufT;
 
@@ -40,12 +55,22 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
     PixBufT *pixbuf = NewPixBuf(file->type, file->width, file->height);
 
     pixbuf->flags = file->flags;
-    pixbuf->colors = file->colors;
+    pixbuf->uniqueColors = file->uniqueColors;
 
-    memcpy(pixbuf->data, file->data, file->width * file->height);
+    if (file->type == PIXBUF_CLUT || file->type == PIXBUF_GRAY) {
+      pixbuf->baseColor = file->baseColor;
+      pixbuf->lastColor = file->lastColor;
 
-    LOG("Image '%s' has size (%d,%d) and %d colors.",
-        fileName, (int)file->width, (int)file->height, (int)file->colors);
+      LOG("Image '%s' has size (%d,%d) and %d colors.",
+          fileName, (int)file->width, (int)file->height,
+          (int)file->lastColor - (int)file->baseColor);
+    } else {
+      LOG("True color image '%s' has size (%d,%d).",
+          fileName, (int)file->width, (int)file->height);
+    }
+
+    MemCopy(pixbuf->data, file->data, 
+            TableSize(pixbuf->data) * TableElemSize(pixbuf->data));
 
     MemUnref(file);
 
@@ -67,19 +92,28 @@ bool PixBufSetTransparent(PixBufT *pixbuf, bool transparent) {
 }
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {
-  ASSERT(pixbuf->type == PIXBUF_CLUT, "Cannot remap non-CLUT image!");
+  ASSERT(pixbuf->type == PIXBUF_CLUT || pixbuf->type == PIXBUF_GRAY,
+         "Cannot remap non-8bit image!");
 
-  if (palette->count != pixbuf->colors) {
-    LOG("PixBuf color number doesn't match palette (%d != %d).",
-        (int)pixbuf->colors, (int)palette->count);
-  } else {
+  ASSERT((pixbuf->lastColor - pixbuf->baseColor + 1) <= palette->count,
+         "There are more colors in PixBuf than in palette (%d > %d).",
+         (int)(pixbuf->lastColor - pixbuf->baseColor + 1), (int)palette->count);
+
+  {
     int color = palette->start - pixbuf->baseColor;
     int i;
 
-    for (i = 0; i < pixbuf->width * pixbuf->height; i++)
+    LOG("Remapping by %d colors.", color);
+
+    for (i = 0; i < pixbuf->width * pixbuf->height; i++) {
+      if ((pixbuf->flags & PIXBUF_TRANSPARENT) && (pixbuf->data[i] == 0))
+          continue;
+
       pixbuf->data[i] += color;
+    }
 
     pixbuf->baseColor = palette->start;
+    pixbuf->lastColor = palette->start + palette->count - 1;
   }
 }
 

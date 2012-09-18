@@ -20,8 +20,7 @@ static void PixBufBlitNormal(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
 
 static void PixBufBlitTransparent(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
                                   size_t width asm("d2"), size_t height asm("d3"),
-                                  size_t sstride asm("d4"), size_t dstride asm("d5"),
-                                  uint8_t transparent asm("d6"))
+                                  size_t sstride asm("d4"), size_t dstride asm("d5"))
 {
   int16_t y = height - 1;
 
@@ -31,7 +30,7 @@ static void PixBufBlitTransparent(uint8_t *dst asm("a0"), uint8_t *src asm("a1")
     do {
       uint8_t c = *src++;
 
-      if (c != transparent)
+      if (c != 0)
         *dst = c;
 
       dst++;
@@ -42,7 +41,7 @@ static void PixBufBlitTransparent(uint8_t *dst asm("a0"), uint8_t *src asm("a1")
   } while (--y >= 0);
 }
 
-static inline void ScaleLine(uint8_t *dst, uint8_t *src, int w, const int du2, bool check, uint8_t transparency) {
+static inline void ScaleLine(uint8_t *dst, uint8_t *src, int w, const int du2, bool check) {
   const int sx = sign(w);
   const int dx = abs(w);
 
@@ -53,7 +52,7 @@ static inline void ScaleLine(uint8_t *dst, uint8_t *src, int w, const int du2, b
   do {
     uint8_t c = *src;
 
-    if ((!check) || (c != transparency))
+    if ((!check) || (c != 0))
       *dst = *src;
 
     while (e >= 0) {
@@ -88,7 +87,7 @@ void PixBufBlitScaled(PixBufT *dstBuf, size_t x, size_t y, int w, int h,
     h = dy;
 
     do {
-      ScaleLine(dst, src, w, du2, srcBuf->flags & PIXBUF_TRANSPARENT, srcBuf->baseColor);
+      ScaleLine(dst, src, w, du2, srcBuf->flags & PIXBUF_TRANSPARENT);
 
       while (e >= 0) {
         src += srcBuf->width;
@@ -146,8 +145,7 @@ void PixBufBlit(PixBufT *dbuf, int x, int y,
 
     switch (sbuf->flags) {
       case PIXBUF_TRANSPARENT:
-        PixBufBlitTransparent(dst, src, w, h, sstride, dstride,
-                              sbuf->baseColor);
+        PixBufBlitTransparent(dst, src, w, h, sstride, dstride);
         break;
 
       default:

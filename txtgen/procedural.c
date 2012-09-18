@@ -35,7 +35,7 @@ void GeneratePixels(PixBufT *dst, GenPixelFuncT func, PtrT data) {
   float dy = 1.0f / dst->height;
   float x, y;
 
-  int colors = dst->colors - 1;
+  int colors = dst->lastColor - dst->baseColor;
   int baseColor = dst->baseColor;
 
   for (y = 0.0f; y < 1.0f; y += dy) {

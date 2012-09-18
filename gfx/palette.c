@@ -31,24 +31,25 @@ PaletteT *NewPalette(size_t count) {
   return palette;
 }
 
+typedef struct DiskPalette {
+  uint16_t start;
+  uint16_t count;
+  RGB      colors[0];
+} DiskPaletteT;
+
 PaletteT *NewPaletteFromFile(const StrT fileName) {
-  uint16_t *data = ReadFileSimple(fileName);
+  DiskPaletteT *file = ReadFileSimple(fileName);
 
-  if (data) {
-    uint16_t count = data[0];
-    PaletteT *palette = NewPalette(count);
-    uint8_t *raw = (uint8_t *)&data[1];
-    int i;
+  if (file) {
+    PaletteT *palette = NewPalette(file->count);
 
-    for (i = 0; i < count; i++) {
-      palette->colors[i].r = raw[i*3];
-      palette->colors[i].g = raw[i*3+1];
-      palette->colors[i].b = raw[i*3+2];
-    }
+    palette->start = file->start;
 
-    LOG("Palette '%s' has %d colors.", fileName, count);
+    LOG("Palette '%s' has %d colors.", fileName, file->count);
 
-    MemUnref(data);
+    MemCopy(palette->colors, file->colors, sizeof(RGB) * file->count);
+
+    MemUnref(file);
 
     return palette;
   }

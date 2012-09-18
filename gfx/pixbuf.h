@@ -16,8 +16,11 @@ typedef struct PixBuf {
   uint16_t flags;
   uint8_t  *data;
   size_t   width, height;
-  size_t   colors;        /* stores number of unique colors in the image */
-  uint8_t  baseColor;     /* valid only in GRAY or CLUT mode */
+  size_t   uniqueColors;  /* stores number of unique colors in the image */
+
+  /* valid only in GRAY or CLUT mode */
+  uint8_t  baseColor;
+  uint8_t  lastColor;
 } PixBufT;
 
 PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height);

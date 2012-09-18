@@ -12,6 +12,10 @@ IMG_GRAY  = 0
 IMG_CLUT  = 1
 IMG_RGB24 = 2
 
+def UsedColorRange(image):
+  colors = sorted([c for n, c in image.getcolors() if n > 0])
+  return (colors[0], colors[-1])
+
 def Main():
   parser = argparse.ArgumentParser(
       description='Converts input image to raw image and palette data.')
@@ -45,16 +49,17 @@ def Main():
 
   if imgType is IMG_CLUT:
     palFilePath = '%s.pal' % outputPath
-    uniqueColors = len(image.getcolors())
+    baseColor, lastColor = UsedColorRange(image)
+    colors = lastColor - baseColor + 1
 
     if os.path.isfile(palFilePath) and not args.force:
       raise SystemExit('Will not overwrite output file!')
 
     with open(palFilePath, 'w') as palFile:
-      pal = array('B', image.getpalette()[:3*uniqueColors])
-      logging.info('Saving palette of %d colors to "%s".',
-                   uniqueColors, palFilePath)
-      palFile.write(struct.pack('>H', uniqueColors))
+      pal = array('B', image.getpalette()[:3*colors])
+      logging.info('Saving palette of %d..%d (%d) colors to "%s".',
+                   baseColor, lastColor, colors, palFilePath)
+      palFile.write(struct.pack('>HH', baseColor, colors))
       palFile.write(pal.tostring())
 
   data = array('B')
@@ -62,12 +67,15 @@ def Main():
   if imgType is IMG_RGB24:
     rawFilePath = '%s.24' % outputPath
     uniqueColors = len(set(image.getdata()))
+    baseColor = 0
+    lastColor = 0
 
     for rgb in image.getdata():
       data.extend(rgb)
   else:
     rawFilePath = '%s.8' % outputPath
     uniqueColors = len(image.getcolors())
+    baseColor, lastColor = UsedColorRange(image)
 
     data.extend(image.getdata())
 
@@ -79,8 +87,8 @@ def Main():
   with open(rawFilePath, 'w') as rawFile:
     logging.info('Saving image of (%d, %d) size to "%s".',
                  width, height, rawFilePath)
-    rawFile.write(struct.pack(
-      '>BBHHI', isTransparent, imgType, width, height, uniqueColors))
+    rawFile.write(struct.pack('>BBHHIBB', imgType, isTransparent, width,
+      height, uniqueColors, baseColor, lastColor))
     rawFile.write(data.tostring())
 
 if __name__ == '__main__':

@@ -441,11 +441,11 @@ void SetupEpisode(FrameT *frame, StrT imgName, StrT palName, int map, int textur
 
   TheImage = R_(imgName);
 
-  if (TheImage->colors <= 128) {
+  if (TheImage->uniqueColors <= 128) {
     ThePalette = TheTexturePal;
     LinkPalettes(ThePalette, R_(palName), NULL);
     PixBufRemap(R_(imgName), R_(palName));
-  } else if (TheImage->colors <= 192) {
+  } else if (TheImage->uniqueColors <= 192) {
     ThePalette = R_(palName);
 
     if (EpisodeNum == 5) {
@@ -554,7 +554,7 @@ void PaletteEffect(FrameT *frame, PaletteT *src, PaletteT *dst) {
 }
 
 void RenderPart2(FrameT *frame) {
-  if (TheImage->colors <= 128) {
+  if (TheImage->uniqueColors <= 128) {
     int du = 2 * frame->number;
     int dv = 2 * frame->number;
 

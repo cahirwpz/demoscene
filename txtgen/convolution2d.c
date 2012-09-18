@@ -2,10 +2,12 @@
 #include "txtgen/convolution2d.h"
 
 static inline void ClampAndPutPixel(PixBufT *dst, size_t x, size_t y, int32_t value) {
+  int last = dst->lastColor - dst->baseColor;
+
   if (value < 0)
     value = 0;
-  if (value > dst->colors - 1)
-    value = dst->colors - 1;
+  if (value > last)
+    value = last;
 
   dst->data[x + y * dst->width] = value + dst->baseColor;
 }
@@ -19,7 +21,7 @@ void Convolution2D(PixBufT *dst, PixBufT *src, CvltKernelT *kernel) {
   ASSERT((dst->width == src->width) && (dst->height == src->height),
          "Buffers must have same size!");
 
-  ASSERT((dst->baseColor == src->baseColor) && (dst->colors == src->colors),
+  ASSERT((dst->baseColor == src->baseColor) && (dst->lastColor == src->lastColor),
          "Buffers must have same color information!");
 
   for (y = 0; y < height; y++) {
