@@ -9,9 +9,8 @@ typedef struct SplineKnot {
 } SplineKnotT;
 
 typedef struct Spline {
-  size_t knots;
+  SplineKnotT *knots;
   bool closed;
-  SplineKnotT knot[0];
 } SplineT;
 
 SplineT *NewSpline(size_t knots, bool closed);

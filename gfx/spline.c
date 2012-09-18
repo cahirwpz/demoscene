@@ -59,30 +59,37 @@ static void HermiteCubicPolynomial(float t asm("fp0"),
  * Spline implementation.
  */
 
-SplineT *NewSpline(size_t knots, bool closed) {
-  size_t size = sizeof(SplineT) + sizeof(SplineKnotT) * knots; 
-  SplineT *spline = (SplineT *)MemNew(size);
+static void DeleteSpline(SplineT *self) {
+  MemUnref(self->knots);
+}
 
-  spline->knots = knots;
+TYPEDECL(SplineT, (FreeFuncT)DeleteSpline);
+
+SplineT *NewSpline(size_t knots, bool closed) {
+  SplineT *spline = NewInstance(SplineT);
+
+  spline->knots = NewTable(SplineKnotT, knots);
   spline->closed = closed;
 
   return spline;
 }
 
 static SplineKnotT *SplineGetKnot(SplineT *spline asm("a0"), ssize_t knot asm("d0")) {
+  size_t knots = TableSize(spline->knots);
+
   if (knot < 0) {
-    knot = spline->closed ? (knot + spline->knots) : 0;
-  } else if (knot >= spline->knots) {
-    knot = spline->closed ? (knot - spline->knots) : (spline->knots - 1);
+    knot = spline->closed ? (knot + knots) : 0;
+  } else if (knot >= knots) {
+    knot = spline->closed ? (knot - knots) : (knots - 1);
   }
 
-  ASSERT((knot >= 0) && (knot < spline->knots), "Knot number (%d) out of range.", (int)knot);
+  ASSERT((knot >= 0) && (knot < knots), "Knot number (%d) out of range.", (int)knot);
 
-  return &spline->knot[knot];
+  return &spline->knots[knot];
 }
 
 static size_t SplineKnots(SplineT *spline asm("a0")) {
-  return spline->knots + (spline->closed ? 1 : 0);
+  return TableSize(spline->knots) + (spline->closed ? 1 : 0);
 }
 
 static float SplineEvalWithinInterval(SplineT *spline asm("a0"), float t asm("fp0"), size_t knot asm("d0")) {
@@ -98,6 +105,14 @@ static float SplineEvalWithinInterval(SplineT *spline asm("a0"), float t asm("fp
 
 float SplineEval(SplineT *spline asm("a0"), float t asm("fp0")) {
   float interval;
+
+  /* Check if ping-pong. */
+  if (!spline->closed) {
+    /* Limit to [0.0, 2.0f). Reverse direction iff t > 1.0f. */
+    t = modff(t * 0.5f, &interval) * 2.0f;
+    if (t > 1.0f)
+      t = 2.0f - t;
+  }
 
   t = modff(t * (int)(SplineKnots(spline) - 1), &interval);
 
@@ -123,7 +138,7 @@ void SplineInterpolate(SplineT *spline, size_t steps, PtrT array, SetItemFuncT w
 void SplineAttachCatmullRomTangents(SplineT *spline) {
   size_t knot;
   size_t first = spline->closed ? 0 : 1;
-  size_t last = spline->knots - first;
+  size_t last = TableSize(spline->knots) - first;
 
   for (knot = first; knot < last; knot++) {
     SplineKnotT *pA = SplineGetKnot(spline, knot - 1);

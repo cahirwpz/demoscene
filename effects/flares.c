@@ -90,17 +90,17 @@ void SetupEffect() {
     SplineT *splineX = R_("SplineX");
     SplineT *splineY = R_("SplineY");
 
-    splineX->knot[0].value = 64;
-    splineY->knot[0].value = 128;
+    splineX->knots[0].value = 64;
+    splineY->knots[0].value = 128;
 
-    splineX->knot[1].value = 128;
-    splineY->knot[1].value = 64;
+    splineX->knots[1].value = 128;
+    splineY->knots[1].value = 64;
 
-    splineX->knot[2].value = 192;
-    splineY->knot[2].value = 192;
+    splineX->knots[2].value = 192;
+    splineY->knots[2].value = 192;
 
-    splineX->knot[3].value = 256;
-    splineY->knot[3].value = 128;
+    splineX->knots[3].value = 256;
+    splineY->knots[3].value = 128;
 
     SplineAttachCatmullRomTangents(splineX);
     SplineAttachCatmullRomTangents(splineY);

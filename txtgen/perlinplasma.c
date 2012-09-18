@@ -15,7 +15,7 @@ void GeneratePerlinPlasma(PixBufT *pixbuf, size_t step, RandomT *random) {
     }
 
     for (i = 0; i < size; i++)
-      colors->knot[i].value = NextRandomFloat(random, 0.0f, 255.0f);
+      colors->knots[i].value = NextRandomFloat(random, 0.0f, 255.0f);
 
     SplineAttachCatmullRomTangents(colors);
     SplineInterpolate(colors, step, pixbuf, (SetItemFuncT)PutDataColumn);
@@ -27,7 +27,7 @@ void GeneratePerlinPlasma(PixBufT *pixbuf, size_t step, RandomT *random) {
     }
 
     for (i = 0; i < size; i++)
-      colors->knot[i].value = GetPixel(pixbuf, i * step, y);
+      colors->knots[i].value = GetPixel(pixbuf, i * step, y);
 
     SplineAttachCatmullRomTangents(colors);
     SplineInterpolate(colors, step, pixbuf, (SetItemFuncT)PutDataRow);
