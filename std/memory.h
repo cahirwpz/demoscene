@@ -19,7 +19,7 @@ PtrT MemRef(PtrT mem);
 PtrT MemUnref(PtrT mem);
 
 size_t TableElemSize(PtrT mem asm("a0"));
-size_t TableLength(PtrT mem asm("a0"));
+size_t TableSize(PtrT mem asm("a0"));
 PtrT TableResize(PtrT mem, size_t count);
 
 void MemCopy(PtrT dst asm("a1"), PtrT src asm("a0"), size_t n asm("d0"));

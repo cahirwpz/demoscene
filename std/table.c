@@ -154,8 +154,8 @@ static void QuickSort(SortAdapterT *self asm("a0"),
 
 size_t TablePartition(SortAdapterT *self, size_t begin, size_t end, PtrT pivot)
 {
-  ASSERT(begin < TableLength(self->table), "Begin index out of bounds.");
-  ASSERT(end < TableLength(self->table), "End index out of bounds.");
+  ASSERT(begin < TableSize(self->table), "Begin index out of bounds.");
+  ASSERT(end < TableSize(self->table), "End index out of bounds.");
   ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!",
          (int)begin, (int)end);
 
@@ -163,8 +163,8 @@ size_t TablePartition(SortAdapterT *self, size_t begin, size_t end, PtrT pivot)
 }
 
 void TableSort(SortAdapterT *self, size_t begin, size_t end) {
-  ASSERT(begin < TableLength(self->table), "Begin index out of bounds.");
-  ASSERT(end < TableLength(self->table), "End index out of bounds.");
+  ASSERT(begin < TableSize(self->table), "Begin index out of bounds.");
+  ASSERT(end < TableSize(self->table), "End index out of bounds.");
   ASSERT(begin < end, "Invalid range of elements specified [%d..%d]!",
          (int)begin, (int)end);
 

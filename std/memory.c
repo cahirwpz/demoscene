@@ -225,7 +225,7 @@ PtrT MemUnref(PtrT mem) {
   return mem;
 }
 
-size_t TableLength(PtrT mem asm("a0")) {
+size_t TableSize(PtrT mem asm("a0")) {
   uint32_t blk = MemBlkData(mem);
 
   return (blk & IS_TABLE) ? (blk & SIZE_MASK) / MEM_BLOCKSIZE : 1;
