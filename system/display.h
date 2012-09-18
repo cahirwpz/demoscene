@@ -13,11 +13,8 @@ RastPortT *GetCurrentRastPort();
 
 void LoadPalette(PaletteT *palette);
 
-void WaitForSafeToWrite();
-void WaitForSafeToSwap();
-void DisplaySwap();
-
 bool InitDisplay(int width, int height, int depth);
 void KillDisplay();
+void DisplaySwap();
 
 #endif
