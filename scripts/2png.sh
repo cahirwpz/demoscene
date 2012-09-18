@@ -11,8 +11,7 @@ declare -r base=$(basename $1)
 
 declare -r input=${path}/${base}
 declare -r output=${path}/${base%\.*}.png
-declare -r tempfile=$(mktemp).png
-
+declare -r tempfile=$(mktemp ${TMPDIR}/XXXXXX.png)
 identify ${input}
 
 if convert ${input} ${tempfile}; then
