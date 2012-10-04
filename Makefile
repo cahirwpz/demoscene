@@ -2,6 +2,8 @@ TOPDIR = $(CURDIR)
 
 export TOPDIR
 
+SUBDIRS = audio distort engine gfx p61 std system tools txtgen
+
 all:: libs
 	@$(MAKE) -C effects
 	@$(MAKE) -C demo
