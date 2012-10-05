@@ -28,6 +28,10 @@ typedef unsigned short uint16_t;
 typedef unsigned long uint32_t;
 #endif
 
+#ifndef uint64_t
+typedef	unsigned long long uint64_t;
+#endif
+
 #ifndef AMIGA
 #define asm(a)
 #endif
