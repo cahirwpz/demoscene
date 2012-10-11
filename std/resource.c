@@ -2,65 +2,40 @@
 
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/list.h"
+#include "std/hashmap.h"
 #include "std/resource.h"
 
-typedef struct Resource {
-  StrT name;
-  PtrT ptr;
-  bool dynamic;
-} ResourceT;
-
-static void DeleteResource(ResourceT *res) {
-  if (res->dynamic) {
-    LOG("Freeing resource '%s' at %p.", res->name, res->ptr);
-    MemUnref(res->ptr);
-  }
-  MemUnref(res->name);
-}
-
-TYPEDECL(ResourceT, (FreeFuncT)DeleteResource);
-
-static ResourceT *NewResource(const StrT name, PtrT ptr, bool dynamic) {
-  ResourceT *res;
-
-  if (!ptr)
-    PANIC("Missing content for resource '%s'.", name);
-
-  res = NewInstance(ResourceT);
-  res->name = StrDup(name);
-  res->ptr = ptr;
-  res->dynamic = dynamic;
-  return res;
-}
-
-static ListT *ResList;
+static HashMapT *Resources = NULL;
 
 void StartResourceManager() {
-  ResList = NewList();
+  if (!Resources)
+    Resources = NewHashMap(50);
 }
 
 void StopResourceManager() {
-  MemUnref(ResList);
+  if (Resources) {
+    MemUnref(Resources);
+    Resources = NULL;
+  }
 }
 
 void ResAddStatic(const StrT name, PtrT ptr) {
-  ListPushFront(ResList, NewResource(name, ptr, FALSE));
+  ASSERT(ptr, "Missing content for resource '%s'.", name);
+
+  HashMapAddLink(Resources, name, ptr);
 }
 
 void ResAdd(const StrT name, PtrT ptr) {
-  ListPushFront(ResList, NewResource(name, ptr, TRUE));
-}
+  ASSERT(ptr, "Missing content for resource '%s'.", name);
 
-static CmpT FindByName(const ResourceT *res, const StrT name) {
-  return strcmp(res->name, name);
+  HashMapAdd(Resources, name, ptr);
 }
 
 PtrT ResGet(const StrT name) {
-  ResourceT *res = ListSearch(ResList, (CompareFuncT)FindByName, (PtrT)name);
+  PtrT ptr = HashMapFind(Resources, name);
 
-  if (!res)
+  if (!ptr)
     PANIC("Resource '%s' not found.", name);
   
-  return res->ptr;
+  return ptr;
 }
