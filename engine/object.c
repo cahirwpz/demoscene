@@ -11,6 +11,7 @@ static void DeleteSceneObject(SceneObjectT *self) {
   MemUnref(self->vertex);
   MemUnref(self->polygonExt);
   MemUnref(self->surfaceNormal);
+  MemUnref(self->sortedPolygonExt);
   MemUnref(self->name);
 }
 
@@ -25,6 +26,7 @@ SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh) {
   self->vertex = NewTable(Vector3D, mesh->vertexNum);
   self->polygonExt = NewTable(PolygonExtT, mesh->polygonNum);
   self->surfaceNormal = NewTable(Vector3D, mesh->polygonNum);
+  self->sortedPolygonExt = (PolygonExtT **)NewTableAdapter(self->polygonExt);
 
   return self;
 }
@@ -62,26 +64,26 @@ void RenderSceneObject(SceneObjectT *self, CanvasT *canvas) {
   }
 
   /* Sort polygons by depth. */
-  {
-    SortAdapterT *adapter = NewSortAdapter(self->polygonExt, SortByDepth);
-    TableSort(adapter, 0, mesh->polygonNum - 1);
-    MemUnref(adapter);
-  }
+  TableSort((PtrT *)self->sortedPolygonExt, SortByDepth, 0, mesh->polygonNum - 1);
 
   /* Render the object. */
   {
-    int j = mesh->polygonNum - 1;
-    float zMin = self->polygonExt[0].depth;
-    float zMax = self->polygonExt[j].depth;
+    size_t n = mesh->polygonNum;
+    size_t j;
+
+    float zMin = self->sortedPolygonExt[n - 1]->depth;
+    float zMax = self->sortedPolygonExt[0]->depth;
     float zInvDiff = 255.0f / (zMax - zMin);
 
-    do {
-      size_t i = self->polygonExt[j].index;
+    for (j = 0; j < n; j++) {
+      PolygonExtT *polyExt = self->sortedPolygonExt[j];
+
+      size_t i = polyExt->index;
       size_t p1 = mesh->polygon[i].p1;
       size_t p2 = mesh->polygon[i].p2;
       size_t p3 = mesh->polygon[i].p3;
 
-      CanvasSetFgCol(canvas, (zMax - self->polygonExt[j].depth) * zInvDiff);
+      CanvasSetFgCol(canvas, (zMax - polyExt->depth) * zInvDiff);
 
       if (self->wireframe) {
         DrawLine(canvas, vertex[p1].x, vertex[p1].y, vertex[p2].x, vertex[p2].y);
@@ -92,6 +94,6 @@ void RenderSceneObject(SceneObjectT *self, CanvasT *canvas) {
                      vertex[p2].x, vertex[p2].y,
                      vertex[p3].x, vertex[p3].y);
       }
-    } while (j-- >= 0);
+    }
   }
 }

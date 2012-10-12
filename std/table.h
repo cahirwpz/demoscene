@@ -5,11 +5,10 @@
 
 typedef bool (*LessFuncT)(const PtrT lhs asm("a0"), const PtrT rhs asm("a1"));
 
-typedef struct SortAdapter SortAdapterT;
+PtrT *NewTableAdapter(PtrT table);
 
-SortAdapterT *NewSortAdapter(PtrT table, LessFuncT cmpFunc);
-size_t TablePartition(SortAdapterT *self,
+size_t TablePartition(PtrT *table, LessFuncT less,
                       size_t begin, size_t end, PtrT pivot);
-void TableSort(SortAdapterT *self, size_t begin, size_t end);
+void TableSort(PtrT *table, LessFuncT less, size_t begin, size_t end);
 
 #endif

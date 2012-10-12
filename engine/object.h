@@ -22,6 +22,7 @@ typedef struct SceneObject {
   Vector3D *vertex;
   Vector3D *surfaceNormal;
   PolygonExtT *polygonExt;
+  PolygonExtT **sortedPolygonExt;
 } SceneObjectT;
 
 SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh);
