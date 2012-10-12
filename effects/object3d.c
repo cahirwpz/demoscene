@@ -32,6 +32,7 @@ void AddInitialResources() {
 
     CenterMeshPosition(mesh);
     NormalizeMeshSize(mesh);
+    CalculateSurfaceNormals(mesh);
   }
 
   SceneAddObject(R_("Scene"), NewSceneObject("Object", R_("Mesh")));

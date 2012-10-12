@@ -45,6 +45,13 @@ void RenderSceneObject(SceneObjectT *self, CanvasT *canvas) {
 
     ProjectTo2D(GetCanvasWidth(canvas)/2, GetCanvasHeight(canvas)/2, vertex,
                 mesh->vertex, mesh->vertexNum, transformation);
+
+    (*transformation)[3][0] = 0.0f;
+    (*transformation)[3][1] = 0.0f;
+    (*transformation)[3][2] = 0.0f;
+
+    Transform3D(self->surfaceNormal, mesh->surfaceNormal, mesh->polygonNum,
+                transformation);
   }
 
   /* Calculate polygons depth. */
@@ -60,6 +67,15 @@ void RenderSceneObject(SceneObjectT *self, CanvasT *canvas) {
 
       polygonExt[i].index = i;
       polygonExt[i].depth = max(max(vertex[p1].z, vertex[p2].z), vertex[p3].z);
+
+      {
+        Vector3D *normal = &self->surfaceNormal[i];
+
+        V3D_Normalize(normal, normal, 255.0f);
+
+        polygonExt[i].flags = (normal->z >= 0);
+        polygonExt[i].color = (normal->z >= 0) ? (uint32_t)normal->z : 0;
+      }
     }
   }
 
@@ -71,10 +87,6 @@ void RenderSceneObject(SceneObjectT *self, CanvasT *canvas) {
     size_t n = mesh->polygonNum;
     size_t j;
 
-    float zMin = self->sortedPolygonExt[n - 1]->depth;
-    float zMax = self->sortedPolygonExt[0]->depth;
-    float zInvDiff = 255.0f / (zMax - zMin);
-
     for (j = 0; j < n; j++) {
       PolygonExtT *polyExt = self->sortedPolygonExt[j];
 
@@ -83,7 +95,10 @@ void RenderSceneObject(SceneObjectT *self, CanvasT *canvas) {
       size_t p2 = mesh->polygon[i].p2;
       size_t p3 = mesh->polygon[i].p3;
 
-      CanvasSetFgCol(canvas, (zMax - polyExt->depth) * zInvDiff);
+      if (!polyExt->flags)
+        continue;
+
+      CanvasSetFgCol(canvas, polyExt->color);
 
       if (self->wireframe) {
         DrawLine(canvas, vertex[p1].x, vertex[p1].y, vertex[p2].x, vertex[p2].y);
