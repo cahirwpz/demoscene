@@ -10,6 +10,8 @@ typedef struct PolygonExt {
   uint8_t flags;
   uint8_t color;
   float depth;
+
+  Vector3D normal;
 } PolygonExtT;
 
 typedef struct SceneObject {
@@ -20,7 +22,6 @@ typedef struct SceneObject {
 
   MatrixStack3D *ms;
   Vector3D *vertex;
-  Vector3D *surfaceNormal;
   PolygonExtT *polygonExt;
   PolygonExtT **sortedPolygonExt;
 } SceneObjectT;

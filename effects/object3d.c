@@ -32,7 +32,6 @@ void AddInitialResources() {
 
     CenterMeshPosition(mesh);
     NormalizeMeshSize(mesh);
-    CalculateSurfaceNormals(mesh);
   }
 
   SceneAddObject(R_("Scene"), NewSceneObject("Object", R_("Mesh")));
@@ -73,7 +72,6 @@ void RenderMesh(int frameNumber) {
     PushScaling3D(ms, 0.6f + 0.25f * s, 0.6f + 0.25f * s, 0.6f + 0.25f * s);
     PushRotation3D(ms, (float)(frameNumber), (float)(frameNumber * 2), (float)(frameNumber * -3));
     PushTranslation3D(ms, 0.0f, 0.0f, 2.0f);
-    PushPerspective3D(ms, 0, 0, 160.0f);
   }
 
   CanvasFill(canvas, 0);

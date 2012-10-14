@@ -10,7 +10,6 @@ static void DeleteSceneObject(SceneObjectT *self) {
   MemUnref(self->ms);
   MemUnref(self->vertex);
   MemUnref(self->polygonExt);
-  MemUnref(self->surfaceNormal);
   MemUnref(self->sortedPolygonExt);
   MemUnref(self->name);
 }
@@ -25,7 +24,6 @@ SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh) {
   self->ms = NewMatrixStack3D();
   self->vertex = NewTable(Vector3D, mesh->vertexNum);
   self->polygonExt = NewTable(PolygonExtT, mesh->polygonNum);
-  self->surfaceNormal = NewTable(Vector3D, mesh->polygonNum);
   self->sortedPolygonExt = (PolygonExtT **)NewTableAdapter(self->polygonExt);
 
   return self;
@@ -39,48 +37,51 @@ void RenderSceneObject(SceneObjectT *self, CanvasT *canvas) {
   MeshT *mesh = self->mesh;
   Vector3D *vertex = self->vertex;
 
-  /* Apply transformations */
+  /* Apply vertex transformations. */
+  Transform3D(vertex, mesh->vertex, mesh->vertexNum,
+              GetMatrix3D(self->ms, 0));
+
+  /* Calculate polygon normals & depths. */
   {
-    Matrix3D *transformation = GetMatrix3D(self->ms, 0);
-
-    ProjectTo2D(GetCanvasWidth(canvas)/2, GetCanvasHeight(canvas)/2, vertex,
-                mesh->vertex, mesh->vertexNum, transformation);
-
-    (*transformation)[3][0] = 0.0f;
-    (*transformation)[3][1] = 0.0f;
-    (*transformation)[3][2] = 0.0f;
-
-    Transform3D(self->surfaceNormal, mesh->surfaceNormal, mesh->polygonNum,
-                transformation);
-  }
-
-  /* Calculate polygons depth. */
-  {
-    PolygonExtT *polygonExt = self->polygonExt;
     TriangleT *polygon = mesh->polygon;
     size_t i;
 
     for (i = 0; i < mesh->polygonNum; i++) {
+      PolygonExtT *polyExt = &self->polygonExt[i];
+      Vector3D *normal = &polyExt->normal;
+
       size_t p1 = polygon[i].p1;
       size_t p2 = polygon[i].p2;
       size_t p3 = polygon[i].p3;
 
-      polygonExt[i].index = i;
-      polygonExt[i].depth = max(max(vertex[p1].z, vertex[p2].z), vertex[p3].z);
+      polyExt->index = i;
+      polyExt->depth = max(max(vertex[p1].z, vertex[p2].z), vertex[p3].z);
 
+      /* Calculate polygon normal. */
       {
-        Vector3D *normal = &self->surfaceNormal[i];
+        Vector3D u, v;
 
-        V3D_Normalize(normal, normal, 255.0f);
+        V3D_Sub(&u, (Vector3D *)&vertex[p1], (Vector3D *)&vertex[p2]);
+        V3D_Sub(&v, (Vector3D *)&vertex[p2], (Vector3D *)&vertex[p3]);
 
-        polygonExt[i].flags = (normal->z >= 0);
-        polygonExt[i].color = (normal->z >= 0) ? (uint32_t)normal->z : 0;
+        V3D_Cross(normal, &u, &v);
+        V3D_Normalize(normal, normal, 1.0f);
+      }
+
+      if (normal->z >= 0) {
+        polyExt->flags |= 1;
+        polyExt->color = (uint32_t)(normal->z * 255.0f);
+      } else {
+        polyExt->flags |= ~1;
       }
     }
   }
 
   /* Sort polygons by depth. */
   TableSort((PtrT *)self->sortedPolygonExt, SortByDepth, 0, mesh->polygonNum - 1);
+
+  ProjectTo2D(vertex, vertex, mesh->vertexNum,
+              GetCanvasWidth(canvas) / 2, GetCanvasHeight(canvas) / 2, 160.0f);
 
   /* Render the object. */
   {
@@ -105,7 +106,8 @@ void RenderSceneObject(SceneObjectT *self, CanvasT *canvas) {
         DrawLine(canvas, vertex[p2].x, vertex[p2].y, vertex[p3].x, vertex[p3].y);
         DrawLine(canvas, vertex[p3].x, vertex[p3].y, vertex[p1].x, vertex[p1].y);
       } else {
-        DrawTriangle(canvas, vertex[p1].x, vertex[p1].y,
+        DrawTriangle(canvas,
+                     vertex[p1].x, vertex[p1].y,
                      vertex[p2].x, vertex[p2].y,
                      vertex[p3].x, vertex[p3].y);
       }

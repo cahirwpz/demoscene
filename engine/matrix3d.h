@@ -17,8 +17,8 @@ void LoadTranslation3D(Matrix3D *d, float moveX, float moveY, float moveZ);
 void LoadPerspective3D(Matrix3D *d,
                        float viewerX, float viewerY, float viewerZ);
 void Transform3D(Vector3D *dst, Vector3D *src, int n, Matrix3D *m);
-void ProjectTo2D(int centerX, int centerY,
-                 Vector3D *dst, Vector3D *src, int n, Matrix3D *m);
+void ProjectTo2D(Vector3D *dst, Vector3D *src, int n,
+                 float viewerX, float viewerY, float viewerZ);
 void LoadCameraFromVector(Matrix3D *camera,
                           Vector3D *direction, Vector3D *position);
 void LoadCameraFromAngles(Matrix3D *camera,
