@@ -42,7 +42,13 @@ struct ExceptionVector {
   APTR UninitializedInterrupt; /* 15 */
   APTR reserved2[8];           /* 16 - 23 */
   APTR SpuriousInterrupt;      /* 24 */
-  APTR InterruptAutovector[7]; /* 25 - 31 */
+  APTR IntLevel1;              /* 25 */
+  APTR IntLevel2;              /* 26 */
+  APTR IntLevel3;              /* 27 */
+  APTR IntLevel4;              /* 28 */
+  APTR IntLevel5;              /* 29 */
+  APTR IntLevel6;              /* 30 */
+  APTR IntLevel7;              /* 31 */
   APTR Trap[16];               /* 32 - 47 */
   APTR reserved3[16];          /* 48 - 63 */
   APTR UserDefined[192];       /* 64 - 255 */
@@ -169,19 +175,51 @@ __regargs void CopEnd(CopListT *copList) {
     copList->entry[copList->index++] = 0xfffffffe;
 }
 
+CopListT *cpMaybe = NULL;
+ULONG frameNumber = 0;
+
+__interrupt_handler void IntLevel3Handler() {
+  if (custom->intreqr & INTF_VERTB) {
+    custom->intreq = INTF_VERTB;
+
+    frameNumber++;
+
+    if (cpMaybe) {
+      ((UWORD *)cpMaybe->entry)[1] = ((frameNumber & 63) < 32) ? 0x00f : 0x0f0;
+    }
+  }
+}
+
+#define INTF_LEVEL3 (INTF_VERTB | INTF_BLIT | INTF_COPER)
+
 void Main() {
-  CopListT *cp = NewCopList(100);
+  APTR OldIntLevel3;
 
-  CopInit(cp);
-  CopMove16(cp, offsetof(struct Custom, color[0]), 0xfff);
-  CopWait(cp, 312/2, 0);
-  CopMove16(cp, offsetof(struct Custom, color[0]), 0xf00);
-  CopEnd(cp);
-  CopListActivate(cp);
+  OldIntLevel3 = ExceptionVector->IntLevel3;
+  ExceptionVector->IntLevel3 = IntLevel3Handler;
+  custom->intena = INTF_SETCLR | INTF_LEVEL3 | INTF_INTEN;
 
-  WaitMouse();
+  {
+    CopListT *cp = NewCopList(100);
 
-  DeleteCopList(cp);
+    cpMaybe = cp;
+
+    CopInit(cp);
+    CopMove16(cp, offsetof(struct Custom, color[0]), 0xfff);
+    CopWait(cp, 312/2, 0);
+    CopMove16(cp, offsetof(struct Custom, color[0]), 0xf00);
+    CopEnd(cp);
+    CopListActivate(cp);
+
+    WaitMouse();
+
+    cpMaybe = NULL;
+
+    DeleteCopList(cp);
+  }
+
+  custom->intena = INTF_LEVEL3;
+  ExceptionVector->IntLevel3 = OldIntLevel3;
 }
 
 int main() {
@@ -201,8 +239,8 @@ int main() {
         WaitBlit();
         OwnBlitter();
 
-        OldDMAcon = custom->dmaconr | INTF_SETCLR;
-        OldIntena = custom->intenar | INTF_SETCLR;
+        OldDMAcon = custom->dmaconr;
+        OldIntena = custom->intenar;
 
         /* prohibit dma & interrupts */
         custom->dmacon = 0x7fff;
@@ -211,8 +249,8 @@ int main() {
         Main();
 
         /* restore AmigaOS state of dma & interrupts */
-        custom->dmacon = OldDMAcon;
-        custom->intena = OldIntena;
+        custom->dmacon = OldDMAcon | DMAF_SETCLR;
+        custom->intena = OldIntena | INTF_SETCLR;
 
         /* restore old copper list */
         custom->cop1lc = (ULONG)GfxBase->copinit;
