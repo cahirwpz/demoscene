@@ -7,6 +7,7 @@
 #include "startup.h"
 #include "hardware.h"
 #include "interrupts.h"
+#include "print.h"
 
 extern void Main();
 
@@ -22,6 +23,10 @@ int main() {
       /* Get Vector Base Register */
       if (SysBase->AttnFlags & AFF_68010)
         InterruptVector = (APTR)Supervisor((APTR)GetVBR);
+
+      Print("Running on Kickstart %ld.%ld.\n",
+            (LONG)SysBase->LibNode.lib_Version,
+            (LONG)SysBase->LibNode.lib_Revision);
 
       Forbid();
 

@@ -7,7 +7,7 @@ LDFLAGS	= -m68000 -msmall-code
 OFLAGS	= -O2 -fomit-frame-pointer
 WFLAGS	= -Wall
 
-copper: startup.o copper.o coplist.o hardware.o vbr.o
+copper: startup.o copper.o coplist.o hardware.o vbr.o print.o
 
 clean:
 	rm -f *~ *.o
