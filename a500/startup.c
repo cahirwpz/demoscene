@@ -6,6 +6,7 @@
 
 #include "startup.h"
 #include "hardware.h"
+#include "interrupts.h"
 
 extern void Main();
 
@@ -14,14 +15,6 @@ int __initlibraries = 0;
 
 struct DosLibrary *DOSBase = NULL;
 struct GfxBase *GfxBase = NULL;
-
-InterruptVectorT *InterruptVector = (APTR)0L;
-InterruptVectorT *GetVBR();
-
-asm(".even\n"
-    "_GetVBR:\n"
-    "  movec vbr,d0\n"
-    "  rte");
 
 int main() {
   if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 34))) {

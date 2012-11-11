@@ -1,6 +1,7 @@
 #include "startup.h"
 #include "hardware.h"
 #include "coplist.h"
+#include "interrupts.h"
 
 static CopListT *cpMaybe = NULL;
 static ULONG frameNumber = 0;
