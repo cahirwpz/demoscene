@@ -17,7 +17,7 @@ LDLIBS	= -lnix13
 all:	copper parseiff
 
 copper:	startup.o copper.o coplist.o hardware.o vbr.o print.o
-parseiff: parseiff.o print.o
+parseiff: parseiff.o iff.o print.o
 
 %.s: %.c
 	$(CC) $(CFLAGS) -fverbose-asm -S -o $@ $<

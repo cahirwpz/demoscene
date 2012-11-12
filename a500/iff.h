@@ -2,6 +2,9 @@
 #define __IFF_H__
 
 #include <exec/types.h>
+#include <dos/dos.h>
+
+#define ReadStruct(fh, ptr) (Read(fh, ptr, sizeof(*(ptr))) == sizeof(*(ptr)))
 
 #define ID_FORM 0x464F524D
 #define ID_BMHD 0x424D4844
@@ -18,6 +21,12 @@ typedef struct IffChunk {
   LONG type;
   LONG length;
 } IffChunkT;
+
+typedef struct IffFile {
+  BPTR fh;
+  IffHeaderT header;
+  IffChunkT chunk;
+} IffFileT;
 
 /* Masking technique. */
 #define mskNone                0
@@ -44,5 +53,10 @@ typedef struct BitmapHeader {
 typedef struct ColorRegister {
   UBYTE red, green, blue;      /* color intensities 0..255 */
 } ColorRegisterT;
+
+__regargs BOOL OpenIff(IffFileT *iff, const char *filename);
+__regargs BOOL ReadChunk(IffFileT *iff);
+__regargs void SkipChunk(IffFileT *iff);
+__regargs void CloseIff(IffFileT *iff);
 
 #endif
