@@ -50,11 +50,9 @@ void ParseIff(const char *filename) {
                 (LONG)color.red, (LONG)color.green, (LONG)color.blue);
         }
       } else if (chunk.type == ID_BODY) {
-        /* WARNING: __mulsi3 (LONG * LONG -> LONG) requires
-         * utility.library which is not available on Kickstart 1.3 */
         Print(" %ld bpls, each of size %ld, %ld bytes of raw data\n",
               (LONG)bmhd.nPlanes, (LONG)(bmhd.w * bmhd.h / 8),
-              (LONG)(bmhd.h * (UWORD)(bmhd.w * bmhd.nPlanes) / 8));
+              (LONG)(bmhd.h * bmhd.w * bmhd.nPlanes / 8));
 
         Print(" %ld bytes (%s data)\n", (LONG)chunk.length,
               bmhd.compression ? "compressed" : "raw");

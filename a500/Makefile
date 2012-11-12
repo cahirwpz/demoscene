@@ -7,6 +7,10 @@ LDFLAGS	= -m68000 -msmall-code
 OFLAGS	= -O2 -fomit-frame-pointer
 WFLAGS	= -Wall
 
+# libnix13.a contains a few functions that don't depend on utility.library
+# which is not present in Kickstart 1.3
+LDLIBS	= -lnix13
+
 all:	copper iff
 
 copper:	startup.o copper.o coplist.o hardware.o vbr.o print.o
