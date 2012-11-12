@@ -18,7 +18,7 @@ int main() {
     if (OpenIff(&iff, filename)) {
       Print("%4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
 
-      while (ReadChunk(&iff)) {
+      while (ParseChunk(&iff)) {
         Print(".%4s %ld\n", (STRPTR)&iff.chunk.type, iff.chunk.length);
         SkipChunk(&iff);
       }
@@ -30,5 +30,6 @@ int main() {
 
     CloseLibrary((struct Library *)DOSBase);
   }
+
   return 0;
 }

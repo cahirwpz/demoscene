@@ -4,8 +4,6 @@
 #include <exec/types.h>
 #include <dos/dos.h>
 
-#define ReadStruct(fh, ptr) (Read(fh, ptr, sizeof(*(ptr))) == sizeof(*(ptr)))
-
 #define ID_FORM 0x464F524D
 #define ID_BMHD 0x424D4844
 #define ID_CMAP 0x434D4150
@@ -28,34 +26,9 @@ typedef struct IffFile {
   IffChunkT chunk;
 } IffFileT;
 
-/* Masking technique. */
-#define mskNone                0
-#define mskHasMask             1
-#define mskHasTransparentColor 2
-#define mskLasso               3
-
-/* Compression algorithm applied to the rows of all source and mask planes. */
-#define cmpNone        0
-#define cmpByteRun1    1
-
-typedef struct BitmapHeader {
-  UWORD w, h;                  /* raster width & height in pixels      */
-  WORD  x, y;                  /* pixel position for this image        */
-  UBYTE nPlanes;               /* # source bitplanes                   */
-  UBYTE masking;
-  UBYTE compression;
-  UBYTE pad1;                  /* unused; ignore on read, write as 0   */
-  UWORD transparentColor;      /* transparent "color number" (sort of) */
-  UBYTE xAspect, yAspect;      /* pixel aspect, a ratio width : height */
-  WORD  pageWidth, pageHeight; /* source "page" size in pixels    */
-} BitmapHeaderT;
-
-typedef struct ColorRegister {
-  UBYTE red, green, blue;      /* color intensities 0..255 */
-} ColorRegisterT;
-
 __regargs BOOL OpenIff(IffFileT *iff, const char *filename);
-__regargs BOOL ReadChunk(IffFileT *iff);
+__regargs BOOL ParseChunk(IffFileT *iff);
+__regargs BOOL ReadChunk(IffFileT *iff, APTR ptr);
 __regargs void SkipChunk(IffFileT *iff);
 __regargs void CloseIff(IffFileT *iff);
 

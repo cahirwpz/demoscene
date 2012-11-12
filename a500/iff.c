@@ -2,6 +2,8 @@
 
 #include "iff.h"
 
+#define ReadStruct(fh, ptr) (Read(fh, ptr, sizeof(*(ptr))) == sizeof(*(ptr)))
+
 __regargs BOOL OpenIff(IffFileT *iff, const char *filename) {
   iff->fh = Open(filename, MODE_OLDFILE);
 
@@ -13,8 +15,20 @@ __regargs BOOL OpenIff(IffFileT *iff, const char *filename) {
   return 0;
 }
 
-__regargs BOOL ReadChunk(IffFileT *iff) {
+__regargs BOOL ParseChunk(IffFileT *iff) {
   return ReadStruct(iff->fh, &iff->chunk);
+}
+
+__regargs BOOL ReadChunk(IffFileT *iff, APTR ptr) {
+  if (Read(iff->fh, ptr, iff->chunk.length) == iff->chunk.length) {
+    /* Skip an extra byte if the lenght of a chunk is odd. */
+    if (iff->chunk.length & 1)
+      (void)Seek(iff->fh, 1, OFFSET_CURRENT);
+
+    return 1;
+  }
+
+  return 0;
 }
 
 __regargs void SkipChunk(IffFileT *iff) {
