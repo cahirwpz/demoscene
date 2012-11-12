@@ -13,25 +13,25 @@ int __initlibraries = 0;
 extern struct ExecBase *SysBase;
 struct DosLibrary *DOSBase = NULL;
 
+#define ReadStruct(fh, ptr) (Read(fh, ptr, sizeof(*(ptr))) == sizeof(*(ptr)))
+
 void ParseIff(const char *filename) {
   BPTR fh = Open(filename, MODE_OLDFILE);
   IffHeaderT header;
 
-  if ((Read(fh, &header, sizeof(header)) == sizeof(header)) &&
-      (header.magic == ID_FORM))
-  {
+  if (ReadStruct(fh, &header) && (header.magic == ID_FORM)) {
     BitmapHeaderT bmhd;
     IffChunkT chunk;
 
     Print("%4s %ld\n", (STRPTR)&header.type, header.length);
 
-    while (Read(fh, &chunk, sizeof(chunk)) == sizeof(chunk)) {
+    while (ReadStruct(fh, &chunk)) {
       int skipPayload = 0;
 
       Print(".%4s %ld\n", (STRPTR)&chunk.type, chunk.length);
 
       if (chunk.type == ID_BMHD) {
-        if (Read(fh, &bmhd, sizeof(bmhd)) != sizeof(bmhd))
+        if (!ReadStruct(fh, &bmhd))
           break;
 
         Print(" size: %ldx%ld\n", (LONG)bmhd.w, (LONG)bmhd.h);
@@ -43,7 +43,7 @@ void ParseIff(const char *filename) {
         int i;
 
         for (i = 0; i < chunk.length; i += sizeof(color)) {
-          if (Read(fh, &color, sizeof(color)) != sizeof(color))
+          if (!ReadStruct(fh, &color))
             break;
 
           Print(" (%3ld, %3ld, %3ld)\n",
