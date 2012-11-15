@@ -14,16 +14,18 @@ DFLAGS	= -D__CONSTLIBBASEDECL__=const
 # which is not present in Kickstart 1.3
 LDLIBS	= -lnix13
 
-all:	copper parseiff
+all:	copper parseiff showilbm
 
 copper:	startup.o copper.o coplist.o hardware.o vbr.o print.o
 parseiff: parseiff.o iff.o print.o
+showilbm: startup.o showilbm.o coplist.o iff.o ilbm.o gfx.o vbr.o print.o \
+	  hardware.o
 
 %.s: %.c
 	$(CC) $(CFLAGS) -fverbose-asm -S -o $@ $<
 
 clean:
 	rm -f *~ *.o
-	rm -f copper parseiff
+	rm -f copper parseiff showilbm
 
 # vim: ts=8:sw=8

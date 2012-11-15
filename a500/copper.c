@@ -1,4 +1,3 @@
-#include "startup.h"
 #include "hardware.h"
 #include "coplist.h"
 #include "interrupts.h"
@@ -21,6 +20,8 @@ __interrupt_handler void IntLevel3Handler() {
    */
   custom->intreq = INTF_LEVEL3;
 }
+
+void Load() {}
 
 void Main() {
   APTR OldIntLevel3;

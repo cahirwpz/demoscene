@@ -5,6 +5,7 @@
 #include <dos/dos.h>
 
 #define ID_FORM 0x464F524D
+#define ID_ILBM 0x494C424D
 #define ID_BMHD 0x424D4844
 #define ID_CMAP 0x434D4150
 #define ID_BODY 0x424F4459

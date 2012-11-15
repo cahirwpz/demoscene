@@ -1,7 +1,6 @@
 #include <exec/memory.h>
-#include <inline/exec.h>
+#include <proto/exec.h>
 
-#include "startup.h"
 #include "coplist.h"
 #include "hardware.h"
 

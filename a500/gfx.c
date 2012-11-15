@@ -4,8 +4,7 @@
 #include "gfx.h"
 
 __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth) {
-  BitmapT *bitmap = AllocMem(sizeof(BitmapT) + depth * sizeof(APTR),
-                             MEMF_PUBLIC|MEMF_CLEAR);
+  BitmapT *bitmap = AllocMem(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
 
   bitmap->width = width;
   bitmap->height = height;
@@ -21,6 +20,8 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth) {
     bplSize = bitmap->bytesPerRow * height;
     bplSize += bplSize & 1;
 
+    bitmap->bplSize = bplSize;
+
     planes = AllocMem((UWORD)bplSize * depth, MEMF_CHIP|MEMF_CLEAR);
     planePtr = bitmap->planes;
 
@@ -28,16 +29,14 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth) {
       *planePtr++ = planes;
       planes += bplSize;
     } while (--depth);
-
-    bitmap->bplSize = bplSize;
   }
 
   return bitmap;
 }
 
 __regargs void DeleteBitmap(BitmapT *bitmap) {
-  FreeMem(bitmap->planes, bitmap->bplSize * bitmap->depth);
-  FreeMem(bitmap, sizeof(BitmapT) + bitmap->depth * (UWORD)sizeof(APTR));
+  FreeMem(bitmap->planes[0], bitmap->bplSize * bitmap->depth);
+  FreeMem(bitmap, sizeof(BitmapT));
 }
 
 __regargs PaletteT *NewPalette(UWORD count) {

@@ -1,10 +1,9 @@
 #include <stdarg.h>
 
 #include <exec/types.h>
-#include <inline/exec.h>
-#include <inline/dos.h> 
+#include <proto/exec.h>
+#include <proto/dos.h> 
 
-#include "startup.h"
 #include "print.h"
 
 #define BUFLEN 80
