@@ -24,7 +24,6 @@ typedef struct BitmapHeader {
 
 __regargs static void UnRLE(BYTE *data, LONG size, BYTE *uncompressed) {
   BYTE *src = data;
-  BYTE *end = data + size;
   BYTE *dst = uncompressed;
 
   do {
@@ -32,36 +31,34 @@ __regargs static void UnRLE(BYTE *data, LONG size, BYTE *uncompressed) {
 
     if (code < 0) {
       BYTE b = *src++;
-      WORD n = 1 - code;
+      WORD n = -code;
 
-      do { *dst++ = b; } while (--n);
+      do { *dst++ = b; } while (--n != -1);
     } else {
-      WORD n = code + 1;
+      WORD n = code;
 
-      do { *dst++ = *src++; } while (--n);
+      do { *dst++ = *src++; } while (--n != -1);
     }
-  } while (src < end);
+  } while (--size);
 }
 
 __regargs static void Deinterleave(BYTE *data, BitmapT *bitmap) { 
   WORD modulo = bitmap->bytesPerRow * (bitmap->depth - 1);
-  WORD i;
+  WORD planeNum = bitmap->depth - 1;
 
-  for (i = 0; i < bitmap->depth; i++) {
-    BYTE *src = data + bitmap->bytesPerRow * i;
-    BYTE *dst = bitmap->planes[i];
+  do {
+    BYTE *src = data + bitmap->bytesPerRow * planeNum;
+    BYTE *dst = bitmap->planes[planeNum];
     WORD rows = bitmap->height;
 
     do {
-      WORD bytes = bitmap->bytesPerRow;
+      WORD bytes = bitmap->bytesPerRow - 1;
 
-      do {
-        *dst++ = *src++;
-      } while (--bytes);
+      do { *dst++ = *src++; } while (--bytes != -1);
 
       src += modulo;
     } while (--rows);
-  }
+  } while (--planeNum >= 0);
 }
 
 __regargs BitmapT *LoadILBM(const char *filename) {
