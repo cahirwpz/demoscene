@@ -2,6 +2,12 @@
 
 from itertools import *
 
+
+def printall(*lines):
+  for line in lines:
+    print line
+
+
 class Bit(object):
   @classmethod
   def Const(cls, value, color=None):
@@ -47,11 +53,11 @@ class Bit(object):
 
 class Word(object):
   @classmethod
-  def Mask(cls, value, width=16, color="0m"):
+  def Mask(cls, value, width=32, color="0m"):
     return cls(Bit.Const((value >> ((width - 1) - i)) & 1, color) for i in range(width))
 
   @classmethod
-  def Data(cls, char, width=16, color="0m"):
+  def Data(cls, char, width=32, color="0m"):
     return cls(Bit.Var(char, i, color) for i in range(width))
 
   def __init__(self, value_or_width):
@@ -121,49 +127,40 @@ class Word(object):
   def __str__(self):
     return "".join(map(str, self))
 
+
 def c2p_2_1_4():
-  w0 = Word.Data('a', width=32, color="31m")
-  w1 = Word.Data('b', width=32, color="32m")
-  w2 = Word.Data('c', width=32, color="33m")
-  w3 = Word.Data('d', width=32, color="34m")
+  m0 = Word.Mask(0x33333333)
+  m1 = Word.Mask(0xcccccccc)
+  m2 = Word.Mask(0x55555555)
+  m3 = Word.Mask(0xaaaaaaaa)
 
-  print "Step 1 (swap 2x4):"
-  print w0
-  print w1
-  print w2
-  print w3
+  w0 = Word.Data('a', color="31m")
+  w1 = Word.Data('b', color="32m")
+  w2 = Word.Data('c', color="33m")
+  w3 = Word.Data('d', color="34m")
 
-  m0 = Word.Mask(0x33333333, width=32)
-  m1 = Word.Mask(0xcccccccc, width=32)
-  m2 = Word.Mask(0x55555555, width=32)
-  m3 = Word.Mask(0xaaaaaaaa, width=32)
+  printall("Step 1 (swap 2x4):", w0, w1, w2, w3)
 
   w4 = (w0 & m1) | (w2 & m0)
   w5 = (w1 & m1) | (w3 & m0)
   w6 = (w0 & m0) | (w2 & m1)
   w7 = (w1 & m0) | (w3 & m1)
 
-  print "Step 2 (rotate 2x2):"
-  print w4
-  print w5
-  print w6
-  print w7
+  printall("Step 2 (rotate 2x2):", w4, w5, w6, w7)
 
   wa = (w4 & m3) | (w5 & m3).lsr(1)
   wb = (w4 & m2).lsl(1) | (w5 & m2)
   wc = (w6 & m3) | (w7 & m3).lsr(1)
   wd = (w6 & m2).lsl(1) | (w7 & m2)
 
-  print "Step 3 (rotate 4x4):"
-  print wa
-  print wb
-  print wc
-  print wd
+  printall("Step 3 (rotate 4x4):", wa, wb, wc, wd)
 
-  print "Step 4:"
-  print (wa & m1) | (wc & m1).lsr(2)
-  print (wb & m1) | (wd & m1).lsr(2)
-  print (wa & m0) | (wc & m0).lsl(2)
-  print (wb & m0) | (wd & m0).lsl(2)
+  we = (wa & m1) | (wc & m1).lsr(2)
+  wf = (wb & m1) | (wd & m1).lsr(2)
+  wg = (wa & m0) | (wc & m0).lsl(2)
+  wh = (wb & m0) | (wd & m0).lsl(2)
+
+  printall("Result:", we, wg, wg, wh)
+
 
 c2p_2_1_4()
