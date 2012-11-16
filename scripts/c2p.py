@@ -134,33 +134,33 @@ def c2p_2_1_4():
   m2 = Word.Mask(0x55555555)
   m3 = Word.Mask(0xaaaaaaaa)
 
-  w0 = Word.Data('a', color="31m")
-  w1 = Word.Data('b', color="32m")
-  w2 = Word.Data('c', color="33m")
-  w3 = Word.Data('d', color="34m")
+  a0 = Word.Data('a', color="31m")
+  a1 = Word.Data('b', color="32m")
+  a2 = Word.Data('c', color="33m")
+  a3 = Word.Data('d', color="34m")
 
-  printall("Step 1 (swap 2x4):", w0, w1, w2, w3)
+  printall("Step 1 (swap 2x4):", a0, a1, a2, a3)
 
-  w4 = (w0 & m1) | (w2 & m0)
-  w5 = (w1 & m1) | (w3 & m0)
-  w6 = (w0 & m0) | (w2 & m1)
-  w7 = (w1 & m0) | (w3 & m1)
+  b0 = (a0 & m1) | (a2 & m0)
+  b1 = (a1 & m1) | (a3 & m0)
+  b2 = (a2 & m1) | (a0 & m0)
+  b3 = (a3 & m1) | (a1 & m0)
 
-  printall("Step 2 (rotate 2x2):", w4, w5, w6, w7)
+  printall("Step 2 (rotate 2x2):", b0, b1, b2, b3)
 
-  wa = (w4 & m3) | (w5 & m3).lsr(1)
-  wb = (w4 & m2).lsl(1) | (w5 & m2)
-  wc = (w6 & m3) | (w7 & m3).lsr(1)
-  wd = (w6 & m2).lsl(1) | (w7 & m2)
+  c0 = (b0 & m3) | (b1 & m3).lsr(1)
+  c1 = (b0 & m2).lsl(1) | (b1 & m2)
+  c2 = (b2 & m3) | (b3 & m3).lsr(1)
+  c3 = (b2 & m2).lsl(1) | (b3 & m2)
 
-  printall("Step 3 (rotate 4x4):", wa, wb, wc, wd)
+  printall("Step 3 (rotate 4x4):", c0, c1, c2, c3)
 
-  we = (wa & m1) | (wc & m1).lsr(2)
-  wf = (wb & m1) | (wd & m1).lsr(2)
-  wg = (wa & m0) | (wc & m0).lsl(2)
-  wh = (wb & m0) | (wd & m0).lsl(2)
+  d0 = (c0 & m1) | (c2 & m1).lsr(2)
+  d1 = (c1 & m1) | (c3 & m1).lsr(2)
+  d2 = (c0 & m0) | (c2 & m0).lsl(2)
+  d3 = (c1 & m0) | (c3 & m0).lsl(2)
 
-  printall("Result:", we, wg, wg, wh)
+  printall("Result:", d0, d1, d2, d3)
 
 
 c2p_2_1_4()
