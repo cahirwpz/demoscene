@@ -5,8 +5,8 @@
 #include "hardware.h"
 
 __regargs CopListT *NewCopList(UWORD length) {
-  CopListT *list = AllocMem(sizeof(CopListT) + 2 * length * sizeof(UWORD),
-                               MEMF_CHIP|MEMF_CLEAR);
+  CopListT *list = AllocMem(sizeof(CopListT) + length * sizeof(CopInsT),
+                            MEMF_CHIP|MEMF_CLEAR);
 
   list->length = length;
 
@@ -16,7 +16,7 @@ __regargs CopListT *NewCopList(UWORD length) {
 }
 
 __regargs void DeleteCopList(CopListT *list) {
-  FreeMem(list, sizeof(CopListT) + 2 * list->length * sizeof(UWORD));
+  FreeMem(list, sizeof(CopListT) + list->length * sizeof(CopInsT));
 }
 
 __regargs void CopListActivate(CopListT *list) {
@@ -31,60 +31,63 @@ __regargs void CopListActivate(CopListT *list) {
 
 __regargs void CopInit(CopListT *list) {
   list->flags = 0;
-  list->last = &list->entry[2 * (list->length - 1)];
   list->curr = list->entry;
 }
 
-__regargs void CopWait(CopListT *list, UWORD vp, UWORD hp) {
-  UWORD *insn = list->curr;
+__regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp) {
+  UWORD *ins = (UWORD *)list->curr;
 
-  if (insn < list->last) {
-    if (vp < 256) {
-      *insn++ = (vp << 8) | (hp & 0xff) | 1;
-      *insn++ = 0xfffe;
-    } else {
-      if (!list->flags) {
-        *((ULONG *)insn)++ = 0xffdffffe;
-        list->flags |= 1;
-      }
+  if ((vp >= 256) && (!list->flags)) {
+    *((ULONG *)ins)++ = 0xffdffffe;
+    list->flags |= 1;
+  }
 
-      if (insn < list->last) {
-        *insn++ = ((vp - 255) << 8) | (hp & 0xff) | 1;
-        *insn++ = 0xfffe;
-      }
-    }
+  {
+    CopInsT *ptr = (CopInsT *)ins;
 
-    list->curr = insn;
+    *ins++ = (vp << 8) | (hp & 0xff) | 1;
+    *ins++ = 0xfffe;
+
+    list->curr = (CopInsT *)ins;
+
+    return ptr;
   }
 }
 
-__regargs void CopMove16(CopListT *list, UWORD reg, UWORD data) {
-  UWORD *insn = list->curr;
+__regargs CopInsT *CopMove16(CopListT *list, UWORD reg, UWORD data) {
+  UWORD *ins = (UWORD *)list->curr;
 
-  if (insn < list->last) {
-    *insn++ = reg & 0x01fe;
-    *insn++ = data;
+  *ins++ = reg & 0x01fe;
+  *ins++ = data;
 
-    list->curr = insn;
+  {
+    CopInsT *ptr = list->curr;
+    list->curr = (CopInsT *)ins;
+    return ptr;
   }
 }
 
-__regargs void CopMove32(CopListT *list, UWORD reg, ULONG data) {
-  UWORD *insn = list->curr;
+__regargs CopInsT *CopMove32(CopListT *list, UWORD reg, ULONG data) {
+  UWORD *ins = (UWORD *)list->curr;
 
-  if (insn - 2 < list->last) {
-    reg &= 0x01fe;
+  reg &= 0x01fe;
 
-    *insn++ = reg;
-    *insn++ = data >> 16;
-    *insn++ = reg + 2;
-    *insn++ = data;
+  *ins++ = reg;
+  *ins++ = data >> 16;
+  *ins++ = reg + 2;
+  *ins++ = data;
 
-    list->curr = insn;
+  {
+    CopInsT *ptr = list->curr;
+    list->curr = (CopInsT *)ins;
+    return ptr;
   }
 }
 
 __regargs void CopEnd(CopListT *list) {
-  if (list->curr <= list->last)
-    *((ULONG *)list->curr)++ = 0xfffffffe;
+  ULONG *ins = (ULONG *)list->curr;
+
+  *ins++ = 0xfffffffe;
+
+  list->curr = (CopInsT *)ins;
 }

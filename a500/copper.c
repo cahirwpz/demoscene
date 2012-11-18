@@ -2,16 +2,15 @@
 #include "coplist.h"
 #include "interrupts.h"
 
-static CopListT *cpMaybe = NULL;
+static CopInsT *upperColor = NULL;
 static ULONG frameNumber = 0;
 
 __interrupt_handler void IntLevel3Handler() {
   if (custom->intreqr & INTF_VERTB) {
     frameNumber++;
 
-    if (cpMaybe) {
-      cpMaybe->entry[1] = ((frameNumber & 63) < 32) ? 0x00f : 0x0f0;
-    }
+    if (upperColor)
+      upperColor->move.data = ((frameNumber & 63) < 32) ? 0x00f : 0x0f0;
   }
 
   /*
@@ -36,10 +35,8 @@ void Main() {
   {
     CopListT *cp = NewCopList(100);
 
-    cpMaybe = cp;
-
     CopInit(cp);
-    CopMove16(cp, CSREG(color[0]), 0xfff);
+    upperColor = CopMove16(cp, CSREG(color[0]), 0xfff);
     CopWait(cp, 312/2, 0);
     CopMove16(cp, CSREG(color[0]), 0xf00);
     CopEnd(cp);
@@ -47,7 +44,7 @@ void Main() {
 
     WaitMouse();
 
-    cpMaybe = NULL;
+    upperColor = NULL;
 
     DeleteCopList(cp);
   }
