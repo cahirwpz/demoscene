@@ -47,8 +47,7 @@ void Main() {
     CopInit(cp);
 
     for (i = 0; i < bitmap->depth; i++)
-      CopMove32(cp, offsetof(struct Custom, bplpt[i]),
-                (ULONG)bitmap->planes[i]);
+      CopMove32(cp, CSREG(bplpt[i]), (ULONG)bitmap->planes[i]);
 
     CopEnd(cp);
     CopListActivate(cp);

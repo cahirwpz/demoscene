@@ -5,82 +5,86 @@
 #include "hardware.h"
 
 __regargs CopListT *NewCopList(UWORD length) {
-  CopListT *copList = AllocMem(sizeof(CopListT) + length * sizeof(ULONG),
+  CopListT *list = AllocMem(sizeof(CopListT) + 2 * length * sizeof(UWORD),
                                MEMF_CHIP|MEMF_CLEAR);
-  copList->length = length - 1;
-  copList->index = 0;
-  copList->flags = 0;
 
-  return copList;
+  list->length = length;
+
+  CopInit(list);
+
+  return list;
 }
 
-__regargs void DeleteCopList(CopListT *copList) {
-  FreeMem(copList, sizeof(CopListT) + (copList->length + 1) * sizeof(ULONG));
+__regargs void DeleteCopList(CopListT *list) {
+  FreeMem(list, sizeof(CopListT) + 2 * list->length * sizeof(UWORD));
 }
 
-__regargs void CopListActivate(CopListT *copList) {
+__regargs void CopListActivate(CopListT *list) {
   WaitVBlank();
   /* Write copper list address. */
-  custom->cop1lc = (ULONG)copList->entry;
+  custom->cop1lc = (ULONG)list->entry;
   /* Activate it immediately */
   custom->copjmp1 = 0;
   /* Enable copper DMA */
   custom->dmacon = DMAF_MASTER | DMAF_COPPER | DMAF_SETCLR;
 }
 
-__regargs void CopInit(CopListT *copList) {
-  copList->index = 0;
-  copList->flags = 0;
+__regargs void CopInit(CopListT *list) {
+  list->flags = 0;
+  list->last = &list->entry[2 * (list->length - 1)];
+  list->curr = list->entry;
 }
 
-__regargs void CopWait(CopListT *copList, UWORD vp, UWORD hp) {
-  if (vp <= 255) {
-    if (copList->index < copList->length) {
-      UWORD *word = (UWORD *)&copList->entry[copList->index++];
+__regargs void CopWait(CopListT *list, UWORD vp, UWORD hp) {
+  UWORD *insn = list->curr;
 
-      word[0] = (vp << 8) | (hp & 0xff) | 1;
-      word[1] = 0xfffe;
-    }
-  } else {
-    if (copList->index - 1 < copList->length) {
-      if (!copList->flags) {
-        copList->entry[copList->index++] = 0xffdffffe;
-        copList->flags |= 1;
+  if (insn < list->last) {
+    if (vp < 256) {
+      *insn++ = (vp << 8) | (hp & 0xff) | 1;
+      *insn++ = 0xfffe;
+    } else {
+      if (!list->flags) {
+        *((ULONG *)insn)++ = 0xffdffffe;
+        list->flags |= 1;
       }
 
-      {
-        UWORD *word = (UWORD *)&copList->entry[copList->index++];
-
-        word[0] = ((vp - 255) << 8) | (hp & 0xff) | 1;
-        word[1] = 0xfffe;
+      if (insn < list->last) {
+        *insn++ = ((vp - 255) << 8) | (hp & 0xff) | 1;
+        *insn++ = 0xfffe;
       }
     }
+
+    list->curr = insn;
   }
 }
 
-__regargs void CopMove16(CopListT *copList, UWORD reg, UWORD data) {
-  if (copList->index < copList->length) {
-    UWORD *word = (UWORD *)&copList->entry[copList->index++];
-    
-    word[0] = reg & 0x01fe;
-    word[1] = data;
+__regargs void CopMove16(CopListT *list, UWORD reg, UWORD data) {
+  UWORD *insn = list->curr;
+
+  if (insn < list->last) {
+    *insn++ = reg & 0x01fe;
+    *insn++ = data;
+
+    list->curr = insn;
   }
 }
 
-__regargs void CopMove32(CopListT *copList, UWORD reg, ULONG data) {
-  if (copList->index - 1 < copList->length) {
-    UWORD *word = (UWORD *)&copList->entry[copList->index];
+__regargs void CopMove32(CopListT *list, UWORD reg, ULONG data) {
+  UWORD *insn = list->curr;
 
-    word[0] = reg & 0x01fe;
-    word[1] = data >> 16;
-    word[2] = (reg + 2) & 0x01fe;
-    word[3] = data;
+  if (insn - 2 < list->last) {
+    reg &= 0x01fe;
 
-    copList->index += 2;
+    *insn++ = reg;
+    *insn++ = data >> 16;
+    *insn++ = reg + 2;
+    *insn++ = data;
+
+    list->curr = insn;
   }
 }
 
-__regargs void CopEnd(CopListT *copList) {
-  if (copList->index <= copList->length)
-    copList->entry[copList->index++] = 0xfffffffe;
+__regargs void CopEnd(CopListT *list) {
+  if (list->curr <= list->last)
+    *((ULONG *)list->curr)++ = 0xfffffffe;
 }

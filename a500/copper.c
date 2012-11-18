@@ -10,7 +10,7 @@ __interrupt_handler void IntLevel3Handler() {
     frameNumber++;
 
     if (cpMaybe) {
-      ((UWORD *)cpMaybe->entry)[1] = ((frameNumber & 63) < 32) ? 0x00f : 0x0f0;
+      cpMaybe->entry[1] = ((frameNumber & 63) < 32) ? 0x00f : 0x0f0;
     }
   }
 
@@ -39,9 +39,9 @@ void Main() {
     cpMaybe = cp;
 
     CopInit(cp);
-    CopMove16(cp, offsetof(struct Custom, color[0]), 0xfff);
+    CopMove16(cp, CSREG(color[0]), 0xfff);
     CopWait(cp, 312/2, 0);
-    CopMove16(cp, offsetof(struct Custom, color[0]), 0xf00);
+    CopMove16(cp, CSREG(color[0]), 0xf00);
     CopEnd(cp);
     CopListActivate(cp);
 

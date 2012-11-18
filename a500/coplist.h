@@ -5,10 +5,10 @@
 
 typedef struct CopList {
   UWORD length;
-  UWORD index;
   UWORD flags;
-  UWORD pad;
-  ULONG entry[0]; 
+  UWORD *curr;
+  UWORD *last;
+  UWORD entry[0]; 
 } CopListT;
 
 __regargs CopListT *NewCopList(UWORD length);
@@ -19,5 +19,7 @@ __regargs void CopWait(CopListT *copList, UWORD vp, UWORD hp);
 __regargs void CopMove16(CopListT *copList, UWORD reg, UWORD data);
 __regargs void CopMove32(CopListT *copList, UWORD reg, ULONG data);
 __regargs void CopEnd(CopListT *copList);
+
+#define CSREG(reg) offsetof(struct Custom, reg)
 
 #endif
