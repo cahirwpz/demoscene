@@ -32,7 +32,6 @@ int main() {
             (LONG)SysBase->LibNode.lib_Revision);
 
       Load();
-
       Forbid();
 
       {
@@ -52,6 +51,10 @@ int main() {
 
         Main();
 
+        /* firstly... disable dma and interrupts that were used in Main */
+        custom->dmacon = 0x7fff;
+        custom->intena = 0x7fff;
+
         /* restore AmigaOS state of dma & interrupts */
         custom->dmacon = OldDMAcon | DMAF_SETCLR;
         custom->intena = OldIntena | INTF_SETCLR;
@@ -62,7 +65,9 @@ int main() {
         DisownBlitter();
         LoadView(OldView);
       }
+
       Permit();
+      CloseLibrary((struct Library *)GfxBase);
     }
     CloseLibrary((struct Library *)DOSBase);
   }
