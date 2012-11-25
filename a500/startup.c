@@ -32,20 +32,30 @@ int main() {
             (LONG)SysBase->LibNode.lib_Revision);
 
       Load();
-      Forbid();
 
       {
-        struct View *OldView = GfxBase->ActiView;
+        struct View *OldView;
         UWORD OldDMAcon, OldIntena;
 
+        /* No calls to any other library than exec beyond this point or expect
+         * undefined behaviour including crashes. */
+        Forbid();
+
+        /* Intercept the view of AmigaOS. */
+        OldView = GfxBase->ActiView;
         LoadView(NULL);
+        WaitVBlank();
+        WaitVBlank();
+
+        /* Allocate blitter. */
         WaitBlit();
         OwnBlitter();
 
+        /* DMA & interrupts take-over. */
         OldDMAcon = custom->dmaconr;
         OldIntena = custom->intenar;
 
-        /* prohibit dma & interrupts */
+        /* Prohibit dma & interrupts. */
         custom->dmacon = 0x7fff;
         custom->intena = 0x7fff;
 
@@ -55,21 +65,28 @@ int main() {
         custom->dmacon = 0x7fff;
         custom->intena = 0x7fff;
 
-        /* restore AmigaOS state of dma & interrupts */
+        /* Restore AmigaOS state of dma & interrupts. */
         custom->dmacon = OldDMAcon | DMAF_SETCLR;
         custom->intena = OldIntena | INTF_SETCLR;
 
-        /* restore old copper list */
-        custom->cop1lc = (ULONG)GfxBase->copinit;
-
+        /* Deallocate blitter. */
         DisownBlitter();
+
+        /* Restore old copper list... */
+        custom->cop1lc = (ULONG)GfxBase->copinit;
+        /* ... and original view. */
         LoadView(OldView);
+        WaitVBlank();
+        WaitVBlank();
+
+        Permit();
       }
 
-      Permit();
       CloseLibrary((struct Library *)GfxBase);
     }
+
     CloseLibrary((struct Library *)DOSBase);
   }
+
   return 0;
 }
