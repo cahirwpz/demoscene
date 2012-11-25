@@ -4,6 +4,10 @@
 #include "gfx.h"
 #include "iff.h"
 
+#define ID_ILBM MAKE_ID('I', 'L', 'B', 'M')
+#define ID_BMHD MAKE_ID('B', 'M', 'H', 'D')
+#define ID_CMAP MAKE_ID('C', 'M', 'A', 'P')
+
 /* Masking technique. */
 #define mskNone                0
 #define mskHasMask             1

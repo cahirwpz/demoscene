@@ -4,11 +4,11 @@
 #include <exec/types.h>
 #include <dos/dos.h>
 
-#define ID_FORM 0x464F524D
-#define ID_ILBM 0x494C424D
-#define ID_BMHD 0x424D4844
-#define ID_CMAP 0x434D4150
-#define ID_BODY 0x424F4459
+#define MAKE_ID(a,b,c,d) \
+        ((ULONG) (a)<<24 | (ULONG) (b)<<16 | (ULONG) (c)<<8 | (ULONG) (d))
+
+#define ID_FORM MAKE_ID('F', 'O', 'R', 'M')
+#define ID_BODY MAKE_ID('B', 'O', 'D', 'Y')
 
 typedef struct IffHeader {
   LONG magic;

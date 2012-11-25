@@ -4,22 +4,28 @@
 #include "iff.h"
 #include "print.h"
 
+extern char *__commandline;
+
 int __nocommandline = 1;
 int __initlibraries = 0;
 
 struct DosLibrary *DOSBase;
 
-static const char *filename = "test.ilbm";
-
 int main() {
+  UWORD len = strlen(__commandline);
+  STRPTR filename = __builtin_alloca(len);
+
+  memcpy(filename, __commandline, len--);
+  filename[len] = '\0';
+
   if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 34))) {
     IffFileT iff;
 
     if (OpenIff(&iff, filename)) {
-      Print("%4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
+      Print("%.4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
 
       while (ParseChunk(&iff)) {
-        Print(".%4s %ld\n", (STRPTR)&iff.chunk.type, iff.chunk.length);
+        Print(".%.4s %ld\n", (STRPTR)&iff.chunk.type, iff.chunk.length);
         SkipChunk(&iff);
       }
 
