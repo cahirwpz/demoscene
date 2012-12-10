@@ -14,10 +14,11 @@ DFLAGS	= -D__CONSTLIBBASEDECL__=const
 # which is not present in Kickstart 1.3
 LDLIBS	= -lnix13
 
-all:	copper parseiff showilbm
+all:	copper parseiff play8svx showilbm
 
 copper:	startup.o copper.o coplist.o hardware.o vbr.o print.o
 parseiff: parseiff.o iff.o print.o
+play8svx: play8svx.o iff.o sound.o 8svx.o vbr.o hardware.o
 showilbm: startup.o showilbm.o coplist.o iff.o ilbm.o gfx.o vbr.o print.o \
 	  hardware.o
 
@@ -26,6 +27,6 @@ showilbm: startup.o showilbm.o coplist.o iff.o ilbm.o gfx.o vbr.o print.o \
 
 clean:
 	rm -f *~ *.o
-	rm -f copper parseiff showilbm
+	rm -f copper parseiff play8svx showilbm
 
 # vim: ts=8:sw=8

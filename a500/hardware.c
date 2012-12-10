@@ -1,8 +1,8 @@
 #include "hardware.h"
 
-volatile struct Custom *custom = (APTR)0xdff000;
-volatile struct CIA *ciaa = (APTR)0xbfe001;
-volatile struct CIA *ciab = (APTR)0xbfd000;
+volatile struct Custom* const custom = (APTR)0xdff000;
+volatile struct CIA* const ciaa = (APTR)0xbfe001;
+volatile struct CIA* const ciab = (APTR)0xbfd000;
 
 void WaitMouse() {
   while (ciaa->ciapra & CIAF_GAMEPORT0);

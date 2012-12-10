@@ -7,13 +7,14 @@
 #include <hardware/intbits.h>
 
 #define INTF_LEVEL3 (INTF_VERTB | INTF_BLIT | INTF_COPER)
+#define INTF_LEVEL4 (INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3)
 
 #define offsetof(st, m) \
   ((ULONG)((char *)&((st *)0)->m - (char *)0))
 
-extern volatile struct Custom *custom;
-extern volatile struct CIA *ciaa;
-extern volatile struct CIA *ciab;
+extern volatile struct Custom* const custom;
+extern volatile struct CIA* const ciaa;
+extern volatile struct CIA* const ciab;
 
 static inline unsigned int swap16(unsigned int a) {
   asm("swap %0": "=d" (a));
