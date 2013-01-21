@@ -3,16 +3,57 @@
 #include "std/debug.h"
 #include "std/math.h"
 
+static inline void remquo16(int32_t n, int16_t d, int32_t *quo, int16_t *rem) {
+  asm("divsw %1,%0\n\t"
+      "movel %0,%1\n\t"
+      "swap  %1\n\t"
+      "extl  %0\n\t"
+      : "+d" (n), "+r" (d));
+
+  *rem = d;
+  *quo = n;
+}
+
 typedef struct EdgeScan {
-  float d, v;
+  int32_t v, dv;
+  int16_t err, derr;
+  int16_t n;
 } EdgeScanT;
 
 static EdgeScanT l12, l13, l23;
 
 static inline void InitEdgeScan(EdgeScanT *e, int dx, int dy, int x) {
-  if (dy) 
-    e->d = (float)dx / (float)dy;
+  /* Divisor, remainder and quotient. */
+  e->n = dy;
+
+  if (dy)
+    remquo16(dx, dy, &e->dv, &e->derr);
+
+  /* Value and error. */
   e->v = x;
+  e->err = 0;
+}
+
+static inline void IterEdgeScan(EdgeScanT *e) {
+  e->v += e->dv;
+  e->err += e->derr;
+
+  if (e->err >= e->n) {
+    e->err -= e->n;
+    e->v += 1;
+  }
+
+  if (e->err < 0) {
+    e->err += e->n;
+    e->v -= 1;
+  }
+}
+
+static inline bool CmpEdgeScan(EdgeScanT *e1, EdgeScanT *e2) {
+  if (e1->dv == e2->dv)
+    return e1->derr < e2->derr;
+  else
+    return e1->dv < e2->dv;
 }
 
 typedef struct Segment {
@@ -30,8 +71,8 @@ __regargs static void DrawTriangleSegment(EdgeScanT *xs, EdgeScanT *xe,
   LOG("Line: (%d, %f..%f)", y, xs->v, xe->v);
 
   do {
-    int x = lroundf(xs->v);
-    int w = lroundf(xe->v - xs->v);
+    int x = xs->v;
+    int w = xe->v - xs->v;
 
     uint8_t *pixels = segment.pixels + x;
     uint8_t color = segment.color;
@@ -41,8 +82,8 @@ __regargs static void DrawTriangleSegment(EdgeScanT *xs, EdgeScanT *xe,
     } while (--w >= 0);
 
     segment.pixels += segment.stride;
-    xs->v += xs->d;
-    xe->v += xe->d;
+    IterEdgeScan(xs);
+    IterEdgeScan(xe);
     y++;
   } while (--h > 0);
 
@@ -98,7 +139,7 @@ void DrawTriangle(CanvasT *canvas,
       else if (bottomHeight == 0)
         longOnRight = (dx23 > 0);
       else
-        longOnRight = (l12.d < l13.d);
+        longOnRight = CmpEdgeScan(&l12, &l13);
     }
 
     {
