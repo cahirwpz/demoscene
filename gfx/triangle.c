@@ -4,12 +4,21 @@
 #include "std/math.h"
 
 static inline void remquo16(int32_t n, int16_t d, int16_t *quo, int16_t *rem) {
-  asm("divsw %1,%0\n\t"
+  int16_t r;
+
+  asm("divsw %2,%0\n\t"
       "movel %0,%1\n\t"
       "swap  %1\n\t"
-      : "+d" (n), "+r" (d));
+      : "+d" (n), "=&d" (r)
+      : "dm" (d));
 
-  *rem = d;
+  /* Remainder is not supposed to be negative so fix it. */
+  if (r < 0) {
+    r += d;
+    n--;
+  }
+
+  *rem = r;
   *quo = n;
 }
 
@@ -39,12 +48,7 @@ static inline void IterEdgeScan(EdgeScanT *e) {
 
   if (e->err >= e->n) {
     e->err -= e->n;
-    e->v += 1;
-  }
-
-  if (e->err < 0) {
-    e->err += e->n;
-    e->v -= 1;
+    e->v++;
   }
 }
 
