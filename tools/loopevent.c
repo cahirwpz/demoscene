@@ -9,8 +9,10 @@ LoopEventT ReadLoopEvent() {
       case IECLASS_RAWKEY:
         if (event.ie_Code & IECODE_UP_PREFIX) {
           switch (event.ie_Code & ~IECODE_UP_PREFIX) {
-            case KEY_SPACE:
+            case KEY_ENTER:
               return LOOP_TRIGGER;
+            case KEY_SPACE:
+              return LOOP_PAUSE;
             case KEY_RIGHT:
               return LOOP_NEXT;
             case KEY_LEFT:

@@ -92,7 +92,19 @@ void MainLoop() {
   SetVBlankCounter(0);
 
   do {
+    static bool paused = FALSE;
+    static int oldFrameNumber = 0;
     int frameNumber = GetVBlankCounter();
+
+    if (event == LOOP_PAUSE)
+      paused = !paused;
+
+    if (paused) {
+      SetVBlankCounter(oldFrameNumber);
+      frameNumber = oldFrameNumber;
+    } else {
+      oldFrameNumber = frameNumber;
+    }
 
     if (event == LOOP_TRIGGER) {
       SceneObjectT *object = GetObject(R_("Scene"), "Object");

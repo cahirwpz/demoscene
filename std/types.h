@@ -40,8 +40,9 @@ typedef	unsigned long long uint64_t;
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define sign(a) ((a) >= 0 ? 1 : -1)
-#define swapi(a,b)	{ (a)^=(b); (b)^=(a); (a)^=(b); }
-#define swapf(a,b)	{ float t; t = (b); (b) = (a); (a) = t; }
+#define swapi(a,b)  { (a)^=(b); (b)^=(a); (a)^=(b); }
+#define swapr(a,b)  { asm("exg %0,%1" : "+r" (a), "+r" (b)); }
+#define swapf(a,b)  { float t; t = (b); (b) = (a); (a) = t; }
 
 /* Auxiliary types */
 typedef enum { CMP_LT = -1, CMP_EQ = 0, CMP_GT = 1 } CmpT;
