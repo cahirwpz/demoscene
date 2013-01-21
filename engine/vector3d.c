@@ -1,6 +1,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "std/fastmath.h"
 #include "engine/vector3d.h"
 
 void V3D_Add(Vector3D *d, Vector3D *a, Vector3D *b) {
@@ -46,5 +47,7 @@ void V3D_Scale(Vector3D *d, Vector3D *a, float s) {
 }
 
 void V3D_Normalize(Vector3D *d, Vector3D *a, float l) {
-  V3D_Scale(d, a, l / V3D_Length(a));
+  float al = a->x * a->x + a->y * a->y + a->z * a->z;
+
+  V3D_Scale(d, a, l * FastInvSqrt(al));
 }
