@@ -3,11 +3,10 @@
 #include "std/debug.h"
 #include "std/math.h"
 
-static inline void remquo16(int32_t n, int16_t d, int32_t *quo, int16_t *rem) {
+static inline void remquo16(int32_t n, int16_t d, int16_t *quo, int16_t *rem) {
   asm("divsw %1,%0\n\t"
       "movel %0,%1\n\t"
       "swap  %1\n\t"
-      "extl  %0\n\t"
       : "+d" (n), "+r" (d));
 
   *rem = d;
@@ -15,7 +14,7 @@ static inline void remquo16(int32_t n, int16_t d, int32_t *quo, int16_t *rem) {
 }
 
 typedef struct EdgeScan {
-  int32_t v, dv;
+  int16_t v, dv;
   int16_t err, derr;
   int16_t n;
 } EdgeScanT;
