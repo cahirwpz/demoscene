@@ -46,7 +46,11 @@ static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
     size_t p3 = polygon[i].p3;
 
     polygonExt[i].index = i;
-    polygonExt[i].depth = max(max(vertex[p1].z, vertex[p2].z), vertex[p3].z);
+    /*
+     * NOTE: Don't use floating point comparison (i.e. max function) to select
+     * a value. It's fragile and may be non-deterministic.
+     */
+    polygonExt[i].depth = vertex[p1].z + vertex[p2].z + vertex[p3].z;
 
     /* Calculate polygon normal. */
     {
@@ -56,14 +60,14 @@ static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
       V3D_Sub(&v, &vertex[p2], &vertex[p3]);
 
       V3D_Cross(normal, &u, &v);
-      V3D_Normalize(normal, normal, 1.0f);
+      V3D_Normalize(normal, normal, 255.0f);
     }
 
     if (normal->z >= 0) {
       polygonExt[i].flags |= 1;
-      polygonExt[i].color = (uint32_t)(normal->z * 255.0f);
+      polygonExt[i].color = normal->z;
     } else {
-      polygonExt[i].flags |= ~1;
+      polygonExt[i].flags &= ~1;
       polygonExt[i].color = 0;
     }
   }
