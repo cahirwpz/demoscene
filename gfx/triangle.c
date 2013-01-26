@@ -22,42 +22,57 @@ static inline void remquo16(int32_t n, int16_t d, int16_t *quo, int16_t *rem) {
   *quo = n;
 }
 
+/* EdgeScan structure & routines. */
+
 typedef struct EdgeScan {
-  int16_t v, dv;
-  int16_t err, derr;
-  int16_t n;
+  int height, width;
+
+  int16_t x, dx;
+  int16_t xerr, dxerr;
+  int16_t y;
 } EdgeScanT;
 
 static EdgeScanT l12, l13, l23;
 
-static inline void InitEdgeScan(EdgeScanT *e, int dx, int dy, int x) {
-  /* Divisor, remainder and quotient. */
-  e->n = dy;
+static inline void InitEdgeScan(EdgeScanT *e, int ys, int ye, int xs, int xe) {
+  int height = ye - ys;
+  int width = xe - xs;
 
-  if (dy)
-    remquo16(dx, dy, &e->dv, &e->derr);
+  /* Divisor, divident, remainder and quotient. */
+  e->height = height;
+  e->width = width;
 
-  /* Value and error. */
-  e->v = x;
-  e->err = 0;
+  if (height)
+    remquo16(width, height, &e->dx, &e->dxerr);
+
+  /* X value and error. */
+  e->x = xs;
+  e->xerr = 0;
+
+  /* Y value. */
+  e->y = ys;
 }
 
 static inline void IterEdgeScan(EdgeScanT *e) {
-  e->v += e->dv;
-  e->err += e->derr;
+  e->x += e->dx;
+  e->xerr += e->dxerr;
 
-  if (e->err >= e->n) {
-    e->err -= e->n;
-    e->v++;
+  if (e->xerr >= e->height) {
+    e->xerr -= e->height;
+    e->x++;
   }
+
+  e->y++;
 }
 
 static inline bool CmpEdgeScan(EdgeScanT *e1, EdgeScanT *e2) {
-  if (e1->dv == e2->dv)
-    return e1->derr < e2->derr;
+  if (e1->dx == e2->dx)
+    return e1->dxerr < e2->dxerr;
   else
-    return e1->dv < e2->dv;
+    return e1->dx < e2->dx;
 }
+
+/* Segment structure & routines. */
 
 typedef struct Segment {
   uint8_t *pixels;
@@ -67,98 +82,95 @@ typedef struct Segment {
 
 static SegmentT segment;
 
-__regargs static void DrawTriangleSegment(EdgeScanT *xs, EdgeScanT *xe,
-                                          int y, int h) {
-  bool same = ((int)xs->v == (int)xe->v);
+static inline void InitSegment(CanvasT *canvas, int y) {
+  int stride = GetCanvasWidth(canvas);
 
-  LOG("Line: (%d, %f..%f)", y, xs->v, xe->v);
+  segment.color  = GetCanvasFgCol(canvas);
+  segment.stride = stride;
+  segment.pixels = GetCanvasPixelData(canvas) + y * stride;
+}
 
-  do {
-    int x = xs->v;
-    int w = xe->v - xs->v;
+__regargs static void DrawTriangleSegment(EdgeScanT *left, EdgeScanT *right,
+                                          int h)
+{
+  while (h-- > 0) {
+    int x = left->x;
+    int w = right->x - left->x;
 
     uint8_t *pixels = segment.pixels + x;
     uint8_t color = segment.color;
+
+    LOG("Line: (%d, %f..%f)", left->y, left->x, right->x);
 
     do {
       *pixels++ = color;
     } while (--w >= 0);
 
     segment.pixels += segment.stride;
-    IterEdgeScan(xs);
-    IterEdgeScan(xe);
-    y++;
-  } while (--h > 0);
-
-  if (!same && abs((int)xs->v - (int)xe->v) > 1)
-    LOG("Line: (%d, %f..%f)", y, xs->v, xe->v);
+    IterEdgeScan(left);
+    IterEdgeScan(right);
+  }
 }
 
-void DrawTriangle(CanvasT *canvas,
-                  int x1, int y1, int x2, int y2, int x3, int y3) {
-  if (y1 > y2) {
-    swapr(x1, x2);
-    swapr(y1, y2);
+/* Triangle rasterization routine. */
+
+void DrawTriangle(CanvasT *canvas, float x1f, float y1f, float x2f, float y2f,
+                  float x3f, float y3f)
+{
+  {
+    int x1 = lroundf(x1f);
+    int y1 = lroundf(y1f);
+    int x2 = lroundf(x2f);
+    int y2 = lroundf(y2f);
+    int x3 = lroundf(x3f);
+    int y3 = lroundf(y3f);
+
+    if (y1 > y2) {
+      swapr(x1, x2);
+      swapr(y1, y2);
+    }
+
+    if (y1 > y3) {
+      swapr(x1, x3);
+      swapr(y1, y3);
+    }
+
+    if (y2 > y3) {
+      swapr(x2, x3);
+      swapr(y2, y3);
+    }
+
+    LOG("Triangle: (%d, %d) (%d, %d) (%d, %d).", x1, y1, x2, y2, x3, y3);
+
+    InitEdgeScan(&l12, y1, y2, x1, x2);
+    InitEdgeScan(&l13, y1, y3, x1, x3);
+    InitEdgeScan(&l23, y2, y3, x2, x3);
   }
 
-  if (y1 > y3) {
-    swapr(x1, x3);
-    swapr(y1, y3);
-  }
-
-  if (y2 > y3) {
-    swapr(x2, x3);
-    swapr(y2, y3);
-  }
-
-  segment.color  = GetCanvasFgCol(canvas);
-  segment.stride = GetCanvasWidth(canvas);
-  segment.pixels = GetCanvasPixelData(canvas) + y1 * segment.stride;
-
-  LOG("Triangle: (%d, %d) (%d, %d) (%d, %d).", x1, y1, x2, y2, x3, y3);
+  InitSegment(canvas, l12.y);
 
   {
     bool longOnRight;
-    int  topHeight;
-    int  bottomHeight;
 
-    {
-      int dx12 = x2 - x1;
-      int dx13 = x3 - x1;
-      int dx23 = x3 - x2;
-      int dy12 = y2 - y1;
-      int dy13 = y3 - y1;
-      int dy23 = y3 - y2;
-
-      InitEdgeScan(&l12, dx12, dy12, x1);
-      InitEdgeScan(&l13, dx13, dy13, x1);
-      InitEdgeScan(&l23, dx23, dy23, x2);
-
-      topHeight = dy12;
-      bottomHeight = dy23;
-
-      if (topHeight == 0)
-        longOnRight = (dx12 < 0);
-      else if (bottomHeight == 0)
-        longOnRight = (dx23 > 0);
-      else
-        longOnRight = CmpEdgeScan(&l12, &l13);
-    }
+    if (l12.height == 0)
+      longOnRight = (l12.width < 0);
+    else if (l23.height == 0)
+      longOnRight = (l23.width > 0);
+    else
+      longOnRight = CmpEdgeScan(&l12, &l13);
 
     {
       EdgeScanT *left  = longOnRight ? &l12 : &l13;
       EdgeScanT *right = longOnRight ? &l13 : &l12;
 
-      if (topHeight)
-        DrawTriangleSegment(left, right, y1, topHeight);
+      DrawTriangleSegment(left, right, l12.height);
 
       if (longOnRight)
         left = &l23;
       else
         right = &l23;
 
-      if (bottomHeight)
-        DrawTriangleSegment(left, right, y2, bottomHeight);
+      DrawTriangleSegment(left, right, l23.height);
     }
   }
 }
