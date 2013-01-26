@@ -80,36 +80,33 @@ static EdgeScanT l12, l13, l23;
  *   | b |   +   b   +       +     b     +
  */
 
-static void InitEdgeScan(EdgeScanT *e, fixed_t ys, fixed_t ye, fixed_t xs, fixed_t xe) {
+__regargs static void InitEdgeScan(EdgeScanT *e, fixed_t ys, fixed_t ye,
+                                   fixed_t xs, fixed_t xe)
+{
   fixed_t height = ye - ys;
   fixed_t width = xe - xs;
 
-  e->height = fx_rint(ye) - fx_rint(ys);
+  e->x = fx_rint(xs);
   e->width = fx_rint(xe) - fx_rint(xs);
+  e->y = fx_rint(ys);
+  e->height = fx_rint(ye) - fx_rint(ys);
+  e->xerr = 0;
   e->nxerr = height;
 
   if (height)
     remquo16(width, height, &e->dx, &e->dxerr);
-
-  /* X value and error. */
-  e->x = fx_rint(xs);
-  e->xerr = 0;
 
   {
     fixed_t ys_centered = ys + float_to_fx(0.5f);
     fixed_t ys_prestep = fx_ceil(ys_centered) - ys_centered;
 
     if (height) {
-      int16_t r, q;
+      int16_t q;
 
-      remquo16(fx_mul(width, ys_prestep), height, &q, &r);
+      remquo16(fx_mul(width, ys_prestep), height, &q, &e->xerr);
 
       e->x += q;
-      e->xerr += r;
     }
-
-    /* Y value. */
-    e->y = fx_int(ys_centered);
   }
 }
 
