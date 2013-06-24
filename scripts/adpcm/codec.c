@@ -1,9 +1,3 @@
-/*
- * This file contains both the standard Intel/DVI/IMA ADPCM encoder & decoder,
- * as well as a transformed C version that lends itself well to running on
- * 68000.
- */
-
 /***********************************************************
   Copyright 1992 by Stichting Mathematisch Centrum, Amsterdam, The
   Netherlands.
@@ -70,9 +64,6 @@ static int stepsizeTable[89] = {
   5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
   15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
 };
-
-static int indexTable68000[16];
-static int stepsizeTable68000[89*16];
 
 void encode(CodecState* state, int16_t* input, int numSamples, uint8_t* output) {
   int16_t *inp;     /* Input buffer pointer */
@@ -236,74 +227,6 @@ void decode(CodecState* state, uint8_t* input, int numSamples, int16_t* output) 
     step = stepsizeTable[index];
 
     /* Step 7 - Output value */
-    *outp++ = valpred;
-  }
-
-  state->valprev = valpred;
-  state->index = index;
-}
-
-void initDecode68000() {
-  for (int i = 0; i < 16; i++)
-    indexTable68000[i] = indexTable[i] << 4;
-
-  for (int i = 0; i < 89; i++) {
-    for (int delta = 0; delta < 16; delta++) {
-      int origPredictor = stepsizeTable[i];
-      int predictor = origPredictor >> 3;
-      if (delta & 4)
-        predictor += origPredictor;
-      if (delta & 2)
-        predictor += origPredictor >> 1;
-      if (delta & 1)
-        predictor += origPredictor >> 2;
-      if (delta & 8)
-        predictor = -predictor;
-      stepsizeTable68000[i * 16 + delta] = predictor;
-    }
-  }
-}
-
-void decode68000(CodecState* state, uint8_t* input, int numSamples, int16_t* output) {
-  uint8_t *inp;     /* Input buffer pointer */
-  int16_t *outp;    /* output buffer pointer */
-  int delta;        /* Current adpcm output value */
-  int valpred;      /* Predicted value */
-  int vpdiff;       /* Current change to valpred */
-  int index;        /* Current step change index */
-  int inputbuffer;  /* place to keep next 4-bit value */
-  int bufferstep;   /* toggle between inputbuffer/input */
-
-  outp = output;
-  inp = input;
-
-  valpred = state->valprev;
-  index = state->index;
-
-  bufferstep = 0;
-
-  for ( ; numSamples > 0 ; numSamples-- ) {
-
-    if ( bufferstep ) {
-      delta = inputbuffer & 0xf;
-    } else {
-      inputbuffer = *inp++;
-      delta = (inputbuffer >> 4) & 0xf;
-    }
-    bufferstep = !bufferstep;
-
-    vpdiff = stepsizeTable68000[index | delta];
-    index += indexTable68000[delta];
-    if ( index < 0 ) index = 0;
-    if ( index > (88 << 4) ) index = (88 << 4);
-
-    valpred += vpdiff;
-
-    if ( valpred > 32767 )
-      valpred = 32767;
-    else if ( valpred < -32768 )
-      valpred = -32768;
-
     *outp++ = valpred;
   }
 

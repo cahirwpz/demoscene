@@ -1,6 +1,6 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-OBJS = ahibase.o stream.o
+OBJS = ahibase.o stream.o adpcm.o
 
 libaudio.a: $(OBJS)
 

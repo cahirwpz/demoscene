@@ -135,8 +135,8 @@ bool adpcm_decode(char* inFileName, char* outFileName)
   endianWriteU32Little(&fmtHeader->ChunkSize, sizeof(FMTHeader) - 8);
   endianWriteU16Little(&fmtHeader->Format, 1);
   endianWriteU16Little(&fmtHeader->NumChannels, 1);
-  endianWriteU32Little(&fmtHeader->SamplesPerSec, 44100);
-  endianWriteU32Little(&fmtHeader->AvgBytesPerSec, 44100 * 2);
+  endianWriteU32Little(&fmtHeader->SamplesPerSec, 22050);
+  endianWriteU32Little(&fmtHeader->AvgBytesPerSec, 22050 * 2);
   endianWriteU16Little(&fmtHeader->BlockAlign, 2);
   endianWriteU16Little(&fmtHeader->BitsPerSample, 16);
 
@@ -147,7 +147,7 @@ bool adpcm_decode(char* inFileName, char* outFileName)
 
   CodecState state;
   memset(&state, 0, sizeof(state));
-  decode68000(&state, inFileBuf, numSamples, (int16_t*) (dataHeader + 1));
+  decode(&state, inFileBuf, numSamples, (int16_t*) (dataHeader + 1));
 
   FILE* outputFile = fopen(outFileName, "wb");
   fwrite(outFileBuf, 1, outBufferSize, outputFile);
@@ -163,8 +163,6 @@ int main(int argc, char** argv)
     printf("Usage: <encode|decode> <input file> <output file>\n");
     return 0;
   }
-
-  initDecode68000();
 
   if (!strcasecmp(argv[1], "encode"))
   {
