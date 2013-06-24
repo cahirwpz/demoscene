@@ -4,17 +4,9 @@
 #include <stddef.h>
 #include <sys/types.h>
 
-#ifdef FALSE
-#undef FALSE
-#endif
+typedef enum { false, true } bool;
 
-#ifdef TRUE
-#undef TRUE
-#endif
-
-typedef enum { FALSE, TRUE } bool;
-
-#define BOOL(a) ((a) != 0 ? TRUE : FALSE)
+#define BOOL(a) ((a) != 0 ? true : false)
 
 #ifndef uint8_t
 typedef unsigned char uint8_t;
@@ -43,6 +35,15 @@ typedef	unsigned long long uint64_t;
 #define swapi(a,b)  { (a)^=(b); (b)^=(a); (a)^=(b); }
 #define swapr(a,b)  { asm("exg %0,%1" : "+r" (a), "+r" (b)); }
 #define swapf(a,b)  { float t; t = (b); (b) = (a); (a) = t; }
+
+#ifndef MAKE_ID
+#define MAKE_ID(a, b, c, d) \
+  (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
+#endif
+
+#define bswap32(a) ((((a) >> 24) & 0x000000ff) | (((a) << 24) & 0xff000000) | \
+                    (((a) >> 8) & 0x0000ff00) | (((a) << 8) & 0x00ff0000)) 
+#define bswap16(a) ((((a) >> 8) & 0x00ff) | (((a) << 8) & 0xff00))
 
 /* Auxiliary types */
 typedef enum { CMP_LT = -1, CMP_EQ = 0, CMP_GT = 1 } CmpT;
