@@ -1,0 +1,4 @@
+*.c
+*.html
+*.so
+build/
