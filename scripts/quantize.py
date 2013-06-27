@@ -22,7 +22,8 @@ class Color(namedtuple('Color', 'r g b')):
 
 
 class Box(object):
-  __slots__ = ('data', 'begin', 'end', 'count', 'average', 'weight', 'color', 'axis')
+  __slots__ = ('data', 'begin', 'end', 'count', 'average', 'weight', 'color',
+               'axis')
 
   def __init__(self, data, begin, end, average=None):
     assert begin < end
@@ -40,7 +41,8 @@ class Box(object):
     self.axis = variance.index(self.weight)
 
   def __repr__(self):
-    return '[%d..%d], count: %d, weight: %s' % (self.begin, self.end, self.count, self.weight)
+    return '[%d..%d], count: %d, weight: %s' % (self.begin, self.end,
+                                                self.count, self.weight)
 
   def CalcAverage(self):
     r, g, b = 0, 0, 0
@@ -92,8 +94,7 @@ class Box(object):
       data[j] = tmp
 
     boxL = Box(self.data, self.begin, i)
-
-    averageR = self.average - boxL.average
+    # averageR = self.average - boxL.average
     boxR = Box(self.data, i, self.end)
 
     return (axis, median, boxL, boxR)
@@ -122,7 +123,7 @@ class KDNode(object):
     if self.box:
       avg = self.box.color
       r, g, b = color[0] - avg.r, color[1] - avg.g, color[2] - avg.b
-      return self, Color(r, g, b), sqrt(r*r + g*g + b*b)
+      return self, Color(r, g, b), sqrt(r * r + g * g + b * b)
 
     dist = color[self.axis] - self.median
 
@@ -165,12 +166,18 @@ def AddErrorAndClamp(pixel, error, coeff):
   g += (error.g * coeff + 7) / 16
   b += (error.b * coeff + 7) / 16
 
-  if r < 0:   r = 0
-  if r > 255: r = 255
-  if g < 0:   g = 0
-  if g > 255: g = 255
-  if b < 0:   b = 0
-  if b > 255: b = 255
+  if r < 0:
+    r = 0
+  if r > 255:
+    r = 255
+  if g < 0:
+    g = 0
+  if g > 255:
+    g = 255
+  if b < 0:
+    b = 0
+  if b > 255:
+    b = 255
 
   return r, g, b
 
@@ -180,16 +187,16 @@ def FloydSteinberg(pixels, pos, size, error):
   width, height = size
 
   if x < width - 1:
-    pixels[x+1, y] = AddErrorAndClamp(pixels[x+1, y], error, 7)
+    pixels[x + 1, y] = AddErrorAndClamp(pixels[x + 1, y], error, 7)
 
   if y < height - 1:
     if x > 0:
-      pixels[x-1, y+1] = AddErrorAndClamp(pixels[x-1, y+1], error, 3)
+      pixels[x - 1, y + 1] = AddErrorAndClamp(pixels[x - 1, y + 1], error, 3)
 
-    pixels[x, y+1] = AddErrorAndClamp(pixels[x, y+1], error, 5)
+    pixels[x, y + 1] = AddErrorAndClamp(pixels[x, y + 1], error, 5)
 
     if x < width - 1:
-      pixels[x+1, y+1] = AddErrorAndClamp(pixels[x+1, y+1], error, 1)
+      pixels[x + 1, y + 1] = AddErrorAndClamp(pixels[x + 1, y + 1], error, 1)
 
 
 def QuantizeImage(image, kdtree, dithering, is_transparent):
@@ -271,19 +278,24 @@ def Quantize(inputPath, outputPath, colors=256, dithering=False):
   output.save(outputPath, **attributes)
 
 
-def Main():
+if __name__ == '__main__':
+  logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
+
   parser = argparse.ArgumentParser(
-      description='Converts input image to use only given number of colors.')
-  parser.add_argument('-c', '--colors', metavar='COLORS', type=int,
-      default=256, help='Number of colors to use in output image.')
-  parser.add_argument('-d', '--dithering', action='store_true',
-      help='Turn on Floyd-Steinberg dithering.')
-  parser.add_argument('-f', '--force', action='store_true',
-      help='If output image exists, the tool will overwrite it.')
-  parser.add_argument('input', metavar='INPUT', type=str,
-      help='Input image filename.')
-  parser.add_argument('output', metavar='OUTPUT', type=str,
-      help='Output image filename.')
+    description='Converts input image to use only given number of colors.')
+  parser.add_argument(
+    '-c', '--colors', metavar='COLORS', type=int, default=256,
+    help='Number of colors to use in output image.')
+  parser.add_argument(
+    '-d', '--dithering', action='store_true',
+    help='Turn on Floyd-Steinberg dithering.')
+  parser.add_argument(
+    '-f', '--force', action='store_true',
+    help='If output image exists, the tool will overwrite it.')
+  parser.add_argument(
+    'input', metavar='INPUT', type=str, help='Input image filename.')
+  parser.add_argument(
+    'output', metavar='OUTPUT', type=str, help='Output image filename.')
   args = parser.parse_args()
 
   inputPath = os.path.abspath(args.input)
@@ -299,9 +311,3 @@ def Main():
     raise SystemExit('Input and output files have to be different!')
 
   Quantize(inputPath, outputPath, args.colors, args.dithering)
-
-
-if __name__ == '__main__':
-  logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
-
-  Main()
