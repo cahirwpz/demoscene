@@ -2,6 +2,7 @@ from libc.math cimport sqrt
 from heapq import heappop, heappush
 cimport cython
 
+@cython.freelist(32)
 cdef class Color:
   cdef readonly int r, g, b
 
@@ -44,7 +45,7 @@ cdef class Box:
   cdef readonly list data
   cdef readonly int begin, end, count, weight, axis
 
-  def __init__(self, list data, int begin, int end, average=None):
+  def __cinit__(self, list data, int begin, int end, average=None):
     assert begin < end
 
     self.data = data
@@ -94,7 +95,7 @@ cdef class Box:
     return Color(r, g, b)
 
   def Split(self):
-    cdef Color tmp, pixel
+    cdef Color pixel, tmp
     cdef int axis, i, j, c, median
     cdef list data
     cdef list values
@@ -145,7 +146,7 @@ cdef class KDNode:
   cdef readonly Box box
   cdef readonly KDNode left, right
 
-  def __init__(self, Box box):
+  def __cinit__(self, Box box):
     self.box = box
     self.left = None
     self.right = None
@@ -177,6 +178,7 @@ cdef class KDNode:
     cdef int dist, r, g, b
     cdef float error, alt_error
     cdef KDNode node, alt_child
+    cdef tuple res, alt_res
 
     if self.box:
       avg = self.box.color
@@ -221,7 +223,7 @@ def SplitKDTree(KDNode kdtree, unsigned int leavesNum):
 cpdef tuple AddErrorAndClamp(tuple pixel, Color error, int coeff):
   cdef int r, g, b
 
-  r, g, b = pixel
+  r, g, b = pixel[0], pixel[1], pixel[2]
 
   r += (error.r * coeff + 7) / 16
   g += (error.g * coeff + 7) / 16
