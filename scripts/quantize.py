@@ -4,14 +4,18 @@ import argparse
 import os.path
 import logging
 
-from collections import namedtuple
 from heapq import heappop, heappush
 from math import sqrt
 from PIL import Image
 
 
-class Color(namedtuple('Color', 'r g b')):
-  __slots__ = ()
+class Color(object):
+  __slots__ = ('r', 'g', 'b')
+
+  def __init__(self, r, g, b):
+    self.r = r
+    self.g = g
+    self.b = b
 
   def __sub__(self, other):
     return Color(self.r - other.r, self.g - other.g, self.b - other.b)
@@ -19,6 +23,19 @@ class Color(namedtuple('Color', 'r g b')):
   def __div__(self, s):
     s = float(s)
     return Color(int(self.r / s), int(self.g / s), int(self.b / s))
+
+  def __getitem__(self, i):
+    if i == 0:
+      return self.r
+    elif i == 1:
+      return self.g
+    elif i == 2:
+      return self.b
+    else:
+      raise IndexError
+
+  def max_comp(self):
+    return max((self.r, 0), (self.g, 1), (self.b, 2))[1]
 
 
 class Box(object):
@@ -37,8 +54,8 @@ class Box(object):
 
     variance = self.CalcVariance()
 
-    self.weight = max(variance)
-    self.axis = variance.index(self.weight)
+    self.axis = variance.max_comp()
+    self.weight = variance[self.axis]
 
   def __repr__(self):
     return '[%d..%d], count: %d, weight: %s' % (self.begin, self.end,
@@ -179,13 +196,10 @@ def AddErrorAndClamp(pixel, error, coeff):
   if b > 255:
     b = 255
 
-  return r, g, b
+  return (r, g, b)
 
 
-def FloydSteinberg(pixels, pos, size, error):
-  x, y = pos
-  width, height = size
-
+def FloydSteinberg(pixels, x, y, width, height, error):
   if x < width - 1:
     pixels[x + 1, y] = AddErrorAndClamp(pixels[x + 1, y], error, 7)
 
@@ -222,7 +236,7 @@ def QuantizeImage(image, kdtree, dithering, is_transparent):
         quantized[x, y] = node.number
 
         if dithering:
-          FloydSteinberg(pixels, (x, y), image.size, diff)
+          FloydSteinberg(pixels, x, y, width, height, diff)
 
   logging.info('Quantization error: %.3f.', errors / (width * height))
 
@@ -264,7 +278,11 @@ def Quantize(inputPath, outputPath, colors=256, dithering=False):
     if is_transparent:
       leaf.number += 1
 
-    palette.extend(leaf.box.color)
+    color = leaf.box.color
+
+    palette.append(color.r)
+    palette.append(color.g)
+    palette.append(color.b)
 
   logging.info('Remapping colors (%s dithering) from the original image.',
                ('without', 'with')[dithering])
