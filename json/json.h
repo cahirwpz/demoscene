@@ -31,7 +31,7 @@ typedef struct JsonNode {
       int num;
       struct JsonPair *item;
     } object;
-  };
+  } u;
 } JsonNodeT;
 
 typedef struct JsonPair {

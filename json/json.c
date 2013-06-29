@@ -267,18 +267,19 @@ static bool ParsePair(ParserT *parser, JsonPairT *pair) {
   if (!ParseValue(parser, &pair->value))
     return false;
 
-  pair->key = strndup(string->value, string->size);
+  pair->key = calloc(string->size + 1, sizeof(char));
+  strncpy(pair->key, string->value, string->size);
   return true;
 }
 
 static bool ParseObject(ParserT *parser, JsonNodeT *node) {
   int i = 0;
 
-  if (ParserMatch(parser, TOK_RBRACE) && node->object.num == 0)
+  if (ParserMatch(parser, TOK_RBRACE) && node->u.object.num == 0)
     return true;
 
   while (true) {
-    if (!ParsePair(parser, &node->object.item[i++]))
+    if (!ParsePair(parser, &node->u.object.item[i++]))
       return false;
 
     if (ParserMatch(parser, TOK_RBRACE))
@@ -290,18 +291,17 @@ static bool ParseObject(ParserT *parser, JsonNodeT *node) {
     }
   }
 
-  assert(i == node->object.num);
   return true;
 }
 
 static bool ParseArray(ParserT *parser, JsonNodeT *node) {
   int i = 0;
 
-  if (ParserMatch(parser, TOK_RBRACKET) && node->array.num == 0)
+  if (ParserMatch(parser, TOK_RBRACKET) && node->u.array.num == 0)
     return true;
 
   while (true) {
-    if (!ParseValue(parser, &node->array.item[i++]))
+    if (!ParseValue(parser, &node->u.array.item[i++]))
       return false;
 
     if (ParserMatch(parser, TOK_RBRACKET))
@@ -313,7 +313,6 @@ static bool ParseArray(ParserT *parser, JsonNodeT *node) {
     }
   }
 
-  assert(i == node->array.num);
   return true;
 }
 
@@ -328,35 +327,38 @@ static bool ParseValue(ParserT *parser, JsonNodeT **node_p) {
 
   if ((token = ParserMatch(parser, TOK_LBRACE))) {
     node->type = JSON_OBJECT;
-    node->object.num = token->size;
-    node->object.item = calloc(token->size, sizeof(JsonPairT));
+    node->u.object.num = token->size;
+    if (token->size)
+      node->u.object.item = calloc(token->size, sizeof(JsonPairT));
     return ParseObject(parser, node);
   }
   else if ((token = ParserMatch(parser, TOK_LBRACKET))) {
     node->type = JSON_ARRAY;
-    node->object.num = token->size;
-    node->object.item = calloc(token->size, sizeof(JsonNodeT));
+    node->u.array.num = token->size;
+    if (token->size)
+      node->u.array.item = calloc(token->size, sizeof(JsonNodeT *));
     return ParseArray(parser, node);
   }
   else if ((token = ParserMatch(parser, TOK_INTEGER))) {
     node->type = JSON_INTEGER;
-    node->integer = strtol(token->value, NULL, 10);
+    node->u.integer = strtol(token->value, NULL, 10);
     return true;
   }
   else if ((token = ParserMatch(parser, TOK_REAL))) {
     node->type = JSON_REAL;
-    node->real = strtod(token->value, NULL);
+    node->u.real = strtod(token->value, NULL);
     return true;
   }
   else if ((token = ParserMatch(parser, TOK_STRING))) {
     node->type = JSON_STRING;
-    node->string = strndup(token->value, token->size);
+    node->u.string = calloc(token->size + 1, sizeof(char));
+    strncpy(node->u.string, token->value, token->size);
     return true;
   }
   else if ((token = ParserMatch(parser, TOK_TRUE)) ||
            (token = ParserMatch(parser, TOK_FALSE))) {
     node->type = JSON_BOOLEAN;
-    node->boolean = (token->id == TOK_TRUE) ? true : false;
+    node->u.boolean = (token->id == TOK_TRUE) ? true : false;
     return true;
   }
   else if ((token = ParserMatch(parser, TOK_NULL))) {
@@ -379,21 +381,21 @@ void FreeJsonNode(JsonNodeT *node) {
       break;
 
     case JSON_STRING:
-      free(node->string);
+      free(node->u.string);
       break;
 
     case JSON_ARRAY:
-      for (i = 0; i < node->array.num; i++)
-        FreeJsonNode(node->array.item[i]);
-      free(node->array.item);
+      for (i = 0; i < node->u.array.num; i++)
+        FreeJsonNode(node->u.array.item[i]);
+      free(node->u.array.item);
       break;
 
     case JSON_OBJECT:
-      for (i = 0; i < node->object.num; i++) {
-        FreeJsonNode(node->object.item[i].value);
-        free(node->object.item[i].key);
+      for (i = 0; i < node->u.object.num; i++) {
+        FreeJsonNode(node->u.object.item[i].value);
+        free(node->u.object.item[i].key);
       }
-      free(node->object.item);
+      free(node->u.object.item);
       break;
   }
 
@@ -433,7 +435,7 @@ static TokenT *ReadTokens(const char *json, int num) {
 
     for (i = 0; i < num; i++) {
       LexerNextToken(&lexer, &tokens[i]);
-#if DEBUG_LEXER
+#ifdef DEBUG_LEXER
       printf("%4d: ", i);
       TokenPrint(&tokens[i]);
 #endif
@@ -459,7 +461,7 @@ JsonNodeT *JsonParse(const char *json) {
     ParserInit(&parser, tokens, num);
 
     if (!ParseValue(&parser, &node)) {
-#if DEBUG_LEXER
+#ifdef DEBUG_LEXER
       printf("%s: ", parser.errmsg);
       TokenPrint(&parser.tokens[parser.pos]);
 #else
