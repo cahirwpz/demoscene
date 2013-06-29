@@ -1,6 +1,9 @@
 #ifndef __JSON_H__
 #define __JSON_H__
 
+#include <stdint.h>
+#include <stdbool.h>
+
 typedef enum {
   JSON_NULL,
   JSON_BOOLEAN,
@@ -35,5 +38,9 @@ typedef struct JsonPair {
   char *key;
   JsonNodeT value;
 } JsonPairT;
+
+void FreeJsonNode(JsonNodeT *node);
+
+JsonNodeT *JsonParse(const char *text);
 
 #endif

@@ -1,8 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
 #include <math.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -112,10 +110,10 @@ void TokenPrint(TokenT *token) {
   printf(" | parent=%d | pos=%d )\n", token->parent, token->pos);
 }
 
-static void LexerInit(LexerT *lexer, char *text) {
-  lexer->start = text;
-  lexer->end = text + strlen(text);
-  lexer->pos = text;
+static void LexerInit(LexerT *lexer, const char *text) {
+  lexer->start = (char *)text;
+  lexer->end = (char *)text + strlen(text);
+  lexer->pos = (char *)text;
   lexer->errmsg = NULL;
 }
 
@@ -247,7 +245,7 @@ static TokenT *ParserMatch(ParserT *parser, TokenIdT tokid) {
   return NULL;
 }
 
-static bool ParseValue(ParserT *parser, JsonNodeT **node_pp);
+static bool ParseValue(ParserT *parser, JsonNodeT **node_p);
 
 static bool ParsePair(ParserT *parser, JsonPairT *pair) {
   TokenT *string = ParserMatch(parser, TOK_STRING);
@@ -263,7 +261,7 @@ static bool ParsePair(ParserT *parser, JsonPairT *pair) {
   }
 
   JsonNodeT *item = &pair->value;
-
+  
   if (!ParseValue(parser, &item))
     return false;
 
@@ -319,13 +317,13 @@ static bool ParseArray(ParserT *parser, JsonNodeT *node) {
   return true;
 }
 
-static bool ParseValue(ParserT *parser, JsonNodeT **node_pp) {
+static bool ParseValue(ParserT *parser, JsonNodeT **node_p) {
   TokenT *token;
-  JsonNodeT *node = *node_pp;
+  JsonNodeT *node = *node_p;
 
   if (!node) {
     node = calloc(1, sizeof(JsonNodeT));
-    (*node_pp) = node;
+    (*node_p) = node;
   }
 
   if ((token = ParserMatch(parser, TOK_LBRACE))) {
@@ -370,152 +368,110 @@ static bool ParseValue(ParserT *parser, JsonNodeT **node_pp) {
   return false;
 } 
 
-static JsonNodeT *Parse(ParserT *parser) {
-  JsonNodeT *node = NULL;
-  if (!ParseValue(parser, &node)) {
-    printf("%s: ", parser->errmsg);
-    TokenPrint(&parser->tokens[parser->pos]);
-    return NULL;
-  }
-  return node;
-}
-
-void PrintSpaces(int n) {
-  while (n--)
-    putchar(' ');
-}
-
-void JsonPrint(JsonNodeT *node, int indent) {
+static void FreeJsonNodeHelper(JsonNodeT *node, bool ownership) {
   int i;
 
   switch (node->type) {
     case JSON_NULL:
-      puts("null");
-      break;
     case JSON_BOOLEAN:
-      puts(node->boolean ? "true" : "false");
-      break;
     case JSON_INTEGER:
-      printf("%ld", node->integer);
-      break;
     case JSON_REAL:
-      printf("%f", node->real);
       break;
+
     case JSON_STRING:
-      printf("%s", node->string);
+      free(node->string);
       break;
+
     case JSON_ARRAY:
-      putchar('[');
-      if (node->array.num)
-        putchar('\n');
-      for (i = 0; i < node->array.num; i++) {
-        JsonPrint(&node->array.item[i], indent + 2);
-        if (i < node->array.num - 1)
-          puts(",");
-        else
-          putchar('\n');
-      }
-      if (node->array.num)
-        PrintSpaces(indent);
-      putchar(']');
+      for (i = 0; i < node->array.num; i++)
+        FreeJsonNodeHelper(&node->array.item[i], false);
+      free(node->array.item);
       break;
+
     case JSON_OBJECT:
-      PrintSpaces(indent);
-      putchar('{');
-      if (node->object.num)
-        putchar('\n');
       for (i = 0; i < node->object.num; i++) {
-        PrintSpaces(indent + 1);
-        printf("%s : ", node->object.item[i].key);
-        JsonPrint(&node->object.item[i].value, indent + 2);
-        if (i < node->object.num - 1)
-          puts(",");
-        else
-          putchar('\n');
+        FreeJsonNodeHelper(&node->object.item[i].value, false);
+        free(node->object.item[i].key);
       }
-      if (node->object.num)
-        PrintSpaces(indent);
-      putchar('}');
+      free(node->object.item);
       break;
   }
+
+  if (ownership)
+    free(node);
 }
 
-static char *ReadText(const char *path) {
-  FILE *fh = fopen(path, "r");
-  uint32_t filesize;
-  char *text = NULL;
+void FreeJsonNode(JsonNodeT *node) {
+  FreeJsonNodeHelper(node, true);
+}
 
-  if (fh) {
-    (void)fseek(fh, 0, SEEK_END);
-    filesize = ftell(fh);
-    (void)fseek(fh, 0, SEEK_SET);
+static bool CountTokens(const char *json, int *num_p) {
+  LexerT lexer;
+  TokenT token;
 
-    text = malloc(filesize + 1);
-    text[filesize] = '\0';
-    fread(text, filesize, 1, fh);
-    fclose(fh);
+  LexerInit(&lexer, json);
+
+  (*num_p) = 0;
+
+  while (LexerNextToken(&lexer, &token))
+    (*num_p)++;
+
+  if (lexer.pos < lexer.end) {
+    printf("Error: %s at position %d.\n",
+           lexer.errmsg, (int)(lexer.end - lexer.start));
+    return false;
   }
 
-  return text;
+  printf("%d tokens.\n", (*num_p));
+  return true;
 }
 
-int main(int argc, char **argv) {
-  char *json;
+static TokenT *ReadTokens(const char *json, int num) {
+  LexerT lexer;
+  TokenT *tokens = NULL;
   int i;
 
-  for (i = 1; i < argc; i++) {
-    if ((json = ReadText(argv[i]))) {
-      LexerT lexer;
-      int num = 0;
+  LexerInit(&lexer, json);
 
-      /* count tokens and check for errors */
-      {
-        TokenT token;
-        LexerInit(&lexer, json);
+  if ((tokens = calloc(num, sizeof(TokenT)))) {
+    LexerInit(&lexer, json);
 
-        while (LexerNextToken(&lexer, &token))
-          num++;
-
-        if (lexer.pos < lexer.end)
-          printf("Error: %s at position %d.\n",
-                 lexer.errmsg, (int)(lexer.end - lexer.start));
-      }
-
-      printf("%s: %d tokens.\n", argv[i], num);
-
-      /* read tokens once again, but into an array */
-      {
-        TokenT *tokens = calloc(num, sizeof(TokenT));
-        int j;
-
-        LexerInit(&lexer, json);
-
-        for (j = 0; j < num; j++)
-          LexerNextToken(&lexer, &tokens[j]);
-
-        TokenAssignParents(tokens, num);
-
-        for (j = 0; j < num; j++) {
-          printf("%4d: ", j);
-          TokenPrint(&tokens[j]);
-        }
-
-        /* now... parse! */
-        {
-          ParserT parser;
-          JsonNodeT *node;
-
-          ParserInit(&parser, tokens, num);
-          node = Parse(&parser);
-          JsonPrint(node, 0);
-        }
-
-        free(tokens);
-      }
-
-      free(json);
+    for (i = 0; i < num; i++) {
+      LexerNextToken(&lexer, &tokens[i]);
+#if 0
+      printf("%4d: ", i);
+      TokenPrint(&tokens[i]);
+#endif
     }
+
+    TokenAssignParents(tokens, num);
   }
 
-  return 0;
+  return tokens;
+}
+
+JsonNodeT *JsonParse(const char *json) {
+  JsonNodeT *node = NULL;
+  int num = 0;
+
+  if (CountTokens(json, &num)) {
+    ParserT parser;
+
+    /* read tokens into an array */
+    TokenT *tokens = ReadTokens(json, num);
+
+    /* now... parse! */
+    ParserInit(&parser, tokens, num);
+
+    if (!ParseValue(&parser, &node)) {
+      printf("%s: ", parser.errmsg);
+      TokenPrint(&parser.tokens[parser.pos]);
+      FreeJsonNode(node);
+      node = NULL;
+    }
+
+    free(tokens);
+  }
+
+  return node;
 }
