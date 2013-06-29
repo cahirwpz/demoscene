@@ -42,5 +42,6 @@ typedef struct JsonPair {
 void FreeJsonNode(JsonNodeT *node);
 
 JsonNodeT *JsonParse(const char *text);
+void JsonPrint(JsonNodeT *node, int indent);
 
 #endif

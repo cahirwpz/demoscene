@@ -7,6 +7,8 @@
 
 #include "json.h"
 
+#undef DEBUG_LEXER
+
 typedef enum {
   TOK_LBRACKET,
   TOK_RBRACKET,
@@ -64,6 +66,7 @@ void TokenAssignParents(TokenT *tokens, size_t num) {
   }
 }
 
+#ifdef DEBUG_LEXER
 void TokenPrint(TokenT *token) {
   char *id = "?";
   int i;
@@ -109,6 +112,7 @@ void TokenPrint(TokenT *token) {
 
   printf(" | parent=%d | pos=%d )\n", token->parent, token->pos);
 }
+#endif
 
 static void LexerInit(LexerT *lexer, const char *text) {
   lexer->start = (char *)text;
@@ -429,7 +433,7 @@ static TokenT *ReadTokens(const char *json, int num) {
 
     for (i = 0; i < num; i++) {
       LexerNextToken(&lexer, &tokens[i]);
-#if 0
+#if DEBUG_LEXER
       printf("%4d: ", i);
       TokenPrint(&tokens[i]);
 #endif
@@ -455,8 +459,12 @@ JsonNodeT *JsonParse(const char *json) {
     ParserInit(&parser, tokens, num);
 
     if (!ParseValue(&parser, &node)) {
+#if DEBUG_LEXER
       printf("%s: ", parser.errmsg);
       TokenPrint(&parser.tokens[parser.pos]);
+#else
+      puts(parser.errmsg);
+#endif
       FreeJsonNode(node);
       node = NULL;
     }

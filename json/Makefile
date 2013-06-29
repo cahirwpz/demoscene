@@ -3,9 +3,10 @@ CFLAGS = -Wall -O2
 
 all: test-json
 
-test-json: json.o test-json.o
+test-json: json.o test-json.o json-print.o
 
 json.o: json.c json.h
+json-print.o: json-print.c json.h
 test-json.o: test-json.c json.h
 
 clean:
