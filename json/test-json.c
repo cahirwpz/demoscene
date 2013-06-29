@@ -51,7 +51,7 @@ void JsonPrint(JsonNodeT *node, int indent) {
       if (node->array.num)
         putchar('\n');
       for (i = 0; i < node->array.num; i++) {
-        JsonPrint(&node->array.item[i], indent + 2);
+        JsonPrint(node->array.item[i], indent + 2);
         if (i < node->array.num - 1)
           puts(",");
         else
@@ -69,7 +69,7 @@ void JsonPrint(JsonNodeT *node, int indent) {
       for (i = 0; i < node->object.num; i++) {
         PrintSpaces(indent + 1);
         printf("%s : ", node->object.item[i].key);
-        JsonPrint(&node->object.item[i].value, indent + 2);
+        JsonPrint(node->object.item[i].value, indent + 2);
         if (i < node->object.num - 1)
           puts(",");
         else

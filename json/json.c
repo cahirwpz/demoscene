@@ -260,9 +260,7 @@ static bool ParsePair(ParserT *parser, JsonPairT *pair) {
     return false;
   }
 
-  JsonNodeT *item = &pair->value;
-  
-  if (!ParseValue(parser, &item))
+  if (!ParseValue(parser, &pair->value))
     return false;
 
   pair->key = strndup(string->value, string->size);
@@ -299,9 +297,7 @@ static bool ParseArray(ParserT *parser, JsonNodeT *node) {
     return true;
 
   while (true) {
-    JsonNodeT *item = &node->array.item[i++];
-
-    if (!ParseValue(parser, &item))
+    if (!ParseValue(parser, &node->array.item[i++]))
       return false;
 
     if (ParserMatch(parser, TOK_RBRACKET))
@@ -368,7 +364,7 @@ static bool ParseValue(ParserT *parser, JsonNodeT **node_p) {
   return false;
 } 
 
-static void FreeJsonNodeHelper(JsonNodeT *node, bool ownership) {
+void FreeJsonNode(JsonNodeT *node) {
   int i;
 
   switch (node->type) {
@@ -384,25 +380,20 @@ static void FreeJsonNodeHelper(JsonNodeT *node, bool ownership) {
 
     case JSON_ARRAY:
       for (i = 0; i < node->array.num; i++)
-        FreeJsonNodeHelper(&node->array.item[i], false);
+        FreeJsonNode(node->array.item[i]);
       free(node->array.item);
       break;
 
     case JSON_OBJECT:
       for (i = 0; i < node->object.num; i++) {
-        FreeJsonNodeHelper(&node->object.item[i].value, false);
+        FreeJsonNode(node->object.item[i].value);
         free(node->object.item[i].key);
       }
       free(node->object.item);
       break;
   }
 
-  if (ownership)
-    free(node);
-}
-
-void FreeJsonNode(JsonNodeT *node) {
-  FreeJsonNodeHelper(node, true);
+  free(node);
 }
 
 static bool CountTokens(const char *json, int *num_p) {

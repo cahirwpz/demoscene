@@ -25,7 +25,7 @@ typedef struct JsonNode {
     char *string;
     struct {
       int num;
-      struct JsonNode *item;
+      struct JsonNode **item;
     } array;
     struct {
       int num;
@@ -36,7 +36,7 @@ typedef struct JsonNode {
 
 typedef struct JsonPair {
   char *key;
-  JsonNodeT value;
+  JsonNodeT *value;
 } JsonPairT;
 
 void FreeJsonNode(JsonNodeT *node);
