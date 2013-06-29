@@ -1,11 +1,14 @@
 #include <assert.h>
-#include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "json.h"
+
+static inline bool isdigit(char c) {
+  return (c >= '0' && c <= '9');
+}
 
 #undef DEBUG_LEXER
 
@@ -46,7 +49,7 @@ typedef struct Parser {
   char *errmsg;
 } ParserT;
 
-void TokenAssignParents(TokenT *tokens, size_t num) {
+static void TokenAssignParents(TokenT *tokens, size_t num) {
   int i, parent = 0;
 
   for (i = 0; i < num; i++) {
@@ -121,7 +124,51 @@ static void LexerInit(LexerT *lexer, const char *text) {
   lexer->errmsg = NULL;
 }
 
-bool LexerNextToken(LexerT *lexer, TokenT *token) {
+static bool SkipNumber(LexerT *lexer, TokenT *token) {
+  char *pos = lexer->pos;
+
+  /* optional minus sign */
+  if (*pos == '-')
+    pos++;
+
+  /* at least one digit is mandatory */
+  if (!isdigit(*pos))
+    goto error;
+
+  /* 0 | [1-9][0-9]+ */
+  if (*pos == '0') {
+    pos++;
+  } else {
+    while (isdigit(*pos))
+      pos++;
+  }
+
+  /* if no fractional part, then this is integer */
+  if (*pos != '.') {
+    token->id = TOK_INTEGER;
+    lexer->pos = pos;
+    return true;
+  } else {
+    pos++;
+  }
+
+  /* fractional part has at least one digit */
+  if (!isdigit(*pos++))
+    goto error;
+
+  while (isdigit(*pos))
+    pos++;
+
+  token->id = TOK_REAL;
+  lexer->pos = pos;
+  return true;
+
+error:
+  lexer->errmsg = "malformed number";
+  return false;
+}
+
+static bool LexerNextToken(LexerT *lexer, TokenT *token) {
   char *prev;
 
   lexer->errmsg = NULL;
@@ -130,8 +177,14 @@ bool LexerNextToken(LexerT *lexer, TokenT *token) {
   do {
     prev = lexer->pos;
 
-    while (isspace(*lexer->pos))
+    while (true) {
+      char c = *lexer->pos;
+
+      if (c != '\n' && c != '\t' && c != ' ')
+        break;
+
       lexer->pos++;
+    }
 
     if (lexer->pos[0] == '/') {
       if (lexer->pos[1] == '/') {
@@ -194,23 +247,8 @@ bool LexerNextToken(LexerT *lexer, TokenT *token) {
     }
     else if (isdigit(c) || c == '-') 
     {
-      char *pos1, *pos2;
-
-      (void)strtol(lexer->pos, &pos1, 10);
-      (void)strtod(lexer->pos, &pos2);
-
-      if (pos1 == lexer->pos) {
-        lexer->errmsg = "malformed number";
+      if (!SkipNumber(lexer, token))
         return false;
-      }
-
-      if (pos1 >= pos2) {
-        token->id = TOK_INTEGER;
-        lexer->pos = pos1;
-      } else {
-        token->id = TOK_REAL;
-        lexer->pos = pos2;
-      }
     }
     else if (!strncmp(lexer->pos, "true", 4)) {
       token->id = TOK_TRUE;
@@ -373,6 +411,9 @@ static bool ParseValue(ParserT *parser, JsonNodeT **node_p) {
 void FreeJsonNode(JsonNodeT *node) {
   int i;
 
+  if (!node)
+    return;
+
   switch (node->type) {
     case JSON_NULL:
     case JSON_BOOLEAN:
@@ -459,6 +500,8 @@ JsonNodeT *JsonParse(const char *json) {
 
     /* now... parse! */
     ParserInit(&parser, tokens, num);
+
+    puts("Parsing...");
 
     if (!ParseValue(&parser, &node)) {
 #ifdef DEBUG_LEXER
