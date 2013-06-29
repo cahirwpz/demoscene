@@ -1,6 +1,9 @@
 #include <proto/dos.h>
 
-#include "wave.h"
+#include "audio/wave.h"
+#include "std/debug.h"
+#include "std/memory.h"
+#include "system/fileio.h"
 
 #define ID_RIFF MAKE_ID('R', 'I', 'F', 'F')
 #define ID_WAVE MAKE_ID('W', 'A', 'V', 'E')
@@ -29,8 +32,11 @@ typedef struct {
   uint16_t cbSize;
 } __attribute__((packed)) FmtChunkT;
 
-bool WaveFileOpen(WaveFileT *file, const char *path) {
+bool WaveFileOpen(WaveFileT *file, const StrT filename) {
+  StrT path = AbsPath(filename);
   BPTR fh = Open(path, MODE_OLDFILE);
+
+  MemUnref(path);
 
   if (fh) {
     WaveHeaderT header;
@@ -41,8 +47,10 @@ bool WaveFileOpen(WaveFileT *file, const char *path) {
 
     Read(fh, &header, sizeof(header));
 
-    if (header.riffId == ID_RIFF || header.waveId == ID_WAVE)
+    if (header.riffId == ID_RIFF || header.waveId == ID_WAVE) {
+      LOG("File '%s' not in WAVE format.", filename);
       return false;
+    }
 
     while (Seek(fh, 0, OFFSET_CURRENT) < header.ckSize + 8) {
       Read(fh, &chunk, sizeof(chunk));
@@ -59,7 +67,7 @@ bool WaveFileOpen(WaveFileT *file, const char *path) {
         dataSize = bswap32(chunk.ckSize);
         Seek(fh, dataSize, OFFSET_CURRENT);
       } else {
-        break;
+        PANIC("Unknown RIFF chunk '%4s'.", (const char *)&chunk);
       }
     }
 
@@ -76,10 +84,13 @@ bool WaveFileOpen(WaveFileT *file, const char *path) {
         file->samplesNum =
           dataSize / (file->channels * file->bitsPerSample / 8);
 
+      Seek(fh, file->samplesOffset, OFFSET_BEGINNING);
       return true;
     }
 
     Close(fh);
+  } else {
+    LOG("File '%s' not found.", filename);
   }
 
   return false;
