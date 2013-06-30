@@ -2,7 +2,7 @@ TOPDIR = $(CURDIR)
 
 export TOPDIR
 
-SUBDIRS = audio distort engine json gfx p61 std system tools txtgen
+SUBDIRS = audio distort engine json gfx p61 std system tinf tools txtgen
 
 all:: libs
 	@$(MAKE) -C tests

@@ -1,4 +1,4 @@
-TOPDIR = $(realpath $(CURDIR)/../..)
+TOPDIR = $(realpath $(CURDIR)/..)
 
 OBJS = crc32.o tinflate.o
 
