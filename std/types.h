@@ -2,9 +2,8 @@
 #define __STD_TYPES_H__
 
 #include <stddef.h>
+#include <stdbool.h>
 #include <sys/types.h>
-
-typedef enum { false, true } bool;
 
 #define BOOL(a) ((a) != 0 ? true : false)
 
