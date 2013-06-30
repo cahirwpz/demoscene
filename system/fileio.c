@@ -51,7 +51,7 @@ PtrT ReadFileSimple(const StrT fileName) {
   return ReadFileToCustomMemory(fileName, MEMF_PUBLIC, 0);
 }
 
-PtrT ReadTextSimple(const StrT fileName) {
+StrT ReadTextSimple(const StrT fileName) {
   return ReadFileToCustomMemory(fileName, MEMF_PUBLIC | MEMF_CLEAR, 1);
 }
 
