@@ -35,8 +35,6 @@ static void FreeJsonNode(JsonNodeT *node) {
       MemUnref(node->u.object.item);
       break;
   }
-
-  MemUnref(node);
 }
 
 TYPEDECL(JsonNodeT, (FreeFuncT)FreeJsonNode);
@@ -110,7 +108,7 @@ JsonNodeT *JsonParse(const char *json) {
 #else
       LOG("Parse error: %s.", parser.errmsg);
 #endif
-      FreeJsonNode(node);
+      MemUnref(node);
       node = NULL;
     } else {
       LOG("Parsing finished.");

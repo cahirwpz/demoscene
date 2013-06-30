@@ -21,22 +21,24 @@ int main(int argc, char **argv) {
 
     MemUnref(json);
 
-    if (argc == 2) {
-      JsonPrint(node, 0);
-    } else {
-      for (i = 2; i < argc; i++) {
-        JsonNodeT *child = JsonQuery(node, argv[i]);
-        printf("%d: result for '%s':\n", i - 1, argv[i]);
-        if (child) {
-          JsonPrint(child, 2);
-          putchar('\n');
-        } else {
-          puts("(not found)");
+    if (node) {
+      if (argc == 2) {
+        JsonPrint(node, 0);
+      } else {
+        for (i = 2; i < argc; i++) {
+          JsonNodeT *child = JsonQuery(node, argv[i]);
+          printf("%d: result for '%s':\n", i - 1, argv[i]);
+          if (child) {
+            JsonPrint(child, 2);
+            putchar('\n');
+          } else {
+            puts("(not found)");
+          }
         }
       }
-    }
 
-    MemUnref(node);
+      MemUnref(node);
+    }
   }
 
   return 0;

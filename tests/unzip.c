@@ -16,23 +16,35 @@ void ZipList(ZipT *zip) {
   }
 }
 
+static void Usage(const char *program) {
+  printf("Usage: %s archive.zip [path1 path2 ...]\n", program);
+  exit(1);
+}
+
 int main(int argc, char **argv) {
+  ZipT *zip;
   int i;
 
-  for (i = 1; i < argc; i++) {
-    ZipT *zip = ZipOpen(argv[i]);
-    ZipList(zip);
-    {
-      uint32_t size;
-      void *data;
+  if (argc < 2)
+    Usage(argv[0]);
 
-      if ((data = ZipRead(zip, "gfx/trianglef.c", &size))) {
-        fwrite(data, size, 1, stdout);
-        MemUnref(data);
-      } else {
-        puts("No such file!");
+  if ((zip = ZipOpen(argv[1]))) {
+    if (argc == 2) {
+      ZipList(zip);
+    } else {
+      for (i = 2; i < argc; i++) {
+        uint32_t size;
+        void *data;
+
+        if ((data = ZipRead(zip, argv[i], &size))) {
+          fwrite(data, size, 1, stdout);
+          MemUnref(data);
+        } else {
+          printf("%s: no such file!", argv[i]);
+        }
       }
     }
+
     MemUnref(zip);
   }
 
