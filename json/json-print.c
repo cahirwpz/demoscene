@@ -24,7 +24,7 @@ void JsonPrint(JsonNodeT *node, int indent) {
       printf("%f", node->u.real);
       break;
     case JSON_STRING:
-      printf("%s", node->u.string);
+      printf("\"%s\"", node->u.string);
       break;
     case JSON_ARRAY:
       putchar('[');

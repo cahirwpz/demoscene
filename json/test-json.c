@@ -22,17 +22,39 @@ static char *ReadText(const char *path) {
   return text;
 }
 
+static void Usage(const char *program) {
+  fprintf(stderr, "Usage: %s file.json [path1 path2 ...]\n", program);
+  exit(1);
+}
+
 int main(int argc, char **argv) {
   char *json;
   int i;
 
-  for (i = 1; i < argc; i++) {
-    if ((json = ReadText(argv[i]))) {
-      JsonNodeT *node = JsonParse(json);
+  if (argc < 2)
+    Usage(argv[0]);
+
+  if ((json = ReadText(argv[1]))) {
+    JsonNodeT *node = JsonParse(json);
+
+    free(json);
+
+    if (argc == 2) {
       JsonPrint(node, 0);
-      FreeJsonNode(node);
-      free(json);
+    } else {
+      for (i = 2; i < argc; i++) {
+        JsonNodeT *child = JsonQuery(node, argv[i]);
+        printf("%d: result for '%s':\n", i - 1, argv[i]);
+        if (child) {
+          JsonPrint(child, 2);
+          putchar('\n');
+        } else {
+          puts("(not found)");
+        }
+      }
     }
+
+    FreeJsonNode(node);
   }
 
   return 0;

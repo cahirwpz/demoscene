@@ -305,8 +305,8 @@ static bool ParsePair(ParserT *parser, JsonPairT *pair) {
   if (!ParseValue(parser, &pair->value))
     return false;
 
-  pair->key = calloc(string->size + 1, sizeof(char));
-  strncpy(pair->key, string->value, string->size);
+  pair->key = calloc(string->size - 1, sizeof(char));
+  strncpy(pair->key, string->value + 1, string->size - 2);
   return true;
 }
 
@@ -389,8 +389,8 @@ static bool ParseValue(ParserT *parser, JsonNodeT **node_p) {
   }
   else if ((token = ParserMatch(parser, TOK_STRING))) {
     node->type = JSON_STRING;
-    node->u.string = calloc(token->size + 1, sizeof(char));
-    strncpy(node->u.string, token->value, token->size);
+    node->u.string = calloc(token->size - 1, sizeof(char));
+    strncpy(node->u.string, token->value + 1, token->size - 2);
     return true;
   }
   else if ((token = ParserMatch(parser, TOK_TRUE)) ||
