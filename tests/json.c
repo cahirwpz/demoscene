@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
       }
     }
 
-    FreeJsonNode(node);
+    MemUnref(node);
   }
 
   return 0;

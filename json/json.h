@@ -38,8 +38,9 @@ typedef struct JsonPair {
   JsonNodeT *value;
 } JsonPairT;
 
+TYPEDEF(JsonNodeT);
+
 JsonNodeT *JsonParse(const char *text);
-void FreeJsonNode(JsonNodeT *node);
 JsonNodeT *JsonQuery(JsonNodeT *node, char *path); 
 void JsonPrint(JsonNodeT *node, int indent);
 

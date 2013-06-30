@@ -87,7 +87,7 @@ bool ParseValue(ParserT *parser, JsonNodeT **node_p) {
   JsonNodeT *node = *node_p;
 
   if (!node)
-    (*node_p) = node = NewRecord(JsonNodeT);
+    (*node_p) = node = NewInstance(JsonNodeT);
 
   if ((token = ParserMatch(parser, TOK_LBRACE))) {
     node->type = JSON_OBJECT;

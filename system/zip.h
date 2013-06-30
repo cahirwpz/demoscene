@@ -14,11 +14,10 @@ typedef struct ZipFile {
 typedef struct Zip {
   uint32_t fh;
   uint32_t num;
-  ZipFileT *entry[0];
+  ZipFileT **entry;
 } ZipT;
 
 ZipT *ZipOpen(const char *filename);
 void *ZipRead(ZipT *zip, const char *path, uint32_t *sizeptr);
-void ZipClose(ZipT *zip);
 
 #endif

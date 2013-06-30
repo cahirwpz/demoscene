@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
         puts("No such file!");
       }
     }
-    ZipClose(zip);
+    MemUnref(zip);
   }
 
   return 0;

@@ -4,7 +4,7 @@
 #include "parser.h"
 #include "json.h"
 
-void FreeJsonNode(JsonNodeT *node) {
+static void FreeJsonNode(JsonNodeT *node) {
   int i;
 
   if (!node)
@@ -23,13 +23,13 @@ void FreeJsonNode(JsonNodeT *node) {
 
     case JSON_ARRAY:
       for (i = 0; i < node->u.array.num; i++)
-        FreeJsonNode(node->u.array.item[i]);
+        MemUnref(node->u.array.item[i]);
       MemUnref(node->u.array.item);
       break;
 
     case JSON_OBJECT:
       for (i = 0; i < node->u.object.num; i++) {
-        FreeJsonNode(node->u.object.item[i].value);
+        MemUnref(node->u.object.item[i].value);
         MemUnref(node->u.object.item[i].key);
       }
       MemUnref(node->u.object.item);
@@ -38,6 +38,8 @@ void FreeJsonNode(JsonNodeT *node) {
 
   MemUnref(node);
 }
+
+TYPEDECL(JsonNodeT, (FreeFuncT)FreeJsonNode);
 
 static bool CountTokens(const char *json, int *num_p) {
   LexerT lexer;

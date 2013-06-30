@@ -65,6 +65,18 @@ typedef struct DiskDir {
   uint16_t comment_len;
 } __attribute__((packed)) DiskDirT;
 
+static void ZipClose(ZipT *zip) {
+  int i;
+
+  for (i = 0; i < zip->num; i++)
+    MemUnref(zip->entry[i]);
+
+  MemUnref(zip->entry);
+  Close(zip->fh);
+}
+
+TYPEDECL(ZipT, (FreeFuncT)ZipClose);
+
 ZipT *ZipOpen(const char *filename) {
   BPTR fh;
   ZipT *zip = NULL;
@@ -79,7 +91,8 @@ ZipT *ZipOpen(const char *filename) {
     Read(fh, &dir, sizeof(DiskDirT));
     ASSERT(le32toh(dir.signature) == ZIP_DIR_SIG, "Wrong signature!");
 
-    zip = MemNew(sizeof(ZipT) + sizeof(ZipFileT *) * le16toh(dir.entries));
+    zip = NewInstance(ZipT);
+    zip->entry = NewTable(ZipFileT *, le16toh(dir.entries));
     zip->num = le16toh(dir.entries);
 
     Seek(fh, le32toh(dir.offset), OFFSET_BEGINNING);
@@ -167,14 +180,4 @@ void *ZipRead(ZipT *zip, const char *path, uint32_t *sizeptr) {
   }
 
   return NULL;
-}
-
-void ZipClose(ZipT *zip) {
-  int i;
-
-  for (i = 0; i < zip->num; i++)
-    MemUnref(zip->entry[i]);
-
-  Close(zip->fh);
-  MemUnref(zip);
 }
