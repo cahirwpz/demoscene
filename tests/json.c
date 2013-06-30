@@ -1,12 +1,11 @@
 #include <stdio.h>
 
+#include "json/json.h"
 #include "std/memory.h"
 #include "system/fileio.h"
 
-#include "json.h"
-
 static void Usage(const char *program) {
-  fprintf(stderr, "Usage: %s file.json [path1 path2 ...]\n", program);
+  printf("Usage: %s file.json [path1 path2 ...]\n", program);
   exit(1);
 }
 

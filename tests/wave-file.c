@@ -3,7 +3,8 @@
  */
 
 #include <stdio.h>
-#include "wave.h"
+
+#include "audio/wave.h"
 
 void WaveFilePrint(WaveFileT *file, const char *path) {
   printf("file            : %s\n", path);
