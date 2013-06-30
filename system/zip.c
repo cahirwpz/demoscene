@@ -1,13 +1,10 @@
 #include <dos/dos.h>
-#include <proto/exec.h>
 #include <proto/dos.h>
 
-#include <stdio.h>
-#include <string.h>
-
 #include "std/debug.h"
-#include "std/types.h"
-#include "tinf.h"
+#include "std/memory.h"
+#include "system/zip.h"
+#include "tinf/tinf.h"
 
 #define ZIP_FILE_SIG  0x04034b50
 #define ZIP_ENTRY_SIG 0x02014b50
@@ -68,23 +65,11 @@ typedef struct DiskDir {
   uint16_t comment_len;
 } __attribute__((packed)) DiskDirT;
 
-typedef struct ZipFile {
-  uint32_t comp_size;
-  uint32_t orig_size;
-  uint32_t offset;
-  uint32_t crc32;
-  char name[0];
-} ZipFileT;
-
-typedef struct Zip {
-  BPTR fh;
-  uint32_t num;
-  ZipFileT *entry[0];
-} ZipT;
-
 ZipT *ZipOpen(const char *filename) {
   BPTR fh;
   ZipT *zip = NULL;
+
+  tinf_init();
 
   if ((fh = Open(filename, MODE_OLDFILE))) {
     DiskDirT dir;
@@ -94,8 +79,7 @@ ZipT *ZipOpen(const char *filename) {
     Read(fh, &dir, sizeof(DiskDirT));
     ASSERT(le32toh(dir.signature) == ZIP_DIR_SIG, "Wrong signature!");
 
-    zip = AllocVec(sizeof(ZipT) + sizeof(ZipFileT *) * le16toh(dir.entries),
-                   MEMF_PUBLIC);
+    zip = MemNew(sizeof(ZipT) + sizeof(ZipFileT *) * le16toh(dir.entries));
     zip->num = le16toh(dir.entries);
 
     Seek(fh, le32toh(dir.offset), OFFSET_BEGINNING);
@@ -112,7 +96,7 @@ ZipT *ZipOpen(const char *filename) {
 
       name_len = le16toh(entry.name_len);
 
-      file = AllocVec(sizeof(ZipFileT) + name_len + 1, MEMF_PUBLIC);
+      file = MemNew(sizeof(ZipFileT) + name_len + 1);
       file->crc32 = le32toh(entry.crc32);
       file->offset = le32toh(entry.offset);
       file->comp_size = le32toh(entry.comp_size);
@@ -155,7 +139,7 @@ void *ZipRead(ZipT *zip, const char *path, uint32_t *sizeptr) {
   }
 
   if (entry) {
-    void *data = AllocVec(entry->comp_size, MEMF_PUBLIC);
+    void *data = MemNew(entry->comp_size);
     unsigned int size;
 
     Seek(zip->fh, entry->offset, OFFSET_BEGINNING);
@@ -164,10 +148,10 @@ void *ZipRead(ZipT *zip, const char *path, uint32_t *sizeptr) {
     size = entry->comp_size;
 
     if (entry->comp_size != entry->orig_size) {
-      void *orig_data = AllocVec(entry->orig_size, MEMF_PUBLIC);
+      void *orig_data = MemNew(entry->orig_size);
       ASSERT(tinf_uncompress(orig_data, &size, data, entry->comp_size) == TINF_OK,
              "Decompression failed!");
-      FreeVec(data);
+      MemUnref(data);
       data = orig_data;
     }
 
@@ -185,50 +169,12 @@ void *ZipRead(ZipT *zip, const char *path, uint32_t *sizeptr) {
   return NULL;
 }
 
-void ZipList(ZipT *zip) {
-  int i;
-
-  printf("entries = %ld\n", zip->num);
-
-  for (i = 0; i < zip->num; i++) {
-    printf("%d: name='%s', offset=%ld, comp_size=%ld, orig_size=%ld, crc=%08lx\n",
-           i + 1, zip->entry[i]->name, zip->entry[i]->offset,
-           zip->entry[i]->comp_size, zip->entry[i]->orig_size,
-           zip->entry[i]->crc32);
-  }
-}
-
 void ZipClose(ZipT *zip) {
   int i;
 
   for (i = 0; i < zip->num; i++)
-    FreeVec(zip->entry[i]);
+    MemUnref(zip->entry[i]);
 
   Close(zip->fh);
-  FreeVec(zip);
-}
-
-int main(int argc, char **argv) {
-  int i;
-
-  tinf_init();
-
-  for (i = 1; i < argc; i++) {
-    ZipT *zip = ZipOpen(argv[i]);
-    ZipList(zip);
-    {
-      uint32_t size;
-      void *data;
-
-      if ((data = ZipRead(zip, "gfx/trianglef.c", &size))) {
-        Write(Output(), data, size);
-        FreeVec(data);
-      } else {
-        PutStr("No such file!");
-      }
-    }
-    ZipClose(zip);
-  }
-
-  return 0;
+  MemUnref(zip);
 }
