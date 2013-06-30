@@ -2,9 +2,10 @@ TOPDIR = $(CURDIR)
 
 export TOPDIR
 
-SUBDIRS = audio distort engine gfx p61 std system tools txtgen
+SUBDIRS = audio distort engine json gfx p61 std system tools txtgen
 
 all:: libs
+	@$(MAKE) -C tests
 	@$(MAKE) -C effects
 	@$(MAKE) -C demo
 
@@ -15,6 +16,7 @@ clean-libs:
 	@for subdir in $(SUBDIRS); do $(MAKE) -C $$subdir clean; done
 
 clean:: clean-libs
+	@$(MAKE) -C tests clean
 	@$(MAKE) -C effects clean
 	@$(MAKE) -C demo clean
 

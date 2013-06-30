@@ -37,10 +37,10 @@ endif
 
 %.o: %.c .deps/%.P 
 	@echo "CC   $(subst $(TOPDIR)/,,$(realpath $<))"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $(realpath $<)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 %.s: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -S -o $@ $(realpath $<)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -S -o $@ $<
 
 %: %.o
 	@echo "LINK $@"
