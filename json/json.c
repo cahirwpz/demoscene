@@ -1,8 +1,5 @@
-#include <assert.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "std/debug.h"
+#include "std/memory.h"
 
 #include "parser.h"
 #include "json.h"
@@ -21,25 +18,25 @@ void FreeJsonNode(JsonNodeT *node) {
       break;
 
     case JSON_STRING:
-      free(node->u.string);
+      MemUnref(node->u.string);
       break;
 
     case JSON_ARRAY:
       for (i = 0; i < node->u.array.num; i++)
         FreeJsonNode(node->u.array.item[i]);
-      free(node->u.array.item);
+      MemUnref(node->u.array.item);
       break;
 
     case JSON_OBJECT:
       for (i = 0; i < node->u.object.num; i++) {
         FreeJsonNode(node->u.object.item[i].value);
-        free(node->u.object.item[i].key);
+        MemUnref(node->u.object.item[i].key);
       }
-      free(node->u.object.item);
+      MemUnref(node->u.object.item);
       break;
   }
 
-  free(node);
+  MemUnref(node);
 }
 
 static bool CountTokens(const char *json, int *num_p) {
@@ -54,12 +51,12 @@ static bool CountTokens(const char *json, int *num_p) {
     (*num_p)++;
 
   if (lexer.pos < lexer.end) {
-    printf("Error: %s at position %d.\n",
-           lexer.errmsg, (int)(lexer.end - lexer.start));
+    LOG("Error: %s at position %d.",
+        lexer.errmsg, (int)(lexer.end - lexer.start));
     return false;
   }
 
-  printf("%d tokens.\n", (*num_p));
+  LOG("Read %d tokens.", (*num_p));
   return true;
 }
 
@@ -70,7 +67,7 @@ static TokenT *ReadTokens(const char *json, int num) {
 
   LexerInit(&lexer, json);
 
-  if ((tokens = calloc(num, sizeof(TokenT)))) {
+  if ((tokens = NewTable(TokenT, num))) {
     LexerInit(&lexer, json);
 
     for (i = 0; i < num; i++) {
@@ -91,6 +88,8 @@ JsonNodeT *JsonParse(const char *json) {
   JsonNodeT *node = NULL;
   int num = 0;
 
+  LOG("Lexing JSON.");
+
   if (CountTokens(json, &num)) {
     ParserT parser;
 
@@ -100,20 +99,22 @@ JsonNodeT *JsonParse(const char *json) {
     /* now... parse! */
     ParserInit(&parser, tokens, num);
 
-    puts("Parsing...");
+    LOG("Parsing JSON.");
 
     if (!ParseValue(&parser, &node)) {
 #ifdef DEBUG_LEXER
-      printf("%s: ", parser.errmsg);
+      LOG("Parse error: %s at token ", parser.errmsg);
       TokenPrint(&parser.tokens[parser.pos]);
 #else
-      puts(parser.errmsg);
+      LOG("Parse error: %s.", parser.errmsg);
 #endif
       FreeJsonNode(node);
       node = NULL;
+    } else {
+      LOG("Parsing finished.");
     }
 
-    free(tokens);
+    MemUnref(tokens);
   }
 
   return node;

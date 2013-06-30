@@ -1,12 +1,7 @@
 #ifndef __JSON_H__
 #define __JSON_H__
 
-#ifdef AMIGA
 #include "std/types.h"
-#else
-#include <stdint.h>
-#include <stdbool.h>
-#endif
 
 typedef enum {
   JSON_NULL,

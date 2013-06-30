@@ -1,8 +1,7 @@
 #ifndef __JSON_LEXER_H__
 #define __JSON_LEXER_H__
 
-#include <stddef.h>
-#include <stdbool.h>
+#include "std/types.h"
 
 typedef enum {
   TOK_LBRACKET,

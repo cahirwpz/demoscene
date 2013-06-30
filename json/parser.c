@@ -1,6 +1,6 @@
 #include <stdlib.h>
-#include <string.h>
 
+#include "std/memory.h"
 #include "parser.h"
 
 void ParserInit(ParserT *parser, TokenT *tokens, int num) {
@@ -34,8 +34,7 @@ static bool ParsePair(ParserT *parser, JsonPairT *pair) {
   if (!ParseValue(parser, &pair->value))
     return false;
 
-  pair->key = calloc(string->size - 1, sizeof(char));
-  strncpy(pair->key, string->value + 1, string->size - 2);
+  pair->key = StrNDup(string->value + 1, string->size - 2);
   return true;
 }
 
@@ -87,23 +86,21 @@ bool ParseValue(ParserT *parser, JsonNodeT **node_p) {
   TokenT *token;
   JsonNodeT *node = *node_p;
 
-  if (!node) {
-    node = calloc(1, sizeof(JsonNodeT));
-    (*node_p) = node;
-  }
+  if (!node)
+    (*node_p) = node = NewRecord(JsonNodeT);
 
   if ((token = ParserMatch(parser, TOK_LBRACE))) {
     node->type = JSON_OBJECT;
     node->u.object.num = token->size;
     if (token->size)
-      node->u.object.item = calloc(token->size, sizeof(JsonPairT));
+      node->u.object.item = NewTable(JsonPairT, token->size);
     return ParseObject(parser, node);
   }
   else if ((token = ParserMatch(parser, TOK_LBRACKET))) {
     node->type = JSON_ARRAY;
     node->u.array.num = token->size;
     if (token->size)
-      node->u.array.item = calloc(token->size, sizeof(JsonNodeT *));
+      node->u.array.item = NewTable(JsonNodeT *, token->size);
     return ParseArray(parser, node);
   }
   else if ((token = ParserMatch(parser, TOK_INTEGER))) {
@@ -118,8 +115,7 @@ bool ParseValue(ParserT *parser, JsonNodeT **node_p) {
   }
   else if ((token = ParserMatch(parser, TOK_STRING))) {
     node->type = JSON_STRING;
-    node->u.string = calloc(token->size - 1, sizeof(char));
-    strncpy(node->u.string, token->value + 1, token->size - 2);
+    node->u.string = StrNDup(token->value + 1, token->size - 2);
     return true;
   }
   else if ((token = ParserMatch(parser, TOK_TRUE)) ||
