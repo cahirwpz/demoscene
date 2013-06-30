@@ -1,4 +1,5 @@
-#include <string.h>
+#undef MEMDEBUG
+
 #include <proto/exec.h>
 
 #include "std/debug.h"
@@ -84,7 +85,7 @@ static inline const TypeT *TypeOf(PtrT mem) {
 static inline size_t MemBlkSize(size_t size, size_t count, bool isExt) {
   size_t bytes = size * count + HeaderSize(isExt);
 
-  return (bytes + MEM_BLOCKMASK) & -MEM_BLOCKSIZE;
+  return (bytes + MEM_BLOCKMASK) & ~MEM_BLOCKMASK;
 }
 
 static inline PtrT MemBlkInit(PtrT mem, size_t size, bool isTable, bool isTyped) {
@@ -264,7 +265,7 @@ PtrT TableResize(PtrT mem, size_t newCount) {
       dst += size;
     } while (--count);
   } else {
-    memcpy(newMem, mem, size * count);
+    MemCopy(newMem, mem, size * count);
   }
 
   /* If not cloning, release the old table. */
@@ -274,8 +275,9 @@ PtrT TableResize(PtrT mem, size_t newCount) {
   return newMem;
 }
 
-void MemCopy(PtrT dst asm("a1"), PtrT src asm("a0"), size_t n asm("d0")) {
-  CopyMem(src, dst, n);
+PtrT MemCopy(PtrT dst asm("a1"), const PtrT src asm("a0"), size_t n asm("d0")) {
+  CopyMem((APTR)src, (APTR)dst, n);
+  return dst;
 }
 
 PtrT MemClone(PtrT mem) {
@@ -294,16 +296,28 @@ PtrT MemClone(PtrT mem) {
     if (type && type->copy)
       type->copy(newMem, mem);
     else
-      memcpy(newMem, mem, size);
+      MemCopy(newMem, mem, size);
   }
 
   return newMem;
 }
 
-PtrT MemDup(const void *p, size_t s) {
-  return memcpy(MemNew(s), p, s);
+PtrT MemDup(const PtrT p, size_t s) {
+  return MemCopy(MemNew(s), p, s);
 }
 
 StrT StrDup(const StrT s) {
   return MemDup(s, strlen(s) + 1);
+}
+
+StrT StrNDup(const StrT s, size_t l) {
+  char *copy;
+  int i = 0;
+
+  while (i < l && s[i] != '\0')
+    i++;
+
+  copy = MemDup(s, i + 1);
+  copy[i] = '\0';
+  return copy;
 }
