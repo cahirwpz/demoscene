@@ -180,17 +180,6 @@ PtrT MemNewTableOfType(const TypeT *type, size_t count) {
   return MemNewCustomTable(type->size, count, MEMF_PUBLIC|MEMF_CLEAR, type);
 }
 
-PtrT MemRef(PtrT mem) {
-  uint8_t *refcnt = (uint8_t *)(mem - 4);
-
-  if (*refcnt == 255)
-    PANIC("Cannot reference block more than 255 times.");
-
-  (*refcnt)++;
-
-  return mem;
-}
-
 PtrT MemUnref(PtrT mem) {
   if (mem) {
     uint8_t *refcnt = (uint8_t *)(mem - 4);

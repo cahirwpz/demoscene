@@ -15,7 +15,6 @@ PtrT MemNewOfType(const TypeT *type);
 PtrT MemNewTable(size_t elemSize, size_t n);
 PtrT MemNewTableOfType(const TypeT *type, size_t n);
 
-PtrT MemRef(PtrT mem);
 PtrT MemUnref(PtrT mem);
 
 size_t TableElemSize(PtrT mem asm("a0"));
