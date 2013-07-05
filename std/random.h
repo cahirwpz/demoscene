@@ -8,7 +8,7 @@ typedef struct Random {
   uint32_t seed;
 } RandomT;
 
-int NextRandom(RandomT *random asm("a0"));
-float NextRandomFloat(RandomT *random asm("a0"), float lo asm("fp0"), float hi asm("fp1"));
+__regargs int NextRandom(RandomT *random);
+__regargs float NextRandomFloat(RandomT *random, float lo, float hi);
 
 #endif
