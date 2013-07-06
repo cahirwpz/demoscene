@@ -1,13 +1,7 @@
-#include <math.h>
-
-#include "p61/p61.h"
-
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/math.h"
 #include "std/resource.h"
 
-#include "distort/generate.h"
 #include "gfx/palette.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
@@ -16,6 +10,8 @@
 #include "system/display.h"
 #include "system/fileio.h"
 #include "system/vblank.h"
+
+#include "uvmap/misc.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -28,50 +24,6 @@ float smoothstep(float edge0, float edge1, float x) {
   return x * x * (3.0f - 2.0f * x);
 }
 
-GenerateMiscDistortion(0,
-                       0.3f / (r + 0.5f * x),
-                       3.0f * a / M_PI);
-
-GenerateMiscDistortion(1,
-                       x * cos(2.0f * r) - y * sin(2.0f * r),
-                       y * cos(2.0f * r) + x * sin(2.0f * r));
-
-GenerateMiscDistortion(2,
-                       pow(r, 0.33f),
-                       a / M_PI + r);
-
-GenerateMiscDistortion(3,
-                       cos(a) / (3 * r),
-                       sin(a) / (3 * r));
-
-GenerateMiscDistortion(4,
-                       0.04f * y + 0.06f * cos(a * 3) / r,
-                       0.04f * x + 0.06f * sin(a * 3) / r);
-
-GenerateMiscDistortion(5,
-                       0.1f * y / (0.11f + r * 0.15f),
-                       0.1f * x / (0.11f + r * 0.15f));
-
-GenerateMiscDistortion(6,
-                       0.5f * a / M_PI + 0.25f * r,
-                       pow(r, 0.25f));
-
-GenerateMiscDistortion(7,
-                       0.5f * a / M_PI,
-                       sin(5.0f * r));
-
-GenerateMiscDistortion(8,
-                       3.0f * a / M_PI,
-                       sin(6.0f * r) + 0.5f * cos(7.0f * a));
-
-GenerateMiscDistortion(9,
-                       x * log(0.5f * r * r),
-                       y * log(0.5f * r * r));
-
-GenerateMiscDistortion(10,
-                       8 * x * (1.5-r) * (1.5-r),
-                       8 * y * (1.5-r) * (1.5-r));
-
 static const int maps = 11;
 static int lastMap = -1;
 
@@ -82,45 +34,47 @@ void ChangeMap(int newMap) {
   newMap = newMap % maps;
 
   if (newMap != lastMap) {
-    DistortionMapT *map = R_("Map");
+    UVMapT *map = R_("Map");
 
     switch (newMap) {
       case 0:
-        GenerateMisc0Distortion(map);
+        UVMapGenerate0(map);
         break;
       case 1:
-        GenerateMisc1Distortion(map);
+        UVMapGenerate1(map);
         break;
       case 2:
-        GenerateMisc2Distortion(map);
+        UVMapGenerate2(map);
         break;
       case 3:
-        GenerateMisc3Distortion(map);
+        UVMapGenerate3(map);
         break;
       case 4:
-        GenerateMisc4Distortion(map);
+        UVMapGenerate4(map);
         break;
       case 5:
-        GenerateMisc5Distortion(map);
+        UVMapGenerate5(map);
         break;
       case 6:
-        GenerateMisc6Distortion(map);
+        UVMapGenerate6(map);
         break;
       case 7:
-        GenerateMisc7Distortion(map);
+        UVMapGenerate7(map);
         break;
       case 8:
-        GenerateMisc8Distortion(map);
+        UVMapGenerate8(map);
         break;
       case 9:
-        GenerateMisc9Distortion(map);
+        UVMapGenerate9(map);
         break;
       case 10:
-        GenerateMisc10Distortion(map);
+        UVMapGenerate10(map);
         break;
       default:
         break;
     }
+
+    UVMapSetTexture(map, R_("Texture"));
 
     lastMap = newMap;
   }
@@ -132,7 +86,7 @@ void ChangeMap(int newMap) {
 void AddInitialResources() {
   ResAdd("Texture", NewPixBufFromFile("data/texture.8"));
   ResAdd("TexturePal", NewPaletteFromFile("data/texture.pal"));
-  ResAdd("Map", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
 }
 
@@ -166,7 +120,8 @@ void RenderChunky(int frameNumber) {
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
 
-  RenderDistortion(R_("Map"), canvas, R_("Texture"), du, dv);
+  UVMapSetOffset(R_("Map"), du, dv);
+  UVMapRender(R_("Map"), canvas);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }

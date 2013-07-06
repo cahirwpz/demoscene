@@ -8,4 +8,6 @@ particles
 playaudio
 raytunnel
 tunnel
+uvmap
+uvmap-light
 vector2d

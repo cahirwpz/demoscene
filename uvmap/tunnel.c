@@ -1,10 +1,10 @@
 #include "std/math.h"
-#include "distort/generate.h"
+#include "uvmap/generate.h"
 
-void GenerateTunnelDistortion(DistortionMapT *map,
-                              float radius, float aspectRatio,
-                              float centerX, float centerY,
-                              TunnelPetalsT *petals)
+void UVMapGenerateTunnel(UVMapT *map,
+                         float radius, float aspectRatio,
+                         float centerX, float centerY,
+                         TunnelPetalsT *petals)
 {
   float dx = 1.0f / (int)map->width;
   float dy = 1.0f / (int)map->height;
@@ -37,7 +37,7 @@ void GenerateTunnelDistortion(DistortionMapT *map,
 
       z = -log2f(1.0f - d);
 
-      DistortionMapSet(map, i, a / (2 * M_PI), radius / z);
+      UVMapSet(map, i, a / (2 * M_PI), radius / z);
     }
   }
 }

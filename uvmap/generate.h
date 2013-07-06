@@ -1,7 +1,7 @@
-#ifndef __DISTORT_GENERATE_H__
-#define __DISTORT_GENERATE_H__
+#ifndef __UVMAP_GENERATE_H__
+#define __UVMAP_GENERATE_H__
 
-#include "distort/common.h"
+#include "uvmap/common.h"
 
 typedef struct {
   size_t petals;
@@ -9,21 +9,18 @@ typedef struct {
   float force;
 } TunnelPetalsT;
 
-void GenerateTunnelDistortion(DistortionMapT *tunnel,
-                              float radius, float aspectRatio,
-                              float centerX, float centerY,
-                              TunnelPetalsT *petals);
+void UVMapGenerateTunnel(UVMapT *tunnel,
+                         float radius, float aspectRatio,
+                         float centerX, float centerY,
+                         TunnelPetalsT *petals);
+void UVMapGenerateSine(UVMapT *map,
+                       size_t xFreq, float xAmp, float xShift,
+                       size_t yFreq, float yAmp, float yShift);
+void UVMapGenerateTwirl(UVMapT *map, float strenght, bool seamless);
+void UVMapGenerateOffset(UVMapT *map, float uOffset, float vOffset);
 
-void GenerateSineDistortion(DistortionMapT *map,
-                            size_t xFreq, float xAmp, float xShift,
-                            size_t yFreq, float yAmp, float yShift);
-void GenerateTwirlDistortion(DistortionMapT *map,
-                             float strenght, bool seamless);
-void GenerateOffsetDistortion(DistortionMapT *map,
-                              float uOffset, float vOffset);
-
-#define GenerateMiscDistortion(NUM, U, V)                   \
-void GenerateMisc ## NUM ## Distortion(DistortionMapT *map) \
+#define UVMapGenerate(NAME, U, V)                           \
+void UVMapGenerate ## NAME ## (UVMapT *map)                 \
 {                                                           \
   float dx = 2.0f / (int)map->width;                        \
   float dy = 2.0f / (int)map->height;                       \
@@ -37,7 +34,7 @@ void GenerateMisc ## NUM ## Distortion(DistortionMapT *map) \
       float r = sqrt(x * x + y * y);                        \
       float u = (U);                                        \
       float v = (V);                                        \
-      DistortionMapSet(map, k, u, v);                       \
+      UVMapSet(map, k, u, v);                               \
     }                                                       \
 }
 

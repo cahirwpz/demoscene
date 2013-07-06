@@ -4,7 +4,7 @@
 #include "std/resource.h"
 
 #include "audio/stream.h"
-#include "distort/generate.h"
+#include "uvmap/generate.h"
 #include "gfx/blit.h"
 #include "gfx/colors.h"
 #include "gfx/palette.h"
@@ -33,41 +33,41 @@ static PaletteT *ThePalette;
 static PixBufT *TheImage;
 
 #ifdef GENERATEMAPS
-GenerateMiscDistortion(0,
-                       0.3f / (r + 0.5f * x),
-                       3.0f * a / M_PI);
+UVMapGenerate(0,
+              0.3f / (r + 0.5f * x),
+              3.0f * a / M_PI);
 
-GenerateMiscDistortion(1,
-                       x * cos(2.0f * r) - y * sin(2.0f * r),
-                       y * cos(2.0f * r) + x * sin(2.0f * r));
+UVMapGenerate(1,
+              x * cos(2.0f * r) - y * sin(2.0f * r),
+              y * cos(2.0f * r) + x * sin(2.0f * r));
 
-GenerateMiscDistortion(2,
-                       pow(r, 0.33f),
-                       a / M_PI + r);
+UVMapGenerate(2,
+              pow(r, 0.33f),
+              a / M_PI + r);
 
-GenerateMiscDistortion(3,
-                       cos(a) / (3 * r),
-                       sin(a) / (3 * r));
+UVMapGenerate(3,
+              cos(a) / (3 * r),
+              sin(a) / (3 * r));
 
-GenerateMiscDistortion(4,
-                       0.04f * y + 0.06f * cos(a * 3) / r,
-                       0.04f * x + 0.06f * sin(a * 3) / r);
+UVMapGenerate(4,
+              0.04f * y + 0.06f * cos(a * 3) / r,
+              0.04f * x + 0.06f * sin(a * 3) / r);
 
-GenerateMiscDistortion(5,
-                       0.1f * y / (0.11f + r * 0.15f),
-                       0.1f * x / (0.11f + r * 0.15f));
+UVMapGenerate(5,
+              0.1f * y / (0.11f + r * 0.15f),
+              0.1f * x / (0.11f + r * 0.15f));
 
-GenerateMiscDistortion(6,
-                       0.5f * a / M_PI + 0.25f * r,
-                       pow(r, 0.25f));
+UVMapGenerate(6,
+              0.5f * a / M_PI + 0.25f * r,
+              pow(r, 0.25f));
 
-GenerateMiscDistortion(7,
-                       0.5f * a / M_PI,
-                       sin(5.0f * r));
+UVMapGenerate(7,
+              0.5f * a / M_PI,
+              sin(5.0f * r));
 
-GenerateMiscDistortion(8,
-                       3.0f * a / M_PI,
-                       sin(3.0f * r) + 0.5f * cos(5.0f * a));
+UVMapGenerate(8,
+              3.0f * a / M_PI,
+              sin(3.0f * r) + 0.5f * cos(5.0f * a));
 #endif
 
 /*
@@ -155,53 +155,53 @@ void SetupResources() {
   ResAdd("EffectPal", NewPalette(256));
 
 #ifdef GENERATEMAPS
-  ResAdd("Map0", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
-  ResAdd("Map1", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
-  ResAdd("Map2", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
-  ResAdd("Map3", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
-  ResAdd("Map4", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
-  ResAdd("Map5", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
-  ResAdd("Map6", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
-  ResAdd("Map7", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
-  ResAdd("Map8", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
+  ResAdd("Map0", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("Map1", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("Map2", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("Map3", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("Map4", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("Map5", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("Map6", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("Map7", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("Map8", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
 
   LOG("Generating map 0.");
-  GenerateMisc0Distortion(R_("Map0"));
-  DistortionMapWriteToFile(R_("Map0"), "map0.bin");
+  UVMapGenerate0(R_("Map0"));
+  UVMapWriteToFile(R_("Map0"), "map0.bin");
   LOG("Generating map 1.");
-  GenerateMisc1Distortion(R_("Map1"));
-  DistortionMapWriteToFile(R_("Map1"), "map1.bin");
+  UVMapGenerate1(R_("Map1"));
+  UVMapWriteToFile(R_("Map1"), "map1.bin");
   LOG("Generating map 2.");
-  GenerateMisc2Distortion(R_("Map2"));
-  DistortionMapWriteToFile(R_("Map2"), "map2.bin");
+  UVMapGenerate2(R_("Map2"));
+  UVMapWriteToFile(R_("Map2"), "map2.bin");
   LOG("Generating map 3.");
-  GenerateMisc3Distortion(R_("Map3"));
-  DistortionMapWriteToFile(R_("Map3"), "map3.bin");
+  UVMapGenerate3(R_("Map3"));
+  UVMapWriteToFile(R_("Map3"), "map3.bin");
   LOG("Generating map 4.");
-  GenerateMisc4Distortion(R_("Map4"));
-  DistortionMapWriteToFile(R_("Map4"), "map4.bin");
+  UVMapGenerate4(R_("Map4"));
+  UVMapWriteToFile(R_("Map4"), "map4.bin");
   LOG("Generating map 5.");
-  GenerateMisc5Distortion(R_("Map5"));
-  DistortionMapWriteToFile(R_("Map5"), "map5.bin");
+  UVMapGenerate5(R_("Map5"));
+  UVMapWriteToFile(R_("Map5"), "map5.bin");
   LOG("Generating map 6.");
-  GenerateMisc6Distortion(R_("Map6"));
-  DistortionMapWriteToFile(R_("Map6"), "map6.bin");
+  UVMapGenerate6(R_("Map6"));
+  UVMapWriteToFile(R_("Map6"), "map6.bin");
   LOG("Generating map 7.");
-  GenerateMisc7Distortion(R_("Map7"));
-  DistortionMapWriteToFile(R_("Map7"), "map7.bin");
+  UVMapGenerate7(R_("Map7"));
+  UVMapWriteToFile(R_("Map7"), "map7.bin");
   LOG("Generating map 8.");
-  GenerateMisc8Distortion(R_("Map8"));
-  DistortionMapWriteToFile(R_("Map8"), "map8.bin");
+  UVMapGenerate8(R_("Map8"));
+  UVMapWriteToFile(R_("Map8"), "map8.bin");
 #else
-  ResAdd("Map0", NewDistortionMapFromFile("data/map0.bin"));
-  ResAdd("Map1", NewDistortionMapFromFile("data/map1.bin"));
-  ResAdd("Map2", NewDistortionMapFromFile("data/map2.bin"));
-  ResAdd("Map3", NewDistortionMapFromFile("data/map3.bin"));
-  ResAdd("Map4", NewDistortionMapFromFile("data/map4.bin"));
-  ResAdd("Map5", NewDistortionMapFromFile("data/map5.bin"));
-  ResAdd("Map6", NewDistortionMapFromFile("data/map6.bin"));
-  ResAdd("Map7", NewDistortionMapFromFile("data/map7.bin"));
-  ResAdd("Map8", NewDistortionMapFromFile("data/map8.bin"));
+  ResAdd("Map0", NewUVMapFromFile("data/map0.bin"));
+  ResAdd("Map1", NewUVMapFromFile("data/map1.bin"));
+  ResAdd("Map2", NewUVMapFromFile("data/map2.bin"));
+  ResAdd("Map3", NewUVMapFromFile("data/map3.bin"));
+  ResAdd("Map4", NewUVMapFromFile("data/map4.bin"));
+  ResAdd("Map5", NewUVMapFromFile("data/map5.bin"));
+  ResAdd("Map6", NewUVMapFromFile("data/map6.bin"));
+  ResAdd("Map7", NewUVMapFromFile("data/map7.bin"));
+  ResAdd("Map8", NewUVMapFromFile("data/map8.bin"));
 #endif
 }
 
@@ -317,7 +317,7 @@ void HandleEvents(int frameNumber) {
 
 static PixBufT *TheTexture;
 static PaletteT *TheTexturePal;
-static DistortionMapT *TheMap;
+static UVMapT *TheMap;
 
 void SetupPart1a(FrameT *frame) {
   AudioStreamSetVolume(TheAudio, 0.5f);
@@ -368,7 +368,9 @@ void RenderPart1(FrameT *frame) {
   int du = 2 * frame->number;
   int dv = 4 * frame->number;
 
-  RenderDistortion(TheMap, TheCanvas, TheTexture, du, dv);
+  UVMapSetOffset(TheMap, du, dv);
+  UVMapSetTexture(TheMap, TheTexture);
+  UVMapRender(TheMap, TheCanvas);
 }
 
 void ShowTitle(FrameT *frame, PixBufT *title) {
@@ -557,7 +559,9 @@ void RenderPart2(FrameT *frame) {
     int du = 2 * frame->number;
     int dv = 2 * frame->number;
 
-    RenderDistortion(TheMap, TheCanvas, TheTexture, du, dv);
+    UVMapSetTexture(TheMap, TheTexture);
+    UVMapSetOffset(TheMap, du, dv);
+    UVMapRender(TheMap, TheCanvas);
   }
 
   EpisodeFrame.number = frame->number - EpisodeFrame.first;

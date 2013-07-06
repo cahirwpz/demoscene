@@ -1,7 +1,7 @@
 #include "std/math.h"
-#include "distort/generate.h"
+#include "uvmap/generate.h"
 
-void GenerateTwirlDistortion(DistortionMapT *map, float strenght, bool seamless) {
+void UVMapGenerateTwirl(UVMapT *map, float strenght, bool seamless) {
   float dy = 2.0f / (int)map->height;
   float dx = 2.0f / (int)map->width;
   float x, y;
@@ -10,6 +10,7 @@ void GenerateTwirlDistortion(DistortionMapT *map, float strenght, bool seamless)
 
   float s = 2 * M_PI * strenght;
 
+  /* "x" and "y" are in [-1.0, 1.0] */
   for (y = -1.0f, i = 0, yi = 0; yi < map->height; yi++, y += dy) {
     for (x = -1.0f, xi = 0; xi < map->width; xi++, x += dx, i++) {
       float r = sqrt(x * x + y * y);
@@ -24,7 +25,7 @@ void GenerateTwirlDistortion(DistortionMapT *map, float strenght, bool seamless)
         v = cos(rad) * r;
       }
 
-      DistortionMapSet(map, i, (u + 1.0f) * 0.5f, (v + 1.0f) * 0.5f);
+      UVMapSet(map, i, (u + 1.0f) * 0.5f, (v + 1.0f) * 0.5f);
     }
   }
 }

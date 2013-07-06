@@ -6,7 +6,7 @@
 #include "std/memory.h"
 #include "std/resource.h"
 
-#include "distort/generate.h"
+#include "uvmap/generate.h"
 #include "gfx/blit.h"
 #include "gfx/hsl.h"
 #include "gfx/line.h"
@@ -34,7 +34,7 @@ void AddInitialResources() {
   ResAdd("CreditsPal", NewPaletteFromFile("data/code.pal"));
   ResAdd("WhelpzImg", NewPixBufFromFile("data/whelpz.8"));
   ResAdd("WhelpzPal", NewPaletteFromFile("data/whelpz.pal"));
-  ResAdd("TunnelMap", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
+  ResAdd("TunnelMap", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
 }
 
@@ -51,7 +51,7 @@ bool SetupDisplay() {
 void SetupEffect() {
   static TunnelPetalsT petals = { 3, 0.333333f, 0.33333f };
 
-  GenerateTunnelDistortion(R_("TunnelMap"), 32.0f, 16.0f / 9.0f, 0.5f, 0.5f, &petals);
+  UVMapGenerateTunnel(R_("TunnelMap"), 32.0f, 16.0f / 9.0f, 0.5f, 0.5f, &petals);
 
   LinkPalettes(R_("TexturePal"), R_("WhelpzPal"), R_("CreditsPal"), NULL);
   LoadPalette(R_("TexturePal"));
@@ -132,7 +132,8 @@ void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst, PaletteFunctor
 void RenderTunnel(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
 
-  RenderDistortion(R_("TunnelMap"), canvas, R_("Texture"), 0, frameNumber);
+  UVMapSetOffset(R_("TunnelMap"), 0, frameNumber);
+  UVMapRender(R_("TunnelMap"), canvas);
 
   PixBufBlit(canvas, 0, 137, R_("WhelpzImg"), NULL);
 

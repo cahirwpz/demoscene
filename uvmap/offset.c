@@ -1,8 +1,6 @@
-#include "distort/generate.h"
+#include "uvmap/generate.h"
 
-void GenerateOffsetDistortion(DistortionMapT *map,
-                              float uOffset, float vOffset)
-{
+void UVMapGenerateOffset(UVMapT *map, float uOffset, float vOffset) {
   float du = 1.0f / (int)map->width;
   float dv = 1.0f / (int)map->height;
   float u, v;
@@ -10,5 +8,5 @@ void GenerateOffsetDistortion(DistortionMapT *map,
 
   for (v = 0.0f, i = 0; v < 1.0f; v += dv)
     for (u = 0.0f; u < 1.0f; u += du, i++)
-      DistortionMapSet(map, i, u, v);
+      UVMapSet(map, i, u, v);
 }

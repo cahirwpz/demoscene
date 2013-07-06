@@ -5,7 +5,7 @@ BINS := spy-shs10
 
 all:: $(BINS)
 
-spy-shs10: demo.o spy-shs10.o libaudio.a libdistort.a libgfx.a libsystem.a libstd.a
+spy-shs10: demo.o spy-shs10.o libaudio.a libuvmap.a libgfx.a libsystem.a libstd.a
 
 spy-shs10.o: CFLAGS += -Wno-unused
 

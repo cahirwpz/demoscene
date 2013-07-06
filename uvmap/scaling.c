@@ -1,5 +1,5 @@
 #include "std/memory.h"
-#include "distort/scaling.h"
+#include "uvmap/scaling.h"
 
 static inline Q16T Div8(Q16T x) {
   asm("asrl #3,%0"
@@ -8,7 +8,7 @@ static inline Q16T Div8(Q16T x) {
   return x;
 }
 
-static UV16T *StepperFromDistortionMap(DistortionMapT *map asm("a0")) {
+static UV16T *StepperFromUVMap(UVMapT *map asm("a0")) {
   int size = map->width * (map->height - 1);
   UV16T *stepper = NewTable(UV16T, size);
 
@@ -58,8 +58,8 @@ static void IncrementUV(UV16T *uv asm("a0"), UV16T *duv asm("a1"), size_t w asm(
   } while (--w);
 }
 
-void DistortionMapScale8x(DistortionMapT *dstMap, DistortionMapT *srcMap) {
-  UV16T *stepper = StepperFromDistortionMap(srcMap);
+void UVMapScale8x(UVMapT *dstMap, UVMapT *srcMap) {
+  UV16T *stepper = StepperFromUVMap(srcMap);
   UV16T *src = (UV16T *)srcMap->map;
   UV16T *duv = stepper;
   uint16_t *dst = (uint16_t *)dstMap->map;

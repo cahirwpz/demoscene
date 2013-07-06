@@ -4,7 +4,7 @@
 #include "std/memory.h"
 #include "std/resource.h"
 
-#include "distort/scaling.h"
+#include "uvmap/scaling.h"
 #include "engine/ms3d.h"
 
 #include "system/c2p.h"
@@ -38,10 +38,10 @@ void AddInitialResources() {
   ResAdd("TexturePal", NewPaletteFromFile("data/texture-01.pal"));
   ResAdd("ms3d", NewMatrixStack3D());
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("SmallMap", NewDistortionMap(H_RAYS, V_RAYS,
-                                      DMAP_ACCURATE, 256, 256));
-  ResAdd("Map", NewDistortionMap(WIDTH, HEIGHT,
-                                 DMAP_OPTIMIZED, 256, 256));
+  ResAdd("SmallMap", NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  
+  UVMapSetTexture(R_("Map"), R_("Texture"));
 }
 
 /*
@@ -82,7 +82,7 @@ void CalculateView(int frameNumber, Vector3D *view) {
   V3D_Sub(&view[2], &view[2], &view[0]);
 }
 
-void RaytraceTunnel(DistortionMapT *map, Vector3D *view) {
+void RaytraceTunnel(UVMapT *map, Vector3D *view) {
   Vector3D ray = view[0];
   Vector3D dp = view[1];
   Vector3D dq = view[2];
@@ -106,7 +106,7 @@ void RaytraceTunnel(DistortionMapT *map, Vector3D *view) {
       float u = a / (2 * M_PI);
       float v = intersection.z * 0.25f;
 
-      DistortionMapSet(map, i++, u, v);
+      UVMapSet(map, i++, u, v);
 
       V3D_Add(&ray, &ray, &dp);
     } while (--w);
@@ -117,14 +117,16 @@ void RaytraceTunnel(DistortionMapT *map, Vector3D *view) {
 
 void RenderEffect(int frameNumber) {
   Vector3D *view = R_("ViewTransformed");
-  DistortionMapT *smallMap = R_("SmallMap");
-  DistortionMapT *map = R_("Map");
+  UVMapT *smallMap = R_("SmallMap");
+  UVMapT *map = R_("Map");
   PixBufT *canvas = R_("Canvas");
 
   CalculateView(frameNumber, view);
   RaytraceTunnel(smallMap, view);
-  DistortionMapScale8x(map, smallMap);
-  RenderDistortion(map, canvas, R_("Texture"), 0, frameNumber);
+  UVMapScale8x(map, smallMap);
+  UVMapSetTexture(map, R_("Texture"));
+  UVMapSetOffset(map, 0, frameNumber);
+  UVMapRender(map, canvas);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
