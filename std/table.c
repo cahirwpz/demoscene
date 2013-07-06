@@ -2,6 +2,10 @@
 #include "std/debug.h"
 #include "std/table.h"
 
+PtrT TableElemGet(PtrT self asm("a0"), size_t index asm("d0")) {
+  return self + index * TableElemSize(self);
+}
+
 PtrT *NewTableAdapter(PtrT table) {
   size_t size = TableSize(table);
   size_t elemSize = TableElemSize(table);

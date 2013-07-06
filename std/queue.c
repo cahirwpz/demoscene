@@ -1,33 +1,31 @@
-#include <strings.h>
-
 #include "std/queue.h"
 #include "std/memory.h"
+#include "std/table.h"
 
 struct Queue {
   int first;
   int last;
-  size_t size;
-  size_t elemSize;
-  uint8_t data[0];
+  PtrT data;
 };
 
-QueueT *NewQueue(size_t size, size_t elemSize) {
-  QueueT *queue = MemNew(sizeof(QueueT) + elemSize * size);
+static void DeleteQueue(QueueT *self) {
+  MemUnref(self->data);
+}
 
-  queue->size = size;
-  queue->elemSize = elemSize;
+TYPEDECL(QueueT, (FreeFuncT)DeleteQueue);
+
+QueueT *NewQueue(size_t size, size_t elemSize) {
+  QueueT *queue = NewInstance(QueueT);
+
+  queue->data = MemNewTable(elemSize, size);
 
   return queue;
 }
 
 static inline int Next(QueueT *self, size_t index) {
-  index++;
+  size_t n = TableSize(self->data);
 
-  return (index >= self->size) ? (index - self->size) : index;
-}
-
-static inline PtrT QueueGet(QueueT *self, size_t index) {
-  return self->data + index * self->elemSize;
+  return (++index >= n) ? (index - n) : index;
 }
 
 static inline bool QueueIsFull(QueueT *self) {
@@ -41,13 +39,13 @@ static inline bool QueueIsEmpty(QueueT *self) {
 void QueueReset(QueueT *self) {
   self->first = 0;
   self->last = 0;
-  bzero(&self->data, self->elemSize * self->size);
+  memset(&self->data, 0, TableElemSize(self->data) * TableSize(self->data));
 }
 
 bool QueuePushBack(QueueT *self, PtrT data) {
   if (!QueueIsFull(self)) {
-    PtrT *elem = QueueGet(self, self->last);
-    memcpy(elem, data, self->elemSize);
+    PtrT *elem = TableElemGet(self->data, self->last);
+    memcpy(elem, data, TableElemSize(self->data));
     self->last = Next(self, self->last);
     return TRUE;
   }
@@ -57,9 +55,9 @@ bool QueuePushBack(QueueT *self, PtrT data) {
 
 bool QueuePopFront(QueueT *self, PtrT data) {
   if (!QueueIsEmpty(self)) {
-    PtrT *elem = QueueGet(self, self->first);
-    memcpy(data, elem, self->elemSize);
-    bzero(elem, self->elemSize);
+    PtrT *elem = TableElemGet(self->data, self->first);
+    memcpy(data, elem, TableElemSize(self->data));
+    memset(elem, 0, TableElemSize(self->data));
     self->first = Next(self, self->first);
     return TRUE;
   }

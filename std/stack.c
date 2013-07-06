@@ -1,32 +1,34 @@
-#include <strings.h>
-
 #include "std/memory.h"
 #include "std/stack.h"
+#include "std/table.h"
 
 struct Stack {
   int top;
-  size_t size;
-  size_t elemSize;
-  uint8_t data[0];
+  PtrT data;
 };
 
-StackT *NewStack(size_t size, size_t elemSize) {
-  StackT *stack = MemNew(sizeof(StackT) + elemSize * size);
+static void DeleteStack(StackT *self) {
+  MemUnref(self->data);
+}
 
+TYPEDECL(StackT, (FreeFuncT)DeleteStack);
+
+StackT *NewStack(size_t size, size_t elemSize) {
+  StackT *stack = NewInstance(StackT);
+
+  stack->data = MemNewTable(elemSize, size);
   stack->top = -1;
-  stack->size = size;
-  stack->elemSize = elemSize;
 
   return stack;
 }
 
 static inline PtrT StackGet(StackT *self, size_t index) {
-  return self->data + (self->top - index) * self->elemSize;
+  return TableElemGet(self->data, self->top - index);
 }
 
 void StackReset(StackT *self) {
   self->top = -1;
-  bzero(&self->data, self->elemSize * self->size);
+  memset(&self->data, 0, TableSize(self->data) * TableElemSize(self->data));
 }
 
 PtrT StackPeek(StackT *self, size_t index) {
@@ -38,7 +40,7 @@ PtrT StackTop(StackT *self) {
 }
 
 PtrT StackPushNew(StackT *self) {
-  if (self->top < (int)self->size) {
+  if (self->top < (int)TableSize(self->data)) {
     self->top++;
     return StackGet(self, 0);
   }
