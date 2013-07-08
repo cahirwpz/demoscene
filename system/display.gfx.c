@@ -75,15 +75,14 @@ typedef struct DBufRaster {
 } DBufRasterT;
 
 static void DeleteDBufRaster(DBufRasterT *raster) {
-  {
-    DBufInfoT *dbufInfo = raster->DBufInfo;
+  DBufInfoT *dbufInfo = raster->DBufInfo;
 
-    FreeBitMap(dbufInfo->dbi_UserData1);
-    FreeBitMap(dbufInfo->dbi_UserData2);
-    DeleteMsgPort(dbufInfo->dbi_SafeMessage.mn_ReplyPort);
-    DeleteMsgPort(dbufInfo->dbi_DispMessage.mn_ReplyPort);
-    FreeDBufInfo(dbufInfo);
-  }
+  FreeBitMap(dbufInfo->dbi_UserData1);
+  FreeBitMap(dbufInfo->dbi_UserData2);
+  (void)GetMsg(dbufInfo->dbi_DispMessage.mn_ReplyPort);
+  DeleteMsgPort(dbufInfo->dbi_SafeMessage.mn_ReplyPort);
+  DeleteMsgPort(dbufInfo->dbi_DispMessage.mn_ReplyPort);
+  FreeDBufInfo(dbufInfo);
 
   MemUnref(raster->Palette);
   MemUnref(raster->RastPort);
