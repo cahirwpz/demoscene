@@ -39,7 +39,7 @@ static inline bool QueueIsEmpty(QueueT *self) {
 void QueueReset(QueueT *self) {
   self->first = 0;
   self->last = 0;
-  memset(&self->data, 0, TableElemSize(self->data) * TableSize(self->data));
+  memset(self->data, 0, TableElemSize(self->data) * TableSize(self->data));
 }
 
 bool QueuePushBack(QueueT *self, PtrT data) {
@@ -47,10 +47,10 @@ bool QueuePushBack(QueueT *self, PtrT data) {
     PtrT *elem = TableElemGet(self->data, self->last);
     memcpy(elem, data, TableElemSize(self->data));
     self->last = Next(self, self->last);
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 bool QueuePopFront(QueueT *self, PtrT data) {
@@ -59,8 +59,8 @@ bool QueuePopFront(QueueT *self, PtrT data) {
     memcpy(data, elem, TableElemSize(self->data));
     memset(elem, 0, TableElemSize(self->data));
     self->first = Next(self, self->first);
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }

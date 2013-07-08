@@ -28,7 +28,7 @@ static inline PtrT StackGet(StackT *self, size_t index) {
 
 void StackReset(StackT *self) {
   self->top = -1;
-  memset(&self->data, 0, TableSize(self->data) * TableElemSize(self->data));
+  memset(self->data, 0, TableSize(self->data) * TableElemSize(self->data));
 }
 
 PtrT StackPeek(StackT *self, size_t index) {
