@@ -3,16 +3,24 @@
 
 #include "std/types.h"
 
+typedef struct AudioBuffer {
+  uint32_t length;
+  struct {
+    uint8_t *hi, *lo;
+  } left;
+  struct {
+    uint8_t *hi, *lo;
+  } right;
+} AudioBufferT;
+
 typedef struct AudioStream AudioStreamT;
 
 AudioStreamT *AudioStreamOpen(const StrT filename);
-size_t AudioStreamFeed(AudioStreamT *audio);
-ssize_t AudioStreamFeedIfHungry(AudioStreamT *audio);
+void AudioStreamFeed(AudioStreamT *audio);
 bool AudioStreamPlay(AudioStreamT *audio);
 void AudioStreamStop(AudioStreamT *audio);
 void AudioStreamSetVolume(AudioStreamT *audio, float volume);
-
-uint32_t AudioStreamHungryWait(AudioStreamT *audio, uint32_t extraSignals);
-void AudioStreamRewind(AudioStreamT *audio);
+void AudioStreamUpdatePos(AudioStreamT *audio);
+AudioBufferT *AudioStreamGetBuffer(AudioStreamT *audio);
 
 #endif

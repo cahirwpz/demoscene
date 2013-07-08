@@ -2,14 +2,12 @@
 #include <hardware/intbits.h>
 #include <proto/exec.h>
 
-/* TODO: Change implementation to use software interrupts and timer.device */
-
 __interrupt static int VBlankServer(int *counter asm("a1")) {
   (*counter)++;
   return 0;
 }
 
-static int VBlankCounter = 0;
+static volatile int VBlankCounter = 0;
 
 static struct Interrupt VBlankInt = {
   {

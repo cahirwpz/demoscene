@@ -22,5 +22,11 @@ typedef struct {
 
 bool WaveFileOpen(WaveFileT *file, const StrT filename);
 void WaveFileClose(WaveFileT *file);
+void WaveFileChangePosition(WaveFileT *file, float second);
+size_t WaveFileReadSamples(WaveFileT *wave, PtrT samples, size_t requested);
+
+static inline int SampleWidth(WaveFileT *file) {
+  return file->channels * file->bitsPerSample / 8;
+}
 
 #endif

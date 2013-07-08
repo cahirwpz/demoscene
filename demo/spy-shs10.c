@@ -11,6 +11,7 @@
 #include "gfx/palette.h"
 #include "tools/frame.h"
 
+#include "system/audio.h"
 #include "system/c2p.h"
 #include "system/display.h"
 #include "system/input.h"
@@ -151,7 +152,7 @@ void SetupResources() {
   ResAdd("shs10.8", NewPixBufFromFile("data/shs10.8"));
   ResAdd("shs10.pal", NewPaletteFromFile("data/shs10.pal"));
 
-  ResAdd("Audio", AudioStreamOpen("data/last-christmas-techno.snd"));
+  ResAdd("Audio", AudioStreamOpen("data/last-christmas-techno.wav"));
 
   ResAdd("EffectPal", NewPalette(256));
 
@@ -224,8 +225,8 @@ void Loading() {
 }
 
 bool SetupDemo() {
-  if (!InitDisplay(WIDTH, HEIGHT, DEPTH))
-    return FALSE;
+  if (!(InitDisplay(WIDTH, HEIGHT, DEPTH) && InitAudio()))
+    return false;
 
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   TheCanvas = R_("Canvas");
@@ -256,6 +257,7 @@ void KillDemo() {
   UnlinkPalettes(R_("texture-4.pal"));
   UnlinkPalettes(R_("texture-5.pal"));
   AudioStreamStop(TheAudio);
+  KillAudio();
 }
 
 /*
@@ -275,22 +277,22 @@ void HandleEvents(int frameNumber) {
 #if ENABLEREWIND
             case KEY_UP:
               ChangeVBlankCounter(-10 * FRAMERATE);
-              AudioStreamRewind(TheAudio);
+              AudioStreamUpdatePos(TheAudio);
               break;
 
             case KEY_DOWN:
               ChangeVBlankCounter(10 * FRAMERATE);
-              AudioStreamRewind(TheAudio);
+              AudioStreamUpdatePos(TheAudio);
               break;
 
             case KEY_LEFT:
               ChangeVBlankCounter(-FRAMERATE);
-              AudioStreamRewind(TheAudio);
+              AudioStreamUpdatePos(TheAudio);
               break;
 
             case KEY_RIGHT:
               ChangeVBlankCounter(FRAMERATE);
-              AudioStreamRewind(TheAudio);
+              AudioStreamUpdatePos(TheAudio);
               break;
 
             case KEY_SPACE:
@@ -655,7 +657,7 @@ void Render(FrameT *frame) {
 
 void FeedAudioStream(FrameT *frame) {
   AudioStreamT *TheAudio = R_("Audio");
-  AudioStreamFeedIfHungry(TheAudio);
+  AudioStreamFeed(TheAudio);
 }
 
 void Quit(FrameT *frame) {

@@ -13,11 +13,11 @@ struct DosLibrary *DOSBase;
 struct GfxBase *GfxBase;
 struct IntuitionBase *IntuitionBase;
 
-bool ExitDemo = FALSE;
+bool ExitDemo = false;
 
 static void DoTimeSlice(TimeSliceT *slice, int thisFrame, int globalLastFrame) {
   while (slice->data.func) {
-    bool invoke = FALSE;
+    bool invoke = false;
 
     if (slice->type < 0) {
       /* Recurse? */
@@ -44,11 +44,11 @@ static void DoTimeSlice(TimeSliceT *slice, int thisFrame, int globalLastFrame) {
           if ((slice->start <= thisFrame) && (thisFrame < slice->end)) {
             if (slice->last == -1) {
               slice->last = slice->start;
-              invoke = TRUE;
+              invoke = true;
             } else {
               if (thisFrame - slice->last >= step) {
                 slice->last = thisFrame - ((thisFrame - slice->start) % step);
-                invoke = TRUE;
+                invoke = true;
               }
             }
           }
