@@ -59,10 +59,18 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
-void RenderMesh(int frameNumber) {
+#define ACCURACY_TEST
+
+void RenderMesh(int frameNumber_) {
   PixBufT *canvas = R_("Canvas");
   SceneT *scene = R_("Scene");
-  float s = sin(frameNumber * 3.14159265f / 90.0f);
+#ifdef ACCURACY_TEST
+  float frameNumber = frameNumber_ * 0.05f;
+  float s = 2.0f;
+#else
+  float frameNumber = frameNumber_;
+  float s = sin(frameNumber * 3.14159265f / 90.0f) + 1.0f;
+#endif
 
   {
     MatrixStack3D *ms = GetObjectTranslation(scene, "Object");
