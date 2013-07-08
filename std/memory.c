@@ -209,15 +209,23 @@ PtrT MemUnref(PtrT mem) {
 }
 
 size_t TableSize(PtrT mem asm("a0")) {
-  uint32_t blk = MemBlkData(mem);
+  uint32_t blk;
+
+  ASSERT(mem, "Null pointer!");
+ 
+  blk = MemBlkData(mem);
 
   return (blk & IS_TABLE) ? (blk / MEM_BLOCKSIZE) : 1;
 }
 
 size_t TableElemSize(PtrT mem asm("a0")) {
-  uint32_t blk = MemBlkData(mem);
+  uint32_t blk;
 
-  ASSERT(blk & IS_TABLE, "Expected to get a pointer to a table.");
+  ASSERT(mem, "Null pointer!");
+ 
+  blk = MemBlkData(mem);
+
+  ASSERT(blk & IS_TABLE, "Expected to get a pointer to a table (%p).", mem);
 
   return (blk & IS_TYPED) ? (MemBlkType(mem)->size) : MemBlkDataExt(mem);
 }

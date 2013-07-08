@@ -1,6 +1,7 @@
 #include <clib/exec_protos.h>
 #include <proto/exec.h>
 
+#include "std/debug.h"
 #include "std/resource.h"
 #include "system/check.h"
 #include "system/display.h"
@@ -25,14 +26,18 @@ int main() {
   IntuitionBase = (struct IntuitionBase *)OpenLibrary("intuition.library", 39);
 
   if (DOSBase && GfxBase && IntuitionBase && SystemCheck()) {
+    LOG("Adding resources.");
     StartResourceManager();
     AddInitialResources();
     StartEventQueue();
 
     if (SetupDisplay()) {
       InstallVBlankIntServer();
+      LOG("Setting up the effect.");
       SetupEffect();
+      LOG("Running up main loop.");
       MainLoop();
+      LOG("Tearing down the effect.");
       TearDownEffect();
       RemoveVBlankIntServer();
       KillDisplay();
