@@ -1,31 +1,78 @@
 #include "gfx/blit.h"
+#include "std/debug.h"
 
 static void PixBufBlitNormal(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
                              size_t width asm("d2"), size_t height asm("d3"),
                              size_t sstride asm("d4"), size_t dstride asm("d5"))
 {
-  int16_t y = height - 1;
+  int16_t y = height;
 
   do {
-    int16_t x = width - 1;
+    int16_t x = width;
 
     do {
       *dst++ = *src++;
-    } while (--x != -1);
+    } while (--x);
 
     src += sstride;
     dst += dstride;
-  } while (--y >= 0);
+  } while (--y);
+}
+
+static void PixBufBlitAdditive(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
+                               size_t width asm("d2"), size_t height asm("d3"),
+                               size_t sstride asm("d4"), size_t dstride asm("d5"))
+{
+  int16_t y = height;
+
+  do {
+    int16_t x = width;
+
+    do {
+      int v = *dst + *src++;
+
+      if (v > 255)
+        v = 255;
+
+      *dst++ = v;
+    } while (--x);
+
+    src += sstride;
+    dst += dstride;
+  } while (--y);
+}
+
+static void PixBufBlitSubstractive(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
+                                   size_t width asm("d2"), size_t height asm("d3"),
+                                   size_t sstride asm("d4"), size_t dstride asm("d5"))
+{
+  int16_t y = height;
+
+  do {
+    int16_t x = width;
+
+    do {
+      int v = *dst - *src++;
+
+      if (v < 0)
+        v = 0;
+
+      *dst++ = v;
+    } while (--x);
+
+    src += sstride;
+    dst += dstride;
+  } while (--y);
 }
 
 static void PixBufBlitTransparent(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
                                   size_t width asm("d2"), size_t height asm("d3"),
                                   size_t sstride asm("d4"), size_t dstride asm("d5"))
 {
-  int16_t y = height - 1;
+  int16_t y = height;
 
   do {
-    int16_t x = width - 1;
+    int16_t x = width;
 
     do {
       uint8_t c = *src++;
@@ -34,11 +81,11 @@ static void PixBufBlitTransparent(uint8_t *dst asm("a0"), uint8_t *src asm("a1")
         *dst = c;
 
       dst++;
-    } while (--x != -1);
+    } while (--x);
 
     src += sstride;
     dst += dstride;
-  } while (--y >= 0);
+  } while (--y);
 }
 
 static inline void ScaleLine(uint8_t *dst, uint8_t *src, int w, const int du2, bool check) {
@@ -69,6 +116,9 @@ static inline void ScaleLine(uint8_t *dst, uint8_t *src, int w, const int du2, b
 void PixBufBlitScaled(PixBufT *dstBuf, size_t x, size_t y, int w, int h,
                       PixBufT *srcBuf)
 {
+  ASSERT(srcBuf->mode == BLIT_NORMAL || srcBuf->mode == BLIT_TRANSPARENT,
+         "Blit mode (%d) not supported.", srcBuf->mode);
+
   if (w && h) {
     const int du2 = 2 * srcBuf->width;
     const int dv2 = 2 * srcBuf->height;
@@ -87,7 +137,7 @@ void PixBufBlitScaled(PixBufT *dstBuf, size_t x, size_t y, int w, int h,
     h = dy;
 
     do {
-      ScaleLine(dst, src, w, du2, srcBuf->flags & PIXBUF_TRANSPARENT);
+      ScaleLine(dst, src, w, du2, srcBuf->mode == BLIT_TRANSPARENT);
 
       while (error >= 0) {
         src += srcBuf->width;
@@ -143,13 +193,21 @@ void PixBufBlit(PixBufT *dbuf, int x, int y,
     uint8_t *src = &sbuf->data[sy * sbuf->width + sx];
     uint8_t *dst = &dbuf->data[y * dbuf->width + x];
 
-    switch (sbuf->flags) {
-      case PIXBUF_TRANSPARENT:
+    switch (sbuf->mode) {
+      case BLIT_NORMAL:
+        PixBufBlitNormal(dst, src, w, h, sstride, dstride);
+        break;
+
+      case BLIT_TRANSPARENT:
         PixBufBlitTransparent(dst, src, w, h, sstride, dstride);
         break;
 
-      default:
-        PixBufBlitNormal(dst, src, w, h, sstride, dstride);
+      case BLIT_ADDITIVE:
+        PixBufBlitAdditive(dst, src, w, h, sstride, dstride);
+        break;
+
+      case BLIT_SUBSTRACTIVE:
+        PixBufBlitSubstractive(dst, src, w, h, sstride, dstride);
         break;
     } 
   }

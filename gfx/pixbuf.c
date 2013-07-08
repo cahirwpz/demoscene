@@ -44,7 +44,7 @@ PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
 
 typedef struct DiskPixBuf {
   uint8_t  type;
-  uint8_t  flags;
+  uint8_t  mode;
   uint16_t width;
   uint16_t height;
   uint32_t uniqueColors;
@@ -59,7 +59,7 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
   if (file) {
     PixBufT *pixbuf = NewPixBuf(file->type, file->width, file->height);
 
-    pixbuf->flags = file->flags;
+    pixbuf->mode = file->mode;
     pixbuf->uniqueColors = file->uniqueColors;
 
     if (file->type == PIXBUF_CLUT || file->type == PIXBUF_GRAY) {
@@ -85,19 +85,14 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
   return NULL;
 }
 
-void PixBufClear(PixBufT *pixbuf) {
-  memset(pixbuf->data, pixbuf->bgColor, pixbuf->width * pixbuf->height);
+BlitModeT PixBufSetBlitMode(PixBufT *pixbuf, BlitModeT mode) {
+  BlitModeT old_mode = pixbuf->mode;
+  pixbuf->mode = mode;
+  return old_mode;
 }
 
-bool PixBufSetTransparent(PixBufT *pixbuf, bool transparent) {
-  bool previous = pixbuf->flags & PIXBUF_TRANSPARENT;
-
-  if (transparent)
-    pixbuf->flags |= PIXBUF_TRANSPARENT;
-  else
-    pixbuf->flags &= ~PIXBUF_TRANSPARENT;
-
-  return previous;
+void PixBufClear(PixBufT *pixbuf) {
+  memset(pixbuf->data, pixbuf->bgColor, pixbuf->width * pixbuf->height);
 }
 
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {
@@ -115,7 +110,7 @@ void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {
     LOG("Remapping by %d colors.", color);
 
     for (i = 0; i < pixbuf->width * pixbuf->height; i++) {
-      if ((pixbuf->flags & PIXBUF_TRANSPARENT) && (pixbuf->data[i] == 0))
+      if ((pixbuf->mode == BLIT_TRANSPARENT) && (pixbuf->data[i] == 0))
           continue;
 
       pixbuf->data[i] += color;

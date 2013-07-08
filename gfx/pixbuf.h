@@ -9,28 +9,33 @@
 #define PIXBUF_CLUT  1
 #define PIXBUF_RGB24 2
 
-#define PIXBUF_TRANSPARENT 1
+typedef enum {
+  BLIT_NORMAL,
+  BLIT_TRANSPARENT,
+  BLIT_ADDITIVE,
+  BLIT_SUBSTRACTIVE
+} BlitModeT;
 
 typedef struct PixBuf {
   uint16_t type;
-  uint16_t flags;
-  uint8_t  *data;
-  size_t   width, height;
-  size_t   uniqueColors;  /* stores number of unique colors in the image */
+  BlitModeT mode;
+  uint8_t *data;
+  size_t width, height;
+  size_t uniqueColors;  /* stores number of unique colors in the image */
 
   /* valid only in GRAY or CLUT mode */
-  uint8_t  baseColor;
-  uint8_t  lastColor;
+  uint8_t baseColor;
+  uint8_t lastColor;
 
-  uint8_t fgColor;
-  uint8_t bgColor;
+  uint8_t  fgColor;
+  uint8_t  bgColor;
 } PixBufT;
 
 PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height);
 PixBufT *NewPixBufFromFile(const StrT fileName);
 
 void PixBufClear(PixBufT *pixbuf);
-bool PixBufSetTransparent(PixBufT *pixbuf, bool transparent);
+BlitModeT PixBufSetBlitMode(PixBufT *pixbuf, BlitModeT mode);
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
 
 void PutPixel(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),

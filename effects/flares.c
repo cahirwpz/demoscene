@@ -20,38 +20,6 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-void PixBufBlitFlare(PixBufT *dstBuf asm("a0"),
-                     size_t x asm("d0"), size_t y asm("d1"),
-                     PixBufT *srcBuf asm("a1"))
-{
-  size_t stride = dstBuf->width - srcBuf->width;
-
-  uint8_t *src = srcBuf->data;
-  uint8_t *dst;
-
-  x -= srcBuf->width / 2;
-  y -= srcBuf->height / 2;
- 
-  dst = &dstBuf->data[y * dstBuf->width + x];
-
-  y = srcBuf->height;
-
-  do {
-    x = srcBuf->width;
-
-    do {
-      int v = *dst + *src++;
-
-      if (v > 255)
-        v = 255;
-
-      *dst++ = v;
-    } while (--x);
-
-    dst += stride;
-  } while (--y);
-}
-
 const int CYCLEFRAMES = 100;
 const int POINTS = 64;
 const int SEGMENTS = 16;
@@ -79,11 +47,12 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
+  PixBufT *flare = R_("Flare");
   float lightRadius = 1.0f;
 
   PixBufClear(R_("Canvas"));
-  GeneratePixels(R_("Flare"),
-                 (GenPixelFuncT)LightNormalFalloff, &lightRadius);
+  GeneratePixels(flare, (GenPixelFuncT)LightNormalFalloff, &lightRadius);
+  PixBufSetBlitMode(flare, BLIT_ADDITIVE);
 
   {
     SplineT *splineX = R_("SplineX");
@@ -120,6 +89,7 @@ static const int LastCurve = 9;
 
 void RenderFlares(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
+  PixBufT *flare = R_("Flare");
   PointT *points = R_("Points");
 
   PixBufClear(canvas);
@@ -192,7 +162,10 @@ void RenderFlares(int frameNumber) {
     for (i = 2; i < FLARES; i++) {
       size_t p = SEGMENTS * i / (FLARES - 1);
 
-      PixBufBlitFlare(canvas, points[p].x, points[p].y, R_("Flare"));
+      PixBufBlit(canvas, 
+                 points[p].x - flare->width / 2,
+                 points[p].y - flare->height / 2,
+                 flare, NULL);
     }
   }
 

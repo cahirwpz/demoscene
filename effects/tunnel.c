@@ -60,8 +60,8 @@ void SetupEffect() {
 
   PixBufRemap(R_("CreditsImg"), R_("CreditsPal"));
   PixBufRemap(R_("WhelpzImg"), R_("WhelpzPal"));
-  PixBufSetTransparent(R_("CreditsImg"), TRUE);
-  PixBufSetTransparent(R_("WhelpzImg"), TRUE);
+  PixBufSetBlitMode(R_("CreditsImg"), BLIT_TRANSPARENT);
+  PixBufSetBlitMode(R_("WhelpzImg"), BLIT_TRANSPARENT);
 
   P61_Init(R_("Module"), NULL, NULL);
   P61_ControlBlock.Play = 1;

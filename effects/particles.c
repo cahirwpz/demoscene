@@ -118,38 +118,6 @@ void ParticleEngineStep(ParticleEngineT *engine) {
   ArrayForEach(engine->particles, (IterFuncT)IncrementAge, NULL);
 }
 
-void PixBufBlitFlare(PixBufT *dstBuf asm("a0"),
-                     size_t x asm("d0"), size_t y asm("d1"),
-                     PixBufT *srcBuf asm("a1"))
-{
-  size_t stride = dstBuf->width - srcBuf->width;
-
-  uint8_t *src = srcBuf->data;
-  uint8_t *dst;
-
-  x -= srcBuf->width / 2;
-  y -= srcBuf->height / 2;
- 
-  dst = &dstBuf->data[y * dstBuf->width + x];
-
-  y = srcBuf->height;
-
-  do {
-    x = srcBuf->width;
-
-    do {
-      int v = *dst + *src++;
-
-      if (v > 255)
-        v = 255;
-
-      *dst++ = v;
-    } while (--x);
-
-    dst += stride;
-  } while (--y);
-}
-
 static void AddParticles(ParticleEngineT *engine) {
   static uint16_t seed[3] = { 0xDEAD, 0x1EE7, 0xC0DE };
 
@@ -166,10 +134,12 @@ static void AddParticles(ParticleEngineT *engine) {
 };
 
 static void ParticleDraw(ParticleT *particle, PixBufT *pixbuf) {
+  PixBufT *flare = R_("Flare");
   PointT point = { particle->position.x + WIDTH / 2,
                    particle->position.y + HEIGHT / 2 };
 
-  PixBufBlitFlare(pixbuf, point.x, point.y, R_("Flare"));
+  PixBufBlit(pixbuf, point.x - flare->width / 2, point.y - flare->height / 2,
+             flare, NULL);
 }
 
 /*
@@ -192,11 +162,12 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
+  PixBufT *flare = R_("Flare");
   float lightRadius = 1.0f;
 
   PixBufClear(R_("Canvas"));
-  GeneratePixels(R_("Flare"),
-                 (GenPixelFuncT)LightNormalFalloff, &lightRadius);
+  GeneratePixels(flare, (GenPixelFuncT)LightNormalFalloff, &lightRadius);
+  PixBufSetBlitMode(flare, BLIT_SUBSTRACTIVE);
 }
 
 /*
