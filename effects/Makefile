@@ -1,8 +1,8 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-OBJS := colormap.o deformations.o flares.o layers.o object3d.o particles.o \
-	playaudio.o raytunnel.o tunnel.o vector2d.o startup.o
-BINS := colormap deformations flares layers object3d particles playaudio \
+OBJS := blur.o colormap.o deformations.o flares.o layers.o object3d.o \
+	particles.o playaudio.o raytunnel.o tunnel.o vector2d.o startup.o
+BINS := blur colormap deformations flares layers object3d particles playaudio \
 	raytunnel tunnel vector2d
 LIBS := libgfx.a libtools.a libsystem.a libstd.a
 
@@ -13,6 +13,7 @@ colormap: startup.o colormap.o libdistort.a $(LIBS)
 deformations: CFLAGS += -Wno-unused
 deformations: startup.o deformations.o libdistort.a $(LIBS)
 
+blur: startup.o blur.o $(LIBS)
 flares: startup.o flares.o libtxtgen.a $(LIBS)
 layers: startup.o layers.o $(LIBS)
 object3d: startup.o object3d.o libengine.a $(LIBS)
