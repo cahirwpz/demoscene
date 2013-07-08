@@ -45,7 +45,7 @@ static inline void ScaleLine(uint8_t *dst, uint8_t *src, int w, const int du2, b
   const int sx = sign(w);
   const int dx = abs(w);
 
-  int e = du2 - dx;
+  int error = du2 - dx;
 
   w = dx;
 
@@ -55,16 +55,17 @@ static inline void ScaleLine(uint8_t *dst, uint8_t *src, int w, const int du2, b
     if ((!check) || (c != 0))
       *dst = *src;
 
-    while (e >= 0) {
+    while (error >= 0) {
       src++;
-      e -= 2 * dx;
+      error -= 2 * dx;
     }
 
     dst += sx;
-    e += du2;
+    error += du2;
   } while (--w);
 }
 
+/* Uses variant of Bresenham algorithm. */
 void PixBufBlitScaled(PixBufT *dstBuf, size_t x, size_t y, int w, int h,
                       PixBufT *srcBuf)
 {
@@ -78,8 +79,7 @@ void PixBufBlitScaled(PixBufT *dstBuf, size_t x, size_t y, int w, int h,
     uint8_t *src = srcBuf->data;
     uint8_t *dst = dstBuf->data;
 
-    int e = dv2 - dy;
-
+    int error = dv2 - dy;
 
     dst += ((h > 0) ? (y) : (y - h - 1)) * dstBuf->width;
     dst += (w > 0) ? (x) : (x - w - 1);
@@ -89,13 +89,13 @@ void PixBufBlitScaled(PixBufT *dstBuf, size_t x, size_t y, int w, int h,
     do {
       ScaleLine(dst, src, w, du2, srcBuf->flags & PIXBUF_TRANSPARENT);
 
-      while (e >= 0) {
+      while (error >= 0) {
         src += srcBuf->width;
-        e -= 2 * dy;
+        error -= 2 * dy;
       }
 
       dst += sy;
-      e += dv2;
+      error += dv2;
     } while (--h);
   }
 }
