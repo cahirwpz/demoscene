@@ -19,7 +19,7 @@ static void DrawEllipseSegment(SegmentT *seg, int x) {
   seg->lower -= seg->stride;
 }
 
-void DrawEllipse(CanvasT *canvas, int xc, int yc, int a, int b) {
+void DrawEllipse(PixBufT *canvas, int xc, int yc, int a, int b) {
   int a2 = a * a;
   int b2 = b * b;
   int x = 0;
@@ -34,10 +34,10 @@ void DrawEllipse(CanvasT *canvas, int xc, int yc, int a, int b) {
 
   SegmentT seg;
 
-  seg.stride = GetCanvasWidth(canvas);
-  seg.color = GetCanvasFgCol(canvas);
-  seg.upper = GetCanvasPixelData(canvas) + (yc - b) * seg.stride + xc;
-  seg.lower = GetCanvasPixelData(canvas) + (yc + b) * seg.stride + xc;
+  seg.stride = canvas->width;
+  seg.color = canvas->fgColor;
+  seg.upper = canvas->data + (yc - b) * seg.stride + xc;
+  seg.lower = canvas->data + (yc + b) * seg.stride + xc;
 
   while (dx < dy) {
     if (d > 0) {

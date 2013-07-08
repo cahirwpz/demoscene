@@ -73,7 +73,7 @@ static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
   }
 }
 
-static void Render(CanvasT *canvas, bool wireframe,
+static void Render(PixBufT *canvas, bool wireframe,
                    PolygonExtT **sortedPolygonExt, TriangleT *polygon,
                    size_t polygonNum, Vector3D *vertex)
 {
@@ -90,7 +90,7 @@ static void Render(CanvasT *canvas, bool wireframe,
     if (!polyExt->flags)
       continue;
 
-    CanvasSetFgCol(canvas, polyExt->color);
+    canvas->fgColor = polyExt->color;
 
     if (wireframe) {
       DrawLine(canvas, vertex[p1].x, vertex[p1].y, vertex[p2].x, vertex[p2].y);
@@ -105,7 +105,7 @@ static void Render(CanvasT *canvas, bool wireframe,
   }
 }
 
-void RenderSceneObject(SceneObjectT *self, CanvasT *canvas) {
+void RenderSceneObject(SceneObjectT *self, PixBufT *canvas) {
   MeshT *mesh = self->mesh;
 
   /* Apply vertex transformations. */
@@ -121,7 +121,7 @@ void RenderSceneObject(SceneObjectT *self, CanvasT *canvas) {
             SortByDepth, 0, mesh->polygonNum - 1);
 
   ProjectTo2D(self->vertex, self->vertex, mesh->vertexNum,
-              GetCanvasWidth(canvas) / 2, GetCanvasHeight(canvas) / 2, 160.0f);
+              canvas->width / 2, canvas->height / 2, 160.0f);
 
   /* Render the object. */
   Render(canvas, self->wireframe,

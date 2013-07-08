@@ -36,7 +36,7 @@ SceneObjectT *GetObject(SceneT *self, const StrT name) {
   return ListSearch(self->objects, (CompareFuncT)CompareName, name);
 }
 
-void RenderScene(SceneT *self, CanvasT *canvas) {
+void RenderScene(SceneT *self, PixBufT *canvas) {
   void RenderObject(SceneObjectT *obj) {
     RenderSceneObject(obj, canvas);
   }

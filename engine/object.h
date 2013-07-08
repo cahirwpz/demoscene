@@ -1,7 +1,7 @@
 #ifndef __ENGINE_SCENE_OBJECT_H__
 #define __ENGINE_SCENE_OBJECT_H__
 
-#include "gfx/canvas.h"
+#include "gfx/pixbuf.h"
 #include "engine/mesh.h"
 #include "engine/ms3d.h"
 
@@ -28,6 +28,6 @@ typedef struct SceneObject {
 
 SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh);
 
-void RenderSceneObject(SceneObjectT *self, CanvasT *canvas);
+void RenderSceneObject(SceneObjectT *self, PixBufT *canvas);
 
 #endif

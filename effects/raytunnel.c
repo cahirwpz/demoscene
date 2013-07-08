@@ -6,7 +6,6 @@
 
 #include "distort/scaling.h"
 #include "engine/ms3d.h"
-#include "gfx/canvas.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
@@ -38,7 +37,7 @@ void AddInitialResources() {
   ResAdd("Texture", NewPixBufFromFile("data/texture-01.8"));
   ResAdd("TexturePal", NewPaletteFromFile("data/texture-01.pal"));
   ResAdd("ms3d", NewMatrixStack3D());
-  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("SmallMap", NewDistortionMap(H_RAYS, V_RAYS,
                                       DMAP_ACCURATE, 256, 256));
   ResAdd("Map", NewDistortionMap(WIDTH, HEIGHT,
@@ -57,7 +56,7 @@ bool SetupDisplay() {
  */
 void SetupEffect() {
   LoadPalette(R_("TexturePal"));
-  CanvasFill(R_("Canvas"), 0);
+  PixBufClear(R_("Canvas"));
 }
 
 /*
@@ -120,16 +119,14 @@ void RenderEffect(int frameNumber) {
   Vector3D *view = R_("ViewTransformed");
   DistortionMapT *smallMap = R_("SmallMap");
   DistortionMapT *map = R_("Map");
+  PixBufT *canvas = R_("Canvas");
 
   CalculateView(frameNumber, view);
   RaytraceTunnel(smallMap, view);
   DistortionMapScale8x(map, smallMap);
-  RenderDistortion(map, R_("Canvas"), R_("Texture"), 0, frameNumber);
-}
+  RenderDistortion(map, canvas, R_("Texture"), 0, frameNumber);
 
-void RenderChunky(int frameNumber) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
-                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -142,7 +139,6 @@ void MainLoop() {
     int frameNumber = GetVBlankCounter();
 
     RenderEffect(frameNumber);
-    RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();

@@ -9,6 +9,6 @@ SceneT *NewScene();
 void SceneAddObject(SceneT *self, SceneObjectT *object);
 SceneObjectT *GetObject(SceneT *self, const StrT name);
 MatrixStack3D *GetObjectTranslation(SceneT *self, const StrT name);
-void RenderScene(SceneT *self, CanvasT *canvas);
+void RenderScene(SceneT *self, PixBufT *canvas);
 
 #endif

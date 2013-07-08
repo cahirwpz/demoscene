@@ -1,7 +1,7 @@
 #include "gfx/line.h"
 
-void DrawLine(CanvasT *canvas, int xs, int ys, int xe, int ye) {
-  int stride = GetCanvasWidth(canvas);
+void DrawLine(PixBufT *canvas, int xs, int ys, int xe, int ye) {
+  int stride = canvas->width;
   int dx, dy, step, dg, dg1, dg2, db1, db2, n;
 
   if (ys > ye) {
@@ -48,8 +48,8 @@ void DrawLine(CanvasT *canvas, int xs, int ys, int xe, int ye) {
   }
 
   {
-    uint8_t *pixels = GetCanvasPixelData(canvas) + ys * stride + xs;
-    uint8_t color = canvas->fg_col;
+    uint8_t *pixels = canvas->data + ys * stride + xs;
+    uint8_t color = canvas->fgColor;
 
     for (;;) {
       *pixels = color;
@@ -69,7 +69,7 @@ void DrawLine(CanvasT *canvas, int xs, int ys, int xe, int ye) {
   }
 }
 
-void DrawPolyLine(CanvasT *canvas, PointT *points, int n, bool closed) {
+void DrawPolyLine(PixBufT *canvas, PointT *points, int n, bool closed) {
   int i;
 
   for (i = 0; i < (n - 1); i++)

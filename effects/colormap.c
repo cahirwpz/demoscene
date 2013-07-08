@@ -7,7 +7,6 @@
 #include "std/resource.h"
 
 #include "gfx/blit.h"
-#include "gfx/canvas.h"
 #include "tools/frame.h"
 #include "tools/gradient.h"
 #include "tools/loopevent.h"
@@ -24,7 +23,7 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
-  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("Map1", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Map2", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Image", NewPixBufFromFile("data/samkaat-absinthe.8"));
@@ -115,42 +114,41 @@ static int Effect = 0;
 static const int LastEffect = 6;
 
 void RenderChunky(int frameNumber) {
-  CanvasT *canvas = R_("Canvas");
+  PixBufT *canvas = R_("Canvas");
   PixBufT *image = R_("Image");
 
   int change = (frameNumber * 2) % 256;
 
   switch (Effect) {
     case 0:
-      Emerge(canvas->pixbuf, image, R_("Map1"), change, 192);
+      Emerge(canvas, image, R_("Map1"), change, 192);
       break;
     
     case 1:
-      Shade(canvas->pixbuf, image, R_("Map1"), R_("Lighten"), change);
+      Shade(canvas, image, R_("Map1"), R_("Lighten"), change);
       break;
 
     case 2:
-      Shade(canvas->pixbuf, image, R_("Map1"), R_("Darken"), change - 64);
+      Shade(canvas, image, R_("Map1"), R_("Darken"), change - 64);
       break;
 
     case 3:
-      Emerge(canvas->pixbuf, image, R_("Map2"), change, 192);
+      Emerge(canvas, image, R_("Map2"), change, 192);
       break;
     
     case 4:
-      Shade(canvas->pixbuf, image, R_("Map2"), R_("Lighten"), change);
+      Shade(canvas, image, R_("Map2"), R_("Lighten"), change);
       break;
 
     case 5:
-      Shade(canvas->pixbuf, image, R_("Map2"), R_("Darken"), change - 64);
+      Shade(canvas, image, R_("Map2"), R_("Darken"), change - 64);
       break;
 
     default:
       break;
   }
 
-  c2p1x1_8_c5_bm(GetCanvasPixelData(canvas),
-                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*

@@ -6,7 +6,6 @@
 
 #include "engine/ms3d.h"
 #include "engine/scene.h"
-#include "gfx/canvas.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
 
@@ -25,7 +24,7 @@ const int DEPTH = 8;
 void AddInitialResources() {
   ResAdd("Scene", NewScene());
   ResAdd("Mesh", NewMeshFromFile("data/whelpz.robj"));
-  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
 
   {
     MeshT *mesh = R_("Mesh");
@@ -48,7 +47,7 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  CanvasFill(R_("Canvas"), 0);
+  PixBufClear(R_("Canvas"));
 }
 
 /*
@@ -61,7 +60,7 @@ void TearDownEffect() {
  * Effect rendering functions.
  */
 void RenderMesh(int frameNumber) {
-  CanvasT *canvas = R_("Canvas");
+  PixBufT *canvas = R_("Canvas");
   SceneT *scene = R_("Scene");
   float s = sin(frameNumber * 3.14159265f / 90.0f);
 
@@ -74,13 +73,10 @@ void RenderMesh(int frameNumber) {
     PushTranslation3D(ms, 0.0f, 0.0f, 2.0f);
   }
 
-  CanvasFill(canvas, 0);
+  PixBufClear(canvas);
   RenderScene(scene, canvas);
-}
 
-void RenderChunky(int frameNumber) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
-                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -113,7 +109,6 @@ void MainLoop() {
     }
 
     RenderMesh(frameNumber);
-    RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
     RenderFramesPerSecond(frameNumber);
 

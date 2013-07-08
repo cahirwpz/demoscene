@@ -4,7 +4,6 @@
 #include "std/types.h"
 #include "std/fp16.h"
 #include "gfx/pixbuf.h"
-#include "gfx/canvas.h"
 
 typedef struct {
   Q16T u, v;
@@ -29,7 +28,7 @@ void DistortionMapWriteToFile(DistortionMapT *map, const StrT fileName);
 void DistortionMapSet(DistortionMapT *map asm("a0"), size_t i asm("d0"),
                       float u asm("fp0"), float v asm("fp1"));
 
-void RenderDistortion(DistortionMapT *map, CanvasT *canvas, PixBufT *texture,
+void RenderDistortion(DistortionMapT *map, PixBufT *canvas, PixBufT *texture,
                       int offsetU, int offsetV);
 
 #endif

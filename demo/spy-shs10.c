@@ -6,7 +6,6 @@
 #include "audio/stream.h"
 #include "distort/generate.h"
 #include "gfx/blit.h"
-#include "gfx/canvas.h"
 #include "gfx/colors.h"
 #include "gfx/palette.h"
 #include "tools/frame.h"
@@ -29,7 +28,7 @@ const int DEPTH = 8;
 #define BEAT_F(x) ((float)(x) * FRAMERATE * (60.0f / BPM))
 
 static AudioStreamT *TheAudio;
-static CanvasT *TheCanvas;
+static PixBufT *TheCanvas;
 static PaletteT *ThePalette;
 static PixBufT *TheImage;
 
@@ -227,7 +226,7 @@ bool SetupDemo() {
   if (!InitDisplay(WIDTH, HEIGHT, DEPTH))
     return FALSE;
 
-  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   TheCanvas = R_("Canvas");
 
   Loading();
@@ -356,13 +355,13 @@ void VolumeUp(FrameT *frame) {
 
   AudioStreamSetVolume(TheAudio, volume);
 
-  PixBufBlit(TheCanvas->pixbuf, 0, 0, R_("slider.8"), NULL);
-  PixBufBlit(TheCanvas->pixbuf, 50 + (int)dx , 110 - (int)dy, R_("knob.8"), NULL);
+  PixBufBlit(TheCanvas, 0, 0, R_("slider.8"), NULL);
+  PixBufBlit(TheCanvas, 50 + (int)dx , 110 - (int)dy, R_("knob.8"), NULL);
 }
 
 void ShowVolume(FrameT *frame) {
-  PixBufBlit(TheCanvas->pixbuf, 0, 0, R_("slider.8"), NULL);
-  PixBufBlit(TheCanvas->pixbuf, 50, 110, R_("knob.8"), NULL);
+  PixBufBlit(TheCanvas, 0, 0, R_("slider.8"), NULL);
+  PixBufBlit(TheCanvas, 50, 110, R_("knob.8"), NULL);
 }
 
 void RenderPart1(FrameT *frame) {
@@ -386,7 +385,7 @@ void ShowTitle(FrameT *frame, PixBufT *title) {
   x = (WIDTH - w) / 2;
   y = (HEIGHT - h) / 2;
 
-  PixBufBlitScaled(TheCanvas->pixbuf, x, y, w, h, title);
+  PixBufBlitScaled(TheCanvas, x, y, w, h, title);
 }
 
 void ShowSpy(FrameT *frame) {
@@ -576,7 +575,7 @@ void RenderPart2(FrameT *frame) {
       rect.y = (int)((float)(TheImage->height - HEIGHT) * 2 * dy / frames);
     }
 
-    PixBufBlit(TheCanvas->pixbuf, 0, 0, TheImage, &rect);
+    PixBufBlit(TheCanvas, 0, 0, TheImage, &rect);
 
     PaletteEffect(frame, ThePalette, R_("EffectPal"));
   }
@@ -590,13 +589,13 @@ void RenderPart2(FrameT *frame) {
 
       rect.x = (TheGreets->width - WIDTH) * frame->number / frames;
 
-      PixBufBlit(TheCanvas->pixbuf, 0, 54, TheGreets, &rect);
+      PixBufBlit(TheCanvas, 0, 54, TheGreets, &rect);
     } else {
       PixBufT *TheGreets = R_("greets2.8");
 
       rect.x = (TheGreets->width - WIDTH) * (frames - frame->number) / frames;
 
-      PixBufBlit(TheCanvas->pixbuf, 0, 54, TheGreets, &rect);
+      PixBufBlit(TheCanvas, 0, 54, TheGreets, &rect);
     }
   }
 }
@@ -641,8 +640,7 @@ TimeSliceT Part2[] = {
 /*** The demo ****************************************************************/
 
 void Render(FrameT *frame) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(TheCanvas),
-                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(TheCanvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 
 #ifdef SHOWFRAMES
   RenderFrameNumber(frame->number);

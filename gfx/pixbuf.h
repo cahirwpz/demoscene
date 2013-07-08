@@ -21,11 +21,15 @@ typedef struct PixBuf {
   /* valid only in GRAY or CLUT mode */
   uint8_t  baseColor;
   uint8_t  lastColor;
+
+  uint8_t fgColor;
+  uint8_t bgColor;
 } PixBufT;
 
 PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height);
 PixBufT *NewPixBufFromFile(const StrT fileName);
 
+void PixBufClear(PixBufT *pixbuf);
 bool PixBufSetTransparent(PixBufT *pixbuf, bool transparent);
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
 

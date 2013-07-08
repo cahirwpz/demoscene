@@ -21,7 +21,7 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
-  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("Audio", AudioStreamOpen("data/chembro.snd"));
 }
 
@@ -49,8 +49,9 @@ void TearDownEffect() {
  */
 
 void RenderChunky(int frameNumber) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
-                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  PixBufT *canvas = R_("Canvas");
+
+  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*

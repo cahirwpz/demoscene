@@ -133,7 +133,7 @@ void AddInitialResources() {
   ResAdd("Texture", NewPixBufFromFile("data/texture.8"));
   ResAdd("TexturePal", NewPaletteFromFile("data/texture.pal"));
   ResAdd("Map", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
-  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
 }
 
 /*
@@ -161,15 +161,14 @@ void TearDownEffect() {
  * Effect rendering functions.
  */
 void RenderChunky(int frameNumber) {
-  CanvasT *canvas = R_("Canvas");
+  PixBufT *canvas = R_("Canvas");
 
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
 
   RenderDistortion(R_("Map"), canvas, R_("Texture"), du, dv);
 
-  c2p1x1_8_c5_bm(GetCanvasPixelData(canvas),
-                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*

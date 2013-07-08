@@ -7,12 +7,12 @@
 #define ADD(i) asm("add.w %1,%0" : "+d" (i) : "a" (offset));
 
 void RenderDistortionOptimized(DistortionMapT *map,
-                               CanvasT *canvas, PixBufT *texture,
+                               PixBufT *canvas, PixBufT *texture,
                                int offsetU, int offsetV)
 {
   uint16_t *data = (uint16_t *)map->map;
   uint16_t *end = &data[map->width * map->height];
-  uint8_t *d = GetCanvasPixelData(canvas);
+  uint8_t *d = canvas->data;
   uint8_t *t = texture->data;
   uint16_t offset = ((offsetV & 0xff) << 8) | (offsetU & 0xff);
 
@@ -54,12 +54,12 @@ void RenderDistortionOptimized(DistortionMapT *map,
 }
 #else
 void RenderDistortionOptimized(DistortionMapT *map,
-                               CanvasT *canvas, PixBufT *texture,
+                               PixBufT *canvas, PixBufT *texture,
                                int offsetU, int offsetV)
 {
   uint16_t *data = (uint16_t *)map->map;
   uint16_t *end = &data[map->width * map->height];
-  uint8_t *d = GetCanvasPixelData(canvas);
+  uint8_t *d = canvas->data;
   uint8_t *t = texture->data;
   uint16_t offset = ((offsetV & 0xff) << 8) | (offsetU & 0xff);
 
@@ -69,11 +69,11 @@ void RenderDistortionOptimized(DistortionMapT *map,
 #endif
 
 void RenderDistortionAccurate(DistortionMapT *map,
-                              CanvasT *canvas, PixBufT *texture,
+                              PixBufT *canvas, PixBufT *texture,
                               int offsetU, int offsetV)
 {
   UV16T *data = (UV16T *)map->map;
-  uint8_t *d = GetCanvasPixelData(canvas);
+  uint8_t *d = canvas->data;
   size_t i;
 
   for (i = 0; i < map->width * map->height; i++) {
@@ -97,7 +97,7 @@ void RenderDistortionAccurate(DistortionMapT *map,
   }
 }
 
-void RenderDistortion(DistortionMapT *map, CanvasT *canvas, PixBufT *texture,
+void RenderDistortion(DistortionMapT *map, PixBufT *canvas, PixBufT *texture,
                       int offsetU, int offsetV)
 {
   ASSERT(texture->width == map->textureW, "Texture width mismatch %d != %d.",

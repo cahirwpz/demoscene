@@ -36,7 +36,7 @@ void AddInitialResources() {
   ResAddStatic("Triangle", Triangle);
   ResAddStatic("TriangleToDraw", TriangleToDraw);
 
-  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("ms2d", NewMatrixStack2D());
 }
 
@@ -51,7 +51,7 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  CanvasFill(R_("Canvas"), 0);
+  PixBufClear(R_("Canvas"));
 }
 
 /*
@@ -67,7 +67,7 @@ int effect = 0;
 const int lastEffect = 3;
 
 void RenderVector(int frameNumber) {
-  CanvasT *canvas = R_("Canvas");
+  PixBufT *canvas = R_("Canvas");
   PointT *toDraw = R_("TriangleToDraw");
   MatrixStack2D *ms = R_("ms2d");
 
@@ -83,7 +83,7 @@ void RenderVector(int frameNumber) {
   Transform2D(R_("CrossToDraw"), R_("Cross"), 12, GetMatrix2D(ms, 0));
 
   if (effect == 0) {
-    CanvasFill(canvas, 0);
+    PixBufClear(canvas);
     DrawPolyLine(canvas, R_("CrossToDraw"), 12, TRUE);
   }
 
@@ -98,9 +98,9 @@ void RenderVector(int frameNumber) {
   frameNumber &= 255;
 
   if (frameNumber < 128)
-    canvas->fg_col = frameNumber * 2;
+    canvas->fgColor = frameNumber * 2;
   else 
-    canvas->fg_col = (255 - frameNumber) * 2;
+    canvas->fgColor = (255 - frameNumber) * 2;
 
   if (effect == 1) {
     DrawTriangle(canvas,
@@ -114,11 +114,8 @@ void RenderVector(int frameNumber) {
                 toDraw[1].x, toDraw[1].y,
                 30 + c * 15, 30 + s * 15);
   }
-}
 
-void RenderChunky(int frameNumber) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
-                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -133,7 +130,7 @@ void MainLoop() {
     int frameNumber = GetVBlankCounter();
 
     if (event != LOOP_CONTINUE) {
-      CanvasFill(R_("Canvas"), 0);
+      PixBufClear(R_("Canvas"));
 
       if (event == LOOP_NEXT)
         effect = (effect + 1) % lastEffect;
@@ -145,7 +142,6 @@ void MainLoop() {
     }
 
     RenderVector(frameNumber);
-    RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();

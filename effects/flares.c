@@ -5,7 +5,6 @@
 #include "std/resource.h"
 
 #include "gfx/blit.h"
-#include "gfx/canvas.h"
 #include "gfx/spline.h"
 #include "gfx/line.h"
 #include "tools/curves.h"
@@ -64,7 +63,7 @@ const int FLARES = 6;
 void AddInitialResources() {
   ResAdd("Points", NewTable(PointT, SEGMENTS + 1));
   ResAdd("Flare", NewPixBuf(PIXBUF_GRAY, 32, 32));
-  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("SplineX", NewSpline(4, TRUE));
   ResAdd("SplineY", NewSpline(4, TRUE));
 }
@@ -82,7 +81,7 @@ bool SetupDisplay() {
 void SetupEffect() {
   float lightRadius = 1.0f;
 
-  CanvasFill(R_("Canvas"), 0);
+  PixBufClear(R_("Canvas"));
   GeneratePixels(R_("Flare"),
                  (GenPixelFuncT)LightNormalFalloff, &lightRadius);
 
@@ -120,10 +119,10 @@ static int Curve = 8;
 static const int LastCurve = 9;
 
 void RenderFlares(int frameNumber) {
-  CanvasT *canvas = R_("Canvas");
+  PixBufT *canvas = R_("Canvas");
   PointT *points = R_("Points");
 
-  CanvasFill(canvas, 0);
+  PixBufClear(canvas);
 
   {
     float t = (float)frameNumber / CYCLEFRAMES;
@@ -186,21 +185,18 @@ void RenderFlares(int frameNumber) {
 
     /* draw lines */
     for (i = 1; i <= SEGMENTS; i++) {
-      canvas->fg_col = i * 255 / SEGMENTS; 
+      canvas->fgColor = i * 255 / SEGMENTS; 
       DrawLine(canvas, points[i-1].x, points[i-1].y, points[i].x, points[i].y);
     }
 
     for (i = 2; i < FLARES; i++) {
       size_t p = SEGMENTS * i / (FLARES - 1);
 
-      PixBufBlitFlare(canvas->pixbuf, points[p].x, points[p].y, R_("Flare"));
+      PixBufBlitFlare(canvas, points[p].x, points[p].y, R_("Flare"));
     }
   }
-}
 
-void RenderChunky(int frameNumber) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
-                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -223,7 +219,6 @@ void MainLoop() {
     }
 
     RenderFlares(frameNumber);
-    RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();

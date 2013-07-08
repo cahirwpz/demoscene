@@ -18,6 +18,9 @@ PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
   pixbuf->width = width;
   pixbuf->height = height;
 
+  LOG("Creating %d-bit image of size (%d,%d).",
+      (type == PIXBUF_RGB24) ? 24 : 8, (int)width, (int)height);
+
   switch (type) {
     case PIXBUF_CLUT:
     case PIXBUF_GRAY:
@@ -33,6 +36,8 @@ PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
       PANIC("Unknown PixBuf type: %d", type);
       break;
   }
+
+  pixbuf->fgColor = 255;
 
   return pixbuf;
 }
@@ -78,6 +83,10 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
   }
 
   return NULL;
+}
+
+void PixBufClear(PixBufT *pixbuf) {
+  memset(pixbuf->data, pixbuf->bgColor, pixbuf->width * pixbuf->height);
 }
 
 bool PixBufSetTransparent(PixBufT *pixbuf, bool transparent) {

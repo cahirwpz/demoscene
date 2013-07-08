@@ -139,12 +139,10 @@ typedef struct Segment {
 
 static SegmentT segment;
 
-static inline void InitSegment(CanvasT *canvas, int y) {
-  int stride = GetCanvasWidth(canvas);
-
-  segment.color  = GetCanvasFgCol(canvas);
-  segment.stride = stride;
-  segment.pixels = GetCanvasPixelData(canvas) + y * stride;
+static inline void InitSegment(PixBufT *canvas, int y) {
+  segment.color  = canvas->fgColor;
+  segment.stride = canvas->width;
+  segment.pixels = canvas->data + y * canvas->width;
 }
 
 __regargs static void DrawTriangleSegment(EdgeScanT *left, EdgeScanT *right,
@@ -171,7 +169,7 @@ __regargs static void DrawTriangleSegment(EdgeScanT *left, EdgeScanT *right,
 
 /* Triangle rasterization routine. */
 
-void DrawTriangle(CanvasT *canvas, float x1f, float y1f, float x2f, float y2f,
+void DrawTriangle(PixBufT *canvas, float x1f, float y1f, float x2f, float y2f,
                   float x3f, float y3f)
 {
   {

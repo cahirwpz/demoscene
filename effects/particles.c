@@ -10,7 +10,6 @@
 #include "engine/sphere.h"
 #include "engine/vector3d.h"
 #include "gfx/blit.h"
-#include "gfx/canvas.h"
 #include "gfx/ellipse.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
@@ -178,7 +177,7 @@ static void ParticleDraw(ParticleT *particle, PixBufT *pixbuf) {
  */
 void AddInitialResources() {
   ResAdd("Flare", NewPixBuf(PIXBUF_GRAY, 32, 32));
-  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("Engine", NewParticleEngine(30, AddParticles));
 }
 
@@ -195,7 +194,7 @@ bool SetupDisplay() {
 void SetupEffect() {
   float lightRadius = 1.0f;
 
-  CanvasFill(R_("Canvas"), 0);
+  PixBufClear(R_("Canvas"));
   GeneratePixels(R_("Flare"),
                  (GenPixelFuncT)LightNormalFalloff, &lightRadius);
 }
@@ -210,23 +209,20 @@ void TearDownEffect() {
  * Effect rendering functions.
  */
 void RenderFlares(int frameNumber) {
-  CanvasT *canvas = R_("Canvas");
+  PixBufT *canvas = R_("Canvas");
   ParticleEngineT *engine = R_("Engine");
 
-  CanvasFill(canvas, 0);
+  PixBufClear(canvas);
   ParticleEngineStep(engine);
 
-  canvas->fg_col = 192;
+  canvas->fgColor = 192;
   DrawEllipse(canvas, WIDTH / 2, HEIGHT / 2, 90, 90);
-  canvas->fg_col = 64;
+  canvas->fgColor = 64;
   DrawEllipse(canvas, WIDTH / 2, HEIGHT / 2, 70, 70);
 
-  ArrayForEach(engine->particles, (IterFuncT)ParticleDraw, canvas->pixbuf);
-}
+  ArrayForEach(engine->particles, (IterFuncT)ParticleDraw, canvas);
 
-void RenderChunky(int frameNumber) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
-                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -239,7 +235,6 @@ void MainLoop() {
     int frameNumber = GetVBlankCounter();
 
     RenderFlares(frameNumber);
-    RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();

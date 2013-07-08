@@ -35,7 +35,7 @@ void AddInitialResources() {
   ResAdd("WhelpzImg", NewPixBufFromFile("data/whelpz.8"));
   ResAdd("WhelpzPal", NewPaletteFromFile("data/whelpz.pal"));
   ResAdd("TunnelMap", NewDistortionMap(WIDTH, HEIGHT, DMAP_OPTIMIZED, 256, 256));
-  ResAdd("Canvas", NewCanvas(WIDTH, HEIGHT));
+  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
 }
 
 /*
@@ -130,22 +130,19 @@ void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst, PaletteFunctor
 }
 
 void RenderTunnel(int frameNumber) {
-  CanvasT *canvas = R_("Canvas");
+  PixBufT *canvas = R_("Canvas");
 
   RenderDistortion(R_("TunnelMap"), canvas, R_("Texture"), 0, frameNumber);
 
-  PixBufBlit(canvas->pixbuf, 0, 137, R_("WhelpzImg"), NULL);
+  PixBufBlit(canvas, 0, 137, R_("WhelpzImg"), NULL);
 
   {
     float rad = (float)(frameNumber % 150) / 150 * 2 * M_PI;
     int w = sin(rad) * 80;
-    PixBufBlitScaled(canvas->pixbuf, 200 + (80 - abs(w)) / 2, 20, w, 33, R_("CreditsImg"));
+    PixBufBlitScaled(canvas, 200 + (80 - abs(w)) / 2, 20, w, 33, R_("CreditsImg"));
   }
-}
 
-void RenderChunky(int frameNumber) {
-  c2p1x1_8_c5_bm(GetCanvasPixelData(R_("Canvas")),
-                 GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -161,7 +158,6 @@ void MainLoop() {
     LoadPalette(R_("EffectPal"));
 
     RenderTunnel(frameNumber);
-    RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();
