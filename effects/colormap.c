@@ -89,33 +89,13 @@ void Emerge(PixBufT *dst, PixBufT *image, PixBufT *map, int change, int threshol
   } while (pixels-- > 0);
 }
 
-void Shade(PixBufT *dst, PixBufT *image, PixBufT *map, PixBufT *colorMap, int change) {
-  uint8_t *s = image->data;
-  uint8_t *d = dst->data;
-  uint8_t *m = map->data;
-  uint8_t *c = colorMap->data;
-
-  int pixels = WIDTH * HEIGHT;
-
-  do {
-    int pixel = *s++;
-    int shade = (*m++) + change;
-
-    if (shade < 0)
-      shade = 0;
-    if (shade > 255)
-      shade = 255;
-
-    *d++ = c[pixel * 256 + shade];
-  } while (pixels-- > 0);
-}
-
 static int Effect = 0;
 static const int LastEffect = 6;
 
 void RenderChunky(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
   PixBufT *image = R_("Image");
+  PixBufT *map;
 
   int change = (frameNumber * 2) % 256;
 
@@ -125,11 +105,19 @@ void RenderChunky(int frameNumber) {
       break;
     
     case 1:
-      Shade(canvas, image, R_("Map1"), R_("Lighten"), change);
+      map = R_("Map1");
+      PixBufCopy(canvas, image);
+      PixBufSetColorMap(map, R_("Lighten"), change);
+      PixBufSetBlitMode(map, BLIT_WITH_COLORMAP);
+      PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
     case 2:
-      Shade(canvas, image, R_("Map1"), R_("Darken"), change - 64);
+      map = R_("Map1");
+      PixBufCopy(canvas, image);
+      PixBufSetColorMap(map, R_("Darken"), change - 64);
+      PixBufSetBlitMode(map, BLIT_WITH_COLORMAP);
+      PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
     case 3:
@@ -137,11 +125,19 @@ void RenderChunky(int frameNumber) {
       break;
     
     case 4:
-      Shade(canvas, image, R_("Map2"), R_("Lighten"), change);
+      map = R_("Map2");
+      PixBufCopy(canvas, image);
+      PixBufSetColorMap(map, R_("Lighten"), change - 64);
+      PixBufSetBlitMode(map, BLIT_WITH_COLORMAP);
+      PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
     case 5:
-      Shade(canvas, image, R_("Map2"), R_("Darken"), change - 64);
+      map = R_("Map2");
+      PixBufCopy(canvas, image);
+      PixBufSetColorMap(map, R_("Darken"), change - 64);
+      PixBufSetBlitMode(map, BLIT_WITH_COLORMAP);
+      PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
     default:

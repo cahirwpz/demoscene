@@ -1,14 +1,15 @@
 #include "gfx/blit.h"
 #include "std/debug.h"
 
-static void PixBufBlitNormal(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
-                             size_t width asm("d2"), size_t height asm("d3"),
-                             size_t sstride asm("d4"), size_t dstride asm("d5"))
+__attribute__((regparm(4))) static void
+PixBufBlitNormal(uint8_t *dst, uint8_t *src,
+                 const int width, const int height,
+                 const int sstride, const int dstride)
 {
-  int16_t y = height;
+  int y = height;
 
   do {
-    int16_t x = width;
+    int x = width;
 
     do {
       *dst++ = *src++;
@@ -19,22 +20,24 @@ static void PixBufBlitNormal(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
   } while (--y);
 }
 
-static void PixBufBlitAdditive(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
-                               size_t width asm("d2"), size_t height asm("d3"),
-                               size_t sstride asm("d4"), size_t dstride asm("d5"))
+__attribute__((regparm(4))) static void
+PixBufBlitAdditive(uint8_t *dst, uint8_t *src,
+                   const int width, const int height,
+                   const int sstride, const int dstride)
 {
-  int16_t y = height;
+  int y = height;
 
   do {
-    int16_t x = width;
+    int x = width;
 
     do {
-      int v = *dst + *src++;
+      uint8_t a = *dst;
+      uint8_t b = *src++;
 
-      if (v > 255)
-        v = 255;
-
-      *dst++ = v;
+      if (a < (uint8_t)~b)
+        *dst++ = a + b;
+      else
+        *dst++ = 255;
     } while (--x);
 
     src += sstride;
@@ -42,22 +45,24 @@ static void PixBufBlitAdditive(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
   } while (--y);
 }
 
-static void PixBufBlitSubstractive(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
-                                   size_t width asm("d2"), size_t height asm("d3"),
-                                   size_t sstride asm("d4"), size_t dstride asm("d5"))
+__attribute__((regparm(4))) static void
+PixBufBlitSubstractive(uint8_t *dst, uint8_t *src,
+                       const int width, const int height,
+                       const int sstride, const int dstride)
 {
-  int16_t y = height;
+  int y = height;
 
   do {
-    int16_t x = width;
+    int x = width;
 
     do {
-      int v = *dst - *src++;
+      uint8_t a = *dst;
+      uint8_t b = *src++;
 
-      if (v < 0)
-        v = 0;
-
-      *dst++ = v;
+      if (a > b)
+        *dst++ = a - b;
+      else
+        *dst++ = 0;
     } while (--x);
 
     src += sstride;
@@ -65,22 +70,50 @@ static void PixBufBlitSubstractive(uint8_t *dst asm("a0"), uint8_t *src asm("a1"
   } while (--y);
 }
 
-static void PixBufBlitTransparent(uint8_t *dst asm("a0"), uint8_t *src asm("a1"),
-                                  size_t width asm("d2"), size_t height asm("d3"),
-                                  size_t sstride asm("d4"), size_t dstride asm("d5"))
+__attribute__((regparm(4))) static void
+PixBufBlitTransparent(uint8_t *dst, uint8_t *src,
+                      const int width, const int height,
+                      const int sstride, const int dstride)
 {
-  int16_t y = height;
+  int y = height;
 
   do {
-    int16_t x = width;
+    int x = width;
 
     do {
       uint8_t c = *src++;
 
       if (c != 0)
-        *dst = c;
+        *dst++ = c;
+      else
+        dst++;
+    } while (--x);
 
-      dst++;
+    src += sstride;
+    dst += dstride;
+  } while (--y);
+}
+
+__attribute__((regparm(4))) static void 
+PixBufBlitWithColorMap(uint8_t *dst, uint8_t *src, uint8_t *cmap,
+                       const int width, const int height,
+                       const int sstride, const int dstride,
+                       const int shift)
+{
+  int y = height;
+
+  do {
+    int x = width;
+
+    do {
+      int shade = shift + (*src++);
+
+      if (shade < 0)
+        shade = 0;
+      if (shade > 255)
+        shade = 255;
+
+      *dst++ = cmap[(*dst << 8) | shade];
     } while (--x);
 
     src += sstride;
@@ -208,6 +241,10 @@ void PixBufBlit(PixBufT *dbuf, int x, int y,
 
       case BLIT_SUBSTRACTIVE:
         PixBufBlitSubstractive(dst, src, w, h, sstride, dstride);
+        break;
+
+      case BLIT_WITH_COLORMAP:
+        PixBufBlitWithColorMap(dst, src, sbuf->colorMap->data, w, h, sstride, dstride, sbuf->colorShift);
         break;
     } 
   }

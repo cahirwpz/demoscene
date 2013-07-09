@@ -13,28 +13,38 @@ typedef enum {
   BLIT_NORMAL,
   BLIT_TRANSPARENT,
   BLIT_ADDITIVE,
-  BLIT_SUBSTRACTIVE
+  BLIT_SUBSTRACTIVE,
+  BLIT_WITH_COLORMAP
 } BlitModeT;
 
-typedef struct PixBuf {
+typedef struct PixBuf PixBufT;
+
+struct PixBuf {
   uint16_t type;
   BlitModeT mode;
   uint8_t *data;
-  size_t width, height;
-  size_t uniqueColors;  /* stores number of unique colors in the image */
+  uint32_t width, height;
+  uint32_t uniqueColors;  /* stores number of unique colors in the image */
 
   /* valid only in GRAY or CLUT mode */
   uint8_t baseColor;
   uint8_t lastColor;
 
-  uint8_t  fgColor;
-  uint8_t  bgColor;
-} PixBufT;
+  /* foreground and background color for drawing */
+  uint8_t fgColor;
+  uint8_t bgColor;
+
+  /* For blit mode: BLIT_WITH_COLORMAP */
+  PixBufT *colorMap;
+  int32_t colorShift;
+};
 
 PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height);
 PixBufT *NewPixBufFromFile(const StrT fileName);
 
+void PixBufCopy(PixBufT *dst, PixBufT *src);
 void PixBufClear(PixBufT *pixbuf);
+void PixBufSetColorMap(PixBufT *pixbuf, PixBufT *colorMap, int colorShift);
 BlitModeT PixBufSetBlitMode(PixBufT *pixbuf, BlitModeT mode);
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
 

@@ -85,10 +85,26 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
   return NULL;
 }
 
+void PixBufSetColorMap(PixBufT *pixbuf, PixBufT *colorMap, int colorShift) {
+  ASSERT(colorMap->type == PIXBUF_GRAY &&
+         colorMap->width == 256 && colorMap->height == 256,
+         "Color map must be 8-bit gray image of size (256,256).");
+  pixbuf->colorMap = colorMap;
+  pixbuf->colorShift = colorShift;
+}
+
 BlitModeT PixBufSetBlitMode(PixBufT *pixbuf, BlitModeT mode) {
   BlitModeT old_mode = pixbuf->mode;
   pixbuf->mode = mode;
   return old_mode;
+}
+
+void PixBufCopy(PixBufT *dst, PixBufT *src) {
+  ASSERT(src->width == dst->width,
+         "Width does not match (%ld != %ld)", src->width, dst->width);
+  ASSERT(src->height == dst->height,
+         "Height does not match (%ld != %ld)", src->width, dst->width);
+  memcpy(dst->data, src->data, src->width * src->height);
 }
 
 void PixBufClear(PixBufT *pixbuf) {
