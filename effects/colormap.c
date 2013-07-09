@@ -69,28 +69,8 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
-void Emerge(PixBufT *dst, PixBufT *image, PixBufT *map, int change, int threshold) {
-  uint8_t *d = dst->data;
-  uint8_t *s = image->data;
-  uint8_t *m = map->data;
-  uint8_t bgcol = image->baseColor;
-
-  int pixels = WIDTH * HEIGHT;
-
-  do {
-    int shade = (*m++) + change;
-
-    if (shade > threshold) {
-      *d++ = *s++;
-    } else {
-      *d++ = bgcol;
-      s++;
-    }
-  } while (pixels-- > 0);
-}
-
 static int Effect = 0;
-static const int LastEffect = 6;
+static const int LastEffect = 4;
 
 void RenderChunky(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
@@ -101,10 +81,6 @@ void RenderChunky(int frameNumber) {
 
   switch (Effect) {
     case 0:
-      Emerge(canvas, image, R_("Map1"), change, 192);
-      break;
-    
-    case 1:
       map = R_("Map1");
       PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Lighten"), change);
@@ -112,7 +88,7 @@ void RenderChunky(int frameNumber) {
       PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
-    case 2:
+    case 1:
       map = R_("Map1");
       PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Darken"), change - 64);
@@ -120,11 +96,7 @@ void RenderChunky(int frameNumber) {
       PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
-    case 3:
-      Emerge(canvas, image, R_("Map2"), change, 192);
-      break;
-    
-    case 4:
+    case 2:
       map = R_("Map2");
       PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Lighten"), change - 64);
@@ -132,7 +104,7 @@ void RenderChunky(int frameNumber) {
       PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
-    case 5:
+    case 3:
       map = R_("Map2");
       PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Darken"), change - 64);
