@@ -3,7 +3,7 @@
 
 #include "gfx/pixbuf.h"
 
-void DrawRectange(PixBufT *canvas,
-                  int x, int y, unsigned int w, unsigned int h);
+void DrawRectangle(PixBufT *canvas,
+                   int x, int y, unsigned int w, unsigned int h);
 
 #endif
