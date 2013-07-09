@@ -42,6 +42,7 @@ struct PixBuf {
 PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height);
 PixBufT *NewPixBufFromFile(const StrT fileName);
 
+void PixBufSwapData(PixBufT *buf1, PixBufT *buf2);
 void PixBufCopy(PixBufT *dst, PixBufT *src);
 void PixBufClear(PixBufT *pixbuf);
 void PixBufSetColorMap(PixBufT *pixbuf, PixBufT *colorMap, int colorShift);
