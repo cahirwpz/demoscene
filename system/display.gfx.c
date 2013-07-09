@@ -224,6 +224,10 @@ bool InitDisplay(int width, int height, int depth) {
       TheView = NewRecord(ViewT);
       InitView(TheView);
 
+      /* Center view */
+      if (height < 256)
+        TheView->DyOffset += (256 - height) / 2;
+
       /* Attach view port. */
       TheView->ViewPort = TheRaster->ViewPort;
       ConfigureViewPort(TheRaster->ViewPort);
