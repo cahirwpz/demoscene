@@ -6,7 +6,8 @@
 #include "gfx/pixbuf.h"
 
 static void DeletePixBuf(PixBufT *pixbuf) {
-  MemUnref(pixbuf->data);
+  if (pixbuf->ownership)
+    MemUnref(pixbuf->data);
 }
 
 TYPEDECL(PixBufT, (FreeFuncT)DeletePixBuf);
@@ -20,6 +21,8 @@ PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
 
   LOG("Creating %d-bit image of size (%d,%d).",
       (type == PIXBUF_RGB24) ? 24 : 8, (int)width, (int)height);
+
+  pixbuf->ownership = true;
 
   switch (type) {
     case PIXBUF_CLUT:
@@ -83,6 +86,20 @@ PixBufT *NewPixBufFromFile(const StrT fileName) {
   }
 
   return NULL;
+}
+
+PixBufT *NewPixBufWrapper(size_t width, size_t height, uint8_t *data) {
+  PixBufT *pixbuf = NewInstance(PixBufT);
+
+  pixbuf->type = PIXBUF_GRAY;
+  pixbuf->width = width;
+  pixbuf->height = height;
+  pixbuf->ownership = false;
+  pixbuf->data = data;
+  pixbuf->lastColor = 255;
+  pixbuf->fgColor = 1;
+
+  return pixbuf;
 }
 
 void PixBufSetColorMap(PixBufT *pixbuf, PixBufT *colorMap, int colorShift) {

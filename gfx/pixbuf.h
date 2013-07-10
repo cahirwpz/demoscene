@@ -21,13 +21,17 @@ typedef enum {
 typedef struct PixBuf PixBufT;
 
 struct PixBuf {
+  /* Basic information. */
   uint16_t type;
   BlitModeT mode;
-  uint8_t *data;
   uint32_t width, height;
-  uint32_t uniqueColors;  /* stores number of unique colors in the image */
+
+  /* Pixel data. */
+  bool ownership; /* false if PixBuf wraps a table */
+  uint8_t *data;
 
   /* Valid only in GRAY or CLUT mode. */
+  uint32_t uniqueColors;  /* stores number of unique colors in the image */
   uint8_t baseColor;
   uint8_t lastColor;
 
