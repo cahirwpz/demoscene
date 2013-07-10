@@ -95,10 +95,10 @@ PixBufBlitTransparent(uint8_t *dst, uint8_t *src,
 }
 
 __attribute__((regparm(4))) static void 
-PixBufBlitWithColorMap(uint8_t *dst, uint8_t *src, uint8_t *cmap,
-                       const int width, const int height,
-                       const int sstride, const int dstride,
-                       const int shift)
+PixBufBlitColorMap(uint8_t *dst, uint8_t *src,
+                   const int width, const int height,
+                   const int sstride, const int dstride,
+                   uint8_t *cmap, const int shift)
 {
   int y = height;
 
@@ -114,6 +114,26 @@ PixBufBlitWithColorMap(uint8_t *dst, uint8_t *src, uint8_t *cmap,
         shade = 255;
 
       *dst++ = cmap[(*dst << 8) | shade];
+    } while (--x);
+
+    src += sstride;
+    dst += dstride;
+  } while (--y);
+}
+
+__attribute__((regparm(4))) static void 
+PixBufBlitColorFunc(uint8_t *dst, uint8_t *src,
+                    const int width, const int height,
+                    const int sstride, const int dstride,
+                    uint8_t *cfunc)
+{
+  int y = height;
+
+  do {
+    int x = width;
+
+    do {
+      *dst++ = cfunc[*src++];
     } while (--x);
 
     src += sstride;
@@ -243,8 +263,14 @@ void PixBufBlit(PixBufT *dbuf, int x, int y,
         PixBufBlitSubstractive(dst, src, w, h, sstride, dstride);
         break;
 
-      case BLIT_WITH_COLORMAP:
-        PixBufBlitWithColorMap(dst, src, sbuf->colorMap->data, w, h, sstride, dstride, sbuf->colorShift);
+      case BLIT_COLOR_MAP:
+        PixBufBlitColorMap(dst, src, w, h, sstride, dstride,
+                           sbuf->blit.cmap.data, sbuf->blit.cmap.shift);
+        break;
+
+      case BLIT_COLOR_FUNC:
+        PixBufBlitColorFunc(dst, src, w, h, sstride, dstride,
+                            sbuf->blit.cfunc.data);
         break;
     } 
   }

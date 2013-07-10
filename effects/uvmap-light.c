@@ -57,7 +57,7 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
-void RenderChunky(int frameNumber) {
+void RenderEffect(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
   UVMapT *uvmap = R_("Map");
   PixBufT *shades = R_("Shades");
@@ -86,7 +86,7 @@ void RenderChunky(int frameNumber) {
   }
 
   PixBufSetColorMap(shades, R_("ColorMap"), 0);
-  PixBufSetBlitMode(shades, BLIT_WITH_COLORMAP);
+  PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
 
   PixBufBlit(canvas, 0, 0, shades, NULL);
 
@@ -104,7 +104,7 @@ void MainLoop() {
   do {
     int frameNumber = GetVBlankCounter();
 
-    RenderChunky(frameNumber);
+    RenderEffect(frameNumber);
     RenderFrameNumber(frameNumber);
 
     DisplaySwap();

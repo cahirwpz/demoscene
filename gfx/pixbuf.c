@@ -89,8 +89,12 @@ void PixBufSetColorMap(PixBufT *pixbuf, PixBufT *colorMap, int colorShift) {
   ASSERT(colorMap->type == PIXBUF_GRAY &&
          colorMap->width == 256 && colorMap->height == 256,
          "Color map must be 8-bit gray image of size (256,256).");
-  pixbuf->colorMap = colorMap;
-  pixbuf->colorShift = colorShift;
+  pixbuf->blit.cmap.data = colorMap->data;
+  pixbuf->blit.cmap.shift = colorShift;
+}
+
+void PixBufSetColorFunc(PixBufT *pixbuf, uint8_t *colorFunc) {
+  pixbuf->blit.cfunc.data = colorFunc;
 }
 
 BlitModeT PixBufSetBlitMode(PixBufT *pixbuf, BlitModeT mode) {

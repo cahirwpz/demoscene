@@ -84,7 +84,7 @@ void RenderChunky(int frameNumber) {
       map = R_("Map1");
       PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Lighten"), change);
-      PixBufSetBlitMode(map, BLIT_WITH_COLORMAP);
+      PixBufSetBlitMode(map, BLIT_COLOR_MAP);
       PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
@@ -92,7 +92,7 @@ void RenderChunky(int frameNumber) {
       map = R_("Map1");
       PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Darken"), change - 64);
-      PixBufSetBlitMode(map, BLIT_WITH_COLORMAP);
+      PixBufSetBlitMode(map, BLIT_COLOR_MAP);
       PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
@@ -100,7 +100,7 @@ void RenderChunky(int frameNumber) {
       map = R_("Map2");
       PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Lighten"), change - 64);
-      PixBufSetBlitMode(map, BLIT_WITH_COLORMAP);
+      PixBufSetBlitMode(map, BLIT_COLOR_MAP);
       PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
@@ -108,7 +108,7 @@ void RenderChunky(int frameNumber) {
       map = R_("Map2");
       PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Darken"), change - 64);
-      PixBufSetBlitMode(map, BLIT_WITH_COLORMAP);
+      PixBufSetBlitMode(map, BLIT_COLOR_MAP);
       PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
