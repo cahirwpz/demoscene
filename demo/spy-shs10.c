@@ -5,6 +5,7 @@
 
 #include "audio/stream.h"
 #include "uvmap/generate.h"
+#include "uvmap/render.h"
 #include "gfx/blit.h"
 #include "gfx/colors.h"
 #include "gfx/palette.h"

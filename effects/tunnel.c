@@ -6,7 +6,6 @@
 #include "std/memory.h"
 #include "std/resource.h"
 
-#include "uvmap/generate.h"
 #include "gfx/blit.h"
 #include "gfx/hsl.h"
 #include "gfx/line.h"
@@ -18,6 +17,9 @@
 #include "system/display.h"
 #include "system/fileio.h"
 #include "system/vblank.h"
+
+#include "uvmap/generate.h"
+#include "uvmap/render.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -34,7 +36,7 @@ void AddInitialResources() {
   ResAdd("CreditsPal", NewPaletteFromFile("data/code.pal"));
   ResAdd("WhelpzImg", NewPixBufFromFile("data/whelpz.8"));
   ResAdd("WhelpzPal", NewPaletteFromFile("data/whelpz.pal"));
-  ResAdd("TunnelMap", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("TunnelMap", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
 }
 
@@ -133,6 +135,7 @@ void RenderTunnel(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
 
   UVMapSetOffset(R_("TunnelMap"), 0, frameNumber);
+  UVMapSetTexture(R_("TunnelMap"), R_("Texture"));
   UVMapRender(R_("TunnelMap"), canvas);
 
   PixBufBlit(canvas, 0, 137, R_("WhelpzImg"), NULL);

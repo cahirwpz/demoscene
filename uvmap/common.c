@@ -5,7 +5,13 @@
 #include "uvmap/common.h"
 
 static void DeleteUVMap(UVMapT *map) {
-  MemUnref(map->map);
+  if (map->type == UV_NORMAL) {
+    MemUnref(map->map.normal.u);
+    MemUnref(map->map.normal.v);
+  } else if (map->type == UV_ACCURATE) {
+    MemUnref(map->map.accurate.u);
+    MemUnref(map->map.accurate.v);
+  }
 }
 
 TYPEDECL(UVMapT, (FreeFuncT)DeleteUVMap);
@@ -19,12 +25,14 @@ UVMapT *NewUVMap(size_t width, size_t height, UVMapTypeT type,
   map->width = width;
   map->height = height;
 
-  if (type == UV_OPTIMIZED) {
+  if (type == UV_NORMAL) {
     ASSERT(textureW == 256 && textureH == 256,
            "In optimized mode texture size has to be 256x256.");
-    map->map = NewTable(uint16_t, width * height);
+    map->map.normal.u = NewTable(uint8_t, width * height);
+    map->map.normal.v = NewTable(uint8_t, width * height);
   } else if (type == UV_ACCURATE) {
-    map->map = NewTable(UV16T, width * height);
+    map->map.accurate.u = NewTable(Q16T, width * height);
+    map->map.accurate.v = NewTable(Q16T, width * height);
   }
 
   /* initially there's no texture attached */
@@ -52,72 +60,32 @@ void UVMapSetTexture(UVMapT *map, PixBufT *texture) {
   map->texture = texture;
 }
 
-void UVMapLayers(UVMapT *map, UVMapAccessT access, PixBufT *pixbuf)
-{
-  int n = pixbuf->width * pixbuf->height;
-  uint8_t *p = pixbuf->data;
-  uint8_t *m = map->map;
-  uint8_t offset;
-
-  ASSERT(map->width == pixbuf->width,
-         "Width does not match (%ld != %ld).", map->width, pixbuf->width);
-  ASSERT(map->height == pixbuf->height,
-         "Height does not match (%ld != %ld).", map->height, pixbuf->height);
-  ASSERT(map->type == UV_OPTIMIZED,
-         "Not implemented for non-optimized maps.");
-
-  switch (access) {
-    case UV_EXTRACT_V:
-      offset = map->offsetV;
-      m++;
-      while (n--) {
-        *p++ = *m++ + offset;
-        m++;
-      }
-      break;
-    case UV_EXTRACT_U:
-      offset = map->offsetU;
-      while (n--) {
-        *p++ = *m++ + offset;
-        m++;
-      }
-      break;
-    case UV_REPLACE_V:
-      offset = map->offsetV;
-      m++;
-      while (n--) {
-        *m++ = *p++ - offset;
-        m++;
-      }
-      break;
-    case UV_REPLACE_U:
-      offset = map->offsetU;
-      while (n--) {
-        *m++ = *p++ - offset;
-        m++;
-      }
-      break;
-  }
-}
-
 typedef struct DiskUVMap {
   uint16_t width;
   uint16_t height;
-  uint16_t data[0];
+  uint8_t  data[0];
 } DiskUVMapT;
 
 UVMapT *NewUVMapFromFile(const StrT fileName) {
   DiskUVMapT *file = (DiskUVMapT *)ReadFileSimple(fileName);
 
   if (file) {
-    UVMapT *map =
-      NewUVMap(file->width, file->height, UV_OPTIMIZED, 256, 256);
+    UVMapT *map = NewUVMap(file->width, file->height, UV_NORMAL, 256, 256);
 
     LOG("Distortion map '%s' has size (%d,%d).",
         fileName, (int)file->width, (int)file->height);
 
-    memcpy(map->map, file->data,
-           (int)file->width * (int)file->height * sizeof(uint16_t));
+    {
+      uint8_t *dstU = map->map.normal.u;
+      uint8_t *dstV = map->map.normal.v;
+      uint8_t *src = file->data;
+      int n = map->width * map->height;
+
+      do {
+        *dstU++ = *src++;
+        *dstV++ = *src++;
+      } while (--n);
+    }
 
     MemUnref(file);
 
@@ -134,24 +102,30 @@ void UVMapWriteToFile(UVMapT *map, const StrT fileName) {
 
   diskMap->width = map->width;
   diskMap->height = map->height;
-  memcpy(diskMap->data, map->map, mapLen);
+
+  {
+    uint8_t *srcU = map->map.normal.u;
+    uint8_t *srcV = map->map.normal.v;
+    uint8_t *dst = diskMap->data;
+
+    do {
+      *dst++ = *srcU++;
+      *dst++ = *srcV++;
+    } while (--mapLen);
+  }
+
   WriteFileSimple(fileName, diskMap, length);
 }
 
-void UVMapSet(UVMapT *map asm("a0"), size_t i asm("d0"),
-                      float u asm("fp0"), float v asm("fp1"))
-{
+__regargs void UVMapSet(UVMapT *map, size_t i, float u, float v) {
   u *= (int)map->textureW;
   v *= (int)map->textureH;
 
-  if (map->type == UV_OPTIMIZED) {
-    uint16_t *data = (uint16_t *)map->map;
-
-    data[i] = ((lroundf(v) & 0xff) << 8) | (lroundf(u) & 0xff);
+  if (map->type == UV_NORMAL) {
+    map->map.normal.u[i] = (int)lroundf(u) & 0xff;
+    map->map.normal.v[i] = (int)lroundf(v) & 0xff;
   } else if (map->type == UV_ACCURATE) {
-    UV16T *data = (UV16T *)map->map;
-
-    data[i].u = CastFloatQ16(u);
-    data[i].v = CastFloatQ16(v);
+    map->map.accurate.u[i] = CastFloatQ16(u);
+    map->map.accurate.v[i] = CastFloatQ16(v);
   }
 }

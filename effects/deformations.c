@@ -12,6 +12,7 @@
 #include "system/vblank.h"
 
 #include "uvmap/misc.h"
+#include "uvmap/render.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -86,7 +87,7 @@ void ChangeMap(int newMap) {
 void AddInitialResources() {
   ResAdd("Texture", NewPixBufFromFile("data/texture.8"));
   ResAdd("TexturePal", NewPaletteFromFile("data/texture.pal"));
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
 }
 

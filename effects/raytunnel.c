@@ -4,7 +4,6 @@
 #include "std/memory.h"
 #include "std/resource.h"
 
-#include "uvmap/scaling.h"
 #include "engine/ms3d.h"
 
 #include "system/c2p.h"
@@ -12,6 +11,9 @@
 #include "system/vblank.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
+
+#include "uvmap/render.h"
+#include "uvmap/scaling.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -39,7 +41,7 @@ void AddInitialResources() {
   ResAdd("ms3d", NewMatrixStack3D());
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("SmallMap", NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256));
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
   
   UVMapSetTexture(R_("Map"), R_("Texture"));
 }

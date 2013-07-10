@@ -1,128 +1,85 @@
-#define NDEBUG
 #include "std/debug.h"
-#include "uvmap/common.h"
+#include "uvmap/render.h"
 
-#ifdef AMIGA
-#define LOAD(i) asm("move.w (%1)+,%0" : "+d" (i) : "a>" (data));
-#define ADD(i) asm("add.w %1,%0" : "+d" (i) : "a" (offset));
+static void RenderNormalUVMap(UVMapT *map, PixBufT *canvas) {
+  uint8_t *mapU = map->map.normal.u;
+  uint8_t *mapV = map->map.normal.v;
+  uint8_t *texture = map->texture->data;
+  uint8_t *dst = canvas->data;
+  int offsetU = map->offsetU;
+  int offsetV = map->offsetV;
+  int n = map->width * map->height;
 
-static void RenderOptimizedUVMap(UVMapT *map, PixBufT *canvas) {
-  uint16_t *data = (uint16_t *)map->map;
-  uint16_t *end = &data[map->width * map->height];
-  uint8_t *d = canvas->data;
-  uint8_t *t = map->texture->data;
-  uint16_t offset = ((map->offsetV & 0xff) << 8) | (map->offsetU & 0xff);
-
-  uint32_t i0 = 0;
-  uint32_t i1 = 0;
-  uint32_t i2 = 0;
-  uint32_t i3 = 0;
-  uint32_t i4 = 0;
-  uint32_t i5 = 0;
-  uint32_t i6 = 0;
-  uint32_t i7 = 0;
-
-  while (data < end) {
-    LOAD(i0);
-    LOAD(i1);
-    LOAD(i2);
-    LOAD(i3);
-    LOAD(i4);
-    LOAD(i5);
-    LOAD(i6);
-    LOAD(i7);
-    ADD(i0);
-    ADD(i1);
-    ADD(i2);
-    ADD(i3);
-    ADD(i4);
-    ADD(i5);
-    ADD(i6);
-    ADD(i7);
-    *d++ = t[i0];
-    *d++ = t[i1];
-    *d++ = t[i2];
-    *d++ = t[i3];
-    *d++ = t[i4];
-    *d++ = t[i5];
-    *d++ = t[i6];
-    *d++ = t[i7];
-  }
+  do {
+    uint8_t u = *mapU++ + offsetU;
+    uint8_t v = *mapV++ + offsetV;
+    *dst++ = texture[u << 8 | v];
+  } while (--n);
 }
-#else
-static void RenderOptimizedUVMap(UVMapT *map, PixBufT *canvas) {
-  uint16_t *data = (uint16_t *)map->map;
-  uint16_t *end = &data[map->width * map->height];
-  uint8_t *d = canvas->data;
-  uint8_t *t = map->texture->data;
-  uint16_t offset = ((map->offsetV & 0xff) << 8) | (map->offsetU & 0xff);
-
-  while (data < end)
-    *d++ = t[(*data++ + offset) & 0xffff];
-}
-#endif
 
 static void RenderAccurateUVMap(UVMapT *map, PixBufT *canvas) {
-  UV16T *data = (UV16T *)map->map;
+  Q16T *mapU = map->map.accurate.u;
+  Q16T *mapV = map->map.accurate.v;
   PixBufT *texture = map->texture;
-  uint8_t *d = canvas->data;
-  size_t i;
+  uint8_t *dst = canvas->data;
+  int16_t offsetU = map->offsetV;
+  int16_t offsetV = map->offsetU;
+  int16_t textureW = map->textureW;
+  int16_t textureH = map->textureH;
+  int n = map->width * map->height;
 
-  for (i = 0; i < map->width * map->height; i++) {
-    Q16T u = data[i].u;
-    Q16T v = data[i].v;
+  do {
+    Q16T u = *mapU++;
+    Q16T v = *mapV++;
 
-    u.integer += map->offsetU;
-    v.integer += map->offsetV;
+    u.integer += offsetU;
+    v.integer += offsetV;
 
     if (u.integer < 0)
-      u.integer += texture->width;
-    if (u.integer >= texture->width)
-      u.integer -= texture->width;
+      u.integer += textureW;
+    if (u.integer >= textureW)
+      u.integer -= textureW;
 
     if (v.integer < 0)
-      v.integer += texture->height;
-    if (v.integer >= texture->height)
-      v.integer -= texture->height;
+      v.integer += textureH;
+    if (v.integer >= textureH)
+      v.integer -= textureH;
 
-    d[i] = GetFilteredPixel(texture, data[i].u, data[i].v);
-  }
+    *dst++ = GetFilteredPixel(texture, u, v);
+  } while (--n);
 }
 
 void UVMapRender(UVMapT *map, PixBufT *canvas) {
   ASSERT(map->texture, "No texture attached.");
 
-  if (map->type == UV_OPTIMIZED) {
-    RenderOptimizedUVMap(map, canvas);
+  if (map->type == UV_NORMAL) {
+    RenderNormalUVMap(map, canvas);
   } else if (map->type == UV_ACCURATE) {
     RenderAccurateUVMap(map, canvas);
   }
 }
 
 void UVMapComposeAndRender(PixBufT *canvas, PixBufT *composeMap,
-                           UVMapT *map1, UVMapT *map2, int threshold)
+                           UVMapT *map1, UVMapT *map2)
 {
   uint8_t *cmap = composeMap->data;
-  uint8_t *d = canvas->data;
-  uint16_t offsetA, offsetB;
-  uint8_t *textureA, *textureB;
-  uint16_t *mapA, *mapB;
+  uint8_t *dst = canvas->data;
   int i;
 
-  offsetA = ((map1->offsetV & 0xff) << 8) | (map1->offsetU & 0xff);
-  offsetB = ((map2->offsetV & 0xff) << 8) | (map2->offsetU & 0xff);
-
-  textureA = map1->texture->data;
-  textureB = map2->texture->data;
-
-  mapA = map1->map;
-  mapB = map2->map;
-
   for (i = 0; i < map1->width * map1->height; i++) {
-    if (*cmap++ < threshold) {
-      *d++ = textureA[(mapA[i] + offsetA) & 0xffff];
+    uint8_t *texture;
+    uint8_t u, v;
+
+    if (*cmap++ == 0) {
+      texture = map1->texture->data;
+      u = map1->map.normal.u[i] + map1->offsetU;
+      v = map1->map.normal.v[i] + map1->offsetV;
     } else {
-      *d++ = textureB[(mapB[i] + offsetB) & 0xffff];
+      texture = map2->texture->data;
+      u = map2->map.normal.u[i] + map2->offsetU;
+      v = map2->map.normal.v[i] + map2->offsetV;
     }
+
+    *dst++ = texture[(u << 8) | v];
   }
 }

@@ -7,81 +7,79 @@ static inline Q16T Div8(Q16T x) {
       : "d" (x));
   return x;
 }
-
-static UV16T *StepperFromUVMap(UVMapT *map asm("a0")) {
-  int size = map->width * (map->height - 1);
-  UV16T *stepper = NewTable(UV16T, size);
-
-  {
-    Q16T *row1 = (Q16T *)map->map;
-    Q16T *row2 = ((Q16T *)map->map) + map->width * 2;
-    Q16T *data = (Q16T *)stepper;
-
-    do {
-      *data++ = Div8(SubQ16(*row2++, *row1++));
-      *data++ = Div8(SubQ16(*row2++, *row1++));
-    } while (--size);
-  }
-
-  return stepper;
-}
-
-static void ScaleLine8x(uint16_t *dstUV asm("a0"), UV16T *srcUV asm("a1"), size_t w asm("d0")) {
-  uint8_t *dst = (uint8_t *)dstUV;
-  Q16T *src = (Q16T *)srcUV;
+ 
+__regargs static void
+StepperFromMap(Q16T *map, Q16T *stepper, const int width, const int height) {
+  int n = width * (height - 1);
+  Q16T *row1 = map;
+  Q16T *row2 = map + width;
 
   do {
-    Q16T u = *src++;
-    Q16T v = *src++;
-    Q16T du = Div8(SubQ16(src[0], u));
-    Q16T dv = Div8(SubQ16(src[1], v));
-
-    int i = 7;
-
-    do {
-      *dst++ = v.integer;
-      v = AddQ16(v, dv);
-      *dst++ = u.integer;
-      u = AddQ16(u, du);
-    } while (--i >= 0);
-  } while (--w > 1);
+    *stepper++ = Div8(SubQ16(*row2++, *row1++));
+  } while (--n);
 }
 
-static void IncrementUV(UV16T *uv asm("a0"), UV16T *duv asm("a1"), size_t w asm("d0")) {
-  Q16T *dst = (Q16T *)uv;
-  Q16T *src = (Q16T *)duv;
+__regargs static void
+ExpandLine8x(uint8_t *dst, Q16T *src, int width) {
+  do {
+    Q16T x = *src++;
+    Q16T dx = Div8(SubQ16(*src, x));
 
-  w *= 2;
+    *dst++ = x.integer; /* 0 */
+    x = AddQ16(x, dx);
+    *dst++ = x.integer; /* 1 */
+    x = AddQ16(x, dx);
+    *dst++ = x.integer; /* 2 */
+    x = AddQ16(x, dx);
+    *dst++ = x.integer; /* 3 */
+    x = AddQ16(x, dx);
+    *dst++ = x.integer; /* 4 */
+    x = AddQ16(x, dx);
+    *dst++ = x.integer; /* 5 */
+    x = AddQ16(x, dx);
+    *dst++ = x.integer; /* 6 */
+    x = AddQ16(x, dx);
+    *dst++ = x.integer; /* 7 */
+  } while (--width);
+}
+
+__regargs static void
+Increment(Q16T *x, Q16T *dx, int width) {
+  do {
+    IAddQ16(x++, *dx++);
+  } while (--width);
+}
+
+__regargs static void
+MapExpand8x(uint8_t *dst, const int dwidth, Q16T *stepper,
+            Q16T *src, const int width, const int height)
+{
+  int i = height - 1;
+
+  StepperFromMap(src, stepper, width, height);
 
   do {
-    IAddQ16(dst++, *src++);
-  } while (--w);
+    int j = 8;
+
+    do {
+      ExpandLine8x(dst, src, width - 1);
+      Increment(src, stepper, width);
+
+      dst += dwidth;
+    } while (--j);
+
+    stepper += width;
+    src += width;
+  } while (--i);
 }
 
 void UVMapScale8x(UVMapT *dstMap, UVMapT *srcMap) {
-  UV16T *stepper = StepperFromUVMap(srcMap);
-  UV16T *src = (UV16T *)srcMap->map;
-  UV16T *duv = stepper;
-  uint16_t *dst = (uint16_t *)dstMap->map;
+  Q16T *stepper = NewTable(Q16T, srcMap->width * (srcMap->height - 1));
 
-  size_t srcRow = srcMap->width;
-  size_t dstRow = dstMap->width;
-
-  size_t i = srcMap->height - 1;
-
-  do {
-    size_t j = 8;
-
-    do {
-      ScaleLine8x(dst, src, srcRow);
-      IncrementUV(src, duv, srcRow);
-
-      dst += dstRow;
-    } while (--j);
-
-    duv += srcRow;
-    src += srcRow;
-  } while (--i);
+  MapExpand8x(dstMap->map.normal.u, dstMap->width, stepper,
+              srcMap->map.accurate.u, srcMap->width, srcMap->height);
+  MapExpand8x(dstMap->map.normal.v, dstMap->width, stepper,
+              srcMap->map.accurate.v, srcMap->width, srcMap->height);
 
   MemUnref(stepper);
 }

@@ -3,6 +3,7 @@
 #include "std/resource.h"
 
 #include "gfx/blit.h"
+#include "gfx/colorfunc.h"
 #include "gfx/palette.h"
 #include "tools/frame.h"
 #include "tools/gradient.h"
@@ -14,6 +15,7 @@
 #include "system/vblank.h"
 
 #include "uvmap/misc.h"
+#include "uvmap/render.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -26,9 +28,10 @@ void AddInitialResources() {
   ResAdd("Texture", NewPixBufFromFile("data/texture-shades.8"));
   ResAdd("TexturePal", NewPaletteFromFile("data/texture-shades.pal"));
   ResAdd("ColorMap", NewPixBufFromFile("data/texture-shades-map.8"));
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_OPTIMIZED, 256, 256));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
   ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
+  ResAdd("ColFunc", NewColorFunc());
 }
 
 /*
@@ -42,10 +45,14 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
+  UVMapT *uvmap = R_("Map");
+
   LoadPalette(R_("TexturePal"));
 
-  UVMapGenerate4(R_("Map"));
-  UVMapSetTexture(R_("Map"), R_("Texture"));
+  UVMapGenerate4(uvmap);
+  UVMapSetTexture(uvmap, R_("Texture"));
+
+  ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.u));
 }
 
 /*
@@ -60,7 +67,9 @@ void TearDownEffect() {
 void RenderEffect(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
   UVMapT *uvmap = R_("Map");
+  PixBufT *comp = R_("Component");
   PixBufT *shades = R_("Shades");
+  uint8_t *cfunc = R_("ColFunc");
 
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
@@ -68,22 +77,22 @@ void RenderEffect(int frameNumber) {
   UVMapSetOffset(uvmap, du, dv);
   UVMapRender(uvmap, canvas);
 
-  UVMapSetOffset(uvmap, -du, -dv / 2);
-  UVMapLayers(uvmap, UV_EXTRACT_U, shades);
-
   {
-    int n = shades->width * shades->height;
-    uint8_t *d = shades->data;
+    int i;
 
-    do {
-      uint8_t v = *d;
+    for (i = 0; i < 256; i++) {
+      uint8_t v = i + du;
 
       if (v >= 128)
-        *d++ = ~v * 2;
+        cfunc[i] = ~v * 2;
       else 
-        *d++ = v * 2;
-    } while (--n);
+        cfunc[i] = v * 2;
+    }
   }
+
+  PixBufSetBlitMode(comp, BLIT_COLOR_FUNC);
+  PixBufSetColorFunc(comp, cfunc);
+  PixBufBlit(shades, 0, 0, comp, NULL);
 
   PixBufSetColorMap(shades, R_("ColorMap"), 0);
   PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
