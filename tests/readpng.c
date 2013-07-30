@@ -46,10 +46,13 @@ static int GetPixelWidth(IHDR *ihdr) {
   return pixelWidth;
 }
 
-typedef struct {
+typedef struct IDAT_s IDAT;
+
+struct IDAT_s {
+  IDAT *next;
   int32_t length;
   uint8_t *data;
-} IDAT;
+};
 
 typedef struct {
   uint32_t no_colors;
@@ -64,7 +67,7 @@ typedef union {
     uint16_t r, g, b;
   } type2;
   struct {
-    uint32_t length;
+    size_t length;
     uint8_t alpha[0];
   } type3;
 } tRNS;
@@ -131,24 +134,37 @@ static void ReconstructImage(uint8_t *pixels, uint8_t *encoded,
   }
 }
 
-static void DecodeImage(uint8_t *pixels, uint8_t *compressed, int srcLength,
-                        int width, int height, int pixelWidth)
-{
-  uint32_t length = width * height * pixelWidth + height;
-  uint8_t *encoded = MemNew(length);
-  unsigned int dstLength = length;
+/* Collapse multiple IDAT chunks into single one. */
+void MergeIDATs(PNG *png) {
+  if (png->idat.next) {
+    uint32_t length, i;
+    uint8_t *data;
+    IDAT *idat;
 
-  LOG("Uncompressing the image.");
+    for (idat = &png->idat, length = 0; idat; idat = idat->next)
+      length += idat->length;
 
-  ASSERT(tinf_uncompress(encoded, &dstLength, compressed + 2, srcLength - 2)
-         == TINF_OK, "Decompression failed.");
-  ASSERT(length == dstLength, "Decompressed data size differs.");
+    LOG("Merged chunk length: %ld.", length);
 
-  LOG("Decoding pixels.");
+    data = MemNew(length);
 
-  ReconstructImage(pixels, encoded, width, height, pixelWidth);
+    for (idat = &png->idat, i = 0; idat;) {
+      IDAT *next = idat->next;
 
-  MemUnref(encoded);
+      memcpy(data + i, idat->data, idat->length);
+      i += idat->length;
+
+      MemUnref(idat->data);
+      if (idat != &png->idat)
+        MemUnref(idat);
+
+      idat = next;
+    }
+
+    png->idat.data = data;
+    png->idat.length = length;
+    png->idat.next = NULL;
+  }
 }
 
 typedef struct {
@@ -189,24 +205,21 @@ static bool ReadPNG(PNG *png, int fd) {
 
     if (chunk.id == PNG_IHDR) {
       memcpy(&png->ihdr, ptr, sizeof(IHDR));
-
-      if (png->ihdr.compression_method != 0) {
-        LOG("Unsupported compression method.");
-        error = true;
-      } else if (png->ihdr.filter_method != 0) {
-        LOG("Unsupported filter method.");
-        error = true;
-      }
     } else if (chunk.id == PNG_IDAT) {
-      if (png->idat.data) {
-        LOG("Error: Only one IDAT chunk supported.");
-        LOG("Use pngcrush or optipng tools to simplify PNG structure.");
-        error = true;
-      } else {
+      if (!png->idat.data) {
         png->idat.length = chunk.length;
         png->idat.data = ptr;
-        ptr = NULL;
+      } else {
+        IDAT *idat = &png->idat;
+
+        while (idat->next)
+          idat = idat->next;
+
+        idat->next = NewRecord(IDAT);
+        idat->next->length = chunk.length;
+        idat->next->data = ptr;
       }
+      ptr = NULL;
     } else if (chunk.id == PNG_PLTE) {
       png->plte.no_colors = chunk.length / 3;
       png->plte.colors = (RGB *)ptr;
@@ -233,6 +246,10 @@ static bool ReadPNG(PNG *png, int fd) {
 
     if (their_crc != my_crc)
       return false;
+  }
+
+  if (!error) {
+    MergeIDATs(png);
   }
 
   return !error;
@@ -282,16 +299,25 @@ void LoadPNG(const char *path) {
         } else if (png.ihdr.bit_depth != 8) {
           puts("Non 8-bit components not supported.");
         } else {
-          int pixelWidth = GetPixelWidth(&png.ihdr);
-          int length = png.ihdr.width * png.ihdr.height * pixelWidth;
+          unsigned int pixelWidth = GetPixelWidth(&png.ihdr);
+          unsigned int length = png.ihdr.width * png.ihdr.height * pixelWidth;
+          unsigned int dstLength = length + png.ihdr.height;
           uint8_t *pixels = MemNew(length);
+          uint8_t *encoded = MemNew(dstLength);
 
-          DecodeImage(pixels, png.idat.data, png.idat.length,
-                      png.ihdr.width, png.ihdr.height, GetPixelWidth(&png.ihdr));
+          LOG("Uncompressing the image.");
 
-          MemUnref(png.idat.data);
-          png.idat.data = pixels;
-          png.idat.length = length;
+          ASSERT(tinf_uncompress(encoded, &dstLength,
+                                 png.idat.data + 2, png.idat.length - 2) == TINF_OK,
+                 "Decompression failed.");
+          ASSERT(length + png.ihdr.height == dstLength, "Decompressed data size differs.");
+
+          LOG("Decoding pixels.");
+
+          ReconstructImage(pixels, encoded, png.ihdr.width, png.ihdr.height, pixelWidth);
+
+          MemUnref(encoded);
+          MemUnref(pixels);
         }
       }
 
@@ -300,12 +326,12 @@ void LoadPNG(const char *path) {
 
     Close(fd);
 
-    if (png.trns)
-      MemUnref(png.trns);
     if (png.idat.data)
       MemUnref(png.idat.data);
     if (png.plte.colors)
       MemUnref(png.plte.colors);
+    if (png.trns)
+      MemUnref(png.trns);
   }
 }
 
