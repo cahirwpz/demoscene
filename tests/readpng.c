@@ -1,14 +1,27 @@
-#include <assert.h>
-#include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include <dos/dos.h>
+#include <proto/dos.h>
 
+#include "gfx/colors.h"
+#include "std/debug.h"
+#include "std/memory.h"
 #include "std/types.h"
 #include "tinf/tinf.h"
 
-static char PNGID[8] = { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
+#define PNG_ID0 MAKE_ID(0x89, 0x50, 0x4e, 0x47)
+#define PNG_ID1 MAKE_ID(0x0d, 0x0a, 0x1a, 0x0a)
+
+#define PNG_IEND MAKE_ID('I', 'E', 'N', 'D')
+#define PNG_IHDR MAKE_ID('I', 'H', 'D', 'R')
+#define PNG_IDAT MAKE_ID('I', 'D', 'A', 'T')
+#define PNG_PLTE MAKE_ID('P', 'L', 'T', 'E')
+#define PNG_tRNS MAKE_ID('t', 'R', 'N', 'S')
+
+#define PNG_GRAYSCALE       0
+#define PNG_TRUECOLOR       2
+#define PNG_INDEXED         3
+#define PNG_GRAYSCALE_ALPHA 4
+#define PNG_TRUECOLOR_ALPHA 6
 
 typedef struct {
   uint32_t width;
@@ -23,24 +36,20 @@ typedef struct {
 static int GetPixelWidth(IHDR *ihdr) {
   int pixelWidth = 1;
 
-  if (ihdr->colour_type == 2)
+  if (ihdr->colour_type == PNG_TRUECOLOR)
     pixelWidth = 3;
-  else if (ihdr->colour_type == 4)
+  else if (ihdr->colour_type == PNG_GRAYSCALE_ALPHA)
     pixelWidth = 2;
-  else if (ihdr->colour_type == 6)
+  else if (ihdr->colour_type == PNG_TRUECOLOR_ALPHA)
     pixelWidth = 4;
 
   return pixelWidth;
 }
 
 typedef struct {
-  uint32_t length;
+  int32_t length;
   uint8_t *data;
 } IDAT;
-
-typedef struct {
-  uint8_t r, g, b;
-} __attribute__((packed)) RGB;
 
 typedef struct {
   uint32_t no_colors;
@@ -55,15 +64,15 @@ typedef union {
     uint16_t r, g, b;
   } type2;
   struct {
+    uint32_t length;
     uint8_t alpha[0];
   } type3;
 } tRNS;
 
 typedef struct {
-  IHDR *ihdr;
+  IHDR ihdr;
   IDAT idat;
   PLTE plte;
-  uint32_t trns_length;
   tRNS *trns;
 } PNG;
 
@@ -122,102 +131,105 @@ static void ReconstructImage(uint8_t *pixels, uint8_t *encoded,
   }
 }
 
-static bool DecodeImage(uint8_t *pixels, uint8_t *compressed, int srcLength,
+static void DecodeImage(uint8_t *pixels, uint8_t *compressed, int srcLength,
                         int width, int height, int pixelWidth)
 {
-  unsigned int dstLength;
   uint32_t length = width * height * pixelWidth + height;
-  uint8_t *encoded;
- 
-  if ((encoded = malloc(length))) {
-    dstLength = length;
+  uint8_t *encoded = MemNew(length);
+  unsigned int dstLength = length;
 
-    puts("Uncompressing the image.");
+  LOG("Uncompressing the image.");
 
-    assert(tinf_uncompress(encoded, &dstLength, compressed + 2, srcLength - 2) == TINF_OK);
-    assert(length == dstLength);
+  ASSERT(tinf_uncompress(encoded, &dstLength, compressed + 2, srcLength - 2)
+         == TINF_OK, "Decompression failed.");
+  ASSERT(length == dstLength, "Decompressed data size differs.");
 
-    puts("Decoding pixels.");
+  LOG("Decoding pixels.");
 
-    ReconstructImage(pixels, encoded, width, height, pixelWidth);
+  ReconstructImage(pixels, encoded, width, height, pixelWidth);
 
-    free(encoded);
-    return true;
-  }
-
-  return false;
+  MemUnref(encoded);
 }
 
 typedef struct {
   uint32_t length;
-  char id[4];
+  uint32_t id;
 } PNGChunkT;
 
 static bool ReadPNG(PNG *png, int fd) {
-  char id[8];
+  uint32_t id[2];
   bool error = false;
   PNGChunkT chunk;
 
   memset(png, 0, sizeof(PNG));
 
-  if (read(fd, id, 8) != 8)
+  if (Read(fd, id, 8) != 8)
     return false;
 
-  if (memcmp(id, PNGID, 8))
+  if (id[0] != PNG_ID0 || id[1] != PNG_ID1)
     return false;
 
   memset(&chunk, 0, sizeof(chunk));
 
-  while (memcmp(chunk.id, "IEND", 4) && !error) {
+  while (chunk.id != PNG_IEND && !error) {
     unsigned int their_crc, my_crc;
     unsigned char *ptr;
 
-    if (read(fd, &chunk, 8) != 8)
+    if (Read(fd, &chunk, 8) != 8)
       return false;
 
-    printf("%.4s: length: %ld, ", chunk.id, chunk.length);
-    my_crc = tinf_crc32(0, (void *)chunk.id, 4);
+    my_crc = tinf_crc32(0, (void *)&chunk.id, 4);
 
-    ptr = malloc(chunk.length);
+    ptr = MemNew(chunk.length);
 
-    if (read(fd, ptr, chunk.length) != chunk.length)
+    if (Read(fd, ptr, chunk.length) != chunk.length)
       return false;
 
     my_crc = tinf_crc32(my_crc, ptr, chunk.length);
 
-    if (!memcmp(chunk.id, "IHDR", 4)) {
-      IHDR *ihdr = (IHDR *)ptr;
+    if (chunk.id == PNG_IHDR) {
+      memcpy(&png->ihdr, ptr, sizeof(IHDR));
 
-      assert(ihdr->compression_method == 0);
-      assert(ihdr->filter_method == 0);
-
-      png->ihdr = ihdr;
-    } else if (!memcmp(chunk.id, "IDAT", 4)) {
-      if (png->idat.data > 0) {
-        puts("error!");
-        puts("Only one IDAT chunk supported. "
-             "Use pngcrush or optipng tools to simplify PNG structure.");
+      if (png->ihdr.compression_method != 0) {
+        LOG("Unsupported compression method.");
         error = true;
-        free(ptr);
+      } else if (png->ihdr.filter_method != 0) {
+        LOG("Unsupported filter method.");
+        error = true;
+      }
+    } else if (chunk.id == PNG_IDAT) {
+      if (png->idat.data) {
+        LOG("Error: Only one IDAT chunk supported.");
+        LOG("Use pngcrush or optipng tools to simplify PNG structure.");
+        error = true;
       } else {
         png->idat.length = chunk.length;
         png->idat.data = ptr;
+        ptr = NULL;
       }
-    } else if (!memcmp(chunk.id, "PLTE", 4)) {
+    } else if (chunk.id == PNG_PLTE) {
       png->plte.no_colors = chunk.length / 3;
       png->plte.colors = (RGB *)ptr;
-    } else if (!memcmp(chunk.id, "tRNS", 4)) {
-      png->trns = (tRNS *)ptr;
-      if (png->ihdr->colour_type == 3)
-        png->trns_length = chunk.length;
-    } else {
-      free(ptr);
+      ptr = NULL;
+    } else if (chunk.id == PNG_tRNS) {
+      if (png->ihdr.colour_type == PNG_INDEXED) {
+        png->trns = MemNew(sizeof(uint32_t) + chunk.length);
+        png->trns->type3.length = chunk.length;
+        memcpy(png->trns->type3.alpha, ptr, chunk.length);
+      } else {
+        png->trns = (tRNS *)ptr;
+        ptr = NULL;
+      }
     }
 
-    if (read(fd, &their_crc, 4) != 4)
+    if (ptr)
+      MemUnref(ptr);
+
+    if (Read(fd, &their_crc, 4) != 4)
       return false;
 
-    printf("crc: %s\n", their_crc == my_crc ? "ok" : "bad");
+    LOG("%.4s: length: %ld, crc: %s",
+        (char *)&chunk.id, chunk.length, their_crc == my_crc ? "ok" : "bad");
 
     if (their_crc != my_crc)
       return false;
@@ -228,32 +240,30 @@ static bool ReadPNG(PNG *png, int fd) {
 
 void LoadPNG(const char *path) {
   PNG png;
-  int fd;
+  BPTR fd;
 
-  if ((fd = open(path, O_RDONLY)) != -1) {
+  if ((fd = Open(path, MODE_OLDFILE))) {
     if (ReadPNG(&png, fd)) {
       printf("PNG '%s'\n", path);
 
       puts("IHDR:");
-      printf("  width      : %ld\n", png.ihdr->width);
-      printf("  height     : %ld\n", png.ihdr->height);
-      printf("  bit depth  : %d\n", png.ihdr->bit_depth);
+      printf("  width      : %ld\n", png.ihdr.width);
+      printf("  height     : %ld\n", png.ihdr.height);
+      printf("  bit depth  : %d\n", png.ihdr.bit_depth);
       printf("  color type : ");
 
-      if (png.ihdr->colour_type == 0)
+      if (png.ihdr.colour_type == PNG_GRAYSCALE)
         puts("gray scale");
-      else if (png.ihdr->colour_type == 2)
+      else if (png.ihdr.colour_type == PNG_TRUECOLOR)
         puts("true color");
-      else if (png.ihdr->colour_type == 3)
+      else if (png.ihdr.colour_type == PNG_INDEXED)
         puts("indexed color");
-      else if (png.ihdr->colour_type == 4)
+      else if (png.ihdr.colour_type == PNG_GRAYSCALE_ALPHA)
         puts("gray scale (with alpha)");
-      else if (png.ihdr->colour_type == 6)
-        puts("true color (with alpha)");
       else
-        printf("? (%d)\n", png.ihdr->colour_type);
+        puts("true color (with alpha)");
 
-      printf("  interlace  : %s\n", png.ihdr->interlace_method ? "yes" : "no");
+      printf("  interlace  : %s\n", png.ihdr.interlace_method ? "yes" : "no");
 
       if (png.plte.no_colors) {
         puts("PLTE:");
@@ -262,43 +272,40 @@ void LoadPNG(const char *path) {
 
       if (png.trns) {
         puts("tRNS:");
-        if (png.ihdr->colour_type == 3)
+        if (png.ihdr.colour_type == PNG_INDEXED)
           printf("  color : %d\n", png.trns->type3.alpha[0]);
       }
 
       if (png.idat.data) {
-        if (png.ihdr->interlace_method != 0) {
+        if (png.ihdr.interlace_method != 0) {
           puts("Interlaced PNG not supported.");
-        } else if (png.ihdr->bit_depth != 8) {
+        } else if (png.ihdr.bit_depth != 8) {
           puts("Non 8-bit components not supported.");
         } else {
-          int pixelWidth = GetPixelWidth(png.ihdr);
-          int length = png.ihdr->width * png.ihdr->height * pixelWidth;
-          uint8_t *pixels = malloc(length);
+          int pixelWidth = GetPixelWidth(&png.ihdr);
+          int length = png.ihdr.width * png.ihdr.height * pixelWidth;
+          uint8_t *pixels = MemNew(length);
 
-          if (DecodeImage(pixels, png.idat.data, png.idat.length,
-                          png.ihdr->width, png.ihdr->height, GetPixelWidth(png.ihdr)))
-          {
-            free(png.idat.data);
-            png.idat.data = pixels;
-            png.idat.length = length;
-          }
+          DecodeImage(pixels, png.idat.data, png.idat.length,
+                      png.ihdr.width, png.ihdr.height, GetPixelWidth(&png.ihdr));
+
+          MemUnref(png.idat.data);
+          png.idat.data = pixels;
+          png.idat.length = length;
         }
       }
 
       puts("");
     }
 
-    close(fd);
+    Close(fd);
 
-    if (png.ihdr)
-      free(png.ihdr);
     if (png.trns)
-      free(png.trns);
+      MemUnref(png.trns);
     if (png.idat.data)
-      free(png.idat.data);
+      MemUnref(png.idat.data);
     if (png.plte.colors)
-      free(png.plte.colors);
+      MemUnref(png.plte.colors);
   }
 }
 

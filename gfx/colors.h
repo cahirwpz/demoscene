@@ -5,7 +5,7 @@
 
 typedef struct {
   uint8_t r, g, b;
-} RGB;
+} __attribute__((packed)) RGB;
 
 typedef struct {
   float h, s, l;
