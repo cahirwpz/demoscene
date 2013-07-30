@@ -45,13 +45,14 @@ static const unsigned int tinf_crc32tab[16] = {
    0xbdbdf21c
 };
 
-unsigned int tinf_crc32(const void *data, unsigned int length)
+unsigned int tinf_crc32(unsigned int crc, const void *data, unsigned int length)
 {
    const unsigned char *buf = (const unsigned char *)data;
-   unsigned int crc = 0xffffffff;
    unsigned int i;
 
-   if (length == 0) return 0;
+   if (length == 0) return crc;
+
+   crc ^= 0xffffffff;
 
    for (i = 0; i < length; ++i)
    {
