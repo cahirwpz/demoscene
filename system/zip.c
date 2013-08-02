@@ -81,8 +81,6 @@ ZipT *ZipOpen(const char *filename) {
   BPTR fh;
   ZipT *zip = NULL;
 
-  tinf_init();
-
   if ((fh = Open(filename, MODE_OLDFILE))) {
     DiskDirT dir;
     int i;

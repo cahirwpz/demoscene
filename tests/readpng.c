@@ -51,8 +51,6 @@ void LoadPng(const char *path) {
 int main(int argc, char **argv) {
   int i;
 
-  tinf_init();
-
   for (i = 1; i < argc ; i++)
     LoadPng(argv[i]);
 

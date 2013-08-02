@@ -31,6 +31,7 @@
  *    any source distribution.
  */
 
+#include "std/types.h"
 #include "tinf.h"
 
 /* ------------------------------ *
@@ -402,6 +403,8 @@ void tinf_init()
    length_bits[28] = 0;
    length_base[28] = 258;
 }
+
+ADD2INIT(tinf_init, 0);
 
 /* inflate stream from source to dest */
 int tinf_uncompress(void *dest, unsigned int *destLen,
