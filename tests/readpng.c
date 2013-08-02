@@ -31,9 +31,9 @@ typedef struct {
   uint8_t compression_method;
   uint8_t filter_method;
   uint8_t interlace_method;
-} IHDR;
+} IhdrT;
 
-static int GetPixelWidth(IHDR *ihdr) {
+static int GetPixelWidth(IhdrT *ihdr) {
   int pixelWidth = 1;
 
   if (ihdr->colour_type == PNG_TRUECOLOR)
@@ -46,18 +46,16 @@ static int GetPixelWidth(IHDR *ihdr) {
   return pixelWidth;
 }
 
-typedef struct IDAT_s IDAT;
-
-struct IDAT_s {
-  IDAT *next;
+typedef struct Idat {
+  struct Idat *next;
   int32_t length;
   uint8_t *data;
-};
+} IdatT;
 
-typedef struct {
+typedef struct Plte {
   uint32_t no_colors;
   RGB *colors;
-} PLTE;
+} PlteT;
 
 typedef union {
   struct {
@@ -70,14 +68,14 @@ typedef union {
     size_t length;
     uint8_t alpha[0];
   } type3;
-} tRNS;
+} TrnsT;
 
 typedef struct {
-  IHDR ihdr;
-  IDAT idat;
-  PLTE plte;
-  tRNS *trns;
-} PNG;
+  IhdrT ihdr;
+  IdatT idat;
+  PlteT plte;
+  TrnsT *trns;
+} PngT;
 
 inline static int
 PaethPredictor(uint8_t a, uint8_t b, uint8_t c) {
@@ -135,11 +133,11 @@ static void ReconstructImage(uint8_t *pixels, uint8_t *encoded,
 }
 
 /* Collapse multiple IDAT chunks into single one. */
-void MergeIDATs(PNG *png) {
+void MergeIDATs(PngT *png) {
   if (png->idat.next) {
     uint32_t length, i;
     uint8_t *data;
-    IDAT *idat;
+    IdatT *idat;
 
     for (idat = &png->idat, length = 0; idat; idat = idat->next)
       length += idat->length;
@@ -149,7 +147,7 @@ void MergeIDATs(PNG *png) {
     data = MemNew(length);
 
     for (idat = &png->idat, i = 0; idat;) {
-      IDAT *next = idat->next;
+      IdatT *next = idat->next;
 
       memcpy(data + i, idat->data, idat->length);
       i += idat->length;
@@ -170,14 +168,14 @@ void MergeIDATs(PNG *png) {
 typedef struct {
   uint32_t length;
   uint32_t id;
-} PNGChunkT;
+} PngChunkT;
 
-static bool ReadPNG(PNG *png, int fd) {
+static bool ReadPNG(PngT *png, int fd) {
   uint32_t id[2];
   bool error = false;
-  PNGChunkT chunk;
+  PngChunkT chunk;
 
-  memset(png, 0, sizeof(PNG));
+  memset(png, 0, sizeof(PngT));
 
   if (Read(fd, id, 8) != 8)
     return false;
@@ -204,18 +202,18 @@ static bool ReadPNG(PNG *png, int fd) {
     my_crc = tinf_crc32(my_crc, ptr, chunk.length);
 
     if (chunk.id == PNG_IHDR) {
-      memcpy(&png->ihdr, ptr, sizeof(IHDR));
+      memcpy(&png->ihdr, ptr, sizeof(IhdrT));
     } else if (chunk.id == PNG_IDAT) {
       if (!png->idat.data) {
         png->idat.length = chunk.length;
         png->idat.data = ptr;
       } else {
-        IDAT *idat = &png->idat;
+        IdatT *idat = &png->idat;
 
         while (idat->next)
           idat = idat->next;
 
-        idat->next = NewRecord(IDAT);
+        idat->next = NewRecord(IdatT);
         idat->next->length = chunk.length;
         idat->next->data = ptr;
       }
@@ -230,7 +228,7 @@ static bool ReadPNG(PNG *png, int fd) {
         png->trns->type3.length = chunk.length;
         memcpy(png->trns->type3.alpha, ptr, chunk.length);
       } else {
-        png->trns = (tRNS *)ptr;
+        png->trns = (TrnsT *)ptr;
         ptr = NULL;
       }
     }
@@ -256,7 +254,7 @@ static bool ReadPNG(PNG *png, int fd) {
 }
 
 void LoadPNG(const char *path) {
-  PNG png;
+  PngT png;
   BPTR fd;
 
   if ((fd = Open(path, MODE_OLDFILE))) {
