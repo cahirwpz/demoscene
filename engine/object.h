@@ -15,7 +15,7 @@ typedef struct PolygonExt {
 } PolygonExtT;
 
 typedef struct SceneObject {
-  StrT name;
+  char *name;
   MeshT *mesh;
 
   bool wireframe;
@@ -26,7 +26,7 @@ typedef struct SceneObject {
   PolygonExtT **sortedPolygonExt;
 } SceneObjectT;
 
-SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh);
+SceneObjectT *NewSceneObject(const char *name, MeshT *mesh);
 
 void RenderSceneObject(SceneObjectT *self, PixBufT *canvas);
 

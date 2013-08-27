@@ -10,17 +10,17 @@ HashMapT *NewHashMap(size_t initialSize);
 /**
  * @begin Makes internal copy of the key. Takes ownership of the value.
  */
-void HashMapAdd(HashMapT *self, StrT key, PtrT value);
+void HashMapAdd(HashMapT *self, const char *key, PtrT value);
 
 /**
  * @begin Makes internal copy of the key. Doesn't take ownership of the value.
  */
-void HashMapAddLink(HashMapT *self, StrT key, PtrT value);
+void HashMapAddLink(HashMapT *self, const char *key, PtrT value);
 
-PtrT HashMapFind(HashMapT *self, StrT key);
-PtrT HashMapRemove(HashMapT *self, StrT key);
+PtrT HashMapFind(HashMapT *self, const char *key);
+PtrT HashMapRemove(HashMapT *self, const char *key);
 
-typedef void (*HashMapIterFuncT)(const StrT key, PtrT value);
+typedef void (*HashMapIterFuncT)(const char *key, PtrT value);
 
 void HashMapIter(HashMapT *self, HashMapIterFuncT func);
 

@@ -12,7 +12,7 @@ typedef struct Palette {
 } PaletteT;
 
 PaletteT *NewPalette(size_t count);
-PaletteT *NewPaletteFromFile(const StrT fileName);
+PaletteT *NewPaletteFromFile(const char *fileName);
 
 bool LinkPalettes(PaletteT *palette, ...);
 void UnlinkPalettes(PaletteT *palette);

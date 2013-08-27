@@ -40,8 +40,13 @@ typedef struct JsonPair {
 
 TYPEDEF(JsonNodeT);
 
+typedef void (*JsonObjectIterFuncT)(const char *key, JsonNodeT *value);
+
 JsonNodeT *JsonParse(const char *text);
-JsonNodeT *JsonQuery(JsonNodeT *node, char *path); 
+JsonNodeT *JsonQuery(JsonNodeT *node, const char *path); 
+JsonNodeT *JsonQueryObject(JsonNodeT *node, const char *path);
+const char *JsonQueryString(JsonNodeT *node, const char *path);
+void JsonObjectForEach(JsonNodeT *node, JsonObjectIterFuncT func);
 void JsonPrint(JsonNodeT *node, int indent);
 
 #endif

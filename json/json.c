@@ -119,3 +119,14 @@ JsonNodeT *JsonParse(const char *json) {
 
   return node;
 }
+
+void JsonObjectForEach(JsonNodeT *node, JsonObjectIterFuncT func) {
+  int i;
+
+  for (i = 0; i < node->u.object.num; i++) {
+    const char *key = node->u.object.item[i].key;
+    JsonNodeT *value = node->u.object.item[i].value;
+
+    func(key, value);
+  }
+}

@@ -3,10 +3,11 @@
 
 #include "std/types.h"
 
-StrT AbsPath(const StrT fileName);
-PtrT ReadFileToChipMem(const StrT fileName);
-PtrT ReadFileSimple(const StrT fileName);
-StrT ReadTextSimple(const StrT fileName);
-void WriteFileSimple(const StrT fileName, PtrT data, size_t length);
+bool FileReadable(const char *fileName);
+char *AbsPath(const char *fileName);
+PtrT ReadFileToChipMem(const char *fileName);
+PtrT ReadFileSimple(const char *fileName);
+char *ReadTextSimple(const char *fileName);
+void WriteFileSimple(const char *fileName, PtrT data, size_t length);
 
 #endif

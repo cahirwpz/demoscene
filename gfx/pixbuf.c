@@ -56,7 +56,7 @@ typedef struct DiskPixBuf {
   uint8_t  data[0];
 } DiskPixBufT;
 
-PixBufT *NewPixBufFromFile(const StrT fileName) {
+PixBufT *NewPixBufFromFile(const char *fileName) {
   DiskPixBufT *file = (DiskPixBufT *)ReadFileSimple(fileName);
 
   if (file) {

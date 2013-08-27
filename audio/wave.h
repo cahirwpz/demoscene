@@ -20,7 +20,7 @@ typedef struct {
   size_t   samplesOffset;
 } WaveFileT;
 
-bool WaveFileOpen(WaveFileT *file, const StrT filename);
+bool WaveFileOpen(WaveFileT *file, const char *filename);
 void WaveFileClose(WaveFileT *file);
 void WaveFileChangePosition(WaveFileT *file, float second);
 size_t WaveFileReadSamples(WaveFileT *wave, PtrT samples, size_t requested);

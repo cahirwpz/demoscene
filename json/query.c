@@ -17,7 +17,7 @@
  *  - "people/1/name"
  */
 
-JsonNodeT *JsonQuery(JsonNodeT *node, char *path) {
+JsonNodeT *JsonQuery(JsonNodeT *node, const char *path) {
   while (node && path) {
     JsonNodeT *child = NULL;
     char *next, *end;
@@ -50,4 +50,16 @@ JsonNodeT *JsonQuery(JsonNodeT *node, char *path) {
   }
 
   return node;
+}
+
+JsonNodeT *JsonQueryObject(JsonNodeT *node, const char *path) {
+  node = JsonQuery(node, path);
+
+  return (node && node->type == JSON_OBJECT) ? node : NULL;
+}
+
+const char *JsonQueryString(JsonNodeT *node, const char *path) {
+  node = JsonQuery(node, path);
+
+  return (node && node->type == JSON_STRING) ? node->u.string : NULL;
 }

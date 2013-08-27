@@ -47,7 +47,6 @@ typedef	unsigned long long uint64_t;
 /* Auxiliary types */
 typedef enum { CMP_LT = -1, CMP_EQ = 0, CMP_GT = 1 } CmpT;
 typedef void* PtrT;
-typedef char* StrT;
 
 /**
  * @brief Type of resource release function.

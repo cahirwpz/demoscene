@@ -33,7 +33,7 @@ void AudioStreamClose(AudioStreamT *audio) {
 
 TYPEDECL(AudioStreamT, (FreeFuncT)AudioStreamClose);
 
-AudioStreamT *AudioStreamOpen(const StrT filename) {
+AudioStreamT *AudioStreamOpen(const char *filename) {
   AudioStreamT *audio = NewInstance(AudioStreamT);
 
   if (WaveFileOpen(&audio->wave, filename)) {

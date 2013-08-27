@@ -37,7 +37,7 @@ typedef struct DiskPalette {
   RGB      colors[0];
 } DiskPaletteT;
 
-PaletteT *NewPaletteFromFile(const StrT fileName) {
+PaletteT *NewPaletteFromFile(const char *fileName) {
   DiskPaletteT *file = ReadFileSimple(fileName);
 
   if (file) {

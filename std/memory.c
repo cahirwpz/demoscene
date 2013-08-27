@@ -292,15 +292,15 @@ PtrT MemClone(PtrT mem) {
   return newMem;
 }
 
-PtrT MemDup(const PtrT p, size_t s) {
-  return MemCopy(MemNew(s), p, s);
+PtrT MemDup(const void *p, size_t s) {
+  return MemCopy(MemNew(s), (APTR)p, s);
 }
 
-StrT StrDup(const StrT s) {
+char *StrDup(const char *s) {
   return MemDup(s, strlen(s) + 1);
 }
 
-StrT StrNDup(const StrT s, size_t l) {
+char *StrNDup(const char *s, size_t l) {
   char *copy;
   int i = 0;
 

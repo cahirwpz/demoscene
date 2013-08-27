@@ -19,19 +19,19 @@ void StopResourceManager() {
   }
 }
 
-void ResAddStatic(const StrT name, PtrT ptr) {
+void ResAddStatic(const char *name, PtrT ptr) {
   ASSERT(ptr, "Missing content for resource '%s'.", name);
 
   HashMapAddLink(Resources, name, ptr);
 }
 
-void ResAdd(const StrT name, PtrT ptr) {
+void ResAdd(const char *name, PtrT ptr) {
   ASSERT(ptr, "Missing content for resource '%s'.", name);
 
   HashMapAdd(Resources, name, ptr);
 }
 
-PtrT ResGet(const StrT name) {
+PtrT ResGet(const char *name) {
   PtrT ptr = HashMapFind(Resources, name);
 
   if (!ptr)

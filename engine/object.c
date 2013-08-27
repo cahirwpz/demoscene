@@ -16,7 +16,7 @@ static void DeleteSceneObject(SceneObjectT *self) {
 
 TYPEDECL(SceneObjectT, (FreeFuncT)DeleteSceneObject);
 
-SceneObjectT *NewSceneObject(const StrT name, MeshT *mesh) {
+SceneObjectT *NewSceneObject(const char *name, MeshT *mesh) {
   SceneObjectT *self = NewInstance(SceneObjectT);
 
   self->name = StrDup(name);

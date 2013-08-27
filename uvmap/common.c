@@ -66,7 +66,7 @@ typedef struct DiskUVMap {
   uint8_t  data[0];
 } DiskUVMapT;
 
-UVMapT *NewUVMapFromFile(const StrT fileName) {
+UVMapT *NewUVMapFromFile(const char *fileName) {
   DiskUVMapT *file = (DiskUVMapT *)ReadFileSimple(fileName);
 
   if (file) {
@@ -95,7 +95,7 @@ UVMapT *NewUVMapFromFile(const StrT fileName) {
   return NULL;
 }
 
-void UVMapWriteToFile(UVMapT *map, const StrT fileName) {
+void UVMapWriteToFile(UVMapT *map, const char *fileName) {
   size_t mapLen = sizeof(uint16_t) * map->width * map->height;
   size_t length = sizeof(int16_t) * 2 + mapLen;
   DiskUVMapT *diskMap = MemNew(length);

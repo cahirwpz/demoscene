@@ -34,7 +34,7 @@ typedef struct Mesh {
 } MeshT;
 
 MeshT *NewMesh(size_t vertices, size_t triangles);
-MeshT *NewMeshFromFile(const StrT fileName);
+MeshT *NewMeshFromFile(const char *fileName);
 void NormalizeMeshSize(MeshT *mesh);
 void CenterMeshPosition(MeshT *mesh);
 

@@ -23,9 +23,9 @@ PtrT TableResize(PtrT mem, size_t count);
 
 PtrT MemCopy(PtrT dst asm("a1"), const PtrT src asm("a0"), size_t n asm("d0"));
 PtrT MemClone(PtrT mem);
-PtrT MemDup(const PtrT p, size_t l);
-StrT StrDup(const StrT s);
-StrT StrNDup(const StrT s, size_t l);
+PtrT MemDup(const void *p, size_t l);
+char *StrDup(const char *s);
+char *StrNDup(const char *s, size_t l);
 
 #define NewRecord(TYPE) \
     (TYPE *)MemNew(sizeof(TYPE))

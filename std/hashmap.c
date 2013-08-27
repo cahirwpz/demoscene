@@ -4,7 +4,7 @@
 
 typedef struct Entry {
   struct Entry *next;
-  StrT key;
+  char *key;
   PtrT value;
   bool ownership;
 } EntryT;
@@ -23,7 +23,7 @@ static void DeleteHashMap(HashMapT *self) {
 
   for (i = 0; i < n; i++) {
     EntryT *entry = &self->map[i];
-    bool firstEntry = TRUE;
+    bool firstEntry = true;
 
     if (!entry->key)
       continue;
@@ -36,7 +36,7 @@ static void DeleteHashMap(HashMapT *self) {
       if (!firstEntry)
         MemUnref(entry);
 
-      firstEntry = FALSE;
+      firstEntry = false;
       entry = next;
     }
   }
@@ -69,7 +69,7 @@ HashMapT *NewHashMap(size_t initialSize) {
   return self;
 }
 
-static EntryT *GetEntry(HashMapT *self, StrT str) {
+static EntryT *GetEntry(HashMapT *self, const char *str) {
   size_t hash = 0;
   size_t c;
 
@@ -80,7 +80,7 @@ static EntryT *GetEntry(HashMapT *self, StrT str) {
 }
 
 /* TODO: Update value if key exists. */
-static void AddEntry(HashMapT *self, StrT key, PtrT value, bool ownership) {
+static void AddEntry(HashMapT *self, const char *key, PtrT value, bool ownership) {
   EntryT *entry = GetEntry(self, key);
 
   if (entry->key) {
@@ -98,15 +98,15 @@ static void AddEntry(HashMapT *self, StrT key, PtrT value, bool ownership) {
   entry->ownership = ownership;
 }
 
-void HashMapAdd(HashMapT *self, StrT key, PtrT value) {
-  AddEntry(self, key, value, TRUE);
+void HashMapAdd(HashMapT *self, const char *key, PtrT value) {
+  AddEntry(self, key, value, true);
 }
 
-void HashMapAddLink(HashMapT *self, StrT key, PtrT value) {
-  AddEntry(self, key, value, FALSE);
+void HashMapAddLink(HashMapT *self, const char *key, PtrT value) {
+  AddEntry(self, key, value, false);
 }
 
-static EntryT *FindEntry(HashMapT *self, StrT key, EntryT **prev) {
+static EntryT *FindEntry(HashMapT *self, const char *key, EntryT **prev) {
   EntryT *entry = GetEntry(self, key);
 
   if (!entry->key)
@@ -122,14 +122,14 @@ static EntryT *FindEntry(HashMapT *self, StrT key, EntryT **prev) {
   return entry;
 }
 
-PtrT HashMapFind(HashMapT *self, StrT key) {
+PtrT HashMapFind(HashMapT *self, const char *key) {
   EntryT *prev;
   EntryT *entry = FindEntry(self, key, &prev);
 
   return entry ? entry->value : NULL;
 }
 
-PtrT HashMapRemove(HashMapT *self, StrT key) {
+PtrT HashMapRemove(HashMapT *self, const char *key) {
   EntryT *prev;
   EntryT *entry = FindEntry(self, key, &prev);
   PtrT value = NULL;

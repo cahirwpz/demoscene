@@ -27,7 +27,7 @@ MeshT *NewMesh(size_t vertices, size_t polygons) {
   return mesh;
 }
 
-MeshT *NewMeshFromFile(const StrT fileName) {
+MeshT *NewMeshFromFile(const char *fileName) {
   uint16_t *data = ReadFileSimple(fileName);
 
   if (data) {

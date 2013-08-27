@@ -275,8 +275,10 @@ PngT *PngLoadFromFile(const char *path) {
   return NULL;
 }
 
+#if 0
 PixBufT *PngToPixBuf(PngT *png) {
 }
 
 PaletteT *PngToPalette(PngT *png) {
 }
+#endif

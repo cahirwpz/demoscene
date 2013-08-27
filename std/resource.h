@@ -6,9 +6,9 @@
 void StartResourceManager();
 void StopResourceManager();
 
-void ResAdd(const StrT name, PtrT ptr);
-void ResAddStatic(const StrT name, PtrT ptr);
-PtrT ResGet(const StrT name);
+void ResAdd(const char *name, PtrT ptr);
+void ResAddStatic(const char *name, PtrT ptr);
+PtrT ResGet(const char *name);
 
 #define ResAddTable(NAME, TYPE, SIZE) \
   ResAdd(NAME, NewTable(TYPE, SIZE))

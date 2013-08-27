@@ -53,7 +53,7 @@ struct PixBuf {
 };
 
 PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height);
-PixBufT *NewPixBufFromFile(const StrT fileName);
+PixBufT *NewPixBufFromFile(const char *fileName);
 PixBufT *NewPixBufWrapper(size_t width, size_t height, uint8_t *data);
 
 void PixBufSwapData(PixBufT *buf1, PixBufT *buf2);

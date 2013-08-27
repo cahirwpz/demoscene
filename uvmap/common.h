@@ -31,8 +31,8 @@ typedef struct UVMap {
 UVMapT *NewUVMap(size_t width, size_t height, UVMapTypeT type,
                  size_t textureW, size_t textureH);
 
-UVMapT *NewUVMapFromFile(const StrT fileName);
-void UVMapWriteToFile(UVMapT *map, const StrT fileName);
+UVMapT *NewUVMapFromFile(const char *fileName);
+void UVMapWriteToFile(UVMapT *map, const char *fileName);
 
 void UVMapSetTexture(UVMapT *map, PixBufT *texture);
 void UVMapSetOffset(UVMapT *map, int offsetU, int offsetV);

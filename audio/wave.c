@@ -32,8 +32,8 @@ typedef struct {
   uint16_t cbSize;
 } __attribute__((packed)) FmtChunkT;
 
-bool WaveFileOpen(WaveFileT *wave, const StrT filename) {
-  StrT path = AbsPath(filename);
+bool WaveFileOpen(WaveFileT *wave, const char *filename) {
+  char *path = AbsPath(filename);
   BPTR fh = Open(path, MODE_OLDFILE);
 
   MemUnref(path);

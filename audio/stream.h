@@ -15,7 +15,7 @@ typedef struct AudioBuffer {
 
 typedef struct AudioStream AudioStreamT;
 
-AudioStreamT *AudioStreamOpen(const StrT filename);
+AudioStreamT *AudioStreamOpen(const char *filename);
 void AudioStreamFeed(AudioStreamT *audio);
 bool AudioStreamPlay(AudioStreamT *audio);
 void AudioStreamStop(AudioStreamT *audio);

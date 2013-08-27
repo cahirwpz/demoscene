@@ -3,7 +3,7 @@
 #include "system/vblank.h"
 #include "tools/frame.h"
 
-static void RenderText(StrT text, int x, int y) {
+static void RenderText(char *text, int x, int y) {
   struct RastPort *rastPort = GetCurrentRastPort();
 
   SetDrMd(rastPort, JAM1);
