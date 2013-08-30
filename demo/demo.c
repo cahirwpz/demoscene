@@ -3,7 +3,6 @@
 
 #include "std/debug.h"
 #include "std/exception.h"
-#include "std/memory.h"
 #include "std/resource.h"
 #include "system/check.h"
 #include "system/display.h"
@@ -75,49 +74,43 @@ void RunEffects(TimeSliceT *slices, int thisFrame) {
 }
 
 int main() {
-  if (SystemCheck()) {
-    JsonNodeT *config;
+  if (SystemCheck() && ReadConfig()) {
+    static bool ready = true;
 
-    if ((config = ReadConfig())) {
-      static bool ready = true;
+    StartResourceManager();
+    StartEventQueue();
 
-      StartResourceManager();
-      StartEventQueue();
-
-      TRY {
-        SetupDemo();
-        LoadResources(config);
-        SetupResources();
-      }
-      CATCH {
-        ready = false;
-      }
-
-      if (ready) {
-        int frameNumber;
-
-        InstallVBlankIntServer();
-        SetVBlankCounter(0);
-
-        do {
-          frameNumber = GetVBlankCounter();
-
-          RunEffects(TheDemo, frameNumber);
-          DisplaySwap();
-          HandleEvents(frameNumber);
-        } while (!ExitDemo);
-
-        RemoveVBlankIntServer();
-
-        KillDemo();
-      }
-
-      KillDisplay();
-      StopEventQueue();
-      StopResourceManager();
-
-      MemUnref(config);
+    TRY {
+      SetupDemo();
+      LoadResources();
+      SetupResources();
     }
+    CATCH {
+      ready = false;
+    }
+
+    if (ready) {
+      int frameNumber;
+
+      InstallVBlankIntServer();
+      SetVBlankCounter(0);
+
+      do {
+        frameNumber = GetVBlankCounter();
+
+        RunEffects(TheDemo, frameNumber);
+        DisplaySwap();
+        HandleEvents(frameNumber);
+      } while (!ExitDemo);
+
+      RemoveVBlankIntServer();
+
+      KillDemo();
+    }
+
+    KillDisplay();
+    StopEventQueue();
+    StopResourceManager();
   }
 
   return 0;

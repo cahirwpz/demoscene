@@ -22,7 +22,8 @@
 
 #include <stdio.h>
 
-const char *ConfigPath = "spy-shs10.json";
+const char *DemoConfigPath = "spy-shs10.json";
+DemoConfigT DemoConfig;
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -187,16 +188,13 @@ void KillDemo() {
  */
 void HandleEvents(int frameNumber) {
   static InputEventT event; 
-#ifdef ENABLEREWIND
   static int counter = 1;
-#endif
 
   while (EventQueuePop(&event)) {
-    switch (event.ie_Class) {
-      case IECLASS_RAWKEY:
-        if (event.ie_Code & IECODE_UP_PREFIX) {
+    if (event.ie_Class == IECLASS_RAWKEY) {
+      if (event.ie_Code & IECODE_UP_PREFIX) {
+        if (DemoConfig.timeKeys) {
           switch (event.ie_Code & ~IECODE_UP_PREFIX) {
-#if ENABLEREWIND
             case KEY_UP:
               ChangeVBlankCounter(-10 * FRAMERATE);
               AudioStreamUpdatePos(TheAudio);
@@ -221,19 +219,15 @@ void HandleEvents(int frameNumber) {
               LOG("Event %d at %.2f (frame %d).",
                   counter++, (float)frameNumber / FRAMERATE, frameNumber);
               break;
-#endif
-
-            case KEY_ESCAPE:
-              ExitDemo = TRUE;
-              break;
 
             default:
               break;
           }
         }
 
-      default:
-        break;
+        if ((event.ie_Code & ~IECODE_UP_PREFIX) == KEY_ESCAPE)
+          ExitDemo = TRUE;
+      }
     }
   }
 }
@@ -571,10 +565,10 @@ TimeSliceT Part2[] = {
 void Render(FrameT *frame) {
   c2p1x1_8_c5_bm(TheCanvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 
-#ifdef SHOWFRAMES
-  RenderFrameNumber(frame->number);
-  RenderFramesPerSecond(frame->number);
-#endif
+  if (DemoConfig.showFrame) {
+    RenderFrameNumber(frame->number);
+    RenderFramesPerSecond(frame->number);
+  }
 }
 
 void FeedAudioStream(FrameT *frame) {

@@ -1,9 +1,9 @@
 {
   "flags": {
     // show the number of current frame
-    "show-frame": true,
+    "show-frame": false,
     // enable rewinding and fast-forward keys
-    "time-keys": true
+    "time-keys": false
   },
   "frame": {
     "first": 0,

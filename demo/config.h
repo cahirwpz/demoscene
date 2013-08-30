@@ -3,9 +3,15 @@
 
 #include "json/json.h"
 
-extern const char *ConfigPath;
+typedef struct DemoConfig {
+  bool showFrame; /* show the number of current frame */
+  bool timeKeys;  /* enable rewinding and fast-forward keys */
+} DemoConfigT;
 
-JsonNodeT *ReadConfig();
-void LoadResources(JsonNodeT *config);
+extern const char *DemoConfigPath;
+extern DemoConfigT DemoConfig;
+
+bool ReadConfig();
+void LoadResources();
 
 #endif

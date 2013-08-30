@@ -52,14 +52,25 @@ JsonNodeT *JsonQuery(JsonNodeT *node, const char *path) {
   return node;
 }
 
-JsonNodeT *JsonQueryObject(JsonNodeT *node, const char *path) {
+JsonNodeT *JsonQueryObject(JsonNodeT *node,
+                           const char *path, JsonNodeT *defval) {
   node = JsonQuery(node, path);
 
-  return (node && node->type == JSON_OBJECT) ? node : NULL;
+  return (node && node->type == JSON_OBJECT) ? node : defval;
 }
 
-const char *JsonQueryString(JsonNodeT *node, const char *path) {
+const char *JsonQueryString(JsonNodeT *node,
+                            const char *path, const char *defval)
+{
   node = JsonQuery(node, path);
 
-  return (node && node->type == JSON_STRING) ? node->u.string : NULL;
+  return (node && node->type == JSON_STRING) ? node->u.string : defval;
+}
+
+bool JsonQueryBoolean(JsonNodeT *node,
+                      const char *path, bool defval)
+{
+  node = JsonQuery(node, path);
+
+  return (node && node->type == JSON_BOOLEAN) ? node->u.boolean : defval;
 }

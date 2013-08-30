@@ -6,24 +6,36 @@
 
 #include "config.h"
 
-JsonNodeT *ReadConfig() {
-  JsonNodeT *node = NULL;
-  char *json;
+static JsonNodeT *_config = NULL;
 
-  if ((json = ReadTextSimple(ConfigPath))) {
-    node = JsonParse(json);
+bool ReadConfig() {
+  char *json;
+  bool result = false;
+
+  if ((json = ReadTextSimple(DemoConfigPath))) {
+    if ((_config = JsonParse(json))) {
+      if (!JsonQueryObject(_config, "resources", NULL)) {
+        LOG("%s: No 'resources' section!", DemoConfigPath);
+      } else {
+        DemoConfig.showFrame = JsonQueryBoolean(_config, "flags/show-frame", false);
+        DemoConfig.timeKeys = JsonQueryBoolean(_config, "flags/time-keys", false);
+
+        result = true;
+      }
+    }
+
     MemUnref(json);
   }
 
-  return node;
+  return result;
 }
 
-void LoadResources(JsonNodeT *config) {
-  JsonNodeT *resources = JsonQueryObject(config, "resources");
+void LoadResources() {
+  JsonNodeT *resources = JsonQueryObject(_config, "resources", NULL);
 
   void LoadFile(const char *key, JsonNodeT *value) {
-    const char *type = JsonQueryString(value, "type");
-    const char *path = JsonQueryString(value, "path");
+    const char *type = JsonQueryString(value, "type", NULL);
+    const char *path = JsonQueryString(value, "path", NULL);
 
     if (!strcmp(type, "image")) {
       ResAdd(key, NewPixBufFromFile(path));
@@ -36,3 +48,9 @@ void LoadResources(JsonNodeT *config) {
 
   JsonObjectForEach(resources, LoadFile);
 }
+
+void KillConfig() {
+  MemUnref(_config);
+}
+
+ADD2EXIT(KillConfig, 0);
