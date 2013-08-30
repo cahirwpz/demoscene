@@ -1,17 +1,17 @@
 #include <clib/exec_protos.h>
 #include <proto/exec.h>
 
+#include "std/debug.h"
+#include "std/exception.h"
+#include "std/memory.h"
 #include "std/resource.h"
 #include "system/check.h"
 #include "system/display.h"
 #include "system/input.h"
 #include "system/vblank.h"
 
+#include "config.h"
 #include "demo.h"
-
-struct DosLibrary *DOSBase;
-struct GfxBase *GfxBase;
-struct IntuitionBase *IntuitionBase;
 
 bool ExitDemo = false;
 
@@ -75,40 +75,50 @@ void RunEffects(TimeSliceT *slices, int thisFrame) {
 }
 
 int main() {
-  DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 39);
-  GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 39);
-  IntuitionBase = (struct IntuitionBase *)OpenLibrary("intuition.library", 39);
+  if (SystemCheck()) {
+    JsonNodeT *config;
 
-  if (DOSBase && GfxBase && IntuitionBase && SystemCheck()) {
-    StartResourceManager();
-    StartEventQueue();
+    if ((config = ReadConfig())) {
+      static bool ready = true;
 
-    if (SetupDemo()) {
-      int frameNumber;
+      StartResourceManager();
+      StartEventQueue();
 
-      InstallVBlankIntServer();
-      SetVBlankCounter(0);
+      TRY {
+        SetupDemo();
+        LoadResources(config);
+        SetupResources();
+      }
+      CATCH {
+        ready = false;
+      }
 
-      do {
-        frameNumber = GetVBlankCounter();
+      if (ready) {
+        int frameNumber;
 
-        RunEffects(TheDemo, frameNumber);
-        DisplaySwap();
-        HandleEvents(frameNumber);
-      } while (!ExitDemo);
+        InstallVBlankIntServer();
+        SetVBlankCounter(0);
 
-      KillDemo();
-      RemoveVBlankIntServer();
+        do {
+          frameNumber = GetVBlankCounter();
+
+          RunEffects(TheDemo, frameNumber);
+          DisplaySwap();
+          HandleEvents(frameNumber);
+        } while (!ExitDemo);
+
+        RemoveVBlankIntServer();
+
+        KillDemo();
+      }
+
       KillDisplay();
+      StopEventQueue();
+      StopResourceManager();
+
+      MemUnref(config);
     }
-
-    StopEventQueue();
-    StopResourceManager();
   }
-
-  CloseLibrary((struct Library *)IntuitionBase);
-  CloseLibrary((struct Library *)GfxBase);
-  CloseLibrary((struct Library *)DOSBase);
 
   return 0;
 }

@@ -1,13 +1,14 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-OBJS := demo.o spy-shs10.o
+OBJS := config.o demo.o spy-shs10.o
 BINS := spy-shs10
 
 all:: $(BINS)
 
-spy-shs10: demo.o spy-shs10.o libaudio.a libuvmap.a libgfx.a libsystem.a libstd.a
+spy-shs10: $(OBJS) libaudio.a libuvmap.a libjson.a libgfx.a libsystem.a libstd.a
 
 spy-shs10.o: CFLAGS += -Wno-unused
+spy-shs10: LIBS += -lauto
 
 archive: spy-shs10
 	lha a $^.lha $^ data

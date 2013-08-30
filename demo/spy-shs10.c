@@ -17,9 +17,12 @@
 #include "system/input.h"
 #include "system/vblank.h"
 
+#include "config.h"
 #include "demo.h"
 
 #include <stdio.h>
+
+const char *ConfigPath = "spy-shs10.json";
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -76,82 +79,6 @@ UVMapGenerate(8,
  * Set up resources.
  */
 void SetupResources() {
-  ResAdd("texture-1.8", NewPixBufFromFile("data/texture-1.8"));
-  ResAdd("texture-1.pal", NewPaletteFromFile("data/texture-1.pal"));
-  ResAdd("texture-2.8", NewPixBufFromFile("data/texture-2.8"));
-  ResAdd("texture-2.pal", NewPaletteFromFile("data/texture-2.pal"));
-  ResAdd("texture-3.8", NewPixBufFromFile("data/texture-3.8"));
-  ResAdd("texture-3.pal", NewPaletteFromFile("data/texture-3.pal"));
-  ResAdd("texture-4.8", NewPixBufFromFile("data/texture-4.8"));
-  ResAdd("texture-4.pal", NewPaletteFromFile("data/texture-4.pal"));
-  ResAdd("texture-5.8", NewPixBufFromFile("data/texture-5.8"));
-  ResAdd("texture-5.pal", NewPaletteFromFile("data/texture-5.pal"));
-
-  ResAdd("01.8", NewPixBufFromFile("data/01.8"));
-  ResAdd("01.pal", NewPaletteFromFile("data/01.pal"));
-  ResAdd("02.8", NewPixBufFromFile("data/02.8"));
-  ResAdd("02.pal", NewPaletteFromFile("data/02.pal"));
-  ResAdd("03.8", NewPixBufFromFile("data/03.8"));
-  ResAdd("03.pal", NewPaletteFromFile("data/03.pal"));
-  ResAdd("04.8", NewPixBufFromFile("data/04.8"));
-  ResAdd("04.pal", NewPaletteFromFile("data/04.pal"));
-  ResAdd("05.8", NewPixBufFromFile("data/05.8"));
-  ResAdd("05.pal", NewPaletteFromFile("data/05.pal"));
-  ResAdd("06.8", NewPixBufFromFile("data/06.8"));
-  ResAdd("06.pal", NewPaletteFromFile("data/06.pal"));
-  ResAdd("07.8", NewPixBufFromFile("data/07.8"));
-  ResAdd("07.pal", NewPaletteFromFile("data/07.pal"));
-  ResAdd("08.8", NewPixBufFromFile("data/08.8"));
-  ResAdd("08.pal", NewPaletteFromFile("data/08.pal"));
-  ResAdd("09.8", NewPixBufFromFile("data/09.8"));
-  ResAdd("09.pal", NewPaletteFromFile("data/09.pal"));
-  ResAdd("10.8", NewPixBufFromFile("data/10.8"));
-  ResAdd("10.pal", NewPaletteFromFile("data/10.pal"));
-  ResAdd("11.8", NewPixBufFromFile("data/11.8"));
-  ResAdd("11.pal", NewPaletteFromFile("data/11.pal"));
-  ResAdd("12.8", NewPixBufFromFile("data/12.8"));
-  ResAdd("12.pal", NewPaletteFromFile("data/12.pal"));
-  ResAdd("13.8", NewPixBufFromFile("data/13.8"));
-  ResAdd("13.pal", NewPaletteFromFile("data/13.pal"));
-  ResAdd("14-1.8", NewPixBufFromFile("data/14-1.8"));
-  ResAdd("14-1.pal", NewPaletteFromFile("data/14-1.pal"));
-  ResAdd("14-2.8", NewPixBufFromFile("data/14-2.8"));
-  ResAdd("14-2.pal", NewPaletteFromFile("data/14-2.pal"));
-  ResAdd("15.8", NewPixBufFromFile("data/15.8"));
-  ResAdd("15.pal", NewPaletteFromFile("data/15.pal"));
-  ResAdd("16.8", NewPixBufFromFile("data/16.8"));
-  ResAdd("16.pal", NewPaletteFromFile("data/16.pal"));
-  ResAdd("17.8", NewPixBufFromFile("data/17.8"));
-  ResAdd("17.pal", NewPaletteFromFile("data/17.pal"));
-  ResAdd("18.8", NewPixBufFromFile("data/18.8"));
-  ResAdd("18.pal", NewPaletteFromFile("data/18.pal"));
-  ResAdd("19.8", NewPixBufFromFile("data/19.8"));
-  ResAdd("19.pal", NewPaletteFromFile("data/19.pal"));
-  ResAdd("end1.8", NewPixBufFromFile("data/end1.8"));
-  ResAdd("end1.pal", NewPaletteFromFile("data/end1.pal"));
-  ResAdd("end2.8", NewPixBufFromFile("data/end2.8"));
-  ResAdd("end2.pal", NewPaletteFromFile("data/end2.pal"));
-
-  ResAdd("slider.8", NewPixBufFromFile("data/slider.8"));
-  ResAdd("slider.pal", NewPaletteFromFile("data/slider.pal"));
-  ResAdd("knob.8", NewPixBufFromFile("data/knob.8"));
-  ResAdd("audio.8", NewPixBufFromFile("data/audio.8"));
-  ResAdd("audio.pal", NewPaletteFromFile("data/audio.pal"));
-  ResAdd("code.8", NewPixBufFromFile("data/code.8"));
-  ResAdd("code.pal", NewPaletteFromFile("data/code.pal"));
-  ResAdd("gfx.8", NewPixBufFromFile("data/gfx.8"));
-  ResAdd("gfx.pal", NewPaletteFromFile("data/gfx.pal"));
-  ResAdd("pics.8", NewPixBufFromFile("data/pics.8"));
-  ResAdd("pics.pal", NewPaletteFromFile("data/pics.pal"));
-  ResAdd("greets1.8", NewPixBufFromFile("data/greets1.8"));
-  ResAdd("greets1.pal", NewPaletteFromFile("data/greets1.pal"));
-  ResAdd("greets2.8", NewPixBufFromFile("data/greets2.8"));
-  ResAdd("greets2.pal", NewPaletteFromFile("data/greets2.pal"));
-  ResAdd("spy.8", NewPixBufFromFile("data/spy.8"));
-  ResAdd("spy.pal", NewPaletteFromFile("data/spy.pal"));
-  ResAdd("shs10.8", NewPixBufFromFile("data/shs10.8"));
-  ResAdd("shs10.pal", NewPaletteFromFile("data/shs10.pal"));
-
   ResAdd("Audio", AudioStreamOpen("data/last-christmas-techno.wav"));
 
   ResAdd("EffectPal", NewPalette(256));
@@ -205,45 +132,40 @@ void SetupResources() {
   ResAdd("Map7", NewUVMapFromFile("data/map7.bin"));
   ResAdd("Map8", NewUVMapFromFile("data/map8.bin"));
 #endif
+
+  /* Slider & knob */
+  LinkPalettes(R_("texture-4.pal"), R_("slider.pal"), NULL);
+  PixBufRemap(R_("slider.8"), R_("slider.pal"));
+  PixBufRemap(R_("knob.8"), R_("slider.pal"));
+
+  /* And finally audio stream... */
+  TheAudio = R_("Audio");
+  AudioStreamPlay(TheAudio);
 }
 
 /*
  * Set up demo.
  */
-void Loading() {
-  PixBufT *BeginImg = NewPixBufFromFile("data/begin.8");
-  PaletteT *BeginPal = NewPaletteFromFile("data/begin.pal");
-
-  c2p1x1_8_c5_bm(BeginImg->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
-  LoadPalette(BeginPal);
-  DisplaySwap();
-
-  SetupResources();
-
-  MemUnref(BeginImg);
-  MemUnref(BeginPal);
-}
 
 bool SetupDemo() {
-  if (!(InitDisplay(WIDTH, HEIGHT, DEPTH) && InitAudio()))
-    return false;
+  ResAdd("BeginImg", NewPixBufFromFile("data/begin.8"));
+  ResAdd("BeginPal", NewPaletteFromFile("data/begin.pal"));
 
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  TheCanvas = R_("Canvas");
+  if (InitDisplay(WIDTH, HEIGHT, DEPTH) && InitAudio()) {
+    PixBufT *BeginImg = R_("BeginImg");
+    PaletteT *BeginPal = R_("BeginPal");
 
-  Loading();
+    ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
+    TheCanvas = R_("Canvas");
 
-  TheAudio = R_("Audio");
-  AudioStreamPlay(TheAudio);
+    c2p1x1_8_c5_bm(BeginImg->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+    LoadPalette(BeginPal);
+    DisplaySwap();
 
-  /* Slider & knob */
-  {
-    LinkPalettes(R_("texture-4.pal"), R_("slider.pal"), NULL);
-    PixBufRemap(R_("slider.8"), R_("slider.pal"));
-    PixBufRemap(R_("knob.8"), R_("slider.pal"));
+    return true;
   }
 
-  return TRUE;
+  return false;
 }
 
 /*
@@ -422,7 +344,7 @@ TimeSliceT Part1[] = {
 static FrameT EpisodeFrame;
 static int EpisodeNum = 0;
 
-void SetupEpisode(FrameT *frame, StrT imgName, StrT palName, int map, int texture) {
+void SetupEpisode(FrameT *frame, char *imgName, char *palName, int map, int texture) {
   EpisodeNum++;
 
   AudioStreamSetVolume(TheAudio, 1.0f);
