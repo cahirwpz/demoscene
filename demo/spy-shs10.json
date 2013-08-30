@@ -13,6 +13,10 @@
     "bpm": 142.18,
     "file": "data/last-christmas-techno.wav"
   },
+  "load": {
+    "image": "data/begin.8",
+    "palette": "data/begin.pal"
+  },
   "resources": {
     "texture-1.8": { "type": "image", "path": "data/texture-1.8" },
     "texture-1.pal": { "type": "palette", "path": "data/texture-1.pal" },

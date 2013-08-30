@@ -1,9 +1,11 @@
 #include <clib/exec_protos.h>
 #include <proto/exec.h>
 
+#include "std/memory.h"
 #include "std/debug.h"
 #include "std/exception.h"
 #include "std/resource.h"
+#include "system/audio.h"
 #include "system/check.h"
 #include "system/display.h"
 #include "system/input.h"
@@ -74,14 +76,15 @@ void RunEffects(TimeSliceT *slices, int thisFrame) {
 }
 
 int main() {
-  if (SystemCheck() && ReadConfig()) {
+  if (SystemCheck() && InitAudio() && ReadConfig()) {
     static bool ready = true;
 
     StartResourceManager();
     StartEventQueue();
 
     TRY {
-      SetupDemo();
+      if (!LoadDemo())
+        PANIC("Loading demo failed.");
       LoadResources();
       SetupResources();
     }
@@ -91,6 +94,8 @@ int main() {
 
     if (ready) {
       int frameNumber;
+
+      BeginDemo();
 
       InstallVBlankIntServer();
       SetVBlankCounter(0);
@@ -108,9 +113,12 @@ int main() {
       KillDemo();
     }
 
+    KillAudio();
     KillDisplay();
     StopEventQueue();
     StopResourceManager();
+
+    MemUnref(DemoConfig);
   }
 
   return 0;

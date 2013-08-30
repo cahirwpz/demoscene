@@ -6,20 +6,17 @@
 
 #include "config.h"
 
-static JsonNodeT *_config = NULL;
+JsonNodeT *DemoConfig = NULL;
 
 bool ReadConfig() {
   char *json;
   bool result = false;
 
   if ((json = ReadTextSimple(DemoConfigPath))) {
-    if ((_config = JsonParse(json))) {
-      if (!JsonQueryObject(_config, "resources", NULL)) {
+    if ((DemoConfig = JsonParse(json))) {
+      if (!JsonQueryObject(DemoConfig, "resources", NULL)) {
         LOG("%s: No 'resources' section!", DemoConfigPath);
       } else {
-        DemoConfig.showFrame = JsonQueryBoolean(_config, "flags/show-frame", false);
-        DemoConfig.timeKeys = JsonQueryBoolean(_config, "flags/time-keys", false);
-
         result = true;
       }
     }
@@ -31,7 +28,7 @@ bool ReadConfig() {
 }
 
 void LoadResources() {
-  JsonNodeT *resources = JsonQueryObject(_config, "resources", NULL);
+  JsonNodeT *resources = JsonQueryObject(DemoConfig, "resources", NULL);
 
   void LoadFile(const char *key, JsonNodeT *value) {
     const char *type = JsonQueryString(value, "type", NULL);
@@ -48,9 +45,3 @@ void LoadResources() {
 
   JsonObjectForEach(resources, LoadFile);
 }
-
-void KillConfig() {
-  MemUnref(_config);
-}
-
-ADD2EXIT(KillConfig, 0);

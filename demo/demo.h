@@ -35,8 +35,10 @@ extern TimeSliceT TheDemo[];
 
 extern bool ExitDemo;
 
-bool SetupDemo();
+bool LoadConfig();
+bool LoadDemo();
 void SetupResources();
+void BeginDemo();
 void KillDemo();
 void HandleEvents(int frameNumber);
 

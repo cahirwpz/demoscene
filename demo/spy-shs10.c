@@ -22,21 +22,84 @@
 
 #include <stdio.h>
 
-const char *DemoConfigPath = "spy-shs10.json";
-DemoConfigT DemoConfig;
-
 const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
+const char *DemoConfigPath = "spy-shs10.json";
+
+static struct {
+  bool showFrame; /* show the number of current frame */
+  bool timeKeys;  /* enable rewinding and fast-forward keys */
+
+  AudioStreamT *music;
+  PixBufT *canvas;
+  PixBufT *loadImg;
+  PaletteT *loadPal;
+
+  PaletteT *palette;
+  PixBufT *image;
+} Demo;
+
+/*
+ * Load demo.
+ */
+
+bool LoadDemo() {
+  const char *loadImgPath = JsonQueryString(DemoConfig, "load/image", NULL);
+  const char *loadPalPath = JsonQueryString(DemoConfig, "load/palette", NULL);
+  const char *musicPath = JsonQueryString(DemoConfig, "music/file", NULL);
+
+  Demo.showFrame = JsonQueryBoolean(DemoConfig, "flags/show-frame", false);
+  Demo.timeKeys = JsonQueryBoolean(DemoConfig, "flags/time-keys", false);
+
+  if ((Demo.loadImg = NewPixBufFromFile(loadImgPath)) &&
+      (Demo.loadPal = NewPaletteFromFile(loadPalPath)) &&
+      (Demo.music = AudioStreamOpen(musicPath)) &&
+      (Demo.canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT)) &&
+      InitDisplay(WIDTH, HEIGHT, DEPTH))
+  {
+    c2p1x1_8_c5_bm(Demo.loadImg->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+    LoadPalette(Demo.loadPal);
+    DisplaySwap();
+
+    return true;
+  }
+
+  return false;
+}
+
+/*
+ * Transition to demo.
+ */
+void BeginDemo() {
+  /* Release loading screen image... */
+  MemUnref(Demo.loadImg);
+  MemUnref(Demo.loadPal);
+
+  /* Play the audio stream... */
+  AudioStreamPlay(Demo.music);
+}
+
+/*
+ * Tear down demo.
+ */
+void KillDemo() {
+  UnlinkPalettes(R_("11.pal"));
+  UnlinkPalettes(R_("texture-1.pal"));
+  UnlinkPalettes(R_("texture-2.pal"));
+  UnlinkPalettes(R_("texture-3.pal"));
+  UnlinkPalettes(R_("texture-4.pal"));
+  UnlinkPalettes(R_("texture-5.pal"));
+  AudioStreamStop(Demo.music);
+
+  MemUnref(Demo.music);
+  MemUnref(Demo.canvas);
+}
+
 #define BPM 142.18f
 #define BPF (BPM / (60.0f * FRAMERATE))
 #define BEAT_F(x) ((float)(x) * FRAMERATE * (60.0f / BPM))
-
-static AudioStreamT *TheAudio;
-static PixBufT *TheCanvas;
-static PaletteT *ThePalette;
-static PixBufT *TheImage;
 
 #ifdef GENERATEMAPS
 UVMapGenerate(0,
@@ -80,8 +143,6 @@ UVMapGenerate(8,
  * Set up resources.
  */
 void SetupResources() {
-  ResAdd("Audio", AudioStreamOpen("data/last-christmas-techno.wav"));
-
   ResAdd("EffectPal", NewPalette(256));
 
 #ifdef GENERATEMAPS
@@ -138,49 +199,6 @@ void SetupResources() {
   LinkPalettes(R_("texture-4.pal"), R_("slider.pal"), NULL);
   PixBufRemap(R_("slider.8"), R_("slider.pal"));
   PixBufRemap(R_("knob.8"), R_("slider.pal"));
-
-  /* And finally audio stream... */
-  TheAudio = R_("Audio");
-  AudioStreamPlay(TheAudio);
-}
-
-/*
- * Set up demo.
- */
-
-bool SetupDemo() {
-  ResAdd("BeginImg", NewPixBufFromFile("data/begin.8"));
-  ResAdd("BeginPal", NewPaletteFromFile("data/begin.pal"));
-
-  if (InitDisplay(WIDTH, HEIGHT, DEPTH) && InitAudio()) {
-    PixBufT *BeginImg = R_("BeginImg");
-    PaletteT *BeginPal = R_("BeginPal");
-
-    ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-    TheCanvas = R_("Canvas");
-
-    c2p1x1_8_c5_bm(BeginImg->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
-    LoadPalette(BeginPal);
-    DisplaySwap();
-
-    return true;
-  }
-
-  return false;
-}
-
-/*
- * Tear down demo.
- */
-void KillDemo() {
-  UnlinkPalettes(R_("11.pal"));
-  UnlinkPalettes(R_("texture-1.pal"));
-  UnlinkPalettes(R_("texture-2.pal"));
-  UnlinkPalettes(R_("texture-3.pal"));
-  UnlinkPalettes(R_("texture-4.pal"));
-  UnlinkPalettes(R_("texture-5.pal"));
-  AudioStreamStop(TheAudio);
-  KillAudio();
 }
 
 /*
@@ -193,26 +211,26 @@ void HandleEvents(int frameNumber) {
   while (EventQueuePop(&event)) {
     if (event.ie_Class == IECLASS_RAWKEY) {
       if (event.ie_Code & IECODE_UP_PREFIX) {
-        if (DemoConfig.timeKeys) {
+        if (Demo.timeKeys) {
           switch (event.ie_Code & ~IECODE_UP_PREFIX) {
             case KEY_UP:
               ChangeVBlankCounter(-10 * FRAMERATE);
-              AudioStreamUpdatePos(TheAudio);
+              AudioStreamUpdatePos(Demo.music);
               break;
 
             case KEY_DOWN:
               ChangeVBlankCounter(10 * FRAMERATE);
-              AudioStreamUpdatePos(TheAudio);
+              AudioStreamUpdatePos(Demo.music);
               break;
 
             case KEY_LEFT:
               ChangeVBlankCounter(-FRAMERATE);
-              AudioStreamUpdatePos(TheAudio);
+              AudioStreamUpdatePos(Demo.music);
               break;
 
             case KEY_RIGHT:
               ChangeVBlankCounter(FRAMERATE);
-              AudioStreamUpdatePos(TheAudio);
+              AudioStreamUpdatePos(Demo.music);
               break;
 
             case KEY_SPACE:
@@ -239,7 +257,7 @@ static PaletteT *TheTexturePal;
 static UVMapT *TheMap;
 
 void SetupPart1a(FrameT *frame) {
-  AudioStreamSetVolume(TheAudio, 0.5f);
+  AudioStreamSetVolume(Demo.music, 0.5f);
   TheMap = R_("Map0");
   TheTexture = R_("texture-3.8");
   TheTexturePal = R_("texture-3.pal");
@@ -258,7 +276,7 @@ void SetupPart1b(FrameT *frame) {
 }
 
 void SetupPart1c(FrameT *frame) {
-  TheImage = NULL;
+  Demo.image = NULL;
   TheMap = R_("Map5");
   TheTexture = R_("texture-4.8");
   TheTexturePal = R_("texture-4.pal");
@@ -272,15 +290,15 @@ void VolumeUp(FrameT *frame) {
   float dx = 1.75f * (frame->number * 4) / 3;
   float dy = 1.75f * frame->number;
 
-  AudioStreamSetVolume(TheAudio, volume);
+  AudioStreamSetVolume(Demo.music, volume);
 
-  PixBufBlit(TheCanvas, 0, 0, R_("slider.8"), NULL);
-  PixBufBlit(TheCanvas, 50 + (int)dx , 110 - (int)dy, R_("knob.8"), NULL);
+  PixBufBlit(Demo.canvas, 0, 0, R_("slider.8"), NULL);
+  PixBufBlit(Demo.canvas, 50 + (int)dx , 110 - (int)dy, R_("knob.8"), NULL);
 }
 
 void ShowVolume(FrameT *frame) {
-  PixBufBlit(TheCanvas, 0, 0, R_("slider.8"), NULL);
-  PixBufBlit(TheCanvas, 50, 110, R_("knob.8"), NULL);
+  PixBufBlit(Demo.canvas, 0, 0, R_("slider.8"), NULL);
+  PixBufBlit(Demo.canvas, 50, 110, R_("knob.8"), NULL);
 }
 
 void RenderPart1(FrameT *frame) {
@@ -289,7 +307,7 @@ void RenderPart1(FrameT *frame) {
 
   UVMapSetOffset(TheMap, du, dv);
   UVMapSetTexture(TheMap, TheTexture);
-  UVMapRender(TheMap, TheCanvas);
+  UVMapRender(TheMap, Demo.canvas);
 }
 
 void ShowTitle(FrameT *frame, PixBufT *title) {
@@ -306,7 +324,7 @@ void ShowTitle(FrameT *frame, PixBufT *title) {
   x = (WIDTH - w) / 2;
   y = (HEIGHT - h) / 2;
 
-  PixBufBlitScaled(TheCanvas, x, y, w, h, title);
+  PixBufBlitScaled(Demo.canvas, x, y, w, h, title);
 }
 
 void ShowSpy(FrameT *frame) {
@@ -341,7 +359,7 @@ static int EpisodeNum = 0;
 void SetupEpisode(FrameT *frame, char *imgName, char *palName, int map, int texture) {
   EpisodeNum++;
 
-  AudioStreamSetVolume(TheAudio, 1.0f);
+  AudioStreamSetVolume(Demo.music, 1.0f);
 
   {
     char name[32];
@@ -359,24 +377,24 @@ void SetupEpisode(FrameT *frame, char *imgName, char *palName, int map, int text
     }
   }
 
-  TheImage = R_(imgName);
+  Demo.image = R_(imgName);
 
-  if (TheImage->uniqueColors <= 128) {
-    ThePalette = TheTexturePal;
-    LinkPalettes(ThePalette, R_(palName), NULL);
+  if (Demo.image->uniqueColors <= 128) {
+    Demo.palette = TheTexturePal;
+    LinkPalettes(Demo.palette, R_(palName), NULL);
     PixBufRemap(R_(imgName), R_(palName));
-  } else if (TheImage->uniqueColors <= 192) {
-    ThePalette = R_(palName);
+  } else if (Demo.image->uniqueColors <= 192) {
+    Demo.palette = R_(palName);
 
     if (EpisodeNum == 5) {
-      LinkPalettes(ThePalette, R_("greets1.pal"), NULL);
+      LinkPalettes(Demo.palette, R_("greets1.pal"), NULL);
       PixBufRemap(R_("greets1.8"), R_("greets1.pal"));
     } else if (EpisodeNum == 6) {
-      LinkPalettes(ThePalette, R_("greets2.pal"), NULL);
+      LinkPalettes(Demo.palette, R_("greets2.pal"), NULL);
       PixBufRemap(R_("greets2.8"), R_("greets2.pal"));
     }
   } else {
-    ThePalette = R_(palName);
+    Demo.palette = R_(palName);
   }
 
   memcpy(&EpisodeFrame, frame, sizeof(FrameT));
@@ -474,13 +492,13 @@ void PaletteEffect(FrameT *frame, PaletteT *src, PaletteT *dst) {
 }
 
 void RenderPart2(FrameT *frame) {
-  if (TheImage->uniqueColors <= 128) {
+  if (Demo.image->uniqueColors <= 128) {
     int du = 2 * frame->number;
     int dv = 2 * frame->number;
 
     UVMapSetTexture(TheMap, TheTexture);
     UVMapSetOffset(TheMap, du, dv);
-    UVMapRender(TheMap, TheCanvas);
+    UVMapRender(TheMap, Demo.canvas);
   }
 
   EpisodeFrame.number = frame->number - EpisodeFrame.first;
@@ -490,17 +508,17 @@ void RenderPart2(FrameT *frame) {
 
     frame = &EpisodeFrame;
 
-    if (TheImage->height > HEIGHT) {
+    if (Demo.image->height > HEIGHT) {
       int frames = frame->last - frame->first + 1;
       int f = frame->number % frames;
       int dy = (f < frames / 2) ? f : (frames - f);
 
-      rect.y = (int)((float)(TheImage->height - HEIGHT) * 2 * dy / frames);
+      rect.y = (int)((float)(Demo.image->height - HEIGHT) * 2 * dy / frames);
     }
 
-    PixBufBlit(TheCanvas, 0, 0, TheImage, &rect);
+    PixBufBlit(Demo.canvas, 0, 0, Demo.image, &rect);
 
-    PaletteEffect(frame, ThePalette, R_("EffectPal"));
+    PaletteEffect(frame, Demo.palette, R_("EffectPal"));
   }
 
   if (EpisodeNum == 5 || EpisodeNum == 6) {
@@ -512,13 +530,13 @@ void RenderPart2(FrameT *frame) {
 
       rect.x = (TheGreets->width - WIDTH) * frame->number / frames;
 
-      PixBufBlit(TheCanvas, 0, 54, TheGreets, &rect);
+      PixBufBlit(Demo.canvas, 0, 54, TheGreets, &rect);
     } else {
       PixBufT *TheGreets = R_("greets2.8");
 
       rect.x = (TheGreets->width - WIDTH) * (frames - frame->number) / frames;
 
-      PixBufBlit(TheCanvas, 0, 54, TheGreets, &rect);
+      PixBufBlit(Demo.canvas, 0, 54, TheGreets, &rect);
     }
   }
 }
@@ -563,17 +581,16 @@ TimeSliceT Part2[] = {
 /*** The demo ****************************************************************/
 
 void Render(FrameT *frame) {
-  c2p1x1_8_c5_bm(TheCanvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  c2p1x1_8_c5_bm(Demo.canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 
-  if (DemoConfig.showFrame) {
+  if (Demo.showFrame) {
     RenderFrameNumber(frame->number);
     RenderFramesPerSecond(frame->number);
   }
 }
 
 void FeedAudioStream(FrameT *frame) {
-  AudioStreamT *TheAudio = R_("Audio");
-  AudioStreamFeed(TheAudio);
+  AudioStreamFeed(Demo.music);
 }
 
 void Quit(FrameT *frame) {
