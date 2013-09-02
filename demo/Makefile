@@ -1,6 +1,6 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-OBJS := config.o demo.o spy-shs10.o
+OBJS := config.o timeline.o demo.o spy-shs10.o
 BINS := spy-shs10
 
 all:: $(BINS)

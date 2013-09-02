@@ -9,7 +9,5 @@ extern JsonNodeT *DemoConfig;
 
 bool ReadConfig();
 void LoadResources();
-float GetBeatLength();
-TimeSliceT *LoadTimeline();
 
 #endif

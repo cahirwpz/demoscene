@@ -19,8 +19,7 @@
 
 #include "config.h"
 #include "demo.h"
-
-#include <stdio.h>
+#include "timeline.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
