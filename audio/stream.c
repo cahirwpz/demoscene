@@ -28,6 +28,15 @@ struct AudioStream {
 };
 
 void AudioStreamClose(AudioStreamT *audio) {
+  int i;
+
+  for (i = 0; i < 2; i++) {
+    FreeAudioData((uint16_t *)audio->hwBuf[i].left.hi);
+    FreeAudioData((uint16_t *)audio->hwBuf[i].left.lo);
+    FreeAudioData((uint16_t *)audio->hwBuf[i].right.hi);
+    FreeAudioData((uint16_t *)audio->hwBuf[i].right.lo);
+  }
+
   WaveFileClose(&audio->wave);
 }
 

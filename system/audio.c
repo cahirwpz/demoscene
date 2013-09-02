@@ -157,5 +157,9 @@ void AudioIntSetHandler(ChanT num, AudioIntHandlerT handler, PtrT userData) {
 }
 
 uint16_t *AllocAudioData(size_t length) {
-  return MemNewCustom((length + 1) % ~1, MEMF_CHIP, NULL);
+  return AllocVec((length + 1) % ~1, MEMF_CHIP | MEMF_CLEAR);
+}
+
+void FreeAudioData(uint16_t *data) {
+  FreeVec(data);
 }

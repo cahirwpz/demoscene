@@ -21,5 +21,6 @@ void AudioIntActivate(ChanT num, bool on);
 void AudioIntSetHandler(ChanT num, AudioIntHandlerT handler, PtrT userData);
 
 uint16_t *AllocAudioData(size_t length);
+void FreeAudioData(uint16_t *data);
 
 #endif
