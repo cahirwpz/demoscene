@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "json.h"
+#include "std/debug.h"
+#include "json/json.h"
 
 /*
  * JsonQuery recursively traverses Json structure according to data contained
@@ -52,25 +53,59 @@ JsonNodeT *JsonQuery(JsonNodeT *node, const char *path) {
   return node;
 }
 
-JsonNodeT *JsonQueryObject(JsonNodeT *node,
-                           const char *path, JsonNodeT *defval) {
-  node = JsonQuery(node, path);
+JsonNodeT *JsonQuerySafe(JsonNodeT *node, const char *path) {
+  JsonNodeT *result = JsonQuery(node, path);
 
-  return (node && node->type == JSON_OBJECT) ? node : defval;
+  ASSERT(node, "Node '%s' does not exist.", path);
+
+  return result;
 }
 
-const char *JsonQueryString(JsonNodeT *node,
-                            const char *path, const char *defval)
-{
-  node = JsonQuery(node, path);
+JsonNodeT *JsonQueryArray(JsonNodeT *node, const char *path) {
+  node = JsonQuerySafe(node, path);
 
-  return (node && node->type == JSON_STRING) ? node->u.string : defval;
+  ASSERT(node->type == JSON_ARRAY, "Item '%s' is not an array.", path);
+
+  return node;
 }
 
-bool JsonQueryBoolean(JsonNodeT *node,
-                      const char *path, bool defval)
-{
-  node = JsonQuery(node, path);
+JsonNodeT *JsonQueryObject(JsonNodeT *node, const char *path) {
+  node = JsonQuerySafe(node, path);
 
-  return (node && node->type == JSON_BOOLEAN) ? node->u.boolean : defval;
+  ASSERT(node->type == JSON_OBJECT, "Item '%s' is not an object.", path);
+
+  return node;
+}
+
+const char *JsonQueryString(JsonNodeT *node, const char *path) {
+  node = JsonQuerySafe(node, path);
+
+  ASSERT(node->type == JSON_STRING, "Item '%s' is not a string.", path);
+
+  return node->u.string;
+}
+
+int JsonQueryInteger(JsonNodeT *node, const char *path) {
+  node = JsonQuerySafe(node, path);
+
+  ASSERT(node->type == JSON_INTEGER, "Item '%s' is not an integer.", path);
+
+  return node->u.integer;
+}
+
+float JsonQueryNumber(JsonNodeT *node, const char *path) {
+  node = JsonQuerySafe(node, path);
+
+  ASSERT(node->type == JSON_INTEGER || node->type == JSON_REAL,
+         "Item '%s' is not a number.", path);
+
+  return (node->type == JSON_INTEGER) ? (float)node->u.integer : node->u.real;
+}
+
+bool JsonQueryBoolean(JsonNodeT *node, const char *path) {
+  node = JsonQuerySafe(node, path);
+
+  ASSERT (node->type == JSON_BOOLEAN, "Item '%s' is not a boolean.", path);
+
+  return node->u.boolean;
 }

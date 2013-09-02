@@ -11,11 +11,14 @@ spy-shs10: $(OBJS) libaudio.a libuvmap.a libjson.a libtools.a libgfx.a \
 spy-shs10.o: CFLAGS += -Wno-unused
 spy-shs10: LIBS += -lauto
 
+%.syms: %.c gen-bindings.sh
+	@./gen-bindings.sh $< >$@
+
 archive: spy-shs10
 	lha a $^.lha $^ data
 
 clean::
-	@$(RM) -v $(BINS) *.lha
+	@$(RM) -v $(BINS) *.lha *.syms
 
 include $(TOPDIR)/Makefile.common
 

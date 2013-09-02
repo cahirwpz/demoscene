@@ -44,14 +44,13 @@ static struct {
 /*
  * Load demo.
  */
-
 bool LoadDemo() {
-  const char *loadImgPath = JsonQueryString(DemoConfig, "load/image", NULL);
-  const char *loadPalPath = JsonQueryString(DemoConfig, "load/palette", NULL);
-  const char *musicPath = JsonQueryString(DemoConfig, "music/file", NULL);
+  const char *loadImgPath = JsonQueryString(DemoConfig, "load/image");
+  const char *loadPalPath = JsonQueryString(DemoConfig, "load/palette");
+  const char *musicPath = JsonQueryString(DemoConfig, "music/file");
 
-  Demo.showFrame = JsonQueryBoolean(DemoConfig, "flags/show-frame", false);
-  Demo.timeKeys = JsonQueryBoolean(DemoConfig, "flags/time-keys", false);
+  Demo.showFrame = JsonQueryBoolean(DemoConfig, "flags/show-frame");
+  Demo.timeKeys = JsonQueryBoolean(DemoConfig, "flags/time-keys");
 
   if ((Demo.loadImg = NewPixBufFromFile(loadImgPath)) &&
       (Demo.loadPal = NewPaletteFromFile(loadPalPath)) &&
@@ -96,10 +95,6 @@ void KillDemo() {
   MemUnref(Demo.music);
   MemUnref(Demo.canvas);
 }
-
-#define BPM 142.18f
-#define BPF (BPM / (60.0f * FRAMERATE))
-#define BEAT_F(x) ((float)(x) * FRAMERATE * (60.0f / BPM))
 
 #ifdef GENERATEMAPS
 UVMapGenerate(0,
@@ -256,7 +251,7 @@ static PixBufT *TheTexture;
 static PaletteT *TheTexturePal;
 static UVMapT *TheMap;
 
-void SetupPart1a(FrameT *frame) {
+CALLBACK(SetupPart1a) {
   AudioStreamSetVolume(Demo.music, 0.5f);
   TheMap = R_("Map0");
   TheTexture = R_("texture-3.8");
@@ -266,7 +261,7 @@ void SetupPart1a(FrameT *frame) {
   LoadPalette(TheTexturePal);
 }
 
-void SetupPart1b(FrameT *frame) {
+CALLBACK(SetupPart1b) {
   TheMap = R_("Map3");
   TheTexture = R_("texture-2.8");
   TheTexturePal = R_("texture-2.pal");
@@ -275,7 +270,7 @@ void SetupPart1b(FrameT *frame) {
   LoadPalette(TheTexturePal);
 }
 
-void SetupPart1c(FrameT *frame) {
+CALLBACK(SetupPart1c) {
   Demo.image = NULL;
   TheMap = R_("Map5");
   TheTexture = R_("texture-4.8");
@@ -284,7 +279,7 @@ void SetupPart1c(FrameT *frame) {
   LoadPalette(TheTexturePal);
 }
 
-void VolumeUp(FrameT *frame) {
+CALLBACK(VolumeUp) {
   int frames = frame->last - frame->first + 1;
   float volume = 0.5f + 0.5f * ((float)frame->number / frames);
   float dx = 1.75f * (frame->number * 4) / 3;
@@ -296,12 +291,12 @@ void VolumeUp(FrameT *frame) {
   PixBufBlit(Demo.canvas, 50 + (int)dx , 110 - (int)dy, R_("knob.8"), NULL);
 }
 
-void ShowVolume(FrameT *frame) {
+CALLBACK(ShowVolume) {
   PixBufBlit(Demo.canvas, 0, 0, R_("slider.8"), NULL);
   PixBufBlit(Demo.canvas, 50, 110, R_("knob.8"), NULL);
 }
 
-void RenderPart1(FrameT *frame) {
+CALLBACK(RenderPart1) {
   int du = 2 * frame->number;
   int dv = 4 * frame->number;
 
@@ -310,8 +305,8 @@ void RenderPart1(FrameT *frame) {
   UVMapRender(TheMap, Demo.canvas);
 }
 
-void ShowTitle(FrameT *frame, PixBufT *title) {
-  int frames = BEAT_F(8);
+static void ShowTitle(FrameT *frame, PixBufT *title) {
+  int frames = frame->beat * 8;
   int w = title->width;
   int h = title->height;
   int x, y;
@@ -327,31 +322,15 @@ void ShowTitle(FrameT *frame, PixBufT *title) {
   PixBufBlitScaled(Demo.canvas, x, y, w, h, title);
 }
 
-void ShowSpy(FrameT *frame) {
+CALLBACK(ShowSpy) {
   ShowTitle(frame, R_("spy.8"));
 }
 
-void ShowSHS10(FrameT *frame) {
+CALLBACK(ShowSHS10) {
   ShowTitle(frame, R_("shs10.8"));
 }
 
-TimeSliceT Part1[] = {
-  /* Part 1 */
-  DO_ONCE(SetupPart1a, 0, BEAT_F(67)),
-  DO_ONCE(SetupPart1b, BEAT_F(32), BEAT_F(67)),
-  DO_ONCE(SetupPart1c, BEAT_F(50), BEAT_F(67)),
-  EACH_FRAME(RenderPart1, 0, BEAT_F(67)),
-  EACH_FRAME(ShowVolume, BEAT_F(50), BEAT_F(62)),
-  EACH_FRAME(VolumeUp, BEAT_F(62), BEAT_F(67)),
-  EACH_FRAME(ShowSpy, BEAT_F(0), BEAT_F(32)),
-  EACH_FRAME(ShowSHS10, BEAT_F(32), BEAT_F(50)),
-  THE_END
-};
-
 /*** Part 2 ******************************************************************/
-
-#define EPISODE_F BEAT_F(16)
-#define EPISODE(a) ((int)((a) * BEAT_F(16)))
 
 static FrameT EpisodeFrame;
 static int EpisodeNum = 0;
@@ -400,56 +379,56 @@ void SetupEpisode(FrameT *frame, char *imgName, char *palName, int map, int text
   memcpy(&EpisodeFrame, frame, sizeof(FrameT));
 }
 
-void Image01(FrameT *frame) { SetupEpisode(frame, "01.8", "01.pal", 0, 1); }
-void Image02(FrameT *frame) { SetupEpisode(frame, "02.8", "02.pal", 1, 2); }
-void Image03(FrameT *frame) { SetupEpisode(frame, "03.8", "03.pal", 1, 3); }
-void Image04(FrameT *frame) { SetupEpisode(frame, "04.8", "04.pal", 4, 4); }
-void Image05(FrameT *frame) { SetupEpisode(frame, "05.8", "05.pal", 2, 1); }
-void Image06(FrameT *frame) { SetupEpisode(frame, "06.8", "06.pal", 3, 2); }
-void Image07(FrameT *frame) { SetupEpisode(frame, "07.8", "07.pal", 4, 3); }
-void Image08(FrameT *frame) { SetupEpisode(frame, "08.8", "08.pal", 6, 4); }
-void Image09(FrameT *frame) { SetupEpisode(frame, "09.8", "09.pal", 0, 1); }
-void Image10(FrameT *frame) { SetupEpisode(frame, "10.8", "10.pal", 5, 2); }
-void Image11(FrameT *frame) { SetupEpisode(frame, "11.8", "11.pal", -1, -1); }
-void Image12(FrameT *frame) { SetupEpisode(frame, "12.8", "12.pal", 5, 5); }
-void Image13(FrameT *frame) { SetupEpisode(frame, "13.8", "13.pal", 5, 5); }
-void Image15(FrameT *frame) { SetupEpisode(frame, "15.8", "15.pal", -1, -1); }
-void Image16(FrameT *frame) { SetupEpisode(frame, "16.8", "16.pal", -1, -1); }
-void Image17(FrameT *frame) { SetupEpisode(frame, "17.8", "17.pal", 8, 3); }
-void Image18(FrameT *frame) { SetupEpisode(frame, "18.8", "18.pal", 7, 4); }
-void Image19(FrameT *frame) { SetupEpisode(frame, "19.8", "19.pal", 7, 1); }
-void ImageEnd1(FrameT *frame) { SetupEpisode(frame, "end1.8", "end1.pal", -1, -1); }
-void ImageEnd2(FrameT *frame) { SetupEpisode(frame, "end2.8", "end2.pal", -1, -1); }
-void ImageAudio(FrameT *frame) { SetupEpisode(frame, "audio.8", "audio.pal", -1, -1); }
-void ImageCode(FrameT *frame) { SetupEpisode(frame, "code.8", "code.pal", -1, -1); }
-void ImageGfx(FrameT *frame) { SetupEpisode(frame, "gfx.8", "gfx.pal", -1, -1); }
-void ImagePics(FrameT *frame) { SetupEpisode(frame, "pics.8", "pics.pal", -1, -1); }
+CALLBACK(Image01) { SetupEpisode(frame, "01.8", "01.pal", 0, 1); }
+CALLBACK(Image02) { SetupEpisode(frame, "02.8", "02.pal", 1, 2); }
+CALLBACK(Image03) { SetupEpisode(frame, "03.8", "03.pal", 1, 3); }
+CALLBACK(Image04) { SetupEpisode(frame, "04.8", "04.pal", 4, 4); }
+CALLBACK(Image05) { SetupEpisode(frame, "05.8", "05.pal", 2, 1); }
+CALLBACK(Image06) { SetupEpisode(frame, "06.8", "06.pal", 3, 2); }
+CALLBACK(Image07) { SetupEpisode(frame, "07.8", "07.pal", 4, 3); }
+CALLBACK(Image08) { SetupEpisode(frame, "08.8", "08.pal", 6, 4); }
+CALLBACK(Image09) { SetupEpisode(frame, "09.8", "09.pal", 0, 1); }
+CALLBACK(Image10) { SetupEpisode(frame, "10.8", "10.pal", 5, 2); }
+CALLBACK(Image11) { SetupEpisode(frame, "11.8", "11.pal", -1, -1); }
+CALLBACK(Image12) { SetupEpisode(frame, "12.8", "12.pal", 5, 5); }
+CALLBACK(Image13) { SetupEpisode(frame, "13.8", "13.pal", 5, 5); }
+CALLBACK(Image15) { SetupEpisode(frame, "15.8", "15.pal", -1, -1); }
+CALLBACK(Image16) { SetupEpisode(frame, "16.8", "16.pal", -1, -1); }
+CALLBACK(Image17) { SetupEpisode(frame, "17.8", "17.pal", 8, 3); }
+CALLBACK(Image18) { SetupEpisode(frame, "18.8", "18.pal", 7, 4); }
+CALLBACK(Image19) { SetupEpisode(frame, "19.8", "19.pal", 7, 1); }
+CALLBACK(ImageEnd1) { SetupEpisode(frame, "end1.8", "end1.pal", -1, -1); }
+CALLBACK(ImageEnd2) { SetupEpisode(frame, "end2.8", "end2.pal", -1, -1); }
+CALLBACK(ImageAudio) { SetupEpisode(frame, "audio.8", "audio.pal", -1, -1); }
+CALLBACK(ImageCode) { SetupEpisode(frame, "code.8", "code.pal", -1, -1); }
+CALLBACK(ImageGfx) { SetupEpisode(frame, "gfx.8", "gfx.pal", -1, -1); }
+CALLBACK(ImagePics) { SetupEpisode(frame, "pics.8", "pics.pal", -1, -1); }
 
-void Waiving(FrameT *frame) {
-  if ((frame->number / (int)BEAT_F(1)) & 1) {
+CALLBACK(Waiving) {
+  if ((frame->number / (int)frame->beat) & 1) {
     SetupEpisode(frame, "14-2.8", "14-2.pal", 8, 5);
   } else {
     SetupEpisode(frame, "14-1.8", "14-1.pal", 8, 5);
   }
 }
 
-bool CountBeat(int thisFrame) {
+static bool CountBeat(FrameT *frame) {
   static int lastFrame = 0;
 
-  float lf = lastFrame * BPF;
-  float tf = thisFrame * BPF;
+  float lf = lastFrame / frame->beat;
+  float tf = frame->number / frame->beat;
   float li, ti;
 
   lf = modff(lf, &li);
   tf = modff(tf, &ti);
 
-  lastFrame = thisFrame;
+  lastFrame = frame->number;
 
   return li < ti;
 }
 
-void PaletteEffect(FrameT *frame, PaletteT *src, PaletteT *dst) {
-  bool beatFlash = CountBeat(frame->number);
+static void PaletteEffect(FrameT *frame, PaletteT *src, PaletteT *dst) {
+  bool beatFlash = CountBeat(frame);
   int j = 0;
 
   while (src) {
@@ -491,7 +470,7 @@ void PaletteEffect(FrameT *frame, PaletteT *src, PaletteT *dst) {
   LoadPalette(dst);
 }
 
-void RenderPart2(FrameT *frame) {
+CALLBACK(RenderPart2) {
   if (Demo.image->uniqueColors <= 128) {
     int du = 2 * frame->number;
     int dv = 2 * frame->number;
@@ -501,7 +480,7 @@ void RenderPart2(FrameT *frame) {
     UVMapRender(TheMap, Demo.canvas);
   }
 
-  EpisodeFrame.number = frame->number - EpisodeFrame.first;
+  EpisodeFrame.number = frame->number + frame->first - EpisodeFrame.first;
 
   {
     RectT rect = { 0, 0, WIDTH, HEIGHT };
@@ -541,46 +520,9 @@ void RenderPart2(FrameT *frame) {
   }
 }
 
-TimeSliceT Part2[] = {
-  DO_ONCE(Image01, EPISODE(0), EPISODE(1)),
-  DO_ONCE(Image02, EPISODE(1), EPISODE(2)),
-  DO_ONCE(Image03, EPISODE(2), EPISODE(3)),
-  DO_ONCE(Image04, EPISODE(3), EPISODE(4)),
-
-  /* Greets */
-  DO_ONCE(Image11, EPISODE(4), EPISODE(5)),
-  DO_ONCE(Image11, EPISODE(5), EPISODE(6)),
-
-  DO_ONCE(Image05, EPISODE(6), EPISODE(7)),
-  DO_ONCE(Image06, EPISODE(7), EPISODE(9)), /* long - azzaro 1 */
-  DO_ONCE(Image07, EPISODE(9), EPISODE(11)), /* long - azzaro 2 */
-  DO_ONCE(Image08, EPISODE(11), EPISODE(12)),
-  DO_ONCE(Image10, EPISODE(12), EPISODE(14)), /* long */
-
-  /* Credits */
-  DO_ONCE(ImageAudio, EPISODE(14), EPISODE(14.5f)),
-  DO_ONCE(ImageCode, EPISODE(14.5f), EPISODE(15)),
-  DO_ONCE(ImageGfx, EPISODE(15), EPISODE(15.5f)),
-  DO_ONCE(ImagePics, EPISODE(15.5f), EPISODE(16)),
-
-  DO_ONCE(Image09, EPISODE(16), EPISODE(17)),
-  DO_ONCE(Image12, EPISODE(17), EPISODE(18)),
-  DO_ONCE(Image13, EPISODE(18), EPISODE(19)),
-  DO_ONCE(Image15, EPISODE(19), EPISODE(20)),
-  DO_ONCE(Image16, EPISODE(20), EPISODE(21)),
-  DO_ONCE(Image18, EPISODE(21), EPISODE(22)),
-  DO_ONCE(Image17, EPISODE(22), EPISODE(23)),
-  DO_ONCE(Image19, EPISODE(23), EPISODE(24)),
-  DO_ONCE(ImageEnd1, EPISODE(24), EPISODE(25)),
-  DO_ONCE(ImageEnd2, EPISODE(25), EPISODE(26)),
-  EACH_FRAME(Waiving, EPISODE(26), TIME_END),
-  EACH_FRAME(RenderPart2, EPISODE(0), TIME_END),
-  THE_END
-};
-
 /*** The demo ****************************************************************/
 
-void Render(FrameT *frame) {
+CALLBACK(Render) {
   c2p1x1_8_c5_bm(Demo.canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 
   if (Demo.showFrame) {
@@ -589,19 +531,12 @@ void Render(FrameT *frame) {
   }
 }
 
-void FeedAudioStream(FrameT *frame) {
+CALLBACK(FeedAudioStream) {
   AudioStreamFeed(Demo.music);
 }
 
-void Quit(FrameT *frame) {
-  ExitDemo = TRUE;
+CALLBACK(Quit) {
+  ExitDemo = true;
 }
 
-TimeSliceT TheDemo[] = {
-  TIMESLICE(Part1, 0, BEAT_F(67)),
-  TIMESLICE(Part2, BEAT_F(67), TIME_END),
-  EACH_NTH_FRAME(FeedAudioStream, 0, TIME_END, 5),
-  EACH_FRAME(Render, 0, TIME_END),
-  DO_ONCE(Quit, 5407, 5407),
-  THE_END
-};
+#include "spy-shs10.syms"
