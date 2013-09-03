@@ -11,8 +11,8 @@ spy-shs10: $(OBJS) libaudio.a libuvmap.a libjson.a libtools.a libgfx.a \
 spy-shs10.o: CFLAGS += -Wno-unused
 spy-shs10: LIBS += -lauto
 
-%.syms: %.c gen-bindings.sh
-	@./gen-bindings.sh $< >$@
+%.syms: %.c gen-bindings.py
+	@./gen-bindings.py $< >$@
 
 archive: spy-shs10
 	lha a $^.lha $^ data

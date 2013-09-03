@@ -246,24 +246,19 @@ void HandleEvents(int frameNumber) {
 
 /*** Part 1 ******************************************************************/
 
-static PixBufT *TheTexture;
-static PaletteT *TheTexturePal;
-static UVMapT *TheMap;
+PARAMETER(PixBufT *, TheTexture, NULL);
+PARAMETER(PaletteT *, TheTexturePal, NULL);
+PARAMETER(UVMapT *, TheMap, NULL);
+PARAMETER(PixBufT *, TheTitle, NULL);
 
 CALLBACK(SetupPart1a) {
   AudioStreamSetVolume(Demo.music, 0.5f);
-  TheMap = R_("Map0");
-  TheTexture = R_("texture-3.8");
-  TheTexturePal = R_("texture-3.pal");
   LinkPalettes(TheTexturePal, R_("spy.pal"), NULL);
   PixBufRemap(R_("spy.8"), R_("spy.pal"));
   LoadPalette(TheTexturePal);
 }
 
 CALLBACK(SetupPart1b) {
-  TheMap = R_("Map3");
-  TheTexture = R_("texture-2.8");
-  TheTexturePal = R_("texture-2.pal");
   LinkPalettes(TheTexturePal, R_("shs10.pal"), NULL);
   PixBufRemap(R_("shs10.8"), R_("shs10.pal"));
   LoadPalette(TheTexturePal);
@@ -271,10 +266,7 @@ CALLBACK(SetupPart1b) {
 
 CALLBACK(SetupPart1c) {
   Demo.image = NULL;
-  TheMap = R_("Map5");
-  TheTexture = R_("texture-4.8");
-  TheTexturePal = R_("texture-4.pal");
-  LinkPalettes(R_("texture-4.pal"), R_("slider.pal"), NULL);
+  LinkPalettes(TheTexturePal, R_("slider.pal"), NULL);
   LoadPalette(TheTexturePal);
 }
 
@@ -304,10 +296,10 @@ CALLBACK(RenderPart1) {
   UVMapRender(TheMap, Demo.canvas);
 }
 
-static void ShowTitle(FrameT *frame, PixBufT *title) {
+CALLBACK(ShowTitle) {
   int frames = frame->beat * 8;
-  int w = title->width;
-  int h = title->height;
+  int w = TheTitle->width;
+  int h = TheTitle->height;
   int x, y;
 
   if (frame->number < frames) {
@@ -318,15 +310,7 @@ static void ShowTitle(FrameT *frame, PixBufT *title) {
   x = (WIDTH - w) / 2;
   y = (HEIGHT - h) / 2;
 
-  PixBufBlitScaled(Demo.canvas, x, y, w, h, title);
-}
-
-CALLBACK(ShowSpy) {
-  ShowTitle(frame, R_("spy.8"));
-}
-
-CALLBACK(ShowSHS10) {
-  ShowTitle(frame, R_("shs10.8"));
+  PixBufBlitScaled(Demo.canvas, x, y, w, h, TheTitle);
 }
 
 /*** Part 2 ******************************************************************/

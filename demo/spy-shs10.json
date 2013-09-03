@@ -99,15 +99,38 @@
     "range": [[0, "beat"], [67, "beat"]],
     "unit":  [1, "beat"],
     "parts": [
-    { "type": "once",
+    {
+      "type": "once",
       "range": [0, -1],
-      "call": "SetupPart1a" },
-    { "type": "once",
+      "set": {
+        "TheTitle": { "resource": "spy.8" },
+        "TheMap": { "resource": "Map0" },
+        "TheTexture": { "resource": "texture-3.8" },
+        "TheTexturePal": { "resource": "texture-3.pal" }
+      },
+      "call": "SetupPart1a"
+    },
+    {
+      "type": "once",
       "range": [32, -1],
-      "call": "SetupPart1b" },
-    { "type": "once",
+      "set": {
+        "TheTitle": { "resource": "shs10.8" },
+        "TheMap": { "resource": "Map3" },
+        "TheTexture": { "resource": "texture-2.8" },
+        "TheTexturePal": { "resource": "texture-2.pal" }
+      },
+      "call": "SetupPart1b"
+    },
+    {
+      "type": "once",
       "range": [50, -1],
-      "call": "SetupPart1c" },
+      "set": {
+        "TheMap": { "resource": "Map5" },
+        "TheTexture": { "resource": "texture-4.8" },
+        "TheTexturePal": { "resource": "texture-4.pal" }
+      },
+      "call": "SetupPart1c"
+    },
     { "type": "each-frame",
       "range": [0, -1],
       "call": "RenderPart1" },
@@ -119,10 +142,10 @@
       "call": "VolumeUp" },
     { "type": "each-frame",
       "range": [0, 32],
-      "call": "ShowSpy" },
+      "call": "ShowTitle" },
     { "type": "each-frame",
       "range": [32, 50],
-      "call": "ShowSHS10" }
+      "call": "ShowTitle" }
     ]
   },
   {

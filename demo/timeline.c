@@ -1,30 +1,31 @@
 #include "std/debug.h"
 #include "std/memory.h"
+#include "std/resource.h"
 #include "system/vblank.h"
 
 #include "config.h"
 #include "timeline.h"
 
 static void DeleteTimeSlice(TimeSliceT *slice) {
-  if (slice->type < 0)
-    MemUnref(slice->data.slice);
+  if (slice->type == TS_NODE)
+    MemUnref(slice->u.slice);
   MemUnref(slice->name);
 }
 
 TYPEDECL(TimeSliceT, (FreeFuncT)DeleteTimeSlice);
 
 void DoTimeSlice(TimeSliceT *slice, FrameT *frame, int thisFrame) {
-  for (; slice->data.func; slice++) {
+  for (; slice->type; slice++) {
     bool invoke = false;
 
-    if (slice->type < 0) {
+    if (slice->type == TS_NODE) {
       /* Recurse? */
       if ((slice->start <= thisFrame) && (thisFrame < slice->end))
-        DoTimeSlice(slice->data.slice, frame, thisFrame);
-    } else {
-      int step = slice->type;
-
-      switch (step) {
+        DoTimeSlice(slice->u.slice, frame, thisFrame);
+    }
+   
+    if (slice->type == TS_LEAF) {
+      switch (slice->step) {
         case 0:
           /* Do it only once. */
           invoke = (slice->start <= thisFrame) && (slice->last < 0);
@@ -44,8 +45,8 @@ void DoTimeSlice(TimeSliceT *slice, FrameT *frame, int thisFrame) {
               slice->last = slice->start;
               invoke = true;
             } else {
-              if (thisFrame - slice->last >= step) {
-                slice->last = thisFrame - ((thisFrame - slice->start) % step);
+              if (thisFrame - slice->last >= slice->step) {
+                slice->last = thisFrame - ((thisFrame - slice->start) % slice->step);
                 invoke = true;
               }
             }
@@ -54,72 +55,147 @@ void DoTimeSlice(TimeSliceT *slice, FrameT *frame, int thisFrame) {
       }
 
       if (invoke) {
-        frame->first = slice->start;
-        frame->last = slice->end - 1;
-        frame->number = thisFrame - slice->start;
+        CallbackT *callback = slice->u.actions.callbacks;
+        SetterT *setter = slice->u.actions.setters;
+        
+        /* Invoke parameter setters. */
+        if (setter) {
+          for (; setter->ptr; setter++) {
+            switch (setter->type) {
+              case ST_INTEGER:
+                *(int *)setter->ptr = setter->u.integer;
+                break;
+              case ST_REAL:
+                *(float *)setter->ptr = setter->u.real;
+                break;
+              case ST_RESOURCE:
+                *(void **)setter->ptr = R_(setter->u.resource);
+                break;
+            }
+          }
+        }
 
-        slice->data.func(frame);
+        /* Invoke callbacks. */
+        if (callback) {
+          frame->first = slice->start;
+          frame->last = slice->end - 1;
+          frame->number = thisFrame - slice->start;
+
+          for (; callback->func; callback++)
+            callback->func(frame);
+        }
+
       }
     }
   }
 }
 
 /*
- * Makes all timing values absolute to the beginning of demo.
+ * Makes all timing values absolute to the beginning of demo,
+ * binds callback and parameter symbols.
  */
 static void CompileTimeSlice(TimeSliceT *slice, int firstFrame, int lastFrame) {
-  for (; slice->name; slice++) {
-    if (slice->start < 0)
-      slice->start = lastFrame;
-    else
-      slice->start += firstFrame;
+  for (; slice->type; slice++) {
+    slice->start = (slice->start < 0) ? lastFrame : (slice->start + firstFrame);
+    slice->end = (slice->end < 0) ? lastFrame : (slice->end + firstFrame);
 
-    if (slice->end < 0)
-      slice->end = lastFrame;
-    else
-      slice->end += firstFrame;
+    if (slice->type == TS_NODE)
+      CompileTimeSlice(slice->u.slice, slice->start, slice->end);
 
-    if (slice->type < 0)
-      CompileTimeSlice(slice->data.slice, slice->start, slice->end);
-    else {
-      CallbackT *callback;
+    if (slice->type == TS_LEAF) {
+      {
+        CallbackT *callback = slice->u.actions.callbacks;
 
-      for (callback = Callbacks; callback->name; callback++) {
-        if (!strcmp(callback->name, slice->name)) {
-          slice->data.func = callback->func;
-          break;
+        if (callback) {
+          for (; callback->name; callback++) {
+            SymbolT *symbol = CallbackSymbols;
+
+            for (; symbol->name; symbol++) {
+              if (!strcmp(symbol->name, callback->name)) {
+                callback->func = (TimeFuncT)symbol->ptr;
+                break;
+              }
+            }
+
+            if (!callback->func)
+              PANIC("Callback '%s' not found!", callback->name);
+          }
         }
       }
 
-      if (!slice->data.func)
-        PANIC("Callback '%s' not found!", slice->name);
+      {
+        SetterT *setter = slice->u.actions.setters;
+
+        if (setter) {
+          for (; setter->name; setter++) {
+            SymbolT *symbol = ParameterSymbols;
+
+            for (; symbol->name; symbol++) {
+              if (!strcmp(symbol->name, setter->name)) {
+                setter->ptr = symbol->ptr;
+                break;
+              }
+            }
+
+            if (!setter->ptr)
+              PANIC("Parameter '%s' not found!", setter->name);
+          }
+        }
+      }
     }
   }
 }
 
-static void PrintTimeSlice(TimeSliceT *slice) {
-  for (; slice->name != NULL; slice++) {
+void PrintTimeSlice(TimeSliceT *slice) {
+  for (; slice->type; slice++) {
     char type[20];
 
-    if (slice->type == -1)
+    if (slice->type == TS_NODE)
       strcpy(type, "timeslice");
-    else if (slice->type == 0)
+    else if (slice->step == 0)
       strcpy(type, "once");
-    else if (slice->type == 1)
+    else if (slice->step == 1)
       strcpy(type, "each frame");
     else
-      snprintf(type, sizeof(type), "every %d frames", slice->type);
+      snprintf(type, sizeof(type), "every %d frames", slice->step);
 
-    if (slice->type == -1) {
-      printf("[%5d]: (start) %s\n", slice->start, slice->name);
-      PrintTimeSlice(slice->data.slice);
-      printf("[%5d]: (end) %s\n", slice->end, slice->name);
-    } else if (slice->type == 0) {
-      printf("[%5d - %5d]: (%s) {%p} %s\n",
-             slice->start, slice->end, type, slice->data.func, slice->name);
+    if (slice->type == TS_NODE) {
+      printf("[%5d]: (start) %s\r\n", slice->start, slice->name);
+      PrintTimeSlice(slice->u.slice);
+      printf("[%5d]: (end) %s\r\n", slice->end, slice->name);
     } else {
-      printf("[%5d - %5d]: (%s) {%p} %s\n",
-             slice->start, slice->end, type, slice->data.func, slice->name);
+      CallbackT *callback = slice->u.actions.callbacks;
+      SetterT *setter = slice->u.actions.setters;
+
+      printf("[%5d - %5d]: (%s) %s\r\n",
+          slice->start, slice->end, type, slice->name);
+
+      if (setter) {
+        for (; setter->name; setter++) {
+          printf("  set: '%s' {%p} = ", setter->name, setter->ptr);
+
+          switch (setter->type) {
+            case ST_INTEGER:
+              printf("(int) %d", setter->u.integer);
+              break;
+            case ST_REAL:
+              printf("(float) %f", setter->u.real);
+              break;
+            case ST_RESOURCE:
+              printf("(resource) '%s'", setter->u.resource);
+              break;
+            default:
+              break;
+          }
+
+          puts("\r");
+        }
+      }
+
+      if (callback) {
+        for (; callback->name; callback++)
+          printf("  call: '%s' {%p} \r\n", callback->name, callback->func);
+      }
     }
   }
 }
@@ -163,12 +239,73 @@ static float JsonReadTime(JsonNodeT *value, const char *path,
   return time;
 }
 
+static CallbackT *BuildCallbacks(JsonNodeT *value, TimeSliceInfoT *tsi) {
+  CallbackT *callbacks = NewTable(CallbackT, 2);
+  callbacks[0].name = StrDup(JsonQueryString(value, "call"));
+  return callbacks;
+}
+
+static void JsonReadSetter(const char *key, JsonNodeT *value, void *data) {
+  SetterT **setter_ptr = (SetterT **)data;
+  SetterT *setter = (*setter_ptr)++;
+
+  setter->name = StrDup(key);
+
+  if (JsonQuery(value, "resource")) {
+    setter->type = ST_RESOURCE;
+    setter->u.resource = StrDup(JsonQueryString(value, "resource"));
+  } else if (JsonQuery(value, "int")) {
+    setter->type = ST_INTEGER;
+    setter->u.integer = JsonQueryInteger(value, "int");
+  } else if (JsonQuery(value, "float")) {
+    setter->type = ST_REAL;
+    setter->u.real = JsonQueryNumber(value, "float");
+  } else {
+    PANIC("Unknown setter type.");
+  }
+}
+
+static SetterT *BuildSetters(JsonNodeT *value, TimeSliceInfoT *tsi) {
+  SetterT *setters = NULL;
+  JsonNodeT *set;
+
+  if ((set = JsonQuery(value, "set"))) {
+    int no_setters = set->u.object.num;
+    SetterT *setter;
+
+    setter = setters = NewTable(SetterT, no_setters + 1);
+
+    JsonObjectForEach(set, JsonReadSetter, &setter);
+  }
+
+  return setters;
+}
+
+typedef enum { UNKNOWN = 0, TIMESLICE, ONCE, EACH_FRAME } TSTypeT;
+
 static void BuildTimeSlice(JsonNodeT *value, void *data) {
   const char *type = JsonQueryString(value, "type");
   TimeSliceInfoT *tsi = (TimeSliceInfoT *)data;
   TimeSliceT *ts = &tsi->ts[tsi->index++];
+  TSTypeT tsType = UNKNOWN;
 
-  if (!strcmp(type, "timeslice")) {
+  if (!strcmp(type, "timeslice"))
+    tsType = TIMESLICE;
+  else if (!strcmp(type, "once"))
+    tsType = ONCE;
+  else if (!strcmp(type, "each-frame"))
+    tsType = EACH_FRAME;
+  else
+    PANIC("Unknown time slice type: '%s'.", type);
+
+  if (JsonQuery(value, "name"))
+    ts->name  = StrDup(JsonQueryString(value, "name"));
+  ts->start = (int)JsonReadTime(value, "range/0", tsi);
+  ts->end   = (int)JsonReadTime(value, "range/1", tsi);
+  ts->step  = 0;
+  ts->last  = -1;
+
+  if (tsType == TIMESLICE) {
     JsonNodeT *parts = JsonQueryArray(value, "parts");
 
     TimeSliceInfoT newTsi;
@@ -178,34 +315,27 @@ static void BuildTimeSlice(JsonNodeT *value, void *data) {
     newTsi.bpm = tsi->bpm;
     newTsi.unit = JsonReadTime(value, "unit", tsi);
 
+    ts->type = TS_NODE;
+    ts->u.slice = newTsi.ts;
+
     JsonArrayForEach(parts, BuildTimeSlice, &newTsi);
+  } else {
+    ts->type = TS_LEAF;
 
-    ts->data.slice = newTsi.ts;
-    ts->name  = StrDup(JsonQueryString(value, "name"));
-    ts->type  = -1;
-    ts->start = (int)JsonReadTime(value, "range/0", tsi);
-    ts->end   = (int)JsonReadTime(value, "range/1", tsi);
-    ts->last  = -1;
-  } else if (!strcmp(type, "once")) {
-    ts->name  = StrDup(JsonQueryString(value, "call"));
-    ts->type  = 0;
-    ts->start = (int)JsonReadTime(value, "range/0", tsi);
-    ts->end   = (int)JsonReadTime(value, "range/1", tsi);
-    ts->last  = -1;
-  } else if (!strcmp(type, "each-frame")) {
-    JsonNodeT *range = JsonQueryArray(value, "range");
-    int step = 1;
-      
-    if (range->u.array.num > 2)
-      step = JsonReadTime(value, "range/2", tsi);
+    if (tsType == EACH_FRAME) {
+      JsonNodeT *range = JsonQueryArray(value, "range");
+      int step = 1;
 
-    ASSERT(step > 0, "Step must be positive.");
+      if (range->u.array.num > 2)
+        step = JsonReadTime(value, "range/2", tsi);
 
-    ts->name  = StrDup(JsonQueryString(value, "call"));
-    ts->type  = step;
-    ts->start = (int)JsonReadTime(value, "range/0", tsi);
-    ts->end   = (int)JsonReadTime(value, "range/1", tsi);
-    ts->last  = -1;
+      ASSERT(step > 0, "Step must be positive.");
+
+      ts->step = step;
+    }
+
+    ts->u.actions.callbacks = BuildCallbacks(value, tsi);
+    ts->u.actions.setters = BuildSetters(value, tsi);
   }
 }
 

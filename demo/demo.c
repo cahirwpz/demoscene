@@ -60,13 +60,14 @@ int main() {
       KillDemo();
     }
 
-    KillAudio();
     KillDisplay();
     StopEventQueue();
     StopResourceManager();
 
     MemUnref(DemoConfig);
   }
+
+  KillAudio();
 
   return 0;
 }

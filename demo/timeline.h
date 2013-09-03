@@ -3,6 +3,10 @@
 
 #include "std/types.h"
 
+/*
+ * Callback type description.
+ */
+
 typedef struct Frame {
   int number;
   int first, last;
@@ -11,43 +15,67 @@ typedef struct Frame {
 
 typedef void (*TimeFuncT)(FrameT *frame);
 
-typedef struct TimeSlice TimeSliceT;
+/*
+ * Symbols.
+ */
 
-typedef union TimeSliceData {
-  TimeFuncT func;
-  TimeSliceT *slice;
-} TimeSliceDataT;
-
-struct TimeSlice {
-  TimeSliceDataT data;
+typedef struct Symbol {
   char *name;
-  int16_t type;
-  int16_t start, end;
-  int16_t last;
-};
+  void *ptr;
+} SymbolT;
 
-#define TIME_END -1
-#define DO_ONCE(FUNC, WHEN, END) \
-  { (TimeSliceDataT)(TimeFuncT)NULL, #FUNC, 0, WHEN, END, -1 }
-#define EACH_FRAME(FUNC, START, END) \
-  { (TimeSliceDataT)(TimeFuncT)NULL, #FUNC, 1, START, END, -1 }
-#define EACH_NTH_FRAME(FUNC, START, END, STEP) \
-  { (TimeSliceDataT)(TimeFuncT)NULL, #FUNC, STEP, START, END, -1 }
-#define TIMESLICE(SLICE, START, END) \
-  { (TimeSliceDataT)SLICE, #SLICE, -1, START, END, -1 }
-#define THE_END \
-  { (TimeSliceDataT)(TimeFuncT)NULL, NULL, 0, 0, 0, 0 }
+#define CALLBACK(SYMBOL) static void SYMBOL(FrameT *frame)
+#define PARAMETER(TYPE, SYMBOL, VALUE) static TYPE SYMBOL = VALUE
 
-#define CALLBACK(FUNC) static void FUNC(FrameT *frame)
+extern SymbolT CallbackSymbols[];
+extern SymbolT ParameterSymbols[];
+
+/*
+ * Time slice.
+ */
 
 typedef struct Callback {
-  const char *name;
+  char *name;
   TimeFuncT func;
 } CallbackT;
 
-extern CallbackT Callbacks[];
+typedef enum { ST_INTEGER, ST_REAL, ST_RESOURCE } SetterTypeT;
+
+typedef struct Setter {
+  SetterTypeT type;
+  char *name;
+  void *ptr;
+  union {
+    char *resource;
+    int integer;
+    float real;
+  } u;
+} SetterT;
+
+typedef enum { TS_LEAF = 1, TS_NODE } TimeSliceTypeT;
+
+typedef struct TimeSlice TimeSliceT;
+
+struct TimeSlice {
+  TimeSliceTypeT type;
+
+  /* optional */
+  char *name;
+
+  int16_t start, end, step;
+  int16_t last;
+
+  union {
+    TimeSliceT *slice;
+    struct {
+      CallbackT *callbacks;
+      SetterT *setters;
+    } actions;
+  } u;
+};
 
 void DoTimeSlice(TimeSliceT *slice, FrameT *frame, int thisFrame);
+void PrintTimeSlice(TimeSliceT *slice);
 float GetBeatLength();
 TimeSliceT *LoadTimeline();
 
