@@ -33,7 +33,7 @@ endif
 .deps/%.P: %.c
 	@echo "DEP  $(subst $(TOPDIR)/,,$(realpath $<))"
 	@mkdir -p .deps
-	$(CC) $(CPPFLAGS) -MM -o $@ $(realpath $<)
+	$(CC) $(CPPFLAGS) -MM -MG -o $@ $(realpath $<)
 
 %.o: %.c .deps/%.P 
 	@echo "CC   $(subst $(TOPDIR)/,,$(realpath $<))"
