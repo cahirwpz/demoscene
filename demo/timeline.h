@@ -20,7 +20,7 @@ typedef union TimeSliceData {
 
 struct TimeSlice {
   TimeSliceDataT data;
-  const char *name;
+  char *name;
   int16_t type;
   int16_t start, end;
   int16_t last;

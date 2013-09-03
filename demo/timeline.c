@@ -5,6 +5,14 @@
 #include "config.h"
 #include "timeline.h"
 
+static void DeleteTimeSlice(TimeSliceT *slice) {
+  if (slice->type < 0)
+    MemUnref(slice->data.slice);
+  MemUnref(slice->name);
+}
+
+TYPEDECL(TimeSliceT, (FreeFuncT)DeleteTimeSlice);
+
 void DoTimeSlice(TimeSliceT *slice, FrameT *frame, int thisFrame) {
   for (; slice->data.func; slice++) {
     bool invoke = false;
@@ -165,7 +173,7 @@ static void BuildTimeSlice(JsonNodeT *value, void *data) {
 
     TimeSliceInfoT newTsi;
 
-    newTsi.ts = NewTable(TimeSliceT, parts->u.array.num + 1);
+    newTsi.ts = NewTableOfType(TimeSliceT, parts->u.array.num + 1);
     newTsi.index = 0;
     newTsi.bpm = tsi->bpm;
     newTsi.unit = JsonReadTime(value, "unit", tsi);
@@ -209,7 +217,7 @@ TimeSliceT *LoadTimeline() {
   JsonNodeT *timeline = JsonQueryArray(DemoConfig, "timeline");
   TimeSliceInfoT tsi;
 
-  tsi.ts    = NewTable(TimeSliceT, timeline->u.array.num + 1);
+  tsi.ts    = NewTableOfType(TimeSliceT, timeline->u.array.num + 1);
   tsi.index = 0;
   tsi.bpm   = JsonQueryNumber(DemoConfig, "music/bpm");
   tsi.unit  = 1.0f; /* 1 frame */
