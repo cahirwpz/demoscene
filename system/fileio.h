@@ -5,8 +5,7 @@
 
 bool FileReadable(const char *fileName);
 char *AbsPath(const char *fileName);
-PtrT ReadFileToChipMem(const char *fileName);
-PtrT ReadFileSimple(const char *fileName);
+void *ReadFileSimple(const char *fileName);
 char *ReadTextSimple(const char *fileName);
 void WriteFileSimple(const char *fileName, PtrT data, size_t length);
 

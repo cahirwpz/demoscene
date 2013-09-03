@@ -27,7 +27,7 @@ bool FileReadable(const char *fileName) {
   return readable;
 }
 
-static PtrT ReadFileToCustomMemory(const char *fileName, uint32_t memFlags, size_t extra) {
+static PtrT ReadFileToMemory(const char *fileName, bool text) {
   BPTR fh;
   PtrT data = NULL;
   PtrT path = AbsPath(fileName);
@@ -39,7 +39,7 @@ static PtrT ReadFileToCustomMemory(const char *fileName, uint32_t memFlags, size
       if (ExamineFH(fh, infoBlock)) {
         size_t dataLen = infoBlock->fib_Size;
 
-        if ((data = MemNewCustom(dataLen + extra, memFlags, NULL))) {
+        if ((data = MemNew(dataLen + (text ? 1 : 0)))) {
           if (dataLen != Read(fh, data, dataLen)) {
             MemUnref(data);
             data = NULL;
@@ -56,16 +56,12 @@ static PtrT ReadFileToCustomMemory(const char *fileName, uint32_t memFlags, size
   return data;
 }
 
-PtrT ReadFileToChipMem(const char *fileName) {
-  return ReadFileToCustomMemory(fileName, MEMF_CHIP, 0);
-}
-
-PtrT ReadFileSimple(const char *fileName) {
-  return ReadFileToCustomMemory(fileName, MEMF_PUBLIC, 0);
+void *ReadFileSimple(const char *fileName) {
+  return ReadFileToMemory(fileName, false);
 }
 
 char *ReadTextSimple(const char *fileName) {
-  return ReadFileToCustomMemory(fileName, MEMF_PUBLIC | MEMF_CLEAR, 1);
+  return ReadFileToMemory(fileName, true);
 }
 
 void WriteFileSimple(const char *fileName, PtrT data, size_t length) {

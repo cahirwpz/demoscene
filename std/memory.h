@@ -5,16 +5,14 @@
 #include "std/types.h"
 
 /* Think twice before you use them. */
+PtrT MemNewCustom(size_t size, const TypeT *type);
+PtrT MemNewCustomTable(size_t size, size_t count, const TypeT *type);
 
-PtrT MemNewCustom(size_t size, uint32_t flags, const TypeT *type);
-PtrT MemNewCustomTable(size_t size, size_t count, uint32_t flags,
-                       const TypeT *type);
-
+/* Common functions. */
 PtrT MemNew(size_t n);
 PtrT MemNewOfType(const TypeT *type);
 PtrT MemNewTable(size_t elemSize, size_t n);
 PtrT MemNewTableOfType(const TypeT *type, size_t n);
-
 PtrT MemUnref(PtrT mem);
 
 size_t TableElemSize(PtrT mem asm("a0"));

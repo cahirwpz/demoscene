@@ -1,9 +1,23 @@
 #undef MEMDEBUG
 
 #include <proto/exec.h>
+#include <exec/memory.h>
 
 #include "std/debug.h"
 #include "std/memory.h"
+
+void *MainPool = NULL;
+
+void InitMemory() {
+  MainPool = CreatePool(MEMF_PUBLIC, 4096, 2048);
+}
+
+void KillMemory() {
+  DeletePool(MainPool);
+}
+
+ADD2INIT(InitMemory, 1);
+ADD2EXIT(KillMemory, 1);
 
 /*
  * Memory block is described by following structure:
@@ -93,22 +107,24 @@ static inline PtrT MemBlkInit(PtrT mem, size_t size, bool isTable, bool isTyped)
   return mem + 4;
 }
 
-static inline PtrT MemBlkAlloc(size_t n, uint32_t flags) {
-  PtrT ptr = AllocMem(n, flags);
+static inline PtrT MemBlkAlloc(size_t n) {
+  PtrT ptr = AllocPooled(MainPool, n);
 
   if (!ptr)
-    PANIC("AllocMem(%ld) failed.", n);
+    PANIC("AllocPooled(..., %ld) failed.", n);
+
+  memset(ptr, 0, n);
 
   return ptr;
 }
 
-PtrT MemNewCustom(size_t size, uint32_t flags, const TypeT *type) {
+PtrT MemNewCustom(size_t size, const TypeT *type) {
   PtrT ptr = NULL;
 
   if (size) {
     size_t bytes = MemBlkSize(size, 1, BOOL(type));
 
-    ptr = MemBlkAlloc(bytes, flags);
+    ptr = MemBlkAlloc(bytes);
 
     if (type) {
       *(const TypeT **)ptr = type;
@@ -128,15 +144,13 @@ PtrT MemNewCustom(size_t size, uint32_t flags, const TypeT *type) {
   return ptr;
 }
 
-PtrT MemNewCustomTable(size_t size, size_t count, uint32_t flags,
-                       const TypeT *type)
-{
+PtrT MemNewCustomTable(size_t size, size_t count, const TypeT *type) {
   PtrT ptr = NULL;
 
   if (size) {
     size_t bytes = MemBlkSize(size, count, true);
 
-    ptr = MemBlkAlloc(bytes, flags);
+    ptr = MemBlkAlloc(bytes);
 
     if (type)
       *(const TypeT **)ptr = type;
@@ -159,19 +173,19 @@ PtrT MemNewCustomTable(size_t size, size_t count, uint32_t flags,
 }
 
 PtrT MemNew(size_t size) {
-  return MemNewCustom(size, MEMF_PUBLIC|MEMF_CLEAR, NULL);
+  return MemNewCustom(size, NULL);
 }
 
 PtrT MemNewOfType(const TypeT *type) {
-  return MemNewCustom(type->size, MEMF_PUBLIC|MEMF_CLEAR, type);
+  return MemNewCustom(type->size, type);
 }
 
 PtrT MemNewTable(size_t size, size_t count) {
-  return MemNewCustomTable(size, count, MEMF_PUBLIC|MEMF_CLEAR, NULL);
+  return MemNewCustomTable(size, count, NULL);
 }
 
 PtrT MemNewTableOfType(const TypeT *type, size_t count) {
-  return MemNewCustomTable(type->size, count, MEMF_PUBLIC|MEMF_CLEAR, type);
+  return MemNewCustomTable(type->size, count, type);
 }
 
 PtrT MemUnref(PtrT mem) {
@@ -200,7 +214,7 @@ PtrT MemUnref(PtrT mem) {
     if (type && type->free)
       type->free(mem);
 
-    FreeMem(StartAddressOf(mem), bytes);
+    FreePooled(MainPool, StartAddressOf(mem), bytes);
 
     mem = NULL;
   }
@@ -232,7 +246,6 @@ size_t TableElemSize(PtrT mem asm("a0")) {
 
 PtrT TableResize(PtrT mem, size_t newCount) {
   const TypeT *type = TypeOf(mem);
-  uint32_t flags = TypeOfMem(mem);
   size_t size, count;
   PtrT newMem = NULL;
 
@@ -243,7 +256,7 @@ PtrT TableResize(PtrT mem, size_t newCount) {
   if (newCount > 0)
     count = newCount;
 
-  newMem = MemNewCustomTable(size, count, flags, type);
+  newMem = MemNewCustomTable(size, count, type);
 
   if (type && type->copy) {
     PtrT src = mem;
@@ -272,7 +285,6 @@ PtrT MemCopy(PtrT dst asm("a1"), const PtrT src asm("a0"), size_t n asm("d0")) {
 
 PtrT MemClone(PtrT mem) {
   const TypeT *type = TypeOf(mem);
-  uint32_t flags = TypeOfMem(mem);
   size_t size, count;
   PtrT newMem;
 
@@ -281,7 +293,7 @@ PtrT MemClone(PtrT mem) {
   if (IsTable(mem)) {
     newMem = TableResize(mem, 0);
   } else {
-    newMem = MemNewCustom(size, flags, type);
+    newMem = MemNewCustom(size, type);
 
     if (type && type->copy)
       type->copy(newMem, mem);

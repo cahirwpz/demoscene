@@ -29,7 +29,9 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
+#if 0
   ResAdd("Module", ReadFileToChipMem("data/tempest-acidjazzed_evening.p61"));
+#endif
   ResAdd("Texture", NewPixBufFromFile("data/texture-01.8"));
   ResAdd("TexturePal", NewPaletteFromFile("data/texture-01.pal"));
   ResAdd("CreditsImg", NewPixBufFromFile("data/code.8"));
@@ -65,8 +67,10 @@ void SetupEffect() {
   PixBufSetBlitMode(R_("CreditsImg"), BLIT_TRANSPARENT);
   PixBufSetBlitMode(R_("WhelpzImg"), BLIT_TRANSPARENT);
 
+#if 0
   P61_Init(R_("Module"), NULL, NULL);
   P61_ControlBlock.Play = 1;
+#endif
 }
 
 /*
