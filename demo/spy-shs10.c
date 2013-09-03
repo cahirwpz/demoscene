@@ -35,9 +35,6 @@ static struct {
   PixBufT *canvas;
   PixBufT *loadImg;
   PaletteT *loadPal;
-
-  PaletteT *palette;
-  PixBufT *image;
 } Demo;
 
 /*
@@ -312,68 +309,50 @@ CALLBACK(ShowTitle) {
 
 /*** Part 2 ******************************************************************/
 
+PARAMETER(PixBufT *, TheImage, NULL);
+PARAMETER(PaletteT *, TheImagePal, NULL);
+
+static PaletteT *ThePalette = NULL;
+
 static FrameT EpisodeFrame;
 static int EpisodeNum = 0;
 
-void SetupEpisode(FrameT *frame, char *imgName, char *palName) {
+CALLBACK(SetupEpisode) {
   EpisodeNum++;
 
   AudioStreamSetVolume(Demo.music, 1.0f);
 
-  Demo.image = R_(imgName);
-
-  if (Demo.image->uniqueColors <= 128) {
-    Demo.palette = TheTexturePal;
-    LinkPalettes(Demo.palette, R_(palName), NULL);
-    PixBufRemap(R_(imgName), R_(palName));
-  } else if (Demo.image->uniqueColors <= 192) {
-    Demo.palette = R_(palName);
+  if (TheImage->uniqueColors <= 128) {
+    ThePalette = TheTexturePal;
+    LinkPalettes(ThePalette, TheImagePal, NULL);
+    PixBufRemap(TheImage, TheImagePal);
+  } else if (TheImage->uniqueColors <= 192) {
+    ThePalette = TheImagePal;
 
     if (EpisodeNum == 5) {
-      LinkPalettes(Demo.palette, R_("greets1.pal"), NULL);
+      LinkPalettes(ThePalette, R_("greets1.pal"), NULL);
       PixBufRemap(R_("greets1.8"), R_("greets1.pal"));
     } else if (EpisodeNum == 6) {
-      LinkPalettes(Demo.palette, R_("greets2.pal"), NULL);
+      LinkPalettes(ThePalette, R_("greets2.pal"), NULL);
       PixBufRemap(R_("greets2.8"), R_("greets2.pal"));
     }
   } else {
-    Demo.palette = R_(palName);
+    ThePalette = TheImagePal;
   }
 
   memcpy(&EpisodeFrame, frame, sizeof(FrameT));
 }
 
-CALLBACK(Image01) { SetupEpisode(frame, "01.8", "01.pal"); }
-CALLBACK(Image02) { SetupEpisode(frame, "02.8", "02.pal"); }
-CALLBACK(Image03) { SetupEpisode(frame, "03.8", "03.pal"); }
-CALLBACK(Image04) { SetupEpisode(frame, "04.8", "04.pal"); }
-CALLBACK(Image05) { SetupEpisode(frame, "05.8", "05.pal"); }
-CALLBACK(Image06) { SetupEpisode(frame, "06.8", "06.pal"); }
-CALLBACK(Image07) { SetupEpisode(frame, "07.8", "07.pal"); }
-CALLBACK(Image08) { SetupEpisode(frame, "08.8", "08.pal"); }
-CALLBACK(Image09) { SetupEpisode(frame, "09.8", "09.pal"); }
-CALLBACK(Image10) { SetupEpisode(frame, "10.8", "10.pal"); }
-CALLBACK(Image11) { SetupEpisode(frame, "11.8", "11.pal"); }
-CALLBACK(Image12) { SetupEpisode(frame, "12.8", "12.pal"); }
-CALLBACK(Image13) { SetupEpisode(frame, "13.8", "13.pal"); }
-CALLBACK(Image15) { SetupEpisode(frame, "15.8", "15.pal"); }
-CALLBACK(Image16) { SetupEpisode(frame, "16.8", "16.pal"); }
-CALLBACK(Image17) { SetupEpisode(frame, "17.8", "17.pal"); }
-CALLBACK(Image18) { SetupEpisode(frame, "18.8", "18.pal"); }
-CALLBACK(Image19) { SetupEpisode(frame, "19.8", "19.pal"); }
-CALLBACK(ImageEnd1) { SetupEpisode(frame, "end1.8", "end1.pal"); }
-CALLBACK(ImageEnd2) { SetupEpisode(frame, "end2.8", "end2.pal"); }
-CALLBACK(ImageAudio) { SetupEpisode(frame, "audio.8", "audio.pal"); }
-CALLBACK(ImageCode) { SetupEpisode(frame, "code.8", "code.pal"); }
-CALLBACK(ImageGfx) { SetupEpisode(frame, "gfx.8", "gfx.pal"); }
-CALLBACK(ImagePics) { SetupEpisode(frame, "pics.8", "pics.pal"); }
-
 CALLBACK(Waiving) {
   if ((frame->number / (int)frame->beat) & 1) {
-    SetupEpisode(frame, "14-2.8", "14-2.pal");
+    TheImage = R_("14-2.8");
+    TheImagePal = R_("14-2.pal");
   } else {
-    SetupEpisode(frame, "14-1.8", "14-1.pal");
+    TheImage = R_("14-1.8");
+    TheImagePal = R_("14-1.pal");
   }
+
+  SetupEpisode(frame);
 }
 
 static bool CountBeat(FrameT *frame) {
@@ -435,7 +414,7 @@ static void PaletteEffect(FrameT *frame, PaletteT *src, PaletteT *dst) {
 }
 
 CALLBACK(RenderPart2) {
-  if (Demo.image->uniqueColors <= 128) {
+  if (TheImage->uniqueColors <= 128) {
     int du = 2 * frame->number;
     int dv = 2 * frame->number;
 
@@ -451,17 +430,17 @@ CALLBACK(RenderPart2) {
 
     frame = &EpisodeFrame;
 
-    if (Demo.image->height > HEIGHT) {
+    if (TheImage->height > HEIGHT) {
       int frames = frame->last - frame->first + 1;
       int f = frame->number % frames;
       int dy = (f < frames / 2) ? f : (frames - f);
 
-      rect.y = (int)((float)(Demo.image->height - HEIGHT) * 2 * dy / frames);
+      rect.y = (int)((float)(TheImage->height - HEIGHT) * 2 * dy / frames);
     }
 
-    PixBufBlit(Demo.canvas, 0, 0, Demo.image, &rect);
+    PixBufBlit(Demo.canvas, 0, 0, TheImage, &rect);
 
-    PaletteEffect(frame, Demo.palette, R_("EffectPal"));
+    PaletteEffect(frame, ThePalette, R_("EffectPal"));
   }
 
   if (EpisodeNum == 5 || EpisodeNum == 6) {
