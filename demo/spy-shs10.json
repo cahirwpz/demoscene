@@ -103,20 +103,22 @@
       "type": "once",
       "range": [0, -1],
       "set": {
-        "TheTitle": { "resource": "spy.8" },
         "TheMap": { "resource": "Map0" },
         "TheTexture": { "resource": "texture-3.8" },
-        "TheTexturePal": { "resource": "texture-3.pal" }
+        "TheTexturePal": { "resource": "texture-3.pal" },
+        "TheTitle": { "resource": "spy.8" },
+        "TheTitlePal": { "resource": "spy.pal" }
       },
       "call": "SetupPart1a"
     }, {
       "type": "once",
       "range": [32, -1],
       "set": {
-        "TheTitle": { "resource": "shs10.8" },
         "TheMap": { "resource": "Map3" },
         "TheTexture": { "resource": "texture-2.8" },
-        "TheTexturePal": { "resource": "texture-2.pal" }
+        "TheTexturePal": { "resource": "texture-2.pal" },
+        "TheTitle": { "resource": "shs10.8" },
+        "TheTitlePal": { "resource": "shs10.pal" }
       },
       "call": "SetupPart1b"
     }, {
@@ -160,18 +162,38 @@
     {
       "type": "once",
       "range": [0, 1],
+      "set": {
+        "TheMap": { "resource": "Map0" },
+        "TheTexture": { "resource": "texture-1.8" },
+        "TheTexturePal": { "resource": "texture-1.pal" }
+      },
       "call": "Image01"
     }, {
       "type": "once", 
       "range": [1, 2],
+      "set": {
+        "TheMap": { "resource": "Map1" },
+        "TheTexture": { "resource": "texture-2.8" },
+        "TheTexturePal": { "resource": "texture-2.pal" }
+      },
       "call": "Image02"
     }, {
       "type": "once", 
       "range": [2, 3],
+      "set": {
+        "TheMap": { "resource": "Map1" },
+        "TheTexture": { "resource": "texture-3.8" },
+        "TheTexturePal": { "resource": "texture-3.pal" }
+      },
       "call": "Image03"
     }, {
       "type": "once", 
       "range": [3, 4],
+      "set": {
+        "TheMap": { "resource": "Map4" },
+        "TheTexture": { "resource": "texture-4.8" },
+        "TheTexturePal": { "resource": "texture-4.pal" }
+      },
       "call": "Image04"
     }, { 
       /* Greets */
@@ -185,25 +207,50 @@
     }, {
       "type": "once",
       "range": [6, 7],
+      "set": {
+        "TheMap": { "resource": "Map2" },
+        "TheTexture": { "resource": "texture-1.8" },
+        "TheTexturePal": { "resource": "texture-1.pal" }
+      },
       "call": "Image05" 
     }, {
       /* long - azzaro 1 */
       "type": "once",
       "range": [7, 9],
+      "set": {
+        "TheMap": { "resource": "Map3" },
+        "TheTexture": { "resource": "texture-2.8" },
+        "TheTexturePal": { "resource": "texture-2.pal" }
+      },
       "call": "Image06"
     }, {
       /* long - azzaro 2 */
       "type": "once",
       "range": [9, 11],
+      "set": {
+        "TheMap": { "resource": "Map4" },
+        "TheTexture": { "resource": "texture-3.8" },
+        "TheTexturePal": { "resource": "texture-3.pal" }
+      },
       "call": "Image07" 
     }, { 
       "type": "once",
       "range": [11, 12],
+      "set": {
+        "TheMap": { "resource": "Map6" },
+        "TheTexture": { "resource": "texture-4.8" },
+        "TheTexturePal": { "resource": "texture-4.pal" }
+      },
       "call": "Image08"
     }, {
       /* long */
       "type": "once",
       "range": [12, 14],
+      "set": {
+        "TheMap": { "resource": "Map5" },
+        "TheTexture": { "resource": "texture-2.8" },
+        "TheTexturePal": { "resource": "texture-2.pal" }
+      },
       "call": "Image10"
     }, {
       /* Credits */
@@ -225,14 +272,29 @@
     }, {
       "type": "once",
       "range": [16, 17],
+      "set": {
+        "TheMap": { "resource": "Map0" },
+        "TheTexture": { "resource": "texture-1.8" },
+        "TheTexturePal": { "resource": "texture-1.pal" }
+      },
       "call": "Image09"
     }, {
       "type": "once",
       "range": [17, 18],
+      "set": {
+        "TheMap": { "resource": "Map5" },
+        "TheTexture": { "resource": "texture-5.8" },
+        "TheTexturePal": { "resource": "texture-5.pal" }
+      },
       "call": "Image12"
     }, {
       "type": "once",
       "range": [18, 19],
+      "set": {
+        "TheMap": { "resource": "Map5" },
+        "TheTexture": { "resource": "texture-5.8" },
+        "TheTexturePal": { "resource": "texture-5.pal" }
+      },
       "call": "Image13"
     }, {
       "type": "once",
@@ -245,14 +307,29 @@
     }, {
       "type": "once",
       "range": [21, 22],
+      "set": {
+        "TheMap": { "resource": "Map7" },
+        "TheTexture": { "resource": "texture-4.8" },
+        "TheTexturePal": { "resource": "texture-4.pal" }
+      },
       "call": "Image18"
     }, {
       "type": "once",
       "range": [22, 23],
+      "set": {
+        "TheMap": { "resource": "Map8" },
+        "TheTexture": { "resource": "texture-3.8" },
+        "TheTexturePal": { "resource": "texture-3.pal" }
+      },
       "call": "Image17"
     }, {
       "type": "once",
       "range": [23, 24],
+      "set": {
+        "TheMap": { "resource": "Map7" },
+        "TheTexture": { "resource": "texture-1.8" },
+        "TheTexturePal": { "resource": "texture-1.pal" }
+      },
       "call": "Image19"
     }, {
       "type": "once",
@@ -262,6 +339,14 @@
       "type": "once",
       "range": [25, 26],
       "call": "ImageEnd2"
+    }, {
+      "type":  "once",
+      "range": [26, -1],
+      "set": {
+        "TheMap": { "resource": "Map8" },
+        "TheTexture": { "resource": "texture-5.8" },
+        "TheTexturePal": { "resource": "texture-5.pal" }
+      }
     }, {
       "type": "each-frame",
       "range": [26, -1],

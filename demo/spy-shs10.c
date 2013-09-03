@@ -188,11 +188,6 @@ void SetupResources() {
   ResAdd("Map7", NewUVMapFromFile("data/map7.bin"));
   ResAdd("Map8", NewUVMapFromFile("data/map8.bin"));
 #endif
-
-  /* Slider & knob */
-  LinkPalettes(R_("texture-4.pal"), R_("slider.pal"), NULL);
-  PixBufRemap(R_("slider.8"), R_("slider.pal"));
-  PixBufRemap(R_("knob.8"), R_("slider.pal"));
 }
 
 /*
@@ -250,23 +245,25 @@ PARAMETER(PixBufT *, TheTexture, NULL);
 PARAMETER(PaletteT *, TheTexturePal, NULL);
 PARAMETER(UVMapT *, TheMap, NULL);
 PARAMETER(PixBufT *, TheTitle, NULL);
+PARAMETER(PaletteT *, TheTitlePal, NULL);
 
 CALLBACK(SetupPart1a) {
   AudioStreamSetVolume(Demo.music, 0.5f);
-  LinkPalettes(TheTexturePal, R_("spy.pal"), NULL);
-  PixBufRemap(R_("spy.8"), R_("spy.pal"));
+  LinkPalettes(TheTexturePal, TheTitlePal, NULL);
+  PixBufRemap(TheTitle, TheTitlePal);
   LoadPalette(TheTexturePal);
 }
 
 CALLBACK(SetupPart1b) {
-  LinkPalettes(TheTexturePal, R_("shs10.pal"), NULL);
-  PixBufRemap(R_("shs10.8"), R_("shs10.pal"));
+  LinkPalettes(TheTexturePal, TheTitlePal, NULL);
+  PixBufRemap(TheTitle, TheTitlePal);
   LoadPalette(TheTexturePal);
 }
 
 CALLBACK(SetupPart1c) {
-  Demo.image = NULL;
   LinkPalettes(TheTexturePal, R_("slider.pal"), NULL);
+  PixBufRemap(R_("slider.8"), R_("slider.pal"));
+  PixBufRemap(R_("knob.8"), R_("slider.pal"));
   LoadPalette(TheTexturePal);
 }
 
@@ -318,26 +315,10 @@ CALLBACK(ShowTitle) {
 static FrameT EpisodeFrame;
 static int EpisodeNum = 0;
 
-void SetupEpisode(FrameT *frame, char *imgName, char *palName, int map, int texture) {
+void SetupEpisode(FrameT *frame, char *imgName, char *palName) {
   EpisodeNum++;
 
   AudioStreamSetVolume(Demo.music, 1.0f);
-
-  {
-    char name[32];
-
-    if (map >= 0 && map <= 8) {
-      snprintf(name, sizeof(name), "Map%d", map);
-      TheMap = R_(name);
-    }
-
-    if (texture >= 1 && texture <= 5) {
-      snprintf(name, sizeof(name), "texture-%d.8", texture);
-      TheTexture = R_(name);
-      snprintf(name, sizeof(name), "texture-%d.pal", texture);
-      TheTexturePal = R_(name);
-    }
-  }
 
   Demo.image = R_(imgName);
 
@@ -362,36 +343,36 @@ void SetupEpisode(FrameT *frame, char *imgName, char *palName, int map, int text
   memcpy(&EpisodeFrame, frame, sizeof(FrameT));
 }
 
-CALLBACK(Image01) { SetupEpisode(frame, "01.8", "01.pal", 0, 1); }
-CALLBACK(Image02) { SetupEpisode(frame, "02.8", "02.pal", 1, 2); }
-CALLBACK(Image03) { SetupEpisode(frame, "03.8", "03.pal", 1, 3); }
-CALLBACK(Image04) { SetupEpisode(frame, "04.8", "04.pal", 4, 4); }
-CALLBACK(Image05) { SetupEpisode(frame, "05.8", "05.pal", 2, 1); }
-CALLBACK(Image06) { SetupEpisode(frame, "06.8", "06.pal", 3, 2); }
-CALLBACK(Image07) { SetupEpisode(frame, "07.8", "07.pal", 4, 3); }
-CALLBACK(Image08) { SetupEpisode(frame, "08.8", "08.pal", 6, 4); }
-CALLBACK(Image09) { SetupEpisode(frame, "09.8", "09.pal", 0, 1); }
-CALLBACK(Image10) { SetupEpisode(frame, "10.8", "10.pal", 5, 2); }
-CALLBACK(Image11) { SetupEpisode(frame, "11.8", "11.pal", -1, -1); }
-CALLBACK(Image12) { SetupEpisode(frame, "12.8", "12.pal", 5, 5); }
-CALLBACK(Image13) { SetupEpisode(frame, "13.8", "13.pal", 5, 5); }
-CALLBACK(Image15) { SetupEpisode(frame, "15.8", "15.pal", -1, -1); }
-CALLBACK(Image16) { SetupEpisode(frame, "16.8", "16.pal", -1, -1); }
-CALLBACK(Image17) { SetupEpisode(frame, "17.8", "17.pal", 8, 3); }
-CALLBACK(Image18) { SetupEpisode(frame, "18.8", "18.pal", 7, 4); }
-CALLBACK(Image19) { SetupEpisode(frame, "19.8", "19.pal", 7, 1); }
-CALLBACK(ImageEnd1) { SetupEpisode(frame, "end1.8", "end1.pal", -1, -1); }
-CALLBACK(ImageEnd2) { SetupEpisode(frame, "end2.8", "end2.pal", -1, -1); }
-CALLBACK(ImageAudio) { SetupEpisode(frame, "audio.8", "audio.pal", -1, -1); }
-CALLBACK(ImageCode) { SetupEpisode(frame, "code.8", "code.pal", -1, -1); }
-CALLBACK(ImageGfx) { SetupEpisode(frame, "gfx.8", "gfx.pal", -1, -1); }
-CALLBACK(ImagePics) { SetupEpisode(frame, "pics.8", "pics.pal", -1, -1); }
+CALLBACK(Image01) { SetupEpisode(frame, "01.8", "01.pal"); }
+CALLBACK(Image02) { SetupEpisode(frame, "02.8", "02.pal"); }
+CALLBACK(Image03) { SetupEpisode(frame, "03.8", "03.pal"); }
+CALLBACK(Image04) { SetupEpisode(frame, "04.8", "04.pal"); }
+CALLBACK(Image05) { SetupEpisode(frame, "05.8", "05.pal"); }
+CALLBACK(Image06) { SetupEpisode(frame, "06.8", "06.pal"); }
+CALLBACK(Image07) { SetupEpisode(frame, "07.8", "07.pal"); }
+CALLBACK(Image08) { SetupEpisode(frame, "08.8", "08.pal"); }
+CALLBACK(Image09) { SetupEpisode(frame, "09.8", "09.pal"); }
+CALLBACK(Image10) { SetupEpisode(frame, "10.8", "10.pal"); }
+CALLBACK(Image11) { SetupEpisode(frame, "11.8", "11.pal"); }
+CALLBACK(Image12) { SetupEpisode(frame, "12.8", "12.pal"); }
+CALLBACK(Image13) { SetupEpisode(frame, "13.8", "13.pal"); }
+CALLBACK(Image15) { SetupEpisode(frame, "15.8", "15.pal"); }
+CALLBACK(Image16) { SetupEpisode(frame, "16.8", "16.pal"); }
+CALLBACK(Image17) { SetupEpisode(frame, "17.8", "17.pal"); }
+CALLBACK(Image18) { SetupEpisode(frame, "18.8", "18.pal"); }
+CALLBACK(Image19) { SetupEpisode(frame, "19.8", "19.pal"); }
+CALLBACK(ImageEnd1) { SetupEpisode(frame, "end1.8", "end1.pal"); }
+CALLBACK(ImageEnd2) { SetupEpisode(frame, "end2.8", "end2.pal"); }
+CALLBACK(ImageAudio) { SetupEpisode(frame, "audio.8", "audio.pal"); }
+CALLBACK(ImageCode) { SetupEpisode(frame, "code.8", "code.pal"); }
+CALLBACK(ImageGfx) { SetupEpisode(frame, "gfx.8", "gfx.pal"); }
+CALLBACK(ImagePics) { SetupEpisode(frame, "pics.8", "pics.pal"); }
 
 CALLBACK(Waiving) {
   if ((frame->number / (int)frame->beat) & 1) {
-    SetupEpisode(frame, "14-2.8", "14-2.pal", 8, 5);
+    SetupEpisode(frame, "14-2.8", "14-2.pal");
   } else {
-    SetupEpisode(frame, "14-1.8", "14-1.pal", 8, 5);
+    SetupEpisode(frame, "14-1.8", "14-1.pal");
   }
 }
 

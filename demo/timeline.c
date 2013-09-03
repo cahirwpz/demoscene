@@ -241,7 +241,8 @@ static float JsonReadTime(JsonNodeT *value, const char *path,
 
 static CallbackT *BuildCallbacks(JsonNodeT *value, TimeSliceInfoT *tsi) {
   CallbackT *callbacks = NewTable(CallbackT, 2);
-  callbacks[0].name = StrDup(JsonQueryString(value, "call"));
+  if (JsonQuery(value, "call"))
+    callbacks[0].name = StrDup(JsonQueryString(value, "call"));
   return callbacks;
 }
 
