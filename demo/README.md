@@ -27,7 +27,7 @@ Only available in **debug mode**.
 * `RIGHT ARROW` - rewind by 1 second,
 * `UP ARROW` - fast forward by 10 seconds,
 * `DOWN ARROW` - rewind by 10 seconds,
-* `SPACE` - pause (does not work yet)
+* `SPACE` - pause the demo.
 
 ## Configuration
 

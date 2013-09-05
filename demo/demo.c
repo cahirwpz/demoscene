@@ -32,13 +32,15 @@ static bool DemoLoop = false;
 static bool DemoShowFrame = false;
 /* Print compiled timeline and quit. */
 static bool DemoPrintTimeline = false;
+/* Pause the demo. */
+static bool DemoPaused = false;
 
 /*
  * Handle events during the demo.
  */
 static bool HandleEvents(int frameNumber) {
   static InputEventT event; 
-  static int counter = 1;
+  static int frameWhenPaused;
 
   while (EventQueuePop(&event)) {
     if (event.ie_Class == IECLASS_RAWKEY) {
@@ -68,8 +70,27 @@ static bool HandleEvents(int frameNumber) {
               break;
 
             case KEY_SPACE:
-              LOG("Event %d at %.2f (frame %d).",
-                  counter++, (float)frameNumber / FRAMERATE, frameNumber);
+              LOG("%s at frame %d (%.2fs).",
+                  DemoPaused ? "Resumed" : "Paused", frameNumber,
+                  (float)frameNumber / FRAMERATE);
+
+              DemoPaused = !DemoPaused;
+
+              if (DemoPaused) {
+                frameWhenPaused = frameNumber;
+
+                AudioStop(CHAN_0);
+                AudioStop(CHAN_1);
+                AudioStop(CHAN_2);
+                AudioStop(CHAN_3);
+              } else {
+                SetVBlankCounter(frameWhenPaused);
+
+                AudioPlay(CHAN_0);
+                AudioPlay(CHAN_1);
+                AudioPlay(CHAN_2);
+                AudioPlay(CHAN_3);
+              }
               break;
 
             default:
@@ -176,36 +197,38 @@ int main() {
         }
 
         if (ready) {
-          int frameNumber;
+          int frameNumber = 0;
 
           BeginDemo();
           InstallVBlankIntServer();
           SetVBlankCounter(DemoFirstFrame);
 
           while (true) {
-            frameNumber = GetVBlankCounter();
+            if (!DemoPaused) {
+              frameNumber = GetVBlankCounter();
 
-            if (frameNumber > DemoLastFrame) {
-              if (!DemoLoop)
-                break;
+              if (frameNumber > DemoLastFrame) {
+                if (!DemoLoop)
+                  break;
 
-              SetVBlankCounter(DemoFirstFrame);
-              DemoUpdateTime(frameNumber, DemoFirstFrame);
+                SetVBlankCounter(DemoFirstFrame);
+                DemoUpdateTime(frameNumber, DemoFirstFrame);
+              }
+
+              DoTimeSlice(demo, frameNumber);
+
+              if (DemoShowFrame) {
+                RenderFrameNumber(frameNumber);
+                RenderFramesPerSecond(frameNumber);
+              }
+
+              DisplaySwap();
             }
-
-            DoTimeSlice(demo, frameNumber);
-
-            if (DemoShowFrame) {
-              RenderFrameNumber(frameNumber);
-              RenderFramesPerSecond(frameNumber);
-            }
-
-            DisplaySwap();
 
             if (HandleEvents(frameNumber))
               break;
           }
-
+ 
           RemoveVBlankIntServer();
 
           KillDemo();
