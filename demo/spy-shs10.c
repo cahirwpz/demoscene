@@ -9,13 +9,10 @@
 #include "gfx/blit.h"
 #include "gfx/colors.h"
 #include "gfx/palette.h"
-#include "tools/frame.h"
 
 #include "system/audio.h"
 #include "system/c2p.h"
 #include "system/display.h"
-#include "system/input.h"
-#include "system/vblank.h"
 
 #include "config.h"
 #include "demo.h"
@@ -27,15 +24,10 @@ const int DEPTH = 8;
 
 const char *DemoConfigPath = "spy-shs10.json";
 
-static struct {
-  bool showFrame; /* show the number of current frame */
-  bool timeKeys;  /* enable rewinding and fast-forward keys */
-
-  AudioStreamT *music;
-  PixBufT *canvas;
-  PixBufT *loadImg;
-  PaletteT *loadPal;
-} Demo;
+static AudioStreamT *TheMusic = NULL;
+static PixBufT *TheCanvas = NULL;
+static PixBufT *TheLoadImg = NULL;
+static PaletteT *TheLoadPal = NULL;
 
 /*
  * Load demo.
@@ -45,17 +37,14 @@ bool LoadDemo() {
   const char *loadPalPath = JsonQueryString(DemoConfig, "load/palette");
   const char *musicPath = JsonQueryString(DemoConfig, "music/file");
 
-  Demo.showFrame = JsonQueryBoolean(DemoConfig, "flags/show-frame");
-  Demo.timeKeys = JsonQueryBoolean(DemoConfig, "flags/time-keys");
-
-  if ((Demo.loadImg = NewPixBufFromFile(loadImgPath)) &&
-      (Demo.loadPal = NewPaletteFromFile(loadPalPath)) &&
-      (Demo.music = AudioStreamOpen(musicPath)) &&
-      (Demo.canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT)) &&
+  if ((TheLoadImg = NewPixBufFromFile(loadImgPath)) &&
+      (TheLoadPal = NewPaletteFromFile(loadPalPath)) &&
+      (TheMusic = AudioStreamOpen(musicPath)) &&
+      (TheCanvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT)) &&
       InitDisplay(WIDTH, HEIGHT, DEPTH))
   {
-    c2p1x1_8_c5_bm(Demo.loadImg->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
-    LoadPalette(Demo.loadPal);
+    c2p1x1_8_c5_bm(TheLoadImg->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+    LoadPalette(TheLoadPal);
     DisplaySwap();
 
     return true;
@@ -69,11 +58,11 @@ bool LoadDemo() {
  */
 void BeginDemo() {
   /* Release loading screen image... */
-  MemUnref(Demo.loadImg);
-  MemUnref(Demo.loadPal);
+  MemUnref(TheLoadImg);
+  MemUnref(TheLoadPal);
 
   /* Play the audio stream... */
-  AudioStreamPlay(Demo.music);
+  AudioStreamPlay(TheMusic);
 }
 
 /*
@@ -86,10 +75,17 @@ void KillDemo() {
   UnlinkPalettes(R_("texture-3.pal"));
   UnlinkPalettes(R_("texture-4.pal"));
   UnlinkPalettes(R_("texture-5.pal"));
-  AudioStreamStop(Demo.music);
+  AudioStreamStop(TheMusic);
 
-  MemUnref(Demo.music);
-  MemUnref(Demo.canvas);
+  MemUnref(TheMusic);
+  MemUnref(TheCanvas);
+}
+
+/*
+ * User updated the time.
+ */
+void DemoUpdateTime(int oldFrameNumber, int newFrameNumber) {
+  AudioStreamUpdatePos(TheMusic);
 }
 
 #ifdef GENERATEMAPS
@@ -187,55 +183,6 @@ void SetupResources() {
 #endif
 }
 
-/*
- * Handle events during the demo.
- */
-void HandleEvents(int frameNumber) {
-  static InputEventT event; 
-  static int counter = 1;
-
-  while (EventQueuePop(&event)) {
-    if (event.ie_Class == IECLASS_RAWKEY) {
-      if (event.ie_Code & IECODE_UP_PREFIX) {
-        if (Demo.timeKeys) {
-          switch (event.ie_Code & ~IECODE_UP_PREFIX) {
-            case KEY_UP:
-              ChangeVBlankCounter(-10 * FRAMERATE);
-              AudioStreamUpdatePos(Demo.music);
-              break;
-
-            case KEY_DOWN:
-              ChangeVBlankCounter(10 * FRAMERATE);
-              AudioStreamUpdatePos(Demo.music);
-              break;
-
-            case KEY_LEFT:
-              ChangeVBlankCounter(-FRAMERATE);
-              AudioStreamUpdatePos(Demo.music);
-              break;
-
-            case KEY_RIGHT:
-              ChangeVBlankCounter(FRAMERATE);
-              AudioStreamUpdatePos(Demo.music);
-              break;
-
-            case KEY_SPACE:
-              LOG("Event %d at %.2f (frame %d).",
-                  counter++, (float)frameNumber / FRAMERATE, frameNumber);
-              break;
-
-            default:
-              break;
-          }
-        }
-
-        if ((event.ie_Code & ~IECODE_UP_PREFIX) == KEY_ESCAPE)
-          ExitDemo = TRUE;
-      }
-    }
-  }
-}
-
 /*** Part 1 ******************************************************************/
 
 PARAMETER(PixBufT *, TheTexture, NULL);
@@ -245,7 +192,7 @@ PARAMETER(PixBufT *, TheTitle, NULL);
 PARAMETER(PaletteT *, TheTitlePal, NULL);
 
 CALLBACK(SetupPart1a) {
-  AudioStreamSetVolume(Demo.music, 0.5f);
+  AudioStreamSetVolume(TheMusic, 0.5f);
   LinkPalettes(TheTexturePal, TheTitlePal, NULL);
   PixBufRemap(TheTitle, TheTitlePal);
   LoadPalette(TheTexturePal);
@@ -270,15 +217,15 @@ CALLBACK(VolumeUp) {
   float dx = 1.75f * (frame->number * 4) / 3;
   float dy = 1.75f * frame->number;
 
-  AudioStreamSetVolume(Demo.music, volume);
+  AudioStreamSetVolume(TheMusic, volume);
 
-  PixBufBlit(Demo.canvas, 0, 0, R_("slider.8"), NULL);
-  PixBufBlit(Demo.canvas, 50 + (int)dx , 110 - (int)dy, R_("knob.8"), NULL);
+  PixBufBlit(TheCanvas, 0, 0, R_("slider.8"), NULL);
+  PixBufBlit(TheCanvas, 50 + (int)dx , 110 - (int)dy, R_("knob.8"), NULL);
 }
 
 CALLBACK(ShowVolume) {
-  PixBufBlit(Demo.canvas, 0, 0, R_("slider.8"), NULL);
-  PixBufBlit(Demo.canvas, 50, 110, R_("knob.8"), NULL);
+  PixBufBlit(TheCanvas, 0, 0, R_("slider.8"), NULL);
+  PixBufBlit(TheCanvas, 50, 110, R_("knob.8"), NULL);
 }
 
 CALLBACK(RenderPart1) {
@@ -287,7 +234,7 @@ CALLBACK(RenderPart1) {
 
   UVMapSetOffset(TheMap, du, dv);
   UVMapSetTexture(TheMap, TheTexture);
-  UVMapRender(TheMap, Demo.canvas);
+  UVMapRender(TheMap, TheCanvas);
 }
 
 CALLBACK(ShowTitle) {
@@ -304,7 +251,7 @@ CALLBACK(ShowTitle) {
   x = (WIDTH - w) / 2;
   y = (HEIGHT - h) / 2;
 
-  PixBufBlitScaled(Demo.canvas, x, y, w, h, TheTitle);
+  PixBufBlitScaled(TheCanvas, x, y, w, h, TheTitle);
 }
 
 /*** Part 2 ******************************************************************/
@@ -320,7 +267,7 @@ static int EpisodeNum = 0;
 CALLBACK(SetupEpisode) {
   EpisodeNum++;
 
-  AudioStreamSetVolume(Demo.music, 1.0f);
+  AudioStreamSetVolume(TheMusic, 1.0f);
 
   if (TheImage->uniqueColors <= 128) {
     ThePalette = TheTexturePal;
@@ -420,7 +367,7 @@ CALLBACK(RenderPart2) {
 
     UVMapSetTexture(TheMap, TheTexture);
     UVMapSetOffset(TheMap, du, dv);
-    UVMapRender(TheMap, Demo.canvas);
+    UVMapRender(TheMap, TheCanvas);
   }
 
   EpisodeFrame.number = frame->number + frame->first - EpisodeFrame.first;
@@ -438,7 +385,7 @@ CALLBACK(RenderPart2) {
       rect.y = (int)((float)(TheImage->height - HEIGHT) * 2 * dy / frames);
     }
 
-    PixBufBlit(Demo.canvas, 0, 0, TheImage, &rect);
+    PixBufBlit(TheCanvas, 0, 0, TheImage, &rect);
 
     PaletteEffect(frame, ThePalette, R_("EffectPal"));
   }
@@ -452,13 +399,13 @@ CALLBACK(RenderPart2) {
 
       rect.x = (TheGreets->width - WIDTH) * frame->number / frames;
 
-      PixBufBlit(Demo.canvas, 0, 54, TheGreets, &rect);
+      PixBufBlit(TheCanvas, 0, 54, TheGreets, &rect);
     } else {
       PixBufT *TheGreets = R_("greets2.8");
 
       rect.x = (TheGreets->width - WIDTH) * (frames - frame->number) / frames;
 
-      PixBufBlit(Demo.canvas, 0, 54, TheGreets, &rect);
+      PixBufBlit(TheCanvas, 0, 54, TheGreets, &rect);
     }
   }
 }
@@ -466,16 +413,11 @@ CALLBACK(RenderPart2) {
 /*** The demo ****************************************************************/
 
 CALLBACK(Render) {
-  c2p1x1_8_c5_bm(Demo.canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
-
-  if (Demo.showFrame) {
-    RenderFrameNumber(frame->number);
-    RenderFramesPerSecond(frame->number);
-  }
+  c2p1x1_8_c5_bm(TheCanvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 CALLBACK(FeedAudioStream) {
-  AudioStreamFeed(Demo.music);
+  AudioStreamFeed(TheMusic);
 }
 
 CALLBACK(Quit) {

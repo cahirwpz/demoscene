@@ -10,6 +10,6 @@ bool LoadDemo();
 void SetupResources();
 void BeginDemo();
 void KillDemo();
-void HandleEvents(int frameNumber);
+void DemoUpdateTime(int oldFrameNumber, int newFrameNumber);
 
 #endif
