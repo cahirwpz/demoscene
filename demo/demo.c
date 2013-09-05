@@ -20,16 +20,18 @@
 
 int __nocommandline = 1;
 
-/* enable rewinding and fast-forward keys */
-static bool DemoTimeKeys = false;
-/* show the number of current frame */
-static bool DemoShowFrame = false;
-/* first frame of the demo to be played */
+/* Enable keys and command line options. */
+static bool DemoDebug = false;
+/* First frame of the demo to be played */
 static int DemoFirstFrame = 0;
-/* last frame of the demo to be played */
+/* Last frame of the demo to be played */
 static int DemoLastFrame = -1;
-/* should the range of frames above be played in loop ? */
+/* Should the range of frames above be played in loop ? */
 static bool DemoLoop = false;
+/* Show the number of current frame. */
+static bool DemoShowFrame = false;
+/* Print compiled timeline and quit. */
+static bool DemoPrintTimeline = false;
 
 /*
  * Handle events during the demo.
@@ -41,7 +43,7 @@ static bool HandleEvents(int frameNumber) {
   while (EventQueuePop(&event)) {
     if (event.ie_Class == IECLASS_RAWKEY) {
       if (event.ie_Code & IECODE_UP_PREFIX) {
-        if (DemoTimeKeys) {
+        if (DemoDebug) {
           bool timeUpdated = false;
 
           switch (event.ie_Code & ~IECODE_UP_PREFIX) {
@@ -93,11 +95,13 @@ static void ParsePlaybackInfo() {
     int *first;
     int *last;
     int loop;
+    int show;
+    int timeline;
   } args = { NULL, NULL, 0 };
 
   DemoLastFrame = DemoEndFrame;
 
-  if ((rdargs = ReadArgs("FIRST/N,LAST/N,LOOP/S", (LONG *)&args, NULL))) {
+  if ((rdargs = ReadArgs("FIRST/N,LAST/N,LOOP/S,SHOWFRAME/S,TIMELINE/S", (LONG *)&args, NULL))) {
     if (args.first) {
       if (*args.first > 0 && *args.first < DemoEndFrame) {
         DemoFirstFrame = *args.first;
@@ -123,6 +127,16 @@ static void ParsePlaybackInfo() {
       DemoLoop = true;
     }
 
+    if (args.show) {
+      LOG("Will show frame and fps counter.");
+      DemoShowFrame = true;
+    }
+
+    if (args.timeline) {
+      LOG("Will print the timeline.");
+      DemoPrintTimeline = true;
+    }
+
     FreeArgs(rdargs);
   }
 }
@@ -130,8 +144,7 @@ static void ParsePlaybackInfo() {
 int main() {
   if (SystemCheck()) {
     if (ReadConfig()) {
-      DemoTimeKeys = JsonQueryBoolean(DemoConfig, "flags/time-keys");
-      DemoShowFrame = JsonQueryBoolean(DemoConfig, "flags/show-frame");
+      DemoDebug = JsonQueryBoolean(DemoConfig, "debug");
 
       if (InitAudio()) {
         static bool ready = true;
@@ -142,6 +155,15 @@ int main() {
 
         TRY {
           demo = LoadTimeline();
+
+          if (DemoDebug) {
+            ParsePlaybackInfo();
+
+            if (DemoPrintTimeline) {
+              PrintTimeSlice(demo);
+              PANIC("User requested not to run the demo.");
+            }
+          }
 
           if (!LoadDemo())
             PANIC("Loading demo failed.");
@@ -156,7 +178,6 @@ int main() {
         if (ready) {
           int frameNumber;
 
-          ParsePlaybackInfo();
           BeginDemo();
           InstallVBlankIntServer();
           SetVBlankCounter(DemoFirstFrame);

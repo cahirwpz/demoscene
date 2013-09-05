@@ -61,9 +61,6 @@ typedef struct TimeSlice TimeSliceT;
 struct TimeSlice {
   TimeSliceTypeT type;
 
-  /* optional */
-  char *name;
-
   int16_t start, end, step;
   int16_t last;
 

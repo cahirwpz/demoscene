@@ -1,10 +1,6 @@
 {
-  "flags": {
-    /* show the number of current frame */
-    "show-frame": false,
-    /* enable rewinding and fast-forward keys */
-    "time-keys": false
-  },
+  /* Enables keys and command line options if set to 'true'. */
+  "debug": true,
   "end-frame": 5407,
   "music": {
     "bpm": 142.18,
@@ -92,7 +88,6 @@
   "timeline": [
   {
     "type":  "timeslice",
-    "name":  "Part1",
     "range": [[0, "beat"], [67, "beat"]],
     "unit":  [1, "beat"],
     "parts": [
@@ -152,7 +147,6 @@
   },
   {
     "type":  "timeslice",
-    "name":  "Part2",
     "range": [[67, "beat"], -1],
     "unit":  [16, "beat"],
     "parts": [
@@ -225,7 +219,6 @@
       },
       "call": "SetupEpisode"
     }, {
-      /* long - azzaro 1 */
       "type": "once",
       "range": [7, 9],
       "set": {
@@ -237,7 +230,6 @@
       },
       "call": "SetupEpisode"
     }, {
-      /* long - azzaro 2 */
       "type": "once",
       "range": [9, 11],
       "set": {
@@ -428,10 +420,6 @@
     "type": "each-frame",
     "range": [0, -1],
     "call": "Render"
-  }, {
-    "type": "once",
-    "range": [-1, -1],
-    "call": "Quit"
   }
   ]
 }

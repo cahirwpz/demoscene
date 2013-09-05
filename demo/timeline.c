@@ -12,7 +12,6 @@ int DemoEndFrame = 0;
 static void DeleteTimeSlice(TimeSliceT *slice) {
   if (slice->type == TS_NODE)
     MemUnref(slice->u.slice);
-  MemUnref(slice->name);
 }
 
 TYPEDECL(TimeSliceT, (FreeFuncT)DeleteTimeSlice);
@@ -165,19 +164,18 @@ void PrintTimeSlice(TimeSliceT *slice) {
       snprintf(type, sizeof(type), "every %d frames", slice->step);
 
     if (slice->type == TS_NODE) {
-      printf("[%5d]: (start) %s\r\n", slice->start, slice->name);
+      printf("[%5d]: (start)\r\n", slice->start);
       PrintTimeSlice(slice->u.slice);
-      printf("[%5d]: (end) %s\r\n", slice->end, slice->name);
+      printf("[%5d]: (end)\r\n", slice->end);
     } else {
       CallbackT *callback = slice->u.actions.callbacks;
       SetterT *setter = slice->u.actions.setters;
 
-      printf("[%5d - %5d]: (%s) %s\r\n",
-          slice->start, slice->end, type, slice->name);
+      printf("[%5d - %5d]: (%s)\r\n", slice->start, slice->end, type);
 
       if (setter) {
         for (; setter->name; setter++) {
-          printf("  set: '%s' {%p} = ", setter->name, setter->ptr);
+          printf("  set: '%s' = ", setter->name);
 
           switch (setter->type) {
             case ST_INTEGER:
@@ -199,7 +197,7 @@ void PrintTimeSlice(TimeSliceT *slice) {
 
       if (callback) {
         for (; callback->name; callback++)
-          printf("  call: '%s' {%p} \r\n", callback->name, callback->func);
+          printf("  call: '%s' \r\n", callback->name);
       }
     }
   }
@@ -303,8 +301,6 @@ static void BuildTimeSlice(JsonNodeT *value, void *data) {
   else
     PANIC("Unknown time slice type: '%s'.", type);
 
-  if (JsonQuery(value, "name"))
-    ts->name  = StrDup(JsonQueryString(value, "name"));
   ts->start = (int)JsonReadTime(value, "range/0", tsi);
   ts->end   = (int)JsonReadTime(value, "range/1", tsi);
   ts->step  = 0;
