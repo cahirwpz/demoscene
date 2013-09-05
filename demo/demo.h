@@ -3,8 +3,6 @@
 
 #include "std/types.h"
 
-extern bool ExitDemo;
-
 bool LoadConfig();
 bool LoadDemo();
 void SetupResources();

@@ -7,6 +7,7 @@
 #include "timeline.h"
 
 float DemoBeat = 0.0f;
+int DemoEndFrame = 0;
 
 static void DeleteTimeSlice(TimeSliceT *slice) {
   if (slice->type == TS_NODE)
@@ -347,6 +348,7 @@ TimeSliceT *LoadTimeline() {
   TimeSliceInfoT tsi;
 
   DemoBeat = (60.0f * FRAMERATE) / JsonQueryNumber(DemoConfig, "music/bpm");
+  DemoEndFrame = JsonQueryInteger(DemoConfig, "end-frame");
 
   tsi.ts    = NewTableOfType(TimeSliceT, timeline->u.array.num + 1);
   tsi.index = 0;
@@ -354,9 +356,7 @@ TimeSliceT *LoadTimeline() {
 
   JsonArrayForEach(timeline, BuildTimeSlice, &tsi);
 
-  CompileTimeSlice(tsi.ts,
-                   JsonQueryInteger(DemoConfig, "frame/first"),
-                   JsonQueryInteger(DemoConfig, "frame/last"));
+  CompileTimeSlice(tsi.ts, 0, DemoEndFrame);
 
   return tsi.ts;
 }

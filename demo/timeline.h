@@ -4,6 +4,7 @@
 #include "std/types.h"
 
 extern float DemoBeat;
+extern int DemoEndFrame;
 
 /*
  * Callback type description.

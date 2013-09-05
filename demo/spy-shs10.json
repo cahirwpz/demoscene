@@ -5,10 +5,7 @@
     /* enable rewinding and fast-forward keys */
     "time-keys": false
   },
-  "frame": {
-    "first": 0,
-    "last": 5407
-  },
+  "end-frame": 5407,
   "music": {
     "bpm": 142.18,
     "file": "data/last-christmas-techno.wav"

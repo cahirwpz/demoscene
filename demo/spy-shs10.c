@@ -420,8 +420,4 @@ CALLBACK(FeedAudioStream) {
   AudioStreamFeed(TheMusic);
 }
 
-CALLBACK(Quit) {
-  ExitDemo = true;
-}
-
 #include "spy-shs10.syms"
