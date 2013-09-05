@@ -238,7 +238,7 @@ CALLBACK(RenderPart1) {
 }
 
 CALLBACK(ShowTitle) {
-  int frames = frame->beat * 8;
+  int frames = DemoBeat * 8;
   int w = TheTitle->width;
   int h = TheTitle->height;
   int x, y;
@@ -291,7 +291,7 @@ CALLBACK(SetupEpisode) {
 }
 
 CALLBACK(Waiving) {
-  if ((frame->number / (int)frame->beat) & 1) {
+  if ((int)(frame->number / DemoBeat) & 1) {
     TheImage = R_("14-2.8");
     TheImagePal = R_("14-2.pal");
   } else {
@@ -305,8 +305,8 @@ CALLBACK(Waiving) {
 static bool CountBeat(FrameT *frame) {
   static int lastFrame = 0;
 
-  float lf = lastFrame / frame->beat;
-  float tf = frame->number / frame->beat;
+  float lf = lastFrame / DemoBeat;
+  float tf = frame->number / DemoBeat;
   float li, ti;
 
   lf = modff(lf, &li);

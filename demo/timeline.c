@@ -6,6 +6,8 @@
 #include "config.h"
 #include "timeline.h"
 
+float DemoBeat = 0.0f;
+
 static void DeleteTimeSlice(TimeSliceT *slice) {
   if (slice->type == TS_NODE)
     MemUnref(slice->u.slice);
@@ -14,14 +16,14 @@ static void DeleteTimeSlice(TimeSliceT *slice) {
 
 TYPEDECL(TimeSliceT, (FreeFuncT)DeleteTimeSlice);
 
-void DoTimeSlice(TimeSliceT *slice, FrameT *frame, int thisFrame) {
+void DoTimeSlice(TimeSliceT *slice, int thisFrame) {
   for (; slice->type; slice++) {
     bool invoke = false;
 
     if (slice->type == TS_NODE) {
       /* Recurse? */
       if ((slice->start <= thisFrame) && (thisFrame < slice->end))
-        DoTimeSlice(slice->u.slice, frame, thisFrame);
+        DoTimeSlice(slice->u.slice, thisFrame);
     }
    
     if (slice->type == TS_LEAF) {
@@ -77,12 +79,14 @@ void DoTimeSlice(TimeSliceT *slice, FrameT *frame, int thisFrame) {
 
         /* Invoke callbacks. */
         if (callback) {
-          frame->first = slice->start;
-          frame->last = slice->end - 1;
-          frame->number = thisFrame - slice->start;
+          FrameT frame = {
+            .first = slice->start,
+            .last = slice->end - 1,
+            .number = thisFrame - slice->start
+          };
 
           for (; callback->func; callback++)
-            callback->func(frame);
+            callback->func(&frame);
         }
 
       }
@@ -203,7 +207,6 @@ void PrintTimeSlice(TimeSliceT *slice) {
 typedef struct {
   TimeSliceT *ts;
   int index;
-  float bpm;
   float unit;
 } TimeSliceInfoT;
 
@@ -219,7 +222,7 @@ static float JsonReadTime(JsonNodeT *value, const char *path,
     const char *unitType = JsonQueryString(value, "1");
 
     if (!strcmp(unitType, "beat"))
-      time = unitBase * (60.0f * FRAMERATE) / tsi->bpm;
+      time = unitBase * DemoBeat;
     else if (!strcmp(unitType, "second"))
       time = unitBase * FRAMERATE;
     else if (!strcmp(unitType, "frame"))
@@ -313,7 +316,6 @@ static void BuildTimeSlice(JsonNodeT *value, void *data) {
 
     newTsi.ts = NewTableOfType(TimeSliceT, parts->u.array.num + 1);
     newTsi.index = 0;
-    newTsi.bpm = tsi->bpm;
     newTsi.unit = JsonReadTime(value, "unit", tsi);
 
     ts->type = TS_NODE;
@@ -340,22 +342,21 @@ static void BuildTimeSlice(JsonNodeT *value, void *data) {
   }
 }
 
-float GetBeatLength() {
-  return (60.0f * FRAMERATE) / JsonQueryNumber(DemoConfig, "music/bpm");
-}
-
 TimeSliceT *LoadTimeline() {
   JsonNodeT *timeline = JsonQueryArray(DemoConfig, "timeline");
   TimeSliceInfoT tsi;
 
+  DemoBeat = (60.0f * FRAMERATE) / JsonQueryNumber(DemoConfig, "music/bpm");
+
   tsi.ts    = NewTableOfType(TimeSliceT, timeline->u.array.num + 1);
   tsi.index = 0;
-  tsi.bpm   = JsonQueryNumber(DemoConfig, "music/bpm");
   tsi.unit  = 1.0f; /* 1 frame */
 
   JsonArrayForEach(timeline, BuildTimeSlice, &tsi);
 
-  CompileTimeSlice(tsi.ts, 0, 5407);
+  CompileTimeSlice(tsi.ts,
+                   JsonQueryInteger(DemoConfig, "frame/first"),
+                   JsonQueryInteger(DemoConfig, "frame/last"));
 
   return tsi.ts;
 }

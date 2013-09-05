@@ -103,14 +103,12 @@ int main() {
       if (InitAudio()) {
         static bool ready = true;
         static TimeSliceT *demo;
-        static float beat;
 
         StartResourceManager();
         StartEventQueue();
 
         TRY {
           demo = LoadTimeline();
-          beat = GetBeatLength();
 
           if (!LoadDemo())
             PANIC("Loading demo failed.");
@@ -130,9 +128,8 @@ int main() {
 
           do {
             int frameNumber = GetVBlankCounter();
-            FrameT frame = { .beat = beat };
 
-            DoTimeSlice(demo, &frame, frameNumber);
+            DoTimeSlice(demo, frameNumber);
 
             if (DemoShowFrame) {
               RenderFrameNumber(frameNumber);

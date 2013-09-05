@@ -3,6 +3,8 @@
 
 #include "std/types.h"
 
+extern float DemoBeat;
+
 /*
  * Callback type description.
  */
@@ -10,7 +12,6 @@
 typedef struct Frame {
   int number;
   int first, last;
-  float beat;
 } FrameT;
 
 typedef void (*TimeFuncT)(FrameT *frame);
@@ -74,9 +75,8 @@ struct TimeSlice {
   } u;
 };
 
-void DoTimeSlice(TimeSliceT *slice, FrameT *frame, int thisFrame);
+void DoTimeSlice(TimeSliceT *slice, int thisFrame);
 void PrintTimeSlice(TimeSliceT *slice);
-float GetBeatLength();
 TimeSliceT *LoadTimeline();
 
 #endif
