@@ -101,7 +101,7 @@
         "TheTitle": { "resource": "spy.8" },
         "TheTitlePal": { "resource": "spy.pal" }
       },
-      "call": "SetupPart1a"
+      "call": ["SetupPart1a"]
     }, {
       "type": "once",
       "range": [32, -1],
@@ -112,36 +112,36 @@
         "TheTitle": { "resource": "shs10.8" },
         "TheTitlePal": { "resource": "shs10.pal" }
       },
-      "call": "SetupPart1b"
+      "call": ["SetupPart1b"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [50, -1],
       "set": {
         "TheMap": { "resource": "Map5" },
         "TheTexture": { "resource": "texture-4.8" },
         "TheTexturePal": { "resource": "texture-4.pal" }
       },
-      "call": "SetupPart1c"
+      "call":  ["SetupPart1c"]
     }, {
-      "type": "each-frame",
+      "type":  "each-frame",
       "range": [0, -1],
-      "call": "RenderPart1"
+      "call":  ["RenderPart1"]
     }, {
-      "type": "each-frame",
+      "type":  "each-frame",
       "range": [50, 62],
-      "call": "ShowVolume"
+      "call":  ["ShowVolume"]
     }, {
-      "type": "each-frame", 
+      "type":  "each-frame", 
       "range": [62, 67], 
-      "call": "VolumeUp"
+      "call":  ["VolumeUp"]
     }, {
-      "type": "each-frame",
+      "type":  "each-frame",
       "range": [0, 32],
-      "call": "ShowTitle"
+      "call":  ["ShowTitle"]
     }, {
-      "type": "each-frame",
+      "type":  "each-frame",
       "range": [32, 50],
-      "call": "ShowTitle"
+      "call":  ["ShowTitle"]
     }
     ]
   },
@@ -151,7 +151,7 @@
     "unit":  [16, "beat"],
     "parts": [
     {
-      "type": "once",
+      "type":  "once",
       "range": [0, 1],
       "set": {
         "TheMap": { "resource": "Map0" },
@@ -160,9 +160,9 @@
         "TheImage": { "resource": "01.8" },
         "TheImagePal": { "resource": "01.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once", 
+      "type":  "once", 
       "range": [1, 2],
       "set": {
         "TheMap": { "resource": "Map1" },
@@ -171,9 +171,9 @@
         "TheImage": { "resource": "02.8" },
         "TheImagePal": { "resource": "02.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once", 
+      "type":  "once",
       "range": [2, 3],
       "set": {
         "TheMap": { "resource": "Map1" },
@@ -182,9 +182,9 @@
         "TheImage": { "resource": "03.8" },
         "TheImagePal": { "resource": "03.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once", 
+      "type":  "once", 
       "range": [3, 4],
       "set": {
         "TheMap": { "resource": "Map4" },
@@ -193,22 +193,22 @@
         "TheImage": { "resource": "04.8" },
         "TheImagePal": { "resource": "04.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, { 
       /* Greets */
-      "type": "once", 
+      "type":  "once", 
       "range": [4, 5],
       "set": {
         "TheImage": { "resource": "11.8" },
         "TheImagePal": { "resource": "11.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once", 
+      "type":  "once", 
       "range": [5, 6],
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [6, 7],
       "set": {
         "TheMap": { "resource": "Map2" },
@@ -217,9 +217,9 @@
         "TheImage": { "resource": "05.8" },
         "TheImagePal": { "resource": "05.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [7, 9],
       "set": {
         "TheMap": { "resource": "Map3" },
@@ -228,9 +228,9 @@
         "TheImage": { "resource": "06.8" },
         "TheImagePal": { "resource": "06.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [9, 11],
       "set": {
         "TheMap": { "resource": "Map4" },
@@ -239,9 +239,9 @@
         "TheImage": { "resource": "07.8" },
         "TheImagePal": { "resource": "07.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, { 
-      "type": "once",
+      "type":  "once",
       "range": [11, 12],
       "set": {
         "TheMap": { "resource": "Map6" },
@@ -250,10 +250,10 @@
         "TheImage": { "resource": "08.8" },
         "TheImagePal": { "resource": "08.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
       /* long */
-      "type": "once",
+      "type":  "once",
       "range": [12, 14],
       "set": {
         "TheMap": { "resource": "Map5" },
@@ -262,24 +262,24 @@
         "TheImage": { "resource": "10.8" },
         "TheImagePal": { "resource": "10.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
       /* Credits */
-      "type": "once",
+      "type":  "once",
       "range": [14, 14.5],
       "set": {
         "TheImage": { "resource": "audio.8" },
         "TheImagePal": { "resource": "audio.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [14.5, 15],
       "set": {
         "TheImage": { "resource": "code.8" },
         "TheImagePal": { "resource": "code.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
       "type": "once",
       "range": [15, 15.5],
@@ -287,17 +287,17 @@
         "TheImage": { "resource": "gfx.8" },
         "TheImagePal": { "resource": "gfx.pal" }
       },
-      "call": "SetupEpisode"
+      "call": ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [15.5, 16],
       "set": {
         "TheImage": { "resource": "pics.8" },
         "TheImagePal": { "resource": "pics.pal" }
       },
-      "call": "SetupEpisode" 
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [16, 17],
       "set": {
         "TheMap": { "resource": "Map0" },
@@ -306,9 +306,9 @@
         "TheImage": { "resource": "09.8" },
         "TheImagePal": { "resource": "09.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [17, 18],
       "set": {
         "TheMap": { "resource": "Map5" },
@@ -317,7 +317,7 @@
         "TheImage": { "resource": "12.8" },
         "TheImagePal": { "resource": "12.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
       "type": "once",
       "range": [18, 19],
@@ -328,25 +328,25 @@
         "TheImage": { "resource": "13.8" },
         "TheImagePal": { "resource": "13.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [19, 20],
       "set": {
         "TheImage": { "resource": "15.8" },
         "TheImagePal": { "resource": "15.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [20, 21],
       "set": {
         "TheImage": { "resource": "16.8" },
         "TheImagePal": { "resource": "16.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [21, 22],
       "set": {
         "TheMap": { "resource": "Map7" },
@@ -355,9 +355,9 @@
         "TheImage": { "resource": "18.8" },
         "TheImagePal": { "resource": "18.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [22, 23],
       "set": {
         "TheMap": { "resource": "Map8" },
@@ -366,9 +366,9 @@
         "TheImage": { "resource": "17.8" },
         "TheImagePal": { "resource": "17.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [23, 24],
       "set": {
         "TheMap": { "resource": "Map7" },
@@ -377,23 +377,23 @@
         "TheImage": { "resource": "19.8" },
         "TheImagePal": { "resource": "19.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [24, 25],
       "set": {
         "TheImage": { "resource": "end1.8" },
         "TheImagePal": { "resource": "end1.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
-      "type": "once",
+      "type":  "once",
       "range": [25, 26],
       "set": {
         "TheImage": { "resource": "end2.8" },
         "TheImagePal": { "resource": "end2.pal" }
       },
-      "call": "SetupEpisode"
+      "call":  ["SetupEpisode"]
     }, {
       "type":  "once",
       "range": [26, -1],
@@ -403,23 +403,23 @@
         "TheTexturePal": { "resource": "texture-5.pal" }
       }
     }, {
-      "type": "each-frame",
+      "type":  "each-frame",
       "range": [26, -1],
-      "call": "Waiving" 
+      "call":  ["Waiving"]
     }, {
-      "type": "each-frame",
+      "type":  "each-frame",
       "range": [0, -1],
-      "call": "RenderPart2"
+      "call":  ["RenderPart2"]
     }
     ]
   }, {
-    "type": "each-frame",
+    "type":  "each-frame",
     "range": [0, -1, [5, "frame"]],
-    "call": "FeedAudioStream"
+    "call":  ["FeedAudioStream"]
   }, {
-    "type": "each-frame",
+    "type":  "each-frame",
     "range": [0, -1],
-    "call": "Render"
+    "call":  ["Render"]
   }
   ]
 }

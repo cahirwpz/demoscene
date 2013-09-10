@@ -150,6 +150,16 @@ static void CompileTimeSlice(TimeSliceT *slice, int firstFrame, int lastFrame) {
   }
 }
 
+void ResetTimeSlice(TimeSliceT *slice) {
+  for (; slice->type; slice++) {
+
+    if (slice->type == TS_NODE)
+      ResetTimeSlice(slice->u.slice);
+    else
+      slice->last = -1;
+  }
+}
+
 void PrintTimeSlice(TimeSliceT *slice) {
   for (; slice->type; slice++) {
     char type[20];
@@ -242,9 +252,22 @@ static float JsonReadTime(JsonNodeT *value, const char *path,
 }
 
 static CallbackT *BuildCallbacks(JsonNodeT *value, TimeSliceInfoT *tsi) {
-  CallbackT *callbacks = NewTable(CallbackT, 2);
-  if (JsonQuery(value, "call"))
-    callbacks[0].name = StrDup(JsonQueryString(value, "call"));
+  CallbackT *callbacks = NULL;
+  JsonNodeT *call;
+
+  if ((call = JsonQuery(value, "call"))) {
+    int no_callbacks = call->u.array.num;
+    int i = 0;
+
+    void ReadCall(JsonNodeT *value, void *data) {
+      callbacks[i++].name = StrDup(value->u.string);
+    }
+
+    callbacks = NewTable(CallbackT, no_callbacks + 1);
+
+    JsonArrayForEach(call, ReadCall, NULL);
+  }
+
   return callbacks;
 }
 

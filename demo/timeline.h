@@ -74,6 +74,7 @@ struct TimeSlice {
 };
 
 void DoTimeSlice(TimeSliceT *slice, int thisFrame);
+void ResetTimeSlice(TimeSliceT *slice);
 void PrintTimeSlice(TimeSliceT *slice);
 TimeSliceT *LoadTimeline();
 

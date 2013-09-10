@@ -202,6 +202,7 @@ int main() {
           BeginDemo();
           InstallVBlankIntServer();
           SetVBlankCounter(DemoFirstFrame);
+          DemoUpdateTime(0, DemoFirstFrame);
 
           while (true) {
             if (!DemoPaused) {
@@ -213,6 +214,9 @@ int main() {
 
                 SetVBlankCounter(DemoFirstFrame);
                 DemoUpdateTime(frameNumber, DemoFirstFrame);
+                ResetTimeSlice(demo);
+
+                frameNumber = DemoFirstFrame;
               }
 
               DoTimeSlice(demo, frameNumber);
