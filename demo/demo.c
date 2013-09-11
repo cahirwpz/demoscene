@@ -69,10 +69,17 @@ static bool HandleEvents(int frameNumber) {
               timeUpdated = true;
               break;
 
+            case KEY_RETURN:
+              LOG("Frame %d (%.2fs, %.2fb).", frameNumber,
+                  (float)frameNumber / FRAMERATE,
+                  (float)frameNumber / DemoBeat);
+              break;
+
             case KEY_SPACE:
-              LOG("%s at frame %d (%.2fs).",
+              LOG("%s at frame %d (%.2fs, %.2fb).",
                   DemoPaused ? "Resumed" : "Paused", frameNumber,
-                  (float)frameNumber / FRAMERATE);
+                  (float)frameNumber / FRAMERATE,
+                  (float)frameNumber / DemoBeat);
 
               DemoPaused = !DemoPaused;
 

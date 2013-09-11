@@ -64,7 +64,7 @@ Note that `PARAMETER` and `CALLBACK` macros define variable and function statica
 
 ### Callbacks
 
-Callback function signature is given below. It takes an argument of `Frame` structure.
+Callback function signature is given below by `TimeFuncT` type. It takes an argument of `Frame` structure.
 
 ```
 typedef struct Frame {
@@ -78,6 +78,14 @@ typedef void (*TimeFuncT)(FrameT *frame);
 `Frame` structure stores a range of frames (from `first` to `last`) counted from the beginning of the demo, when the callback is called. `number` is the number of current frame counted from `first` frame.
 
 ### Parameters
+
+Parameter definition macro takes 3 arguments.
+
+```PARAMETER(TYPE, SYMBOL, VALUE)```
+
+* `TYPE` is C type of the variable,
+* `SYMBOL` is the name of variable, which is visible in C and [JSON] under the same name.
+* `VALUE` is the inital value of variable (only value of basic C type allowed).
 
 ## Configuration
 
