@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 
 from chunk import Chunk
+from StringIO import StringIO as OrigStringIO
 import logging
-import struct
+
+
+class StringIO(OrigStringIO):
+  def __len__(self):
+    return len(self.getvalue())
+
 
 class Parser(object):
   ChunkAliasMap = {}
@@ -34,7 +40,8 @@ class Parser(object):
 
           self._chunks.append(self._parseChunk(name, data))
       else:
-        logging.error('File %s is not of IFF/%s type.' % (filename, self._kind))
+        logging.error(
+          'File %s is not of IFF/%s type.' % (filename, self._kind))
         return False
 
     return True
@@ -47,9 +54,14 @@ class Parser(object):
         name = alias
 
     handler = getattr(self, 'handle%s' % name, None)
+    arg = data
+
+    if not handler:
+      handler = getattr(self, 'read%s' % name, None)
+      arg = StringIO(data)
 
     if handler:
-      data = handler(data)
+      data = handler(arg)
     else:
       logging.warning('No handler for %s chunk.' % orig_name)
 
