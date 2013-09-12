@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import json
 import logging
 import os
 import struct
@@ -310,6 +311,9 @@ def main():
   parser.add_argument('-f', '--force', action='store_true',
                       help=('If the output object exists, the tool will'
                             'overwrite it.'))
+  parser.add_argument('-c', '--colors', action='store_true',
+                      help=('If the object has surfaces with colors assigned, '
+                            'the tool will write out palette in JSON format.'))
   parser.add_argument('input', metavar='LWOB', type=str,
                       help='Input LightWave object (LWOB) file name.')
   parser.add_argument('output', metavar='RAWOBJ', type=str,
@@ -368,6 +372,14 @@ def main():
                 for points, surf in zip(lwo.polygons, polysurf)]
 
   WriteRawObject(args.output, lwo.points, polygons, surfaces)
+
+  if args.colors:
+    filename = args.output.strip('.robj') + '.json'
+    with open(filename, 'w') as fp:
+      colors = [tuple(surface.color) for surface in surfaces if surface.color]
+      json.dump(colors, fp)
+      fp.write('\n')
+      logging.info('Wrote surface colors to: "%s" file.', filename)
 
 
 if __name__ == '__main__':
