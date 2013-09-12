@@ -32,7 +32,7 @@ class LWOParserMixin(object):
     return chunks
 
   def readColor(self, data):
-    return Color(*struct.unpack('>bbbx', data.read(4)))
+    return Color(*struct.unpack('>BBBx', data.read(4)))
 
   def readColor12(self, data):
     r, g, b = struct.unpack('>fffH', data.read(14))[:3]
@@ -230,13 +230,15 @@ class LWO2(iff.Parser, LWOParserMixin):
 
 
 class LWOB(iff.Parser, LWOParserMixin):
+  # http://sandbox.de/osg/lightwave.htm
+
   ChunkAliasMap = {
       'Int16': ['FLAG', 'DIFF', 'LUMI', 'SPEC', 'GLOS', 'TFLG', 'REFL', 'TRAN',
                 'TVAL'],
       'Float': ['VDIF', 'SMAN', 'EDGE', 'TAAS', 'TAMP', 'TFP0', 'RIND', 'VSPC',
                 'VLUM', 'TOPC', 'VTRN'],
       'Color': ['COLR', 'TCLR'],
-      'Point': ['TSIZ', 'TCTR', 'TFAL', 'TVEL'],
+      'Vertex': ['TSIZ', 'TCTR', 'TFAL', 'TVEL'],
       'String': ['TIMG', 'BTEX', 'CTEX', 'DTEX', 'LTEX', 'TTEX']}
 
   def __init__(self):
@@ -297,9 +299,9 @@ def WriteRawObject(filename, points, polygons, surfaces):
     for surface in surfaces:
       color = surface.color or Color(0, 0, 0)
 
-      data = struct.pack('>%dsx?xBBB' % len(surface.name),
-                         surface.name, surface.sideness,
-                         color.r, color.g, color.b)
+      data = struct.pack('>?BBB%dsx' % len(surface.name),
+                         surface.sideness, color.r, color.g, color.b,
+                         surface.name)
       robj.write(data)
 
   logging.info('Wrote Raw Object file to: "%s"', filename)
@@ -307,17 +309,18 @@ def WriteRawObject(filename, points, polygons, surfaces):
 
 def main():
   parser = argparse.ArgumentParser(
-    description=('Converts Lightwave Object (LWOB) file to raw data.'))
-  parser.add_argument('-f', '--force', action='store_true',
-                      help=('If the output object exists, the tool will'
-                            'overwrite it.'))
-  parser.add_argument('-c', '--colors', action='store_true',
-                      help=('If the object has surfaces with colors assigned, '
-                            'the tool will write out palette in JSON format.'))
-  parser.add_argument('input', metavar='LWOB', type=str,
-                      help='Input LightWave object (LWOB) file name.')
-  parser.add_argument('output', metavar='RAWOBJ', type=str,
-                      help='Output Raw Object file name.')
+    description='Converts Lightwave Object (LWOB/LWO2) file to raw data.')
+  parser.add_argument(
+    '-f', '--force', action='store_true',
+    help='If the output object exists, the tool will' 'overwrite it.')
+  parser.add_argument(
+    '-c', '--colors', action='store_true',
+    help=('If the object has surfaces with colors assigned, the tool will '
+          'write out palette in JSON format.'))
+  parser.add_argument(
+    'input', metavar='LWO', type=str, help='Input LightWave object file name.')
+  parser.add_argument(
+    'output', metavar='RAWOBJ', type=str, help='Output Raw Object file name.')
   args = parser.parse_args()
 
   args.input = os.path.abspath(args.input)
@@ -350,6 +353,11 @@ def main():
   if type(lwo) == LWOB:
     polygons = [Polygon(points, surf) for points, surf in lwo.polygons]
     surfaces = []
+    for surface in lwo['SURF']:
+      name, props = surface
+      color = props.get('COLR', None)
+      sideness = bool(props.get('FLAG', 0) & 0x0100)
+      surfaces.append(Surface(name, color, sideness))
 
   if type(lwo) == LWO2:
     surfaces = []

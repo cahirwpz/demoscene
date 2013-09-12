@@ -5,47 +5,78 @@
 #include "system/fileio.h"
 #include "engine/mesh.h"
 
+static void DeleteSurface(SurfaceT *surface) {
+  MemUnref(surface->name);
+}
+
+TYPEDECL(SurfaceT, (FreeFuncT)DeleteSurface);
+
 static void DeleteMesh(MeshT *mesh) {
   MemUnref(mesh->vertexToPoly.vertex);
   MemUnref(mesh->vertexToPoly.indices);
   MemUnref(mesh->surfaceNormal);
   MemUnref(mesh->vertexNormal);
+  MemUnref(mesh->surface);
   MemUnref(mesh->polygon);
   MemUnref(mesh->vertex);
 }
 
 TYPEDECL(MeshT, (FreeFuncT)DeleteMesh);
 
-MeshT *NewMesh(size_t vertices, size_t polygons) {
+MeshT *NewMesh(size_t vertices, size_t polygons, size_t surfaces) {
   MeshT *mesh = NewInstance(MeshT);
 
   mesh->vertexNum = vertices;
   mesh->polygonNum = polygons;
+  mesh->surfaceNum = surfaces;
   mesh->vertex = NewTable(Vector3D, vertices);
   mesh->polygon = NewTable(TriangleT, polygons);
+  mesh->surface = NewTableOfType(SurfaceT, surfaces);
 
   return mesh;
 }
 
+typedef struct DiskMesh {
+  uint16_t vertices;
+  uint16_t polygons;
+  uint16_t surfaces;
+  uint8_t data[0];
+} DiskMeshT;
+
+typedef struct DiskSurface {
+  uint8_t flags;
+  RGB color;
+  char name[0];
+} DiskSurfaceT;
+
 MeshT *NewMeshFromFile(const char *fileName) {
-  uint16_t *data = ReadFileSimple(fileName);
+  DiskMeshT *header = ReadFileSimple(fileName);
 
-  if (data) {
-    uint16_t vertices = data[0];
-    uint16_t polygons = data[1];
+  if (header) {
+    MeshT *mesh = NewMesh(header->vertices, header->polygons, header->surfaces);
+    uint8_t *data = header->data;
+    int i;
 
-    MeshT *mesh = NewMesh(vertices, polygons);
+    memcpy(mesh->vertex, data, sizeof(Vector3D) * header->vertices);
+    data += sizeof(Vector3D) * header->vertices;
 
-    Vector3D *vertexPtr = (Vector3D *)&data[2];
-    TriangleT *polygonPtr = (TriangleT *)&vertexPtr[vertices];
+    memcpy(mesh->polygon, data, sizeof(TriangleT) * header->polygons);
+    data += sizeof(TriangleT) * header->polygons;
 
-    memcpy(mesh->vertex, vertexPtr, sizeof(Vector3D) * vertices);
-    memcpy(mesh->polygon, polygonPtr, sizeof(TriangleT) * polygons);
+    for (i = 0; i < header->surfaces; i++) {
+      DiskSurfaceT *surface = (DiskSurfaceT *)data;
 
-    LOG("Mesh '%s' has %d vertices and %d polygons.",
-        fileName, vertices, polygons);
+      mesh->surface[i].name = StrDup(surface->name);
+      mesh->surface[i].color.rgb = surface->color;
+      mesh->surface[i].sideness = surface->flags;
 
-    MemUnref(data);
+      data += sizeof(DiskSurfaceT) + strlen(surface->name) + 1;
+    }
+
+    LOG("Mesh '%s' has %d vertices, %d polygons and %d surfaces.",
+        fileName, header->vertices, header->polygons, header->surfaces);
+
+    MemUnref(header);
 
     return mesh;
   }
