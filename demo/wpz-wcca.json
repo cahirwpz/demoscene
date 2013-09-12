@@ -1,0 +1,40 @@
+{
+  /* Enables keys and command line options if set to 'true'. */
+  "debug": true,
+  "end-frame": 4583,
+  "music": {
+    "bpm": 142.18,
+    "file": "data/voyager.wav"
+  },
+  "load": {
+    "image": "data/begin.8",
+    "palette": "data/begin.pal"
+  },
+  "resources": {
+    "texture.8": { "type": "image", "path": "data/texture-1.8" },
+    "texture.pal": { "type": "palette", "path": "data/texture-1.pal" },
+    "spy.8": { "type": "image", "path": "data/spy.8" },
+    "spy.pal": { "type": "palette", "path": "data/spy.pal" },
+    "shs10.8": { "type": "image", "path": "data/shs10.8" },
+    "shs10.pal": { "type": "palette", "path": "data/shs10.pal" }
+  },
+  "timeline": [
+  {
+    "type":  "timeslice",
+    "range": [0, -1],
+    "unit":  [1, "beat"],
+    "parts": [
+    {
+      "type": "once",
+      "range": [0, -1],
+      "call": ["ClearCanvas", "RenderCanvas"]
+    }
+    ]
+  }, {
+    "type":  "each-frame",
+    "range": [0, -1, [5, "frame"]],
+    "call":  ["FeedAudioStream"]
+  }]
+}
+
+// vim: ts=2 sw=2 expandtab

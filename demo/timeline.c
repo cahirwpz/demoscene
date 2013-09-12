@@ -70,6 +70,9 @@ void DoTimeSlice(TimeSliceT *slice, int thisFrame) {
               case ST_REAL:
                 *(float *)setter->ptr = setter->u.real;
                 break;
+              case ST_STRING:
+                *(char **)setter->ptr = setter->u.string;
+                break;
               case ST_RESOURCE:
                 *(void **)setter->ptr = R_(setter->u.resource);
                 break;
@@ -277,17 +280,34 @@ static void JsonReadSetter(const char *key, JsonNodeT *value, void *data) {
 
   setter->name = StrDup(key);
 
-  if (JsonQuery(value, "resource")) {
-    setter->type = ST_RESOURCE;
-    setter->u.resource = StrDup(JsonQueryString(value, "resource"));
-  } else if (JsonQuery(value, "int")) {
-    setter->type = ST_INTEGER;
-    setter->u.integer = JsonQueryInteger(value, "int");
-  } else if (JsonQuery(value, "float")) {
-    setter->type = ST_REAL;
-    setter->u.real = JsonQueryNumber(value, "float");
-  } else {
-    PANIC("Unknown setter type.");
+  switch (value->type) {
+    case JSON_OBJECT:
+      if (JsonQuery(value, "resource")) {
+        setter->type = ST_RESOURCE;
+        setter->u.resource = StrDup(JsonQueryString(value, "resource"));
+      } else {
+        PANIC("Unknown setter type: '%s'.", value->u.object.item[0].key);
+      }
+      break;
+
+    case JSON_INTEGER:
+      setter->type = ST_INTEGER;
+      setter->u.integer = value->u.integer;
+      break;
+
+    case JSON_REAL:
+      setter->type = ST_REAL;
+      setter->u.real = value->u.real;
+      break;
+
+    case JSON_STRING:
+      setter->type = ST_STRING;
+      setter->u.string = value->u.string;
+      break;
+
+    default:
+      PANIC("Unhandled JSON type: %d.", value->type);
+      break;
   }
 }
 

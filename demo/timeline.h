@@ -28,6 +28,7 @@ typedef struct Symbol {
 
 #define CALLBACK(SYMBOL) static void SYMBOL(FrameT *frame)
 #define PARAMETER(TYPE, SYMBOL, VALUE) static TYPE SYMBOL = VALUE
+#define ARRAY(TYPE, SIZE, SYMBOL, ...) static TYPE SYMBOL[SIZE] = { __VA_ARGS__ }
 
 extern SymbolT CallbackSymbols[];
 extern SymbolT ParameterSymbols[];
@@ -41,7 +42,7 @@ typedef struct Callback {
   TimeFuncT func;
 } CallbackT;
 
-typedef enum { ST_INTEGER, ST_REAL, ST_RESOURCE } SetterTypeT;
+typedef enum { ST_INTEGER, ST_REAL, ST_STRING, ST_RESOURCE } SetterTypeT;
 
 typedef struct Setter {
   SetterTypeT type;
@@ -49,6 +50,7 @@ typedef struct Setter {
   void *ptr;
   union {
     char *resource;
+    char *string;
     int integer;
     float real;
   } u;
