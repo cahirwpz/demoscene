@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from chunk import Chunk
+from collections import Sequence
 from StringIO import StringIO as OrigStringIO
 import logging
 
@@ -10,7 +11,7 @@ class StringIO(OrigStringIO):
     return len(self.getvalue())
 
 
-class Parser(object):
+class Parser(Sequence):
   ChunkAliasMap = {}
 
   def __init__(self, kind):
@@ -77,3 +78,12 @@ class Parser(object):
       return chunks[0]
     else:
       return chunks
+
+  def __getitem__(self, name):
+    return [c for n, c in self._chunks if n == name]
+
+  def __iter__(self):
+    return iter(self._chunks)
+
+  def __len__(self):
+    return len(self._chunks)

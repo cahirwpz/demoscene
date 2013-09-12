@@ -4,15 +4,16 @@ import argparse
 import logging
 import os
 import struct
-import pprint
 
 from collections import namedtuple
+#from pprint import pprint
 
 from util import iff
 
 Vertex = namedtuple('Vertex', 'x y z')
 Color = namedtuple('Color', 'r g b')
 Polygon = namedtuple('Polygon', 'points surface')
+Surface = namedtuple('Surface', 'name color sideness')
 
 
 class LWOParserMixin(object):
@@ -34,7 +35,7 @@ class LWOParserMixin(object):
 
   def readColor12(self, data):
     r, g, b = struct.unpack('>fffH', data.read(14))[:3]
-    return Color(int(r * 256), int(g * 256), int(b * 256))
+    return Color(int(r * 255), int(g * 255), int(b * 255))
 
   def readFloat(self, data):
     return struct.unpack('>f', data.read(4))[0]
@@ -78,10 +79,6 @@ class LWOParserMixin(object):
   @property
   def points(self):
     return self._getChunk('PNTS')
-
-  @property
-  def polygons(self):
-    return self._getChunk('POLS')
 
 
 class LWO2(iff.Parser, LWOParserMixin):
@@ -141,7 +138,7 @@ class LWO2(iff.Parser, LWOParserMixin):
     while data.tell() < len(data):
       points = struct.unpack('>H', data.read(2))[0]
       indices = struct.unpack('>' + 'H' * points, data.read(2 * points))
-      polygons.append(Polygon(indices, 0))
+      polygons.append(indices)
 
     return [polyType, polygons]
 
@@ -218,12 +215,17 @@ class LWO2(iff.Parser, LWOParserMixin):
     return [self.readInt16(data), self.readInt16(data)]
 
   @property
-  def tags(self):
-    return self._getChunk('TAGS')
+  def polygons(self):
+    polyType, polygons = self['POLS'][0]
+    return polygons
 
   @property
   def polygonTags(self):
     return dict(self._getChunk('PTAG', always_list=True))
+
+  @property
+  def tags(self):
+    return self._getChunk('TAGS')
 
 
 class LWOB(iff.Parser, LWOParserMixin):
@@ -247,7 +249,7 @@ class LWOB(iff.Parser, LWOParserMixin):
       step = (points + 2) * 2
 
       words = struct.unpack('>' + 'H' * (points + 1), data[2:step])
-      polygons.append(Polygon(words[:-1], words[-1]))
+      polygons.append([words[:-1], words[-1]])
 
       data = data[step:]
 
@@ -270,6 +272,36 @@ class LWOB(iff.Parser, LWOParserMixin):
   @property
   def surfaces(self):
     return dict(self._getChunk('SURF', always_list=True))
+
+  @property
+  def polygons(self):
+    return self._getChunk('POLS')
+
+
+def WriteRawObject(filename, points, polygons, surfaces):
+  logging.info('Object has %d points, %d polygons and %d surfaces.',
+               len(points), len(polygons), len(surfaces))
+
+  with open(filename, 'w') as robj:
+    robj.write(struct.pack('>HHH', len(points), len(polygons), len(surfaces)))
+
+    for x, y, z in points:
+      robj.write(struct.pack('>fff', x, y, z))
+
+    for points, surf in polygons:
+      if len(points) != 3:
+        raise SystemExit('Polygon triangulation not yet supported.')
+      robj.write(struct.pack('>HHHH', surf, *points))
+
+    for surface in surfaces:
+      color = surface.color or Color(0, 0, 0)
+
+      data = struct.pack('>%dsx?xBBB' % len(surface.name),
+                         surface.name, surface.sideness,
+                         color.r, color.g, color.b)
+      robj.write(data)
+
+  logging.info('Wrote Raw Object file to: "%s"', filename)
 
 
 def main():
@@ -300,27 +332,42 @@ def main():
     raise SystemExit('Raw Object file "%s" already exists (use'
                      ' "-f" to override).' % args.output)
 
+  lwo = None
   lwob = LWOB()
   lwo2 = LWO2()
 
   if lwob.loadFile(args.input):
-    logging.info('Object has %d points, and %d polygons.',
-                 len(lwob.points), len(lwob.polygons))
-
-    with open(args.output, 'w') as robj:
-      robj.write(struct.pack('>HH', len(lwob.points), len(lwob.polygons)))
-
-      for x, y, z in lwob.points:
-        robj.write(struct.pack('>fff', x, y, z))
-
-      for points, _ in lwob.polygons:
-        if len(points) != 3:
-          raise SystemExit('Polygon triangulation not yet supported.')
-        robj.write(struct.pack('>HHH', *points))
-
-    logging.info('Wrote Raw Object file to: "%s"', args.output)
+    lwo = lwob
   elif lwo2.loadFile(args.input):
-    pprint.pprint(lwo2._chunks)
+    lwo = lwo2
+  else:
+    raise SystemExit('File format not recognized.')
+
+  if type(lwo) == LWOB:
+    polygons = [Polygon(points, surf) for points, surf in lwo.polygons]
+    surfaces = []
+
+  if type(lwo) == LWO2:
+    surfaces = []
+
+    for surface in lwo['SURF']:
+      name, props = surface[0], dict(surface[2])
+      color = props.get('COLR', None)
+      sideness = props.get('SIDE', 1) == 3
+      surfaces.append(Surface(name, color, sideness))
+
+    surfenum = {}
+
+    for orig, name in enumerate(lwo['TAGS'][0]):
+      for num, surf in enumerate(surfaces):
+        if name == surf.name:
+          surfenum[orig] = num
+
+    polysurf = [surfenum[num] for _, num in dict(lwo['PTAG'])['SURF']]
+    polygons = [Polygon(points, surf)
+                for points, surf in zip(lwo.polygons, polysurf)]
+
+  WriteRawObject(args.output, lwo.points, polygons, surfaces)
 
 
 if __name__ == '__main__':
