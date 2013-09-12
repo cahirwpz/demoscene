@@ -93,3 +93,32 @@ void UnlinkPalettes(PaletteT *palette) {
     palette = next;
   }
 }
+
+int PaletteFindNearest(PaletteT *palette, RGB color) {
+  int16_t r = color.r;
+  int16_t g = color.g;
+  int16_t b = color.b;
+  uint32_t minDiff = -1;
+  int index = -1;
+
+  while (palette) {
+    RGB *candidate = palette->colors;
+    int i;
+
+    for (i = 0; i < palette->count; i++, candidate++) {
+      int16_t dr = r - candidate->r;
+      int16_t dg = g - candidate->g;
+      int16_t db = b - candidate->b;
+      uint32_t diff = dr * dr + dg * dg + db * db;
+
+      if (diff < minDiff) {
+        minDiff = diff;
+        index = i + palette->start;
+      }
+    }
+
+    palette = palette->next;
+  }
+
+  return index;
+}
