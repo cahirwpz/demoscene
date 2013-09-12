@@ -38,11 +38,7 @@ def QuantizeImage(image, kdtree, dithering, is_transparent):
   return output
 
 
-def Quantize(inputPath, outputPath, colors=256, dithering=False):
-  logging.info('Reading input file: "%s".', inputPath)
-
-  image = Image.open(inputPath)
-
+def Quantize(image, colors=256, dithering=False):
   assert image.mode in ['RGB', 'RGBA']
 
   logging.info('Quantizing colorspace using median-cut algorithm.')
@@ -85,10 +81,7 @@ def Quantize(inputPath, outputPath, colors=256, dithering=False):
   output = QuantizeImage(image, kdtree, dithering, is_transparent)
   output.putpalette(palette)
 
-  logging.info('Saving quantized image to: "%s".', outputPath)
-
-  attributes = {'transparency': 0} if is_transparent else {}
-  output.save(outputPath, **attributes)
+  return output
 
 
 if __name__ == '__main__':
@@ -123,4 +116,12 @@ if __name__ == '__main__':
   if inputPath == outputPath:
     raise SystemExit('Input and output files have to be different!')
 
-  Quantize(inputPath, outputPath, args.colors, args.dithering)
+  logging.info('Reading input file: "%s".', inputPath)
+
+  image = Image.open(inputPath)
+  output = Quantize(image, args.colors, args.dithering)
+
+  logging.info('Saving quantized image to: "%s".', outputPath)
+
+  attributes = {'transparency': 0} if (image.mode is 'RGBA') else {}
+  output.save(outputPath, **attributes)
