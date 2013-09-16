@@ -3,7 +3,7 @@
 
 #include "std/types.h"
 #include "engine/vector3d.h"
-#include "gfx/colors.h"
+#include "gfx/palette.h"
 
 typedef struct Triangle {
   uint16_t surface;
@@ -54,5 +54,7 @@ void CenterMeshPosition(MeshT *mesh);
 void CalculateSurfaceNormals(MeshT *mesh);
 void CalculateVertexToPolygonMap(MeshT *mesh);
 void CalculateVertexNormals(MeshT *mesh);
+
+void MeshApplyPalette(MeshT *mesh, PaletteT *palette);
 
 #endif

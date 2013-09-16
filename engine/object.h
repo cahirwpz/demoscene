@@ -5,25 +5,25 @@
 #include "engine/mesh.h"
 #include "engine/ms3d.h"
 
+extern bool RenderFlatShading;
+extern bool RenderWireFrame;
+
 typedef struct PolygonExt {
   uint16_t index;
   uint8_t flags;
   uint8_t color;
   float depth;
-
-  Vector3D normal;
 } PolygonExtT;
 
 typedef struct SceneObject {
   char *name;
   MeshT *mesh;
 
-  bool wireframe;
-
   MatrixStack3D *ms;
   Vector3D *vertex;
   PolygonExtT *polygonExt;
   PolygonExtT **sortedPolygonExt;
+  Vector3D *surfaceNormal;
 } SceneObjectT;
 
 SceneObjectT *NewSceneObject(const char *name, MeshT *mesh);

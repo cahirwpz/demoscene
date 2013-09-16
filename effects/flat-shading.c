@@ -1,19 +1,23 @@
-#include <math.h>
-
 #include "std/debug.h"
 #include "std/memory.h"
 #include "std/resource.h"
 
 #include "engine/ms3d.h"
-#include "engine/object.h"
 #include "engine/scene.h"
+#include "gfx/blit.h"
+#include "gfx/colorfunc.h"
+#include "gfx/palette.h"
 #include "tools/frame.h"
+#include "tools/gradient.h"
 #include "tools/loopevent.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
-#include "system/input.h"
+#include "system/fileio.h"
 #include "system/vblank.h"
+
+#include "uvmap/misc.h"
+#include "uvmap/render.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -23,23 +27,26 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
-  ResAdd("Scene", NewScene());
-  ResAdd("Mesh", NewMeshFromFile("data/wecan_logo.robj"));
+  ResAdd("Texture", NewPixBufFromFile("data/texture-shades.8"));
+  ResAdd("TexturePal", NewPaletteFromFile("data/texture-shades.pal"));
+  ResAdd("ColorMap", NewPixBufFromFile("data/texture-shades-map.8"));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
+  ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("ColorMap", NewPixBufFromFile("data/wecan_logo_cmap.8"));
-  ResAdd("Palette", NewPaletteFromFile("data/wecan_logo_cmap.pal"));
+  ResAdd("Scene", NewScene());
+  ResAdd("Mesh", NewMeshFromFile("data/konus.robj"));
 
   {
     MeshT *mesh = R_("Mesh");
 
+    CenterMeshPosition(mesh);
     CalculateSurfaceNormals(mesh);
     NormalizeMeshSize(mesh);
-    MeshApplyPalette(mesh, R_("Palette"));
   }
 
   SceneAddObject(R_("Scene"), NewSceneObject("Object", R_("Mesh")));
 
-  RenderFlatShading = false;
+  RenderFlatShading = true;
 }
 
 /*
@@ -53,8 +60,14 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  PixBufClear(R_("Canvas"));
-  LoadPalette(R_("Palette"));
+  UVMapT *uvmap = R_("Map");
+
+  LoadPalette(R_("TexturePal"));
+
+  UVMapGenerate2(uvmap);
+  UVMapSetTexture(uvmap, R_("Texture"));
+
+  ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.u));
 }
 
 /*
@@ -66,24 +79,35 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
-
-void RenderMesh(int frameNumber_) {
+void RenderEffect(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
+  UVMapT *uvmap = R_("Map");
+  PixBufT *shades = R_("Shades");
+
+  int du = 2 * frameNumber;
+  int dv = 4 * frameNumber;
+
   SceneT *scene = R_("Scene");
-  float frameNumber = frameNumber_;
-  float s = sin(frameNumber * 3.14159265f / 90.0f) + 1.0f;
 
   {
     MatrixStack3D *ms = GetObjectTranslation(scene, "Object");
 
     StackReset(ms);
-    PushScaling3D(ms, 0.5f + 0.25f * s, 0.5f + 0.25f * s, 0.5f + 0.25f * s);
+    PushScaling3D(ms, 1.2f, 1.2f, 1.2f);
     PushRotation3D(ms, 0, (float)(-frameNumber * 2), frameNumber);
     PushTranslation3D(ms, 0.0f, 0.0f, -2.0f);
   }
 
-  PixBufClear(canvas);
-  RenderScene(scene, canvas);
+  UVMapSetOffset(uvmap, du, dv);
+  UVMapRender(uvmap, canvas);
+
+  PixBufClear(shades);
+  RenderScene(scene, shades);
+
+  PixBufSetColorMap(shades, R_("ColorMap"), 0);
+  PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
+
+  PixBufBlit(canvas, 0, 0, shades, NULL);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
@@ -97,26 +121,10 @@ void MainLoop() {
   SetVBlankCounter(0);
 
   do {
-    static bool paused = FALSE;
-    static int oldFrameNumber = 0;
     int frameNumber = GetVBlankCounter();
 
-    if (event == LOOP_PAUSE)
-      paused = !paused;
-
-    if (paused) {
-      SetVBlankCounter(oldFrameNumber);
-      frameNumber = oldFrameNumber;
-    } else {
-      oldFrameNumber = frameNumber;
-    }
-
-    if (event == LOOP_TRIGGER)
-      RenderWireFrame = !RenderWireFrame;
-
-    RenderMesh(frameNumber);
+    RenderEffect(frameNumber);
     RenderFrameNumber(frameNumber);
-    RenderFramesPerSecond(frameNumber);
 
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);

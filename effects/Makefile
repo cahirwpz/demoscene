@@ -3,8 +3,8 @@ TOPDIR = $(realpath $(CURDIR)/..)
 OBJS := blur.o colormap.o deformations.o flares.o layers.o object3d.o \
 	particles.o playaudio.o raytunnel.o tunnel.o uvmap-compose.o \
 	uvmap-light.o vector2d.o startup.o
-BINS := blur colormap deformations flares layers object3d particles playaudio \
-	raytunnel tunnel uvmap-compose uvmap-light vector2d 
+BINS := blur colormap deformations flares flat-shading layers object3d \
+	particles playaudio raytunnel tunnel uvmap-compose uvmap-light vector2d 
 LIBS := libgfx.a libtools.a libsystem.a libstd.a
 
 all:: $(BINS)
@@ -12,11 +12,13 @@ all:: $(BINS)
 colormap: startup.o colormap.o $(LIBS)
 
 deformations: CFLAGS += -Wno-unused
-deformations: startup.o deformations.o libuvmap.a $(LIBS)
+deformations: startup.o deformations.o libtxtgen.a libuvmap.a $(LIBS)
 uvmap-light: CFLAGS += -Wno-unused
-uvmap-light: startup.o uvmap-light.o libuvmap.a $(LIBS)
+uvmap-light: startup.o uvmap-light.o libuvmap.a libengine.a $(LIBS)
 uvmap-compose: CFLAGS += -Wno-unused
 uvmap-compose: startup.o uvmap-compose.o libuvmap.a $(LIBS)
+flat-shading: CFLAGS += -Wno-unused
+flat-shading: startup.o flat-shading.o libuvmap.a libengine.a $(LIBS)
 
 blur: startup.o blur.o $(LIBS)
 flares: startup.o flares.o libtxtgen.a $(LIBS)

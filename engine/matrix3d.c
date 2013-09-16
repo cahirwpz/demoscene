@@ -116,6 +116,28 @@ void Transform3D(Vector3D *dst, Vector3D *src, int n, Matrix3D *m) {
   }
 }
 
+void Transform3D_2(Vector3D *dst, Vector3D *src, int n, Matrix3D *m) {
+  int i;
+
+  for (i = 0; i < n; i++) {
+    float x = src[i].x;
+    float y = src[i].y;
+    float z = src[i].z;
+
+    dst[i].x = M(m,0,0) * x + M(m,1,0) * y + M(m,2,0) * z;
+    dst[i].y = M(m,0,1) * x + M(m,1,1) * y + M(m,2,1) * z;
+    dst[i].z = M(m,0,2) * x + M(m,1,2) * y + M(m,2,2) * z;
+  }
+}
+
+
+/*
+ * Lightwave coordinate system:
+ * X: left => right
+ * Y: down => up
+ * Z: behind you => far away
+ */
+
 void ProjectTo2D(Vector3D *dst, Vector3D *src, int n,
                  float viewerX, float viewerY, float viewerZ)
 {
@@ -126,8 +148,8 @@ void ProjectTo2D(Vector3D *dst, Vector3D *src, int n,
     float y = src[i].y;
     float z = src[i].z;
 
-    dst[i].x = x / z * viewerZ + viewerX;
-    dst[i].y = y / z * viewerZ + viewerY;
+    dst[i].x = - x / z * viewerZ + viewerX;
+    dst[i].y = - y / z * viewerZ + viewerY;
   }
 }
 

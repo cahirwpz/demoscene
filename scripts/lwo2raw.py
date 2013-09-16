@@ -336,8 +336,9 @@ def main():
     raise SystemExit('Input file "%s" does not exists!' % args.input)
 
   if os.path.exists(args.output) and not args.force:
-    raise SystemExit('Raw Object file "%s" already exists (use'
-                     ' "-f" to override).' % args.output)
+    raise SystemExit(
+      'Raw Object file "%s" already exists (use "-f" to override).' %
+      args.output)
 
   lwo = None
   lwob = LWOB()
@@ -382,7 +383,7 @@ def main():
   WriteRawObject(args.output, lwo.points, polygons, surfaces)
 
   if args.colors:
-    filename = args.output.strip('.robj') + '.json'
+    filename = args.output.rsplit('.', 1)[0] + '.json'
     with open(filename, 'w') as fp:
       colors = [tuple(surface.color) for surface in surfaces if surface.color]
       json.dump(colors, fp)

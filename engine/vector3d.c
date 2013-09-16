@@ -51,3 +51,9 @@ void V3D_Normalize(Vector3D *d, Vector3D *a, float l) {
 
   V3D_Scale(d, a, l * FastInvSqrt(al));
 }
+
+void V3D_NormalizeToUnit(Vector3D *d, Vector3D *a) {
+  float al = a->x * a->x + a->y * a->y + a->z * a->z;
+
+  V3D_Scale(d, a, FastInvSqrt(al));
+}

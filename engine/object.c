@@ -11,6 +11,7 @@ static void DeleteSceneObject(SceneObjectT *self) {
   MemUnref(self->vertex);
   MemUnref(self->polygonExt);
   MemUnref(self->sortedPolygonExt);
+  MemUnref(self->surfaceNormal);
   MemUnref(self->name);
 }
 
@@ -25,6 +26,7 @@ SceneObjectT *NewSceneObject(const char *name, MeshT *mesh) {
   self->vertex = NewTable(Vector3D, mesh->vertexNum);
   self->polygonExt = NewTable(PolygonExtT, mesh->polygonNum);
   self->sortedPolygonExt = (PolygonExtT **)NewTableAdapter(self->polygonExt);
+  self->surfaceNormal = NewTable(Vector3D, mesh->polygonNum);
 
   return self;
 }
@@ -34,65 +36,75 @@ static bool SortByDepth(const PtrT a asm("a0"), const PtrT b asm("a1")) {
 }
 
 static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
-                             size_t polygonNum, Vector3D *vertex)
+                             size_t polygonNum, Vector3D *vertex, Vector3D *normal)
 {
-  size_t i;
+  int i;
 
   for (i = 0; i < polygonNum; i++) {
-    Vector3D *normal = &polygonExt[i].normal;
-
-    size_t p1 = polygon[i].p1;
-    size_t p2 = polygon[i].p2;
-    size_t p3 = polygon[i].p3;
+    int p1 = polygon[i].p1;
+    int p2 = polygon[i].p2;
+    int p3 = polygon[i].p3;
+    Vector3D unitNormal;
+    float angle;
 
     polygonExt[i].index = i;
+
     /*
      * NOTE: Don't use floating point comparison (i.e. max function) to select
      * a value. It's fragile and may be non-deterministic.
      */
     polygonExt[i].depth = vertex[p1].z + vertex[p2].z + vertex[p3].z;
 
-    /* Calculate polygon normal. */
-    {
-      Vector3D u, v;
+    /* Calculate angle between camera and surface normal. */
+    V3D_NormalizeToUnit(&unitNormal, &normal[i]);
 
-      V3D_Sub(&u, &vertex[p1], &vertex[p2]);
-      V3D_Sub(&v, &vertex[p2], &vertex[p3]);
+    angle = unitNormal.z;
 
-      V3D_Cross(normal, &u, &v);
-      V3D_Normalize(normal, normal, 255.0f);
-    }
+    polygonExt[i].color = (int)(angle * 255.0f);
 
-    if (normal->z >= 0) {
+    if (angle > 0)
       polygonExt[i].flags |= 1;
-      polygonExt[i].color = normal->z;
-    } else {
+    else
       polygonExt[i].flags &= ~1;
-      polygonExt[i].color = 0;
-    }
   }
 }
 
-static void Render(PixBufT *canvas, bool wireframe,
-                   PolygonExtT **sortedPolygonExt, TriangleT *polygon,
-                   size_t polygonNum, Vector3D *vertex)
+bool RenderFlatShading = false;
+bool RenderWireFrame = false;
+
+static void Render(PixBufT *canvas, PolygonExtT **sortedPolygonExt,
+                   TriangleT *polygon, size_t polygonNum,
+                   Vector3D *vertex, SurfaceT *surface)
 {
-  size_t j;
+  int j;
 
   for (j = 0; j < polygonNum; j++) {
     PolygonExtT *polyExt = sortedPolygonExt[j];
 
-    size_t i = polyExt->index;
-    size_t p1 = polygon[i].p1;
-    size_t p2 = polygon[i].p2;
-    size_t p3 = polygon[i].p3;
+    int i = polyExt->index;
+    int p1 = polygon[i].p1;
+    int p2 = polygon[i].p2;
+    int p3 = polygon[i].p3;
 
-    if (!polyExt->flags)
+    if ((vertex[p1].x < 0) || (vertex[p1].y < 0) ||
+        (vertex[p2].x < 0) || (vertex[p2].y < 0) ||
+        (vertex[p3].x < 0) || (vertex[p3].y < 0))
       continue;
 
-    canvas->fgColor = polyExt->color;
+    if ((vertex[p1].x >= canvas->width) || (vertex[p1].y >= canvas->height) ||
+        (vertex[p2].x >= canvas->width) || (vertex[p2].y >= canvas->height) ||
+        (vertex[p3].x >= canvas->width) || (vertex[p3].y >= canvas->height))
+      continue;
 
-    if (wireframe) {
+    if (!polyExt->flags && !surface[polygon[i].surface].sideness)
+      continue;
+
+    if (RenderFlatShading)
+      canvas->fgColor = polyExt->color;
+    else
+      canvas->fgColor = surface[polygon[i].surface].color.clut;
+
+    if (RenderWireFrame) {
       DrawLine(canvas, vertex[p1].x, vertex[p1].y, vertex[p2].x, vertex[p2].y);
       DrawLine(canvas, vertex[p2].x, vertex[p2].y, vertex[p3].x, vertex[p3].y);
       DrawLine(canvas, vertex[p3].x, vertex[p3].y, vertex[p1].x, vertex[p1].y);
@@ -112,19 +124,23 @@ void RenderSceneObject(SceneObjectT *self, PixBufT *canvas) {
   Transform3D(self->vertex, mesh->vertex, mesh->vertexNum,
               GetMatrix3D(self->ms, 0));
 
+  /* Apply transformations to surface normals */
+  Transform3D_2(self->surfaceNormal, mesh->surfaceNormal, mesh->polygonNum,
+                GetMatrix3D(self->ms, 0));
+
   /* Calculate polygon normals & depths. */
   UpdatePolygonExt(self->polygonExt, mesh->polygon, mesh->polygonNum,
-                   self->vertex);
+                   self->vertex, self->surfaceNormal);
 
   /* Sort polygons by depth. */
   TableSort((PtrT *)self->sortedPolygonExt,
             SortByDepth, 0, mesh->polygonNum - 1);
 
   ProjectTo2D(self->vertex, self->vertex, mesh->vertexNum,
-              canvas->width / 2, canvas->height / 2, 160.0f);
+              canvas->width / 2, canvas->height / 2, -160.0f);
 
   /* Render the object. */
-  Render(canvas, self->wireframe,
+  Render(canvas,
          self->sortedPolygonExt, mesh->polygon, mesh->polygonNum,
-         self->vertex);
+         self->vertex, mesh->surface);
 }

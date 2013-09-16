@@ -15,5 +15,6 @@ float V3D_Length(Vector3D *a);
 float V3D_Distance(Vector3D *a, Vector3D *b);
 void V3D_Scale(Vector3D *d, Vector3D *a, float s);
 void V3D_Normalize(Vector3D *d, Vector3D *a, float l);
+void V3D_NormalizeToUnit(Vector3D *d, Vector3D *a);
 
 #endif

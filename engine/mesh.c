@@ -150,7 +150,7 @@ void CalculateSurfaceNormals(MeshT *mesh) {
     V3D_Sub(&v, &mesh->vertex[p2], &mesh->vertex[p3]);
 
     V3D_Cross(normal, &u, &v);
-    V3D_Normalize(normal, normal, 1.0f);
+    V3D_NormalizeToUnit(normal, normal);
   }
 }
 
@@ -216,4 +216,15 @@ void CalculateVertexNormals(MeshT *mesh) {
 
     V3D_Normalize(&mesh->vertexNormal[i], &normal, 1.0f);
   }
+}
+
+/*
+ * Use provided palette to map surface RGB color to the palette. 
+ */
+void MeshApplyPalette(MeshT *mesh, PaletteT *palette) {
+  SurfaceT *surface = mesh->surface;
+  int i;
+
+  for (i = 0; i < mesh->surfaceNum; i++)
+    surface[i].color.clut = PaletteFindNearest(palette, surface[i].color.rgb);
 }
