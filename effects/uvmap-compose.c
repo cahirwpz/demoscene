@@ -28,8 +28,8 @@ void AddInitialResources() {
   ResAdd("Texture1Pal", NewPaletteFromFile("data/texture-128-01.pal"));
   ResAdd("Texture2", NewPixBufFromFile("data/texture-128-02.8"));
   ResAdd("Texture2Pal", NewPaletteFromFile("data/texture-128-02.pal"));
-  ResAdd("Map1", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
-  ResAdd("Map2", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
+  ResAdd("Map1", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
+  ResAdd("Map2", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("ComposeMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("ColFunc", NewColorFunc());
@@ -60,7 +60,7 @@ void SetupEffect() {
   UVMapGenerate4(map2);
   UVMapSetTexture(map2, R_("Texture2"));
 
-  ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, map2->map.normal.v));
+  ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, map2->map.fast.v));
 }
 
 /*

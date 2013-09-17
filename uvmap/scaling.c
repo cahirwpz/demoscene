@@ -1,3 +1,4 @@
+#include "std/debug.h"
 #include "std/memory.h"
 #include "uvmap/scaling.h"
 
@@ -95,9 +96,12 @@ MapExpand8x(uint8_t *dst, const int dwidth, Q16T *stepper,
 void UVMapScale8x(UVMapT *dstMap, UVMapT *srcMap) {
   Q16T *stepper = NewTable(Q16T, srcMap->width * (srcMap->height - 1));
 
-  MapExpand8x(dstMap->map.normal.u, dstMap->width, stepper,
+  ASSERT(srcMap->type == UV_ACCURATE, "Source map must be accurate.");
+  ASSERT(dstMap->type == UV_FAST, "Destination map must be fast.");
+
+  MapExpand8x(dstMap->map.fast.u, dstMap->width, stepper,
               srcMap->map.accurate.u, srcMap->width, srcMap->height);
-  MapExpand8x(dstMap->map.normal.v, dstMap->width, stepper,
+  MapExpand8x(dstMap->map.fast.v, dstMap->width, stepper,
               srcMap->map.accurate.v, srcMap->width, srcMap->height);
 
   MemUnref(stepper);

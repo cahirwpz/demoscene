@@ -30,7 +30,7 @@ void AddInitialResources() {
   ResAdd("Texture", NewPixBufFromFile("data/texture-shades.8"));
   ResAdd("TexturePal", NewPaletteFromFile("data/texture-shades.pal"));
   ResAdd("ColorMap", NewPixBufFromFile("data/texture-shades-map.8"));
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("Scene", NewScene());
@@ -68,10 +68,10 @@ void SetupEffect() {
   UVMapGenerate2(uvmap);
   UVMapSetTexture(uvmap, R_("Texture"));
 
-  ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.u));
+  ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u));
 
   PixBufBlit(R_("Orig"), 0, 0,
-             NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.u), NULL);
+             NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u), NULL);
 }
 
 /*
@@ -108,7 +108,7 @@ void RenderEffect(int frameNumber) {
   }
 
   if (EffectNum == 0) {
-    umap = NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.u);
+    umap = NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u);
 
     PixBufClear(shades);
     RenderScene(scene, shades);

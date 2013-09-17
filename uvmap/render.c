@@ -1,9 +1,9 @@
 #include "std/debug.h"
 #include "uvmap/render.h"
 
-static void RenderNormalUVMap(UVMapT *map, PixBufT *canvas) {
-  uint8_t *mapU = map->map.normal.u;
-  uint8_t *mapV = map->map.normal.v;
+static void RenderFastUVMap(UVMapT *map, PixBufT *canvas) {
+  uint8_t *mapU = map->map.fast.u;
+  uint8_t *mapV = map->map.fast.v;
   uint8_t *texture = map->texture->data;
   uint8_t *dst = canvas->data;
   int offsetU = map->offsetU;
@@ -52,8 +52,8 @@ static void RenderAccurateUVMap(UVMapT *map, PixBufT *canvas) {
 void UVMapRender(UVMapT *map, PixBufT *canvas) {
   ASSERT(map->texture, "No texture attached.");
 
-  if (map->type == UV_NORMAL) {
-    RenderNormalUVMap(map, canvas);
+  if (map->type == UV_FAST) {
+    RenderFastUVMap(map, canvas);
   } else if (map->type == UV_ACCURATE) {
     RenderAccurateUVMap(map, canvas);
   }
@@ -72,12 +72,12 @@ void UVMapComposeAndRender(PixBufT *canvas, PixBufT *composeMap,
 
     if (*cmap++ == 0) {
       texture = map1->texture->data;
-      u = map1->map.normal.u[i] + map1->offsetU;
-      v = map1->map.normal.v[i] + map1->offsetV;
+      u = map1->map.fast.u[i] + map1->offsetU;
+      v = map1->map.fast.v[i] + map1->offsetV;
     } else {
       texture = map2->texture->data;
-      u = map2->map.normal.u[i] + map2->offsetU;
-      v = map2->map.normal.v[i] + map2->offsetV;
+      u = map2->map.fast.u[i] + map2->offsetU;
+      v = map2->map.fast.v[i] + map2->offsetV;
     }
 
     *dst++ = texture[(u << 8) | v];

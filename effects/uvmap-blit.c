@@ -26,7 +26,7 @@ const int DEPTH = 8;
 void AddInitialResources() {
   ResAdd("Texture", NewPixBufFromFile("data/texture-01.8"));
   ResAdd("TexturePal", NewPaletteFromFile("data/texture-01.pal"));
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("OrigU", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("OrigV", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
@@ -60,9 +60,9 @@ void SetupEffect() {
     flare->data[i] /= 4;
 
   PixBufBlit(R_("OrigU"), 0, 0,
-             NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.u), NULL);
+             NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u), NULL);
   PixBufBlit(R_("OrigV"), 0, 0,
-             NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.v), NULL);
+             NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.v), NULL);
 }
 
 /*
@@ -85,7 +85,7 @@ void RenderChunky(int frameNumber) {
   int dv = 2 * frameNumber;
   int i;
 
-  umap = NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.u);
+  umap = NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u);
 
   UVMapSetOffset(R_("Map"), du, dv);
   PixBufBlit(umap, 0, 0, origU, NULL);

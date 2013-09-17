@@ -28,7 +28,7 @@ void AddInitialResources() {
   ResAdd("Texture", NewPixBufFromFile("data/texture-shades.8"));
   ResAdd("TexturePal", NewPaletteFromFile("data/texture-shades.pal"));
   ResAdd("ColorMap", NewPixBufFromFile("data/texture-shades-map.8"));
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("ColFunc", NewColorFunc());
@@ -52,7 +52,7 @@ void SetupEffect() {
   UVMapGenerate4(uvmap);
   UVMapSetTexture(uvmap, R_("Texture"));
 
-  ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.u));
+  ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u));
 }
 
 /*

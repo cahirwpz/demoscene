@@ -87,7 +87,7 @@ void ChangeMap(int newMap) {
 void AddInitialResources() {
   ResAdd("Texture", NewPixBufFromFile("data/texture.8"));
   ResAdd("TexturePal", NewPaletteFromFile("data/texture.pal"));
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
 }
 

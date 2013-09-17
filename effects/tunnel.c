@@ -38,7 +38,7 @@ void AddInitialResources() {
   ResAdd("CreditsPal", NewPaletteFromFile("data/code.pal"));
   ResAdd("WhelpzImg", NewPixBufFromFile("data/whelpz.8"));
   ResAdd("WhelpzPal", NewPaletteFromFile("data/whelpz.pal"));
-  ResAdd("TunnelMap", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
+  ResAdd("TunnelMap", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
 }
 

@@ -12,6 +12,7 @@
 #include "tools/frame.h"
 #include "tools/loopevent.h"
 
+#include "gfx/blit.h"
 #include "uvmap/render.h"
 #include "uvmap/scaling.h"
 
@@ -36,12 +37,14 @@ void AddInitialResources() {
 
   ResAddStatic("View", View);
   ResAddStatic("ViewTransformed", ViewTransformed);
-  ResAdd("Texture", NewPixBufFromFile("data/texture-01.8"));
-  ResAdd("TexturePal", NewPaletteFromFile("data/texture-01.pal"));
+  ResAdd("Texture", NewPixBufFromFile("data/texture-shades.8"));
+  ResAdd("TexturePal", NewPaletteFromFile("data/texture-shades.pal"));
+  ResAdd("ColorMap", NewPixBufFromFile("data/texture-shades-map.8"));
+  ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("ms3d", NewMatrixStack3D());
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("SmallMap", NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256));
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   
   UVMapSetTexture(R_("Map"), R_("Texture"));
 }
@@ -106,7 +109,7 @@ void RaytraceTunnel(UVMapT *map, Vector3D *view) {
 
       float a = FastAtan2(intersection.x, intersection.y);
       float u = a / (2 * M_PI);
-      float v = intersection.z * 0.25f;
+      float v = intersection.z / 8.0f;
 
       UVMapSet(map, i++, u, v);
 
@@ -122,6 +125,10 @@ void RenderEffect(int frameNumber) {
   UVMapT *smallMap = R_("SmallMap");
   UVMapT *map = R_("Map");
   PixBufT *canvas = R_("Canvas");
+  PixBufT *shades = R_("Shades");
+
+  shades->bgColor = frameNumber % 256;
+  PixBufClear(shades);
 
   CalculateView(frameNumber, view);
   RaytraceTunnel(smallMap, view);
@@ -129,6 +136,10 @@ void RenderEffect(int frameNumber) {
   UVMapSetTexture(map, R_("Texture"));
   UVMapSetOffset(map, 0, frameNumber);
   UVMapRender(map, canvas);
+
+  PixBufSetColorMap(shades, R_("ColorMap"), 0);
+  PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
+  PixBufBlit(canvas, 0, 0, shades, NULL);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
