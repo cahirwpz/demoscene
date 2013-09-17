@@ -1,20 +1,22 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-OBJS := blur.o colormap.o deformations.o flares.o layers.o object3d.o \
-	particles.o playaudio.o raytunnel.o tunnel.o uvmap-compose.o \
+OBJS := blur.o colormap.o flares.o layers.o object3d.o particles.o \
+	playaudio.o raytunnel.o tunnel.o uvmap.o uvmap-blit.o uvmap-compose.o \
 	uvmap-light.o vector2d.o startup.o
-BINS := blur colormap deformations flares flat-shading layers object3d \
-	particles playaudio raytunnel tunnel uvmap-compose uvmap-light vector2d 
+BINS := blur colormap flares flat-shading layers object3d particles playaudio \
+	raytunnel tunnel uvmap uvmap-blit uvmap-compose uvmap-light vector2d 
 LIBS := libgfx.a libtools.a libsystem.a libstd.a
 
 all:: $(BINS)
 
 colormap: startup.o colormap.o $(LIBS)
 
-deformations: CFLAGS += -Wno-unused
-deformations: startup.o deformations.o libtxtgen.a libuvmap.a $(LIBS)
+uvmap: CFLAGS += -Wno-unused
+uvmap: startup.o uvmap.o libtxtgen.a libuvmap.a $(LIBS)
+uvmap-blit: CFLAGS += -Wno-unused
+uvmap-blit: startup.o uvmap-blit.o libuvmap.a libtxtgen.a $(LIBS)
 uvmap-light: CFLAGS += -Wno-unused
-uvmap-light: startup.o uvmap-light.o libuvmap.a libengine.a $(LIBS)
+uvmap-light: startup.o uvmap-light.o libuvmap.a $(LIBS)
 uvmap-compose: CFLAGS += -Wno-unused
 uvmap-compose: startup.o uvmap-compose.o libuvmap.a $(LIBS)
 flat-shading: CFLAGS += -Wno-unused
@@ -35,6 +37,7 @@ archive:
 
 clean::
 	@$(RM) -v $(BINS)
+	@$(RM) -rvf binaries
 
 include $(TOPDIR)/Makefile.common
 

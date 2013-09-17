@@ -2,9 +2,8 @@
 #include "uvmap/generate.h"
 
 void UVMapGenerateTunnel(UVMapT *map,
-                         float radius, float aspectRatio,
-                         float centerX, float centerY,
-                         TunnelPetalsT *petals)
+                         float radius, int wrap, float aspectRatio,
+                         float centerX, float centerY, TunnelPetalsT *petals)
 {
   float dx = 1.0f / (int)map->width;
   float dy = 1.0f / (int)map->height;
@@ -24,7 +23,7 @@ void UVMapGenerateTunnel(UVMapT *map,
       float yc = (fy - centerY) * aspectRatio;
       float xc = (fx - centerX);
 
-      float a = atan2(xc, yc);
+      float a = atan2(xc, yc) * wrap;
       float d = sqrt(xc * xc + yc * yc) * scaleD;
       float z;
 

@@ -167,7 +167,7 @@ void SetupEffect() {
 
   PixBufClear(R_("Canvas"));
   GeneratePixels(flare, (GenPixelFuncT)LightNormalFalloff, &lightRadius);
-  PixBufSetBlitMode(flare, BLIT_SUBSTRACTIVE);
+  PixBufSetBlitMode(flare, BLIT_SUBSTRACTIVE_CLIP);
 }
 
 /*

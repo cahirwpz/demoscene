@@ -52,7 +52,7 @@ void SetupEffect() {
 
   PixBufClear(R_("Canvas"));
   GeneratePixels(flare, (GenPixelFuncT)LightNormalFalloff, &lightRadius);
-  PixBufSetBlitMode(flare, BLIT_ADDITIVE);
+  PixBufSetBlitMode(flare, BLIT_ADDITIVE_CLIP);
 
   {
     SplineT *splineX = R_("SplineX");

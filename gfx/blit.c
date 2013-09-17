@@ -34,6 +34,28 @@ PixBufBlitAdditive(uint8_t *dst, uint8_t *src,
       uint8_t a = *dst;
       uint8_t b = *src++;
 
+      *dst++ = a + b;
+    } while (--x);
+
+    src += sstride;
+    dst += dstride;
+  } while (--y);
+}
+
+__attribute__((regparm(4))) static void
+PixBufBlitAdditiveClip(uint8_t *dst, uint8_t *src,
+                       const int width, const int height,
+                       const int sstride, const int dstride)
+{
+  int y = height;
+
+  do {
+    int x = width;
+
+    do {
+      uint8_t a = *dst;
+      uint8_t b = *src++;
+
       if (a < (uint8_t)~b)
         *dst++ = a + b;
       else
@@ -45,10 +67,33 @@ PixBufBlitAdditive(uint8_t *dst, uint8_t *src,
   } while (--y);
 }
 
+
 __attribute__((regparm(4))) static void
 PixBufBlitSubstractive(uint8_t *dst, uint8_t *src,
                        const int width, const int height,
                        const int sstride, const int dstride)
+{
+  int y = height;
+
+  do {
+    int x = width;
+
+    do {
+      uint8_t a = *dst;
+      uint8_t b = *src++;
+
+      *dst++ = a - b;
+    } while (--x);
+
+    src += sstride;
+    dst += dstride;
+  } while (--y);
+}
+
+__attribute__((regparm(4))) static void
+PixBufBlitSubstractiveClip(uint8_t *dst, uint8_t *src,
+                           const int width, const int height,
+                           const int sstride, const int dstride)
 {
   int y = height;
 
@@ -259,8 +304,16 @@ void PixBufBlit(PixBufT *dbuf, int x, int y,
         PixBufBlitAdditive(dst, src, w, h, sstride, dstride);
         break;
 
+      case BLIT_ADDITIVE_CLIP:
+        PixBufBlitAdditiveClip(dst, src, w, h, sstride, dstride);
+        break;
+
       case BLIT_SUBSTRACTIVE:
         PixBufBlitSubstractive(dst, src, w, h, sstride, dstride);
+        break;
+
+      case BLIT_SUBSTRACTIVE_CLIP:
+        PixBufBlitSubstractiveClip(dst, src, w, h, sstride, dstride);
         break;
 
       case BLIT_COLOR_MAP:

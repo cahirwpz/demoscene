@@ -10,9 +10,8 @@ typedef struct {
 } TunnelPetalsT;
 
 void UVMapGenerateTunnel(UVMapT *tunnel,
-                         float radius, float aspectRatio,
-                         float centerX, float centerY,
-                         TunnelPetalsT *petals);
+                         float radius, int wrap, float aspectRatio,
+                         float centerX, float centerY, TunnelPetalsT *petals);
 void UVMapGenerateSine(UVMapT *map,
                        size_t xFreq, float xAmp, float xShift,
                        size_t yFreq, float yAmp, float yShift);

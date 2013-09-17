@@ -55,7 +55,7 @@ bool SetupDisplay() {
 void SetupEffect() {
   static TunnelPetalsT petals = { 3, 0.333333f, 0.33333f };
 
-  UVMapGenerateTunnel(R_("TunnelMap"), 32.0f, 16.0f / 9.0f, 0.5f, 0.5f, &petals);
+  UVMapGenerateTunnel(R_("TunnelMap"), 32.0f, 1, 16.0f / 9.0f, 0.5f, 0.5f, &petals);
 
   LinkPalettes(R_("TexturePal"), R_("WhelpzPal"), R_("CreditsPal"), NULL);
   LoadPalette(R_("TexturePal"));
