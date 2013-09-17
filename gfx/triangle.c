@@ -135,6 +135,7 @@ typedef struct Segment {
   uint8_t *pixels;
   size_t stride;
   uint8_t color;
+  int width, height;
 } SegmentT;
 
 static SegmentT segment;
@@ -143,23 +144,42 @@ static inline void InitSegment(PixBufT *canvas, int y) {
   segment.color  = canvas->fgColor;
   segment.stride = canvas->width;
   segment.pixels = canvas->data + y * canvas->width;
+  segment.width = canvas->width;
+  segment.height = canvas->height;
 }
 
 __regargs static void DrawTriangleSegment(EdgeScanT *left, EdgeScanT *right,
                                           int h)
 {
-  while (h-- > 0) {
-    int x = left->x;
-    int w = right->x - left->x;
+  int bottom = left->y + h;
+  int y;
 
-    uint8_t *pixels = segment.pixels + x;
-    uint8_t color = segment.color;
+  for (y = left->y; y < bottom; y++) {
+    if (y >= 0 && y < segment.height) {
+      int lx = left->x;
+      int rx = right->x;
 
-    LOG("Line: (%d, %d..%d)", left->y, left->x, right->x);
+      uint8_t *pixels = segment.pixels;
+      uint8_t color = segment.color;
 
-    do {
-      *pixels++ = color;
-    } while (--w >= 0);
+      if (lx < segment.width && rx >= 0) {
+        int w;
+
+        if (lx < 0)
+          lx = 0;
+        if (rx >= segment.width)
+          rx = segment.width - 1;
+
+        w = rx - lx;
+        pixels += lx;
+
+        LOG("Line: (%d, %d..%d)", left->y, left->x, right->x);
+
+        do {
+          *pixels++ = color;
+        } while (--w >= 0);
+      }
+    }
 
     segment.pixels += segment.stride;
     IterEdgeScan(left);

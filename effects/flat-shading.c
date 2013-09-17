@@ -102,7 +102,7 @@ void RenderEffect(int frameNumber) {
     MatrixStack3D *ms = GetObjectTranslation(scene, "Object");
 
     StackReset(ms);
-    PushScaling3D(ms, 1.2f, 1.2f, 1.2f);
+    PushScaling3D(ms, 1.75f, 1.75f, 1.75f);
     PushRotation3D(ms, 0, (float)(-frameNumber * 2), frameNumber);
     PushTranslation3D(ms, 0.0f, 0.0f, -2.0f);
   }

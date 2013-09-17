@@ -86,16 +86,6 @@ static void Render(PixBufT *canvas, PolygonExtT **sortedPolygonExt,
     int p2 = polygon[i].p2;
     int p3 = polygon[i].p3;
 
-    if ((vertex[p1].x < 0) || (vertex[p1].y < 0) ||
-        (vertex[p2].x < 0) || (vertex[p2].y < 0) ||
-        (vertex[p3].x < 0) || (vertex[p3].y < 0))
-      continue;
-
-    if ((vertex[p1].x >= canvas->width) || (vertex[p1].y >= canvas->height) ||
-        (vertex[p2].x >= canvas->width) || (vertex[p2].y >= canvas->height) ||
-        (vertex[p3].x >= canvas->width) || (vertex[p3].y >= canvas->height))
-      continue;
-
     if (!polyExt->flags && !surface[polygon[i].surface].sideness)
       continue;
 

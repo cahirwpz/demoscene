@@ -77,7 +77,7 @@ void RenderMesh(int frameNumber_) {
     MatrixStack3D *ms = GetObjectTranslation(scene, "Object");
 
     StackReset(ms);
-    PushScaling3D(ms, 0.5f + 0.25f * s, 0.5f + 0.25f * s, 0.5f + 0.25f * s);
+    PushScaling3D(ms, 0.75f + 0.5f * s, 0.75f + 0.5f * s, 0.75f + 0.5f * s);
     PushRotation3D(ms, 0, (float)(-frameNumber * 2), frameNumber);
     PushTranslation3D(ms, 0.0f, 0.0f, -2.0f);
   }

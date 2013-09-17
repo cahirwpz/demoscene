@@ -60,6 +60,11 @@ MeshT *NewMeshFromFile(const char *fileName) {
     memcpy(mesh->vertex, data, sizeof(Vector3D) * header->vertices);
     data += sizeof(Vector3D) * header->vertices;
 
+    for (i = 0; i < header->vertices; i++) {
+      mesh->vertex[i].y = - mesh->vertex[i].y;
+      mesh->vertex[i].z = - mesh->vertex[i].z;
+    }
+
     memcpy(mesh->polygon, data, sizeof(TriangleT) * header->polygons);
     data += sizeof(TriangleT) * header->polygons;
 

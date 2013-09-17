@@ -26,14 +26,15 @@ blur: startup.o blur.o $(LIBS)
 flares: startup.o flares.o libtxtgen.a $(LIBS)
 layers: startup.o layers.o $(LIBS)
 object3d: startup.o object3d.o libengine.a $(LIBS)
-playaudio: startup.o playaudio.o libaudio.a $(LIBS)
+playaudio: CFLAGS += -Wno-unused
+playaudio: startup.o playaudio.o libaudio.a libuvmap.a $(LIBS)
 particles: startup.o particles.o libtxtgen.a libengine.a $(LIBS)
 raytunnel: startup.o raytunnel.o libuvmap.a libengine.a $(LIBS)
 tunnel: startup.o tunnel.o libp61.a libuvmap.a libaudio.a $(LIBS)
 vector2d: startup.o vector2d.o $(LIBS)
 
 archive:
-	7z a "all-$$(date +%F).7z" $(BINS) data
+	7z a "all-$$(date +%F-%H%M).7z" $(BINS) data
 
 binaries:
 	7z a "bin-$$(date +%F-%H%M).7z" $(BINS)

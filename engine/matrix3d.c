@@ -148,8 +148,8 @@ void ProjectTo2D(Vector3D *dst, Vector3D *src, int n,
     float y = src[i].y;
     float z = src[i].z;
 
-    dst[i].x = - x / z * viewerZ + viewerX;
-    dst[i].y = - y / z * viewerZ + viewerY;
+    dst[i].x = x / z * viewerZ + viewerX;
+    dst[i].y = y / z * viewerZ + viewerY;
   }
 }
 
