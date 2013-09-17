@@ -36,7 +36,7 @@ archive:
 	7z a "all-$$(date +%F).7z" $(BINS) data
 
 binaries:
-	7z a "bin-$$(date +%F).7z" $(BINS)
+	7z a "bin-$$(date +%F-%H%M).7z" $(BINS)
 
 clean::
 	@$(RM) -v $(BINS) *.7z

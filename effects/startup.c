@@ -2,6 +2,7 @@
 #include <proto/exec.h>
 
 #include "std/debug.h"
+#include "std/exception.h"
 #include "std/resource.h"
 #include "system/check.h"
 #include "system/display.h"
@@ -10,9 +11,7 @@
 
 #include "startup.h"
 
-struct DosLibrary *DOSBase;
-struct GfxBase *GfxBase;
-struct IntuitionBase *IntuitionBase;
+int __nocommandline = 1;
 
 extern void MainLoop();
 extern bool SetupDisplay();
@@ -21,24 +20,34 @@ extern void SetupEffect();
 extern void AddInitialResources();
 
 int main() {
-  DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 39);
-  GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 39);
-  IntuitionBase = (struct IntuitionBase *)OpenLibrary("intuition.library", 39);
-
-  if (DOSBase && GfxBase && IntuitionBase && SystemCheck()) {
+  if (SystemCheck()) {
     LOG("Adding resources.");
     StartResourceManager();
-    AddInitialResources();
+
+    TRY {
+      AddInitialResources();
+    }
+    CATCH {
+      return 1;
+    }
+
     StartEventQueue();
 
     if (SetupDisplay()) {
       InstallVBlankIntServer();
-      LOG("Setting up the effect.");
-      SetupEffect();
-      LOG("Running up main loop.");
-      MainLoop();
-      LOG("Tearing down the effect.");
-      TearDownEffect();
+
+      TRY {
+        LOG("Setting up the effect.");
+        SetupEffect();
+        LOG("Running up main loop.");
+        MainLoop();
+        LOG("Tearing down the effect.");
+        TearDownEffect();
+      }
+      CATCH {
+        LOG("Effect crashed!");
+      }
+
       RemoveVBlankIntServer();
       KillDisplay();
     }
@@ -46,10 +55,6 @@ int main() {
     StopEventQueue();
     StopResourceManager();
   }
-
-  CloseLibrary((struct Library *)IntuitionBase);
-  CloseLibrary((struct Library *)GfxBase);
-  CloseLibrary((struct Library *)DOSBase);
 
   return 0;
 }
