@@ -120,16 +120,12 @@ void RaytraceTunnel(UVMapT *map, Vector3D *view) {
   } while (--h);
 }
 
-void RenderEffect(int frameNumber) {
-  Vector3D *view = R_("ViewTransformed");
-  UVMapT *smallMap = R_("SmallMap");
-  UVMapT *map = R_("Map");
-  PixBufT *canvas = R_("Canvas");
-  PixBufT *shades = R_("Shades");
-  int i;
+static void RenderShadeMap(PixBufT *shades, int16_t *map) {
+  int n = shades->width * shades->height;
+  uint8_t *dst = shades->data;
 
-  for (i = 0; i < shades->width * shades->height; i++) {
-    int16_t value = map->map.normal.v[i];
+  while (n--) {
+    int value = *map++;
 
     if (value < 0)
       value = -value;
@@ -138,8 +134,16 @@ void RenderEffect(int frameNumber) {
     if (value > 255)
       value = 255;
 
-    shades->data[i] = value;
+    *dst++ = value;
   }
+}
+
+void RenderEffect(int frameNumber) {
+  Vector3D *view = R_("ViewTransformed");
+  UVMapT *smallMap = R_("SmallMap");
+  UVMapT *map = R_("Map");
+  PixBufT *canvas = R_("Canvas");
+  PixBufT *shades = R_("Shades");
 
   CalculateView(frameNumber, view);
   RaytraceTunnel(smallMap, view);
@@ -147,6 +151,8 @@ void RenderEffect(int frameNumber) {
   UVMapSetTexture(map, R_("Texture"));
   UVMapSetOffset(map, 0, frameNumber);
   UVMapRender(map, canvas);
+
+  RenderShadeMap(shades, map->map.normal.v);
 
   PixBufSetColorMap(shades, R_("ColorMap"), 0);
   PixBufSetBlitMode(shades, BLIT_COLOR_MAP);

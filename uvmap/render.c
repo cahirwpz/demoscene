@@ -1,11 +1,10 @@
 #include "std/debug.h"
 #include "uvmap/render.h"
 
-static void RenderFastUVMap(UVMapT *map, PixBufT *canvas) {
+static void RenderFastUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
   uint8_t *mapU = map->map.fast.u;
   uint8_t *mapV = map->map.fast.v;
   uint8_t *texture = map->texture->data;
-  uint8_t *dst = canvas->data;
   int offsetU = map->offsetU;
   int offsetV = map->offsetV;
   int n = map->width * map->height;
@@ -17,27 +16,25 @@ static void RenderFastUVMap(UVMapT *map, PixBufT *canvas) {
   } while (--n);
 }
 
-static void RenderNormalUVMap(UVMapT *map, PixBufT *canvas) {
+static void RenderNormalUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
   int16_t *mapU = map->map.normal.u;
   int16_t *mapV = map->map.normal.v;
   uint8_t *texture = map->texture->data;
-  uint8_t *dst = canvas->data;
   int offsetU = map->offsetU;
   int offsetV = map->offsetV;
   int n = map->width * map->height;
 
   do {
-    uint8_t u = *mapU++ + offsetU;
-    uint8_t v = *mapV++ + offsetV;
-    *dst++ = texture[u << 8 | v];
+    int u = *mapU++ + offsetU;
+    int v = *mapV++ + offsetV;
+    *dst++ = texture[(uint8_t)u << 8 | (uint8_t)v];
   } while (--n);
 }
 
-static void RenderAccurateUVMap(UVMapT *map, PixBufT *canvas) {
+static void RenderAccurateUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
   Q16T *mapU = map->map.accurate.u;
   Q16T *mapV = map->map.accurate.v;
   PixBufT *texture = map->texture;
-  uint8_t *dst = canvas->data;
   int16_t offsetU = map->offsetV;
   int16_t offsetV = map->offsetU;
   int16_t textureW = map->textureW;
@@ -69,11 +66,11 @@ void UVMapRender(UVMapT *map, PixBufT *canvas) {
   ASSERT(map->texture, "No texture attached.");
 
   if (map->type == UV_FAST)
-    RenderFastUVMap(map, canvas);
+    RenderFastUVMap(map, canvas->data);
   else if (map->type == UV_NORMAL)
-    RenderNormalUVMap(map, canvas);
+    RenderNormalUVMap(map, canvas->data);
   else if (map->type == UV_ACCURATE)
-    RenderAccurateUVMap(map, canvas);
+    RenderAccurateUVMap(map, canvas->data);
 }
 
 void UVMapComposeAndRender(PixBufT *canvas, PixBufT *composeMap,
