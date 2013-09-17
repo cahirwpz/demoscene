@@ -113,12 +113,17 @@ cdef class Box:
       pixel = data[i]
       j = pixel.comp(axis)
       values[j] += 1
-    values = [i for i in values if i > 0]
 
-    if median == values[-1]:
-      median = values[-2]
-    if median == values[0]:
-      median = values[1]
+    medians = []
+
+    for i in range(256):
+      if values[i] > 0:
+        medians.append(i)
+
+    if median == medians[-1]:
+      median = medians[-2]
+    if median == medians[0]:
+      median = medians[1]
 
     i = self.begin
     j = self.end - 1
