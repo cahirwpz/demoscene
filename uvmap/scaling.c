@@ -1,6 +1,11 @@
 #include "std/memory.h"
 #include "uvmap/scaling.h"
 
+int UVMapExpanderThreshold = 224;
+
+static const Q16T PLUS = { 256, 0 };
+static const Q16T MINUS = { -256, 0 };
+
 static inline Q16T Div8(Q16T x) {
   asm("asrl #3,%0"
       : "+d" (x)
@@ -15,7 +20,14 @@ StepperFromMap(Q16T *map, Q16T *stepper, const int width, const int height) {
   Q16T *row2 = map + width;
 
   do {
-    *stepper++ = Div8(SubQ16(*row2++, *row1++));
+    Q16T diff = SubQ16(*row2++, *row1++);
+
+    if (diff.integer > UVMapExpanderThreshold)
+      IAddQ16(&diff, MINUS);
+    if (diff.integer < -UVMapExpanderThreshold)
+      IAddQ16(&diff, PLUS);
+
+    *stepper++ = Div8(diff);
   } while (--n);
 }
 
@@ -23,7 +35,14 @@ __regargs static void
 ExpandLine8x(uint8_t *dst, Q16T *src, int width) {
   do {
     Q16T x = *src++;
-    Q16T dx = Div8(SubQ16(*src, x));
+    Q16T dx = SubQ16(*src, x);
+
+    if (dx.integer > UVMapExpanderThreshold)
+      IAddQ16(&dx, MINUS);
+    if (dx.integer < -UVMapExpanderThreshold)
+      IAddQ16(&dx, PLUS);
+
+    dx = Div8(dx);
 
     *dst++ = x.integer; /* 0 */
     x = AddQ16(x, dx);

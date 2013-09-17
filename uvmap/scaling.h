@@ -3,6 +3,8 @@
 
 #include "uvmap/common.h"
 
+extern int UVMapExpanderThreshold;
+
 void UVMapScale8x(UVMapT *dstMap, UVMapT *srcMap);
 
 #endif
