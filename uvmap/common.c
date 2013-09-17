@@ -8,6 +8,9 @@ static void DeleteUVMap(UVMapT *map) {
   if (map->type == UV_FAST) {
     MemUnref(map->map.fast.u);
     MemUnref(map->map.fast.v);
+  } else if (map->type == UV_NORMAL) {
+    MemUnref(map->map.normal.u);
+    MemUnref(map->map.normal.v);
   } else if (map->type == UV_ACCURATE) {
     MemUnref(map->map.accurate.u);
     MemUnref(map->map.accurate.v);
@@ -30,6 +33,9 @@ UVMapT *NewUVMap(size_t width, size_t height, UVMapTypeT type,
            "In optimized mode texture size has to be 256x256.");
     map->map.fast.u = NewTable(uint8_t, width * height);
     map->map.fast.v = NewTable(uint8_t, width * height);
+  } else if (type == UV_NORMAL) {
+    map->map.normal.u = NewTable(int16_t, width * height);
+    map->map.normal.v = NewTable(int16_t, width * height);
   } else if (type == UV_ACCURATE) {
     map->map.accurate.u = NewTable(Q16T, width * height);
     map->map.accurate.v = NewTable(Q16T, width * height);
@@ -122,8 +128,11 @@ __regargs void UVMapSet(UVMapT *map, size_t i, float u, float v) {
   v *= (int)map->textureH;
 
   if (map->type == UV_FAST) {
-    map->map.fast.u[i] = (int)lroundf(u) & 0xff;
-    map->map.fast.v[i] = (int)lroundf(v) & 0xff;
+    map->map.fast.u[i] = (uint8_t)lroundf(u) & 0xff;
+    map->map.fast.v[i] = (uint8_t)lroundf(v) & 0xff;
+  } else if (map->type == UV_NORMAL) {
+    map->map.normal.u[i] = (int16_t)lroundf(u);
+    map->map.normal.v[i] = (int16_t)lroundf(v);
   } else if (map->type == UV_ACCURATE) {
     map->map.accurate.u[i] = CastFloatQ16(u);
     map->map.accurate.v[i] = CastFloatQ16(v);

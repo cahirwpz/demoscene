@@ -5,7 +5,7 @@
 #include "std/fp16.h"
 #include "gfx/pixbuf.h"
 
-typedef enum { UV_FAST, UV_ACCURATE } UVMapTypeT;
+typedef enum { UV_FAST, UV_NORMAL, UV_ACCURATE } UVMapTypeT;
 
 typedef struct UVMap {
   UVMapTypeT type;
@@ -17,6 +17,9 @@ typedef struct UVMap {
     struct {
       uint8_t *u, *v;
     } fast;
+    struct {
+      int16_t *u, *v;
+    } normal;
     struct {
       Q16T *u, *v;
     } accurate;

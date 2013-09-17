@@ -44,7 +44,7 @@ void AddInitialResources() {
   ResAdd("ms3d", NewMatrixStack3D());
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("SmallMap", NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256));
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
   
   UVMapSetTexture(R_("Map"), R_("Texture"));
 }
@@ -126,9 +126,20 @@ void RenderEffect(int frameNumber) {
   UVMapT *map = R_("Map");
   PixBufT *canvas = R_("Canvas");
   PixBufT *shades = R_("Shades");
+  int i;
 
-  shades->bgColor = frameNumber % 256;
-  PixBufClear(shades);
+  for (i = 0; i < shades->width * shades->height; i++) {
+    int16_t value = map->map.normal.v[i];
+
+    if (value < 0)
+      value = -value;
+    if (value < 128)
+      value = 128;
+    if (value > 255)
+      value = 255;
+
+    shades->data[i] = value;
+  }
 
   CalculateView(frameNumber, view);
   RaytraceTunnel(smallMap, view);

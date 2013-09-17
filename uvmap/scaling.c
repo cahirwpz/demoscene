@@ -33,7 +33,7 @@ StepperFromMap(Q16T *map, Q16T *stepper, const int width, const int height) {
 }
 
 __regargs static void
-ExpandLine8x(uint8_t *dst, Q16T *src, int width) {
+ExpandLine8x(int16_t *dst, Q16T *src, int width) {
   do {
     Q16T x = *src++;
     Q16T dx = SubQ16(*src, x);
@@ -71,7 +71,7 @@ Increment(Q16T *x, Q16T *dx, int width) {
 }
 
 __regargs static void
-MapExpand8x(uint8_t *dst, const int dwidth, Q16T *stepper,
+MapExpand8x(int16_t *dst, const int dwidth, Q16T *stepper,
             Q16T *src, const int width, const int height)
 {
   int i = height - 1;
@@ -97,11 +97,11 @@ void UVMapScale8x(UVMapT *dstMap, UVMapT *srcMap) {
   Q16T *stepper = NewTable(Q16T, srcMap->width * (srcMap->height - 1));
 
   ASSERT(srcMap->type == UV_ACCURATE, "Source map must be accurate.");
-  ASSERT(dstMap->type == UV_FAST, "Destination map must be fast.");
+  ASSERT(dstMap->type == UV_NORMAL, "Destination map must be normal.");
 
-  MapExpand8x(dstMap->map.fast.u, dstMap->width, stepper,
+  MapExpand8x(dstMap->map.normal.u, dstMap->width, stepper,
               srcMap->map.accurate.u, srcMap->width, srcMap->height);
-  MapExpand8x(dstMap->map.fast.v, dstMap->width, stepper,
+  MapExpand8x(dstMap->map.normal.v, dstMap->width, stepper,
               srcMap->map.accurate.v, srcMap->width, srcMap->height);
 
   MemUnref(stepper);
