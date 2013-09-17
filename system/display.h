@@ -14,6 +14,7 @@ RastPortT *GetCurrentRastPort();
 void LoadPalette(PaletteT *palette);
 
 bool InitDisplay(int width, int height, int depth);
+bool ChangeDisplay(int width, int height, int depth);
 void KillDisplay();
 void DisplaySwap();
 

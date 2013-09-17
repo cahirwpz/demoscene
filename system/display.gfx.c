@@ -52,14 +52,22 @@ static ViewPortT *NewViewPort(int width, int height, int depth) {
   return NULL;
 }
 
-static struct TagItem VideoCtrlTags[] = {
+static void ConfigureView(ViewT *view, int width, int height) {
   { VTAG_BORDERBLANK_SET, TRUE },
+  /* Center view */
+  if (height < 256)
+    view->DyOffset += (256 - height) / 2;
+  if (height > 288 && height < 512)
+    view->DyOffset += (512 - height) / 4;
+}
+
+static struct TagItem VideoCtrlTags[] = {
   { VTAG_BORDERSPRITE_SET, TRUE },
   { VTAG_SPRITERESN_SET, SPRITERESN_ECS },
   { VTAG_END_CM, 0L }
 };
 
-void ConfigureViewPort(ViewPortT *viewPort) {
+static void ConfigureViewPort(ViewPortT *viewPort) {
   VideoControl(viewPort->ColorMap, VideoCtrlTags);
 }
 
@@ -219,6 +227,14 @@ void LoadPalette(PaletteT *palette) {
   LoadRGB32(TheRaster->ViewPort, (ULONG *)ThePalette);
 }
 
+/* Clean-up Intuition sprites */
+static void ClearSprites() {
+  int i;
+
+  for (i = 0; i < 8; i++)
+    FreeSprite(i);
+}
+
 bool InitDisplay(int width, int height, int depth) {
   if (!TheRaster) {
     if ((TheRaster = NewDBufRaster(width, height, depth))) {
@@ -228,12 +244,7 @@ bool InitDisplay(int width, int height, int depth) {
       /* Create new view. */
       TheView = NewRecord(ViewT);
       InitView(TheView);
-
-      /* Center view */
-      if (height < 256)
-        TheView->DyOffset += (256 - height) / 2;
-      if (height > 288 && height < 512)
-        TheView->DyOffset += (512 - height) / 4;
+      ConfigureView(TheView, width, height);
 
       /* Attach view port. */
       TheView->ViewPort = TheRaster->ViewPort;
@@ -243,14 +254,42 @@ bool InitDisplay(int width, int height, int depth) {
       /* Load new view. */
       MrgCop(TheView);
       LoadView(TheView);
+      ClearSprites();
 
-      /* Clean-up Intuition sprites */
-      {
-        int i;
+      return true;
+    }
+  }
 
-        for (i = 0; i < 8; i++)
-          FreeSprite(i);
-      }
+  return false;
+}
+
+bool ChangeDisplay(int width, int height, int depth) {
+  if (TheRaster) {
+    ViewT *OldView = TheView;
+    DBufRasterT *OldRaster = TheRaster;
+
+    if ((TheRaster = NewDBufRaster(width, height, depth))) {
+      /* Create new view. */
+      TheView = NewRecord(ViewT);
+      InitView(TheView);
+      ConfigureView(TheView, width, height);
+
+      /* Attach view port. */
+      TheView->ViewPort = TheRaster->ViewPort;
+      ConfigureViewPort(TheRaster->ViewPort);
+      MakeVPort(TheView, TheRaster->ViewPort);
+
+      /* Load new view. */
+      MrgCop(TheView);
+      LoadView(TheView);
+      ClearSprites();
+
+      FreeCprList(OldView->LOFCprList);                                                                                                                                                  
+      if (OldView->SHFCprList)
+        FreeCprList(OldView->SHFCprList);
+
+      MemUnref(OldView);
+      MemUnref(OldRaster);
 
       return true;
     }
