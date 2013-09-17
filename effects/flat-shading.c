@@ -35,6 +35,7 @@ void AddInitialResources() {
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("Scene", NewScene());
   ResAdd("Mesh", NewMeshFromFile("data/konus.robj"));
+  ResAdd("Orig", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
 
   {
     MeshT *mesh = R_("Mesh");
@@ -68,6 +69,9 @@ void SetupEffect() {
   UVMapSetTexture(uvmap, R_("Texture"));
 
   ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.u));
+
+  PixBufBlit(R_("Orig"), 0, 0,
+             NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.u), NULL);
 }
 
 /*
@@ -79,10 +83,15 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
+
+static int EffectNum = 1;
+
 void RenderEffect(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
   UVMapT *uvmap = R_("Map");
   PixBufT *shades = R_("Shades");
+  PixBufT *orig = R_("Orig");
+  PixBufT *umap;
 
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
@@ -98,16 +107,32 @@ void RenderEffect(int frameNumber) {
     PushTranslation3D(ms, 0.0f, 0.0f, -2.0f);
   }
 
-  UVMapSetOffset(uvmap, du, dv);
-  UVMapRender(uvmap, canvas);
+  if (EffectNum == 0) {
+    umap = NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.normal.u);
 
-  PixBufClear(shades);
-  RenderScene(scene, shades);
+    PixBufClear(shades);
+    RenderScene(scene, shades);
 
-  PixBufSetColorMap(shades, R_("ColorMap"), 0);
-  PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
+    PixBufSetBlitMode(shades, BLIT_ADDITIVE);
+    PixBufBlit(umap, 0, 0, R_("Orig"), NULL);
+    PixBufBlit(umap, 0, 0, shades, NULL);
 
-  PixBufBlit(canvas, 0, 0, shades, NULL);
+    UVMapSetOffset(uvmap, du, dv);
+    UVMapRender(uvmap, canvas);
+
+    MemUnref(umap);
+  } else {
+    UVMapSetOffset(uvmap, du, dv);
+    UVMapRender(uvmap, canvas);
+
+    PixBufClear(shades);
+    RenderScene(scene, shades);
+
+    PixBufSetColorMap(shades, R_("ColorMap"), 0);
+    PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
+
+    PixBufBlit(canvas, 0, 0, shades, NULL);
+  }
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
@@ -122,6 +147,11 @@ void MainLoop() {
 
   do {
     int frameNumber = GetVBlankCounter();
+
+    if (event == LOOP_NEXT)
+      EffectNum = (EffectNum + 1) % 2;
+    if (event == LOOP_PREV)
+      EffectNum = (EffectNum - 1) % 2;
 
     RenderEffect(frameNumber);
     RenderFrameNumber(frameNumber);

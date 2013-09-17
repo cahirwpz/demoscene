@@ -1,6 +1,5 @@
 blur
 colormap
-deformations
 flares
 flat-shading
 layers
@@ -9,6 +8,9 @@ particles
 playaudio
 raytunnel
 tunnel
+uvmap
+uvmap-blit
 uvmap-compose
 uvmap-light
 vector2d
+*.7z

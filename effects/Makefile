@@ -33,10 +33,13 @@ tunnel: startup.o tunnel.o libp61.a libuvmap.a libaudio.a $(LIBS)
 vector2d: startup.o vector2d.o $(LIBS)
 
 archive:
-	7z a "bins-$$(date +%F).7z" $(BINS) data
+	7z a "all-$$(date +%F).7z" $(BINS) data
+
+binaries:
+	7z a "bin-$$(date +%F).7z" $(BINS)
 
 clean::
-	@$(RM) -v $(BINS)
+	@$(RM) -v $(BINS) *.7z
 	@$(RM) -rvf binaries
 
 include $(TOPDIR)/Makefile.common
