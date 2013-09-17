@@ -39,6 +39,11 @@ static ViewPortT *NewViewPort(int width, int height, int depth) {
   viewPort->RasInfo = NewRecord(struct RasInfo);
   viewPort->ColorMap = GetColorMap(1 << depth);
 
+  if (width > 360)
+    viewPort->Modes |= HIRES;
+  if (height > 288)
+    viewPort->Modes |= LACE;
+
   if (viewPort->RasInfo && viewPort->ColorMap)
     return viewPort;
 
@@ -227,6 +232,8 @@ bool InitDisplay(int width, int height, int depth) {
       /* Center view */
       if (height < 256)
         TheView->DyOffset += (256 - height) / 2;
+      if (height > 288 && height < 512)
+        TheView->DyOffset += (512 - height) / 4;
 
       /* Attach view port. */
       TheView->ViewPort = TheRaster->ViewPort;
@@ -245,11 +252,11 @@ bool InitDisplay(int width, int height, int depth) {
           FreeSprite(i);
       }
 
-      return TRUE;
+      return true;
     }
   }
 
-  return FALSE;
+  return false;
 }
 
 void KillDisplay() {
