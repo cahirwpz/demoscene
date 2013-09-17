@@ -4,6 +4,7 @@
 
 #include "gfx/blit.h"
 #include "gfx/colorfunc.h"
+#include "gfx/ellipse.h"
 #include "gfx/palette.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
@@ -73,27 +74,36 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
+
+static int EffectNum = 0;
+
 void RenderChunky(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
   PixBufT *compMap = R_("ComposeMap");
   UVMapT *map1 = R_("Map1");
   UVMapT *map2 = R_("Map2");
   PixBufT *comp = R_("Component");
-  uint8_t *cfunc = R_("ColFunc");
-
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
 
-  {
+  if (EffectNum == 0) {
+    uint8_t *cfunc = R_("ColFunc");
     int i;
 
     for (i = 0; i < 256; i++)
       cfunc[i] = ((128 - ((frameNumber * 2) % 256 + i)) & 0xff) >= 128 ? 1 : 0;
-  }
 
-  PixBufSetColorFunc(comp, cfunc);
-  PixBufSetBlitMode(comp, BLIT_COLOR_FUNC);
-  PixBufBlit(compMap, 0, 0, comp, NULL);
+    PixBufSetColorFunc(comp, cfunc);
+    PixBufSetBlitMode(comp, BLIT_COLOR_FUNC);
+    PixBufBlit(compMap, 0, 0, comp, NULL);
+  } else {
+    PixBufClear(compMap);
+    compMap->fgColor = 1;
+    DrawEllipse(compMap,
+                160, 128,
+                40 + sin((float)frameNumber / (4.0f * M_PI)) * 40.0f,
+                32 + sin((float)frameNumber / (4.0f * M_PI)) * 32.0f);
+  }
 
   UVMapSetOffset(map1, du, dv);
   UVMapSetOffset(map2, -du, -dv);
@@ -112,6 +122,11 @@ void MainLoop() {
 
   do {
     int frameNumber = GetVBlankCounter();
+
+    if (event == LOOP_NEXT)
+      EffectNum = (EffectNum + 1) % 2;
+    if (event == LOOP_PREV)
+      EffectNum = (EffectNum - 1) % 2;
 
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
