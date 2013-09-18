@@ -18,12 +18,17 @@
     "RaycastTexturePal": { "type": "palette", "path": "data/raycast-208.pal" },
     "RaycastColorMap": { "type": "image", "path": "data/raycast-shades.8" },
     "WhelpzLogoImg": { "type": "image", "path": "data/rork-logo_whelpz_02-48.8" },
-    "WhelpzLogoPal": { "type": "palette", "path": "data/rork-logo_whelpz_02-48.pal" }
+    "WhelpzLogoPal": { "type": "palette", "path": "data/rork-logo_whelpz_02-48.pal" },
+    "BackgroundImg": { "type": "image", "path": "data/background.8" },
+    "CompTxt0Img": { "type": "image", "path": "data/compose-0-128.8" },
+    "CompTxt0Pal": { "type": "palette", "path": "data/compose-0-128.pal" },
+    "CompTxt1Img": { "type": "image", "path": "data/compose-1-128.8" },
+    "CompTxt1Pal": { "type": "palette", "path": "data/compose-1-128.pal" }
   },
   "timeline": [
   {
     "type":  "timeslice",
-    "range": [0, -1],
+    "range": [0, [64, "beat"]],
     "unit":  [1, "beat"],
     "parts": [
     {
@@ -32,6 +37,7 @@
       "set": {
         "ClipartImg" : { "resource": "WhelpzLogoImg" },
         "ThePalette" : { "resource": "RaycastTexturePal" },
+        "LightMap" : { "resource": "BackgroundImg" },
         "RaycastTexture" : { "resource": "RaycastTextureImg" },
         "ClipartY" : 28
       },
@@ -59,9 +65,26 @@
       "call": ["RenderRaycastLight"]
     }, {
       "type": "each-frame", "range": [22, 42],
-      "call": ["BlitClipartToCanvas"]
+      "call": ["BlitLightMapToCanvas", "BlitClipartToCanvas"]
     }
     ]
+  }, {
+    "type":  "timeslice",
+    "range": [[64, "beat"], -1],
+    "unit":  [1, "beat"],
+    "parts": [{
+      "type": "once", "range": [0, -1],
+      "set": {
+        "ThePalette" : { "resource": "CompTxt0Pal" }
+      },
+      "call": ["ReloadPalette"]
+    }, {
+      "type": "each-frame", "range": [8, -1],
+      "call": ["CalculateComposeMap"]
+    }, {
+      "type": "each-frame", "range": [0, -1],
+      "call": ["ComposeMaps"]
+    }]
   }, {
     "type":  "each-frame",
     "range": [0, -1],

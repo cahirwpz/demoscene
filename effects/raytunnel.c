@@ -4,14 +4,13 @@
 #include "std/memory.h"
 #include "std/resource.h"
 
-#include "engine/ms3d.h"
-
 #include "system/c2p.h"
 #include "system/display.h"
 #include "system/vblank.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
 
+#include "engine/matrix3d.h"
 #include "gfx/blit.h"
 #include "uvmap/raycast.h"
 #include "uvmap/render.h"
@@ -45,7 +44,6 @@ void AddInitialResources() {
   ResAdd("TexturePal", NewPaletteFromFile("data/texture-shades.pal"));
   ResAdd("ColorMap", NewPixBufFromFile("data/texture-shades-map.8"));
   ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAdd("ms3d", NewMatrixStack3D());
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("SmallMap", NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256));
   ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));

@@ -6,11 +6,13 @@
 #include "audio/stream.h"
 #include "engine/object.h"
 #include "engine/scene.h"
+#include "uvmap/misc.h"
 #include "uvmap/generate.h"
 #include "uvmap/raycast.h"
 #include "uvmap/render.h"
 #include "uvmap/scaling.h"
 #include "gfx/blit.h"
+#include "gfx/colorfunc.h"
 #include "gfx/colors.h"
 #include "gfx/palette.h"
 
@@ -82,6 +84,7 @@ void BeginDemo() {
  */
 void KillDemo() {
   UnlinkPalettes(R_("RaycastTexturePal"));
+  UnlinkPalettes(R_("CompTxt0Pal"));
 
   AudioStreamStop(TheMusic);
 
@@ -113,13 +116,24 @@ void SetupResources() {
 
   ResAdd("RaycastMap", NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256));
   ResAdd("UVMap", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
+  ResAdd("UVMapA", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
+  ResAdd("UVMapB", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
 
-  ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-
-  ResAdd("ViewMatrixStack", NewMatrixStack3D());
+  ResAdd("ComposeMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
+  ResAdd("ShadeMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
 
   LinkPalettes(R_("RaycastTexturePal"), R_("WhelpzLogoPal"), NULL);
   PixBufRemap(R_("WhelpzLogoImg"), R_("WhelpzLogoPal"));
+
+  UVMapGenerate3(R_("UVMapA"));
+  UVMapSetTexture(R_("UVMapA"), R_("CompTxt0Img"));
+  UVMapGenerate4(R_("UVMapB"));
+  UVMapSetTexture(R_("UVMapB"), R_("CompTxt1Img"));
+
+  LinkPalettes(R_("CompTxt0Pal"), R_("CompTxt1Pal"), NULL);
+  PixBufRemap(R_("CompTxt1Img"), R_("CompTxt1Pal"));
+
+  ResAdd("ColorFunc", NewColorFunc());
 }
 
 /*** Raycast *****************************************************************/
@@ -180,7 +194,7 @@ CALLBACK(RaycastCalculateView) {
 CALLBACK(RenderRaycast) {
   UVMapT *map = R_("UVMap");
   UVMapT *smallMap = R_("RaycastMap");
-  PixBufT *shades = R_("Shades");
+  PixBufT *shades = R_("ShadeMap");
 
   RaycastTunnel(smallMap, CameraView.Transformed);
   UVMapScale8x(map, smallMap);
@@ -191,7 +205,7 @@ CALLBACK(RenderRaycast) {
 
 CALLBACK(CalculateShadeMap1) {
   UVMapT *uvmap = R_("UVMap");
-  PixBufT *shades = R_("Shades");
+  PixBufT *shades = R_("ShadeMap");
   int16_t *map = uvmap->map.normal.v;
   uint8_t *dst = shades->data;
   int n = shades->width * shades->height;
@@ -218,7 +232,7 @@ CALLBACK(CalculateShadeMap1) {
 
 CALLBACK(CalculateShadeMap2) {
   UVMapT *uvmap = R_("UVMap");
-  PixBufT *shades = R_("Shades");
+  PixBufT *shades = R_("ShadeMap");
   int16_t *map = uvmap->map.normal.v;
   uint8_t *dst = shades->data;
   int n = shades->width * shades->height;
@@ -242,11 +256,50 @@ CALLBACK(CalculateShadeMap2) {
 
 CALLBACK(RenderRaycastLight) {
   UVMapT *map = R_("UVMap");
-  PixBufT *shades = R_("Shades");
+  PixBufT *shades = R_("ShadeMap");
 
   PixBufSetColorMap(shades, R_("RaycastColorMap"), 0);
   PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
   PixBufBlit(TheCanvas, 0, 0, shades, NULL);
+}
+
+PARAMETER(PixBufT *, LightMap, NULL);
+
+CALLBACK(BlitLightMapToCanvas) {
+  PixBufSetColorMap(LightMap, R_("RaycastColorMap"), 0);
+  PixBufSetBlitMode(LightMap, BLIT_COLOR_MAP);
+  PixBufBlit(TheCanvas, 0, 0, LightMap, NULL);
+}
+
+/*** Composition *************************************************************/
+
+CALLBACK(CalculateComposeMap) {
+  uint8_t *cfunc = R_("ColorFunc");
+  UVMapT *map = R_("UVMapB");
+  PixBufT *comp = NewPixBufWrapper(WIDTH, HEIGHT, map->map.fast.v);
+  PixBufT *compMap = R_("ComposeMap");
+  int i;
+
+  for (i = 0; i < 256; i++)
+    cfunc[i] = ((128 - ((frame->number * 2) % 256 + i)) & 0xff) >= 128 ? 1 : 0;
+
+  PixBufSetColorFunc(comp, cfunc);
+  PixBufSetBlitMode(comp, BLIT_COLOR_FUNC);
+  PixBufBlit(compMap, 0, 0, comp, NULL);
+
+  MemUnref(comp);
+}
+
+CALLBACK(ComposeMaps) {
+  UVMapT *map1 = R_("UVMapA");
+  UVMapT *map2 = R_("UVMapB");
+  PixBufT *compMap = R_("ComposeMap");
+  int du = 2 * frame->number;
+  int dv = 4 * frame->number;
+
+  UVMapSetOffset(map1, du, dv);
+  UVMapSetOffset(map2, -du, -dv);
+  UVMapComposeAndRender(TheCanvas, compMap, map1, map2);
 }
 
 /*****************************************************************************/

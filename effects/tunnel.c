@@ -95,14 +95,14 @@ void CyclicHue(int frameNumber, HSL *hsl) {
 }
 
 void PulsingSaturation(int frameNumber, HSL *hsl) {
-  float s = sin(frameNumber * 3.14159265f / 50.0f) * 1.00f;
+  float s = sin(frameNumber * M_PI / 50.0f) * 1.00f;
   float change = (s > 0.0f) ? (1.0f - hsl->s) : (hsl->s);
 
   hsl->s += change * s;
 }
 
 void PulsingLuminosity(int frameNumber, HSL *hsl) {
-  float s = sin(frameNumber * 3.14159265f / 12.5f) * 0.66f;
+  float s = sin(frameNumber * M_PI / 12.5f) * 0.66f;
   float change = (s > 0.0f) ? (1.0f - hsl->l) : (hsl->l);
 
   hsl->l += change * s;

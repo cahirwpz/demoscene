@@ -61,6 +61,7 @@ static void ConfigureView(ViewT *view, int width, int height) {
 }
 
 static struct TagItem VideoCtrlTags[] = {
+  { VTAG_BORDERBLANK_SET, TRUE },
   { VTAG_BORDERSPRITE_SET, TRUE },
   { VTAG_SPRITERESN_SET, SPRITERESN_ECS },
   { VTAG_END_CM, 0L }

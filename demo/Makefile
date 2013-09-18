@@ -19,8 +19,9 @@ demo.o:: WFLAGS += -Wno-error
 	@echo "SYMS $(subst $(TOPDIR)/,,$(realpath $<))"
 	@./gen-bindings.py $< >$@
 
-archive: spy-shs10
-	lha a $^.lha $^ data
+archive: wpz-wcca
+	rm -f $^.7z
+	7z a $^.7z $^ $^.json data/*.{8,pal,robj} 
 
 clean::
 	@$(RM) -v $(BINS) *.lha *.syms
