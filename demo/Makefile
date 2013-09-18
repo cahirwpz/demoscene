@@ -1,18 +1,19 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-BINS := spy-shs10 wpz-noname
-OBJS := spy-shs10.o wpz-noname.o config.o timeline.o demo.o
-LIBS := libaudio.a libuvmap.a libjson.a libtools.a libgfx.a libsystem.a \
-	libstd.a 
+BINS := spy-shs10 wpz-wcca
+OBJS := spy-shs10.o wpz-wcca.o config.o timeline.o demo.o
+LIBS := libaudio.a libengine.a libuvmap.a libjson.a libtools.a libgfx.a \
+	libsystem.a libstd.a 
 
-all:: spy-shs10.syms wpz-noname.syms $(BINS)
+all:: spy-shs10.syms wpz-wcca.syms $(BINS)
 
 spy-shs10: spy-shs10.o config.o timeline.o demo.o $(LIBS)
 
-wpz-noname: wpz-noname.o config.o timeline.o demo.o $(LIBS)
+wpz-wcca: wpz-wcca.o config.o timeline.o demo.o $(LIBS)
 
 spy-shs10.o:: CFLAGS += -Wno-unused
-wzp-noname.o:: CFLAGS += -Wno-unused
+wpz-wcca.o:: CFLAGS += -Wno-unused
+demo.o:: WFLAGS += -Wno-error
 
 %.syms: %.c gen-bindings.py
 	@echo "SYMS $(subst $(TOPDIR)/,,$(realpath $<))"

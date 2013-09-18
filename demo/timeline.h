@@ -17,6 +17,10 @@ typedef struct Frame {
 
 typedef void (*TimeFuncT)(FrameT *frame);
 
+static inline float FrameTime(FrameT *frame) {
+  return (float)frame->number / (frame->last - frame->first);
+}
+
 /*
  * Symbols.
  */

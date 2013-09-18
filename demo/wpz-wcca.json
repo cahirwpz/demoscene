@@ -3,20 +3,22 @@
   "debug": true,
   "end-frame": 4583,
   "music": {
-    "bpm": 142.18,
-    "file": "data/voyager.wav"
+    "bpm": 110.0,
+    "file": "data/and_silence_in_veins.wav"
   },
   "load": {
-    "image": "data/begin.8",
-    "palette": "data/begin.pal"
+    "image": "data/kickstart-0.8",
+    "palette": "data/kickstart-0.pal"
   },
   "resources": {
-    "texture.8": { "type": "image", "path": "data/texture-1.8" },
-    "texture.pal": { "type": "palette", "path": "data/texture-1.pal" },
-    "spy.8": { "type": "image", "path": "data/spy.8" },
-    "spy.pal": { "type": "palette", "path": "data/spy.pal" },
-    "shs10.8": { "type": "image", "path": "data/shs10.8" },
-    "shs10.pal": { "type": "palette", "path": "data/shs10.pal" }
+    "WeCanLogoScreenImg": { "type": "image", "path": "data/wecan-logo-screen-256.8" },
+    "WeCanLogoScreenPal": { "type": "palette", "path": "data/wecan-logo-screen-256.pal" },
+    "WeCanLogoMesh": { "type": "mesh3d", "path": "data/wecan-logo.robj" },
+    "RaycastTextureImg": { "type": "image", "path": "data/raycast-208.8" },
+    "RaycastTexturePal": { "type": "palette", "path": "data/raycast-208.pal" },
+    "RaycastColorMap": { "type": "image", "path": "data/raycast-shades.8" },
+    "WhelpzLogoImg": { "type": "image", "path": "data/rork-logo_whelpz_02-48.8" },
+    "WhelpzLogoPal": { "type": "palette", "path": "data/rork-logo_whelpz_02-48.pal" }
   },
   "timeline": [
   {
@@ -27,9 +29,43 @@
     {
       "type": "once",
       "range": [0, -1],
-      "call": ["ClearCanvas", "RenderCanvas"]
+      "set": {
+        "ClipartImg" : { "resource": "WhelpzLogoImg" },
+        "ThePalette" : { "resource": "RaycastTexturePal" },
+        "RaycastTexture" : { "resource": "RaycastTextureImg" },
+        "ClipartY" : 28
+      },
+      "call": ["ReloadPalette"]
+    }, {
+      "type": "each-frame", "range": [0, 22],
+      "call": ["RaycastSetView1"]
+    }, {
+      "type": "each-frame", "range": [22, 42],
+      "call": ["RaycastSetView2"]
+    }, {
+      "type": "each-frame", "range": [42, 64],
+      "call": ["RaycastSetView3"]
+    }, {
+      "type": "each-frame", "range": [0, 64],
+      "call": ["RaycastCalculateView", "RenderRaycast"]
+    }, {
+      "type": "each-frame", "range": [0, 22],
+      "call": ["CalculateShadeMap1"]
+    }, {
+      "type": "each-frame", "range": [42, 64],
+      "call": ["CalculateShadeMap2"]
+    }, {
+      "type": "each-frame", "range": [0, 64],
+      "call": ["RenderRaycastLight"]
+    }, {
+      "type": "each-frame", "range": [22, 42],
+      "call": ["BlitClipartToCanvas"]
     }
     ]
+  }, {
+    "type":  "each-frame",
+    "range": [0, -1],
+    "call":  ["RenderCanvas"]
   }, {
     "type":  "each-frame",
     "range": [0, -1, [5, "frame"]],

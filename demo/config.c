@@ -1,3 +1,4 @@
+#include "engine/mesh.h"
 #include "gfx/pixbuf.h"
 #include "std/debug.h"
 #include "std/memory.h"
@@ -34,6 +35,8 @@ void LoadResources() {
       ResAdd(key, NewPixBufFromFile(path));
     } else if (!strcmp(type, "palette")) {
       ResAdd(key, NewPaletteFromFile(path));
+    } else if (!strcmp(type, "mesh3d")) {
+      ResAdd(key, NewMeshFromFile(path));
     } else {
       PANIC("Resource '%s' has wrong type '%s'!", key, type);
     }

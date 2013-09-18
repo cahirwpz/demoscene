@@ -4,8 +4,12 @@
 #include "std/resource.h"
 
 #include "audio/stream.h"
+#include "engine/object.h"
+#include "engine/scene.h"
 #include "uvmap/generate.h"
+#include "uvmap/raycast.h"
 #include "uvmap/render.h"
+#include "uvmap/scaling.h"
 #include "gfx/blit.h"
 #include "gfx/colors.h"
 #include "gfx/palette.h"
@@ -21,6 +25,9 @@
 const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
+
+const int H_RAYS = 41;
+const int V_RAYS = 33;
 
 const char *DemoConfigPath = "wpz-wcca.json";
 
@@ -42,14 +49,15 @@ bool LoadDemo() {
   if ((TheLoadImg = NewPixBufFromFile(loadImgPath)) &&
       (TheLoadPal = NewPaletteFromFile(loadPalPath)) &&
       (TheMusic = AudioStreamOpen(musicPath)) &&
-      (TheCanvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT)) &&
-      InitDisplay(WIDTH, HEIGHT, DEPTH))
+      (TheCanvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT)))
   {
-    c2p1x1_8_c5_bm(TheLoadImg->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
-    LoadPalette(TheLoadPal);
-    DisplaySwap();
-
-    return true;
+    if (InitDisplay(TheLoadImg->width, TheLoadImg->height, DEPTH)) {
+      c2p1x1_8_c5_bm(TheLoadImg->data, GetCurrentBitMap(),
+                     TheLoadImg->width, TheLoadImg->height, 0, 0);
+      LoadPalette(TheLoadPal);
+      DisplaySwap();
+      return true;
+    }
   }
 
   return false;
@@ -59,6 +67,8 @@ bool LoadDemo() {
  * Transition to demo.
  */
 void BeginDemo() {
+  ChangeDisplay(WIDTH, HEIGHT, DEPTH);
+
   /* Release loading screen image... */
   MemUnref(TheLoadImg);
   MemUnref(TheLoadPal);
@@ -71,6 +81,8 @@ void BeginDemo() {
  * Tear down demo.
  */
 void KillDemo() {
+  UnlinkPalettes(R_("RaycastTexturePal"));
+
   AudioStreamStop(TheMusic);
 
   MemUnref(TheMusic);
@@ -88,6 +100,153 @@ void DemoUpdateTime(int oldFrameNumber, int newFrameNumber) {
  * Set up resources.
  */
 void SetupResources() {
+  MeshT *mesh = R_("WeCanLogoMesh");
+
+  CalculateSurfaceNormals(mesh);
+  NormalizeMeshSize(mesh);
+  MeshApplyPalette(mesh, R_("WeCanLogoScreenPal"));
+
+  ResAdd("WeCanLogoObj", NewSceneObject("WeCanLogo", R_("WeCanLogoMesh")));
+  ResAdd("WeCanLogoScene", NewScene());
+
+  SceneAddObject(R_("WeCanLogoScene"), R_("WeCanLogoObj"));
+
+  ResAdd("RaycastMap", NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256));
+  ResAdd("UVMap", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
+
+  ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
+
+  ResAdd("ViewMatrixStack", NewMatrixStack3D());
+
+  LinkPalettes(R_("RaycastTexturePal"), R_("WhelpzLogoPal"), NULL);
+  PixBufRemap(R_("WhelpzLogoImg"), R_("WhelpzLogoPal"));
+}
+
+/*** Raycast *****************************************************************/
+
+typedef struct {
+  Vector3D Nominal[3];
+  Vector3D Transformed[3];
+  Matrix3D Transformation;
+} CameraViewT;
+
+static CameraViewT CameraView = {
+  .Nominal = {
+    { -0.5f,  0.333333f, 0.5f },
+    {  0.5f,  0.333333f, 0.5f },
+    { -0.5f, -0.333333f, 0.5f }
+  }
+};
+
+PARAMETER(PixBufT *, RaycastTexture, NULL);
+
+CALLBACK(RaycastSetView1) {
+  float t = FrameTime(frame);
+  int y = 0;
+
+  if (t > 0.75)
+    y = 4 * (t - 0.75) * 90;
+
+  LoadRotation3D(&CameraView.Transformation,
+                 0.0f, y, (frame->number + frame->first) * 0.75f);
+}
+
+CALLBACK(RaycastSetView2) {
+  LoadRotation3D(&CameraView.Transformation,
+                 0.0f, 90.0f, (frame->number + frame->first) * 0.75f);
+}
+
+CALLBACK(RaycastSetView3) {
+  float t = FrameTime(frame);
+  int y = 90;
+
+  if (t < 0.25)
+    y = 4 * t * 90;
+
+  LoadRotation3D(&CameraView.Transformation,
+                 0.0f, y + 90, (frame->number + frame->first) * 0.75f);
+}
+
+CALLBACK(RaycastCalculateView) {
+  Vector3D *transformed = CameraView.Transformed;
+  Vector3D *nominal = CameraView.Nominal;
+
+  Transform3D(transformed, nominal, 3, &CameraView.Transformation);
+
+  V3D_Sub(&transformed[1], &transformed[1], &transformed[0]);
+  V3D_Sub(&transformed[2], &transformed[2], &transformed[0]);
+}
+
+CALLBACK(RenderRaycast) {
+  UVMapT *map = R_("UVMap");
+  UVMapT *smallMap = R_("RaycastMap");
+  PixBufT *shades = R_("Shades");
+
+  RaycastTunnel(smallMap, CameraView.Transformed);
+  UVMapScale8x(map, smallMap);
+  UVMapSetTexture(map, RaycastTexture);
+  // UVMapSetOffset(map, 0, frame->number);
+  UVMapRender(map, TheCanvas);
+}
+
+CALLBACK(CalculateShadeMap1) {
+  UVMapT *uvmap = R_("UVMap");
+  PixBufT *shades = R_("Shades");
+  int16_t *map = uvmap->map.normal.v;
+  uint8_t *dst = shades->data;
+  int n = shades->width * shades->height;
+  int f = FrameTime(frame) * 256 - 224;
+
+  while (n--) {
+    int value = f - (*map++);
+
+    if (value < 0) {
+      value = -value;
+      if (value < 128)
+        value = 128;
+      else if (value < 255)
+        value = 255 - value;
+      else
+        value = 0;
+    } else {
+      value = 128;
+    }
+
+    *dst++ = value;
+  }
+}
+
+CALLBACK(CalculateShadeMap2) {
+  UVMapT *uvmap = R_("UVMap");
+  PixBufT *shades = R_("Shades");
+  int16_t *map = uvmap->map.normal.v;
+  uint8_t *dst = shades->data;
+  int n = shades->width * shades->height;
+  int f = FrameTime(frame) * 224.0f;
+
+  while (n--) {
+    int value = - (*map++) + f;
+
+    if (value < 0) {
+      value = 128;
+    } else {
+      if (value < 128)
+        value = 128;
+      if (value > 255)
+        value = 255;
+    }
+
+    *dst++ = value;
+  }
+}
+
+CALLBACK(RenderRaycastLight) {
+  UVMapT *map = R_("UVMap");
+  PixBufT *shades = R_("Shades");
+
+  PixBufSetColorMap(shades, R_("RaycastColorMap"), 0);
+  PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
+  PixBufBlit(TheCanvas, 0, 0, shades, NULL);
 }
 
 /*****************************************************************************/
@@ -96,6 +255,23 @@ PARAMETER(PixBufT *, ClipartImg, NULL);
 PARAMETER(PaletteT *, ClipartPal, NULL);
 PARAMETER(int, ClipartX, 0);
 PARAMETER(int, ClipartY, 0);
+
+CALLBACK(RenderWeCanLogo) {
+  SceneT *scene = R_("WeCanLogoScene");
+
+  RenderFlatShading = false;
+
+  {
+    MatrixStack3D *ms = GetObjectTranslation(scene, "WeCanLogo");
+
+    StackReset(ms);
+    PushRotation3D(ms, 0, (float)(-frame->number * 2), 0);
+    PushTranslation3D(ms, 0.0f, 0.0f, -2.0f);
+    //PushTranslation3D(ms, -1.0f, -0.775f, -1.95f);
+  }
+
+  RenderScene(scene, TheCanvas);
+}
 
 CALLBACK(BlitClipartToCanvas) {
   PixBufBlit(TheCanvas, ClipartX, ClipartY, ClipartImg, NULL);

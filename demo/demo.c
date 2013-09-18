@@ -204,14 +204,15 @@ int main() {
         }
 
         if (ready) {
-          int frameNumber = 0;
+          static int frameNumber = 0;
+          static bool error = false;
 
           BeginDemo();
           InstallVBlankIntServer();
           SetVBlankCounter(DemoFirstFrame);
           DemoUpdateTime(0, DemoFirstFrame);
 
-          while (true) {
+          while (!error) {
             if (!DemoPaused) {
               frameNumber = GetVBlankCounter();
 
@@ -226,7 +227,11 @@ int main() {
                 frameNumber = DemoFirstFrame;
               }
 
-              DoTimeSlice(demo, frameNumber);
+              TRY {
+                DoTimeSlice(demo, frameNumber);
+              } CATCH {
+                error = true;
+              }
 
               if (DemoShowFrame) {
                 RenderFrameNumber(frameNumber);

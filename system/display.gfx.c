@@ -53,7 +53,6 @@ static ViewPortT *NewViewPort(int width, int height, int depth) {
 }
 
 static void ConfigureView(ViewT *view, int width, int height) {
-  { VTAG_BORDERBLANK_SET, TRUE },
   /* Center view */
   if (height < 256)
     view->DyOffset += (256 - height) / 2;

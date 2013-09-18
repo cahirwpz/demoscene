@@ -103,9 +103,9 @@ PixBufT *NewPixBufWrapper(size_t width, size_t height, uint8_t *data) {
 }
 
 void PixBufSetColorMap(PixBufT *pixbuf, PixBufT *colorMap, int colorShift) {
-  ASSERT(colorMap->type == PIXBUF_GRAY &&
-         colorMap->width == 256 && colorMap->height == 256,
-         "Color map must be 8-bit gray image of size (256,256).");
+  ASSERT((colorMap->type == PIXBUF_GRAY || colorMap->type == PIXBUF_CLUT) &&
+         colorMap->width == 256,
+         "Color map must be 8-bit gray image of width 256.");
   pixbuf->blit.cmap.data = colorMap->data;
   pixbuf->blit.cmap.shift = colorShift;
 }
