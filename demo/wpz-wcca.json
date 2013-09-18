@@ -23,7 +23,8 @@
     "CompTxt0Img": { "type": "image", "path": "data/compose-0-128.8" },
     "CompTxt0Pal": { "type": "palette", "path": "data/compose-0-128.pal" },
     "CompTxt1Img": { "type": "image", "path": "data/compose-1-128.8" },
-    "CompTxt1Pal": { "type": "palette", "path": "data/compose-1-128.pal" }
+    "CompTxt1Pal": { "type": "palette", "path": "data/compose-1-128.pal" },
+    "PotatoMesh": { "type": "mesh3d",  "path": "data/potato.robj" }
   },
   "timeline": [
   {
@@ -70,7 +71,7 @@
     ]
   }, {
     "type":  "timeslice",
-    "range": [[64, "beat"], -1],
+    "range": [[64, "beat"], [96, "beat"]],
     "unit":  [1, "beat"],
     "parts": [{
       "type": "once", "range": [0, -1],
@@ -82,10 +83,32 @@
       "type": "each-frame", "range": [0, 4], "call": ["FadeFromWhite"]
     }, {
       "type": "each-frame", "range": [8, -1],
-      "call": ["CalculateComposeMap", "CycleHue", "ReloadPalette"]
+      "call": ["CalculateComposeMap", "CycleHue"]
     }, {
       "type": "each-frame", "range": [0, -1],
       "call": ["ComposeMaps"]
+    }, {
+      "type": "each-frame", "range": [0, 28],
+      "call": ["ReloadPalette"]
+    }, {
+      "type": "each-frame", "range": [28, -1],
+      "call": ["FadeToBlack"]
+    }]
+  }, {
+    "type":  "timeslice",
+    "range": [[96, "beat"], -1],
+    "unit":  [1, "beat"],
+    "parts": [{
+      "type": "once", "range": [0, -1],
+      "set": {
+        "ThePalette" : { "resource": "RaycastTexturePal" }
+      }
+    }, {
+      "type": "each-frame", "range": [0, -1],
+      "call": ["RenderPotatoBackground", "ControlPotato", "RenderPotato"]
+    }, {
+      "type": "each-frame", "range": [0, 4],
+      "call": ["FadeFromBlack"]
     }]
   }, {
     "type":  "each-frame",

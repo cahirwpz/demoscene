@@ -112,13 +112,25 @@ void SetupResources() {
 
   ResAdd("WeCanLogoObj", NewSceneObject("WeCanLogo", R_("WeCanLogoMesh")));
   ResAdd("WeCanLogoScene", NewScene());
-
   SceneAddObject(R_("WeCanLogoScene"), R_("WeCanLogoObj"));
+
+  {
+    MeshT *mesh = R_("PotatoMesh");
+
+    CenterMeshPosition(mesh);
+    CalculateSurfaceNormals(mesh);
+    NormalizeMeshSize(mesh);
+  }
+
+  ResAdd("PotatoObj", NewSceneObject("Potato", R_("PotatoMesh")));
+  ResAdd("PotatoScene", NewScene());
+  SceneAddObject(R_("PotatoScene"), R_("PotatoObj"));
 
   ResAdd("RaycastMap", NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256));
   ResAdd("UVMap", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
   ResAdd("UVMapA", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("UVMapB", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
+  ResAdd("UVMapC", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
 
   ResAdd("ComposeMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("ShadeMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
@@ -130,6 +142,8 @@ void SetupResources() {
   UVMapSetTexture(R_("UVMapA"), R_("CompTxt0Img"));
   UVMapGenerate4(R_("UVMapB"));
   UVMapSetTexture(R_("UVMapB"), R_("CompTxt1Img"));
+  UVMapGenerate2(R_("UVMapC"));
+  UVMapSetTexture(R_("UVMapC"), R_("RaycastTextureImg"));
 
   ResAdd("CompTxt0PalOrig", MemClone(R_("CompTxt0Pal")));
 
@@ -203,7 +217,6 @@ CALLBACK(RenderRaycast) {
   RaycastTunnel(smallMap, CameraView.Transformed);
   UVMapScale8x(map, smallMap);
   UVMapSetTexture(map, RaycastTexture);
-  // UVMapSetOffset(map, 0, frame->number);
   UVMapRender(map, TheCanvas);
 }
 
@@ -312,6 +325,34 @@ CALLBACK(FadeFromWhite) {
   LoadPalette(pal);
 }
 
+CALLBACK(FadeFromBlack) {
+  PaletteT *pal = R_("EffectPal");
+  float t = FrameTime(frame);
+
+  void Fade(RGB *dst, RGB *src) {
+    dst->r = src->r * t;
+    dst->g = src->g * t;
+    dst->b = src->b * t;
+  }
+
+  PaletteModify(pal, ThePalette, Fade);
+  LoadPalette(pal);
+}
+
+CALLBACK(FadeToBlack) {
+  PaletteT *pal = R_("EffectPal");
+  float t = 1.0f - FrameTime(frame);
+
+  void Fade(RGB *dst, RGB *src) {
+    dst->r = src->r * t;
+    dst->g = src->g * t;
+    dst->b = src->b * t;
+  }
+
+  PaletteModify(pal, ThePalette, Fade);
+  LoadPalette(pal);
+}
+
 CALLBACK(CycleHue) {
   float temp;
   float t = modff(frame->number / (DemoBeat * 4.0f), &temp);
@@ -342,6 +383,38 @@ CALLBACK(ComposeMaps) {
   UVMapSetOffset(map1, du, dv);
   UVMapSetOffset(map2, -du, -dv);
   UVMapComposeAndRender(TheCanvas, compMap, map1, map2);
+}
+
+/*** Potato ******************************************************************/
+
+CALLBACK(ControlPotato) {
+  MatrixStack3D *ms = GetObjectTranslation(R_("PotatoScene"), "Potato");
+
+  StackReset(ms);
+  PushScaling3D(ms, 1.75f, 1.75f, 1.75f);
+  PushRotation3D(ms, 0, (float)(-frame->number * 2), frame->number);
+  PushTranslation3D(ms, 0.0f, 0.0f, -2.0f);
+}
+
+CALLBACK(RenderPotato) {
+  PixBufT *shades = R_("ShadeMap");
+  RenderFlatShading = true;
+
+  PixBufClear(shades);
+  RenderScene(R_("PotatoScene"), shades);
+
+  PixBufSetColorMap(shades, R_("RaycastColorMap"), 0);
+  PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
+
+  PixBufBlit(TheCanvas, 0, 0, shades, NULL);
+}
+
+CALLBACK(RenderPotatoBackground) {
+  int du = 2 * frame->number;
+  int dv = 4 * frame->number;
+
+  UVMapSetOffset(R_("UVMapC"), du, dv);
+  UVMapRender(R_("UVMapC"), TheCanvas);
 }
 
 /*****************************************************************************/

@@ -10,13 +10,13 @@ Demo accepts following parameters (all optional): `FIRST/N,LAST/N,LOOP/S,SHOWFRA
 * `FIRST` - the number of first frame to be played (*default: 0*)
 * `LAST` - the number of last frame to be played (*default: specified by timeline*)
 * `LOOP` - don't quit, just play specified range of frames in a loop (*default: false*)
-* `SHOWFRAME` - render layer of extra information including **frame per second** and **frame number**.
+* `SHOWTIME` - render layer of extra information including **frame per second** and **time**.
 * `TIMELINE` - print demo timeline and quit.
 
 Invocation examples:
 
 * `demo FIRST 200 LAST 400 LOOP` - plays **[200, 400]** range of frames in a loop,
-* `demo SHOWFRAME` - plays the demo once showing frames per second counter and frame counter.
+* `demo SHOWTIME` - plays the demo once showing frames per second counter and time.
 
 ## Keys
 

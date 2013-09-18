@@ -129,7 +129,7 @@ static void ParsePlaybackInfo() {
 
   DemoLastFrame = DemoEndFrame;
 
-  if ((rdargs = ReadArgs("FIRST/N,LAST/N,LOOP/S,SHOWFRAME/S,TIMELINE/S", (LONG *)&args, NULL))) {
+  if ((rdargs = ReadArgs("FIRST/N,LAST/N,LOOP/S,SHOWTIME/S,TIMELINE/S", (LONG *)&args, NULL))) {
     if (args.first) {
       if (*args.first > 0 && *args.first < DemoEndFrame) {
         DemoFirstFrame = *args.first;
@@ -156,7 +156,7 @@ static void ParsePlaybackInfo() {
     }
 
     if (args.show) {
-      LOG("Will show frame and fps counter.");
+      LOG("Will show timing and fps counter.");
       DemoShowFrame = true;
     }
 
