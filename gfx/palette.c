@@ -122,3 +122,21 @@ int PaletteFindNearest(PaletteT *palette, RGB color) {
 
   return index;
 }
+
+void PaletteModify(PaletteT *dst, PaletteT *src, ColorModifyFuncT func) {
+  int i = 0, j = 0;
+
+  while (src && dst) {
+    (*func)(&dst->colors[j++], &src->colors[i++]);
+
+    if (i == src->count) {
+      i = 0;
+      src = src->next;
+    }
+
+    if (j == dst->count) {
+      j = 0;
+      dst = dst->next;
+    }
+  }
+}

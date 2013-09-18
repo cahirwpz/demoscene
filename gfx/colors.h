@@ -11,6 +11,8 @@ typedef struct {
   float h, s, l;
 } HSL;
 
+typedef void (*ColorModifyFuncT)(RGB *dst, RGB *src);
+
 void ColorsInvert(RGB *dst, RGB *src, size_t count);
 void ColorsAverage(uint8_t *dst, RGB *src, size_t count);
 void ColorsContrast(RGB *dst, RGB *src, size_t count);

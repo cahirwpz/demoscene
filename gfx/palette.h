@@ -21,4 +21,6 @@ void UnlinkPalettes(PaletteT *palette);
 
 int PaletteFindNearest(PaletteT *palette, RGB color);
 
+void PaletteModify(PaletteT *dst, PaletteT *src, ColorModifyFuncT func);
+
 #endif

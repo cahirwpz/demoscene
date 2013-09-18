@@ -14,6 +14,7 @@
 #include "gfx/blit.h"
 #include "gfx/colorfunc.h"
 #include "gfx/colors.h"
+#include "gfx/hsl.h"
 #include "gfx/palette.h"
 
 #include "system/audio.h"
@@ -130,10 +131,13 @@ void SetupResources() {
   UVMapGenerate4(R_("UVMapB"));
   UVMapSetTexture(R_("UVMapB"), R_("CompTxt1Img"));
 
+  ResAdd("CompTxt0PalOrig", MemClone(R_("CompTxt0Pal")));
+
   LinkPalettes(R_("CompTxt0Pal"), R_("CompTxt1Pal"), NULL);
   PixBufRemap(R_("CompTxt1Img"), R_("CompTxt1Pal"));
 
   ResAdd("ColorFunc", NewColorFunc());
+  ResAdd("EffectPal", NewPalette(256));
 }
 
 /*** Raycast *****************************************************************/
@@ -273,6 +277,10 @@ CALLBACK(BlitLightMapToCanvas) {
 
 /*** Composition *************************************************************/
 
+CALLBACK(ClearComposeMap) {
+  PixBufClear(R_("ComposeMap"));
+}
+
 CALLBACK(CalculateComposeMap) {
   uint8_t *cfunc = R_("ColorFunc");
   UVMapT *map = R_("UVMapB");
@@ -288,6 +296,40 @@ CALLBACK(CalculateComposeMap) {
   PixBufBlit(compMap, 0, 0, comp, NULL);
 
   MemUnref(comp);
+}
+
+CALLBACK(FadeFromWhite) {
+  PaletteT *pal = R_("EffectPal");
+  float t = 1.0f - FrameTime(frame);
+
+  void Fade(RGB *dst, RGB *src) {
+    dst->r = (float)(255 - src->r) * t + src->r;
+    dst->g = (float)(255 - src->g) * t + src->g;
+    dst->b = (float)(255 - src->b) * t + src->b;
+  }
+
+  PaletteModify(pal, ThePalette, Fade);
+  LoadPalette(pal);
+}
+
+CALLBACK(CycleHue) {
+  float temp;
+  float t = modff(frame->number / (DemoBeat * 4.0f), &temp);
+
+  void CyclicHue(RGB *dst, RGB *src) {
+    HSL hsl;
+
+    RGB2HSL(src, &hsl);
+
+    hsl.h += t;
+
+    if (hsl.h >= 1.0f)
+      hsl.h -= 1.0f;
+
+    HSL2RGB(&hsl, dst);
+  }
+
+  PaletteModify(R_("CompTxt0Pal"), R_("CompTxt0PalOrig"), CyclicHue);
 }
 
 CALLBACK(ComposeMaps) {

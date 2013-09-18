@@ -77,10 +77,12 @@
       "set": {
         "ThePalette" : { "resource": "CompTxt0Pal" }
       },
-      "call": ["ReloadPalette"]
+      "call": ["ClearComposeMap", "ReloadPalette"]
+    }, {
+      "type": "each-frame", "range": [0, 4], "call": ["FadeFromWhite"]
     }, {
       "type": "each-frame", "range": [8, -1],
-      "call": ["CalculateComposeMap"]
+      "call": ["CalculateComposeMap", "CycleHue", "ReloadPalette"]
     }, {
       "type": "each-frame", "range": [0, -1],
       "call": ["ComposeMaps"]
