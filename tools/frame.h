@@ -4,6 +4,7 @@
 #include "system/display.h"
 
 void RenderFrameNumber(int frameNumber);
+void RenderTime(int frameNumber, float beatsPerFrame);
 void RenderFramesPerSecond(int frameNumber);
 
 #endif

@@ -234,7 +234,7 @@ int main() {
               }
 
               if (DemoShowFrame) {
-                RenderFrameNumber(frameNumber);
+                RenderTime(frameNumber, DemoBeat);
                 RenderFramesPerSecond(frameNumber);
               }
 
