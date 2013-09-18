@@ -13,6 +13,7 @@
 #include "tools/loopevent.h"
 
 #include "gfx/blit.h"
+#include "uvmap/raycast.h"
 #include "uvmap/render.h"
 #include "uvmap/scaling.h"
 
@@ -23,20 +24,23 @@ const int DEPTH = 8;
 const int H_RAYS = 41;
 const int V_RAYS = 33;
 
+typedef struct {
+  Vector3D Nominal[3];
+  Vector3D Transformed[3];
+} CameraViewT;
+
+static CameraViewT CameraView = {
+  .Nominal = {
+    { -0.5f,  0.333333f, 0.5f },
+    {  0.5f,  0.333333f, 0.5f },
+    { -0.5f, -0.333333f, 0.5f }
+  }
+};
+
 /*
  * Set up resources.
  */
 void AddInitialResources() {
-  static Vector3D View[3] = {
-    { -0.5f,  0.333333f, 0.5f }, 
-    {  0.5f,  0.333333f, 0.5f },
-    { -0.5f, -0.333333f, 0.5f }
-  };
-
-  static Vector3D ViewTransformed[3];
-
-  ResAddStatic("View", View);
-  ResAddStatic("ViewTransformed", ViewTransformed);
   ResAdd("Texture", NewPixBufFromFile("data/texture-shades.8"));
   ResAdd("TexturePal", NewPaletteFromFile("data/texture-shades.pal"));
   ResAdd("ColorMap", NewPixBufFromFile("data/texture-shades-map.8"));
@@ -73,51 +77,20 @@ void TearDownEffect() {
 /*
  * Effect rendering functions.
  */
-void CalculateView(int frameNumber, Vector3D *view) {
+void RaycastCalculateView(int frameNumber) {
   Matrix3D transformation;
+  Vector3D *transformed = CameraView.Transformed;
+  Vector3D *nominal = CameraView.Nominal;
 
   LoadRotation3D(&transformation,
                  0.0f,
                  frameNumber * 0.75f,
                  frameNumber * 0.5f);
 
-  Transform3D(view, R_("View"), 3, &transformation);
+  Transform3D(transformed, nominal, 3, &transformation);
 
-  V3D_Sub(&view[1], &view[1], &view[0]);
-  V3D_Sub(&view[2], &view[2], &view[0]);
-}
-
-void RaytraceTunnel(UVMapT *map, Vector3D *view) {
-  Vector3D ray = view[0];
-  Vector3D dp = view[1];
-  Vector3D dq = view[2];
-
-  size_t h = map->height;
-  size_t i = 0;
-
-  V3D_Scale(&dp, &view[1], 1.0f / (int)(map->width - 1));
-  V3D_Scale(&dq, &view[2], 1.0f / (int)(map->height - 1));
-
-  do {
-    Vector3D leftRay = ray;
-    size_t w = map->width;
-
-    do {
-      float t = FastInvSqrt(ray.x * ray.x + ray.y * ray.y);
-
-      Vector3D intersection = { t * ray.x, t * ray.y, t * ray.z };
-
-      float a = FastAtan2(intersection.x, intersection.y);
-      float u = a / (2 * M_PI);
-      float v = intersection.z / 8.0f;
-
-      UVMapSet(map, i++, u, v);
-
-      V3D_Add(&ray, &ray, &dp);
-    } while (--w);
-
-    V3D_Add(&ray, &leftRay, &dq);
-  } while (--h);
+  V3D_Sub(&transformed[1], &transformed[1], &transformed[0]);
+  V3D_Sub(&transformed[2], &transformed[2], &transformed[0]);
 }
 
 static void RenderShadeMap(PixBufT *shades, int16_t *map) {
@@ -139,14 +112,13 @@ static void RenderShadeMap(PixBufT *shades, int16_t *map) {
 }
 
 void RenderEffect(int frameNumber) {
-  Vector3D *view = R_("ViewTransformed");
   UVMapT *smallMap = R_("SmallMap");
   UVMapT *map = R_("Map");
   PixBufT *canvas = R_("Canvas");
   PixBufT *shades = R_("Shades");
 
-  CalculateView(frameNumber, view);
-  RaytraceTunnel(smallMap, view);
+  RaycastCalculateView(frameNumber);
+  RaycastTunnel(smallMap, CameraView.Transformed);
   UVMapScale8x(map, smallMap);
   UVMapSetTexture(map, R_("Texture"));
   UVMapSetOffset(map, 0, frameNumber);
