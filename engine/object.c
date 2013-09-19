@@ -56,11 +56,18 @@ static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
     polygonExt[i].depth = vertex[p1].z + vertex[p2].z + vertex[p3].z;
 
     /* Calculate angle between camera and surface normal. */
-    V3D_NormalizeToUnit(&unitNormal, &normal[i]);
+    {
+      Vector3D cameraToFace = { -vertex[p1].x, -vertex[p1].y, -vertex[p1].z };
+
+      V3D_NormalizeToUnit(&cameraToFace, &cameraToFace);
+      V3D_NormalizeToUnit(&unitNormal, &normal[i]);
+
+      angle = V3D_Dot(&cameraToFace, &unitNormal);
+    }
 
     angle = unitNormal.z;
 
-    polygonExt[i].color = (int)(angle * 255.0f);
+    polygonExt[i].color = abs((int)(angle * 255.0f));
 
     if (angle > 0)
       polygonExt[i].flags |= 1;
@@ -89,10 +96,24 @@ static void Render(PixBufT *canvas, PolygonExtT **sortedPolygonExt,
     if (!polyExt->flags && !surface[polygon[i].surface].sideness)
       continue;
 
-    if (RenderFlatShading)
-      canvas->fgColor = polyExt->color;
-    else
+    if (RenderFlatShading) {
+      if (canvas->blit.cmap.data) {
+        int color = polyExt->color + canvas->blit.cmap.shift;
+
+        if (color > 255)
+          color = 255;
+        if (color < 0)
+          color = 0;
+
+        color += polygon[i].surface * 256;
+
+        canvas->fgColor = canvas->blit.cmap.data[color];
+      } else {
+        canvas->fgColor = polyExt->color;
+      }
+    } else {
       canvas->fgColor = surface[polygon[i].surface].color.clut;
+    }
 
     if (RenderWireFrame) {
       DrawLine(canvas, vertex[p1].x, vertex[p1].y, vertex[p2].x, vertex[p2].y);

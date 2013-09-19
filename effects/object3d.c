@@ -24,10 +24,10 @@ const int DEPTH = 8;
  */
 void AddInitialResources() {
   ResAdd("Scene", NewScene());
-  ResAdd("Mesh", NewMeshFromFile("data/wecan_logo.robj"));
+  ResAdd("Mesh", NewMeshFromFile("data/shattered_ball.robj"));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("ColorMap", NewPixBufFromFile("data/wecan_logo_cmap.8"));
-  ResAdd("Palette", NewPaletteFromFile("data/wecan_logo_cmap.pal"));
+  ResAdd("ColorMap", NewPixBufFromFile("data/shattered_ball_cmap.8"));
+  ResAdd("Palette", NewPaletteFromFile("data/shattered_ball_cmap.pal"));
 
   {
     MeshT *mesh = R_("Mesh");
@@ -82,7 +82,10 @@ void RenderMesh(int frameNumber_) {
     PushTranslation3D(ms, 0.0f, 0.0f, -2.0f);
   }
 
+  RenderFlatShading = true;
+
   PixBufClear(canvas);
+  PixBufSetColorMap(canvas, R_("ColorMap"), -32);
   RenderScene(scene, canvas);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);

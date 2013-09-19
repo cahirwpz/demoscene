@@ -7,7 +7,7 @@ import os
 import struct
 
 from collections import namedtuple
-#from pprint import pprint
+from pprint import pprint
 
 from util import iff
 
@@ -320,25 +320,27 @@ def main():
   parser.add_argument(
     'input', metavar='LWO', type=str, help='Input LightWave object file name.')
   parser.add_argument(
-    'output', metavar='RAWOBJ', type=str, help='Output Raw Object file name.')
+    'output', metavar='RAWOBJ', type=str, nargs='?',
+    help='Output Raw Object file name.')
   args = parser.parse_args()
 
   args.input = os.path.abspath(args.input)
 
-  if not args.output.endswith('.robj'):
-    try:
-      name = args.output.rsplit('.', 1)[0]
-    except:
-      pass
-    args.output = os.path.join(name + '.robj')
-
   if not os.path.isfile(args.input):
     raise SystemExit('Input file "%s" does not exists!' % args.input)
 
-  if os.path.exists(args.output) and not args.force:
-    raise SystemExit(
-      'Raw Object file "%s" already exists (use "-f" to override).' %
-      args.output)
+  if args.output:
+    if not args.output.endswith('.robj'):
+      try:
+        name = args.output.rsplit('.', 1)[0]
+      except:
+        pass
+      args.output = os.path.join(name + '.robj')
+
+    if os.path.exists(args.output) and not args.force:
+      raise SystemExit(
+        'Raw Object file "%s" already exists (use "-f" to override).' %
+        args.output)
 
   lwo = None
   lwob = LWOB()
@@ -380,15 +382,18 @@ def main():
     polygons = [Polygon(points, surf)
                 for points, surf in zip(lwo.polygons, polysurf)]
 
-  WriteRawObject(args.output, lwo.points, polygons, surfaces)
+  if args.output:
+    WriteRawObject(args.output, lwo.points, polygons, surfaces)
 
-  if args.colors:
-    filename = args.output.rsplit('.', 1)[0] + '.json'
-    with open(filename, 'w') as fp:
-      colors = [tuple(surface.color) for surface in surfaces if surface.color]
-      json.dump(colors, fp)
-      fp.write('\n')
-      logging.info('Wrote surface colors to: "%s" file.', filename)
+    if args.colors:
+      filename = args.output.rsplit('.', 1)[0] + '.json'
+      with open(filename, 'w') as fp:
+        colors = [tuple(surface.color) for surface in surfaces if surface.color]
+        json.dump(colors, fp)
+        fp.write('\n')
+        logging.info('Wrote surface colors to: "%s" file.', filename)
+  else:
+    pprint(lwo._chunks)
 
 
 if __name__ == '__main__':

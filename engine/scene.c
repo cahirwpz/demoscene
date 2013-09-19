@@ -7,7 +7,9 @@ struct Scene {
 };
 
 static void DeleteScene(SceneT *self) {
+#if 0
   MemUnref(self->objects);
+#endif
 }
 
 TYPEDECL(SceneT, (FreeFuncT)DeleteScene);
