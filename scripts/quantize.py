@@ -38,24 +38,33 @@ def QuantizeImage(image, kdtree, dithering, is_transparent):
   return output
 
 
-def Quantize(image, colors=256, dithering=False):
-  assert image.mode in ['RGB', 'RGBA']
+def Quantize(image, colors=256, dithering=False, sources=None):
+  if not sources:
+    sources = [image]
+
+  assert all(source.mode in ['RGB', 'RGBA'] for source in sources)
 
   logging.info('Quantizing colorspace using median-cut algorithm.')
 
-  is_transparent = image.mode is 'RGBA'
+  pixels = []
 
-  if is_transparent:
-    # Exclude pixels which are deemed to be transparent.
-    pixels = [Color(r, g, b) for r, g, b, a in image.getdata() if a >= 128]
-    # Remember to reserve one color for transparency.
+  for source in sources:
+    if source.mode is 'RGBA':
+      # Exclude pixels which are deemed to be transparent.
+      pixels.extend(
+        [Color(r, g, b) for r, g, b, a in source.getdata() if a >= 128])
+    else:
+      pixels.extend([Color(r, g, b) for r, g, b in source.getdata()])
+
+  # Remember to reserve one color for transparency.
+  if any(source.mode is 'RGBA' for source in sources):
     colors -= 1
-  else:
-    pixels = [Color(r, g, b) for r, g, b in image.getdata()]
 
   space = Box(pixels, 0, len(pixels))
   kdtree = KDNode(space)
   leaves = SplitKDTree(kdtree, colors)
+
+  is_transparent = image.mode is 'RGBA'
 
   if is_transparent:
     palette = [0, 0, 0]
@@ -93,35 +102,44 @@ if __name__ == '__main__':
     '-c', '--colors', metavar='COLORS', type=int, default=256,
     help='Number of colors to use in output image.')
   parser.add_argument(
+    '-t', '--target', metavar='DIR', type=str, default='.',
+    help='Target directory where output image will be written.')
+  parser.add_argument(
     '-d', '--dithering', action='store_true',
     help='Turn on Floyd-Steinberg dithering.')
   parser.add_argument(
     '-f', '--force', action='store_true',
     help='If output image exists, the tool will overwrite it.')
   parser.add_argument(
-    'input', metavar='INPUT', type=str, help='Input image filename.')
-  parser.add_argument(
-    'output', metavar='OUTPUT', type=str, help='Output image filename.')
+    'input', metavar='INPUT', nargs='+', help='Input image filenames.')
   args = parser.parse_args()
 
-  inputPath = os.path.abspath(args.input)
-  outputPath = os.path.abspath(args.output)
+  images = []
 
-  if not os.path.isfile(inputPath):
-    raise SystemExit('Input file does not exists!')
+  for inputPath in args.input:
+    inputPath = os.path.abspath(inputPath)
+    inputFilePart = os.path.splitext(os.path.basename(inputPath))[0]
+    outputPath = os.path.abspath(
+      os.path.join(args.target, '%s-%d.png' % (inputFilePart, args.colors)))
 
-  if os.path.isfile(outputPath) and not args.force:
-    raise SystemExit('Will not overwrite output file!')
+    if not os.path.isfile(inputPath):
+      raise SystemExit('Input file does not exists!')
 
-  if inputPath == outputPath:
-    raise SystemExit('Input and output files have to be different!')
+    if os.path.isfile(outputPath) and not args.force:
+      raise SystemExit('Will not overwrite output file!')
 
-  logging.info('Reading input file: "%s".', inputPath)
+    logging.info('Reading input file: "%s".', inputPath)
 
-  image = Image.open(inputPath)
-  output = Quantize(image, args.colors, args.dithering)
+    images.append((Image.open(inputPath), outputPath))
 
-  logging.info('Saving quantized image to: "%s".', outputPath)
+  sources = [image for image, _ in images]
 
-  attributes = {'transparency': 0} if (image.mode is 'RGBA') else {}
-  output.save(outputPath, **attributes)
+  for image, outputPath in images:
+    logging.info('Quantizing file: "%s".', image.filename)
+
+    output = Quantize(image, args.colors, args.dithering, sources)
+
+    logging.info('Saving quantized image to: "%s".', outputPath)
+
+    attributes = {'transparency': 0} if (image.mode is 'RGBA') else {}
+    output.save(outputPath, **attributes)

@@ -19,6 +19,8 @@ def UsedColorRange(image):
 def Main():
   parser = argparse.ArgumentParser(
       description='Converts input image to raw image and palette data.')
+  parser.add_argument('-p', '--full-palette', action='store_true',
+      help='Save all colors - including unused.')
   parser.add_argument('-f', '--force', action='store_true',
       help='If output files exist, the tool will overwrite them.')
   parser.add_argument('input', metavar='INPUT', type=str,
@@ -49,8 +51,12 @@ def Main():
 
   if imgType is IMG_CLUT:
     palFilePath = '%s.pal' % outputPath
-    baseColor, lastColor = UsedColorRange(image)
-    colors = lastColor - baseColor + 1
+    if not args.full_palette:
+      baseColor, lastColor = UsedColorRange(image)
+      colors = lastColor - baseColor + 1
+    else:
+      baseColor, lastColor = 0, 255
+      colors = 256
 
     if os.path.isfile(palFilePath) and not args.force:
       raise SystemExit('Will not overwrite output file!')
