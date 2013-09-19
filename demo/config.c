@@ -28,7 +28,7 @@ bool ReadConfig() {
 static EnvelopeT *ReadEnvelope(EnvTypeT type, JsonNodeT *value) {
   JsonNodeT *points = JsonQueryArray(value, "points");
   int dimensions = JsonQueryInteger(value, "dimensions");
-  EnvelopeT *env = NewEnvelope(dimensions, points->u.array.num);
+  EnvelopeT *env = NewEnvelope(type, dimensions, points->u.array.num);
 
   void ReadValue(size_t index, JsonNodeT *node, void *data) {
     ASSERT(node->type == JSON_INTEGER || node->type == JSON_REAL,
@@ -61,6 +61,8 @@ void LoadResources() {
       ResAdd(key, NewMeshFromFile(JsonQueryString(value, "path")));
     } else if (!strcmp(type, "envelope:polyline")) {
       ResAdd(key, ReadEnvelope(ENV_POLYLINE, value));
+    } else if (!strcmp(type, "envelope:smoothstep")) {
+      ResAdd(key, ReadEnvelope(ENV_SMOOTHSTEP, value));
     } else {
       PANIC("Resource '%s' has wrong type '%s'!", key, type);
     }

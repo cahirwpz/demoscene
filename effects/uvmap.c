@@ -18,13 +18,6 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-float smoothstep(float edge0, float edge1, float x) {
-  // Scale, bias and saturate x to 0..1 range
-  x = clampf((x - edge0) / (edge1 - edge0)); 
-  // Evaluate polynomial
-  return x * x * (3.0f - 2.0f * x);
-}
-
 static const int maps = 11;
 static int lastMap = -1;
 

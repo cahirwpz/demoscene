@@ -34,9 +34,9 @@
     "CodeAgainImg": { "type": "image",  "path": "data/codeagain.8" },
     "DateImg": { "type": "image",  "path": "data/date.8" },
     "TwoPath": {
-      "type": "envelope:polyline",
+      "type": "envelope:smoothstep",
       "dimensions": 2,
-      "points": [[0, 0, 0], [8, 100, 30]]
+      "points": [[0, 0, 0], [10, 160, 100], [20, 240, 80]]
     }
   },
   "timeline": [
