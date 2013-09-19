@@ -467,52 +467,47 @@ CALLBACK(ShowWeCanBg2) {
   PixBufBlit(TheCanvas, 0, 0, R_("WeCanBg2Img"), NULL);
 }
 
-PARAMETER(int, DateX, 100);
-PARAMETER(int, DateY, 200);
+ARRAY(float, 2, DatePos, 100.0f, 200.0f);
 
 CALLBACK(ShowDate)  {
   PixBufT *date = R_("DateImg");
   PixBufSetBlitMode(date, BLIT_TRANSPARENT);
-  PixBufBlit(TheCanvas, DateX, DateY, date, NULL);
+  PixBufBlit(TheCanvas, DatePos[0], DatePos[1], date, NULL);
 }
 
-PARAMETER(int, CodeAgainX, 20);
-PARAMETER(int, CodeAgainY, 20);
+ARRAY(float, 2, CodeAgainPos, 20.0f, 20.f);
 
 CALLBACK(ShowCodeAgain) {
   PixBufT *date = R_("CodeAgainImg");
   PixBufSetBlitMode(date, BLIT_TRANSPARENT);
-  PixBufBlit(TheCanvas, CodeAgainX, CodeAgainY, date, NULL);
+  PixBufBlit(TheCanvas, CodeAgainPos[0], CodeAgainPos[1], date, NULL);
 }
 
-PARAMETER(int, TwoX, 135);
-PARAMETER(int, TwoY, 80);
+ARRAY(float, 2, TwoPos, 135.0f, 80.0f);
 
 CALLBACK(ShowTwo)  {
-  PixBufT *two = R_("2Img");
+  PixBufT *two = R_("TwoImg");
   PixBufSetColorMap(two, R_("WeCanColorMap"), 0);
   PixBufSetBlitMode(two, BLIT_COLOR_MAP);
-  PixBufBlit(TheCanvas, TwoX, TwoY, two, NULL);
+  PixBufBlit(TheCanvas, TwoPos[0], TwoPos[1], two, NULL);
 }
 
-PARAMETER(int, WarnungX, 20);
-PARAMETER(int, WarnungY, 10);
+ARRAY(float, 2, WarnungPos, 20.0f, 10.0f);
 
 CALLBACK(ShowWarnung)  {
   PixBufT *warnung = R_("WarnungImg");
   PixBufSetColorMap(warnung, R_("WeCanColorMap"), 0);
   PixBufSetBlitMode(warnung, BLIT_COLOR_MAP);
-  PixBufBlit(TheCanvas, WarnungX, WarnungY, warnung, NULL);
+  PixBufBlit(TheCanvas, WarnungPos[0], WarnungPos[1], warnung, NULL);
 }
 
-PARAMETER(int, AttenzioneX, 100);
-PARAMETER(int, AttenzioneY, 10);
+ARRAY(float, 2, AttenzionePos, 100.0f, 10.0f);
 
 CALLBACK(ShowAttenzione) {
   PixBufT *attenzione = R_("AttenzioneImg");
   PixBufSetColorMap(attenzione, R_("WeCanColorMap"), 0);
   PixBufSetBlitMode(attenzione, BLIT_COLOR_MAP);
-  PixBufBlit(TheCanvas, AttenzioneX, AttenzioneY, attenzione, NULL);
+  PixBufBlit(TheCanvas, AttenzionePos[0], AttenzionePos[1], attenzione, NULL);
 }
 
 /*****************************************************************************/

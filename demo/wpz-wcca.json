@@ -27,12 +27,17 @@
     "WeCanBg2Img": { "type": "image",  "path": "data/wecan-bg-2.8" },
     "WeCanBgPal": { "type": "palette",  "path": "data/wecan-bg-1.pal" },
     "WeCanColorMap": { "type": "image",  "path": "data/wecan-shades.8" },
-    "2Img": { "type": "image",  "path": "data/2.8" },
+    "TwoImg": { "type": "image",  "path": "data/2.8" },
     "AttenzioneImg": { "type": "image",  "path": "data/attenzione.8" },
     "HighVoltageImg": { "type": "image",  "path": "data/highvoltage.8" },
     "WarnungImg": { "type": "image",  "path": "data/warnung.8" },
     "CodeAgainImg": { "type": "image",  "path": "data/codeagain.8" },
-    "DateImg": { "type": "image",  "path": "data/date.8" }
+    "DateImg": { "type": "image",  "path": "data/date.8" },
+    "TwoPath": {
+      "type": "envelope:polyline",
+      "dimensions": 2,
+      "points": [[0, 0, 0], [8, 100, 30]]
+    }
   },
   "timeline": [
   {
@@ -136,6 +141,9 @@
       "call": ["Transition"]
     }, {
       "type": "each-frame", "range": [24, -1],
+      "set": {
+        "TwoPos" : { "envelope": "TwoPath" }
+      },
       "call": ["ShowWeCanBg2", "RenderWeCanLogo", "ShowTwo", "ShowDate",
                "ShowCodeAgain", "ShowWarnung", "ShowAttenzione"]
     }, {

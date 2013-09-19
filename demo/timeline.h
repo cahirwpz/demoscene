@@ -46,7 +46,7 @@ typedef struct Callback {
   TimeFuncT func;
 } CallbackT;
 
-typedef enum { ST_INTEGER, ST_REAL, ST_STRING, ST_RESOURCE } SetterTypeT;
+typedef enum { ST_INTEGER, ST_REAL, ST_STRING, ST_RESOURCE, ST_ENVELOPE } SetterTypeT;
 
 typedef struct Setter {
   SetterTypeT type;

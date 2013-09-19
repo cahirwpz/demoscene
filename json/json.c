@@ -125,7 +125,7 @@ void JsonArrayForEach(JsonNodeT *node, JsonArrayIterFuncT func, void *data) {
   int i;
 
   for (i = 0; i < node->u.array.num; i++)
-    func(node->u.array.item[i], data);
+    func(i, node->u.array.item[i], data);
 }
 
 void JsonObjectForEach(JsonNodeT *node, JsonObjectIterFuncT func, void *data) {

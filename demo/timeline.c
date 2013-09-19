@@ -4,6 +4,7 @@
 #include "system/vblank.h"
 
 #include "config.h"
+#include "envelope.h"
 #include "timeline.h"
 
 float DemoBeat = 0.0f;
@@ -75,6 +76,13 @@ void DoTimeSlice(TimeSliceT *slice, int thisFrame) {
                 break;
               case ST_RESOURCE:
                 *(void **)setter->ptr = R_(setter->u.resource);
+                break;
+              case ST_ENVELOPE:
+                {
+                  EnvelopeT *env = R_(setter->u.resource);
+                  float time = (float)(thisFrame - slice->start) / DemoBeat;
+                  EnvelopeEvaluate(env, time, (float *)setter->ptr);
+                }
                 break;
             }
           }
@@ -260,10 +268,9 @@ static CallbackT *BuildCallbacks(JsonNodeT *value, TimeSliceInfoT *tsi) {
 
   if ((call = JsonQuery(value, "call"))) {
     int no_callbacks = call->u.array.num;
-    int i = 0;
 
-    void ReadCall(JsonNodeT *value, void *data) {
-      callbacks[i++].name = StrDup(value->u.string);
+    void ReadCall(size_t i, JsonNodeT *value, void *data) {
+      callbacks[i].name = StrDup(value->u.string);
     }
 
     callbacks = NewTable(CallbackT, no_callbacks + 1);
@@ -285,6 +292,9 @@ static void JsonReadSetter(const char *key, JsonNodeT *value, void *data) {
       if (JsonQuery(value, "resource")) {
         setter->type = ST_RESOURCE;
         setter->u.resource = StrDup(JsonQueryString(value, "resource"));
+      } else if (JsonQuery(value, "envelope")) {
+        setter->type = ST_ENVELOPE;
+        setter->u.resource = StrDup(JsonQueryString(value, "envelope"));
       } else {
         PANIC("Unknown setter type: '%s'.", value->u.object.item[0].key);
       }
@@ -329,7 +339,7 @@ static SetterT *BuildSetters(JsonNodeT *value, TimeSliceInfoT *tsi) {
 
 typedef enum { UNKNOWN = 0, TIMESLICE, ONCE, EACH_FRAME } TSTypeT;
 
-static void BuildTimeSlice(JsonNodeT *value, void *data) {
+static void BuildTimeSlice(size_t index, JsonNodeT *value, void *data) {
   const char *type = JsonQueryString(value, "type");
   TimeSliceInfoT *tsi = (TimeSliceInfoT *)data;
   TimeSliceT *ts = &tsi->ts[tsi->index++];

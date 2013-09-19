@@ -1,15 +1,15 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
 BINS := spy-shs10 wpz-wcca
-OBJS := spy-shs10.o wpz-wcca.o config.o timeline.o demo.o
+OBJS := spy-shs10.o wpz-wcca.o config.o timeline.o demo.o envelope.o
 LIBS := libaudio.a libengine.a libuvmap.a libjson.a libtools.a libgfx.a \
 	libsystem.a libstd.a 
 
 all:: spy-shs10.syms wpz-wcca.syms $(BINS)
 
-spy-shs10: spy-shs10.o config.o timeline.o demo.o $(LIBS)
+spy-shs10: spy-shs10.o config.o timeline.o demo.o envelope.o $(LIBS)
 
-wpz-wcca: wpz-wcca.o config.o timeline.o demo.o $(LIBS)
+wpz-wcca: wpz-wcca.o config.o timeline.o demo.o envelope.o $(LIBS)
 
 spy-shs10.o:: CFLAGS += -Wno-unused
 wpz-wcca.o:: CFLAGS += -Wno-unused

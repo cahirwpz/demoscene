@@ -40,7 +40,7 @@ typedef struct JsonPair {
 
 TYPEDEF(JsonNodeT);
 
-typedef void (*JsonArrayIterFuncT)(JsonNodeT *value, void *data);
+typedef void (*JsonArrayIterFuncT)(size_t index, JsonNodeT *value, void *data);
 typedef void (*JsonObjectIterFuncT)(const char *key, JsonNodeT *value, void *data);
 
 JsonNodeT *JsonParse(const char *text);
