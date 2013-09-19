@@ -7,6 +7,7 @@
 
 extern bool RenderFlatShading;
 extern bool RenderWireFrame;
+extern bool RenderAllFaces;
 
 typedef struct PolygonExt {
   uint16_t index;

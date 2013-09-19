@@ -78,6 +78,7 @@ static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
 
 bool RenderFlatShading = false;
 bool RenderWireFrame = false;
+bool RenderAllFaces = false;
 
 static void Render(PixBufT *canvas, PolygonExtT **sortedPolygonExt,
                    TriangleT *polygon, size_t polygonNum,
@@ -93,7 +94,7 @@ static void Render(PixBufT *canvas, PolygonExtT **sortedPolygonExt,
     int p2 = polygon[i].p2;
     int p3 = polygon[i].p3;
 
-    if (!polyExt->flags && !surface[polygon[i].surface].sideness)
+    if (!RenderAllFaces && !polyExt->flags && !surface[polygon[i].surface].sideness)
       continue;
 
     if (RenderFlatShading) {

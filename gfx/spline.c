@@ -15,9 +15,8 @@ typedef struct CubicPolynomial {
   float h11;
 } CubicPolynomialT;
 
-static void HermiteCubicPolynomial(float t asm("fp0"),
-                                   CubicPolynomialT *poly asm("a0"))
-{
+__regargs static
+void HermiteCubicPolynomial(float t, CubicPolynomialT *poly) {
   /*
    * h00(t) = 2*t^3 - 3*t^2 + 1
    *        = 2*(t^3 - t^2) - (t^2 + 1)
@@ -74,7 +73,8 @@ SplineT *NewSpline(size_t knots, bool closed) {
   return spline;
 }
 
-static SplineKnotT *SplineGetKnot(SplineT *spline asm("a0"), ssize_t knot asm("d0")) {
+__regargs static
+SplineKnotT *SplineGetKnot(SplineT *spline, ssize_t knot) {
   size_t knots = TableSize(spline->knots);
 
   if (knot < 0) {
@@ -88,11 +88,13 @@ static SplineKnotT *SplineGetKnot(SplineT *spline asm("a0"), ssize_t knot asm("d
   return &spline->knots[knot];
 }
 
-static size_t SplineKnots(SplineT *spline asm("a0")) {
+__regargs static
+size_t SplineKnots(SplineT *spline) {
   return TableSize(spline->knots) + (spline->closed ? 1 : 0);
 }
 
-static float SplineEvalWithinInterval(SplineT *spline asm("a0"), float t asm("fp0"), size_t knot asm("d0")) {
+__regargs static
+float SplineEvalWithinInterval(SplineT *spline, float t, size_t knot) {
   SplineKnotT *p0 = SplineGetKnot(spline, knot);
   SplineKnotT *p1 = SplineGetKnot(spline, knot + 1);
   CubicPolynomialT poly;

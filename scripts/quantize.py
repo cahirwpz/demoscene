@@ -125,12 +125,12 @@ if __name__ == '__main__':
     if not os.path.isfile(inputPath):
       raise SystemExit('Input file does not exists!')
 
-    if os.path.isfile(outputPath) and not args.force:
-      raise SystemExit('Will not overwrite output file!')
-
     logging.info('Reading input file: "%s".', inputPath)
 
     images.append((Image.open(inputPath), outputPath))
+
+    if os.path.isfile(outputPath) and not args.force:
+      raise SystemExit('Will not overwrite "%s" file!' % outputPath)
 
   sources = [image for image, _ in images]
 

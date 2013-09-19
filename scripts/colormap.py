@@ -63,7 +63,7 @@ if __name__ == '__main__':
       raise SystemExit('Image has to be of CLUT type.')
 
     rawPal = image.getpalette()
-    colors = len(set(image.getdata()))
+    colors = max(set(image.getdata())) + 1
     pal = [tuple(rawPal[3 * i:3 * (i + 1)]) for i in range(colors)]
 
   colorMapData = []

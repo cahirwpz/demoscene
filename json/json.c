@@ -106,7 +106,8 @@ JsonNodeT *JsonParse(const char *json) {
       LOG("Parse error: %s at token ", parser.errmsg);
       TokenPrint(&parser.tokens[parser.pos]);
 #else
-      LOG("Parse error: %s.", parser.errmsg);
+      LOG("Parse error: %s at position %d.", parser.errmsg,
+          parser.tokens[parser.pos].pos);
 #endif
       MemUnref(node);
       node = NULL;
