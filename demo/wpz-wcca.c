@@ -15,7 +15,9 @@
 #include "gfx/colorfunc.h"
 #include "gfx/colors.h"
 #include "gfx/hsl.h"
+#include "gfx/layers.h"
 #include "gfx/palette.h"
+#include "gfx/rectangle.h"
 
 #include "system/audio.h"
 #include "system/c2p.h"
@@ -40,6 +42,10 @@ static PaletteT *TheLoadPal = NULL;
 
 PARAMETER(PixBufT *, TheCanvas, NULL);
 PARAMETER(PaletteT *, ThePalette, NULL);
+PARAMETER(PixBufT *, ClipartImg, NULL);
+PARAMETER(PaletteT *, ClipartPal, NULL);
+PARAMETER(int, ClipartX, 0);
+PARAMETER(int, ClipartY, 0);
 
 /*
  * Load demo.
@@ -104,12 +110,6 @@ void DemoUpdateTime(int oldFrameNumber, int newFrameNumber) {
  * Set up resources.
  */
 void SetupResources() {
-  MeshT *mesh = R_("WeCanLogoMesh");
-
-  CalculateSurfaceNormals(mesh);
-  NormalizeMeshSize(mesh);
-  MeshApplyPalette(mesh, R_("WeCanLogoScreenPal"));
-
   ResAdd("WeCanLogoObj", NewSceneObject("WeCanLogo", R_("WeCanLogoMesh")));
   ResAdd("WeCanLogoScene", NewScene());
   SceneAddObject(R_("WeCanLogoScene"), R_("WeCanLogoObj"));
@@ -122,6 +122,14 @@ void SetupResources() {
     NormalizeMeshSize(mesh);
   }
 
+  {
+    MeshT *mesh = R_("WeCanLogoMesh");
+
+    CalculateSurfaceNormals(mesh);
+    NormalizeMeshSize(mesh);
+    MeshApplyPalette(mesh, R_("WeCanBgPal"));
+  }
+
   ResAdd("PotatoObj", NewSceneObject("Potato", R_("PotatoMesh")));
   ResAdd("PotatoScene", NewScene());
   SceneAddObject(R_("PotatoScene"), R_("PotatoObj"));
@@ -132,6 +140,7 @@ void SetupResources() {
   ResAdd("UVMapB", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("UVMapC", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
 
+  ResAdd("LayerMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("ComposeMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("ShadeMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
 
@@ -302,7 +311,7 @@ CALLBACK(CalculateComposeMap) {
   int i;
 
   for (i = 0; i < 256; i++)
-    cfunc[i] = ((128 - ((frame->number * 2) % 256 + i)) & 0xff) >= 128 ? 1 : 0;
+    cfunc[i] = ((128 - (frame->number % 256 + i)) & 0xff) >= 128 ? 1 : 0;
 
   PixBufSetColorFunc(comp, cfunc);
   PixBufSetBlitMode(comp, BLIT_COLOR_FUNC);
@@ -377,8 +386,8 @@ CALLBACK(ComposeMaps) {
   UVMapT *map1 = R_("UVMapA");
   UVMapT *map2 = R_("UVMapB");
   PixBufT *compMap = R_("ComposeMap");
-  int du = 2 * frame->number;
-  int dv = 4 * frame->number;
+  int du = frame->number;
+  int dv = 2 * frame->number;
 
   UVMapSetOffset(map1, du, dv);
   UVMapSetOffset(map2, -du, -dv);
@@ -417,12 +426,19 @@ CALLBACK(RenderPotatoBackground) {
   UVMapRender(R_("UVMapC"), TheCanvas);
 }
 
-/*****************************************************************************/
+/*** We Can Screen ***********************************************************/
 
-PARAMETER(PixBufT *, ClipartImg, NULL);
-PARAMETER(PaletteT *, ClipartPal, NULL);
-PARAMETER(int, ClipartX, 0);
-PARAMETER(int, ClipartY, 0);
+CALLBACK(Transition) {
+  PixBufT *map = R_("LayerMap");
+  PixBufT *image[] = { R_("WeCanBg1Img"), R_("WeCanBg2Img") };
+  float t = FrameTime(frame);
+
+  PixBufClear(map);
+  map->fgColor = 1;
+  DrawRectangle(map, 0, 0, 320 * t, 200);
+
+  LayersCompose(TheCanvas, map, image, 2);
+}
 
 CALLBACK(RenderWeCanLogo) {
   SceneT *scene = R_("WeCanLogoScene");
@@ -438,8 +454,68 @@ CALLBACK(RenderWeCanLogo) {
     //PushTranslation3D(ms, -1.0f, -0.775f, -1.95f);
   }
 
+  RenderAllFaces = true;
+
   RenderScene(scene, TheCanvas);
 }
+
+CALLBACK(ShowWeCanBg1) {
+  PixBufBlit(TheCanvas, 0, 0, R_("WeCanBg1Img"), NULL);
+}
+
+CALLBACK(ShowWeCanBg2) {
+  PixBufBlit(TheCanvas, 0, 0, R_("WeCanBg2Img"), NULL);
+}
+
+PARAMETER(int, DateX, 100);
+PARAMETER(int, DateY, 200);
+
+CALLBACK(ShowDate)  {
+  PixBufT *date = R_("DateImg");
+  PixBufSetBlitMode(date, BLIT_TRANSPARENT);
+  PixBufBlit(TheCanvas, DateX, DateY, date, NULL);
+}
+
+PARAMETER(int, CodeAgainX, 20);
+PARAMETER(int, CodeAgainY, 20);
+
+CALLBACK(ShowCodeAgain) {
+  PixBufT *date = R_("CodeAgainImg");
+  PixBufSetBlitMode(date, BLIT_TRANSPARENT);
+  PixBufBlit(TheCanvas, CodeAgainX, CodeAgainY, date, NULL);
+}
+
+PARAMETER(int, TwoX, 135);
+PARAMETER(int, TwoY, 80);
+
+CALLBACK(ShowTwo)  {
+  PixBufT *two = R_("2Img");
+  PixBufSetColorMap(two, R_("WeCanColorMap"), 0);
+  PixBufSetBlitMode(two, BLIT_COLOR_MAP);
+  PixBufBlit(TheCanvas, TwoX, TwoY, two, NULL);
+}
+
+PARAMETER(int, WarnungX, 20);
+PARAMETER(int, WarnungY, 10);
+
+CALLBACK(ShowWarnung)  {
+  PixBufT *warnung = R_("WarnungImg");
+  PixBufSetColorMap(warnung, R_("WeCanColorMap"), 0);
+  PixBufSetBlitMode(warnung, BLIT_COLOR_MAP);
+  PixBufBlit(TheCanvas, WarnungX, WarnungY, warnung, NULL);
+}
+
+PARAMETER(int, AttenzioneX, 100);
+PARAMETER(int, AttenzioneY, 10);
+
+CALLBACK(ShowAttenzione) {
+  PixBufT *attenzione = R_("AttenzioneImg");
+  PixBufSetColorMap(attenzione, R_("WeCanColorMap"), 0);
+  PixBufSetBlitMode(attenzione, BLIT_COLOR_MAP);
+  PixBufBlit(TheCanvas, AttenzioneX, AttenzioneY, attenzione, NULL);
+}
+
+/*****************************************************************************/
 
 CALLBACK(BlitClipartToCanvas) {
   PixBufBlit(TheCanvas, ClipartX, ClipartY, ClipartImg, NULL);

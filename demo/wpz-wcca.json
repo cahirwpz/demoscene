@@ -11,9 +11,6 @@
     "palette": "data/kickstart-0.pal"
   },
   "resources": {
-    "WeCanLogoScreenImg": { "type": "image", "path": "data/wecan-logo-screen-256.8" },
-    "WeCanLogoScreenPal": { "type": "palette", "path": "data/wecan-logo-screen-256.pal" },
-    "WeCanLogoMesh": { "type": "mesh3d", "path": "data/wecan-logo.robj" },
     "RaycastTextureImg": { "type": "image", "path": "data/raycast-208.8" },
     "RaycastTexturePal": { "type": "palette", "path": "data/raycast-208.pal" },
     "RaycastColorMap": { "type": "image", "path": "data/raycast-shades.8" },
@@ -24,7 +21,18 @@
     "CompTxt0Pal": { "type": "palette", "path": "data/compose-0-128.pal" },
     "CompTxt1Img": { "type": "image", "path": "data/compose-1-128.8" },
     "CompTxt1Pal": { "type": "palette", "path": "data/compose-1-128.pal" },
-    "PotatoMesh": { "type": "mesh3d",  "path": "data/potato.robj" }
+    "PotatoMesh": { "type": "mesh3d",  "path": "data/potato.robj" },
+    "WeCanLogoMesh": { "type": "mesh3d", "path": "data/wecan-logo.robj" },
+    "WeCanBg1Img": { "type": "image",  "path": "data/wecan-bg-1.8" },
+    "WeCanBg2Img": { "type": "image",  "path": "data/wecan-bg-2.8" },
+    "WeCanBgPal": { "type": "palette",  "path": "data/wecan-bg-1.pal" },
+    "WeCanColorMap": { "type": "image",  "path": "data/wecan-shades.8" },
+    "2Img": { "type": "image",  "path": "data/2.8" },
+    "AttenzioneImg": { "type": "image",  "path": "data/attenzione.8" },
+    "HighVoltageImg": { "type": "image",  "path": "data/highvoltage.8" },
+    "WarnungImg": { "type": "image",  "path": "data/warnung.8" },
+    "CodeAgainImg": { "type": "image",  "path": "data/codeagain.8" },
+    "DateImg": { "type": "image",  "path": "data/date.8" }
   },
   "timeline": [
   {
@@ -71,14 +79,14 @@
     ]
   }, {
     "type":  "timeslice",
-    "range": [[64, "beat"], [96, "beat"]],
+    "range": [[64, "beat"], [128, "beat"]],
     "unit":  [1, "beat"],
     "parts": [{
       "type": "once", "range": [0, -1],
       "set": {
         "ThePalette" : { "resource": "CompTxt0Pal" }
       },
-      "call": ["ClearComposeMap", "ReloadPalette"]
+      "call": ["ClearComposeMap"]
     }, {
       "type": "each-frame", "range": [0, 4], "call": ["FadeFromWhite"]
     }, {
@@ -88,15 +96,15 @@
       "type": "each-frame", "range": [0, -1],
       "call": ["ComposeMaps"]
     }, {
-      "type": "each-frame", "range": [0, 28],
+      "type": "each-frame", "range": [4, 60],
       "call": ["ReloadPalette"]
     }, {
-      "type": "each-frame", "range": [28, -1],
+      "type": "each-frame", "range": [60, -1],
       "call": ["FadeToBlack"]
     }]
   }, {
     "type":  "timeslice",
-    "range": [[96, "beat"], -1],
+    "range": [[128, "beat"], [160, "beat"]],
     "unit":  [1, "beat"],
     "parts": [{
       "type": "once", "range": [0, -1],
@@ -109,6 +117,33 @@
     }, {
       "type": "each-frame", "range": [0, 4],
       "call": ["FadeFromBlack"]
+    }, {
+      "type": "each-frame", "range": [28, -1],
+      "call": ["FadeToBlack"]
+    }]
+  }, {
+    "type":  "timeslice",
+    "range": [[200, "beat"], -1],
+    "unit":  [1, "beat"],
+    "parts": [{
+      "type": "once", "range": [0, -1],
+      "set": {
+        "ThePalette" : { "resource": "WeCanBgPal" }
+      },
+      "call": ["ReloadPalette", "ShowWeCanBg1"]
+    }, {
+      "type": "each-frame", "range": [8, 16],
+      "call": ["Transition"]
+    }, {
+      "type": "each-frame", "range": [24, -1],
+      "call": ["ShowWeCanBg2", "RenderWeCanLogo", "ShowTwo", "ShowDate",
+               "ShowCodeAgain", "ShowWarnung", "ShowAttenzione"]
+    }, {
+      "type": "each-frame", "range": [0, 4],
+      "call": ["FadeFromBlack"]
+    }, {
+      "type": "each-frame", "range": [100, -1],
+      "call": ["FadeToBlack"]
     }]
   }, {
     "type":  "each-frame",
@@ -116,7 +151,7 @@
     "call":  ["RenderCanvas"]
   }, {
     "type":  "each-frame",
-    "range": [0, -1, [5, "frame"]],
+    "range": [0, -1],
     "call":  ["FeedAudioStream"]
   }]
 }
