@@ -396,11 +396,41 @@ CALLBACK(ComposeMaps) {
 
 /*** Potato ******************************************************************/
 
+ARRAY(float, 2, Credits3DPos, 12.0f, 40.0f);
+
+CALLBACK(ShowCredits3D)  {
+  PixBufBlit(TheCanvas, Credits3DPos[0], Credits3DPos[1], R_("Credits3D"),
+             NULL);
+}
+
+ARRAY(float, 2, CreditsCodeWorkPos, 56.0f, 48.0f);
+
+CALLBACK(ShowCreditsCodeWork)  {
+  PixBufBlit(TheCanvas, CreditsCodeWorkPos[0], CreditsCodeWorkPos[1],
+             R_("CreditsCodeWork"), NULL);
+}
+
+ARRAY(float, 2, CreditsPxlWorkPos, 26.0f, 32.0f);
+
+CALLBACK(ShowCreditsPxlWork)  {
+  PixBufBlit(TheCanvas, CreditsPxlWorkPos[0], CreditsPxlWorkPos[1],
+             R_("CreditsPxlWork"), NULL);
+}
+
+ARRAY(float, 2, CreditsSoundPos, 30.0f, 40.0f);
+
+CALLBACK(ShowCreditsSound)  {
+  PixBufBlit(TheCanvas, CreditsSoundPos[0], CreditsSoundPos[1],
+             R_("CreditsSound"), NULL);
+}
+
+PARAMETER(float, PotatoZoom, 1.25f);
+
 CALLBACK(ControlPotato) {
   MatrixStack3D *ms = GetObjectTranslation(R_("PotatoScene"), "Potato");
 
   StackReset(ms);
-  PushScaling3D(ms, 1.75f, 1.75f, 1.75f);
+  PushScaling3D(ms, PotatoZoom, PotatoZoom, PotatoZoom);
   PushRotation3D(ms, 0, (float)(-frame->number * 2), frame->number);
   PushTranslation3D(ms, 0.0f, 0.0f, -2.0f);
 }
@@ -409,10 +439,11 @@ CALLBACK(RenderPotato) {
   PixBufT *shades = R_("ShadeMap");
   RenderFlatShading = true;
 
+  shades->bgColor = 96;
   PixBufClear(shades);
   RenderScene(R_("PotatoScene"), shades);
 
-  PixBufSetColorMap(shades, R_("RaycastColorMap"), 0);
+  PixBufSetColorMap(shades, R_("PotatoBgColorMap"), -16);
   PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
 
   PixBufBlit(TheCanvas, 0, 0, shades, NULL);

@@ -21,7 +21,14 @@
     "CompTxt0Pal": { "type": "palette", "path": "data/compose-0-128.pal" },
     "CompTxt1Img": { "type": "image", "path": "data/compose-1-128.8" },
     "CompTxt1Pal": { "type": "palette", "path": "data/compose-1-128.pal" },
+    "Credits3D": { "type": "image",  "path": "data/credits-3d.8" },
+    "CreditsPxlWork": { "type": "image",  "path": "data/credits-pxlwork.8" },
+    "CreditsCodeWork": { "type": "image",  "path": "data/credits-codework.8" },
+    "CreditsSound": { "type": "image",  "path": "data/credits-sound.8" },
     "PotatoMesh": { "type": "mesh3d",  "path": "data/potato.robj" },
+    "PotatoBgImg": { "type": "image",  "path": "data/potato-bg.8" },
+    "PotatoBgPal": { "type": "palette",  "path": "data/potato-bg-shades.pal" },
+    "PotatoBgColorMap": { "type": "image",  "path": "data/potato-bg-shades.8" },
     "WeCanLogoMesh": { "type": "mesh3d", "path": "data/wecan-logo.robj" },
     "WeCanBg1Img": { "type": "image",  "path": "data/wecan-bg-1.8" },
     "WeCanBg2Img": { "type": "image",  "path": "data/wecan-bg-2.8" },
@@ -109,21 +116,36 @@
     }]
   }, {
     "type":  "timeslice",
-    "range": [[128, "beat"], [160, "beat"]],
+    "range": [[128, "beat"], [200, "beat"]],
     "unit":  [1, "beat"],
     "parts": [{
       "type": "once", "range": [0, -1],
       "set": {
-        "ThePalette" : { "resource": "RaycastTexturePal" }
+        "ThePalette" : { "resource": "PotatoBgPal" },
+        "PotatoZoom" : 1.30
       }
+    }, {
+      "type": "once", "range": [4, -1], "call": ["ReloadPalette"]
     }, {
       "type": "each-frame", "range": [0, -1],
       "call": ["RenderPotatoBackground", "ControlPotato", "RenderPotato"]
     }, {
+      "type": "each-frame", "range": [8, 18],
+      "call": ["ShowCredits3D"]
+    }, {
+      "type": "each-frame", "range": [22, 32],
+      "call": ["ShowCreditsCodeWork"]
+    }, {
+      "type": "each-frame", "range": [36, 46],
+      "call": ["ShowCreditsPxlWork"]
+    }, {
+      "type": "each-frame", "range": [50, 60],
+      "call": ["ShowCreditsSound"]
+    }, {
       "type": "each-frame", "range": [0, 4],
       "call": ["FadeFromBlack"]
     }, {
-      "type": "each-frame", "range": [28, -1],
+      "type": "each-frame", "range": [68, -1],
       "call": ["FadeToBlack"]
     }]
   }, {
