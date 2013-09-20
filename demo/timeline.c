@@ -79,7 +79,7 @@ void DoTimeSlice(TimeSliceT *slice, int thisFrame) {
                 break;
               case ST_ENVELOPE:
                 {
-                  EnvelopeT *env = R_(setter->u.resource);
+                  EnvelopeT *env = setter->u.envelope;
                   float time = (float)(thisFrame - slice->start) / DemoBeat;
                   EnvelopeEvaluate(env, time, (float *)setter->ptr);
                 }
@@ -281,9 +281,32 @@ static CallbackT *BuildCallbacks(JsonNodeT *value, TimeSliceInfoT *tsi) {
   return callbacks;
 }
 
+static EnvelopeT *ReadEnvelope(EnvTypeT type, JsonNodeT *value) {
+  JsonNodeT *points = JsonQueryArray(value, "points");
+  int dimensions = JsonQueryInteger(value, "dimensions");
+  EnvelopeT *env = NewEnvelope(type, dimensions, points->u.array.num);
+
+  void ReadValue(size_t index, JsonNodeT *node, void *data) {
+    ASSERT(node->type == JSON_INTEGER || node->type == JSON_REAL,
+           "Item '%ld' is not a number.", index);
+
+    ((float *)data)[index] = (node->type == JSON_INTEGER) ?
+      (float)node->u.integer : node->u.real;
+  }
+
+  void ReadPoint(size_t index, JsonNodeT *value, void *data) {
+    JsonArrayForEach(value, ReadValue, (void *)&env->point[index]);
+  }
+
+  JsonArrayForEach(points, ReadPoint, NULL);
+
+  return env;
+}
+
 static void JsonReadSetter(const char *key, JsonNodeT *value, void *data) {
   SetterT **setter_ptr = (SetterT **)data;
   SetterT *setter = (*setter_ptr)++;
+  JsonNodeT *env;
 
   setter->name = StrDup(key);
 
@@ -292,9 +315,12 @@ static void JsonReadSetter(const char *key, JsonNodeT *value, void *data) {
       if (JsonQuery(value, "resource")) {
         setter->type = ST_RESOURCE;
         setter->u.resource = StrDup(JsonQueryString(value, "resource"));
-      } else if (JsonQuery(value, "envelope")) {
+      } else if ((env = JsonQuery(value, "envelope:polyline"))) {
         setter->type = ST_ENVELOPE;
-        setter->u.resource = StrDup(JsonQueryString(value, "envelope"));
+        setter->u.envelope = ReadEnvelope(ENV_POLYLINE, env);
+      } else if ((env = JsonQuery(value, "envelope:smoothstep"))) {
+        setter->type = ST_ENVELOPE;
+        setter->u.envelope = ReadEnvelope(ENV_SMOOTHSTEP, env);
       } else {
         PANIC("Unknown setter type: '%s'.", value->u.object.item[0].key);
       }

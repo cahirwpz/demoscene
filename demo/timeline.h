@@ -2,6 +2,7 @@
 #define __TIMELINE_H__
 
 #include "std/types.h"
+#include "envelope.h"
 
 extern float DemoBeat;
 extern int DemoEndFrame;
@@ -57,6 +58,7 @@ typedef struct Setter {
     char *string;
     int integer;
     float real;
+    EnvelopeT *envelope;
   } u;
 } SetterT;
 

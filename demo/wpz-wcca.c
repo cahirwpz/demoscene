@@ -6,11 +6,6 @@
 #include "audio/stream.h"
 #include "engine/object.h"
 #include "engine/scene.h"
-#include "uvmap/misc.h"
-#include "uvmap/generate.h"
-#include "uvmap/raycast.h"
-#include "uvmap/render.h"
-#include "uvmap/scaling.h"
 #include "gfx/blit.h"
 #include "gfx/colorfunc.h"
 #include "gfx/colors.h"
@@ -18,6 +13,12 @@
 #include "gfx/layers.h"
 #include "gfx/palette.h"
 #include "gfx/rectangle.h"
+#include "tools/gradient.h"
+#include "uvmap/generate.h"
+#include "uvmap/misc.h"
+#include "uvmap/raycast.h"
+#include "uvmap/render.h"
+#include "uvmap/scaling.h"
 
 #include "system/audio.h"
 #include "system/c2p.h"
@@ -42,10 +43,6 @@ static PaletteT *TheLoadPal = NULL;
 
 PARAMETER(PixBufT *, TheCanvas, NULL);
 PARAMETER(PaletteT *, ThePalette, NULL);
-PARAMETER(PixBufT *, ClipartImg, NULL);
-PARAMETER(PaletteT *, ClipartPal, NULL);
-PARAMETER(int, ClipartX, 0);
-PARAMETER(int, ClipartY, 0);
 
 /*
  * Load demo.
@@ -110,30 +107,6 @@ void DemoUpdateTime(int oldFrameNumber, int newFrameNumber) {
  * Set up resources.
  */
 void SetupResources() {
-  ResAdd("WeCanLogoObj", NewSceneObject("WeCanLogo", R_("WeCanLogoMesh")));
-  ResAdd("WeCanLogoScene", NewScene());
-  SceneAddObject(R_("WeCanLogoScene"), R_("WeCanLogoObj"));
-
-  {
-    MeshT *mesh = R_("PotatoMesh");
-
-    CenterMeshPosition(mesh);
-    CalculateSurfaceNormals(mesh);
-    NormalizeMeshSize(mesh);
-  }
-
-  {
-    MeshT *mesh = R_("WeCanLogoMesh");
-
-    CalculateSurfaceNormals(mesh);
-    NormalizeMeshSize(mesh);
-    MeshApplyPalette(mesh, R_("WeCanBgPal"));
-  }
-
-  ResAdd("PotatoObj", NewSceneObject("Potato", R_("PotatoMesh")));
-  ResAdd("PotatoScene", NewScene());
-  SceneAddObject(R_("PotatoScene"), R_("PotatoObj"));
-
   ResAdd("RaycastMap", NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256));
   ResAdd("UVMap", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
   ResAdd("UVMapA", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
@@ -143,6 +116,12 @@ void SetupResources() {
   ResAdd("LayerMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("ComposeMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("ShadeMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
+  ResAdd("CircleShade", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
+
+  {
+    FPointT center = { WIDTH / 2, HEIGHT / 2 };
+    CircularGradient(R_("CircleShade"), &center);
+  }
 
   LinkPalettes(R_("RaycastTexturePal"), R_("WhelpzLogoPal"), NULL);
   PixBufRemap(R_("WhelpzLogoImg"), R_("WhelpzLogoPal"));
@@ -156,11 +135,56 @@ void SetupResources() {
 
   ResAdd("CompTxt0PalOrig", MemClone(R_("CompTxt0Pal")));
 
-  LinkPalettes(R_("CompTxt0Pal"), R_("CompTxt1Pal"), NULL);
+  LinkPalettes(R_("CompTxt0Pal"), R_("CompTxt1Pal"), R_("StonePal"), NULL);
   PixBufRemap(R_("CompTxt1Img"), R_("CompTxt1Pal"));
 
   ResAdd("ColorFunc", NewColorFunc());
   ResAdd("EffectPal", NewPalette(256));
+
+  ResAdd("WeCanBg1Img", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
+  PixBufBlit(R_("WeCanBg1Img"), 0, 0, R_("WeCanBgImg"), NULL);
+
+  {
+    MeshT *mesh = R_("PotatoMesh");
+    SceneT *scene = NewScene();
+
+    CenterMeshPosition(mesh);
+    CalculateSurfaceNormals(mesh);
+    NormalizeMeshSize(mesh);
+
+    SceneAddObject(scene, NewSceneObject("Potato", mesh));
+    ResAdd("PotatoScene", scene);
+  }
+
+  {
+    MeshT *mesh = R_("WeCanLogoMesh");
+    SceneT *scene = NewScene();
+
+    CalculateSurfaceNormals(mesh);
+    NormalizeMeshSize(mesh);
+    MeshApplyPalette(mesh, R_("WeCanBgPal"));
+
+    SceneAddObject(scene, NewSceneObject("WeCanLogo", mesh));
+    ResAdd("WeCanLogoScene", scene);
+  }
+
+  {
+    MeshT *mesh1 = R_("Stone1Mesh");
+    MeshT *mesh2 = R_("Stone2Mesh");
+    SceneT *scene = NewScene();
+
+    CenterMeshPosition(mesh1);
+    CalculateSurfaceNormals(mesh1);
+    MeshApplyPalette(mesh1, R_("StonePal"));
+    SceneAddObject(scene, NewSceneObject("Stone1", mesh1));
+
+    CenterMeshPosition(mesh2);
+    CalculateSurfaceNormals(mesh2);
+    MeshApplyPalette(mesh2, R_("StonePal"));
+    SceneAddObject(scene, NewSceneObject("Stone2", mesh2));
+
+    ResAdd("StonesScene", scene);
+  }
 }
 
 /*** Raycast *****************************************************************/
@@ -178,8 +202,6 @@ static CameraViewT CameraView = {
     { -0.5f, -0.333333f, 0.5f }
   }
 };
-
-PARAMETER(PixBufT *, RaycastTexture, NULL);
 
 CALLBACK(RaycastSetView1) {
   float t = FrameTime(frame);
@@ -225,7 +247,7 @@ CALLBACK(RenderRaycast) {
 
   RaycastTunnel(smallMap, CameraView.Transformed);
   UVMapScale8x(map, smallMap);
-  UVMapSetTexture(map, RaycastTexture);
+  UVMapSetTexture(map, R_("RaycastTextureImg"));
   UVMapRender(map, TheCanvas);
 }
 
@@ -280,6 +302,10 @@ CALLBACK(CalculateShadeMap2) {
   }
 }
 
+CALLBACK(CopyShadeMap) {
+  PixBufCopy(R_("ShadeMap"), R_("CircleShade"));
+}
+
 CALLBACK(RenderRaycastLight) {
   UVMapT *map = R_("UVMap");
   PixBufT *shades = R_("ShadeMap");
@@ -289,12 +315,8 @@ CALLBACK(RenderRaycastLight) {
   PixBufBlit(TheCanvas, 0, 0, shades, NULL);
 }
 
-PARAMETER(PixBufT *, LightMap, NULL);
-
-CALLBACK(BlitLightMapToCanvas) {
-  PixBufSetColorMap(LightMap, R_("RaycastColorMap"), 0);
-  PixBufSetBlitMode(LightMap, BLIT_COLOR_MAP);
-  PixBufBlit(TheCanvas, 0, 0, LightMap, NULL);
+CALLBACK(ShowWhelpzLogo) {
+  PixBufBlit(TheCanvas, 0, 28, R_("WhelpzLogoImg"), NULL);
 }
 
 /*** Composition *************************************************************/
@@ -303,15 +325,20 @@ CALLBACK(ClearComposeMap) {
   PixBufClear(R_("ComposeMap"));
 }
 
+PARAMETER(float, ComposeLevel, 0.0f);
+
 CALLBACK(CalculateComposeMap) {
   uint8_t *cfunc = R_("ColorFunc");
   UVMapT *map = R_("UVMapB");
   PixBufT *comp = NewPixBufWrapper(WIDTH, HEIGHT, map->map.fast.v);
   PixBufT *compMap = R_("ComposeMap");
   int i;
+  int t = (int)(clampf(ComposeLevel) * 255.0f);
 
-  for (i = 0; i < 256; i++)
-    cfunc[i] = ((128 - (frame->number % 256 + i)) & 0xff) >= 128 ? 1 : 0;
+  for (i = 0; i < 256; i++) {
+    int magic = 128 - (t + i);
+    cfunc[i] = ((magic & 0xff) >= 128) ? 1 : 0;
+  }
 
   PixBufSetColorFunc(comp, cfunc);
   PixBufSetBlitMode(comp, BLIT_COLOR_FUNC);
@@ -394,6 +421,29 @@ CALLBACK(ComposeMaps) {
   UVMapComposeAndRender(TheCanvas, compMap, map1, map2);
 }
 
+ARRAY(float, 3, Stone1Pos, -0.5f, 0.0f, 0.0f);
+ARRAY(float, 3, Stone2Pos, 0.5f, 0.0f, 0.0f);
+
+CALLBACK(RenderStones) {
+  MatrixStack3D *ms;
+ 
+  ms = GetObjectTranslation(R_("StonesScene"), "Stone1");
+  StackReset(ms);
+  PushScaling3D(ms, 5.0f, 5.0f, 5.0f);
+  PushRotation3D(ms, 0, (float)(-frame->number * 2), frame->number);
+  PushTranslation3D(ms, Stone1Pos[0], Stone1Pos[1], Stone2Pos[2] - 2.0f);
+
+  ms = GetObjectTranslation(R_("StonesScene"), "Stone2");
+  StackReset(ms);
+  PushScaling3D(ms, 5.0f, 5.0f, 5.0f);
+  PushRotation3D(ms, 0, (float)(frame->number * 2), -frame->number);
+  PushTranslation3D(ms, Stone2Pos[0], Stone2Pos[1], Stone2Pos[2] - 2.0f);
+
+  RenderAllFaces = true;
+  RenderFlatShading = false;
+  RenderScene(R_("StonesScene"), TheCanvas);
+}
+
 /*** Potato ******************************************************************/
 
 ARRAY(float, 2, Credits3DPos, 12.0f, 40.0f);
@@ -437,10 +487,12 @@ CALLBACK(ControlPotato) {
 
 CALLBACK(RenderPotato) {
   PixBufT *shades = R_("ShadeMap");
-  RenderFlatShading = true;
 
   shades->bgColor = 96;
   PixBufClear(shades);
+
+  RenderAllFaces = false;
+  RenderFlatShading = true;
   RenderScene(R_("PotatoScene"), shades);
 
   PixBufSetColorMap(shades, R_("PotatoBgColorMap"), -16);
@@ -460,34 +512,58 @@ CALLBACK(RenderPotatoBackground) {
 /*** We Can Screen ***********************************************************/
 
 CALLBACK(Transition) {
+  uint8_t *cfunc = R_("ColorFunc");
+  PixBufT *shade = R_("CircleShade");
   PixBufT *map = R_("LayerMap");
-  PixBufT *image[] = { R_("WeCanBg1Img"), R_("WeCanBg2Img") };
+  PixBufT *image[] = { R_("WeCanBg1Img"), TheCanvas };
   float t = FrameTime(frame);
+  int i;
 
-  PixBufClear(map);
-  map->fgColor = 1;
-  DrawRectangle(map, 0, 0, 320 * t, 200);
+  for (i = 0; i < 256; i++) {
+    cfunc[i] = (i < (int)(t * 255.0f)) ? 1 : 0;
+  }
+
+  PixBufSetColorFunc(shade, cfunc);
+  PixBufSetBlitMode(shade, BLIT_COLOR_FUNC);
+  PixBufBlit(map, 0, 0, shade, NULL);
 
   LayersCompose(TheCanvas, map, image, 2);
 }
 
+ARRAY(float, 3, WeCanLogoRotation);
+ARRAY(float, 2, WeCanLogoPos);
+
 CALLBACK(RenderWeCanLogo) {
   SceneT *scene = R_("WeCanLogoScene");
-
-  RenderFlatShading = false;
 
   {
     MatrixStack3D *ms = GetObjectTranslation(scene, "WeCanLogo");
 
     StackReset(ms);
-    PushRotation3D(ms, 0, (float)(-frame->number * 2), 0);
-    PushTranslation3D(ms, 0.0f, 0.0f, -2.0f);
+    PushRotation3D(ms, WeCanLogoRotation[0], WeCanLogoRotation[1], WeCanLogoRotation[2]);
+    PushTranslation3D(ms, WeCanLogoPos[0], WeCanLogoPos[1], -2.0f);
     //PushTranslation3D(ms, -1.0f, -0.775f, -1.95f);
   }
 
+  RenderFlatShading = false;
   RenderAllFaces = true;
-
   RenderScene(scene, TheCanvas);
+}
+
+PARAMETER(float, WeCanBgX, 0.0f);
+
+CALLBACK(ShowWeCanBg) {
+  PixBufT *bg = R_("WeCanBgImg");
+  RectT rect = { (int)WeCanBgX, 0, TheCanvas->width, TheCanvas->height };
+  int w = bg->width - TheCanvas->width;
+
+  if (rect.x < 0)
+    rect.x = 0;
+  
+  if (rect.x > w)
+    rect.x = w;
+
+  PixBufBlit(TheCanvas, 0, 0, bg, &rect);
 }
 
 CALLBACK(ShowWeCanBg1) {
@@ -498,7 +574,7 @@ CALLBACK(ShowWeCanBg2) {
   PixBufBlit(TheCanvas, 0, 0, R_("WeCanBg2Img"), NULL);
 }
 
-ARRAY(float, 2, DatePos, 100.0f, 200.0f);
+ARRAY(float, 2, DatePos, 0.0f, 0.0f);
 
 CALLBACK(ShowDate)  {
   PixBufT *date = R_("DateImg");
@@ -551,10 +627,6 @@ CALLBACK(ShowHighVoltage) {
 }
 
 /*****************************************************************************/
-
-CALLBACK(BlitClipartToCanvas) {
-  PixBufBlit(TheCanvas, ClipartX, ClipartY, ClipartImg, NULL);
-}
 
 CALLBACK(ClearCanvas) {
   PixBufClear(TheCanvas);

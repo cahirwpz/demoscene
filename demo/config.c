@@ -7,7 +7,6 @@
 #include "system/vblank.h"
 
 #include "config.h"
-#include "envelope.h"
 
 JsonNodeT *DemoConfig = NULL;
 
@@ -25,28 +24,6 @@ bool ReadConfig() {
   return result;
 }
 
-static EnvelopeT *ReadEnvelope(EnvTypeT type, JsonNodeT *value) {
-  JsonNodeT *points = JsonQueryArray(value, "points");
-  int dimensions = JsonQueryInteger(value, "dimensions");
-  EnvelopeT *env = NewEnvelope(type, dimensions, points->u.array.num);
-
-  void ReadValue(size_t index, JsonNodeT *node, void *data) {
-    ASSERT(node->type == JSON_INTEGER || node->type == JSON_REAL,
-           "Item '%ld' is not a number.", index);
-
-    ((float *)data)[index] = (node->type == JSON_INTEGER) ?
-      (float)node->u.integer : node->u.real;
-  }
-
-  void ReadPoint(size_t index, JsonNodeT *value, void *data) {
-    JsonArrayForEach(value, ReadValue, (void *)&env->point[index]);
-  }
-
-  JsonArrayForEach(points, ReadPoint, NULL);
-
-  return env;
-}
-
 void LoadResources() {
   JsonNodeT *resources = JsonQueryObject(DemoConfig, "resources");
 
@@ -59,10 +36,6 @@ void LoadResources() {
       ResAdd(key, NewPaletteFromFile(JsonQueryString(value, "path")));
     } else if (!strcmp(type, "mesh3d")) {
       ResAdd(key, NewMeshFromFile(JsonQueryString(value, "path")));
-    } else if (!strcmp(type, "envelope:polyline")) {
-      ResAdd(key, ReadEnvelope(ENV_POLYLINE, value));
-    } else if (!strcmp(type, "envelope:smoothstep")) {
-      ResAdd(key, ReadEnvelope(ENV_SMOOTHSTEP, value));
     } else {
       PANIC("Resource '%s' has wrong type '%s'!", key, type);
     }

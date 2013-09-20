@@ -16,11 +16,13 @@
     "RaycastColorMap": { "type": "image", "path": "data/raycast-shades.8" },
     "WhelpzLogoImg": { "type": "image", "path": "data/rork-logo_whelpz_02-48.8" },
     "WhelpzLogoPal": { "type": "palette", "path": "data/rork-logo_whelpz_02-48.pal" },
-    "BackgroundImg": { "type": "image", "path": "data/background.8" },
-    "CompTxt0Img": { "type": "image", "path": "data/compose-0-128.8" },
-    "CompTxt0Pal": { "type": "palette", "path": "data/compose-0-128.pal" },
-    "CompTxt1Img": { "type": "image", "path": "data/compose-1-128.8" },
-    "CompTxt1Pal": { "type": "palette", "path": "data/compose-1-128.pal" },
+    "CompTxt0Img": { "type": "image", "path": "data/compose-0-125.8" },
+    "CompTxt0Pal": { "type": "palette", "path": "data/compose-0-125.pal" },
+    "CompTxt1Img": { "type": "image", "path": "data/compose-1-125.8" },
+    "CompTxt1Pal": { "type": "palette", "path": "data/compose-1-125.pal" },
+    "StonePal": { "type": "palette", "path": "data/stone-1.pal" },
+    "Stone1Mesh": { "type": "mesh3d", "path": "data/stone-1.robj" },
+    "Stone2Mesh": { "type": "mesh3d", "path": "data/stone-2.robj" },
     "Credits3D": { "type": "image",  "path": "data/credits-3d.8" },
     "CreditsPxlWork": { "type": "image",  "path": "data/credits-pxlwork.8" },
     "CreditsCodeWork": { "type": "image",  "path": "data/credits-codework.8" },
@@ -30,21 +32,16 @@
     "PotatoBgPal": { "type": "palette",  "path": "data/potato-bg-shades.pal" },
     "PotatoBgColorMap": { "type": "image",  "path": "data/potato-bg-shades.8" },
     "WeCanLogoMesh": { "type": "mesh3d", "path": "data/wecan-logo.robj" },
-    "WeCanBg1Img": { "type": "image",  "path": "data/wecan-bg-1.8" },
+    "WeCanBgImg": { "type": "image",  "path": "data/wecan-bg.8" },
+    "WeCanBgPal": { "type": "palette",  "path": "data/wecan-bg.pal" },
     "WeCanBg2Img": { "type": "image",  "path": "data/wecan-bg-2.8" },
-    "WeCanBgPal": { "type": "palette",  "path": "data/wecan-bg-1.pal" },
     "WeCanColorMap": { "type": "image",  "path": "data/wecan-shades.8" },
     "TwoImg": { "type": "image",  "path": "data/2.8" },
     "AttenzioneImg": { "type": "image",  "path": "data/attenzione.8" },
     "HighVoltageImg": { "type": "image",  "path": "data/highvoltage.8" },
     "WarnungImg": { "type": "image",  "path": "data/warnung.8" },
     "CodeAgainImg": { "type": "image",  "path": "data/codeagain.8" },
-    "DateImg": { "type": "image",  "path": "data/date.8" },
-    "TwoPath": {
-      "type": "envelope:smoothstep",
-      "dimensions": 2,
-      "points": [[0, 0, 0], [10, 160, 100], [20, 240, 80]]
-    }
+    "DateImg": { "type": "image",  "path": "data/date.8" }
   },
   "timeline": [
   {
@@ -56,11 +53,7 @@
       "type": "once",
       "range": [0, -1],
       "set": {
-        "ClipartImg" : { "resource": "WhelpzLogoImg" },
-        "ThePalette" : { "resource": "RaycastTexturePal" },
-        "LightMap" : { "resource": "BackgroundImg" },
-        "RaycastTexture" : { "resource": "RaycastTextureImg" },
-        "ClipartY" : 28
+        "ThePalette" : { "resource": "RaycastTexturePal" }
       },
       "call": ["ReloadPalette"]
     }, {
@@ -79,6 +72,9 @@
       "type": "each-frame", "range": [0, 22],
       "call": ["CalculateShadeMap1"]
     }, {
+      "type": "each-frame", "range": [22, 42],
+      "call": ["CopyShadeMap"]
+    }, {
       "type": "each-frame", "range": [42, 64],
       "call": ["CalculateShadeMap2"]
     }, {
@@ -86,7 +82,7 @@
       "call": ["RenderRaycastLight"]
     }, {
       "type": "each-frame", "range": [22, 42],
-      "call": ["BlitLightMapToCanvas", "BlitClipartToCanvas"]
+      "call": ["ShowWhelpzLogo"]
     }
     ]
   }, {
@@ -106,7 +102,32 @@
       "call": ["CalculateComposeMap", "CycleHue"]
     }, {
       "type": "each-frame", "range": [0, -1],
+      "set": {
+        "ComposeLevel" : {
+          "envelope:polyline": {
+            "dimensions": 1, 
+            "points": [[0, 0], [8, 1], [16, 0.5], [32, 0]]
+          }
+        }
+      },
       "call": ["ComposeMaps"]
+    }, {
+      "type": "each-frame", "range": [0, -1],
+      "set": {
+        "Stone1Pos" : {
+          "envelope:smoothstep": {
+            "dimensions": 3, 
+            "points": [[0, -1.0, 0, 0], [32, -2.0, -0.5, -10.0]]
+          }
+        },
+        "Stone2Pos" : {
+          "envelope:smoothstep": {
+            "dimensions": 3, 
+            "points": [[0, 1.0, 0, 0], [32, 2.0, 0.5, -10.0]]
+          }
+        }
+      },
+      "call": ["RenderStones"]
     }, {
       "type": "each-frame", "range": [4, 60],
       "call": ["ReloadPalette"]
@@ -128,7 +149,7 @@
       "type": "once", "range": [4, -1], "call": ["ReloadPalette"]
     }, {
       "type": "each-frame", "range": [0, -1],
-      "call": ["RenderPotatoBackground", "ControlPotato", "RenderPotato"]
+      "call": ["RenderPotatoBackground"]
     }, {
       "type": "each-frame", "range": [8, 18],
       "call": ["ShowCredits3D"]
@@ -142,6 +163,9 @@
       "type": "each-frame", "range": [50, 60],
       "call": ["ShowCreditsSound"]
     }, {
+      "type": "each-frame", "range": [0, -1],
+      "call": ["ControlPotato", "RenderPotato"]
+    }, {
       "type": "each-frame", "range": [0, 4],
       "call": ["FadeFromBlack"]
     }, {
@@ -152,23 +176,80 @@
     "type":  "timeslice",
     "range": [[200, "beat"], -1],
     "unit":  [1, "beat"],
-    "parts": [{
+    "parts": [
+    {
       "type": "once", "range": [0, -1],
       "set": {
         "ThePalette" : { "resource": "WeCanBgPal" }
-      },
-      "call": ["ReloadPalette", "ShowWeCanBg1"]
+      }
     }, {
-      "type": "each-frame", "range": [8, 16],
-      "call": ["Transition"]
-    }, {
-      "type": "each-frame", "range": [24, -1],
+      "type": "each-frame", "range": [0, 16],
       "set": {
-        "TwoPos" : { "envelope": "TwoPath" }
+        "WeCanBgX": {
+          "envelope:smoothstep": {
+            "dimensions": 1,
+            "points": [[4, 200], [16, 0]]
+          }
+        }
       },
-      "call": ["ShowWeCanBg2", "RenderWeCanLogo", "ShowTwo", "ShowDate",
-               "ShowHighVoltage", "ShowCodeAgain", "ShowWarnung",
-               "ShowAttenzione"]
+      "call": ["ShowWeCanBg"]
+    }, {
+      "type": "each-frame", "range": [16, -1],
+      "call": ["ShowWeCanBg2"]
+    }, {
+      "type": "each-frame", "range": [16, -1],
+      "set": {
+        "WeCanLogoPos" : {
+          "envelope:smoothstep": {
+            "dimensions": 2, 
+            "points": [[0, -0.75, -0.75]]
+          }
+        },
+        "WeCanLogoRotation" : {
+          "envelope:polyline": {
+            "dimensions": 3, 
+            "points": [[0, 0, 0, 0], [16, 0, 0, 0], [64, 0, 1080, 0]]
+          }
+        }
+      },
+      "call": ["RenderWeCanLogo"]
+    }, {
+      "type": "each-frame", "range": [16, -1],
+      "set": {
+        "TwoPos" : {
+          "envelope:smoothstep": {
+            "dimensions": 2, 
+            "points": [[0, 160, 100], [10, 160, 100], [20, 240, 200]]
+          }
+        }
+      },
+      "call": ["ShowTwo"]
+    }, {
+      "type": "each-frame", "range": [16, -1],
+      "set": {
+        "DatePos" : {
+          "envelope:polyline": {
+            "dimensions": 2, 
+            "points": [[0, 230, 50], [16, 230, 50], [32, 320, 50]]
+          }
+        }
+      },
+      "call": ["ShowDate"]
+    }, {
+      "type": "each-frame", "range": [32, -1],
+      "call": ["ShowHighVoltage"]
+    }, {
+      "type": "each-frame", "range": [32, -1],
+      "call": ["ShowCodeAgain"]
+    }, {
+      "type": "each-frame", "range": [32, -1],
+      "call": ["ShowWarnung"]
+    }, {
+      "type": "each-frame", "range": [32, -1],
+      "call": ["ShowAttenzione"]
+    }, {
+      "type": "each-frame", "range": [16, 24],
+      "call": ["Transition"]
     }, {
       "type": "each-frame", "range": [0, 4],
       "call": ["FadeFromBlack"]

@@ -6,6 +6,7 @@ import logging
 import os
 import struct
 
+from array import array
 from collections import namedtuple
 from pprint import pprint
 
@@ -386,12 +387,25 @@ def main():
     WriteRawObject(args.output, lwo.points, polygons, surfaces)
 
     if args.colors:
+      colors = [tuple(surface.color) for surface in surfaces if surface.color]
+
       filename = args.output.rsplit('.', 1)[0] + '.json'
       with open(filename, 'w') as fp:
-        colors = [tuple(surface.color) for surface in surfaces if surface.color]
         json.dump(colors, fp)
         fp.write('\n')
         logging.info('Wrote surface colors to: "%s" file.', filename)
+
+      filename = args.output.rsplit('.', 1)[0] + '.pal'
+      with open(filename, 'w') as fp:
+        pal = array('B')
+
+        for color in colors:
+          pal.extend(color)
+
+        logging.info('Saving palette of %d surfaces to "%s".',
+                     len(colors), filename)
+        fp.write(struct.pack('>HH', 0, len(colors)))
+        fp.write(pal.tostring())
   else:
     pprint(lwo._chunks)
 

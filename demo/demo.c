@@ -125,11 +125,13 @@ static void ParsePlaybackInfo() {
     int loop;
     int show;
     int timeline;
+    char *json;
   } args = { NULL, NULL, 0 };
 
   DemoLastFrame = DemoEndFrame;
 
-  if ((rdargs = ReadArgs("FIRST/N,LAST/N,LOOP/S,SHOWTIME/S,TIMELINE/S", (LONG *)&args, NULL))) {
+  if ((rdargs = ReadArgs("FIRST/N,LAST/N,LOOP/S,SHOWTIME/S,TIMELINE/S,JSON",
+                         (LONG *)&args, NULL))) {
     if (args.first) {
       if (*args.first > 0 && *args.first < DemoEndFrame) {
         DemoFirstFrame = *args.first;
@@ -148,6 +150,11 @@ static void ParsePlaybackInfo() {
       LOG("Wrong frame range specification. Reverting to original values.");
       DemoFirstFrame = 0;
       DemoLastFrame = DemoEndFrame;
+    }
+
+    if (args.json) {
+      LOG("Will use another JSON file: '%s'.", args.json);
+      DemoConfigPath = StrDup(args.json);
     }
 
     if (args.loop) {
