@@ -99,7 +99,7 @@ static void Render(PixBufT *canvas, PolygonExtT **sortedPolygonExt,
 
     if (RenderFlatShading) {
       if (canvas->blit.cmap.data) {
-        int color = polyExt->color + canvas->blit.cmap.shift;
+        int color = polyExt->color / 2 + 128 + canvas->blit.cmap.shift;
 
         if (color > 255)
           color = 255;

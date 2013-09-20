@@ -57,14 +57,15 @@ def Quantize(image, colors=256, dithering=False, sources=None):
       pixels.extend([Color(r, g, b) for r, g, b in source.getdata()])
 
   # Remember to reserve one color for transparency.
+  is_transparent = False
+
   if any(source.mode is 'RGBA' for source in sources):
+    is_transparent = True
     colors -= 1
 
   space = Box(pixels, 0, len(pixels))
   kdtree = KDNode(space)
   leaves = SplitKDTree(kdtree, colors)
-
-  is_transparent = image.mode is 'RGBA'
 
   if is_transparent:
     palette = [0, 0, 0]
