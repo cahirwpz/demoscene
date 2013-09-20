@@ -167,7 +167,8 @@
         "TwoPos" : { "envelope": "TwoPath" }
       },
       "call": ["ShowWeCanBg2", "RenderWeCanLogo", "ShowTwo", "ShowDate",
-               "ShowCodeAgain", "ShowWarnung", "ShowAttenzione"]
+               "ShowHighVoltage", "ShowCodeAgain", "ShowWarnung",
+               "ShowAttenzione"]
     }, {
       "type": "each-frame", "range": [0, 4],
       "call": ["FadeFromBlack"]

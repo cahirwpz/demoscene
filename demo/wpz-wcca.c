@@ -541,6 +541,15 @@ CALLBACK(ShowAttenzione) {
   PixBufBlit(TheCanvas, AttenzionePos[0], AttenzionePos[1], attenzione, NULL);
 }
 
+ARRAY(float, 2, HighVoltagePos, 100.0f, 10.0f);
+
+CALLBACK(ShowHighVoltage) {
+  PixBufT *highvoltage = R_("HighVoltageImg");
+  PixBufSetColorMap(highvoltage, R_("WeCanColorMap"), 0);
+  PixBufSetBlitMode(highvoltage, BLIT_COLOR_MAP);
+  PixBufBlit(TheCanvas, HighVoltagePos[0], HighVoltagePos[1], highvoltage, NULL);
+}
+
 /*****************************************************************************/
 
 CALLBACK(BlitClipartToCanvas) {
