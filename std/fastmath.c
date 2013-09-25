@@ -4,31 +4,23 @@
  * “Efficient approximations for the arctangent function”
  * Rajan, S. Sichun Wang Inkol, R. Joyal, A., May 2006
  */
-float FastAtan(float x asm("fp0")) {
+__regargs inline
+float FastAtan(float x)  {
   return ((float)M_PI_4 - (fabsf(x) - 1.0f) * (0.2447f + 0.0663f * fabsf(x))) * x;
 }
 
-float FastAtan2(float dy asm("fp0"), float dx asm("fp1")) {
-  float a;
+__regargs
+float FastAtan2(float dy, float dx) {
+  bool ge = fabsf(dx) > fabsf(dy);
+  float a = ge ? (dy / dx) : (dx / dy);
 
-  if (fabsf(dx) > fabsf(dy)) {
-   a = FastAtan(dy / dx);
-  } else {
-    a = FastAtan(dx / dy);
+  a = FastAtan(a);
 
-    if (a < 0)
-      a = -M_PI_2 - a;
-    else
-      a = M_PI_2 - a;
-  }
+  if (!ge)
+    a = (a < 0) ? (- M_PI_2 - a) : (M_PI_2 - a);
 
-  if (dx < 0) {
-    if (dy < 0) {
-      a = a - M_PI;
-    } else {
-      a = a + M_PI;
-    }
-  }
+  if (dx < 0)
+    a = (dy < 0) ? (a - M_PI) : (a + M_PI);
 
   return a;
 }
@@ -36,7 +28,8 @@ float FastAtan2(float dy asm("fp0"), float dx asm("fp1")) {
 /*
  * From Quake III Arena sources.
  */
-float FastInvSqrt(float x asm("fp0")) {
+__regargs
+float FastInvSqrt(float x) {
   uint32_t i;
   float x2;
 

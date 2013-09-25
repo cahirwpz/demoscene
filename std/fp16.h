@@ -2,6 +2,7 @@
 #define __STD_FP16_H__
 
 #include "std/types.h"
+#include "std/math.h"
 
 #define AsInt(a) (*(int *)&(a))
 #define AsQ16(a) (*(Q16T *)&(a))
@@ -12,7 +13,7 @@ typedef struct {
 } Q16T;
 
 static inline Q16T CastFloatQ16(float value) {
-  int integer = (int)(value * 65536);
+  int integer = lroundf(value * 65536.0f);
   return AsQ16(integer);
 }
 

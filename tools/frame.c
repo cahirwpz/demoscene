@@ -1,7 +1,6 @@
 #include <proto/exec.h>
 #include <proto/graphics.h>
 
-#include <stdio.h>
 #include <stdarg.h>
 
 #include "std/math.h"

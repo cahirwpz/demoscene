@@ -5,8 +5,8 @@ static void RenderFastUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
   uint8_t *mapU = map->map.fast.u;
   uint8_t *mapV = map->map.fast.v;
   uint8_t *texture = map->texture->data;
-  int offsetU = map->offsetU;
-  int offsetV = map->offsetV;
+  uint8_t offsetU = map->offsetU;
+  uint8_t offsetV = map->offsetV;
   int n = map->width * map->height;
 
   do {
@@ -20,13 +20,13 @@ static void RenderNormalUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
   int16_t *mapU = map->map.normal.u;
   int16_t *mapV = map->map.normal.v;
   uint8_t *texture = map->texture->data;
-  int offsetU = map->offsetU;
-  int offsetV = map->offsetV;
+  int16_t offsetU = map->offsetU;
+  int16_t offsetV = map->offsetV;
   int n = map->width * map->height;
 
   do {
-    int u = *mapU++ + offsetU;
-    int v = *mapV++ + offsetV;
+    int16_t u = *mapU++ + offsetU;
+    int16_t v = *mapV++ + offsetV;
     *dst++ = texture[(uint8_t)u << 8 | (uint8_t)v];
   } while (--n);
 }

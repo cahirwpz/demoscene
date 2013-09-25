@@ -2,13 +2,14 @@
 #include "std/math.h"
 #include "std/fastmath.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
+#include "system/timer.h"
 #include "system/vblank.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
+#include "tools/profiling.h"
 
 #include "engine/matrix3d.h"
 #include "gfx/blit.h"
@@ -39,16 +40,24 @@ static CameraViewT CameraView = {
 /*
  * Set up resources.
  */
+static PixBufT *Texture;
+static PaletteT *TexturePal;
+static PixBufT *ColorMap;
+static PixBufT *Shades;
+static PixBufT *Canvas;
+static UVMapT *SmallMap;
+static UVMapT *Map;
+
 void AddInitialResources() {
-  ResAdd("Texture", NewPixBufFromFile("data/texture-shades.8"));
-  ResAdd("TexturePal", NewPaletteFromFile("data/texture-shades.pal"));
-  ResAdd("ColorMap", NewPixBufFromFile("data/texture-shades-map.8"));
-  ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("SmallMap", NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256));
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
+  Texture = NewPixBufFromFile("data/texture-shades.8");
+  TexturePal = NewPaletteFromFile("data/texture-shades.pal");
+  ColorMap = NewPixBufFromFile("data/texture-shades-map.8");
+  Shades = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  Canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  SmallMap = NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256);
+  Map = NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256);
   
-  UVMapSetTexture(R_("Map"), R_("Texture"));
+  UVMapSetTexture(Map, Texture);
 }
 
 /*
@@ -62,14 +71,16 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  LoadPalette(R_("TexturePal"));
-  PixBufClear(R_("Canvas"));
+  LoadPalette(TexturePal);
+  PixBufClear(Canvas);
+  StartProfiling();
 }
 
 /*
  * Tear down effect function.
  */
 void TearDownEffect() {
+  StopProfiling();
 }
 
 /*
@@ -95,7 +106,7 @@ static void RenderShadeMap(PixBufT *shades, int16_t *map) {
   int n = shades->width * shades->height;
   uint8_t *dst = shades->data;
 
-  while (n--) {
+  do {
     int value = *map++;
 
     if (value < 0)
@@ -106,29 +117,33 @@ static void RenderShadeMap(PixBufT *shades, int16_t *map) {
       value = 255;
 
     *dst++ = value;
-  }
+  } while (--n);
 }
 
 void RenderEffect(int frameNumber) {
-  UVMapT *smallMap = R_("SmallMap");
-  UVMapT *map = R_("Map");
-  PixBufT *canvas = R_("Canvas");
-  PixBufT *shades = R_("Shades");
-
   RaycastCalculateView(frameNumber);
-  RaycastTunnel(smallMap, CameraView.Transformed);
-  UVMapScale8x(map, smallMap);
-  UVMapSetTexture(map, R_("Texture"));
-  UVMapSetOffset(map, 0, frameNumber);
-  UVMapRender(map, canvas);
 
-  RenderShadeMap(shades, map->map.normal.v);
+  PROFILE(RaycastTunnel)
+    RaycastTunnel(SmallMap, CameraView.Transformed);
 
-  PixBufSetColorMap(shades, R_("ColorMap"), 0);
-  PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
-  PixBufBlit(canvas, 0, 0, shades, NULL);
+  PROFILE (UVMapScale8x)
+    UVMapScale8x(Map, SmallMap);
 
-  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  UVMapSetTexture(Map, Texture);
+  UVMapSetOffset(Map, 0, frameNumber);
+
+  PROFILE (UVMapRender)
+    UVMapRender(Map, Canvas);
+
+  if (false) {
+    RenderShadeMap(Shades, Map->map.normal.v);
+
+    PixBufSetColorMap(Shades, ColorMap, 0);
+    PixBufSetBlitMode(Shades, BLIT_COLOR_MAP);
+    PixBufBlit(Canvas, 0, 0, Shades, NULL);
+  }
+
+  c2p1x1_8_c5_bm(Canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -142,6 +157,7 @@ void MainLoop() {
 
     RenderEffect(frameNumber);
     RenderFrameNumber(frameNumber);
+    RenderFramesPerSecond(frameNumber);
 
     DisplaySwap();
   } while (ReadLoopEvent() != LOOP_EXIT);

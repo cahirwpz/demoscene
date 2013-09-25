@@ -167,6 +167,7 @@ void MainLoop() {
 
     RenderTunnel(frameNumber);
     RenderFrameNumber(frameNumber);
+    RenderFramesPerSecond(frameNumber);
 
     DisplaySwap();
   } while (ReadLoopEvent() != LOOP_EXIT);

@@ -3,8 +3,8 @@
 
 #include "std/math.h"
 
-float FastAtan(float x asm("fp0"));
-float FastAtan2(float dy asm("fp0"), float dx asm("fp1"));
-float FastInvSqrt(float x asm("fp0"));
+__regargs float FastAtan(float x);
+__regargs float FastAtan2(float dy, float dx);
+__regargs float FastInvSqrt(float x);
 
 #endif
