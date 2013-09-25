@@ -8,6 +8,8 @@
 #include "std/memory.h"
 #include "system/timer.h"
 
+struct Device *TimerBase;
+
 typedef struct {
   struct MsgPort *msgPort;
   struct IORequest *ioReq;

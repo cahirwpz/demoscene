@@ -1,6 +1,7 @@
 #include <proto/exec.h>
 #include <proto/graphics.h>
 
+#include <stdio.h>
 #include <stdarg.h>
 
 #include "std/math.h"
@@ -33,18 +34,17 @@ static void PrintToString(char *buffer, size_t length, const char *format, ...) 
 
 static float CalculateFramesPerSecond(int frameNumber) {
   static int frames[FRAMERATE];
-
+  float fps;
   int i;
 
-  for (i = 0; i < FRAMERATE - 1; i++)
-    frames[i] = frames[i + 1];
+  for (i = 1; i < FRAMERATE; i++)
+    frames[i-1] = frames[i];
 
-  frames[i--] = frameNumber;
+  frames[--i] = frameNumber;
 
-  while ((i > 0) && (frameNumber - frames[i] < FRAMERATE))
-    i--;
+  fps = (float)(FRAMERATE * FRAMERATE) / (float)(frames[FRAMERATE - 1] - frames[0]);
 
-  return (float)(FRAMERATE * FRAMERATE) / (float)(frameNumber - frames[i]);
+  return (fps > FRAMERATE) ? FRAMERATE : fps;
 }
 
 void RenderFrameNumber(int frameNumber) {
