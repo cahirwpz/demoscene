@@ -46,33 +46,33 @@ static bool HandleEvents(int frameNumber) {
     if (event.ie_Class == IECLASS_RAWKEY) {
       if (event.ie_Code & IECODE_UP_PREFIX) {
         if (DemoDebug) {
-          bool timeUpdated = false;
+          bool timeUpdated = true;
+
+          if (DemoPaused)
+            SetVBlankCounter(frameWhenPaused);
 
           switch (event.ie_Code & ~IECODE_UP_PREFIX) {
             case KEY_UP:
               ChangeVBlankCounter(-10 * FRAMERATE);
-              timeUpdated = true;
               break;
 
             case KEY_DOWN:
               ChangeVBlankCounter(10 * FRAMERATE);
-              timeUpdated = true;
               break;
 
             case KEY_LEFT:
               ChangeVBlankCounter(-FRAMERATE);
-              timeUpdated = true;
               break;
 
             case KEY_RIGHT:
               ChangeVBlankCounter(FRAMERATE);
-              timeUpdated = true;
               break;
 
             case KEY_RETURN:
               LOG("Frame %d (%.2fs, %.2fb).", frameNumber,
                   (float)frameNumber / FRAMERATE,
                   (float)frameNumber / DemoBeat);
+              timeUpdated = false;
               break;
 
             case KEY_SPACE:
@@ -81,22 +81,17 @@ static bool HandleEvents(int frameNumber) {
                   (float)frameNumber / FRAMERATE,
                   (float)frameNumber / DemoBeat);
 
-              DemoPaused = !DemoPaused;
+              if (!DemoPaused) {
+                DemoPaused = true;
 
-              if (DemoPaused) {
                 frameWhenPaused = frameNumber;
 
                 AudioStop(CHAN_0);
                 AudioStop(CHAN_1);
                 AudioStop(CHAN_2);
                 AudioStop(CHAN_3);
-              } else {
-                SetVBlankCounter(frameWhenPaused);
 
-                AudioPlay(CHAN_0);
-                AudioPlay(CHAN_1);
-                AudioPlay(CHAN_2);
-                AudioPlay(CHAN_3);
+                timeUpdated = false;
               }
               break;
 
@@ -104,8 +99,16 @@ static bool HandleEvents(int frameNumber) {
               break;
           }
 
-          if (timeUpdated)
+          if (timeUpdated) {
+            DemoPaused = false;
+
+            AudioPlay(CHAN_0);
+            AudioPlay(CHAN_1);
+            AudioPlay(CHAN_2);
+            AudioPlay(CHAN_3);
+
             DemoUpdateTime(frameNumber, GetVBlankCounter());
+          }
         }
 
         if ((event.ie_Code & ~IECODE_UP_PREFIX) == KEY_ESCAPE)
