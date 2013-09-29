@@ -1,6 +1,8 @@
 #include "std/debug.h"
 #include "uvmap/render.h"
+#include "uvmap/render-opt.h"
 
+#if 0
 static void RenderFastUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
   uint8_t *mapU = map->map.fast.u;
   uint8_t *mapV = map->map.fast.v;
@@ -29,6 +31,28 @@ static void RenderNormalUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
     int16_t v = *mapV++ + offsetV;
     *dst++ = texture[(uint8_t)u << 8 | (uint8_t)v];
   } while (--n);
+}
+#endif
+
+void RenderFastUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
+  RenderFastUVMapOptimized(map->map.normal.u,
+                           map->map.normal.v,
+                           map->texture->data,
+                           dst,
+                           map->width * map->height,
+                           map->offsetU,
+                           map->offsetV);
+}
+
+
+void RenderNormalUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
+  RenderNormalUVMapOptimized(map->map.normal.u,
+                             map->map.normal.v,
+                             map->texture->data,
+                             dst,
+                             map->width * map->height,
+                             map->offsetU,
+                             map->offsetV);
 }
 
 static void RenderAccurateUVMap(UVMapT *map, uint8_t *dst asm("a6")) {

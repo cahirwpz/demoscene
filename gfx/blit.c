@@ -115,6 +115,14 @@ PixBufBlitSubstractiveClip(uint8_t *dst, uint8_t *src,
   } while (--y);
 }
 
+void PixBufBlitTransparent(uint8_t *dst asm("a0"),
+                           uint8_t *src asm("a1"),
+                           const int width asm("d0"),
+                           const int height asm("d1"),
+                           const int sstride asm("d2"), 
+                           const int dstride asm("d3"));
+
+#if 0
 __attribute__((regparm(4))) static void
 PixBufBlitTransparent(uint8_t *dst, uint8_t *src,
                       const int width, const int height,
@@ -138,6 +146,7 @@ PixBufBlitTransparent(uint8_t *dst, uint8_t *src,
     dst += dstride;
   } while (--y);
 }
+#endif
 
 __attribute__((regparm(4))) static void 
 PixBufBlitColorMap(uint8_t *dst, uint8_t *src,

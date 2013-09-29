@@ -83,7 +83,6 @@ typedef struct DBufRaster {
   ScreenPaletteT *Palette;
 
   LONG CurrentBitMap;
-  BOOL SafeToWrite;
   BOOL SafeToSwap;
 } DBufRasterT;
 
@@ -93,7 +92,6 @@ static void DeleteDBufRaster(DBufRasterT *raster) {
   FreeBitMap(dbufInfo->dbi_UserData1);
   FreeBitMap(dbufInfo->dbi_UserData2);
   (void)GetMsg(dbufInfo->dbi_DispMessage.mn_ReplyPort);
-  DeleteMsgPort(dbufInfo->dbi_SafeMessage.mn_ReplyPort);
   DeleteMsgPort(dbufInfo->dbi_DispMessage.mn_ReplyPort);
   FreeDBufInfo(dbufInfo);
 
@@ -109,7 +107,6 @@ DBufRasterT *NewDBufRaster(int width, int height, int depth) {
 
   raster->ViewPort = NewViewPort(width, height, depth);
   raster->SafeToSwap = TRUE;
-  raster->SafeToWrite = TRUE;
   raster->CurrentBitMap = 1;
 
   {
@@ -141,9 +138,6 @@ DBufRasterT *NewDBufRaster(int width, int height, int depth) {
           AllocBitMap(width, height, depth, BMF_DISPLAYABLE|BMF_CLEAR, NULL)))
       PANIC("AllocBitMap(%d, %d, %d, ...) failed!", width, height, depth);
 
-    if (!(dbufInfo->dbi_SafeMessage.mn_ReplyPort = CreateMsgPort()))
-      PANIC("CreateMsgPort() failed!");
-
     if (!(dbufInfo->dbi_DispMessage.mn_ReplyPort = CreateMsgPort()))
       PANIC("CreateMsgPort() failed!");
 
@@ -157,17 +151,6 @@ DBufRasterT *NewDBufRaster(int width, int height, int depth) {
   raster->RastPort->BitMap = raster->BitMap;
 
   return raster;
-}
-
-static void WaitForSafeToWrite(DBufRasterT *raster) {
-  if (!raster->SafeToWrite) {
-    struct MsgPort *SafeMsgPort = raster->DBufInfo->dbi_SafeMessage.mn_ReplyPort;
-
-    while (!GetMsg(SafeMsgPort))
-      Wait(1L << SafeMsgPort->mp_SigBit);
-
-    raster->SafeToWrite = TRUE;
-  }
 }
 
 static void WaitForSafeToSwap(DBufRasterT *raster) {
@@ -189,7 +172,6 @@ static void DBufRasterSwap(DBufRasterT *raster) {
                                raster->DBufInfo->dbi_UserData1);
   raster->RastPort->BitMap = raster->BitMap;
   raster->SafeToSwap = FALSE;
-  raster->SafeToWrite = FALSE;
   raster->CurrentBitMap ^= 1;
 }
 
@@ -321,7 +303,6 @@ void KillDisplay() {
 void DisplaySwap() {
   WaitForSafeToSwap(TheRaster);
   DBufRasterSwap(TheRaster);
-  WaitForSafeToWrite(TheRaster);
 }
 
 BitMapT *GetCurrentBitMap() {

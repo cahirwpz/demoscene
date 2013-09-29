@@ -1,6 +1,7 @@
 #include "std/debug.h"
 #include "std/memory.h"
 #include "uvmap/scaling.h"
+#include "uvmap/scaling-opt.h"
 
 int UVMapExpanderThreshold = 224;
 
@@ -43,6 +44,7 @@ FastStepperFromMap(Q16T *map, Q16T *stepper, const int width, const int height) 
   } while (--n);
 }
 
+#if 0
 __regargs static void
 ExpandLine8x(int16_t *dst, Q16T *src, int width) {
   do {
@@ -108,6 +110,7 @@ Increment(Q16T *x, Q16T *dx, int width) {
     IAddQ16(x++, *dx++);
   } while (--width);
 }
+#endif
 
 __regargs static void
 MapExpand8x(int16_t *dst, const int dwidth, Q16T *stepper,

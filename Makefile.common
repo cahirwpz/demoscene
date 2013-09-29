@@ -3,8 +3,8 @@ SUFFIXES += .P
 CC	 = m68k-amigaos-gcc -noixemul
 AS	 = vasm -quiet
 CPPFLAGS = -I$(realpath $(TOPDIR))
-LDFLAGS  = -m68020-60 -mnobitfield -fbaserel -msmall-code
-ASFLAGS  = -Faout -phxass -m68020 -m68882
+LDFLAGS  = -m68060 -mnobitfield -fbaserel -msmall-code
+ASFLAGS  = -Faout -phxass -m68060 -m68882
 CFLAGS   = $(LDFLAGS) $(OFLAGS) $(WFLAGS)
 
 ifeq ($(DEBUG), 1)

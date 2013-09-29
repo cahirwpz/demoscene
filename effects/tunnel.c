@@ -12,6 +12,7 @@
 #include "gfx/palette.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
+#include "tools/profiling.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
@@ -71,15 +72,20 @@ void SetupEffect() {
   P61_Init(R_("Module"), NULL, NULL);
   P61_ControlBlock.Play = 1;
 #endif
+
+  StartProfiling();
 }
 
 /*
  * Tear down effect function.
  */
 void TearDownEffect() {
+#if 0
   P61_End();
+#endif
 
   UnlinkPalettes(R_("TexturePal"));
+  StopProfiling();
 }
 
 /*
@@ -140,17 +146,21 @@ void RenderTunnel(int frameNumber) {
 
   UVMapSetOffset(R_("TunnelMap"), 0, frameNumber);
   UVMapSetTexture(R_("TunnelMap"), R_("Texture"));
-  UVMapRender(R_("TunnelMap"), canvas);
+  PROFILE (UVMapRender)
+    UVMapRender(R_("TunnelMap"), canvas);
 
-  PixBufBlit(canvas, 0, 137, R_("WhelpzImg"), NULL);
+  PROFILE (PixBufBlit)
+    PixBufBlit(canvas, 0, 137, R_("WhelpzImg"), NULL);
 
   {
     float rad = (float)(frameNumber % 150) / 150 * 2 * M_PI;
     int w = sin(rad) * 80;
-    PixBufBlitScaled(canvas, 200 + (80 - abs(w)) / 2, 20, w, 33, R_("CreditsImg"));
+    PROFILE (PixBufBlitScaled)
+      PixBufBlitScaled(canvas, 200 + (80 - abs(w)) / 2, 20, w, 33, R_("CreditsImg"));
   }
 
-  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  PROFILE (c2p)
+    c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*

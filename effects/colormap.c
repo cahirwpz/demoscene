@@ -10,6 +10,7 @@
 #include "tools/frame.h"
 #include "tools/gradient.h"
 #include "tools/loopevent.h"
+#include "tools/profiling.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
@@ -43,6 +44,8 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
+  StartProfiling();
+
   {
     FLineT line;
     FPointT pa = { 0, 0 };
@@ -64,6 +67,7 @@ void SetupEffect() {
  * Tear down effect function.
  */
 void TearDownEffect() {
+  StopProfiling();
 }
 
 /*
@@ -82,34 +86,42 @@ void RenderChunky(int frameNumber) {
   switch (Effect) {
     case 0:
       map = R_("Map1");
-      PixBufCopy(canvas, image);
+      PROFILE(PixBufCopy)
+        PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Lighten"), change);
       PixBufSetBlitMode(map, BLIT_COLOR_MAP);
-      PixBufBlit(canvas, 0, 0, map, NULL);
+      PROFILE(PixBufBlit)
+        PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
     case 1:
       map = R_("Map1");
-      PixBufCopy(canvas, image);
+      PROFILE(PixBufCopy)
+        PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Darken"), change - 64);
       PixBufSetBlitMode(map, BLIT_COLOR_MAP);
-      PixBufBlit(canvas, 0, 0, map, NULL);
+      PROFILE(PixBufBlit)
+        PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
     case 2:
       map = R_("Map2");
-      PixBufCopy(canvas, image);
+      PROFILE(PixBufCopy)
+        PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Lighten"), change - 64);
       PixBufSetBlitMode(map, BLIT_COLOR_MAP);
-      PixBufBlit(canvas, 0, 0, map, NULL);
+      PROFILE(PixBufBlit)
+        PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
     case 3:
       map = R_("Map2");
-      PixBufCopy(canvas, image);
+      PROFILE(PixBufCopy)
+        PixBufCopy(canvas, image);
       PixBufSetColorMap(map, R_("Darken"), change - 64);
       PixBufSetBlitMode(map, BLIT_COLOR_MAP);
-      PixBufBlit(canvas, 0, 0, map, NULL);
+      PROFILE(PixBufBlit)
+        PixBufBlit(canvas, 0, 0, map, NULL);
       break;
 
     default:
@@ -140,6 +152,7 @@ void MainLoop() {
 
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
+    RenderFramesPerSecond(frameNumber);
 
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
