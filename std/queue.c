@@ -45,7 +45,7 @@ void QueueReset(QueueT *self) {
 bool QueuePushBack(QueueT *self, PtrT data) {
   if (!QueueIsFull(self)) {
     PtrT *elem = TableElemGet(self->data, self->last);
-    memcpy(elem, data, TableElemSize(self->data));
+    MemCopy(elem, data, TableElemSize(self->data));
     self->last = Next(self, self->last);
     return true;
   }
@@ -56,7 +56,7 @@ bool QueuePushBack(QueueT *self, PtrT data) {
 bool QueuePopFront(QueueT *self, PtrT data) {
   if (!QueueIsEmpty(self)) {
     PtrT *elem = TableElemGet(self->data, self->first);
-    memcpy(data, elem, TableElemSize(self->data));
+    MemCopy(data, elem, TableElemSize(self->data));
     memset(elem, 0, TableElemSize(self->data));
     self->first = Next(self, self->first);
     return true;

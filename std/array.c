@@ -69,7 +69,7 @@ static inline void RemoveFast(ArrayT *self, PtrT item) {
     self->freeFunc(item);
 
   if (item != last)
-    memcpy(item, last, self->elemSize);
+    MemCopy(item, last, self->elemSize);
 
   if (self->zeroed)
     bzero(last, self->elemSize);
@@ -132,10 +132,10 @@ PtrT ArrayInsertFast(ArrayT *self, ssize_t index, PtrT data) {
     PtrT last = ArrayGet(self, self->size - 1);
     size_t elemSize = self->elemSize;
 
-    memcpy(last, item, elemSize);
+    MemCopy(last, item, elemSize);
     
     if (data)
-      memcpy(item, data, elemSize);
+      MemCopy(item, data, elemSize);
     else if (self->zeroed)
       bzero(item, elemSize);
 
@@ -159,7 +159,7 @@ PtrT ArrayInsertElements(ArrayT *self, ssize_t index,
   item = ArrayGet(self, self->size - count);
 
   if (data)
-    memcpy(item, data, count * self->elemSize);
+    MemCopy(item, data, count * self->elemSize);
 
   return item;
 }
@@ -176,7 +176,7 @@ PtrT ArrayAppendElements(ArrayT *self, PtrT data, size_t count) {
   item = ArrayGet(self, self->size - count);
 
   if (data)
-    memcpy(item, data, count * self->elemSize);
+    MemCopy(item, data, count * self->elemSize);
 
   return item;
 }
@@ -315,9 +315,9 @@ void ArrayInsertionSort(ArrayT *self, ssize_t begin, ssize_t end) {
         insert += elemSize;
 
       if (insert < pivot) {
-        memcpy(tmp, pivot, elemSize);
+        MemCopy(tmp, pivot, elemSize);
         memmove(insert + elemSize, insert, pivot - insert);
-        memcpy(insert, tmp, elemSize);
+        MemCopy(insert, tmp, elemSize);
       }
 
       pivot += elemSize;
@@ -348,9 +348,9 @@ size_t ArrayPartition(ArrayT *self, size_t begin, size_t end, PtrT pivot) {
     {
       PtrT tmp = self->temporary;
 
-      memcpy(tmp, left, elemSize);
-      memcpy(left, right, elemSize);
-      memcpy(right, tmp, elemSize);
+      MemCopy(tmp, left, elemSize);
+      MemCopy(left, right, elemSize);
+      MemCopy(right, tmp, elemSize);
     }
 
     left += elemSize;

@@ -2,6 +2,7 @@
 #define __STD_ARRAY_H__
 
 #include "std/types.h"
+#include "std/memory.h"
 
 typedef struct Array {
   uint8_t *data;
@@ -47,7 +48,7 @@ static inline PtrT ArrayGet(ArrayT *self, size_t index) {
 }
 
 static inline PtrT ArraySet(ArrayT *self, size_t index, PtrT data) {
-  return memcpy(ArrayGet(self, index), data, self->elemSize);
+  return MemCopy(ArrayGet(self, index), data, self->elemSize);
 }
 
 /*

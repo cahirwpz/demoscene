@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "std/fastmath.h"
+#include "std/memory.h"
 #include "engine/vector3d.h"
 
 void V3D_Add(Vector3D *d, Vector3D *a, Vector3D *b) {
@@ -23,7 +24,7 @@ void V3D_Cross(Vector3D *d, Vector3D *a, Vector3D *b) {
   w.y = a->z * b->x - b->z * a->x;
   w.z = a->x * b->y - b->x * a->y;
 
-  memcpy(d, &w, sizeof(w));
+  MemCopy(d, &w, sizeof(w));
 }
 
 float V3D_Dot(Vector3D *a, Vector3D *b) {

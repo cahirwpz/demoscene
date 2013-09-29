@@ -100,7 +100,7 @@ static void MergeIDATs(PngT *png) {
     for (idat = &png->idat, i = 0; idat;) {
       IdatT *next = idat->next;
 
-      memcpy(data + i, idat->data, idat->length);
+      MemCopy(data + i, idat->data, idat->length);
       i += idat->length;
 
       MemUnref(idat->data);
@@ -186,7 +186,7 @@ static bool ReadPNG(PngT *png, int fd) {
     my_crc = tinf_crc32(my_crc, ptr, chunk.length);
 
     if (chunk.id == PNG_IHDR) {
-      memcpy(&png->ihdr, ptr, sizeof(IhdrT));
+      MemCopy(&png->ihdr, ptr, sizeof(IhdrT));
     } else if (chunk.id == PNG_IDAT) {
       if (!png->idat.data) {
         png->idat.length = chunk.length;
@@ -210,7 +210,7 @@ static bool ReadPNG(PngT *png, int fd) {
       if (png->ihdr.colour_type == PNG_INDEXED) {
         png->trns = MemNew(sizeof(uint32_t) + chunk.length);
         png->trns->type3.length = chunk.length;
-        memcpy(png->trns->type3.alpha, ptr, chunk.length);
+        MemCopy(png->trns->type3.alpha, ptr, chunk.length);
       } else {
         png->trns = (TrnsT *)ptr;
         ptr = NULL;

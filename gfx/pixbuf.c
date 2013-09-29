@@ -138,7 +138,7 @@ void PixBufCopy(PixBufT *dst, PixBufT *src) {
          "Width does not match (%ld != %ld)", src->width, dst->width);
   ASSERT(src->height == dst->height,
          "Height does not match (%ld != %ld)", src->height, dst->height);
-  memcpy(dst->data, src->data, src->width * src->height);
+  MemCopy(dst->data, src->data, src->width * src->height);
 }
 
 void PixBufClear(PixBufT *pixbuf) {

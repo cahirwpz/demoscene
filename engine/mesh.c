@@ -57,7 +57,7 @@ MeshT *NewMeshFromFile(const char *fileName) {
     uint8_t *data = header->data;
     int i;
 
-    memcpy(mesh->vertex, data, sizeof(Vector3D) * header->vertices);
+    MemCopy(mesh->vertex, data, sizeof(Vector3D) * header->vertices);
     data += sizeof(Vector3D) * header->vertices;
 
     for (i = 0; i < header->vertices; i++) {
@@ -65,7 +65,7 @@ MeshT *NewMeshFromFile(const char *fileName) {
       mesh->vertex[i].z = - mesh->vertex[i].z;
     }
 
-    memcpy(mesh->polygon, data, sizeof(TriangleT) * header->polygons);
+    MemCopy(mesh->polygon, data, sizeof(TriangleT) * header->polygons);
     data += sizeof(TriangleT) * header->polygons;
 
     for (i = 0; i < header->surfaces; i++) {
