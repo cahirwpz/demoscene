@@ -11,6 +11,7 @@
 #include "gfx/rectangle.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
+#include "tools/profiling.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
@@ -50,6 +51,8 @@ void SetupEffect() {
 
   PixBufRemap(R_("Image2"), R_("Image2Pal"));
   PixBufRemap(R_("Image3"), R_("Image3Pal"));
+
+  StartProfiling();
 }
 
 /*
@@ -57,6 +60,7 @@ void SetupEffect() {
  */
 void TearDownEffect() {
   UnlinkPalettes(R_("Image1Pal"));
+  StopProfiling();
 }
 
 /*
@@ -73,23 +77,26 @@ void RenderChunky(int frameNumber) {
   int x = 160.0 * sin(M_PI * frameNumber / 100);
   int y = 100.0 * sin(M_PI * frameNumber / 100);
 
-  switch (Effect) {
-    case 0:
-      PixBufClear(map);
-      map->fgColor = 2;
-      DrawRectangle(map, 0, 0, 160 + x, 100 + y);
-      DrawRectangle(map, 160 - x, 100 - y, 320, 200);
-      map->fgColor = 1;
-      DrawEllipse(map, 160, 100, -x, -y);
-      break;
-    
-    default:
-      break;
-  }
+  PROFILE(DrawComposeMap)
+    switch (Effect) {
+      case 0:
+        PixBufClear(map);
+        map->fgColor = 2;
+        DrawRectangle(map, 0, 0, 160 + x, 100 + y);
+        DrawRectangle(map, 160 - x, 100 - y, 320, 200);
+        map->fgColor = 1;
+        DrawEllipse(map, 160, 100, -x, -y);
+        break;
+      
+      default:
+        break;
+    }
 
-  LayersCompose(canvas, map, image, 3);
+  PROFILE(LayersCompose)
+    LayersCompose(canvas, map, image, 3);
 
-  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  PROFILE(ChunkyToPlanar)
+    c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -113,6 +120,7 @@ void MainLoop() {
 
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
+    RenderFramesPerSecond(frameNumber);
 
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);

@@ -1,29 +1,39 @@
 #include "std/debug.h"
 #include "gfx/layers.h"
 
-void LayersCompose(PixBufT *dstBuf, PixBufT *composeMap,
-                   PixBufT **layers, size_t no_layers)
+static void
+LayersComposeLoop(uint8_t *map asm("a3"), uint8_t *dst asm("a1"), uint8_t **src asm("a2"),
+                  int n asm("d5"), int no_layers asm("d3"), int bg asm("d4"))
 {
-  uint8_t *dst = dstBuf->data;
-  uint8_t *map = composeMap->data;
-  uint8_t bg = dstBuf->baseColor;
-  int i;
+  register int i asm("d0");
 
-  for (i = 0; i < no_layers; i++) {
-    ASSERT(layers[i]->width == dstBuf->width,
-           "Width does not match (%ld != %ld) for layer #%d.",
-           layers[i]->width, dstBuf->width, i);
-    ASSERT(layers[i]->height == dstBuf->height,
-           "Height does not match (%ld != %ld) for layer #%d.",
-           layers[i]->height, dstBuf->height, i);
-  }
+  for (i = 0; i < n; i++) {
+    register int l asm("d1") = *map++;
 
-  for (i = 0; i < dstBuf->width * dstBuf->height; i++) {
-    int l = *map++;
-
-    if (l < no_layers)
-      *dst++ = layers[l]->data[i];
+    if (l < no_layers) 
+      *dst++ = src[l][i];
     else
       *dst++ = bg;
   }
+}
+
+void LayersCompose(PixBufT *canvas, PixBufT *composeMap,
+                   PixBufT **layers, size_t no_layers)
+{
+  uint8_t **src = alloca(sizeof(uint8_t *) * no_layers);
+  int i;
+
+  for (i = 0; i < no_layers; i++) {
+    ASSERT(layers[i]->width == canvas->width,
+           "Width does not match (%ld != %ld) for layer #%d.",
+           layers[i]->width, canvas->width, i);
+    ASSERT(layers[i]->height == canvas->height,
+           "Height does not match (%ld != %ld) for layer #%d.",
+           layers[i]->height, canvas->height, i);
+    src[i] = layers[i]->data;
+  }
+
+  LayersComposeLoop(composeMap->data, canvas->data, src,
+                    canvas->width * canvas->height, no_layers,
+                    canvas->baseColor);
 }

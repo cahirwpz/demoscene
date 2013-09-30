@@ -5,6 +5,7 @@
 
 int UVMapExpanderThreshold = 224;
 
+#if 0
 static const Q16T PLUS = { 256, 0 };
 static const Q16T MINUS = { -256, 0 };
 
@@ -44,7 +45,6 @@ FastStepperFromMap(Q16T *map, Q16T *stepper, const int width, const int height) 
   } while (--n);
 }
 
-#if 0
 __regargs static void
 ExpandLine8x(int16_t *dst, Q16T *src, int width) {
   do {

@@ -8,6 +8,7 @@
 #include "tools/frame.h"
 #include "tools/gradient.h"
 #include "tools/loopevent.h"
+#include "tools/profiling.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
@@ -53,12 +54,15 @@ void SetupEffect() {
   UVMapSetTexture(uvmap, R_("Texture"));
 
   ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u));
+
+  StartProfiling();
 }
 
 /*
  * Tear down effect function.
  */
 void TearDownEffect() {
+  StopProfiling();
 }
 
 /*
@@ -75,7 +79,8 @@ void RenderEffect(int frameNumber) {
   int dv = 4 * frameNumber;
 
   UVMapSetOffset(uvmap, du, dv);
-  UVMapRender(uvmap, canvas);
+  PROFILE (UVMapRenderFast)
+    UVMapRender(uvmap, canvas);
 
   {
     int i;
@@ -92,12 +97,13 @@ void RenderEffect(int frameNumber) {
 
   PixBufSetBlitMode(comp, BLIT_COLOR_FUNC);
   PixBufSetColorFunc(comp, cfunc);
-  PixBufBlit(shades, 0, 0, comp, NULL);
+  PROFILE (PixBufBlitWithColorFunc)
+    PixBufBlit(shades, 0, 0, comp, NULL);
 
-  PixBufSetColorMap(shades, R_("ColorMap"), 0);
+  PixBufSetColorMap(shades, R_("ColorMap"));
   PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
-
-  PixBufBlit(canvas, 0, 0, shades, NULL);
+  PROFILE (PixBufBlitWithColorMap)
+    PixBufBlit(canvas, 0, 0, shades, NULL);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
@@ -115,6 +121,7 @@ void MainLoop() {
 
     RenderEffect(frameNumber);
     RenderFrameNumber(frameNumber);
+    RenderFramesPerSecond(frameNumber);
 
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);

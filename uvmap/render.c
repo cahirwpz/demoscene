@@ -34,27 +34,6 @@ static void RenderNormalUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
 }
 #endif
 
-void RenderFastUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
-  RenderFastUVMapOptimized(map->map.normal.u,
-                           map->map.normal.v,
-                           map->texture->data,
-                           dst,
-                           map->width * map->height,
-                           map->offsetU,
-                           map->offsetV);
-}
-
-
-void RenderNormalUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
-  RenderNormalUVMapOptimized(map->map.normal.u,
-                             map->map.normal.v,
-                             map->texture->data,
-                             dst,
-                             map->width * map->height,
-                             map->offsetU,
-                             map->offsetV);
-}
-
 static void RenderAccurateUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
   Q16T *mapU = map->map.accurate.u;
   Q16T *mapV = map->map.accurate.v;
@@ -90,37 +69,41 @@ void UVMapRender(UVMapT *map, PixBufT *canvas) {
   ASSERT(map->texture, "No texture attached.");
 
   if (map->type == UV_FAST)
-    RenderFastUVMap(map, canvas->data);
+    RenderFastUVMapOptimized(map->map.fast.u,
+                             map->map.fast.v,
+                             map->texture->data,
+                             canvas->data,
+                             map->width * map->height,
+                             map->offsetU,
+                             map->offsetV);
   else if (map->type == UV_NORMAL)
-    RenderNormalUVMap(map, canvas->data);
+    RenderNormalUVMapOptimized(map->map.normal.u,
+                               map->map.normal.v,
+                               map->texture->data,
+                               canvas->data,
+                               map->width * map->height,
+                               map->offsetU,
+                               map->offsetV);
   else if (map->type == UV_ACCURATE)
     RenderAccurateUVMap(map, canvas->data);
 }
 
-void UVMapComposeAndRender(PixBufT *canvas, PixBufT *composeMap,
-                           UVMapT *map1, UVMapT *map2)
+void UVMapComposeAndRender(UVMapT *map, PixBufT *canvas, PixBufT *composeMap,
+                           uint8_t index)
 {
-  uint8_t *cmap = composeMap->data;
-  uint8_t *dst = canvas->data;
-  int i;
+  UVMapRenderT render;
+ 
+  render.mapU = map->map.fast.u;
+  render.mapV = map->map.fast.v;
+  render.texture = map->texture->data;
+  render.dst = canvas->data;
+  render.offsetU = map->offsetU;
+  render.offsetV = map->offsetV;
+  render.n = map->width * map->height;
+  render.cmap = composeMap->data;
+  render.index = index;
 
-  ASSERT((map1->type == UV_FAST) && (map2->type == UV_FAST),
-         "Both source maps must be fast.");
+  ASSERT(map->type == UV_FAST, "Source map must be fast.");
 
-  for (i = 0; i < map1->width * map1->height; i++) {
-    uint8_t *texture;
-    uint8_t u, v;
-
-    if (*cmap++ == 0) {
-      texture = map1->texture->data;
-      u = map1->map.fast.u[i] + map1->offsetU;
-      v = map1->map.fast.v[i] + map1->offsetV;
-    } else {
-      texture = map2->texture->data;
-      u = map2->map.fast.u[i] + map2->offsetU;
-      v = map2->map.fast.v[i] + map2->offsetV;
-    }
-
-    *dst++ = texture[(u << 8) | v];
-  }
+  UVMapComposeAndRenderOptimized(&render);
 }

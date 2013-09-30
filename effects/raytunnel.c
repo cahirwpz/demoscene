@@ -47,6 +47,27 @@ static PixBufT *Shades;
 static PixBufT *Canvas;
 static UVMapT *SmallMap;
 static UVMapT *Map;
+static uint8_t *LightFunc;
+
+static uint8_t *CalculateLightFunc() {
+  uint8_t *lightFunc = NewTable(uint8_t, 65536);
+  int i;
+
+  for (i = -32768; i < 32768; i++) {
+    int value = i;
+
+    if (value < 0)
+      value = -value;
+    if (value < 128)
+      value = 128;
+    else if (value > 255)
+      value = 255;
+
+    lightFunc[(uint16_t)i] = value;
+  }
+
+  return lightFunc;
+}
 
 void AddInitialResources() {
   Texture = NewPixBufFromFile("data/texture-shades.8");
@@ -56,6 +77,7 @@ void AddInitialResources() {
   Canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   SmallMap = NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256);
   Map = NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256);
+  LightFunc = CalculateLightFunc();
   
   UVMapSetTexture(Map, Texture);
 }
@@ -102,21 +124,15 @@ void RaycastCalculateView(int frameNumber) {
   V3D_Sub(&transformed[2], &transformed[2], &transformed[0]);
 }
 
-static void RenderShadeMap(PixBufT *shades, int16_t *map) {
+static void RenderShadeMap(PixBufT *shades, uint16_t *map) {
+  uint8_t *lightFunc = LightFunc;
   int n = shades->width * shades->height;
   uint8_t *dst = shades->data;
+  uint32_t offset;
 
   do {
-    int value = *map++;
-
-    if (value < 0)
-      value = -value;
-    if (value < 128)
-      value = 128;
-    if (value > 255)
-      value = 255;
-
-    *dst++ = value;
+    offset = *map++;
+    *dst++ = lightFunc[offset];
   } while (--n);
 }
 
@@ -135,15 +151,17 @@ void RenderEffect(int frameNumber) {
   PROFILE (UVMapRender)
     UVMapRender(Map, Canvas);
 
-  if (false) {
+  PROFILE (RenderShadeMap)
     RenderShadeMap(Shades, Map->map.normal.v);
 
-    PixBufSetColorMap(Shades, ColorMap, 0);
-    PixBufSetBlitMode(Shades, BLIT_COLOR_MAP);
-    PixBufBlit(Canvas, 0, 0, Shades, NULL);
-  }
+  PixBufSetColorMap(Shades, ColorMap);
+  PixBufSetBlitMode(Shades, BLIT_COLOR_MAP);
 
-  c2p1x1_8_c5_bm(Canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  PROFILE (BlitShadeMap)
+    PixBufBlit(Canvas, 0, 0, Shades, NULL);
+
+  PROFILE (ChunkyToPlanar)
+    c2p1x1_8_c5_bm(Canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*

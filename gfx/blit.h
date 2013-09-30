@@ -10,4 +10,6 @@ void PixBufBlit(PixBufT *dstBuf, int x, int y,
 void PixBufBlitScaled(PixBufT *dstBuf, size_t x, size_t y, int w, int h,
                       PixBufT *srcBuf);
 
+void PixBufAddAndClamp(PixBufT *dstBuf, PixBufT *srcBuf, int value);
+
 #endif

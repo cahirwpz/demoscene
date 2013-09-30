@@ -31,6 +31,7 @@ void AddInitialResources() {
   ResAdd("ImagePal", NewPaletteFromFile("data/samkaat-absinthe.pal"));
   ResAdd("Darken", NewPixBufFromFile("data/samkaat-absinthe-darken.8"));
   ResAdd("Lighten", NewPixBufFromFile("data/samkaat-absinthe-lighten.8"));
+  ResAdd("Shade", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
 }
 
 /*
@@ -80,6 +81,7 @@ void RenderChunky(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
   PixBufT *image = R_("Image");
   PixBufT *map;
+  PixBufT *shade = R_("Shade");
 
   int change = (frameNumber * 2) % 256;
 
@@ -88,40 +90,48 @@ void RenderChunky(int frameNumber) {
       map = R_("Map1");
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
-      PixBufSetColorMap(map, R_("Lighten"), change);
-      PixBufSetBlitMode(map, BLIT_COLOR_MAP);
+      PROFILE(PixBufAddAndClamp)
+        PixBufAddAndClamp(shade, map, change);
+      PixBufSetColorMap(shade, R_("Lighten"));
+      PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
-        PixBufBlit(canvas, 0, 0, map, NULL);
+        PixBufBlit(canvas, 0, 0, shade, NULL);
       break;
 
     case 1:
       map = R_("Map1");
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
-      PixBufSetColorMap(map, R_("Darken"), change - 64);
-      PixBufSetBlitMode(map, BLIT_COLOR_MAP);
+      PROFILE(PixBufAddAndClamp)
+        PixBufAddAndClamp(shade, map, change - 64);
+      PixBufSetColorMap(shade, R_("Darken"));
+      PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
-        PixBufBlit(canvas, 0, 0, map, NULL);
+        PixBufBlit(canvas, 0, 0, shade, NULL);
       break;
 
     case 2:
       map = R_("Map2");
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
-      PixBufSetColorMap(map, R_("Lighten"), change - 64);
-      PixBufSetBlitMode(map, BLIT_COLOR_MAP);
+      PROFILE(PixBufAddAndClamp)
+        PixBufAddAndClamp(shade, map, change - 64);
+      PixBufSetColorMap(shade, R_("Lighten"));
+      PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
-        PixBufBlit(canvas, 0, 0, map, NULL);
+        PixBufBlit(canvas, 0, 0, shade, NULL);
       break;
 
     case 3:
       map = R_("Map2");
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
-      PixBufSetColorMap(map, R_("Darken"), change - 64);
-      PixBufSetBlitMode(map, BLIT_COLOR_MAP);
+      PROFILE(PixBufAddAndClamp)
+        PixBufAddAndClamp(shade, map, change - 64);
+      PixBufSetColorMap(shade, R_("Darken"));
+      PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
-        PixBufBlit(canvas, 0, 0, map, NULL);
+        PixBufBlit(canvas, 0, 0, shade, NULL);
       break;
 
     default:

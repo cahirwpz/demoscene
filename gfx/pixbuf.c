@@ -102,16 +102,15 @@ PixBufT *NewPixBufWrapper(size_t width, size_t height, uint8_t *data) {
   return pixbuf;
 }
 
-void PixBufSetColorMap(PixBufT *pixbuf, PixBufT *colorMap, int colorShift) {
+void PixBufSetColorMap(PixBufT *pixbuf, PixBufT *colorMap) {
   ASSERT((colorMap->type == PIXBUF_GRAY || colorMap->type == PIXBUF_CLUT) &&
          colorMap->width == 256,
          "Color map must be 8-bit gray image of width 256.");
-  pixbuf->blit.cmap.data = colorMap->data;
-  pixbuf->blit.cmap.shift = colorShift;
+  pixbuf->blit.cmap = colorMap->data;
 }
 
 void PixBufSetColorFunc(PixBufT *pixbuf, uint8_t *colorFunc) {
-  pixbuf->blit.cfunc.data = colorFunc;
+  pixbuf->blit.cfunc = colorFunc;
 }
 
 BlitModeT PixBufSetBlitMode(PixBufT *pixbuf, BlitModeT mode) {

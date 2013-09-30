@@ -8,6 +8,7 @@
 #include "gfx/palette.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
+#include "tools/profiling.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
@@ -62,6 +63,8 @@ void SetupEffect() {
   UVMapSetTexture(map2, R_("Texture2"));
 
   ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, map2->map.fast.v));
+
+  StartProfiling();
 }
 
 /*
@@ -69,6 +72,7 @@ void SetupEffect() {
  */
 void TearDownEffect() {
   UnlinkPalettes(R_("Texture1Pal"));
+  StopProfiling();
 }
 
 /*
@@ -107,7 +111,10 @@ void RenderChunky(int frameNumber) {
 
   UVMapSetOffset(map1, du, dv);
   UVMapSetOffset(map2, -du, -dv);
-  UVMapComposeAndRender(canvas, compMap, map1, map2);
+  PROFILE (UVMapCompose1)
+    UVMapComposeAndRender(map1, canvas, compMap, 0);
+  PROFILE (UVMapCompose2)
+    UVMapComposeAndRender(map2, canvas, compMap, 1);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
@@ -130,6 +137,7 @@ void MainLoop() {
 
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
+    RenderFramesPerSecond(frameNumber);
 
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);

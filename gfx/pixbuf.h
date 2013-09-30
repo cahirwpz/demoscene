@@ -43,14 +43,9 @@ struct PixBuf {
 
   union {
     /* For BLIT_COLOR_MAP mode. */
-    struct {
-      uint8_t *data;
-      int32_t shift;
-    } cmap;
+    uint8_t *cmap;
     /* For BLIT_COLOR_FUNC mode. */
-    struct {
-      uint8_t *data;
-    } cfunc;
+    uint8_t *cfunc;
   } blit;
 };
 
@@ -61,7 +56,7 @@ PixBufT *NewPixBufWrapper(size_t width, size_t height, uint8_t *data);
 void PixBufSwapData(PixBufT *buf1, PixBufT *buf2);
 void PixBufCopy(PixBufT *dst, PixBufT *src);
 void PixBufClear(PixBufT *pixbuf);
-void PixBufSetColorMap(PixBufT *pixbuf, PixBufT *colorMap, int colorShift);
+void PixBufSetColorMap(PixBufT *pixbuf, PixBufT *colorMap);
 void PixBufSetColorFunc(PixBufT *pixbuf, uint8_t *colorFunc);
 BlitModeT PixBufSetBlitMode(PixBufT *pixbuf, BlitModeT mode);
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);

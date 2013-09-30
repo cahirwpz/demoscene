@@ -1,6 +1,8 @@
 #include "gfx/blit.h"
+#include "gfx/raw.h"
 #include "std/debug.h"
 
+#if 0
 __attribute__((regparm(4))) static void
 PixBufBlitNormal(uint8_t *dst, uint8_t *src,
                  const int width, const int height,
@@ -19,6 +21,7 @@ PixBufBlitNormal(uint8_t *dst, uint8_t *src,
     dst += dstride;
   } while (--y);
 }
+#endif
 
 __attribute__((regparm(4))) static void
 PixBufBlitAdditive(uint8_t *dst, uint8_t *src,
@@ -67,7 +70,6 @@ PixBufBlitAdditiveClip(uint8_t *dst, uint8_t *src,
   } while (--y);
 }
 
-
 __attribute__((regparm(4))) static void
 PixBufBlitSubstractive(uint8_t *dst, uint8_t *src,
                        const int width, const int height,
@@ -115,13 +117,6 @@ PixBufBlitSubstractiveClip(uint8_t *dst, uint8_t *src,
   } while (--y);
 }
 
-void PixBufBlitTransparent(uint8_t *dst asm("a0"),
-                           uint8_t *src asm("a1"),
-                           const int width asm("d0"),
-                           const int height asm("d1"),
-                           const int sstride asm("d2"), 
-                           const int dstride asm("d3"));
-
 #if 0
 __attribute__((regparm(4))) static void
 PixBufBlitTransparent(uint8_t *dst, uint8_t *src,
@@ -146,7 +141,6 @@ PixBufBlitTransparent(uint8_t *dst, uint8_t *src,
     dst += dstride;
   } while (--y);
 }
-#endif
 
 __attribute__((regparm(4))) static void 
 PixBufBlitColorMap(uint8_t *dst, uint8_t *src,
@@ -194,6 +188,7 @@ PixBufBlitColorFunc(uint8_t *dst, uint8_t *src,
     dst += dstride;
   } while (--y);
 }
+#endif
 
 static inline void ScaleLine(uint8_t *dst, uint8_t *src, int w, const int du2, bool check) {
   const int sx = sign(w);
@@ -302,11 +297,11 @@ void PixBufBlit(PixBufT *dbuf, int x, int y,
 
     switch (sbuf->mode) {
       case BLIT_NORMAL:
-        PixBufBlitNormal(dst, src, w, h, sstride, dstride);
+        RawBlitNormal(dst, src, w, h, sstride, dstride);
         break;
 
       case BLIT_TRANSPARENT:
-        PixBufBlitTransparent(dst, src, w, h, sstride, dstride);
+        RawBlitTransparent(dst, src, w, h, sstride, dstride);
         break;
 
       case BLIT_ADDITIVE:
@@ -326,14 +321,28 @@ void PixBufBlit(PixBufT *dbuf, int x, int y,
         break;
 
       case BLIT_COLOR_MAP:
-        PixBufBlitColorMap(dst, src, w, h, sstride, dstride,
-                           sbuf->blit.cmap.data, sbuf->blit.cmap.shift);
+        RawBlitColorMap(dst, src, w, h, sstride, dstride, sbuf->blit.cmap);
         break;
 
       case BLIT_COLOR_FUNC:
-        PixBufBlitColorFunc(dst, src, w, h, sstride, dstride,
-                            sbuf->blit.cfunc.data);
+        RawBlitColorFunc(dst, src, w, h, sstride, dstride, sbuf->blit.cfunc);
         break;
     } 
+  }
+}
+
+void PixBufAddAndClamp(PixBufT *dstBuf, PixBufT *srcBuf, int value) {
+  if (value < 0) {
+    value = -value;
+
+    if (value > 255)
+      value = 255;
+
+    RawSubAndClamp(dstBuf->data, srcBuf->data, srcBuf->width * srcBuf->height, value);
+  } else {
+    if (value > 255)
+      value = 255;
+
+    RawAddAndClamp(dstBuf->data, srcBuf->data, srcBuf->width * srcBuf->height, value);
   }
 }

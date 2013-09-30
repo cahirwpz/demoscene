@@ -310,7 +310,7 @@ CALLBACK(RenderRaycastLight) {
   UVMapT *map = R_("UVMap");
   PixBufT *shades = R_("ShadeMap");
 
-  PixBufSetColorMap(shades, R_("RaycastColorMap"), 0);
+  PixBufSetColorMap(shades, R_("RaycastColorMap"));
   PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
   PixBufBlit(TheCanvas, 0, 0, shades, NULL);
 }
@@ -418,7 +418,8 @@ CALLBACK(ComposeMaps) {
 
   UVMapSetOffset(map1, du, dv);
   UVMapSetOffset(map2, -du, -dv);
-  UVMapComposeAndRender(TheCanvas, compMap, map1, map2);
+  UVMapComposeAndRender(map1, TheCanvas, compMap, 0);
+  UVMapComposeAndRender(map2, TheCanvas, compMap, 1);
 }
 
 ARRAY(float, 3, Stone1Pos, -0.5f, 0.0f, 0.0f);
@@ -495,7 +496,7 @@ CALLBACK(RenderPotato) {
   RenderFlatShading = true;
   RenderScene(R_("PotatoScene"), shades);
 
-  PixBufSetColorMap(shades, R_("PotatoBgColorMap"), -16);
+  PixBufSetColorMap(shades, R_("PotatoBgColorMap"));
   PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
 
   PixBufBlit(TheCanvas, 0, 0, shades, NULL);
@@ -594,7 +595,7 @@ ARRAY(float, 2, TwoPos, 135.0f, 80.0f);
 
 CALLBACK(ShowTwo)  {
   PixBufT *two = R_("TwoImg");
-  PixBufSetColorMap(two, R_("WeCanColorMap"), 0);
+  PixBufSetColorMap(two, R_("WeCanColorMap"));
   PixBufSetBlitMode(two, BLIT_COLOR_MAP);
   PixBufBlit(TheCanvas, TwoPos[0], TwoPos[1], two, NULL);
 }
@@ -603,7 +604,7 @@ ARRAY(float, 2, WarnungPos, 20.0f, 10.0f);
 
 CALLBACK(ShowWarnung)  {
   PixBufT *warnung = R_("WarnungImg");
-  PixBufSetColorMap(warnung, R_("WeCanColorMap"), 0);
+  PixBufSetColorMap(warnung, R_("WeCanColorMap"));
   PixBufSetBlitMode(warnung, BLIT_COLOR_MAP);
   PixBufBlit(TheCanvas, WarnungPos[0], WarnungPos[1], warnung, NULL);
 }
@@ -612,7 +613,7 @@ ARRAY(float, 2, AttenzionePos, 100.0f, 10.0f);
 
 CALLBACK(ShowAttenzione) {
   PixBufT *attenzione = R_("AttenzioneImg");
-  PixBufSetColorMap(attenzione, R_("WeCanColorMap"), 0);
+  PixBufSetColorMap(attenzione, R_("WeCanColorMap"));
   PixBufSetBlitMode(attenzione, BLIT_COLOR_MAP);
   PixBufBlit(TheCanvas, AttenzionePos[0], AttenzionePos[1], attenzione, NULL);
 }
@@ -621,7 +622,7 @@ ARRAY(float, 2, HighVoltagePos, 100.0f, 10.0f);
 
 CALLBACK(ShowHighVoltage) {
   PixBufT *highvoltage = R_("HighVoltageImg");
-  PixBufSetColorMap(highvoltage, R_("WeCanColorMap"), 0);
+  PixBufSetColorMap(highvoltage, R_("WeCanColorMap"));
   PixBufSetBlitMode(highvoltage, BLIT_COLOR_MAP);
   PixBufBlit(TheCanvas, HighVoltagePos[0], HighVoltagePos[1], highvoltage, NULL);
 }

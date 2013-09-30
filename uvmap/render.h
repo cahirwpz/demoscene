@@ -4,7 +4,7 @@
 #include "uvmap/common.h"
 
 void UVMapRender(UVMapT *map, PixBufT *canvas);
-void UVMapComposeAndRender(PixBufT *canvas, PixBufT *composeMap,
-                           UVMapT *map1, UVMapT *map2);
+void UVMapComposeAndRender(UVMapT *map, PixBufT *canvas, PixBufT *composeMap,
+                           uint8_t index);
 
 #endif
