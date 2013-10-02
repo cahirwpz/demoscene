@@ -1,6 +1,6 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-OBJS = matrix3d.o mesh.o ms3d.o object.o plane.o scene.o sphere.o vector3d.o
+OBJS = matrix3d.o mesh.o ms3d.o object.o plane.o scene.o sphere.o
 
 libengine.a: $(OBJS)
 
