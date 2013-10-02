@@ -55,7 +55,6 @@ typedef struct EdgeScan {
 
   int16_t x, dx;
   int16_t xerr, dxerr, nxerr;
-  int16_t y;
 } EdgeScanT;
 
 static EdgeScanT l12, l13, l23;
@@ -88,7 +87,6 @@ __regargs static void InitEdgeScan(EdgeScanT *e, fixed_t ys, fixed_t ye,
 
   e->x = fx_rint(xs);
   e->width = fx_rint(xe) - fx_rint(xs);
-  e->y = fx_rint(ys);
   e->height = fx_rint(ye) - fx_rint(ys);
   e->xerr = 0;
   e->nxerr = height;
@@ -118,8 +116,6 @@ static inline void IterEdgeScan(EdgeScanT *e) {
     e->xerr -= e->nxerr;
     e->x++;
   }
-
-  e->y++;
 }
 
 static inline bool CmpEdgeScan(EdgeScanT *e1, EdgeScanT *e2) {
@@ -129,61 +125,48 @@ static inline bool CmpEdgeScan(EdgeScanT *e1, EdgeScanT *e2) {
     return e1->dx < e2->dx;
 }
 
-/* Segment structure & routines. */
+/* Segment routines. */
 
-typedef struct Segment {
-  uint8_t *pixels;
-  size_t stride;
-  uint8_t color;
-  int width, height;
-} SegmentT;
+__regargs static void DrawTriangleSpan(uint8_t *pixels, uint8_t color,
+                                       int xs, int xe, const int width)
+{
+  int n;
 
-static SegmentT segment;
+  if (xs < 0)
+    xs = 0;
 
-static inline void InitSegment(PixBufT *canvas, int y) {
-  segment.color  = canvas->fgColor;
-  segment.stride = canvas->width;
-  segment.pixels = canvas->data + y * canvas->width;
-  segment.width = canvas->width;
-  segment.height = canvas->height;
+  if (xe >= width)
+    xe = width - 1;
+
+  n = xe - xs;
+  pixels += xs;
+
+  LOG("Line: (%d, %d..%d)", ys, xs, xe);
+
+  do {
+    *pixels++ = color;
+  } while (--n >= 0);
 }
 
-__regargs static void DrawTriangleSegment(EdgeScanT *left, EdgeScanT *right,
-                                          int h)
+__regargs static void
+DrawTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
+                    int ys, int ye)
 {
-  int bottom = left->y + h;
-  int y;
+  uint8_t *pixels = canvas->data + ys * canvas->width;
+  uint8_t color = canvas->fgColor;
+  int width = canvas->width;
+  int height = canvas->height;
 
-  for (y = left->y; y < bottom; y++) {
-    if (y >= 0 && y < segment.height) {
-      int lx = left->x;
-      int rx = right->x;
+  while (ys < ye) {
+    if (ys >= 0 && ys < height && left->x < width && right->x >= 0)
+      DrawTriangleSpan(pixels, color, left->x, right->x, width);
 
-      uint8_t *pixels = segment.pixels;
-      uint8_t color = segment.color;
+    pixels += width;
 
-      if (lx < segment.width && rx >= 0) {
-        int w;
-
-        if (lx < 0)
-          lx = 0;
-        if (rx >= segment.width)
-          rx = segment.width - 1;
-
-        w = rx - lx;
-        pixels += lx;
-
-        LOG("Line: (%d, %d..%d)", left->y, left->x, right->x);
-
-        do {
-          *pixels++ = color;
-        } while (--w >= 0);
-      }
-    }
-
-    segment.pixels += segment.stride;
     IterEdgeScan(left);
     IterEdgeScan(right);
+
+    ys++;
   }
 }
 
@@ -192,13 +175,16 @@ __regargs static void DrawTriangleSegment(EdgeScanT *left, EdgeScanT *right,
 void DrawTriangle(PixBufT *canvas, float x1f, float y1f, float x2f, float y2f,
                   float x3f, float y3f)
 {
+  fixed_t y1, y2;
+
   {
     fixed_t x1 = float_to_fx(x1f);
-    fixed_t y1 = float_to_fx(y1f);
     fixed_t x2 = float_to_fx(x2f);
-    fixed_t y2 = float_to_fx(y2f);
     fixed_t x3 = float_to_fx(x3f);
     fixed_t y3 = float_to_fx(y3f);
+
+    y1 = float_to_fx(y1f);
+    y2 = float_to_fx(y2f);
 
     if (y1 > y2) {
       swapr(x1, x2);
@@ -222,8 +208,6 @@ void DrawTriangle(PixBufT *canvas, float x1f, float y1f, float x2f, float y2f,
     InitEdgeScan(&l23, y2, y3, x2, x3);
   }
 
-  InitSegment(canvas, l12.y);
-
   {
     bool longOnRight;
 
@@ -238,14 +222,14 @@ void DrawTriangle(PixBufT *canvas, float x1f, float y1f, float x2f, float y2f,
       EdgeScanT *left  = longOnRight ? &l12 : &l13;
       EdgeScanT *right = longOnRight ? &l13 : &l12;
 
-      DrawTriangleSegment(left, right, l12.height);
+      DrawTriangleSegment(canvas, left, right, fx_rint(y1), fx_rint(y1) + l12.height);
 
       if (longOnRight)
         left = &l23;
       else
         right = &l23;
 
-      DrawTriangleSegment(left, right, l23.height);
+      DrawTriangleSegment(canvas, left, right, fx_rint(y2), fx_rint(y2) + l23.height);
     }
   }
 }
