@@ -1,6 +1,7 @@
 #include "std/debug.h"
 #include "std/math.h"
 #include "std/memory.h"
+#include "std/quicksort.h"
 #include "std/table.h"
 #include "engine/object.h"
 #include "gfx/line.h"
@@ -31,9 +32,11 @@ SceneObjectT *NewSceneObject(const char *name, MeshT *mesh) {
   return self;
 }
 
-static bool SortByDepth(const PtrT a asm("a0"), const PtrT b asm("a1")) {
-  return (((PolygonExtT *)a)->depth < ((PolygonExtT *)b)->depth);
+static inline bool SortByDepth(const PolygonExtT *a, const PolygonExtT *b) {
+  return a->depth < b->depth;
 }
+
+QUICKSORT(PolygonExtT, SortByDepth);
 
 static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
                              size_t polygonNum, Vector3D *vertex, Vector3D *normal)
@@ -145,8 +148,7 @@ void RenderSceneObject(SceneObjectT *self, PixBufT *canvas) {
                    self->vertex, self->surfaceNormal);
 
   /* Sort polygons by depth. */
-  TableSort((PtrT *)self->sortedPolygonExt,
-            SortByDepth, 0, mesh->polygonNum - 1);
+  QuickSortPolygonExtT(self->sortedPolygonExt, 0, mesh->polygonNum - 1);
 
   ProjectTo2D(self->vertex, self->vertex, mesh->vertexNum,
               canvas->width / 2, canvas->height / 2, -160.0f);

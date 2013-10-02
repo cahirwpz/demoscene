@@ -91,8 +91,8 @@ static inline void Swap(PtrT *table, size_t i, size_t j) {
   }
 }
 
-static size_t Partition(PtrT *table, LessFuncT less,
-                        size_t begin, size_t end, PtrT pivot)
+__regargs static size_t Partition(PtrT *table, LessFuncT less,
+                                  size_t begin, size_t end, PtrT pivot)
 {
   size_t left = begin;
   size_t right = end;
@@ -113,8 +113,8 @@ static size_t Partition(PtrT *table, LessFuncT less,
   return left;
 }
 
-static inline size_t ChoosePivot(PtrT *table, LessFuncT less,
-                                 size_t left, size_t right) {
+__regargs static size_t ChoosePivot(PtrT *table, LessFuncT less,
+                                    size_t left, size_t right) {
   size_t middle = (left + right) / 2;
 
   PtrT a = table[left];
@@ -180,5 +180,4 @@ void TableSort(PtrT *table, LessFuncT less, size_t begin, size_t end) {
          (int)begin, (int)end);
 
   QuickSort(table, less, begin, end);
-
 }

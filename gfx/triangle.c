@@ -127,16 +127,16 @@ static inline bool CmpEdgeScan(EdgeScanT *e1, EdgeScanT *e2) {
 
 /* Segment routines. */
 
-__regargs static void DrawTriangleSpan(uint8_t *pixels, uint8_t color,
-                                       int xs, int xe, const int width)
+static inline void DrawTriangleSpan(uint8_t *pixels, const uint8_t color,
+                                    int xs, int xe, const int max_x)
 {
   int n;
 
   if (xs < 0)
     xs = 0;
 
-  if (xe >= width)
-    xe = width - 1;
+  if (xe > max_x)
+    xe = max_x;
 
   n = xe - xs;
   pixels += xs;
@@ -159,7 +159,7 @@ DrawTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
 
   while (ys < ye) {
     if (ys >= 0 && ys < height && left->x < width && right->x >= 0)
-      DrawTriangleSpan(pixels, color, left->x, right->x, width);
+      DrawTriangleSpan(pixels, color, left->x, right->x, width - 1);
 
     pixels += width;
 
