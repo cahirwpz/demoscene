@@ -16,12 +16,18 @@ typedef struct PolygonExt {
   float depth;
 } PolygonExtT;
 
+typedef struct VertexExt {
+  uint8_t flags;
+  int x, y;
+} VertexExtT;
+
 typedef struct SceneObject {
   char *name;
   MeshT *mesh;
 
   MatrixStack3D *ms;
   Vector3D *vertex;
+  VertexExtT *vertexExt;
   PolygonExtT *polygonExt;
   PolygonExtT **sortedPolygonExt;
   Vector3D *surfaceNormal;

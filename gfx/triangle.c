@@ -57,8 +57,6 @@ typedef struct EdgeScan {
   int16_t xerr, dxerr, nxerr;
 } EdgeScanT;
 
-static EdgeScanT l12, l13, l23;
-
 /*
  * 1) DDA equation:
  *
@@ -79,9 +77,8 @@ static EdgeScanT l12, l13, l23;
  *   | b |   +   b   +       +     b     +
  */
 
-__regargs static void InitEdgeScan(EdgeScanT *e, fixed_t ys, fixed_t ye,
-                                   fixed_t xs, fixed_t xe)
-{
+__attribute__((regparm(4))) static void
+InitEdgeScan(EdgeScanT *e, fixed_t ys, fixed_t ye, fixed_t xs, fixed_t xe) {
   fixed_t height = ye - ys;
   fixed_t width = xe - xs;
 
@@ -126,9 +123,9 @@ static inline bool CmpEdgeScan(EdgeScanT *e1, EdgeScanT *e2) {
 }
 
 /* Segment routines. */
-
-static inline void DrawTriangleSpan(uint8_t *pixels, const uint8_t color,
-                                    int xs, int xe, const int max_x)
+static inline void 
+DrawTriangleSpan(uint8_t *pixels, const uint8_t color,
+                 int xs, int xe, const int max_x)
 {
   int n;
 
@@ -148,12 +145,12 @@ static inline void DrawTriangleSpan(uint8_t *pixels, const uint8_t color,
   } while (--n >= 0);
 }
 
-__regargs static void
+__attribute__((regparm(4))) static void
 DrawTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
                     int ys, int ye)
 {
   uint8_t *pixels = canvas->data + ys * canvas->width;
-  uint8_t color = canvas->fgColor;
+  const uint8_t color = canvas->fgColor;
   int width = canvas->width;
   int height = canvas->height;
 
@@ -170,66 +167,99 @@ DrawTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
   }
 }
 
-/* Triangle rasterization routine. */
+__attribute__((regparm(4))) static void
+DrawTriangleSegmentFast(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
+                        int ys, int ye)
+{
+  uint8_t *pixels = canvas->data + ys * canvas->width;
+  register const uint8_t color = canvas->fgColor;
 
-void DrawTriangle(PixBufT *canvas, float x1f, float y1f, float x2f, float y2f,
+  while (ys < ye) {
+    register uint8_t *span = pixels + left->x;
+    register int n = right->x - left->x;
+
+    LOG("Line: (%d, %d..%d)", ys, left->x, right->x);
+
+    do {
+      *span++ = color;
+    } while (--n >= 0);
+
+    pixels += canvas->width;
+
+    IterEdgeScan(left);
+    IterEdgeScan(right);
+
+    ys++;
+  }
+}
+
+/* Triangle rasterization routine. */
+void DrawTriangle(PixBufT *canvas,
+                  float x1f, float y1f, float x2f, float y2f,
                   float x3f, float y3f)
 {
-  fixed_t y1, y2;
+  fixed_t x1 = float_to_fx(x1f);
+  fixed_t y1 = float_to_fx(y1f);
+  fixed_t x2 = float_to_fx(x2f);
+  fixed_t y2 = float_to_fx(y2f);
+  fixed_t x3 = float_to_fx(x3f);
+  fixed_t y3 = float_to_fx(y3f);
 
-  {
-    fixed_t x1 = float_to_fx(x1f);
-    fixed_t x2 = float_to_fx(x2f);
-    fixed_t x3 = float_to_fx(x3f);
-    fixed_t y3 = float_to_fx(y3f);
+  DrawTriangleNew(canvas, x1, y1, x2, y2, x3, y3, false);
+}
 
-    y1 = float_to_fx(y1f);
-    y2 = float_to_fx(y2f);
+void DrawTriangleNew(PixBufT *canvas,
+                     fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2,
+                     fixed_t x3, fixed_t y3, bool check)
+{
+  EdgeScanT l12, l13, l23;
+  bool longOnRight;
 
-    if (y1 > y2) {
-      swapr(x1, x2);
-      swapr(y1, y2);
-    }
-
-    if (y1 > y3) {
-      swapr(x1, x3);
-      swapr(y1, y3);
-    }
-
-    if (y2 > y3) {
-      swapr(x2, x3);
-      swapr(y2, y3);
-    }
-
-    LOG("Triangle: (%f, %f) (%f, %f) (%f, %f).", x1f, y1f, x2f, y2f, x3f, y3f);
-
-    InitEdgeScan(&l12, y1, y2, x1, x2);
-    InitEdgeScan(&l13, y1, y3, x1, x3);
-    InitEdgeScan(&l23, y2, y3, x2, x3);
+  if (y1 > y2) {
+    swapr(x1, x2);
+    swapr(y1, y2);
   }
 
+  if (y1 > y3) {
+    swapr(x1, x3);
+    swapr(y1, y3);
+  }
+
+  if (y2 > y3) {
+    swapr(x2, x3);
+    swapr(y2, y3);
+  }
+
+  LOG("Triangle: (%f, %f) (%f, %f) (%f, %f).", x1f, y1f, x2f, y2f, x3f, y3f);
+
+  InitEdgeScan(&l12, y1, y2, x1, x2);
+  InitEdgeScan(&l13, y1, y3, x1, x3);
+  InitEdgeScan(&l23, y2, y3, x2, x3);
+
+  if (l12.height == 0)
+    longOnRight = (l12.width < 0);
+  else if (l23.height == 0)
+    longOnRight = (l23.width > 0);
+  else
+    longOnRight = CmpEdgeScan(&l12, &l13);
+
   {
-    bool longOnRight;
+    EdgeScanT *left  = longOnRight ? &l12 : &l13;
+    EdgeScanT *right = longOnRight ? &l13 : &l12;
 
-    if (l12.height == 0)
-      longOnRight = (l12.width < 0);
-    else if (l23.height == 0)
-      longOnRight = (l23.width > 0);
-    else
-      longOnRight = CmpEdgeScan(&l12, &l13);
-
-    {
-      EdgeScanT *left  = longOnRight ? &l12 : &l13;
-      EdgeScanT *right = longOnRight ? &l13 : &l12;
-
+    if (check)
       DrawTriangleSegment(canvas, left, right, fx_rint(y1), fx_rint(y1) + l12.height);
+    else
+      DrawTriangleSegmentFast(canvas, left, right, fx_rint(y1), fx_rint(y1) + l12.height);
 
-      if (longOnRight)
-        left = &l23;
-      else
-        right = &l23;
+    if (longOnRight)
+      left = &l23;
+    else
+      right = &l23;
 
+    if (check)
       DrawTriangleSegment(canvas, left, right, fx_rint(y2), fx_rint(y2) + l23.height);
-    }
+    else
+      DrawTriangleSegmentFast(canvas, left, right, fx_rint(y2), fx_rint(y2) + l23.height);
   }
 }

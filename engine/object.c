@@ -13,6 +13,7 @@ static void DeleteSceneObject(SceneObjectT *self) {
   MemUnref(self->polygonExt);
   MemUnref(self->sortedPolygonExt);
   MemUnref(self->surfaceNormal);
+  MemUnref(self->vertexExt);
   MemUnref(self->name);
 }
 
@@ -25,6 +26,7 @@ SceneObjectT *NewSceneObject(const char *name, MeshT *mesh) {
   self->mesh = mesh;
   self->ms = NewMatrixStack3D();
   self->vertex = NewTable(Vector3D, mesh->vertexNum);
+  self->vertexExt = NewTable(VertexExtT, mesh->vertexNum);
   self->polygonExt = NewTable(PolygonExtT, mesh->polygonNum);
   self->sortedPolygonExt = (PolygonExtT **)NewTableAdapter(self->polygonExt);
   self->surfaceNormal = NewTable(Vector3D, mesh->polygonNum);
@@ -83,9 +85,49 @@ bool RenderFlatShading = false;
 bool RenderWireFrame = false;
 bool RenderAllFaces = false;
 
+typedef int fixed_t;
+
+static inline fixed_t float_to_fx(float v) {
+  return v * 16.0f;
+}
+
+static inline int fx_rint(fixed_t v) {
+  return (v + 8) >> 4;
+}
+
+static void UpdateVertexExt(PixBufT *canvas, VertexExtT *dst, Vector3D *src, int vertexNum) {
+  const float viewerX = canvas->width / 2;
+  const float viewerY = canvas->height / 2;
+  const float viewerZ = -160.0f;
+  int i;
+
+  for (i = 0; i < vertexNum; i++) {
+    float invZ = viewerZ / src[i].z;
+    fixed_t fx = float_to_fx(src[i].x * invZ + viewerX);
+    fixed_t fy = float_to_fx(src[i].y * invZ + viewerY);
+    int x = fx_rint(fx);
+    int y = fx_rint(fy);
+    uint8_t flags = 0;
+
+    if (x < 0)
+      flags |= 1;
+    else if (x > canvas->width - 1)
+      flags |= 2;
+
+    if (y < 0)
+      flags |= 4;
+    else if (y > canvas->height - 1)
+      flags |= 8;
+
+    dst[i].x = fx;
+    dst[i].y = fy;
+    dst[i].flags = flags;
+  }
+}
+
 static void Render(PixBufT *canvas, PolygonExtT **sortedPolygonExt,
                    TriangleT *polygon, size_t polygonNum,
-                   Vector3D *vertex, SurfaceT *surface)
+                   Vector3D *vertex, VertexExtT *vertexExt, SurfaceT *surface)
 {
   int j;
 
@@ -96,6 +138,9 @@ static void Render(PixBufT *canvas, PolygonExtT **sortedPolygonExt,
     int p1 = polygon[i].p1;
     int p2 = polygon[i].p2;
     int p3 = polygon[i].p3;
+
+    if (vertexExt[p1].flags & vertexExt[p2].flags & vertexExt[p3].flags)
+      continue;
 
     if (!RenderAllFaces && !polyExt->flags && !surface[polygon[i].surface].sideness)
       continue;
@@ -124,10 +169,11 @@ static void Render(PixBufT *canvas, PolygonExtT **sortedPolygonExt,
       DrawLine(canvas, vertex[p2].x, vertex[p2].y, vertex[p3].x, vertex[p3].y);
       DrawLine(canvas, vertex[p3].x, vertex[p3].y, vertex[p1].x, vertex[p1].y);
     } else {
-      DrawTriangle(canvas,
-                   vertex[p1].x, vertex[p1].y,
-                   vertex[p2].x, vertex[p2].y,
-                   vertex[p3].x, vertex[p3].y);
+      DrawTriangleNew(canvas,
+                      vertexExt[p1].x, vertexExt[p1].y,
+                      vertexExt[p2].x, vertexExt[p2].y,
+                      vertexExt[p3].x, vertexExt[p3].y,
+                      vertexExt[p1].flags | vertexExt[p2].flags | vertexExt[p3].flags);
     }
   }
 }
@@ -138,6 +184,8 @@ void RenderSceneObject(SceneObjectT *self, PixBufT *canvas) {
   /* Apply vertex transformations. */
   Transform3D(self->vertex, mesh->vertex, mesh->vertexNum,
               GetMatrix3D(self->ms, 0));
+
+  UpdateVertexExt(canvas, self->vertexExt, self->vertex, mesh->vertexNum);
 
   /* Apply transformations to surface normals */
   Transform3D_2(self->surfaceNormal, mesh->surfaceNormal, mesh->polygonNum,
@@ -150,11 +198,8 @@ void RenderSceneObject(SceneObjectT *self, PixBufT *canvas) {
   /* Sort polygons by depth. */
   QuickSortPolygonExtT(self->sortedPolygonExt, 0, mesh->polygonNum - 1);
 
-  ProjectTo2D(self->vertex, self->vertex, mesh->vertexNum,
-              canvas->width / 2, canvas->height / 2, -160.0f);
-
   /* Render the object. */
   Render(canvas,
          self->sortedPolygonExt, mesh->polygon, mesh->polygonNum,
-         self->vertex, mesh->surface);
+         self->vertex, self->vertexExt, mesh->surface);
 }
