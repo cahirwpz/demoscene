@@ -5,9 +5,14 @@
 #include "engine/vector3d.h"
 #include "gfx/palette.h"
 
+typedef struct Edge {
+  uint16_t p[2];
+} EdgeT;
+
 typedef struct Triangle {
   uint16_t surface;
-  uint16_t p1, p2, p3;
+  uint16_t p[3];
+  uint16_t e[3];
 } TriangleT;
 
 typedef struct IndexArray {
@@ -33,10 +38,12 @@ typedef struct Mesh {
   size_t vertexNum;
   size_t polygonNum;
   size_t surfaceNum;
+  size_t edgeNum;
 
   Vector3D *vertex;
   TriangleT *polygon;
   SurfaceT *surface;
+  EdgeT *edge;
 
   /* map from vertex index to list of polygon indices */
   IndexMapT vertexToPoly;

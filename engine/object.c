@@ -46,9 +46,9 @@ static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
   int i;
 
   for (i = 0; i < polygonNum; i++) {
-    int p1 = polygon[i].p1;
-    int p2 = polygon[i].p2;
-    int p3 = polygon[i].p3;
+    int p1 = polygon[i].p[0];
+    int p2 = polygon[i].p[1];
+    int p3 = polygon[i].p[2];
     Vector3D unitNormal;
     float angle;
 
@@ -135,9 +135,9 @@ static void Render(PixBufT *canvas, PolygonExtT **sortedPolygonExt,
     PolygonExtT *polyExt = sortedPolygonExt[j];
 
     int i = polyExt->index;
-    int p1 = polygon[i].p1;
-    int p2 = polygon[i].p2;
-    int p3 = polygon[i].p3;
+    int p1 = polygon[i].p[0];
+    int p2 = polygon[i].p[1];
+    int p3 = polygon[i].p[2];
 
     if (vertexExt[p1].flags & vertexExt[p2].flags & vertexExt[p3].flags)
       continue;

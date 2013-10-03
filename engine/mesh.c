@@ -2,6 +2,7 @@
 
 #include "std/debug.h"
 #include "std/memory.h"
+#include "std/table.h"
 #include "system/fileio.h"
 #include "engine/mesh.h"
 
@@ -43,11 +44,18 @@ typedef struct DiskMesh {
   uint8_t data[0];
 } DiskMeshT;
 
+typedef struct DiskTriangle {
+  uint16_t surface;
+  uint16_t p[3];
+} DiskTriangleT;
+
 typedef struct DiskSurface {
   uint8_t flags;
   RGB color;
   char name[0];
 } DiskSurfaceT;
+
+static void MeshCalculateEdges(MeshT *mesh);
 
 MeshT *NewMeshFromFile(const char *fileName) {
   DiskMeshT *header = ReadFileSimple(fileName);
@@ -57,17 +65,31 @@ MeshT *NewMeshFromFile(const char *fileName) {
     uint8_t *data = header->data;
     int i;
 
+    /* vertices */
     MemCopy(mesh->vertex, data, sizeof(Vector3D) * header->vertices);
-    data += sizeof(Vector3D) * header->vertices;
 
     for (i = 0; i < header->vertices; i++) {
       mesh->vertex[i].y = - mesh->vertex[i].y;
       mesh->vertex[i].z = - mesh->vertex[i].z;
     }
 
-    MemCopy(mesh->polygon, data, sizeof(TriangleT) * header->polygons);
-    data += sizeof(TriangleT) * header->polygons;
+    data += sizeof(Vector3D) * header->vertices;
 
+    /* triangles */
+    for (i = 0; i < header->polygons; i++) {
+      DiskTriangleT *triangle = (DiskTriangleT *)data;
+
+      mesh->polygon[i].surface = triangle->surface;
+      mesh->polygon[i].p[0] = triangle->p[0];
+      mesh->polygon[i].p[1] = triangle->p[1];
+      mesh->polygon[i].p[2] = triangle->p[2];
+
+      data += sizeof(DiskTriangleT);
+    }
+
+    MeshCalculateEdges(mesh);
+
+    /* surfaces */
     for (i = 0; i < header->surfaces; i++) {
       DiskSurfaceT *surface = (DiskSurfaceT *)data;
 
@@ -78,8 +100,9 @@ MeshT *NewMeshFromFile(const char *fileName) {
       data += sizeof(DiskSurfaceT) + strlen(surface->name) + 1;
     }
 
-    LOG("Mesh '%s' has %d vertices, %d polygons and %d surfaces.",
-        fileName, header->vertices, header->polygons, header->surfaces);
+    LOG("Mesh '%s' has %ld vertices, %ld polygons, %ld edges "
+        "and %ld surfaces.", fileName, mesh->vertexNum, mesh->polygonNum,
+        mesh->edgeNum, mesh->surfaceNum);
 
     MemUnref(header);
 
@@ -87,6 +110,96 @@ MeshT *NewMeshFromFile(const char *fileName) {
   }
 
   return NULL;
+}
+
+/*
+ *
+ */
+typedef struct {
+  uint16_t p[2];
+  uint16_t polygon, vertex;
+} TriangleEdgeT;
+
+__regargs static bool EdgeCmp(const PtrT a, const PtrT b) {
+  const EdgeT *e1 = (const EdgeT *)a;
+  const EdgeT *e2 = (const EdgeT *)b;
+
+  if (e1->p[0] == e2->p[0])
+    return (e1->p[1] < e2->p[1]);
+  else
+    return (e1->p[0] < e2->p[0]);
+}
+
+static void MeshCalculateEdges(MeshT *mesh) {
+  TriangleEdgeT *edges = NewTable(TriangleEdgeT, mesh->polygonNum * 3);
+  int i, j;
+
+  for (i = 0, j = 0; i < mesh->polygonNum; i++) {
+    int16_t p0 = mesh->polygon[i].p[0];
+    int16_t p1 = mesh->polygon[i].p[1];
+    int16_t p2 = mesh->polygon[i].p[2];
+
+    if (p0 < p1) {
+      edges[j].p[0] = p0;
+      edges[j].p[1] = p1;
+    } else {
+      edges[j].p[0] = p1;
+      edges[j].p[1] = p0;
+    }
+
+    edges[j].polygon = i;
+    edges[j].vertex = 0;
+    j++;
+
+    if (p1 < p2) {
+      edges[j].p[1] = p1;
+      edges[j].p[2] = p2;
+    } else {
+      edges[j].p[1] = p2;
+      edges[j].p[2] = p1;
+    }
+
+    edges[j].polygon = i;
+    edges[j].vertex = 1;
+    j++;
+
+    if (p0 < p2) {
+      edges[j].p[0] = p0;
+      edges[j].p[2] = p2;
+    } else {
+      edges[j].p[2] = p2;
+      edges[j].p[0] = p0;
+    }
+
+    edges[j].polygon = i;
+    edges[j].vertex = 2;
+    j++;
+  }
+
+  /* Sort all edges */
+  TableSort(edges, EdgeCmp, 0, mesh->polygonNum * 3 - 1);
+
+  /* Count unique edges */
+  for (i = 1, mesh->edgeNum = 1; i < mesh->polygonNum * 3; i++)
+    if (edges[i].p[0] != edges[i - 1].p[0] || edges[i].p[1] != edges[i - 1].p[1])
+      mesh->edgeNum++;
+
+  mesh->edge = NewTable(EdgeT, mesh->edgeNum);
+  mesh->edge[0].p[0] = edges[0].p[0];
+  mesh->edge[0].p[1] = edges[0].p[1];
+  mesh->polygon[edges[0].polygon].e[edges[0].vertex] = 0;
+
+  for (i = 1, j = 0; i < mesh->polygonNum * 3; i++) {
+    if (edges[i].p[0] != edges[i - 1].p[0] || edges[i].p[1] != edges[i - 1].p[1]) {
+      j++;
+      mesh->edge[j].p[0] = edges[i].p[0];
+      mesh->edge[j].p[1] = edges[i].p[1];
+    }
+
+    mesh->polygon[edges[i].polygon].e[edges[i].vertex] = j;
+  }
+
+  MemUnref(edges);
 }
 
 /*
@@ -147,9 +260,9 @@ void CalculateSurfaceNormals(MeshT *mesh) {
     Vector3D *normal = &mesh->surfaceNormal[i];
     Vector3D u, v;
 
-    size_t p1 = mesh->polygon[i].p1;
-    size_t p2 = mesh->polygon[i].p2;
-    size_t p3 = mesh->polygon[i].p3;
+    size_t p1 = mesh->polygon[i].p[0];
+    size_t p2 = mesh->polygon[i].p[1];
+    size_t p3 = mesh->polygon[i].p[2];
 
     V3D_Sub(&u, &mesh->vertex[p1], &mesh->vertex[p2]);
     V3D_Sub(&v, &mesh->vertex[p2], &mesh->vertex[p3]);
@@ -172,9 +285,9 @@ void CalculateVertexToPolygonMap(MeshT *mesh) {
   map->indices = NewTable(uint16_t, mesh->vertexNum * 3);
 
   for (i = 0; i < mesh->polygonNum; i++) {
-    size_t p1 = mesh->polygon[i].p1;
-    size_t p2 = mesh->polygon[i].p2;
-    size_t p3 = mesh->polygon[i].p3;
+    size_t p1 = mesh->polygon[i].p[0];
+    size_t p2 = mesh->polygon[i].p[1];
+    size_t p3 = mesh->polygon[i].p[2];
 
     map->vertex[p1].count++;
     map->vertex[p2].count++;
@@ -191,9 +304,9 @@ void CalculateVertexToPolygonMap(MeshT *mesh) {
     map->vertex[i].count = 0;
 
   for (i = 0; i < mesh->polygonNum; i++) {
-    size_t p1 = mesh->polygon[i].p1;
-    size_t p2 = mesh->polygon[i].p2;
-    size_t p3 = mesh->polygon[i].p3;
+    size_t p1 = mesh->polygon[i].p[0];
+    size_t p2 = mesh->polygon[i].p[1];
+    size_t p3 = mesh->polygon[i].p[2];
 
     map->vertex[p1].index[map->vertex[p1].count++] = i;
     map->vertex[p2].index[map->vertex[p2].count++] = i;
