@@ -30,22 +30,31 @@ RasterizeTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
 {
   uint8_t *pixels = canvas->data + ys * canvas->width;
   register const uint8_t color = canvas->fgColor;
+  register FP16 lx = left->x;
+  register FP16 rx = right->x;
+  register FP16 ldx = left->dx;
+  register FP16 rdx = right->dx;
 
   while (ys < ye) {
-    register uint8_t *span = pixels + FP16_i(left->x);
-    register int16_t n = FP16_i(right->x) - FP16_i(left->x);
+    int16_t xs = FP16_rintf(lx);
+    int16_t xe = FP16_rintf(rx);
+    register uint8_t *span = pixels + xs;
+    register int16_t n = xe - xs;
 
-    do 
+    do {
       *span++ = color;
-    while (--n >= 0);
+    } while (--n > 0);
 
     pixels += canvas->width;
 
-    left->x = FP16_add(left->x, left->dx);
-    right->x = FP16_add(right->x, right->dx);
+    lx = FP16_add(lx, ldx);
+    rx = FP16_add(rx, rdx);
 
     ys++;
   }
+
+  left->x = lx;
+  right->x = rx;
 }
 
 void RasterizeTriangle(PixBufT *canvas,

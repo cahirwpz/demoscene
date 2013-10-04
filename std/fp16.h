@@ -47,7 +47,13 @@ static inline int FP16_rint(FP16 value) {
   else
     value.v += 0x8000;
 
-  return value.v / 65536;
+  return FP16_i(value);
+}
+
+static inline int FP16_rintf(FP16 value) {
+  value.v += 0x8000;
+
+  return FP16_i(value);
 }
 
 static inline FP16 FP16_rerr(FP16 value) {

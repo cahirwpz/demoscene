@@ -35,7 +35,7 @@ void AddInitialResources() {
   ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("Scene", NewScene());
-  ResAdd("Mesh", NewMeshFromFile("data/konus.robj"));
+  ResAdd("Mesh", NewMeshFromFile("data/shattered_ball.robj"));
   ResAdd("Orig", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
 
   {
@@ -107,7 +107,7 @@ void RenderEffect(int frameNumber) {
     MatrixStack3D *ms = GetObjectTranslation(scene, "Object");
 
     StackReset(ms);
-    PushScaling3D(ms, 1.75f, 1.75f, 1.75f);
+    PushScaling3D(ms, 1.25f, 1.25f, 1.25f);
     PushRotation3D(ms, 0, (float)(-frameNumber * 2), frameNumber);
     PushTranslation3D(ms, 0.0f, 0.0f, -2.0f);
   }
