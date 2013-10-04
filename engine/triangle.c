@@ -3,20 +3,23 @@
 #include "std/math.h"
 
 __attribute__((regparm(4))) void
-InitEdgeScan(EdgeScanT *e, FP16 ys, FP16 ye, FP16 xs, FP16 xe) {
-  FP16 height = FP16_sub(ye, ys);
-  FP16 width = FP16_sub(xe, xs);
+InitEdgeScan(EdgeScanT *e, float ys, float ye, float xs, float xe) {
+  float height = ye - ys;
+  float width = xe - xs;
 
-  e->xs = FP16_rint(xs);
-  e->xe = FP16_rint(xe);
-  e->ys = FP16_rint(ys);
-  e->ye = FP16_rint(ye);
+  e->xs = lroundf(xs);
+  e->xe = lroundf(xe);
+  e->ys = lroundf(ys);
+  e->ye = lroundf(ye);
 
-  e->visible = (e->ye > e->ys);
+  if (e->ys < e->ye) {
+    float dx = width / height;
+    float ys_centered = ys + 0.5f;
+    float ys_prestep = ceil(ys_centered) - ys_centered;
+    float x = xs + ys_prestep * dx;
 
-  if (e->visible) {
-    e->x = xs;
-    e->dx = FP16_div(width, height);
+    e->x = FP16_float(x);
+    e->dx = FP16_float(dx);
   }
 }
 
@@ -32,9 +35,9 @@ RasterizeTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
     register uint8_t *span = pixels + FP16_i(left->x);
     register int16_t n = FP16_i(right->x) - FP16_i(left->x);
 
-    do {
+    do 
       *span++ = color;
-    } while (--n >= 0);
+    while (--n > 0);
 
     pixels += canvas->width;
 
@@ -57,9 +60,11 @@ void RasterizeTriangle(PixBufT *canvas,
   if (e1->ye > e3->ye)
     swapr(e1, e3);
 
+#if 0
   ASSERT(e1->ys == e2->ys && e2->ye == e3->ye && e1->ye == e3->ys,
          "Wrong edges order: e1: (%d, %d), e2: (%d, %d), e3: (%d, %d).",
          e1->ys, e1->ye, e2->ys, e2->ye, e3->ys, e3->ye);
+#endif
 
   {
     EdgeScanT l12 = *e1;
@@ -75,9 +80,9 @@ void RasterizeTriangle(PixBufT *canvas,
     LOG("l23: (%d, %d) (%d, %d)", l23.xs, l23.ys, l23.xe, l23.ye);
 #endif
 
-    if (!l12.visible)
+    if (l12.ys == l12.ye)
       longOnRight = (l13.xs > l23.xs);
-    else if (!l23.visible)
+    else if (l23.ys == l23.ye)
       longOnRight = (l13.xe > l12.xe);
     else
       longOnRight = (l12.dx.v < l13.dx.v);
@@ -92,9 +97,9 @@ void RasterizeTriangle(PixBufT *canvas,
       left = &l13; right = &l12;
     }
 
-    if (l12.visible) {
+    if (l12.ys != l12.ye) {
 #if 0
-      ASSERT(left->x.v <= right->x.v, "top: xs = %d, xe = %d", FP16_i(left->x), FP16_i(right->x));
+      ASSERT(FP16_i(left->x) <= FP16_i(right->x) + 1, "top: xs = %d, xe = %d", FP16_i(left->x), FP16_i(right->x));
 #endif
       RasterizeTriangleSegment(canvas, left, right, l12.ys, l12.ye);
     }
@@ -105,9 +110,9 @@ void RasterizeTriangle(PixBufT *canvas,
       right = &l23;
     }
 
-    if (l23.visible) {
+    if (l23.ys != l23.ye) {
 #if 0
-      ASSERT(left->x.v <= right->x.v, "bottom: xs = %d, xe = %d", FP16_i(left->x), FP16_i(right->x));
+      ASSERT(FP16_i(left->x) <= FP16_i(right->x) + 1, "bottom: xs = %d, xe = %d", FP16_i(left->x), FP16_i(right->x));
 #endif
       RasterizeTriangleSegment(canvas, left, right, l23.ys, l23.ye);
     }

@@ -26,11 +26,11 @@ static inline FP16 FP16_sub(FP16 a, FP16 b) {
 }
 
 static inline FP16 FP16_mul(FP16 a, FP16 b) {
-  return (FP16)(int)((a.v / 256) * (b.v / 256));
+  return (FP16)(int)(((int64_t)a.v * (int64_t)b.v) / 65536);
 }
 
 static inline FP16 FP16_div(FP16 a, FP16 b) {
-  return (FP16)(int)((a.v * 256) / (b.v / 256));
+  return (FP16)(int)(((int64_t)a.v << 16) / b.v);
 }
 
 static inline FP16 FP16_float(float value) {
@@ -48,6 +48,19 @@ static inline int FP16_rint(FP16 value) {
     value.v += 0x8000;
 
   return value.v / 65536;
+}
+
+static inline FP16 FP16_rerr(FP16 value) {
+  FP16 orig = value;
+
+  if (value.v < 0)
+    value.v -= 0x7fff;
+  else
+    value.v += 0x8000;
+
+  orig.v -= value.v & 0xffff0000;
+
+  return orig;
 }
 
 static inline FP16 FP16_recip(int value) {

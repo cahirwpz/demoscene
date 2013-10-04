@@ -229,7 +229,7 @@ void RenderSceneObject(SceneObjectT *self, PixBufT *canvas) {
         swapr(y1, y2);
       }
 
-      InitEdgeScan(edgeScan, FP16_float(y1), FP16_float(y2), FP16_float(x1), FP16_float(x2));
+      InitEdgeScan(edgeScan, y1, y2, x1, x2);
     }
   }
 
