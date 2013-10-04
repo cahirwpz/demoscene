@@ -9,6 +9,7 @@
 #include "engine/scene.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
+#include "tools/profiling.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
@@ -23,11 +24,17 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
-  ResAdd("Scene", NewScene());
-  ResAdd("Mesh", NewMeshFromFile("data/shattered_ball.robj"));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
+  ResAdd("Scene", NewScene());
+#if 0
+  ResAdd("Mesh", NewMeshFromFile("data/shattered_ball.robj"));
   ResAdd("ColorMap", NewPixBufFromFile("data/shattered_ball_cmap.8"));
   ResAdd("Palette", NewPaletteFromFile("data/shattered_ball_cmap.pal"));
+#else
+  ResAdd("Mesh", NewMeshFromFile("data/wecan_logo.robj"));
+  ResAdd("ColorMap", NewPixBufFromFile("data/wecan_logo_cmap.8"));
+  ResAdd("Palette", NewPaletteFromFile("data/wecan_logo_cmap.pal"));
+#endif
 
   {
     MeshT *mesh = R_("Mesh");
@@ -55,12 +62,14 @@ bool SetupDisplay() {
 void SetupEffect() {
   PixBufClear(R_("Canvas"));
   LoadPalette(R_("Palette"));
+  StartProfiling();
 }
 
 /*
  * Tear down effect function.
  */
 void TearDownEffect() {
+  StopProfiling();
 }
 
 /*
@@ -82,11 +91,13 @@ void RenderMesh(int frameNumber_) {
     PushTranslation3D(ms, 0.0f, 0.0f, -2.0f);
   }
 
-  RenderFlatShading = true;
-
   PixBufClear(canvas);
+#if 0
+  RenderFlatShading = true;
   PixBufSetColorMap(canvas, R_("ColorMap"), -32);
-  RenderScene(scene, canvas);
+#endif
+  PROFILE(RenderScene)
+    RenderScene(scene, canvas);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }

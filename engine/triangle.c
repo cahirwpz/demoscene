@@ -37,7 +37,7 @@ RasterizeTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
 
     do 
       *span++ = color;
-    while (--n > 0);
+    while (--n >= 0);
 
     pixels += canvas->width;
 
@@ -60,12 +60,6 @@ void RasterizeTriangle(PixBufT *canvas,
   if (e1->ye > e3->ye)
     swapr(e1, e3);
 
-#if 0
-  ASSERT(e1->ys == e2->ys && e2->ye == e3->ye && e1->ye == e3->ys,
-         "Wrong edges order: e1: (%d, %d), e2: (%d, %d), e3: (%d, %d).",
-         e1->ys, e1->ye, e2->ys, e2->ye, e3->ys, e3->ye);
-#endif
-
   {
     EdgeScanT l12 = *e1;
     EdgeScanT l13 = *e2; /* long one */
@@ -74,11 +68,6 @@ void RasterizeTriangle(PixBufT *canvas,
     EdgeScanT *right;
     bool longOnRight;
 
-#if 0
-    LOG("l12: (%d, %d) (%d, %d)", l12.xs, l12.ys, l12.xe, l12.ye);
-    LOG("l13: (%d, %d) (%d, %d)", l13.xs, l13.ys, l13.xe, l13.ye);
-    LOG("l23: (%d, %d) (%d, %d)", l23.xs, l23.ys, l23.xe, l23.ye);
-#endif
 
     if (l12.ys == l12.ye)
       longOnRight = (l13.xs > l23.xs);
@@ -86,10 +75,6 @@ void RasterizeTriangle(PixBufT *canvas,
       longOnRight = (l13.xe > l12.xe);
     else
       longOnRight = (l12.dx.v < l13.dx.v);
-
-#if 0
-    LOG("long on %s", longOnRight ? "right" : "left");
-#endif
 
     if (longOnRight) {
       left = &l12; right = &l13;
@@ -99,7 +84,13 @@ void RasterizeTriangle(PixBufT *canvas,
 
     if (l12.ys != l12.ye) {
 #if 0
-      ASSERT(FP16_i(left->x) <= FP16_i(right->x) + 1, "top: xs = %d, xe = %d", FP16_i(left->x), FP16_i(right->x));
+      if (FP16_i(left->x) > FP16_i(right->x) + 3) {
+        LOG("l12: (%d, %d) (%d, %d)", l12.xs, l12.ys, l12.xe, l12.ye);
+        LOG("l13: (%d, %d) (%d, %d)", l13.xs, l13.ys, l13.xe, l13.ye);
+        LOG("l23: (%d, %d) (%d, %d)", l23.xs, l23.ys, l23.xe, l23.ye);
+        LOG("long on %s", longOnRight ? "right" : "left");
+        LOG("top: xs = %d, xe = %d", FP16_i(left->x), FP16_i(right->x));
+      }
 #endif
       RasterizeTriangleSegment(canvas, left, right, l12.ys, l12.ye);
     }

@@ -56,7 +56,6 @@ static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
     int p1 = polygon[i].p[0];
     int p2 = polygon[i].p[1];
     int p3 = polygon[i].p[2];
-    Vector3D unitNormal;
     float angle;
 
     polygonExt[i].index = i;
@@ -67,17 +66,23 @@ static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
      */
     polygonExt[i].depth = (vertex[p1].z + vertex[p2].z + vertex[p3].z) / 3.0f;
 
+#if 0
     /* Calculate angle between camera and surface normal. */
     {
       Vector3D cameraToFace = { -vertex[p1].x, -vertex[p1].y, -vertex[p1].z };
+      float angle;
 
       V3D_NormalizeToUnit(&cameraToFace, &cameraToFace);
       V3D_NormalizeToUnit(&unitNormal, &normal[i]);
 
       angle = V3D_Dot(&cameraToFace, &unitNormal);
     }
-
-    angle = unitNormal.z;
+#endif
+    {
+      Vector3D unitNormal;
+      V3D_NormalizeToUnit(&unitNormal, &normal[i]);
+      angle = unitNormal.z;
+    }
 
     polygonExt[i].color = abs((int)(angle * 255.0f));
 
