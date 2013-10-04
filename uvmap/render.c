@@ -35,8 +35,8 @@ static void RenderNormalUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
 #endif
 
 static void RenderAccurateUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
-  Q16T *mapU = map->map.accurate.u;
-  Q16T *mapV = map->map.accurate.v;
+  FP16 *mapU = map->map.accurate.u;
+  FP16 *mapV = map->map.accurate.v;
   PixBufT *texture = map->texture;
   int16_t offsetU = map->offsetV;
   int16_t offsetV = map->offsetU;
@@ -45,21 +45,21 @@ static void RenderAccurateUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
   int n = map->width * map->height;
 
   do {
-    Q16T u = *mapU++;
-    Q16T v = *mapV++;
+    FP16 u = *mapU++;
+    FP16 v = *mapV++;
 
-    u.integer += offsetU;
-    v.integer += offsetV;
+    FP16_i(u) += offsetU;
+    FP16_f(v) += offsetV;
 
-    if (u.integer < 0)
-      u.integer += textureW;
-    if (u.integer >= textureW)
-      u.integer -= textureW;
+    if (FP16_i(u) < 0)
+      FP16_i(u) += textureW;
+    if (FP16_i(u) >= textureW)
+      FP16_i(u) -= textureW;
 
-    if (v.integer < 0)
-      v.integer += textureH;
-    if (v.integer >= textureH)
-      v.integer -= textureH;
+    if (FP16_i(v) < 0)
+      FP16_i(v) += textureH;
+    if (FP16_i(v) >= textureH)
+      FP16_i(v) -= textureH;
 
     *dst++ = GetFilteredPixel(texture, u, v);
   } while (--n);

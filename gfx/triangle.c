@@ -167,32 +167,6 @@ DrawTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
   }
 }
 
-__attribute__((regparm(4))) static void
-DrawTriangleSegmentFast(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
-                        int ys, int ye)
-{
-  uint8_t *pixels = canvas->data + ys * canvas->width;
-  register const uint8_t color = canvas->fgColor;
-
-  while (ys < ye) {
-    register uint8_t *span = pixels + left->x;
-    register int n = right->x - left->x;
-
-    LOG("Line: (%d, %d..%d)", ys, left->x, right->x);
-
-    do {
-      *span++ = color;
-    } while (--n >= 0);
-
-    pixels += canvas->width;
-
-    IterEdgeScan(left);
-    IterEdgeScan(right);
-
-    ys++;
-  }
-}
-
 /* Triangle rasterization routine. */
 void DrawTriangle(PixBufT *canvas,
                   float x1f, float y1f, float x2f, float y2f,
@@ -204,14 +178,6 @@ void DrawTriangle(PixBufT *canvas,
   fixed_t y2 = float_to_fx(y2f);
   fixed_t x3 = float_to_fx(x3f);
   fixed_t y3 = float_to_fx(y3f);
-
-  DrawTriangleNew(canvas, x1, y1, x2, y2, x3, y3, false);
-}
-
-void DrawTriangleNew(PixBufT *canvas,
-                     fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2,
-                     fixed_t x3, fixed_t y3, bool check)
-{
   EdgeScanT l12, l13, l23;
   bool longOnRight;
 
@@ -247,19 +213,13 @@ void DrawTriangleNew(PixBufT *canvas,
     EdgeScanT *left  = longOnRight ? &l12 : &l13;
     EdgeScanT *right = longOnRight ? &l13 : &l12;
 
-    if (check)
-      DrawTriangleSegment(canvas, left, right, fx_rint(y1), fx_rint(y1) + l12.height);
-    else
-      DrawTriangleSegmentFast(canvas, left, right, fx_rint(y1), fx_rint(y1) + l12.height);
+    DrawTriangleSegment(canvas, left, right, fx_rint(y1), fx_rint(y1) + l12.height);
 
     if (longOnRight)
       left = &l23;
     else
       right = &l23;
 
-    if (check)
-      DrawTriangleSegment(canvas, left, right, fx_rint(y2), fx_rint(y2) + l23.height);
-    else
-      DrawTriangleSegmentFast(canvas, left, right, fx_rint(y2), fx_rint(y2) + l23.height);
+    DrawTriangleSegment(canvas, left, right, fx_rint(y2), fx_rint(y2) + l23.height);
   }
 }

@@ -5,8 +5,8 @@
 #include "txtgen/txtgen.h"
 
 void DirectionalBlur(PixBufT *dst, PixBufT *src, PixBufT *map, int radius) {
-  Q16T *dxs = CalcSineTableQ16(256, 1, 1.0f, 0.5f);  /* -sin(x) */
-  Q16T *dys = CalcSineTableQ16(256, 1, 1.0f, 0.75f); /* -cos(x) */
+  FP16 *dxs = CalcSineTableFP16(256, 1, 1.0f, 0.5f);  /* -sin(x) */
+  FP16 *dys = CalcSineTableFP16(256, 1, 1.0f, 0.75f); /* -cos(x) */
   size_t x, y, i;
 
   radius++;
@@ -15,11 +15,11 @@ void DirectionalBlur(PixBufT *dst, PixBufT *src, PixBufT *map, int radius) {
     for (x = 0; x < src->width; x++, i++) {
       size_t direction = src->data[i];
 
-      Q16T dx = dxs[direction];
-      Q16T dy = dys[direction];
+      FP16 dx = dxs[direction];
+      FP16 dy = dys[direction];
 
-      Q16T px = CastIntQ16(x);
-      Q16T py = CastIntQ16(y);
+      FP16 px = FP16_int(x);
+      FP16 py = FP16_int(y);
 
       int value = 0;
 
@@ -28,8 +28,8 @@ void DirectionalBlur(PixBufT *dst, PixBufT *src, PixBufT *map, int radius) {
       for (j = 0; j < radius; j++) {
         value += GetFilteredPixel(src, px, py);
 
-        px = AddQ16(px, dx);
-        py = AddQ16(py, dy);
+        px = FP16_add(px, dx);
+        py = FP16_add(py, dy);
       }
 
       dst->data[i] = value / radius;

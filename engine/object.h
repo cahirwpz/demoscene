@@ -4,6 +4,7 @@
 #include "gfx/pixbuf.h"
 #include "engine/mesh.h"
 #include "engine/ms3d.h"
+#include "engine/triangle.h"
 
 extern bool RenderFlatShading;
 extern bool RenderWireFrame;
@@ -18,7 +19,7 @@ typedef struct PolygonExt {
 
 typedef struct VertexExt {
   uint8_t flags;
-  int x, y;
+  float x, y;
 } VertexExtT;
 
 typedef struct SceneObject {
@@ -30,6 +31,7 @@ typedef struct SceneObject {
   VertexExtT *vertexExt;
   PolygonExtT *polygonExt;
   PolygonExtT **sortedPolygonExt;
+  EdgeScanT *edgeScan;
   Vector3D *surfaceNormal;
 } SceneObjectT;
 

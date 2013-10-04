@@ -21,7 +21,7 @@ typedef struct UVMap {
       int16_t *u, *v;
     } normal;
     struct {
-      Q16T *u, *v;
+      FP16 *u, *v;
     } accurate;
   } map;
 

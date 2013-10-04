@@ -134,46 +134,51 @@ static void MeshCalculateEdges(MeshT *mesh) {
   TriangleEdgeT *edges = NewTable(TriangleEdgeT, mesh->polygonNum * 3);
   int i, j;
 
-  for (i = 0, j = 0; i < mesh->polygonNum; i++) {
-    int16_t p0 = mesh->polygon[i].p[0];
-    int16_t p1 = mesh->polygon[i].p[1];
-    int16_t p2 = mesh->polygon[i].p[2];
+  {
+    TriangleEdgeT *edge = edges;
+    TriangleT *polygon = mesh->polygon;
 
-    if (p0 < p1) {
-      edges[j].p[0] = p0;
-      edges[j].p[1] = p1;
-    } else {
-      edges[j].p[0] = p1;
-      edges[j].p[1] = p0;
+    for (i = 0; i < mesh->polygonNum; i++, polygon++) {
+      int16_t p0 = polygon->p[0];
+      int16_t p1 = polygon->p[1];
+      int16_t p2 = polygon->p[2];
+
+      if (p0 < p1) {
+        edge->p[0] = p0;
+        edge->p[1] = p1;
+      } else {
+        edge->p[0] = p1;
+        edge->p[1] = p0;
+      }
+
+      edge->polygon = i;
+      edge->vertex = 0;
+      edge++;
+
+      if (p1 < p2) {
+        edge->p[0] = p1;
+        edge->p[1] = p2;
+      } else {
+        edge->p[0] = p2;
+        edge->p[1] = p1;
+      }
+
+      edge->polygon = i;
+      edge->vertex = 1;
+      edge++;
+
+      if (p0 < p2) {
+        edge->p[0] = p0;
+        edge->p[1] = p2;
+      } else {
+        edge->p[0] = p2;
+        edge->p[1] = p0;
+      }
+
+      edge->polygon = i;
+      edge->vertex = 2;
+      edge++;
     }
-
-    edges[j].polygon = i;
-    edges[j].vertex = 0;
-    j++;
-
-    if (p1 < p2) {
-      edges[j].p[1] = p1;
-      edges[j].p[2] = p2;
-    } else {
-      edges[j].p[1] = p2;
-      edges[j].p[2] = p1;
-    }
-
-    edges[j].polygon = i;
-    edges[j].vertex = 1;
-    j++;
-
-    if (p0 < p2) {
-      edges[j].p[0] = p0;
-      edges[j].p[2] = p2;
-    } else {
-      edges[j].p[2] = p2;
-      edges[j].p[0] = p0;
-    }
-
-    edges[j].polygon = i;
-    edges[j].vertex = 2;
-    j++;
   }
 
   /* Sort all edges */
@@ -184,19 +189,24 @@ static void MeshCalculateEdges(MeshT *mesh) {
     if (edges[i].p[0] != edges[i - 1].p[0] || edges[i].p[1] != edges[i - 1].p[1])
       mesh->edgeNum++;
 
-  mesh->edge = NewTable(EdgeT, mesh->edgeNum);
-  mesh->edge[0].p[0] = edges[0].p[0];
-  mesh->edge[0].p[1] = edges[0].p[1];
-  mesh->polygon[edges[0].polygon].e[edges[0].vertex] = 0;
+  {
+    TriangleEdgeT *edge = edges;
 
-  for (i = 1, j = 0; i < mesh->polygonNum * 3; i++) {
-    if (edges[i].p[0] != edges[i - 1].p[0] || edges[i].p[1] != edges[i - 1].p[1]) {
-      j++;
-      mesh->edge[j].p[0] = edges[i].p[0];
-      mesh->edge[j].p[1] = edges[i].p[1];
+    mesh->edge = NewTable(EdgeT, mesh->edgeNum);
+    mesh->edge[0].p[0] = edge->p[0];
+    mesh->edge[0].p[1] = edge->p[1];
+    mesh->polygon[edge->polygon].e[edge->vertex] = 0;
+    edge++;
+
+    for (i = 1, j = 0; i < mesh->polygonNum * 3; i++, edge++) {
+      if (edge[0].p[0] != edge[-1].p[0] || edge[0].p[1] != edge[-1].p[1]) {
+        j++;
+        mesh->edge[j].p[0] = edge->p[0];
+        mesh->edge[j].p[1] = edge->p[1];
+      }
+
+      mesh->polygon[edge->polygon].e[edge->vertex] = j;
     }
-
-    mesh->polygon[edges[i].polygon].e[edges[i].vertex] = j;
   }
 
   MemUnref(edges);

@@ -6,10 +6,10 @@
 int UVMapExpanderThreshold = 224;
 
 #if 0
-static const Q16T PLUS = { 256, 0 };
-static const Q16T MINUS = { -256, 0 };
+static const FP16 PLUS = { 256, 0 };
+static const FP16 MINUS = { -256, 0 };
 
-static inline Q16T Div8(Q16T x) {
+static inline FP16 Div8(FP16 x) {
   asm("asrl #3,%0"
       : "+d" (x)
       : "d" (x));
@@ -17,13 +17,13 @@ static inline Q16T Div8(Q16T x) {
 }
  
 __regargs static void
-StepperFromMap(Q16T *map, Q16T *stepper, const int width, const int height) {
+StepperFromMap(FP16 *map, FP16 *stepper, const int width, const int height) {
   int n = width * (height - 1);
-  Q16T *row1 = map;
-  Q16T *row2 = map + width;
+  FP16 *row1 = map;
+  FP16 *row2 = map + width;
 
   do {
-    Q16T diff = SubQ16(*row2++, *row1++);
+    FP16 diff = SubQ16(*row2++, *row1++);
 
     if (diff.integer > UVMapExpanderThreshold)
       IAddQ16(&diff, MINUS);
@@ -35,10 +35,10 @@ StepperFromMap(Q16T *map, Q16T *stepper, const int width, const int height) {
 }
 
 __regargs static void
-FastStepperFromMap(Q16T *map, Q16T *stepper, const int width, const int height) {
+FastStepperFromMap(FP16 *map, FP16 *stepper, const int width, const int height) {
   int n = width * (height - 1);
-  Q16T *row1 = map;
-  Q16T *row2 = map + width;
+  FP16 *row1 = map;
+  FP16 *row2 = map + width;
 
   do {
     *stepper++ = Div8(SubQ16(*row2++, *row1++));
@@ -46,11 +46,11 @@ FastStepperFromMap(Q16T *map, Q16T *stepper, const int width, const int height) 
 }
 
 __regargs static void
-ExpandLine8x(int16_t *dst, Q16T *src, int width) {
+ExpandLine8x(int16_t *dst, FP16 *src, int width) {
   do {
-    Q16T x0 = *src++;
-    Q16T x1, x2, x3, x4, x5, x6, x7;
-    Q16T dx = SubQ16(*src, x0);
+    FP16 x0 = *src++;
+    FP16 x1, x2, x3, x4, x5, x6, x7;
+    FP16 dx = SubQ16(*src, x0);
 
     if (dx.integer > UVMapExpanderThreshold)
       IAddQ16(&dx, MINUS);
@@ -79,11 +79,11 @@ ExpandLine8x(int16_t *dst, Q16T *src, int width) {
 }
 
 __regargs static void
-FastExpandLine8x(int16_t *dst, Q16T *src, int width) {
+FastExpandLine8x(int16_t *dst, FP16 *src, int width) {
   do {
-    Q16T x0 = *src++;
-    Q16T x1, x2, x3, x4, x5, x6, x7;
-    Q16T dx = Div8(SubQ16(*src, x0));
+    FP16 x0 = *src++;
+    FP16 x1, x2, x3, x4, x5, x6, x7;
+    FP16 dx = Div8(SubQ16(*src, x0));
 
     x1 = AddQ16(x0, dx);
     x2 = AddQ16(x1, dx);
@@ -105,7 +105,7 @@ FastExpandLine8x(int16_t *dst, Q16T *src, int width) {
 }
 
 __regargs static void
-Increment(Q16T *x, Q16T *dx, int width) {
+Increment(FP16 *x, FP16 *dx, int width) {
   do {
     IAddQ16(x++, *dx++);
   } while (--width);
@@ -113,8 +113,8 @@ Increment(Q16T *x, Q16T *dx, int width) {
 #endif
 
 __regargs static void
-MapExpand8x(int16_t *dst, const int dwidth, Q16T *stepper,
-            Q16T *src, const int width, const int height)
+MapExpand8x(int16_t *dst, const int dwidth, FP16 *stepper,
+            FP16 *src, const int width, const int height)
 {
   int i = height - 1;
 
@@ -136,8 +136,8 @@ MapExpand8x(int16_t *dst, const int dwidth, Q16T *stepper,
 }
 
 __regargs static void
-FastMapExpand8x(int16_t *dst, const int dwidth, Q16T *stepper,
-                Q16T *src, const int width, const int height)
+FastMapExpand8x(int16_t *dst, const int dwidth, FP16 *stepper,
+                FP16 *src, const int width, const int height)
 {
   int i = height - 1;
 
@@ -159,7 +159,7 @@ FastMapExpand8x(int16_t *dst, const int dwidth, Q16T *stepper,
 }
 
 void UVMapScale8x(UVMapT *dstMap, UVMapT *srcMap) {
-  Q16T *stepper = NewTable(Q16T, srcMap->width * (srcMap->height - 1));
+  FP16 *stepper = NewTable(FP16, srcMap->width * (srcMap->height - 1));
 
   ASSERT(srcMap->type == UV_ACCURATE, "Source map must be accurate.");
   ASSERT(dstMap->type == UV_NORMAL, "Destination map must be normal.");

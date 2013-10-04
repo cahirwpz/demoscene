@@ -37,8 +37,8 @@ UVMapT *NewUVMap(size_t width, size_t height, UVMapTypeT type,
     map->map.normal.u = NewTable(int16_t, width * height);
     map->map.normal.v = NewTable(int16_t, width * height);
   } else if (type == UV_ACCURATE) {
-    map->map.accurate.u = NewTable(Q16T, width * height);
-    map->map.accurate.v = NewTable(Q16T, width * height);
+    map->map.accurate.u = NewTable(FP16, width * height);
+    map->map.accurate.v = NewTable(FP16, width * height);
   }
 
   /* initially there's no texture attached */
@@ -134,7 +134,7 @@ __regargs void UVMapSet(UVMapT *map, size_t i, float u, float v) {
     map->map.normal.u[i] = (int16_t)lroundf(u);
     map->map.normal.v[i] = (int16_t)lroundf(v);
   } else if (map->type == UV_ACCURATE) {
-    map->map.accurate.u[i] = CastFloatQ16(u);
-    map->map.accurate.v[i] = CastFloatQ16(v);
+    map->map.accurate.u[i] = FP16_float(u);
+    map->map.accurate.v[i] = FP16_float(v);
   }
 }

@@ -4,7 +4,7 @@
 #include "uvmap/raycast.h"
 
 static __regargs
-void RaycastTunnelLine(Q16T *umap, Q16T *vmap, size_t w,
+void RaycastTunnelLine(FP16 *umap, FP16 *vmap, size_t w,
                        float x, float y, float z, Vector3D *dp)
 {
   do {
@@ -13,11 +13,8 @@ void RaycastTunnelLine(Q16T *umap, Q16T *vmap, size_t w,
     float u = a / (2.0f * M_PI);
     float v = t * z / 8.0f;
 
-    int uu = lroundf(u * 65536.0f * 256.0f);
-    int vv = lroundf(v * 65536.0f * 256.0f);
-
-    *umap++ = AsQ16(uu);
-    *vmap++ = AsQ16(vv);
+    *umap++ = FP16_float(u * 256.0f);
+    *vmap++ = FP16_float(v * 256.0f);
 
     x += dp->x;
     y += dp->y;
@@ -32,8 +29,8 @@ void RaycastTunnel(UVMapT *map, Vector3D *view) {
 
   size_t h = map->height;
 
-  Q16T *umap = map->map.accurate.u;
-  Q16T *vmap = map->map.accurate.v;
+  FP16 *umap = map->map.accurate.u;
+  FP16 *vmap = map->map.accurate.v;
 
   ASSERT((map->type == UV_ACCURATE) && (map->textureW == 256) &&
          (map->textureH == 256),

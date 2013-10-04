@@ -61,15 +61,10 @@ void PixBufSetColorFunc(PixBufT *pixbuf, uint8_t *colorFunc);
 BlitModeT PixBufSetBlitMode(PixBufT *pixbuf, BlitModeT mode);
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
 
-void PutPixel(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),
-              int c asm("d0"));
-int GetPixel(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"));
-
-void PutPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),
-                 RGB c asm("d0"));
-RGB GetPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"));
-
-int GetFilteredPixel(PixBufT *pixbuf asm("a0"),
-                     Q16T x asm("d0"), Q16T y asm("d1"));
+__regargs void PutPixel(PixBufT *pixbuf, int x, int y, int c);
+__regargs int GetPixel(PixBufT *pixbuf, int x, int y);
+__regargs void PutPixelRGB(PixBufT *pixbuf, int x, int y, RGB c);
+__regargs RGB GetPixelRGB(PixBufT *pixbuf, int x, int y);
+__regargs int GetFilteredPixel(PixBufT *pixbuf, FP16 x, FP16 y);
 
 #endif

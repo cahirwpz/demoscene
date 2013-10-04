@@ -5,8 +5,5 @@
 
 void DrawTriangle(PixBufT *canvas, float x1, float y1, float x2, float y2,
                   float x3, float y3);
-void DrawTriangleNew(PixBufT *canvas,
-                     int x1, int y1, int x2, int y2, int x3, int y3,
-                     bool check);
 
 #endif

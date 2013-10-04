@@ -176,42 +176,33 @@ static const size_t inline GetPixelIndex(PixBufT *pixbuf, ssize_t x, ssize_t y) 
   return x + pixbuf->width * y;
 }
 
-void PutPixel(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),
-              int c asm("d0"))
-{
-  size_t index = GetPixelIndex(pixbuf, x, y);
-  pixbuf->data[index] = c;
+__regargs void PutPixel(PixBufT *pixbuf, int x, int y, int c) {
+  pixbuf->data[GetPixelIndex(pixbuf, x, y)] = c;
 }
 
-int GetPixel(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"))
-{
+__regargs int GetPixel(PixBufT *pixbuf, int x, int y) {
   return pixbuf->data[GetPixelIndex(pixbuf, x, y)];
 }
 
-void PutPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("a1"), int y asm("d1"),
-                 RGB c asm("d0"))
-{
+__regargs void PutPixelRGB(PixBufT *pixbuf, int x, int y, RGB c) {
   size_t index = GetPixelIndex(pixbuf, x, y);
   ((uint32_t *)pixbuf->data)[index] = *(uint32_t *)&c;
 }
 
-RGB GetPixelRGB(PixBufT *pixbuf asm("a0"), int x asm("d0"), int y asm("d1"))
-{
+__regargs RGB GetPixelRGB(PixBufT *pixbuf, int x, int y) {
   return *(RGB *)&pixbuf->data[GetPixelIndex(pixbuf, x, y)];
 }
 
-int GetFilteredPixel(PixBufT *pixbuf asm("a0"),
-                     Q16T x asm("d0"), Q16T y asm("d1"))
-{
-  uint8_t *data = &pixbuf->data[pixbuf->width * y.integer + x.integer];
+__regargs int GetFilteredPixel(PixBufT *pixbuf, FP16 x, FP16 y) {
+  uint8_t *data = &pixbuf->data[pixbuf->width * FP16_i(y) + FP16_i(x)];
 
   int p1 = data[0];
   int p2 = data[1];
   int p3 = data[pixbuf->width];
   int p4 = data[pixbuf->width + 1];
 
-  int d31 = p1 + ((p3 - p1) * y.fraction >> 16);
-  int d42 = p2 + ((p4 - p2) * y.fraction >> 16);
+  int d31 = p1 + ((p3 - p1) * FP16_f(y) >> 16);
+  int d42 = p2 + ((p4 - p2) * FP16_f(y) >> 16);
 
-	return d31 + ((d42 - d31) * x.fraction >> 16);
+	return d31 + ((d42 - d31) * FP16_f(x) >> 16);
 }
