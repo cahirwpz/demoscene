@@ -260,7 +260,7 @@ CALLBACK(CalculateShadeMap1) {
   int f = FrameTime(frame) * 256 - 224;
 
   do {
-    int value = (*map++) - f;
+    int16_t value = (*map++) - f;
 
     if (value < 128)
       *dst++ = 128;
@@ -280,7 +280,7 @@ CALLBACK(CalculateShadeMap2) {
   int n = shades->width * shades->height;
 
   do {
-    int value = f - *map++;
+    int16_t value = f - *map++;
 
     if (value < 128)
       *dst++ = 128;

@@ -13,6 +13,11 @@ void RaycastTunnelLine(FP16 *umap, FP16 *vmap, size_t w,
     float u = a / (2.0f * M_PI);
     float v = t * z / 8.0f;
 
+    if (v > 32.0f)
+      v = 32.0f;
+    if (v < -32.0f)
+      v = -32.f;
+
     *umap++ = FP16_float(u * 256.0f);
     *vmap++ = FP16_float(v * 256.0f);
 
