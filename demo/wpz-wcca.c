@@ -259,23 +259,16 @@ CALLBACK(CalculateShadeMap1) {
   int n = shades->width * shades->height;
   int f = FrameTime(frame) * 256 - 224;
 
-  while (n--) {
-    int value = f - (*map++);
+  do {
+    int value = (*map++) - f;
 
-    if (value < 0) {
-      value = -value;
-      if (value < 128)
-        value = 128;
-      else if (value < 255)
-        value = 255 - value;
-      else
-        value = 0;
-    } else {
-      value = 128;
-    }
-
-    *dst++ = value;
-  }
+    if (value < 128)
+      *dst++ = 128;
+    else if (value < 256)
+      *dst++ = ~(uint8_t)value;
+    else
+      *dst++ = 0;
+  } while (--n);
 }
 
 CALLBACK(CalculateShadeMap2) {
@@ -283,23 +276,19 @@ CALLBACK(CalculateShadeMap2) {
   PixBufT *shades = R_("ShadeMap");
   int16_t *map = uvmap->map.normal.v;
   uint8_t *dst = shades->data;
-  int n = shades->width * shades->height;
   int f = FrameTime(frame) * 224.0f;
+  int n = shades->width * shades->height;
 
-  while (n--) {
-    int value = - (*map++) + f;
+  do {
+    int value = f - *map++;
 
-    if (value < 0) {
-      value = 128;
-    } else {
-      if (value < 128)
-        value = 128;
-      if (value > 255)
-        value = 255;
-    }
-
-    *dst++ = value;
-  }
+    if (value < 128)
+      *dst++ = 128;
+    else if (value < 256)
+      *dst++ = value;
+    else
+      *dst++ = 255;
+  } while (--n);
 }
 
 CALLBACK(CopyShadeMap) {
