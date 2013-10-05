@@ -170,29 +170,6 @@ void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {
   }
 }
 
-static const size_t inline GetPixelIndex(PixBufT *pixbuf, ssize_t x, ssize_t y) {
-  ASSERT((x >= 0) && (x < pixbuf->width), "x (%d) out of bound!", x);
-  ASSERT((y >= 0) && (y < pixbuf->height), "y (%d) out of bound!", y);
-  return x + pixbuf->width * y;
-}
-
-__regargs void PutPixel(PixBufT *pixbuf, int x, int y, int c) {
-  pixbuf->data[GetPixelIndex(pixbuf, x, y)] = c;
-}
-
-__regargs int GetPixel(PixBufT *pixbuf, int x, int y) {
-  return pixbuf->data[GetPixelIndex(pixbuf, x, y)];
-}
-
-__regargs void PutPixelRGB(PixBufT *pixbuf, int x, int y, RGB c) {
-  size_t index = GetPixelIndex(pixbuf, x, y);
-  ((uint32_t *)pixbuf->data)[index] = *(uint32_t *)&c;
-}
-
-__regargs RGB GetPixelRGB(PixBufT *pixbuf, int x, int y) {
-  return *(RGB *)&pixbuf->data[GetPixelIndex(pixbuf, x, y)];
-}
-
 __regargs int GetFilteredPixel(PixBufT *pixbuf, FP16 x, FP16 y) {
   uint8_t *data = &pixbuf->data[pixbuf->width * FP16_i(y) + FP16_i(x)];
 

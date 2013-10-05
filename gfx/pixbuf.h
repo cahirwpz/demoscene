@@ -61,10 +61,22 @@ void PixBufSetColorFunc(PixBufT *pixbuf, uint8_t *colorFunc);
 BlitModeT PixBufSetBlitMode(PixBufT *pixbuf, BlitModeT mode);
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
 
-__regargs void PutPixel(PixBufT *pixbuf, int x, int y, int c);
-__regargs int GetPixel(PixBufT *pixbuf, int x, int y);
-__regargs void PutPixelRGB(PixBufT *pixbuf, int x, int y, RGB c);
-__regargs RGB GetPixelRGB(PixBufT *pixbuf, int x, int y);
+static inline void PutPixel(PixBufT *pixbuf, int x, int y, uint8_t c) {
+  pixbuf->data[x + pixbuf->width * y] = c;
+}
+
+static inline uint8_t GetPixel(PixBufT *pixbuf, int x, int y) {
+  return pixbuf->data[x + pixbuf->width * y];
+}
+
+static inline void PutPixelRGB(PixBufT *pixbuf, int x, int y, RGB c) {
+  ((uint32_t *)pixbuf->data)[x + pixbuf->width * y] = *(uint32_t *)&c;
+}
+
+static inline RGB GetPixelRGB(PixBufT *pixbuf, int x, int y) {
+  return *(RGB *)&pixbuf->data[x + pixbuf->width * y];
+}
+
 __regargs int GetFilteredPixel(PixBufT *pixbuf, FP16 x, FP16 y);
 
 #endif
