@@ -3,13 +3,16 @@
 
 #include "gfx.h"
 
-typedef struct Sprite {
+typedef struct Sprite SpriteT;
+
+struct Sprite {
+  SpriteT *attached;
   UWORD height;
   UWORD x, y;
   UWORD *data;
-} SpriteT;
+};
 
-__regargs SpriteT *NewSprite(UWORD height);
+__regargs SpriteT *NewSprite(UWORD height, BOOL attached);
 __regargs SpriteT *NewSpriteFromBitmap(UWORD height, BitmapT *bitmap,
                                        UWORD xstart, UWORD ystart);
 __regargs void DeleteSprite(SpriteT *sprite);
