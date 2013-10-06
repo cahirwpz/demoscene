@@ -1,7 +1,7 @@
 Amiga 500 Hardware Programming Examples
 ===
 
-## Documentation
+### Documentation
 
 1. [Amiga Hardware Reference Manual](http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0000.html)
 
