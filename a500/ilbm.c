@@ -28,6 +28,7 @@ typedef struct BitmapHeader {
 
 __regargs static void UnRLE(BYTE *data, LONG size, BYTE *uncompressed) {
   BYTE *src = data;
+  BYTE *end = data + size;
   BYTE *dst = uncompressed;
 
   do {
@@ -43,7 +44,7 @@ __regargs static void UnRLE(BYTE *data, LONG size, BYTE *uncompressed) {
 
       do { *dst++ = *src++; } while (--n != -1);
     }
-  } while (--size);
+  } while (src < end);
 }
 
 __regargs static void Deinterleave(BYTE *data, BitmapT *bitmap) { 
