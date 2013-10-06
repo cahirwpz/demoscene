@@ -24,8 +24,14 @@ static inline unsigned int swap16(unsigned int a) {
   return a;
 }
 
+__regargs void WaitLine(ULONG line);
+
 void WaitMouse();
 void WaitBlitter();
-void WaitVBlank();
+static void inline WaitVBlank() { WaitLine(312); }
+
+static inline BOOL LeftMouseButton() {
+  return !(ciaa->ciapra & CIAF_GAMEPORT0);
+}
 
 #endif

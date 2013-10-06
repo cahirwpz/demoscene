@@ -12,11 +12,14 @@ void WaitBlitter() {
   while (custom->dmaconr & DMAF_BLTDONE);
 }
 
-void WaitVBlank() {
-  for (;;) {
-    ULONG vpos = (*(volatile ULONG *)&custom->vposr) >> 8;
+__regargs void WaitLine(ULONG line) {
+  ULONG mask = 0x1ff00;
+  ULONG vpos;
 
-    if ((vpos & 0x1ff) == 312)
-      break;
-  }
+  line <<= 8;
+  line &= mask;
+
+  do {
+    vpos = (*(volatile ULONG *)&custom->vposr) & mask;
+  } while (vpos != line);
 }

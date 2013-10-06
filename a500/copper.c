@@ -2,15 +2,26 @@
 #include "coplist.h"
 #include "interrupts.h"
 
+static CopListT *cp = NULL;
+
+void Load() {
+  cp = NewCopList(100);
+}
+
+void Kill() {
+  DeleteCopList(cp);
+}
+
 static CopInsT *upperColor = NULL;
-static ULONG frameNumber = 0;
 
 __interrupt_handler void IntLevel3Handler() {
+  static ULONG frameNumber = 0;
+
   if (custom->intreqr & INTF_VERTB) {
     frameNumber++;
 
     if (upperColor)
-      upperColor->move.data = ((frameNumber & 63) < 32) ? 0x00f : 0x0f0;
+      CopInsSet16(upperColor, ((frameNumber & 63) < 32) ? 0x00f : 0x0f0);
   }
 
   /*
@@ -20,39 +31,24 @@ __interrupt_handler void IntLevel3Handler() {
   custom->intreq = INTF_LEVEL3;
 }
 
-void Load() {}
-void Kill() {}
-
 void Main() {
   APTR OldIntLevel3;
 
   /* Hardware initialization. */
-  {
-    OldIntLevel3 = InterruptVector->IntLevel3;
-    InterruptVector->IntLevel3 = IntLevel3Handler;
-    custom->intena = INTF_SETCLR | INTF_LEVEL3 | INTF_INTEN;
-  }
+  OldIntLevel3 = InterruptVector->IntLevel3;
+  InterruptVector->IntLevel3 = IntLevel3Handler;
+  custom->intena = INTF_SETCLR | INTF_LEVEL3 | INTF_INTEN;
 
-  {
-    CopListT *cp = NewCopList(100);
+  CopInit(cp);
+  upperColor = CopMove16(cp, color[0], 0xfff);
+  CopWait(cp, 312/2, 0);
+  CopMove16(cp, color[0], 0xf00);
+  CopEnd(cp);
+  CopListActivate(cp);
 
-    CopInit(cp);
-    upperColor = CopMove16(cp, color[0], 0xfff);
-    CopWait(cp, 312/2, 0);
-    CopMove16(cp, color[0], 0xf00);
-    CopEnd(cp);
-    CopListActivate(cp);
-
-    WaitMouse();
-
-    upperColor = NULL;
-
-    DeleteCopList(cp);
-  }
+  WaitMouse();
 
   /* Hardware release. */
-  {
-    custom->intena = INTF_LEVEL3;
-    InterruptVector->IntLevel3 = OldIntLevel3;
-  }
+  custom->intena = INTF_LEVEL3;
+  InterruptVector->IntLevel3 = OldIntLevel3;
 }

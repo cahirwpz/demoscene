@@ -71,6 +71,15 @@ static inline void CopEnd(CopListT *list) {
 #define CopMove16(cp, reg, data) CopMoveWord(cp, CSREG(reg), data)
 #define CopMove32(cp, reg, data) CopMoveLong(cp, CSREG(reg), data)
 
+static inline void CopInsSet32(CopInsT *ins, APTR data) {
+  ins[0].move.data = (ULONG)data >> 16;
+  ins[1].move.data = (ULONG)data;
+}
+
+static inline void CopInsSet16(CopInsT *ins, UWORD data) {
+  ins->move.data = data;
+}
+
 static inline void
 CopMakeDispWin(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
   /* vstart  $00 ..  $ff */

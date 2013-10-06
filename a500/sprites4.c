@@ -1,5 +1,4 @@
 #include "hardware.h"
-#include "interrupts.h"
 #include "coplist.h"
 #include "ilbm.h"
 #include "print.h"
@@ -43,48 +42,31 @@ void Kill() {
 
 static CopInsT *sprptr;
 
-__interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB) {
-    static UWORD counter = 0;
-    static UWORD x = X(0);
-    static WORD direction = 1;
-    WORD i = (WORD)(counter * 2 / 50) % 4;
+static void MoveSprite() {
+  static UWORD counter = 0;
+  static UWORD x = X(0);
+  static WORD direction = 1;
+  WORD i = (WORD)(counter * 2 / 50) % 4;
 
-    if (x >= X(304))
-      direction = -1;
-    if (x <= X(0))
-      direction = 1;
-    x += direction;
+  if (x >= X(304))
+    direction = -1;
+  if (x <= X(0))
+    direction = 1;
+  x += direction;
 
-    if (i > 2)
-      i = 4 - i;
+  if (i > 2)
+    i = 4 - i;
 
-    sprite[i]->x = x;
-    UpdateSprite(sprite[i]);
+  sprite[i]->x = x;
+  UpdateSprite(sprite[i]);
 
-    if (sprptr) {
-      sprptr[0].move.data = (ULONG)sprite[i]->data >> 16;
-      sprptr[1].move.data = (ULONG)sprite[i]->data;
-    }
+  if (sprptr)
+    CopInsSet32(sprptr, sprite[i]->data);
 
-    counter++;
-  }
-
-  /*
-   * Clear interrupt flags for this level to avoid infinite re-entering
-   * interrupt handler.
-   */
-  custom->intreq = INTF_LEVEL3;
+  counter++;
 }
 
 void Main() {
-  APTR OldIntLevel3;
-
-  /* Our vertical blank interrupt handler. */
-  OldIntLevel3 = InterruptVector->IntLevel3;
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_LEVEL3 | INTF_INTEN;
-
   CopInit(cp);
 
   CopMove16(cp, bplcon0, BPLCON0_BPU(screen->depth) | BPLCON0_COLOR);
@@ -112,9 +94,9 @@ void Main() {
 
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE | DMAF_MASTER;
 
-  WaitMouse();
-
-  /* Restore original vertical blank handler. */
-  custom->intena = INTF_LEVEL3;
-  InterruptVector->IntLevel3 = OldIntLevel3;
+  while (!LeftMouseButton()) {
+    WaitLine(Y(256));
+    MoveSprite();
+    WaitVBlank();
+  }
 }

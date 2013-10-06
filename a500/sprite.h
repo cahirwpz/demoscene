@@ -17,11 +17,6 @@ __regargs SpriteT *NewSpriteFromBitmap(UWORD height, BitmapT *bitmap,
                                        UWORD xstart, UWORD ystart);
 __regargs void DeleteSprite(SpriteT *sprite);
 __regargs void UpdateSprite(SpriteT *sprite);
-
-static inline void UpdateSpritePos(SpriteT *sprite, UWORD hstart, UWORD vstart) {
-  sprite->x = hstart;
-  sprite->y = vstart;
-  UpdateSprite(sprite);
-}
+__regargs void UpdateSpritePos(SpriteT *sprite, UWORD hstart, UWORD vstart);
 
 #endif

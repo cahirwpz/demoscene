@@ -95,3 +95,15 @@ __regargs void UpdateSprite(SpriteT *sprite) {
     sprite->attached->data[1] = sprctl | 0x80;
   }
 }
+
+__regargs void UpdateSpritePos(SpriteT *sprite, UWORD hstart, UWORD vstart) {
+  sprite->x = hstart;
+  sprite->y = vstart;
+
+  if (sprite->attached) {
+    sprite->attached->x = hstart;
+    sprite->attached->y = vstart;
+  }
+
+  UpdateSprite(sprite);
+}
