@@ -41,9 +41,9 @@ void Main() {
   CopMakeDispWin(cp, 0x81, 0x2c, bitmap->width, bitmap->height);
 
   for (i = 0; i < bitmap->depth; i++)
-    CopMove32(cp, bplpt[i], (ULONG)bitmap->planes[i]);
+    CopMove32(cp, bplpt[i], bitmap->planes[i]);
 
-  CopLoadPal(cp, bitmap->palette);
+  CopLoadPal(cp, bitmap->palette, 0);
   CopEnd(cp);
   CopListActivate(cp);
 

@@ -31,7 +31,7 @@ __regargs void DeleteCopList(CopListT *copList);
 __regargs void CopListActivate(CopListT *copList);
 __regargs void CopInit(CopListT *copList);
 __regargs CopInsT *CopWait(CopListT *copList, UWORD vp, UWORD hp);
-__regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette);
+__regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start);
 
 static inline CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {
   CopInsT *ptr = list->curr;
@@ -44,16 +44,16 @@ static inline CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {
   return ptr;
 }
 
-static inline CopInsT *CopMoveLong(CopListT *list, UWORD reg, ULONG data) {
+static inline CopInsT *CopMoveLong(CopListT *list, UWORD reg, APTR data) {
   CopInsT *ptr = list->curr;
   UWORD *ins = (UWORD *)ptr;
 
   reg &= 0x01fe;
 
   *ins++ = reg;
-  *ins++ = data >> 16;
+  *ins++ = (ULONG)data >> 16;
   *ins++ = reg + 2;
-  *ins++ = data;
+  *ins++ = (ULONG)data;
 
   list->curr = (CopInsT *)ins;
   return ptr;
