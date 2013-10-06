@@ -1,8 +1,6 @@
 #ifndef __COPLIST_H__
 #define __COPLIST_H__
 
-#include <exec/types.h>
-
 #include "gfx.h"
 #include "hardware.h"
 

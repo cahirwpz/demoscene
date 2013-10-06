@@ -2,7 +2,6 @@
 #include <proto/exec.h>
 
 #include "coplist.h"
-#include "hardware.h"
 
 __regargs CopListT *NewCopList(UWORD length) {
   CopListT *list = AllocMem(sizeof(CopListT) + length * sizeof(CopInsT),
