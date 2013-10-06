@@ -3,6 +3,9 @@
 
 #include <exec/types.h>
 
+#include "gfx.h"
+#include "hardware.h"
+
 typedef union CopIns {
   struct {
     WORD vpos;
@@ -28,6 +31,7 @@ __regargs void DeleteCopList(CopListT *copList);
 __regargs void CopListActivate(CopListT *copList);
 __regargs void CopInit(CopListT *copList);
 __regargs CopInsT *CopWait(CopListT *copList, UWORD vp, UWORD hp);
+__regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette);
 
 static inline CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {
   CopInsT *ptr = list->curr;
@@ -66,5 +70,18 @@ static inline void CopEnd(CopListT *list) {
 #define CSREG(reg) (UWORD)offsetof(struct Custom, reg)
 #define CopMove16(cp, reg, data) CopMoveWord(cp, CSREG(reg), data)
 #define CopMove32(cp, reg, data) CopMoveLong(cp, CSREG(reg), data)
+
+static inline void
+CopMakeDispWin(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
+  /* vstart  $00 ..  $ff */
+  /* hstart  $00 ..  $ff */
+  /* vstop   $80 .. $17f */
+  /* hstop  $100 .. $1ff */
+  UBYTE xe = xs + w;
+  UBYTE ye = ys + h;
+
+  CopMove16(list, diwstrt, (ys << 8) | xs);
+  CopMove16(list, diwstop, (ye << 8) | xe);
+}
 
 #endif

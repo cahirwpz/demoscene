@@ -53,3 +53,18 @@ __regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp) {
     return ptr;
   }
 }
+
+__regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette) {
+  CopInsT *ptr = list->curr;
+  UWORD *ins = (UWORD *)ptr;
+  ColorT *c = palette->colors;
+  UWORD i;
+
+  for (i = 0; i < palette->count; i++, c++) {
+    *ins++ = CSREG(color[i]);
+    *ins++ = ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4);
+  }
+
+  list->curr = (CopInsT *)ins;
+  return ptr;
+}

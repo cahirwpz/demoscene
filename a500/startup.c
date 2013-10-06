@@ -12,6 +12,7 @@
 #include "print.h"
 
 extern void Load();
+extern void Kill();
 extern void Main();
 
 int __nocommandline = 1;
@@ -59,6 +60,10 @@ int main() {
         custom->dmacon = 0x7fff;
         custom->intena = 0x7fff;
 
+        /* Clear all interrupt requests. Really. */
+        custom->intreq = 0x7fff;
+        custom->intreq = 0x7fff;
+
         Main();
 
         /* firstly... disable dma and interrupts that were used in Main */
@@ -81,6 +86,8 @@ int main() {
 
         Permit();
       }
+
+      Kill();
 
       CloseLibrary((struct Library *)GfxBase);
     }

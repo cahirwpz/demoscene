@@ -4,30 +4,21 @@
 #include "ilbm.h"
 
 static BitmapT *bitmap;
+static CopListT *cp;
 
 void Load() {
-  bitmap = LoadILBM("test.ilbm", FALSE);
+  bitmap = LoadILBM("data/test.ilbm", FALSE);
+  cp = NewCopList(100);
 }
 
-static inline void
-MakeDisplayWindow(CopListT *cp, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
-  /* vstart  $00 ..  $ff */
-  /* hstart  $00 ..  $ff */
-  /* vstop   $80 .. $17f */
-  /* hstop  $100 .. $1ff */
-  UBYTE xe = xs + w;
-  UBYTE ye = ys + h;
-
-  CopMove16(cp, diwstrt, (ys << 8) | xs);
-  CopMove16(cp, diwstop, (ye << 8) | xe);
+void Kill() {
+  DeleteCopList(cp);
+  DeletePalette(bitmap->palette);
+  DeleteBitmap(bitmap);
 }
-
-#define BPLCON0_BPU(d)  (((d) & 7) << 12)
-#define BPLCON0_COLOR   (1 << 9)
 
 void Main() {
-  CopListT *cp = NewCopList(100);
-  WORD i;
+  UWORD i;
 
   CopInit(cp);
   CopMove16(cp, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR);
@@ -47,25 +38,16 @@ void Main() {
   CopMove16(cp, ddfstrt, 0x38);
   CopMove16(cp, ddfstop, 0xd0);
 
-  MakeDisplayWindow(cp, 0x81, 0x2c, bitmap->width, bitmap->height);
+  CopMakeDispWin(cp, 0x81, 0x2c, bitmap->width, bitmap->height);
 
   for (i = 0; i < bitmap->depth; i++)
     CopMove32(cp, bplpt[i], (ULONG)bitmap->planes[i]);
 
-  for (i = 0; i < bitmap->palette->count; i++) {
-    ColorT c = bitmap->palette->colors[i];
-
-    CopMove16(cp, color[i],
-              ((c.r & 0xf0) << 4) | (c.g & 0xf0) | ((c.b & 0xf0) >> 4));
-  }
-
+  CopLoadPal(cp, bitmap->palette);
   CopEnd(cp);
   CopListActivate(cp);
 
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_MASTER;
 
   WaitMouse();
-  DeleteCopList(cp);
-  DeletePalette(bitmap->palette);
-  DeleteBitmap(bitmap);
 }

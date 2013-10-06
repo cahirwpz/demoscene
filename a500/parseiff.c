@@ -15,11 +15,13 @@ int main() {
   UWORD len = strlen(__commandline);
   STRPTR filename = __builtin_alloca(len);
 
-  memcpy(filename, __commandline, len--);
+  CopyMem(__commandline, filename, len--);
   filename[len] = '\0';
 
   if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 34))) {
     IffFileT iff;
+
+    Print("Parsing >>> %s <<<\n", filename);
 
     if (OpenIff(&iff, filename)) {
       Print("%.4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);

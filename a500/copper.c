@@ -21,6 +21,7 @@ __interrupt_handler void IntLevel3Handler() {
 }
 
 void Load() {}
+void Kill() {}
 
 void Main() {
   APTR OldIntLevel3;

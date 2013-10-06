@@ -12,6 +12,9 @@
 #define offsetof(st, m) \
   ((ULONG)((char *)&((st *)0)->m - (char *)0))
 
+#define BPLCON0_BPU(d)  (((d) & 7) << 12)
+#define BPLCON0_COLOR   (1 << 9)
+
 extern volatile struct Custom* const custom;
 extern volatile struct CIA* const ciaa;
 extern volatile struct CIA* const ciab;
