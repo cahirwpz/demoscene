@@ -15,10 +15,11 @@ typedef union CopIns {
 } CopInsT;
 
 typedef struct CopList {
+  CopInsT *curr;
+
   UWORD length;
   UWORD flags;
 
-  CopInsT *curr;
   CopInsT entry[0]; 
 } CopListT;
 
@@ -27,10 +28,43 @@ __regargs void DeleteCopList(CopListT *copList);
 __regargs void CopListActivate(CopListT *copList);
 __regargs void CopInit(CopListT *copList);
 __regargs CopInsT *CopWait(CopListT *copList, UWORD vp, UWORD hp);
-__regargs CopInsT *CopMove16(CopListT *copList, UWORD reg, UWORD data);
-__regargs CopInsT *CopMove32(CopListT *copList, UWORD reg, ULONG data);
-__regargs void CopEnd(CopListT *copList);
 
-#define CSREG(reg) offsetof(struct Custom, reg)
+static inline CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {
+  CopInsT *ptr = list->curr;
+  UWORD *ins = (UWORD *)ptr;
+
+  *ins++ = reg & 0x01fe;
+  *ins++ = data;
+
+  list->curr = (CopInsT *)ins;
+  return ptr;
+}
+
+static inline CopInsT *CopMoveLong(CopListT *list, UWORD reg, ULONG data) {
+  CopInsT *ptr = list->curr;
+  UWORD *ins = (UWORD *)ptr;
+
+  reg &= 0x01fe;
+
+  *ins++ = reg;
+  *ins++ = data >> 16;
+  *ins++ = reg + 2;
+  *ins++ = data;
+
+  list->curr = (CopInsT *)ins;
+  return ptr;
+}
+
+static inline void CopEnd(CopListT *list) {
+  ULONG *ins = (ULONG *)list->curr;
+
+  *ins++ = 0xfffffffe;
+
+  list->curr = (CopInsT *)ins;
+}
+
+#define CSREG(reg) (UWORD)offsetof(struct Custom, reg)
+#define CopMove16(cp, reg, data) CopMoveWord(cp, CSREG(reg), data)
+#define CopMove32(cp, reg, data) CopMoveLong(cp, CSREG(reg), data)
 
 #endif

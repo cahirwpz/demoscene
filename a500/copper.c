@@ -36,9 +36,9 @@ void Main() {
     CopListT *cp = NewCopList(100);
 
     CopInit(cp);
-    upperColor = CopMove16(cp, CSREG(color[0]), 0xfff);
+    upperColor = CopMove16(cp, color[0], 0xfff);
     CopWait(cp, 312/2, 0);
-    CopMove16(cp, CSREG(color[0]), 0xf00);
+    CopMove16(cp, color[0], 0xf00);
     CopEnd(cp);
     CopListActivate(cp);
 

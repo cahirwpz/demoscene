@@ -27,7 +27,7 @@ int main() {
       if (SysBase->AttnFlags & AFF_68010)
         InterruptVector = (APTR)Supervisor((APTR)GetVBR);
 
-      Print("Running on Kickstart %ld.%ld.\n",
+      Print("Running on Kickstart %ld.%ld.\n\r",
             (LONG)SysBase->LibNode.lib_Version,
             (LONG)SysBase->LibNode.lib_Revision);
 

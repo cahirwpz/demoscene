@@ -65,7 +65,7 @@ __regargs static void Deinterleave(BYTE *data, BitmapT *bitmap) {
   } while (--planeNum >= 0);
 }
 
-__regargs BitmapT *LoadILBM(const char *filename) {
+__regargs BitmapT *LoadILBM(const char *filename, BOOL interleaved) {
   BitmapT *bitmap = NULL;
   PaletteT *palette = NULL;
   IffFileT iff;
@@ -80,7 +80,7 @@ __regargs BitmapT *LoadILBM(const char *filename) {
         switch (iff.chunk.type) {
           case ID_BMHD:
             ReadChunk(&iff, &bmhd);
-            bitmap = NewBitmap(bmhd.w, bmhd.h, bmhd.nPlanes);
+            bitmap = NewBitmap(bmhd.w, bmhd.h, bmhd.nPlanes, interleaved);
             compression = bmhd.compression;
             break;
 
@@ -107,7 +107,11 @@ __regargs BitmapT *LoadILBM(const char *filename) {
                 size = newSize;
               }
 
-              Deinterleave(data, bitmap);
+              if (!interleaved)
+                Deinterleave(data, bitmap);
+              else
+                CopyMem(data, bitmap->planes[0], bitmap->bplSize * bitmap->depth);
+
               FreeMem(data, size);
             }
             break;

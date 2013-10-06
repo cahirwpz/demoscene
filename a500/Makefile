@@ -4,7 +4,7 @@ CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 
 ASFLAGS	= -Faout -phxass -m68010
 LDFLAGS	= -m68000 -msmall-code 
-OFLAGS	= -O2 -fomit-frame-pointer
+OFLAGS	= -O2 -fomit-frame-pointer -mregparm=4
 WFLAGS	= -Wall
 
 # Don't reload library base for each call.

@@ -3,6 +3,6 @@
 
 #include "gfx.h"
 
-__regargs BitmapT *LoadILBM(const char *filename);
+__regargs BitmapT *LoadILBM(const char *filename, BOOL interleaved);
 
 #endif

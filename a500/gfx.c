@@ -3,13 +3,16 @@
 
 #include "gfx.h"
 
-__regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth) {
+__regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
+                             BOOL interleaved)
+{
   BitmapT *bitmap = AllocMem(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
 
   bitmap->width = width;
   bitmap->height = height;
   bitmap->bytesPerRow = (width + 7) / 8;
   bitmap->depth = depth;
+  bitmap->interleaved = interleaved;
 
   {
     APTR *planePtr;
@@ -24,6 +27,9 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth) {
 
     planes = AllocMem((UWORD)bplSize * depth, MEMF_CHIP|MEMF_CLEAR);
     planePtr = bitmap->planes;
+
+    if (interleaved)
+      bplSize = width / 8;
 
     do {
       *planePtr++ = planes;

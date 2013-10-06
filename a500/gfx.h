@@ -15,18 +15,21 @@ typedef struct Palette {
 __regargs PaletteT *NewPalette(UWORD count);
 __regargs void DeletePalette(PaletteT *palette);
 
+#define BM_INTERLEAVED 1
+
 typedef struct Bitmap {
   UWORD width;
   UWORD height;
   UWORD depth;
   UWORD bytesPerRow;
   UWORD bplSize;
-  UWORD pad;
+  BOOL  interleaved;
   PaletteT *palette;
   APTR  planes[6];
 } BitmapT;
 
-__regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth);
+__regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
+                             BOOL interleaved);
 __regargs void DeleteBitmap(BitmapT *bitmap);
 
 
