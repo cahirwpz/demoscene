@@ -4,7 +4,7 @@
 #include "gfx.h"
 #include "hardware.h"
 
-typedef union CopIns {
+typedef union {
   struct {
     WORD vpos;
     WORD hpos;
@@ -15,7 +15,7 @@ typedef union CopIns {
   } move;
 } CopInsT;
 
-typedef struct CopList {
+typedef struct {
   CopInsT *curr;
 
   UWORD length;

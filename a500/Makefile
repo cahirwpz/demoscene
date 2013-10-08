@@ -1,4 +1,4 @@
-BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16
+BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8
 
 all:	$(BINS)
 
@@ -12,6 +12,7 @@ sprites4:  startup.o sprites4.o coplist.o hardware.o iff.o ilbm.o gfx.o \
 	   vbr.o print.o sprite.o
 sprites16: startup.o sprites16.o coplist.o hardware.o iff.o ilbm.o gfx.o \
 	   vbr.o print.o sprite.o
+topaz8:	   startup.o topaz8.o coplist.o hardware.o gfx.o vbr.o print.o
 
 clean::
 	rm -f $(BINS) *.7z
