@@ -40,8 +40,8 @@ __regargs void BlitterLine(BitmapT *bitmap, UWORD b,
   custom->bltdpt = data;
 
   /* Minterm is either $ca or $4a */
-  custom->bltcon0 =
-    ((x1 & 15) << 12) | BLTCON0_USEA | BLTCON0_USEC | BLTCON0_USED | 0xca;
+  custom->bltcon0 = ((x1 & 15) << 12) |
+    (SRCA | SRCC | DEST) | (ABC | ABNC | NABC | NANBC); /* $ca */
 
   /*
    *  \   |   /
@@ -67,22 +67,22 @@ __regargs void BlitterLine(BitmapT *bitmap, UWORD b,
    */
 
   {
-    UWORD bltcon1 = ((x1 & 15) << 12) | BLTCON1_LINE;
+    UWORD bltcon1 = ((x1 & 15) << 12) | LINEMODE;
 
     if (bltapt < 0)
-      bltcon1 |= BLTCON1_SIGN;
+      bltcon1 |= SIGNFLAG;
 
     if (dx >= dy) {
       if (x1 >= x2)
-        bltcon1 |= BLTCON1_AUL;
+        bltcon1 |= AUL;
       if (y1 >= y2)
-        bltcon1 |= BLTCON1_SUL;
-      bltcon1 |= BLTCON1_SUD;
+        bltcon1 |= SUL;
+      bltcon1 |= SUD;
     } else {
       if (x1 >= x2)
-        bltcon1 |= BLTCON1_SUL;
+        bltcon1 |= SUL;
       if (y1 >= y2)
-        bltcon1 |= BLTCON1_AUL;
+        bltcon1 |= AUL;
     }
 
     custom->bltcon1 = bltcon1;

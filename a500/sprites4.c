@@ -25,8 +25,7 @@ void Load() {
   UpdateSpritePos(sprite[1], X(0), Y(110));
   UpdateSpritePos(sprite[2], X(0), Y(101));
 
-  nullspr = NewSprite(1, FALSE);
-  UpdateSpritePos(nullspr, X(0), Y(0));
+  nullspr = NewSprite(0, FALSE);
 }
 
 void Kill() {

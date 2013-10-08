@@ -39,7 +39,7 @@ endif
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.s: %.c
-	$(CC) $(CFLAGS) -fverbose-asm -S -o $@ $<
+	$(CC) $(CFLAGS) -S -fverbose-asm -o $@ $<
 
 clean::
 	@$(RM) -v -r .deps

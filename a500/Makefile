@@ -14,7 +14,10 @@ sprites16: startup.o sprites16.o coplist.o hardware.o iff.o ilbm.o gfx.o \
 	   vbr.o print.o sprite.o
 
 clean::
-	rm -f $(BINS)
+	rm -f $(BINS) *.7z
+
+archive:
+	7z a "a500-$$(date +%F-%H%M).7z" $(BINS) data
 
 include Makefile.common
 

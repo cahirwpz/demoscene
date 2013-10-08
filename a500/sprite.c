@@ -7,7 +7,7 @@ __regargs SpriteT *NewSprite(UWORD height, BOOL attached) {
   SpriteT *sprite = AllocMem(sizeof(SpriteT), MEMF_PUBLIC|MEMF_CLEAR);
 
   sprite->height = height;
-  sprite->data = AllocMem((height + 2) * 4, MEMF_CHIP|MEMF_CLEAR);
+  sprite->data = AllocMem((height ? (height + 2) : 1) * 4, MEMF_CHIP|MEMF_CLEAR);
 
   if (attached)
     sprite->attached = NewSprite(height, FALSE);

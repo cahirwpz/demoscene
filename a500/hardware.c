@@ -8,10 +8,6 @@ void WaitMouse() {
   while (ciaa->ciapra & CIAF_GAMEPORT0);
 }
 
-void WaitBlitter() {
-  while (custom->dmaconr & DMAF_BLTDONE);
-}
-
 __regargs void WaitLine(ULONG line) {
   ULONG mask = 0x1ff00;
   ULONG vpos;

@@ -37,6 +37,7 @@ void Main() {
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_MASTER;
 
   BlitterLine(screen, 0, 0, 0, 160, 100);
+  WaitBlitter();
 
   WaitMouse();
 }
