@@ -1,13 +1,12 @@
 #include <dos/dos.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
-#include <exec/memory.h>
 
 #include "file.h"
-#include "print.h"
+#include "memory.h"
 
-FileDataT *ReadFile(STRPTR path, ULONG memoryFlags) {
-  FileDataT *data = NULL;
+APTR ReadFile(STRPTR path, ULONG memoryFlags) {
+  APTR data = NULL;
   LONG size = -1;
   BPTR fh;
 
@@ -21,10 +20,9 @@ FileDataT *ReadFile(STRPTR path, ULONG memoryFlags) {
   }
   
   if ((size > 0) && (fh = Open(path, MODE_OLDFILE))) {
-    if ((data = AllocMem(size + sizeof(FileDataT), memoryFlags))) {
-      data->size = size;
-      if (size != Read(fh, data->data, size)) {
-        FreeFile(data);
+    if ((data = AllocAutoMem(size, memoryFlags))) {
+      if (size != Read(fh, data, size)) {
+        FreeAutoMem(data);
         data = NULL;
       }
     }
@@ -32,8 +30,4 @@ FileDataT *ReadFile(STRPTR path, ULONG memoryFlags) {
   }
 
   return data;
-}
-
-void FreeFile(FileDataT *data) {
-  FreeMem(data, data->size + sizeof(FileDataT));
 }

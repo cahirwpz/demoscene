@@ -1,22 +1,21 @@
-#include <exec/memory.h>
-
-#include "p61/p61.h"
 #include "file.h"
 #include "hardware.h"
+#include "memory.h"
+#include "p61/p61.h"
 #include "print.h"
 
-static FileDataT *module;
+static void *module;
 
 void Load() {
   module = ReadFile("data/tempest-acidjazzed_evening.p61", MEMF_CHIP);
 }
 
 void Kill() {
-  FreeFile(module);
+  FreeAutoMem(module);
 }
 
 void Main() {
-  P61_Init(module->data, NULL, NULL);
+  P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
   WaitMouse();
