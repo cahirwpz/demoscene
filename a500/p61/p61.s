@@ -70,7 +70,7 @@ fade  = 1	;0 = Normal, NO master volume control possible
 jump = 1	;0 = do NOT include position jump code (P61_SetPosition)
 		;1 = Include
 
-system = 1	;0 = killer
+system = 0	;0 = killer
 		;1 = friendly
 
 CIA = 1		;0 = CIA disabled - Tempo commands are skipped !!
@@ -2856,7 +2856,7 @@ P61_etu
 	ifne	example
 	section	chip,data_c
 P61_data
-	incbin	"P61.Tempest - Acidjazzed evening"
+	incbin	"tempest-acidjazzed_evening.p61"
 
 ; uncomment if samples are external to the module
 ;P61_smp	incbin	"ram:SMP.fields of green"

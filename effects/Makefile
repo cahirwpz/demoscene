@@ -30,7 +30,7 @@ playaudio: CFLAGS += -Wno-unused
 playaudio: startup.o playaudio.o libaudio.a libuvmap.a $(LIBS)
 particles: startup.o particles.o libtxtgen.a libengine.a $(LIBS)
 raytunnel: startup.o raytunnel.o libuvmap.a libengine.a $(LIBS)
-tunnel: startup.o tunnel.o libp61.a libuvmap.a libaudio.a $(LIBS)
+tunnel: startup.o tunnel.o libuvmap.a libaudio.a $(LIBS)
 vector2d: startup.o vector2d.o $(LIBS)
 
 archive:
