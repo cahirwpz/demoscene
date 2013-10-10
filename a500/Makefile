@@ -1,22 +1,21 @@
+CPPFLAGS = -Isys
+
 BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
 	  playp61
 
-all:	libs $(BINS)
+all:	startup.o libs $(BINS)
 
-copper:    startup.o copper.o coplist.o hardware.o vbr.o print.o
-lines:	   startup.o lines.o coplist.o hardware.o gfx.o print.o vbr.o blitter.o
-parseiff:  parseiff.o iff.o print.o
-play8svx:  play8svx.o iff.o sound.o 8svx.o vbr.o hardware.o
-playp61:   playp61.o startup.o file.o hardware.o vbr.o print.o libp61.a
-showilbm:  startup.o showilbm.o coplist.o iff.o ilbm.o gfx.o vbr.o print.o \
-	   hardware.o
-sprites4:  startup.o sprites4.o coplist.o hardware.o iff.o ilbm.o gfx.o \
-	   vbr.o print.o sprite.o
-sprites16: startup.o sprites16.o coplist.o hardware.o iff.o ilbm.o gfx.o \
-	   vbr.o print.o sprite.o
-topaz8:	   startup.o topaz8.o coplist.o hardware.o gfx.o vbr.o print.o
+copper:    copper.o startup.o libsys.a
+lines:	   lines.o startup.o libsys.a
+parseiff:  parseiff.o libsys.a
+play8svx:  play8svx.o libsys.a
+playp61:   playp61.o startup.o libsys.a libp61.a
+showilbm:  showilbm.o startup.o libsys.a
+sprites4:  sprites4.o startup.o libsys.a
+sprites16: sprites16.o startup.o libsys.a
+topaz8:	   topaz8.o startup.o libsys.a
 
-SUBDIRS = p61
+SUBDIRS = p61 sys
 
 libs:
 	@for subdir in $(SUBDIRS); do $(MAKE) -C $$subdir || exit 1; done

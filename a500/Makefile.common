@@ -3,7 +3,7 @@ AS	= vasm -quiet
 CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 
 ASFLAGS	= -Faout -phxass -m68010
-LDFLAGS	= -m68000 -msmall-code 
+LDFLAGS	= -m68000 -msmall-code
 OFLAGS	= -O2 -fomit-frame-pointer
 WFLAGS	= -Wall
 
