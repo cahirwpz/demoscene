@@ -34,9 +34,25 @@ endif
 	@echo "CC   $<"
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
+%.o: %.s
+	@echo "AS   $<"
+	$(AS) $(ASFLAGS) -o $@ $<
+
+LIB := lib$(notdir $(CURDIR)).a
+
+$(LIB):
+	@echo "LIB  $@"
+	@m68k-amigaos-ar cr $@ $^
+	@m68k-amigaos-ranlib $@
+
+%.a:
+	make -C $(patsubst lib%.a,%,$@)
+
 %: %.o
 	@echo "LINK $@"
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(filter-out lib%.a,$^) \
+		$(foreach lib,$(patsubst lib%.a,%,$(filter lib%a,$^)),\
+		-L$(lib) -l$(lib)) $(LDLIBS)
 
 %.s: %.c
 	$(CC) $(CFLAGS) -S -fverbose-asm -o $@ $<
