@@ -32,6 +32,10 @@ int main() {
             (LONG)SysBase->LibNode.lib_Version,
             (LONG)SysBase->LibNode.lib_Revision);
 
+      /* Allocate blitter. */
+      WaitBlit();
+      OwnBlitter();
+
       Load();
 
       {
@@ -45,12 +49,8 @@ int main() {
         /* Intercept the view of AmigaOS. */
         OldView = GfxBase->ActiView;
         LoadView(NULL);
-        WaitVBlank();
-        WaitVBlank();
-
-        /* Allocate blitter. */
-        WaitBlit();
-        OwnBlitter();
+        WaitTOF();
+        WaitTOF();
 
         /* DMA & interrupts take-over. */
         OldDMAcon = custom->dmaconr;
@@ -74,20 +74,20 @@ int main() {
         custom->dmacon = OldDMAcon | DMAF_SETCLR;
         custom->intena = OldIntena | INTF_SETCLR;
 
-        /* Deallocate blitter. */
-        DisownBlitter();
-
         /* Restore old copper list... */
         custom->cop1lc = (ULONG)GfxBase->copinit;
         /* ... and original view. */
         LoadView(OldView);
-        WaitVBlank();
-        WaitVBlank();
+        WaitTOF();
+        WaitTOF();
 
         Permit();
       }
 
       Kill();
+
+      /* Deallocate blitter. */
+      DisownBlitter();
 
       CloseLibrary((struct Library *)GfxBase);
     }
