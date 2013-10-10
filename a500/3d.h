@@ -4,6 +4,10 @@
 #include <exec/types.h>
 
 typedef struct {
+  UWORD p1, p2;
+} EdgeT;
+
+typedef struct {
   WORD x, y, z;
 } VertexT;
 

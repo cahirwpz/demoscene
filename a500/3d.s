@@ -59,7 +59,7 @@ _CalculateView3D:
         move.w  d6,m00(a0)      ; m[0][0] = cosY * cosZ
 
         move.w  cosY,d6
-        move.w  sinZ,d6
+        muls.w  sinZ,d6
         asr.l   #8,d6
         move.w  d6,m01(a0)      ; m[0][1] = cosY * sinZ
 
@@ -168,7 +168,7 @@ _TransformVertices:
         movem.w (a3)+,x/y/z
 
         ; some magic value
-        add.l   #250,d5
+        add.l   #1000,d5
 
         tst.l   d5
         bne     .perspective

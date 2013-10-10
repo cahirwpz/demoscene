@@ -1,12 +1,12 @@
 CPPFLAGS = -Isys
 
 BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
-	  playp61 dots
+	  playp61 cube
 
 all:	startup.o libs $(BINS)
 
 copper:    copper.o startup.o libsys.a
-dots:	   dots.o 3d.o sincos.o startup.o libsys.a
+cube:	   cube.o 3d.o sincos.o startup.o libsys.a
 lines:	   lines.o startup.o libsys.a
 parseiff:  parseiff.o libsys.a
 play8svx:  play8svx.o libsys.a

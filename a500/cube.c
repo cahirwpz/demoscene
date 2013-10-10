@@ -19,33 +19,49 @@ static VertexT cube3d[8] = {
   { -100,  100,  100 }
 };
 
+static EdgeT edge[12] = {
+  { 0, 1 },
+  { 1, 2 },
+  { 2, 3 },
+  { 3, 0 },
+  { 4, 5 },
+  { 5, 6 },
+  { 6, 7 },
+  { 7, 4 },
+  { 0, 4 },
+  { 1, 5 },
+  { 2, 6 },
+  { 3, 7 }
+};
+
 static WORD buffer = 0;
 static PointT cube2d[2][8];
 static View3D view3d;
 static WORD alpha = 0, beta = 0, gamma = 0;
-static WORD lines[256];
-static WORD pixel[8] = { 128, 64, 32, 16, 8, 4, 2, 1 };
 
 static BitmapT *screen;
 static CopListT *cp;
 
 void Load() {
-
   screen = NewBitmap(320, 256, 1, FALSE);
   cp = NewCopList(100);
-
-  {
-    WORD i, j;
-    WORD l = screen->width / 8;
-
-    for (i = 0, j = 0; i < 256; i++, j += l)
-      lines[i] = j;
-  }
 }
 
 void Kill() {
   DeleteCopList(cp);
   DeleteBitmap(screen);
+}
+
+#if 0
+static WORD lines[256];
+static WORD pixel[8] = { 128, 64, 32, 16, 8, 4, 2, 1 };
+
+static void CalculateLines() {
+  WORD i, j;
+  WORD l = screen->width / 8;
+
+  for (i = 0, j = 0; i < 256; i++, j += l)
+    lines[i] = j;
 }
 
 static void ClearPoints() {
@@ -79,6 +95,7 @@ static void DrawPoints() {
     plane[lines[y] + (x >> 3)] |= pixel[x & 7];
   }
 }
+#endif
 
 void Main() {
   CopInit(cp);
@@ -97,11 +114,11 @@ void Main() {
   CopEnd(cp);
   CopListActivate(cp);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_MASTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_MASTER;
 
   view3d.viewerX = 160;
   view3d.viewerY = 100;
-  view3d.viewerZ = 100;
+  view3d.viewerZ = 300;
 
   while (!LeftMouseButton()) {
     alpha++;
@@ -115,12 +132,32 @@ void Main() {
     TransformVertices(&view3d, cube3d, cube2d[buffer], 8);
     custom->color[0] = 0x000;
 
-    WaitLine(Y(256));
+    WaitLine(Y(200));
 
     custom->color[0] = 0x0f0;
-    ClearPoints();
-    DrawPoints();
-    buffer ^= 1;
+    memset(screen->planes[0], 0, screen->width * screen->height / 8);
+    {
+      PointT *point = cube2d[buffer];
+      WORD i;
+
+      for (i = 0; i < 12; i++) {
+        UWORD p1 = edge[i].p1;
+        UWORD p2 = edge[i].p2;
+        WORD x1 = point[p1].x;
+        WORD y1 = point[p1].y;
+        WORD x2 = point[p2].x;
+        WORD y2 = point[p2].y;
+
+        if (x1 < 0 || y1 < 0 || x1 >= 320 || y1 >= 256)
+          continue;
+
+        if (x2 < 0 || y2 < 0 || x2 >= 320 || y2 >= 256)
+          continue;
+
+        BlitterLine(screen, 0, x1, y1, x2, y2);
+        WaitBlitter();
+      }
+    }
     custom->color[0] = 0x000;
 
     WaitVBlank();
