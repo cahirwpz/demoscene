@@ -1,11 +1,12 @@
 CPPFLAGS = -Isys
 
 BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
-	  playp61
+	  playp61 dots
 
 all:	startup.o libs $(BINS)
 
 copper:    copper.o startup.o libsys.a
+dots:	   dots.o 3d.o sincos.o startup.o libsys.a
 lines:	   lines.o startup.o libsys.a
 parseiff:  parseiff.o libsys.a
 play8svx:  play8svx.o libsys.a
@@ -14,6 +15,9 @@ showilbm:  showilbm.o startup.o libsys.a
 sprites4:  sprites4.o startup.o libsys.a
 sprites16: sprites16.o startup.o libsys.a
 topaz8:	   topaz8.o startup.o libsys.a
+
+sincos.s: sincos.py
+	python sincos.py
 
 SUBDIRS = p61 sys
 
@@ -24,6 +28,7 @@ clean-libs:
 	@for subdir in $(SUBDIRS); do $(MAKE) -C $$subdir clean; done
 
 clean::	clean-libs
+	rm -vf sincos.s
 	rm -f $(BINS) *.7z
 
 archive:

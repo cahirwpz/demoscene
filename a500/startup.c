@@ -84,10 +84,10 @@ int main() {
         Permit();
       }
 
-      Kill();
-
       /* Deallocate blitter. */
       DisownBlitter();
+
+      Kill();
 
       CloseLibrary((struct Library *)GfxBase);
     }
