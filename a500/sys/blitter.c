@@ -1,6 +1,14 @@
 #include "blitter.h"
 #include "hardware.h"
 
+__regargs void BlitterClear(BitmapT *bitmap, UWORD b) {
+  custom->bltdpt = bitmap->planes[b];
+  custom->bltdmod = 0;
+  custom->bltcon0 = DEST;
+  custom->bltcon1 = 0;
+  custom->bltsize = (bitmap->height * 64) + (bitmap->width / 16);
+}
+
 __regargs void BlitterLine(BitmapT *bitmap, UWORD b,
                            UWORD x1, UWORD y1, UWORD x2, UWORD y2)
 {
@@ -89,7 +97,7 @@ __regargs void BlitterLine(BitmapT *bitmap, UWORD b,
   }
 
   custom->bltadat = 0x8000;
-  custom->bltbdat = -1; /* Line texture pattern. */
+  custom->bltbdat = 0xffff; /* Line texture pattern. */
   custom->bltafwm = -1;
   custom->bltalwm = -1;
 

@@ -134,8 +134,12 @@ void Main() {
 
     WaitLine(Y(200));
 
+    custom->color[0] = 0xf00;
+
+    WaitBlitter();
+    BlitterClear(screen, 0);
+
     custom->color[0] = 0x0f0;
-    memset(screen->planes[0], 0, screen->width * screen->height / 8);
     {
       PointT *point = cube2d[buffer];
       WORD i;
@@ -148,18 +152,14 @@ void Main() {
         WORD x2 = point[p2].x;
         WORD y2 = point[p2].y;
 
-        if (x1 < 0 || y1 < 0 || x1 >= 320 || y1 >= 256)
-          continue;
-
-        if (x2 < 0 || y2 < 0 || x2 >= 320 || y2 >= 256)
-          continue;
-
-        BlitterLine(screen, 0, x1, y1, x2, y2);
         WaitBlitter();
+        BlitterLine(screen, 0, x1, y1, x2, y2);
       }
     }
     custom->color[0] = 0x000;
 
+#if 0
     WaitVBlank();
+#endif
   }
 }
