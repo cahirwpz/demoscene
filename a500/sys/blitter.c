@@ -6,7 +6,21 @@ __regargs void BlitterClear(BitmapT *bitmap, UWORD b) {
   custom->bltdmod = 0;
   custom->bltcon0 = DEST;
   custom->bltcon1 = 0;
-  custom->bltsize = (bitmap->height * 64) + (bitmap->width / 16);
+  custom->bltsize = (bitmap->height << 6) + (bitmap->width >> 4);
+}
+
+__regargs void BlitterFill(BitmapT *bitmap, UWORD b) {
+  UBYTE *bpl = bitmap->planes[b] + bitmap->bplSize - 1;
+
+  custom->bltapt = bpl;
+  custom->bltdpt = bpl;
+  custom->bltamod = 0;
+  custom->bltdmod = 0;
+  custom->bltcon0 = (SRCA | DEST) | A_TO_D;
+  custom->bltcon1 = BLITREVERSE | FILL_OR;
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+  custom->bltsize = (bitmap->height << 6) + (bitmap->width >> 4);
 }
 
 __regargs void BlitterLine(BitmapT *bitmap, UWORD b,
@@ -47,9 +61,13 @@ __regargs void BlitterLine(BitmapT *bitmap, UWORD b,
   custom->bltcpt = data;
   custom->bltdpt = data;
 
-  /* Minterm is either $ca or $4a */
+  /*
+   * Minterm is either:
+   * - OR: (ABC | ABNC | NABC | NANBC)
+   * - XOR: (ABNC | NABC | NANBC)
+   */
   custom->bltcon0 = ((x1 & 15) << 12) |
-    (SRCA | SRCC | DEST) | (ABC | ABNC | NABC | NANBC); /* $ca */
+    (SRCA | SRCC | DEST) | (ABC | ABNC | NABC | NANBC);
 
   /*
    *  \   |   /
@@ -75,6 +93,7 @@ __regargs void BlitterLine(BitmapT *bitmap, UWORD b,
    */
 
   {
+    /* Or with ONEDOT to get one pixel per line. */
     UWORD bltcon1 = ((x1 & 15) << 12) | LINEMODE;
 
     if (bltapt < 0)
