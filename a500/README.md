@@ -10,3 +10,7 @@ Amiga 500 Hardware Programming Examples
    * [Undocumented Amiga hardware stuff](http://eab.abime.net/showthread.php?t=19676)
 
 3. Amiga Demoscene Archive Forum: [coding](http://ada.untergrund.net/forum/index.php?action=vtopic&forum=4).
+
+4. [Custom Register Index](http://www.winnicki.net/amiga/memmap/)
+
+5. [Subpixel line drawing using Blitter](http://scalibq.wordpress.com/2011/12/28/just-keeping-it-real-part-5/)
