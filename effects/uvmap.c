@@ -5,6 +5,7 @@
 #include "gfx/palette.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
+#include "tools/profiling.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
@@ -97,12 +98,14 @@ bool SetupDisplay() {
  */
 void SetupEffect() {
   LoadPalette(R_("TexturePal"));
+  StartProfiling();
 }
 
 /*
  * Tear down effect function.
  */
 void TearDownEffect() {
+  StopProfiling();
 }
 
 /*
@@ -115,9 +118,10 @@ void RenderChunky(int frameNumber) {
   int dv = 4 * frameNumber;
 
   UVMapSetOffset(R_("Map"), du, dv);
-  UVMapRender(R_("Map"), canvas);
-
-  c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+  PROFILE(UVMapRender)
+    UVMapRender(R_("Map"), canvas);
+  PROFILE(C2P)
+    c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
 /*
@@ -138,6 +142,7 @@ void MainLoop() {
 
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
+    RenderFramesPerSecond(frameNumber);
 
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);

@@ -4,33 +4,19 @@
 #include "std/types.h"
 
 typedef struct {
-  void *mapU;
-  void *mapV;
-  uint8_t *texture;
-  uint8_t *dst;
-  int n;
-  int offsetU;
-  int offsetV;
-  uint8_t *cmap;
-  int index;
-} UVMapRenderT;
+  uint32_t mapSize;
+  void     *mapU;
+  void     *mapV;
+  uint8_t  *texture;
+  uint8_t  *pixmap;
+  uint8_t  *colorMap;
+  uint8_t  *lightMap;
+  uint16_t offset;
+  uint8_t  colorIndex;
+} UVMapRendererT;
 
-void RenderFastUVMapOptimized(uint8_t *mapU asm("a0"),
-                              uint8_t *mapV asm("a1"),
-                              uint8_t *texture asm("a2"),
-                              uint8_t *dst asm("a6"),
-                              int n asm("d5"),
-                              int offsetU asm("d6"),
-                              int offsetV asm("d7"));
-
-void RenderNormalUVMapOptimized(uint16_t *mapU asm("a0"),
-                                uint16_t *mapV asm("a1"),
-                                uint8_t *texture asm("a2"),
-                                uint8_t *dst asm("a6"),
-                                int n asm("d5"),
-                                int offsetU asm("d6"),
-                                int offsetV asm("d7"));
-
-void UVMapComposeAndRenderOptimized(UVMapRenderT *render asm("a6"));
+void RenderFastUVMapOptimized(UVMapRendererT *renderer asm("a6"));
+void RenderNormalUVMapOptimized(UVMapRendererT *renderer asm("a6"));
+void UVMapComposeAndRenderOptimized(UVMapRendererT *renderer asm("a6"));
 
 #endif

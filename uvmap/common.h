@@ -23,6 +23,9 @@ typedef struct UVMap {
     struct {
       FP16 *u, *v;
     } accurate;
+    struct {
+      void *u, *v;
+    } any;
   } map;
 
   /* associated texture, its required size, and offset for texturing */

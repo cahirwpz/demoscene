@@ -66,44 +66,41 @@ static void RenderAccurateUVMap(UVMapT *map, uint8_t *dst asm("a6")) {
 }
 
 void UVMapRender(UVMapT *map, PixBufT *canvas) {
+  UVMapRendererT renderer = {
+    .mapU = map->map.fast.u,
+    .mapV = map->map.fast.v,
+    .texture = map->texture->data,
+    .pixmap = canvas->data,
+    .mapSize = map->width * map->height,
+    .offset = ((map->offsetU & 255) << 8) | (map->offsetV & 255)
+  };
+
   ASSERT(map->texture, "No texture attached.");
 
-  if (map->type == UV_FAST)
-    RenderFastUVMapOptimized(map->map.fast.u,
-                             map->map.fast.v,
-                             map->texture->data,
-                             canvas->data,
-                             map->width * map->height,
-                             map->offsetU,
-                             map->offsetV);
-  else if (map->type == UV_NORMAL)
-    RenderNormalUVMapOptimized(map->map.normal.u,
-                               map->map.normal.v,
-                               map->texture->data,
-                               canvas->data,
-                               map->width * map->height,
-                               map->offsetU,
-                               map->offsetV);
-  else if (map->type == UV_ACCURATE)
+  if (map->type == UV_FAST) {
+    RenderFastUVMapOptimized(&renderer);
+  } else if (map->type == UV_NORMAL) {
+    RenderNormalUVMapOptimized(&renderer);
+  } else if (map->type == UV_ACCURATE) {
     RenderAccurateUVMap(map, canvas->data);
+  }
 }
 
 void UVMapComposeAndRender(UVMapT *map, PixBufT *canvas, PixBufT *composeMap,
                            uint8_t index)
 {
-  UVMapRenderT render;
- 
-  render.mapU = map->map.fast.u;
-  render.mapV = map->map.fast.v;
-  render.texture = map->texture->data;
-  render.dst = canvas->data;
-  render.offsetU = map->offsetU;
-  render.offsetV = map->offsetV;
-  render.n = map->width * map->height;
-  render.cmap = composeMap->data;
-  render.index = index;
+  UVMapRendererT renderer = {
+    .mapU = map->map.fast.u,
+    .mapV = map->map.fast.v,
+    .texture = map->texture->data,
+    .pixmap = canvas->data,
+    .mapSize = map->width * map->height,
+    .offset = ((map->offsetU & 255) << 8) | (map->offsetV & 255),
+    .colorMap = composeMap->data,
+    .colorIndex = index
+  };
 
   ASSERT(map->type == UV_FAST, "Source map must be fast.");
 
-  UVMapComposeAndRenderOptimized(&render);
+  UVMapComposeAndRenderOptimized(&renderer);
 }
