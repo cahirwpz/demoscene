@@ -1,6 +1,6 @@
 ; vim: ft=asm68k:ts=8:sw=8:
 
-        SECTION FireOptimizedCode,code
+        SECTION FireOptimized,code
 
         XDEF    _InitFireTables
         XDEF    _CalculateFire
