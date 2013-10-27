@@ -8,36 +8,8 @@
 #define X(x) ((x) + 0x81)
 #define Y(y) ((y) + 0x2c)
 
-static VertexT cube3d[8] = {
-  { -100, -100, -100 },
-  {  100, -100, -100 },
-  {  100,  100, -100 },
-  { -100,  100, -100 },
-  { -100, -100,  100 },
-  {  100, -100,  100 },
-  {  100,  100,  100 },
-  { -100,  100,  100 }
-};
-
-static EdgeT edge[12] = {
-  { 0, 1 },
-  { 1, 2 },
-  { 2, 3 },
-  { 3, 0 },
-  { 4, 5 },
-  { 5, 6 },
-  { 6, 7 },
-  { 7, 4 },
-  { 0, 4 },
-  { 1, 5 },
-  { 2, 6 },
-  { 3, 7 }
-};
-
-static WORD buffer = 0;
-static PointT cube2d[2][8];
+static Object3D object;
 static View3D view3d;
-static WORD alpha = 0, beta = 0, gamma = 0;
 
 static BitmapT *screen;
 static CopListT *cp;
@@ -45,6 +17,48 @@ static CopListT *cp;
 void Load() {
   screen = NewBitmap(320, 256, 1, FALSE);
   cp = NewCopList(100);
+
+  {
+    static VertexT vertex[8] = {
+      { -100, -100, -100 },
+      {  100, -100, -100 },
+      {  100,  100, -100 },
+      { -100,  100, -100 },
+      { -100, -100,  100 },
+      {  100, -100,  100 },
+      {  100,  100,  100 },
+      { -100,  100,  100 }
+    };
+
+    static EdgeT edge[12] = {
+      { 0, 1 },
+      { 1, 2 },
+      { 2, 3 },
+      { 3, 0 },
+      { 4, 5 },
+      { 5, 6 },
+      { 6, 7 },
+      { 7, 4 },
+      { 0, 4 },
+      { 1, 5 },
+      { 2, 6 },
+      { 3, 7 }
+    };
+
+    static PointT point[8];
+    static UBYTE pointFlags[8];
+    static LineT line[12];
+    static UBYTE lineFlags[12];
+
+    object.nVertex = 8;
+    object.nEdge = 12;
+    object.vertex = vertex;
+    object.edge = edge;
+    object.point = point;
+    object.pointFlags = pointFlags;
+    object.line = line;
+    object.lineFlags = lineFlags;
+  }
 }
 
 void Kill() {
@@ -66,7 +80,7 @@ static void CalculateLines() {
 
 static void ClearPoints() {
   UBYTE *plane = screen->planes[0];
-  WORD *coords = (WORD *)cube2d[buffer ^ 1];
+  WORD *coords = (WORD *)point[buffer ^ 1];
   WORD i;
 
   for (i = 0; i < 8; i++) {
@@ -82,7 +96,7 @@ static void ClearPoints() {
 
 static void DrawPoints() {
   UBYTE *plane = screen->planes[0];
-  WORD *coords = (WORD *)cube2d[buffer];
+  WORD *coords = (WORD *)point[buffer];
   WORD i;
 
   for (i = 0; i < 8; i++) {
@@ -96,6 +110,21 @@ static void DrawPoints() {
   }
 }
 #endif
+
+static void DrawObject() {
+  LineT *line = object.line;
+  WORD i;
+
+  for (i = 0; i < object.nEdge; i++, line++) {
+    WORD x1 = line->x1;
+    WORD y1 = line->y1;
+    WORD x2 = line->x2;
+    WORD y2 = line->y2;
+
+    WaitBlitter();
+    BlitterLine(screen, 0, x1, y1, x2, y2);
+  }
+}
 
 void Main() {
   CopInit(cp);
@@ -121,15 +150,16 @@ void Main() {
   view3d.viewerZ = 300;
 
   while (!LeftMouseButton()) {
-    alpha++;
-    beta++;
-    gamma++;
+    view3d.rotateX++;
+    view3d.rotateY++;
+    view3d.rotateZ++;
 
     WaitLine(Y(0));
 
     custom->color[0] = 0x00f;
-    CalculateView3D(&view3d, alpha, beta, gamma);
-    TransformVertices(&view3d, cube3d, cube2d[buffer], 8);
+    CalculateView3D(&view3d);
+    TransformVertices(&view3d, &object);
+    ClipEdges(&object);
     custom->color[0] = 0x000;
 
     WaitLine(Y(200));
@@ -140,22 +170,7 @@ void Main() {
     BlitterClear(screen, 0);
 
     custom->color[0] = 0x0f0;
-    {
-      PointT *point = cube2d[buffer];
-      WORD i;
-
-      for (i = 0; i < 12; i++) {
-        UWORD p1 = edge[i].p1;
-        UWORD p2 = edge[i].p2;
-        WORD x1 = point[p1].x;
-        WORD y1 = point[p1].y;
-        WORD x2 = point[p2].x;
-        WORD y2 = point[p2].y;
-
-        WaitBlitter();
-        BlitterLine(screen, 0, x1, y1, x2, y2);
-      }
-    }
+    DrawObject();
     custom->color[0] = 0x000;
 
 #if 0

@@ -3,6 +3,11 @@
 
 #include <exec/types.h>
 
+#define PF_LEFT   8 /* less than zero */
+#define PF_RIGHT  4 /* greater or equal to width */
+#define PF_TOP    2 /* less than zero */
+#define PF_BOTTOM 1 /* greater or equal to height */
+
 typedef struct {
   UWORD p1, p2;
 } EdgeT;
@@ -16,10 +21,18 @@ typedef struct {
 } PointT;
 
 typedef struct {
+  WORD x1, y1;
+  WORD x2, y2;
+} LineT;
+
+typedef struct {
   WORD m[9];
   WORD viewerX;
   WORD viewerY;
   WORD viewerZ;
+  WORD rotateX;
+  WORD rotateY;
+  WORD rotateZ;
 } View3D;
 
 typedef struct {
@@ -27,12 +40,24 @@ typedef struct {
   WORD cos;
 } SinCosT;
 
+typedef struct {
+  UWORD nVertex;
+  UWORD nEdge;
+
+  VertexT *vertex;
+  EdgeT *edge;
+
+  PointT *point;
+  UBYTE *pointFlags;
+
+  LineT *line;
+  UBYTE *lineFlags;
+} Object3D;
+
 extern const SinCosT *const sincos;
 
-void CalculateView3D(View3D *view asm("a0"), WORD angle_x asm("d0"),
-                     WORD angle_y asm("d1"), WORD angle_z asm("d2"));
-
-void TransformVertices(View3D *view asm("a0"), VertexT *vertex asm("a1"),
-                       PointT *point asm("a2"), WORD n asm("d0"));
+void CalculateView3D(View3D *view asm("a0"));
+void TransformVertices(View3D *view asm("a0"), Object3D *object asm("a1"));
+void ClipEdges(Object3D *object asm("a0"));
 
 #endif

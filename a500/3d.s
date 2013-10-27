@@ -15,18 +15,31 @@
         WORD    viewerX
         WORD    viewerY
         WORD    viewerZ
+        WORD    rotateX
+        WORD    rotateY
+        WORD    rotateZ
 	LABEL   View3D_SIZE
+
+    STRUCTURE   Object3D,0
+        UWORD   nVertex
+        UWORD   nEdge
+        APTR    vertex
+        APTR    edge
+        APTR    point
+        APTR    pointFlags
+        APTR    line
+        APTR    lineFlags
+        LABEL   Object3D_SIZE
 
         XDEF    _CalculateView3D
         XDEF    _TransformVertices
+        XDEF    _ClipEdges
+
         XREF    _sincos
 
         SECTION 3d,code
 
 ; a0 [View3D *] view structure
-; d0 [WORD] alpha
-; d1 [WORD] beta
-; d2 [WORD] gamma
 
 sinX    EQUR    d0
 sinY    EQUR    d1
@@ -38,6 +51,8 @@ saved   EQURL   d2-d7/a2
 
 _CalculateView3D:
         movem.l saved,-(sp)
+
+        movem.w rotateX(a0),d0-d2
 
         lea     _sincos,a1
 
@@ -123,25 +138,34 @@ _CalculateView3D:
         rts
 
 ; a0 [View3D *] view structure
-; a1 [VertexT *] vertices array
-; a2 [PointT *] 2d points array
-; d0 [WORD] number of vertices
+; a1 [Object3D *] 3d object structure
 
 x       EQUR    d0
 y       EQUR    d1
 z       EQUR    d2
-saved   EQURL   d2-d7/a2-a3
+saved   EQURL   d2-d7/a2-a6
+
+width   EQU     320
+height  EQU     256
 
 _TransformVertices:
         movem.l saved,-(sp)
-        subq.l  #1,d0
+
+        move.l  vertex(a1),a6
+        move.l  point(a1),a2
+        move.l  pointFlags(a1),a3
+        move.w  nVertex(a1),d0
+        subq.w  #1,d0
+
+        move.w  #width,a4
+        move.w  #height,a5
 
 .loop:
-        move.l  a0,a3
-        exg.l   d0,a4
-        movem.w (a1)+,x/y/z
+        movem.l d0/a0,-(sp) ; these get clobbered within loop's body
 
-        movem.w (a3)+,d3-d5
+        movem.w (a6)+,x/y/z
+
+        movem.w (a0)+,d3-d5
         muls.w  x,d3
         muls.w  y,d4
         muls.w  z,d5
@@ -149,7 +173,7 @@ _TransformVertices:
         add.l   d5,d3
         asr.l   #8,d3   ; x' = m[0][0] * x + m[1][0] * y + m[2][0] * z
 
-        movem.w (a3)+,d4-d6
+        movem.w (a0)+,d4-d6
         muls.w  x,d4
         muls.w  y,d5
         muls.w  z,d6
@@ -157,7 +181,7 @@ _TransformVertices:
         add.l   d6,d4
         asr.l   #8,d4   ; y' = m[0][1] * x + m[1][1] * y + m[2][1] * z
 
-        movem.w (a3)+,d5-d7
+        movem.w (a0)+,d5-d7
         muls.w  x,d5
         muls.w  y,d6
         muls.w  z,d7
@@ -165,16 +189,17 @@ _TransformVertices:
         add.l   d7,d5
         asr.l   #8,d5   ; z' = m[0][2] * x + m[1][2] * y + m[2][2] * z
 
-        movem.w (a3)+,x/y/z
+        movem.w (a0)+,x/y/z
 
         ; some magic value
-        add.l   #1000,d5
+        add.w   #1024,d5
 
-        tst.l   d5
+        tst.w   d5
         bne     .perspective
 
         move.w  x,(a2)+
         move.w  y,(a2)+
+        ;clr.b   (a3)+
         bra     .continue
 
 .perspective
@@ -182,15 +207,54 @@ _TransformVertices:
         divs.w  d5,d3
         add.w   x,d3     ; x2d = x' * viewerZ / z' + viewerX
         move.w  d3,(a2)+
+        
+        smi     d6       ; set PF_LEFT iff x2d < 0
+        add.w   d6,d6
+        cmp.w   a4,d3    ; set PF_RIGHT iff x2d >= width
+        sge     d6
+        add.w   d6,d6
 
         muls.w  z,d4
         divs.w  d5,d4
         add.w   y,d4     ; y2d = y' * viewerZ / z' + viewerY
         move.w  d4,(a2)+
 
+        smi     d6       ; set PF_TOP iff y2d < 0
+        add.w   d6,d6
+        cmp.w   a5,d3    ; set PF_BOTTOM iff y2d >= height
+        sge     d6
+        lsr.w   #7,d6
+
+        move.b  d6,(a3)+
+
 .continue
-        exg.l   d0,a4
+        movem.l (sp)+,d0/a0
         dbf     d0,.loop
+
+        movem.l (sp)+,saved
+        rts
+
+; a0 [Object3D *] 3d object structure
+
+saved   EQURL   d2/a2-a3
+
+_ClipEdges:
+        movem.l saved,-(sp)
+
+        move.l  point(a0),a1
+        move.l  edge(a0),a2
+        move.l  line(a0),a3
+
+        move.w  nEdge(a0),d2
+        subq.w  #1,d2
+
+.loop
+        movem.w (a2)+,d0/d1
+        lsl.w   #2,d0
+        lsl.w   #2,d1
+        move.l  (a1,d0.w),(a3)+
+        move.l  (a1,d1.w),(a3)+
+        dbf     d2,.loop
 
         movem.l (sp)+,saved
         rts
