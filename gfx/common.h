@@ -4,7 +4,7 @@
 #include "std/types.h"
 
 typedef struct Point {
-  size_t x, y;
+  int x, y;
 } PointT;
 
 typedef struct FPoint {
@@ -12,8 +12,8 @@ typedef struct FPoint {
 } FPointT;
 
 typedef struct Rect {
-  size_t x, y;
-  size_t w, h;
+  int x, y;
+  int w, h;
 } RectT;
 
 #endif

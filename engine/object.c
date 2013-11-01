@@ -168,15 +168,33 @@ static void RenderObject(SceneObjectT *self, PixBufT *canvas) {
       DetermineSurfaceColor(canvas, surface, polygon->surface, polyExt->color);
 
     if (RenderWireFrame) {
-      DrawLine(canvas,
-               lroundf(vertex[p1].x), lroundf(vertex[p1].y),
-               lroundf(vertex[p2].x), lroundf(vertex[p2].y));
-      DrawLine(canvas, 
-               lroundf(vertex[p2].x), lroundf(vertex[p2].y),
-               lroundf(vertex[p3].x), lroundf(vertex[p3].y));
-      DrawLine(canvas,
-               lroundf(vertex[p3].x), lroundf(vertex[p3].y),
-               lroundf(vertex[p1].x), lroundf(vertex[p1].y));
+      int x1 = lroundf(vertex[p1].x);
+      int y1 = lroundf(vertex[p1].y);
+      int x2 = lroundf(vertex[p2].x);
+      int y2 = lroundf(vertex[p2].y);
+      int x3 = lroundf(vertex[p3].x);
+      int y3 = lroundf(vertex[p3].y);
+
+      if (!(vertex[p1].flags & vertex[p2].flags)) {
+        if (vertex[p1].flags | vertex[p2].flags)
+          DrawLine(canvas, x1, y1, x2, y2);
+        else
+          DrawLineUnsafe(canvas, x1, y1, x2, y2);
+      }
+
+      if (!(vertex[p2].flags & vertex[p3].flags)) {
+        if (vertex[p2].flags | vertex[p3].flags)
+          DrawLine(canvas, x2, y2, x3, y3);
+        else
+          DrawLineUnsafe(canvas, x2, y2, x3, y3);
+      }
+
+      if (!(vertex[p1].flags & vertex[p3].flags)) {
+        if (vertex[p1].flags | vertex[p3].flags)
+          DrawLine(canvas, x1, y1, x3, y3);
+        else
+          DrawLineUnsafe(canvas, x1, y1, x3, y3);
+      }
     } else {
       bool clipping = vertex[p1].flags | vertex[p2].flags | vertex[p3].flags;
 
