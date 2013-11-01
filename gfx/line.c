@@ -6,71 +6,73 @@
  * http://www.skytopia.com/project/articles/compsci/clipping.html
  */
 
+typedef struct {
+  int p, q;
+} LBEdgeT;
+
+static inline int ext16(int p) {
+  asm("swap  %0;"
+      "clr.w %0;"
+      : "+d" (p));
+  return p;
+}
+
+static inline int round16(int p) {
+  asm("add.l #0x8000,%0;"
+      "swap  %0;"
+      "ext.l %0;"
+      : "+d" (p));
+  return p;
+}
+
 static bool LiangBarsky(PointT *p1, PointT *p2, PixBufT *canvas) {
-  float t0 = 0.0;
-  float t1 = 1.0;
+  static LBEdgeT edge[4];
+
+  int t0 = 0;
+  int t1 = 0x10000;
   int xdelta = p2->x - p1->x;
   int ydelta = p2->y - p1->y;
-  int edge;
+  int i;
 
-  for(edge = 0; edge < 4; edge++) {
-    int p = 0, q = 0;
-    float r;
+  edge[0].p = -xdelta;
+  edge[0].q = p1->x - 0;
+  edge[1].p = xdelta;
+  edge[1].q = (canvas->width - 1) - p1->x;
+  edge[2].p = -ydelta;
+  edge[2].q = p1->y - 0;
+  edge[3].p = ydelta;
+  edge[3].q = (canvas->height - 1) - p1->y;
 
-    switch (edge) {
-      case 0:
-        p = -xdelta;
-        q = p1->x; // - minX
-        break;
+  for(i = 0; i < 4; i++) {
+    int p = edge[i].p;
+    int q = edge[i].q;
 
-      case 1:
-        p = xdelta;
-        q = (canvas->width - 1) - p1->x;
-        break;
-
-      case 2:
-        p = -ydelta;
-        q = p1->y; // - minY
-        break;
-
-      case 3:
-        p = ydelta;
-        q = (canvas->height - 1) - p1->y;
-        break;
-    }
-
-    if (p == 0 && q < 0)
-      return false;
-
-    if (p == 0)
-      continue;
-
-    r = (float)q / (float)p;
-
-    if (p < 0) {
-      if (r > t1)
+    if (p == 0) {
+      if (q < 0)
         return false;
-
-      if (r > t0)
-        t0 = r;
     } else {
-      if (r < t0)
-        return false;
+      int r = ext16(q) / p;
 
-      if (r < t1)
-        t1 = r;
+      if (p < 0) {
+        if (r > t1)
+          return false;
+
+        if (r > t0)
+          t0 = r;
+      } else {
+        if (r < t0)
+          return false;
+
+        if (r < t1)
+          t1 = r;
+      }
     }
   }
 
-  if (t1 < 1.0f) {
-    p2->x = p1->x + t1 * (float)xdelta;
-    p2->y = p1->y + t1 * (float)ydelta;
-  }
-
-  if (t0 > 0.0f) {
-    p1->x += t0 * (float)xdelta;
-    p1->y += t0 * (float)ydelta;
-  }
+  p2->x = p1->x + round16(t1 * xdelta);
+  p2->y = p1->y + round16(t1 * ydelta);
+  p1->x += round16(t0 * xdelta);
+  p1->y += round16(t0 * ydelta);
 
   return true;
 }
@@ -80,8 +82,8 @@ void DrawLineUnsafe(PixBufT *canvas, int xs, int ys, int xe, int ye) {
   int dx, dy, step, dg, dg1, dg2, db1, db2, n;
 
   if (ys > ye) {
-    swapi(xs, xe);
-    swapi(ys, ye);
+    swapr(xs, xe);
+    swapr(ys, ye);
   }
 
   /*  quarters:
