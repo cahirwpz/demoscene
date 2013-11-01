@@ -111,19 +111,115 @@ static void DrawPoints() {
 }
 #endif
 
-static void DrawObject() {
-  LineT *line = object.line;
+typedef struct {
+  WORD p, q;
+} LBEdgeT;
+
+static inline WORD div16(LONG a, WORD b) {
+  asm("divs %1,%0"
+      : "+d" (a)
+      : "d" (b));
+  return a;
+}
+
+static BOOL LiangBarsky(LineT *line) {
+  static LBEdgeT edge[4];
+
+  WORD t0 = 0;
+  WORD t1 = 0x1000;
+  WORD xdelta = line->x2 - line->x1;
+  WORD ydelta = line->y2 - line->y1;
   WORD i;
 
-  for (i = 0; i < object.nEdge; i++, line++) {
-    WORD x1 = line->x1;
-    WORD y1 = line->y1;
-    WORD x2 = line->x2;
-    WORD y2 = line->y2;
+  edge[0].p = -xdelta;
+  edge[0].q = line->x1;
+  edge[1].p = xdelta;
+  edge[1].q = 319 - line->x1;
+  edge[2].p = -ydelta;
+  edge[2].q = line->y1;
+  edge[3].p = ydelta;
+  edge[3].q = 255 - line->y1;
 
-    WaitBlitter();
-    BlitterLine(screen, 0, x1, y1, x2, y2);
+  for (i = 0; i < 4; i++) {
+    WORD p, r;
+   
+    p = edge[i].p;
+
+    if (p == 0) {
+      i++;
+      continue;
+    }
+
+    r = div16(edge[i].q * 0x1000, p);
+
+    if (p < 0) {
+      if (r > t1)
+        return FALSE;
+
+      if (r > t0)
+        t0 = r;
+    } else {
+      if (r < t0)
+        return FALSE;
+
+      if (r < t1)
+        t1 = r;
+    }
   }
+
+  if (t0 > 0) {
+    line->x1 += (t0 * xdelta + 0x800) / 0x1000;
+    line->y1 += (t0 * ydelta + 0x800) / 0x1000;
+  }
+
+  if (t1 < 0x1000) {
+    t1 -= 0x1000;
+    line->x2 += (t1 * xdelta + 0x800) / 0x1000;
+    line->y2 += (t1 * ydelta + 0x800) / 0x1000;
+  }
+
+  return TRUE;
+}
+
+void ClipEdges(Object3D *object) {
+  WORD n = object->nEdge;
+  PointT *point = object->point;
+  UBYTE *pointFlags = object->pointFlags;
+  EdgeT *edge = object->edge;
+  LineT *line = object->line;
+  UBYTE *lineFlags = object->lineFlags;
+
+  do {
+    UWORD i1 = edge->p1;
+    UWORD i2 = edge->p2;
+    BOOL outside = pointFlags[i1] & pointFlags[i2];
+    BOOL clip = pointFlags[i1] | pointFlags[i2];
+
+    line->x1 = point[i1].x;
+    line->y1 = point[i1].y;
+    line->x2 = point[i2].x;
+    line->y2 = point[i2].y;
+
+    if (!outside && clip)
+      outside = !LiangBarsky(line);
+
+    edge++;
+    line++;
+    *lineFlags++ = outside;
+  } while (--n);
+}
+
+static void DrawObject() {
+  LineT *line = object.line;
+  UBYTE *lineFlags = object.lineFlags;
+  WORD n = object.nEdge;
+
+  do {
+    WaitBlitter();
+    if (!*lineFlags++)
+      BlitterLine(screen, 0, line->x1, line->y1, line->x2, line->y2);
+    line++;
+  } while (--n);
 }
 
 void Main() {
@@ -145,7 +241,7 @@ void Main() {
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_MASTER;
 
-  view3d.viewerX = 160;
+  view3d.viewerX = 100;
   view3d.viewerY = 100;
   view3d.viewerZ = 300;
 
