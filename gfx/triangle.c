@@ -1,4 +1,6 @@
+#ifndef NDEBUG
 #define NDEBUG
+#endif
 #include "gfx/triangle.h"
 #include "std/debug.h"
 #include "std/math.h"
@@ -138,7 +140,7 @@ DrawTriangleSpan(uint8_t *pixels, const uint8_t color,
   n = xe - xs;
   pixels += xs;
 
-  LOG("Line: (%d, %d..%d)", ys, xs, xe);
+  LOG("Line: (%d..%d)", xs, xe);
 
   do {
     *pixels++ = color;
@@ -167,40 +169,43 @@ DrawTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
   }
 }
 
+typedef struct {
+  fixed_t x, y;
+} _TriPoint;
+
 /* Triangle rasterization routine. */
 void DrawTriangle(PixBufT *canvas,
-                  float x1f, float y1f, float x2f, float y2f,
-                  float x3f, float y3f)
+                  TriPoint *p1f, TriPoint *p2f, TriPoint *p3f)
 {
-  fixed_t x1 = float_to_fx(x1f);
-  fixed_t y1 = float_to_fx(y1f);
-  fixed_t x2 = float_to_fx(x2f);
-  fixed_t y2 = float_to_fx(y2f);
-  fixed_t x3 = float_to_fx(x3f);
-  fixed_t y3 = float_to_fx(y3f);
   EdgeScanT l12, l13, l23;
   bool longOnRight;
 
-  if (y1 > y2) {
-    swapr(x1, x2);
-    swapr(y1, y2);
-  }
+  /* Vertices translation could be dropped at some point... */
+  _TriPoint points[] = {
+    { float_to_fx(p1f->x), float_to_fx(p1f->y) },
+    { float_to_fx(p2f->x), float_to_fx(p2f->y) },
+    { float_to_fx(p3f->x), float_to_fx(p3f->y) }
+  };
 
-  if (y1 > y3) {
-    swapr(x1, x3);
-    swapr(y1, y3);
-  }
+  _TriPoint *p1 = &points[0];
+  _TriPoint *p2 = &points[1];
+  _TriPoint *p3 = &points[2];
 
-  if (y2 > y3) {
-    swapr(x2, x3);
-    swapr(y2, y3);
-  }
+  if (p1->y > p2->y)
+    swapr(p1, p2);
 
-  LOG("Triangle: (%f, %f) (%f, %f) (%f, %f).", x1f, y1f, x2f, y2f, x3f, y3f);
+  if (p1->y > p3->y)
+    swapr(p1, p3);
 
-  InitEdgeScan(&l12, y1, y2, x1, x2);
-  InitEdgeScan(&l13, y1, y3, x1, x3);
-  InitEdgeScan(&l23, y2, y3, x2, x3);
+  if (p2->y > p3->y)
+    swapr(p2, p3);
+
+  LOG("Triangle: (%f, %f) (%f, %f) (%f, %f).",
+      p1f->x, p1f->y, p2f->x, p2f->y, p3f->x, p3f->y);
+
+  InitEdgeScan(&l12, p1->y, p2->y, p1->x, p2->x);
+  InitEdgeScan(&l13, p1->y, p3->y, p1->x, p3->x);
+  InitEdgeScan(&l23, p2->y, p3->y, p2->x, p3->x);
 
   if (l12.height == 0)
     longOnRight = (l12.width < 0);
@@ -213,13 +218,15 @@ void DrawTriangle(PixBufT *canvas,
     EdgeScanT *left  = longOnRight ? &l12 : &l13;
     EdgeScanT *right = longOnRight ? &l13 : &l12;
 
-    DrawTriangleSegment(canvas, left, right, fx_rint(y1), fx_rint(y1) + l12.height);
+    DrawTriangleSegment(canvas, left, right,
+                        fx_rint(p1->y), fx_rint(p1->y) + l12.height);
 
     if (longOnRight)
       left = &l23;
     else
       right = &l23;
 
-    DrawTriangleSegment(canvas, left, right, fx_rint(y2), fx_rint(y2) + l23.height);
+    DrawTriangleSegment(canvas, left, right,
+                        fx_rint(p2->y), fx_rint(p2->y) + l23.height);
   }
 }

@@ -3,7 +3,10 @@
 
 #include "gfx/pixbuf.h"
 
-void DrawTriangle(PixBufT *canvas, float x1, float y1, float x2, float y2,
-                  float x3, float y3);
+typedef struct {
+  float x, y;
+} TriPoint;
+
+void DrawTriangle(PixBufT *canvas, TriPoint *p1, TriPoint *p2, TriPoint *p3);
 
 #endif

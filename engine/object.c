@@ -227,9 +227,9 @@ static void RenderObject(SceneObjectT *self, PixBufT *canvas) {
             RasterizeTriangle(canvas, e1, e2, e3);
           } else {
             DrawTriangle(canvas,
-                         vertex[p1].x, vertex[p1].y,
-                         vertex[p2].x, vertex[p2].y,
-                         vertex[p3].x, vertex[p3].y);
+                         (TriPoint *)&vertex[p1],
+                         (TriPoint *)&vertex[p2], 
+                         (TriPoint *)&vertex[p3]);
           }
         }
         break;

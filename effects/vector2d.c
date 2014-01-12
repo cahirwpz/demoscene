@@ -103,10 +103,10 @@ void RenderVector(int frameNumber) {
     canvas->fgColor = (255 - frameNumber) * 2;
 
   if (effect == 1) {
-    DrawTriangle(canvas,
-                 toDraw[0].x, toDraw[0].y,
-                 toDraw[1].x, toDraw[1].y,
-                 toDraw[2].x, toDraw[2].y);
+    TriPoint p1 = { toDraw[0].x, toDraw[0].y };
+    TriPoint p2 = { toDraw[1].x, toDraw[1].y };
+    TriPoint p3 = { toDraw[2].x, toDraw[2].y };
+    DrawTriangle(canvas, &p1, &p2, &p3);
   }
 
   if (effect == 2) {
