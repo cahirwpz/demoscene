@@ -12,6 +12,8 @@ typedef struct EdgeScan {
 
   FP16 x;
   FP16 dx;
+
+  bool done;
 } EdgeScanT;
 
 __attribute__((regparm(4))) void

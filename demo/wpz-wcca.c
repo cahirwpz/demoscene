@@ -430,7 +430,7 @@ CALLBACK(RenderStones) {
   PushTranslation3D(ms, Stone2Pos[0], Stone2Pos[1], Stone2Pos[2] - 2.0f);
 
   RenderAllFaces = true;
-  RenderFlatShading = false;
+  RenderMode = RENDER_FILLED;
   RenderScene(R_("StonesScene"), TheCanvas);
 }
 
@@ -482,7 +482,7 @@ CALLBACK(RenderPotato) {
   PixBufClear(shades);
 
   RenderAllFaces = false;
-  RenderFlatShading = true;
+  RenderMode = RENDER_FLAT_SHADING;
   RenderScene(R_("PotatoScene"), shades);
 
   PixBufSetColorMap(shades, R_("PotatoBgColorMap"));
@@ -495,6 +495,7 @@ CALLBACK(RenderPotatoBackground) {
   int du = 2 * frame->number;
   int dv = 4 * frame->number;
 
+  UVMapSetTexture(R_("UVMapC"), R_("PotatoBgImg"));
   UVMapSetOffset(R_("UVMapC"), du, dv);
   UVMapRender(R_("UVMapC"), TheCanvas);
 }
@@ -535,7 +536,7 @@ CALLBACK(RenderWeCanLogo) {
     //PushTranslation3D(ms, -1.0f, -0.775f, -1.95f);
   }
 
-  RenderFlatShading = false;
+  RenderMode = RENDER_FILLED;
   RenderAllFaces = true;
   RenderScene(scene, TheCanvas);
 }

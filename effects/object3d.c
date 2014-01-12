@@ -46,7 +46,8 @@ void AddInitialResources() {
 
   SceneAddObject(R_("Scene"), NewSceneObject("Object", R_("Mesh")));
 
-  RenderFlatShading = false;
+  RenderMode = RENDER_WIREFRAME;
+  RenderAllFaces = true;
 }
 
 /*
@@ -125,8 +126,16 @@ void MainLoop() {
       oldFrameNumber = frameNumber;
     }
 
-    if (event == LOOP_TRIGGER)
-      RenderWireFrame = !RenderWireFrame;
+    if (event == LOOP_TRIGGER) {
+      RenderMode++;
+      if (RenderMode > 3)
+        RenderMode = 0;
+
+      if (RenderMode < RENDER_FILLED)
+        RenderAllFaces = true;
+      else
+        RenderAllFaces = false;
+    }
 
     RenderMesh(frameNumber);
     RenderFrameNumber(frameNumber);

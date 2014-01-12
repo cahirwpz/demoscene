@@ -49,7 +49,7 @@ void AddInitialResources() {
   SceneAddObject(R_("Scene"), NewSceneObject("Object", R_("Mesh")));
 
   RenderAllFaces = false;
-  RenderFlatShading = true;
+  RenderMode = RENDER_FLAT_SHADING;
 }
 
 /*

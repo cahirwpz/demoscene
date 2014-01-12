@@ -6,8 +6,11 @@
 #include "engine/ms3d.h"
 #include "engine/triangle.h"
 
-extern bool RenderFlatShading;
-extern bool RenderWireFrame;
+typedef enum {
+  RENDER_WIREFRAME, RENDER_WIREFRAME_AA, RENDER_FILLED, RENDER_FLAT_SHADING
+} RenderModeT;
+
+extern RenderModeT RenderMode;
 extern bool RenderAllFaces;
 
 typedef struct PolygonExt {

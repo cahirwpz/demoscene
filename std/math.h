@@ -96,7 +96,8 @@ inline static float modff(float x, float *ip) {
       : "=f" (temp)
       : "f" (x));
 
-  *ip = temp;
+  if (ip)
+    *ip = temp;
 
   return x - temp;
 }

@@ -8,8 +8,7 @@
 #include "gfx/triangle.h"
 #include "engine/triangle.h"
 
-bool RenderFlatShading = false;
-bool RenderWireFrame = false;
+RenderModeT RenderMode = RENDER_WIREFRAME;
 bool RenderAllFaces = false;
 
 static void DeleteSceneObject(SceneObjectT *self) {
@@ -125,7 +124,7 @@ static void UpdateVertexExt(PixBufT *canvas, VertexExtT *dst, Vector3D *src, int
 
 __regargs static uint8_t
 DetermineSurfaceColor(PixBufT *canvas, SurfaceT *surface, int color, int shade) {
-  if (RenderFlatShading) {
+  if (RenderMode == RENDER_FLAT_SHADING) {
     if (canvas->blit.cmap) {
       shade = shade / 2 + 128 - 16;
 
@@ -152,6 +151,7 @@ static void RenderObject(SceneObjectT *self, PixBufT *canvas) {
   for (j = 0; j < mesh->polygonNum; j++) {
     PolygonExtT *polyExt = self->sortedPolygonExt[j];
     TriangleT *polygon = &mesh->polygon[polyExt->index];
+    EdgeScanT *e1, *e2, *e3;
     int p1 = polygon->p[0];
     int p2 = polygon->p[1];
     int p3 = polygon->p[2];
@@ -167,48 +167,72 @@ static void RenderObject(SceneObjectT *self, PixBufT *canvas) {
     canvas->fgColor =
       DetermineSurfaceColor(canvas, surface, polygon->surface, polyExt->color);
 
-    if (RenderWireFrame) {
-      int x1 = lroundf(vertex[p1].x);
-      int y1 = lroundf(vertex[p1].y);
-      int x2 = lroundf(vertex[p2].x);
-      int y2 = lroundf(vertex[p2].y);
-      int x3 = lroundf(vertex[p3].x);
-      int y3 = lroundf(vertex[p3].y);
+    e1 = &edge[polygon->e[0]];
+    e2 = &edge[polygon->e[1]];
+    e3 = &edge[polygon->e[2]];
 
-      if (!(vertex[p1].flags & vertex[p2].flags)) {
-        if (vertex[p1].flags | vertex[p2].flags)
-          DrawLine(canvas, x1, y1, x2, y2);
-        else
-          DrawLineUnsafe(canvas, x1, y1, x2, y2);
-      }
+    switch (RenderMode) {
+      case RENDER_WIREFRAME:
+        if (!e1->done && !(vertex[p1].flags & vertex[p2].flags)) {
+          if (vertex[p1].flags | vertex[p2].flags)
+            DrawLine(canvas, e1->xs, e1->ys, e1->xe, e1->ye);
+          else
+            DrawLineUnsafe(canvas, e1->xs, e1->ys, e1->xe, e1->ye);
+          e1->done = true;
+        }
 
-      if (!(vertex[p2].flags & vertex[p3].flags)) {
-        if (vertex[p2].flags | vertex[p3].flags)
-          DrawLine(canvas, x2, y2, x3, y3);
-        else
-          DrawLineUnsafe(canvas, x2, y2, x3, y3);
-      }
+        if (!e2->done && !(vertex[p2].flags & vertex[p3].flags)) {
+          if (vertex[p2].flags | vertex[p3].flags)
+            DrawLine(canvas, e2->xs, e2->ys, e2->xe, e2->ye);
+          else
+            DrawLineUnsafe(canvas, e2->xs, e2->ys, e2->xe, e2->ye);
+          e2->done = true;
+        }
 
-      if (!(vertex[p1].flags & vertex[p3].flags)) {
-        if (vertex[p1].flags | vertex[p3].flags)
-          DrawLine(canvas, x1, y1, x3, y3);
-        else
-          DrawLineUnsafe(canvas, x1, y1, x3, y3);
-      }
-    } else {
-      bool clipping = vertex[p1].flags | vertex[p2].flags | vertex[p3].flags;
+        if (!e3->done && !(vertex[p1].flags & vertex[p3].flags)) {
+          if (vertex[p1].flags | vertex[p3].flags)
+            DrawLine(canvas, e3->xs, e3->ys, e3->xe, e3->ye);
+          else
+            DrawLineUnsafe(canvas, e3->xs, e3->ys, e3->xe, e3->ye);
+          e3->done = true;
+        }
+        break;
 
-      if (!clipping) {
-        EdgeScanT *e1 = &edge[polygon->e[0]];
-        EdgeScanT *e2 = &edge[polygon->e[1]];
-        EdgeScanT *e3 = &edge[polygon->e[2]];
-        RasterizeTriangle(canvas, e1, e2, e3);
-      } else {
-        DrawTriangle(canvas,
-                     vertex[p1].x, vertex[p1].y,
-                     vertex[p2].x, vertex[p2].y,
-                     vertex[p3].x, vertex[p3].y);
-      }
+      case RENDER_WIREFRAME_AA:
+        if (!e1->done && !(vertex[p1].flags & vertex[p2].flags)) {
+          DrawLineAA(canvas, e1->xs, e1->ys, e1->xe, e1->ye);
+          e1->done = true;
+        }
+
+        if (!e2->done && !(vertex[p2].flags & vertex[p3].flags)) {
+          DrawLineAA(canvas, e2->xs, e2->ys, e2->xe, e2->ye);
+          e2->done = true;
+        }
+
+        if (!e3->done && !(vertex[p1].flags & vertex[p3].flags)) {
+          DrawLineAA(canvas, e3->xs, e3->ys, e3->xe, e3->ye);
+          e3->done = true;
+        }
+        break;
+
+      case RENDER_FILLED:
+      case RENDER_FLAT_SHADING:
+        {
+          bool clipping = vertex[p1].flags | vertex[p2].flags | vertex[p3].flags;
+
+          if (!clipping) {
+            EdgeScanT *e1 = &edge[polygon->e[0]];
+            EdgeScanT *e2 = &edge[polygon->e[1]];
+            EdgeScanT *e3 = &edge[polygon->e[2]];
+            RasterizeTriangle(canvas, e1, e2, e3);
+          } else {
+            DrawTriangle(canvas,
+                         vertex[p1].x, vertex[p1].y,
+                         vertex[p2].x, vertex[p2].y,
+                         vertex[p3].x, vertex[p3].y);
+          }
+        }
+        break;
     }
   }
 }

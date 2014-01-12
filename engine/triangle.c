@@ -21,6 +21,8 @@ InitEdgeScan(EdgeScanT *e, float ys, float ye, float xs, float xe) {
     e->x = FP16_float(x);
     e->dx = FP16_float(dx);
   }
+
+  e->done = false;
 }
 
 /* Segment routines. */
