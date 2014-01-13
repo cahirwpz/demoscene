@@ -1,6 +1,7 @@
 #ifndef NDEBUG
 #define NDEBUG
 #endif
+
 #include "gfx/triangle.h"
 #include "std/debug.h"
 #include "std/math.h"
@@ -158,14 +159,15 @@ DrawTriangleSpan(uint8_t *pixels, const uint8_t color,
 
 __attribute__((regparm(4))) static void
 DrawTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
-                    int ys, int ye)
+                    int ys, int h)
 {
   uint8_t *pixels = canvas->data + ys * canvas->width;
   const uint8_t color = canvas->fgColor;
   int width = canvas->width;
   int height = canvas->height;
+  int ye = ys + h;
 
-  while (ys < ye) {
+  for (; ys < ye; ys++) {
     if (ys >= 0 && ys < height && left->x < width && right->x >= 0)
       DrawTriangleSpan(pixels, color, left->x, right->x, width - 1);
 
@@ -173,8 +175,6 @@ DrawTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
 
     IterEdgeScan(left);
     IterEdgeScan(right);
-
-    ys++;
   }
 }
 
@@ -223,15 +223,13 @@ void DrawTriangle(PixBufT *canvas,
     EdgeScanT *left  = longOnRight ? &l12 : &l13;
     EdgeScanT *right = longOnRight ? &l13 : &l12;
 
-    DrawTriangleSegment(canvas, left, right,
-                        fx_rint(p1->y), fx_rint(p1->y) + l12.height);
+    DrawTriangleSegment(canvas, left, right, fx_rint(p1->y), l12.height);
 
     if (longOnRight)
       left = &l23;
     else
       right = &l23;
 
-    DrawTriangleSegment(canvas, left, right,
-                        fx_rint(p2->y), fx_rint(p2->y) + l23.height);
+    DrawTriangleSegment(canvas, left, right, fx_rint(p2->y), l23.height);
   }
 }
