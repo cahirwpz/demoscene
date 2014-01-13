@@ -51,19 +51,19 @@ static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
 {
   int i;
 
-  for (i = 0; i < polygonNum; i++) {
-    int p1 = polygon[i].p[0];
-    int p2 = polygon[i].p[1];
-    int p3 = polygon[i].p[2];
-    float angle;
+  for (i = 0; i < polygonNum; i++, polygon++) {
+    PolygonExtT *polyExt = &polygonExt[i];
+    int p1 = polygon->p[0];
+    int p2 = polygon->p[1];
+    int p3 = polygon->p[2];
 
-    polygonExt[i].index = i;
+    polyExt->index = i;
 
     /*
      * NOTE: Don't use floating point comparison (i.e. max function) to select
      * a value. It's fragile and may be non-deterministic.
      */
-    polygonExt[i].depth = (vertex[p1].z + vertex[p2].z + vertex[p3].z) / 3.0f;
+    polyExt->depth = (vertex[p1].z + vertex[p2].z + vertex[p3].z) / 3.0f;
 
 #if 0
     /* Calculate angle between camera and surface normal. */
@@ -77,18 +77,13 @@ static void UpdatePolygonExt(PolygonExtT *polygonExt, TriangleT *polygon,
       angle = V3D_Dot(&cameraToFace, &unitNormal);
     }
 #endif
-    {
-      Vector3D unitNormal;
-      V3D_NormalizeToUnit(&unitNormal, &normal[i]);
-      angle = unitNormal.z;
-    }
+    V3D_NormalizeToUnit(&polyExt->normal, &normal[i]);
 
-    polygonExt[i].color = abs((int)(angle * 255.0f));
 
-    if (angle > 0)
-      polygonExt[i].flags |= 1;
+    if (polyExt->normal.z > 0)
+      polyExt->flags |= 1;
     else
-      polygonExt[i].flags &= ~1;
+      polyExt->flags &= ~1;
   }
 }
 
@@ -122,9 +117,35 @@ static void UpdateVertexExt(PixBufT *canvas, VertexExtT *dst, Vector3D *src, int
   }
 }
 
+static void
+UpdateVertexNormals(VertexExtT *vertexExt, IndexArrayT *indexArray,
+                    PolygonExtT *polygonExt, int vertexNum)
+{
+  int i, j;
+
+  for (i = 0; i < vertexNum; i++) {
+    uint16_t count = indexArray[i].count;
+    uint16_t *index = indexArray[i].index;
+    Vector3D *normal = &vertexExt[i].normal;
+
+    normal->x = 0.0f;
+    normal->y = 0.0f;
+    normal->z = 0.0f;
+
+    for (j = 0; j < count; j++)
+      V3D_Add(normal, normal, &polygonExt[index[j]].normal);
+
+    V3D_Scale(normal, normal, 1.0f / (float)count);
+  }
+}
+
 __regargs static uint8_t
-DetermineSurfaceColor(PixBufT *canvas, SurfaceT *surface, int color, int shade) {
+DetermineSurfaceColor(PixBufT *canvas, SurfaceT *surface, PolygonExtT *polyExt,
+                      int color)
+{
   if (RenderMode == RENDER_FLAT_SHADING) {
+    int shade = abs((int)(polyExt->normal.z * 255.0f));
+
     if (canvas->blit.cmap) {
       shade = shade / 2 + 128 - 16;
 
@@ -165,7 +186,7 @@ static void RenderObject(SceneObjectT *self, PixBufT *canvas) {
       continue;
 
     canvas->fgColor =
-      DetermineSurfaceColor(canvas, surface, polygon->surface, polyExt->color);
+      DetermineSurfaceColor(canvas, surface, polyExt, polygon->surface);
 
     e1 = &edge[polygon->e[0]];
     e2 = &edge[polygon->e[1]];
@@ -253,6 +274,10 @@ void RenderSceneObject(SceneObjectT *self, PixBufT *canvas) {
   /* Calculate polygon normals & depths. */
   UpdatePolygonExt(self->polygonExt, mesh->polygon, mesh->polygonNum,
                    self->vertex, self->surfaceNormal);
+
+  if (RenderMode == RENDER_GOURAUD_SHADING)
+    UpdateVertexNormals(self->vertexExt, mesh->vertexToPoly.vertex,
+                        self->polygonExt, mesh->vertexNum);
 
   /* Sort polygons by depth. */
   QuickSortPolygonExtT(self->sortedPolygonExt, 0, mesh->polygonNum - 1);

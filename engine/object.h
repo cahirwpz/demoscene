@@ -7,7 +7,11 @@
 #include "engine/triangle.h"
 
 typedef enum {
-  RENDER_WIREFRAME, RENDER_WIREFRAME_AA, RENDER_FILLED, RENDER_FLAT_SHADING
+  RENDER_WIREFRAME,
+  RENDER_WIREFRAME_AA,
+  RENDER_FILLED,
+  RENDER_FLAT_SHADING,
+  RENDER_GOURAUD_SHADING
 } RenderModeT;
 
 extern RenderModeT RenderMode;
@@ -16,13 +20,14 @@ extern bool RenderAllFaces;
 typedef struct PolygonExt {
   uint16_t index;
   uint8_t flags;
-  uint8_t color;
   float depth;
+  Vector3D normal;
 } PolygonExtT;
 
 typedef struct VertexExt {
   uint8_t flags;
   float x, y;
+  Vector3D normal;
 } VertexExtT;
 
 typedef struct SceneObject {

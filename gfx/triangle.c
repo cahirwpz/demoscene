@@ -52,6 +52,10 @@ static inline fixed_t fx_mul(fixed_t u, fixed_t v) {
 
 /* EdgeScan structure & routines. */
 
+typedef struct {
+  fixed_t x, y;
+} _TriPoint;
+
 typedef struct EdgeScan {
   int height, width;
 
@@ -80,7 +84,12 @@ typedef struct EdgeScan {
  */
 
 __attribute__((regparm(4))) static void
-InitEdgeScan(EdgeScanT *e, fixed_t ys, fixed_t ye, fixed_t xs, fixed_t xe) {
+InitEdgeScan(EdgeScanT *e, _TriPoint *ps, _TriPoint *pe) {
+  fixed_t xs = ps->x;
+  fixed_t ys = ps->y;
+  fixed_t xe = pe->x;
+  fixed_t ye = pe->y;
+
   fixed_t height = ye - ys;
   fixed_t width = xe - xs;
 
@@ -169,10 +178,6 @@ DrawTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
   }
 }
 
-typedef struct {
-  fixed_t x, y;
-} _TriPoint;
-
 /* Triangle rasterization routine. */
 void DrawTriangle(PixBufT *canvas,
                   TriPoint *p1f, TriPoint *p2f, TriPoint *p3f)
@@ -203,9 +208,9 @@ void DrawTriangle(PixBufT *canvas,
   LOG("Triangle: (%f, %f) (%f, %f) (%f, %f).",
       p1f->x, p1f->y, p2f->x, p2f->y, p3f->x, p3f->y);
 
-  InitEdgeScan(&l12, p1->y, p2->y, p1->x, p2->x);
-  InitEdgeScan(&l13, p1->y, p3->y, p1->x, p3->x);
-  InitEdgeScan(&l23, p2->y, p3->y, p2->x, p3->x);
+  InitEdgeScan(&l12, p1, p2);
+  InitEdgeScan(&l13, p1, p3);
+  InitEdgeScan(&l23, p2, p3);
 
   if (l12.height == 0)
     longOnRight = (l12.width < 0);

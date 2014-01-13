@@ -106,6 +106,8 @@ MeshT *NewMeshFromFile(const char *fileName) {
 
     MemUnref(header);
 
+    CalculateVertexToPolygonMap(mesh);
+
     return mesh;
   }
 
@@ -288,40 +290,43 @@ void CalculateSurfaceNormals(MeshT *mesh) {
  * vertices, so this procedure calculates a reverse map.
  */
 void CalculateVertexToPolygonMap(MeshT *mesh) {
-  IndexMapT *map = &mesh->vertexToPoly;
-  size_t i, j;
-
-  map->vertex = NewTable(IndexArrayT, mesh->vertexNum);
-  map->indices = NewTable(uint16_t, mesh->vertexNum * 3);
+  IndexArrayT *vertex = NewTable(IndexArrayT, mesh->vertexNum);
+  uint16_t *indices = NewTable(uint16_t, mesh->polygonNum * 3);
+  int i, j;
 
   for (i = 0; i < mesh->polygonNum; i++) {
-    size_t p1 = mesh->polygon[i].p[0];
-    size_t p2 = mesh->polygon[i].p[1];
-    size_t p3 = mesh->polygon[i].p[2];
+    TriangleT *polygon = &mesh->polygon[i];
+    uint16_t p1 = polygon->p[0];
+    uint16_t p2 = polygon->p[1];
+    uint16_t p3 = polygon->p[2];
 
-    map->vertex[p1].count++;
-    map->vertex[p2].count++;
-    map->vertex[p3].count++;
+    vertex[p1].count++;
+    vertex[p2].count++;
+    vertex[p3].count++;
   }
 
-  for (i = 0, j = 0; i < mesh->vertexNum;) {
-    map->vertex[i].index = &map->indices[j];
+  for (i = 0, j = 0; i < mesh->vertexNum; i++) {
+    vertex[i].index = &indices[j];
 
-    j += map->vertex[i++].count;
+    j += vertex[i].count;
   }
 
   for (i = 0; i < mesh->vertexNum; i++)
-    map->vertex[i].count = 0;
+    vertex[i].count = 0;
 
   for (i = 0; i < mesh->polygonNum; i++) {
-    size_t p1 = mesh->polygon[i].p[0];
-    size_t p2 = mesh->polygon[i].p[1];
-    size_t p3 = mesh->polygon[i].p[2];
+    TriangleT *polygon = &mesh->polygon[i];
+    uint16_t p1 = polygon->p[0];
+    uint16_t p2 = polygon->p[1];
+    uint16_t p3 = polygon->p[2];
 
-    map->vertex[p1].index[map->vertex[p1].count++] = i;
-    map->vertex[p2].index[map->vertex[p2].count++] = i;
-    map->vertex[p3].index[map->vertex[p3].count++] = i;
+    vertex[p1].index[vertex[p1].count++] = i;
+    vertex[p2].index[vertex[p2].count++] = i;
+    vertex[p3].index[vertex[p3].count++] = i;
   }
+
+  mesh->vertexToPoly.vertex = vertex;
+  mesh->vertexToPoly.indices = indices; 
 }
 
 /*

@@ -35,10 +35,10 @@ typedef struct Surface {
 } SurfaceT;
 
 typedef struct Mesh {
-  size_t vertexNum;
-  size_t polygonNum;
-  size_t surfaceNum;
-  size_t edgeNum;
+  uint32_t vertexNum;
+  uint32_t polygonNum;
+  uint32_t surfaceNum;
+  uint32_t edgeNum;
 
   Vector3D *vertex;
   TriangleT *polygon;
@@ -53,7 +53,7 @@ typedef struct Mesh {
   Vector3D *vertexNormal;
 } MeshT;
 
-MeshT *NewMesh(size_t vertices, size_t triangles, size_t surfaces);
+MeshT *NewMesh(uint32_t vertices, uint32_t triangles, uint32_t surfaces);
 MeshT *NewMeshFromFile(const char *fileName);
 void NormalizeMeshSize(MeshT *mesh);
 void CenterMeshPosition(MeshT *mesh);
