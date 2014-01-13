@@ -11,24 +11,31 @@
 typedef struct EdgeScan {
   int height, width, y;
   float x, dx;
+  float c, dc;
 } EdgeScanT;
 
-__regargs static void InitEdgeScan(EdgeScanT *e, TriPoint *ps, TriPoint *pe) {
+__regargs static void InitEdgeScan(EdgeScanT *e, TriPointC *ps, TriPointC *pe) {
   float xs = ps->x;
   float ys = ps->y;
   float xe = pe->x;
   float ye = pe->y;
+  float cs = ps->c;
+  float ce = pe->c;
 
   float height = ye - ys;
   float width = xe - xs;
+  float gradient = ce - cs;
 
   e->height = lroundf(ye) - lroundf(ys);
   e->width = lroundf(xe) - lroundf(xs);
 
-  if (height)
+  if (height) {
     e->dx = width / height;
+    e->dc = gradient / height;
+  }
 
   e->x = xs;
+  e->c = cs;
   e->y = lroundf(ys);
 
   if (height) {
@@ -36,11 +43,13 @@ __regargs static void InitEdgeScan(EdgeScanT *e, TriPoint *ps, TriPoint *pe) {
     float ys_prestep = ceil(ys_centered) - ys_centered;
 
     e->x += e->dx * ys_prestep;
+    e->c += e->dc * ys_prestep;
   }
 }
 
 static inline void IterEdgeScan(EdgeScanT *e) {
   e->x += e->dx;
+  e->c += e->dc;
   e->y++;
 }
 
@@ -50,18 +59,21 @@ static inline bool CmpEdgeScan(EdgeScanT *e1, EdgeScanT *e2) {
 
 /* Segment routines. */
 static inline void 
-DrawTriangleSpan(uint8_t *pixels, const uint8_t color,
-                 int xs, int xe, int y)
+DrawTriangleSpan(uint8_t *pixels, int xs, int xe, float cs, float ce, int y)
 {
-  int n;
+  float dc = 0.0f;
+  int n = xe - xs;
 
-  n = xe - xs;
   pixels += xs;
 
   LOG("Line: (%d, %d..%d)", y, xs, xe);
 
+  if (n > 0)
+    dc = (ce - cs) / n;
+
   do {
-    *pixels++ = color;
+    *pixels++ = cs;
+    cs += dc;
   } while (--n >= 0);
 }
 
@@ -70,12 +82,12 @@ DrawTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
                     int ys, int h)
 {
   uint8_t *pixels = canvas->data + ys * canvas->width;
-  const uint8_t color = canvas->fgColor;
   int width = canvas->width;
   int ye = ys + h;
 
   for (; ys < ye; ys++) {
-    DrawTriangleSpan(pixels, color, lroundf(left->x), lroundf(right->x), ys);
+    DrawTriangleSpan(pixels, lroundf(left->x), lroundf(right->x),
+                     left->c, right->c, ys);
 
     pixels += width;
 
@@ -85,8 +97,8 @@ DrawTriangleSegment(PixBufT *canvas, EdgeScanT *left, EdgeScanT *right,
 }
 
 /* Triangle rasterization routine. */
-void DrawTriangle(PixBufT *canvas,
-                  TriPoint *p1, TriPoint *p2, TriPoint *p3)
+void DrawTriangleC(PixBufT *canvas,
+                   TriPointC *p1, TriPointC *p2, TriPointC *p3)
 {
   EdgeScanT l12, l13, l23;
   bool longOnRight;

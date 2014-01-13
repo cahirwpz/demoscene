@@ -46,8 +46,8 @@ void AddInitialResources() {
 
   SceneAddObject(R_("Scene"), NewSceneObject("Object", R_("Mesh")));
 
-  RenderMode = RENDER_WIREFRAME;
-  RenderAllFaces = true;
+  RenderMode = RENDER_GOURAUD_SHADING;
+  RenderAllFaces = false;
 }
 
 /*
@@ -128,7 +128,7 @@ void MainLoop() {
 
     if (event == LOOP_TRIGGER) {
       RenderMode++;
-      if (RenderMode > 3)
+      if (RenderMode > 4)
         RenderMode = 0;
 
       if (RenderMode < RENDER_FILLED)

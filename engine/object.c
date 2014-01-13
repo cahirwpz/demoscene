@@ -254,6 +254,26 @@ static void RenderObject(SceneObjectT *self, PixBufT *canvas) {
           }
         }
         break;
+
+      case RENDER_GOURAUD_SHADING:
+        {
+          TriPointC point[3];
+
+          point[0].x = vertex[p1].x;
+          point[0].y = vertex[p1].y;
+          point[0].c = fabsf(vertex[p1].normal.z) * 255.0f;
+
+          point[1].x = vertex[p2].x;
+          point[1].y = vertex[p2].y;
+          point[1].c = fabsf(vertex[p2].normal.z) * 255.0f;
+
+          point[2].x = vertex[p3].x;
+          point[2].y = vertex[p3].y;
+          point[2].c = fabsf(vertex[p3].normal.z) * 255.0f;
+
+          DrawTriangleC(canvas, &point[0], &point[1], &point[2]);
+        }
+        break;
     }
   }
 }
