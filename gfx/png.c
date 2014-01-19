@@ -1,9 +1,6 @@
-#include <stdio.h>
-#include <dos/dos.h>
-#include <proto/dos.h>
-
 #include "std/debug.h"
 #include "std/memory.h"
+#include "system/rwops.h"
 #include "gfx/png.h"
 #include "tinf/tinf.h"
 
@@ -93,7 +90,7 @@ static void MergeIDATs(PngT *png) {
     for (idat = &png->idat, length = 0; idat; idat = idat->next)
       length += idat->length;
 
-    LOG("Merged chunk length: %ld.", length);
+    LOG("Merged chunk length: %d.", length);
 
     data = MemNew(length);
 
@@ -154,33 +151,37 @@ typedef struct {
   uint32_t id;
 } PngChunkT;
 
-static bool ReadPNG(PngT *png, int fd) {
+static bool ReadPNG(PngT *png, RwOpsT *stream) {
   uint32_t id[2];
   bool error = false;
   PngChunkT chunk;
 
   memset(png, 0, sizeof(PngT));
 
-  if (Read(fd, id, 8) != 8)
+  if (!IoRead32(stream, &id[0]) || !IoRead32(stream, &id[1])) {
+    LOG("Could not read PNG header!");
     return false;
+  }
 
-  if (id[0] != PNG_ID0 || id[1] != PNG_ID1)
+  if (id[0] != PNG_ID0 || id[1] != PNG_ID1) {
+    LOG("Not a PNG file!");
     return false;
+  }
 
   memset(&chunk, 0, sizeof(chunk));
 
   while (chunk.id != PNG_IEND && !error) {
-    unsigned int their_crc, my_crc;
-    unsigned char *ptr;
+    uint32_t their_crc, my_crc;
+    uint8_t *ptr;
 
-    if (Read(fd, &chunk, 8) != 8)
+    if (IoRead(stream, &chunk, 8) != 8)
       return false;
 
     my_crc = tinf_crc32(0, (void *)&chunk.id, 4);
 
     ptr = MemNew(chunk.length);
 
-    if (Read(fd, ptr, chunk.length) != chunk.length)
+    if (IoRead(stream, ptr, chunk.length) != chunk.length)
       return false;
 
     my_crc = tinf_crc32(my_crc, ptr, chunk.length);
@@ -220,10 +221,10 @@ static bool ReadPNG(PngT *png, int fd) {
     if (ptr)
       MemUnref(ptr);
 
-    if (Read(fd, &their_crc, 4) != 4)
+    if (!IoRead32(stream, &their_crc))
       return false;
 
-    LOG("%.4s: length: %ld, crc: %s",
+    LOG("%.4s: length: %d, crc: %s",
         (char *)&chunk.id, chunk.length, their_crc == my_crc ? "ok" : "bad");
 
     if (their_crc != my_crc)
@@ -256,19 +257,19 @@ static void DeletePng(PngT *png) {
 TYPEDECL(PngT, (FreeFuncT)DeletePng);
 
 PngT *PngLoadFromFile(const char *path) {
-  BPTR fd;
+  RwOpsT *stream;
 
-  if ((fd = Open(path, MODE_OLDFILE))) {
+  if ((stream = RwOpsFromFile(path, "r"))) {
     PngT *png = NewInstance(PngT);
 
-    if (ReadPNG(png, fd)) {
+    if (ReadPNG(png, stream)) {
       LOG("Loaded '%s' file.", path);
     } else {
       MemUnref(png);
       png = NULL;
     }
 
-    Close(fd);
+    IoClose(stream);
     return png;
   }
 
