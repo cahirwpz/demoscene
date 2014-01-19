@@ -8,25 +8,27 @@ import logging
 import struct
 import os
 
-IMG_GRAY  = 0
-IMG_CLUT  = 1
+IMG_GRAY = 0
+IMG_CLUT = 1
 IMG_RGB24 = 2
+
 
 def UsedColorRange(image):
   colors = sorted([c for n, c in image.getcolors() if n > 0])
   return (colors[0], colors[-1])
 
+
 def Main():
   parser = argparse.ArgumentParser(
       description='Converts input image to raw image and palette data.')
   parser.add_argument('-p', '--full-palette', action='store_true',
-      help='Save all colors - including unused.')
+                      help='Save all colors - including unused.')
   parser.add_argument('-f', '--force', action='store_true',
-      help='If output files exist, the tool will overwrite them.')
+                      help='If output exists, the tool will overwrite it.')
   parser.add_argument('input', metavar='INPUT', type=str,
-      help='Input image filename.')
+                      help='Input image filename.')
   parser.add_argument('output', metavar='OUTPUT', type=str,
-      help='Output files basename (without extension).')
+                      help='Output files basename (without extension).')
   args = parser.parse_args()
 
   inputPath = os.path.abspath(args.input)
@@ -40,17 +42,18 @@ def Main():
   except IOError as ex:
     raise SystemExit('Error: %s.' % ex)
 
-  imgTypeMap = {'L' : IMG_GRAY, 'P' : IMG_CLUT, 'RGB' : IMG_RGB24}
+  imgTypeMap = {'L': IMG_GRAY, 'P': IMG_CLUT, 'RGB': IMG_RGB24}
   imgType = imgTypeMap.get(image.mode, None)
 
   # Assumes that color #0 is transparency color (for 8-bit images).
-  isTransparent = image.info.has_key('transparency')
+  isTransparent = 'transparency' in image.info
 
   if imgType is None:
     raise SystemExit('Unknown color space: "%s".' % image.mode)
 
   if imgType is IMG_CLUT:
     palFilePath = '%s.pal' % outputPath
+
     if not args.full_palette:
       baseColor, lastColor = UsedColorRange(image)
       colors = lastColor - baseColor + 1
@@ -62,7 +65,7 @@ def Main():
       raise SystemExit('Will not overwrite output file!')
 
     with open(palFilePath, 'w') as palFile:
-      pal = array('B', image.getpalette()[:3*colors])
+      pal = array('B', image.getpalette()[:3 * colors])
       logging.info('Saving palette of %d..%d (%d) colors to "%s".',
                    baseColor, lastColor, colors, palFilePath)
       palFile.write(struct.pack('>HH', baseColor, colors))
@@ -72,17 +75,10 @@ def Main():
 
   if imgType is IMG_RGB24:
     rawFilePath = '%s.24' % outputPath
-    uniqueColors = len(set(image.getdata()))
-    baseColor = 0
-    lastColor = 0
-
     for rgb in image.getdata():
       data.extend(rgb)
   else:
     rawFilePath = '%s.8' % outputPath
-    uniqueColors = len(image.getcolors())
-    baseColor, lastColor = UsedColorRange(image)
-
     data.extend(image.getdata())
 
   width, height = image.size
@@ -93,8 +89,7 @@ def Main():
   with open(rawFilePath, 'w') as rawFile:
     logging.info('Saving image of (%d, %d) size to "%s".',
                  width, height, rawFilePath)
-    rawFile.write(struct.pack('>BBHHIBB', imgType, isTransparent, width,
-      height, uniqueColors, baseColor, lastColor))
+    rawFile.write(struct.pack('>BBHH', imgType, isTransparent, width, height))
     rawFile.write(data.tostring())
 
 if __name__ == '__main__':

@@ -33,7 +33,7 @@ struct PixBuf {
   uint8_t *data;
 
   /* Valid only in GRAY or CLUT mode. */
-  uint32_t uniqueColors;  /* stores number of unique colors in the image */
+  uint16_t uniqueColors;  /* stores number of unique colors in the image */
   uint8_t baseColor;
   uint8_t lastColor;
 

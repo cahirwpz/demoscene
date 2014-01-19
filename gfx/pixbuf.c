@@ -45,14 +45,43 @@ PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
   return pixbuf;
 }
 
+static void PixBufCalculateHistogram(PixBufT *pixbuf) {
+  if (pixbuf->type == PIXBUF_CLUT || pixbuf->type == PIXBUF_GRAY) {
+    uint32_t *histogram = NewTable(uint32_t, 256);
+    uint32_t i;
+
+    for (i = 0; i < pixbuf->width * pixbuf->height; i++)
+      histogram[pixbuf->data[i]]++;
+
+    /* Calculate unique colors. */
+    for (i = 0; i < 256; i++) {
+      if (histogram[i])
+        pixbuf->uniqueColors++;
+    }
+
+    /* Calculare the lowest color. */
+    for (i = 0; i < 256; i++)
+      if (histogram[i])
+        break;
+
+    pixbuf->baseColor = i;
+
+    /* Calculare the highest color. */
+    for (i = 255; i >= 0; i--)
+      if (histogram[i])
+        break;
+
+    pixbuf->lastColor = i;
+
+    MemUnref(histogram);
+  }
+}
+
 typedef struct DiskPixBuf {
   uint8_t  type;
   uint8_t  mode;
   uint16_t width;
   uint16_t height;
-  uint32_t uniqueColors;
-  uint8_t  baseColor;
-  uint8_t  lastColor;
   uint8_t  data[0];
 } DiskPixBufT;
 
@@ -63,24 +92,22 @@ PixBufT *NewPixBufFromFile(const char *fileName) {
     PixBufT *pixbuf = NewPixBuf(file->type, file->width, file->height);
 
     pixbuf->mode = file->mode;
-    pixbuf->uniqueColors = file->uniqueColors;
-
-    if (file->type == PIXBUF_CLUT || file->type == PIXBUF_GRAY) {
-      pixbuf->baseColor = file->baseColor;
-      pixbuf->lastColor = file->lastColor;
-
-      LOG("Image '%s' has size (%d,%d) and %d colors.",
-          fileName, (int)file->width, (int)file->height,
-          (int)file->lastColor - (int)file->baseColor);
-    } else {
-      LOG("True color image '%s' has size (%d,%d).",
-          fileName, (int)file->width, (int)file->height);
-    }
 
     MemCopy(pixbuf->data, file->data, 
             TableSize(pixbuf->data) * TableElemSize(pixbuf->data));
 
     MemUnref(file);
+
+    if (pixbuf->type == PIXBUF_CLUT || pixbuf->type == PIXBUF_GRAY) {
+      PixBufCalculateHistogram(pixbuf);
+
+      LOG("Image '%s' has size (%d,%d) and %d colors.",
+          fileName, pixbuf->width, pixbuf->height,
+          (int)pixbuf->lastColor - (int)pixbuf->baseColor + 1);
+    } else {
+      LOG("True color image '%s' has size (%d,%d).",
+          fileName, pixbuf->width, pixbuf->height);
+    }
 
     return pixbuf;
   }
