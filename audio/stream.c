@@ -1,7 +1,6 @@
 #include <devices/ahi.h>
 #include <exec/exec.h>
 #include <proto/ahi.h>
-#include <proto/dos.h>
 #include <proto/exec.h>
 
 #include "audio/stream.h"

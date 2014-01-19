@@ -6,10 +6,10 @@
 void ZipList(ZipT *zip) {
   int i;
 
-  printf("entries = %ld\n", zip->num);
+  printf("entries = %d\n", zip->num);
 
   for (i = 0; i < zip->num; i++) {
-    printf("%d: name='%s', offset=%ld, comp_size=%ld, orig_size=%ld, crc=%08lx\n",
+    printf("%d: name='%s', offset=%d, comp_size=%d, orig_size=%d, crc=%08x\n",
            i + 1, zip->entry[i]->name, zip->entry[i]->offset,
            zip->entry[i]->comp_size, zip->entry[i]->orig_size,
            zip->entry[i]->crc32);
@@ -33,10 +33,14 @@ int main(int argc, char **argv) {
       ZipList(zip);
     } else {
       for (i = 2; i < argc; i++) {
-        uint32_t size;
-        void *data;
+        RwOpsT *file;
 
-        if ((data = ZipRead(zip, argv[i], &size))) {
+        if ((file = ZipRead(zip, argv[i]))) {
+          int size = IoSize(file);
+          uint8_t *data = MemNew(size);
+
+          IoRead(file, data, size);
+          IoClose(file);
           fwrite(data, size, 1, stdout);
           MemUnref(data);
         } else {

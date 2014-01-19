@@ -12,7 +12,6 @@ typedef enum { IO_SEEK_SET, IO_SEEK_CUR, IO_SEEK_END } SeekModeT;
 #define IO_UNKNOWN   0   /* Unknown stream type */
 #define IO_FILE      1   /* File stream */
 #define IO_MEMORY    2   /* Memory stream */
-#define IO_MEMORY_RO 3   /* Read-Only memory stream */
 
 struct RwOps {
   int (*read)(RwOpsT *stream asm("a0"), void *buffer asm("d2"), unsigned int size asm("d3"));
@@ -22,6 +21,8 @@ struct RwOps {
   int (*close)(RwOpsT *stream asm("a0"));
 
   int type;
+
+  bool opened;
 
   union {
     struct {
@@ -37,8 +38,7 @@ struct RwOps {
 };
 
 RwOpsT *RwOpsFromFile(const char *file, const char *mode);
-RwOpsT *RwOpsFromMemory(void *ptr, int size);
-RwOpsT *RwOpsFromConstMemory(const void *ptr, int size);
+RwOpsT *RwOpsFromMemory(void *ptr, uint32_t size);
 
 static inline int IoRead(RwOpsT *stream, void *buffer, unsigned int size) {
   return stream->read(stream, buffer, size);

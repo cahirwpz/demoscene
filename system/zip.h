@@ -1,7 +1,7 @@
 #ifndef __SYSTEM_ZIP_H__
 #define __SYSTEM_ZIP_H__
 
-#include "std/types.h"
+#include "system/rwops.h"
 
 typedef struct ZipFile {
   uint32_t comp_size;
@@ -12,12 +12,12 @@ typedef struct ZipFile {
 } ZipFileT;
 
 typedef struct Zip {
-  uint32_t fh;
+  RwOpsT *fh;
   uint32_t num;
   ZipFileT **entry;
 } ZipT;
 
 ZipT *ZipOpen(const char *filename);
-void *ZipRead(ZipT *zip, const char *path, uint32_t *sizeptr);
+RwOpsT *ZipRead(ZipT *zip, const char *path);
 
 #endif

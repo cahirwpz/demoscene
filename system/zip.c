@@ -1,6 +1,3 @@
-#include <dos/dos.h>
-#include <proto/dos.h>
-
 #include "std/debug.h"
 #include "std/memory.h"
 #include "system/zip.h"
@@ -9,16 +6,6 @@
 #define ZIP_FILE_SIG  0x04034b50
 #define ZIP_ENTRY_SIG 0x02014b50
 #define ZIP_DIR_SIG   0x06054b50
-
-static uint16_t le16toh(uint16_t little16) {
-  uint8_t *v = (uint8_t *)&little16;
-  return (v[1] << 8) | v[0];
-}
-
-static uint32_t le32toh(uint32_t little32) {
-  uint8_t *v = (uint8_t *)&little32;
-  return (v[3] << 24) | (v[2] << 16) | (v[1] << 8) | v[0];
-}
 
 typedef struct DiskFileInfo {
   uint32_t signature;
@@ -72,50 +59,50 @@ static void ZipClose(ZipT *zip) {
     MemUnref(zip->entry[i]);
 
   MemUnref(zip->entry);
-  Close(zip->fh);
+  IoClose(zip->fh);
 }
 
 TYPEDECL(ZipT, (FreeFuncT)ZipClose);
 
 ZipT *ZipOpen(const char *filename) {
-  BPTR fh;
+  RwOpsT *fh;
   ZipT *zip = NULL;
 
-  if ((fh = Open(filename, MODE_OLDFILE))) {
+  if ((fh = RwOpsFromFile(filename, "r"))) {
     DiskDirT dir;
     int i;
 
-    Seek(fh, -sizeof(DiskDirT), OFFSET_END);
-    Read(fh, &dir, sizeof(DiskDirT));
-    ASSERT(le32toh(dir.signature) == ZIP_DIR_SIG, "Wrong signature!");
+    IoSeek(fh, -sizeof(DiskDirT), IO_SEEK_END);
+    IoRead(fh, &dir, sizeof(DiskDirT));
+    ASSERT(bswap32(dir.signature) == ZIP_DIR_SIG, "Wrong signature!");
 
     zip = NewInstance(ZipT);
-    zip->entry = NewTable(ZipFileT *, le16toh(dir.entries));
-    zip->num = le16toh(dir.entries);
+    zip->entry = NewTable(ZipFileT *, bswap16(dir.entries));
+    zip->num = bswap16(dir.entries);
 
-    Seek(fh, le32toh(dir.offset), OFFSET_BEGINNING);
+    IoSeek(fh, bswap32(dir.offset), IO_SEEK_SET);
 
     for (i = 0; i < zip->num; i++) {
       DiskEntryT entry;
       ZipFileT *file;
       int name_len;
 
-      Read(fh, &entry, sizeof(DiskEntryT));
-      ASSERT(le32toh(entry.signature) == ZIP_ENTRY_SIG, "Wrong signature!");
-      ASSERT(le16toh(entry.comp_method) == 0 ||
-             le16toh(entry.comp_method) == 8, "Unknown compression method!");
+      IoRead(fh, &entry, sizeof(DiskEntryT));
+      ASSERT(bswap32(entry.signature) == ZIP_ENTRY_SIG, "Wrong signature!");
+      ASSERT(bswap16(entry.comp_method) == 0 ||
+             bswap16(entry.comp_method) == 8, "Unknown compression method!");
 
-      name_len = le16toh(entry.name_len);
+      name_len = bswap16(entry.name_len);
 
       file = MemNew(sizeof(ZipFileT) + name_len + 1);
-      file->crc32 = le32toh(entry.crc32);
-      file->offset = le32toh(entry.offset);
-      file->comp_size = le32toh(entry.comp_size);
-      file->orig_size = le32toh(entry.orig_size);
+      file->crc32 = bswap32(entry.crc32);
+      file->offset = bswap32(entry.offset);
+      file->comp_size = bswap32(entry.comp_size);
+      file->orig_size = bswap32(entry.orig_size);
       file->name[name_len] = '\0';
-      Read(fh, file->name, name_len);
-      Seek(fh, le16toh(entry.comment_len) + le16toh(entry.extra_len),
-           OFFSET_CURRENT);
+      IoRead(fh, file->name, name_len);
+      IoSeek(fh, bswap16(entry.comment_len) + bswap16(entry.extra_len),
+             IO_SEEK_CUR);
 
       zip->entry[i] = file;
     }
@@ -123,13 +110,13 @@ ZipT *ZipOpen(const char *filename) {
     for (i = 0; i < zip->num; i++) {
       DiskFileInfoT info;
 
-      Seek(fh, zip->entry[i]->offset, OFFSET_BEGINNING);
-      Read(fh, &info, sizeof(DiskFileInfoT));
-      ASSERT(le32toh(info.signature) == ZIP_FILE_SIG, "Wrong signature!");
+      IoSeek(fh, zip->entry[i]->offset, IO_SEEK_SET);
+      IoRead(fh, &info, sizeof(DiskFileInfoT));
+      ASSERT(bswap32(info.signature) == ZIP_FILE_SIG, "Wrong signature!");
 
-      Seek(fh, le16toh(info.name_len) + le16toh(info.extra_len),
-           OFFSET_CURRENT);
-      zip->entry[i]->offset = Seek(fh, 0, OFFSET_CURRENT);
+      IoSeek(fh, bswap16(info.name_len) + bswap16(info.extra_len),
+             IO_SEEK_CUR);
+      zip->entry[i]->offset = IoTell(fh);
     }
 
     zip->fh = fh;
@@ -138,7 +125,7 @@ ZipT *ZipOpen(const char *filename) {
   return zip;
 }
 
-void *ZipRead(ZipT *zip, const char *path, uint32_t *sizeptr) {
+RwOpsT *ZipRead(ZipT *zip, const char *path) {
   int i;
   ZipFileT *entry = NULL;
 
@@ -153,8 +140,8 @@ void *ZipRead(ZipT *zip, const char *path, uint32_t *sizeptr) {
     void *data = MemNew(entry->comp_size);
     unsigned int size;
 
-    Seek(zip->fh, entry->offset, OFFSET_BEGINNING);
-    Read(zip->fh, data, entry->comp_size);
+    IoSeek(zip->fh, entry->offset, IO_SEEK_SET);
+    IoRead(zip->fh, data, entry->comp_size);
 
     size = entry->comp_size;
 
@@ -166,8 +153,6 @@ void *ZipRead(ZipT *zip, const char *path, uint32_t *sizeptr) {
       data = orig_data;
     }
 
-    *sizeptr = size;
-
     {
 #ifndef NDEBUG
       uint32_t crc = tinf_crc32(0, data, size);
@@ -176,7 +161,7 @@ void *ZipRead(ZipT *zip, const char *path, uint32_t *sizeptr) {
              "Bad CRC checksum (orig: $%8x) vs. (curr: $%8x)!", entry->crc32, crc);
     }
 
-    return data;
+    return RwOpsFromMemory(data, size);
   }
 
   return NULL;

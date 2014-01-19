@@ -1,6 +1,4 @@
 #include <stdio.h>
-#include <dos/dos.h>
-#include <proto/dos.h>
 
 #include "std/debug.h"
 #include "std/memory.h"
