@@ -55,7 +55,7 @@ FileSeek(RwOpsT *stream asm("a0"),
 }
 
 static int FileTell(RwOpsT *stream asm("a0")) {
-  return Seek(stream->u.file.fd, 0, SEEK_CUR);
+  return Seek(stream->u.file.fd, 0, OFFSET_CURRENT);
 }
 
 static int FileClose(RwOpsT *stream asm("a0")) {

@@ -1,6 +1,8 @@
 #ifndef __SYSTEM_RWOPS_H__
 #define __SYSTEM_RWOPS_H__
 
+#include "std/types.h"
+
 /* Heavily inspired by SDL RWOps. */
 
 typedef struct RwOps RwOpsT;

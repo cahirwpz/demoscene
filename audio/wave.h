@@ -1,7 +1,7 @@
 #ifndef __AUDIO_WAVE_H__
 #define __AUDIO_WAVE_H__
 
-#include "std/types.h"
+#include "system/rwops.h"
 
 typedef enum {
   WAVE_PCM = 1,
@@ -9,8 +9,7 @@ typedef enum {
 } WaveFmtT;
 
 typedef struct {
-  long fh; /* AmigaDOS BPTR in fact, but let's not expose the type */
-
+  RwOpsT *file;
   WaveFmtT format;
   uint8_t  channels;
   uint8_t  bitsPerSample;

@@ -1,9 +1,6 @@
-#include <proto/dos.h>
-
 #include "audio/wave.h"
 #include "std/debug.h"
 #include "std/memory.h"
-#include "system/fileio.h"
 
 #define ID_RIFF MAKE_ID('R', 'I', 'F', 'F')
 #define ID_WAVE MAKE_ID('W', 'A', 'V', 'E')
@@ -33,43 +30,38 @@ typedef struct {
 } __attribute__((packed)) FmtChunkT;
 
 bool WaveFileOpen(WaveFileT *wave, const char *filename) {
-  char *path = AbsPath(filename);
-  BPTR fh = Open(path, MODE_OLDFILE);
+  RwOpsT *file = RwOpsFromFile(filename, "r");
 
-  MemUnref(path);
-
-  if (fh) {
+  if (file) {
     WaveHeaderT header;
     ChunkT chunk;
     FmtChunkT fmt;
     int dwSampleLength = 0;
     int dataSize = 0;
 
-    Read(fh, &header, sizeof(header));
+    IoRead(file, &header, sizeof(header));
     header.ckSize = bswap32(header.ckSize);
 
     if (header.riffId == ID_RIFF && header.waveId == ID_WAVE) {
-      while (Seek(fh, 0, OFFSET_CURRENT) < header.ckSize + 8) {
-        Read(fh, &chunk, sizeof(chunk));
-
+      while (IoRead(file, &chunk, sizeof(chunk)) > 0) {
         if (chunk.ckId == ID_FMT) {
           bool ext_chunk = bswap32(chunk.ckSize) > 16;
-          Read(fh, &fmt, ext_chunk ? 18 : 16);
+          IoRead(file, &fmt, ext_chunk ? 18 : 16);
           if (ext_chunk)
-            Seek(fh, bswap16(fmt.cbSize), OFFSET_CURRENT);
+            IoSeek(file, bswap16(fmt.cbSize), IO_SEEK_CUR);
         } else if (chunk.ckId == ID_FACT) {
-          Read(fh, &dwSampleLength, sizeof(dwSampleLength));
+          IoReadLE32(file, &dwSampleLength);
         } else if (chunk.ckId == ID_DATA) {
-          wave->samplesOffset = Seek(fh, 0, OFFSET_CURRENT);
+          wave->samplesOffset = IoTell(file);
           dataSize = bswap32(chunk.ckSize);
-          Seek(fh, dataSize, OFFSET_CURRENT);
+          IoSeek(file, dataSize, IO_SEEK_CUR);
         } else {
           PANIC("Unknown RIFF chunk '%4s'.", (const char *)&chunk);
         }
       }
 
-      if (Seek(fh, 0, OFFSET_CURRENT) == header.ckSize + 8) {
-        wave->fh = fh;
+      if (IoTell(file) == header.ckSize + 8) {
+        wave->file = file;
         wave->format = bswap16(fmt.wFormatTag);
         wave->channels = bswap16(fmt.nChannels);
         wave->blockAlign = bswap16(fmt.nBlockAlign);
@@ -77,7 +69,7 @@ bool WaveFileOpen(WaveFileT *wave, const char *filename) {
         wave->samplesPerSec = bswap32(fmt.nSamplesPerSec);
 
         if (dwSampleLength > 0)
-          wave->samplesNum = bswap32(dwSampleLength);
+          wave->samplesNum = dwSampleLength;
         else
           wave->samplesNum =
             dataSize / (wave->channels * wave->bitsPerSample / 8);
@@ -86,14 +78,14 @@ bool WaveFileOpen(WaveFileT *wave, const char *filename) {
             wave->format, wave->channels, wave->bitsPerSample,
             wave->samplesPerSec);
 
-        Seek(fh, wave->samplesOffset, OFFSET_BEGINNING);
+        IoSeek(file, wave->samplesOffset, IO_SEEK_SET);
         return true;
       }
     } else {
       LOG("File '%s' not in WAVE format.", filename);
     }
 
-    Close(fh);
+    IoClose(file);
   } else {
     LOG("File '%s' not found.", filename);
   }
@@ -102,7 +94,7 @@ bool WaveFileOpen(WaveFileT *wave, const char *filename) {
 }
 
 void WaveFileClose(WaveFileT *wave) {
-  Close(wave->fh);
+  IoClose(wave->file);
 }
 
 void WaveFileChangePosition(WaveFileT *wave, float second) {
@@ -110,7 +102,7 @@ void WaveFileChangePosition(WaveFileT *wave, float second) {
   size_t offset = wave->samplesOffset +
     (size_t)(wave->samplesPerSec * second) * sampleWidth;
 
-  Seek(wave->fh, offset, OFFSET_BEGINNING);
+  IoSeek(wave->file, offset, IO_SEEK_SET);
 }
 
 size_t WaveFileReadSamples(WaveFileT *wave, PtrT samples, size_t requested) {
@@ -118,7 +110,7 @@ size_t WaveFileReadSamples(WaveFileT *wave, PtrT samples, size_t requested) {
   int obtained;
 
   requested *= sampleWidth;
-  obtained = Read(wave->fh, samples, requested);
+  obtained = IoRead(wave->file, samples, requested);
 
   /* Clear rest of buffer if needed. */
   if (obtained < requested)
