@@ -6,7 +6,7 @@ OBJS := blur.o colormap.o flares.o layers.o object3d.o particles.o \
 BINS := blur colormap flares flat-shading layers object3d particles playaudio \
 	raytunnel tunnel uvmap uvmap-blit uvmap-compose uvmap-light vector2d \
 	fire bumpmap
-LIBS := libgfx.a libtools.a libsystem.a libstd.a
+LIBS := libgfx.a libtools.a libsystem.a libstd.a libtinf.a
 
 all:: $(BINS)
 

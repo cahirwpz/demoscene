@@ -3,6 +3,7 @@
 
 #include "std/types.h"
 #include "gfx/colors.h"
+#include "gfx/pixbuf.h"
 
 #define PNG_GRAYSCALE       0
 #define PNG_TRUECOLOR       2
@@ -52,6 +53,8 @@ typedef struct {
 } PngT;
 
 PngT *PngLoadFromFile(const char *filepath);
-uint8_t *PngDecodeImage(PngT *png);
+bool PngDecodeImage(PngT *png, PixBufT *pixbuf);
+
+void ResAddPngImage(const char *imgName, const char *palName, const char *pngFile);
 
 #endif

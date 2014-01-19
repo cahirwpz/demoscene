@@ -8,6 +8,10 @@ typedef struct {
 } __attribute__((packed)) RGB;
 
 typedef struct {
+  uint8_t r, g, b, a;
+} __attribute__((packed)) RGBA;
+
+typedef struct {
   float h, s, l;
 } HSL;
 

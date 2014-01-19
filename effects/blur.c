@@ -3,6 +3,7 @@
 
 #include "gfx/blit.h"
 #include "gfx/filter.h"
+#include "gfx/png.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
 
@@ -20,7 +21,7 @@ const int DEPTH = 8;
 void AddInitialResources() {
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("Buffer", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("Image", NewPixBufFromFile("data/samkaat-absinthe.8"));
+  ResAddPngImage("Image", NULL, "data/samkaat-absinthe.png");
 }
 
 /*

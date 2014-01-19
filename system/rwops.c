@@ -81,6 +81,11 @@ RwOpsT *RwOpsFromFile(const char *file, const char *mode) {
   stream->tell = FileTell;
   stream->close = FileClose;
 
+  if (!stream->u.file.fd) {
+    MemUnref(stream);
+    stream = NULL;
+  }
+
   return stream;
 }
 

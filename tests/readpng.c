@@ -11,28 +11,37 @@ void LoadPng(const char *path) {
   PngT *png = PngLoadFromFile(path);
 
   if (png) {
+    PixBufT *pixbuf;
+    int16_t type;
+
     puts("IHDR:");
-    printf("  width      : %ld\n", png->ihdr.width);
-    printf("  height     : %ld\n", png->ihdr.height);
+    printf("  width      : %d\n", png->ihdr.width);
+    printf("  height     : %d\n", png->ihdr.height);
     printf("  bit depth  : %d\n", png->ihdr.bit_depth);
     printf("  color type : ");
 
-    if (png->ihdr.colour_type == PNG_GRAYSCALE)
+    if (png->ihdr.colour_type == PNG_GRAYSCALE) {
+      type = PIXBUF_GRAY;
       puts("gray scale");
-    else if (png->ihdr.colour_type == PNG_TRUECOLOR)
+    } else if (png->ihdr.colour_type == PNG_TRUECOLOR) {
+      type = PIXBUF_RGB;
       puts("true color");
-    else if (png->ihdr.colour_type == PNG_INDEXED)
+    } else if (png->ihdr.colour_type == PNG_INDEXED) {
+      type = PIXBUF_CLUT;
       puts("indexed color");
-    else if (png->ihdr.colour_type == PNG_GRAYSCALE_ALPHA)
+    } else if (png->ihdr.colour_type == PNG_GRAYSCALE_ALPHA) {
+      type = PIXBUF_GRAY;
       puts("gray scale (with alpha)");
-    else
+    } else {
+      type = PIXBUF_RGBA;
       puts("true color (with alpha)");
+    }
 
     printf("  interlace  : %s\n", png->ihdr.interlace_method ? "yes" : "no");
 
     if (png->plte.no_colors) {
       puts("PLTE:");
-      printf("  colors     : %ld\n", png->plte.no_colors);
+      printf("  colors     : %d\n", png->plte.no_colors);
     }
 
     if (png->trns) {
@@ -41,7 +50,9 @@ void LoadPng(const char *path) {
         printf("  color : %d\n", png->trns->type3.alpha[0]);
     }
 
-    MemUnref(PngDecodeImage(png));
+    pixbuf = NewPixBuf(type, png->ihdr.width, png->ihdr.height);
+    PngDecodeImage(png, pixbuf);
+    MemUnref(pixbuf);
   }
 
   puts("");

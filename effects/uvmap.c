@@ -3,6 +3,7 @@
 #include "std/resource.h"
 
 #include "gfx/palette.h"
+#include "gfx/png.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
 #include "tools/profiling.h"
@@ -79,8 +80,7 @@ void ChangeMap(int newMap) {
  * Set up resources.
  */
 void AddInitialResources() {
-  ResAdd("Texture", NewPixBufFromFile("data/texture.8"));
-  ResAdd("TexturePal", NewPaletteFromFile("data/texture.pal"));
+  ResAddPngImage("Texture", "TexturePal", "data/texture.png");
   ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
 }

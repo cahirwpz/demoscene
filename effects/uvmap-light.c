@@ -5,6 +5,7 @@
 #include "gfx/blit.h"
 #include "gfx/colorfunc.h"
 #include "gfx/palette.h"
+#include "gfx/png.h"
 #include "tools/frame.h"
 #include "tools/gradient.h"
 #include "tools/loopevent.h"
@@ -26,9 +27,8 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
-  ResAdd("Texture", NewPixBufFromFile("data/texture-shades.8"));
-  ResAdd("TexturePal", NewPaletteFromFile("data/texture-shades.pal"));
-  ResAdd("ColorMap", NewPixBufFromFile("data/texture-shades-map.8"));
+  ResAddPngImage("Texture", "TexturePal", "data/texture-shades.png");
+  ResAddPngImage("ColorMap", NULL, "data/texture-shades-map.png");
   ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
@@ -47,11 +47,14 @@ bool SetupDisplay() {
  */
 void SetupEffect() {
   UVMapT *uvmap = R_("Map");
+  PixBufT *shades = R_("Shades");
 
   LoadPalette(R_("TexturePal"));
 
   UVMapGenerate4(uvmap);
   UVMapSetTexture(uvmap, R_("Texture"));
+  uvmap->lightMap = shades;
+  PixBufSetColorMap(shades, R_("ColorMap"));
 
   ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u));
 
@@ -78,10 +81,6 @@ void RenderEffect(int frameNumber) {
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
 
-  UVMapSetOffset(uvmap, du, dv);
-  PROFILE (UVMapRenderFast)
-    UVMapRender(uvmap, canvas);
-
   {
     int i;
 
@@ -100,10 +99,9 @@ void RenderEffect(int frameNumber) {
   PROFILE (PixBufBlitWithColorFunc)
     PixBufBlit(shades, 0, 0, comp, NULL);
 
-  PixBufSetColorMap(shades, R_("ColorMap"));
-  PixBufSetBlitMode(shades, BLIT_COLOR_MAP);
-  PROFILE (PixBufBlitWithColorMap)
-    PixBufBlit(canvas, 0, 0, shades, NULL);
+  UVMapSetOffset(uvmap, du, dv);
+  PROFILE (UVMapRenderFast)
+    UVMapRender(uvmap, canvas);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }

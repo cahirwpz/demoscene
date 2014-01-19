@@ -29,11 +29,10 @@ void AddInitialResources() {
 #if 0
   ResAdd("Mesh", NewMeshFromFile("data/shattered_ball.robj"));
   ResAdd("ColorMap", NewPixBufFromFile("data/shattered_ball_cmap.8"));
+  ResAddPngImage("ColorMap", "Palette", "data/wecan_logo_cmap.png");
   ResAdd("Palette", NewPaletteFromFile("data/shattered_ball_cmap.pal"));
 #else
   ResAdd("Mesh", NewMeshFromFile("data/wecan_logo.robj"));
-  ResAdd("ColorMap", NewPixBufFromFile("data/wecan_logo_cmap.8"));
-  ResAdd("Palette", NewPaletteFromFile("data/wecan_logo_cmap.pal"));
 #endif
 
   {
@@ -106,6 +105,7 @@ void RenderMesh(int frameNumber_) {
 /*
  * Main loop.
  */
+
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 

@@ -5,9 +5,10 @@
 #include "gfx/palette.h"
 #include "std/fp16.h"
 
-#define PIXBUF_GRAY  0
-#define PIXBUF_CLUT  1
-#define PIXBUF_RGB24 2
+#define PIXBUF_GRAY 0
+#define PIXBUF_CLUT 1
+#define PIXBUF_RGB  2
+#define PIXBUF_RGBA 3
 
 typedef enum {
   BLIT_NORMAL,
@@ -60,6 +61,7 @@ void PixBufSetColorMap(PixBufT *pixbuf, PixBufT *colorMap);
 void PixBufSetColorFunc(PixBufT *pixbuf, uint8_t *colorFunc);
 BlitModeT PixBufSetBlitMode(PixBufT *pixbuf, BlitModeT mode);
 void PixBufRemap(PixBufT *pixbuf, PaletteT *palette);
+void PixBufCalculateHistogram(PixBufT *pixbuf);
 
 static inline void PutPixel(PixBufT *pixbuf, int x, int y, uint8_t c) {
   pixbuf->data[x + pixbuf->width * y] = c;

@@ -20,7 +20,7 @@ PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
   pixbuf->height = height;
 
   LOG("Creating %d-bit image of size (%d,%d).",
-      (type == PIXBUF_RGB24) ? 24 : 8, (int)width, (int)height);
+      (type >= PIXBUF_RGB) ? 24 : 8, (int)width, (int)height);
 
   pixbuf->ownership = true;
 
@@ -31,8 +31,12 @@ PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
       pixbuf->lastColor = 255;
       break;
 
-    case PIXBUF_RGB24:
+    case PIXBUF_RGB:
       pixbuf->data = (uint8_t *)NewTable(RGB, width * height);
+      break;
+
+    case PIXBUF_RGBA:
+      pixbuf->data = (uint8_t *)NewTable(RGBA, width * height);
       break;
 
     default:
@@ -43,38 +47,6 @@ PixBufT *NewPixBuf(uint16_t type, size_t width, size_t height) {
   pixbuf->fgColor = 255;
 
   return pixbuf;
-}
-
-static void PixBufCalculateHistogram(PixBufT *pixbuf) {
-  if (pixbuf->type == PIXBUF_CLUT || pixbuf->type == PIXBUF_GRAY) {
-    uint32_t *histogram = NewTable(uint32_t, 256);
-    uint32_t i;
-
-    for (i = 0; i < pixbuf->width * pixbuf->height; i++)
-      histogram[pixbuf->data[i]]++;
-
-    /* Calculate unique colors. */
-    for (i = 0; i < 256; i++) {
-      if (histogram[i])
-        pixbuf->uniqueColors++;
-    }
-
-    /* Calculare the lowest color. */
-    for (i = 0; i < 256; i++)
-      if (histogram[i])
-        break;
-
-    pixbuf->baseColor = i;
-
-    /* Calculare the highest color. */
-    for (i = 255; i >= 0; i--)
-      if (histogram[i])
-        break;
-
-    pixbuf->lastColor = i;
-
-    MemUnref(histogram);
-  }
 }
 
 typedef struct DiskPixBuf {
@@ -194,6 +166,38 @@ void PixBufRemap(PixBufT *pixbuf, PaletteT *palette) {
 
     pixbuf->baseColor = palette->start;
     pixbuf->lastColor = palette->start + palette->count - 1;
+  }
+}
+
+void PixBufCalculateHistogram(PixBufT *pixbuf) {
+  if (pixbuf->type == PIXBUF_CLUT || pixbuf->type == PIXBUF_GRAY) {
+    uint32_t *histogram = NewTable(uint32_t, 256);
+    uint32_t i;
+
+    for (i = 0; i < pixbuf->width * pixbuf->height; i++)
+      histogram[pixbuf->data[i]]++;
+
+    /* Calculate unique colors. */
+    for (i = 0; i < 256; i++) {
+      if (histogram[i])
+        pixbuf->uniqueColors++;
+    }
+
+    /* Calculare the lowest color. */
+    for (i = 0; i < 256; i++)
+      if (histogram[i])
+        break;
+
+    pixbuf->baseColor = i;
+
+    /* Calculare the highest color. */
+    for (i = 255; i >= 0; i--)
+      if (histogram[i])
+        break;
+
+    pixbuf->lastColor = i;
+
+    MemUnref(histogram);
   }
 }
 

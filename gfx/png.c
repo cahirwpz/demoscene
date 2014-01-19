@@ -1,5 +1,6 @@
 #include "std/debug.h"
 #include "std/memory.h"
+#include "std/resource.h"
 #include "system/rwops.h"
 #include "gfx/png.h"
 #include "tinf/tinf.h"
@@ -113,16 +114,15 @@ static void MergeIDATs(PngT *png) {
   }
 }
 
-uint8_t *PngDecodeImage(PngT *png) {
+bool PngDecodeImage(PngT *png, PixBufT *pixbuf) {
   if (png->ihdr.interlace_method != 0) {
     LOG("Interlaced PNG not supported.");
   } else if (png->ihdr.bit_depth != 8) {
     LOG("Non 8-bit components not supported.");
   } else {
-    unsigned int pixelWidth = GetPixelWidth(png);
-    unsigned int length = png->ihdr.width * png->ihdr.height * pixelWidth;
-    unsigned int dstLength = length + png->ihdr.height;
-    uint8_t *pixels = MemNew(length);
+    uint32_t pixelWidth = GetPixelWidth(png);
+    uint32_t length = png->ihdr.width * png->ihdr.height * pixelWidth;
+    uint32_t dstLength = length + png->ihdr.height;
     uint8_t *encoded = MemNew(dstLength);
 
     MergeIDATs(png);
@@ -136,14 +136,14 @@ uint8_t *PngDecodeImage(PngT *png) {
 
     LOG("Decoding pixels.");
 
-    ReconstructImage(pixels, encoded, png->ihdr.width, png->ihdr.height, pixelWidth);
+    ReconstructImage(pixbuf->data, encoded, png->ihdr.width, png->ihdr.height, pixelWidth);
 
     MemUnref(encoded);
 
-    return pixels;
+    return true;
   }
 
-  return NULL;
+  return false;
 }
 
 typedef struct {
@@ -276,10 +276,75 @@ PngT *PngLoadFromFile(const char *path) {
   return NULL;
 }
 
-#if 0
-PixBufT *PngToPixBuf(PngT *png) {
+static PixBufT *PngToPixBuf(PngT *png) {
+  PixBufT *pixbuf = NULL;
+
+  if (png->ihdr.bit_depth == 8) {
+    int16_t type;
+
+    switch (png->ihdr.colour_type) {
+      case PNG_GRAYSCALE:
+        type = PIXBUF_GRAY;
+        break;
+
+      case PNG_INDEXED:
+        type = PIXBUF_CLUT;
+        break;
+
+      default:
+        type = -1;
+        break;
+    }
+
+    if (type >= 0) {
+      pixbuf = NewPixBuf(type, png->ihdr.width, png->ihdr.height);
+
+      if (!PngDecodeImage(png, pixbuf)) {
+        MemUnref(pixbuf);
+        pixbuf = NULL;
+      } else {
+        PixBufCalculateHistogram(pixbuf);
+
+        LOG("The image has %d (%d..%d) colors.",
+            (int)pixbuf->lastColor - (int)pixbuf->baseColor + 1,
+            pixbuf->baseColor, pixbuf->lastColor);
+
+        if (png->trns) {
+          pixbuf->mode = BLIT_TRANSPARENT;
+          pixbuf->baseColor = png->trns->type3.alpha[0];
+
+          LOG("The image is transparent (color = %d).", pixbuf->baseColor);
+        }
+      }
+    }
+  }
+
+  return pixbuf;
 }
 
-PaletteT *PngToPalette(PngT *png) {
+static PaletteT *PngToPalette(PngT *png) {
+  if ((png->ihdr.bit_depth == 8) && (png->ihdr.colour_type == PNG_INDEXED)) {
+    PaletteT *palette = NewPalette(png->plte.no_colors);
+
+    LOG("The palette has %d colors.", png->plte.no_colors);
+    MemCopy(palette->colors, png->plte.colors, sizeof(RGB) * palette->count);
+
+    return palette;
+  }
+
+  return NULL;
 }
-#endif
+
+void ResAddPngImage(const char *imgName, const char *palName, const char *pngFile) {
+  PngT *png = PngLoadFromFile(pngFile);
+
+  if (!png)
+    PANIC("Could not load '%s' file.", pngFile);
+
+  if (imgName)
+    ResAdd(imgName, PngToPixBuf(png));
+  if (palName)
+    ResAdd(palName, PngToPalette(png));
+
+  MemUnref(png);
+}

@@ -1,12 +1,16 @@
 #include "std/debug.h"
+#include "std/math.h"
 #include "std/memory.h"
 #include "std/resource.h"
 
 #include "audio/stream.h"
-#include "gfx/hsl.h"
+#include "gfx/blit.h"
 #include "gfx/line.h"
 #include "gfx/palette.h"
+#include "gfx/png.h"
 #include "tools/frame.h"
+#include "uvmap/generate.h"
+#include "uvmap/render.h"
 
 #include "system/audio.h"
 #include "system/c2p.h"
@@ -18,10 +22,17 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
+UVMapGenerate(Polar, (1.0f - r * 0.7f), a);
+
 /*
  * Set up resources.
  */
 void AddInitialResources() {
+  ResAddPngImage("Image", "ImagePal", "data/samkaat-absinthe.png");
+  ResAddPngImage("Darken", NULL, "data/samkaat-absinthe-darken.png");
+  ResAdd("Texture", NewPixBuf(PIXBUF_GRAY, 256, 256));
+  ResAdd("Shade", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
+  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("Audio", AudioStreamOpen("data/chembro.wav"));
 }
@@ -37,6 +48,8 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
+  UVMapGeneratePolar(R_("Map"));
+  LoadPalette(R_("ImagePal"));
 }
 
 /*
@@ -52,20 +65,38 @@ void TearDownEffect() {
 
 void RenderChunky(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
+  PixBufT *texture = R_("Texture");
+  PixBufT *shade = R_("Shade");
   AudioBufferT *buffer = AudioStreamGetBuffer(R_("Audio"));
-  int i;
+  static int array[256];
+  int i, j;
 
-  PixBufClear(canvas);
+  PixBufClear(texture);
 
-  for (i = 0; i < min(buffer->length, WIDTH); i++) {
-    int y1 = (int8_t)buffer->left.hi[i];
-    int y2 = (int8_t)buffer->right.hi[i];
+  for (i = 0; i < min(buffer->length, texture->width); i++) {
+    int y1 = abs((int8_t)buffer->left.hi[i]);
+    int y2 = abs((int8_t)buffer->right.hi[i]);
+    int y = y1 + y2;
 
-    canvas->fgColor = abs(y1) + 128;
-    DrawLine(canvas, i,  64, i,  64 + y1 / 2);
-    canvas->fgColor = abs(y2) + 128;
-    DrawLine(canvas, i, 192, i, 192 + y2 / 2);
+    if (y > 255)
+      y = 255;
+
+    array[i] = (array[(i - 1) & 0xff] + y) / 2;
   }
+
+  for (i = 0; i < min(buffer->length, texture->width); i++) {
+    texture->fgColor = 255;
+  }
+
+  PixBufCopy(canvas, R_("Image"));
+
+  UVMapSetTexture(R_("Map"), R_("Texture"));
+  UVMapSetOffset(R_("Map"), 0, 0);
+  UVMapRender(R_("Map"), shade);
+
+  PixBufSetColorMap(shade, R_("Darken"));
+  PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
+  PixBufBlit(canvas, 0, 0, shade, NULL);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }

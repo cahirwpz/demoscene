@@ -8,8 +8,8 @@ typedef struct Palette PaletteT;
 
 struct Palette {
   RGB *colors;
-  size_t start;
-  size_t count;
+  uint16_t start;
+  uint16_t count;
   PaletteT *next;
 };
 

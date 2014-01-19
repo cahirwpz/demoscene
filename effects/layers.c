@@ -9,6 +9,7 @@
 #include "gfx/ellipse.h"
 #include "gfx/layers.h"
 #include "gfx/rectangle.h"
+#include "gfx/png.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
 #include "tools/profiling.h"
@@ -27,12 +28,9 @@ const int DEPTH = 8;
 void AddInitialResources() {
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("LayerMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAdd("Image1", NewPixBufFromFile("data/last-hope-64.8"));
-  ResAdd("Image1Pal", NewPaletteFromFile("data/last-hope-64.pal"));
-  ResAdd("Image2", NewPixBufFromFile("data/bus-stop-64.8"));
-  ResAdd("Image2Pal", NewPaletteFromFile("data/bus-stop-64.pal"));
-  ResAdd("Image3", NewPixBufFromFile("data/dragon-128.8"));
-  ResAdd("Image3Pal", NewPaletteFromFile("data/dragon-128.pal"));
+  ResAddPngImage("Image1", "Image1Pal", "data/last-hope-64.png");
+  ResAddPngImage("Image2", "Image2Pal", "data/bus-stop-64.png");
+  ResAddPngImage("Image3", "Image3Pal", "data/dragon-128.png");
 }
 
 /*

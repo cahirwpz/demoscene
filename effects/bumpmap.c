@@ -4,6 +4,7 @@
 
 #include "gfx/pixbuf.h"
 #include "gfx/palette.h"
+#include "gfx/png.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
 #include "tools/profiling.h"
@@ -118,7 +119,7 @@ RenderBumpMap(PixBufT *canvas, UVMapT *bumpMap, PixBufT *reflectionMap,
 void AddInitialResources() {
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("BumpMap", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
-  ResAdd("HeightMap", NewPixBufFromFile("data/samkaat-absinthe.8"));
+  ResAddPngImage("HeightMap", NULL, "data/samkaat-absinthe.png");
   ResAdd("ReflectionMap", CreateReflectionMap());
 
   CalculateBumpMap(R_("BumpMap"), R_("HeightMap"));

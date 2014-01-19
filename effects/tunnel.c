@@ -8,6 +8,7 @@
 #include "gfx/hsl.h"
 #include "gfx/line.h"
 #include "gfx/palette.h"
+#include "gfx/png.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
 #include "tools/profiling.h"
@@ -28,12 +29,9 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
-  ResAdd("Texture", NewPixBufFromFile("data/texture-01.8"));
-  ResAdd("TexturePal", NewPaletteFromFile("data/texture-01.pal"));
-  ResAdd("CreditsImg", NewPixBufFromFile("data/code.8"));
-  ResAdd("CreditsPal", NewPaletteFromFile("data/code.pal"));
-  ResAdd("WhelpzImg", NewPixBufFromFile("data/whelpz.8"));
-  ResAdd("WhelpzPal", NewPaletteFromFile("data/whelpz.pal"));
+  ResAddPngImage("Texture", "TexturePal", "data/texture-01.png");
+  ResAddPngImage("CreditsImg", "CreditsPal", "data/code.png");
+  ResAddPngImage("WhelpzImg", "WhelpzPal", "data/whelpz.png");
   ResAdd("TunnelMap", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
 }

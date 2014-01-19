@@ -2,6 +2,7 @@
 #include "std/math.h"
 #include "std/fastmath.h"
 #include "std/memory.h"
+#include "std/resource.h"
 
 #include "system/c2p.h"
 #include "system/display.h"
@@ -13,6 +14,7 @@
 
 #include "engine/matrix3d.h"
 #include "gfx/blit.h"
+#include "gfx/png.h"
 #include "uvmap/raycast.h"
 #include "uvmap/render.h"
 #include "uvmap/scaling.h"
@@ -40,9 +42,6 @@ static CameraViewT CameraView = {
 /*
  * Set up resources.
  */
-static PixBufT *Texture;
-static PaletteT *TexturePal;
-static PixBufT *ColorMap;
 static PixBufT *Shades;
 static PixBufT *Canvas;
 static UVMapT *SmallMap;
@@ -70,16 +69,15 @@ static uint8_t *CalculateLightFunc() {
 }
 
 void AddInitialResources() {
-  Texture = NewPixBufFromFile("data/texture-shades.8");
-  TexturePal = NewPaletteFromFile("data/texture-shades.pal");
-  ColorMap = NewPixBufFromFile("data/texture-shades-map.8");
+  ResAddPngImage("Texture", "TexturePal", "data/texture-shades.png");
+  ResAddPngImage("ColorMap", NULL, "data/texture-shades-map.png");
   Shades = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
   Canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   SmallMap = NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256);
   Map = NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256);
   LightFunc = CalculateLightFunc();
   
-  UVMapSetTexture(Map, Texture);
+  UVMapSetTexture(Map, R_("Texture"));
 }
 
 /*
@@ -93,7 +91,7 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  LoadPalette(TexturePal);
+  LoadPalette(R_("TexturePal"));
   PixBufClear(Canvas);
   StartProfiling();
 }
@@ -145,7 +143,7 @@ void RenderEffect(int frameNumber) {
   PROFILE (UVMapScale8x)
     UVMapScale8x(Map, SmallMap);
 
-  UVMapSetTexture(Map, Texture);
+  UVMapSetTexture(Map, R_("Texture"));
   UVMapSetOffset(Map, 0, frameNumber);
 
   PROFILE (UVMapRender)
@@ -154,7 +152,7 @@ void RenderEffect(int frameNumber) {
   PROFILE (RenderShadeMap)
     RenderShadeMap(Shades, Map->map.normal.v);
 
-  PixBufSetColorMap(Shades, ColorMap);
+  PixBufSetColorMap(Shades, R_("ColorMap"));
   PixBufSetBlitMode(Shades, BLIT_COLOR_MAP);
 
   PROFILE (BlitShadeMap)

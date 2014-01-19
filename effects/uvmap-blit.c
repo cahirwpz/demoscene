@@ -4,6 +4,7 @@
 
 #include "gfx/blit.h"
 #include "gfx/palette.h"
+#include "gfx/png.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
 #include "txtgen/procedural.h"
@@ -24,8 +25,7 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
-  ResAdd("Texture", NewPixBufFromFile("data/texture-01.8"));
-  ResAdd("TexturePal", NewPaletteFromFile("data/texture-01.pal"));
+  ResAddPngImage("Texture", "TexturePal", "data/texture-01.png");
   ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("OrigU", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));

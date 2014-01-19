@@ -6,6 +6,7 @@
 #include "gfx/colorfunc.h"
 #include "gfx/ellipse.h"
 #include "gfx/palette.h"
+#include "gfx/png.h"
 #include "tools/frame.h"
 #include "tools/loopevent.h"
 #include "tools/profiling.h"
@@ -26,10 +27,8 @@ const int DEPTH = 8;
  * Set up resources.
  */
 void AddInitialResources() {
-  ResAdd("Texture1", NewPixBufFromFile("data/texture-128-01.8"));
-  ResAdd("Texture1Pal", NewPaletteFromFile("data/texture-128-01.pal"));
-  ResAdd("Texture2", NewPixBufFromFile("data/texture-128-02.8"));
-  ResAdd("Texture2Pal", NewPaletteFromFile("data/texture-128-02.pal"));
+  ResAddPngImage("Texture1", "Texture1Pal", "data/texture-128-01.png");
+  ResAddPngImage("Texture2", "Texture2Pal", "data/texture-128-02.png");
   ResAdd("Map1", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("Map2", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
   ResAdd("ComposeMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));

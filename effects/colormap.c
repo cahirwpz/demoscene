@@ -7,6 +7,7 @@
 #include "std/resource.h"
 
 #include "gfx/blit.h"
+#include "gfx/png.h"
 #include "tools/frame.h"
 #include "tools/gradient.h"
 #include "tools/loopevent.h"
@@ -27,10 +28,9 @@ void AddInitialResources() {
   ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
   ResAdd("Map1", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
   ResAdd("Map2", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAdd("Image", NewPixBufFromFile("data/samkaat-absinthe.8"));
-  ResAdd("ImagePal", NewPaletteFromFile("data/samkaat-absinthe.pal"));
-  ResAdd("Darken", NewPixBufFromFile("data/samkaat-absinthe-darken.8"));
-  ResAdd("Lighten", NewPixBufFromFile("data/samkaat-absinthe-lighten.8"));
+  ResAddPngImage("Image", "ImagePal", "data/samkaat-absinthe.png");
+  ResAddPngImage("Darken", NULL, "data/samkaat-absinthe-darken.png");
+  ResAddPngImage("Lighten", NULL, "data/samkaat-absinthe-lighten.png");
   ResAdd("Shade", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
 }
 
