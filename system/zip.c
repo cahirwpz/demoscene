@@ -169,9 +169,11 @@ void *ZipRead(ZipT *zip, const char *path, uint32_t *sizeptr) {
     *sizeptr = size;
 
     {
+#ifndef NDEBUG
       uint32_t crc = tinf_crc32(0, data, size);
+#endif
       ASSERT(crc == entry->crc32,
-             "Bad CRC checksum (orig: $%8lx) vs. (curr: $%8lx)!", entry->crc32, crc);
+             "Bad CRC checksum (orig: $%8x) vs. (curr: $%8x)!", entry->crc32, crc);
     }
 
     return data;

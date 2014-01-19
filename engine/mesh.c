@@ -24,7 +24,7 @@ static void DeleteMesh(MeshT *mesh) {
 
 TYPEDECL(MeshT, (FreeFuncT)DeleteMesh);
 
-MeshT *NewMesh(size_t vertices, size_t polygons, size_t surfaces) {
+MeshT *NewMesh(uint32_t vertices, uint32_t polygons, uint32_t surfaces) {
   MeshT *mesh = NewInstance(MeshT);
 
   mesh->vertexNum = vertices;
@@ -100,8 +100,8 @@ MeshT *NewMeshFromFile(const char *fileName) {
       data += sizeof(DiskSurfaceT) + strlen(surface->name) + 1;
     }
 
-    LOG("Mesh '%s' has %ld vertices, %ld polygons, %ld edges "
-        "and %ld surfaces.", fileName, mesh->vertexNum, mesh->polygonNum,
+    LOG("Mesh '%s' has %d vertices, %d polygons, %d edges "
+        "and %d surfaces.", fileName, mesh->vertexNum, mesh->polygonNum,
         mesh->edgeNum, mesh->surfaceNum);
 
     MemUnref(header);

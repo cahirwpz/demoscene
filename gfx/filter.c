@@ -18,9 +18,9 @@ void BlurH3(PixBufT *dstBuf, PixBufT *srcBuf) {
   int16_t c;
 
   ASSERT(dstBuf->width == srcBuf->width,
-         "Width does not match (%ld != %ld)", dstBuf->width, srcBuf->width);
+         "Width does not match (%d != %d)", dstBuf->width, srcBuf->width);
   ASSERT(dstBuf->height == srcBuf->height,
-         "Height does not match (%ld != %ld)", dstBuf->height, srcBuf->height);
+         "Height does not match (%d != %d)", dstBuf->height, srcBuf->height);
 
   y = srcBuf->height;
 
@@ -62,9 +62,9 @@ void BlurV3(PixBufT *dstBuf, PixBufT *srcBuf) {
   }
 
   ASSERT(dstBuf->width == srcBuf->width,
-         "Width does not match (%ld != %ld)", dstBuf->width, srcBuf->width);
+         "Width does not match (%d != %d)", dstBuf->width, srcBuf->width);
   ASSERT(dstBuf->height == srcBuf->height,
-         "Height does not match (%ld != %ld)", dstBuf->height, srcBuf->height);
+         "Height does not match (%d != %d)", dstBuf->height, srcBuf->height);
 
   y = srcBuf->height - 2;
 

@@ -1,14 +1,15 @@
 #ifndef __STD_DEBUG_H__
 #define __STD_DEBUG_H__
 
+#include <stdio.h>
+
 #include "std/exception.h"
 
 #ifdef NDEBUG
 #define LOG(...)
 #define PANIC(...) RAISE
-#define ASSERT(...)
+#define ASSERT(cond, ...) { if (!(cond)) { RAISE; } }
 #else
-#include <stdio.h>
 #define _LINE() printf("%s:%d: ", __FILE__, __LINE__)
 #define _EOL() printf("\r\n")
 #define LOG(...) { _LINE(); printf(__VA_ARGS__); _EOL(); }

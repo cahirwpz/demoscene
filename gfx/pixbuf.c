@@ -123,9 +123,9 @@ void PixBufSwapData(PixBufT *buf1, PixBufT *buf2) {
   uint8_t *tmp;
 
   ASSERT(buf1->width == buf2->width,
-         "Width does not match (%ld != %ld)", buf1->width, buf2->width);
+         "Width does not match (%d != %d)", buf1->width, buf2->width);
   ASSERT(buf1->height == buf2->height,
-         "Height does not match (%ld != %ld)", buf1->height, buf2->height);
+         "Height does not match (%d != %d)", buf1->height, buf2->height);
 
   tmp = buf1->data;
   buf1->data = buf2->data;
@@ -134,9 +134,9 @@ void PixBufSwapData(PixBufT *buf1, PixBufT *buf2) {
 
 void PixBufCopy(PixBufT *dst, PixBufT *src) {
   ASSERT(src->width == dst->width,
-         "Width does not match (%ld != %ld)", src->width, dst->width);
+         "Width does not match (%d != %d)", src->width, dst->width);
   ASSERT(src->height == dst->height,
-         "Height does not match (%ld != %ld)", src->height, dst->height);
+         "Height does not match (%d != %d)", src->height, dst->height);
   MemCopy(dst->data, src->data, src->width * src->height);
 }
 

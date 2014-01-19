@@ -249,7 +249,7 @@ PtrT TableResize(PtrT mem, size_t newCount) {
   size_t size, count;
   PtrT newMem = NULL;
 
-  ASSERT(IsTable(mem), "Object at $%08lx is not a table.", (uint32_t)newMem);
+  ASSERT(IsTable(mem), "Object at $%08x is not a table.", (uint32_t)newMem);
 
   SizeOf(mem, &size, &count);
 

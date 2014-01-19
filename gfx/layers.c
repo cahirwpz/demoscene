@@ -25,10 +25,10 @@ void LayersCompose(PixBufT *canvas, PixBufT *composeMap,
 
   for (i = 0; i < no_layers; i++) {
     ASSERT(layers[i]->width == canvas->width,
-           "Width does not match (%ld != %ld) for layer #%d.",
+           "Width does not match (%d != %d) for layer #%d.",
            layers[i]->width, canvas->width, i);
     ASSERT(layers[i]->height == canvas->height,
-           "Height does not match (%ld != %ld) for layer #%d.",
+           "Height does not match (%d != %d) for layer #%d.",
            layers[i]->height, canvas->height, i);
     src[i] = layers[i]->data;
   }
