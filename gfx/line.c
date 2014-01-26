@@ -77,9 +77,13 @@ static bool LiangBarsky(PointT *p1, PointT *p2, PixBufT *canvas) {
   return true;
 }
 
-void DrawLineUnsafe(PixBufT *canvas, int xs, int ys, int xe, int ye) {
-  int stride = canvas->width;
-  int dx, dy, step, dg, dg1, dg2, db1, db2, n;
+#define dx xe
+#define dy ye
+__attribute__((regparm(4))) void
+DrawLineUnsafe(PixBufT *canvas, int xs, int ys, int xe, int ye) {
+  uint8_t *pixels;
+  uint8_t color;
+  int step, stride;
 
   if (ys > ye) {
     swapr(xs, xe);
@@ -100,51 +104,60 @@ void DrawLineUnsafe(PixBufT *canvas, int xs, int ys, int xe, int ye) {
    *
    */
 
-  dx = abs(xe - xs);
-  dy = ye - ys;
-  step = (xe < xs) ? -1 : 1;
-
-  if (dx < dy) {
-    dg1 = (dx - dy) << 1;
-    dg2 = (dx << 1);
-    dg  = dg2 - dy;
-
-    db1 = step;
-    db2 = stride;
-
-    n = dy;
+  if (xs < xe) {
+    dx = xe - xs;
+    step = 1;
   } else {
-    dg1 = (dy - dx) << 1;
-    dg2 = (dy << 1);
-    dg  = dg2 - dx;
-
-    db1 = stride;
-    db2 = step;
-
-    n = dx;
+    dx = xs - xe;
+    step = -1;
   }
 
-  {
-    uint8_t *pixels = canvas->data + ys * stride + xs;
-    uint8_t color = canvas->fgColor;
+  dy = ye - ys;
 
-    for (;;) {
+  color = canvas->fgColor;
+  stride = canvas->width;
+  pixels = canvas->data + ys * stride + xs;
+
+  /* (xs, ys, xe, ye) unused from now on */
+
+  if (dx < dy) {
+    int dg2 = dx * 2;
+    int dg = dg2 - dy;
+    int dg1 = dg - dy;
+
+    do {
       *pixels = color;
 
-      if (!n--)
-        break;
-
       if (dg > 0) {
-        pixels += db1;
+        pixels += step;
         dg += dg1;
       } else {
         dg += dg2;
       }
 
-      pixels += db2;
-    }
+      pixels += stride;
+    } while (--dy > 0);
+  } else {
+    int dg2 = dy * 2;
+    int dg = dg2 - dx;
+    int dg1 = dg - dx;
+
+    do {
+      *pixels = color;
+
+      if (dg > 0) {
+        pixels += stride;
+        dg += dg1;
+      } else {
+        dg += dg2;
+      }
+
+      pixels += step;
+    } while (--dx > 0);
   }
 }
+#undef dx
+#undef dy
 
 void DrawLine(PixBufT *canvas, int xs, int ys, int xe, int ye) {
   PointT p1 = { xs, ys };

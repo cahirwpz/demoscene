@@ -23,9 +23,9 @@ void StopProfiling() {
     void PrintTiming(const char *key, PtrT value) {
       TimingT *timing = (TimingT *)value;
 
-      LOG("%s: %.2fms (min: %.2fms, max: %.2fms)",
-          key, timing->sum * 1000.0f / timing->n,
-          timing->min * 1000.0f, timing->max * 1000.0f);
+      printf("%s: %.2fms (min: %.2fms, max: %.2fms)\n\r",
+             key, timing->sum * 1000.0f / timing->n,
+             timing->min * 1000.0f, timing->max * 1000.0f);
     }
 
     LOG("Timing measurements:");
