@@ -4,6 +4,12 @@
 #include <proto/exec.h>
 #include "std/types.h"
 
+/*
+ * Tables allocated by this interface have nice property of being cache line
+ * (16 bytes) aligned. Thus we can make use of MOVE16 instruction for data
+ * copying.
+ */
+
 /* Think twice before you use them. */
 PtrT MemNewCustom(uint32_t size, const TypeT *type);
 PtrT MemNewCustomTable(uint32_t size, uint32_t count, const TypeT *type);

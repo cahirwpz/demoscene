@@ -29,8 +29,14 @@ ADD2EXIT(KillMemory, 1);
 
 #define MEM_BLOCKALIGN(size) (((size) + MEM_BLOCKMASK) & ~MEM_BLOCKMASK)
 
-#define IS_TYPED 1 /* u.type is valid */
-#define IS_TABLE 2 /* u.elemSize is valid, size /= MEM_BLOCKSIZE */
+/* u.type is valid */
+#define IS_TYPED 1
+
+/* u.elemSize is valid, size /= MEM_BLOCKSIZE */
+#define IS_TABLE 2
+
+/* if this flag and IS_TABLE is set, then this block is a dummy */
+#define IS_PADDING 4
 
 typedef struct MemBlk {
   /* Size in bytes (multiple of 8-byte word) or elements (shift right by 3!)
@@ -51,9 +57,15 @@ typedef struct MemBlk {
  */
 
 static MemBlkT *GetMemBlk(PtrT mem) {
+  MemBlkT *blk = (MemBlkT *)(mem - sizeof(MemBlkT));
+
   ASSERT(mem, "Null pointer!");
 
-  return (MemBlkT *)(mem - sizeof(MemBlkT));
+  /* Skip padding if a pointer to a table. */
+  if ((blk->size & IS_TABLE) && (blk->size & IS_PADDING))
+    blk--;
+
+  return blk;
 }
 
 static inline TypeT *GetMemBlkType(MemBlkT *blk) {
@@ -96,11 +108,12 @@ PtrT MemNewCustom(uint32_t size, const TypeT *type) {
   return ptr;
 }
 
+/* Tables are always cache line aligned. */
 PtrT MemNewCustomTable(uint32_t elemSize, uint32_t count, const TypeT *type) {
   PtrT ptr = NULL;
 
   if (count) {
-    uint32_t bytes = sizeof(MemBlkT) + MEM_BLOCKALIGN(elemSize * count);
+    uint32_t bytes = sizeof(MemBlkT) * 2 + MEM_BLOCKALIGN(elemSize * count);
     MemBlkT *blk = MemBlkAlloc(bytes);
 
     blk->size = (count * MEM_BLOCKSIZE) | IS_TABLE;
@@ -110,6 +123,12 @@ PtrT MemNewCustomTable(uint32_t elemSize, uint32_t count, const TypeT *type) {
       blk->u.type = (TypeT *)type;
     } else {
       blk->u.elemSize = elemSize;
+    }
+
+    /* Insert padding if data pointer is not cache line aligned. */
+    if ((uint32_t)blk->data & MEM_BLOCKSIZE) {
+      blk = (MemBlkT *)blk->data;
+      blk->size = IS_PADDING | IS_TABLE;
     }
 
     ptr = blk->data;
@@ -150,7 +169,7 @@ void MemUnref(PtrT mem) {
       uint32_t elemSize = 
         (blk->size & IS_TYPED) ? blk->u.type->size : blk->u.elemSize;
 
-      bytes = sizeof(MemBlkT) + MEM_BLOCKALIGN(count * elemSize);
+      bytes = sizeof(MemBlkT) * 2 + MEM_BLOCKALIGN(count * elemSize);
 
       /* FIXME: Should I call free routine for each element? */
 
