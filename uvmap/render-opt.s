@@ -15,6 +15,7 @@
 	LABEL   UVMapRenderer_SIZE
 
         XDEF    _RenderFastUVMapOptimized
+        XDEF    _RenderFastUVMapWithLightOptimized
         XDEF    _RenderNormalUVMapOptimized
         XDEF    _UVMapComposeAndRenderOptimized
 
@@ -32,7 +33,8 @@ _RenderFastUVMapOptimized:
         move.l  pixmap(a6),a3
         move.w  offset(a6),d6
         move.l  mapSize(a6),d7
-        add.l   #32768,a2
+        clr.l   d0
+        clr.l   d1
         nop
 
 .loop:  move.w  (a0)+,d0        ; u1u2
@@ -50,8 +52,55 @@ _RenderFastUVMapOptimized:
         add.w   d6,d0
         add.w   d6,d1
 
-        move.w  (a2,d0.w),d0
-        move.b  (a2,d1.w),d0
+        move.w  (a2,d0.l),d0
+        move.b  (a2,d1.l),d0
+        move.w  d0,(a3)+
+
+        subq.l  #2,d7
+        bgt     .loop
+
+        movem.l (sp)+,saved
+        rts
+
+_RenderFastUVMapWithLightOptimized:
+        movem.l saved,-(sp)
+        move.l  mapU(a6),a0
+        move.l  mapV(a6),a1
+        move.l  texture(a6),a2
+        move.l  pixmap(a6),a3
+        move.l  lightMap(a6),a4
+        move.l  colorMap(a6),a5
+        move.w  offset(a6),d6
+        move.l  mapSize(a6),d7
+        add.l   #32768,a2
+        clr.l   d4
+        clr.l   d5
+        nop
+
+.loop:  move.w  (a0)+,d0        ; u1u2
+        move.w  d0,d1           ; u1u2
+
+        move.w  (a1)+,d2        ; v1v2
+        move.w  d2,d3           ; v1v2
+
+        lsl.w   #8,d1           ; u2--
+        lsr.w   #8,d3           ; --v1
+
+        move.b  d3,d0           ; u1v1
+        move.b  d2,d1           ; u2v2
+
+        add.w   d6,d0
+        add.w   d6,d1
+
+        move.w  (a2,d0.w),d4
+        move.w  (a2,d1.w),d5
+
+        move.b  (a4)+,d4
+        move.b  (a4)+,d5
+
+        move.w  (a5,d4.l),d0
+        move.b  (a5,d5.l),d0
+        
         move.w  d0,(a3)+
 
         subq.l  #2,d7
@@ -81,10 +130,10 @@ _RenderNormalUVMapOptimized:
         move.l  d3,d1
 
         move.l  (a0)+,d2        ; ??u1??u2
-        and.l   d2,d0           ; --v1--v2
+        and.l   d2,d0           ; --u1--u2
 
         move.l  (a1)+,d2        ; ??v1??v2
-        and.l   d2,d1           ; --u1--u2
+        and.l   d2,d1           ; --v1--v2
 
         ror.l   #8,d0           ; u2--u1--
         ror.l   d4,d1           ; --v2--v1

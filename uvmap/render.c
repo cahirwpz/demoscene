@@ -78,7 +78,13 @@ void UVMapRender(UVMapT *map, PixBufT *canvas) {
   ASSERT(map->texture, "No texture attached.");
 
   if (map->type == UV_FAST) {
-    RenderFastUVMapOptimized(&renderer);
+    if (map->lightMap) {
+      renderer.lightMap = map->lightMap->data;
+      renderer.colorMap = map->lightMap->blit.cmap;
+      RenderFastUVMapWithLightOptimized(&renderer);
+    } else {
+      RenderFastUVMapOptimized(&renderer);
+    }
   } else if (map->type == UV_NORMAL) {
     RenderNormalUVMapOptimized(&renderer);
   } else if (map->type == UV_ACCURATE) {

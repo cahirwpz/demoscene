@@ -5,6 +5,12 @@
 #include "std/fp16.h"
 #include "gfx/pixbuf.h"
 
+/*
+ * In this context following mapping holds:
+ * u -> y
+ * v -> x
+ */
+
 typedef enum { UV_FAST, UV_NORMAL, UV_ACCURATE } UVMapTypeT;
 
 typedef struct UVMap {
@@ -27,6 +33,8 @@ typedef struct UVMap {
       void *u, *v;
     } any;
   } map;
+
+  PixBufT *lightMap;
 
   /* associated texture, its required size, and offset for texturing */
   PixBufT *texture;

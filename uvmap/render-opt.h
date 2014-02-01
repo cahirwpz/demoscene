@@ -16,6 +16,7 @@ typedef struct {
 } UVMapRendererT;
 
 void RenderFastUVMapOptimized(UVMapRendererT *renderer asm("a6"));
+void RenderFastUVMapWithLightOptimized(UVMapRendererT *renderer asm("a6"));
 void RenderNormalUVMapOptimized(UVMapRendererT *renderer asm("a6"));
 void UVMapComposeAndRenderOptimized(UVMapRendererT *renderer asm("a6"));
 
