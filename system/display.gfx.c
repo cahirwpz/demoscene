@@ -58,6 +58,8 @@ static void ConfigureView(ViewT *view, int width, int height) {
     view->DyOffset += (256 - height) / 2;
   if (height > 288 && height < 512)
     view->DyOffset += (512 - height) / 4;
+  if (width < 320)
+    view->DxOffset += (320 - width) / 2;
 }
 
 static struct TagItem VideoCtrlTags[] = {

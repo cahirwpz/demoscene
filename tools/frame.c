@@ -65,9 +65,11 @@ void RenderTime(int frameNumber, float beatsPerFrame) {
 }
 
 void RenderFramesPerSecond(int frameNumber) {
-  char text[6];
+  struct RastPort *rastPort = GetCurrentRastPort();
   int fps = (int)(100 * CalculateFramesPerSecond(frameNumber));
+  int width = rastPort->BitMap->BytesPerRow * 8;
+  char text[6];
 
   PrintToString(text, sizeof(text), "%2ld.%02ld", fps / 100, fps % 100);
-  RenderText(text, 320 - (2 + 8 * 5), 8);
+  RenderText(text, width - (2 + 8 * 5), 8);
 }
