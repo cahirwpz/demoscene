@@ -5,7 +5,7 @@ OBJS := blur.o colormap.o flares.o layers.o object3d.o particles.o \
 	uvmap-light.o vector2d.o startup.o fire.o bumpmap.o
 BINS := blur colormap flares flat-shading layers object3d particles playaudio \
 	raytunnel tunnel uvmap uvmap-blit uvmap-compose uvmap-light vector2d \
-	fire bumpmap
+	fire bumpmap polar
 LIBS := libgfx.a libtools.a libsystem.a libstd.a libtinf.a
 
 all:: $(BINS)
@@ -20,8 +20,8 @@ flat-shading: startup.o flat-shading.o libuvmap.a libengine.a $(LIBS)
 layers: startup.o layers.o $(LIBS)
 object3d: startup.o object3d.o libengine.a $(LIBS)
 particles: startup.o particles.o libtxtgen.a libengine.a $(LIBS)
-playaudio: CFLAGS += -Wno-unused
 playaudio: startup.o playaudio.o libaudio.a libuvmap.a $(LIBS)
+polar: startup.o polar.o libuvmap.a $(LIBS)
 raytunnel: startup.o raytunnel.o libuvmap.a libengine.a $(LIBS)
 tunnel: startup.o tunnel.o libuvmap.a libaudio.a $(LIBS)
 uvmap-blit: startup.o uvmap-blit.o libuvmap.a libtxtgen.a $(LIBS)
