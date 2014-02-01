@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+#define UNUSED __attribute__((unused))
+
 #define BOOL(a) ((a) != 0 ? true : false)
 
 #ifndef uint8_t

@@ -12,28 +12,22 @@ all:: $(BINS)
 
 colormap: startup.o colormap.o $(LIBS)
 
-uvmap: CFLAGS += -Wno-unused
-uvmap: startup.o uvmap.o libtxtgen.a libuvmap.a $(LIBS)
-uvmap-blit: CFLAGS += -Wno-unused
-uvmap-blit: startup.o uvmap-blit.o libuvmap.a libtxtgen.a $(LIBS)
-uvmap-light: CFLAGS += -Wno-unused
-uvmap-light: startup.o uvmap-light.o libuvmap.a $(LIBS)
-uvmap-compose: CFLAGS += -Wno-unused
-uvmap-compose: startup.o uvmap-compose.o libuvmap.a $(LIBS)
-flat-shading: CFLAGS += -Wno-unused
-flat-shading: startup.o flat-shading.o libuvmap.a libengine.a $(LIBS)
-
 blur: startup.o blur.o $(LIBS)
 bumpmap: startup.o bumpmap.o bumpmap-opt.o libuvmap.a $(LIBS)
 fire: startup.o fire-opt.o fire.o $(LIBS)
 flares: startup.o flares.o libtxtgen.a $(LIBS)
+flat-shading: startup.o flat-shading.o libuvmap.a libengine.a $(LIBS)
 layers: startup.o layers.o $(LIBS)
 object3d: startup.o object3d.o libengine.a $(LIBS)
+particles: startup.o particles.o libtxtgen.a libengine.a $(LIBS)
 playaudio: CFLAGS += -Wno-unused
 playaudio: startup.o playaudio.o libaudio.a libuvmap.a $(LIBS)
-particles: startup.o particles.o libtxtgen.a libengine.a $(LIBS)
 raytunnel: startup.o raytunnel.o libuvmap.a libengine.a $(LIBS)
 tunnel: startup.o tunnel.o libuvmap.a libaudio.a $(LIBS)
+uvmap-blit: startup.o uvmap-blit.o libuvmap.a libtxtgen.a $(LIBS)
+uvmap-compose: startup.o uvmap-compose.o libuvmap.a $(LIBS)
+uvmap-light: startup.o uvmap-light.o libuvmap.a $(LIBS)
+uvmap: startup.o uvmap.o libtxtgen.a libuvmap.a $(LIBS)
 vector2d: startup.o vector2d.o $(LIBS)
 
 archive:
