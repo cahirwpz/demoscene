@@ -1,18 +1,19 @@
 #include <proto/exec.h>
-#include <inline/dos.h>
+#include <proto/dos.h>
 
 #include "iff.h"
 #include "print.h"
 
-extern char *__commandline;
-
 int __nocommandline = 1;
 int __initlibraries = 0;
+
+extern char *__commandline;
+extern int __commandlen;
 
 struct DosLibrary *DOSBase;
 
 int main() {
-  UWORD len = strlen(__commandline);
+  UWORD len = __commandlen;
   STRPTR filename = __builtin_alloca(len);
 
   CopyMem(__commandline, filename, len--);
@@ -21,9 +22,9 @@ int main() {
   if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 34))) {
     IffFileT iff;
 
-    Print("Parsing >>> %s <<<\n", filename);
-
     if (OpenIff(&iff, filename)) {
+      Print("Parsing '%s':\n", filename);
+
       Print("%.4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
 
       while (ParseChunk(&iff)) {
@@ -33,7 +34,7 @@ int main() {
 
       CloseIff(&iff);
     } else {
-      Print("%s is not an IFF file.\n", filename);
+      Print("'%s' is not an IFF file.\n", filename);
     }
 
     CloseLibrary((struct Library *)DOSBase);

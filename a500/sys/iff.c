@@ -7,12 +7,15 @@
 __regargs BOOL OpenIff(IffFileT *iff, const char *filename) {
   iff->fh = Open(filename, MODE_OLDFILE);
 
+  if (!iff->fh)
+    return FALSE;
+
   if (ReadStruct(iff->fh, &iff->header) &&
       (iff->header.magic == ID_FORM))
-    return 1;
+    return TRUE;
 
   Close(iff->fh);
-  return 0;
+  return FALSE;
 }
 
 __regargs BOOL ParseChunk(IffFileT *iff) {
@@ -25,10 +28,10 @@ __regargs BOOL ReadChunk(IffFileT *iff, APTR ptr) {
     if (iff->chunk.length & 1)
       (void)Seek(iff->fh, 1, OFFSET_CURRENT);
 
-    return 1;
+    return TRUE;
   }
 
-  return 0;
+  return FALSE;
 }
 
 __regargs void SkipChunk(IffFileT *iff) {
