@@ -1,6 +1,6 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-BINS := benchmark exception json wave-file unzip readpng
+BINS := benchmark exception json wave-file unzip readpng parseiff
 LIBS := libsystem.a libstd.a
 
 all:: $(BINS)
@@ -10,6 +10,7 @@ exception: exception.o $(LIBS)
 json: json.o libjson.a $(LIBS)
 wave-file: wave-file.o libaudio.a $(LIBS)
 unzip: unzip.o $(LIBS) libtinf.a 
+parseiff: parseiff.o $(LIBS)
 readpng: readpng.o libgfx.a libtinf.a $(LIBS)
 
 archive:

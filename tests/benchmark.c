@@ -41,6 +41,13 @@ int main() {
       DrawLineUnsafe(canvas, line->x1, line->y1, line->x2, line->y2);
     }
 
+  PROFILE (DrawLineAA)
+    for (i = 0; i < n; i++) {
+      LineT *line = &lines[i];
+
+      DrawLineAA(canvas, line->x1, line->y1, line->x2, line->y2);
+    }
+
   StopProfiling();
 
   MemUnref(lines);
