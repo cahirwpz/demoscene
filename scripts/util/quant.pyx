@@ -170,7 +170,10 @@ cdef class KDNode:
       return 0
 
   def __repr__(self):
-    return "KDTree{%r}" % self.box
+    if self.box:
+      return "KDTree{%r, number=%d}" % (self.box, self.number)
+    else:
+      return "KDTree{%r, %r}" % (self.left, self.right)
 
   def Split(self):
     self.axis, self.median, left, right = self.box.Split()

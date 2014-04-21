@@ -38,13 +38,12 @@ def QuantizeImage(image, kdtree, dithering, is_transparent):
   return output
 
 
-def Quantize(image, colors=256, dithering=False, sources=None):
-  if not sources:
-    sources = [image]
-
+def Quantize(sources, colors=256):
   assert all(source.mode in ['RGB', 'RGBA'] for source in sources)
 
-  logging.info('Quantizing colorspace using median-cut algorithm.')
+  logging.info(
+    'Quantizing colorspace using median-cut algorithm to %d colors.',
+    args.colors)
 
   pixels = []
 
@@ -85,13 +84,7 @@ def Quantize(image, colors=256, dithering=False, sources=None):
     palette.append(color.g)
     palette.append(color.b)
 
-  logging.info('Remapping colors (%s dithering) from the original image.',
-               ('without', 'with')[dithering])
-
-  output = QuantizeImage(image, kdtree, dithering, is_transparent)
-  output.putpalette(palette)
-
-  return output
+  return (kdtree, palette)
 
 
 if __name__ == '__main__':
@@ -133,14 +126,19 @@ if __name__ == '__main__':
     if os.path.isfile(outputPath) and not args.force:
       raise SystemExit('Will not overwrite "%s" file!' % outputPath)
 
-  sources = [image for image, _ in images]
+  kdtree, palette = Quantize([image for image, _ in images], args.colors)
 
   for image, outputPath in images:
-    logging.info('Quantizing file: "%s".', image.filename)
+    logging.info(
+      'Remapping colors (%s dithering) from the original image "%s".',
+      ('without', 'with')[args.dithering], image.filename)
 
-    output = Quantize(image, args.colors, args.dithering, sources)
+    is_transparent = image.mode is 'RGBA'
+
+    output = QuantizeImage(image, kdtree, args.dithering, is_transparent)
+    output.putpalette(palette)
 
     logging.info('Saving quantized image to: "%s".', outputPath)
 
-    attributes = {'transparency': 0} if (image.mode is 'RGBA') else {}
+    attributes = {'transparency': 0} if is_transparent else {}
     output.save(outputPath, **attributes)
