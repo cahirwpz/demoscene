@@ -1,16 +1,16 @@
-#include <graphics/text.h>
 #include <proto/graphics.h>
 
 #include "blitter.h"
 #include "coplist.h"
-#include "print.h"
+#include "console.h"
 
 #define X(x) ((x) + 0x81)
 #define Y(y) ((y) + 0x2c)
 
 static BitmapT *screen;
 static CopListT *cp;
-static struct TextFont *topaz8;
+static TextFontT *topaz8;
+static ConsoleT console;
 
 void Load() {
   screen = NewBitmap(320, 256, 1, FALSE);
@@ -20,31 +20,14 @@ void Load() {
     struct TextAttr textattr = { "topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
     topaz8 = OpenFont(&textattr);
   }
+
+  ConsoleInit(&console, screen, topaz8);
 }
 
 void Kill() {
   CloseFont(topaz8);
   DeleteCopList(cp);
   DeleteBitmap(screen);
-}
-
-static __regargs void BitmapPutChar(BitmapT *bitmap, UBYTE plane,
-                                    UWORD x, UWORD y, char c)
-{
-  UBYTE *src = topaz8->tf_CharData;
-  UBYTE *dst = screen->planes[plane];
-  UWORD swidth = topaz8->tf_Modulo;
-  UWORD dwidth = screen->width / 8;
-  WORD h = 8;
-
-  src += c - 32;
-  dst += dwidth * y + (x >> 3);
-
-  do {
-    *dst = *src;
-    src += swidth;
-    dst += dwidth;
-  } while (--h > 0);
 }
 
 void Main() {
@@ -66,7 +49,9 @@ void Main() {
 
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_MASTER;
 
-  BitmapPutChar(screen, 0, 40, 30, '0');
+  ConsoleDrawBox(&console, 10, 10, 20, 20);
+  ConsoleSetCursor(&console, 2, 2);
+  ConsolePutStr(&console, "The quick brown fox jumps\nover the lazy dog\n");
 
   WaitMouse();
 }
