@@ -1,3 +1,7 @@
+#include <stdarg.h>
+
+#include <proto/exec.h>
+
 #include "console.h"
 
 void ConsoleInit(ConsoleT *console, BitmapT *bitmap, TextFontT *font) {
@@ -15,13 +19,14 @@ __regargs void ConsoleSetCursor(ConsoleT *console, UWORD x, UWORD y) {
 }
 
 static __regargs void ConsoleNextLine(ConsoleT *console) {
+  console->cursor.x = 0;
+
   if (++console->cursor.y >= console->height)
     console->cursor.y = 0;
 }
 
 static __regargs void ConsoleNextChar(ConsoleT *console) {
   if (++console->cursor.x >= console->width) {
-    console->cursor.x = 0;
     ConsoleNextLine(console);
   }
 }
@@ -72,21 +77,37 @@ __regargs void ConsoleDrawBox(ConsoleT *console, UWORD x, UWORD y, UWORD w, UWOR
 }
 
 __regargs void ConsolePutChar(ConsoleT *console, char c) {
-  BitmapPutChar(console->bitmap, 0, console->font, console->cursor.x, console->cursor.y, c);
-  ConsoleNextChar(console);
+  switch (c) {
+    case '\r':
+      break;
+    case '\n':
+      ConsoleNextLine(console);
+      break;
+    default:
+      if (c < 32)
+        return;
+      BitmapPutChar(console->bitmap, 0, console->font, console->cursor.x, console->cursor.y, c);
+      ConsoleNextChar(console);
+      break;
+  }
 }
 
 __regargs void ConsolePutStr(ConsoleT *console, const char *str)
 {
   char c;
-  int x = console->cursor.x;
 
-  while ((c = *str++)) {
-    if (c == '\n') {
-      ConsoleNextLine(console);
-      console->cursor.x = x;
-    } else {
-      ConsolePutChar(console, c);
-    }
-  }
+  while ((c = *str++))
+    ConsolePutChar(console, c);
+}
+
+static void OutputToConsole(char c asm("d0"), ConsoleT *console asm("a3")) {
+  ConsolePutChar(console, c);
+}
+
+void ConsolePrint(ConsoleT *console, const char *format, ...) {
+  va_list args;
+
+  va_start(args, format);
+  RawDoFmt(format, args, (void (*)())OutputToConsole, console);
+  va_end(args);
 }

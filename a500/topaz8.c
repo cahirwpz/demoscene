@@ -1,4 +1,6 @@
+#include <exec/execbase.h>
 #include <proto/graphics.h>
+#include <proto/exec.h>
 
 #include "blitter.h"
 #include "coplist.h"
@@ -51,6 +53,9 @@ void Main() {
 
   ConsoleDrawBox(&console, 10, 10, 20, 20);
   ConsoleSetCursor(&console, 2, 2);
+  ConsolePrint(&console, "Running on Kickstart %ld.%ld.\n",
+               (LONG)SysBase->LibNode.lib_Version,
+               (LONG)SysBase->LibNode.lib_Revision);
   ConsolePutStr(&console, "The quick brown fox jumps\nover the lazy dog\n");
 
   WaitMouse();

@@ -23,5 +23,6 @@ __regargs void ConsolePutChar(ConsoleT *console, char c);
 __regargs void ConsolePutStr(ConsoleT *console, const char *str);
 __regargs void ConsoleDrawChar(ConsoleT *console, UWORD x, UWORD y, char c);
 __regargs void ConsoleDrawBox(ConsoleT *console, UWORD x, UWORD y, UWORD w, UWORD h);
+void ConsolePrint(ConsoleT *console, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
 
 #endif
