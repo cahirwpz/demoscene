@@ -17,6 +17,7 @@ Amiga 500 Hardware Programming Examples
    * [Asm / Hardware](http://eab.abime.net/forumdisplay.php?f=112)
    * [Undocumented Amiga hardware stuff](http://eab.abime.net/showthread.php?t=19676)
 
-2. Amiga Demoscene Archive Forum: [coding](http://ada.untergrund.net/forum/index.php?action=vtopic&forum=4).
+2. Amiga Demoscene Archive Forum: [coding](http://ada.untergrund.net/?p=boardforums&forum=4)
+   * [Atari style C2P](http://ada.untergrund.net/?p=boardthread&id=217)
 
 3. [Subpixel line drawing using Blitter](http://scalibq.wordpress.com/2011/12/28/just-keeping-it-real-part-5/)
