@@ -3,11 +3,35 @@
 
 #include <exec/types.h>
 
+typedef struct AhxVoiceTemp {
+  BYTE Track;
+  BYTE Transpose;
+  BYTE NextTrack;
+  BYTE NextTranspose;
+  BYTE ADSRVolume;
+  BYTE pad0[87];
+  APTR AudioPointer;
+  BYTE pad1[4];
+  WORD AudioPeriod;
+  WORD AudioVolume;
+  BYTE pad2[128];
+} AhxVoiceTempT; /* sizeof(AhxVoiceTempT) == 232 */
+
+typedef struct AhxInfo {
+  BYTE ExternalTiming;
+  BYTE MainVolume;
+  BYTE Subsongs;
+  BYTE SongEnd;
+  BYTE Playing;
+  BYTE pad[9];
+  AhxVoiceTempT VoiceTemp[4];
+} AhxInfoT;
+
 struct AhxPlayer {
-  APTR  BSS_P;        // pointer to ahx's public (fast) memory block
-  APTR  BSS_C;        // pointer to ahx's explicit chip memory block
-  ULONG BSS_Psize;    // size of public memory (intern use only!)
-  ULONG BSS_Csize;    // size of chip memory (intern use only!)
+  AhxInfoT *Public;   // pointer to ahx's public (fast) memory block
+  APTR  Chip;         // pointer to ahx's explicit chip memory block
+  ULONG PublicSize;   // size of public memory (intern use only!)
+  ULONG ChipSize;     // size of chip memory (intern use only!)
   APTR  Module;       // pointer to ahxModule after InitModule
   ULONG IsCIA;        // byte flag (using ANY (intern/own) cia?)
   ULONG Tempo;        // word to cia tempo (normally NOT needed to xs)
