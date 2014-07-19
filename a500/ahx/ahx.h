@@ -13,9 +13,18 @@ struct AhxPlayer {
   ULONG Tempo;        // word to cia tempo (normally NOT needed to xs)
 };
 
-LONG AhxInitCIA(VOID (*ciaInt)() asm("a0"), LONG killSys asm("d0"));
-LONG AhxInitPlayer(APTR memPub asm("a0"), APTR memChip asm("a1"),
-                   LONG loadWavesFile asm("d0"), LONG filters asm("d1"));
+#define AHX_SYSTEM_FRIENDLY 0
+#define AHX_KILL_SYSTEM 1
+
+LONG AhxInitCIA(VOID (*ciaInt)() asm("a0"), LONG system asm("d0"));
+
+#define AHX_LOAD_WAVES_FILE 0
+#define AHX_EXPLICIT_WAVES_PRECALCING 1
+#define AHX_FILTERS 0
+#define AHX_NO_FILTERS 1
+
+LONG AhxInitPlayer(LONG waves asm("d0"), LONG filters asm("d1"));
+
 LONG AhxInitModule(APTR module asm("a0"));
 LONG AhxInitSubSong(LONG subsong asm("d0"), LONG waitPlay asm("d1"));
 VOID AhxInterrupt();

@@ -19,7 +19,7 @@ Ahx:
 ;       incbin  AHX-Replayer020.BIN
 
         cargs #Ahx+0, AhxInitCIA
-        cargs #Ahx+4, _AhxInitPlayer
+        cargs #Ahx+4, AhxInitPlayer
         cargs #Ahx+8, _AhxInitModule
         cargs #Ahx+12, _AhxInitSubSong
         cargs #Ahx+16, _AhxInterrupt
@@ -35,6 +35,11 @@ _AhxInitCIA:
         bsr     AhxInitCIA
         movem.l (sp)+,d6/a2-a4/a6
         rts
+
+_AhxInitPlayer:
+        suba.l  a0,a0
+        suba.l  a1,a1
+        jmp     AhxInitPlayer
 
 _AhxKillCIA:
         movem.l a3/a4/a6,-(sp)

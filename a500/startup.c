@@ -32,11 +32,11 @@ int main() {
             (LONG)SysBase->LibNode.lib_Version,
             (LONG)SysBase->LibNode.lib_Revision);
 
+      Load();
+
       /* Allocate blitter. */
       WaitBlit();
       OwnBlitter();
-
-      Load();
 
       {
         struct View *OldView;
