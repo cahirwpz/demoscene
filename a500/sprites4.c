@@ -73,9 +73,6 @@ void Main() {
   CopMove16(cp, bplcon2, 0x24);
   CopMove32(cp, bplpt[0], screen->planes[0]);
 
-  CopMove16(cp, ddfstrt, 0x38);
-  CopMove16(cp, ddfstop, 0xd0);
-
   {
     UWORD i;
 

@@ -98,11 +98,8 @@ void Main() {
   CopMove16(cp, bplcon2, 0x24);
   CopMove32(cp, bplpt[0], screen->planes[0]);
 
-  CopMove16(cp, ddfstrt, 0x38);
-  CopMove16(cp, ddfstop, 0xd0);
-
   CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
-  CopMove16(cp, color[0], 0x346);
+  CopSetRGB(cp, 0, 0x346);
   CopLoadPal(cp, bitmap->palette, 16);
 
   {

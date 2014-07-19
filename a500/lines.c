@@ -1,9 +1,6 @@
 #include "blitter.h"
 #include "coplist.h"
 
-#define X(x) ((x) + 0x81)
-#define Y(y) ((y) + 0x2c)
-
 static BitmapT *screen;
 static CopListT *cp;
 
@@ -19,19 +16,12 @@ void Kill() {
 
 void Main() {
   CopInit(cp);
-
-  CopMove16(cp, bplcon0, BPLCON0_BPU(screen->depth) | BPLCON0_COLOR);
-  CopMove16(cp, bplcon1, 0);
-  CopMove16(cp, bplcon2, 0);
-  CopMove32(cp, bplpt[0], screen->planes[0]);
-
-  CopMove16(cp, ddfstrt, 0x38);
-  CopMove16(cp, ddfstop, 0xd0);
-  CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
-  CopMove16(cp, color[0], 0x000);
-  CopMove16(cp, color[1], 0xfff);
-
+  CopMakePlayfield(cp, screen);
+  CopMakeDispWin(cp, 0x81, 0x2c, screen->width, screen->height);
+  CopSetRGB(cp, 0, 0x000);
+  CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
+
   CopListActivate(cp);
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_MASTER;

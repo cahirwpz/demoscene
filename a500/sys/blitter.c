@@ -1,16 +1,16 @@
 #include "blitter.h"
 #include "hardware.h"
 
-__regargs void BlitterClear(BitmapT *bitmap, UWORD b) {
-  custom->bltdpt = bitmap->planes[b];
+__regargs void BlitterClear(BitmapT *bitmap, UWORD plane) {
+  custom->bltdpt = bitmap->planes[plane];
   custom->bltdmod = 0;
   custom->bltcon0 = DEST;
   custom->bltcon1 = 0;
   custom->bltsize = (bitmap->height << 6) + (bitmap->width >> 4);
 }
 
-__regargs void BlitterFill(BitmapT *bitmap, UWORD b) {
-  UBYTE *bpl = bitmap->planes[b] + bitmap->bplSize - 1;
+__regargs void BlitterFill(BitmapT *bitmap, UWORD plane) {
+  UBYTE *bpl = bitmap->planes[plane] + bitmap->bplSize - 1;
 
   custom->bltapt = bpl;
   custom->bltdpt = bpl;
@@ -23,10 +23,10 @@ __regargs void BlitterFill(BitmapT *bitmap, UWORD b) {
   custom->bltsize = (bitmap->height << 6) + (bitmap->width >> 4);
 }
 
-__regargs void BlitterLine(BitmapT *bitmap, UWORD b,
+__regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
                            UWORD x1, UWORD y1, UWORD x2, UWORD y2)
 {
-  UBYTE *data = bitmap->planes[b];
+  UBYTE *data = bitmap->planes[plane];
   UWORD bwidth = bitmap->width / 8;
   WORD dx, dy, dmax, dmin, bltapt, begin;
 

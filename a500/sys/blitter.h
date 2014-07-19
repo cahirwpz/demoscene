@@ -4,9 +4,9 @@
 #include "gfx.h"
 #include "hardware.h"
 
-__regargs void BlitterClear(BitmapT *bitmap, UWORD b);
-__regargs void BlitterFill(BitmapT *bitmap, UWORD b);
-__regargs void BlitterLine(BitmapT *bitmap, UWORD b,
+__regargs void BlitterClear(BitmapT *bitmap, UWORD plane);
+__regargs void BlitterFill(BitmapT *bitmap, UWORD plane);
+__regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
                            UWORD x1, UWORD y1, UWORD x2, UWORD y2);
 
 static inline BOOL BlitterBusy() {

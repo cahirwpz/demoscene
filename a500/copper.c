@@ -40,9 +40,9 @@ void Main() {
   custom->intena = INTF_SETCLR | INTF_LEVEL3 | INTF_INTEN;
 
   CopInit(cp);
-  upperColor = CopMove16(cp, color[0], 0xfff);
+  upperColor = CopSetRGB(cp, 0, 0xfff);
   CopWait(cp, 312/2, 0);
-  CopMove16(cp, color[0], 0xf00);
+  CopSetRGB(cp, 0, 0xf00);
   CopEnd(cp);
   CopListActivate(cp);
 

@@ -87,8 +87,30 @@ CopMakeDispWin(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
   UBYTE xe = xs + w;
   UBYTE ye = ys + h;
 
+  CopMove16(list, ddfstrt, 0x38);
+  CopMove16(list, ddfstop, 0xd0);
   CopMove16(list, diwstrt, (ys << 8) | xs);
   CopMove16(list, diwstop, (ye << 8) | xe);
+}
+
+static inline void CopMakePlayfield(CopListT *list, BitmapT *bitmap) {
+  UWORD i, modulo;
+
+  CopMove16(list, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR);
+  CopMove16(list, bplcon1, 0);
+  CopMove16(list, bplcon2, 0);
+  
+  modulo = bitmap->interleaved ? (bitmap->width / 8 * (bitmap->depth - 1)) : 0;
+
+  CopMove16(list, bpl1mod, modulo);
+  CopMove16(list, bpl2mod, modulo);
+
+  for (i = 0; i < bitmap->depth; i++)
+    CopMove32(list, bplpt[i], bitmap->planes[i]);
+}
+
+static inline CopInsT *CopSetRGB(CopListT *list, UWORD i, UWORD value) {
+  return CopMove16(list, color[i], value);
 }
 
 #endif
