@@ -12,7 +12,7 @@ static TextFontT *topaz8;
 static ConsoleT console;
 
 void Load() {
-  screen = NewBitmap(320, 256, 1, FALSE);
+  screen = NewBitmap(640, 256, 1, FALSE);
   cp = NewCopList(100);
 
   {
@@ -41,7 +41,7 @@ void Main() {
 
   CopInit(cp);
   CopMakePlayfield(cp, screen);
-  CopMakeDispWin(cp, 0x81, 0x2c, screen->width, screen->height);
+  CopMakeDispWin(cp, 0x81, 0x2c, screen->width / 2, screen->height);
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
