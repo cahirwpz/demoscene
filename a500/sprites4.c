@@ -39,7 +39,7 @@ void Kill() {
   DeleteBitmap(screen);
 }
 
-static CopInsT *sprptr;
+static CopInsT *sprptr[8];
 
 static void MoveSprite() {
   static UWORD counter = 0;
@@ -59,33 +59,20 @@ static void MoveSprite() {
   sprite[i]->x = x;
   UpdateSprite(sprite[i]);
 
-  if (sprptr)
-    CopInsSet32(sprptr, sprite[i]->data);
+  if (sprptr[0])
+    CopInsSet32(sprptr[0], sprite[i]->data);
 
   counter++;
 }
 
 void Main() {
   CopInit(cp);
-
-  CopMove16(cp, bplcon0, BPLCON0_BPU(screen->depth) | BPLCON0_COLOR);
-  CopMove16(cp, bplcon1, 0);
-  CopMove16(cp, bplcon2, 0x24);
-  CopMove32(cp, bplpt[0], screen->planes[0]);
-
-  {
-    UWORD i;
-
-    sprptr = CopMove32(cp, sprpt[0], sprite[0]->data);
-
-    for (i = 1; i < 8; i++)
-      CopMove32(cp, sprpt[i], nullspr->data);
-  }
-
+  CopMakePlayfield(cp, screen);
   CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
   CopLoadPal(cp, bitmap->palette, 16);
-
+  CopMakeSprites(cp, sprptr, nullspr);
   CopEnd(cp);
+
   CopListActivate(cp);
 
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE | DMAF_MASTER;

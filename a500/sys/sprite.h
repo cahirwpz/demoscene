@@ -1,6 +1,7 @@
 #ifndef __SPRITE_H__
 #define __SPRITE_H__
 
+#include "coplist.h"
 #include "gfx.h"
 
 typedef struct Sprite SpriteT;
@@ -20,5 +21,12 @@ __regargs void DeleteSprite(SpriteT *sprite);
 /* Don't call these for null sprites. */
 __regargs void UpdateSprite(SpriteT *sprite);
 __regargs void UpdateSpritePos(SpriteT *sprite, UWORD hstart, UWORD vstart);
+
+static inline void CopMakeSprites(CopListT *list, CopInsT **sprptr, SpriteT *nullspr) {
+  UWORD i;
+
+  for (i = 0; i < 8; i++)
+    sprptr[i] = CopMove32(list, sprpt[i], nullspr->data);
+}
 
 #endif

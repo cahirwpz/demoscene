@@ -85,7 +85,8 @@ static inline void CopMakePlayfield(CopListT *list, BitmapT *bitmap) {
   CopMove16(list, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR |
             (hires ? BPLCON0_HIRES : 0));
   CopMove16(list, bplcon1, 0);
-  CopMove16(list, bplcon2, 0);
+  CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
+  CopMove16(list, bplcon3, 0);
   
   modulo = bitmap->interleaved ? (bitmap->width / 8 * (bitmap->depth - 1)) : 0;
 
@@ -97,6 +98,7 @@ static inline void CopMakePlayfield(CopListT *list, BitmapT *bitmap) {
 
   CopMove16(list, ddfstrt, hires ? 0x3c : 0x38);
   CopMove16(list, ddfstop, 0xd0);
+  CopMove16(list, fmode, 0);
 }
 
 /* Arguments must be always specified in low resolution coordinates. */

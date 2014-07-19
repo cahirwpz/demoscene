@@ -43,8 +43,7 @@ void Kill() {
   DeleteBitmap(screen);
 }
 
-static CopInsT *spr0ptr = NULL;
-static CopInsT *spr1ptr = NULL;
+static CopInsT *sprptr[8];
 
 static UWORD move[] = { 0, 1, 0, 2, 0 };
 
@@ -81,9 +80,9 @@ static void MoveSprite() {
   if (i < 11)
     UpdateSpritePos(sprite[i+1], 0, Y(-1));
 
-  if (spr0ptr) {
-    CopInsSet32(spr0ptr, sprite[i]->data);
-    CopInsSet32(spr1ptr, sprite[i]->attached->data);
+  if (sprptr[0] && sprptr[1]) {
+    CopInsSet32(sprptr[0], sprite[i]->data);
+    CopInsSet32(sprptr[1], sprite[i]->attached->data);
   }
 
   counter++;
@@ -91,28 +90,13 @@ static void MoveSprite() {
 
 void Main() {
   CopInit(cp);
-
-  CopMove16(cp, fmode, 0);
-  CopMove16(cp, bplcon0, BPLCON0_BPU(screen->depth) | BPLCON0_COLOR);
-  CopMove16(cp, bplcon1, 0);
-  CopMove16(cp, bplcon2, 0x24);
-  CopMove32(cp, bplpt[0], screen->planes[0]);
-
+  CopMakePlayfield(cp, screen);
   CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
   CopSetRGB(cp, 0, 0x346);
   CopLoadPal(cp, bitmap->palette, 16);
-
-  {
-    UWORD i;
-
-    spr0ptr = CopMove32(cp, sprpt[0], NULL);
-    spr1ptr = CopMove32(cp, sprpt[1], NULL);
-
-    for (i = 2; i < 8; i++)
-      CopMove32(cp, sprpt[i], nullspr->data);
-  }
-
+  CopMakeSprites(cp, sprptr, nullspr);
   CopEnd(cp);
+
   CopListActivate(cp);
 
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE | DMAF_MASTER;

@@ -16,6 +16,8 @@
 #define BPLCON0_COLOR   (1 << 9)
 #define BPLCON0_LACE    (1 << 2)
 #define BPLCON0_HIRES   (1 << 15)
+#define BPLCON2_PF2P2   (1 << 5)
+#define BPLCON2_PF1P2   (1 << 2)
 
 extern volatile struct Custom* const custom;
 extern volatile struct CIA* const ciaa;
