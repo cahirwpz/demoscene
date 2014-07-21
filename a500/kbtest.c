@@ -30,9 +30,14 @@ void Kill() {
 }
 
 __interrupt_handler void IntLevel2Handler() {
-  if (custom->intreqr & INTF_PORTS)
+  if (custom->intreqr & INTF_PORTS) {
+    /* Make sure all scratchpad registers are saved, because we call a function
+     * that relies on the fact that it's caller responsibility to save them. */
+    asm volatile("" ::: "d0", "d1", "a0", "a1");
     KeyboardIntHandler();
+  }
 
+  custom->intreq = INTF_PORTS;
   custom->intreq = INTF_PORTS;
 }
 
@@ -54,23 +59,24 @@ void Main() {
   OldIntLevel2 = InterruptVector->IntLevel2;
   InterruptVector->IntLevel2 = IntLevel2Handler;
 
-  custom->intena = INTF_SETCLR | INTF_PORTS | INTF_INTEN;
+  KeyboardInit();
 
-  /* Disable all CIA-A interrupts. */
-  ciaa->ciaicr = (UBYTE)(~CIAICRF_SETCLR);
-  /* Enable keyboard interrupt.
-   * The keyboard is attached to CIA-A serial port. */
-  ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_SP;
+  custom->intena = INTF_SETCLR | INTF_PORTS | INTF_INTEN;
 
   ConsolePutStr(&console, "Press ESC key to exit!\n");
 
   while (1) {
-    if (KeyCode == KEY_ESCAPE)
-      break;
+    KeyEventT event;
 
-    if (KeyChar && !(KeyMod & MOD_PRESSED)) {
-      ConsolePutChar(&console, KeyChar);
-      KeyChar = 0;
+    if (GetKeyEvent(&event)) {
+      if (event.modifier & MOD_PRESSED)
+        continue;
+
+      if (event.code == KEY_ESCAPE)
+        break;
+
+      if (event.ascii)
+        ConsolePutChar(&console, event.ascii);
     }
   }
 

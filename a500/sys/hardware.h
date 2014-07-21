@@ -1,6 +1,7 @@
 #ifndef __HARDWARE_H__
 #define __HARDWARE_H__
 
+#include <hardware/adkbits.h>
 #include <hardware/cia.h>
 #include <hardware/custom.h>
 #include <hardware/dmabits.h>
@@ -30,5 +31,7 @@ static void inline WaitVBlank() { WaitLine(312); }
 static inline BOOL LeftMouseButton() {
   return !(ciaa->ciapra & CIAF_GAMEPORT0);
 }
+
+__regargs void Wait280ns(ULONG delay);
 
 #endif

@@ -96,7 +96,7 @@ typedef enum {
   KEY_RALT = 0x65,
   KEY_LAMIGA = 0x66,
   KEY_RAMIGA = 0x67
-} KeyCodeT;
+} __attribute__((packed)) KeyCodeT;
 
 typedef enum {
   MOD_PRESSED = 0x01,
@@ -111,12 +111,17 @@ typedef enum {
   MOD_SHIFT = MOD_LSHIFT | MOD_RSHIFT,
   MOD_ALT = MOD_LALT | MOD_RALT,
   MOD_AMIGA = MOD_LAMIGA | MOD_RAMIGA
-} KeyModT;
+} __attribute__((packed)) KeyModT;
 
-extern KeyModT KeyMod;
-extern KeyCodeT KeyCode;
-extern char KeyChar;
+typedef struct {
+  KeyModT modifier;
+  KeyCodeT code;
+  char ascii;
+} KeyEventT;
 
+__regargs BOOL GetKeyEvent(KeyEventT *event);
+
+void KeyboardInit();
 void KeyboardIntHandler();
 
 #endif

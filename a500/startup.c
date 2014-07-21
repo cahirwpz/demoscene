@@ -40,7 +40,7 @@ int main() {
 
       {
         struct View *OldView;
-        UWORD OldDMAcon, OldIntena;
+        UWORD OldDmacon, OldIntena, OldAdkcon;
 
         /* No calls to any other library than exec beyond this point or expect
          * undefined behaviour including crashes. */
@@ -53,26 +53,30 @@ int main() {
         WaitTOF();
 
         /* DMA & interrupts take-over. */
-        OldDMAcon = custom->dmaconr;
+        OldAdkcon = custom->adkconr;
+        OldDmacon = custom->dmaconr;
         OldIntena = custom->intenar;
 
         /* Prohibit dma & interrupts. */
-        custom->dmacon = 0x7fff;
-        custom->intena = 0x7fff;
+        custom->dmacon = (UWORD)~DMAF_SETCLR;
+        custom->intena = (UWORD)~INTF_SETCLR;
+        WaitLine(303);
 
         /* Clear all interrupt requests. Really. */
-        custom->intreq = 0x7fff;
-        custom->intreq = 0x7fff;
+        custom->intreq = (UWORD)~INTF_SETCLR;
+        custom->intreq = (UWORD)~INTF_SETCLR;
 
         Main();
 
         /* firstly... disable dma and interrupts that were used in Main */
-        custom->dmacon = 0x7fff;
-        custom->intena = 0x7fff;
+        custom->dmacon = (UWORD)~DMAF_SETCLR;
+        custom->intena = (UWORD)~INTF_SETCLR;
+        WaitLine(303);
 
         /* Restore AmigaOS state of dma & interrupts. */
-        custom->dmacon = OldDMAcon | DMAF_SETCLR;
+        custom->dmacon = OldDmacon | DMAF_SETCLR;
         custom->intena = OldIntena | INTF_SETCLR;
+        custom->adkcon = OldAdkcon | ADKF_SETCLR;
 
         /* Restore old copper list... */
         custom->cop1lc = (ULONG)GfxBase->copinit;

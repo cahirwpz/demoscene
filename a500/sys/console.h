@@ -11,9 +11,9 @@ typedef struct TextFont TextFontT;
 typedef struct Console {
   BitmapT *bitmap;
   TextFontT *font;
-  UWORD width, height;
+  WORD width, height;
   struct {
-    UWORD x, y;
+    WORD x, y;
   } cursor;
 } ConsoleT;
 

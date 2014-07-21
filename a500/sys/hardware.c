@@ -19,3 +19,17 @@ __regargs void WaitLine(ULONG line) {
     vpos = (*(volatile ULONG *)&custom->vposr) & mask;
   } while (vpos != line);
 }
+
+/* Wait for a period of time shorter than one frame.
+ * This is based upon a fact that VPOS register resolution is 280ns. */
+__regargs void Wait280ns(ULONG delay) {
+  volatile LONG *vposr = (volatile LONG *)&custom->vposr;
+  LONG start = (*vposr) & 0x1ffff;
+  LONG diff;
+
+  do {
+    diff = ((*vposr) & 0x1ffff) - start;
+    if (diff < 0)
+      diff += 0x20000;
+  } while (diff < delay);
+}

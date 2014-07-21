@@ -124,49 +124,113 @@ static char KeyMapUpper[128] = {
   [KEY_SLASH] '?'
 };
 
-KeyModT KeyMod = 0;
-KeyCodeT KeyCode = 0;
-char KeyChar = 0;
+#define QUEUELEN 32
+
+UBYTE rawkey[QUEUELEN];
+UBYTE head, tail, used;
+UBYTE modifier;
+
+static inline void PushRawKey(UBYTE raw) {
+  if (used < QUEUELEN) {
+    rawkey[tail] = raw;
+    tail = (tail + 1) & (QUEUELEN - 1);
+    used++;
+  }
+}
+
+static WORD PopRawKey() {
+  WORD raw = -1;
+
+  custom->intena = INTF_PORTS;
+
+  if (!(custom->intreqr & INTF_PORTS)) {
+    if (used > 0) {
+      raw = rawkey[head];
+      head = (head + 1) & (QUEUELEN - 1);
+      used--;
+    }
+  }
+
+  custom->intena = INTF_SETCLR | INTF_PORTS;
+
+  return raw;
+}
+
+__regargs BOOL GetKeyEvent(KeyEventT *event) {
+  WORD raw = PopRawKey();
+  UBYTE code, mod;
+
+  if (raw < 0)
+    return FALSE;
+
+  code = raw & 0x7f;
+
+  if (code == KEY_LSHIFT)
+    mod = MOD_LSHIFT;
+  else if (code == KEY_RSHIFT)
+    mod = MOD_RSHIFT;
+  else if (code == KEY_CONTROL)
+    mod = MOD_CONTROL;
+  else if (code == KEY_LALT)
+    mod = MOD_LALT;
+  else if (code == KEY_RALT)
+    mod = MOD_RALT;
+  else if (code == KEY_LAMIGA)
+    mod = MOD_LAMIGA;
+  else if (code == KEY_RAMIGA)
+    mod = MOD_RAMIGA;
+  else
+    mod = 0;
+
+  /* Process key modifiers */
+  if (raw & 0x80)
+    modifier &= ~(mod | MOD_PRESSED);
+  else
+    modifier |= (mod | MOD_PRESSED);
+
+  event->code = code;
+  event->modifier = modifier;
+  event->ascii = ((modifier & MOD_SHIFT) ? KeyMapUpper : KeyMapLower)[code];
+
+  return TRUE;
+}
+
+void KeyboardInit() {
+  /* Disable all CIA-A interrupts. */
+  ciaa->ciaicr = (UBYTE)(~CIAICRF_SETCLR);
+  /* Enable keyboard interrupt.
+   * The keyboard is attached to CIA-A serial port. */
+  ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_SP;
+  ciaa->ciacra = (UBYTE)(~CIACRAF_SPMODE);
+}
 
 void KeyboardIntHandler() {
   if (ciaa->ciaicr & CIAICRF_SP) {
+    /* Read keyboard data register. */
     UBYTE sdr = ciaa->ciasdr;
-    UBYTE raw = ((sdr >> 1) | (sdr << 7)) ^ 0xff;
-
     /* Set serial port to output mode. */
     ciaa->ciacra |= CIACRAF_SPMODE;
     /* Send handshake. */
     ciaa->ciasdr = 0;
-    /* Set back to input mode. */
-    ciaa->ciacra ^= CIACRAF_SPMODE;
-
+    /* Save raw key in the queue. Filter out exceptional conditions. */
     {
-      UBYTE code = raw & 0x7f;
-      UBYTE mod = 0;
-
-      if (code == KEY_LSHIFT)
-        mod = MOD_LSHIFT;
-      else if (code == KEY_RSHIFT)
-        mod = MOD_RSHIFT;
-      else if (code == KEY_CONTROL)
-        mod = MOD_CONTROL;
-      else if (code == KEY_LALT)
-        mod = MOD_LALT;
-      else if (code == KEY_RALT)
-        mod = MOD_RALT;
-      else if (code == KEY_LAMIGA)
-        mod = MOD_LAMIGA;
-      else if (code == KEY_RAMIGA)
-        mod = MOD_RAMIGA;
-
-      /* Process key modifiers */
-      if (raw & 0x80)
-        KeyMod &= ~(mod | MOD_PRESSED);
-      else
-        KeyMod |= (mod | MOD_PRESSED);
-
-      KeyCode = code;
-      KeyChar = ((KeyMod & MOD_SHIFT) ? KeyMapUpper : KeyMapLower)[code];
+      UBYTE raw = ((sdr >> 1) | (sdr << 7)) ^ 0xff;
+      switch (raw) {
+        case 0x78: /* Reset warning. */
+        case 0xf9: /* Last key code bad. */
+        case 0xfa: /* Keyboard key buffer overflow. */
+        case 0xfc: /* Keyboard self-test fail. */
+        case 0xfd: /* Initiate power-up key stream. */
+        case 0xfe: /* Terminate power-up key stream. */
+          break;
+        default:
+          PushRawKey(raw);
+          break;
+      }
     }
+    /* Wait for at least 85us for handshake to be registered. */
+    Wait280ns((85 * 1000 + 279) / 280);
+    /* Set back to input mode. */
+    ciaa->ciacra &= (UBYTE)~CIACRAF_SPMODE;
   }
 }
