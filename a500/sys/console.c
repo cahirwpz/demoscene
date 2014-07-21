@@ -31,27 +31,31 @@ static __regargs void ConsoleNextChar(ConsoleT *console) {
   }
 }
 
-static __regargs void BitmapPutChar(BitmapT *bitmap, UBYTE plane, TextFontT *font,
-                                    UWORD x, UWORD y, char c)
-{
-  UBYTE *src = font->tf_CharData;
-  UBYTE *dst = bitmap->planes[plane];
-  UWORD swidth = font->tf_Modulo;
-  UWORD dwidth = bitmap->width / 8;
-  WORD h = 8;
-
-  src += c - 32;
-  dst += dwidth * y * 8 + x;
+__regargs void ConsoleDrawChar(ConsoleT *console, UWORD x, UWORD y, char c) {
+  UBYTE *src = console->font->tf_CharData;
+  UBYTE *dst = console->bitmap->planes[0];
+  WORD swidth = console->font->tf_Modulo;
+  WORD dwidth = console->bitmap->width / 8;
+  WORD i = c - 32;
+  WORD j = console->bitmap->width * y + x;
+  WORD h = 7;
 
   do {
-    *dst = *src;
-    src += swidth;
-    dst += dwidth;
-  } while (--h > 0);
+    dst[j] = src[i];
+    i += swidth;
+    j += dwidth;
+  } while (--h >= 0);
 }
 
-__regargs void ConsoleDrawChar(ConsoleT *console, UWORD x, UWORD y, char c) {
-  BitmapPutChar(console->bitmap, 0, console->font, x, y, c);
+__regargs void ConsoleDrawCursor(ConsoleT *console) {
+  UBYTE *dst = console->bitmap->planes[0];
+  WORD dwidth = console->bitmap->width / 8;
+  WORD i = console->bitmap->width * console->cursor.y + console->cursor.x;
+  WORD h = 7;
+
+  do {
+    dst[i] = ~dst[i]; i += dwidth;
+  } while (--h >= 0);
 }
 
 __regargs void ConsoleDrawBox(ConsoleT *console, UWORD x, UWORD y, UWORD w, UWORD h) {
@@ -86,7 +90,7 @@ __regargs void ConsolePutChar(ConsoleT *console, char c) {
     default:
       if (c < 32)
         return;
-      BitmapPutChar(console->bitmap, 0, console->font, console->cursor.x, console->cursor.y, c);
+      ConsoleDrawChar(console, console->cursor.x, console->cursor.y, c);
       ConsoleNextChar(console);
       break;
   }

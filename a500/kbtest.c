@@ -55,15 +55,14 @@ void Main() {
 
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 
-  /* CIA interrupt initialization. */
-  OldIntLevel2 = InterruptVector->IntLevel2;
-  InterruptVector->IntLevel2 = IntLevel2Handler;
-
   KeyboardInit();
 
+  OldIntLevel2 = InterruptVector->IntLevel2;
+  InterruptVector->IntLevel2 = IntLevel2Handler;
   custom->intena = INTF_SETCLR | INTF_PORTS;
 
   ConsolePutStr(&console, "Press ESC key to exit!\n");
+  ConsoleDrawCursor(&console);
 
   while (1) {
     KeyEventT event;
@@ -75,8 +74,34 @@ void Main() {
       if (event.code == KEY_ESCAPE)
         break;
 
+      ConsoleDrawCursor(&console);
+
+      if (event.code == KEY_LEFT) {
+        if (console.cursor.x > 0)
+          console.cursor.x--;
+      }
+
+      if (event.code == KEY_RIGHT) {
+        console.cursor.x++;
+        if (console.cursor.x >= console.width)
+          console.cursor.x = console.width;
+      }
+
+      if (event.code == KEY_UP) {
+        if (console.cursor.y > 0)
+          console.cursor.y--;
+      }
+
+      if (event.code == KEY_DOWN) {
+        console.cursor.y++;
+        if (console.cursor.y >= console.height)
+          console.cursor.y = console.height;
+      }
+
       if (event.ascii)
         ConsolePutChar(&console, event.ascii);
+
+      ConsoleDrawCursor(&console);
     }
   }
 

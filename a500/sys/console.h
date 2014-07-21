@@ -11,9 +11,9 @@ typedef struct TextFont TextFontT;
 typedef struct Console {
   BitmapT *bitmap;
   TextFontT *font;
-  WORD width, height;
+  UWORD width, height;
   struct {
-    WORD x, y;
+    UWORD x, y;
   } cursor;
 } ConsoleT;
 
@@ -22,6 +22,7 @@ __regargs void ConsoleSetCursor(ConsoleT *console, UWORD x, UWORD y);
 __regargs void ConsolePutChar(ConsoleT *console, char c);
 __regargs void ConsolePutStr(ConsoleT *console, const char *str);
 __regargs void ConsoleDrawChar(ConsoleT *console, UWORD x, UWORD y, char c);
+__regargs void ConsoleDrawCursor(ConsoleT *console);
 __regargs void ConsoleDrawBox(ConsoleT *console, UWORD x, UWORD y, UWORD w, UWORD h);
 void ConsolePrint(ConsoleT *console, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
 
