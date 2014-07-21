@@ -1,5 +1,6 @@
 #include "blitter.h"
 #include "coplist.h"
+#include "line.h"
 
 static BitmapT *screen;
 static CopListT *cp;
@@ -14,7 +15,11 @@ void Kill() {
   DeleteBitmap(screen);
 }
 
+#define CPULINE
+
 void Main() {
+  UWORD i;
+
   CopInit(cp);
   CopMakePlayfield(cp, screen);
   CopMakeDispWin(cp, 0x81, 0x2c, screen->width, screen->height);
@@ -26,8 +31,23 @@ void Main() {
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 
-  BlitterLine(screen, 0, 0, 0, 160, 100);
-  WaitBlitter();
+  for (i = 0; i < screen->width; i += 2) {
+#ifdef CPULINE
+    CpuLine(screen, 0, i, 0, screen->width - 1 - i, screen->height - 1);
+#else
+    BlitterLine(screen, 0, i, 0, screen->width - 1 - i, screen->height - 1);
+    WaitBlitter();
+#endif
+  }
+
+  for (i = 0; i < screen->height; i += 2) {
+#ifdef CPULINE
+    CpuLine(screen, 0, 0, i, screen->width - 1, screen->height - 1 - i);
+#else
+    BlitterLine(screen, 0, 0, i, screen->width - 1, screen->height - 1 - i);
+    WaitBlitter();
+#endif
+  }
 
   WaitMouse();
 }
