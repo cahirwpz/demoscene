@@ -60,18 +60,22 @@ int main() {
         /* Prohibit dma & interrupts. */
         custom->dmacon = (UWORD)~DMAF_SETCLR;
         custom->intena = (UWORD)~INTF_SETCLR;
-        WaitLine(303);
+        WaitVBlank();
 
         /* Clear all interrupt requests. Really. */
         custom->intreq = (UWORD)~INTF_SETCLR;
         custom->intreq = (UWORD)~INTF_SETCLR;
+
+        /* Enable master switches. */
+        custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
+        custom->intena = INTF_SETCLR | INTF_INTEN;
 
         Main();
 
         /* firstly... disable dma and interrupts that were used in Main */
         custom->dmacon = (UWORD)~DMAF_SETCLR;
         custom->intena = (UWORD)~INTF_SETCLR;
-        WaitLine(303);
+        WaitVBlank();
 
         /* Restore AmigaOS state of dma & interrupts. */
         custom->dmacon = OldDmacon | DMAF_SETCLR;

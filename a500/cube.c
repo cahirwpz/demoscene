@@ -232,7 +232,7 @@ void Main() {
 
   CopListActivate(cp);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_MASTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 
   view3d.viewerX = 100;
   view3d.viewerY = 100;

@@ -53,7 +53,7 @@ void Main() {
 
   CopListActivate(cp);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_MASTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 
   /* CIA interrupt initialization. */
   OldIntLevel2 = InterruptVector->IntLevel2;
@@ -61,7 +61,7 @@ void Main() {
 
   KeyboardInit();
 
-  custom->intena = INTF_SETCLR | INTF_PORTS | INTF_INTEN;
+  custom->intena = INTF_SETCLR | INTF_PORTS;
 
   ConsolePutStr(&console, "Press ESC key to exit!\n");
 

@@ -75,7 +75,7 @@ void Main() {
 
   CopListActivate(cp);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE | DMAF_MASTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
 
   while (!LeftMouseButton()) {
     WaitLine(Y(256));

@@ -37,7 +37,7 @@ void Main() {
   /* Hardware initialization. */
   OldIntLevel3 = InterruptVector->IntLevel3;
   InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_LEVEL3 | INTF_INTEN;
+  custom->intena = INTF_SETCLR | INTF_LEVEL3;
 
   CopInit(cp);
   upperColor = CopSetRGB(cp, 0, 0xfff);

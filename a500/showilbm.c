@@ -26,7 +26,7 @@ void Main() {
 
   CopListActivate(cp);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_MASTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 
   WaitMouse();
 }

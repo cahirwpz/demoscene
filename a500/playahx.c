@@ -36,18 +36,15 @@ void AhxSetTempo(UWORD tempo asm("d0")) {
 void Main() {
   APTR OldIntLevel2;
 
-  OldIntLevel2 = InterruptVector->IntLevel2;
-  InterruptVector->IntLevel2 = IntLevel2Handler;
-
   /* Enable only CIA Timer A interrupt. */
   ciaa->ciaicr = (UBYTE)(~CIAICRF_SETCLR);
   ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_TA;
-
   /* Run CIA Timer A in continuous / normal mode, increment every 10 cycles. */
   ciaa->ciacra &= (UBYTE)(~CIACRAF_RUNMODE & ~CIACRAF_INMODE & ~CIACRAF_PBON);
 
-  custom->intena = INTF_SETCLR | INTF_PORTS | INTF_INTEN;
-  custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
+  OldIntLevel2 = InterruptVector->IntLevel2;
+  InterruptVector->IntLevel2 = IntLevel2Handler;
+  custom->intena = INTF_SETCLR | INTF_PORTS;
 
   if (AhxInitCIA((APTR)AhxSetTempo, AHX_KILL_SYSTEM) == 0) {
     /* Use AHX_EXPLICIT_WAVES_PRECALCING flag,

@@ -39,7 +39,7 @@ void Main() {
 
   CopListActivate(cp);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_MASTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 
   ConsoleDrawBox(&console, 10, 10, 20, 20);
   ConsoleSetCursor(&console, 2, 2);
