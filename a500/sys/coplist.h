@@ -77,8 +77,8 @@ static inline void CopInsSet32(CopInsT *ins, APTR data) {
 static inline void CopInsSet16(CopInsT *ins, UWORD data) {
   ins->move.data = data;
 }
-
-static inline void CopMakePlayfield(CopListT *list, BitmapT *bitmap) {
+ 
+static inline void CopMakePlayfield(CopListT *list, CopInsT **bplptr, BitmapT *bitmap) {
   UWORD i, modulo;
   BOOL hires = bitmap->width > 320;
 
@@ -93,8 +93,12 @@ static inline void CopMakePlayfield(CopListT *list, BitmapT *bitmap) {
   CopMove16(list, bpl1mod, modulo);
   CopMove16(list, bpl2mod, modulo);
 
-  for (i = 0; i < bitmap->depth; i++)
-    CopMove32(list, bplpt[i], bitmap->planes[i]);
+  for (i = 0; i < bitmap->depth; i++) {
+    CopInsT *bplpt = CopMove32(list, bplpt[i], bitmap->planes[i]);
+
+    if (bplptr)
+      bplptr[i] = bplpt;
+  }
 
   CopMove16(list, ddfstrt, hires ? 0x3c : 0x38);
   CopMove16(list, ddfstop, 0xd0);

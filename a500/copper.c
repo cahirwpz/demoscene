@@ -29,6 +29,7 @@ __interrupt_handler void IntLevel3Handler() {
    * interrupt handler.
    */
   custom->intreq = INTF_LEVEL3;
+  custom->intreq = INTF_LEVEL3;
 }
 
 void Main() {

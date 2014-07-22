@@ -45,7 +45,7 @@ void Main() {
   APTR OldIntLevel2;
 
   CopInit(cp);
-  CopMakePlayfield(cp, screen);
+  CopMakePlayfield(cp, NULL, screen);
   CopMakeDispWin(cp, 0x81, 0x2c, screen->width / 2, screen->height);
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0xfff);

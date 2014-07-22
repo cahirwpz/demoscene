@@ -19,7 +19,7 @@ void Kill() {
 
 void Main() {
   CopInit(cp);
-  CopMakePlayfield(cp, bitmap);
+  CopMakePlayfield(cp, NULL, bitmap);
   CopMakeDispWin(cp, 0x81, 0x2c, bitmap->width, bitmap->height);
   CopLoadPal(cp, bitmap->palette, 0);
   CopEnd(cp);
