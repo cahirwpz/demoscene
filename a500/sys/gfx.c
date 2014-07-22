@@ -25,7 +25,9 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
 
     bitmap->bplSize = bplSize;
 
-    planes = AllocMem((UWORD)bplSize * depth, MEMF_CHIP|MEMF_CLEAR);
+    /* Allocate extra two bytes for scratchpad area.
+     * Used by blitter line drawing. */
+    planes = AllocMem((UWORD)bplSize * depth + 2, MEMF_CHIP|MEMF_CLEAR);
     planePtr = bitmap->planes;
 
     if (interleaved)
@@ -34,14 +36,14 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
     do {
       *planePtr++ = planes;
       planes += bplSize;
-    } while (--depth);
+    } while (depth--);
   }
 
   return bitmap;
 }
 
 __regargs void DeleteBitmap(BitmapT *bitmap) {
-  FreeMem(bitmap->planes[0], bitmap->bplSize * bitmap->depth);
+  FreeMem(bitmap->planes[0], bitmap->bplSize * bitmap->depth + 2);
   FreeMem(bitmap, sizeof(BitmapT));
 }
 

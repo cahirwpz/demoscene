@@ -23,20 +23,24 @@ __regargs void BlitterFill(BitmapT *bitmap, UWORD plane) {
   custom->bltsize = (bitmap->height << 6) + (bitmap->width >> 4);
 }
 
-__regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
-                           UWORD x1, UWORD y1, UWORD x2, UWORD y2)
+void BlitterLine(BitmapT *bitmap, UWORD plane, UWORD flags0, UWORD flags1,
+                 UWORD x1, UWORD y1, UWORD x2, UWORD y2)
 {
   UBYTE *data = bitmap->planes[plane];
   UWORD bwidth = bitmap->width / 8;
   WORD dx, dy, dmax, dmin, bltapt, begin;
 
+  /* Always draw the line downwards. */
+  if (y1 > y2) {
+    asm("exg %0,%1" : "+r" (y1), "+r" (y2));
+    asm("exg %0,%1" : "+r" (x1), "+r" (x2));
+  }
+
   dx = x2 - x1;
+  dy = y2 - y1;
+
   if (dx < 0)
     dx = -dx;
-
-  dy = y2 - y1;
-  if (dy < 0)
-    dy = -dy;
 
   if (dx > dy) {
     dmax = dx;
@@ -59,15 +63,16 @@ __regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
   data = &data[begin];
 
   custom->bltcpt = data;
-  custom->bltdpt = data;
+  /* Uses undocumented chipset feature.
+   * First dot is drawn into bltdpt, the rest goes to bltcpt. */
+  custom->bltdpt = bitmap->planes[bitmap->depth];
 
   /*
    * Minterm is either:
    * - OR: (ABC | ABNC | NABC | NANBC)
    * - XOR: (ABNC | NABC | NANBC)
    */
-  custom->bltcon0 = ((x1 & 15) << 12) |
-    (SRCA | SRCC | DEST) | (ABC | ABNC | NABC | NANBC);
+  custom->bltcon0 = ((x1 & 15) << 12) | (SRCA | SRCC | DEST) | flags0;
 
   /*
    *  \   |   /
@@ -94,7 +99,7 @@ __regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
 
   {
     /* Or with ONEDOT to get one pixel per line. */
-    UWORD bltcon1 = ((x1 & 15) << 12) | LINEMODE;
+    UWORD bltcon1 = ((x1 & 15) << 12) | LINEMODE | flags1;
 
     if (bltapt < 0)
       bltcon1 |= SIGNFLAG;
@@ -102,14 +107,10 @@ __regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
     if (dx >= dy) {
       if (x1 >= x2)
         bltcon1 |= AUL;
-      if (y1 >= y2)
-        bltcon1 |= SUL;
       bltcon1 |= SUD;
     } else {
       if (x1 >= x2)
         bltcon1 |= SUL;
-      if (y1 >= y2)
-        bltcon1 |= AUL;
     }
 
     custom->bltcon1 = bltcon1;

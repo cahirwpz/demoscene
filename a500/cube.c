@@ -217,7 +217,7 @@ static void DrawObject() {
   do {
     WaitBlitter();
     if (!*lineFlags++)
-      BlitterLine(screen, 0, line->x1, line->y1, line->x2, line->y2);
+      BlitterLine(screen, 0, LINE_OR, 0, line->x1, line->y1, line->x2, line->y2);
     line++;
   } while (--n);
 }

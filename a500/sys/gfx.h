@@ -25,7 +25,7 @@ typedef struct Bitmap {
   UWORD bplSize;
   BOOL  interleaved;
   PaletteT *palette;
-  APTR  planes[6];
+  APTR  planes[7];
 } BitmapT;
 
 __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
