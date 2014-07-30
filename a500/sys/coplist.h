@@ -29,6 +29,8 @@ __regargs void DeleteCopList(CopListT *copList);
 __regargs void CopListActivate(CopListT *copList);
 __regargs void CopInit(CopListT *copList);
 __regargs CopInsT *CopWait(CopListT *copList, UWORD vp, UWORD hp);
+__regargs CopInsT *CopWaitMask(CopListT *list,
+                               UWORD vp, UWORD hp, UWORD vpmask, UWORD hpmask);
 __regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start);
 
 static inline CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {

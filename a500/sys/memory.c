@@ -1,7 +1,13 @@
-#include <exec/memory.h>
-#include <proto/exec.h>
-
 #include "memory.h"
+
+void *AllocMemSafe(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) {
+  void *ptr = AllocMem(byteSize, attributes);
+
+  if (!ptr)
+    exit();
+
+  return ptr;
+}
 
 typedef struct {
   ULONG size;

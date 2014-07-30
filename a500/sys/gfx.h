@@ -1,7 +1,7 @@
 #ifndef __BITMAP_H__
 #define __BITMAP_H__
 
-#include <exec/types.h>
+#include "common.h"
 
 typedef struct Color {
   UBYTE r, g, b;
@@ -31,6 +31,5 @@ typedef struct Bitmap {
 __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
                              BOOL interleaved);
 __regargs void DeleteBitmap(BitmapT *bitmap);
-
 
 #endif

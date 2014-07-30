@@ -1,12 +1,10 @@
-#include <exec/memory.h>
-#include <proto/exec.h>
-
+#include "memory.h"
 #include "gfx.h"
 
 __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
                              BOOL interleaved)
 {
-  BitmapT *bitmap = AllocMem(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
+  BitmapT *bitmap = AllocMemSafe(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
 
   bitmap->width = width;
   bitmap->height = height;
@@ -27,7 +25,7 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
 
     /* Allocate extra two bytes for scratchpad area.
      * Used by blitter line drawing. */
-    planes = AllocMem((UWORD)bplSize * depth + 2, MEMF_CHIP|MEMF_CLEAR);
+    planes = AllocMemSafe((UWORD)bplSize * depth + 2, MEMF_CHIP|MEMF_CLEAR);
     planePtr = bitmap->planes;
 
     if (interleaved)
@@ -48,8 +46,8 @@ __regargs void DeleteBitmap(BitmapT *bitmap) {
 }
 
 __regargs PaletteT *NewPalette(UWORD count) {
-  PaletteT *palette = AllocMem(sizeof(PaletteT) + count * sizeof(ColorT),
-                               MEMF_PUBLIC|MEMF_CLEAR);
+  PaletteT *palette = AllocMemSafe(sizeof(PaletteT) + count * sizeof(ColorT),
+                                   MEMF_PUBLIC|MEMF_CLEAR);
   palette->count = count;
 
   return palette;

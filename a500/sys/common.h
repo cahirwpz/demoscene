@@ -15,4 +15,8 @@ static inline int swap16(int a) {
   return a;
 }
 
+static inline UWORD swap8(UWORD a) {
+  return (a << 8) | (a >> 8);
+}
+
 #endif

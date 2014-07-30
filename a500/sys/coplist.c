@@ -37,14 +37,14 @@ __regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp) {
   UWORD *ins = (UWORD *)list->curr;
 
   if ((vp >= 256) && (!list->flags)) {
-    *((ULONG *)ins)++ = 0xffdffffe;
+    *((ULONG *)ins)++ = 0xffe2fffe;
     list->flags |= 1;
   }
 
   {
     CopInsT *ptr = (CopInsT *)ins;
 
-    *ins++ = (vp << 8) | (hp & 0xff) | 1;
+    *ins++ = (vp << 8) | (hp & 0xfe) | 1;
     *ins++ = 0xfffe;
 
     list->curr = (CopInsT *)ins;
@@ -52,6 +52,29 @@ __regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp) {
     return ptr;
   }
 }
+
+__regargs CopInsT *CopWaitMask(CopListT *list,
+                               UWORD vp, UWORD hp, UWORD vpmask, UWORD hpmask)
+{
+  UWORD *ins = (UWORD *)list->curr;
+
+  if ((vp >= 256) && (!list->flags)) {
+    *((ULONG *)ins)++ = 0xffdffffe;
+    list->flags |= 1;
+  }
+
+  {
+    CopInsT *ptr = (CopInsT *)ins;
+
+    *ins++ = (vp << 8) | (hp & 0xfe) | 1;
+    *ins++ = 0x8000 | ((vpmask << 8) & 0x7f00) | (hpmask & 0x7e);
+
+    list->curr = (CopInsT *)ins;
+
+    return ptr;
+  }
+}
+
 
 __regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start) {
   CopInsT *ptr = list->curr;
