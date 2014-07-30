@@ -53,7 +53,7 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type) {
   {
     ULONG imgSize = tga.width * tga.height;
 
-    pixmap = NewPixmap(tga.width, tga.height, PM_GRAY);
+    pixmap = NewPixmap(tga.width, tga.height, PM_GRAY, MEMF_PUBLIC);
 
     if (Read(fh, pixmap->pixels, imgSize) != imgSize)
       goto error;
@@ -64,7 +64,7 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type) {
     ULONG imgSize = tga.width * tga.height;
     ULONG palSize = tga.cmapLength * 3;
 
-    pixmap = NewPixmap(tga.width, tga.height, PM_CMAP);
+    pixmap = NewPixmap(tga.width, tga.height, PM_CMAP, MEMF_PUBLIC);
     pixmap->palette = NewPalette(tga.cmapLength);
 
     data = AllocAutoMem(palSize, MEMF_PUBLIC);
@@ -116,7 +116,7 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type) {
   {
     ULONG imgSize = tga.width * tga.height * 3;
 
-    pixmap = NewPixmap(tga.width, tga.height, PM_RGB4);
+    pixmap = NewPixmap(tga.width, tga.height, PM_RGB4, MEMF_PUBLIC);
 
     data = AllocAutoMem(imgSize, MEMF_PUBLIC);
 

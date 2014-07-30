@@ -1,22 +1,30 @@
 #include "memory.h"
 #include "pixmap.h"
 
-__regargs PixmapT *NewPixmap(UWORD width, UWORD height, PixmapTypeT type) {
+static inline UWORD BitsPerPixel(PixmapTypeT type) {
+  if (type == PM_RGB4)
+    return 16;
+  if (type == PM_GRAY4)
+    return 4;
+  return 8;
+}
+
+__regargs PixmapT *NewPixmap(UWORD width, UWORD height, 
+                             PixmapTypeT type, ULONG memoryAttributes)
+{
   PixmapT *pixmap = AllocMemSafe(sizeof(PixmapT), MEMF_PUBLIC|MEMF_CLEAR);
-  UWORD pixelSize = (type == PM_RGB4) ? 2 : 1;
 
   pixmap->type = type;
   pixmap->width = width;
   pixmap->height = height;
-  pixmap->pixels = AllocMemSafe(width * height * pixelSize,
-                                MEMF_PUBLIC|MEMF_CLEAR);
+  pixmap->pixels = AllocMemSafe(width * height * BitsPerPixel(type) >> 3,
+                                memoryAttributes);
 
   return pixmap;
 }
 
 __regargs void DeletePixmap(PixmapT *pixmap) {
-  UWORD pixelSize = (pixmap->type == PM_RGB4) ? 2 : 1;
-
-  FreeMem(pixmap->pixels, pixmap->width * pixmap->height * pixelSize);
+  FreeMem(pixmap->pixels,
+          pixmap->width * pixmap->height * BitsPerPixel(pixmap->type) >> 3);
   FreeMem(pixmap, sizeof(PixmapT));
 }

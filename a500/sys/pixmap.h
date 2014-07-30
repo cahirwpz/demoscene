@@ -3,7 +3,7 @@
 
 #include "gfx.h"
 
-typedef enum { PM_GRAY, PM_CMAP, PM_RGB4 } PixmapTypeT;
+typedef enum { PM_GRAY, PM_CMAP, PM_RGB4, PM_GRAY4 } PixmapTypeT;
 
 typedef struct Pixmap {
   PixmapTypeT type;
@@ -12,7 +12,8 @@ typedef struct Pixmap {
   APTR pixels;
 } PixmapT;
 
-__regargs PixmapT *NewPixmap(UWORD width, UWORD height, PixmapTypeT type);
+__regargs PixmapT *NewPixmap(UWORD width, UWORD height, 
+                             PixmapTypeT type, ULONG memoryAttributes);
 __regargs void DeletePixmap(PixmapT *pixmap);
 
 #endif
