@@ -72,7 +72,7 @@ __regargs void PointsInsideBox(PointT *in, UBYTE *flags, UWORD n, BoxT *box) {
   }
 }
 
-#define BITS 10
+#define BITS 8
 #define ONE (1 << BITS)
 #define HALF (1 << (BITS - 1))
 

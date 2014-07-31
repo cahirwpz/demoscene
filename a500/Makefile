@@ -7,8 +7,8 @@ all:	startup.o libs $(BINS)
 
 chunky-16c:     chunky-16c.o startup.o libsys.a
 chunky-rgb:     chunky-rgb.o startup.o libsys.a
-copper:         copper.o cophack.o startup.o libsys.a
-cube:           cube.o 3d.o sincos.o startup.o libsys.a
+copper:         copper.o startup.o libsys.a
+cube:           cube.o 3d.o 2d.o sincos.o startup.o libsys.a
 lines:          lines.o startup.o libsys.a
 mouse:          mouse.o startup.o libsys.a
 kbtest:         kbtest.o startup.o libsys.a

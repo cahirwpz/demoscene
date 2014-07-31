@@ -33,7 +33,6 @@
 
         XDEF    _CalculateView3D
         XDEF    _TransformVertices
-        XDEF    _ClipEdges
 
         XREF    _sincos
 
@@ -192,23 +191,25 @@ _TransformVertices:
         movem.w (a0)+,x/y/z
 
         ; some magic value
-        add.w   #1024,d5
+        add.w   #384,d5
 
         tst.w   d5
         bne     .perspective
 
         move.w  x,(a2)+
         move.w  y,(a2)+
-        ;clr.b   (a3)+
+        clr.b   (a3)+
         bra     .continue
 
 .perspective
+        clr.w   d6
+
         muls.w  z,d3
         divs.w  d5,d3
         add.w   x,d3     ; x2d = x' * viewerZ / z' + viewerX
         move.w  d3,(a2)+
         
-        smi     d6       ; set PF_LEFT iff x2d < 0
+        slt     d6       ; set PF_LEFT iff x2d < 0
         add.w   d6,d6
         cmp.w   a4,d3    ; set PF_RIGHT iff x2d >= width
         sge     d6
@@ -219,9 +220,9 @@ _TransformVertices:
         add.w   y,d4     ; y2d = y' * viewerZ / z' + viewerY
         move.w  d4,(a2)+
 
-        smi     d6       ; set PF_TOP iff y2d < 0
+        slt     d6       ; set PF_TOP iff y2d < 0
         add.w   d6,d6
-        cmp.w   a5,d3    ; set PF_BOTTOM iff y2d >= height
+        cmp.w   a5,d4    ; set PF_BOTTOM iff y2d >= height
         sge     d6
         lsr.w   #7,d6
 
@@ -230,31 +231,6 @@ _TransformVertices:
 .continue
         movem.l (sp)+,d0/a0
         dbf     d0,.loop
-
-        movem.l (sp)+,saved
-        rts
-
-; a0 [Object3D *] 3d object structure
-
-saved   EQURL   d2/a2-a3
-
-_ClipEdges:
-        movem.l saved,-(sp)
-
-        move.l  point(a0),a1
-        move.l  edge(a0),a2
-        move.l  line(a0),a3
-
-        move.w  nEdge(a0),d2
-        subq.w  #1,d2
-
-.loop
-        movem.w (a2)+,d0/d1
-        lsl.w   #2,d0
-        lsl.w   #2,d1
-        move.l  (a1,d0.w),(a3)+
-        move.l  (a1,d1.w),(a3)+
-        dbf     d2,.loop
 
         movem.l (sp)+,saved
         rts
