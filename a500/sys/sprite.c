@@ -1,5 +1,7 @@
 #include <exec/memory.h>
+#include <graphics/gfxbase.h>
 #include <proto/exec.h>
+#include <proto/graphics.h>
 
 #include "sprite.h"
 
@@ -55,6 +57,16 @@ __regargs SpriteT *NewSpriteFromBitmap(UWORD height, BitmapT *bitmap,
   }
 
   return sprite;
+}
+
+__regargs SpriteT *CloneSystemPointer() {
+  struct SimpleSprite *sprite = GfxBase->SimpleSprites[0];
+  UWORD height = sprite->height;
+  SpriteT *pointer = NewSprite(height, FALSE);
+
+  CopyMem(sprite->posctldata + 2, pointer->data + 2, height * sizeof(LONG));
+
+  return pointer;
 }
 
 __regargs void DeleteSprite(SpriteT *sprite) {

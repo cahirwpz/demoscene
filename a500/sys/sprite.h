@@ -16,6 +16,7 @@ struct Sprite {
 __regargs SpriteT *NewSprite(UWORD height, BOOL attached);
 __regargs SpriteT *NewSpriteFromBitmap(UWORD height, BitmapT *bitmap,
                                        UWORD xstart, UWORD ystart);
+__regargs SpriteT *CloneSystemPointer();
 __regargs void DeleteSprite(SpriteT *sprite);
 
 /* Don't call these for null sprites. */
