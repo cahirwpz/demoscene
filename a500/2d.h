@@ -22,9 +22,9 @@ typedef struct Shape {
 } ShapeT;
 
 typedef struct {
-  WORD m00, m01, m10, m11;
-  WORD x, y;
-} Transform2D;
+  WORD m00, m01, x;
+  WORD m10, m11, y;
+} View2D;
 
 typedef struct {
   WORD sin;
@@ -33,10 +33,10 @@ typedef struct {
 
 extern SinCosT sincos[];
 
-__regargs void Identity2D(Transform2D *t);
-__regargs void Translate2D(Transform2D *t, WORD x, WORD y);
-__regargs void Scale2D(Transform2D *t, WORD sx, WORD sy);
-__regargs void Rotate2D(Transform2D *t, WORD a);
-__regargs void Apply2D(Transform2D *t, PointT *out, PointT *in, UWORD n);
+__regargs void Identity2D(View2D *view);
+__regargs void Translate2D(View2D *view, WORD x, WORD y);
+__regargs void Scale2D(View2D *view, WORD sx, WORD sy);
+__regargs void Rotate2D(View2D *view, WORD a);
+__regargs void Transform2D(View2D *view, PointT *out, PointT *in, UWORD n);
 
 #endif

@@ -1,47 +1,51 @@
 #include "2d.h"
 
-__regargs void Identity2D(Transform2D *t) {
-  t->m00 = 1 << 8;
-  t->m01 = 0;
-  t->m10 = 0;
-  t->m11 = 1 << 8;
+__regargs void Identity2D(View2D *view) {
+  view->m00 = 1 << 8;
+  view->m01 = 0;
+  view->x = 0;
 
-  t->x = 0;
-  t->y = 0;
+  view->m11 = 1 << 8;
+  view->m10 = 0;
+  view->y = 0;
 }
 
-__regargs void Translate2D(Transform2D *t, WORD x, WORD y) {
-  t->x += x;
-  t->y += y;
+__regargs void Translate2D(View2D *view, WORD x, WORD y) {
+  view->x += x;
+  view->y += y;
 }
 
-__regargs void Scale2D(Transform2D *t, WORD sx, WORD sy) {
-  t->m00 = (t->m00 * sx) / 256;
-  t->m01 = (t->m01 * sy) / 256;
-  t->m10 = (t->m10 * sx) / 256;
-  t->m11 = (t->m11 * sy) / 256;
+__regargs void Scale2D(View2D *view, WORD sx, WORD sy) {
+  view->m00 = (view->m00 * sx) >> 8;
+  view->m01 = (view->m01 * sy) >> 8;
+  view->m10 = (view->m10 * sx) >> 8;
+  view->m11 = (view->m11 * sy) >> 8;
 }
 
-__regargs void Rotate2D(Transform2D *t, WORD a) {
+__regargs void Rotate2D(View2D *view, WORD a) {
   WORD sin = sincos[a & 0x1ff].sin;
   WORD cos = sincos[a & 0x1ff].cos;
 
-  WORD m00 = (LONG)(t->m00 * cos - t->m01 * sin) / 256;
-  WORD m01 = (LONG)(t->m00 * sin + t->m01 * cos) / 256;
-  WORD m10 = (LONG)(t->m10 * cos - t->m11 * sin) / 256;
-  WORD m11 = (LONG)(t->m10 * sin + t->m11 * cos) / 256;
+  WORD m00 = (LONG)(view->m00 * cos - view->m01 * sin) >> 8;
+  WORD m01 = (LONG)(view->m00 * sin + view->m01 * cos) >> 8;
+  WORD m10 = (LONG)(view->m10 * cos - view->m11 * sin) >> 8;
+  WORD m11 = (LONG)(view->m10 * sin + view->m11 * cos) >> 8;
 
-  t->m00 = m00;
-  t->m01 = m01;
-  t->m10 = m10;
-  t->m11 = m11;
+  view->m00 = m00;
+  view->m01 = m01;
+  view->m10 = m10;
+  view->m11 = m11;
 }
 
-__regargs void Apply2D(Transform2D *t, PointT *out, PointT *in, UWORD n) {
-  UWORD i;
+__regargs void Transform2D(View2D *view, PointT *out, PointT *in, UWORD n) {
+  WORD *src = (WORD *)in;
+  WORD *dst = (WORD *)out;
 
-  for (i = 0; i < n; i++) {
-    out[i].x = ((t->m00 * in[i].x + t->m01 * in[i].y) / 256) + t->x;
-    out[i].y = ((t->m10 * in[i].x + t->m11 * in[i].y) / 256) + t->y;
+  while (n--) {
+    register WORD x = *src++;
+    register WORD y = *src++;
+
+    *dst++ = ((view->m00 * x + view->m01 * y) >> 8) + view->x;
+    *dst++ = ((view->m10 * x + view->m11 * y) >> 8) + view->y;
   }
 }

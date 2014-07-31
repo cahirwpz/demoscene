@@ -52,7 +52,7 @@ __interrupt_handler void IntLevel3Handler() {
 
 static BOOL Loop() {
   UWORD i, a = (frameCount * 8) & 0x1ff;
-  Transform2D t;
+  View2D t;
 
   BlitterClear(screen, plane);
 
@@ -61,7 +61,7 @@ static BOOL Loop() {
   Scale2D(&t,
           256 + sincos[a].sin / 2, 256 + sincos[a].cos / 2);
   Translate2D(&t, screen->width / 2, screen->height / 2);
-  Apply2D(&t, shape.outPoints, shape.points, shape.nPoints);
+  Transform2D(&t, shape.outPoints, shape.points, shape.nPoints);
 
   for (i = 0; i < shape.nEdges; i++) {
     UWORD p1 = shape.edges[i].p1;
