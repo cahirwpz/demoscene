@@ -26,9 +26,6 @@ typedef struct {
 
   PointT *point;
   UBYTE *pointFlags;
-
-  LineT *line;
-  UBYTE *lineFlags;
 } Object3D;
 
 void CalculateView3D(View3D *view asm("a0"));

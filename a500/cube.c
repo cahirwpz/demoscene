@@ -1,11 +1,14 @@
 #include "blitter.h"
+#include "memory.h"
 #include "coplist.h"
+#include "file.h"
 #include "3d.h"
+#include "reader.h"
 
 #define X(x) ((x) + 0x81)
 #define Y(y) ((y) + 0x2c)
 
-static Object3D object;
+static Object3D *cube;
 static View3D view3d;
 
 static BitmapT *screen;
@@ -13,8 +16,63 @@ static CopListT *cp;
 
 static BoxT box = { 40, 32, 280 - 1, 224 - 1 };
 
+Object3D *NewObject3D(UWORD nVertex, UWORD nEdge) {
+  Object3D *object = AllocMemSafe(sizeof(Object3D), MEMF_PUBLIC|MEMF_CLEAR);
+
+  object->nVertex = nVertex;
+  object->nEdge = nEdge;
+
+  object->vertex = AllocMemSafe(sizeof(VertexT) * nVertex, MEMF_PUBLIC);
+  object->edge = AllocMemSafe(sizeof(EdgeT) * nEdge, MEMF_PUBLIC);
+  object->point = AllocMemSafe(sizeof(PointT) * nVertex, MEMF_PUBLIC);
+  object->pointFlags = AllocMemSafe(sizeof(UBYTE) * nVertex, MEMF_PUBLIC);
+
+  return object;
+}
+
+void DeleteObject3D(Object3D *object) {
+  FreeMem(object->vertex, sizeof(VertexT) * object->nVertex);
+  FreeMem(object->edge, sizeof(EdgeT) * object->nEdge);
+  FreeMem(object->point, sizeof(PointT) * object->nVertex);
+  FreeMem(object->pointFlags, sizeof(UBYTE) * object->nVertex);
+  FreeMem(object, sizeof(Object3D));
+}
+
+Object3D *LoadObject3D(char *filename) {
+  char *file = ReadFile(filename, MEMF_PUBLIC);
+  char *data = file;
+  Object3D *object = NULL;
+  WORD i, nVertex, nEdge;
+  
+  if (ReadNumber(&data, &nVertex) && ReadNumber(&data, &nEdge)) {
+    object = NewObject3D(nVertex, nEdge);
+
+    for (i = 0; i < object->nVertex; i++) {
+      if (!ReadNumber(&data, &object->vertex[i].x) ||
+          !ReadNumber(&data, &object->vertex[i].y) ||
+          !ReadNumber(&data, &object->vertex[i].z))
+        goto error;
+    }
+
+    for (i = 0; i < object->nEdge; i++) {
+      if (!ReadNumber(&data, &object->edge[i].p1) ||
+          !ReadNumber(&data, &object->edge[i].p2))
+        goto error;
+    }
+
+    FreeAutoMem(file);
+    return object;
+  }
+
+error:
+  DeleteObject3D(object);
+  FreeAutoMem(file);
+  return NULL;
+}
+
 void Load() {
   screen = NewBitmap(320, 256, 1, FALSE);
+  cube = LoadObject3D("data/cube.3d");
   cp = NewCopList(100);
 
   CopInit(cp);
@@ -23,47 +81,10 @@ void Load() {
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
-
-  {
-    static VertexT vertex[8] = {
-      { -100, -100, -100 },
-      {  100, -100, -100 },
-      {  100,  100, -100 },
-      { -100,  100, -100 },
-      { -100, -100,  100 },
-      {  100, -100,  100 },
-      {  100,  100,  100 },
-      { -100,  100,  100 }
-    };
-
-    static EdgeT edge[12] = {
-      { 0, 1 },
-      { 1, 2 },
-      { 2, 3 },
-      { 3, 0 },
-      { 4, 5 },
-      { 5, 6 },
-      { 6, 7 },
-      { 7, 4 },
-      { 0, 4 },
-      { 1, 5 },
-      { 2, 6 },
-      { 3, 7 }
-    };
-
-    static PointT point[8];
-    static UBYTE pointFlags[8];
-
-    object.nVertex = 8;
-    object.nEdge = 12;
-    object.vertex = vertex;
-    object.edge = edge;
-    object.point = point;
-    object.pointFlags = pointFlags;
-  }
 }
 
 void Kill() {
+  DeleteObject3D(cube);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
@@ -111,15 +132,15 @@ void Main() {
     view3d.rotateZ++;
 
     CalculateView3D(&view3d);
-    TransformVertices(&view3d, &object);
-    PointsInsideBox(object.point, object.pointFlags, object.nVertex, &box);
+    TransformVertices(&view3d, cube);
+    PointsInsideBox(cube->point, cube->pointFlags, cube->nVertex, &box);
 
     WaitLine(Y(180));
 
     WaitBlitter();
     BlitterClear(screen, 0);
 
-    DrawObject(&object);
+    DrawObject(cube);
 
     WaitBlitter();
     BlitterLine(screen, 0, LINE_OR, 0, box.minX, box.minY, box.maxX, box.minY);

@@ -6,7 +6,7 @@
 #include "memory.h"
 
 APTR ReadFile(STRPTR path, ULONG memoryFlags) {
-  APTR data = NULL;
+  BYTE *data = NULL;
   LONG size = -1;
   BPTR fh;
 
@@ -20,11 +20,13 @@ APTR ReadFile(STRPTR path, ULONG memoryFlags) {
   }
   
   if ((size > 0) && (fh = Open(path, MODE_OLDFILE))) {
-    if ((data = AllocAutoMem(size, memoryFlags))) {
+    if ((data = AllocAutoMem(size + 1, memoryFlags))) {
       if (size != Read(fh, data, size)) {
         FreeAutoMem(data);
         data = NULL;
       }
+      /* Add extra byte and mark the end of file by zero. */
+      data[size] = 0;
     }
     Close(fh);
   }
