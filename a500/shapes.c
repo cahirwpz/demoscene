@@ -1,43 +1,83 @@
 #include "2d.h"
 #include "blitter.h"
 #include "coplist.h"
+#include "memory.h"
 #include "interrupts.h"
+#include "file.h"
+#include "reader.h"
 
+typedef struct Shape {
+  UWORD nPoint;
+  UWORD nEdge;
+
+  PointT *point;
+  PointT *outPoint;
+  EdgeT *edge;
+} ShapeT;
+
+ShapeT *NewShape(UWORD nPoint, UWORD nEdge) {
+  ShapeT *shape = AllocMemSafe(sizeof(ShapeT), MEMF_PUBLIC|MEMF_CLEAR);
+
+  shape->nPoint = nPoint;
+  shape->nEdge = nEdge;
+
+  shape->point = AllocMemSafe(sizeof(PointT) * nPoint, MEMF_PUBLIC);
+  shape->outPoint = AllocMemSafe(sizeof(PointT) * nPoint, MEMF_PUBLIC);
+  shape->edge = AllocMemSafe(sizeof(EdgeT) * nEdge, MEMF_PUBLIC);
+
+  return shape;
+}
+
+void DeleteShape(ShapeT *shape) {
+  FreeMem(shape->edge, sizeof(EdgeT) * shape->nEdge);
+  FreeMem(shape->outPoint, sizeof(PointT) * shape->nPoint);
+  FreeMem(shape->point, sizeof(PointT) * shape->nPoint);
+  FreeMem(shape, sizeof(ShapeT));
+}
+
+ShapeT *LoadShape(char *filename) {
+  char *file = ReadFile(filename, MEMF_PUBLIC);
+  char *data = file;
+  ShapeT *shape = NULL;
+  WORD i, nPoint, nEdge;
+
+  if (!file)
+    return NULL;
+  
+  if (ReadNumber(&data, &nPoint) && ReadNumber(&data, &nEdge)) {
+    shape = NewShape(nPoint, nEdge);
+
+    for (i = 0; i < shape->nPoint; i++) {
+      if (!ReadNumber(&data, &shape->point[i].x) ||
+          !ReadNumber(&data, &shape->point[i].y))
+        goto error;
+    }
+
+    for (i = 0; i < shape->nEdge; i++) {
+      if (!ReadNumber(&data, &shape->edge[i].p1) ||
+          !ReadNumber(&data, &shape->edge[i].p2))
+        goto error;
+    }
+
+    FreeAutoMem(file);
+    return shape;
+  }
+
+error:
+  DeleteShape(shape);
+  FreeAutoMem(file);
+  return NULL;
+}
+
+static ShapeT *shape;
 static BitmapT *screen;
 static CopInsT *bplptr[5];
 static CopListT *cp;
-
-typedef struct Shape {
-  UWORD nPoints;
-  UWORD nEdges;
-
-  PointT *points;
-  PointT *outPoints;
-  EdgeT *edges;
-} ShapeT;
-
-static PointT sPoints[] = {
-  { -50, -50 },
-  { -50,  50 },
-  {  50,  50 },
-  {  50, -50 }
-};
-
-static PointT sOutPoints[4];
-
-static EdgeT sEdges[] = {
-  { 0, 1 },
-  { 1, 2 },
-  { 2, 3 },
-  { 3, 0 }
-};
-
-static ShapeT shape = { 4, 4, sPoints, sOutPoints, sEdges };
-
 static WORD plane, planeC;
 
 void Load() {
   screen = NewBitmap(320, 256, 5, FALSE);
+  shape = LoadShape("data/box.2d");
   cp = NewCopList(100);
 
   plane = screen->depth - 1;
@@ -45,14 +85,15 @@ void Load() {
 }
 
 void Kill() {
+  DeleteShape(shape);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
 
 static void DrawShape(ShapeT *shape) {
-  PointT *point = shape->outPoints;
-  EdgeT *edge = shape->edges;
-  UWORD n = shape->nEdges;
+  PointT *point = shape->outPoint;
+  EdgeT *edge = shape->edge;
+  UWORD n = shape->nEdge;
 
   while (n--) {
     UWORD i1 = edge->p1;
@@ -86,8 +127,8 @@ static BOOL Loop() {
   Rotate2D(&t, frameCount);
   Scale2D(&t, 256 + sincos[a].sin / 2, 256 + sincos[a].cos / 2);
   Translate2D(&t, screen->width / 2, screen->height / 2);
-  Transform2D(&t, shape.outPoints, shape.points, shape.nPoints);
-  DrawShape(&shape);
+  Transform2D(&t, shape->outPoint, shape->point, shape->nPoint);
+  DrawShape(shape);
 
   WaitBlitter();
   BlitterFill(screen, plane);

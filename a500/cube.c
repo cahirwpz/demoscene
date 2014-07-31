@@ -43,6 +43,9 @@ Object3D *LoadObject3D(char *filename) {
   char *data = file;
   Object3D *object = NULL;
   WORD i, nVertex, nEdge;
+
+  if (!file)
+    return NULL;
   
   if (ReadNumber(&data, &nVertex) && ReadNumber(&data, &nEdge)) {
     object = NewObject3D(nVertex, nEdge);
