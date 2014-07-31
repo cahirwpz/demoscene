@@ -49,3 +49,106 @@ __regargs void Transform2D(View2D *view, PointT *out, PointT *in, UWORD n) {
     *dst++ = ((view->m10 * x + view->m11 * y) >> 8) + view->y;
   }
 }
+
+__regargs void PointsInsideBox(PointT *in, UBYTE *flags, UWORD n, BoxT *box) {
+  WORD *src = (WORD *)in;
+
+  while (n--) {
+    WORD x = *src++;
+    WORD y = *src++;
+    UBYTE f = 0;
+
+    if (x < box->minX)
+      f |= PF_LEFT;
+    if (x >= box->maxX)
+      f |= PF_RIGHT;
+
+    if (y < box->minY)
+      f |= PF_TOP;
+    if (y >= box->maxY)
+      f |= PF_BOTTOM;
+
+    *flags++ = f;
+  }
+}
+
+#define BITS 10
+#define ONE (1 << BITS)
+#define HALF (1 << (BITS - 1))
+
+typedef struct {
+  WORD p, q1, q2;
+} LBEdgeT;
+
+static LBEdgeT edge[2];
+
+/* Liang-Brasky algorithm. */
+__regargs BOOL ClipLine(LineT *line, BoxT *box) {
+  WORD t0 = 0;
+  WORD t1 = ONE;
+  WORD xdelta = line->x2 - line->x1;
+  WORD ydelta = line->y2 - line->y1;
+  WORD i;
+
+  edge[0].p  = -xdelta;
+  edge[0].q1 = line->x1 - box->minX;
+  edge[0].q2 = box->maxX - line->x1;
+  edge[1].p  = -ydelta;
+  edge[1].q1 = line->y1 - box->minY;
+  edge[1].q2 = box->maxY - line->y1;
+
+  for (i = 0; i < 2; i++) {
+    WORD p = edge[i].p;
+    WORD r;
+
+    if (p == 0)
+      continue;
+
+    if (p < 0) {
+      r = div16(edge[i].q1 << BITS, p);
+
+      if (r > t1)
+        return FALSE;
+
+      if (r > t0)
+        t0 = r;
+
+      r = div16(edge[i].q2 << BITS, -p);
+
+      if (r < t0)
+        return FALSE;
+
+      if (r < t1)
+        t1 = r;
+    } else {
+      r = div16(edge[i].q1 << BITS, p);
+
+      if (r < t0)
+        return FALSE;
+
+      if (r < t1)
+        t1 = r;
+
+      r = div16(edge[i].q2 << BITS, -p);
+
+      if (r > t1)
+        return FALSE;
+
+      if (r > t0)
+        t0 = r;
+    }
+  }
+
+  if (t0 > 0) {
+    line->x1 += (t0 * xdelta + HALF) >> BITS;
+    line->y1 += (t0 * ydelta + HALF) >> BITS;
+  }
+
+  if (t1 < ONE) {
+    t1 = ONE - t1;
+    line->x2 -= (t1 * xdelta + HALF) >> BITS;
+    line->y2 -= (t1 * ydelta + HALF) >> BITS;
+  }
+
+  return TRUE;
+}

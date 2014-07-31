@@ -7,6 +7,15 @@ static BitmapT *screen;
 static CopInsT *bplptr[5];
 static CopListT *cp;
 
+typedef struct Shape {
+  UWORD nPoints;
+  UWORD nEdges;
+
+  PointT *points;
+  PointT *outPoints;
+  EdgeT *edges;
+} ShapeT;
+
 static PointT sPoints[] = {
   { -50, -50 },
   { -50,  50 },
@@ -14,7 +23,7 @@ static PointT sPoints[] = {
   {  50, -50 }
 };
 
-static PointT sOutPoints[8];
+static PointT sOutPoints[4];
 
 static EdgeT sEdges[] = {
   { 0, 1 },
@@ -23,7 +32,7 @@ static EdgeT sEdges[] = {
   { 3, 0 }
 };
 
-ShapeT shape = { 4, 4, sPoints, sOutPoints, sEdges };
+static ShapeT shape = { 4, 4, sPoints, sOutPoints, sEdges };
 
 static WORD plane, planeC;
 
@@ -38,6 +47,23 @@ void Load() {
 void Kill() {
   DeleteCopList(cp);
   DeleteBitmap(screen);
+}
+
+static void DrawShape(ShapeT *shape) {
+  PointT *point = shape->outPoints;
+  EdgeT *edge = shape->edges;
+  UWORD n = shape->nEdges;
+
+  while (n--) {
+    UWORD i1 = edge->p1;
+    UWORD i2 = edge->p2;
+
+    WaitBlitter();
+    BlitterLine(screen, plane, LINE_EOR, ONEDOT,
+                point[i1].x, point[i1].y, point[i2].x, point[i2].y);
+
+    edge++;
+  }
 }
 
 static ULONG frameCount = 0;
@@ -58,21 +84,10 @@ static BOOL Loop() {
 
   Identity2D(&t);
   Rotate2D(&t, frameCount);
-  Scale2D(&t,
-          256 + sincos[a].sin / 2, 256 + sincos[a].cos / 2);
+  Scale2D(&t, 256 + sincos[a].sin / 2, 256 + sincos[a].cos / 2);
   Translate2D(&t, screen->width / 2, screen->height / 2);
   Transform2D(&t, shape.outPoints, shape.points, shape.nPoints);
-
-  for (i = 0; i < shape.nEdges; i++) {
-    UWORD p1 = shape.edges[i].p1;
-    UWORD p2 = shape.edges[i].p2;
-
-    WaitBlitter();
-
-    BlitterLine(screen, plane, LINE_EOR, ONEDOT,
-                shape.outPoints[p1].x, shape.outPoints[p1].y,
-                shape.outPoints[p2].x, shape.outPoints[p2].y);
-  }
+  DrawShape(&shape);
 
   WaitBlitter();
   BlitterFill(screen, plane);
