@@ -65,7 +65,10 @@ void BlitterLine(BitmapT *bitmap, UWORD plane, UWORD flags0, UWORD flags1,
   custom->bltcpt = data;
   /* Uses undocumented chipset feature.
    * First dot is drawn into bltdpt, the rest goes to bltcpt. */
-  custom->bltdpt = bitmap->planes[bitmap->depth];
+  if (flags1 & ONEDOT)
+    custom->bltdpt = bitmap->planes[bitmap->depth];
+  else
+    custom->bltdpt = data;
 
   /*
    * Minterm is either:
