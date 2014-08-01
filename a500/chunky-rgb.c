@@ -2,7 +2,6 @@
 #include "coplist.h"
 #include "memory.h"
 #include "tga.h"
-#include "print.h"
 #include "interrupts.h"
 
 static BitmapT *screen;
@@ -59,7 +58,7 @@ void Load() {
     CopEnd(cp);
   }
 
-  Print("Copper list entries: %ld\n", (LONG)(cp->curr - cp->entry));
+  Log("Copper list entries: %ld.\n", (LONG)(cp->curr - cp->entry));
 }
 
 void Kill() {
@@ -69,20 +68,11 @@ void Kill() {
 }
 
 void Main() {
-  APTR OldIntLevel3;
-
-  CopListActivate(cp);
-
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
-
-  /* Hardware initialization. */
-  OldIntLevel3 = InterruptVector->IntLevel3;
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_LEVEL3;
 
-  WaitMouse();
+  CopListActivate(cp);
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 
-  /* Hardware release. */
-  custom->intena = INTF_LEVEL3;
-  InterruptVector->IntLevel3 = OldIntLevel3;
+  WaitMouse();
 }

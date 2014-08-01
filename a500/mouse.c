@@ -85,14 +85,10 @@ __interrupt_handler void IntLevel3Handler() {
 }
 
 void Main() {
-  APTR OldIntLevel2, OldIntLevel3;
-
   KeyboardInit();
   MouseInit(0, 0, screen->width - 1, screen->height - 1);
 
-  OldIntLevel2 = InterruptVector->IntLevel2;
   InterruptVector->IntLevel2 = IntLevel2Handler;
-  OldIntLevel3 = InterruptVector->IntLevel3;
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_PORTS | INTF_VERTB;
 
@@ -100,8 +96,4 @@ void Main() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
 
   while (Loop());
-
-  custom->intena = INTF_PORTS | INTF_VERTB;
-  InterruptVector->IntLevel2 = OldIntLevel2;
-  InterruptVector->IntLevel3 = OldIntLevel3;
 }

@@ -13,20 +13,28 @@ static BitmapT *bitmap;
 static CopListT *cp;
 static SpriteT *nullspr;
 static SpriteT *sprite[12];
+static CopInsT *sprptr[8];
 
 void Load() {
   WORD i;
 
-  cp = NewCopList(100);
   screen = NewBitmap(320, 256, 1, FALSE);
   bitmap = LoadILBM("data/sprites16.ilbm", TRUE);
+  nullspr = NewSprite(0, FALSE);
+  cp = NewCopList(100);
+
+  CopInit(cp);
+  CopMakePlayfield(cp, NULL, screen);
+  CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
+  CopSetRGB(cp, 0, 0x346);
+  CopLoadPal(cp, bitmap->palette, 16);
+  CopMakeSprites(cp, sprptr, nullspr);
+  CopEnd(cp);
 
   for (i = 0; i < 12; i++) {
     sprite[i] = NewSpriteFromBitmap(20, bitmap, 0, 22 * i + 1);
     UpdateSpritePos(sprite[i], X(0), Y(128));
   }
-
-  nullspr = NewSprite(0, FALSE);
 }
 
 void Kill() {
@@ -42,8 +50,6 @@ void Kill() {
   DeleteBitmap(bitmap);
   DeleteBitmap(screen);
 }
-
-static CopInsT *sprptr[8];
 
 static UWORD move[] = { 0, 1, 0, 2, 0 };
 
@@ -89,14 +95,6 @@ static void MoveSprite() {
 }
 
 void Main() {
-  CopInit(cp);
-  CopMakePlayfield(cp, NULL, screen);
-  CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
-  CopSetRGB(cp, 0, 0x346);
-  CopLoadPal(cp, bitmap->palette, 16);
-  CopMakeSprites(cp, sprptr, nullspr);
-  CopEnd(cp);
-
   CopListActivate(cp);
 
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;

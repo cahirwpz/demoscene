@@ -26,4 +26,6 @@ static inline WORD div16(LONG a, WORD b) {
   return a;
 }
 
+void Log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+
 #endif

@@ -80,6 +80,25 @@ void Load() {
   shape = LoadShape("data/box.2d");
   cp = NewCopList(100);
 
+  CopInit(cp);
+  CopMakePlayfield(cp, bplptr, screen);
+  CopMakeDispWin(cp, 0x81, 0x2c, screen->width, screen->height);
+  {
+    UWORD i, j = 2;
+
+    CopSetRGB(cp, 0, 0x000);
+    CopSetRGB(cp, 1, 0x111);
+    for (i = 0; i < 2; i++)
+      CopSetRGB(cp, j++, 0x222);
+    for (i = 0; i < 4; i++)
+      CopSetRGB(cp, j++, 0x444);
+    for (i = 0; i < 8; i++)
+      CopSetRGB(cp, j++, 0x888);
+    for (i = 0; i < 16; i++)
+      CopSetRGB(cp, j++, 0xfff);
+  }
+  CopEnd(cp);
+
   plane = screen->depth - 1;
   planeC = 0;
 }
@@ -154,37 +173,11 @@ static BOOL Loop() {
 }
 
 void Main() {
-  APTR OldIntLevel3;
-
-  OldIntLevel3 = InterruptVector->IntLevel3;
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
-  CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen);
-  CopMakeDispWin(cp, 0x81, 0x2c, screen->width, screen->height);
-  {
-    UWORD i, j = 2;
-
-    CopSetRGB(cp, 0, 0x000);
-    CopSetRGB(cp, 1, 0x111);
-    for (i = 0; i < 2; i++)
-      CopSetRGB(cp, j++, 0x222);
-    for (i = 0; i < 4; i++)
-      CopSetRGB(cp, j++, 0x444);
-    for (i = 0; i < 8; i++)
-      CopSetRGB(cp, j++, 0x888);
-    for (i = 0; i < 16; i++)
-      CopSetRGB(cp, j++, 0xfff);
-  }
-  CopEnd(cp);
-
   CopListActivate(cp);
-
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 
   while (Loop());
-
-  custom->intena = INTF_LEVEL3;
-  InterruptVector->IntLevel3 = OldIntLevel3;
 }

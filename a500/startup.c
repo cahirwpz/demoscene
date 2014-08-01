@@ -66,6 +66,8 @@ int main() {
         custom->intreq = (UWORD)~INTF_SETCLR;
         custom->intreq = (UWORD)~INTF_SETCLR;
 
+        SaveInterrupts();
+
         /* Enable master switches. */
         custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
         custom->intena = INTF_SETCLR | INTF_INTEN;
@@ -76,6 +78,12 @@ int main() {
         custom->dmacon = (UWORD)~DMAF_SETCLR;
         custom->intena = (UWORD)~INTF_SETCLR;
         WaitVBlank();
+
+        /* Clear all interrupt requests. Really. */
+        custom->intreq = (UWORD)~INTF_SETCLR;
+        custom->intreq = (UWORD)~INTF_SETCLR;
+
+        RestoreInterrupts();
 
         /* Restore AmigaOS state of dma & interrupts. */
         custom->dmacon = OldDmacon | DMAF_SETCLR;

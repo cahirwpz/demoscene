@@ -10,8 +10,10 @@
 
 #include "common.h"
 
+#define INTF_LEVEL1 (INTF_SOFTINT | INTF_DSKBLK | INTF_TBE)
 #define INTF_LEVEL3 (INTF_VERTB | INTF_BLIT | INTF_COPER)
 #define INTF_LEVEL4 (INTF_AUD0 | INTF_AUD1 | INTF_AUD2 | INTF_AUD3)
+#define INTF_LEVEL5 (INTF_DSKSYNC | INTF_RBF)
 
 #define BPLCON0_BPU(d)  (((d) & 7) << 12)
 #define BPLCON0_COLOR   (1 << 9)

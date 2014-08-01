@@ -15,6 +15,13 @@ void Load() {
   screen = NewBitmap(640, 256, 1, FALSE);
   cp = NewCopList(100);
 
+  CopInit(cp);
+  CopMakePlayfield(cp, NULL, screen);
+  CopMakeDispWin(cp, 0x81, 0x2c, screen->width / 2, screen->height);
+  CopSetRGB(cp, 0, 0x000);
+  CopSetRGB(cp, 1, 0xfff);
+  CopEnd(cp);
+
   {
     struct TextAttr textattr = { "topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
     topaz8 = OpenFont(&textattr);
@@ -42,24 +49,12 @@ __interrupt_handler void IntLevel2Handler() {
 }
 
 void Main() {
-  APTR OldIntLevel2;
-
-  CopInit(cp);
-  CopMakePlayfield(cp, NULL, screen);
-  CopMakeDispWin(cp, 0x81, 0x2c, screen->width / 2, screen->height);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xfff);
-  CopEnd(cp);
-
-  CopListActivate(cp);
-
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
-
   KeyboardInit();
-
-  OldIntLevel2 = InterruptVector->IntLevel2;
   InterruptVector->IntLevel2 = IntLevel2Handler;
   custom->intena = INTF_SETCLR | INTF_PORTS;
+
+  CopListActivate(cp);
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
@@ -104,8 +99,4 @@ void Main() {
       ConsoleDrawCursor(&console);
     }
   }
-
-  /* CIA interrupt release. */
-  custom->intena = INTF_PORTS;
-  InterruptVector->IntLevel2 = OldIntLevel2;
 }

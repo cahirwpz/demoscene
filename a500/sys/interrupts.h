@@ -32,6 +32,9 @@ typedef struct InterruptVector {
 
 extern InterruptVectorT *InterruptVector;
 
+void SaveInterrupts();
+void RestoreInterrupts();
+
 InterruptVectorT *GetVBR();
 void StopCPU();
 

@@ -12,11 +12,19 @@ static BitmapT *bitmap;
 static CopListT *cp;
 static SpriteT *nullspr;
 static SpriteT *sprite[3];
+static CopInsT *sprptr[8];
 
 void Load() {
   screen = NewBitmap(320, 256, 1, FALSE);
   bitmap = LoadILBM("data/sprites4.ilbm", TRUE);
   cp = NewCopList(100);
+
+  CopInit(cp);
+  CopMakePlayfield(cp, NULL, screen);
+  CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
+  CopLoadPal(cp, bitmap->palette, 16);
+  CopMakeSprites(cp, sprptr, nullspr);
+  CopEnd(cp);
 
   sprite[0] = NewSpriteFromBitmap(19, bitmap, 0, 0);
   sprite[1] = NewSpriteFromBitmap(24, bitmap, 0, 19);
@@ -38,8 +46,6 @@ void Kill() {
   DeleteBitmap(bitmap);
   DeleteBitmap(screen);
 }
-
-static CopInsT *sprptr[8];
 
 static void MoveSprite() {
   static UWORD counter = 0;
@@ -66,15 +72,7 @@ static void MoveSprite() {
 }
 
 void Main() {
-  CopInit(cp);
-  CopMakePlayfield(cp, NULL, screen);
-  CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
-  CopLoadPal(cp, bitmap->palette, 16);
-  CopMakeSprites(cp, sprptr, nullspr);
-  CopEnd(cp);
-
   CopListActivate(cp);
-
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
 
   while (!LeftMouseButton()) {

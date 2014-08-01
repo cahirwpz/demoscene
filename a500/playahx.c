@@ -34,15 +34,12 @@ void AhxSetTempo(UWORD tempo asm("d0")) {
 }
 
 void Main() {
-  APTR OldIntLevel2;
-
   /* Enable only CIA Timer A interrupt. */
   ciaa->ciaicr = (UBYTE)(~CIAICRF_SETCLR);
   ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_TA;
   /* Run CIA Timer A in continuous / normal mode, increment every 10 cycles. */
   ciaa->ciacra &= (UBYTE)(~CIACRAF_RUNMODE & ~CIACRAF_INMODE & ~CIACRAF_PBON);
 
-  OldIntLevel2 = InterruptVector->IntLevel2;
   InterruptVector->IntLevel2 = IntLevel2Handler;
   custom->intena = INTF_SETCLR | INTF_PORTS;
 
@@ -59,8 +56,4 @@ void Main() {
     }
     AhxKillCIA();
   }
-
-  /* CIA interrupt release. */
-  custom->intena = INTF_PORTS;
-  InterruptVector->IntLevel2 = OldIntLevel2;
 }
