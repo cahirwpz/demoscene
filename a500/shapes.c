@@ -184,11 +184,11 @@ static __regargs void ClipEdge(PointT *o, PointT *s, PointT *e,
 
   if (plane & (PF_LEFT | PF_RIGHT)) {
     o->x = limit;
-    o->y = e->y + dy * (limit - e->x) / dx;
+    o->y = e->y + div16(dy * (limit - e->x), dx);
   } 
 
   if (plane & (PF_TOP | PF_BOTTOM)) {
-    o->x = e->x + dx * (limit - e->y) / dy;
+    o->x = e->x + div16(dx * (limit - e->y), dy);
     o->y = limit;
   }
 }

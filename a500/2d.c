@@ -38,34 +38,42 @@ __regargs void Rotate2D(View2D *view, WORD a) {
 }
 
 __regargs void Transform2D(View2D *view, PointT *out, PointT *in, UWORD n) {
-  WORD *src = (WORD *)in;
   WORD *dst = (WORD *)out;
 
-  while (n--) {
-    register WORD x = *src++;
-    register WORD y = *src++;
+  WORD m00 = view->m00;
+  WORD m01 = view->m01;
+  WORD m10 = view->m10;
+  WORD m11 = view->m11;
+  WORD x = view->x;
+  WORD y = view->y;
 
-    *dst++ = ((view->m00 * x + view->m01 * y) >> 8) + view->x;
-    *dst++ = ((view->m10 * x + view->m11 * y) >> 8) + view->y;
+  while (n--) {
+    *dst++ = ((m00 * in->x + m01 * in->y) >> 8) + x;
+    *dst++ = ((m10 * in->x + m11 * in->y) >> 8) + y;
+    in++;
   }
 }
 
 __regargs void PointsInsideBox(PointT *in, UBYTE *flags, UWORD n, BoxT *box) {
   WORD *src = (WORD *)in;
 
+  WORD minX = box->minX;
+  WORD minY = box->minY;
+  WORD maxX = box->maxX;
+  WORD maxY = box->maxY;
+
   while (n--) {
     WORD x = *src++;
     WORD y = *src++;
     UBYTE f = 0;
 
-    if (x < box->minX)
+    if (x < minX)
       f |= PF_LEFT;
-    if (x >= box->maxX)
+    if (x >= maxX)
       f |= PF_RIGHT;
-
-    if (y < box->minY)
+    if (y < minY)
       f |= PF_TOP;
-    if (y >= box->maxY)
+    if (y >= maxY)
       f |= PF_BOTTOM;
 
     *flags++ = f;
@@ -82,7 +90,7 @@ typedef struct {
 
 static LBEdgeT edge[2];
 
-/* Liang-Brasky algorithm. */
+/* Liang-Barsky algorithm. */
 __regargs BOOL ClipLine(LineT *line, BoxT *box) {
   WORD t0 = 0;
   WORD t1 = ONE;
