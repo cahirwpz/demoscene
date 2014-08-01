@@ -8,11 +8,16 @@
 #define X(x) ((x) + 0x81)
 #define Y(y) ((y) + 0x2c)
 
+#define WIDTH  320
+#define HEIGHT 256
+
 static Object3D *cube;
 static View3D view3d;
 
-static BitmapT *screen;
 static CopListT *cp;
+static BitmapT *screen[2];
+static UWORD active = 0;
+static CopInsT *bplptr[8];
 
 static BoxT box = { 40, 32, 280 - 1, 224 - 1 };
 
@@ -74,13 +79,14 @@ error:
 }
 
 void Load() {
-  screen = NewBitmap(320, 256, 1, FALSE);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
   cube = LoadObject3D("data/cube.3d");
   cp = NewCopList(100);
 
   CopInit(cp);
-  CopMakePlayfield(cp, NULL, screen);
-  CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
+  CopMakePlayfield(cp, bplptr, screen[0]);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
@@ -89,7 +95,8 @@ void Load() {
 void Kill() {
   DeleteObject3D(cube);
   DeleteCopList(cp);
-  DeleteBitmap(screen);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 static void DrawObject(Object3D *object) {
@@ -112,7 +119,7 @@ static void DrawObject(Object3D *object) {
 
       if (!outside) {
         WaitBlitter();
-        BlitterLine(screen, 0, LINE_OR, 0, line.x1, line.y1, line.x2, line.y2);
+        BlitterLine(screen[active], 0, LINE_OR, 0, line.x1, line.y1, line.x2, line.y2);
       }
     }
 
@@ -130,6 +137,9 @@ void Main() {
   view3d.viewerZ = 300;
 
   while (!LeftMouseButton()) {
+    WaitBlitter();
+    BlitterClear(screen[active], 0);
+
     view3d.rotateX++;
     view3d.rotateY++;
     view3d.rotateZ++;
@@ -138,20 +148,21 @@ void Main() {
     TransformVertices(&view3d, cube);
     PointsInsideBox(cube->point, cube->pointFlags, cube->nVertex, &box);
 
-    WaitLine(Y(180));
-
-    WaitBlitter();
-    BlitterClear(screen, 0);
-
     DrawObject(cube);
 
     WaitBlitter();
-    BlitterLine(screen, 0, LINE_OR, 0, box.minX, box.minY, box.maxX, box.minY);
+    BlitterLine(screen[active], 0, LINE_OR, 0, box.minX, box.minY, box.maxX, box.minY);
     WaitBlitter();
-    BlitterLine(screen, 0, LINE_OR, 0, box.maxX, box.minY, box.maxX, box.maxY);
+    BlitterLine(screen[active], 0, LINE_OR, 0, box.maxX, box.minY, box.maxX, box.maxY);
     WaitBlitter();
-    BlitterLine(screen, 0, LINE_OR, 0, box.maxX, box.maxY, box.minX, box.maxY);
+    BlitterLine(screen[active], 0, LINE_OR, 0, box.maxX, box.maxY, box.minX, box.maxY);
     WaitBlitter();
-    BlitterLine(screen, 0, LINE_OR, 0, box.minX, box.maxY, box.minX, box.minY);
+    BlitterLine(screen[active], 0, LINE_OR, 0, box.minX, box.maxY, box.minX, box.minY);
+
+    WaitBlitter();
+    WaitVBlank();
+    CopInsSet32(bplptr[0], screen[active]->planes[0]);
+
+    active ^= 1;
   }
 }
