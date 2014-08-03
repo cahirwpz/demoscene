@@ -20,4 +20,4 @@ Amiga 500 Hardware Programming Examples
 2. Amiga Demoscene Archive Forum: [coding](http://ada.untergrund.net/?p=boardforums&forum=4)
    * [Atari style C2P](http://ada.untergrund.net/?p=boardthread&id=217)
 
-3. [Subpixel line drawing using Blitter](http://scalibq.wordpress.com/2011/12/28/just-keeping-it-real-part-5/)
+3. Subpixel line drawing using Blitter: [part 1](http://scalibq.wordpress.com/2011/12/28/just-keeping-it-real-part-5/) and [part 2](http://scalibq.wordpress.com/2012/01/06/just-keeping-it-real-part-5-1/).
