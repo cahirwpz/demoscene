@@ -18,7 +18,7 @@ void Kill() {
 #define CPULINE
 
 void Main() {
-  UWORD i;
+  WORD i;
 
   CopInit(cp);
   CopMakePlayfield(cp, NULL, screen);
@@ -32,20 +32,22 @@ void Main() {
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 
   for (i = 0; i < screen->width; i += 2) {
+    Line2D line = { i, 0, screen->width - 1 - i, screen->height - 1 };
 #ifdef CPULINE
-    CpuLine(screen, 0, i, 0, screen->width - 1 - i, screen->height - 1);
+    CpuLine(screen, 0, &line);
 #else
-    BlitterLine(screen, 0, i, 0, screen->width - 1 - i, screen->height - 1);
     WaitBlitter();
+    BlitterLine(screen, 0, LINE_OR, LINE_SOLID, &line);
 #endif
   }
 
   for (i = 0; i < screen->height; i += 2) {
+    Line2D line = { 0, i, screen->width - 1, screen->height - 1 - i };
 #ifdef CPULINE
-    CpuLine(screen, 0, 0, i, screen->width - 1, screen->height - 1 - i);
+    CpuLine(screen, 0, &line);
 #else
-    BlitterLine(screen, 0, 0, i, screen->width - 1, screen->height - 1 - i);
     WaitBlitter();
+    BlitterLine(screen, 0, LINE_OR, LINE_SOLID, &line);
 #endif
   }
 

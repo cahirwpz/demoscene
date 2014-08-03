@@ -1,60 +1,63 @@
 #include "2d.h"
 
-__regargs void Identity2D(View2D *view) {
-  view->m00 = 1 << 8;
-  view->m01 = 0;
-  view->x = 0;
+__regargs void LoadIdentity2D(Matrix2D *M) {
+  M->m00 = 1 << 8;
+  M->m01 = 0;
+  M->x = 0;
 
-  view->m11 = 1 << 8;
-  view->m10 = 0;
-  view->y = 0;
+  M->m10 = 0;
+  M->m11 = 1 << 8;
+  M->y = 0;
 }
 
-__regargs void Translate2D(View2D *view, WORD x, WORD y) {
-  view->x += x;
-  view->y += y;
+__regargs void Translate2D(Matrix2D *M, WORD x, WORD y) {
+  M->x += x;
+  M->y += y;
 }
 
-__regargs void Scale2D(View2D *view, WORD sx, WORD sy) {
-  view->m00 = (view->m00 * sx) >> 8;
-  view->m01 = (view->m01 * sy) >> 8;
-  view->m10 = (view->m10 * sx) >> 8;
-  view->m11 = (view->m11 * sy) >> 8;
+__regargs void Scale2D(Matrix2D *M, WORD sx, WORD sy) {
+  M->m00 = (M->m00 * sx) >> 8;
+  M->m01 = (M->m01 * sy) >> 8;
+  M->m10 = (M->m10 * sx) >> 8;
+  M->m11 = (M->m11 * sy) >> 8;
 }
 
-__regargs void Rotate2D(View2D *view, WORD a) {
+__regargs void Rotate2D(Matrix2D *M, WORD a) {
   WORD sin = sincos[a & 0x1ff].sin;
   WORD cos = sincos[a & 0x1ff].cos;
+  WORD m00 = M->m00;
+  WORD m01 = M->m01;
+  WORD m10 = M->m10;
+  WORD m11 = M->m11;
 
-  WORD m00 = (LONG)(view->m00 * cos - view->m01 * sin) >> 8;
-  WORD m01 = (LONG)(view->m00 * sin + view->m01 * cos) >> 8;
-  WORD m10 = (LONG)(view->m10 * cos - view->m11 * sin) >> 8;
-  WORD m11 = (LONG)(view->m10 * sin + view->m11 * cos) >> 8;
-
-  view->m00 = m00;
-  view->m01 = m01;
-  view->m10 = m10;
-  view->m11 = m11;
+  M->m00 = (m00 * cos - m01 * sin) >> 8;
+  M->m01 = (m00 * sin + m01 * cos) >> 8;
+  M->m10 = (m10 * cos - m11 * sin) >> 8;
+  M->m11 = (m10 * sin + m11 * cos) >> 8;
 }
 
-__regargs void Transform2D(View2D *view, PointT *out, PointT *in, UWORD n) {
-  WORD *dst = (WORD *)out;
+#define MULPOINT() {              \
+  LONG t0 = (*v++) * x;           \
+  LONG t1 = (*v++) * y;           \
+  WORD t2 = (*v++);               \
+  *dst++ = ((t0 + t1) >> 8) + t2; \
+}
 
-  WORD m00 = view->m00;
-  WORD m01 = view->m01;
-  WORD m10 = view->m10;
-  WORD m11 = view->m11;
-  WORD x = view->x;
-  WORD y = view->y;
+__regargs void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, UWORD n) {
+  WORD *dst = (WORD *)out;
+  WORD *src = (WORD *)in;
 
   while (n--) {
-    *dst++ = ((m00 * in->x + m01 * in->y) >> 8) + x;
-    *dst++ = ((m10 * in->x + m11 * in->y) >> 8) + y;
-    in++;
+    WORD *v = (WORD *)M;
+    WORD x = *src++;
+    WORD y = *src++;
+
+    MULPOINT();
+    MULPOINT();
   }
 }
 
-__regargs void PointsInsideBox(PointT *in, UBYTE *flags, UWORD n, BoxT *box) {
+__regargs void PointsInsideBox(Point2D *in, UBYTE *flags, UWORD n, Box2D *box) {
   WORD *src = (WORD *)in;
 
   WORD minX = box->minX;
@@ -91,7 +94,7 @@ typedef struct {
 static LBEdgeT edge[2];
 
 /* Liang-Barsky algorithm. */
-__regargs BOOL ClipLine(LineT *line, BoxT *box) {
+__regargs BOOL ClipLine2D(Line2D *line, Box2D *box) {
   WORD t0 = 0;
   WORD t1 = ONE;
   WORD xdelta = line->x2 - line->x1;
@@ -159,4 +162,69 @@ __regargs BOOL ClipLine(LineT *line, BoxT *box) {
   }
 
   return TRUE;
+}
+
+static __regargs BOOL CheckInside(Point2D *p, WORD limit, UWORD plane) {
+  if (plane & PF_LEFT)
+    return (p->x >= limit);
+  if (plane & PF_RIGHT)
+    return (p->x < limit);
+  if (plane & PF_TOP)
+    return (p->y >= limit);
+  if (plane & PF_BOTTOM)
+    return (p->y < limit);
+  return FALSE;
+}
+
+static __regargs void ClipEdge(Point2D *o, Point2D *s, Point2D *e,
+                               WORD limit, UWORD plane) 
+{
+  WORD dx = s->x - e->x;
+  WORD dy = s->y - e->y;
+
+  if (plane & (PF_LEFT | PF_RIGHT)) {
+    o->x = limit;
+    o->y = e->y + div16(dy * (limit - e->x), dx);
+  } 
+
+  if (plane & (PF_TOP | PF_BOTTOM)) {
+    o->x = e->x + div16(dx * (limit - e->y), dy);
+    o->y = limit;
+  }
+}
+
+__regargs UWORD ClipPolygon2D(Point2D *S, Point2D *O,
+                              UWORD n, WORD limit, UWORD plane)
+{
+  Point2D *E = S + 1;
+
+  BOOL S_inside = CheckInside(S, limit, plane);
+  BOOL needClose = TRUE;
+  UWORD m = 0;
+
+  if (S_inside) {
+    needClose = FALSE;
+    O[m++] = *S;
+  }
+
+  while (--n) {
+    BOOL E_inside = CheckInside(E, limit, plane);
+
+    if (S_inside && E_inside) {
+      O[m++] = *E;
+    } else if (S_inside && !E_inside) {
+      ClipEdge(&O[m++], S, E, limit, plane);
+    } else if (!S_inside && E_inside) {
+      ClipEdge(&O[m++], E, S, limit, plane);
+      O[m++] = *E;
+    }
+
+    S_inside = E_inside;
+    S++; E++;
+  }
+
+  if (needClose)
+    O[m++] = *O;
+
+  return m;
 }

@@ -23,106 +23,94 @@ __regargs void BlitterFill(BitmapT *bitmap, UWORD plane) {
   custom->bltsize = (bitmap->height << 6) + (bitmap->width >> 4);
 }
 
-void BlitterLine(BitmapT *bitmap, UWORD plane, UWORD flags0, UWORD flags1,
-                 UWORD x1, UWORD y1, UWORD x2, UWORD y2)
+/*
+ * Minterm is either:
+ * - OR: (ABC | ABNC | NABC | NANBC)
+ * - XOR: (ABNC | NABC | NANBC)
+ */
+
+/*
+ *  \   |   /
+ *   \3 | 1/
+ *  7 \ | / 6
+ *     \|/
+ *  ----X----
+ *     /|\
+ *  5 / | \ 4
+ *   /2 | 0\
+ *  /   |   \
+ *
+ * OCT | SUD SUL AUL
+ * ----+------------
+ *   3 |   1   1   1
+ *   0 |   1   1   0
+ *   4 |   1   0   1
+ *   7 |   1   0   0
+ *   2 |   0   1   1
+ *   5 |   0   1   0
+ *   1 |   0   0   1
+ *   6 |   0   0   0
+ */
+
+__regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
+                           UWORD bltcon0, UWORD bltcon1, Line2D *line)
 {
   UBYTE *data = bitmap->planes[plane];
-  UWORD bwidth = bitmap->width / 8;
-  WORD dx, dy, dmax, dmin, bltapt, begin;
+  WORD bwidth = bitmap->width / 8;
+  WORD dx, dy, dmax, dmin, derr;
+  WORD x1 = line->x1;
+  WORD x2 = line->x2;
+  WORD y1 = line->y1;
+  WORD y2 = line->y2;
 
   /* Always draw the line downwards. */
   if (y1 > y2) {
-    asm("exg %0,%1" : "+r" (y1), "+r" (y2));
-    asm("exg %0,%1" : "+r" (x1), "+r" (x2));
+    swapr(x1, x2);
+    swapr(y1, y2);
   }
 
-  dx = x2 - x1;
+  dx = abs(x2 - x1);
   dy = y2 - y1;
 
-  if (dx < 0)
-    dx = -dx;
-
-  if (dx > dy) {
+  if (dx >= dy) {
     dmax = dx;
     dmin = dy;
+    if (x1 >= x2)
+      bltcon1 |= AUL;
+    bltcon1 |= SUD;
   } else {
     dmax = dy;
     dmin = dx;
+    if (x1 >= x2)
+      bltcon1 |= SUL;
   }
 
-  bltapt = (dmin << 2) - (dmax << 1);
-  custom->bltapt = (APTR)(LONG)bltapt;
+  derr = 4 * dmin - 2 * dmax;
+  if (derr < 0)
+    bltcon1 |= SIGNFLAG;
 
-  custom->bltamod = (dmin - dmax) << 2;
-  custom->bltbmod = dmin << 2;
+  custom->bltamod = 4 * dmin - 4 * dmax;
+  custom->bltbmod = 4 * dmin;
   custom->bltcmod = bwidth;
   custom->bltdmod = bwidth;
 
   /* Word containing the first pixel of the line. */
-  begin = (UWORD)(bwidth * y1) + ((x1 >> 3) ^ 1);
-  data = &data[begin];
+  data += bwidth * y1;
+  data += (x1 >> 3) & ~1;
 
+  custom->bltapt = (APTR)(LONG)derr;
   custom->bltcpt = data;
   /* Uses undocumented chipset feature.
    * First dot is drawn into bltdpt, the rest goes to bltcpt. */
-  if (flags1 & ONEDOT)
-    custom->bltdpt = bitmap->planes[bitmap->depth];
-  else
-    custom->bltdpt = data;
+  custom->bltdpt = (bltcon1 & ONEDOT) ? bitmap->planes[bitmap->depth] : data;
 
-  /*
-   * Minterm is either:
-   * - OR: (ABC | ABNC | NABC | NANBC)
-   * - XOR: (ABNC | NABC | NANBC)
-   */
-  custom->bltcon0 = ((x1 & 15) << 12) | (SRCA | SRCC | DEST) | flags0;
+  custom->bltcon0 = rorw(x1 & 15, 4) | bltcon0;
+  custom->bltcon1 = rorw(x1 & 15, 4)  | bltcon1;
 
-  /*
-   *  \   |   /
-   *   \3 | 1/
-   *  7 \ | / 6
-   *     \|/
-   *  ----X----
-   *     /|\
-   *  5 / | \ 4
-   *   /2 | 0\
-   *  /   |   \
-   *
-   * OCT | SUD SUL AUL
-   * ----+------------
-   *   3 |   1   1   1
-   *   0 |   1   1   0
-   *   4 |   1   0   1
-   *   7 |   1   0   0
-   *   2 |   0   1   1
-   *   5 |   0   1   0
-   *   1 |   0   0   1
-   *   6 |   0   0   0
-   */
-
-  {
-    /* Or with ONEDOT to get one pixel per line. */
-    UWORD bltcon1 = ((x1 & 15) << 12) | LINEMODE | flags1;
-
-    if (bltapt < 0)
-      bltcon1 |= SIGNFLAG;
-
-    if (dx >= dy) {
-      if (x1 >= x2)
-        bltcon1 |= AUL;
-      bltcon1 |= SUD;
-    } else {
-      if (x1 >= x2)
-        bltcon1 |= SUL;
-    }
-
-    custom->bltcon1 = bltcon1;
-  }
-
-  custom->bltadat = 0x8000;
-  custom->bltbdat = 0xffff; /* Line texture pattern. */
   custom->bltafwm = -1;
   custom->bltalwm = -1;
+  custom->bltadat = 0x8000;
+  custom->bltbdat = 0xffff; /* Line texture pattern. */
 
-  custom->bltsize = ((dmax + 1) << 6) + 2;
+  custom->bltsize = dmax * 64 + 66;
 }

@@ -4,13 +4,18 @@
 #include "gfx.h"
 #include "hardware.h"
 
-#define LINE_OR   (ABC | ABNC | NABC | NANBC)
-#define LINE_EOR  (ABNC | NABC | NANBC)
+/* Values for bltcon0. */
+#define LINE_OR  ((ABC | ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
+#define LINE_EOR ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
+
+/* Values for bltcon1. */
+#define LINE_SOLID  (LINEMODE)
+#define LINE_ONEDOT (LINEMODE | ONEDOT)
 
 __regargs void BlitterClear(BitmapT *bitmap, UWORD plane);
 __regargs void BlitterFill(BitmapT *bitmap, UWORD plane);
-void BlitterLine(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWORD bltcon1,
-                 UWORD x1, UWORD y1, UWORD x2, UWORD y2);
+__regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
+                           UWORD bltcon0, UWORD bltcon1, Line2D *line);
 
 static inline BOOL BlitterBusy() {
   return custom->dmaconr & DMAF_BLTDONE;

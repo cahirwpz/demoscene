@@ -16,8 +16,8 @@ typedef struct Shape {
   UWORD polygons;
   UWORD polygonVertices;
 
-  PointT *origPoint;
-  PointT *viewPoint;
+  Point2D *origPoint;
+  Point2D *viewPoint;
   UBYTE *viewPointFlags;
   PolygonT *polygon;
   UWORD *polygonVertex;
@@ -29,8 +29,8 @@ ShapeT *NewShape(UWORD points, UWORD polygons) {
   shape->points = points;
   shape->polygons = polygons;
 
-  shape->origPoint = AllocMemSafe(sizeof(PointT) * points, MEMF_PUBLIC);
-  shape->viewPoint = AllocMemSafe(sizeof(PointT) * points, MEMF_PUBLIC);
+  shape->origPoint = AllocMemSafe(sizeof(Point2D) * points, MEMF_PUBLIC);
+  shape->viewPoint = AllocMemSafe(sizeof(Point2D) * points, MEMF_PUBLIC);
   shape->viewPointFlags = AllocMemSafe(points, MEMF_PUBLIC);
   shape->polygon = AllocMemSafe(sizeof(PolygonT) * polygons, MEMF_PUBLIC);
 
@@ -42,8 +42,8 @@ void DeleteShape(ShapeT *shape) {
     FreeMem(shape->polygonVertex, sizeof(UWORD) * shape->polygonVertices);
   FreeMem(shape->polygon, sizeof(PolygonT) * shape->polygons);
   FreeMem(shape->viewPointFlags, shape->points);
-  FreeMem(shape->viewPoint, sizeof(PointT) * shape->points);
-  FreeMem(shape->origPoint, sizeof(PointT) * shape->points);
+  FreeMem(shape->viewPoint, sizeof(Point2D) * shape->points);
+  FreeMem(shape->origPoint, sizeof(Point2D) * shape->points);
   FreeMem(shape, sizeof(ShapeT));
 }
 
@@ -128,7 +128,7 @@ static BitmapT *screen;
 static CopInsT *bplptr[5];
 static CopListT *cp;
 static WORD plane, planeC;
-static BoxT clipBox = { 80, 64, 240 - 1, 192 - 1 };
+static Box2D clipBox = { 80, 64, 240 - 1, 192 - 1 };
 
 void Load() {
   screen = NewBitmap(320, 256, 5, FALSE);
@@ -164,76 +164,10 @@ void Kill() {
   DeleteBitmap(screen);
 }
 
-static __regargs BOOL CheckInside(PointT *p, WORD limit, UWORD plane) {
-  if (plane & PF_LEFT)
-    return (p->x >= limit);
-  if (plane & PF_RIGHT)
-    return (p->x < limit);
-  if (plane & PF_TOP)
-    return (p->y >= limit);
-  if (plane & PF_BOTTOM)
-    return (p->y < limit);
-  return FALSE;
-}
-
-static __regargs void ClipEdge(PointT *o, PointT *s, PointT *e,
-                               WORD limit, UWORD plane) 
-{
-  WORD dx = s->x - e->x;
-  WORD dy = s->y - e->y;
-
-  if (plane & (PF_LEFT | PF_RIGHT)) {
-    o->x = limit;
-    o->y = e->y + div16(dy * (limit - e->x), dx);
-  } 
-
-  if (plane & (PF_TOP | PF_BOTTOM)) {
-    o->x = e->x + div16(dx * (limit - e->y), dy);
-    o->y = limit;
-  }
-}
-
-__regargs UWORD SutherlandHodgman(PointT *S, PointT *O,
-                                  UWORD n, WORD limit, UWORD plane)
-{
-  PointT *E = S + 1;
-
-  BOOL S_inside = CheckInside(S, limit, plane);
-  BOOL needClose = TRUE;
-  UWORD m = 0;
-
-  if (S_inside) {
-    needClose = FALSE;
-    O[m++] = *S;
-  }
-
-  while (--n) {
-    BOOL E_inside = CheckInside(E, limit, plane);
-
-    if (S_inside && E_inside) {
-      O[m++] = *E;
-    } else if (S_inside && !E_inside) {
-      ClipEdge(&O[m++], S, E, limit, plane);
-    } else if (!S_inside && E_inside) {
-      ClipEdge(&O[m++], E, S, limit, plane);
-      O[m++] = *E;
-    }
-
-    S_inside = E_inside;
-    S++; E++;
-  }
-
-  if (needClose)
-    O[m++] = *O;
-
-  return m;
-}
-
-static PointT tmpPoint0[16];
-static PointT tmpPoint1[16];
+static Point2D tmpPoint[2][16];
 
 static void DrawShape(ShapeT *shape) {
-  PointT *point = shape->viewPoint;
+  Point2D *point = shape->viewPoint;
   PolygonT *polygon = shape->polygon;
   UBYTE *flags = shape->viewPointFlags;
   UWORD *vertex = shape->polygonVertex;
@@ -243,8 +177,8 @@ static void DrawShape(ShapeT *shape) {
 
   while (ps--) {
     UWORD i, j;
-    UWORD n = polygon->vertices;
-    UWORD m = n + 1;
+    WORD n = polygon->vertices;
+    WORD m = n + 1;
     UBYTE clip = 0;
     UBYTE outside = 0xff;
 
@@ -253,22 +187,38 @@ static void DrawShape(ShapeT *shape) {
 
       clip |= flags[k];
       outside &= flags[k];
-      tmpPoint0[j] = point[k];
+      tmpPoint[0][j] = point[k];
     }
-    tmpPoint0[j] = point[vertex[i - n]];
+    tmpPoint[0][j] = point[vertex[i - n]];
 
     if (!outside) {
+      Point2D *p0 = tmpPoint[0];
+      Point2D *p1 = tmpPoint[1];
+
       if (clip) {
-        m = SutherlandHodgman(tmpPoint0, tmpPoint1, m, clipBox.minX, PF_LEFT);
-        m = SutherlandHodgman(tmpPoint1, tmpPoint0, m, clipBox.minY, PF_TOP);
-        m = SutherlandHodgman(tmpPoint0, tmpPoint1, m, clipBox.maxX, PF_RIGHT);
-        m = SutherlandHodgman(tmpPoint1, tmpPoint0, m, clipBox.maxY, PF_BOTTOM);
+        if (clip & PF_LEFT) {
+          m = ClipPolygon2D(p0, p1, m, clipBox.minX, PF_LEFT);
+          swapr(p0, p1);
+        }
+        if (clip & PF_TOP) {
+          m = ClipPolygon2D(p0, p1, m, clipBox.minY, PF_TOP);
+          swapr(p0, p1);
+        }
+        if (clip & PF_RIGHT) {
+          m = ClipPolygon2D(p0, p1, m, clipBox.maxX, PF_RIGHT);
+          swapr(p0, p1);
+        }
+        if (clip & PF_BOTTOM) {
+          m = ClipPolygon2D(p0, p1, m, clipBox.maxY, PF_BOTTOM);
+          swapr(p0, p1);
+        }
       }
 
-      for (j = 0; j < m - 1; j++) {
+      while (--m > 0) {
+        Line2D *line = (Line2D *)p0++;
+
         WaitBlitter();
-        BlitterLine(screen, plane, LINE_EOR, ONEDOT,
-                    tmpPoint0[j].x, tmpPoint0[j].y, tmpPoint0[j+1].x, tmpPoint0[j+1].y);
+        BlitterLine(screen, plane, LINE_EOR, LINE_ONEDOT, line);
       }
     }
 
@@ -288,17 +238,19 @@ __interrupt_handler void IntLevel3Handler() {
 
 static BOOL Loop() {
   UWORD i, a = (frameCount * 8) & 0x1ff;
-  View2D t;
+  Matrix2D t;
 
   BlitterClear(screen, plane);
 
-  Identity2D(&t);
+  LoadIdentity2D(&t);
   Rotate2D(&t, frameCount);
   Scale2D(&t, 288 + sincos[a].sin / 2, 288 + sincos[a].cos / 2);
   Translate2D(&t, screen->width / 2, screen->height / 2);
   Transform2D(&t, shape->viewPoint, shape->origPoint, shape->points);
 
+  custom->color[0] = 0xf00;
   DrawShape(shape);
+  custom->color[0] = 0x000;
 
   WaitBlitter();
   BlitterFill(screen, plane);

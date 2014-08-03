@@ -5,7 +5,7 @@
 
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #define min(a, b) (((a) < (b)) ? (a) : (b))
-#define abs(a) (((a) < 0) ? (-a) : (a))
+#define abs(a) (((a) < 0) ? (-(a)) : (a))
 
 #define offsetof(st, m) \
   ((ULONG)((char *)&((st *)0)->m - (char *)0))
@@ -25,6 +25,18 @@ static inline WORD div16(LONG a, WORD b) {
       : "d" (b));
   return a;
 }
+
+#define rorw(a, b) \
+  (((a) << (16 - (b))) | ((a) >> (b)))
+
+#define swapr(a, b) \
+  asm ("exg %0,%1" : "+r" (a), "+r" (b))
+
+#define pushl(a) \
+  asm ("movel %0,%-" :: "r" (a))
+
+#define popl(a) \
+  asm ("movel %+,%0" : "=r" (a))
 
 void Log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
 

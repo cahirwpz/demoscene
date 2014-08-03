@@ -3,7 +3,6 @@
 
 #include "gfx.h"
 
-__regargs void CpuLine(BitmapT *bitmap, UWORD plane,
-                       UWORD xs, UWORD ys, UWORD xe, UWORD ye);
+__regargs void CpuLine(BitmapT *bitmap, ULONG plane, Line2D *line);
 
 #endif

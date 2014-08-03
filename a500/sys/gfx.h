@@ -12,6 +12,11 @@ typedef struct Palette {
   ColorT colors[0];
 } PaletteT;
 
+typedef struct {
+  WORD x1, y1;
+  WORD x2, y2;
+} Line2D;
+
 __regargs PaletteT *NewPalette(UWORD count);
 __regargs void DeletePalette(PaletteT *palette);
 

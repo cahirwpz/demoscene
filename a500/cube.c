@@ -12,34 +12,33 @@
 #define HEIGHT 256
 
 static Object3D *cube;
-static View3D view3d;
 
 static CopListT *cp;
 static BitmapT *screen[2];
 static UWORD active = 0;
 static CopInsT *bplptr[8];
 
-static BoxT box = { 40, 32, 280 - 1, 224 - 1 };
+static Box2D box = { 40, 32, 280 - 1, 224 - 1 };
 
-Object3D *NewObject3D(UWORD nVertex, UWORD nEdge) {
+Object3D *NewObject3D(UWORD points, UWORD edges) {
   Object3D *object = AllocMemSafe(sizeof(Object3D), MEMF_PUBLIC|MEMF_CLEAR);
 
-  object->nVertex = nVertex;
-  object->nEdge = nEdge;
+  object->points = points;
+  object->edges = edges;
 
-  object->vertex = AllocMemSafe(sizeof(VertexT) * nVertex, MEMF_PUBLIC);
-  object->edge = AllocMemSafe(sizeof(EdgeT) * nEdge, MEMF_PUBLIC);
-  object->point = AllocMemSafe(sizeof(PointT) * nVertex, MEMF_PUBLIC);
-  object->pointFlags = AllocMemSafe(sizeof(UBYTE) * nVertex, MEMF_PUBLIC);
+  object->point = AllocMemSafe(sizeof(Point3D) * points, MEMF_PUBLIC);
+  object->edge = AllocMemSafe(sizeof(EdgeT) * edges, MEMF_PUBLIC);
+  object->cameraPoint = AllocMemSafe(sizeof(Point3D) * points, MEMF_PUBLIC);
+  object->frustumPointFlags = AllocMemSafe(points, MEMF_PUBLIC);
 
   return object;
 }
 
 void DeleteObject3D(Object3D *object) {
-  FreeMem(object->vertex, sizeof(VertexT) * object->nVertex);
-  FreeMem(object->edge, sizeof(EdgeT) * object->nEdge);
-  FreeMem(object->point, sizeof(PointT) * object->nVertex);
-  FreeMem(object->pointFlags, sizeof(UBYTE) * object->nVertex);
+  FreeMem(object->point, sizeof(Point3D) * object->points);
+  FreeMem(object->edge, sizeof(EdgeT) * object->edges);
+  FreeMem(object->cameraPoint, sizeof(Point3D) * object->points);
+  FreeMem(object->frustumPointFlags, object->points);
   FreeMem(object, sizeof(Object3D));
 }
 
@@ -47,22 +46,22 @@ Object3D *LoadObject3D(char *filename) {
   char *file = ReadFile(filename, MEMF_PUBLIC);
   char *data = file;
   Object3D *object = NULL;
-  WORD i, nVertex, nEdge;
+  WORD i, points, edges;
 
   if (!file)
     return NULL;
   
-  if (ReadNumber(&data, &nVertex) && ReadNumber(&data, &nEdge)) {
-    object = NewObject3D(nVertex, nEdge);
+  if (ReadNumber(&data, &points) && ReadNumber(&data, &edges)) {
+    object = NewObject3D(points, edges);
 
-    for (i = 0; i < object->nVertex; i++) {
-      if (!ReadNumber(&data, &object->vertex[i].x) ||
-          !ReadNumber(&data, &object->vertex[i].y) ||
-          !ReadNumber(&data, &object->vertex[i].z))
+    for (i = 0; i < object->points; i++) {
+      if (!ReadNumber(&data, &object->point[i].x) ||
+          !ReadNumber(&data, &object->point[i].y) ||
+          !ReadNumber(&data, &object->point[i].z))
         goto error;
     }
 
-    for (i = 0; i < object->nEdge; i++) {
+    for (i = 0; i < object->edges; i++) {
       if (!ReadNumber(&data, &object->edge[i].p1) ||
           !ReadNumber(&data, &object->edge[i].p2))
         goto error;
@@ -100,26 +99,26 @@ void Kill() {
 }
 
 static void DrawObject(Object3D *object) {
-  WORD n = object->nEdge;
-  PointT *point = object->point;
-  UBYTE *pointFlags = object->pointFlags;
+  WORD n = object->edges;
+  Point3D *point = object->cameraPoint;
+  UBYTE *frustumFlags = object->frustumPointFlags;
   EdgeT *edge = object->edge;
 
   while (n--) {
     UWORD i1 = edge->p1;
     UWORD i2 = edge->p2;
-    BOOL outside = pointFlags[i1] & pointFlags[i2];
-    BOOL clip = pointFlags[i1] | pointFlags[i2];
+    BOOL outside = frustumFlags[i1] & frustumFlags[i2];
+    BOOL clip = frustumFlags[i1] | frustumFlags[i2];
 
     if (!outside) {
-      LineT line = { point[i1].x, point[i1].y, point[i2].x, point[i2].y };
+      Line2D line = { point[i1].x, point[i1].y, point[i2].x, point[i2].y };
 
       if (!outside && clip)
-        outside = !ClipLine(&line, &box);
+        outside = !ClipLine2D(&line, &box);
 
       if (!outside) {
         WaitBlitter();
-        BlitterLine(screen[active], 0, LINE_OR, 0, line.x1, line.y1, line.x2, line.y2);
+        BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, &line);
       }
     }
 
@@ -127,42 +126,44 @@ static void DrawObject(Object3D *object) {
   }
 }
 
+static Point3D rotate = { 0, 0, 0 };
+
+static BOOL Loop() {
+  Matrix3D t;
+
+  WaitBlitter();
+  BlitterClear(screen[active], 0);
+
+  LoadRotate3D(&t, rotate.x++, rotate.y++, rotate.z++);
+  Translate3D(&t, 160, 128, 300);
+  Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
+  PointsInsideFrustum(cube->cameraPoint, cube->frustumPointFlags, cube->points, 10, 1000);
+
+  DrawObject(cube);
+
+#if 0
+  WaitBlitter();
+  BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, box.minX, box.minY, box.maxX, box.minY);
+  WaitBlitter();
+  BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, box.maxX, box.minY, box.maxX, box.maxY);
+  WaitBlitter();
+  BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, box.maxX, box.maxY, box.minX, box.maxY);
+  WaitBlitter();
+  BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, box.minX, box.maxY, box.minX, box.minY);
+#endif
+
+  WaitBlitter();
+  WaitVBlank();
+  CopInsSet32(bplptr[0], screen[active]->planes[0]);
+
+  active ^= 1;
+
+  return !LeftMouseButton();
+}
+
 void Main() {
   CopListActivate(cp);
-
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 
-  view3d.viewerX = 160;
-  view3d.viewerY = 128;
-  view3d.viewerZ = 300;
-
-  while (!LeftMouseButton()) {
-    WaitBlitter();
-    BlitterClear(screen[active], 0);
-
-    view3d.rotateX++;
-    view3d.rotateY++;
-    view3d.rotateZ++;
-
-    CalculateView3D(&view3d);
-    TransformVertices(&view3d, cube);
-    PointsInsideBox(cube->point, cube->pointFlags, cube->nVertex, &box);
-
-    DrawObject(cube);
-
-    WaitBlitter();
-    BlitterLine(screen[active], 0, LINE_OR, 0, box.minX, box.minY, box.maxX, box.minY);
-    WaitBlitter();
-    BlitterLine(screen[active], 0, LINE_OR, 0, box.maxX, box.minY, box.maxX, box.maxY);
-    WaitBlitter();
-    BlitterLine(screen[active], 0, LINE_OR, 0, box.maxX, box.maxY, box.minX, box.maxY);
-    WaitBlitter();
-    BlitterLine(screen[active], 0, LINE_OR, 0, box.minX, box.maxY, box.minX, box.minY);
-
-    WaitBlitter();
-    WaitVBlank();
-    CopInsSet32(bplptr[0], screen[active]->planes[0]);
-
-    active ^= 1;
-  }
+  while (Loop());
 }

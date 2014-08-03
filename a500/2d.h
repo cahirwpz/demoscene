@@ -2,34 +2,26 @@
 #define __2D_H__
 
 #include "common.h"
+#include "gfx.h"
 
-#define PF_LEFT   8 /* less than zero */
-#define PF_RIGHT  4 /* greater or equal to width */
-#define PF_TOP    2 /* less than zero */
-#define PF_BOTTOM 1 /* greater or equal to height */
-
-typedef struct Point {
-  WORD x, y;
-} PointT;
+#define PF_LEFT   1
+#define PF_RIGHT  2
+#define PF_TOP    4
+#define PF_BOTTOM 8
 
 typedef struct {
-  WORD x1, y1;
-  WORD x2, y2;
-} LineT;
+  WORD x, y;
+} Point2D;
 
 typedef struct Box {
   WORD minX, minY;
   WORD maxX, maxY;
-} BoxT;
-
-typedef struct Edge {
-  UWORD p1, p2;
-} EdgeT;
+} Box2D;
 
 typedef struct {
   WORD m00, m01, x;
   WORD m10, m11, y;
-} View2D;
+} Matrix2D;
 
 typedef struct {
   WORD sin;
@@ -38,12 +30,13 @@ typedef struct {
 
 extern SinCosT sincos[];
 
-__regargs void Identity2D(View2D *view);
-__regargs void Translate2D(View2D *view, WORD x, WORD y);
-__regargs void Scale2D(View2D *view, WORD sx, WORD sy);
-__regargs void Rotate2D(View2D *view, WORD a);
-__regargs void Transform2D(View2D *view, PointT *out, PointT *in, UWORD n);
-__regargs void PointsInsideBox(PointT *in, UBYTE *flags, UWORD n, BoxT *box);
-__regargs BOOL ClipLine(LineT *line, BoxT *box);
+__regargs void LoadIdentity2D(Matrix2D *M);
+__regargs void Translate2D(Matrix2D *M, WORD x, WORD y);
+__regargs void Scale2D(Matrix2D *M, WORD sx, WORD sy);
+__regargs void Rotate2D(Matrix2D *M, WORD a);
+__regargs void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, UWORD n);
+__regargs void PointsInsideBox(Point2D *in, UBYTE *flags, UWORD n, Box2D *box);
+__regargs BOOL ClipLine2D(Line2D *line, Box2D *box);
+__regargs UWORD ClipPolygon2D(Point2D *S, Point2D *O, UWORD n, WORD limit, UWORD plane);
 
 #endif

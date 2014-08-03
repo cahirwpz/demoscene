@@ -1,28 +1,33 @@
 #include "line.h"
 
-__regargs void CpuLine(BitmapT *bitmap, UWORD plane,
-                       UWORD xs, UWORD ys, UWORD xe, UWORD ye)
+__regargs void CpuLine(BitmapT *bitmap, ULONG plane, Line2D *line)
 {
   UBYTE *pixels = bitmap->planes[plane];
-  ULONG stride = bitmap->width / 8;
-  UBYTE color = 0x80;
+  LONG stride = bitmap->width / 8;
+  UBYTE color;
+  WORD xs = line->x1;
+  WORD ys = line->y1;
+  WORD xe = line->x2;
+  WORD ye = line->y2;
   WORD dx, dy;
 
   if (ys > ye) {
-    asm("exg %0,%1" : "+r" (xs), "+r" (xe));
-    asm("exg %0,%1" : "+r" (ys), "+r" (ye));
+    swapr(xs, xe);
+    swapr(ys, ye);
   }
 
   dx = abs(xe - xs);
   dy = ye - ys;
 
-  pixels += (ys * bitmap->width + xs) / 8;
-  color >>= (xs & 7);
+  pixels += ys * (WORD)stride;
+  pixels += (LONG)xs >> 3;
+
+  color = 0x80 >> (xs & 7);
 
   if (dx < dy) {
-    WORD dg1 = (dx - dy) << 1;
-    WORD dg2 = dx << 1;
+    WORD dg2 = 2 * dx;
     WORD dg = dg2 - dy;
+    WORD dg1 = dg - dy;
 
     if (dy == 0)
       return;
@@ -61,9 +66,9 @@ __regargs void CpuLine(BitmapT *bitmap, UWORD plane,
       } while (--dy != -1);
     }
   } else {
-    WORD dg1 = (dy - dx) << 1;
-    WORD dg2 = dy << 1;
+    WORD dg2 = 2 * dy;
     WORD dg = dg2 - dx;
+    WORD dg1 = dg - dx;
 
     if (dx == 0)
       return;
