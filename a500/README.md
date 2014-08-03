@@ -5,7 +5,7 @@ Amiga 500 Hardware Programming Examples
 
 1. [Amiga Hardware Reference Manual](http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0000.html)
 
-2. [MC68000 instruction timing](http://oldwww.nvg.ntnu.no/amiga/MC680x0_Sections/mc68000timing.HTML)
+2. [MC68000 instruction timing](http://linas.org/mirrors/www.nvg.ntnu.no/2002.09.16/amiga/MC680x0_Sections/mc68000timing.HTML)
 
 3. [Custom Register Index](http://www.winnicki.net/amiga/memmap/)
 
