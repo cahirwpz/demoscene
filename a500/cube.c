@@ -1,9 +1,7 @@
 #include "blitter.h"
-#include "memory.h"
 #include "coplist.h"
-#include "file.h"
 #include "3d.h"
-#include "reader.h"
+#include "fx.h"
 
 #define X(x) ((x) + 0x81)
 #define Y(y) ((y) + 0x2c)
@@ -18,65 +16,6 @@ static BitmapT *screen[2];
 static UWORD active = 0;
 static CopInsT *bplptr[8];
 
-static Box2D box = { 40, 32, 280 - 1, 224 - 1 };
-
-Object3D *NewObject3D(UWORD points, UWORD edges) {
-  Object3D *object = AllocMemSafe(sizeof(Object3D), MEMF_PUBLIC|MEMF_CLEAR);
-
-  object->points = points;
-  object->edges = edges;
-
-  object->point = AllocMemSafe(sizeof(Point3D) * points, MEMF_PUBLIC);
-  object->edge = AllocMemSafe(sizeof(EdgeT) * edges, MEMF_PUBLIC);
-  object->cameraPoint = AllocMemSafe(sizeof(Point3D) * points, MEMF_PUBLIC);
-  object->frustumPointFlags = AllocMemSafe(points, MEMF_PUBLIC);
-
-  return object;
-}
-
-void DeleteObject3D(Object3D *object) {
-  FreeMem(object->point, sizeof(Point3D) * object->points);
-  FreeMem(object->edge, sizeof(EdgeT) * object->edges);
-  FreeMem(object->cameraPoint, sizeof(Point3D) * object->points);
-  FreeMem(object->frustumPointFlags, object->points);
-  FreeMem(object, sizeof(Object3D));
-}
-
-Object3D *LoadObject3D(char *filename) {
-  char *file = ReadFile(filename, MEMF_PUBLIC);
-  char *data = file;
-  Object3D *object = NULL;
-  WORD i, points, edges;
-
-  if (!file)
-    return NULL;
-  
-  if (ReadNumber(&data, &points) && ReadNumber(&data, &edges)) {
-    object = NewObject3D(points, edges);
-
-    for (i = 0; i < object->points; i++) {
-      if (!ReadNumber(&data, &object->point[i].x) ||
-          !ReadNumber(&data, &object->point[i].y) ||
-          !ReadNumber(&data, &object->point[i].z))
-        goto error;
-    }
-
-    for (i = 0; i < object->edges; i++) {
-      if (!ReadNumber(&data, &object->edge[i].p1) ||
-          !ReadNumber(&data, &object->edge[i].p2))
-        goto error;
-    }
-
-    FreeAutoMem(file);
-    return object;
-  }
-
-error:
-  DeleteObject3D(object);
-  FreeAutoMem(file);
-  return NULL;
-}
-
 void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
@@ -89,6 +28,9 @@ void Load() {
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
+
+  ClipFrustum.near = fx4i(-200);
+  ClipFrustum.far = fx4i(-300);
 }
 
 void Kill() {
@@ -98,31 +40,58 @@ void Kill() {
   DeleteBitmap(screen[1]);
 }
 
-static void DrawObject(Object3D *object) {
-  WORD n = object->edges;
-  Point3D *point = object->cameraPoint;
-  UBYTE *frustumFlags = object->frustumPointFlags;
-  EdgeT *edge = object->edge;
+static Point3D tmpPoint[2][16];
 
-  while (n--) {
-    UWORD i1 = edge->p1;
-    UWORD i2 = edge->p2;
-    BOOL outside = frustumFlags[i1] & frustumFlags[i2];
-    BOOL clip = frustumFlags[i1] | frustumFlags[i2];
+static void DrawObject(Object3D *object) {
+  Point3D *point = object->cameraPoint;
+  PolygonT *polygon = object->polygon;
+  UBYTE *flags = object->cameraPointFlags;
+  UWORD *vertex = object->polygonVertex;
+  WORD polygons = object->polygons;
+
+  while (polygons--) {
+    WORD i, n = polygon->vertices;
+    UBYTE clipFlags = 0;
+    UBYTE outside = 0xff;
+    Point3D *in = tmpPoint[0];
+    Point3D *out = tmpPoint[1];
+
+    for (i = 0; i < n; i++) {
+      UWORD k = vertex[polygon->index + i];
+
+      clipFlags |= flags[k];
+      outside &= flags[k];
+      in[i] = point[k];
+      out[i] = point[k];
+    }
 
     if (!outside) {
-      Line2D line = { point[i1].x, point[i1].y, point[i2].x, point[i2].y };
+      n = ClipPolygon3D(in, &out, n, clipFlags);
 
-      if (!outside && clip)
-        outside = !ClipLine2D(&line, &box);
+      /* Perspective mapping. */
+      for (i = 0; i < n; i++) {
+        out[i].x = div16(256 * out[i].x, out[i].z) + 160;
+        out[i].y = div16(256 * out[i].y, out[i].z) + 128;
+      }
 
-      if (!outside) {
+      while (--n > 0) {
+        Line2D line;
+
+        line.x1 = out->x;
+        line.y1 = out->y;
+        //Log ("(%ld %ld %ld) -", (LONG)out->x, (LONG)out->y, (LONG)out->z);
+
+        out++;
+        line.x2 = out->x;
+        line.y2 = out->y;
+        //Log ("- (%ld %ld %ld)\n", (LONG)out->x, (LONG)out->y, (LONG)out->z);
+
         WaitBlitter();
         BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, &line);
       }
     }
 
-    edge++;
+    polygon++;
   }
 }
 
@@ -134,23 +103,16 @@ static BOOL Loop() {
   WaitBlitter();
   BlitterClear(screen[active], 0);
 
-  LoadRotate3D(&t, rotate.x++, rotate.y++, rotate.z++);
-  Translate3D(&t, 160, 128, 300);
+  rotate.x += 4;
+  rotate.y += 4;
+  rotate.z += 4;
+
+  LoadRotate3D(&t, rotate.x, rotate.y, rotate.z);
+  Translate3D(&t, 0, 0, fx4i(-250));
   Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
-  PointsInsideFrustum(cube->cameraPoint, cube->frustumPointFlags, cube->points, 10, 1000);
+  PointsInsideFrustum(cube->cameraPoint, cube->cameraPointFlags, cube->points);
 
   DrawObject(cube);
-
-#if 0
-  WaitBlitter();
-  BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, box.minX, box.minY, box.maxX, box.minY);
-  WaitBlitter();
-  BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, box.maxX, box.minY, box.maxX, box.maxY);
-  WaitBlitter();
-  BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, box.maxX, box.maxY, box.minX, box.maxY);
-  WaitBlitter();
-  BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, box.minX, box.maxY, box.minX, box.minY);
-#endif
 
   WaitBlitter();
   WaitVBlank();

@@ -32,8 +32,6 @@ __regargs void CpuLine(BitmapT *bitmap, ULONG plane, Line2D *line)
     if (dy == 0)
       return;
 
-    dy--;
-
     if (xe < xs) {
       do {
         *pixels |= color;
@@ -72,8 +70,6 @@ __regargs void CpuLine(BitmapT *bitmap, ULONG plane, Line2D *line)
 
     if (dx == 0)
       return;
-
-    dx--;
 
     if (xe < xs) {
       do {

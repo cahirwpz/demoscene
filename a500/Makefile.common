@@ -55,7 +55,7 @@ $(LIB):
 		-L$(lib) -l$(lib)) $(LDLIBS)
 
 %.s: %.c
-	$(CC) $(CFLAGS) -S -fverbose-asm -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -S -fverbose-asm -o $@ $<
 
 clean::
 	@$(RM) -v -r .deps

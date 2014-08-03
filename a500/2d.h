@@ -13,10 +13,15 @@ typedef struct {
   WORD x, y;
 } Point2D;
 
-typedef struct Box {
+typedef struct {
   WORD minX, minY;
   WORD maxX, maxY;
 } Box2D;
+
+typedef struct Polygon {
+  UWORD vertices;
+  UWORD index;
+} PolygonT;
 
 typedef struct {
   WORD m00, m01, x;
@@ -28,15 +33,33 @@ typedef struct {
   WORD cos;
 } SinCosT;
 
-extern SinCosT sincos[];
-
 __regargs void LoadIdentity2D(Matrix2D *M);
 __regargs void Translate2D(Matrix2D *M, WORD x, WORD y);
 __regargs void Scale2D(Matrix2D *M, WORD sx, WORD sy);
 __regargs void Rotate2D(Matrix2D *M, WORD a);
 __regargs void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, UWORD n);
-__regargs void PointsInsideBox(Point2D *in, UBYTE *flags, UWORD n, Box2D *box);
-__regargs BOOL ClipLine2D(Line2D *line, Box2D *box);
-__regargs UWORD ClipPolygon2D(Point2D *S, Point2D *O, UWORD n, WORD limit, UWORD plane);
+
+extern Box2D ClipWin;
+
+__regargs void PointsInsideBox(Point2D *in, UBYTE *flags, UWORD n);
+__regargs BOOL ClipLine2D(Line2D *line);
+__regargs UWORD ClipPolygon2D(Point2D *in, Point2D **outp, UWORD n,
+                              UWORD clipFlags);
+
+typedef struct Shape {
+  UWORD points;
+  UWORD polygons;
+  UWORD polygonVertices;
+
+  Point2D *origPoint;
+  Point2D *viewPoint;
+  UBYTE *viewPointFlags;
+  PolygonT *polygon;
+  UWORD *polygonVertex;
+} ShapeT;
+
+__regargs ShapeT *NewShape(UWORD points, UWORD polygons);
+__regargs void DeleteShape(ShapeT *shape);
+__regargs ShapeT *LoadShape(char *filename);
 
 #endif

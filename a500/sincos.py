@@ -8,10 +8,10 @@ if __name__ == '__main__':
     print >>fh, '\tSECTION\tsincos,DATA\n'
     print >>fh, '_sincos:'
 
-    prec = 512
+    prec = 4096
 
-    sintab = [int(sin(i * 2 * pi / prec) * 256) for i in range(prec)]
-    costab = [int(cos(i * 2 * pi / prec) * 256) for i in range(prec)]
+    sintab = [int(sin(i * 2 * pi / prec) * prec) for i in range(prec)]
+    costab = [int(cos(i * 2 * pi / prec) * prec) for i in range(prec)]
 
     for a, b in zip(sintab, costab):
       print >>fh, '\tdc.w\t%d,%d' % (a, b)

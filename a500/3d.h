@@ -17,19 +17,9 @@ typedef struct {
 } Matrix3D;
 
 typedef struct {
-  UWORD p1, p2;
-} EdgeT;
-
-typedef struct {
-  UWORD points;
-  UWORD edges;
-
-  Point3D *point;
-  EdgeT *edge;
-
-  Point3D *cameraPoint;
-  UBYTE *frustumPointFlags;
-} Object3D;
+  WORD near;
+  WORD far;
+} Frustum3D;
 
 __regargs void LoadIdentity3D(Matrix3D *M);
 __regargs void Translate3D(Matrix3D *M, WORD x, WORD y, WORD z);
@@ -37,7 +27,28 @@ __regargs void Scale3D(Matrix3D *M, WORD sx, WORD sy, WORD sz);
 __regargs void LoadRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az);
 __regargs void Rotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az);
 __regargs void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, UWORD n);
-__regargs void PointsInsideFrustum(Point3D *in, UBYTE *flags, UWORD n,
-                                   WORD near, WORD far);
+
+extern Frustum3D ClipFrustum;
+
+__regargs void PointsInsideFrustum(Point3D *in, UBYTE *flags, UWORD n);
+__regargs UWORD ClipPolygon3D(Point3D *in, Point3D **outp, UWORD n,
+                              UWORD clipFlags);
+
+typedef struct {
+  UWORD points;
+  UWORD polygons;
+  UWORD polygonVertices;
+
+  Point3D *point;
+  Point3D *cameraPoint;
+  UBYTE *cameraPointFlags;
+
+  PolygonT *polygon;
+  UWORD *polygonVertex;
+} Object3D;
+
+__regargs Object3D *NewObject3D(UWORD points, UWORD polygons);
+__regargs void DeleteObject3D(Object3D *object);
+__regargs Object3D *LoadObject3D(char *filename);
 
 #endif
