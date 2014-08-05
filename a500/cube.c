@@ -29,8 +29,8 @@ void Load() {
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
 
-  ClipFrustum.near = fx4i(-200);
-  ClipFrustum.far = fx4i(-300);
+  ClipFrustum.near = fx4i(-100);
+  ClipFrustum.far = fx4i(-400);
 }
 
 void Kill() {
@@ -48,13 +48,22 @@ static void DrawObject(Object3D *object) {
   UBYTE *flags = object->cameraPointFlags;
   UWORD *vertex = object->polygonVertex;
   WORD polygons = object->polygons;
+  Point3D *normal = object->polygonNormal;
 
-  while (polygons--) {
+  for (; polygons--; normal++, polygon++) {
     WORD i, n = polygon->vertices;
     UBYTE clipFlags = 0;
     UBYTE outside = 0xff;
     Point3D *in = tmpPoint[0];
     Point3D *out = tmpPoint[1];
+
+    /* Check polygon visibility. */
+    {
+      Point3D *p = &point[vertex[polygon->index]];
+
+      if (normal->x * p->x + normal->y * p->y + normal->z * p->z >= 0)
+        continue;
+    }
 
     for (i = 0; i < n; i++) {
       UWORD k = vertex[polygon->index + i];
@@ -65,33 +74,32 @@ static void DrawObject(Object3D *object) {
       out[i] = point[k];
     }
 
-    if (!outside) {
-      n = ClipPolygon3D(in, &out, n, clipFlags);
+    if (outside)
+      continue;
 
-      /* Perspective mapping. */
-      for (i = 0; i < n; i++) {
-        out[i].x = div16(256 * out[i].x, out[i].z) + 160;
-        out[i].y = div16(256 * out[i].y, out[i].z) + 128;
-      }
+    n = ClipPolygon3D(in, &out, n, clipFlags);
 
-      while (--n > 0) {
-        Line2D line;
-
-        line.x1 = out->x;
-        line.y1 = out->y;
-        //Log ("(%ld %ld %ld) -", (LONG)out->x, (LONG)out->y, (LONG)out->z);
-
-        out++;
-        line.x2 = out->x;
-        line.y2 = out->y;
-        //Log ("- (%ld %ld %ld)\n", (LONG)out->x, (LONG)out->y, (LONG)out->z);
-
-        WaitBlitter();
-        BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, &line);
-      }
+    /* Perspective mapping. */
+    for (i = 0; i < n; i++) {
+      out[i].x = div16(256 * out[i].x, out[i].z) + 160;
+      out[i].y = div16(256 * out[i].y, out[i].z) + 128;
     }
 
-    polygon++;
+    while (--n > 0) {
+      Line2D line;
+
+      line.x1 = out->x;
+      line.y1 = out->y;
+      //Log ("(%ld %ld %ld) -", (LONG)out->x, (LONG)out->y, (LONG)out->z);
+
+      out++;
+      line.x2 = out->x;
+      line.y2 = out->y;
+      //Log ("- (%ld %ld %ld)\n", (LONG)out->x, (LONG)out->y, (LONG)out->z);
+
+      WaitBlitter();
+      BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, &line);
+    }
   }
 }
 
@@ -111,6 +119,7 @@ static BOOL Loop() {
   Translate3D(&t, 0, 0, fx4i(-250));
   Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
   PointsInsideFrustum(cube->cameraPoint, cube->cameraPointFlags, cube->points);
+  UpdatePolygonNormals(cube);
 
   DrawObject(cube);
 

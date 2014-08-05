@@ -14,6 +14,15 @@ static inline WORD normfx(LONG a) {
   return a;
 }
 
+static inline LONG shift12(WORD a) {
+  LONG b;
+  asm("swap %0\n"
+      "clrw %0\n"
+      "asrl #4,%0\n"
+      : "=d" (b) : "d" (a));
+  return b;
+}
+
 #define fx4i(i) \
   (WORD)((WORD)(i) << 4)
 

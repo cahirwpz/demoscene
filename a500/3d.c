@@ -327,6 +327,8 @@ __regargs Object3D *NewObject3D(UWORD points, UWORD polygons) {
   object->cameraPoint = AllocMemSafe(sizeof(Point3D) * points, MEMF_PUBLIC);
   object->cameraPointFlags = AllocMemSafe(points, MEMF_PUBLIC);
   object->polygon = AllocMemSafe(sizeof(PolygonT) * polygons, MEMF_PUBLIC);
+  object->polygonNormal =
+    AllocMemSafe(sizeof(Point3D) * polygons, MEMF_PUBLIC);
 
   return object;
 }
@@ -334,10 +336,11 @@ __regargs Object3D *NewObject3D(UWORD points, UWORD polygons) {
 __regargs void DeleteObject3D(Object3D *object) {
   if (object->polygonVertex)
     FreeMem(object->polygonVertex, sizeof(UWORD) * object->polygonVertices);
-  FreeMem(object->point, sizeof(Point3D) * object->points);
+  FreeMem(object->polygonNormal, sizeof(Point3D) * object->polygons);
   FreeMem(object->polygon, sizeof(PolygonT) * object->polygons);
-  FreeMem(object->cameraPoint, sizeof(Point3D) * object->points);
   FreeMem(object->cameraPointFlags, object->points);
+  FreeMem(object->cameraPoint, sizeof(Point3D) * object->points);
+  FreeMem(object->point, sizeof(Point3D) * object->points);
   FreeMem(object, sizeof(Object3D));
 }
 
@@ -421,4 +424,43 @@ error:
   DeleteObject3D(object);
   FreeAutoMem(file);
   return NULL;
+}
+
+/*
+ * For given triangle T with vertices A, B and C, surface normal N is a cross
+ * product between vectors AB and BC.
+ *
+ * Ordering of vertices in polygon description is meaningful - depending on
+ * that the normal vector will be directed inwards or outwards.
+ *
+ * Clockwise convention is used.
+ */
+
+__regargs void UpdatePolygonNormals(Object3D *object) {
+  WORD polygons = object->polygons;
+  Point3D *point = object->cameraPoint;
+  PolygonT *polygon = object->polygon;
+  WORD *normal = (WORD *)object->polygonNormal;
+  UWORD *vertex = object->polygonVertex;
+
+  while (polygons--) {
+    UWORD *v = &vertex[polygon->index];
+
+    Point3D *p1 = &point[*v++];
+    Point3D *p2 = &point[*v++];
+    Point3D *p3 = &point[*v++];
+
+    WORD ax = p1->x - p2->x;
+    WORD ay = p1->y - p2->y;
+    WORD az = p1->z - p2->z;
+    WORD bx = p2->x - p3->x;
+    WORD by = p2->y - p3->y;
+    WORD bz = p2->z - p3->z;
+
+    *normal++ = normfx(ay * bz - by * az);
+    *normal++ = normfx(az * bx - bz * ax);
+    *normal++ = normfx(ax * by - bx * ay);
+
+    polygon++;
+  }
 }

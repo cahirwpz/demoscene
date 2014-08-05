@@ -10,6 +10,12 @@
 #define offsetof(st, m) \
   ((ULONG)((char *)&((st *)0)->m - (char *)0))
 
+static inline WORD absw(WORD a) {
+  if (a < 0)
+    return -a;
+  return a;
+}
+
 static inline ULONG swap16(ULONG a) {
   asm("swap %0": "=d" (a));
   return a;
