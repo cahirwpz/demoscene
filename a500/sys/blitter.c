@@ -85,12 +85,12 @@ __regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
       bltcon1 |= SUL;
   }
 
-  derr = 4 * dmin - 2 * dmax;
+  derr = 2 * dmin - dmax;
   if (derr < 0)
     bltcon1 |= SIGNFLAG;
 
-  custom->bltamod = 4 * dmin - 4 * dmax;
-  custom->bltbmod = 4 * dmin;
+  custom->bltamod = 2 * dmin - 2 * dmax;
+  custom->bltbmod = 2 * dmin;
   custom->bltcmod = bwidth;
   custom->bltdmod = bwidth;
 
