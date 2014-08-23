@@ -9,7 +9,7 @@
 #define WIDTH 320
 #define HEIGHT 256
 
-static PixmapT *chunky;
+static PixmapT *chunky[2];
 static PixmapT *textureHi, *textureLo;
 static BitmapT *screen[2];
 static PaletteT *palette;
@@ -66,7 +66,8 @@ void Load() {
     DeletePixmap(texture);
   }
 
-  chunky = NewPixmap(WIDTH / 2, HEIGHT / 2, PM_GRAY4, MEMF_CHIP);
+  chunky[0] = NewPixmap(WIDTH / 2, HEIGHT / 2, PM_GRAY4, MEMF_CHIP);
+  chunky[1] = NewPixmap(WIDTH / 2, HEIGHT / 2, PM_GRAY4, MEMF_CHIP);
 
   {
     UWORD *uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
@@ -106,49 +107,73 @@ void Load() {
 void Kill() {
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
-  DeletePixmap(chunky);
-  DeletePalette(palette);
+  DeletePixmap(chunky[0]);
+  DeletePixmap(chunky[1]);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
+  DeletePalette(palette);
   DeleteCopList(cp);
 }
 
-void ChunkyToPlanar(BitmapT *screen) {
-  /* Swap 4x2, pass 1. */
-  custom->bltapt = chunky->pixels;
-  custom->bltbpt = chunky->pixels + 2;
-  custom->bltdpt = screen->planes[0];
-  custom->bltamod = 2;
-  custom->bltbmod = 2;
-  custom->bltdmod = 0;
-  custom->bltcdat = 0xf0f0;
+static struct {
+  ULONG phase;
+  BitmapT *screen;
+  PixmapT *chunky;
+} c2p = { 3, NULL, NULL };
 
-  custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-  custom->bltcon1 = 4 << BSHIFTSHIFT;
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
-  custom->bltsizv = 80 * 128 / 4;
-  custom->bltsizh = 1;
+void ChunkyToPlanar() {
+  BitmapT *screen = c2p.screen;
+  PixmapT *chunky = c2p.chunky;
 
-  WaitBlitter();
+  switch (c2p.phase) {
+    case 0:
+      /* Swap 4x2, pass 1. */
+      custom->bltapt = chunky->pixels;
+      custom->bltbpt = chunky->pixels + 2;
+      custom->bltdpt = screen->planes[0];
+      custom->bltamod = 2;
+      custom->bltbmod = 2;
+      custom->bltdmod = 0;
+      custom->bltcdat = 0xf0f0;
 
-  /* Swap 4x2, pass 2. */
-  custom->bltapt = chunky->pixels + 80 * 128;
-  custom->bltbpt = chunky->pixels + 80 * 128 + 2;
-  custom->bltdpt = screen->planes[2] + 80 * 128 / 2;
-  custom->bltamod = 2;
-  custom->bltbmod = 2;
-  custom->bltdmod = 0;
-  custom->bltcdat = 0xf0f0;
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
+      custom->bltcon1 = 4 << BSHIFTSHIFT;
+      custom->bltafwm = -1;
+      custom->bltalwm = -1;
+      custom->bltsizv = 80 * 128 / 4;
+      custom->bltsizh = 1;
+      break;
 
-  custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
-  custom->bltcon1 = BLITREVERSE;
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
-  custom->bltsizv = 80 * 128 / 4;
-  custom->bltsizh = 1;
+    case 1:
+      /* Swap 4x2, pass 2. */
+      // custom->bltapt = chunky->pixels + 80 * 128;
+      // custom->bltbpt = chunky->pixels + 80 * 128 + 2;
+      custom->bltdpt = screen->planes[2] + 80 * 128 / 2;
+      // custom->bltamod = 2;
+      // custom->bltbmod = 2;
+      // custom->bltdmod = 0;
+      // custom->bltcdat = 0xf0f0;
 
-  WaitBlitter();
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
+      custom->bltcon1 = BLITREVERSE;
+      // custom->bltafwm = -1;
+      // custom->bltalwm = -1;
+      custom->bltsizv = 80 * 128 / 4;
+      custom->bltsizh = 1;
+      break;
+
+    case 2:
+      CopInsSet32(bpls[0], screen->planes[0]);
+      CopInsSet32(bpls[1], screen->planes[0]);
+      CopInsSet32(bpls[2], screen->planes[2]);
+      CopInsSet32(bpls[3], screen->planes[2]);
+      break;
+
+    default:
+      return;
+  }
+
+  c2p.phase++;
 }
 
 static ULONG frameCount = 0;
@@ -157,13 +182,18 @@ __interrupt_handler void IntLevel3Handler() {
   if (custom->intreqr & INTF_VERTB)
     frameCount++;
 
+  if (custom->intreqr & INTF_BLIT) {
+    asm volatile("" ::: "d0", "d1", "a0", "a1");
+    ChunkyToPlanar();
+  }
+
   custom->intreq = INTF_LEVEL3;
   custom->intreq = INTF_LEVEL3;
 }
 
 void Main() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
+  custom->intena = INTF_SETCLR | INTF_VERTB | INTF_BLIT;
 
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
@@ -174,7 +204,7 @@ void Main() {
     UBYTE *txtHi = textureHi->pixels + (offset & 16383);
     UBYTE *txtLo = textureLo->pixels + (offset & 16383);
 
-#ifdef PROFILING
+#if 0
     {
       LONG lines = ReadLineCounter();
 
@@ -183,25 +213,13 @@ void Main() {
       Log("uvmap: %ld\n", ReadLineCounter() - lines);
     }
 #else
-    (*UVMapRender)(chunky->pixels, txtHi, txtLo);
+    (*UVMapRender)(chunky[active]->pixels, txtHi, txtLo);
 #endif
 
-#ifdef PROFILING
-    {
-      LONG lines = ReadLineCounter();
-
-      ChunkyToPlanar(screen[active]);
-
-      Log("c2p: %ld\n", ReadLineCounter() - lines);
-    }
-#else
-    ChunkyToPlanar(screen[active]);
-#endif
-
-    CopInsSet32(bpls[0], screen[active]->planes[0]);
-    CopInsSet32(bpls[1], screen[active]->planes[0]);
-    CopInsSet32(bpls[2], screen[active]->planes[2]);
-    CopInsSet32(bpls[3], screen[active]->planes[2]);
+    c2p.phase = 0;
+    c2p.screen = screen[active];
+    c2p.chunky = chunky[active];
+    ChunkyToPlanar();
 
     active ^= 1;
   }
