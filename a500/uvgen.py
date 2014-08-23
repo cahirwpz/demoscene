@@ -34,6 +34,24 @@ def generate(width, height, fn):
   return uvmap
 
 
+def scramble(uvmap):
+  out = array("B")
+
+  i = 0
+  while i < len(uvmap):
+    for j in range(4):
+      out.append(uvmap[i + j])
+    for j in range(4):
+      out.append(uvmap[i + j + 8])
+    for j in range(4):
+      out.append(uvmap[i + j + 4])
+    for j in range(4):
+      out.append(uvmap[i + j + 12])
+    i += 16
+
+  return out
+
+
 def FancyEye(x, y):
   a = atan2(x, y)
   r = dist(x, y, 0.0, 0.0)
@@ -49,5 +67,5 @@ def FancyEye(x, y):
 
 if __name__ == "__main__":
   with open("data/uvmap.bin", "w") as f:
-    arr = generate(160, 128, FancyEye)
-    arr.tofile(f)
+    uvmap = generate(160, 128, FancyEye)
+    scramble(uvmap).tofile(f)

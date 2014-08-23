@@ -20,25 +20,19 @@ void (*UVMapRender)(UBYTE *chunky asm("a0"),
                     UBYTE *textureHi asm("a1"),
                     UBYTE *textureLo asm("a2"));
 
-static void PixmapScrambleHi(PixmapT *image) {
+static void PixmapScramble(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
+{
   UBYTE *data = image->pixels;
+  UBYTE *hi = imageHi->pixels;
+  UBYTE *lo = imageLo->pixels;
   LONG n = image->width * image->height;
 
-  /* [0 0 0 0 a0 a1 a2 a3] => [a2 a3 0 0 a0 a1 0 0] */
   do {
-    BYTE c = *data;
-    *data++ = (c & 0x0c) | ((c & 0x03) << 6);
-  } while (--n);
-}
-
-static void PixmapScrambleLo(PixmapT *image) {
-  UBYTE *data = image->pixels;
-  LONG n = image->width * image->height;
-
-  /* [0 0 0 0 a0 a1 a2 a3] => [ 0 0 a2 a3 0 0 a0 a1] */
-  do {
-    BYTE c = *data;
-    *data++ = ((c & 0x0c) >> 2) | ((c & 0x03) << 4);
+    BYTE c = *data++;
+    /* [0 0 0 0 a0 a1 a2 a3] => [a2 a3 0 0 a0 a1 0 0] */
+    *hi++ = (c & 0x0c) | ((c & 0x03) << 6);
+    /* [0 0 0 0 a0 a1 a2 a3] => [ 0 0 a2 a3 0 0 a0 a1] */
+    *lo++ = ((c & 0x0c) >> 2) | ((c & 0x03) << 4);
   } while (--n);
 }
 
@@ -51,8 +45,7 @@ void Load() {
 
   textureHi = LoadTGA("data/texture-16.tga", PM_CMAP);
   textureLo = CopyPixmap(textureHi);
-  PixmapScrambleHi(textureHi);
-  PixmapScrambleLo(textureLo);
+  PixmapScramble(textureHi, textureHi, textureLo);
 
   chunky = NewPixmap(WIDTH / 2, HEIGHT / 2, PM_GRAY4, MEMF_CHIP|MEMF_CLEAR);
   chunky->palette = textureHi->palette;
@@ -61,19 +54,15 @@ void Load() {
     UWORD *uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
     UWORD *data = uvmap;
     UWORD *code = UVMapRenderTemplate;
-    WORD n = WIDTH * HEIGHT / 4 / 8;
+    WORD n = WIDTH * HEIGHT / 8;
 
+    /* UVMap is pre-scrambled. */
     while (n--) {
-      /* scramble: [ab] [cd] [ef] [gh] => [ab] [ef] [cd] [gh] */
-      code[1] = *data++;
-      code[3] = *data++;
-      code[11] = *data++;
-      code[13] = *data++;
-      code[6] = *data++;
-      code[8] = *data++;
-      code[16] = *data++;
-      code[18] = *data++;
-      code += 20;
+      code++;
+      *code++ = *data++;
+      code++;
+      *code++ = *data++;
+      code++;
     }
 
     UVMapRender = (void *)UVMapRenderTemplate;
