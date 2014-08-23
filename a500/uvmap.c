@@ -12,9 +12,13 @@
 static PixmapT *chunky;
 static PixmapT *textureHi, *textureLo;
 static BitmapT *screen;
-static UWORD *uvmap;
 static CopListT *cp;
 static CopInsT *bpls[6];
+
+extern WORD UVMapRenderTemplate[];
+void (*UVMapRender)(UBYTE *chunky asm("a0"),
+                    UBYTE *textureHi asm("a1"),
+                    UBYTE *textureLo asm("a2"));
 
 static void PixmapScrambleHi(PixmapT *image) {
   UBYTE *data = image->pixels;
@@ -53,7 +57,29 @@ void Load() {
   chunky = NewPixmap(WIDTH / 2, HEIGHT / 2, PM_GRAY4, MEMF_CHIP|MEMF_CLEAR);
   chunky->palette = textureHi->palette;
 
-  uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
+  {
+    UWORD *uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
+    UWORD *data = uvmap;
+    UWORD *code = UVMapRenderTemplate;
+    WORD n = WIDTH * HEIGHT / 4 / 8;
+
+    while (n--) {
+      /* scramble: [ab] [cd] [ef] [gh] => [ab] [ef] [cd] [gh] */
+      code[1] = *data++;
+      code[3] = *data++;
+      code[11] = *data++;
+      code[13] = *data++;
+      code[6] = *data++;
+      code[8] = *data++;
+      code[16] = *data++;
+      code[18] = *data++;
+      code += 20;
+    }
+
+    UVMapRender = (void *)UVMapRenderTemplate;
+
+    FreeAutoMem(uvmap);
+  }
 
   CopInit(cp);
   CopMakePlayfield(cp, bpls, screen);
@@ -76,7 +102,6 @@ void Load() {
 }
 
 void Kill() {
-  FreeAutoMem(uvmap);
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
   DeletePalette(chunky->palette);
@@ -133,17 +158,6 @@ __interrupt_handler void IntLevel3Handler() {
   custom->intreq = INTF_LEVEL3;
 }
 
-static inline UBYTE load(UBYTE *hi, UBYTE *lo, UWORD o1, UWORD o2) {
-  UBYTE res;
-
-  asm("moveb %2@(%3:w),%0\n"
-      "orb   %1@(%4:w),%0\n"
-      : "=d" (res)
-      : "a" (lo), "a" (hi), "d" (o1), "d" (o2));
-
-  return res;
-}
-
 void Main() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
@@ -152,40 +166,23 @@ void Main() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
 
   while (!LeftMouseButton()) {
-    register UBYTE *txtHi = textureHi->pixels + 32768 + (frameCount & 255);
-    register UBYTE *txtLo = textureLo->pixels + 32768 + (frameCount & 255);
-    register UBYTE *chk = chunky->pixels;
-    register UWORD *uv = uvmap;
-    LONG n = (HEIGHT / 2) * (WIDTH / 2) / 8;
+    UBYTE *txtHi = textureHi->pixels + 32768 + (frameCount & 255);
+    UBYTE *txtLo = textureLo->pixels + 32768 + (frameCount & 255);
 
-    while (n--) {
-      register UWORD d0 asm("d0");
-      register UWORD d1 asm("d1");
-      register UWORD d2 asm("d2");
-      register UWORD d3 asm("d3");
-      register UWORD d4 asm("d4");
-      register UWORD d5 asm("d5");
-      register UWORD d6 asm("d6");
-      register UWORD d7 asm("d7");
+    {
+      LONG lines = ReadLineCounter();
 
-      asm("movemw %0@+,%1/%2/%3/%4/%5/%6/%7/%8"
-          : "+a" (uv),
-            "=d" (d0), "=d" (d1), "=d" (d2), "=d" (d3),
-            "=d" (d4), "=d" (d5), "=d" (d6), "=d" (d7));
+      (*UVMapRender)(chunky->pixels, txtHi, txtLo);
 
-      {
-        UBYTE a = load(txtHi, txtLo, d0, d1);
-        UBYTE b = load(txtHi, txtLo, d2, d3);
-        UBYTE c = load(txtHi, txtLo, d4, d5);
-        UBYTE d = load(txtHi, txtLo, d6, d7);
-
-        *chk++ = a;
-        *chk++ = c;
-        *chk++ = b;
-        *chk++ = d;
-      }
+      Log("uvmap: %ld\n", ReadLineCounter() - lines);
     }
 
-    ChunkyToPlanar();
+    {
+      LONG lines = ReadLineCounter();
+
+      ChunkyToPlanar();
+
+      Log("c2p: %ld\n", ReadLineCounter() - lines);
+    }
   }
 }
