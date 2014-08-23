@@ -145,11 +145,14 @@ static void ChunkyToPlanar() {
 
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
       custom->bltcon1 = 4 << BSHIFTSHIFT;
-      custom->bltsizv = WIDTH * HEIGHT / 8;
-      custom->bltsizh = 1;
+      custom->bltsize = 1;
       break;
 
     case 1:
+      custom->bltsize = 1 | (976 << 6);
+      break;
+
+    case 2:
       /* Swap 4x2, pass 2. */
       // custom->bltapt = chunky->pixels + WIDTH * HEIGHT / 2;
       // custom->bltbpt = chunky->pixels + WIDTH * HEIGHT / 2 + 2;
@@ -157,11 +160,14 @@ static void ChunkyToPlanar() {
 
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
       custom->bltcon1 = BLITREVERSE;
-      custom->bltsizv = WIDTH * HEIGHT / 8;
-      custom->bltsizh = 1;
+      custom->bltsize = 1;
       break;
 
-    case 2:
+    case 3:
+      custom->bltsize = 1 | (977 << 6);
+      break;
+
+    case 4:
       CopInsSet32(bpls[0], screen->planes[0]);
       CopInsSet32(bpls[1], screen->planes[0]);
       CopInsSet32(bpls[2], screen->planes[2]);
