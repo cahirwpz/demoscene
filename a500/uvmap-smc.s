@@ -6,7 +6,7 @@
 
 ; 15 cycles per pixel
 _UVMapRenderTemplate:
-        REPT    160*128/2
+        REPT    160*100/2
         move.b  $1000(a1),d0    ; 12 * 2
         or.b    $1000(a2),d0
         move.b  d0,(a0)+        ; 8

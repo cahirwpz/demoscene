@@ -6,8 +6,10 @@
 #include "file.h"
 #include "interrupts.h"
 
-#define WIDTH 320
-#define HEIGHT 256
+#define WIDTH 160
+#define HEIGHT 100
+#define X(x) ((x) + 0x81)
+#define Y(y) ((y) + 0x2c + 28)
 
 static PixmapT *chunky[2];
 static PixmapT *textureHi, *textureLo;
@@ -42,10 +44,10 @@ void Load() {
   UWORD i;
 
   cp = NewCopList(4096);
-  screen[0] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, 4, FALSE);
+  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, 5, FALSE);
+  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, 4, FALSE);
 
-  memset(screen[0]->planes[4], 0xaa, WIDTH * HEIGHT / 8);
+  memset(screen[0]->planes[4], 0xaa, WIDTH * HEIGHT * 4 / 8);
 
   {
     PixmapT *texture = LoadTGA("data/texture-16.tga", PM_CMAP);
@@ -66,14 +68,14 @@ void Load() {
     DeletePixmap(texture);
   }
 
-  chunky[0] = NewPixmap(WIDTH / 2, HEIGHT / 2, PM_GRAY4, MEMF_CHIP);
-  chunky[1] = NewPixmap(WIDTH / 2, HEIGHT / 2, PM_GRAY4, MEMF_CHIP);
+  chunky[0] = NewPixmap(WIDTH, HEIGHT, PM_GRAY4, MEMF_CHIP);
+  chunky[1] = NewPixmap(WIDTH, HEIGHT, PM_GRAY4, MEMF_CHIP);
 
   {
     UWORD *uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
     UWORD *data = uvmap;
     UWORD *code = UVMapRenderTemplate;
-    WORD n = WIDTH * HEIGHT / 8;
+    WORD n = WIDTH * HEIGHT / 2;
 
     /* UVMap is pre-scrambled. */
     while (n--) {
@@ -91,12 +93,12 @@ void Load() {
 
   CopInit(cp);
   CopMakePlayfield(cp, bpls, screen[0]);
-  CopMakeDispWin(cp, 0x81, 0x2c, screen[0]->width, screen[0]->height);
+  CopMakeDispWin(cp, X(0), Y(0), screen[0]->width, screen[0]->height);
   CopLoadPal(cp, palette, 0);
   for (i = 16; i < 32; i++)
     CopSetRGB(cp, i, 0x000);
-  for (i = 0; i < 256; i++) {
-    CopWaitMask(cp, 0x2c + i, 0, 0xff, 0);
+  for (i = 0; i < HEIGHT * 2; i++) {
+    CopWaitMask(cp, Y(i), 0, 0xff, 0);
     CopMove16(cp, bplcon1, (i & 1) ? 0x0021 : 0x0010);
     CopMove16(cp, bpl1mod, (i & 1) ? -40 : 0);
     CopMove16(cp, bpl2mod, (i & 1) ? -40 : 0);
@@ -121,7 +123,16 @@ static struct {
   PixmapT *chunky;
 } c2p = { 3, NULL, NULL };
 
-void ChunkyToPlanar() {
+static void InitChunkyToPlanar() {
+  custom->bltamod = 2;
+  custom->bltbmod = 2;
+  custom->bltdmod = 0;
+  custom->bltcdat = 0xf0f0;
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+}
+
+static void ChunkyToPlanar() {
   BitmapT *screen = c2p.screen;
   PixmapT *chunky = c2p.chunky;
 
@@ -131,34 +142,22 @@ void ChunkyToPlanar() {
       custom->bltapt = chunky->pixels;
       custom->bltbpt = chunky->pixels + 2;
       custom->bltdpt = screen->planes[0];
-      custom->bltamod = 2;
-      custom->bltbmod = 2;
-      custom->bltdmod = 0;
-      custom->bltcdat = 0xf0f0;
 
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
       custom->bltcon1 = 4 << BSHIFTSHIFT;
-      custom->bltafwm = -1;
-      custom->bltalwm = -1;
-      custom->bltsizv = 80 * 128 / 4;
+      custom->bltsizv = WIDTH * HEIGHT / 8;
       custom->bltsizh = 1;
       break;
 
     case 1:
       /* Swap 4x2, pass 2. */
-      // custom->bltapt = chunky->pixels + 80 * 128;
-      // custom->bltbpt = chunky->pixels + 80 * 128 + 2;
-      custom->bltdpt = screen->planes[2] + 80 * 128 / 2;
-      // custom->bltamod = 2;
-      // custom->bltbmod = 2;
-      // custom->bltdmod = 0;
-      // custom->bltcdat = 0xf0f0;
+      // custom->bltapt = chunky->pixels + WIDTH * HEIGHT / 2;
+      // custom->bltbpt = chunky->pixels + WIDTH * HEIGHT / 2 + 2;
+      custom->bltdpt = screen->planes[2] + WIDTH * HEIGHT / 4;
 
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
       custom->bltcon1 = BLITREVERSE;
-      // custom->bltafwm = -1;
-      // custom->bltalwm = -1;
-      custom->bltsizv = 80 * 128 / 4;
+      custom->bltsizv = WIDTH * HEIGHT / 8;
       custom->bltsizh = 1;
       break;
 
@@ -198,6 +197,8 @@ void Main() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
 
+  InitChunkyToPlanar();
+
   while (!LeftMouseButton()) {
     UWORD offset = frameCount;
 
@@ -208,7 +209,7 @@ void Main() {
     {
       LONG lines = ReadLineCounter();
 
-      (*UVMapRender)(chunky->pixels, txtHi, txtLo);
+      (*UVMapRender)(chunky[active]->pixels, txtHi, txtLo);
 
       Log("uvmap: %ld\n", ReadLineCounter() - lines);
     }

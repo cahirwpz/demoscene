@@ -71,5 +71,5 @@ def FancyEye(x, y):
 
 if __name__ == "__main__":
   with open("data/uvmap.bin", "w") as f:
-    uvmap = generate(160, 128, FancyEye)
+    uvmap = generate(160, 100, FancyEye)
     scramble(uvmap).tofile(f)
