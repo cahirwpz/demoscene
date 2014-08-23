@@ -23,14 +23,14 @@ __regargs PixmapT *NewPixmap(UWORD width, UWORD height,
   return pixmap;
 }
 
-__regargs PixmapT *CopyPixmap(PixmapT *pixmap) {
-  PixmapT *copy = NewPixmap(pixmap->width, pixmap->height,
+__regargs PixmapT *ClonePixmap(PixmapT *pixmap) {
+  PixmapT *clone = NewPixmap(pixmap->width, pixmap->height,
                             pixmap->type, TypeOfMem(pixmap->pixels));
 
-  memcpy(copy->pixels, pixmap->pixels,
+  memcpy(clone->pixels, pixmap->pixels,
          pixmap->width * pixmap->height * BitsPerPixel(pixmap->type) >> 3);
 
-  return copy;
+  return clone;
 }
 
 __regargs void DeletePixmap(PixmapT *pixmap) {

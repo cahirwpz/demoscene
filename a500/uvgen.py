@@ -19,7 +19,7 @@ def dist(x1, y1, x2, y2):
 
 
 def generate(width, height, fn):
-  uvmap = array("B")
+  uvmap = array("H")
 
   for j in range(height):
     for i in range(width):
@@ -28,26 +28,30 @@ def generate(width, height, fn):
 
       (u, v) = fn(x, y)
 
-      uvmap.append(int(frpart(u) * 255))
-      uvmap.append(int(frpart(v) * 255))
+      u = int(u * 256) & 127
+      v = int(v * 256) & 127
+
+      uvmap.append(u * 128 + v)
 
   return uvmap
 
 
 def scramble(uvmap):
-  out = array("B")
+  out = array("H")
 
   i = 0
   while i < len(uvmap):
-    for j in range(4):
-      out.append(uvmap[i + j])
-    for j in range(4):
-      out.append(uvmap[i + j + 8])
-    for j in range(4):
-      out.append(uvmap[i + j + 4])
-    for j in range(4):
-      out.append(uvmap[i + j + 12])
-    i += 16
+    out.append(uvmap[i + 0])
+    out.append(uvmap[i + 1])
+    out.append(uvmap[i + 4])
+    out.append(uvmap[i + 5])
+    out.append(uvmap[i + 2])
+    out.append(uvmap[i + 3])
+    out.append(uvmap[i + 6])
+    out.append(uvmap[i + 7])
+    i += 8
+
+  out.byteswap()
 
   return out
 

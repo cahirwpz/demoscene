@@ -43,12 +43,26 @@ void Load() {
   screen = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
   memset(screen->planes[4], 0xaa, WIDTH * HEIGHT / 8);
 
-  textureHi = LoadTGA("data/texture-16.tga", PM_CMAP);
-  textureLo = CopyPixmap(textureHi);
-  PixmapScramble(textureHi, textureHi, textureLo);
+  {
+    PixmapT *texture = LoadTGA("data/texture-16.tga", PM_CMAP);
+    LONG size = texture->width * texture->height;
 
-  chunky = NewPixmap(WIDTH / 2, HEIGHT / 2, PM_GRAY4, MEMF_CHIP|MEMF_CLEAR);
-  chunky->palette = textureHi->palette;
+    screen->palette = texture->palette;
+
+    textureHi = NewPixmap(texture->width, texture->height * 2,
+                          PM_CMAP, MEMF_PUBLIC|MEMF_CLEAR);
+    textureLo = NewPixmap(texture->width, texture->height * 2,
+                          PM_CMAP, MEMF_PUBLIC|MEMF_CLEAR);
+    PixmapScramble(texture, textureHi, textureLo);
+
+    /* Extra halves for cheap texture motion. */
+    memcpy(textureHi->pixels + size, textureHi->pixels, size);
+    memcpy(textureLo->pixels + size, textureLo->pixels, size);
+
+    DeletePixmap(texture);
+  }
+
+  chunky = NewPixmap(WIDTH / 2, HEIGHT / 2, PM_GRAY4, MEMF_CHIP);
 
   {
     UWORD *uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
@@ -73,7 +87,7 @@ void Load() {
   CopInit(cp);
   CopMakePlayfield(cp, bpls, screen);
   CopMakeDispWin(cp, 0x81, 0x2c, screen->width, screen->height);
-  CopLoadPal(cp, chunky->palette, 0);
+  CopLoadPal(cp, screen->palette, 0);
   for (i = 16; i < 32; i++)
     CopSetRGB(cp, i, 0x000);
   for (i = 0; i < 256; i++) {
@@ -93,8 +107,8 @@ void Load() {
 void Kill() {
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
-  DeletePalette(chunky->palette);
   DeletePixmap(chunky);
+  DeletePalette(screen->palette);
   DeleteBitmap(screen);
   DeleteCopList(cp);
 }
@@ -155,8 +169,10 @@ void Main() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
 
   while (!LeftMouseButton()) {
-    UBYTE *txtHi = textureHi->pixels + 32768 + (frameCount & 255);
-    UBYTE *txtLo = textureLo->pixels + 32768 + (frameCount & 255);
+    UWORD offset = frameCount / 2;
+
+    UBYTE *txtHi = textureHi->pixels + (offset & 16383);
+    UBYTE *txtLo = textureLo->pixels + (offset & 16383);
 
     {
       LONG lines = ReadLineCounter();

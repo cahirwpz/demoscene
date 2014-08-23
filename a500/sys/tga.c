@@ -104,11 +104,11 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type) {
       
       do {
         UBYTE *colors = data + tga.width * (y - 1);
-        WORD x = tga.width;
 
-        do {
-          *pixels++ = *colors++;
-        } while (--x);
+        memcpy(pixels, colors, tga.width);
+
+        pixels += tga.width;
+        colors += tga.width;
       } while (--y);
     }
 
