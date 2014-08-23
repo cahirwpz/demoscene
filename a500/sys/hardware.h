@@ -36,4 +36,7 @@ static inline BOOL LeftMouseButton() {
 
 __regargs void Wait280ns(ULONG delay);
 
+LONG ReadLineCounter();
+LONG ReadFrameCounter();
+
 #endif

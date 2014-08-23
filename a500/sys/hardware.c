@@ -33,3 +33,11 @@ __regargs void Wait280ns(ULONG delay) {
       diff += 0x20000;
   } while (diff < delay);
 }
+
+LONG ReadLineCounter() {
+  return (ciab->ciatodlow | (ciab->ciatodmid << 8) | (ciab->ciatodhi << 16));
+}
+
+LONG ReadFrameCounter() {
+  return (ciaa->ciatodlow | (ciaa->ciatodmid << 8) | (ciaa->ciatodhi << 16));
+}
