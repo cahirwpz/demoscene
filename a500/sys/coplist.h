@@ -72,8 +72,11 @@ static inline void CopEnd(CopListT *list) {
 #define CopMove32(cp, reg, data) CopMoveLong(cp, CSREG(reg), data)
 
 static inline void CopInsSet32(CopInsT *ins, APTR data) {
-  ins[0].move.data = (ULONG)data >> 16;
-  ins[1].move.data = (ULONG)data;
+  asm volatile("movew %0,%2\n"
+               "swap  %0\n"
+               "movew %0,%1\n"
+               : "+d" (data)
+               : "m" (ins[0].move.data), "m" (ins[1].move.data));
 }
 
 static inline void CopInsSet16(CopInsT *ins, UWORD data) {
