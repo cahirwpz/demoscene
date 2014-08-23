@@ -59,15 +59,17 @@ void Load() {
   for (i = 16; i < 32; i++)
     CopSetRGB(cp, i, 0x000);
   for (i = 0; i < 256; i++) {
-    CopWait(cp, 0x2c + i, 0);
+    CopWaitMask(cp, 0x2c + i, 0, 0xff, 0);
     CopMove16(cp, bplcon1, (i & 1) ? 0x0021 : 0x0010);
-    CopMove32(cp, bplpt[0], screen->planes[0] + (i / 2) * 40);
-    CopMove32(cp, bplpt[1], screen->planes[0] + (i / 2) * 40);
-    CopMove32(cp, bplpt[2], screen->planes[2] + (i / 2) * 40);
-    CopMove32(cp, bplpt[3], screen->planes[2] + (i / 2) * 40);
-    CopMove32(cp, bplpt[4], screen->planes[4]);
+    CopMove16(cp, bpl1mod, (i & 1) ? -40 : 0);
+    CopMove16(cp, bpl2mod, (i & 1) ? -40 : 0);
   }
   CopEnd(cp);
+
+  CopInsSet32(bpls[0], screen->planes[0]);
+  CopInsSet32(bpls[1], screen->planes[0]);
+  CopInsSet32(bpls[2], screen->planes[2]);
+  CopInsSet32(bpls[3], screen->planes[2]);
 
   Print("Copper list entries: %ld\n", (LONG)(cp->curr - cp->entry));
 }
