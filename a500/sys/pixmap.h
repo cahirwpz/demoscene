@@ -14,6 +14,7 @@ typedef struct Pixmap {
 
 __regargs PixmapT *NewPixmap(UWORD width, UWORD height, 
                              PixmapTypeT type, ULONG memoryAttributes);
+__regargs PixmapT *CopyPixmap(PixmapT *pixmap);
 __regargs void DeletePixmap(PixmapT *pixmap);
 
 #endif

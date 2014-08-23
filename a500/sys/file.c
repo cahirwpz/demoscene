@@ -2,6 +2,7 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 
+#include "common.h"
 #include "file.h"
 #include "memory.h"
 
@@ -29,6 +30,8 @@ APTR ReadFile(STRPTR path, ULONG memoryFlags) {
       data[size] = 0;
     }
     Close(fh);
+  } else {
+    Log("File '%s' missing.\n", path);
   }
 
   return data;

@@ -33,8 +33,10 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type) {
   UBYTE *data = NULL;
   TgaHeaderT tga;
 
-  if (!fh)
+  if (!fh) {
+    Log("File '%s' missing.\n", filename);
     goto error;
+  }
 
   if (Read(fh, &tga, sizeof(TgaHeaderT)) != sizeof(TgaHeaderT))
     goto error;
