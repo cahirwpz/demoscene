@@ -11,7 +11,9 @@
 
 static PixmapT *chunky;
 static PixmapT *textureHi, *textureLo;
-static BitmapT *screen;
+static BitmapT *screen[2];
+static PaletteT *palette;
+static UWORD active = 0;
 static CopListT *cp;
 static CopInsT *bpls[6];
 
@@ -40,14 +42,16 @@ void Load() {
   UWORD i;
 
   cp = NewCopList(4096);
-  screen = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
-  memset(screen->planes[4], 0xaa, WIDTH * HEIGHT / 8);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, 4, FALSE);
+
+  memset(screen[0]->planes[4], 0xaa, WIDTH * HEIGHT / 8);
 
   {
     PixmapT *texture = LoadTGA("data/texture-16.tga", PM_CMAP);
     LONG size = texture->width * texture->height;
 
-    screen->palette = texture->palette;
+    palette = texture->palette;
 
     textureHi = NewPixmap(texture->width, texture->height * 2,
                           PM_CMAP, MEMF_PUBLIC|MEMF_CLEAR);
@@ -85,9 +89,9 @@ void Load() {
   }
 
   CopInit(cp);
-  CopMakePlayfield(cp, bpls, screen);
-  CopMakeDispWin(cp, 0x81, 0x2c, screen->width, screen->height);
-  CopLoadPal(cp, screen->palette, 0);
+  CopMakePlayfield(cp, bpls, screen[0]);
+  CopMakeDispWin(cp, 0x81, 0x2c, screen[0]->width, screen[0]->height);
+  CopLoadPal(cp, palette, 0);
   for (i = 16; i < 32; i++)
     CopSetRGB(cp, i, 0x000);
   for (i = 0; i < 256; i++) {
@@ -97,23 +101,19 @@ void Load() {
     CopMove16(cp, bpl2mod, (i & 1) ? -40 : 0);
   }
   CopEnd(cp);
-
-  CopInsSet32(bpls[0], screen->planes[0]);
-  CopInsSet32(bpls[1], screen->planes[0]);
-  CopInsSet32(bpls[2], screen->planes[2]);
-  CopInsSet32(bpls[3], screen->planes[2]);
 }
 
 void Kill() {
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
   DeletePixmap(chunky);
-  DeletePalette(screen->palette);
-  DeleteBitmap(screen);
+  DeletePalette(palette);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
   DeleteCopList(cp);
 }
 
-void ChunkyToPlanar() {
+void ChunkyToPlanar(BitmapT *screen) {
   /* Swap 4x2, pass 1. */
   custom->bltapt = chunky->pixels;
   custom->bltbpt = chunky->pixels + 2;
@@ -169,11 +169,12 @@ void Main() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
 
   while (!LeftMouseButton()) {
-    UWORD offset = frameCount / 2;
+    UWORD offset = frameCount;
 
     UBYTE *txtHi = textureHi->pixels + (offset & 16383);
     UBYTE *txtLo = textureLo->pixels + (offset & 16383);
 
+#ifdef PROFILING
     {
       LONG lines = ReadLineCounter();
 
@@ -181,13 +182,27 @@ void Main() {
 
       Log("uvmap: %ld\n", ReadLineCounter() - lines);
     }
+#else
+    (*UVMapRender)(chunky->pixels, txtHi, txtLo);
+#endif
 
+#ifdef PROFILING
     {
       LONG lines = ReadLineCounter();
 
-      ChunkyToPlanar();
+      ChunkyToPlanar(screen[active]);
 
       Log("c2p: %ld\n", ReadLineCounter() - lines);
     }
+#else
+    ChunkyToPlanar(screen[active]);
+#endif
+
+    CopInsSet32(bpls[0], screen[active]->planes[0]);
+    CopInsSet32(bpls[1], screen[active]->planes[0]);
+    CopInsSet32(bpls[2], screen[active]->planes[2]);
+    CopInsSet32(bpls[3], screen[active]->planes[2]);
+
+    active ^= 1;
   }
 }
