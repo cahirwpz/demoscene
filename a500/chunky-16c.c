@@ -44,11 +44,10 @@ void Load() {
   UWORD i;
 
   cp = NewCopList(4096);
-  screen = NewBitmap(WIDTH * 2, HEIGHT * 2, 5, FALSE);
-  memset(screen->planes[4], 0xaa, WIDTH * HEIGHT * 4 / 8);
+  screen = NewBitmap(WIDTH * 2, HEIGHT * 2, 4, FALSE);
 
   {
-    PixmapT *pixmap = LoadTGA("data/helmet.tga", PM_CMAP);
+    PixmapT *pixmap = LoadTGA("data/helmet.tga", PM_CMAP, MEMF_PUBLIC);
 
     chunky = NewPixmap(pixmap->width, pixmap->height, PM_GRAY4, MEMF_CHIP);
     chunky->palette = pixmap->palette;
@@ -65,7 +64,6 @@ void Load() {
     CopSetRGB(cp, i, 0x000);
   for (i = 0; i < HEIGHT * 2; i++) {
     CopWaitMask(cp, Y(i), 0, 0xff, 0);
-    CopMove16(cp, bplcon1, (i & 1) ? 0x0021 : 0x0010);
     CopMove16(cp, bpl1mod, (i & 1) ? -40 : 0);
     CopMove16(cp, bpl2mod, (i & 1) ? -40 : 0);
   }
@@ -87,10 +85,6 @@ void Kill() {
 }
 
 static void InitChunkyToPlanar() {
-  custom->bltamod = 2;
-  custom->bltbmod = 2;
-  custom->bltdmod = 0;
-  custom->bltcdat = 0xf0f0;
   custom->bltafwm = -1;
   custom->bltalwm = -1;
 }
@@ -101,15 +95,26 @@ static void ChunkyToPlanar() {
   custom->bltbpt = chunky->pixels + 2;
   custom->bltdpt = screen->planes[0];
 
+  custom->bltamod = 2;
+  custom->bltbmod = 2;
+  custom->bltdmod = 0;
+  custom->bltcdat = 0xf0f0;
+
   custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
   custom->bltcon1 = 4 << BSHIFTSHIFT;
 
+#ifdef OCS
   custom->bltsize = 1; // (1024 << 6)
   WaitBlitter();
   custom->bltsize = 1; // (1024 << 6)
   WaitBlitter();
   custom->bltsize = 1 | (512 << 6);
   WaitBlitter();
+#else
+  custom->bltsizv = WIDTH * HEIGHT / 8;
+  custom->bltsizh = 1;
+  WaitBlitter();
+#endif
 
   /* Swap 4x2, pass 2. */
   // custom->bltapt = chunky->pixels + WIDTH * HEIGHT / 2;
@@ -119,12 +124,18 @@ static void ChunkyToPlanar() {
   custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
   custom->bltcon1 = BLITREVERSE;
 
+#ifdef OCS
   custom->bltsize = 1; // | (1024 << 6)
   WaitBlitter();
   custom->bltsize = 1; // | (1024 << 6)
   WaitBlitter();
   custom->bltsize = (513 << 6) | 1;
   WaitBlitter();
+#else
+  custom->bltsizv = WIDTH * HEIGHT / 8 + 2;
+  custom->bltsizh = 1;
+  WaitBlitter();
+#endif
 }
 
 void Main() {

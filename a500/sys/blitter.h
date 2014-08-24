@@ -22,7 +22,8 @@ static inline BOOL BlitterBusy() {
 }
 
 static inline void WaitBlitter() {
-  while (custom->dmaconr & DMAF_BLTDONE);
+  asm("1: btst #6,0xdff002\n"
+      "   bnes 1b");
 }
 
 #endif

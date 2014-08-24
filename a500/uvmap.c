@@ -50,7 +50,7 @@ void Load() {
   memset(screen[0]->planes[4], 0xaa, WIDTH * HEIGHT * 4 / 8);
 
   {
-    PixmapT *texture = LoadTGA("data/texture-16.tga", PM_CMAP);
+    PixmapT *texture = LoadTGA("data/texture-16.tga", PM_CMAP, MEMF_PUBLIC);
     LONG size = texture->width * texture->height;
 
     palette = texture->palette;

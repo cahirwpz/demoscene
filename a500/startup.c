@@ -85,13 +85,15 @@ int main() {
 
         RestoreInterrupts();
 
+        /* Restore old copper list... */
+        custom->cop1lc = (ULONG)GfxBase->copinit;
+        WaitVBlank();
+
         /* Restore AmigaOS state of dma & interrupts. */
         custom->dmacon = OldDmacon | DMAF_SETCLR;
         custom->intena = OldIntena | INTF_SETCLR;
         custom->adkcon = OldAdkcon | ADKF_SETCLR;
 
-        /* Restore old copper list... */
-        custom->cop1lc = (ULONG)GfxBase->copinit;
         /* ... and original view. */
         LoadView(OldView);
         WaitTOF();

@@ -32,8 +32,8 @@ static inline WORD div16(LONG a, WORD b) {
   return a;
 }
 
-static inline void bset(UBYTE *ptr, WORD bit) {
-  asm("bset %1,%0" :: "m" (*ptr), "d" (bit));
+static inline void bset(UBYTE *ptr, BYTE bit) {
+  asm("bset %1,%0" :: "m" (*ptr), "dI" (bit));
 }
 
 #define rorw(a, b) \

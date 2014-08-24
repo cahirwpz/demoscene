@@ -27,7 +27,9 @@ typedef struct TgaHeader {
   UBYTE descriptor;
 } __attribute__((packed)) TgaHeaderT;
 
-__regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type) {
+__regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type,
+                           ULONG memoryFlags)
+{
   BPTR fh = Open(filename, MODE_OLDFILE);
   PixmapT *pixmap = NULL;
   UBYTE *data = NULL;
@@ -55,7 +57,7 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type) {
   {
     ULONG imgSize = tga.width * tga.height;
 
-    pixmap = NewPixmap(tga.width, tga.height, PM_GRAY, MEMF_PUBLIC);
+    pixmap = NewPixmap(tga.width, tga.height, PM_GRAY, memoryFlags);
 
     if (Read(fh, pixmap->pixels, imgSize) != imgSize)
       goto error;
@@ -66,7 +68,7 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type) {
     ULONG imgSize = tga.width * tga.height;
     ULONG palSize = tga.cmapLength * 3;
 
-    pixmap = NewPixmap(tga.width, tga.height, PM_CMAP, MEMF_PUBLIC);
+    pixmap = NewPixmap(tga.width, tga.height, PM_CMAP, memoryFlags);
     pixmap->palette = NewPalette(tga.cmapLength);
 
     data = AllocAutoMem(palSize, MEMF_PUBLIC);
@@ -118,7 +120,7 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type) {
   {
     ULONG imgSize = tga.width * tga.height * 3;
 
-    pixmap = NewPixmap(tga.width, tga.height, PM_RGB4, MEMF_PUBLIC);
+    pixmap = NewPixmap(tga.width, tga.height, PM_RGB4, memoryFlags);
 
     data = AllocAutoMem(imgSize, MEMF_PUBLIC);
 
