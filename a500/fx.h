@@ -4,6 +4,8 @@
 #include "common.h"
 
 #define SINCOS_MASK 0xfff
+#define SINCOS_PI 0x800
+#define SINCOS_TWOPI 0x800
 
 extern SinCosT sincos[];
 

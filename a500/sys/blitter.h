@@ -8,6 +8,9 @@
 #define LINE_OR  ((ABC | ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
 #define LINE_EOR ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
 
+#define A_XOR_B (ANBC | NABC | ANBNC | NABNC)
+#define A_AND_B (ABC | ABNC)
+
 /* Values for bltcon1. */
 #define LINE_SOLID  (LINEMODE)
 #define LINE_ONEDOT (LINEMODE | ONEDOT)
