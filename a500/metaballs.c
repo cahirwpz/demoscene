@@ -10,23 +10,26 @@
 #define HEIGHT 256
 #define SIZE 80
 
+/* Triple buffering. */
+static BitmapT *screen[3];
+static WORD active = 0;
+
+static Point2D pos[3][3];
 static BitmapT *metaball;
 static BitmapT *carry;
-static BitmapT *screen[2];
-static UWORD active = 0;
 static CopInsT *bplptr[5];
 static CopListT *cp;
-static Point2D pos[2][3];
 
 void Load() {
-  metaball = LoadILBM("data/metaball.ilbm", FALSE);
-  carry = NewBitmap(SIZE + 16, SIZE, 2, FALSE);
   screen[0] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
-  cp = NewCopList(100);
+  screen[2] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
+  metaball = LoadILBM("data/metaball.ilbm", FALSE);
+  carry = NewBitmap(SIZE + 16, SIZE, 2, FALSE);
 
+  cp = NewCopList(100);
   CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[0]);
+  CopMakePlayfield(cp, bplptr, screen[active]);
   CopMakeDispWin(cp, 0x81, 0x2c, WIDTH, HEIGHT);
   CopLoadPal(cp, metaball->palette, 0);
   CopEnd(cp);
@@ -36,34 +39,51 @@ void Kill() {
   DeleteCopList(cp);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
+  DeleteBitmap(screen[2]);
   DeleteBitmap(carry);
   DeletePalette(metaball->palette);
   DeleteBitmap(metaball);
 }
 
+static volatile LONG swapScreen = -1;
 static ULONG frameCount = 0;
 
 __interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB)
+  if (custom->intreqr & INTF_VERTB) {
+    if (swapScreen >= 0) {
+      BitmapT *buffer = screen[swapScreen];
+      WORD n = 5;
+
+      while (--n >= 0) {
+        CopInsSet32(bplptr[n], buffer->planes[n]);
+        custom->bplpt[n] = buffer->planes[n];
+      }
+
+      swapScreen = -1;
+    }
+
     frameCount++;
+  }
 
   custom->intreq = INTF_LEVEL3;
   custom->intreq = INTF_LEVEL3;
 }
 
 __regargs static void ClearMetaballs() {
-  Point2D *p = pos[active ^ 1];
-  int i, j;
+  BitmapT *buffer = screen[active];
+  Point2D *p = pos[active];
+  WORD i, j;
 
   for (j = 0; j < 3; j++) {
     ULONG start = ((p[j].x & ~15) >> 3) + (p[j].y * WIDTH / 8);
+
     for (i = 0; i < 5; i++) {
       custom->bltadat = 0;
-      custom->bltdpt = screen[active]->planes[i] + start;
+      custom->bltdpt = buffer->planes[i] + start;
       custom->bltdmod = (WIDTH - (SIZE + 16)) / 8;
       custom->bltcon0 = DEST;
       custom->bltcon1 = 0;
-      custom->bltsize = ((SIZE + 1) << 6) | ((SIZE + 16) >> 4);
+      custom->bltsize = (SIZE << 6) | ((SIZE + 16) >> 4);
       WaitBlitter();
     }
   }
@@ -168,25 +188,24 @@ __regargs static void AddMetaball(LONG x, LONG y) {
 }
 
 static void PositionMetaballs() {
-  LONG t = frameCount * 16;
+  LONG t = frameCount * 24;
 
-  pos[active][0].x = (WIDTH - SIZE) / 2 + normfx(SIN(t) * SIZE * 2 / 3);
+  pos[active][0].x = (WIDTH - SIZE) / 2 + normfx(SIN(t) * SIZE * 3 / 4);
   pos[active][0].y = (HEIGHT - SIZE) / 2;
 
-  pos[active][1].x = (WIDTH - SIZE) / 2 - normfx(SIN(t) * SIZE * 2 / 3);
+  pos[active][1].x = (WIDTH - SIZE) / 2 - normfx(SIN(t) * SIZE * 3 / 4);
   pos[active][1].y = (HEIGHT - SIZE) / 2;
 
   pos[active][2].x = (WIDTH - SIZE) / 2;
-  pos[active][2].y = (HEIGHT - SIZE) / 2 + normfx(COS(t) * SIZE);
+  pos[active][2].y = (HEIGHT - SIZE) / 2 + normfx(COS(t) * SIZE * 3 / 4);
 }
 
 BOOL Loop() {
   LONG lines = ReadLineCounter();
 
-  PositionMetaballs();
-
   // This takes about 100 lines. Could we do better?
   ClearMetaballs();
+  PositionMetaballs();
 
   CopyMetaball(pos[active][0].x, pos[active][0].y);
   AddMetaball(pos[active][1].x, pos[active][1].y);
@@ -194,18 +213,11 @@ BOOL Loop() {
   
   Log("loop: %ld\n", ReadLineCounter() - lines);
 
-  WaitBlitter();
-  WaitVBlank();
+  swapScreen = active;
 
-  {
-    int i;
-    for (i = 0; i < 5; i++) {
-      CopInsSet32(bplptr[i], screen[active]->planes[i]);
-      custom->bplpt[i] = screen[active]->planes[i];
-    }
-  }
-
-  active ^= 1;
+  active++;
+  if (active > 2)
+    active = 0;
 
   return !LeftMouseButton();
 }
