@@ -24,7 +24,7 @@ void Main() {
 
   CopListActivate(cp);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 
   {
     LONG lines = ReadLineCounter();

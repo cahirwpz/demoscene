@@ -17,8 +17,9 @@
 
 __regargs void BlitterClear(BitmapT *bitmap, UWORD plane);
 __regargs void BlitterFill(BitmapT *bitmap, UWORD plane);
-__regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
-                           UWORD bltcon0, UWORD bltcon1, Line2D *line);
+
+__regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWORD bltcon1);
+__regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2);
 
 static inline BOOL BlitterBusy() {
   return custom->dmaconr & DMAF_BLTDONE;

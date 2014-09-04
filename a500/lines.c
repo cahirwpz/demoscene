@@ -15,7 +15,7 @@ void Kill() {
   DeleteBitmap(screen);
 }
 
-#define CPULINE
+//#define CPULINE
 
 void Main() {
   WORD i;
@@ -29,26 +29,32 @@ void Main() {
 
   CopListActivate(cp);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
 
-  for (i = 0; i < screen->width; i += 2) {
-    Line2D line = { i, 0, screen->width - 1 - i, screen->height - 1 };
-#ifdef CPULINE
-    CpuLine(screen, 0, &line);
-#else
-    WaitBlitter();
-    BlitterLine(screen, 0, LINE_OR, LINE_SOLID, &line);
-#endif
-  }
+  {
+    LONG lines = ReadLineCounter();
 
-  for (i = 0; i < screen->height; i += 2) {
-    Line2D line = { 0, i, screen->width - 1, screen->height - 1 - i };
+    BlitterLineSetup(screen, 0, LINE_OR, LINE_SOLID);
+
+    for (i = 0; i < screen->width; i += 2) {
 #ifdef CPULINE
-    CpuLine(screen, 0, &line);
+      CpuLine(screen, 0, &line);
 #else
-    WaitBlitter();
-    BlitterLine(screen, 0, LINE_OR, LINE_SOLID, &line);
+      BlitterLine(i, 0, screen->width - 1 - i, screen->height - 1);
+      WaitBlitter();
 #endif
+    }
+
+    for (i = 0; i < screen->height; i += 2) {
+#ifdef CPULINE
+      CpuLine(screen, 0, &line);
+#else
+      BlitterLine(0, i, screen->width - 1, screen->height - 1 - i);
+      WaitBlitter();
+#endif
+    }
+
+    Log("lines: %ld\n", ReadLineCounter() - lines);
   }
 
   WaitMouse();

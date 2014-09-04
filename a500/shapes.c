@@ -83,11 +83,13 @@ static __regargs void DrawShape(ShapeT *shape) {
         out[i].y /= 16;
       }
 
+      BlitterLineSetup(screen, plane, LINE_EOR, LINE_ONEDOT);
+
       while (--n > 0) {
         Line2D *line = (Line2D *)out++;
 
+        BlitterLine(line->x1, line->y1, line->x2, line->y2);
         WaitBlitter();
-        BlitterLine(screen, plane, LINE_EOR, LINE_ONEDOT, line);
       }
     }
 
@@ -110,6 +112,7 @@ static BOOL Loop() {
   Matrix2D t;
 
   BlitterClear(screen, plane);
+  WaitBlitter();
 
   LoadIdentity2D(&t);
   Rotate2D(&t, frameCount * 8);
@@ -118,11 +121,12 @@ static BOOL Loop() {
   Transform2D(&t, shape->viewPoint, shape->origPoint, shape->points);
   PointsInsideBox(shape->viewPoint, shape->viewPointFlags, shape->points);
 
-  custom->color[0] = 0xf00;
-  DrawShape(shape);
-  custom->color[0] = 0x000;
+  {
+    // LONG lines = ReadLineCounter();
+    DrawShape(shape);
+    // Log("draw: %ld\n", ReadLineCounter() - lines);
+  }
 
-  WaitBlitter();
   BlitterFill(screen, plane);
   WaitBlitter();
 

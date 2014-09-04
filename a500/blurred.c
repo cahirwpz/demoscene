@@ -85,8 +85,7 @@ void RotatingTriangle(WORD t, WORD phi, WORD size) {
 
   /* Create a bob with rotating triangle. */
   for (i = 0, j = 1; i < 3; i++, j = (i == 2 ? 0 : i + 1)) {
-    Line2D line = { p[i].x, p[i].y, p[j].x, p[j].y };
-    BlitterLine(carry, 0, LINE_EOR, LINE_ONEDOT, &line);
+    BlitterLine(p[i].x, p[i].y, p[j].x, p[j].y);
     WaitBlitter();
   }
 }
@@ -94,6 +93,8 @@ void RotatingTriangle(WORD t, WORD phi, WORD size) {
 static void DrawShape() {
   BlitterClear(carry, 0);
   WaitBlitter();
+
+  BlitterLineSetup(carry, 0, LINE_EOR, LINE_ONEDOT);
 
   RotatingTriangle(iterCount * 16, 0, SIZE);
   RotatingTriangle(iterCount * 16, SIN_PI * 2 / 3, SIZE);

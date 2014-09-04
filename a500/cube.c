@@ -85,20 +85,18 @@ static void DrawObject(Object3D *object) {
       out[i].y = div16(256 * out[i].y, out[i].z) + 128;
     }
 
+    BlitterLineSetup(screen[active], 0, LINE_OR, LINE_SOLID);
+
     while (--n > 0) {
-      Line2D line;
+#if 0
+      Log ("(%ld %ld %ld) - (%ld %ld %ld)\n",
+           (LONG)out[0].x, (LONG)out[0].y, (LONG)out[0].z,
+           (LONG)out[1].x, (LONG)out[1].y, (LONG)out[1].z);
+#endif
 
-      line.x1 = out->x;
-      line.y1 = out->y;
-      //Log ("(%ld %ld %ld) -", (LONG)out->x, (LONG)out->y, (LONG)out->z);
-
-      out++;
-      line.x2 = out->x;
-      line.y2 = out->y;
-      //Log ("- (%ld %ld %ld)\n", (LONG)out->x, (LONG)out->y, (LONG)out->z);
-
+      BlitterLine(out[0].x, out[0].y, out[1].x, out[1].y);
       WaitBlitter();
-      BlitterLine(screen[active], 0, LINE_OR, LINE_SOLID, &line);
+      out++;
     }
   }
 }
@@ -108,8 +106,8 @@ static Point3D rotate = { 0, 0, 0 };
 static BOOL Loop() {
   Matrix3D t;
 
-  WaitBlitter();
   BlitterClear(screen[active], 0);
+  WaitBlitter();
 
   rotate.x += 4;
   rotate.y += 4;
@@ -123,7 +121,6 @@ static BOOL Loop() {
 
   DrawObject(cube);
 
-  WaitBlitter();
   WaitVBlank();
   CopInsSet32(bplptr[0], screen[active]->planes[0]);
 

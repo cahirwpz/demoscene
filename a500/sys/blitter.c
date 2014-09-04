@@ -2,6 +2,7 @@
 #include "hardware.h"
 
 __regargs void BlitterClear(BitmapT *bitmap, UWORD plane) {
+  custom->bltadat = 0;
   custom->bltdpt = bitmap->planes[plane];
   custom->bltdmod = 0;
   custom->bltcon0 = DEST;
@@ -52,16 +53,34 @@ __regargs void BlitterFill(BitmapT *bitmap, UWORD plane) {
  *   6 |   0   0   0
  */
 
-__regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
-                           UWORD bltcon0, UWORD bltcon1, Line2D *line)
+struct {
+  UBYTE *data;
+  UBYTE *scratch;
+  WORD stride;
+  UWORD bltcon0;
+  UWORD bltcon1;
+} line;
+
+__regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWORD bltcon1) 
 {
-  UBYTE *data = bitmap->planes[plane];
-  WORD bwidth = bitmap->width / 8;
-  WORD dx, dy, dmax, dmin, derr;
-  WORD x1 = line->x1;
-  WORD x2 = line->x2;
-  WORD y1 = line->y1;
-  WORD y2 = line->y2;
+  line.data = bitmap->planes[plane];
+  line.scratch = bitmap->planes[bitmap->depth];
+  line.stride = bitmap->width / 8;
+  line.bltcon0 = bltcon0;
+  line.bltcon1 = bltcon1;
+
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+  custom->bltadat = 0x8000;
+  custom->bltbdat = 0xffff; /* Line texture pattern. */
+  custom->bltcmod = line.stride;
+  custom->bltdmod = line.stride;
+}
+
+__regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
+  UBYTE *data = line.data;
+  UWORD bltcon1 = line.bltcon1;
+  WORD dmax, dmin, derr;
 
   /* Always draw the line downwards. */
   if (y1 > y2) {
@@ -69,18 +88,19 @@ __regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
     swapr(y1, y2);
   }
 
-  dx = abs(x2 - x1);
-  dy = y2 - y1;
+  /* Word containing the first pixel of the line. */
+  data += line.stride * y1;
+  data += (x1 >> 3) & ~1;
 
-  if (dx >= dy) {
-    dmax = dx;
-    dmin = dy;
+  dmax = abs(x2 - x1);
+  dmin = y2 - y1;
+
+  if (dmax >= dmin) {
     if (x1 >= x2)
       bltcon1 |= AUL;
     bltcon1 |= SUD;
   } else {
-    dmax = dy;
-    dmin = dx;
+    swapr(dmax, dmin);
     if (x1 >= x2)
       bltcon1 |= SUL;
   }
@@ -89,28 +109,17 @@ __regargs void BlitterLine(BitmapT *bitmap, UWORD plane,
   if (derr < 0)
     bltcon1 |= SIGNFLAG;
 
-  custom->bltamod = 2 * dmin - 2 * dmax;
-  custom->bltbmod = 2 * dmin;
-  custom->bltcmod = bwidth;
-  custom->bltdmod = bwidth;
+  custom->bltcon0 = rorw(x1 & 15, 4) | line.bltcon0;
+  custom->bltcon1 = rorw(x1 & 15, 4) | bltcon1;
 
-  /* Word containing the first pixel of the line. */
-  data += bwidth * y1;
-  data += (x1 >> 3) & ~1;
+  custom->bltamod = derr - dmax;
+  custom->bltbmod = 2 * dmin;
 
   custom->bltapt = (APTR)(LONG)derr;
   custom->bltcpt = data;
   /* Uses undocumented chipset feature.
    * First dot is drawn into bltdpt, the rest goes to bltcpt. */
-  custom->bltdpt = (bltcon1 & ONEDOT) ? bitmap->planes[bitmap->depth] : data;
+  custom->bltdpt = (bltcon1 & ONEDOT) ? line.scratch : data;
 
-  custom->bltcon0 = rorw(x1 & 15, 4) | bltcon0;
-  custom->bltcon1 = rorw(x1 & 15, 4)  | bltcon1;
-
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
-  custom->bltadat = 0x8000;
-  custom->bltbdat = 0xffff; /* Line texture pattern. */
-
-  custom->bltsize = dmax * 64 + 66;
+  custom->bltsize = (dmax << 6) + 66;
 }
