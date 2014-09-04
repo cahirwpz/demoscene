@@ -132,3 +132,29 @@ __regargs BitmapT *LoadILBM(const char *filename, BOOL interleaved) {
 
   return bitmap;
 }
+
+__regargs PaletteT *LoadPalette(const char *filename) {
+  PaletteT *palette = NULL;
+  IffFileT iff;
+
+  if (OpenIff(&iff, filename)) {
+    if (iff.header.type == ID_ILBM) {
+      while (ParseChunk(&iff)) {
+        switch (iff.chunk.type) {
+          case ID_CMAP:
+            palette = NewPalette(iff.chunk.length / sizeof(ColorT));
+            ReadChunk(&iff, palette->colors);
+            break;
+
+          default:
+            SkipChunk(&iff);
+            break;
+        }
+      }
+    }
+
+    CloseIff(&iff);
+  }
+
+  return palette;
+}
