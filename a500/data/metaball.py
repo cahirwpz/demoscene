@@ -1,29 +1,7 @@
 #!/usr/bin/env python -B
 
 import Image
-from math import sqrt
-
-
-def constrain(val, lo, hi):
-  if val < lo:
-    return lo
-  if val > hi:
-    return hi
-  return val
-
-
-def sq(x):
-  return x * x
-
-
-def lerp(lo, hi, step):
-  return lo + (hi - lo) * step
-
-
-def dist(x1, y1, x2, y2):
-  dx = x2 - x1
-  dy = y2 - y1
-  return sqrt(dx * dx + dy * dy)
+from utils import lerp, sq, constrain
 
 
 if __name__ == "__main__":
@@ -48,7 +26,7 @@ if __name__ == "__main__":
       x = lerp(-D, D, float(i) / size[0])
       y = lerp(-D, D, float(j) / size[1])
 
-      d = sqrt(sq(x) + sq(y))
+      d = dist(x, y, 0, 0);
 
       if d < D:
         p = constrain(int(sq(1.0 - d) * 128), 0, 31)
