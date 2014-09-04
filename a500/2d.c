@@ -29,8 +29,8 @@ __regargs void Scale2D(Matrix2D *M, WORD sx, WORD sy) {
 }
 
 __regargs void Rotate2D(Matrix2D *M, WORD a) {
-  WORD sin = sincos[a & SINCOS_MASK].sin;
-  WORD cos = sincos[a & SINCOS_MASK].cos;
+  WORD sin = SIN(a);
+  WORD cos = COS(a);
   WORD m00 = M->m00;
   WORD m01 = M->m01;
   WORD m10 = M->m10;

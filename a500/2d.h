@@ -28,11 +28,6 @@ typedef struct {
   WORD m10, m11, y;
 } Matrix2D;
 
-typedef struct {
-  WORD sin;
-  WORD cos;
-} SinCosT;
-
 __regargs void LoadIdentity2D(Matrix2D *M);
 __regargs void Translate2D(Matrix2D *M, WORD x, WORD y);
 __regargs void Scale2D(Matrix2D *M, WORD sx, WORD sy);

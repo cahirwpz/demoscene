@@ -3,11 +3,14 @@
 
 #include "common.h"
 
-#define SINCOS_MASK 0xfff
-#define SINCOS_PI 0x800
-#define SINCOS_TWOPI 0x800
+#define SIN_MASK 0xfff
+#define SIN_HALF_PI 0x400
+#define SIN_PI 0x800
 
-extern SinCosT sincos[];
+extern WORD sintab[];
+
+#define SIN(a) sintab[(a) & SIN_MASK]
+#define COS(a) sintab[((a) + SIN_HALF_PI) & SIN_MASK]
 
 static inline WORD normfx(LONG a) {
   asm("lsll #4,%0\n"

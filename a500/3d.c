@@ -77,12 +77,12 @@ static __regargs void Compose3D(Matrix3D *d, WORD a[9], WORD b[9]) {
 }
 
 __regargs void LoadRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
-  WORD sinX = sincos[ax & SINCOS_MASK].sin;
-  WORD cosX = sincos[ax & SINCOS_MASK].cos;
-  WORD sinY = sincos[ay & SINCOS_MASK].sin;
-  WORD cosY = sincos[ay & SINCOS_MASK].cos;
-  WORD sinZ = sincos[az & SINCOS_MASK].sin;
-  WORD cosZ = sincos[az & SINCOS_MASK].cos;
+  WORD sinX = SIN(ax);
+  WORD cosX = COS(ax);
+  WORD sinY = SIN(ay);
+  WORD cosY = COS(ay);
+  WORD sinZ = SIN(az);
+  WORD cosZ = COS(az);
 
   WORD tmp0 = normfx(sinX * sinY);
   WORD tmp1 = normfx(cosX * sinY);
@@ -117,12 +117,12 @@ __regargs void Rotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
   ma[8] = M->m22;
 
   {
-    WORD sinX = sincos[ax & SINCOS_MASK].sin;
-    WORD cosX = sincos[ax & SINCOS_MASK].cos;
-    WORD sinY = sincos[ay & SINCOS_MASK].sin;
-    WORD cosY = sincos[ay & SINCOS_MASK].cos;
-    WORD sinZ = sincos[az & SINCOS_MASK].sin;
-    WORD cosZ = sincos[az & SINCOS_MASK].cos;
+    WORD sinX = SIN(ax);
+    WORD cosX = COS(ax);
+    WORD sinY = SIN(ay);
+    WORD cosY = COS(ay);
+    WORD sinZ = SIN(az);
+    WORD cosZ = COS(az);
 
     WORD tmp0 = normfx(sinX * sinY);
     WORD tmp1 = normfx(cosX * sinY);

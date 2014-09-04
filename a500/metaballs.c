@@ -168,19 +168,16 @@ __regargs static void AddMetaball(LONG x, LONG y) {
 }
 
 static void PositionMetaballs() {
-  LONG t = (frameCount * 16) & SINCOS_MASK;
+  LONG t = frameCount * 16;
 
-  pos[active][0].x = (WIDTH - SIZE) / 2 +
-    normfx(sincos[t].sin * SIZE * 2 / 3);
+  pos[active][0].x = (WIDTH - SIZE) / 2 + normfx(SIN(t) * SIZE * 2 / 3);
   pos[active][0].y = (HEIGHT - SIZE) / 2;
 
-  pos[active][1].x = (WIDTH - SIZE) / 2 +
-    normfx(sincos[(t + SINCOS_PI) & SINCOS_MASK].sin * SIZE * 2 / 3);
+  pos[active][1].x = (WIDTH - SIZE) / 2 - normfx(SIN(t) * SIZE * 2 / 3);
   pos[active][1].y = (HEIGHT - SIZE) / 2;
 
   pos[active][2].x = (WIDTH - SIZE) / 2;
-  pos[active][2].y = (HEIGHT - SIZE) / 2 +
-    normfx(sincos[(t + SINCOS_PI) & SINCOS_MASK].sin * SIZE);
+  pos[active][2].y = (HEIGHT - SIZE) / 2 + normfx(COS(t) * SIZE);
 }
 
 BOOL Loop() {

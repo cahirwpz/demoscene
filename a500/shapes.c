@@ -106,14 +106,14 @@ __interrupt_handler void IntLevel3Handler() {
 }
 
 static BOOL Loop() {
-  UWORD i, a = (frameCount * 64) & SINCOS_MASK;
+  UWORD i, a = frameCount * 64;
   Matrix2D t;
 
   BlitterClear(screen, plane);
 
   LoadIdentity2D(&t);
   Rotate2D(&t, frameCount * 8);
-  Scale2D(&t, fx12f(1.0) + sincos[a].sin / 2, fx12f(1.0) + sincos[a].cos / 2);
+  Scale2D(&t, fx12f(1.0) + SIN(a) / 2, fx12f(1.0) + COS(a) / 2);
   Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
   Transform2D(&t, shape->viewPoint, shape->origPoint, shape->points);
   PointsInsideBox(shape->viewPoint, shape->viewPointFlags, shape->points);
