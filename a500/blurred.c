@@ -7,6 +7,9 @@
 #include "fx.h"
 #include "circle.h"
 
+#define X(x) ((x) + 0x81)
+#define Y(y) ((y) + 0x2c)
+
 #define WIDTH 320
 #define HEIGHT 256
 #define SIZE 128
@@ -16,23 +19,32 @@ static UWORD active = 0;
 
 static BitmapT *carry;
 static BitmapT *buffer;
-static PaletteT *palette;
-static CopInsT *bplptr[5];
+static PaletteT *palette[2];
+static CopInsT *bplptr[2][5];
 static CopListT *cp;
 
 void Load() {
-  palette = LoadPalette("data/blurred.ilbm");
+  palette[0] = LoadPalette("data/blurred1.ilbm");
+  palette[1] = LoadPalette("data/blurred2.ilbm");
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, 4, FALSE);
   buffer = NewBitmap(SIZE, SIZE, 4, FALSE);
   carry = NewBitmap(SIZE, SIZE, 2, FALSE);
 
-  cp = NewCopList(100);
+  cp = NewCopList(200);
   CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[active]);
-  CopMakeDispWin(cp, 0x81, 0x2c, WIDTH, HEIGHT);
-  CopLoadPal(cp, palette, 0);
+  CopLoadPal(cp, palette[0], 0);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopMakePlayfield(cp, bplptr[0], screen[active]);
+  CopWait(cp, Y(127), 0);
+  CopLoadPal(cp, palette[1], 0);
+  CopWait(cp, Y(128), 0);
+  {
+    WORD i;
+    for (i = 0; i < screen[active]->depth; i++)
+      bplptr[1][i] = CopMove32(cp, bplpt[i], screen[active]->planes[i] - WIDTH / 16);
+  }
   CopEnd(cp);
 }
 
@@ -42,7 +54,8 @@ void Kill() {
   DeleteBitmap(screen[1]);
   DeleteBitmap(buffer);
   DeleteBitmap(carry);
-  DeletePalette(palette);
+  DeletePalette(palette[0]);
+  DeletePalette(palette[1]);
 }
 
 static volatile LONG swapScreen = -1;
@@ -56,7 +69,8 @@ __interrupt_handler void IntLevel3Handler() {
       WORD n = 4;
 
       while (--n >= 0) {
-        CopInsSet32(bplptr[n], buffer->planes[n]);
+        CopInsSet32(bplptr[0][n], buffer->planes[n]);
+        CopInsSet32(bplptr[1][n], buffer->planes[n] - WIDTH / 16);
         custom->bplpt[n] = buffer->planes[n];
       }
 
@@ -221,14 +235,14 @@ static void CopyToScreen() {
 
   while (--n >= 0) {
     custom->bltapt = buffer->planes[n];
-    custom->bltdpt = screen[active]->planes[n];
+    custom->bltdpt = screen[active]->planes[n] + 2;
     custom->bltsize = (SIZE << 6) + (SIZE >> 4);
     WaitBlitter();
   }
 }
 
 BOOL Loop() {
-  LONG lines = ReadLineCounter();
+  // LONG lines = ReadLineCounter();
 
   if (iterCount++ & 1)
     DecrementAndSaturate();
@@ -236,7 +250,7 @@ BOOL Loop() {
   IncrementAndSaturate();
   CopyToScreen();
 
-  Log("loop: %ld\n", ReadLineCounter() - lines);
+  // Log("loop: %ld\n", ReadLineCounter() - lines);
 
   swapScreen = active;
   active ^= 1;
@@ -251,9 +265,24 @@ void Main() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
 
-  CircleEdge(screen[0], 4, SIZE / 2, SIZE / 2, SIZE / 4 - 1);
+  CircleEdge(screen[0], 4, SIZE / 2 + 16, SIZE / 2, SIZE / 4 - 1);
   BlitterFill(screen[0], 4);
   WaitBlitter();
+
+  {
+    WORD i;
+
+    for (i = 0; i < 2; i++) {
+      BlitterLineSetup(screen[i], 3, LINE_OR, LINE_SOLID);
+      BlitterLine(WIDTH - 1, 0, WIDTH - 1, SIZE - 2);
+      WaitBlitter();
+      BlitterLine(WIDTH / 2, 0, WIDTH / 2, SIZE - 2);
+      WaitBlitter();
+      Circle(screen[i], 4, WIDTH * 3 / 4, SIZE / 2, SIZE / 2 - 10);
+      BlitterFill(screen[i], 3);
+      WaitBlitter();
+    }
+  }
 
   while (Loop());
 }
