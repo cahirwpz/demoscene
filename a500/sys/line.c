@@ -1,14 +1,19 @@
 #include "line.h"
 
-__regargs void CpuLine(BitmapT *bitmap, ULONG plane, Line2D *line)
-{
-  UBYTE *pixels = bitmap->planes[plane];
-  LONG stride = bitmap->width / 8;
+static struct {
+  UBYTE *pixels;
+  LONG stride;
+} line;
+
+__regargs void CpuLineSetup(BitmapT *bitmap, UWORD plane) {
+  line.pixels = bitmap->planes[plane];
+  line.stride = bitmap->width / 8;
+}
+
+__regargs void CpuLine(WORD xs, WORD ys, WORD xe, WORD ye) {
+  UBYTE *pixels = line.pixels;
+  LONG stride = line.stride;
   UBYTE color;
-  WORD xs = line->x1;
-  WORD ys = line->y1;
-  WORD xe = line->x2;
-  WORD ye = line->y2;
   WORD dx, dy;
 
   if (ys > ye) {

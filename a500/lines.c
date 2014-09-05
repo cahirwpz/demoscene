@@ -15,7 +15,7 @@ void Kill() {
   DeleteBitmap(screen);
 }
 
-//#define CPULINE
+#define CPULINE
 
 void Main() {
   WORD i;
@@ -34,11 +34,15 @@ void Main() {
   {
     LONG lines = ReadLineCounter();
 
+#ifdef CPULINE
+    CpuLineSetup(screen, 0);
+#else
     BlitterLineSetup(screen, 0, LINE_OR, LINE_SOLID);
+#endif
 
     for (i = 0; i < screen->width; i += 2) {
 #ifdef CPULINE
-      CpuLine(screen, 0, &line);
+      CpuLine(i, 0, screen->width - 1 - i, screen->height - 1);
 #else
       BlitterLine(i, 0, screen->width - 1 - i, screen->height - 1);
       WaitBlitter();
@@ -47,7 +51,7 @@ void Main() {
 
     for (i = 0; i < screen->height; i += 2) {
 #ifdef CPULINE
-      CpuLine(screen, 0, &line);
+      CpuLine(0, i, screen->width - 1, screen->height - 1 - i);
 #else
       BlitterLine(0, i, screen->width - 1, screen->height - 1 - i);
       WaitBlitter();
