@@ -32,6 +32,10 @@ static inline WORD div16(LONG a, WORD b) {
   return a;
 }
 
+static inline void bclr(UBYTE *ptr, BYTE bit) {
+  asm("bclr %1,%0" :: "m" (*ptr), "dI" (bit));
+}
+
 static inline void bset(UBYTE *ptr, BYTE bit) {
   asm("bset %1,%0" :: "m" (*ptr), "dI" (bit));
 }
