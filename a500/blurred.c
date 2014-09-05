@@ -5,6 +5,7 @@
 #include "ilbm.h"
 #include "2d.h"
 #include "fx.h"
+#include "circle.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -249,6 +250,10 @@ void Main() {
   
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
+
+  CircleEdge(screen[0], 4, SIZE / 2, SIZE / 2, SIZE / 4 - 1);
+  BlitterFill(screen[0], 4);
+  WaitBlitter();
 
   while (Loop());
 }

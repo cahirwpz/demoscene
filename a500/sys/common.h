@@ -36,6 +36,10 @@ static inline void bset(UBYTE *ptr, BYTE bit) {
   asm("bset %1,%0" :: "m" (*ptr), "dI" (bit));
 }
 
+static inline void bchg(UBYTE *ptr, BYTE bit) {
+  asm("bchg %1,%0" :: "m" (*ptr), "dI" (bit));
+}
+
 #define rorw(a, b) \
   (((a) << (16 - (b))) | ((a) >> (b)))
 
