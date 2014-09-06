@@ -3,6 +3,7 @@
 #include "reader.h"
 #include "3d.h"
 #include "fx.h"
+#include "qsort.h"
 
 Frustum3D ClipFrustum;
 
@@ -336,6 +337,8 @@ __regargs Object3D *NewObject3D(UWORD points, UWORD polygons) {
 __regargs void DeleteObject3D(Object3D *object) {
   if (object->polygonVertex)
     FreeMem(object->polygonVertex, sizeof(UWORD) * object->polygonVertices);
+  if (object->edge)
+    FreeMem(object->edge, sizeof(EdgeT) * object->edges);
   FreeMem(object->polygonNormal, sizeof(Point3D) * object->polygons);
   FreeMem(object->polygon, sizeof(PolygonT) * object->polygons);
   FreeMem(object->cameraPointFlags, object->points);
@@ -463,4 +466,74 @@ __regargs void UpdatePolygonNormals(Object3D *object) {
 
     polygon++;
   }
+}
+
+static __regargs LONG EdgeCompare(APTR a, APTR b) {
+  EdgeT *e0 = a;
+  EdgeT *e1 = b;
+
+  if (e0->p0 < e1->p0)
+    return -1;
+  if (e0->p0 > e1->p0)
+    return 1;
+
+  if (e0->p1 < e1->p1)
+    return -1;
+  if (e0->p1 > e1->p1)
+    return 1;
+
+  return 0;
+}
+
+__regargs void CalculateEdges(Object3D *obj) {
+  EdgeT *edge = AllocMemSafe(sizeof(EdgeT) * obj->polygonVertices,
+                             MEMF_PUBLIC);
+  WORD p, k, i, j;
+
+  for (p = 0, k = 0; p < obj->polygons; p++) {
+    WORD i = obj->polygon[p].index;
+    WORD n = obj->polygon[p].vertices;
+    UWORD p0 = obj->polygonVertex[i];
+    UWORD p1 = obj->polygonVertex[i + n - 1];
+
+    edge[k].p0 = p0;
+    edge[k].p1 = p1;
+    k++;
+
+    for (j = 1; j < n; j++) {
+      p1 = obj->polygonVertex[i + j];
+      edge[k].p0 = p0;
+      edge[k].p1 = p1;
+      k++;
+      p0 = p1;
+    }
+  }
+
+  for (i = 0; i < obj->polygonVertices; i++) {
+    UWORD p0 = edge[i].p0 * 6;
+    UWORD p1 = edge[i].p1 * 6;
+
+    if (p0 > p1) {
+      edge[i].p0 = p1;
+      edge[i].p1 = p0;
+    } else {
+      edge[i].p0 = p0;
+      edge[i].p1 = p1;
+    }
+  }
+
+  qsort(edge, obj->polygonVertices, sizeof(EdgeT), EdgeCompare);
+
+  for (i = 1, j = 0; i < obj->polygonVertices; i++)
+    if (EdgeCompare(&edge[i], &edge[j]))
+      edge[++j] = edge[i];
+
+  obj->edge = AllocMemSafe(sizeof(EdgeT) * j, MEMF_PUBLIC);
+  obj->edges = j;
+
+  memcpy(obj->edge, edge, sizeof(EdgeT) * j);
+
+  Log("Object has %ld edges.\n", (LONG)j);
+
+  FreeMem(edge, sizeof(EdgeT) * obj->polygonVertices);
 }

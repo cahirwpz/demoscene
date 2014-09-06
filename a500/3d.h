@@ -38,6 +38,7 @@ typedef struct {
   UWORD points;
   UWORD polygons;
   UWORD polygonVertices;
+  UWORD edges;
 
   Point3D *point;
   Point3D *cameraPoint;
@@ -46,6 +47,8 @@ typedef struct {
   PolygonT *polygon;
   Point3D *polygonNormal;
   UWORD *polygonVertex;
+
+  EdgeT *edge;
 } Object3D;
 
 __regargs Object3D *NewObject3D(UWORD points, UWORD polygons);
@@ -54,5 +57,6 @@ __regargs Object3D *LoadObject3D(char *filename);
 
 __regargs void UpdatePolygonNormals(Object3D *object);
 __regargs void NormalizePolygonNormals(Object3D *object);
+__regargs void CalculateEdges(Object3D *object);
 
 #endif

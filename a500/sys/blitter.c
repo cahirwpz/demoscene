@@ -92,13 +92,17 @@ __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
   data += line.stride * y1;
   data += (x1 >> 3) & ~1;
 
-  dmax = abs(x2 - x1);
+  dmax = x2 - x1;
   dmin = y2 - y1;
+
+  if (dmax < 0)
+    dmax = -dmax;
 
   if (dmax >= dmin) {
     if (x1 >= x2)
-      bltcon1 |= AUL;
-    bltcon1 |= SUD;
+      bltcon1 |= (AUL | SUD);
+    else
+      bltcon1 |= SUD;
   } else {
     swapr(dmax, dmin);
     if (x1 >= x2)
@@ -122,4 +126,62 @@ __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
   custom->bltdpt = (bltcon1 & ONEDOT) ? line.scratch : data;
 
   custom->bltsize = (dmax << 6) + 66;
+}
+
+__regargs void BlitterLineSync(WORD x1, WORD y1, WORD x2, WORD y2) {
+  UBYTE *data = line.data;
+  UWORD bltcon1 = line.bltcon1;
+  WORD dmax, dmin, derr;
+
+  /* Always draw the line downwards. */
+  if (y1 > y2) {
+    swapr(x1, x2);
+    swapr(y1, y2);
+  }
+
+  /* Word containing the first pixel of the line. */
+  data += line.stride * y1;
+  data += (x1 >> 3) & ~1;
+
+  dmax = x2 - x1;
+  dmin = y2 - y1;
+
+  if (dmax < 0)
+    dmax = -dmax;
+
+  if (dmax >= dmin) {
+    if (x1 >= x2)
+      bltcon1 |= (AUL | SUD);
+    else
+      bltcon1 |= SUD;
+  } else {
+    swapr(dmax, dmin);
+    if (x1 >= x2)
+      bltcon1 |= SUL;
+  }
+
+  derr = 2 * dmin - dmax;
+  if (derr < 0)
+    bltcon1 |= SIGNFLAG;
+  bltcon1 |= rorw(x1 & 15, 4);
+
+  {
+    UWORD bltcon0 = rorw(x1 & 15, 4) | line.bltcon0;
+    UWORD bltamod = derr - dmax;
+    UWORD bltbmod = 2 * dmin;
+    APTR bltapt = (APTR)(LONG)derr;
+    APTR bltdpt = (bltcon1 & ONEDOT) ? line.scratch : data;
+    UWORD bltsize = (dmax << 6) + 66;
+
+    WaitBlitter();
+
+    custom->bltcon0 = bltcon0;
+    custom->bltcon1 = bltcon1;
+    custom->bltamod = bltamod;
+    custom->bltbmod = bltbmod;
+    custom->bltapt = bltapt;
+    custom->bltcpt = data;
+    custom->bltdpt = bltdpt;
+    custom->bltsize = bltsize;
+  }
 }

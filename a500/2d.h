@@ -13,6 +13,10 @@ typedef struct {
   WORD x, y;
 } Point2D;
 
+typedef struct Edge {
+  UWORD p0, p1;
+} EdgeT;
+
 typedef struct {
   WORD minX, minY;
   WORD maxX, maxY;

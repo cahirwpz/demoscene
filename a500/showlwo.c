@@ -1,5 +1,6 @@
 #include "blitter.h"
 #include "coplist.h"
+#include "interrupts.h"
 #include "3d.h"
 #include "fx.h"
 #include "iff.h"
@@ -24,7 +25,7 @@ static CopInsT *bplptr[8];
 #define ID_PNTS MAKE_ID('P', 'N', 'T', 'S')
 #define ID_POLS MAKE_ID('P', 'O', 'L', 'S')
 
-__regargs Object3D *LoadLWO(char *filename, LONG scale) {
+__regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
   Object3D *obj = NULL;
   IffFileT iff;
 
@@ -87,7 +88,7 @@ __regargs Object3D *LoadLWO(char *filename, LONG scale) {
 
         /* Process points. */
         {
-          FLOAT s = SPFlt(scale * 16);
+          FLOAT s = SPMul(scale, SPFlt(16));
 
           for (i = 0; i < points; i++) {
             obj->point[i].x = SPFix(SPMul(SPFieee(pnts[i * 3 + 0]), s));
@@ -129,7 +130,6 @@ __regargs Object3D *LoadLWO(char *filename, LONG scale) {
             }
           }
 
-
           obj->polygonVertices = polygonVertices;
           obj->polygonVertex = polygonVertex;
 
@@ -147,9 +147,11 @@ __regargs Object3D *LoadLWO(char *filename, LONG scale) {
 void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
-  cube = LoadLWO("data/obj2.lwo", 140);
-  cp = NewCopList(100);
+  cube = LoadLWO("data/new_2.lwo", SPFlt(80));
 
+  CalculateEdges(cube);
+
+  cp = NewCopList(80);
   CopInit(cp);
   CopMakePlayfield(cp, bplptr, screen[0]);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
@@ -165,38 +167,55 @@ void Kill() {
   DeleteBitmap(screen[1]);
 }
 
-static void DrawObject(Object3D *object) {
+__regargs static void CalculatePerspective(Point3D *p, WORD points) {
+  WORD *src = (WORD *)p;
+  WORD *dst = (WORD *)p;
+  WORD n = points;
+
+  while (--n >= 0) {
+    WORD x = *src++;
+    WORD y = *src++;
+    WORD z = *src++;
+
+    *dst++ = div16(256 * x, z) + WIDTH / 2;
+    *dst++ = div16(256 * y, z) + HEIGHT / 2;
+    dst++;
+  }
+}
+
+__regargs static void DrawObject(Object3D *object) {
   Point3D *point = object->cameraPoint;
-  PolygonT *polygon = object->polygon;
-  UWORD *vertex = object->polygonVertex;
-  WORD polygons = object->polygons;
-  Point3D *normal = object->polygonNormal;
+  UWORD *edge = (UWORD *)object->edge;
+  WORD edges = object->edges;
 
   BlitterLineSetup(screen[active], 0, LINE_OR, LINE_SOLID);
 
-  for (; polygons--; normal++, polygon++) {
-    WORD i, n = polygon->vertices;
-    Point3D out[16];
-
-    for (i = 0; i < n; i++) {
-      UWORD k = vertex[polygon->index + i];
-      out[i] = point[k];
-    }
-
-    /* Perspective mapping. */
-    for (i = 0; i < n; i++) {
-      out[i].x = div16(256 * out[i].x, out[i].z) + 160;
-      out[i].y = div16(256 * out[i].y, out[i].z) + 128;
-    }
-
-    for (i = 0; i < n; i++) {
-      WORD j = i + 1;
-      if (j >= n)
-        j = 0;
-      BlitterLine(out[i].x, out[i].y, out[j].x, out[j].y);
-      WaitBlitter();
-    }
+  while (--edges >= 0) {
+    Point3D *p0 = (APTR)point + (ULONG)*edge++;
+    Point3D *p1 = (APTR)point + (ULONG)*edge++;
+    BlitterLineSync(p0->x, p0->y, p1->x, p1->y);
   }
+}
+
+static volatile LONG swapScreen = -1;
+static volatile LONG frameCount = 0;
+
+__interrupt_handler void IntLevel3Handler() {
+  if (custom->intreqr & INTF_VERTB) {
+    if (swapScreen >= 0) {
+      BitmapT *buffer = screen[swapScreen];
+
+      CopInsSet32(bplptr[0], buffer->planes[0]);
+      custom->bplpt[0] = buffer->planes[0];
+
+      swapScreen = -1;
+    }
+
+    frameCount++;
+  }
+
+  custom->intreq = INTF_LEVEL3;
+  custom->intreq = INTF_LEVEL3;
 }
 
 static Point3D rotate = { 0, 0, 0 };
@@ -204,33 +223,39 @@ static Point3D rotate = { 0, 0, 0 };
 static BOOL Loop() {
   Matrix3D t;
 
-  BlitterClear(screen[active], 0);
-  WaitBlitter();
-
-  rotate.x += 4;
-  rotate.y += 4;
-  rotate.z += 4;
+  rotate.x += 16;
+  rotate.y += 16;
+  rotate.z += 16;
 
   {
     LONG lines = ReadLineCounter();
-
     LoadRotate3D(&t, rotate.x, rotate.y, rotate.z);
     Translate3D(&t, 0, 0, fx4i(-250));
     Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
-    DrawObject(cube);
 
-    Log("object: %ld\n", ReadLineCounter() - lines);
+    CalculatePerspective(cube->cameraPoint, cube->points);
+    Log("transform: %ld\n", ReadLineCounter() - lines);
   }
 
-  WaitVBlank();
-  CopInsSet32(bplptr[0], screen[active]->planes[0]);
+  BlitterClear(screen[active], 0);
+  WaitBlitter();
 
+  {
+    LONG lines = ReadLineCounter();
+    DrawObject(cube);
+    Log("draw: %ld\n", ReadLineCounter() - lines);
+  }
+
+  swapScreen = active;
   active ^= 1;
 
   return !LeftMouseButton();
 }
 
 void Main() {
+  InterruptVector->IntLevel3 = IntLevel3Handler;
+  custom->intena = INTF_SETCLR | INTF_VERTB;
+
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 
