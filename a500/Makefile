@@ -2,7 +2,7 @@ CPPFLAGS = -Isys
 
 BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           playahx playp61 cube kbtest shapes chunky-16c chunky-rgb mouse \
-          uvmap metaballs blurred circles floor
+          uvmap metaballs blurred circles floor parselwo
 
 all:	startup.o libs $(BINS)
 
@@ -18,6 +18,7 @@ metaballs:      metaballs.o sintab.o startup.o libsys.a
 mouse:          mouse.o startup.o libsys.a
 kbtest:         kbtest.o startup.o libsys.a
 parseiff:       parseiff.o libsys.a
+parselwo:       parselwo.o libsys.a
 play8svx:       play8svx.o libsys.a
 playahx:        playahx.o startup.o libsys.a libahx.a
 playp61:        playp61.o startup.o libsys.a libp61.a
