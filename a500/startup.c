@@ -20,98 +20,104 @@ int __initlibraries = 0;
 
 struct DosLibrary *DOSBase = NULL;
 struct GfxBase *GfxBase = NULL;
+struct Library *MathBase = NULL;
 
 int main() {
-  if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 34))) {
-    if ((GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 34))) {
-      /* Get Vector Base Register */
-      if (SysBase->AttnFlags & AFF_68010)
-        InterruptVector = (APTR)Supervisor((APTR)GetVBR);
+  DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 33);
+  GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 33);
+  MathBase = OpenLibrary("mathffp.library", 33);
 
-      Print("Running on Kickstart %ld.%ld.\n\r",
-            (LONG)SysBase->LibNode.lib_Version,
-            (LONG)SysBase->LibNode.lib_Revision);
+  if (DOSBase && GfxBase && MathBase) {
+    /* Get Vector Base Register */
+    if (SysBase->AttnFlags & AFF_68010)
+      InterruptVector = (APTR)Supervisor((APTR)GetVBR);
 
-      Load();
+    Print("Running on Kickstart %ld.%ld.\n\r",
+          (LONG)SysBase->LibNode.lib_Version,
+          (LONG)SysBase->LibNode.lib_Revision);
 
-      /* Allocate blitter. */
-      WaitBlit();
-      OwnBlitter();
+    Load();
 
-      {
-        struct View *OldView;
-        UWORD OldDmacon, OldIntena, OldAdkcon;
+    /* Allocate blitter. */
+    WaitBlit();
+    OwnBlitter();
 
-        /* No calls to any other library than exec beyond this point or expect
-         * undefined behaviour including crashes. */
-        Forbid();
+    {
+      struct View *OldView;
+      UWORD OldDmacon, OldIntena, OldAdkcon;
 
-        /* Intercept the view of AmigaOS. */
-        OldView = GfxBase->ActiView;
-        LoadView(NULL);
-        WaitTOF();
-        WaitTOF();
+      /* No calls to any other library than exec beyond this point or expect
+       * undefined behaviour including crashes. */
+      Forbid();
 
-        /* DMA & interrupts take-over. */
-        OldAdkcon = custom->adkconr;
-        OldDmacon = custom->dmaconr;
-        OldIntena = custom->intenar;
+      /* Intercept the view of AmigaOS. */
+      OldView = GfxBase->ActiView;
+      LoadView(NULL);
+      WaitTOF();
+      WaitTOF();
 
-        /* Prohibit dma & interrupts. */
-        custom->dmacon = (UWORD)~DMAF_SETCLR;
-        custom->intena = (UWORD)~INTF_SETCLR;
-        WaitVBlank();
+      /* DMA & interrupts take-over. */
+      OldAdkcon = custom->adkconr;
+      OldDmacon = custom->dmaconr;
+      OldIntena = custom->intenar;
 
-        /* Clear all interrupt requests. Really. */
-        custom->intreq = (UWORD)~INTF_SETCLR;
-        custom->intreq = (UWORD)~INTF_SETCLR;
+      /* Prohibit dma & interrupts. */
+      custom->dmacon = (UWORD)~DMAF_SETCLR;
+      custom->intena = (UWORD)~INTF_SETCLR;
+      WaitVBlank();
 
-        SaveInterrupts();
+      /* Clear all interrupt requests. Really. */
+      custom->intreq = (UWORD)~INTF_SETCLR;
+      custom->intreq = (UWORD)~INTF_SETCLR;
 
-        /* Enable master switches. */
-        custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
-        custom->intena = INTF_SETCLR | INTF_INTEN;
+      SaveInterrupts();
 
-        Main();
+      /* Enable master switches. */
+      custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
+      custom->intena = INTF_SETCLR | INTF_INTEN;
 
-        /* firstly... disable dma and interrupts that were used in Main */
-        custom->dmacon = (UWORD)~DMAF_SETCLR;
-        custom->intena = (UWORD)~INTF_SETCLR;
-        WaitVBlank();
+      Main();
 
-        /* Clear all interrupt requests. Really. */
-        custom->intreq = (UWORD)~INTF_SETCLR;
-        custom->intreq = (UWORD)~INTF_SETCLR;
+      /* firstly... disable dma and interrupts that were used in Main */
+      custom->dmacon = (UWORD)~DMAF_SETCLR;
+      custom->intena = (UWORD)~INTF_SETCLR;
+      WaitVBlank();
 
-        RestoreInterrupts();
+      /* Clear all interrupt requests. Really. */
+      custom->intreq = (UWORD)~INTF_SETCLR;
+      custom->intreq = (UWORD)~INTF_SETCLR;
 
-        /* Restore old copper list... */
-        custom->cop1lc = (ULONG)GfxBase->copinit;
-        WaitVBlank();
+      RestoreInterrupts();
 
-        /* Restore AmigaOS state of dma & interrupts. */
-        custom->dmacon = OldDmacon | DMAF_SETCLR;
-        custom->intena = OldIntena | INTF_SETCLR;
-        custom->adkcon = OldAdkcon | ADKF_SETCLR;
+      /* Restore old copper list... */
+      custom->cop1lc = (ULONG)GfxBase->copinit;
+      WaitVBlank();
 
-        /* ... and original view. */
-        LoadView(OldView);
-        WaitTOF();
-        WaitTOF();
+      /* Restore AmigaOS state of dma & interrupts. */
+      custom->dmacon = OldDmacon | DMAF_SETCLR;
+      custom->intena = OldIntena | INTF_SETCLR;
+      custom->adkcon = OldAdkcon | ADKF_SETCLR;
 
-        Permit();
-      }
+      /* ... and original view. */
+      LoadView(OldView);
+      WaitTOF();
+      WaitTOF();
 
-      /* Deallocate blitter. */
-      DisownBlitter();
-
-      Kill();
-
-      CloseLibrary((struct Library *)GfxBase);
+      Permit();
     }
 
-    CloseLibrary((struct Library *)DOSBase);
+    /* Deallocate blitter. */
+    DisownBlitter();
+
+    Kill();
   }
+
+  if (MathBase)
+    CloseLibrary(MathBase);
+  if (GfxBase)
+    CloseLibrary((struct Library *)GfxBase);
+  if (DOSBase)
+    CloseLibrary((struct Library *)DOSBase);
 
   return 0;
 }

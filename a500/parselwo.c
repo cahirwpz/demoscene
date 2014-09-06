@@ -1,9 +1,8 @@
 #undef __CONSTLIBBASEDECL__ 
 #include <proto/exec.h>
 #include <proto/dos.h>
-#include <proto/mathffp.h>
-#include <proto/mathtrans.h>
 
+#include "ffp.h"
 #include "iff.h"
 #include "print.h"
 
@@ -15,7 +14,6 @@ extern int __commandlen;
 
 struct DosLibrary *DOSBase;
 struct Library *MathBase;
-struct Library *MathTransBase;
 
 #define ID_LWOB MAKE_ID('L', 'W', 'O', 'B')
 #define ID_LWO2 MAKE_ID('L', 'W', 'O', '2')
@@ -32,98 +30,96 @@ int main() {
   CopyMem(__commandline, filename, len--);
   filename[len] = '\0';
 
-  if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 34))) {
-    if ((MathBase = OpenLibrary("mathffp.library", 33))) {
-      if ((MathTransBase = OpenLibrary("mathtrans.library", 33))) {
-        IffFileT iff;
+  DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 33);
+  MathBase = OpenLibrary("mathffp.library", 33);
 
-        if (OpenIff(&iff, filename)) {
-          Print("Parsing '%s':\n", filename);
+  if (DOSBase && MathBase) {
+    IffFileT iff;
 
-          Print("%.4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
+    if (OpenIff(&iff, filename)) {
+      Print("Parsing '%s':\n", filename);
 
-          while (ParseChunk(&iff)) {
-            Print(".%.4s %ld\n", (STRPTR)&iff.chunk.type, iff.chunk.length);
+      Print("%.4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
 
-            switch (iff.chunk.type) {
-              case ID_PNTS:
-                {
-                  FLOAT *pnts = AllocMem(iff.chunk.length, MEMF_PUBLIC);
-                  FLOAT s = SPFlt(scale);
-                  WORD n = iff.chunk.length / 12;
-                  WORD i;
+      while (ParseChunk(&iff)) {
+        Print(".%.4s %ld\n", (STRPTR)&iff.chunk.type, iff.chunk.length);
 
-                  ReadChunk(&iff, pnts);
+        switch (iff.chunk.type) {
+          case ID_PNTS:
+            {
+              FLOAT *pnts = AllocMem(iff.chunk.length, MEMF_PUBLIC);
+              FLOAT s = SPFlt(scale);
+              WORD n = iff.chunk.length / 12;
+              WORD i;
 
-                  for (i = 0; i < n; i++) {
-                    LONG x = SPFix(SPMul(SPFieee(pnts[i * 3 + 0]), s));
-                    LONG y = SPFix(SPMul(SPFieee(pnts[i * 3 + 1]), s));
-                    LONG z = SPFix(SPMul(SPFieee(pnts[i * 3 + 2]), s));
-                    Print("%5ld : [%ld %ld %ld]\n", (LONG)i, x, y, z);
-                  }
+              ReadChunk(&iff, pnts);
 
-                  FreeMem(pnts, iff.chunk.length);
-                }
-                break;
+              for (i = 0; i < n; i++) {
+                LONG x = SPFix(SPMul(SPFieee(pnts[i * 3 + 0]), s));
+                LONG y = SPFix(SPMul(SPFieee(pnts[i * 3 + 1]), s));
+                LONG z = SPFix(SPMul(SPFieee(pnts[i * 3 + 2]), s));
+                Print("%5ld : [%ld %ld %ld]\n", (LONG)i, x, y, z);
+              }
 
-              case ID_POLS:
-                {
-                  WORD *pols = AllocMem(iff.chunk.length, MEMF_PUBLIC);
-                  WORD n = iff.chunk.length / 2;
-                  WORD i = 0, j = 0;
-
-                  ReadChunk(&iff, pols);
-
-                  if (iff.header.type == ID_LWOB) {
-                    while (i < n) {
-                      /* Face vertex indices. */
-                      WORD vertices = pols[i++];
-                      Print("%5ld: [", (LONG)j++);
-                      while (--vertices > 0)
-                        Print("%ld ", (LONG)pols[i++]);
-                      Print("%ld] ", (LONG)pols[i++]);
-
-                      /* Polygon flags. */
-                      Print("{%ld}\n", (LONG)pols[i++]);
-                    }
-                  } else {
-                    Print("..%.4s\n", (STRPTR)pols);
-
-                    i += 2; /* Skip POLS type field. */
-                    
-                    while (i < n) {
-                      /* Face vertex indices. */
-                      WORD vertices = pols[i++];
-                      Print("%5ld: [", (LONG)j++);
-                      while (--vertices > 0)
-                        Print("%ld ", (LONG)pols[i++]);
-                      Print("%ld]\n", (LONG)pols[i++]);
-                    }
-                  }
-
-                  FreeMem(pols, iff.chunk.length);
-                }
-                break;
-
-              default:
-                SkipChunk(&iff);
-                break;
+              FreeMem(pnts, iff.chunk.length);
             }
-          }
+            break;
 
-          CloseIff(&iff);
-        } else {
-          Print("'%s' is not an IFF file.\n", filename);
+          case ID_POLS:
+            {
+              WORD *pols = AllocMem(iff.chunk.length, MEMF_PUBLIC);
+              WORD n = iff.chunk.length / 2;
+              WORD i = 0, j = 0;
+
+              ReadChunk(&iff, pols);
+
+              if (iff.header.type == ID_LWOB) {
+                while (i < n) {
+                  /* Face vertex indices. */
+                  WORD vertices = pols[i++];
+                  Print("%5ld: [", (LONG)j++);
+                  while (--vertices > 0)
+                    Print("%ld ", (LONG)pols[i++]);
+                  Print("%ld] ", (LONG)pols[i++]);
+
+                  /* Polygon flags. */
+                  Print("{%ld}\n", (LONG)pols[i++]);
+                }
+              } else {
+                Print("..%.4s\n", (STRPTR)pols);
+
+                i += 2; /* Skip POLS type field. */
+
+                while (i < n) {
+                  /* Face vertex indices. */
+                  WORD vertices = pols[i++];
+                  Print("%5ld: [", (LONG)j++);
+                  while (--vertices > 0)
+                    Print("%ld ", (LONG)pols[i++]);
+                  Print("%ld]\n", (LONG)pols[i++]);
+                }
+              }
+
+              FreeMem(pols, iff.chunk.length);
+            }
+            break;
+
+          default:
+            SkipChunk(&iff);
+            break;
         }
-
-        CloseLibrary(MathTransBase);
       }
 
-      CloseLibrary(MathBase);
+      CloseIff(&iff);
+    } else {
+      Print("'%s' is not an IFF file.\n", filename);
     }
-
-    CloseLibrary((struct Library *)DOSBase);
   }
 
-    return 0;
+  if (MathBase)
+    CloseLibrary(MathBase);
+  if (DOSBase)
+    CloseLibrary((struct Library *)DOSBase);
+
+  return 0;
 }
