@@ -15,6 +15,7 @@ static BitmapT *screen[3];
 static WORD active = 0;
 
 static Point2D pos[3][3];
+static BitmapT *background;
 static BitmapT *metaball;
 static BitmapT *carry;
 static CopInsT *bplptr[5];
@@ -24,6 +25,7 @@ void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
   screen[2] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
+  background = LoadILBM("data/metaball-bg.ilbm", FALSE);
   metaball = LoadILBM("data/metaball.ilbm", FALSE);
   carry = NewBitmap(SIZE + 16, SIZE, 2, FALSE);
 
@@ -41,6 +43,8 @@ void Kill() {
   DeleteBitmap(screen[1]);
   DeleteBitmap(screen[2]);
   DeleteBitmap(carry);
+  DeletePalette(background->palette);
+  DeleteBitmap(background);
   DeletePalette(metaball->palette);
   DeleteBitmap(metaball);
 }
@@ -228,6 +232,12 @@ void Main() {
   
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
+
+  ITER(i, 0, 4, {
+    BlitterCopySync(screen[0], i, 0, 0, background, i);
+    BlitterCopySync(screen[1], i, 0, 0, background, i);
+    BlitterCopySync(screen[2], i, 0, 0, background, i);
+  });
 
   while (Loop());
 }
