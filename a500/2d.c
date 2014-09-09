@@ -63,6 +63,28 @@ __regargs void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, UWORD n) {
   }
 }
 
+__regargs BOOL ClipArea2D(Point2D *dst, WORD width, WORD height, Area2D *src) {
+  if (dst->y < 0) {
+    src->y -= dst->y;
+    src->h += dst->y;
+    dst->y = 0;
+  }
+
+  if (dst->x < 0) {
+    src->x -= dst->x;
+    src->w += dst->x;
+    dst->x = 0;
+  }
+
+  if (dst->y + src->h >= height)
+    src->h = height - dst->y;
+
+  if (dst->x + src->w >= width)
+    src->h = width - dst->x;
+
+  return (src->w > 0 && src->h > 0);
+}
+
 __regargs void PointsInsideBox(Point2D *in, UBYTE *flags, UWORD n) {
   WORD *src = (WORD *)in;
 

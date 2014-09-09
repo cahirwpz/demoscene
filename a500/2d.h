@@ -22,6 +22,11 @@ typedef struct {
   WORD maxX, maxY;
 } Box2D;
 
+typedef struct {
+  WORD x, y;
+  WORD w, h;
+} Area2D;
+
 typedef struct Polygon {
   UWORD vertices;
   UWORD index;
@@ -37,6 +42,8 @@ __regargs void Translate2D(Matrix2D *M, WORD x, WORD y);
 __regargs void Scale2D(Matrix2D *M, WORD sx, WORD sy);
 __regargs void Rotate2D(Matrix2D *M, WORD a);
 __regargs void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, UWORD n);
+
+__regargs BOOL ClipArea2D(Point2D *dst, WORD width, WORD height, Area2D *src);
 
 extern Box2D ClipWin;
 
