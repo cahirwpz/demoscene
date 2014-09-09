@@ -116,9 +116,10 @@ __regargs void CopyMetaball(LONG x, LONG y) {
 
 #define BLTOP_NAME AddMetaball
 #define BLTOP_SRC_BM metaball
-#define BLTOP_SRC_WIDTH WIDTH
+#define BLTOP_SRC_WIDTH SIZE
 #define BLTOP_CARRY_BM carry
 #define BLTOP_DST_BM screen[active]
+#define BLTOP_DST_WIDTH WIDTH
 #define BLTOP_HSIZE SIZE
 #define BLTOP_VSIZE SIZE
 #define BLTOP_BPLS 5
@@ -145,8 +146,8 @@ BOOL Loop() {
   PositionMetaballs();
 
   CopyMetaball(pos[active][0].x, pos[active][0].y);
-  AddMetaball(pos[active][1].x, pos[active][1].y);
-  AddMetaball(pos[active][2].x, pos[active][2].y);
+  AddMetaball(pos[active][1].x, pos[active][1].y, 0, 0);
+  AddMetaball(pos[active][2].x, pos[active][2].y, 0, 0);
   
   Log("loop: %ld\n", ReadLineCounter() - lines);
 

@@ -18,6 +18,10 @@
 #error "BLTOP: destination bitmap not defined!"
 #endif
 
+#ifndef BLTOP_DST_WIDTH
+#error "BLTOP: destination width not defined!"
+#endif
+
 #ifndef BLTOP_BPLS
 #error "BLTOP: number of bitplanes not defined!"
 #endif
@@ -32,10 +36,11 @@
 #define BLTOP_WAIT WaitBlitter()
 #endif
 
-__regargs static void BLTOP_NAME(WORD x, WORD y) {
-  ULONG dst_begin = ((x & ~15) >> 3) + ((WORD)y * BLTOP_SRC_WIDTH / 8);
-  UWORD dst_modulo = (BLTOP_SRC_WIDTH - (BLTOP_HSIZE + 16)) / 8;
-  UWORD src_shift = (x & 15) << ASHIFTSHIFT;
+__regargs static void BLTOP_NAME(WORD dx, WORD dy, WORD sx, WORD sy) {
+  ULONG dst_begin = ((dx & ~15) >> 3) + ((WORD)dy * BLTOP_DST_WIDTH / 8);
+  UWORD dst_modulo = (BLTOP_DST_WIDTH - (BLTOP_HSIZE + 16)) / 8;
+  ULONG src_begin = ((sx & ~15) >> 3) + ((WORD)sy * BLTOP_SRC_WIDTH / 8);
+  UWORD src_shift = (dx & 15) << ASHIFTSHIFT;
   APTR *__src = (BLTOP_SRC_BM)->planes;
   APTR *__dst = (BLTOP_DST_BM)->planes;
   APTR *__carry = (BLTOP_CARRY_BM)->planes;
@@ -50,7 +55,7 @@ __regargs static void BLTOP_NAME(WORD x, WORD y) {
   custom->bltalwm = 0;
 
   /* Bitplane 0: half adder with carry. */
-  custom->bltapt = __src[0];
+  custom->bltapt = __src[0] + src_begin;
   custom->bltbpt = __dst[0] + dst_begin;
   custom->bltdpt = __carry[0];
   custom->bltdmod = 0;
@@ -58,7 +63,7 @@ __regargs static void BLTOP_NAME(WORD x, WORD y) {
   custom->bltsize = BLTOP_SIZE;
   BLTOP_WAIT;
 
-  custom->bltapt = __src[0];
+  custom->bltapt = __src[0] + src_begin;
   custom->bltbpt = __dst[0] + dst_begin;
   custom->bltdpt = __dst[0] + dst_begin;
   custom->bltdmod = dst_modulo;
@@ -68,7 +73,7 @@ __regargs static void BLTOP_NAME(WORD x, WORD y) {
 
   /* Bitplane 1-5: full adder with carry. */
   for (i = 1, k = 0; i < BLTOP_BPLS; i++, k ^= 1) {
-    custom->bltapt = __src[i];
+    custom->bltapt = __src[i] + src_begin;
     custom->bltbpt = __dst[i] + dst_begin;
     custom->bltcpt = __carry[k];
     custom->bltdpt = __carry[k ^ 1];
@@ -77,7 +82,7 @@ __regargs static void BLTOP_NAME(WORD x, WORD y) {
     custom->bltsize = BLTOP_SIZE;
     BLTOP_WAIT;
 
-    custom->bltapt = __src[i];
+    custom->bltapt = __src[i] + src_begin;
     custom->bltbpt = __dst[i] + dst_begin;
     custom->bltcpt = __carry[k];
     custom->bltdpt = __dst[i] + dst_begin;
@@ -108,6 +113,7 @@ __regargs static void BLTOP_NAME(WORD x, WORD y) {
 #undef BLTOP_SRC_WIDTH
 #undef BLTOP_CARRY_BM
 #undef BLTOP_DST_BM
+#undef BLTOP_DST_WIDTH
 #undef BLTOP_BPLS
 #undef BLTOP_HSIZE
 #undef BLTOP_VSIZE
