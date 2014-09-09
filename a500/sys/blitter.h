@@ -22,6 +22,14 @@ __regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWO
 __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2);
 __regargs void BlitterLineSync(WORD x1, WORD y1, WORD x2, WORD y2);
 
+void BlitterCopySync(BitmapT *dst, UWORD dstbpl, UWORD x, UWORD y,
+                     BitmapT *src, UWORD srcbpl);
+void BlitterCopyAreaSync(BitmapT *dst, UWORD dstbpl, UWORD dx, UWORD dy,
+                         BitmapT *src, UWORD srcbpl,
+                         UWORD sx, UWORD sy, UWORD sw, UWORD sh);
+void BlitterSetSync(BitmapT *dst, UWORD dstbpl,
+                    UWORD x, UWORD y, UWORD w, UWORD h, UWORD val);
+
 static inline BOOL BlitterBusy() {
   return custom->dmaconr & DMAF_BLTDONE;
 }
