@@ -10,6 +10,13 @@
 #define offsetof(st, m) \
   ((ULONG)((char *)&((st *)0)->m - (char *)0))
 
+#define ITER(_VAR, _BEGIN, _END, _EXPR) { \
+  WORD _VAR; \
+  for (_VAR = _BEGIN; _VAR <= _END; _VAR++) { \
+    _EXPR; \
+  } \
+}
+
 static inline WORD absw(WORD a) {
   if (a < 0)
     return -a;
