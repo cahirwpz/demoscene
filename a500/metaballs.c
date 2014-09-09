@@ -73,46 +73,22 @@ __interrupt_handler void IntLevel3Handler() {
   custom->intreq = INTF_LEVEL3;
 }
 
-__regargs static void ClearMetaballs() {
-  BitmapT *buffer = screen[active];
-  Point2D *p = pos[active];
-  WORD i, j;
+#define BLTOP_NAME ClearMetaball
+#define BLTOP_DST_BM screen[active]
+#define BLTOP_DST_WIDTH WIDTH
+#define BLTOP_HSIZE SIZE
+#define BLTOP_VSIZE SIZE
+#define BLTOP_BPLS 5
+#include "bltop_clear_simple.h"
 
-  for (j = 0; j < 3; j++) {
-    ULONG start = ((p[j].x & ~15) >> 3) + (p[j].y * WIDTH / 8);
-
-    for (i = 0; i < 5; i++) {
-      custom->bltadat = 0;
-      custom->bltdpt = buffer->planes[i] + start;
-      custom->bltdmod = (WIDTH - (SIZE + 16)) / 8;
-      custom->bltcon0 = DEST;
-      custom->bltcon1 = 0;
-      custom->bltsize = (SIZE << 6) | ((SIZE + 16) >> 4);
-      WaitBlitter();
-    }
-  }
-}
-
-__regargs void CopyMetaball(LONG x, LONG y) {
-  ULONG dstart = ((x & ~15) >> 3) + ((WORD)y * WIDTH / 8);
-  APTR *src = metaball->planes;
-  APTR *dst = screen[active]->planes;
-  WORD i;
-
-  custom->bltamod = -2;
-  custom->bltdmod = (WIDTH - (SIZE + 16)) / 8;
-  custom->bltcon0 = (SRCA | DEST | A_TO_D) | ((x & 15) << ASHIFTSHIFT);
-  custom->bltcon1 = 0;
-  custom->bltafwm = -1;
-  custom->bltalwm = 0;
-
-  for (i = 0; i < 5; i++) {
-    custom->bltapt = src[i];
-    custom->bltdpt = dst[i] + dstart;
-    custom->bltsize = (SIZE << 6) | ((SIZE + 16) >> 4);
-    WaitBlitter();
-  }
-}
+#define BLTOP_NAME CopyMetaball
+#define BLTOP_SRC_BM metaball
+#define BLTOP_DST_BM screen[active]
+#define BLTOP_DST_WIDTH WIDTH
+#define BLTOP_HSIZE SIZE
+#define BLTOP_VSIZE SIZE
+#define BLTOP_BPLS 5
+#include "bltop_copy_simple.h"
 
 #define BLTOP_NAME AddMetaball
 #define BLTOP_SRC_BM metaball
@@ -124,6 +100,14 @@ __regargs void CopyMetaball(LONG x, LONG y) {
 #define BLTOP_VSIZE SIZE
 #define BLTOP_BPLS 5
 #include "bltop_adds.h"
+
+static void ClearMetaballs() {
+  Point2D *p = pos[active];
+  WORD j;
+
+  for (j = 0; j < 3; j++, p++)
+    ClearMetaball(p->x, p->y);
+}
 
 static void PositionMetaballs() {
   LONG t = frameCount * 24;
