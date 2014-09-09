@@ -36,6 +36,7 @@
 #define BLTOP_WAIT WaitBlitter()
 #endif
 
+/* Bitplane adder with saturation. */
 __regargs static void BLTOP_NAME(WORD dx, WORD dy, WORD sx, WORD sy) {
   ULONG dst_begin = ((dx & ~15) >> 3) + ((WORD)dy * BLTOP_DST_WIDTH / 8);
   UWORD dst_modulo = (BLTOP_DST_WIDTH - (BLTOP_HSIZE + 16)) / 8;
@@ -46,7 +47,9 @@ __regargs static void BLTOP_NAME(WORD dx, WORD dy, WORD sx, WORD sy) {
   APTR *__carry = (BLTOP_CARRY_BM)->planes;
   LONG i, k;
 
-  /* Bitplane adder with saturation. */
+  BLTOP_WAIT;
+
+  /* Initialize blitter */
   custom->bltamod = -2;
   custom->bltbmod = dst_modulo;
   custom->bltcmod = 0;
@@ -61,18 +64,18 @@ __regargs static void BLTOP_NAME(WORD dx, WORD dy, WORD sx, WORD sy) {
   custom->bltdmod = 0;
   custom->bltcon0 = HALF_ADDER_CARRY | src_shift;
   custom->bltsize = BLTOP_SIZE;
-  BLTOP_WAIT;
 
+  BLTOP_WAIT;
   custom->bltapt = __src[0] + src_begin;
   custom->bltbpt = __dst[0] + dst_begin;
   custom->bltdpt = __dst[0] + dst_begin;
   custom->bltdmod = dst_modulo;
   custom->bltcon0 = HALF_ADDER | src_shift;
   custom->bltsize = BLTOP_SIZE;
-  BLTOP_WAIT;
 
   /* Bitplane 1-5: full adder with carry. */
   for (i = 1, k = 0; i < BLTOP_BPLS; i++, k ^= 1) {
+    BLTOP_WAIT;
     custom->bltapt = __src[i] + src_begin;
     custom->bltbpt = __dst[i] + dst_begin;
     custom->bltcpt = __carry[k];
@@ -80,8 +83,8 @@ __regargs static void BLTOP_NAME(WORD dx, WORD dy, WORD sx, WORD sy) {
     custom->bltdmod = 0;
     custom->bltcon0 = FULL_ADDER_CARRY | src_shift;
     custom->bltsize = BLTOP_SIZE;
-    BLTOP_WAIT;
 
+    BLTOP_WAIT;
     custom->bltapt = __src[i] + src_begin;
     custom->bltbpt = __dst[i] + dst_begin;
     custom->bltcpt = __carry[k];
@@ -89,10 +92,10 @@ __regargs static void BLTOP_NAME(WORD dx, WORD dy, WORD sx, WORD sy) {
     custom->bltdmod = dst_modulo;
     custom->bltcon0 = FULL_ADDER | src_shift;
     custom->bltsize = BLTOP_SIZE;
-    BLTOP_WAIT;
   }
 
   /* Apply saturation bits. */
+  BLTOP_WAIT;
   custom->bltamod = dst_modulo;
   custom->bltbmod = 0;
   custom->bltdmod = dst_modulo;
@@ -100,11 +103,11 @@ __regargs static void BLTOP_NAME(WORD dx, WORD dy, WORD sx, WORD sy) {
   custom->bltalwm = -1;
 
   for (i = 0; i < BLTOP_BPLS; i++) {
+    BLTOP_WAIT;
     custom->bltapt = __dst[i] + dst_begin;
     custom->bltbpt = __carry[k];
     custom->bltdpt = __dst[i] + dst_begin;
     custom->bltsize = BLTOP_SIZE;
-    BLTOP_WAIT;
   }
 }
 

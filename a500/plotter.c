@@ -104,7 +104,6 @@ static BOOL Loop() {
   //LONG lines = ReadLineCounter();
 
   ITER(i, 0, 2, BlitterSetSync(screen[active], i, 0, 0, 96 * 2 + SIZE, 96 * 2 + SIZE, 0));
-  WaitBlitter();
   DrawPlotter();
 
   //Log("loop: %ld\n", ReadLineCounter() - lines);

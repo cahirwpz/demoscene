@@ -97,18 +97,18 @@ __regargs void CopyMetaball(LONG x, LONG y) {
   ULONG dstart = ((x & ~15) >> 3) + ((WORD)y * WIDTH / 8);
   APTR *src = metaball->planes;
   APTR *dst = screen[active]->planes;
-  WORD n = 5;
+  WORD i;
 
   custom->bltamod = -2;
   custom->bltdmod = (WIDTH - (SIZE + 16)) / 8;
-  custom->bltcon0 = SRCA | DEST | A_TO_D | ((x & 15) << ASHIFTSHIFT);
+  custom->bltcon0 = (SRCA | DEST | A_TO_D) | ((x & 15) << ASHIFTSHIFT);
   custom->bltcon1 = 0;
   custom->bltafwm = -1;
   custom->bltalwm = 0;
 
-  while (n--) {
-    custom->bltapt = *src++;
-    custom->bltdpt = *dst++ + dstart;
+  for (i = 0; i < 5; i++) {
+    custom->bltapt = src[i];
+    custom->bltdpt = dst[i] + dstart;
     custom->bltsize = (SIZE << 6) | ((SIZE + 16) >> 4);
     WaitBlitter();
   }
