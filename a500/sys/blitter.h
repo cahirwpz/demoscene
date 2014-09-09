@@ -11,6 +11,11 @@
 #define A_XOR_B (ANBC | NABC | ANBNC | NABNC)
 #define A_AND_B (ABC | ABNC)
 
+#define HALF_ADDER ((SRCA | SRCB | DEST) | A_XOR_B)
+#define HALF_ADDER_CARRY ((SRCA | SRCB | DEST) | A_AND_B)
+#define FULL_ADDER ((SRCA | SRCB | SRCC | DEST) | (NANBC | NABNC | ANBNC | ABC))
+#define FULL_ADDER_CARRY ((SRCA | SRCB | SRCC | DEST) | (NABC | ANBC | ABNC | ABC))
+
 /* Values for bltcon1. */
 #define LINE_SOLID  (LINEMODE)
 #define LINE_ONEDOT (LINEMODE | ONEDOT)

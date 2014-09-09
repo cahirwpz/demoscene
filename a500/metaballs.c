@@ -114,82 +114,15 @@ __regargs void CopyMetaball(LONG x, LONG y) {
   }
 }
 
-#define HALF_ADDER ((SRCA | SRCB | DEST) | A_XOR_B)
-#define HALF_ADDER_CARRY ((SRCA | SRCB | DEST) | A_AND_B)
-#define FULL_ADDER ((SRCA | SRCB | SRCC | DEST) | (NANBC | NABNC | ANBNC | ABC))
-#define FULL_ADDER_CARRY ((SRCA | SRCB | SRCC | DEST) | (NABC | ANBC | ABNC | ABC))
-
-__regargs static void AddMetaball(LONG x, LONG y) {
-  ULONG start = ((x & ~15) >> 3) + ((WORD)y * WIDTH / 8);
-  UWORD shift = (x & 15) << ASHIFTSHIFT;
-  BitmapT *buffer = screen[active];
-  LONG i, k;
-
-  /* Bitplane adder with saturation. */
-  custom->bltamod = -2;
-  custom->bltbmod = (WIDTH - (SIZE + 16)) / 8;
-  custom->bltcmod = 0;
-  custom->bltcon1 = 0;
-  custom->bltafwm = -1;
-  custom->bltalwm = 0;
-
-  /* Bitplane 0: half adder with carry. */
-  custom->bltapt = metaball->planes[0];
-  custom->bltbpt = buffer->planes[0] + start;
-  custom->bltdpt = carry->planes[0];
-  custom->bltdmod = 0;
-  custom->bltcon0 = HALF_ADDER_CARRY | shift;
-  custom->bltsize = (SIZE << 6) + ((SIZE + 16) >> 4);
-  WaitBlitter();
-
-  custom->bltapt = metaball->planes[0];
-  custom->bltbpt = buffer->planes[0] + start;
-  custom->bltdpt = buffer->planes[0] + start;
-  custom->bltdmod = (WIDTH - (SIZE + 16)) / 8;
-  custom->bltcon0 = HALF_ADDER | shift;
-  custom->bltsize = (SIZE << 6) + ((SIZE + 16) >> 4);
-  WaitBlitter();
-
-  /* Bitplane 1-5: full adder with carry. */
-  for (i = 1, k = 0; i < 5; i++, k ^= 1) {
-    custom->bltapt = metaball->planes[i];
-    custom->bltbpt = buffer->planes[i] + start;
-    custom->bltcpt = carry->planes[k];
-    custom->bltdpt = carry->planes[k ^ 1];
-    custom->bltdmod = 0;
-    custom->bltcon0 = FULL_ADDER_CARRY | shift;
-    custom->bltsize = (SIZE << 6) + ((SIZE + 16) >> 4);
-    WaitBlitter();
-
-    custom->bltapt = metaball->planes[i];
-    custom->bltbpt = buffer->planes[i] + start;
-    custom->bltcpt = carry->planes[k];
-    custom->bltdpt = buffer->planes[i] + start;
-    custom->bltdmod = (WIDTH - (SIZE + 16)) / 8;
-    custom->bltcon0 = FULL_ADDER | shift;
-    custom->bltsize = (SIZE << 6) + ((SIZE + 16) >> 4);
-    WaitBlitter();
-  }
-
-  /* Apply saturation bits. */
-  {
-    WORD n = 5;
-
-    custom->bltamod = (WIDTH - (SIZE + 16)) / 8;
-    custom->bltbmod = 0;
-    custom->bltdmod = (WIDTH - (SIZE + 16)) / 8;
-    custom->bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
-    custom->bltalwm = -1;
-
-    while (--n >= 0) {
-      custom->bltapt = buffer->planes[n] + start;
-      custom->bltbpt = carry->planes[k];
-      custom->bltdpt = buffer->planes[n] + start;
-      custom->bltsize = (SIZE << 6) + ((SIZE + 16) >> 4);
-      WaitBlitter();
-    }
-  }
-}
+#define BLTOP_NAME AddMetaball
+#define BLTOP_SRC_BM metaball
+#define BLTOP_SRC_WIDTH WIDTH
+#define BLTOP_CARRY_BM carry
+#define BLTOP_DST_BM screen[active]
+#define BLTOP_HSIZE SIZE
+#define BLTOP_VSIZE SIZE
+#define BLTOP_BPLS 5
+#include "bltop_adds.h"
 
 static void PositionMetaballs() {
   LONG t = frameCount * 24;
