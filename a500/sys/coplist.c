@@ -75,7 +75,6 @@ __regargs CopInsT *CopWaitMask(CopListT *list,
   }
 }
 
-
 __regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start) {
   CopInsT *ptr = list->curr;
   UWORD *ins = (UWORD *)ptr;

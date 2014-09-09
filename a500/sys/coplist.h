@@ -82,6 +82,10 @@ static inline void CopInsSet32(CopInsT *ins, APTR data) {
 static inline void CopInsSet16(CopInsT *ins, UWORD data) {
   ins->move.data = data;
 }
+
+static inline void CopInsSetRGB24(CopInsT *ins, UBYTE r, UBYTE g, UBYTE b) {
+  ins->move.data = ((r & 0xf0) << 4) | (g & 0xf0) | ((b & 0xf0) >> 4);
+}
  
 static inline void CopMakePlayfield(CopListT *list, CopInsT **bplptr, BitmapT *bitmap) {
   UWORD i, modulo;
