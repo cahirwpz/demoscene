@@ -35,6 +35,16 @@ void Load() {
   CopMakeDispWin(cp, 0x81, 0x2c, WIDTH, HEIGHT);
   CopLoadPal(cp, metaball->palette, 0);
   CopEnd(cp);
+
+  {
+    WORD i, j;
+
+    for (i = 0; i < 3; i++)
+      for (j = 0; j < 3; j++) {
+        pos[i][j].x = 160;
+        pos[i][j].x = 128;
+      }
+  }
 }
 
 void Kill() {
