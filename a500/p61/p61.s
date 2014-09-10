@@ -60,7 +60,7 @@ clraudxdat = 0	;enable smoother start of quiet sounds. probably not needed.
 optjmp = 1	;0=safety check for jump beyond end of song. Clear it if you 
 		;play unknown P61 songs with erroneous Bxx/Dxx commands in them
 
-oscillo = 0	;1 to get a sample window (ptr, size) to read and display for 
+oscillo = 1	;1 to get a sample window (ptr, size) to read and display for 
 		;oscilloscope type effects (beta, noshorts=1, pad instruments)
 		;IMPORTANT: see ;@@ note about chipmem dc.w buffer.
 
@@ -116,7 +116,8 @@ suppF01 = 1	;0 is incompatible with CIA mode. It moves ~100 cycles of
 
 ********** CODE START **********
 
-	xdef _P61_Init, _P61_SetPosition, _P61_End, _P61_ControlBlock
+	xdef _P61_Init, _P61_SetPosition, _P61_Osc, _P61_End
+        xdef _P61_ControlBlock, _P61_Samples
 
 	section	"P6111",code
 
@@ -133,6 +134,22 @@ _P61_SetPosition
 	bsr	P61_SetPosition
 	movem.l	(sp)+,a3/a6
 	rts
+
+_P61_Osc
+        movem.l d2-d4/a2,-(sp)
+        bsr     P61_osc
+        bne.s   .ready
+        moveq.l #0,d0
+        bra.s   .quit
+.ready
+        move.l  a2,(a3)
+        move.w  d0,4(a3)
+        move.w  d1,6(a3)
+        move.w  d4,8(a3)
+        moveq.l #1,d0
+.quit
+        movem.l (sp)+,d2-d4/a2
+        rts
 
 _P61_End
 	movem.l a3/a6,-(sp)
