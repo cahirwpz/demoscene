@@ -20,7 +20,7 @@ int P61_Init(APTR Module asm("a0"),
 
 /**
  * @brief Jump to a specific position in the song. Starts from the beginning if
- *        out of limits.	­
+ *        out of limits.
  *
  * @param Position position in a module (Starts from the beginning if is out of
  *                 limits)
@@ -33,6 +33,48 @@ void P61_SetPosition(LONG Position asm("d0"));
  */
 void P61_End();
 
+typedef struct {
+	UBYTE SN_Note;
+	UBYTE Command;
+	UBYTE Info;
+	UBYTE Pack;
+	APTR  Sample;
+	UWORD OnOff;
+	APTR  ChaPos;
+	APTR  TempPos;
+	UWORD TempLen;
+
+	UWORD Note;
+	UWORD Period;
+	UWORD Volume;
+	UWORD Fine;
+
+	UWORD Offset;
+	UWORD LOffset;
+	UWORD ToPeriod;
+	UWORD TPSpeed;
+	UBYTE VibCmd;
+	UBYTE VibPos;
+	UBYTE TreCmd;
+	UBYTE TrePos;
+	UWORD RetrigCount;
+	UBYTE Funkspd;
+	UBYTE Funkoff;
+	APTR  Wave;
+
+	UWORD TData;
+	APTR  TChaPos;
+	APTR  TTempPos;
+	UWORD TTempLen;
+	UWORD Shadow;
+#ifdef P61_oscill
+	APTR  OscPtr;		  /* points to end of current frame's sample-chunk. */
+	UWORD OscPtrRem;  /* remainder for precision (internal use only) */
+	APTR  OscPtrWrap; /* wrap (end) pointer for current Paula soundloop */
+#endif
+	UWORD DMABit;
+} P61_ChannelBlock;
+
 struct P61_ControlBlock
 {
 	UWORD	Master;		/* Master volume (0-64) */
@@ -43,6 +85,7 @@ struct P61_ControlBlock
 	UWORD	Pos;		  /* Current song position (read only) */
 	UWORD	Pattern;	/* Current pattern (read only) */
 	UWORD	Row;		  /* Current pattern row (read only) */
+	P61_ChannelBlock *Channel[4];
 };
 
 extern struct P61_ControlBlock P61_ControlBlock;
