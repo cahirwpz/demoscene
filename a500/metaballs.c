@@ -109,7 +109,7 @@ __interrupt_handler void IntLevel3Handler() {
 #define BLTOP_HSIZE SIZE
 #define BLTOP_VSIZE SIZE
 #define BLTOP_BPLS 5
-#include "bltop_adds.h"
+#include "bltop_add_sat.h"
 
 static void ClearMetaballs() {
   Point2D *p = pos[active];
