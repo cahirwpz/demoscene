@@ -35,7 +35,7 @@ __regargs void ConsoleDrawChar(ConsoleT *console, UWORD x, UWORD y, char c) {
   UBYTE *src = console->font->tf_CharData;
   UBYTE *dst = console->bitmap->planes[0];
   WORD swidth = console->font->tf_Modulo;
-  WORD dwidth = console->bitmap->width / 8;
+  WORD dwidth = console->bitmap->bytesPerRow;
   WORD i = c - 32;
   WORD j = console->bitmap->width * y + x;
   WORD h = 7;
@@ -49,7 +49,7 @@ __regargs void ConsoleDrawChar(ConsoleT *console, UWORD x, UWORD y, char c) {
 
 __regargs void ConsoleDrawCursor(ConsoleT *console) {
   UBYTE *dst = console->bitmap->planes[0];
-  WORD dwidth = console->bitmap->width / 8;
+  WORD dwidth = console->bitmap->bytesPerRow;
   WORD i = console->bitmap->width * console->cursor.y + console->cursor.x;
   WORD h = 7;
 

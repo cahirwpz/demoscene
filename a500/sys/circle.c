@@ -1,7 +1,7 @@
 #include "circle.h"
 
 __regargs void Circle(BitmapT *bitmap, LONG plane, WORD xc, WORD yc, WORD r) {
-  LONG stride = bitmap->width >> 3;
+  LONG stride = bitmap->bytesPerRow;
 
   UBYTE *pixels = bitmap->planes[plane] + yc * (WORD)stride;
   UBYTE *q0 = pixels;

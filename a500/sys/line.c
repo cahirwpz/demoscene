@@ -7,7 +7,7 @@ static struct {
 
 __regargs void CpuLineSetup(BitmapT *bitmap, UWORD plane) {
   line.pixels = bitmap->planes[plane];
-  line.stride = bitmap->width / 8;
+  line.stride = bitmap->bytesPerRow;
 }
 
 __regargs void CpuLine(WORD xs, WORD ys, WORD xe, WORD ye) {
