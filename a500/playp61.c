@@ -21,7 +21,7 @@ static TextFontT *topaz8;
 static ConsoleT console;
 
 void Load() {
-  module = ReadFile("data/tempest-acidjazzed_evening.p61", MEMF_CHIP);
+  module = ReadFile("data/jazzcat-boogie_town.p61", MEMF_CHIP);
   screen = NewBitmap(320, 256, 1, FALSE);
   ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1, FALSE));
 
@@ -85,7 +85,7 @@ static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
     }
   }
 
-  if (data->WrapCount > 0) {
+  if (data->WrapCount > 0 && data->LoopEndPtr) {
     end = data->LoopEndPtr;
 
     while (n > 0) {
@@ -103,10 +103,6 @@ static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
   }
 
   BlitterFill(osc, 0);
-  WaitBlitter();
-
-  BlitterLineSetup(osc, 0, LINE_OR, LINE_SOLID);
-  BlitterLine(32, 0, 32, 64);
   WaitBlitter();
 }
 
@@ -181,7 +177,7 @@ void Main() {
       /* Command upper 4 bits store instrument number. */
       WORD cmd = ((ch->Command & 15) << 8) | ch->Info;
       WORD ins = (ch->Command >> 4) | ((ch->SN_Note & 1) << 4);
-      ConsolePrint(&console, " %ld |  %02lx %03lx  %02ld %4lx\n",
+      ConsolePrint(&console, " %ld |  %02lx %03lx  %02ld %04lx\n",
                    (LONG)i, (LONG)ins, (LONG)cmd,
                    (LONG)(ch->Volume), (LONG)P61_visuctr[i]);
     }
@@ -198,6 +194,10 @@ void Main() {
 
         if (P61_Osc(P61_CHANNEL(i), &data))
           DrawOsc(osc[i], &data);
+
+        BlitterLineSetup(osc[i], 0, LINE_OR, LINE_SOLID);
+        BlitterLine(32, 0, 32, 64);
+        WaitBlitter();
       }
 
       for (i = 0; i < 4; i++) {
