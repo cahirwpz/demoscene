@@ -3970,7 +3970,6 @@ P61_pdelay:
 P61_pdflag:
 	dc 0
 	endc
-_P61_Samples:
 P61_samples:
 	dcb.b 16*31,0
 P61_emptysample:
@@ -4057,6 +4056,7 @@ P61_Quiet:	dc.w 0	;@@this "sample" MUST be in chipmem!
 	endc
 
 	ifne visuctrs
+_P61_visuctr:
 P61_visuctr0:	dc.w $4000	;pretend long elapsed time at start
 P61_visuctr1:	dc.w $4000	;(to not show inital trigger on all channels.)
 P61_visuctr2:	dc.w $4000

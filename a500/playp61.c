@@ -10,6 +10,9 @@
 #include "interrupts.h"
 #include "blitter.h"
 
+#define X(x) ((x) + 0x81)
+#define Y(y) ((y) + 0x2c)
+
 static APTR module;
 static BitmapT *screen;
 static BitmapT *osc[4];
@@ -58,8 +61,54 @@ __interrupt_handler void IntLevel2Handler() {
   custom->intreq = INTF_PORTS;
 }
 
-static BYTE SampleNum[4];
-static WORD SampleWait[4] = {-1, -1, -1, -1};
+static inline void putpixel(UBYTE *line, WORD x) {
+  bset(line + (x >> 3), ~x);
+}
+
+static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
+  UBYTE *line = osc->planes[0];
+  BYTE *sample, *end;
+  WORD n = 64;
+
+  sample = data->SamplePtr;
+  end = sample + data->Count;
+
+  if (data->WrapCount > 0)
+    end -= data->WrapCount;
+
+  for (; n > 0 && sample < end; n--, line += osc->bytesPerRow) {
+    WORD x = absw(*sample++) / 8;
+
+    if (x > 0) {
+      putpixel(line, 32 - x);
+      putpixel(line, 32 + x);
+    }
+  }
+
+  if (data->WrapCount > 0) {
+    end = data->LoopEndPtr;
+
+    while (n > 0) {
+      sample = data->LoopStartPtr;
+
+      for (; n > 0 && sample < end; n--, line += osc->bytesPerRow) {
+        WORD x = absw(*sample++) / 8;
+
+        if (x > 0) {
+          putpixel(line, 32 - x);
+          putpixel(line, 32 + x);
+        }
+      }
+    }
+  }
+
+  BlitterFill(osc, 0);
+  WaitBlitter();
+
+  BlitterLineSetup(osc, 0, LINE_OR, LINE_SOLID);
+  BlitterLine(32, 0, 32, 64);
+  WaitBlitter();
+}
 
 void Main() {
   KeyboardInit();
@@ -72,9 +121,9 @@ void Main() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
 
-  ConsolePutStr(&console,
-                "ESC   : exit player\n"
-                "SPACE : pause\n");
+  custom->color[0] = 0;
+
+  ConsolePutStr(&console, "Exit (ESC) | Pause (SPACE)\n");
 
   {
     WORD i;
@@ -84,8 +133,8 @@ void Main() {
     for (i = 0; i < 4; i++) {
       WORD x1 = 8 + 72 * i - 1;
       WORD x2 = 72 + 72 * i + 1;
-      WORD y1 = 64 - 1;
-      WORD y2 = 128 + 1;
+      WORD y1 = 80 - 1;
+      WORD y2 = 144 + 1;
 
       BlitterLineSync(x1, y1, x2, y1);
       BlitterLineSync(x1, y2, x2, y2);
@@ -96,7 +145,7 @@ void Main() {
 
   while (1) {
     KeyEventT event;
-    WORD i, j;
+    WORD i;
 
     if (GetKeyEvent(&event)) {
       if (event.modifier & MOD_PRESSED)
@@ -104,6 +153,14 @@ void Main() {
 
       if (event.code == KEY_ESCAPE)
         break;
+
+      if (event.code == KEY_SPACE) {
+        P61_ControlBlock.Play ^= 1;
+        if (P61_ControlBlock.Play)
+          custom->dmacon = DMAF_SETCLR | DMAF_AUDIO;
+        else
+          custom->dmacon = DMAF_AUDIO;
+      }
 
 #if 0
       if (event.code == KEY_RIGHT)
@@ -114,60 +171,40 @@ void Main() {
 #endif
     }
 
-    ConsoleSetCursor(&console, 0, 3);
-    ConsolePrint(&console, "Position : %02ld/%02ld\n",
+    ConsoleSetCursor(&console, 0, 2);
+    ConsolePrint(&console, "Position : %02ld/%02ld\n\n",
                  (LONG)P61_ControlBlock.Pos, (LONG)P61_ControlBlock.Row);
 
-    ConsolePutStr(&console, "Samples  : ");
+    ConsolePrint(&console, "Ch | Ins Cmd Vol Visu\n");
     for (i = 0; i < 4; i++) {
-      BYTE num = P61_CHANNEL(i)->Sample - P61_Samples;
-      if (num != SampleNum[i]) {
-        ConsolePrint(&console, "%02lx ", (LONG)num);
-        SampleNum[i] = num;
-        SampleWait[i] = 8;
-      } else {
-        if (--SampleWait[i] < 0)
-          ConsolePutStr(&console, "-- ");
-        else
-          ConsolePrint(&console, "%02lx ", (LONG)num);
-      }
-    }
-    ConsolePutStr(&console, "\n");
-
-    for (i = 0; i < 4; i++) {
-      P61_OscData data;
-
-      BlitterClear(osc[i], 0);
-      WaitBlitter();
-
-      if (P61_Osc(P61_CHANNEL(i), &data)) {
-        if (data.WrapCount <= 0) {
-          UBYTE *pixel = osc[i]->planes[0];
-          for (j = 0; j < min(data.Count, 64); j++, pixel += 64 / 8) {
-            WORD x = abs(data.SamplePtr[j]) / 8;
-
-            if (x > 31)
-              x = 31;
-
-            {
-              WORD x1 = 32 - x;
-              WORD x2 = 32 + x;
-              bset(pixel + (x1 >> 3), ~x1);
-              bset(pixel + (x2 >> 3), ~x2);
-            }
-          }
-
-          BlitterFill(osc[i], 0);
-          WaitBlitter();
-        }
-      }
+      P61_ChannelBlock *ch = P61_CHANNEL(i);
+      /* Command upper 4 bits store instrument number. */
+      WORD cmd = ((ch->Command & 15) << 8) | ch->Info;
+      WORD ins = (ch->Command >> 4) | ((ch->SN_Note & 1) << 4);
+      ConsolePrint(&console, " %ld |  %02lx %03lx  %02ld %4lx\n",
+                   (LONG)i, (LONG)ins, (LONG)cmd,
+                   (LONG)(ch->Volume), (LONG)P61_visuctr[i]);
     }
 
-    WaitLine(128);
-    for (i = 0; i < 4; i++) {
-      WORD x1 = 8 + 72 * i;
-      WORD y1 = 64;
-      BlitterCopySync(screen, 0, x1, y1, osc[i], 0);
+
+    if (P61_ControlBlock.Play) {
+      WaitLine(Y(96));
+
+      for (i = 0; i < 4; i++) {
+        P61_OscData data;
+
+        BlitterClear(osc[i], 0);
+        WaitBlitter();
+
+        if (P61_Osc(P61_CHANNEL(i), &data))
+          DrawOsc(osc[i], &data);
+      }
+
+      for (i = 0; i < 4; i++) {
+        WORD x = 8 + 72 * i;
+        WORD y = 80;
+        BlitterCopySync(screen, 0, x, y, osc[i], 0);
+      }
     }
 
     WaitVBlank();

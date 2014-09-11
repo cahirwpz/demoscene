@@ -22,7 +22,7 @@ splitchans = 1	;#channels to be split off to be decrunched at "playtime frame"
 		;Experiment to find minimum rastertime, but it should be 1 or 2
 		;for 3-4 channels songs and 0 or 1 with less channels.
 
-visuctrs = 0	;enables visualizers in this example: P61_visuctr0..3.w 
+visuctrs = 1	;enables visualizers in this example: P61_visuctr0..3.w 
 		;containing #frames (#lev6ints if cia=1) elapsed since last
 		;instrument triggered. (0=triggered this frame.)
 		;Easy alternative to E8x or 1Fx sync commands.
@@ -39,7 +39,7 @@ p61fade = 0	;enable channel volume fading from your demo
 channels = 4	;<4 for game sound effects in the higher channels. Incompatible
 		; with splitchans/split4.
 
-playflag = 0	;1=enable music on/off capability (at run-time). .If 0, you can
+playflag = 1	;1=enable music on/off capability (at run-time). .If 0, you can
 		;still do this by just, you know, not calling P61_Music...
 		;It's a convenience function to "pause" music in CIA mode.
 
@@ -117,7 +117,7 @@ suppF01 = 1	;0 is incompatible with CIA mode. It moves ~100 cycles of
 ********** CODE START **********
 
 	xdef _P61_Init, _P61_SetPosition, _P61_Osc, _P61_End
-        xdef _P61_ControlBlock, _P61_Samples
+        xdef _P61_ControlBlock, _P61_visuctr
 
 	section	"P6111",code
 
@@ -136,19 +136,22 @@ _P61_SetPosition
 	rts
 
 _P61_Osc
-        movem.l d2-d4/a2,-(sp)
+        movem.l d2-d4/a2-a3,-(sp)
         bsr     P61_osc
         bne.s   .ready
         moveq.l #0,d0
         bra.s   .quit
+
 .ready
-        move.l  a2,(a3)
-        move.w  d0,4(a3)
-        move.w  d1,6(a3)
-        move.w  d4,8(a3)
+        move.l  a2,(a3)+
+        move.l  a1,(a3)+
+        move.l  d2,(a3)+
+        move.w  d0,(a3)+
+        move.w  d1,(a3)+
+        move.w  d4,(a3)+
         moveq.l #1,d0
 .quit
-        movem.l (sp)+,d2-d4/a2
+        movem.l (sp)+,d2-d4/a2-a3
         rts
 
 _P61_End

@@ -3,6 +3,8 @@
 
 #include <exec/types.h>
 
+extern UWORD P61_visuctr[4];
+
 typedef struct {
 	APTR  P61_SampleOffset;
 	UWORD P61_SampleLength;
@@ -11,8 +13,6 @@ typedef struct {
 	UWORD P61_SampleVolume;
 	UWORD P61_FineTune;
 } __attribute__((packed)) P61_SampleBlock;
-
-extern P61_SampleBlock P61_Samples[32];
 
 typedef struct {
 	UBYTE SN_Note;
@@ -93,10 +93,12 @@ LONG P61_Init(APTR Module asm("a0"),
  */
 
 typedef struct {
-  BYTE *SamplePtr;
-  WORD WrapCount;
-  WORD Count;
-  WORD RepLen;
+  BYTE *SamplePtr;    /* a2 */
+  BYTE *LoopStartPtr; /* a1 */
+  BYTE *LoopEndPtr;   /* d2 */
+  WORD WrapCount;     /* d0 */
+  WORD Count;         /* d1 */
+  WORD RepLen;        /* d4 */
 } P61_OscData;
 
 BOOL P61_Osc(P61_ChannelBlock *channel asm("a0"), P61_OscData *data asm("a3"));
