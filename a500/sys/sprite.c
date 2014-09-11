@@ -22,26 +22,28 @@ __regargs SpriteT *NewSpriteFromBitmap(UWORD height, BitmapT *bitmap,
 {
   SpriteT *sprite = NewSprite(height, bitmap->depth == 4);
   WORD yend = ystart + sprite->height;
+  LONG start = ystart * bitmap->bytesPerRow / 2 + xstart / 16;
+  LONG stride = bitmap->bytesPerRow / 2;
 
   if (bitmap->depth == 2) {
     UWORD *data = &sprite->data[2];
-    UWORD *bpl0 = (UWORD *)bitmap->planes[0] + ystart * 2;
-    UWORD *bpl1 = (UWORD *)bitmap->planes[1] + ystart * 2;
+    UWORD *bpl0 = (UWORD *)bitmap->planes[0] + start;
+    UWORD *bpl1 = (UWORD *)bitmap->planes[1] + start;
 
     for (; ystart < yend; ystart++) {
       *data++ = *bpl0;
       *data++ = *bpl1;
 
-      bpl0 += 2;
-      bpl1 += 2;
+      bpl0 += stride;
+      bpl1 += stride;
     }
   } else {
     UWORD *data0 = &sprite->data[2];
     UWORD *data1 = &sprite->attached->data[2];
-    UWORD *bpl0 = (UWORD *)bitmap->planes[0] + ystart * 4;
-    UWORD *bpl1 = (UWORD *)bitmap->planes[1] + ystart * 4;
-    UWORD *bpl2 = (UWORD *)bitmap->planes[2] + ystart * 4;
-    UWORD *bpl3 = (UWORD *)bitmap->planes[3] + ystart * 4;
+    UWORD *bpl0 = (UWORD *)bitmap->planes[0] + start;
+    UWORD *bpl1 = (UWORD *)bitmap->planes[1] + start;
+    UWORD *bpl2 = (UWORD *)bitmap->planes[2] + start;
+    UWORD *bpl3 = (UWORD *)bitmap->planes[3] + start;
 
     for (; ystart < yend; ystart++) {
       *data0++ = *bpl0;
@@ -49,10 +51,10 @@ __regargs SpriteT *NewSpriteFromBitmap(UWORD height, BitmapT *bitmap,
       *data1++ = *bpl2;
       *data1++ = *bpl3;
 
-      bpl0 += 4;
-      bpl1 += 4;
-      bpl2 += 4;
-      bpl3 += 4;
+      bpl0 += stride;
+      bpl1 += stride;
+      bpl2 += stride;
+      bpl3 += stride;
     }
   }
 

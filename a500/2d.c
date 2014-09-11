@@ -80,7 +80,7 @@ __regargs BOOL ClipArea2D(Point2D *dst, WORD width, WORD height, Area2D *src) {
     src->h = height - dst->y;
 
   if (dst->x + src->w >= width)
-    src->h = width - dst->x;
+    src->w = width - dst->x;
 
   return (src->w > 0 && src->h > 0);
 }

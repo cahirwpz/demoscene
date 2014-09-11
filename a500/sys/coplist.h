@@ -89,7 +89,7 @@ static inline void CopInsSetRGB24(CopInsT *ins, UBYTE r, UBYTE g, UBYTE b) {
  
 static inline void CopMakePlayfield(CopListT *list, CopInsT **bplptr, BitmapT *bitmap) {
   UWORD i, modulo;
-  BOOL hires = bitmap->width > 320;
+  BOOL hires = bitmap->width > 512;
 
   CopMove16(list, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR |
             (hires ? BPLCON0_HIRES : 0));
