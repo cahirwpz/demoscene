@@ -6,8 +6,10 @@
 
 typedef union {
   struct {
-    WORD vpos;
-    WORD hpos;
+    UBYTE vp;
+    UBYTE hp;
+    UBYTE vpmask;
+    UBYTE hpmask;
   } wait;
   struct {
     WORD reg;

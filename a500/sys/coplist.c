@@ -37,7 +37,7 @@ __regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp) {
   UWORD *ins = (UWORD *)list->curr;
 
   if ((vp >= 256) && (!list->flags)) {
-    *((ULONG *)ins)++ = 0xffe2fffe;
+    *((ULONG *)ins)++ = 0xffdffffe;
     list->flags |= 1;
   }
 
@@ -67,7 +67,7 @@ __regargs CopInsT *CopWaitMask(CopListT *list,
     CopInsT *ptr = (CopInsT *)ins;
 
     *ins++ = (vp << 8) | (hp & 0xfe) | 1;
-    *ins++ = 0x8000 | ((vpmask << 8) & 0x7f00) | (hpmask & 0x7e);
+    *ins++ = 0x8000 | ((vpmask << 8) & 0x7f00) | (hpmask & 0xfe);
 
     list->curr = (CopInsT *)ins;
 

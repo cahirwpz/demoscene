@@ -24,7 +24,7 @@ static inline WORD absw(WORD a) {
 }
 
 static inline ULONG swap16(ULONG a) {
-  asm("swap %0": "=d" (a));
+  asm("swap %0": "+d" (a));
   return a;
 }
 
