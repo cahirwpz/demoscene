@@ -111,6 +111,38 @@ static inline void CopMakePlayfield(CopListT *list, CopInsT **bplptr, BitmapT *b
   }
 }
 
+static inline void CopShowPlayfield(CopListT *list, BitmapT *bitmap) {
+  UWORD i;
+
+  CopMove16(list, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR);
+  CopMove16(list, bplcon1, 0);
+  CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
+  CopMove16(list, bplcon3, 0);
+  
+  CopMove16(list, bpl1mod, 0);
+  CopMove16(list, bpl2mod, 0);
+
+  for (i = 0; i < bitmap->depth; i++)
+    CopMove32(list, bplpt[i], bitmap->planes[i]);
+}
+
+static inline void CopShowPlayfieldArea(CopListT *list, BitmapT *bitmap, UWORD xs, UWORD ys, UWORD width) {
+  UWORD i;
+  LONG start = ys * bitmap->bytesPerRow + (xs >> 3);
+  WORD modulo = bitmap->bytesPerRow - (width >> 3);
+
+  CopMove16(list, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR);
+  CopMove16(list, bplcon1, 0);
+  CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
+  CopMove16(list, bplcon3, 0);
+  
+  CopMove16(list, bpl1mod, modulo);
+  CopMove16(list, bpl2mod, modulo);
+
+  for (i = 0; i < bitmap->depth; i++)
+    CopMove32(list, bplpt[i], bitmap->planes[i] + start);
+}
+
 /* Arguments must be always specified in low resolution coordinates. */
 static inline void
 CopMakeDispWin(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {

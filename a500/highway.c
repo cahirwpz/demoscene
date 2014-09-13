@@ -58,7 +58,7 @@ static void MakeCopperList(CopListT *cp, WORD num) {
   CopLoadPal(cp, title->palette, 28);
 
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, NULL, carsTop);
+  CopShowPlayfield(cp, carsTop);
   CopLoadPal(cp, carsTop->palette, 0);
 
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
@@ -67,9 +67,7 @@ static void MakeCopperList(CopListT *cp, WORD num) {
     CopWait(cp, Y(LANEL_Y - 1), 8);
     CopMove16(cp, dmacon, DMAF_RASTER);
     CopLoadPal(cp, carsL->palette, 0);
-    CopMakePlayfield(cp, NULL, lanes[num]);
-    CopMove16(cp, bpl1mod, 2 * HSIZE / 8);
-    CopMove16(cp, bpl2mod, 2 * HSIZE / 8);
+    CopShowPlayfieldArea(cp, lanes[num], 32, 0, WIDTH);
 
     CopWait(cp, Y(LANEL_Y), 8);
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
@@ -93,9 +91,7 @@ static void MakeCopperList(CopListT *cp, WORD num) {
   {
     CopWait(cp, Y(LANER_Y - 1), 8);
     CopLoadPal(cp, carsR->palette, 0);
-    CopMakePlayfield(cp, NULL, lanes[num]);
-    CopMove16(cp, bpl1mod, 2 * HSIZE / 8);
-    CopMove16(cp, bpl2mod, 2 * HSIZE / 8);
+    CopShowPlayfieldArea(cp, lanes[num], 32, LANE_H, WIDTH);
 
     CopWait(cp, Y(LANER_Y), 8);
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
@@ -105,9 +101,8 @@ static void MakeCopperList(CopListT *cp, WORD num) {
 
   {
     CopWait(cp, Y(LANER_Y + LANE_H + 1), 8);
-    CopSetRGB(cp, 0, 0);
-    CopMakePlayfield(cp, NULL, carsBottom);
     CopLoadPal(cp, carsBottom->palette, 0);
+    CopShowPlayfield(cp, carsBottom);
     CopWait(cp, Y(LANER_Y + LANE_H + 2), 8);
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   }
@@ -296,8 +291,6 @@ static WORD iterCount = 0;
 static LONG lastFrameCount;
 
 static BOOL Loop() {
-  // LONG lines = ReadLineCounter();
-
 #if 0
   ITER(i, 0, 3, BlitterSetSync(laneL[active], i, HSIZE, 0, WIDTH, LANE_H, 0));
   ITER(i, 0, 3, BlitterSetSync(laneR[active], i, HSIZE, LANE_H, WIDTH, LANE_H, 0));
@@ -314,8 +307,6 @@ static BOOL Loop() {
     DrawCars(frameCount - lastFrameCount);
     lastFrameCount = t;
   }
-
-  // Log("loop: %ld\n", ReadLineCounter() - lines);
 
   return !LeftMouseButton();
 }
