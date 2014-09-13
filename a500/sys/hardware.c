@@ -34,10 +34,13 @@ __regargs void Wait280ns(ULONG delay) {
   } while (diff < delay);
 }
 
+/* All TOD registers latch on a read of  MSB event  and remain latched until
+ * after a read of LSB event. */
+
 LONG ReadLineCounter() {
-  return (ciab->ciatodlow | (ciab->ciatodmid << 8) | (ciab->ciatodhi << 16));
+  return ((ciab->ciatodhi << 16) | (ciab->ciatodmid << 8) | ciab->ciatodlow);
 }
 
 LONG ReadFrameCounter() {
-  return (ciaa->ciatodlow | (ciaa->ciatodmid << 8) | (ciaa->ciatodhi << 16));
+  return ((ciaa->ciatodhi << 16) | (ciaa->ciatodmid << 8) | ciaa->ciatodlow);
 }

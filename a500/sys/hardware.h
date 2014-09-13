@@ -28,7 +28,7 @@ extern volatile struct CIA* const ciab;
 
 void WaitMouse();
 __regargs void WaitLine(ULONG line);
-static void inline WaitVBlank() { WaitLine(312); }
+static void inline WaitVBlank() { WaitLine(303); }
 
 static inline BOOL LeftMouseButton() {
   return !(ciaa->ciapra & CIAF_GAMEPORT0);
