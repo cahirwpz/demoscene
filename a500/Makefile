@@ -11,11 +11,11 @@ blurred:        blurred.o sintab.o startup.o libsys.a
 chunky-16c:     chunky-16c.o startup.o libsys.a
 chunky-rgb:     chunky-rgb.o startup.o libsys.a
 circles:        circles.o startup.o libsys.a
-neons:          neons.o sintab.o 2d.o startup.o libsys.a
+neons:          neons.o sintab.o startup.o libsys.a
 copper:         copper.o startup.o libsys.a
-cube:           cube.o 3d.o 2d.o sintab.o startup.o libsys.a
+cube:           cube.o sintab.o startup.o libsys.a
 floor:          floor.o sintab.o startup.o libsys.a
-highway:        highway.o 2d.o sintab.o startup.o libsys.a
+highway:        highway.o sintab.o startup.o libsys.a
 lines:          lines.o startup.o libsys.a
 metaballs:      metaballs.o sintab.o startup.o libsys.a
 mouse:          mouse.o startup.o libsys.a
@@ -26,9 +26,9 @@ play8svx:       play8svx.o libsys.a
 playahx:        playahx.o startup.o libsys.a libahx.a
 playp61:        playp61.o startup.o libsys.a libp61.a
 plotter:        plotter.o sintab.o startup.o libsys.a
-shapes:         shapes.o 2d.o sintab.o startup.o libsys.a
+shapes:         shapes.o sintab.o startup.o libsys.a
 showilbm:       showilbm.o startup.o libsys.a
-showlwo:        showlwo.o 3d.o 2d.o sintab.o startup.o libsys.a
+showlwo:        showlwo.o sintab.o startup.o libsys.a
 sprites4:       sprites4.o startup.o libsys.a
 sprites16:      sprites16.o startup.o libsys.a
 topaz8:         topaz8.o startup.o libsys.a
