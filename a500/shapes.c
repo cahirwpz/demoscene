@@ -4,6 +4,13 @@
 #include "fx.h"
 #include "memory.h"
 
+#define X(x) ((x) + 0x81)
+#define Y(y) ((y) + 0x2c)
+
+#define WIDTH  320
+#define HEIGHT 256
+#define DEPTH  5
+
 static ShapeT *shape;
 static BitmapT *screen;
 static CopInsT *bplptr[5];
@@ -11,13 +18,13 @@ static CopListT *cp;
 static WORD plane, planeC;
 
 void Load() {
-  screen = NewBitmap(320, 256, 5, FALSE);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   shape = LoadShape("data/boxes.2d");
   cp = NewCopList(100);
 
   CopInit(cp);
+  CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
   CopMakePlayfield(cp, bplptr, screen);
-  CopMakeDispWin(cp, 0x81, 0x2c, screen->width, screen->height);
   {
     UWORD i, j = 2;
 
@@ -103,8 +110,8 @@ void Init() {
 
 void Main() {
   while (!LeftMouseButton()) {
-    ULONG frameCount = ReadFrameCounter();
-    UWORD i, a = frameCount * 64;
+    LONG frameCount = ReadFrameCounter();
+    WORD i, a = frameCount * 64;
     Matrix2D t;
 
     BlitterClear(screen, plane);
@@ -129,19 +136,13 @@ void Main() {
     WaitVBlank();
 
     for (i = 0; i < screen->depth; i++) {
-      WORD j = plane + i;
-
-      if (j >= screen->depth)
-        j -= screen->depth;
-
+      WORD j = (plane + i) % DEPTH;
       CopInsSet32(bplptr[i], screen->planes[j]);
     }
 
-    if (planeC & 1) {
-      plane++;
-      if (plane >= screen->depth)
-        plane -= screen->depth;
-    }
+    if (planeC & 1)
+      plane = (plane + 1) % DEPTH;
+
     planeC ^= 1;
   }
 }

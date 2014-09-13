@@ -8,6 +8,7 @@
 
 #define WIDTH  320
 #define HEIGHT 256
+#define DEPTH  1
 
 static Object3D *cube;
 
@@ -25,8 +26,8 @@ static void MakeCopperList(CopListT *cp, UWORD num) {
 }
 
 void Load() {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   cube = LoadObject3D("data/cube.3d");
 
   cp[0] = NewCopList(100);
@@ -40,10 +41,10 @@ void Load() {
 
 void Kill() {
   DeleteObject3D(cube);
-  DeleteCopList(cp[0]);
-  DeleteCopList(cp[1]);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
 }
 
 static Point3D tmpPoint[2][16];
@@ -107,36 +108,27 @@ static void DrawObject(Object3D *object) {
   }
 }
 
-static Point3D rotate = { 0, 0, 0 };
-
-static BOOL Loop() {
-  Matrix3D t;
-
-  BlitterClear(screen[active], 0);
-  WaitBlitter();
-
-  rotate.x += 4;
-  rotate.y += 4;
-  rotate.z += 4;
-
-  LoadRotate3D(&t, rotate.x, rotate.y, rotate.z);
-  Translate3D(&t, 0, 0, fx4i(-250));
-  Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
-  PointsInsideFrustum(cube->cameraPoint, cube->cameraPointFlags, cube->points);
-  UpdatePolygonNormals(cube);
-
-  DrawObject(cube);
-
-  return !LeftMouseButton();
-}
-
 void Init() {
   CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 }
 
 void Main() {
-  while (Loop()) {
+  while (!LeftMouseButton()) {
+    LONG a = ReadFrameCounter() * 4;
+    Matrix3D t;
+
+    BlitterClear(screen[active], 0);
+    WaitBlitter();
+
+    LoadRotate3D(&t, a, a, a);
+    Translate3D(&t, 0, 0, fx4i(-250));
+    Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
+    PointsInsideFrustum(cube->cameraPoint, cube->cameraPointFlags, cube->points);
+    UpdatePolygonNormals(cube);
+
+    DrawObject(cube);
+
     CopListRun(cp[active]);
     WaitVBlank();
     active ^= 1;
