@@ -91,15 +91,14 @@ static inline void CopInsSetRGB24(CopInsT *ins, UBYTE r, UBYTE g, UBYTE b) {
  
 static inline void CopMakePlayfield(CopListT *list, CopInsT **bplptr, BitmapT *bitmap) {
   UWORD i, modulo;
-  BOOL hires = bitmap->width > 512;
 
   CopMove16(list, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR |
-            (hires ? BPLCON0_HIRES : 0));
+            (bitmap->width > 512 ? BPLCON0_HIRES : 0));
   CopMove16(list, bplcon1, 0);
   CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
   CopMove16(list, bplcon3, 0);
   
-  modulo = bitmap->interleaved ? (bitmap->width / 8 * (bitmap->depth - 1)) : 0;
+  modulo = bitmap->interleaved ? (bitmap->bytesPerRow * (bitmap->depth - 1)) : 0;
 
   CopMove16(list, bpl1mod, modulo);
   CopMove16(list, bpl2mod, modulo);
@@ -110,10 +109,6 @@ static inline void CopMakePlayfield(CopListT *list, CopInsT **bplptr, BitmapT *b
     if (bplptr)
       bplptr[i] = bplpt;
   }
-
-  CopMove16(list, ddfstrt, hires ? 0x3c : 0x38);
-  CopMove16(list, ddfstop, 0xd0);
-  CopMove16(list, fmode, 0);
 }
 
 /* Arguments must be always specified in low resolution coordinates. */
@@ -128,6 +123,27 @@ CopMakeDispWin(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
 
   CopMove16(list, diwstrt, (ys << 8) | xs);
   CopMove16(list, diwstop, (ye << 8) | xe);
+
+  CopMove16(list, ddfstrt, 0x38);
+  CopMove16(list, ddfstop, 0xd0);
+  CopMove16(list, fmode, 0);
+}
+
+static inline void
+CopMakeDispWinHiRes(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
+  /* vstart  $00 ..  $ff */
+  /* hstart  $00 ..  $ff */
+  /* vstop   $80 .. $17f */
+  /* hstop  $100 .. $1ff */
+  UBYTE xe = xs + w / 2;
+  UBYTE ye = ys + h;
+
+  CopMove16(list, diwstrt, (ys << 8) | xs);
+  CopMove16(list, diwstop, (ye << 8) | xe);
+
+  CopMove16(list, ddfstrt, 0x3c);
+  CopMove16(list, ddfstop, 0xd0);
+  CopMove16(list, fmode, 0);
 }
 
 static inline CopInsT *CopSetRGB(CopListT *list, UWORD i, UWORD value) {
