@@ -48,14 +48,16 @@ __interrupt_handler void IntLevel2Handler() {
   custom->intreq = INTF_PORTS;
 }
 
-void Main() {
+void Init() {
   KeyboardInit();
   InterruptVector->IntLevel2 = IntLevel2Handler;
   custom->intena = INTF_SETCLR | INTF_PORTS;
 
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+}
 
+void Main() {
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
 

@@ -94,11 +94,12 @@ static void MoveSprite() {
   counter++;
 }
 
-void Main() {
+void Init() {
   CopListActivate(cp);
-
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
+}
 
+void Main() {
   while (!LeftMouseButton()) {
     WaitLine(Y(200));
     MoveSprite();

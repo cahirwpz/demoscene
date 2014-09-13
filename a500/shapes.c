@@ -39,10 +39,10 @@ void Load() {
   planeC = 0;
 
   /* Set up clipping window. */
-  ClipWin.minX = fx4i(80);
-  ClipWin.maxX = fx4i(319 - 80);
-  ClipWin.minY = fx4i(64);
-  ClipWin.maxY = fx4i(255 - 64);
+  ClipWin.minX = fx4i(0);
+  ClipWin.maxX = fx4i(319);
+  ClipWin.minY = fx4i(0);
+  ClipWin.maxY = fx4i(255);
 }
 
 void Kill() {
@@ -107,56 +107,54 @@ __interrupt_handler void IntLevel3Handler() {
   custom->intreq = INTF_LEVEL3;
 }
 
-static BOOL Loop() {
-  UWORD i, a = frameCount * 64;
-  Matrix2D t;
-
-  BlitterClear(screen, plane);
-  WaitBlitter();
-
-  LoadIdentity2D(&t);
-  Rotate2D(&t, frameCount * 8);
-  Scale2D(&t, fx12f(1.0) + SIN(a) / 2, fx12f(1.0) + COS(a) / 2);
-  Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
-  Transform2D(&t, shape->viewPoint, shape->origPoint, shape->points);
-  PointsInsideBox(shape->viewPoint, shape->viewPointFlags, shape->points);
-
-  {
-    // LONG lines = ReadLineCounter();
-    DrawShape(shape);
-    // Log("draw: %ld\n", ReadLineCounter() - lines);
-  }
-
-  BlitterFill(screen, plane);
-  WaitBlitter();
-
-  WaitVBlank();
-
-  for (i = 0; i < screen->depth; i++) {
-    WORD j = plane + i;
-
-    if (j >= screen->depth)
-      j -= screen->depth;
-
-    CopInsSet32(bplptr[i], screen->planes[j]);
-  }
-
-  if (planeC & 1) {
-    plane++;
-    if (plane >= screen->depth)
-      plane -= screen->depth;
-  }
-  planeC ^= 1;
-
-  return !LeftMouseButton();
-}
-
-void Main() {
+void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
+}
 
-  while (Loop());
+void Main() {
+  while (!LeftMouseButton()) {
+    UWORD i, a = frameCount * 64;
+    Matrix2D t;
+
+    BlitterClear(screen, plane);
+    WaitBlitter();
+
+    LoadIdentity2D(&t);
+    Rotate2D(&t, frameCount * 8);
+    Scale2D(&t, fx12f(1.0) + SIN(a) / 2, fx12f(1.0) + COS(a) / 2);
+    Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
+    Transform2D(&t, shape->viewPoint, shape->origPoint, shape->points);
+    PointsInsideBox(shape->viewPoint, shape->viewPointFlags, shape->points);
+
+    {
+      // LONG lines = ReadLineCounter();
+      DrawShape(shape);
+      // Log("draw: %ld\n", ReadLineCounter() - lines);
+    }
+
+    BlitterFill(screen, plane);
+    WaitBlitter();
+
+    WaitVBlank();
+
+    for (i = 0; i < screen->depth; i++) {
+      WORD j = plane + i;
+
+      if (j >= screen->depth)
+        j -= screen->depth;
+
+      CopInsSet32(bplptr[i], screen->planes[j]);
+    }
+
+    if (planeC & 1) {
+      plane++;
+      if (plane >= screen->depth)
+        plane -= screen->depth;
+    }
+    planeC ^= 1;
+  }
 }

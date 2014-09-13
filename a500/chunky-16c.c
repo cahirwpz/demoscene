@@ -138,11 +138,12 @@ static void ChunkyToPlanar() {
 #endif
 }
 
-void Main() {
+void Init() {
   CopListActivate(cp);
-
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
+}
 
+void Main() {
   InitChunkyToPlanar();
 
   while (!LeftMouseButton()) {

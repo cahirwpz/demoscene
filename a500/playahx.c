@@ -27,13 +27,13 @@ __interrupt_handler void IntLevel2Handler() {
   custom->intreq = INTF_PORTS;
 }
 
-void AhxSetTempo(UWORD tempo asm("d0")) {
+static void AhxSetTempo(UWORD tempo asm("d0")) {
   ciaa->ciatalo = tempo & 0xff;
   ciaa->ciatahi = tempo >> 8;
   ciaa->ciacra |= CIACRAF_START;
 }
 
-void Main() {
+void Init() {
   /* Enable only CIA Timer A interrupt. */
   ciaa->ciaicr = (UBYTE)(~CIAICRF_SETCLR);
   ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_TA;
@@ -42,7 +42,9 @@ void Main() {
 
   InterruptVector->IntLevel2 = IntLevel2Handler;
   custom->intena = INTF_SETCLR | INTF_PORTS;
+}
 
+void Main() {
   if (AhxInitCIA((APTR)AhxSetTempo, AHX_KILL_SYSTEM) == 0) {
     /* Use AHX_EXPLICIT_WAVES_PRECALCING flag,
      * because dos.library is not usable at this point. */

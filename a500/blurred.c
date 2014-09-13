@@ -139,25 +139,7 @@ static void DrawShape() {
 #define BLTOP_BPLS 4
 #include "bltop_inc_sat.h"
 
-BOOL Loop() {
-  LONG lines = ReadLineCounter();
-
-  if (iterCount++ & 1)
-    DecrementAndSaturate();
-  DrawShape();
-  IncrementAndSaturate();
-
-  ITER(i, 0, 3, BlitterCopySync(screen[active], i, 16, 0, buffer, i));
-
-  Log("loop: %ld\n", ReadLineCounter() - lines);
-
-  swapScreen = active;
-  active ^= 1;
-
-  return !LeftMouseButton();
-}
-
-void Main() {
+void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
@@ -171,6 +153,22 @@ void Main() {
 
   ITER(i, 0, 4, BlitterCopySync(screen[0], i, WIDTH / 2, 0, clip, i));
   ITER(i, 0, 4, BlitterCopySync(screen[1], i, WIDTH / 2, 0, clip, i));
+}
 
-  while (Loop());
+void Main() {
+  while (!LeftMouseButton()) {
+    LONG lines = ReadLineCounter();
+
+    if (iterCount++ & 1)
+      DecrementAndSaturate();
+    DrawShape();
+    IncrementAndSaturate();
+
+    ITER(i, 0, 3, BlitterCopySync(screen[active], i, 16, 0, buffer, i));
+
+    Log("loop: %ld\n", ReadLineCounter() - lines);
+
+    swapScreen = active;
+    active ^= 1;
+  }
 }

@@ -35,31 +35,6 @@ void Kill() {
   DeleteBitmap(screen);
 }
 
-static BOOL Loop() {
-  MouseEventT cursor;
-  KeyEventT key;
-
-  if (GetKeyEvent(&key)) {
-    if (!(key.modifier & MOD_PRESSED) && (key.code == KEY_ESCAPE))
-      return FALSE;
-  }
-
-  if (GetMouseEvent(&cursor)) {
-    UBYTE *data = screen->planes[0] + 
-      (cursor.x + cursor.y * screen->width) / 8;
-    UBYTE value = 1 << (7 - (cursor.x & 7));
-
-    if (cursor.button & LMB_PRESSED)
-      *data |= value;
-    if (cursor.button & RMB_PRESSED)
-      *data &= ~value;
-
-    UpdateSpritePos(pointer, 0x81 + cursor.x, 0x2c + cursor.y);
-  }
-
-  return TRUE;
-}
-
 __interrupt_handler void IntLevel2Handler() {
   if (custom->intreqr & INTF_PORTS) {
     /* Make sure all scratchpad registers are saved, because we call a function
@@ -84,7 +59,7 @@ __interrupt_handler void IntLevel3Handler() {
   custom->intreq = INTF_VERTB;
 }
 
-void Main() {
+void Init() {
   KeyboardInit();
   MouseInit(0, 0, screen->width - 1, screen->height - 1);
 
@@ -94,6 +69,31 @@ void Main() {
 
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
+}
 
-  while (Loop());
+void Main() {
+  BOOL quit = FALSE;
+
+  while (!quit) {
+    MouseEventT cursor;
+    KeyEventT key;
+
+    if (GetKeyEvent(&key)) {
+      if (!(key.modifier & MOD_PRESSED) && (key.code == KEY_ESCAPE))
+        quit = TRUE;
+    }
+
+    if (GetMouseEvent(&cursor)) {
+      UBYTE *data = screen->planes[0] + 
+        (cursor.x + cursor.y * screen->width) / 8;
+      UBYTE value = 1 << (7 - (cursor.x & 7));
+
+      if (cursor.button & LMB_PRESSED)
+        *data |= value;
+      if (cursor.button & RMB_PRESSED)
+        *data &= ~value;
+
+      UpdateSpritePos(pointer, 0x81 + cursor.x, 0x2c + cursor.y);
+    }
+  }
 }

@@ -106,20 +106,13 @@ static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
   WaitBlitter();
 }
 
-void Main() {
+void Init() {
   KeyboardInit();
   InterruptVector->IntLevel2 = IntLevel2Handler;
   custom->intena = INTF_SETCLR | INTF_PORTS;
 
-  P61_Init(module, NULL, NULL);
-  P61_ControlBlock.Play = 1;
-
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
-
-  custom->color[0] = 0;
-
-  ConsolePutStr(&console, "Exit (ESC) | Pause (SPACE)\n");
 
   {
     WORD i;
@@ -138,6 +131,13 @@ void Main() {
       BlitterLineSync(x2, y1, x2, y2);
     }
   }
+}
+
+void Main() {
+  P61_Init(module, NULL, NULL);
+  P61_ControlBlock.Play = 1;
+
+  ConsolePutStr(&console, "Exit (ESC) | Pause (SPACE)\n");
 
   while (1) {
     KeyEventT event;
@@ -157,14 +157,6 @@ void Main() {
         else
           custom->dmacon = DMAF_AUDIO;
       }
-
-#if 0
-      if (event.code == KEY_RIGHT)
-        P61_SetPosition(P61_ControlBlock.Pos + 1);
-
-      if (event.code == KEY_RIGHT)
-        P61_SetPosition(P61_ControlBlock.Pos - 1);
-#endif
     }
 
     ConsoleSetCursor(&console, 0, 2);

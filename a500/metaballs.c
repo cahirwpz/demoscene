@@ -132,29 +132,7 @@ static void PositionMetaballs() {
   pos[active][2].y = (HEIGHT - SIZE) / 2 + normfx(COS(t) * SIZE * 3 / 4);
 }
 
-BOOL Loop() {
-  LONG lines = ReadLineCounter();
-
-  // This takes about 100 lines. Could we do better?
-  ClearMetaballs();
-  PositionMetaballs();
-
-  CopyMetaball(pos[active][0].x, pos[active][0].y);
-  AddMetaball(pos[active][1].x, pos[active][1].y, 0, 0);
-  AddMetaball(pos[active][2].x, pos[active][2].y, 0, 0);
-  
-  Log("loop: %ld\n", ReadLineCounter() - lines);
-
-  swapScreen = active;
-
-  active++;
-  if (active > 2)
-    active = 0;
-
-  return !LeftMouseButton();
-}
-
-void Main() {
+void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
@@ -166,6 +144,26 @@ void Main() {
     BlitterCopySync(screen[1], i, 0, 0, background, i);
     BlitterCopySync(screen[2], i, 0, 0, background, i);
   });
+}
 
-  while (Loop());
+void Main() {
+  while (!LeftMouseButton()) {
+    LONG lines = ReadLineCounter();
+
+    // This takes about 100 lines. Could we do better?
+    ClearMetaballs();
+    PositionMetaballs();
+
+    CopyMetaball(pos[active][0].x, pos[active][0].y);
+    AddMetaball(pos[active][1].x, pos[active][1].y, 0, 0);
+    AddMetaball(pos[active][2].x, pos[active][2].y, 0, 0);
+
+    Log("loop: %ld\n", ReadLineCounter() - lines);
+
+    swapScreen = active;
+
+    active++;
+    if (active > 2)
+      active = 0;
+  }
 }

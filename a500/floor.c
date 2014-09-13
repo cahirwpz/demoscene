@@ -26,7 +26,6 @@
 #define FAR_W (WIDTH * FAR_Z / 256)
 
 static BitmapT *screen[2];
-static CopInsT *bplptr[DEPTH];
 static UWORD active = 0;
 static CopListT *cp[2];
 
@@ -67,14 +66,13 @@ static void FloorPrecalc() {
   }
 }
 
-static CopListT *MakeCopperList(WORD num) {
-  CopListT *cp = NewCopList((256 - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
+static void MakeCopperList(CopListT *cp, WORD num) {
   CopInsT *ins;
   WORD i, j;
 
   CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[num]);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopShowPlayfield(cp, screen[num]);
   CopSetRGB(cp, 0, 0);
   CopSetRGB(cp, 1, 0);
   CopSetRGB(cp, 2, 0);
@@ -105,16 +103,16 @@ static CopListT *MakeCopperList(WORD num) {
   CopSetRGB(cp, 2, 0);
   CopSetRGB(cp, 3, 0);
   CopEnd(cp);
-
-  return cp;
 }
 
 void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
 
-  cp[0] = MakeCopperList(0);
-  cp[1] = MakeCopperList(1);
+  cp[0] = NewCopList((256 - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
+  MakeCopperList(cp[0], 0);
+  cp[1] = NewCopList((256 - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
+  MakeCopperList(cp[1], 1);
 
   FloorPrecalc();
 
@@ -192,7 +190,7 @@ void DrawStripes(WORD xo, WORD kxo) {
   BlitterLineSetup(screen[active], 0, LINE_EOR, LINE_ONEDOT);
 
   for (k = SIZE - 1, l[0] = &first; k >= 0; k--) {
-    WORD xi = (xo & (TILESIZE - 1)) + k * TILESIZE; // + TILESIZE / 2;
+    WORD xi = (xo & (TILESIZE - 1)) + k * TILESIZE;
     WORD col = k + kxo;
 
     if ((col & 1) == 0) {
@@ -243,11 +241,11 @@ void DrawStripes(WORD xo, WORD kxo) {
     l[0] = l[1];
   }
 
+  /* Color switching with copper. */
   {
     WORD xi = (xo & (TILESIZE - 1));
     UBYTE **activeLinePos = linePos[active];
 
-    /* Color switching. */
     for (k = 0; k < SIZE; k++, xi += TILESIZE) {
       Line2D *l = &vert[xi & (N - 1)];
       CopperLine(activeLinePos[k], l->x1, l->y1, l->x2, l->y2);
@@ -347,7 +345,6 @@ __regargs static void AssignColorToTiles(WORD kxo) {
 }
 
 BOOL Loop() {
-  //LONG lines = ReadLineCounter();
   WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
   WORD yo = (N / 2) + normfx(COS(frameCount * 16) * (N / 2));
   WORD kxo = 7 - xo * SIZE / N;
@@ -376,16 +373,15 @@ BOOL Loop() {
   CalculateTileColumns(yo, kyo);
   AssignColorToTiles(kxo);
 
-  //Log("loop: %ld\n", ReadLineCounter() - lines);
   return !LeftMouseButton();
 }
 
-void Main() {
+void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
   CopListActivate(cp[active]);
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 
   {
     WORD i;
@@ -406,7 +402,9 @@ void Main() {
       WaitBlitter();
     }
   }
+}
 
+void Main() {
   while (Loop()) {
     custom->cop1lc = (LONG)cp[active]->entry;
     WaitVBlank();

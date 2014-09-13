@@ -36,16 +36,17 @@ void Kill() {
   DeleteBitmap(screen);
 }
 
-void Main() {
+void Init() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+}
 
+void Main() {
   ConsoleDrawBox(&console, 10, 10, 20, 20);
   ConsoleSetCursor(&console, 2, 2);
   ConsolePrint(&console, "Running on Kickstart %ld.%ld.\n",
                (LONG)SysBase->LibNode.lib_Version,
                (LONG)SysBase->LibNode.lib_Revision);
   ConsolePutStr(&console, "The quick brown fox jumps\nover the lazy dog\n");
-
   WaitMouse();
 }

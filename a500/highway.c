@@ -290,28 +290,7 @@ static void DrawCars(WORD step) {
 static WORD iterCount = 0;
 static LONG lastFrameCount;
 
-static BOOL Loop() {
-#if 0
-  ITER(i, 0, 3, BlitterSetSync(laneL[active], i, HSIZE, 0, WIDTH, LANE_H, 0));
-  ITER(i, 0, 3, BlitterSetSync(laneR[active], i, HSIZE, LANE_H, WIDTH, LANE_H, 0));
-#else
-  ITER(i, 0, 3, BlitterCopySync(lanes[active], i, HSIZE, 0, carsBg, i));
-  ITER(i, 0, 3, BlitterCopySync(lanes[active], i, HSIZE, LANE_H, carsBg, i));
-#endif
-
-  if ((iterCount++ & 7) == 0)
-    AddCar();
-
-  {
-    LONG t = frameCount;
-    DrawCars(frameCount - lastFrameCount);
-    lastFrameCount = t;
-  }
-
-  return !LeftMouseButton();
-}
-
-void Main() {
+void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
@@ -319,8 +298,27 @@ void Main() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
 
   lastFrameCount = frameCount;
+}
 
-  while (Loop()) {
+void Main() {
+  while (!LeftMouseButton()) {
+#if 0
+    ITER(i, 0, 3, BlitterSetSync(laneL[active], i, HSIZE, 0, WIDTH, LANE_H, 0));
+    ITER(i, 0, 3, BlitterSetSync(laneR[active], i, HSIZE, LANE_H, WIDTH, LANE_H, 0));
+#else
+    ITER(i, 0, 3, BlitterCopySync(lanes[active], i, HSIZE, 0, carsBg, i));
+    ITER(i, 0, 3, BlitterCopySync(lanes[active], i, HSIZE, LANE_H, carsBg, i));
+#endif
+
+    if ((iterCount++ & 7) == 0)
+      AddCar();
+
+    {
+      LONG t = frameCount;
+      DrawCars(frameCount - lastFrameCount);
+      lastFrameCount = t;
+    }
+
     custom->cop1lc = (LONG)cp[active]->entry;
     WaitVBlank();
     active ^= 1;

@@ -11,23 +11,28 @@
 
 static Object3D *cube;
 
-static CopListT *cp;
+static CopListT *cp[2];
 static BitmapT *screen[2];
 static UWORD active = 0;
-static CopInsT *bplptr[8];
+
+static void MakeCopperList(CopListT *cp, UWORD num) {
+  CopInit(cp);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopShowPlayfield(cp, screen[num]);
+  CopSetRGB(cp, 0, 0x000);
+  CopSetRGB(cp, 1, 0xfff);
+  CopEnd(cp);
+}
 
 void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
   cube = LoadObject3D("data/cube.3d");
-  cp = NewCopList(100);
 
-  CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[0]);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xfff);
-  CopEnd(cp);
+  cp[0] = NewCopList(100);
+  MakeCopperList(cp[0], 0);
+  cp[1] = NewCopList(100);
+  MakeCopperList(cp[1], 1);
 
   ClipFrustum.near = fx4i(-100);
   ClipFrustum.far = fx4i(-400);
@@ -35,7 +40,8 @@ void Load() {
 
 void Kill() {
   DeleteObject3D(cube);
-  DeleteCopList(cp);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }
@@ -121,17 +127,18 @@ static BOOL Loop() {
 
   DrawObject(cube);
 
-  WaitVBlank();
-  CopInsSet32(bplptr[0], screen[active]->planes[0]);
-
-  active ^= 1;
-
   return !LeftMouseButton();
 }
 
-void Main() {
-  CopListActivate(cp);
+void Init() {
+  CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
+}
 
-  while (Loop());
+void Main() {
+  while (Loop()) {
+    custom->cop1lc = (LONG)cp[active]->entry;
+    WaitVBlank();
+    active ^= 1;
+  }
 }

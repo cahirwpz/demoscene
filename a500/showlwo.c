@@ -218,46 +218,44 @@ __interrupt_handler void IntLevel3Handler() {
   custom->intreq = INTF_LEVEL3;
 }
 
-static Point3D rotate = { 0, 0, 0 };
-
-static BOOL Loop() {
-  Matrix3D t;
-
-  rotate.x += 16;
-  rotate.y += 16;
-  rotate.z += 16;
-
-  {
-    LONG lines = ReadLineCounter();
-    LoadRotate3D(&t, rotate.x, rotate.y, rotate.z);
-    Translate3D(&t, 0, 0, fx4i(-250));
-    Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
-
-    CalculatePerspective(cube->cameraPoint, cube->points);
-    Log("transform: %ld\n", ReadLineCounter() - lines);
-  }
-
-  BlitterClear(screen[active], 0);
-  WaitBlitter();
-
-  {
-    LONG lines = ReadLineCounter();
-    DrawObject(cube);
-    Log("draw: %ld\n", ReadLineCounter() - lines);
-  }
-
-  swapScreen = active;
-  active ^= 1;
-
-  return !LeftMouseButton();
-}
-
-void Main() {
+void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
 
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
+}
 
-  while (Loop());
+static Point3D rotate = { 0, 0, 0 };
+
+void Main() {
+  while (!LeftMouseButton()) {
+    Matrix3D t;
+
+    rotate.x += 16;
+    rotate.y += 16;
+    rotate.z += 16;
+
+    {
+      LONG lines = ReadLineCounter();
+      LoadRotate3D(&t, rotate.x, rotate.y, rotate.z);
+      Translate3D(&t, 0, 0, fx4i(-250));
+      Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
+
+      CalculatePerspective(cube->cameraPoint, cube->points);
+      Log("transform: %ld\n", ReadLineCounter() - lines);
+    }
+
+    BlitterClear(screen[active], 0);
+    WaitBlitter();
+
+    {
+      LONG lines = ReadLineCounter();
+      DrawObject(cube);
+      Log("draw: %ld\n", ReadLineCounter() - lines);
+    }
+
+    swapScreen = active;
+    active ^= 1;
+  }
 }

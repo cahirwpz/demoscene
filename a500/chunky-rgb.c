@@ -130,13 +130,15 @@ static void ChunkyToCopList() {
   }
 }
 
-void Main() {
+void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_LEVEL3;
 
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
+}
 
+void Main() {
   while (!LeftMouseButton()) {
     LONG lines = ReadLineCounter();
     ChunkyToCopList();

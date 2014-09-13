@@ -100,28 +100,21 @@ static void DrawPlotter() {
   }
 }
 
-static BOOL Loop() {
-  //LONG lines = ReadLineCounter();
-
-  ITER(i, 0, 2, BlitterSetSync(screen[active], i, 0, 0, 96 * 2 + SIZE, 96 * 2 + SIZE, 0));
-  DrawPlotter();
-
-  //Log("loop: %ld\n", ReadLineCounter() - lines);
-
-  WaitVBlank();
-
-  swapScreen = active;
-  active ^= 1;
-
-  return !LeftMouseButton();
-}
-
-void Main() {
+void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
+}
 
-  while (Loop());
+void Main() {
+  while (!LeftMouseButton()) {
+    ITER(i, 0, 2, BlitterSetSync(screen[active], i, 0, 0, 96 * 2 + SIZE, 96 * 2 + SIZE, 0));
+    DrawPlotter();
+
+    WaitVBlank();
+    swapScreen = active;
+    active ^= 1;
+  }
 }

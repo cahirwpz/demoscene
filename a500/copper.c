@@ -132,11 +132,13 @@ static BOOL Loop() {
   return !LeftMouseButton();
 }
 
-void Main() {
+void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_LEVEL3;
 
   CopListActivate(cp);
+}
 
+void Main() {
   while (Loop());
 }

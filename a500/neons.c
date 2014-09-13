@@ -162,23 +162,7 @@ static void DrawCliparts() {
   }
 }
 
-static BOOL Loop() {
-  //LONG lines = ReadLineCounter();
-
-  ClearCliparts();
-  DrawCliparts();
-
-  //Log("loop: %ld\n", ReadLineCounter() - lines);
-
-  swapScreen = active;
-  active ^= 1;
-
-  WaitVBlank();
-
-  return !LeftMouseButton();
-}
-
-void Main() {
+void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
@@ -187,6 +171,15 @@ void Main() {
 
   ITER(i, 0, 3, BlitterCopySync(screen[0], i, 0, 0, background, i));
   ITER(i, 0, 3, BlitterCopySync(screen[1], i, 0, 0, background, i));
+}
 
-  while (Loop());
+void Main() {
+  while (!LeftMouseButton()) {
+    ClearCliparts();
+    DrawCliparts();
+
+    swapScreen = active;
+    active ^= 1;
+    WaitVBlank();
+  }
 }

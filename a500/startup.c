@@ -12,6 +12,7 @@
 #include "print.h"
 
 extern void Load();
+extern void Init();
 extern void Kill();
 extern void Main();
 
@@ -76,6 +77,7 @@ int main() {
       custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
       custom->intena = INTF_SETCLR | INTF_INTEN;
 
+      Init();
       Main();
 
       /* firstly... disable dma and interrupts that were used in Main */

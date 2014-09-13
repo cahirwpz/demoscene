@@ -17,7 +17,7 @@ void Kill() {
   DeleteBitmap(bitmap);
 }
 
-void Main() {
+void Init() {
   CopInit(cp);
   CopMakePlayfield(cp, NULL, bitmap);
   CopMakeDispWin(cp, 0x81, 0x2c, bitmap->width, bitmap->height);
@@ -25,8 +25,9 @@ void Main() {
   CopEnd(cp);
 
   CopListActivate(cp);
-
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+}
 
+void Main() {
   WaitMouse();
 }
