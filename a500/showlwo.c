@@ -1,6 +1,5 @@
 #include "blitter.h"
 #include "coplist.h"
-#include "interrupts.h"
 #include "3d.h"
 #include "fx.h"
 #include "iff.h"
@@ -15,7 +14,7 @@
 
 static Object3D *cube;
 
-static CopListT *cp;
+static CopListT *cp[2];
 static BitmapT *screen[2];
 static UWORD active = 0;
 static CopInsT *bplptr[8];
@@ -144,6 +143,15 @@ __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
   return obj;
 }
 
+static void MakeCopperList(CopListT *cp, UWORD num) {
+  CopInit(cp);
+  CopMakePlayfield(cp, bplptr, screen[num]);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetRGB(cp, 0, 0x000);
+  CopSetRGB(cp, 1, 0xfff);
+  CopEnd(cp);
+}
+
 void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
@@ -151,18 +159,16 @@ void Load() {
 
   CalculateEdges(cube);
 
-  cp = NewCopList(80);
-  CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[0]);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xfff);
-  CopEnd(cp);
+  cp[0] = NewCopList(80);
+  MakeCopperList(cp[0], 0);
+  cp[1] = NewCopList(80);
+  MakeCopperList(cp[1], 1);
 }
 
 void Kill() {
   DeleteObject3D(cube);
-  DeleteCopList(cp);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }
@@ -197,32 +203,8 @@ __regargs static void DrawObject(Object3D *object) {
   }
 }
 
-static volatile LONG swapScreen = -1;
-static volatile LONG frameCount = 0;
-
-__interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB) {
-    if (swapScreen >= 0) {
-      BitmapT *buffer = screen[swapScreen];
-
-      CopInsSet32(bplptr[0], buffer->planes[0]);
-      custom->bplpt[0] = buffer->planes[0];
-
-      swapScreen = -1;
-    }
-
-    frameCount++;
-  }
-
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
-}
-
 void Init() {
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
-
-  CopListActivate(cp);
+  CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 }
 
@@ -255,7 +237,8 @@ void Main() {
       Log("draw: %ld\n", ReadLineCounter() - lines);
     }
 
-    swapScreen = active;
+    CopListRun(cp[active]);
+    WaitVBlank();
     active ^= 1;
   }
 }

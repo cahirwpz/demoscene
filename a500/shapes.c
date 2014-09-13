@@ -2,7 +2,6 @@
 #include "blitter.h"
 #include "coplist.h"
 #include "fx.h"
-#include "interrupts.h"
 #include "memory.h"
 
 static ShapeT *shape;
@@ -97,26 +96,14 @@ static __regargs void DrawShape(ShapeT *shape) {
   }
 }
 
-static ULONG frameCount = 0;
-
-__interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB)
-    frameCount++;
-
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
-}
-
 void Init() {
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
-  
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 }
 
 void Main() {
   while (!LeftMouseButton()) {
+    ULONG frameCount = ReadFrameCounter();
     UWORD i, a = frameCount * 64;
     Matrix2D t;
 

@@ -13,13 +13,20 @@
 #define NUM 37
 #define ARMS 3
 
+static CopListT *cp[2];
 static BitmapT *screen[2];
 static UWORD active = 0;
-static CopInsT *bplptr[5];
 
 static BitmapT *carry;
 static BitmapT *flares;
-static CopListT *cp;
+
+static void MakeCopperList(CopListT *cp, UWORD num) {
+  CopInit(cp);
+  CopMakeDispWin(cp, 0x81, 0x2c, WIDTH, HEIGHT);
+  CopShowPlayfield(cp, screen[num]);
+  CopLoadPal(cp, flares->palette, 0);
+  CopEnd(cp);
+}
 
 void Load() {
   flares = LoadILBM("data/plotter-flares.ilbm", FALSE);
@@ -27,46 +34,23 @@ void Load() {
   screen[1] = NewBitmap(WIDTH, HEIGHT, 3, FALSE);
   carry = NewBitmap(SIZE + 16, SIZE, 2, FALSE);
 
-  cp = NewCopList(100);
-  CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[active]);
-  CopMakeDispWin(cp, 0x81, 0x2c, WIDTH, HEIGHT);
-  CopLoadPal(cp, flares->palette, 0);
-  CopEnd(cp);
+  cp[0] = NewCopList(50);
+  MakeCopperList(cp[0], 0);
+  cp[1] = NewCopList(50);
+  MakeCopperList(cp[1], 1);
 }
 
 void Kill() {
-  DeleteCopList(cp);
   DeletePalette(flares->palette);
   DeleteBitmap(flares);
   DeleteBitmap(carry);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
 }
 
-static volatile LONG swapScreen = -1;
-static volatile LONG frameCount = 0;
-
-__interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB) {
-    if (swapScreen >= 0) {
-      BitmapT *buffer = screen[swapScreen];
-      WORD n = buffer->depth;
-
-      while (--n >= 0) {
-        CopInsSet32(bplptr[n], buffer->planes[n]);
-        custom->bplpt[n] = buffer->planes[n];
-      }
-
-      swapScreen = -1;
-    }
-
-    frameCount++;
-  }
-
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
-}
+static LONG frameCount = 0;
 
 #define BLTOP_NAME AddFlare
 #define BLTOP_SRC_BM flares
@@ -101,20 +85,19 @@ static void DrawPlotter() {
 }
 
 void Init() {
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
-  
-  CopListActivate(cp);
+  CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 }
 
 void Main() {
   while (!LeftMouseButton()) {
+    frameCount = ReadFrameCounter();
+
     ITER(i, 0, 2, BlitterSetSync(screen[active], i, 0, 0, 96 * 2 + SIZE, 96 * 2 + SIZE, 0));
     DrawPlotter();
 
+    CopListRun(cp[active]);
     WaitVBlank();
-    swapScreen = active;
     active ^= 1;
   }
 }

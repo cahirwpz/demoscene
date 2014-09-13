@@ -344,36 +344,19 @@ __regargs static void AssignColorToTiles(WORD kxo) {
   }
 }
 
-BOOL Loop() {
-  WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
-  WORD yo = (N / 2) + normfx(COS(frameCount * 16) * (N / 2));
-  WORD kxo = 7 - xo * SIZE / N;
-  WORD kyo = 7 - yo * SIZE / N;
+static void ClearLines() {
+  UBYTE **activeLinePos = linePos[active];
+  WORD k;
 
-  {
-    UBYTE **activeLinePos = linePos[active];
-    WORD k;
-
-    for (k = 0; k < SIZE; k++) {
-      UBYTE *pos = activeLinePos[k];
-      UBYTE x = (k < 4 ? CPX : (X(WIDTH) >> 1)) | 1;
-      WORD n = HEIGHT - FAR_Y;
-      while (--n >= 0) {
-        *pos = x;
-        pos += STRIDE;
-      }
+  for (k = 0; k < SIZE; k++) {
+    UBYTE *pos = activeLinePos[k];
+    UBYTE x = (k < 4 ? CPX : (X(WIDTH) >> 1)) | 1;
+    WORD n = HEIGHT - FAR_Y;
+    while (--n >= 0) {
+      *pos = x;
+      pos += STRIDE;
     }
   }
-
-
-  ClearFloor();
-  DrawStripes(xo, kxo);
-  FillStripes();
-  HorizontalStripes(yo);
-  CalculateTileColumns(yo, kyo);
-  AssignColorToTiles(kxo);
-
-  return !LeftMouseButton();
 }
 
 void Init() {
@@ -405,8 +388,21 @@ void Init() {
 }
 
 void Main() {
-  while (Loop()) {
-    custom->cop1lc = (LONG)cp[active]->entry;
+  while (!LeftMouseButton()) {
+    WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
+    WORD yo = (N / 2) + normfx(COS(frameCount * 16) * (N / 2));
+    WORD kxo = 7 - xo * SIZE / N;
+    WORD kyo = 7 - yo * SIZE / N;
+
+    ClearLines();
+    ClearFloor();
+    DrawStripes(xo, kxo);
+    FillStripes();
+    HorizontalStripes(yo);
+    CalculateTileColumns(yo, kyo);
+    AssignColorToTiles(kxo);
+
+    CopListRun(cp[active]);
     WaitVBlank();
     active ^= 1;
   }

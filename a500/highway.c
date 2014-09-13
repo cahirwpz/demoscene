@@ -127,8 +127,8 @@ void Load() {
   ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, title, 16 * i, 0));
   ITER(i, 0, 7, UpdateSpritePos(sprite[i], X(80 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
 
-  cp[0] = NewCopList(500);
-  cp[1] = NewCopList(500);
+  cp[0] = NewCopList(300);
+  cp[1] = NewCopList(300);
   MakeCopperList(cp[0], 0);
   MakeCopperList(cp[1], 1);
 }
@@ -319,7 +319,7 @@ void Main() {
       lastFrameCount = t;
     }
 
-    custom->cop1lc = (LONG)cp[active]->entry;
+    CopListRun(cp[active]);
     WaitVBlank();
     active ^= 1;
   }

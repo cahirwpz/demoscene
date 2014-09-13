@@ -67,6 +67,8 @@ static inline void CopEnd(CopListT *list) {
   *ins++ = 0xfffffffe;
 
   list->curr = (CopInsT *)ins;
+
+  Log("Copper list entries: %ld.\n", (LONG)(list->curr - list->entry));
 }
 
 #define CSREG(reg) (UWORD)offsetof(struct Custom, reg)
@@ -180,6 +182,10 @@ CopMakeDispWinHiRes(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
 
 static inline CopInsT *CopSetRGB(CopListT *list, UWORD i, UWORD value) {
   return CopMove16(list, color[i], value);
+}
+
+static inline void CopListRun(CopListT *list) {
+  custom->cop1lc = (ULONG)list->entry;
 }
 
 #endif

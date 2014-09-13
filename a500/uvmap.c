@@ -43,7 +43,7 @@ static void PixmapScramble(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
 void Load() {
   UWORD i;
 
-  cp = NewCopList(4096);
+  cp = NewCopList(1024);
   screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, 5, FALSE);
   screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, 4, FALSE);
 
@@ -181,12 +181,7 @@ static void ChunkyToPlanar() {
   c2p.phase++;
 }
 
-static ULONG frameCount = 0;
-
 __interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB)
-    frameCount++;
-
   if (custom->intreqr & INTF_BLIT) {
     asm volatile("" ::: "d0", "d1", "a0", "a1");
     ChunkyToPlanar();
@@ -208,7 +203,7 @@ void Main() {
   InitChunkyToPlanar();
 
   while (!LeftMouseButton()) {
-    UWORD offset = frameCount;
+    UWORD offset = ReadFrameCounter();
 
     UBYTE *txtHi = textureHi->pixels + (offset & 16383);
     UBYTE *txtLo = textureLo->pixels + (offset & 16383);

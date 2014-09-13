@@ -100,8 +100,6 @@ void Load() {
     }
     CopEnd(cp);
   }
-
-  Log("Copper list entries: %ld.\n", (LONG)(cp->curr - cp->entry));
 }
 
 void Kill() {

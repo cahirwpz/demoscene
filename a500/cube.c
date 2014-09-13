@@ -137,7 +137,7 @@ void Init() {
 
 void Main() {
   while (Loop()) {
-    custom->cop1lc = (LONG)cp[active]->entry;
+    CopListRun(cp[active]);
     WaitVBlank();
     active ^= 1;
   }
