@@ -34,8 +34,9 @@ typedef struct {
 
 static Car cars[CARS];
 
+static CopListT *cp[2];
 static UWORD active = 0;
-static CopInsT *bplptr[2][5];
+static CopInsT *sprptr[2][8];
 
 static BitmapT *carry;
 static BitmapT *lanes[2];
@@ -45,47 +46,28 @@ static BitmapT *carsBg;
 static BitmapT *carsTop;
 static BitmapT *carsBottom;
 static SpriteT *nullspr;
-static BitmapT *sprite128;
-static CopInsT *sprptr[8];
+static BitmapT *title;
 static SpriteT *sprite[8];
 
-static CopListT *cp;
-
-void Load() {
-  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
-  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
-  sprite128 = LoadILBM("data/sprite128.ilbm", FALSE);
-  carsBg = LoadILBM("data/cars-bg.ilbm", FALSE);
-  carsTop = LoadILBM("data/cars-top.ilbm", FALSE);
-  carsBottom = LoadILBM("data/cars-bottom.ilbm", FALSE);
-  carsL = LoadILBM("data/cars-l.ilbm", FALSE);
-  carsR = LoadILBM("data/cars-r.ilbm", FALSE);
-  carry = NewBitmap(HSIZE + 16, VSIZE, 2, FALSE);
-
-  nullspr = NewSprite(0, FALSE);
-
-  cp = NewCopList(500);
+static void MakeCopperList(CopListT *cp, WORD num) {
   CopInit(cp);
+  CopMakeSprites(cp, sprptr[num], nullspr);
+  CopLoadPal(cp, title->palette, 16);
+  CopLoadPal(cp, title->palette, 20);
+  CopLoadPal(cp, title->palette, 24);
+  CopLoadPal(cp, title->palette, 28);
+
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopMakePlayfield(cp, NULL, carsTop);
   CopLoadPal(cp, carsTop->palette, 0);
 
-  CopMakeSprites(cp, sprptr, nullspr);
-  CopLoadPal(cp, sprite128->palette, 16);
-  CopLoadPal(cp, sprite128->palette, 20);
-  CopLoadPal(cp, sprite128->palette, 24);
-  CopLoadPal(cp, sprite128->palette, 28);
-
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
 
   {
-    CopWait(cp, Y(64), 8);
-    CopMove16(cp, dmacon, DMAF_RASTER);
-    CopSetRGB(cp, 0, 0x0222);
-
     CopWait(cp, Y(LANEL_Y - 1), 8);
+    CopMove16(cp, dmacon, DMAF_RASTER);
     CopLoadPal(cp, carsL->palette, 0);
-    CopMakePlayfield(cp, bplptr[0], lanes[active]);
+    CopMakePlayfield(cp, NULL, lanes[num]);
     CopMove16(cp, bpl1mod, 2 * HSIZE / 8);
     CopMove16(cp, bpl2mod, 2 * HSIZE / 8);
 
@@ -111,7 +93,7 @@ void Load() {
   {
     CopWait(cp, Y(LANER_Y - 1), 8);
     CopLoadPal(cp, carsR->palette, 0);
-    CopMakePlayfield(cp, bplptr[1], lanes[active]);
+    CopMakePlayfield(cp, NULL, lanes[num]);
     CopMove16(cp, bpl1mod, 2 * HSIZE / 8);
     CopMove16(cp, bpl2mod, 2 * HSIZE / 8);
 
@@ -119,31 +101,46 @@ void Load() {
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
     CopWait(cp, Y(LANER_Y + LANE_H), 8);
     CopMove16(cp, dmacon, DMAF_RASTER);
-
-    CopWait(cp, Y(LANER_Y + LANE_H + 1), 8);
-    CopSetRGB(cp, 0, 0x222);
   }
 
   {
-    CopWait(cp, Y(192 - 1), 8);
+    CopWait(cp, Y(LANER_Y + LANE_H + 1), 8);
     CopSetRGB(cp, 0, 0);
     CopMakePlayfield(cp, NULL, carsBottom);
     CopLoadPal(cp, carsBottom->palette, 0);
-    CopWait(cp, Y(192), 8);
+    CopWait(cp, Y(LANER_Y + LANE_H + 2), 8);
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   }
 
   CopEnd(cp);
 
-  ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, sprite128, 16 * i, 0));
+  ITER(i, 0, 7, CopInsSet32(sprptr[num][i], sprite[i]->data));
+}
+
+void Load() {
+  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
+  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
+  title = LoadILBM("data/sprite128.ilbm", FALSE);
+  carsBg = LoadILBM("data/cars-bg.ilbm", FALSE);
+  carsTop = LoadILBM("data/cars-top.ilbm", FALSE);
+  carsBottom = LoadILBM("data/cars-bottom.ilbm", FALSE);
+  carsL = LoadILBM("data/cars-l.ilbm", FALSE);
+  carsR = LoadILBM("data/cars-r.ilbm", FALSE);
+  carry = NewBitmap(HSIZE + 16, VSIZE, 2, FALSE);
+  nullspr = NewSprite(0, FALSE);
+
+  ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, title, 16 * i, 0));
   ITER(i, 0, 7, UpdateSpritePos(sprite[i], X(80 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
-  ITER(i, 0, 7, CopInsSet32(sprptr[i], sprite[i]->data));
+
+  cp[0] = NewCopList(500);
+  cp[1] = NewCopList(500);
+  MakeCopperList(cp[0], 0);
+  MakeCopperList(cp[1], 1);
 }
 
 void Kill() {
   DeleteSprite(nullspr);
   ITER(i, 0, 7, DeleteSprite(sprite[i]));
-  DeleteCopList(cp);
   DeletePalette(carsL->palette);
   DeleteBitmap(carsL);
   DeletePalette(carsR->palette);
@@ -157,31 +154,16 @@ void Kill() {
   DeleteBitmap(carry);
   DeleteBitmap(lanes[0]);
   DeleteBitmap(lanes[1]);
-  DeleteBitmap(sprite128);
+  DeleteBitmap(title);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
 }
 
-static volatile LONG swapScreen = -1;
 static volatile LONG frameCount = 0;
 
 __interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB) {
-    if (swapScreen >= 0) {
-      BitmapT *buffer = lanes[swapScreen];
-      WORD n = 4;
-
-      while (--n >= 0) {
-        CopInsSet32(bplptr[0][n], buffer->planes[n] + HSIZE / 8);
-        CopInsSet32(bplptr[1][n], buffer->planes[n] + HSIZE / 8 +
-                    buffer->bytesPerRow * LANE_H);
-      }
-
-      swapScreen = -1;
-    }
-
-    ITER(i, 0, 7, UpdateSprite(sprite[i]));
-
+  if (custom->intreqr & INTF_VERTB)
     frameCount++;
-  }
 
   custom->intreq = INTF_LEVEL3;
   custom->intreq = INTF_LEVEL3;
@@ -196,7 +178,7 @@ static inline void CarInit(Car *car) {
 }
 
 static inline void CarMove(Car *car, WORD step) {
-  car->x += (car->speed + 8) * step;
+  car->x += (car->speed + 32) * step;
   if (car->x >= fx4i(LANE_W))
     car->active = FALSE;
 }
@@ -335,11 +317,6 @@ static BOOL Loop() {
 
   // Log("loop: %ld\n", ReadLineCounter() - lines);
 
-  WaitVBlank();
-
-  swapScreen = active;
-  active ^= 1;
-
   return !LeftMouseButton();
 }
 
@@ -347,10 +324,14 @@ void Main() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
-  CopListActivate(cp);
+  CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
 
   lastFrameCount = frameCount;
 
-  while (Loop());
+  while (Loop()) {
+    custom->cop1lc = (LONG)cp[active]->entry;
+    WaitVBlank();
+    active ^= 1;
+  }
 }
