@@ -1,11 +1,9 @@
+#include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
 #include "fx.h"
 #include "random.h"
-
-#define X(x) ((x) + 0x80)
-#define Y(y) ((y) + 0x2c)
 
 #define WIDTH 320
 #define HEIGHT 212
@@ -32,6 +30,7 @@ static Line2D vert[N];
 static WORD horiz[N];
 static UBYTE *linePos[2][SIZE];
 static UWORD *lineColor[2][SIZE];
+static UWORD tileColumn[HEIGHT];
 static UWORD texture[TILES * TILES];
 
 static void FloorPrecalc() {
@@ -104,7 +103,7 @@ static void MakeCopperList(CopListT *cp, WORD num) {
   CopEnd(cp);
 }
 
-void Load() {
+static void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
 
@@ -118,14 +117,14 @@ void Load() {
   ITER(i, 0, TILES * TILES - 1, texture[i] = random() & 0xfff);
 }
 
-void Kill() {
+static void Kill() {
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }
 
-void ClearFloor() {
+static void ClearFloor() {
   BitmapT *buffer = screen[active];
   WORD n = DEPTH;
 
@@ -145,7 +144,7 @@ void ClearFloor() {
   }
 }
 
-__regargs void CopperLine(UBYTE *pos, WORD x1, WORD y1, WORD x2, WORD y2) {
+static __regargs void CopperLine(UBYTE *pos, WORD x1, WORD y1, WORD x2, WORD y2) {
   x1 = X(x1) / 2;
   x2 = X(x2) / 2;
   y1 -= FAR_Y; /* this one is always going to be zero */
@@ -168,7 +167,7 @@ __regargs void CopperLine(UBYTE *pos, WORD x1, WORD y1, WORD x2, WORD y2) {
   }
 }
 
-void DrawStripes(WORD xo, WORD kxo) {
+static void DrawStripes(WORD xo, WORD kxo) {
   Line2D first = { 0, 0, WIDTH - 1, FAR_Y };
   Line2D *l[2];
   WORD k;
@@ -241,7 +240,7 @@ void DrawStripes(WORD xo, WORD kxo) {
   }
 }
 
-void FillStripes() {
+static void FillStripes() {
   BitmapT *buffer = screen[active];
   WORD n = DEPTH;
 
@@ -264,7 +263,7 @@ void FillStripes() {
   }
 }
 
-void HorizontalStripes(WORD yo) {
+static void HorizontalStripes(WORD yo) {
   BitmapT *buffer = screen[active];
   WORD yi = yo & (TILESIZE - 1);
   WORD n, k, y1, y2;
@@ -294,8 +293,6 @@ void HorizontalStripes(WORD yo) {
     }
   }
 }
-
-static UWORD tileColumn[HEIGHT];
 
 __regargs static void CalculateTileColumns(WORD yo, WORD kyo) {
   WORD k;
@@ -347,7 +344,7 @@ static void ClearLines() {
   }
 }
 
-void Init() {
+static void Init() {
   CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 
@@ -372,7 +369,7 @@ void Init() {
   }
 }
 
-void Main() {
+static void Loop() {
   while (!LeftMouseButton()) {
     LONG frameCount = ReadFrameCounter();
 
@@ -394,3 +391,5 @@ void Main() {
     active ^= 1;
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

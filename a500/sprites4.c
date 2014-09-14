@@ -1,11 +1,8 @@
+#include "startup.h"
 #include "hardware.h"
 #include "coplist.h"
 #include "ilbm.h"
-#include "print.h"
 #include "sprite.h"
-
-#define X(x) ((x) + 0x81)
-#define Y(y) ((y) + 0x2c)
 
 static BitmapT *screen;
 static BitmapT *bitmap;
@@ -14,7 +11,7 @@ static SpriteT *nullspr;
 static SpriteT *sprite[3];
 static CopInsT *sprptr[8];
 
-void Load() {
+static void Load() {
   screen = NewBitmap(320, 256, 1, FALSE);
   bitmap = LoadILBM("data/sprites4.ilbm", TRUE);
   cp = NewCopList(100);
@@ -36,7 +33,7 @@ void Load() {
   nullspr = NewSprite(0, FALSE);
 }
 
-void Kill() {
+static void Kill() {
   DeleteSprite(nullspr);
   DeleteSprite(sprite[0]);
   DeleteSprite(sprite[1]);
@@ -71,15 +68,17 @@ static void MoveSprite() {
   counter++;
 }
 
-void Init() {
+static void Init() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
 }
 
-void Main() {
+static void Loop() {
   while (!LeftMouseButton()) {
     WaitLine(Y(256));
     MoveSprite();
     WaitVBlank();
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

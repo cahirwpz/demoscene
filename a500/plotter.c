@@ -1,3 +1,4 @@
+#include "startup.h"
 #include "hardware.h"
 #include "coplist.h"
 #include "gfx.h"
@@ -21,13 +22,13 @@ static BitmapT *flares;
 
 static void MakeCopperList(CopListT *cp, UWORD num) {
   CopInit(cp);
-  CopMakeDispWin(cp, 0x81, 0x2c, WIDTH, HEIGHT);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopShowPlayfield(cp, screen[num]);
   CopLoadPal(cp, flares->palette, 0);
   CopEnd(cp);
 }
 
-void Load() {
+static void Load() {
   flares = LoadILBM("data/plotter-flares.ilbm", FALSE);
   screen[0] = NewBitmap(WIDTH, HEIGHT, 3, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, 3, FALSE);
@@ -39,7 +40,7 @@ void Load() {
   MakeCopperList(cp[1], 1);
 }
 
-void Kill() {
+static void Kill() {
   DeletePalette(flares->palette);
   DeleteBitmap(flares);
   DeleteBitmap(carry);
@@ -83,12 +84,12 @@ static void DrawPlotter() {
   }
 }
 
-void Init() {
+static void Init() {
   CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 }
 
-void Main() {
+static void Loop() {
   while (!LeftMouseButton()) {
     frameCount = ReadFrameCounter();
 
@@ -100,3 +101,5 @@ void Main() {
     active ^= 1;
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

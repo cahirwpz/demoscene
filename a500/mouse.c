@@ -1,3 +1,4 @@
+#include "startup.h"
 #include "hardware.h"
 #include "interrupts.h"
 #include "coplist.h"
@@ -6,36 +7,40 @@
 #include "keyboard.h"
 #include "print.h"
 
+#define WIDTH 320
+#define HEIGHT 256
+#define DEPTH 1
+
 static BitmapT *screen;
 static CopListT *cp;
 static SpriteT *pointer;
 static SpriteT *nullspr;
 static CopInsT *sprptr[8];
 
-void Load() {
-  screen = NewBitmap(320, 256, 1, FALSE);
+static void Load() {
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   cp = NewCopList(100);
   nullspr = NewSprite(0, FALSE);
   pointer = CloneSystemPointer();
 
   CopInit(cp);
   CopMakePlayfield(cp, NULL, screen);
-  CopMakeDispWin(cp, 0x81, 0x2c, screen->width, screen->height);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopMakeSprites(cp, sprptr, nullspr);
   CopEnd(cp);
 
   CopInsSet32(sprptr[0], pointer->data);
-  UpdateSpritePos(pointer, 0x81, 0x2c);
+  UpdateSpritePos(pointer, X(0), Y(0));
 }
 
-void Kill() {
+static void Kill() {
   DeleteSprite(pointer);
   DeleteSprite(nullspr);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
 
-__interrupt_handler void IntLevel2Handler() {
+static __interrupt_handler void IntLevel2Handler() {
   if (custom->intreqr & INTF_PORTS) {
     /* Make sure all scratchpad registers are saved, because we call a function
      * that relies on the fact that it's caller responsibility to save them. */
@@ -47,7 +52,7 @@ __interrupt_handler void IntLevel2Handler() {
   custom->intreq = INTF_PORTS;
 }
 
-__interrupt_handler void IntLevel3Handler() {
+static __interrupt_handler void IntLevel3Handler() {
   if (custom->intreqr & INTF_VERTB) {
     /* Make sure all scratchpad registers are saved, because we call a function
      * that relies on the fact that it's caller responsibility to save them. */
@@ -59,9 +64,9 @@ __interrupt_handler void IntLevel3Handler() {
   custom->intreq = INTF_VERTB;
 }
 
-void Init() {
+static void Init() {
   KeyboardInit();
-  MouseInit(0, 0, screen->width - 1, screen->height - 1);
+  MouseInit(0, 0, WIDTH - 1, HEIGHT - 1);
 
   InterruptVector->IntLevel2 = IntLevel2Handler;
   InterruptVector->IntLevel3 = IntLevel3Handler;
@@ -71,7 +76,7 @@ void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
 }
 
-void Main() {
+static void Loop() {
   BOOL quit = FALSE;
 
   while (!quit) {
@@ -85,7 +90,7 @@ void Main() {
 
     if (GetMouseEvent(&cursor)) {
       UBYTE *data = screen->planes[0] + 
-        (cursor.x + cursor.y * screen->width) / 8;
+        cursor.x / 8 + cursor.y * screen->bytesPerRow;
       UBYTE value = 1 << (7 - (cursor.x & 7));
 
       if (cursor.button & LMB_PRESSED)
@@ -93,7 +98,9 @@ void Main() {
       if (cursor.button & RMB_PRESSED)
         *data &= ~value;
 
-      UpdateSpritePos(pointer, 0x81 + cursor.x, 0x2c + cursor.y);
+      UpdateSpritePos(pointer, X(cursor.x), Y(cursor.y));
     }
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

@@ -1,3 +1,4 @@
+#include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
 #include "interrupts.h"
@@ -6,9 +7,6 @@
 #include "2d.h"
 #include "fx.h"
 #include "circle.h"
-
-#define X(x) ((x) + 0x81)
-#define Y(y) ((y) + 0x2c)
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -24,7 +22,7 @@ static PaletteT *palette[2];
 static CopInsT *bplptr[2][5];
 static CopListT *cp;
 
-void Load() {
+static void Load() {
   clip = LoadILBM("data/blurred-clip.ilbm", FALSE);
 
   palette[0] = LoadPalette("data/blurred1.ilbm");
@@ -51,7 +49,7 @@ void Load() {
   CopEnd(cp);
 }
 
-void Kill() {
+static void Kill() {
   DeleteCopList(cp);
   DeletePalette(clip->palette);
   DeleteBitmap(clip);
@@ -67,7 +65,7 @@ static volatile LONG swapScreen = -1;
 static ULONG frameCount = 0;
 static ULONG iterCount = 0;
 
-__interrupt_handler void IntLevel3Handler() {
+static __interrupt_handler void IntLevel3Handler() {
   if (custom->intreqr & INTF_VERTB) {
     if (swapScreen >= 0) {
       BitmapT *buffer = screen[swapScreen];
@@ -89,7 +87,7 @@ __interrupt_handler void IntLevel3Handler() {
   custom->intreq = INTF_LEVEL3;
 }
 
-void RotatingTriangle(WORD t, WORD phi, WORD size) {
+static void RotatingTriangle(WORD t, WORD phi, WORD size) {
   Point2D p[3];
   WORD i, j;
 
@@ -139,7 +137,7 @@ static void DrawShape() {
 #define BLTOP_BPLS 4
 #include "bltop_inc_sat.h"
 
-void Init() {
+static void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
@@ -155,7 +153,7 @@ void Init() {
   ITER(i, 0, 4, BlitterCopySync(screen[1], i, WIDTH / 2, 0, clip, i));
 }
 
-void Main() {
+static void Loop() {
   while (!LeftMouseButton()) {
     LONG lines = ReadLineCounter();
 
@@ -172,3 +170,5 @@ void Main() {
     active ^= 1;
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

@@ -1,3 +1,4 @@
+#include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
 #include "interrupts.h"
@@ -21,7 +22,7 @@ static BitmapT *carry;
 static CopInsT *bplptr[5];
 static CopListT *cp;
 
-void Load() {
+static void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
   screen[2] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
@@ -32,7 +33,7 @@ void Load() {
   cp = NewCopList(100);
   CopInit(cp);
   CopMakePlayfield(cp, bplptr, screen[active]);
-  CopMakeDispWin(cp, 0x81, 0x2c, WIDTH, HEIGHT);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopLoadPal(cp, metaball->palette, 0);
   CopEnd(cp);
 
@@ -47,7 +48,7 @@ void Load() {
   }
 }
 
-void Kill() {
+static void Kill() {
   DeleteCopList(cp);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
@@ -62,7 +63,7 @@ void Kill() {
 static volatile LONG swapScreen = -1;
 static ULONG frameCount = 0;
 
-__interrupt_handler void IntLevel3Handler() {
+static __interrupt_handler void IntLevel3Handler() {
   if (custom->intreqr & INTF_VERTB) {
     if (swapScreen >= 0) {
       BitmapT *buffer = screen[swapScreen];
@@ -132,7 +133,7 @@ static void PositionMetaballs() {
   pos[active][2].y = (HEIGHT - SIZE) / 2 + normfx(COS(t) * SIZE * 3 / 4);
 }
 
-void Init() {
+static void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
@@ -146,7 +147,7 @@ void Init() {
   });
 }
 
-void Main() {
+static void Loop() {
   while (!LeftMouseButton()) {
     LONG lines = ReadLineCounter();
 
@@ -167,3 +168,5 @@ void Main() {
       active = 0;
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

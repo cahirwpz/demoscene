@@ -10,11 +10,9 @@
 #include "hardware.h"
 #include "interrupts.h"
 #include "print.h"
+#include "startup.h"
 
-extern void Load();
-extern void Init();
-extern void Kill();
-extern void Main();
+extern EffectT Effect;
 
 int __nocommandline = 1;
 int __initlibraries = 0;
@@ -37,7 +35,8 @@ int main() {
           (LONG)SysBase->LibNode.lib_Version,
           (LONG)SysBase->LibNode.lib_Revision);
 
-    Load();
+    if (Effect.Load)
+      Effect.Load();
 
     /* Allocate blitter. */
     WaitBlit();
@@ -77,8 +76,11 @@ int main() {
       custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
       custom->intena = INTF_SETCLR | INTF_INTEN;
 
-      Init();
-      Main();
+      if (Effect.Init)
+        Effect.Init();
+
+      if (Effect.Loop)
+        Effect.Loop();
 
       /* firstly... disable dma and interrupts that were used in Main */
       custom->dmacon = (UWORD)~DMAF_SETCLR;
@@ -111,7 +113,8 @@ int main() {
     /* Deallocate blitter. */
     DisownBlitter();
 
-    Kill();
+    if (Effect.Kill)
+      Effect.Kill();
   }
 
   if (MathBase)

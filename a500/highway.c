@@ -1,3 +1,4 @@
+#include "startup.h"
 #include "hardware.h"
 #include "coplist.h"
 #include "gfx.h"
@@ -8,9 +9,6 @@
 #include "2d.h"
 #include "random.h"
 #include "sprite.h"
-
-#define X(x) ((x) + 0x81)
-#define Y(y) ((y) + 0x2c)
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -111,7 +109,7 @@ static void MakeCopperList(CopListT *cp, WORD num) {
   ITER(i, 0, 7, CopInsSet32(sprptr[num][i], sprite[i]->data));
 }
 
-void Load() {
+static void Load() {
   lanes[0] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
   lanes[1] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
   title = LoadILBM("data/sprite128.ilbm", FALSE);
@@ -132,7 +130,7 @@ void Load() {
   MakeCopperList(cp[1], 1);
 }
 
-void Kill() {
+static void Kill() {
   DeleteSprite(nullspr);
   ITER(i, 0, 7, DeleteSprite(sprite[i]));
   DeletePalette(carsL->palette);
@@ -182,7 +180,7 @@ static void AddCar() {
 }
 
 /* Bitplane adder with saturation. */
-void BlitterAddSaturatedSync(BitmapT *dst, WORD dx, WORD dy, BitmapT *src) {
+static void BlitterAddSaturatedSync(BitmapT *dst, WORD dx, WORD dy, BitmapT *src) {
   ULONG dst_begin = ((dx & ~15) >> 3) + dy * dst->bytesPerRow;
   UWORD dst_modulo = (dst->bytesPerRow - src->bytesPerRow) - 2;
   UWORD src_shift = (dx & 15) << ASHIFTSHIFT;
@@ -280,14 +278,14 @@ static WORD iterCount = 0;
 static LONG lastFrameCount;
 static LONG frameCount = 0;
 
-void Init() {
+static void Init() {
   CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
 
   lastFrameCount = ReadFrameCounter();
 }
 
-void Main() {
+static void Loop() {
   while (!LeftMouseButton()) {
     frameCount = ReadFrameCounter();
 
@@ -313,3 +311,5 @@ void Main() {
     active ^= 1;
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

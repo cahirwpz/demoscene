@@ -1,3 +1,4 @@
+#include "startup.h"
 #include "hardware.h"
 #include "coplist.h"
 #include "gfx.h"
@@ -25,7 +26,7 @@ static CopInsT *pal;
 static Point2D p[PNUM];
 static Point2D p_last[2][PNUM];
 
-void Load() {
+static void Load() {
   neon[0] = LoadILBM("data/greetz-1.ilbm", FALSE);
   neon[1] = LoadILBM("data/greetz-2.ilbm", FALSE);
   background = LoadILBM("data/neons.ilbm", FALSE);
@@ -51,7 +52,7 @@ void Load() {
   cp = NewCopList(100);
   CopInit(cp);
   CopMakePlayfield(cp, bplptr, screen[active]);
-  CopMakeDispWin(cp, 0x81, 0x2c, WIDTH, HEIGHT);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   pal = CopLoadPal(cp, palette, 0);
   CopEnd(cp);
 
@@ -59,7 +60,7 @@ void Load() {
   ITER(i, 0, PNUM - 1, p[i].y = -128);
 }
 
-void Kill() {
+static void Kill() {
   DeleteCopList(cp);
   DeleteBitmap(neon[0]);
   DeleteBitmap(neon[1]);
@@ -93,7 +94,7 @@ static void RotatePalette() {
   }
 }
 
-__interrupt_handler void IntLevel3Handler() {
+static __interrupt_handler void IntLevel3Handler() {
   if (custom->intreqr & INTF_VERTB) {
     if (swapScreen >= 0) {
       BitmapT *buffer = screen[swapScreen];
@@ -162,7 +163,7 @@ static void DrawCliparts() {
   }
 }
 
-void Init() {
+static void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;
   
@@ -173,7 +174,7 @@ void Init() {
   ITER(i, 0, 3, BlitterCopySync(screen[1], i, 0, 0, background, i));
 }
 
-void Main() {
+static void Loop() {
   while (!LeftMouseButton()) {
     ClearCliparts();
     DrawCliparts();
@@ -183,3 +184,5 @@ void Main() {
     WaitVBlank();
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

@@ -1,16 +1,17 @@
+#include "startup.h"
 #include "file.h"
 #include "hardware.h"
 #include "memory.h"
 #include "ahx/ahx.h"
 #include "interrupts.h"
 
-static void *module;
+static APTR module;
 
-void Load() {
+static void Load() {
   module = ReadFile("data/jazzcat-electric_city.ahx", MEMF_PUBLIC);
 }
 
-void Kill() {
+static void Kill() {
   FreeAutoMem(module);
 }
 
@@ -33,7 +34,7 @@ static void AhxSetTempo(UWORD tempo asm("d0")) {
   ciaa->ciacra |= CIACRAF_START;
 }
 
-void Init() {
+static void Init() {
   /* Enable only CIA Timer A interrupt. */
   ciaa->ciaicr = (UBYTE)(~CIAICRF_SETCLR);
   ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_TA;
@@ -44,7 +45,7 @@ void Init() {
   custom->intena = INTF_SETCLR | INTF_PORTS;
 }
 
-void Main() {
+static void Loop() {
   if (AhxInitCIA((APTR)AhxSetTempo, AHX_KILL_SYSTEM) == 0) {
     /* Use AHX_EXPLICIT_WAVES_PRECALCING flag,
      * because dos.library is not usable at this point. */
@@ -59,3 +60,5 @@ void Main() {
     AhxKillCIA();
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

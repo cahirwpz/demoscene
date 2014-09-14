@@ -1,3 +1,4 @@
+#include "startup.h"
 #include "hardware.h"
 #include "coplist.h"
 #include "gfx.h"
@@ -6,21 +7,21 @@
 static BitmapT *bitmap;
 static CopListT *cp;
 
-void Load() {
+static void Load() {
   bitmap = LoadILBM("data/test.ilbm", FALSE);
   cp = NewCopList(100);
 }
 
-void Kill() {
+static void Kill() {
   DeleteCopList(cp);
   DeletePalette(bitmap->palette);
   DeleteBitmap(bitmap);
 }
 
-void Init() {
+static void Init() {
   CopInit(cp);
   CopMakePlayfield(cp, NULL, bitmap);
-  CopMakeDispWin(cp, 0x81, 0x2c, bitmap->width, bitmap->height);
+  CopMakeDispWin(cp, X(0), Y(0), bitmap->width, bitmap->height);
   CopLoadPal(cp, bitmap->palette, 0);
   CopEnd(cp);
 
@@ -28,6 +29,8 @@ void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 }
 
-void Main() {
+static void Loop() {
   WaitMouse();
 }
+
+EffectT Effect = { Load, Kill, Init, Loop };

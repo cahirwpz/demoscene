@@ -1,11 +1,9 @@
+#include "startup.h"
 #include "2d.h"
 #include "blitter.h"
 #include "coplist.h"
 #include "fx.h"
 #include "memory.h"
-
-#define X(x) ((x) + 0x81)
-#define Y(y) ((y) + 0x2c)
 
 #define WIDTH  320
 #define HEIGHT 256
@@ -17,7 +15,7 @@ static CopInsT *bplptr[5];
 static CopListT *cp;
 static WORD plane, planeC;
 
-void Load() {
+static void Load() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   shape = LoadShape("data/boxes.2d");
   cp = NewCopList(100);
@@ -51,7 +49,7 @@ void Load() {
   ClipWin.maxY = fx4i(255);
 }
 
-void Kill() {
+static void Kill() {
   DeleteShape(shape);
   DeleteCopList(cp);
   DeleteBitmap(screen);
@@ -103,12 +101,12 @@ static __regargs void DrawShape(ShapeT *shape) {
   }
 }
 
-void Init() {
+static void Init() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 }
 
-void Main() {
+static void Loop() {
   while (!LeftMouseButton()) {
     LONG frameCount = ReadFrameCounter();
     WORD i, a = frameCount * 64;
@@ -146,3 +144,5 @@ void Main() {
     planeC ^= 1;
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

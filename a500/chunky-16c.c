@@ -1,11 +1,10 @@
+#include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
 #include "tga.h"
 #include "print.h"
 
-#define X(x) ((x) + 0x81)
-#define Y(y) ((y) + 0x2c)
 #define WIDTH 160
 #define HEIGHT 128
 
@@ -40,7 +39,7 @@ static void PixmapScramble(PixmapT *image, PixmapT *chunky) {
   } while (--n);
 }
 
-void Load() {
+static void Load() {
   UWORD i;
 
   cp = NewCopList(4096);
@@ -138,14 +137,14 @@ static void ChunkyToPlanar() {
 #endif
 }
 
-void Init() {
+static void Init() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
+
+  InitChunkyToPlanar();
 }
 
-void Main() {
-  InitChunkyToPlanar();
-
+static void Loop() {
   while (!LeftMouseButton()) {
     LONG lines = ReadLineCounter();
     ChunkyToPlanar();
@@ -154,3 +153,5 @@ void Main() {
     WaitVBlank();
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

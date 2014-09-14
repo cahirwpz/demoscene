@@ -6,10 +6,11 @@
 #include "file.h"
 #include "interrupts.h"
 
+#define Y(y) ((y) + 0x48)
+#include "startup.h"
+
 #define WIDTH 160
 #define HEIGHT 100
-#define X(x) ((x) + 0x81)
-#define Y(y) ((y) + 0x2c + 28)
 
 static PixmapT *chunky[2];
 static PixmapT *textureHi, *textureLo;
@@ -40,7 +41,7 @@ static void PixmapScramble(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
   } while (--n);
 }
 
-void Load() {
+static void Load() {
   UWORD i;
 
   cp = NewCopList(1024);
@@ -106,7 +107,7 @@ void Load() {
   CopEnd(cp);
 }
 
-void Kill() {
+static void Kill() {
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
   DeletePixmap(chunky[0]);
@@ -181,7 +182,7 @@ static void ChunkyToPlanar() {
   c2p.phase++;
 }
 
-__interrupt_handler void IntLevel3Handler() {
+static __interrupt_handler void IntLevel3Handler() {
   if (custom->intreqr & INTF_BLIT) {
     asm volatile("" ::: "d0", "d1", "a0", "a1");
     ChunkyToPlanar();
@@ -191,34 +192,28 @@ __interrupt_handler void IntLevel3Handler() {
   custom->intreq = INTF_LEVEL3;
 }
 
-void Init() {
+static void Init() {
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB | INTF_BLIT;
 
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
+
+  InitChunkyToPlanar();
 }
 
-void Main() {
-  InitChunkyToPlanar();
-
+static void Loop() {
   while (!LeftMouseButton()) {
     UWORD offset = ReadFrameCounter();
 
     UBYTE *txtHi = textureHi->pixels + (offset & 16383);
     UBYTE *txtLo = textureLo->pixels + (offset & 16383);
 
-#if 0
     {
-      LONG lines = ReadLineCounter();
-
+      // LONG lines = ReadLineCounter();
       (*UVMapRender)(chunky[active]->pixels, txtHi, txtLo);
-
-      Log("uvmap: %ld\n", ReadLineCounter() - lines);
+      // Log("uvmap: %ld\n", ReadLineCounter() - lines);
     }
-#else
-    (*UVMapRender)(chunky[active]->pixels, txtHi, txtLo);
-#endif
 
     c2p.phase = 0;
     c2p.screen = screen[active];
@@ -228,3 +223,5 @@ void Main() {
     active ^= 1;
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

@@ -1,11 +1,8 @@
+#include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
 #include "tga.h"
-#include "interrupts.h"
-
-#define X(x) ((x) + 0x81)
-#define Y(y) ((y) + 0x2c)
 
 #define WIDTH 80
 #define HEIGHT 128
@@ -16,17 +13,7 @@ static PixmapT *chunky;
 
 CopInsT *lines[256];
 
-__interrupt_handler void IntLevel3Handler() {
-  static UWORD frameNumber = 0;
-
-  if (custom->intreqr & INTF_VERTB)
-    frameNumber++;
-
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
-}
-
-void Load() {
+static void Load() {
   cp = NewCopList((WIDTH + 2) * HEIGHT + 100);
   screen = NewBitmap(WIDTH * 4, HEIGHT * 2, 1, FALSE);
   chunky = NewPixmap(WIDTH + 2, HEIGHT, PM_RGB4, MEMF_CHIP);
@@ -128,15 +115,12 @@ static void ChunkyToCopList() {
   }
 }
 
-void Init() {
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_LEVEL3;
-
+static void Init() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
 }
 
-void Main() {
+static void Loop() {
   while (!LeftMouseButton()) {
     LONG lines = ReadLineCounter();
     ChunkyToCopList();
@@ -145,3 +129,5 @@ void Main() {
     WaitVBlank();
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

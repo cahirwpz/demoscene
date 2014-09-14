@@ -1,3 +1,4 @@
+#include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
 #include "3d.h"
@@ -5,9 +6,6 @@
 #include "iff.h"
 #include "ffp.h"
 #include "memory.h"
-
-#define X(x) ((x) + 0x81)
-#define Y(y) ((y) + 0x2c)
 
 #define WIDTH  320
 #define HEIGHT 256
@@ -24,7 +22,7 @@ static CopInsT *bplptr[8];
 #define ID_PNTS MAKE_ID('P', 'N', 'T', 'S')
 #define ID_POLS MAKE_ID('P', 'O', 'L', 'S')
 
-__regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
+static __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
   Object3D *obj = NULL;
   IffFileT iff;
 
@@ -152,7 +150,7 @@ static void MakeCopperList(CopListT *cp, UWORD num) {
   CopEnd(cp);
 }
 
-void Load() {
+static void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
   cube = LoadLWO("data/new_2.lwo", SPFlt(80));
@@ -165,7 +163,7 @@ void Load() {
   MakeCopperList(cp[1], 1);
 }
 
-void Kill() {
+static void Kill() {
   DeleteObject3D(cube);
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
@@ -203,14 +201,14 @@ __regargs static void DrawObject(Object3D *object) {
   }
 }
 
-void Init() {
+static void Init() {
   CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 }
 
 static Point3D rotate = { 0, 0, 0 };
 
-void Main() {
+static void Loop() {
   while (!LeftMouseButton()) {
     Matrix3D t;
 
@@ -242,3 +240,5 @@ void Main() {
     active ^= 1;
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

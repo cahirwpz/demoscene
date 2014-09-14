@@ -1,23 +1,28 @@
 #include <proto/graphics.h>
 
+#include "startup.h"
 #include "console.h"
 #include "hardware.h"
 #include "interrupts.h"
 #include "coplist.h"
 #include "keyboard.h"
 
+#define WIDTH 640
+#define HEIGHT 256
+#define DEPTH 1
+
 static BitmapT *screen;
 static CopListT *cp;
 static TextFontT *topaz8;
 static ConsoleT console;
 
-void Load() {
-  screen = NewBitmap(640, 256, 1, FALSE);
+static void Load() {
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   cp = NewCopList(100);
 
   CopInit(cp);
   CopMakePlayfield(cp, NULL, screen);
-  CopMakeDispWinHiRes(cp, 0x81, 0x2c, screen->width, screen->height);
+  CopMakeDispWinHiRes(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
@@ -30,13 +35,13 @@ void Load() {
   ConsoleInit(&console, screen, topaz8);
 }
 
-void Kill() {
+static void Kill() {
   CloseFont(topaz8);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
 
-__interrupt_handler void IntLevel2Handler() {
+static __interrupt_handler void IntLevel2Handler() {
   if (custom->intreqr & INTF_PORTS) {
     /* Make sure all scratchpad registers are saved, because we call a function
      * that relies on the fact that it's caller responsibility to save them. */
@@ -48,7 +53,7 @@ __interrupt_handler void IntLevel2Handler() {
   custom->intreq = INTF_PORTS;
 }
 
-void Init() {
+static void Init() {
   KeyboardInit();
   InterruptVector->IntLevel2 = IntLevel2Handler;
   custom->intena = INTF_SETCLR | INTF_PORTS;
@@ -57,7 +62,7 @@ void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 }
 
-void Main() {
+static void Loop() {
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
 
@@ -102,3 +107,5 @@ void Main() {
     }
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

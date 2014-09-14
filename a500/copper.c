@@ -1,9 +1,7 @@
+#include "startup.h"
 #include "hardware.h"
 #include "coplist.h"
 #include "random.h"
-
-#define X(x) ((x) + 0x80)
-#define Y(y) ((y) + 0x2c)
 
 #define LINES 8
 #define NEXT ((LINES * 2 + 3) * sizeof(CopInsT))
@@ -13,7 +11,7 @@ static UBYTE *linePos[LINES];
 static UWORD *lineColor[LINES];
 static UWORD colors[LINES][LINES];
 
-void Load() {
+static void Load() {
   CopInsT *ins;
   WORD i, j;
 
@@ -48,11 +46,11 @@ void Load() {
   Log("Copper list entries: %ld.\n", (LONG)(cp->curr - cp->entry));
 }
 
-void Kill() {
+static void Kill() {
   DeleteCopList(cp);
 }
 
-void CopperLine(UBYTE *lineptr, WORD x1, WORD y1, WORD x2, WORD y2) {
+static void CopperLine(UBYTE *lineptr, WORD x1, WORD y1, WORD x2, WORD y2) {
   x1 = X(x1) >> 1;
   x2 = X(x2) >> 1;
 
@@ -100,26 +98,24 @@ static void SetLinesColor() {
   }
 }
 
-static BOOL Loop() {
-  {
-    LONG lc = ReadLineCounter();
-    ITER(i, 0, LINES - 1, CopperLine(linePos[i], 0 + i * 32, 0, 24 + i * 32, 256));
-    Log("lines: %ld\n", ReadLineCounter() - lc);
-  }
-
-  {
-    LONG lc = ReadLineCounter();
-    SetLinesColor();
-    Log("colors: %ld\n", ReadLineCounter() - lc);
-  }
-
-  return !LeftMouseButton();
-}
-
-void Init() {
+static void Init() {
   CopListActivate(cp);
 }
 
-void Main() {
-  while (Loop());
+static void Loop() {
+  while (!LeftMouseButton()) {
+    {
+      LONG lc = ReadLineCounter();
+      ITER(i, 0, LINES - 1, CopperLine(linePos[i], 0 + i * 32, 0, 24 + i * 32, 256));
+      Log("lines: %ld\n", ReadLineCounter() - lc);
+    }
+
+    {
+      LONG lc = ReadLineCounter();
+      SetLinesColor();
+      Log("colors: %ld\n", ReadLineCounter() - lc);
+    }
+  }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

@@ -1,10 +1,8 @@
+#include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
-
-#define X(x) ((x) + 0x81)
-#define Y(y) ((y) + 0x2c)
 
 #define WIDTH  320
 #define HEIGHT 256
@@ -25,7 +23,7 @@ static void MakeCopperList(CopListT *cp, UWORD num) {
   CopEnd(cp);
 }
 
-void Load() {
+static void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   cube = LoadObject3D("data/cube.3d");
@@ -39,7 +37,7 @@ void Load() {
   ClipFrustum.far = fx4i(-400);
 }
 
-void Kill() {
+static void Kill() {
   DeleteObject3D(cube);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
@@ -108,12 +106,12 @@ static void DrawObject(Object3D *object) {
   }
 }
 
-void Init() {
+static void Init() {
   CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 }
 
-void Main() {
+static void Loop() {
   while (!LeftMouseButton()) {
     LONG a = ReadFrameCounter() * 4;
     Matrix3D t;
@@ -134,3 +132,5 @@ void Main() {
     active ^= 1;
   }
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };

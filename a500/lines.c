@@ -1,34 +1,39 @@
+#include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
 #include "line.h"
 
+#define WIDTH 320
+#define HEIGHT 256
+#define DEPTH 1
+
+#define CPULINE 0
+
 static BitmapT *screen;
 static CopListT *cp;
 
-void Load() {
-  screen = NewBitmap(320, 256, 1, FALSE);
+static void Load() {
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   cp = NewCopList(100);
   CopInit(cp);
   CopMakePlayfield(cp, NULL, screen);
-  CopMakeDispWin(cp, 0x81, 0x2c, screen->width, screen->height);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
 }
 
-void Kill() {
+static void Kill() {
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
 
-#define CPULINE 0
-
-void Init() {
+static void Init() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
 }
 
-void Main() {
+static void Loop() {
   WORD i;
   LONG lines = ReadLineCounter();
 
@@ -58,3 +63,5 @@ void Main() {
 
   WaitMouse();
 }
+
+EffectT Effect = { Load, Init, Kill, Loop };
