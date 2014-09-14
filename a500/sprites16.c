@@ -20,7 +20,7 @@ static void Load() {
   cp = NewCopList(100);
 
   CopInit(cp);
-  CopMakePlayfield(cp, NULL, screen);
+  CopMakePlayfield(cp, NULL, screen, screen->depth);
   CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
   CopSetRGB(cp, 0, 0x346);
   CopLoadPal(cp, bitmap->palette, 16);

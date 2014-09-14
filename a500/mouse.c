@@ -24,7 +24,7 @@ static void Load() {
   pointer = CloneSystemPointer();
 
   CopInit(cp);
-  CopMakePlayfield(cp, NULL, screen);
+  CopMakePlayfield(cp, NULL, screen, DEPTH);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopMakeSprites(cp, sprptr, nullspr);
   CopEnd(cp);

@@ -21,7 +21,7 @@ static void Load() {
   cp = NewCopList(100);
 
   CopInit(cp);
-  CopMakePlayfield(cp, NULL, screen);
+  CopMakePlayfield(cp, NULL, screen, DEPTH);
   CopMakeDispWinHiRes(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0xfff);

@@ -237,4 +237,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };

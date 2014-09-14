@@ -72,7 +72,7 @@ static void Load() {
     UWORD i, j;
 
     CopInit(cp);
-    CopMakePlayfield(cp, NULL, screen);
+    CopMakePlayfield(cp, NULL, screen, screen->depth);
     CopMakeDispWin(cp, X(3), Y(0), screen->width, screen->height);
     for (i = 0; i < 32; i++)
       CopSetRGB(cp, i, 0);

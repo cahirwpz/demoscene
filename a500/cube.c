@@ -32,7 +32,7 @@ static void UnLoad() {
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, bplptr, screen[active]);
+  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);

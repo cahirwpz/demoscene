@@ -56,7 +56,7 @@ static void Load() {
   }
 
   CopInit(cp);
-  CopMakePlayfield(cp, bpls, screen);
+  CopMakePlayfield(cp, bpls, screen, screen->depth);
   CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
   CopLoadPal(cp, chunky->palette, 0);
   for (i = 16; i < 32; i++)

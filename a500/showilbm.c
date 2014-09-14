@@ -20,7 +20,7 @@ static void UnLoad() {
 
 static void Init() {
   CopInit(cp);
-  CopMakePlayfield(cp, NULL, bitmap);
+  CopMakePlayfield(cp, NULL, bitmap, bitmap->depth);
   CopMakeDispWin(cp, X(0), Y(0), bitmap->width, bitmap->height);
   CopLoadPal(cp, bitmap->palette, 0);
   CopEnd(cp);
