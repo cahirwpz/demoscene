@@ -71,7 +71,6 @@ static void UnLoad() {
 }
 
 static volatile LONG swapScreen = -1;
-static volatile LONG frameCount = 0;
 
 static void RotatePalette() {
   WORD f = frameCount * 128;
@@ -108,8 +107,6 @@ static __interrupt_handler void IntLevel3Handler() {
       swapScreen = -1;
     }
 
-    frameCount++;
-
     asm volatile("" ::: "d0", "d1", "a0", "a1");
     RotatePalette();
   }
@@ -135,11 +132,8 @@ static void ClearCliparts() {
 }
 
 static void DrawCliparts() {
-  static LONG lastFrameCount = 0;
   WORD step = frameCount - lastFrameCount;
   WORD i;
-
-  lastFrameCount = frameCount;
 
   for (i = 0; i < PNUM; i++) {
     BitmapT *src = neon[i & 1];

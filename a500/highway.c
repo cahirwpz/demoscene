@@ -275,19 +275,13 @@ static void DrawCars(WORD step) {
 }
 
 static WORD iterCount = 0;
-static LONG lastFrameCount;
-static LONG frameCount = 0;
 
 static void Init() {
   CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
-
-  lastFrameCount = ReadFrameCounter();
 }
 
 static void Render() {
-  frameCount = ReadFrameCounter();
-
 #if 0
   ITER(i, 0, 3, BlitterSetSync(laneL[active], i, HSIZE, 0, WIDTH, LANE_H, 0));
   ITER(i, 0, 3, BlitterSetSync(laneR[active], i, HSIZE, LANE_H, WIDTH, LANE_H, 0));

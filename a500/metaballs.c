@@ -61,7 +61,6 @@ static void UnLoad() {
 }
 
 static volatile LONG swapScreen = -1;
-static ULONG frameCount = 0;
 
 static __interrupt_handler void IntLevel3Handler() {
   if (custom->intreqr & INTF_VERTB) {
@@ -76,8 +75,6 @@ static __interrupt_handler void IntLevel3Handler() {
 
       swapScreen = -1;
     }
-
-    frameCount++;
   }
 
   custom->intreq = INTF_LEVEL3;

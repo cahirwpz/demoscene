@@ -370,8 +370,6 @@ static void Init() {
 }
 
 static void Render() {
-  LONG frameCount = ReadFrameCounter();
-
   WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
   WORD yo = (N / 2) + normfx(COS(frameCount * 16) * (N / 2));
   WORD kxo = 7 - xo * SIZE / N;

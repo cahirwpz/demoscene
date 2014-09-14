@@ -24,6 +24,9 @@ struct Library *MathBase = NULL;
 static void DummyRender() {}
 static BOOL ExitOnLMB() { return !LeftMouseButton(); }
 
+LONG frameCount;
+LONG lastFrameCount;
+
 int main() {
   DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 33);
   GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 33);
@@ -87,8 +90,14 @@ int main() {
       if (Effect.Init)
         Effect.Init();
 
-      while (Effect.HandleEvent())
+      lastFrameCount = ReadFrameCounter();
+
+      while (Effect.HandleEvent()) {
+        LONG t = ReadFrameCounter();
+        frameCount = t;
         Effect.Render();
+        lastFrameCount = t;
+      }
 
       if (Effect.Kill)
         Effect.Kill();

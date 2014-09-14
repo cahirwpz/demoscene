@@ -107,7 +107,6 @@ static void Init() {
 }
 
 static void Render() {
-  LONG frameCount = ReadFrameCounter();
   WORD i, a = frameCount * 64;
   Matrix2D t;
 

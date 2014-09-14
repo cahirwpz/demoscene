@@ -11,12 +11,13 @@
 #define Y(y) ((y) + 0x2c)
 #endif
 
-//extern static LONG lastFrameCount;
-//extern static LONG frameCount;
+extern LONG frameCount;
+extern LONG lastFrameCount;
 
 typedef struct Effect {
-  /* Call it while OS is active. Loads resources from disk. */
+  /* AmigaOS is active during this step. Loads resources from disk. */
   void (*Load)();
+  /* Frees all resources allocated by "Load" step. */
   void (*UnLoad)();
   /*
    * Does all initialization steps required to launch the effect.
@@ -26,7 +27,7 @@ typedef struct Effect {
    * 3) Set up interrupts and DMA channels.
    */
   void (*Init)();
-  /* Frees all resources allocated in "Init" and "Load" step. */
+  /* Frees all resources allocated by "Init" step. */
   void (*Kill)();
   /* Renders single frame of an effect. */
   void (*Render)();

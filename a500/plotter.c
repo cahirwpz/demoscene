@@ -50,8 +50,6 @@ static void UnLoad() {
   DeleteCopList(cp[1]);
 }
 
-static LONG frameCount = 0;
-
 #define BLTOP_NAME AddFlare
 #define BLTOP_SRC_BM flares
 #define BLTOP_SRC_WIDTH SIZE
@@ -90,8 +88,6 @@ static void Init() {
 }
 
 static void Render() {
-  frameCount = ReadFrameCounter();
-
   ITER(i, 0, 2, BlitterSetSync(screen[active], i, 0, 0, 96 * 2 + SIZE, 96 * 2 + SIZE, 0));
   DrawPlotter();
 
