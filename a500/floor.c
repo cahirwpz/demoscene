@@ -64,6 +64,25 @@ static void FloorPrecalc() {
   }
 }
 
+static void Load() {
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+
+  cp[0] = NewCopList((256 - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
+  cp[1] = NewCopList((256 - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
+
+  FloorPrecalc();
+
+  ITER(i, 0, TILES * TILES - 1, texture[i] = random() & 0xfff);
+}
+
+static void UnLoad() {
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
+}
+
 static void MakeCopperList(CopListT *cp, WORD num) {
   CopInsT *ins;
   WORD i, j;
@@ -103,26 +122,30 @@ static void MakeCopperList(CopListT *cp, WORD num) {
   CopEnd(cp);
 }
 
-static void Load() {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+static void Init() {
+  WORD i;
 
-  cp[0] = NewCopList((256 - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
-  MakeCopperList(cp[0], 0);
-  cp[1] = NewCopList((256 - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
-  MakeCopperList(cp[1], 1);
+  ITER(j, 0, 1, MakeCopperList(cp[j], j));
+  CopListActivate(cp[active]);
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 
-  FloorPrecalc();
+  for (i = 0; i < 2; i++) {
+    BlitterLineSetup(screen[i], 0, LINE_EOR, LINE_ONEDOT);
+    BlitterLine(WIDTH - 1, 0, WIDTH - 1, FAR_Y - 1);
+    WaitBlitter();
+    BlitterLine(WIDTH - 1, FAR_Y - 1, WIDTH - 1, HEIGHT);
+    WaitBlitter();
+    BlitterFill(screen[i], 0);
+    WaitBlitter();
 
-  ITER(i, 0, TILES * TILES - 1, texture[i] = random() & 0xfff);
+    BlitterLineSetup(screen[i], 1, LINE_EOR, LINE_ONEDOT);
+    BlitterLine(WIDTH - 1, 0, WIDTH - 1, FAR_Y - 1);
+    WaitBlitter();
+    BlitterFill(screen[i], 1);
+    WaitBlitter();
+  }
 }
 
-static void UnLoad() {
-  DeleteCopList(cp[0]);
-  DeleteCopList(cp[1]);
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
-}
 
 static void ClearFloor() {
   BitmapT *buffer = screen[active];
@@ -340,31 +363,6 @@ static void ClearLines() {
     while (--n >= 0) {
       *pos = x;
       pos += STRIDE;
-    }
-  }
-}
-
-static void Init() {
-  CopListActivate(cp[active]);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
-
-  {
-    WORD i;
-
-    for (i = 0; i < 2; i++) {
-      BlitterLineSetup(screen[i], 0, LINE_EOR, LINE_ONEDOT);
-      BlitterLine(WIDTH - 1, 0, WIDTH - 1, FAR_Y - 1);
-      WaitBlitter();
-      BlitterLine(WIDTH - 1, FAR_Y - 1, WIDTH - 1, HEIGHT);
-      WaitBlitter();
-      BlitterFill(screen[i], 0);
-      WaitBlitter();
-
-      BlitterLineSetup(screen[i], 1, LINE_EOR, LINE_ONEDOT);
-      BlitterLine(WIDTH - 1, 0, WIDTH - 1, FAR_Y - 1);
-      WaitBlitter();
-      BlitterFill(screen[i], 1);
-      WaitBlitter();
     }
   }
 }

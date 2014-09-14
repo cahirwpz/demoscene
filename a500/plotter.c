@@ -20,24 +20,13 @@ static UWORD active = 0;
 static BitmapT *carry;
 static BitmapT *flares;
 
-static void MakeCopperList(CopListT *cp, UWORD num) {
-  CopInit(cp);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopShowPlayfield(cp, screen[num]);
-  CopLoadPal(cp, flares->palette, 0);
-  CopEnd(cp);
-}
-
 static void Load() {
   flares = LoadILBM("data/plotter-flares.ilbm", FALSE);
   screen[0] = NewBitmap(WIDTH, HEIGHT, 3, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, 3, FALSE);
   carry = NewBitmap(SIZE + 16, SIZE, 2, FALSE);
-
   cp[0] = NewCopList(50);
-  MakeCopperList(cp[0], 0);
   cp[1] = NewCopList(50);
-  MakeCopperList(cp[1], 1);
 }
 
 static void UnLoad() {
@@ -48,6 +37,21 @@ static void UnLoad() {
   DeleteBitmap(screen[1]);
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
+}
+
+static void MakeCopperList(CopListT *cp, UWORD num) {
+  CopInit(cp);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopShowPlayfield(cp, screen[num]);
+  CopLoadPal(cp, flares->palette, 0);
+  CopEnd(cp);
+}
+
+static void Init() {
+  MakeCopperList(cp[0], 0);
+  MakeCopperList(cp[1], 1);
+  CopListActivate(cp[active]);
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 }
 
 #define BLTOP_NAME AddFlare
@@ -80,11 +84,6 @@ static void DrawPlotter() {
 
     AddFlare(x, y, 0, f * SIZE);
   }
-}
-
-static void Init() {
-  CopListActivate(cp[active]);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 }
 
 static void Render() {

@@ -46,6 +46,45 @@ static SpriteT *nullspr;
 static BitmapT *title;
 static SpriteT *sprite[8];
 
+static void Load() {
+  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
+  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
+  title = LoadILBM("data/sprite128.ilbm", FALSE);
+  carsBg = LoadILBM("data/cars-bg.ilbm", FALSE);
+  carsTop = LoadILBM("data/cars-top.ilbm", FALSE);
+  carsBottom = LoadILBM("data/cars-bottom.ilbm", FALSE);
+  carsL = LoadILBM("data/cars-l.ilbm", FALSE);
+  carsR = LoadILBM("data/cars-r.ilbm", FALSE);
+  carry = NewBitmap(HSIZE + 16, VSIZE, 2, FALSE);
+  nullspr = NewSprite(0, FALSE);
+
+  ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, title, 16 * i, 0));
+
+  cp[0] = NewCopList(300);
+  cp[1] = NewCopList(300);
+}
+
+static void UnLoad() {
+  DeleteSprite(nullspr);
+  ITER(i, 0, 7, DeleteSprite(sprite[i]));
+  DeletePalette(carsL->palette);
+  DeleteBitmap(carsL);
+  DeletePalette(carsR->palette);
+  DeleteBitmap(carsR);
+  DeletePalette(carsTop->palette);
+  DeleteBitmap(carsTop);
+  DeletePalette(carsBottom->palette);
+  DeleteBitmap(carsBottom);
+  DeletePalette(carsBg->palette);
+  DeleteBitmap(carsBg);
+  DeleteBitmap(carry);
+  DeleteBitmap(lanes[0]);
+  DeleteBitmap(lanes[1]);
+  DeleteBitmap(title);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
+}
+
 static void MakeCopperList(CopListT *cp, WORD num) {
   CopInit(cp);
   CopMakeSprites(cp, sprptr[num], nullspr);
@@ -109,46 +148,12 @@ static void MakeCopperList(CopListT *cp, WORD num) {
   ITER(i, 0, 7, CopInsSet32(sprptr[num][i], sprite[i]->data));
 }
 
-static void Load() {
-  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
-  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
-  title = LoadILBM("data/sprite128.ilbm", FALSE);
-  carsBg = LoadILBM("data/cars-bg.ilbm", FALSE);
-  carsTop = LoadILBM("data/cars-top.ilbm", FALSE);
-  carsBottom = LoadILBM("data/cars-bottom.ilbm", FALSE);
-  carsL = LoadILBM("data/cars-l.ilbm", FALSE);
-  carsR = LoadILBM("data/cars-r.ilbm", FALSE);
-  carry = NewBitmap(HSIZE + 16, VSIZE, 2, FALSE);
-  nullspr = NewSprite(0, FALSE);
-
-  ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, title, 16 * i, 0));
+static void Init() {
   ITER(i, 0, 7, UpdateSpritePos(sprite[i], X(80 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
-
-  cp[0] = NewCopList(300);
-  cp[1] = NewCopList(300);
   MakeCopperList(cp[0], 0);
   MakeCopperList(cp[1], 1);
-}
-
-static void UnLoad() {
-  DeleteSprite(nullspr);
-  ITER(i, 0, 7, DeleteSprite(sprite[i]));
-  DeletePalette(carsL->palette);
-  DeleteBitmap(carsL);
-  DeletePalette(carsR->palette);
-  DeleteBitmap(carsR);
-  DeletePalette(carsTop->palette);
-  DeleteBitmap(carsTop);
-  DeletePalette(carsBottom->palette);
-  DeleteBitmap(carsBottom);
-  DeletePalette(carsBg->palette);
-  DeleteBitmap(carsBg);
-  DeleteBitmap(carry);
-  DeleteBitmap(lanes[0]);
-  DeleteBitmap(lanes[1]);
-  DeleteBitmap(title);
-  DeleteCopList(cp[0]);
-  DeleteCopList(cp[1]);
+  CopListActivate(cp[active]);
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
 }
 
 static inline void CarInit(Car *car) {
@@ -275,11 +280,6 @@ static void DrawCars(WORD step) {
 }
 
 static WORD iterCount = 0;
-
-static void Init() {
-  CopListActivate(cp[active]);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
-}
 
 static void Render() {
 #if 0

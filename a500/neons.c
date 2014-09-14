@@ -11,6 +11,7 @@
 
 #define WIDTH 320
 #define HEIGHT 256
+#define DEPTH 5
 #define PNUM 8
 
 static BitmapT *screen[2];
@@ -30,8 +31,9 @@ static void Load() {
   neon[0] = LoadILBM("data/greetz-1.ilbm", FALSE);
   neon[1] = LoadILBM("data/greetz-2.ilbm", FALSE);
   background = LoadILBM("data/neons.ilbm", FALSE);
-  screen[0] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  cp = NewCopList(100);
   palette = NewPalette(32);
 
   {
@@ -48,16 +50,6 @@ static void Load() {
     DeletePalette(neon[1]->palette);
     DeletePalette(background->palette);
   }
-
-  cp = NewCopList(100);
-  CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[active]);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  pal = CopLoadPal(cp, palette, 0);
-  CopEnd(cp);
-
-  ITER(i, 0, PNUM - 1, p[i].x = 0);
-  ITER(i, 0, PNUM - 1, p[i].y = -128);
 }
 
 static void UnLoad() {
@@ -115,6 +107,29 @@ static __interrupt_handler void IntLevel3Handler() {
   custom->intreq = INTF_LEVEL3;
 }
 
+static void MakeCopperList(CopListT *cp) {
+  CopInit(cp);
+  CopMakePlayfield(cp, bplptr, screen[active]);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  pal = CopLoadPal(cp, palette, 0);
+  CopEnd(cp);
+}
+
+static void Init() {
+  MakeCopperList(cp);
+  CopListActivate(cp);
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
+
+  ITER(i, 0, PNUM - 1, p[i].x = 0);
+  ITER(i, 0, PNUM - 1, p[i].y = -128);
+
+  ITER(i, 0, 3, BlitterCopySync(screen[0], i, 0, 0, background, i));
+  ITER(i, 0, 3, BlitterCopySync(screen[1], i, 0, 0, background, i));
+
+  InterruptVector->IntLevel3 = IntLevel3Handler;
+  custom->intena = INTF_SETCLR | INTF_VERTB;
+}
+
 static void ClearCliparts() {
   WORD i;
 
@@ -155,17 +170,6 @@ static void DrawCliparts() {
 
     p[i].y -= step;
   }
-}
-
-static void Init() {
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
-  
-  CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
-
-  ITER(i, 0, 3, BlitterCopySync(screen[0], i, 0, 0, background, i));
-  ITER(i, 0, 3, BlitterCopySync(screen[1], i, 0, 0, background, i));
 }
 
 static void Render() {

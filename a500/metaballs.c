@@ -29,23 +29,7 @@ static void Load() {
   background = LoadILBM("data/metaball-bg.ilbm", FALSE);
   metaball = LoadILBM("data/metaball.ilbm", FALSE);
   carry = NewBitmap(SIZE + 16, SIZE, 2, FALSE);
-
   cp = NewCopList(100);
-  CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[active]);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopLoadPal(cp, metaball->palette, 0);
-  CopEnd(cp);
-
-  {
-    WORD i, j;
-
-    for (i = 0; i < 3; i++)
-      for (j = 0; j < 3; j++) {
-        pos[i][j].x = 160;
-        pos[i][j].x = 128;
-      }
-  }
 }
 
 static void UnLoad() {
@@ -79,6 +63,42 @@ static __interrupt_handler void IntLevel3Handler() {
 
   custom->intreq = INTF_LEVEL3;
   custom->intreq = INTF_LEVEL3;
+}
+
+static void SetInitialPositions() {
+  WORD i, j;
+
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j++) {
+      pos[i][j].x = 160;
+      pos[i][j].x = 128;
+    }
+  }
+}
+
+static void MakeCopperList(CopListT *cp) {
+  CopInit(cp);
+  CopMakePlayfield(cp, bplptr, screen[active]);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopLoadPal(cp, metaball->palette, 0);
+  CopEnd(cp);
+}
+
+static void Init() {
+  SetInitialPositions();
+  MakeCopperList(cp);
+
+  CopListActivate(cp);
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
+
+  InterruptVector->IntLevel3 = IntLevel3Handler;
+  custom->intena = INTF_SETCLR | INTF_VERTB;
+
+  ITER(i, 0, 4, {
+    BlitterCopySync(screen[0], i, 0, 0, background, i);
+    BlitterCopySync(screen[1], i, 0, 0, background, i);
+    BlitterCopySync(screen[2], i, 0, 0, background, i);
+  });
 }
 
 #define BLTOP_NAME ClearMetaball
@@ -128,20 +148,6 @@ static void PositionMetaballs() {
 
   pos[active][2].x = (WIDTH - SIZE) / 2;
   pos[active][2].y = (HEIGHT - SIZE) / 2 + normfx(COS(t) * SIZE * 3 / 4);
-}
-
-static void Init() {
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
-  
-  CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
-
-  ITER(i, 0, 4, {
-    BlitterCopySync(screen[0], i, 0, 0, background, i);
-    BlitterCopySync(screen[1], i, 0, 0, background, i);
-    BlitterCopySync(screen[2], i, 0, 0, background, i);
-  });
 }
 
 static void Render() {

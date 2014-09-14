@@ -19,26 +19,34 @@ static void Load() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   shape = LoadShape("data/boxes.2d");
   cp = NewCopList(100);
+}
+
+static void UnLoad() {
+  DeleteShape(shape);
+  DeleteCopList(cp);
+  DeleteBitmap(screen);
+}
+
+static void MakeCopperList(CopListT *cp) {
+  UWORD i, j = 2;
 
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
   CopMakePlayfield(cp, bplptr, screen);
-  {
-    UWORD i, j = 2;
-
-    CopSetRGB(cp, 0, 0x000);
-    CopSetRGB(cp, 1, 0x111);
-    for (i = 0; i < 2; i++)
-      CopSetRGB(cp, j++, 0x222);
-    for (i = 0; i < 4; i++)
-      CopSetRGB(cp, j++, 0x444);
-    for (i = 0; i < 8; i++)
-      CopSetRGB(cp, j++, 0x888);
-    for (i = 0; i < 16; i++)
-      CopSetRGB(cp, j++, 0xfff);
-  }
+  CopSetRGB(cp, 0, 0x000);
+  CopSetRGB(cp, 1, 0x111);
+  for (i = 0; i < 2; i++)
+    CopSetRGB(cp, j++, 0x222);
+  for (i = 0; i < 4; i++)
+    CopSetRGB(cp, j++, 0x444);
+  for (i = 0; i < 8; i++)
+    CopSetRGB(cp, j++, 0x888);
+  for (i = 0; i < 16; i++)
+    CopSetRGB(cp, j++, 0xfff);
   CopEnd(cp);
+}
 
+static void Init() {
   plane = screen->depth - 1;
   planeC = 0;
 
@@ -47,12 +55,10 @@ static void Load() {
   ClipWin.maxX = fx4i(319);
   ClipWin.minY = fx4i(0);
   ClipWin.maxY = fx4i(255);
-}
 
-static void UnLoad() {
-  DeleteShape(shape);
-  DeleteCopList(cp);
-  DeleteBitmap(screen);
+  MakeCopperList(cp);
+  CopListActivate(cp);
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 }
 
 static Point2D tmpPoint[2][16];
@@ -99,11 +105,6 @@ static __regargs void DrawShape(ShapeT *shape) {
 
     polygon++;
   }
-}
-
-static void Init() {
-  CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 }
 
 static void Render() {

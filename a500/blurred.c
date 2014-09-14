@@ -34,19 +34,6 @@ static void Load() {
   carry = NewBitmap(SIZE, SIZE, 2, FALSE);
 
   cp = NewCopList(200);
-  CopInit(cp);
-  CopLoadPal(cp, palette[0], 0);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, bplptr[0], screen[active]);
-  CopWait(cp, Y(127), 0);
-  CopLoadPal(cp, palette[1], 0);
-  CopWait(cp, Y(128), 0);
-  {
-    WORD i;
-    for (i = 0; i < screen[active]->depth; i++)
-      bplptr[1][i] = CopMove32(cp, bplpt[i], screen[active]->planes[i] - WIDTH / 16);
-  }
-  CopEnd(cp);
 }
 
 static void UnLoad() {
@@ -82,6 +69,38 @@ static __interrupt_handler void IntLevel3Handler() {
 
   custom->intreq = INTF_LEVEL3;
   custom->intreq = INTF_LEVEL3;
+}
+
+static void MakeCopperList(CopListT *cp) {
+  WORD i;
+
+  CopInit(cp);
+  CopLoadPal(cp, palette[0], 0);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopMakePlayfield(cp, bplptr[0], screen[active]);
+  CopWait(cp, Y(127), 0);
+  CopLoadPal(cp, palette[1], 0);
+  CopWait(cp, Y(128), 0);
+  for (i = 0; i < screen[active]->depth; i++)
+    bplptr[1][i] = CopMove32(cp, bplpt[i], screen[active]->planes[i] - WIDTH / 16);
+  CopEnd(cp);
+}
+
+static void Init() {
+  MakeCopperList(cp);
+  CopListActivate(cp);
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
+
+  /* Make the center of blurred shape use colors from range 16-31. */
+  CircleEdge(screen[0], 4, SIZE / 2 + 16, SIZE / 2, SIZE / 4 - 1);
+  BlitterFill(screen[0], 4);
+  WaitBlitter();
+
+  ITER(i, 0, 4, BlitterCopySync(screen[0], i, WIDTH / 2, 0, clip, i));
+  ITER(i, 0, 4, BlitterCopySync(screen[1], i, WIDTH / 2, 0, clip, i));
+
+  InterruptVector->IntLevel3 = IntLevel3Handler;
+  custom->intena = INTF_SETCLR | INTF_VERTB;
 }
 
 static void RotatingTriangle(WORD t, WORD phi, WORD size) {
@@ -133,22 +152,6 @@ static void DrawShape() {
 #define BLTOP_VSIZE SIZE
 #define BLTOP_BPLS 4
 #include "bltop_inc_sat.h"
-
-static void Init() {
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
-  
-  CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
-
-  /* Make the center of blurred shape use colors from range 16-31. */
-  CircleEdge(screen[0], 4, SIZE / 2 + 16, SIZE / 2, SIZE / 4 - 1);
-  BlitterFill(screen[0], 4);
-  WaitBlitter();
-
-  ITER(i, 0, 4, BlitterCopySync(screen[0], i, WIDTH / 2, 0, clip, i));
-  ITER(i, 0, 4, BlitterCopySync(screen[1], i, WIDTH / 2, 0, clip, i));
-}
 
 static void Render() {
   LONG lines = ReadLineCounter();
