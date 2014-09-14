@@ -183,12 +183,23 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
+  WORD i;
+
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+
+  for (i = 0; i < 5; i++) {
+    BlitterClear(screen[0], i);
+    WaitBlitter();
+    BlitterClear(screen[1], i);
+    WaitBlitter();
+  }
+
   memset(screen[0]->planes[4], 0xaa, WIDTH * HEIGHT * 4 / 8);
   memset(screen[1]->planes[4], 0xaa, WIDTH * HEIGHT * 4 / 8);
 
   MakeCopperList(cp);
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 
   /* Initialize chunky to planar. */
   custom->bltamod = 2;
@@ -199,7 +210,12 @@ static void Init() {
   custom->bltalwm = -1;
 
   InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB | INTF_BLIT;
+  custom->intena = INTF_SETCLR | INTF_BLIT;
+}
+
+static void Kill() {
+  custom->dmacon = DMAF_RASTER | DMAF_BLITTER;
+  custom->intena = INTF_BLIT;
 }
 
 static void Render() {
@@ -219,4 +235,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };

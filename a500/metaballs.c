@@ -102,6 +102,11 @@ static void Init() {
   });
 }
 
+static void Kill() {
+  custom->dmacon = DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
+  custom->intena = INTF_VERTB;
+}
+
 #define BLTOP_NAME ClearMetaball
 #define BLTOP_DST_BM screen[active]
 #define BLTOP_DST_WIDTH WIDTH
@@ -171,4 +176,4 @@ static void Render() {
     active = 0;
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };
