@@ -6,11 +6,11 @@
 #include "file.h"
 #include "interrupts.h"
 
-#define Y(y) ((y) + 0x48)
 #include "startup.h"
 
 #define WIDTH 160
 #define HEIGHT 100
+#define DEPTH 5
 
 static PixmapT *chunky[2];
 static PixmapT *textureHi, *textureLo;
@@ -18,7 +18,7 @@ static BitmapT *screen[2];
 static PaletteT *palette;
 static UWORD active = 0;
 static CopListT *cp;
-static CopInsT *bpls[6];
+static CopInsT *bplptr[DEPTH];
 
 extern WORD UVMapRenderTemplate[];
 void (*UVMapRender)(UBYTE *chunky asm("a0"),
@@ -42,13 +42,9 @@ static void PixmapScramble(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
 }
 
 static void Load() {
-  UWORD i;
-
   cp = NewCopList(1024);
   screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, 5, FALSE);
   screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, 4, FALSE);
-
-  memset(screen[0]->planes[4], 0xaa, WIDTH * HEIGHT * 4 / 8);
 
   {
     PixmapT *texture = LoadTGA("data/texture-16.tga", PM_CMAP, MEMF_PUBLIC);
@@ -91,20 +87,6 @@ static void Load() {
 
     FreeAutoMem(uvmap);
   }
-
-  CopInit(cp);
-  CopMakePlayfield(cp, bpls, screen[0]);
-  CopMakeDispWin(cp, X(0), Y(0), screen[0]->width, screen[0]->height);
-  CopLoadPal(cp, palette, 0);
-  for (i = 16; i < 32; i++)
-    CopSetRGB(cp, i, 0x000);
-  for (i = 0; i < HEIGHT * 2; i++) {
-    CopWaitMask(cp, Y(i), 0, 0xff, 0);
-    CopMove16(cp, bplcon1, (i & 1) ? 0x0021 : 0x0010);
-    CopMove16(cp, bpl1mod, (i & 1) ? -40 : 0);
-    CopMove16(cp, bpl2mod, (i & 1) ? -40 : 0);
-  }
-  CopEnd(cp);
 }
 
 static void UnLoad() {
@@ -119,30 +101,20 @@ static void UnLoad() {
 }
 
 static struct {
-  ULONG phase;
-  BitmapT *screen;
-  PixmapT *chunky;
-} c2p = { 3, NULL, NULL };
-
-static void InitChunkyToPlanar() {
-  custom->bltamod = 2;
-  custom->bltbmod = 2;
-  custom->bltdmod = 0;
-  custom->bltcdat = 0xf0f0;
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
-}
+  WORD phase;
+  WORD active;
+} c2p = { 5, 0 };
 
 static void ChunkyToPlanar() {
-  BitmapT *screen = c2p.screen;
-  PixmapT *chunky = c2p.chunky;
+  BitmapT *dst = screen[c2p.active];
+  PixmapT *src = chunky[c2p.active];
 
   switch (c2p.phase) {
     case 0:
       /* Swap 4x2, pass 1. */
-      custom->bltapt = chunky->pixels;
-      custom->bltbpt = chunky->pixels + 2;
-      custom->bltdpt = screen->planes[0];
+      custom->bltapt = src->pixels;
+      custom->bltbpt = src->pixels + 2;
+      custom->bltdpt = dst->planes[0];
 
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
       custom->bltcon1 = 4 << BSHIFTSHIFT;
@@ -155,9 +127,9 @@ static void ChunkyToPlanar() {
 
     case 2:
       /* Swap 4x2, pass 2. */
-      // custom->bltapt = chunky->pixels + WIDTH * HEIGHT / 2;
-      // custom->bltbpt = chunky->pixels + WIDTH * HEIGHT / 2 + 2;
-      custom->bltdpt = screen->planes[2] + WIDTH * HEIGHT / 4;
+      // custom->bltapt = src->pixels + WIDTH * HEIGHT / 2;
+      // custom->bltbpt = src->pixels + WIDTH * HEIGHT / 2 + 2;
+      custom->bltdpt = dst->planes[2] + WIDTH * HEIGHT / 4;
 
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
       custom->bltcon1 = BLITREVERSE;
@@ -169,10 +141,10 @@ static void ChunkyToPlanar() {
       break;
 
     case 4:
-      CopInsSet32(bpls[0], screen->planes[0]);
-      CopInsSet32(bpls[1], screen->planes[0]);
-      CopInsSet32(bpls[2], screen->planes[2]);
-      CopInsSet32(bpls[3], screen->planes[2]);
+      CopInsSet32(bplptr[0], dst->planes[0]);
+      CopInsSet32(bplptr[1], dst->planes[0]);
+      CopInsSet32(bplptr[2], dst->planes[2]);
+      CopInsSet32(bplptr[3], dst->planes[2]);
       break;
 
     default:
@@ -192,21 +164,47 @@ static __interrupt_handler void IntLevel3Handler() {
   custom->intreq = INTF_LEVEL3;
 }
 
-static void Init() {
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB | INTF_BLIT;
+static void MakeCopperList(CopListT *cp) {
+  WORD i;
 
+  CopInit(cp);
+  CopMakeDispWin(cp, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
+  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
+  CopLoadPal(cp, palette, 0);
+  for (i = 16; i < 32; i++)
+    CopSetRGB(cp, i, 0x000);
+  for (i = 0; i < HEIGHT * 2; i++) {
+    CopWaitMask(cp, Y(i), 0, 0xff, 0);
+    CopMove16(cp, bplcon1, (i & 1) ? 0x0021 : 0x0010);
+    CopMove16(cp, bpl1mod, (i & 1) ? -40 : 0);
+    CopMove16(cp, bpl2mod, (i & 1) ? -40 : 0);
+  }
+  CopEnd(cp);
+}
+
+static void Init() {
+  memset(screen[0]->planes[4], 0xaa, WIDTH * HEIGHT * 4 / 8);
+  memset(screen[1]->planes[4], 0xaa, WIDTH * HEIGHT * 4 / 8);
+
+  MakeCopperList(cp);
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
 
-  InitChunkyToPlanar();
+  /* Initialize chunky to planar. */
+  custom->bltamod = 2;
+  custom->bltbmod = 2;
+  custom->bltdmod = 0;
+  custom->bltcdat = 0xf0f0;
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+
+  InterruptVector->IntLevel3 = IntLevel3Handler;
+  custom->intena = INTF_SETCLR | INTF_VERTB | INTF_BLIT;
 }
 
 static void Render() {
-  UWORD offset = ReadFrameCounter();
-
-  UBYTE *txtHi = textureHi->pixels + (offset & 16383);
-  UBYTE *txtLo = textureLo->pixels + (offset & 16383);
+  UBYTE *txtHi = textureHi->pixels + (frameCount & 16383);
+  UBYTE *txtLo = textureLo->pixels + (frameCount & 16383);
 
   {
     // LONG lines = ReadLineCounter();
@@ -215,8 +213,7 @@ static void Render() {
   }
 
   c2p.phase = 0;
-  c2p.screen = screen[active];
-  c2p.chunky = chunky[active];
+  c2p.active = active;
   ChunkyToPlanar();
 
   active ^= 1;
