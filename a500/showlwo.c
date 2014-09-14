@@ -9,13 +9,14 @@
 
 #define WIDTH  320
 #define HEIGHT 256
+#define DEPTH 1
 
 static Object3D *cube;
 
-static CopListT *cp[2];
+static CopListT *cp;
 static BitmapT *screen[2];
 static UWORD active = 0;
-static CopInsT *bplptr[8];
+static CopInsT *bplptr[DEPTH];
 
 #define ID_LWOB MAKE_ID('L', 'W', 'O', 'B')
 #define ID_LWO2 MAKE_ID('L', 'W', 'O', '2')
@@ -141,34 +142,35 @@ static __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
   return obj;
 }
 
-static void MakeCopperList(CopListT *cp, UWORD num) {
+static void Load() {
+  screen[0] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
+  cp = NewCopList(80);
+  cube = LoadLWO("data/new_2.lwo", SPFlt(80));
+
+  CalculateEdges(cube);
+}
+
+static void UnLoad() {
+  DeleteObject3D(cube);
+  DeleteCopList(cp);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
+}
+
+static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[num]);
+  CopMakePlayfield(cp, bplptr, screen[active]);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
 }
 
-static void Load() {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
-  cube = LoadLWO("data/new_2.lwo", SPFlt(80));
-
-  CalculateEdges(cube);
-
-  cp[0] = NewCopList(80);
-  MakeCopperList(cp[0], 0);
-  cp[1] = NewCopList(80);
-  MakeCopperList(cp[1], 1);
-}
-
-static void UnLoad() {
-  DeleteObject3D(cube);
-  DeleteCopList(cp[0]);
-  DeleteCopList(cp[1]);
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
+static void Init() {
+  MakeCopperList(cp);
+  CopListActivate(cp);
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 }
 
 __regargs static void CalculatePerspective(Point3D *p, WORD points) {
@@ -201,11 +203,6 @@ __regargs static void DrawObject(Object3D *object) {
   }
 }
 
-static void Init() {
-  CopListActivate(cp[active]);
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
-}
-
 static Point3D rotate = { 0, 0, 0 };
 
 static void Render() {
@@ -234,8 +231,8 @@ static void Render() {
     Log("draw: %ld\n", ReadLineCounter() - lines);
   }
 
-  CopListRun(cp[active]);
   WaitVBlank();
+  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   active ^= 1;
 }
 

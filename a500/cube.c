@@ -10,39 +10,41 @@
 
 static Object3D *cube;
 
-static CopListT *cp[2];
+static CopListT *cp;
+static CopInsT *bplptr[DEPTH];
 static BitmapT *screen[2];
 static UWORD active = 0;
-
-static void MakeCopperList(CopListT *cp, UWORD num) {
-  CopInit(cp);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopShowPlayfield(cp, screen[num]);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xfff);
-  CopEnd(cp);
-}
 
 static void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   cube = LoadObject3D("data/cube.3d");
-
-  cp[0] = NewCopList(100);
-  MakeCopperList(cp[0], 0);
-  cp[1] = NewCopList(100);
-  MakeCopperList(cp[1], 1);
-
-  ClipFrustum.near = fx4i(-100);
-  ClipFrustum.far = fx4i(-400);
+  cp = NewCopList(100);
 }
 
 static void UnLoad() {
   DeleteObject3D(cube);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
-  DeleteCopList(cp[0]);
-  DeleteCopList(cp[1]);
+  DeleteCopList(cp);
+}
+
+static void MakeCopperList(CopListT *cp) {
+  CopInit(cp);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopMakePlayfield(cp, bplptr, screen[active]);
+  CopSetRGB(cp, 0, 0x000);
+  CopSetRGB(cp, 1, 0xfff);
+  CopEnd(cp);
+}
+
+static void Init() {
+  MakeCopperList(cp);
+  CopListActivate(cp);
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
+
+  ClipFrustum.near = fx4i(-100);
+  ClipFrustum.far = fx4i(-400);
 }
 
 static Point3D tmpPoint[2][16];
@@ -106,11 +108,6 @@ static void DrawObject(Object3D *object) {
   }
 }
 
-static void Init() {
-  CopListActivate(cp[active]);
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
-}
-
 static void Render() {
   LONG a = ReadFrameCounter() * 4;
   Matrix3D t;
@@ -126,8 +123,8 @@ static void Render() {
 
   DrawObject(cube);
 
-  CopListRun(cp[active]);
   WaitVBlank();
+  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   active ^= 1;
 }
 

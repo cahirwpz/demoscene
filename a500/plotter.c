@@ -9,11 +9,13 @@
 
 #define WIDTH 320
 #define HEIGHT 256
+#define DEPTH 3
 #define SIZE 16
 #define NUM 37
 #define ARMS 3
 
-static CopListT *cp[2];
+static CopListT *cp;
+static CopInsT *bplptr[DEPTH];
 static BitmapT *screen[2];
 static UWORD active = 0;
 
@@ -22,11 +24,10 @@ static BitmapT *flares;
 
 static void Load() {
   flares = LoadILBM("data/plotter-flares.ilbm", FALSE);
-  screen[0] = NewBitmap(WIDTH, HEIGHT, 3, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, 3, FALSE);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   carry = NewBitmap(SIZE + 16, SIZE, 2, FALSE);
-  cp[0] = NewCopList(50);
-  cp[1] = NewCopList(50);
+  cp = NewCopList(50);
 }
 
 static void UnLoad() {
@@ -35,22 +36,20 @@ static void UnLoad() {
   DeleteBitmap(carry);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
-  DeleteCopList(cp[0]);
-  DeleteCopList(cp[1]);
+  DeleteCopList(cp);
 }
 
-static void MakeCopperList(CopListT *cp, UWORD num) {
+static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopShowPlayfield(cp, screen[num]);
+  CopMakePlayfield(cp, bplptr, screen[active]);
   CopLoadPal(cp, flares->palette, 0);
   CopEnd(cp);
 }
 
 static void Init() {
-  MakeCopperList(cp[0], 0);
-  MakeCopperList(cp[1], 1);
-  CopListActivate(cp[active]);
+  MakeCopperList(cp);
+  CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 }
 
@@ -90,8 +89,8 @@ static void Render() {
   ITER(i, 0, 2, BlitterSetSync(screen[active], i, 0, 0, 96 * 2 + SIZE, 96 * 2 + SIZE, 0));
   DrawPlotter();
 
-  CopListRun(cp[active]);
   WaitVBlank();
+  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   active ^= 1;
 }
 

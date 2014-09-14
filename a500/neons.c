@@ -62,8 +62,6 @@ static void UnLoad() {
   DeleteBitmap(screen[1]);
 }
 
-static volatile LONG swapScreen = -1;
-
 static void RotatePalette() {
   WORD f = frameCount * 128;
   WORD i;
@@ -87,18 +85,6 @@ static void RotatePalette() {
 
 static __interrupt_handler void IntLevel3Handler() {
   if (custom->intreqr & INTF_VERTB) {
-    if (swapScreen >= 0) {
-      BitmapT *buffer = screen[swapScreen];
-      WORD n = buffer->depth;
-
-      while (--n >= 0) {
-        CopInsSet32(bplptr[n], buffer->planes[n]);
-        custom->bplpt[n] = buffer->planes[n];
-      }
-
-      swapScreen = -1;
-    }
-
     asm volatile("" ::: "d0", "d1", "a0", "a1");
     RotatePalette();
   }
@@ -176,9 +162,9 @@ static void Render() {
   ClearCliparts();
   DrawCliparts();
 
-  swapScreen = active;
-  active ^= 1;
   WaitVBlank();
+  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  active ^= 1;
 }
 
 EffectT Effect = { Load, UnLoad, Init, NULL, Render };
