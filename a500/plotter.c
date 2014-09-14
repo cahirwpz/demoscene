@@ -42,15 +42,24 @@ static void UnLoad() {
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, bplptr, screen[active]);
+  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
   CopLoadPal(cp, flares->palette, 0);
   CopEnd(cp);
 }
 
 static void Init() {
+  UWORD i;
+
   MakeCopperList(cp);
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
+
+  for (i = 0; i < DEPTH; i++) {
+    BlitterClear(screen[0], i);
+    WaitBlitter();
+    BlitterClear(screen[1], i);
+    WaitBlitter();
+  }
 }
 
 #define BLTOP_NAME AddFlare

@@ -57,7 +57,7 @@ static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopLoadPal(cp, palette[0], 0);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, bplptr[0], screen[active]);
+  CopMakePlayfield(cp, bplptr[0], screen[active], DEPTH);
   CopWait(cp, Y(127), 0);
   CopLoadPal(cp, palette[1], 0);
   CopWait(cp, Y(128), 0);
@@ -131,7 +131,7 @@ static void DrawShape() {
 #include "bltop_inc_sat.h"
 
 static void Render() {
-  LONG lines = ReadLineCounter();
+  //LONG lines = ReadLineCounter();
 
   if (iterCount++ & 1)
     DecrementAndSaturate();
@@ -140,7 +140,7 @@ static void Render() {
 
   ITER(i, 0, 3, BlitterCopySync(screen[active], i, 16, 0, buffer, i));
 
-  Log("loop: %ld\n", ReadLineCounter() - lines);
+  //Log("loop: %ld\n", ReadLineCounter() - lines);
 
   WaitVBlank();
   ITER(i, 0, 3, {

@@ -365,7 +365,7 @@ __regargs ShapeT *LoadShape(char *filename) {
       if (!ReadNumber(&data, &n))
         goto error;
 
-      Log("Polygon %ld at %ld:", (LONG)i, (LONG)j);
+      // Log("Polygon %ld at %ld:", (LONG)i, (LONG)j);
 
       shape->polygon[i].vertices = n + 1;
       shape->polygon[i].index = j;
@@ -379,11 +379,11 @@ __regargs ShapeT *LoadShape(char *filename) {
           goto error;
 
         shape->polygonVertex[j++] = tmp;
-        Log(" %ld", (LONG)tmp);
+        // Log(" %ld", (LONG)tmp);
       }
       shape->polygonVertex[j++] = shape->polygonVertex[k];
 
-      Log(" %ld\n", (LONG)shape->polygonVertex[k]);
+      // Log(" %ld\n", (LONG)shape->polygonVertex[k]);
     }
 
     FreeAutoMem(file);

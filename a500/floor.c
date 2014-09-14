@@ -89,7 +89,7 @@ static void MakeCopperList(CopListT *cp, WORD num) {
 
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopShowPlayfield(cp, screen[num]);
+  CopMakePlayfield(cp, NULL, screen[num], DEPTH);
   CopSetRGB(cp, 0, 0);
   CopSetRGB(cp, 1, 0);
   CopSetRGB(cp, 2, 0);
@@ -130,6 +130,11 @@ static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 
   for (i = 0; i < 2; i++) {
+    BlitterClear(screen[i], 0);
+    WaitBlitter();
+    BlitterClear(screen[i], 1);
+    WaitBlitter();
+
     BlitterLineSetup(screen[i], 0, LINE_EOR, LINE_ONEDOT);
     BlitterLine(WIDTH - 1, 0, WIDTH - 1, FAR_Y - 1);
     WaitBlitter();
@@ -145,7 +150,6 @@ static void Init() {
     WaitBlitter();
   }
 }
-
 
 static void ClearFloor() {
   BitmapT *buffer = screen[active];

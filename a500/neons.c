@@ -95,7 +95,7 @@ static __interrupt_handler void IntLevel3Handler() {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[active]);
+  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   pal = CopLoadPal(cp, palette, 0);
   CopEnd(cp);
@@ -111,6 +111,11 @@ static void Init() {
 
   ITER(i, 0, 3, BlitterCopySync(screen[0], i, 0, 0, background, i));
   ITER(i, 0, 3, BlitterCopySync(screen[1], i, 0, 0, background, i));
+
+  BlitterClear(screen[0], 4);
+  WaitBlitter();
+  BlitterClear(screen[1], 4);
+  WaitBlitter();
 
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_VERTB;

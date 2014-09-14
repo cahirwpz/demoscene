@@ -9,6 +9,7 @@
 
 #define WIDTH 320
 #define HEIGHT 256
+#define DEPTH 5
 #define SIZE 80
 
 /* Triple buffering. */
@@ -78,7 +79,7 @@ static void SetInitialPositions() {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[active]);
+  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopLoadPal(cp, metaball->palette, 0);
   CopEnd(cp);
@@ -151,7 +152,7 @@ static void PositionMetaballs() {
 }
 
 static void Render() {
-  LONG lines = ReadLineCounter();
+  // LONG lines = ReadLineCounter();
 
   // This takes about 100 lines. Could we do better?
   ClearMetaballs();
@@ -161,7 +162,7 @@ static void Render() {
   AddMetaball(pos[active][1].x, pos[active][1].y, 0, 0);
   AddMetaball(pos[active][2].x, pos[active][2].y, 0, 0);
 
-  Log("loop: %ld\n", ReadLineCounter() - lines);
+  // Log("loop: %ld\n", ReadLineCounter() - lines);
 
   swapScreen = active;
 

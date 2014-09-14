@@ -43,13 +43,12 @@ static BitmapT *carsBg;
 static BitmapT *carsTop;
 static BitmapT *carsBottom;
 static SpriteT *nullspr;
-static BitmapT *title;
 static SpriteT *sprite[8];
+static PaletteT *spritePal;
 
 static void Load() {
   lanes[0] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
   lanes[1] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
-  title = LoadILBM("data/sprite128.ilbm", FALSE);
   carsBg = LoadILBM("data/cars-bg.ilbm", FALSE);
   carsTop = LoadILBM("data/cars-top.ilbm", FALSE);
   carsBottom = LoadILBM("data/cars-bottom.ilbm", FALSE);
@@ -58,7 +57,12 @@ static void Load() {
   carry = NewBitmap(HSIZE + 16, VSIZE, 2, FALSE);
   nullspr = NewSprite(0, FALSE);
 
-  ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, title, 16 * i, 0));
+  {
+    BitmapT *title = LoadILBM("data/sprite128.ilbm", FALSE);
+    ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, title, 16 * i, 0));
+    spritePal = title->palette;
+    DeleteBitmap(title);
+  }
 
   cp[0] = NewCopList(300);
   cp[1] = NewCopList(300);
@@ -77,10 +81,10 @@ static void UnLoad() {
   DeleteBitmap(carsBottom);
   DeletePalette(carsBg->palette);
   DeleteBitmap(carsBg);
+  DeletePalette(spritePal);
   DeleteBitmap(carry);
   DeleteBitmap(lanes[0]);
   DeleteBitmap(lanes[1]);
-  DeleteBitmap(title);
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
 }
@@ -88,10 +92,10 @@ static void UnLoad() {
 static void MakeCopperList(CopListT *cp, WORD num) {
   CopInit(cp);
   CopMakeSprites(cp, sprptr[num], nullspr);
-  CopLoadPal(cp, title->palette, 16);
-  CopLoadPal(cp, title->palette, 20);
-  CopLoadPal(cp, title->palette, 24);
-  CopLoadPal(cp, title->palette, 28);
+  CopLoadPal(cp, spritePal, 16);
+  CopLoadPal(cp, spritePal, 20);
+  CopLoadPal(cp, spritePal, 24);
+  CopLoadPal(cp, spritePal, 28);
 
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopShowPlayfield(cp, carsTop);
@@ -154,6 +158,10 @@ static void Init() {
   MakeCopperList(cp[1], 1);
   CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
+}
+
+static void Kill() {
+  custom->dmacon = DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
 }
 
 static inline void CarInit(Car *car) {

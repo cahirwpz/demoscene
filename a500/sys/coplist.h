@@ -68,7 +68,7 @@ static inline void CopEnd(CopListT *list) {
 
   list->curr = (CopInsT *)ins;
 
-  Log("Copper list entries: %ld.\n", (LONG)(list->curr - list->entry));
+  // Log("Copper list entries: %ld.\n", (LONG)(list->curr - list->entry));
 }
 
 #define CSREG(reg) (UWORD)offsetof(struct Custom, reg)
@@ -91,21 +91,21 @@ static inline void CopInsSetRGB24(CopInsT *ins, UBYTE r, UBYTE g, UBYTE b) {
   ins->move.data = ((r & 0xf0) << 4) | (g & 0xf0) | ((b & 0xf0) >> 4);
 }
  
-static inline void CopMakePlayfield(CopListT *list, CopInsT **bplptr, BitmapT *bitmap) {
+static inline void CopMakePlayfield(CopListT *list, CopInsT **bplptr, BitmapT *bitmap, UWORD depth) {
   UWORD i, modulo;
 
-  CopMove16(list, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR |
+  CopMove16(list, bplcon0, BPLCON0_BPU(depth) | BPLCON0_COLOR |
             (bitmap->width > 512 ? BPLCON0_HIRES : 0));
   CopMove16(list, bplcon1, 0);
   CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
   CopMove16(list, bplcon3, 0);
   
-  modulo = bitmap->interleaved ? (bitmap->bytesPerRow * (bitmap->depth - 1)) : 0;
+  modulo = bitmap->interleaved ? (bitmap->bytesPerRow * (depth - 1)) : 0;
 
   CopMove16(list, bpl1mod, modulo);
   CopMove16(list, bpl2mod, modulo);
 
-  for (i = 0; i < bitmap->depth; i++) {
+  for (i = 0; i < depth; i++) {
     CopInsT *bplpt = CopMove32(list, bplpt[i], bitmap->planes[i]);
 
     if (bplptr)
