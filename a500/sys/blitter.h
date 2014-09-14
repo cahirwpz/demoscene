@@ -38,6 +38,7 @@ void BlitterCopyAreaSync(BitmapT *dst, UWORD dstbpl, UWORD dx, UWORD dy,
                          UWORD sx, UWORD sy, UWORD sw, UWORD sh);
 void BlitterSetSync(BitmapT *dst, UWORD dstbpl,
                     UWORD x, UWORD y, UWORD w, UWORD h, UWORD val);
+void BlitterAddSaturatedSync(BitmapT *dst, WORD dx, WORD dy, BitmapT *src, BitmapT *carry);
 
 static inline BOOL BlitterBusy() {
   return custom->dmaconr & DMAF_BLTDONE;

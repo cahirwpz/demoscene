@@ -184,81 +184,6 @@ static void AddCar() {
   }
 }
 
-/* Bitplane adder with saturation. */
-static void BlitterAddSaturatedSync(BitmapT *dst, WORD dx, WORD dy, BitmapT *src) {
-  ULONG dst_begin = ((dx & ~15) >> 3) + dy * dst->bytesPerRow;
-  UWORD dst_modulo = (dst->bytesPerRow - src->bytesPerRow) - 2;
-  UWORD src_shift = (dx & 15) << ASHIFTSHIFT;
-  UWORD bltsize = (src->height << 6) | ((src->width + 16) >> 4);
-  APTR *__src = src->planes;
-  APTR *__dst = dst->planes;
-  APTR *__carry = carry->planes;
-  WORD i, k;
-
-  WaitBlitter();
-
-  /* Initialize blitter */
-  custom->bltamod = -2;
-  custom->bltbmod = dst_modulo;
-  custom->bltcmod = 0;
-  custom->bltcon1 = 0;
-  custom->bltafwm = -1;
-  custom->bltalwm = 0;
-
-  /* Bitplane 0: half adder with carry. */
-  custom->bltapt = __src[0];
-  custom->bltbpt = __dst[0] + dst_begin;
-  custom->bltdpt = __carry[0];
-  custom->bltdmod = 0;
-  custom->bltcon0 = HALF_ADDER_CARRY | src_shift;
-  custom->bltsize = bltsize;
-
-  WaitBlitter();
-  custom->bltapt = __src[0];
-  custom->bltbpt = __dst[0] + dst_begin;
-  custom->bltdpt = __dst[0] + dst_begin;
-  custom->bltdmod = dst_modulo;
-  custom->bltcon0 = HALF_ADDER | src_shift;
-  custom->bltsize = bltsize;
-
-  /* Bitplane 1-n: full adder with carry. */
-  for (i = 1, k = 0; i < dst->depth; i++, k ^= 1) {
-    WaitBlitter();
-    custom->bltapt = __src[i];
-    custom->bltbpt = __dst[i] + dst_begin;
-    custom->bltcpt = __carry[k];
-    custom->bltdpt = __carry[k ^ 1];
-    custom->bltdmod = 0;
-    custom->bltcon0 = FULL_ADDER_CARRY | src_shift;
-    custom->bltsize = bltsize;
-
-    WaitBlitter();
-    custom->bltapt = __src[i];
-    custom->bltbpt = __dst[i] + dst_begin;
-    custom->bltcpt = __carry[k];
-    custom->bltdpt = __dst[i] + dst_begin;
-    custom->bltdmod = dst_modulo;
-    custom->bltcon0 = FULL_ADDER | src_shift;
-    custom->bltsize = bltsize;
-  }
-
-  /* Apply saturation bits. */
-  WaitBlitter();
-  custom->bltamod = dst_modulo;
-  custom->bltbmod = 0;
-  custom->bltdmod = dst_modulo;
-  custom->bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
-  custom->bltalwm = -1;
-
-  for (i = 0; i < dst->depth; i++) {
-    WaitBlitter();
-    custom->bltapt = __dst[i] + dst_begin;
-    custom->bltbpt = __carry[k];
-    custom->bltdpt = __dst[i] + dst_begin;
-    custom->bltsize = bltsize;
-  }
-}
-
 /* Draw each active cars. */
 static void DrawCars(WORD step) {
   WORD i;
@@ -270,18 +195,18 @@ static void DrawCars(WORD step) {
       WORD x = (car->x + 7) / 16;
 
       if (car->side)
-        BlitterAddSaturatedSync(lanes[active], x, car->y + LANE_H, carsR);
+        BlitterAddSaturatedSync(lanes[active], x, car->y + LANE_H, carsR, carry);
       else
-        BlitterAddSaturatedSync(lanes[active], LANE_W - x, car->y, carsL);
+        BlitterAddSaturatedSync(lanes[active], LANE_W - x, car->y, carsL, carry);
 
       CarMove(car, step);
     }
   }
 }
 
-static WORD iterCount = 0;
-
 static void Render() {
+  static WORD iterCount = 0;
+
 #if 0
   ITER(i, 0, 3, BlitterSetSync(laneL[active], i, HSIZE, 0, WIDTH, LANE_H, 0));
   ITER(i, 0, 3, BlitterSetSync(laneR[active], i, HSIZE, LANE_H, WIDTH, LANE_H, 0));
