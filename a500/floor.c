@@ -117,7 +117,7 @@ static void Load() {
   ITER(i, 0, TILES * TILES - 1, texture[i] = random() & 0xfff);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
   DeleteBitmap(screen[0]);
@@ -369,27 +369,25 @@ static void Init() {
   }
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    LONG frameCount = ReadFrameCounter();
+static void Render() {
+  LONG frameCount = ReadFrameCounter();
 
-    WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
-    WORD yo = (N / 2) + normfx(COS(frameCount * 16) * (N / 2));
-    WORD kxo = 7 - xo * SIZE / N;
-    WORD kyo = 7 - yo * SIZE / N;
+  WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
+  WORD yo = (N / 2) + normfx(COS(frameCount * 16) * (N / 2));
+  WORD kxo = 7 - xo * SIZE / N;
+  WORD kyo = 7 - yo * SIZE / N;
 
-    ClearLines();
-    ClearFloor();
-    DrawStripes(xo, kxo);
-    FillStripes();
-    HorizontalStripes(yo);
-    CalculateTileColumns(yo, kyo);
-    AssignColorToTiles(kxo);
+  ClearLines();
+  ClearFloor();
+  DrawStripes(xo, kxo);
+  FillStripes();
+  HorizontalStripes(yo);
+  CalculateTileColumns(yo, kyo);
+  AssignColorToTiles(kxo);
 
-    CopListRun(cp[active]);
-    WaitVBlank();
-    active ^= 1;
-  }
+  CopListRun(cp[active]);
+  WaitVBlank();
+  active ^= 1;
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

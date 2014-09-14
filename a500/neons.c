@@ -60,7 +60,7 @@ static void Load() {
   ITER(i, 0, PNUM - 1, p[i].y = -128);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteCopList(cp);
   DeleteBitmap(neon[0]);
   DeleteBitmap(neon[1]);
@@ -174,15 +174,13 @@ static void Init() {
   ITER(i, 0, 3, BlitterCopySync(screen[1], i, 0, 0, background, i));
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    ClearCliparts();
-    DrawCliparts();
+static void Render() {
+  ClearCliparts();
+  DrawCliparts();
 
-    swapScreen = active;
-    active ^= 1;
-    WaitVBlank();
-  }
+  swapScreen = active;
+  active ^= 1;
+  WaitVBlank();
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

@@ -130,7 +130,7 @@ static void Load() {
   MakeCopperList(cp[1], 1);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteSprite(nullspr);
   ITER(i, 0, 7, DeleteSprite(sprite[i]));
   DeletePalette(carsL->palette);
@@ -285,31 +285,29 @@ static void Init() {
   lastFrameCount = ReadFrameCounter();
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    frameCount = ReadFrameCounter();
+static void Render() {
+  frameCount = ReadFrameCounter();
 
 #if 0
-    ITER(i, 0, 3, BlitterSetSync(laneL[active], i, HSIZE, 0, WIDTH, LANE_H, 0));
-    ITER(i, 0, 3, BlitterSetSync(laneR[active], i, HSIZE, LANE_H, WIDTH, LANE_H, 0));
+  ITER(i, 0, 3, BlitterSetSync(laneL[active], i, HSIZE, 0, WIDTH, LANE_H, 0));
+  ITER(i, 0, 3, BlitterSetSync(laneR[active], i, HSIZE, LANE_H, WIDTH, LANE_H, 0));
 #else
-    ITER(i, 0, 3, BlitterCopySync(lanes[active], i, HSIZE, 0, carsBg, i));
-    ITER(i, 0, 3, BlitterCopySync(lanes[active], i, HSIZE, LANE_H, carsBg, i));
+  ITER(i, 0, 3, BlitterCopySync(lanes[active], i, HSIZE, 0, carsBg, i));
+  ITER(i, 0, 3, BlitterCopySync(lanes[active], i, HSIZE, LANE_H, carsBg, i));
 #endif
 
-    iterCount += frameCount - lastFrameCount;
-    while (iterCount > 10) {
-      AddCar();
-      iterCount -= 10;
-    }
-
-    DrawCars(frameCount - lastFrameCount);
-    lastFrameCount = frameCount;
-
-    CopListRun(cp[active]);
-    WaitVBlank();
-    active ^= 1;
+  iterCount += frameCount - lastFrameCount;
+  while (iterCount > 10) {
+    AddCar();
+    iterCount -= 10;
   }
+
+  DrawCars(frameCount - lastFrameCount);
+  lastFrameCount = frameCount;
+
+  CopListRun(cp[active]);
+  WaitVBlank();
+  active ^= 1;
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

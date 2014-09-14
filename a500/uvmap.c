@@ -107,7 +107,7 @@ static void Load() {
   CopEnd(cp);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
   DeletePixmap(chunky[0]);
@@ -202,26 +202,24 @@ static void Init() {
   InitChunkyToPlanar();
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    UWORD offset = ReadFrameCounter();
+static void Render() {
+  UWORD offset = ReadFrameCounter();
 
-    UBYTE *txtHi = textureHi->pixels + (offset & 16383);
-    UBYTE *txtLo = textureLo->pixels + (offset & 16383);
+  UBYTE *txtHi = textureHi->pixels + (offset & 16383);
+  UBYTE *txtLo = textureLo->pixels + (offset & 16383);
 
-    {
-      // LONG lines = ReadLineCounter();
-      (*UVMapRender)(chunky[active]->pixels, txtHi, txtLo);
-      // Log("uvmap: %ld\n", ReadLineCounter() - lines);
-    }
-
-    c2p.phase = 0;
-    c2p.screen = screen[active];
-    c2p.chunky = chunky[active];
-    ChunkyToPlanar();
-
-    active ^= 1;
+  {
+    // LONG lines = ReadLineCounter();
+    (*UVMapRender)(chunky[active]->pixels, txtHi, txtLo);
+    // Log("uvmap: %ld\n", ReadLineCounter() - lines);
   }
+
+  c2p.phase = 0;
+  c2p.screen = screen[active];
+  c2p.chunky = chunky[active];
+  ChunkyToPlanar();
+
+  active ^= 1;
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

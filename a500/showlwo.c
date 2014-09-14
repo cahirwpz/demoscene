@@ -163,7 +163,7 @@ static void Load() {
   MakeCopperList(cp[1], 1);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteObject3D(cube);
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
@@ -208,37 +208,35 @@ static void Init() {
 
 static Point3D rotate = { 0, 0, 0 };
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    Matrix3D t;
+static void Render() {
+  Matrix3D t;
 
-    rotate.x += 16;
-    rotate.y += 16;
-    rotate.z += 16;
+  rotate.x += 16;
+  rotate.y += 16;
+  rotate.z += 16;
 
-    {
-      LONG lines = ReadLineCounter();
-      LoadRotate3D(&t, rotate.x, rotate.y, rotate.z);
-      Translate3D(&t, 0, 0, fx4i(-250));
-      Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
+  {
+    LONG lines = ReadLineCounter();
+    LoadRotate3D(&t, rotate.x, rotate.y, rotate.z);
+    Translate3D(&t, 0, 0, fx4i(-250));
+    Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
 
-      CalculatePerspective(cube->cameraPoint, cube->points);
-      Log("transform: %ld\n", ReadLineCounter() - lines);
-    }
-
-    BlitterClear(screen[active], 0);
-    WaitBlitter();
-
-    {
-      LONG lines = ReadLineCounter();
-      DrawObject(cube);
-      Log("draw: %ld\n", ReadLineCounter() - lines);
-    }
-
-    CopListRun(cp[active]);
-    WaitVBlank();
-    active ^= 1;
+    CalculatePerspective(cube->cameraPoint, cube->points);
+    Log("transform: %ld\n", ReadLineCounter() - lines);
   }
+
+  BlitterClear(screen[active], 0);
+  WaitBlitter();
+
+  {
+    LONG lines = ReadLineCounter();
+    DrawObject(cube);
+    Log("draw: %ld\n", ReadLineCounter() - lines);
+  }
+
+  CopListRun(cp[active]);
+  WaitVBlank();
+  active ^= 1;
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

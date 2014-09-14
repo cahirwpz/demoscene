@@ -17,6 +17,7 @@
 typedef struct Effect {
   /* Call it while OS is active. Loads resources from disk. */
   void (*Load)();
+  void (*UnLoad)();
   /*
    * Does all initialization steps required to launch the effect.
    * 1) Allocate required memory.
@@ -27,8 +28,10 @@ typedef struct Effect {
   void (*Init)();
   /* Frees all resources allocated in "Init" and "Load" step. */
   void (*Kill)();
-  /* Runs main loop of the effect. */
-  void (*Loop)();
+  /* Renders single frame of an effect. */
+  void (*Render)();
+  /* Handles all events and returns FALSE to break loop. */
+  BOOL (*HandleEvent)();
 } EffectT;
 
 #endif

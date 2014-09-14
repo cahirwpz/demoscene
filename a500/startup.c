@@ -21,6 +21,9 @@ struct DosLibrary *DOSBase = NULL;
 struct GfxBase *GfxBase = NULL;
 struct Library *MathBase = NULL;
 
+static void DummyRender() {}
+static BOOL ExitOnLMB() { return !LeftMouseButton(); }
+
 int main() {
   DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 33);
   GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 33);
@@ -76,11 +79,19 @@ int main() {
       custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
       custom->intena = INTF_SETCLR | INTF_INTEN;
 
+      if (!Effect.Render)
+        Effect.Render = DummyRender;
+      if (!Effect.HandleEvent)
+        Effect.HandleEvent = ExitOnLMB;
+
       if (Effect.Init)
         Effect.Init();
 
-      if (Effect.Loop)
-        Effect.Loop();
+      while (Effect.HandleEvent())
+        Effect.Render();
+
+      if (Effect.Kill)
+        Effect.Kill();
 
       /* firstly... disable dma and interrupts that were used in Main */
       custom->dmacon = (UWORD)~DMAF_SETCLR;
@@ -113,8 +124,8 @@ int main() {
     /* Deallocate blitter. */
     DisownBlitter();
 
-    if (Effect.Kill)
-      Effect.Kill();
+    if (Effect.UnLoad)
+      Effect.UnLoad();
   }
 
   if (MathBase)

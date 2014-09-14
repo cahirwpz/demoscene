@@ -11,7 +11,7 @@ static void Load() {
   module = ReadFile("data/jazzcat-electric_city.ahx", MEMF_PUBLIC);
 }
 
-static void Kill() {
+static void UnLoad() {
   FreeAutoMem(module);
 }
 
@@ -43,22 +43,20 @@ static void Init() {
 
   InterruptVector->IntLevel2 = IntLevel2Handler;
   custom->intena = INTF_SETCLR | INTF_PORTS;
-}
 
-static void Loop() {
-  if (AhxInitCIA((APTR)AhxSetTempo, AHX_KILL_SYSTEM) == 0) {
-    /* Use AHX_EXPLICIT_WAVES_PRECALCING flag,
-     * because dos.library is not usable at this point. */
-    if (AhxInitPlayer(AHX_EXPLICIT_WAVES_PRECALCING, AHX_FILTERS) == 0) {
-      if (AhxInitModule(module) == 0) {
+  /* Use AHX_EXPLICIT_WAVES_PRECALCING flag,
+   * because dos.library is not usable at this point. */
+
+  if (AhxInitCIA((APTR)AhxSetTempo, AHX_KILL_SYSTEM) == 0)
+    if (AhxInitPlayer(AHX_EXPLICIT_WAVES_PRECALCING, AHX_FILTERS) == 0)
+      if (AhxInitModule(module) == 0)
         AhxInitSubSong(0, 0);
-        WaitMouse();
-        AhxStopSong();
-      }
-      AhxKillPlayer();
-    }
-    AhxKillCIA();
-  }
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+static void Kill() {
+  AhxStopSong();
+  AhxKillPlayer();
+  AhxKillCIA();
+}
+
+EffectT Effect = { Load, UnLoad, Init, Kill, NULL };

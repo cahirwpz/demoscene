@@ -40,7 +40,7 @@ static void Load() {
   MakeCopperList(cp[1], 1);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeletePalette(flares->palette);
   DeleteBitmap(flares);
   DeleteBitmap(carry);
@@ -89,17 +89,15 @@ static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    frameCount = ReadFrameCounter();
+static void Render() {
+  frameCount = ReadFrameCounter();
 
-    ITER(i, 0, 2, BlitterSetSync(screen[active], i, 0, 0, 96 * 2 + SIZE, 96 * 2 + SIZE, 0));
-    DrawPlotter();
+  ITER(i, 0, 2, BlitterSetSync(screen[active], i, 0, 0, 96 * 2 + SIZE, 96 * 2 + SIZE, 0));
+  DrawPlotter();
 
-    CopListRun(cp[active]);
-    WaitVBlank();
-    active ^= 1;
-  }
+  CopListRun(cp[active]);
+  WaitVBlank();
+  active ^= 1;
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

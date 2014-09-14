@@ -49,7 +49,7 @@ static void Load() {
   ClipWin.maxY = fx4i(255);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteShape(shape);
   DeleteCopList(cp);
   DeleteBitmap(screen);
@@ -106,43 +106,41 @@ static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    LONG frameCount = ReadFrameCounter();
-    WORD i, a = frameCount * 64;
-    Matrix2D t;
+static void Render() {
+  LONG frameCount = ReadFrameCounter();
+  WORD i, a = frameCount * 64;
+  Matrix2D t;
 
-    BlitterClear(screen, plane);
-    WaitBlitter();
+  BlitterClear(screen, plane);
+  WaitBlitter();
 
-    LoadIdentity2D(&t);
-    Rotate2D(&t, frameCount * 8);
-    Scale2D(&t, fx12f(1.0) + SIN(a) / 2, fx12f(1.0) + COS(a) / 2);
-    Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
-    Transform2D(&t, shape->viewPoint, shape->origPoint, shape->points);
-    PointsInsideBox(shape->viewPoint, shape->viewPointFlags, shape->points);
+  LoadIdentity2D(&t);
+  Rotate2D(&t, frameCount * 8);
+  Scale2D(&t, fx12f(1.0) + SIN(a) / 2, fx12f(1.0) + COS(a) / 2);
+  Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
+  Transform2D(&t, shape->viewPoint, shape->origPoint, shape->points);
+  PointsInsideBox(shape->viewPoint, shape->viewPointFlags, shape->points);
 
-    {
-      // LONG lines = ReadLineCounter();
-      DrawShape(shape);
-      // Log("draw: %ld\n", ReadLineCounter() - lines);
-    }
-
-    BlitterFill(screen, plane);
-    WaitBlitter();
-
-    WaitVBlank();
-
-    for (i = 0; i < screen->depth; i++) {
-      WORD j = (plane + i) % DEPTH;
-      CopInsSet32(bplptr[i], screen->planes[j]);
-    }
-
-    if (planeC & 1)
-      plane = (plane + 1) % DEPTH;
-
-    planeC ^= 1;
+  {
+    // LONG lines = ReadLineCounter();
+    DrawShape(shape);
+    // Log("draw: %ld\n", ReadLineCounter() - lines);
   }
+
+  BlitterFill(screen, plane);
+  WaitBlitter();
+
+  WaitVBlank();
+
+  for (i = 0; i < screen->depth; i++) {
+    WORD j = (plane + i) % DEPTH;
+    CopInsSet32(bplptr[i], screen->planes[j]);
+  }
+
+  if (planeC & 1)
+    plane = (plane + 1) % DEPTH;
+
+  planeC ^= 1;
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

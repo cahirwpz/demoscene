@@ -89,7 +89,7 @@ static void Load() {
   }
 }
 
-void Kill() {
+static void UnLoad() {
   DeleteCopList(cp);
   DeletePixmap(chunky);
   DeleteBitmap(screen);
@@ -120,14 +120,12 @@ static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    LONG lines = ReadLineCounter();
-    ChunkyToCopList();
-    Log("copy: %ld\n", ReadLineCounter() - lines);
+static void Render() {
+  LONG lines = ReadLineCounter();
+  ChunkyToCopList();
+  Log("copy: %ld\n", ReadLineCounter() - lines);
 
-    WaitVBlank();
-  }
+  WaitVBlank();
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

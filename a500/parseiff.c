@@ -1,3 +1,4 @@
+#undef __CONSTLIBBASEDECL__
 #include <proto/exec.h>
 #include <proto/dos.h>
 

@@ -72,11 +72,9 @@ static void Load() {
   CopInsSet32(bpls[1], screen->planes[0]);
   CopInsSet32(bpls[2], screen->planes[2]);
   CopInsSet32(bpls[3], screen->planes[2]);
-
-  Print("Copper list entries: %ld\n", (LONG)(cp->curr - cp->entry));
 }
 
-void Kill() {
+static void UnLoad() {
   DeletePalette(chunky->palette);
   DeletePixmap(chunky);
   DeleteBitmap(screen);
@@ -144,14 +142,12 @@ static void Init() {
   InitChunkyToPlanar();
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    LONG lines = ReadLineCounter();
-    ChunkyToPlanar();
-    Log("c2p: %ld\n", ReadLineCounter() - lines);
+static void Render() {
+  LONG lines = ReadLineCounter();
+  ChunkyToPlanar();
+  Log("c2p: %ld\n", ReadLineCounter() - lines);
 
-    WaitVBlank();
-  }
+  WaitVBlank();
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

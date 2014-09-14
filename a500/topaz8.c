@@ -35,7 +35,7 @@ static void Load() {
   ConsoleInit(&console, screen, topaz8);
 }
 
-static void Kill() {
+static void UnLoad() {
   CloseFont(topaz8);
   DeleteCopList(cp);
   DeleteBitmap(screen);
@@ -44,16 +44,13 @@ static void Kill() {
 static void Init() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
-}
 
-static void Loop() {
   ConsoleDrawBox(&console, 10, 10, 20, 20);
   ConsoleSetCursor(&console, 2, 2);
   ConsolePrint(&console, "Running on Kickstart %ld.%ld.\n",
                (LONG)SysBase->LibNode.lib_Version,
                (LONG)SysBase->LibNode.lib_Revision);
   ConsolePutStr(&console, "The quick brown fox jumps\nover the lazy dog\n");
-  WaitMouse();
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, NULL };

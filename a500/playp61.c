@@ -43,7 +43,7 @@ static void Load() {
   ConsoleInit(&console, screen, topaz8);
 }
 
-static void Kill() {
+static void UnLoad() {
   FreeAutoMem(module);
   CloseFont(topaz8);
   DeleteCopList(cp);
@@ -133,79 +133,85 @@ static void Init() {
       BlitterLineSync(x2, y1, x2, y2);
     }
   }
-}
 
-static void Loop() {
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
   ConsolePutStr(&console, "Exit (ESC) | Pause (SPACE)\n");
+}
 
-  while (1) {
-    KeyEventT event;
-    WORD i;
-
-    if (GetKeyEvent(&event)) {
-      if (event.modifier & MOD_PRESSED)
-        continue;
-
-      if (event.code == KEY_ESCAPE)
-        break;
-
-      if (event.code == KEY_SPACE) {
-        P61_ControlBlock.Play ^= 1;
-        if (P61_ControlBlock.Play)
-          custom->dmacon = DMAF_SETCLR | DMAF_AUDIO;
-        else
-          custom->dmacon = DMAF_AUDIO;
-      }
-    }
-
-    ConsoleSetCursor(&console, 0, 2);
-    ConsolePrint(&console, "Position : %02ld/%02ld\n\n",
-                 (LONG)P61_ControlBlock.Pos, (LONG)P61_ControlBlock.Row);
-
-    ConsolePrint(&console, "Ch | Ins Cmd Vol Visu\n");
-    for (i = 0; i < 4; i++) {
-      P61_ChannelBlock *ch = P61_CHANNEL(i);
-      /* Command upper 4 bits store instrument number. */
-      WORD cmd = ((ch->Command & 15) << 8) | ch->Info;
-      WORD ins = (ch->Command >> 4) | ((ch->SN_Note & 1) << 4);
-      ConsolePrint(&console, " %ld |  %02lx %03lx  %02ld %04lx\n",
-                   (LONG)i, (LONG)ins, (LONG)cmd,
-                   (LONG)(ch->Volume), (LONG)P61_visuctr[i]);
-    }
-
-
-    if (P61_ControlBlock.Play) {
-      WaitLine(Y(96));
-
-      for (i = 0; i < 4; i++) {
-        P61_OscData data;
-
-        BlitterClear(osc[i], 0);
-        WaitBlitter();
-
-        if (P61_Osc(P61_CHANNEL(i), &data))
-          DrawOsc(osc[i], &data);
-
-        BlitterLineSetup(osc[i], 0, LINE_OR, LINE_SOLID);
-        BlitterLine(32, 0, 32, 64);
-        WaitBlitter();
-      }
-
-      for (i = 0; i < 4; i++) {
-        WORD x = 8 + 72 * i;
-        WORD y = 80;
-        BlitterCopySync(screen, 0, x, y, osc[i], 0);
-      }
-    }
-
-    WaitVBlank();
-  }
-
+static void Kill() {
   P61_ControlBlock.Play = 0;
   P61_End();
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+static void Render() {
+  WORD i;
+
+  ConsoleSetCursor(&console, 0, 2);
+  ConsolePrint(&console, "Position : %02ld/%02ld\n\n",
+               (LONG)P61_ControlBlock.Pos, (LONG)P61_ControlBlock.Row);
+
+  ConsolePrint(&console, "Ch | Ins Cmd Vol Visu\n");
+  for (i = 0; i < 4; i++) {
+    P61_ChannelBlock *ch = P61_CHANNEL(i);
+    /* Command upper 4 bits store instrument number. */
+    WORD cmd = ((ch->Command & 15) << 8) | ch->Info;
+    WORD ins = (ch->Command >> 4) | ((ch->SN_Note & 1) << 4);
+    ConsolePrint(&console, " %ld |  %02lx %03lx  %02ld %04lx\n",
+                 (LONG)i, (LONG)ins, (LONG)cmd,
+                 (LONG)(ch->Volume), (LONG)P61_visuctr[i]);
+  }
+
+
+  if (P61_ControlBlock.Play) {
+    WaitLine(Y(96));
+
+    for (i = 0; i < 4; i++) {
+      P61_OscData data;
+
+      BlitterClear(osc[i], 0);
+      WaitBlitter();
+
+      if (P61_Osc(P61_CHANNEL(i), &data))
+        DrawOsc(osc[i], &data);
+
+      BlitterLineSetup(osc[i], 0, LINE_OR, LINE_SOLID);
+      BlitterLine(32, 0, 32, 64);
+      WaitBlitter();
+    }
+
+    for (i = 0; i < 4; i++) {
+      WORD x = 8 + 72 * i;
+      WORD y = 80;
+      BlitterCopySync(screen, 0, x, y, osc[i], 0);
+    }
+  }
+
+  WaitVBlank();
+}
+
+static BOOL HandleEvent() {
+  KeyEventT event;
+
+  if (!GetKeyEvent(&event))
+    return TRUE;
+
+  if (event.modifier & MOD_PRESSED)
+    return TRUE;
+
+  if (event.code == KEY_ESCAPE)
+    return FALSE;
+
+  if (event.code == KEY_SPACE) {
+    P61_ControlBlock.Play ^= 1;
+    if (P61_ControlBlock.Play)
+      custom->dmacon = DMAF_SETCLR | DMAF_AUDIO;
+    else
+      custom->dmacon = DMAF_AUDIO;
+  }
+
+  return TRUE;
+}
+
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, HandleEvent };

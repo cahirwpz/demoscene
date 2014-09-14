@@ -49,7 +49,7 @@ static void Load() {
   CopEnd(cp);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteCopList(cp);
   DeletePalette(clip->palette);
   DeleteBitmap(clip);
@@ -153,22 +153,20 @@ static void Init() {
   ITER(i, 0, 4, BlitterCopySync(screen[1], i, WIDTH / 2, 0, clip, i));
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    LONG lines = ReadLineCounter();
+static void Render() {
+  LONG lines = ReadLineCounter();
 
-    if (iterCount++ & 1)
-      DecrementAndSaturate();
-    DrawShape();
-    IncrementAndSaturate();
+  if (iterCount++ & 1)
+    DecrementAndSaturate();
+  DrawShape();
+  IncrementAndSaturate();
 
-    ITER(i, 0, 3, BlitterCopySync(screen[active], i, 16, 0, buffer, i));
+  ITER(i, 0, 3, BlitterCopySync(screen[active], i, 16, 0, buffer, i));
 
-    Log("loop: %ld\n", ReadLineCounter() - lines);
+  Log("loop: %ld\n", ReadLineCounter() - lines);
 
-    swapScreen = active;
-    active ^= 1;
-  }
+  swapScreen = active;
+  active ^= 1;
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

@@ -33,7 +33,7 @@ static void Load() {
   nullspr = NewSprite(0, FALSE);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteSprite(nullspr);
   DeleteSprite(sprite[0]);
   DeleteSprite(sprite[1]);
@@ -73,12 +73,10 @@ static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    WaitLine(Y(256));
-    MoveSprite();
-    WaitVBlank();
-  }
+static void Render() {
+  WaitLine(Y(256));
+  MoveSprite();
+  WaitVBlank();
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

@@ -21,7 +21,7 @@ static void Load() {
   CopEnd(cp);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
@@ -29,18 +29,16 @@ static void Kill() {
 static void Init() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+
+  {
+    LONG lines = ReadLineCounter();
+    WORD r;
+
+    for (r = 2; r < screen->height / 2 - 2; r += 2)
+      Circle(screen, 0, screen->width / 2, screen->height / 2, r);
+
+    Log("circles: %ld\n", ReadLineCounter() - lines);
+  }
 }
 
-static void Loop() {
-  LONG lines = ReadLineCounter();
-  WORD r;
-
-  for (r = 2; r < screen->height / 2 - 2; r += 2)
-    Circle(screen, 0, screen->width / 2, screen->height / 2, r);
-
-  Log("circles: %ld\n", ReadLineCounter() - lines);
-
-  WaitMouse();
-}
-
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init };

@@ -11,11 +11,9 @@ static UBYTE *linePos[LINES];
 static UWORD *lineColor[LINES];
 static UWORD colors[LINES][LINES];
 
-static void Load() {
+static void MakeCopperList(CopListT *cp) {
   CopInsT *ins;
   WORD i, j;
-
-  cp = NewCopList(256 * (LINES * 2 + 3) + 100);
 
   CopInit(cp);
   CopSetRGB(cp, 0, 0);
@@ -38,15 +36,24 @@ static void Load() {
   CopWait(cp, Y(256), 8);
   CopSetRGB(cp, 0, 0);
   CopEnd(cp);
+}
+
+static void MakeTileColors() {
+  WORD i, j;
 
   for (i = 0; i < LINES; i++) 
     for (j = 0; j < LINES; j++) 
       colors[i][j] = random() & 0xfff;
-
-  Log("Copper list entries: %ld.\n", (LONG)(cp->curr - cp->entry));
 }
 
-static void Kill() {
+static void Load() {
+  cp = NewCopList(256 * (LINES * 2 + 3) + 100);
+  MakeCopperList(cp);
+
+  MakeTileColors();
+}
+
+static void UnLoad() {
   DeleteCopList(cp);
 }
 
@@ -102,20 +109,18 @@ static void Init() {
   CopListActivate(cp);
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    {
-      LONG lc = ReadLineCounter();
-      ITER(i, 0, LINES - 1, CopperLine(linePos[i], 0 + i * 32, 0, 24 + i * 32, 256));
-      Log("lines: %ld\n", ReadLineCounter() - lc);
-    }
+static void Render() {
+  {
+    LONG lc = ReadLineCounter();
+    ITER(i, 0, LINES - 1, CopperLine(linePos[i], 0 + i * 32, 0, 24 + i * 32, 256));
+    Log("lines: %ld\n", ReadLineCounter() - lc);
+  }
 
-    {
-      LONG lc = ReadLineCounter();
-      SetLinesColor();
-      Log("colors: %ld\n", ReadLineCounter() - lc);
-    }
+  {
+    LONG lc = ReadLineCounter();
+    SetLinesColor();
+    Log("colors: %ld\n", ReadLineCounter() - lc);
   }
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

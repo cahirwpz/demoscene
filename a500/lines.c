@@ -23,7 +23,7 @@ static void Load() {
   CopEnd(cp);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
@@ -31,37 +31,35 @@ static void Kill() {
 static void Init() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
+
+  {
+    WORD i;
+    LONG lines = ReadLineCounter();
+
+#if CPULINE == 1
+    CpuLineSetup(screen, 0);
+#else
+    BlitterLineSetup(screen, 0, LINE_OR, LINE_SOLID);
+#endif
+
+    for (i = 0; i < screen->width; i += 2) {
+#if CPULINE == 1
+      CpuLine(i, 0, screen->width - 1 - i, screen->height - 1);
+#else
+      BlitterLineSync(i, 0, screen->width - 1 - i, screen->height - 1);
+#endif
+    }
+
+    for (i = 0; i < screen->height; i += 2) {
+#if CPULINE == 1
+      CpuLine(0, i, screen->width - 1, screen->height - 1 - i);
+#else
+      BlitterLineSync(0, i, screen->width - 1, screen->height - 1 - i);
+#endif
+    }
+
+    Log("lines: %ld\n", ReadLineCounter() - lines);
+  }
 }
 
-static void Loop() {
-  WORD i;
-  LONG lines = ReadLineCounter();
-
-#if CPULINE == 1
-  CpuLineSetup(screen, 0);
-#else
-  BlitterLineSetup(screen, 0, LINE_OR, LINE_SOLID);
-#endif
-
-  for (i = 0; i < screen->width; i += 2) {
-#if CPULINE == 1
-    CpuLine(i, 0, screen->width - 1 - i, screen->height - 1);
-#else
-    BlitterLineSync(i, 0, screen->width - 1 - i, screen->height - 1);
-#endif
-  }
-
-  for (i = 0; i < screen->height; i += 2) {
-#if CPULINE == 1
-    CpuLine(0, i, screen->width - 1, screen->height - 1 - i);
-#else
-    BlitterLineSync(0, i, screen->width - 1, screen->height - 1 - i);
-#endif
-  }
-
-  Log("lines: %ld\n", ReadLineCounter() - lines);
-
-  WaitMouse();
-}
-
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, NULL };

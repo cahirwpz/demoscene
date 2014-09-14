@@ -37,7 +37,7 @@ static void Load() {
   ClipFrustum.far = fx4i(-400);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteObject3D(cube);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
@@ -111,26 +111,24 @@ static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    LONG a = ReadFrameCounter() * 4;
-    Matrix3D t;
+static void Render() {
+  LONG a = ReadFrameCounter() * 4;
+  Matrix3D t;
 
-    BlitterClear(screen[active], 0);
-    WaitBlitter();
+  BlitterClear(screen[active], 0);
+  WaitBlitter();
 
-    LoadRotate3D(&t, a, a, a);
-    Translate3D(&t, 0, 0, fx4i(-250));
-    Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
-    PointsInsideFrustum(cube->cameraPoint, cube->cameraPointFlags, cube->points);
-    UpdatePolygonNormals(cube);
+  LoadRotate3D(&t, a, a, a);
+  Translate3D(&t, 0, 0, fx4i(-250));
+  Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
+  PointsInsideFrustum(cube->cameraPoint, cube->cameraPointFlags, cube->points);
+  UpdatePolygonNormals(cube);
 
-    DrawObject(cube);
+  DrawObject(cube);
 
-    CopListRun(cp[active]);
-    WaitVBlank();
-    active ^= 1;
-  }
+  CopListRun(cp[active]);
+  WaitVBlank();
+  active ^= 1;
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

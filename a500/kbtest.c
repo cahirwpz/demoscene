@@ -35,7 +35,7 @@ static void Load() {
   ConsoleInit(&console, screen, topaz8);
 }
 
-static void Kill() {
+static void UnLoad() {
   CloseFont(topaz8);
   DeleteCopList(cp);
   DeleteBitmap(screen);
@@ -60,52 +60,53 @@ static void Init() {
 
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
-}
 
-static void Loop() {
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
-
-  while (1) {
-    KeyEventT event;
-
-    if (GetKeyEvent(&event)) {
-      if (event.modifier & MOD_PRESSED)
-        continue;
-
-      if (event.code == KEY_ESCAPE)
-        break;
-
-      ConsoleDrawCursor(&console);
-
-      if (event.code == KEY_LEFT) {
-        if (console.cursor.x > 0)
-          console.cursor.x--;
-      }
-
-      if (event.code == KEY_RIGHT) {
-        console.cursor.x++;
-        if (console.cursor.x >= console.width)
-          console.cursor.x = console.width;
-      }
-
-      if (event.code == KEY_UP) {
-        if (console.cursor.y > 0)
-          console.cursor.y--;
-      }
-
-      if (event.code == KEY_DOWN) {
-        console.cursor.y++;
-        if (console.cursor.y >= console.height)
-          console.cursor.y = console.height;
-      }
-
-      if (event.ascii)
-        ConsolePutChar(&console, event.ascii);
-
-      ConsoleDrawCursor(&console);
-    }
-  }
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+static BOOL HandleEvent() {
+  KeyEventT event;
+
+  if (!GetKeyEvent(&event))
+    return TRUE;
+
+  if (event.modifier & MOD_PRESSED)
+    return TRUE;
+
+  if (event.code == KEY_ESCAPE)
+    return FALSE;
+
+  ConsoleDrawCursor(&console);
+
+  if (event.code == KEY_LEFT) {
+    if (console.cursor.x > 0)
+      console.cursor.x--;
+  }
+
+  if (event.code == KEY_RIGHT) {
+    console.cursor.x++;
+    if (console.cursor.x >= console.width)
+      console.cursor.x = console.width;
+  }
+
+  if (event.code == KEY_UP) {
+    if (console.cursor.y > 0)
+      console.cursor.y--;
+  }
+
+  if (event.code == KEY_DOWN) {
+    console.cursor.y++;
+    if (console.cursor.y >= console.height)
+      console.cursor.y = console.height;
+  }
+
+  if (event.ascii)
+    ConsolePutChar(&console, event.ascii);
+
+  ConsoleDrawCursor(&console);
+
+  return TRUE;
+}
+
+EffectT Effect = { Load, UnLoad, Init, NULL, NULL, HandleEvent };

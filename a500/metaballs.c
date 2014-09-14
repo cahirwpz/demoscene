@@ -48,7 +48,7 @@ static void Load() {
   }
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteCopList(cp);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
@@ -147,26 +147,24 @@ static void Init() {
   });
 }
 
-static void Loop() {
-  while (!LeftMouseButton()) {
-    LONG lines = ReadLineCounter();
+static void Render() {
+  LONG lines = ReadLineCounter();
 
-    // This takes about 100 lines. Could we do better?
-    ClearMetaballs();
-    PositionMetaballs();
+  // This takes about 100 lines. Could we do better?
+  ClearMetaballs();
+  PositionMetaballs();
 
-    CopyMetaball(pos[active][0].x, pos[active][0].y);
-    AddMetaball(pos[active][1].x, pos[active][1].y, 0, 0);
-    AddMetaball(pos[active][2].x, pos[active][2].y, 0, 0);
+  CopyMetaball(pos[active][0].x, pos[active][0].y);
+  AddMetaball(pos[active][1].x, pos[active][1].y, 0, 0);
+  AddMetaball(pos[active][2].x, pos[active][2].y, 0, 0);
 
-    Log("loop: %ld\n", ReadLineCounter() - lines);
+  Log("loop: %ld\n", ReadLineCounter() - lines);
 
-    swapScreen = active;
+  swapScreen = active;
 
-    active++;
-    if (active > 2)
-      active = 0;
-  }
+  active++;
+  if (active > 2)
+    active = 0;
 }
 
-EffectT Effect = { Load, Init, Kill, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, Render };

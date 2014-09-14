@@ -12,7 +12,7 @@ static void Load() {
   cp = NewCopList(100);
 }
 
-static void Kill() {
+static void UnLoad() {
   DeleteCopList(cp);
   DeletePalette(bitmap->palette);
   DeleteBitmap(bitmap);
@@ -29,8 +29,4 @@ static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 }
 
-static void Loop() {
-  WaitMouse();
-}
-
-EffectT Effect = { Load, Kill, Init, Loop };
+EffectT Effect = { Load, UnLoad, Init, NULL, NULL };
