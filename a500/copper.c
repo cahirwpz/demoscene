@@ -1,6 +1,5 @@
 #include "hardware.h"
 #include "coplist.h"
-#include "interrupts.h"
 #include "random.h"
 
 #define X(x) ((x) + 0x80)
@@ -51,21 +50,6 @@ void Load() {
 
 void Kill() {
   DeleteCopList(cp);
-}
-
-__interrupt_handler void IntLevel3Handler() {
-  static ULONG frameNumber = 0;
-
-  if (custom->intreqr & INTF_VERTB) {
-    frameNumber++;
-  }
-
-  /*
-   * Clear interrupt flags for this level to avoid infinite re-entering
-   * interrupt handler.
-   */
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
 }
 
 void CopperLine(UBYTE *lineptr, WORD x1, WORD y1, WORD x2, WORD y2) {
@@ -133,9 +117,6 @@ static BOOL Loop() {
 }
 
 void Init() {
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_LEVEL3;
-
   CopListActivate(cp);
 }
 

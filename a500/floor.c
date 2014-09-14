@@ -1,6 +1,5 @@
 #include "blitter.h"
 #include "coplist.h"
-#include "interrupts.h"
 #include "memory.h"
 #include "fx.h"
 #include "random.h"
@@ -124,17 +123,6 @@ void Kill() {
   DeleteCopList(cp[1]);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
-}
-
-static volatile LONG frameCount = 0;
-
-__interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB) {
-    frameCount++;
-  }
-
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
 }
 
 void ClearFloor() {
@@ -360,9 +348,6 @@ static void ClearLines() {
 }
 
 void Init() {
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
-  
   CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 
@@ -389,6 +374,8 @@ void Init() {
 
 void Main() {
   while (!LeftMouseButton()) {
+    LONG frameCount = ReadFrameCounter();
+
     WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
     WORD yo = (N / 2) + normfx(COS(frameCount * 16) * (N / 2));
     WORD kxo = 7 - xo * SIZE / N;

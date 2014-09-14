@@ -1,5 +1,4 @@
 #include "hardware.h"
-#include "interrupts.h"
 #include "coplist.h"
 #include "ilbm.h"
 #include "print.h"

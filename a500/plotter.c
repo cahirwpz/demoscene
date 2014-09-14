@@ -2,7 +2,6 @@
 #include "coplist.h"
 #include "gfx.h"
 #include "ilbm.h"
-#include "interrupts.h"
 #include "blitter.h"
 #include "circle.h"
 #include "fx.h"

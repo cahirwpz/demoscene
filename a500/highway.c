@@ -2,7 +2,6 @@
 #include "coplist.h"
 #include "gfx.h"
 #include "ilbm.h"
-#include "interrupts.h"
 #include "blitter.h"
 #include "circle.h"
 #include "fx.h"
@@ -154,16 +153,6 @@ void Kill() {
   DeleteCopList(cp[1]);
 }
 
-static volatile LONG frameCount = 0;
-
-__interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB)
-    frameCount++;
-
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
-}
-
 static inline void CarInit(Car *car) {
   car->speed = random() & 15;
   car->x = 0;
@@ -289,19 +278,19 @@ static void DrawCars(WORD step) {
 
 static WORD iterCount = 0;
 static LONG lastFrameCount;
+static LONG frameCount = 0;
 
 void Init() {
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
-  
   CopListActivate(cp[active]);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
 
-  lastFrameCount = frameCount;
+  lastFrameCount = ReadFrameCounter();
 }
 
 void Main() {
   while (!LeftMouseButton()) {
+    frameCount = ReadFrameCounter();
+
 #if 0
     ITER(i, 0, 3, BlitterSetSync(laneL[active], i, HSIZE, 0, WIDTH, LANE_H, 0));
     ITER(i, 0, 3, BlitterSetSync(laneR[active], i, HSIZE, LANE_H, WIDTH, LANE_H, 0));
@@ -310,14 +299,14 @@ void Main() {
     ITER(i, 0, 3, BlitterCopySync(lanes[active], i, HSIZE, LANE_H, carsBg, i));
 #endif
 
-    if ((iterCount++ & 7) == 0)
+    iterCount += frameCount - lastFrameCount;
+    while (iterCount > 10) {
       AddCar();
-
-    {
-      LONG t = frameCount;
-      DrawCars(frameCount - lastFrameCount);
-      lastFrameCount = t;
+      iterCount -= 10;
     }
+
+    DrawCars(frameCount - lastFrameCount);
+    lastFrameCount = frameCount;
 
     CopListRun(cp[active]);
     WaitVBlank();
