@@ -174,7 +174,7 @@ static void MakeCopperList(CopListT *cp) {
   for (i = 16; i < 32; i++)
     CopSetRGB(cp, i, 0x000);
   for (i = 0; i < HEIGHT * 2; i++) {
-    CopWaitMask(cp, Y(i), 0, 0xff, 0);
+    CopWaitMask(cp, Y(i + 28), 0, 0xff, 0);
     CopMove16(cp, bplcon1, (i & 1) ? 0x0021 : 0x0010);
     CopMove16(cp, bpl1mod, (i & 1) ? -40 : 0);
     CopMove16(cp, bpl2mod, (i & 1) ? -40 : 0);
