@@ -1,6 +1,20 @@
 #include "memory.h"
 #include "gfx.h"
 
+__regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
+                                UWORD depth, BitmapT *donor)
+{
+  bitmap->width = width;
+  bitmap->height = height;
+  bitmap->depth = depth;
+  bitmap->bytesPerRow = (width + 7) / 8;
+  bitmap->bplSize = bitmap->bytesPerRow * height;
+  bitmap->interleaved = donor->interleaved;
+  bitmap->palette = donor->palette;
+
+  ITER(i, 0, depth - 1, bitmap->planes[i] = donor->planes[i]);
+}
+
 __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
                              BOOL interleaved)
 {

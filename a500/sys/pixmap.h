@@ -12,6 +12,16 @@ typedef struct Pixmap {
   APTR pixels;
 } PixmapT;
 
+static inline void InitSharedPixmap(PixmapT *pixmap, UWORD width, UWORD height,
+                                    PixmapTypeT type, APTR pixels) 
+{
+  pixmap->type = type;
+  pixmap->width = width;
+  pixmap->height = height;
+  pixmap->palette = NULL;
+  pixmap->pixels = pixels;
+}
+
 __regargs PixmapT *NewPixmap(UWORD width, UWORD height, 
                              PixmapTypeT type, ULONG memoryAttributes);
 __regargs PixmapT *ClonePixmap(PixmapT *pixmap);
