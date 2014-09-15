@@ -10,6 +10,19 @@ __regargs void BlitterClear(BitmapT *bitmap, UWORD plane) {
   custom->bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
 }
 
+__regargs void BlitterClearSync(BitmapT *bitmap, UWORD plane) {
+  APTR bltdpt = bitmap->planes[plane];
+  UWORD bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
+
+  WaitBlitter();
+  custom->bltadat = 0;
+  custom->bltdpt = bltdpt;
+  custom->bltdmod = 0;
+  custom->bltcon0 = DEST;
+  custom->bltcon1 = 0;
+  custom->bltsize = bltsize;
+}
+
 __regargs void BlitterFill(BitmapT *bitmap, UWORD plane) {
   UBYTE *bpl = bitmap->planes[plane] + bitmap->bplSize - 2;
 
@@ -22,6 +35,22 @@ __regargs void BlitterFill(BitmapT *bitmap, UWORD plane) {
   custom->bltafwm = -1;
   custom->bltalwm = -1;
   custom->bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
+}
+
+__regargs void BlitterFillSync(BitmapT *bitmap, UWORD plane) {
+  APTR bltpt = bitmap->planes[plane] + bitmap->bplSize - 2;
+  UWORD bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
+
+  WaitBlitter();
+  custom->bltapt = bltpt;
+  custom->bltdpt = bltpt;
+  custom->bltamod = 0;
+  custom->bltdmod = 0;
+  custom->bltcon0 = (SRCA | DEST) | A_TO_D;
+  custom->bltcon1 = BLITREVERSE | FILL_OR;
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+  custom->bltsize = bltsize;
 }
 
 void BlitterCopySync(BitmapT *dst, UWORD dstbpl, UWORD x, UWORD y,
@@ -53,6 +82,42 @@ void BlitterCopySync(BitmapT *dst, UWORD dstbpl, UWORD x, UWORD y,
   }
 
   custom->bltdpt = dstbpt;
+  custom->bltdmod = dst->bytesPerRow - w;
+  custom->bltafwm = -1;
+  custom->bltsize = (src->height << 6) | (w >> 1);
+}
+
+void BlitterCopyMaskedSync(BitmapT *dst, UWORD dstbpl, UWORD x, UWORD y,
+                           BitmapT *src, UWORD srcbpl, BitmapT *msk) 
+{
+  APTR srcbpt = (APTR)src->planes[srcbpl];
+  APTR mskbpt = (APTR)msk->planes[0];
+  APTR dstbpt = (APTR)dst->planes[dstbpl] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
+  UWORD w = src->bytesPerRow;
+
+  WaitBlitter();
+
+  if (x & 15) {
+    w += 2;
+
+    custom->bltamod = -2;
+    custom->bltbmod = -2;
+    custom->bltcon0 = (SRCA | SRCB | SRCC | DEST) | (ABC | ABNC | ANBC | NANBC) | ((x & 15) << ASHIFTSHIFT);
+    custom->bltcon1 = ((x & 15) << BSHIFTSHIFT);
+    custom->bltalwm = 0;
+  } else {
+    custom->bltamod = 0;
+    custom->bltbmod = 0;
+    custom->bltcon0 = (SRCA | SRCB | SRCC | DEST) | (ABC | ABNC | ANBC | NANBC);
+    custom->bltcon1 = 0;
+    custom->bltalwm = -1;
+  }
+
+  custom->bltapt = srcbpt;
+  custom->bltbpt = mskbpt;
+  custom->bltcpt = dstbpt;
+  custom->bltdpt = dstbpt;
+  custom->bltcmod = dst->bytesPerRow - w;
   custom->bltdmod = dst->bytesPerRow - w;
   custom->bltafwm = -1;
   custom->bltsize = (src->height << 6) | (w >> 1);
@@ -126,6 +191,39 @@ void BlitterSetSync(BitmapT *dst, UWORD dstbpl, UWORD x, UWORD y, UWORD w, UWORD
   custom->bltalwm = -1;
   custom->bltafwm = -1;
   custom->bltsize = (h << 6) | (w >> 1);
+}
+
+void BlitterSetMaskedSync(BitmapT *dst, UWORD dstbpl, UWORD x, UWORD y,
+                          BitmapT *msk, UWORD val)
+{
+  APTR mskbpt = (APTR)msk->planes[0];
+  APTR dstbpt = (APTR)dst->planes[dstbpl] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
+  UWORD w = msk->bytesPerRow;
+
+  WaitBlitter();
+
+  if (x & 15) {
+    w += 2;
+
+    custom->bltbmod = -2;
+    custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | ABNC | ANBC | NANBC) | ((x & 15) << ASHIFTSHIFT);
+    custom->bltcon1 = ((x & 15) << BSHIFTSHIFT);
+    custom->bltalwm = 0;
+  } else {
+    custom->bltbmod = 0;
+    custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | ABNC | ANBC | NANBC);
+    custom->bltcon1 = 0;
+    custom->bltalwm = -1;
+  }
+
+  custom->bltadat = val;
+  custom->bltbpt = mskbpt;
+  custom->bltcpt = dstbpt;
+  custom->bltdpt = dstbpt;
+  custom->bltcmod = dst->bytesPerRow - w;
+  custom->bltdmod = dst->bytesPerRow - w;
+  custom->bltafwm = -1;
+  custom->bltsize = (msk->height << 6) | (w >> 1);
 }
 
 /* Bitplane adder with saturation. */
