@@ -111,7 +111,7 @@ BOOL P61_Osc(P61_ChannelBlock *channel asm("a0"), P61_OscData *data asm("a3"));
  *                 limits)
  */
 
-void P61_SetPosition(LONG Position asm("d0"));
+void P61_SetPosition(UBYTE Position asm("d0"));
 
 /**
  * @brief Stop the music.
