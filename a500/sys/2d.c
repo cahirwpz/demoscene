@@ -4,7 +4,7 @@
 #include "reader.h"
 #include "fx.h"
 
-Box2D ClipWin;
+Box2D ClipWin = { 0, 0, fx4i(319), fx4i(255) };
 
 __regargs void LoadIdentity2D(Matrix2D *M) {
   M->m00 = fx12f(1.0);
@@ -200,7 +200,7 @@ static __regargs BOOL CheckInside(Point2D *p, UWORD plane) {
   if (plane & PF_TOP)
     return (p->y >= ClipWin.minY);
   if (plane & PF_BOTTOM)
-    return (p->y < ClipWin.maxX);
+    return (p->y < ClipWin.maxY);
   return FALSE;
 }
 
