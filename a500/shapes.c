@@ -63,6 +63,22 @@ static void Init() {
 
 static Point2D tmpPoint[2][16];
 
+static __regargs void DrawPolygon(Point2D *out, WORD n) {
+  WORD *pos = (WORD *)out;
+  WORD x1, y1, x2, y2;
+
+  x1 = *pos++ >> 4;
+  y1 = *pos++ >> 4;
+  n--;
+
+  while (--n >= 0) {
+    x2 = *pos++ >> 4;
+    y2 = *pos++ >> 4;
+    BlitterLineSync(x1, y1, x2, y2);
+    x1 = x2; y1 = y2;
+  }
+}
+
 static __regargs void DrawShape(ShapeT *shape) {
   Point2D *point = shape->viewPoint;
   PolygonT *polygon = shape->polygon;
@@ -76,10 +92,10 @@ static __regargs void DrawShape(ShapeT *shape) {
     UBYTE outside = 0xff;
     Point2D *in = tmpPoint[0];
     Point2D *out = tmpPoint[1];
+    UWORD *vxptr = &vertex[polygon->index];
 
     for (i = 0; i < n; i++) {
-      UWORD k = vertex[polygon->index + i];
-
+      UWORD k = *vxptr++;
       clipFlags |= flags[k];
       outside &= flags[k];
       in[i] = point[k];
@@ -87,20 +103,7 @@ static __regargs void DrawShape(ShapeT *shape) {
 
     if (!outside) {
       n = ClipPolygon2D(in, &out, n, clipFlags);
-
-      for (i = 0; i < n; i++) {
-        out[i].x /= 16;
-        out[i].y /= 16;
-      }
-
-      BlitterLineSetup(screen, plane, LINE_EOR, LINE_ONEDOT);
-
-      while (--n > 0) {
-        Line2D *line = (Line2D *)out++;
-
-        BlitterLine(line->x1, line->y1, line->x2, line->y2);
-        WaitBlitter();
-      }
+      DrawPolygon(out, n);
     }
 
     polygon++;
@@ -108,27 +111,23 @@ static __regargs void DrawShape(ShapeT *shape) {
 }
 
 static void Render() {
+  // LONG lines = ReadLineCounter();
   WORD i, a = frameCount * 64;
   Matrix2D t;
 
-  BlitterClear(screen, plane);
-  WaitBlitter();
-
+  BlitterClearSync(screen, plane);
   LoadIdentity2D(&t);
   Rotate2D(&t, frameCount * 8);
   Scale2D(&t, fx12f(1.0) + SIN(a) / 2, fx12f(1.0) + COS(a) / 2);
   Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
   Transform2D(&t, shape->viewPoint, shape->origPoint, shape->points);
   PointsInsideBox(shape->viewPoint, shape->viewPointFlags, shape->points);
-
-  {
-    // LONG lines = ReadLineCounter();
-    DrawShape(shape);
-    // Log("draw: %ld\n", ReadLineCounter() - lines);
-  }
-
-  BlitterFill(screen, plane);
   WaitBlitter();
+  BlitterLineSetup(screen, plane, LINE_EOR, LINE_ONEDOT);
+  DrawShape(shape);
+  BlitterFillSync(screen, plane);
+  WaitBlitter();
+  // Log("shape: %ld\n", ReadLineCounter() - lines);
 
   WaitVBlank();
 
