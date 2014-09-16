@@ -37,9 +37,14 @@ int main() {
     if (SysBase->AttnFlags & AFF_68010)
       InterruptVector = (APTR)Supervisor((APTR)GetVBR);
 
-    Print("Running on Kickstart %ld.%ld.\n\r",
+    Print("Running on Kickstart %ld.%ld.\n",
           (LONG)SysBase->LibNode.lib_Version,
           (LONG)SysBase->LibNode.lib_Revision);
+    Print("Largest available chunk of :\n"
+          "(*) chip memory : %7ld bytes\n"
+          "(*) fast memory : %7ld bytes\n",
+          (LONG)AvailMem(MEMF_CHIP | MEMF_LARGEST),
+          (LONG)AvailMem(MEMF_FAST | MEMF_LARGEST));
 
     if (Effect.Load)
       Effect.Load();
