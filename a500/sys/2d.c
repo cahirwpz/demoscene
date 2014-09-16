@@ -380,8 +380,8 @@ __regargs ShapeT *LoadShape(char *filename) {
         ReadNumber(&data, &x);
         ReadNumber(&data, &y);
 
-        shape->origPoint[k].x = (x + origin_x) * 16;
-        shape->origPoint[k].y = (y + origin_y) * 16;
+        shape->origPoint[k].x = (x - origin_x) * 16;
+        shape->origPoint[k].y = (y - origin_y) * 16;
         shape->polygonVertex[j] = k;
 
         j++; k++;
