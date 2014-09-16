@@ -325,24 +325,26 @@ __regargs ShapeT *LoadShape(char *filename) {
     char *data = file;
     WORD n;
 
-    while (*data) {
-      if (!ReadNumber(&data, &n))
-        break;
-
-      points += n;
-      polygons++;
-
-      n *= 2;
-
-      do {
-        if (!ReadNumber(&data, NULL))
+    if (ReadNumber(&data, NULL) && ReadNumber(&data, NULL)) {
+      while (*data) {
+        if (!ReadNumber(&data, &n))
           break;
-      } while (--n > 0);
 
-      if (n > 0)
-        break;
+        points += n;
+        polygons++;
 
-      SkipSpaces(&data);
+        n *= 2;
+
+        do {
+          if (!ReadNumber(&data, NULL))
+            break;
+        } while (--n > 0);
+
+        if (n > 0)
+          break;
+
+        SkipSpaces(&data);
+      }
     }
 
     if (*data == 0) {
@@ -357,6 +359,10 @@ __regargs ShapeT *LoadShape(char *filename) {
   if (shape) {
     char *data = file;
     WORD i = 0, j = 0, k = 0;
+    WORD origin_x, origin_y;
+
+    ReadNumber(&data, &origin_x);
+    ReadNumber(&data, &origin_y);
 
     while (*data) {
       WORD n, old_k;
@@ -374,8 +380,8 @@ __regargs ShapeT *LoadShape(char *filename) {
         ReadNumber(&data, &x);
         ReadNumber(&data, &y);
 
-        shape->origPoint[k].x = x * 16;
-        shape->origPoint[k].y = y * 16;
+        shape->origPoint[k].x = (x + origin_x) * 16;
+        shape->origPoint[k].y = (y + origin_y) * 16;
         shape->polygonVertex[j] = k;
 
         j++; k++;
