@@ -318,81 +318,78 @@ __regargs void DeleteShape(ShapeT *shape) {
 
 __regargs ShapeT *LoadShape(char *filename) {
   char *file = ReadFile(filename, MEMF_PUBLIC);
-  char *data = file;
+  WORD points = 0, polygons = 0;
   ShapeT *shape = NULL;
-  WORD i, j, points, polygons;
 
-  if (!file)
-    return NULL;
-  
-  if (ReadNumber(&data, &points) && ReadNumber(&data, &polygons)) {
-    shape = NewShape(points, polygons);
+  if (file) {
+    char *data = file;
+    WORD n;
 
-    for (i = 0; i < shape->points; i++) {
-      if (!ReadNumber(&data, &shape->origPoint[i].x) ||
-          !ReadNumber(&data, &shape->origPoint[i].y))
-        goto error;
-
-      shape->origPoint[i].x *= 16;
-      shape->origPoint[i].y *= 16;
-    }
-
-    /* Calculate size of polygonVertex array. */
-    {
-      char *ptr = data;
-
-      for (i = 0; i < shape->polygons; i++) {
-        WORD n, tmp;
-
-        if (!ReadNumber(&ptr, &n))
-          goto error;
-
-        shape->polygonVertices += n + 1;
-
-        while (n--) {
-          if (!ReadNumber(&ptr, &tmp))
-            goto error;
-        }
-      }
-    }
-
-    shape->polygonVertex =
-      AllocMemSafe(sizeof(UWORD) * shape->polygonVertices, MEMF_PUBLIC);
-
-    for (i = 0, j = 0; i < shape->polygons; i++) {
-      UWORD n, k;
-
+    while (*data) {
       if (!ReadNumber(&data, &n))
-        goto error;
+        break;
 
-      // Log("Polygon %ld at %ld:", (LONG)i, (LONG)j);
+      points += n;
+      polygons++;
+
+      n *= 2;
+
+      do {
+        if (!ReadNumber(&data, NULL))
+          break;
+      } while (--n > 0);
+
+      if (n > 0)
+        break;
+
+      SkipSpaces(&data);
+    }
+
+    if (*data == 0) {
+      shape = NewShape(points, polygons);
+
+      shape->polygonVertices = points + polygons;
+      shape->polygonVertex = 
+        AllocMemSafe(sizeof(UWORD) * shape->polygonVertices, MEMF_PUBLIC);
+    }
+  }
+
+  if (shape) {
+    char *data = file;
+    WORD i = 0, j = 0, k = 0;
+
+    while (*data) {
+      WORD n, old_k;
+
+      ReadNumber(&data, &n);
 
       shape->polygon[i].vertices = n + 1;
       shape->polygon[i].index = j;
 
-      k = j;
+      old_k = k;
 
-      while (n--) {
-        UWORD tmp;
+      while (--n >= 0) {
+        WORD x, y;
 
-        if (!ReadNumber(&data, &tmp))
-          goto error;
+        ReadNumber(&data, &x);
+        ReadNumber(&data, &y);
 
-        shape->polygonVertex[j++] = tmp;
-        // Log(" %ld", (LONG)tmp);
+        shape->origPoint[k].x = x * 16;
+        shape->origPoint[k].y = y * 16;
+        shape->polygonVertex[j] = k;
+
+        j++; k++;
       }
-      shape->polygonVertex[j++] = shape->polygonVertex[k];
 
-      // Log(" %ld\n", (LONG)shape->polygonVertex[k]);
+      shape->polygonVertex[j++] = old_k;
+
+      i++;
+
+      SkipSpaces(&data);
     }
-
-    FreeAutoMem(file);
-    return shape;
   }
 
-error:
-  DeleteShape(shape);
   FreeAutoMem(file);
-  return NULL;
+  return shape;
 }
 
