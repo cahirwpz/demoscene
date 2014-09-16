@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, floor
 
 
 def constrain(val, lo, hi):
@@ -11,6 +11,14 @@ def constrain(val, lo, hi):
 
 def sq(x):
   return x * x
+
+
+def saw(x):
+  t = x - floor(x)
+  if t > 0.5:
+    return 2.0 * (1.0 - t)
+  else:
+    return 2.0 * t
 
 
 def lerp(lo, hi, step):
