@@ -15,12 +15,15 @@
 static PixmapT *chunky[2];
 static PixmapT *textureHi, *textureLo;
 static BitmapT *screen[2];
+static UWORD *uvmap;
 static PaletteT *palette;
 static UWORD active = 0;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 
-extern WORD UVMapRenderTemplate[];
+extern APTR UVMapRenderTemplate[5];
+#define UVMapRenderSize \
+  (WIDTH * HEIGHT / 2 * sizeof(UVMapRenderTemplate) + 2)
 void (*UVMapRender)(UBYTE *chunky asm("a0"),
                     UBYTE *textureHi asm("a1"),
                     UBYTE *textureLo asm("a2"));
@@ -68,28 +71,13 @@ static void Load() {
   chunky[0] = NewPixmap(WIDTH, HEIGHT, PM_GRAY4, MEMF_CHIP);
   chunky[1] = NewPixmap(WIDTH, HEIGHT, PM_GRAY4, MEMF_CHIP);
 
-  {
-    UWORD *uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
-    UWORD *data = uvmap;
-    UWORD *code = UVMapRenderTemplate;
-    WORD n = WIDTH * HEIGHT / 2;
-
-    /* UVMap is pre-scrambled. */
-    while (n--) {
-      code++;
-      *code++ = *data++;
-      code++;
-      *code++ = *data++;
-      code++;
-    }
-
-    UVMapRender = (void *)UVMapRenderTemplate;
-
-    FreeAutoMem(uvmap);
-  }
+  uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
+  UVMapRender = AllocMemSafe(UVMapRenderSize, MEMF_PUBLIC);
 }
 
 static void UnLoad() {
+  FreeAutoMem(uvmap);
+  FreeMem(UVMapRender, UVMapRenderSize);
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
   DeletePixmap(chunky[0]);
@@ -182,16 +170,34 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
+static void MakeUVMapRenderCode() {
+  UWORD *code = (APTR)UVMapRender;
+  UWORD *tmpl = (APTR)UVMapRenderTemplate;
+  UWORD *data = uvmap;
+  WORD n = WIDTH * HEIGHT / 2;
+
+  /* UVMap is pre-scrambled. */
+  while (n--) {
+    *code++ = tmpl[0];
+    *code++ = *data++;
+    *code++ = tmpl[2];
+    *code++ = *data++;
+    *code++ = tmpl[4];
+  }
+
+  *code++ = 0x4e75; /* return from subroutine instruction */
+}
+
 static void Init() {
   WORD i;
+
+  MakeUVMapRenderCode();
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
 
   for (i = 0; i < 5; i++) {
-    BlitterClear(screen[0], i);
-    WaitBlitter();
-    BlitterClear(screen[1], i);
-    WaitBlitter();
+    BlitterClearSync(screen[0], i);
+    BlitterClearSync(screen[1], i);
   }
 
   memset(screen[0]->planes[4], 0xaa, WIDTH * HEIGHT * 4 / 8);
