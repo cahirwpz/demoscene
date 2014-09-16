@@ -69,6 +69,18 @@ def FancyEye(x, y):
   return (u, v)
 
 
+def Anamorphosis(x, y):
+  a = atan2(x, y)
+  r = dist(x, y, 0.0, 0.0)
+
+  if r == 0:
+    return (0, 0)
+
+  u = cos(a) / (3.0 * r)
+  v = sin(a) / (3.0 * r)
+
+  return (u, v)
+
 if __name__ == "__main__":
   with open("data/uvmap.bin", "w") as f:
     uvmap = generate(160, 100, FancyEye)
