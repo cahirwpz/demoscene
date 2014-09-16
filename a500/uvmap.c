@@ -46,8 +46,8 @@ static void PixmapScramble(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
 
 static void Load() {
   cp = NewCopList(1024);
-  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, 5, FALSE);
-  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, 4, FALSE);
+  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, FALSE);
+  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, FALSE);
 
   {
     PixmapT *texture = LoadTGA("data/texture-16.tga", PM_CMAP, MEMF_PUBLIC);
@@ -158,9 +158,9 @@ static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
   CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
-  CopLoadPal(cp, palette, 0);
-  for (i = 16; i < 32; i++)
-    CopSetRGB(cp, i, 0x000);
+  for (i = 0; i < 16; i++)
+    CopSetRGB(cp, i, 0);
+  CopLoadPal(cp, palette, 16);
   for (i = 0; i < HEIGHT * 2; i++) {
     CopWaitMask(cp, Y(i + 28), 0, 0xff, 0);
     CopMove16(cp, bplcon1, (i & 1) ? 0x0021 : 0x0010);
@@ -200,8 +200,8 @@ static void Init() {
     BlitterClearSync(screen[1], i);
   }
 
-  memset(screen[0]->planes[4], 0xaa, WIDTH * HEIGHT * 4 / 8);
-  memset(screen[1]->planes[4], 0xaa, WIDTH * HEIGHT * 4 / 8);
+  memset(screen[0]->planes[4], 0x55, WIDTH * HEIGHT * 4 / 8);
+  memset(screen[1]->planes[4], 0x55, WIDTH * HEIGHT * 4 / 8);
 
   MakeCopperList(cp);
   CopListActivate(cp);
