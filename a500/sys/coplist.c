@@ -80,8 +80,9 @@ __regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start) {
   UWORD *ins = (UWORD *)ptr;
   ColorT *c = palette->colors;
   UWORD i;
+  UWORD n = min(palette->count, 32 - start);
 
-  for (i = 0; i < palette->count; i++, c++) {
+  for (i = 0; i < n; i++, c++) {
     *ins++ = CSREG(color[i + start]);
     *ins++ = ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4);
   }
