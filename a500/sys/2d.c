@@ -293,27 +293,26 @@ __regargs UWORD ClipPolygon2D(Point2D *in, Point2D **outp, UWORD n,
 }
 
 __regargs ShapeT *NewShape(UWORD points, UWORD polygons) {
-  ShapeT *shape = AllocMemSafe(sizeof(ShapeT), MEMF_PUBLIC|MEMF_CLEAR);
+  ShapeT *shape = MemAlloc(sizeof(ShapeT), MEMF_PUBLIC|MEMF_CLEAR);
 
   shape->points = points;
   shape->polygons = polygons;
 
-  shape->origPoint = AllocMemSafe(sizeof(Point2D) * points, MEMF_PUBLIC);
-  shape->viewPoint = AllocMemSafe(sizeof(Point2D) * points, MEMF_PUBLIC);
-  shape->viewPointFlags = AllocMemSafe(points, MEMF_PUBLIC);
-  shape->polygon = AllocMemSafe(sizeof(PolygonT) * polygons, MEMF_PUBLIC);
+  shape->origPoint = MemAlloc(sizeof(Point2D) * points, MEMF_PUBLIC);
+  shape->viewPoint = MemAlloc(sizeof(Point2D) * points, MEMF_PUBLIC);
+  shape->viewPointFlags = MemAlloc(points, MEMF_PUBLIC);
+  shape->polygon = MemAlloc(sizeof(PolygonT) * polygons, MEMF_PUBLIC);
 
   return shape;
 }
 
 __regargs void DeleteShape(ShapeT *shape) {
-  if (shape->polygonVertex)
-    FreeMem(shape->polygonVertex, sizeof(UWORD) * shape->polygonVertices);
-  FreeMem(shape->polygon, sizeof(PolygonT) * shape->polygons);
-  FreeMem(shape->viewPointFlags, shape->points);
-  FreeMem(shape->viewPoint, sizeof(Point2D) * shape->points);
-  FreeMem(shape->origPoint, sizeof(Point2D) * shape->points);
-  FreeMem(shape, sizeof(ShapeT));
+  MemFree(shape->polygonVertex, sizeof(UWORD) * shape->polygonVertices);
+  MemFree(shape->polygon, sizeof(PolygonT) * shape->polygons);
+  MemFree(shape->viewPointFlags, shape->points);
+  MemFree(shape->viewPoint, sizeof(Point2D) * shape->points);
+  MemFree(shape->origPoint, sizeof(Point2D) * shape->points);
+  MemFree(shape, sizeof(ShapeT));
 }
 
 __regargs ShapeT *LoadShape(char *filename) {
@@ -351,8 +350,8 @@ __regargs ShapeT *LoadShape(char *filename) {
       shape = NewShape(points, polygons);
 
       shape->polygonVertices = points + polygons;
-      shape->polygonVertex = 
-        AllocMemSafe(sizeof(UWORD) * shape->polygonVertices, MEMF_PUBLIC);
+      shape->polygonVertex = MemAlloc(sizeof(UWORD) * shape->polygonVertices,
+                                      MEMF_PUBLIC);
     }
   }
 
@@ -395,7 +394,7 @@ __regargs ShapeT *LoadShape(char *filename) {
     }
   }
 
-  FreeAutoMem(file);
+  MemFreeAuto(file);
   return shape;
 }
 

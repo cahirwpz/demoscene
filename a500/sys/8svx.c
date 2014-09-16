@@ -1,8 +1,6 @@
-#include <exec/memory.h>
-#include <proto/exec.h>
-
 #include "sound.h"
 #include "iff.h"
+#include "memory.h"
 
 #define ID_8SVX MAKE_ID('8', 'S', 'V', 'X')
 #define ID_VHDR MAKE_ID('V', 'H', 'D', 'R')
@@ -42,7 +40,7 @@ __regargs SoundT *Load8SVX(const char *filename) {
 
           case ID_BODY:
             sound->length = iff.chunk.length;
-            sound->sample = AllocMem(iff.chunk.length, MEMF_CHIP);
+            sound->sample = MemAlloc(iff.chunk.length, MEMF_CHIP);
             ReadChunk(&iff, sound->sample);
             break;
 

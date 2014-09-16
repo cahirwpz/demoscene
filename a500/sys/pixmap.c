@@ -1,3 +1,5 @@
+#include <proto/exec.h>
+
 #include "memory.h"
 #include "pixmap.h"
 
@@ -12,13 +14,13 @@ static inline UWORD BitsPerPixel(PixmapTypeT type) {
 __regargs PixmapT *NewPixmap(UWORD width, UWORD height, 
                              PixmapTypeT type, ULONG memoryAttributes)
 {
-  PixmapT *pixmap = AllocMemSafe(sizeof(PixmapT), MEMF_PUBLIC|MEMF_CLEAR);
+  PixmapT *pixmap = MemAlloc(sizeof(PixmapT), MEMF_PUBLIC|MEMF_CLEAR);
 
   pixmap->type = type;
   pixmap->width = width;
   pixmap->height = height;
-  pixmap->pixels = AllocMemSafe(width * height * BitsPerPixel(type) >> 3,
-                                memoryAttributes);
+  pixmap->pixels = MemAlloc(width * height * BitsPerPixel(type) >> 3,
+                            memoryAttributes);
 
   return pixmap;
 }
@@ -34,7 +36,7 @@ __regargs PixmapT *ClonePixmap(PixmapT *pixmap) {
 }
 
 __regargs void DeletePixmap(PixmapT *pixmap) {
-  FreeMem(pixmap->pixels,
+  MemFree(pixmap->pixels,
           pixmap->width * pixmap->height * BitsPerPixel(pixmap->type) >> 3);
-  FreeMem(pixmap, sizeof(PixmapT));
+  MemFree(pixmap, sizeof(PixmapT));
 }

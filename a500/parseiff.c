@@ -17,7 +17,7 @@ int main() {
   UWORD len = __commandlen;
   STRPTR filename = __builtin_alloca(len);
 
-  CopyMem(__commandline, filename, len--);
+  memcpy(filename, __commandline, len--);
   filename[len] = '\0';
 
   if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 34))) {

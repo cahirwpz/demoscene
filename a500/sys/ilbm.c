@@ -1,8 +1,6 @@
-#include <exec/memory.h>
-#include <proto/exec.h>
-
 #include "gfx.h"
 #include "iff.h"
+#include "memory.h"
 
 #define ID_ILBM MAKE_ID('I', 'L', 'B', 'M')
 #define ID_BMHD MAKE_ID('B', 'M', 'H', 'D')
@@ -92,17 +90,17 @@ __regargs BitmapT *LoadILBM(const char *filename, BOOL interleaved) {
         
           case ID_BODY:
             {
-              BYTE *data = AllocMem(iff.chunk.length, MEMF_PUBLIC);
+              BYTE *data = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
               LONG size = iff.chunk.length;
 
               ReadChunk(&iff, data);
 
               if (compression) {
                 LONG newSize = bitmap->bplSize * bitmap->depth;
-                BYTE *uncompressed = AllocMem(newSize, MEMF_PUBLIC);
+                BYTE *uncompressed = MemAlloc(newSize, MEMF_PUBLIC);
 
                 UnRLE(data, size, uncompressed);
-                FreeMem(data, size);
+                MemFree(data, size);
 
                 data = uncompressed;
                 size = newSize;
@@ -111,9 +109,9 @@ __regargs BitmapT *LoadILBM(const char *filename, BOOL interleaved) {
               if (!interleaved)
                 Deinterleave(data, bitmap);
               else
-                CopyMem(data, bitmap->planes[0], bitmap->bplSize * bitmap->depth);
+                memcpy(bitmap->planes[0], data, bitmap->bplSize * bitmap->depth);
 
-              FreeMem(data, size);
+              MemFree(data, size);
             }
             break;
 

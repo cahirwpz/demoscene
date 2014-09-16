@@ -44,7 +44,7 @@ static void Load() {
 }
 
 static void UnLoad() {
-  FreeAutoMem(module);
+  MemFreeAuto(module);
   CloseFont(topaz8);
   DeleteCopList(cp);
   ITER(i, 0, 3, DeleteBitmap(osc[i]));

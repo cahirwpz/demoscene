@@ -72,12 +72,12 @@ static void Load() {
   chunky[1] = NewPixmap(WIDTH, HEIGHT, PM_GRAY4, MEMF_CHIP);
 
   uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
-  UVMapRender = AllocMemSafe(UVMapRenderSize, MEMF_PUBLIC);
+  UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
 }
 
 static void UnLoad() {
-  FreeAutoMem(uvmap);
-  FreeMem(UVMapRender, UVMapRenderSize);
+  MemFreeAuto(uvmap);
+  MemFree(UVMapRender, UVMapRenderSize);
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
   DeletePixmap(chunky[0]);

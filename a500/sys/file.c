@@ -21,9 +21,9 @@ APTR ReadFile(STRPTR path, ULONG memoryFlags) {
   }
   
   if ((size > 0) && (fh = Open(path, MODE_OLDFILE))) {
-    if ((data = AllocAutoMem(size + 1, memoryFlags))) {
+    if ((data = MemAllocAuto(size + 1, memoryFlags))) {
       if (size != Read(fh, data, size)) {
-        FreeAutoMem(data);
+        MemFreeAuto(data);
         data = NULL;
       }
       /* Add extra byte and mark the end of file by zero. */

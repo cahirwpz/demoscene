@@ -38,13 +38,13 @@ static __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
         switch (iff.chunk.type) {
           case ID_PNTS:
             pntsLength = iff.chunk.length;
-            pnts = AllocMemSafe(pntsLength, MEMF_PUBLIC);
+            pnts = MemAlloc(pntsLength, MEMF_PUBLIC);
             ReadChunk(&iff, pnts);
             break;
 
           case ID_POLS:
             polsLength = iff.chunk.length;
-            pols = AllocMemSafe(polsLength, MEMF_PUBLIC);
+            pols = MemAlloc(polsLength, MEMF_PUBLIC);
             ReadChunk(&iff, pols);
             break;
 
@@ -94,13 +94,13 @@ static __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
             obj->point[i].z = SPFix(SPMul(SPFieee(pnts[i * 3 + 2]), s));
           }
 
-          FreeMem(pnts, pntsLength);
+          MemFree(pnts, pntsLength);
         }
 
         /* Process polygons. */
         {
-          WORD *polygonVertex = AllocMemSafe(sizeof(UWORD) * polygonVertices,
-                                             MEMF_PUBLIC);
+          WORD *polygonVertex = MemAlloc(sizeof(UWORD) * polygonVertices,
+                                         MEMF_PUBLIC);
           WORD p = 0, j = 0;
 
           i = 0;
@@ -131,7 +131,7 @@ static __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
           obj->polygonVertices = polygonVertices;
           obj->polygonVertex = polygonVertex;
 
-          FreeMem(pols, polsLength);
+          MemFree(pols, polsLength);
         }
       }
     }

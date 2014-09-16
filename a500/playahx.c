@@ -12,7 +12,7 @@ static void Load() {
 }
 
 static void UnLoad() {
-  FreeAutoMem(module);
+  MemFreeAuto(module);
 }
 
 __interrupt_handler void IntLevel2Handler() {

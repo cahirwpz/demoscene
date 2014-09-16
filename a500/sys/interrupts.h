@@ -1,6 +1,8 @@
 #ifndef __INTERRUPTS_H__
 #define __INTERRUPTS_H__
 
+#include <exec/types.h>
+
 typedef struct InterruptVector {
   APTR InitialSSP;             /*  0 */
   APTR InitialPC;              /*  1 */

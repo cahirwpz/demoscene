@@ -3,10 +3,11 @@
 
 #include <exec/types.h>
 #include <exec/memory.h>
-#include <proto/exec.h>
 
-void *AllocMemSafe(ULONG byteSize asm("d0"), ULONG attributes asm("d1"));
-void *AllocAutoMem(ULONG byteSize asm("d0"), ULONG attributes asm("d1"));
-void FreeAutoMem(void *memoryBlock asm("a1"));
+APTR MemAlloc(ULONG byteSize asm("d0"), ULONG attributes asm("d1"));
+void MemFree(APTR memoryBlock asm("a1"), ULONG byteSize asm("d0"));
+
+APTR MemAllocAuto(ULONG byteSize asm("d0"), ULONG attributes asm("d1"));
+void MemFreeAuto(APTR memoryBlock asm("a1"));
 
 #endif

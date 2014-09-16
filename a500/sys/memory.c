@@ -1,7 +1,9 @@
+#include <proto/exec.h>
+
 #include "memory.h"
 
-void *AllocMemSafe(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) {
-  void *ptr = AllocMem(byteSize, attributes);
+APTR MemAlloc(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) {
+  APTR ptr = AllocMem(byteSize, attributes);
 
   if (!ptr)
     exit();
@@ -9,23 +11,31 @@ void *AllocMemSafe(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) {
   return ptr;
 }
 
+void MemFree(APTR memoryBlock asm("a1"), ULONG byteSize asm("d0")) {
+  if (memoryBlock)
+    FreeMem(memoryBlock, byteSize);
+}
+
 typedef struct {
   ULONG size;
   UBYTE data[0];
 } MemBlockT;
 
-void *AllocAutoMem(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) {
-  MemBlockT *mb;
+APTR MemAllocAuto(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) {
+  MemBlockT *mb = NULL;
 
   if ((mb = AllocMem(byteSize + sizeof(MemBlockT), attributes))) {
     mb->size = byteSize;
-    return mb->data;
+  } else {
+    exit();
   }
 
-  return NULL;
+  return mb->data;
 }
 
-void FreeAutoMem(void *memoryBlock asm("a1")) {
-  MemBlockT *mb = (MemBlockT *)((ULONG *)memoryBlock - 1);
-  FreeMem(mb, mb->size + sizeof(MemBlockT));
+void MemFreeAuto(APTR memoryBlock asm("a1")) {
+  if (memoryBlock) {
+    MemBlockT *mb = (MemBlockT *)((ULONG *)memoryBlock - 1);
+    FreeMem(mb, mb->size + sizeof(MemBlockT));
+  }
 }

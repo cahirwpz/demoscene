@@ -1,10 +1,11 @@
 #undef __CONSTLIBBASEDECL__ 
-#include <proto/exec.h>
 #include <proto/dos.h>
+#include <proto/exec.h>
 
 #include "ffp.h"
 #include "iff.h"
 #include "print.h"
+#include "memory.h"
 
 int __nocommandline = 1;
 int __initlibraries = 0;
@@ -27,7 +28,7 @@ int main() {
   UWORD len = __commandlen;
   STRPTR filename = __builtin_alloca(len);
 
-  CopyMem(__commandline, filename, len--);
+  memcpy(filename, __commandline, len--);
   filename[len] = '\0';
 
   DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 33);
@@ -47,7 +48,7 @@ int main() {
         switch (iff.chunk.type) {
           case ID_PNTS:
             {
-              FLOAT *pnts = AllocMem(iff.chunk.length, MEMF_PUBLIC);
+              FLOAT *pnts = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
               FLOAT s = SPFlt(scale);
               WORD n = iff.chunk.length / 12;
               WORD i;
@@ -61,13 +62,13 @@ int main() {
                 Print("%5ld : [%ld %ld %ld]\n", (LONG)i, x, y, z);
               }
 
-              FreeMem(pnts, iff.chunk.length);
+              MemFree(pnts, iff.chunk.length);
             }
             break;
 
           case ID_POLS:
             {
-              WORD *pols = AllocMem(iff.chunk.length, MEMF_PUBLIC);
+              WORD *pols = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
               WORD n = iff.chunk.length / 2;
               WORD i = 0, j = 0;
 
@@ -100,7 +101,7 @@ int main() {
                 }
               }
 
-              FreeMem(pols, iff.chunk.length);
+              MemFree(pols, iff.chunk.length);
             }
             break;
 

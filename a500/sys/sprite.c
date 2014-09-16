@@ -1,15 +1,14 @@
-#include <exec/memory.h>
 #include <graphics/gfxbase.h>
-#include <proto/exec.h>
 #include <proto/graphics.h>
 
 #include "sprite.h"
+#include "memory.h"
 
 __regargs SpriteT *NewSprite(UWORD height, BOOL attached) {
-  SpriteT *sprite = AllocMem(sizeof(SpriteT), MEMF_PUBLIC|MEMF_CLEAR);
+  SpriteT *sprite = MemAlloc(sizeof(SpriteT), MEMF_PUBLIC|MEMF_CLEAR);
 
   sprite->height = height;
-  sprite->data = AllocMem((height ? (height + 2) : 1) * 4, MEMF_CHIP|MEMF_CLEAR);
+  sprite->data = MemAlloc((height ? (height + 2) : 1) * 4, MEMF_CHIP|MEMF_CLEAR);
 
   if (attached)
     sprite->attached = NewSprite(height, FALSE);
@@ -66,7 +65,7 @@ __regargs SpriteT *CloneSystemPointer() {
   UWORD height = sprite->height;
   SpriteT *pointer = NewSprite(height, FALSE);
 
-  CopyMem(sprite->posctldata + 2, pointer->data + 2, height * sizeof(LONG));
+  memcpy(pointer->data + 2, sprite->posctldata + 2, height * sizeof(LONG));
 
   return pointer;
 }
@@ -75,8 +74,8 @@ __regargs void DeleteSprite(SpriteT *sprite) {
   if (sprite->attached)
     DeleteSprite(sprite->attached);
 
-  FreeMem(sprite->data, (sprite->height + 2) * 4);
-  FreeMem(sprite, sizeof(SpriteT));
+  MemFree(sprite->data, (sprite->height + 2) * 4);
+  MemFree(sprite, sizeof(SpriteT));
 }
 
 __regargs void UpdateSprite(SpriteT *sprite) {

@@ -18,7 +18,7 @@ __regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
 __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
                              BOOL interleaved)
 {
-  BitmapT *bitmap = AllocMemSafe(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
+  BitmapT *bitmap = MemAlloc(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
 
   bitmap->width = width;
   bitmap->height = height;
@@ -39,7 +39,7 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
 
     /* Allocate extra two bytes for scratchpad area.
      * Used by blitter line drawing. */
-    planes = AllocMemSafe((UWORD)bplSize * depth + 2, MEMF_CHIP|MEMF_CLEAR);
+    planes = MemAlloc((UWORD)bplSize * depth + 2, MEMF_CHIP|MEMF_CLEAR);
     planePtr = bitmap->planes;
 
     if (interleaved)
@@ -55,18 +55,18 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
 }
 
 __regargs void DeleteBitmap(BitmapT *bitmap) {
-  FreeMem(bitmap->planes[0], bitmap->bplSize * bitmap->depth + 2);
-  FreeMem(bitmap, sizeof(BitmapT));
+  MemFree(bitmap->planes[0], bitmap->bplSize * bitmap->depth + 2);
+  MemFree(bitmap, sizeof(BitmapT));
 }
 
 __regargs PaletteT *NewPalette(UWORD count) {
-  PaletteT *palette = AllocMemSafe(sizeof(PaletteT) + count * sizeof(ColorT),
-                                   MEMF_PUBLIC|MEMF_CLEAR);
+  PaletteT *palette = MemAlloc(sizeof(PaletteT) + count * sizeof(ColorT),
+                               MEMF_PUBLIC|MEMF_CLEAR);
   palette->count = count;
 
   return palette;
 }
 
 __regargs void DeletePalette(PaletteT *palette) {
-  FreeMem(palette, sizeof(PaletteT) + palette->count * sizeof(ColorT));
+  MemFree(palette, sizeof(PaletteT) + palette->count * sizeof(ColorT));
 }

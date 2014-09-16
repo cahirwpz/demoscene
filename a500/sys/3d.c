@@ -319,32 +319,29 @@ __regargs UWORD ClipPolygon3D(Point3D *in, Point3D **outp, UWORD n,
 
 
 __regargs Object3D *NewObject3D(UWORD points, UWORD polygons) {
-  Object3D *object = AllocMemSafe(sizeof(Object3D), MEMF_PUBLIC|MEMF_CLEAR);
+  Object3D *object = MemAlloc(sizeof(Object3D), MEMF_PUBLIC|MEMF_CLEAR);
 
   object->points = points;
   object->polygons = polygons;
 
-  object->point = AllocMemSafe(sizeof(Point3D) * points, MEMF_PUBLIC);
-  object->cameraPoint = AllocMemSafe(sizeof(Point3D) * points, MEMF_PUBLIC);
-  object->cameraPointFlags = AllocMemSafe(points, MEMF_PUBLIC);
-  object->polygon = AllocMemSafe(sizeof(PolygonT) * polygons, MEMF_PUBLIC);
-  object->polygonNormal =
-    AllocMemSafe(sizeof(Point3D) * polygons, MEMF_PUBLIC);
+  object->point = MemAlloc(sizeof(Point3D) * points, MEMF_PUBLIC);
+  object->cameraPoint = MemAlloc(sizeof(Point3D) * points, MEMF_PUBLIC);
+  object->cameraPointFlags = MemAlloc(points, MEMF_PUBLIC);
+  object->polygon = MemAlloc(sizeof(PolygonT) * polygons, MEMF_PUBLIC);
+  object->polygonNormal = MemAlloc(sizeof(Point3D) * polygons, MEMF_PUBLIC);
 
   return object;
 }
 
 __regargs void DeleteObject3D(Object3D *object) {
-  if (object->polygonVertex)
-    FreeMem(object->polygonVertex, sizeof(UWORD) * object->polygonVertices);
-  if (object->edge)
-    FreeMem(object->edge, sizeof(EdgeT) * object->edges);
-  FreeMem(object->polygonNormal, sizeof(Point3D) * object->polygons);
-  FreeMem(object->polygon, sizeof(PolygonT) * object->polygons);
-  FreeMem(object->cameraPointFlags, object->points);
-  FreeMem(object->cameraPoint, sizeof(Point3D) * object->points);
-  FreeMem(object->point, sizeof(Point3D) * object->points);
-  FreeMem(object, sizeof(Object3D));
+  MemFree(object->polygonVertex, sizeof(UWORD) * object->polygonVertices);
+  MemFree(object->edge, sizeof(EdgeT) * object->edges);
+  MemFree(object->polygonNormal, sizeof(Point3D) * object->polygons);
+  MemFree(object->polygon, sizeof(PolygonT) * object->polygons);
+  MemFree(object->cameraPointFlags, object->points);
+  MemFree(object->cameraPoint, sizeof(Point3D) * object->points);
+  MemFree(object->point, sizeof(Point3D) * object->points);
+  MemFree(object, sizeof(Object3D));
 }
 
 __regargs Object3D *LoadObject3D(char *filename) {
@@ -389,8 +386,8 @@ __regargs Object3D *LoadObject3D(char *filename) {
       }
     }
 
-    object->polygonVertex =
-      AllocMemSafe(sizeof(UWORD) * object->polygonVertices, MEMF_PUBLIC);
+    object->polygonVertex = MemAlloc(sizeof(UWORD) * object->polygonVertices,
+                                     MEMF_PUBLIC);
 
     for (i = 0, j = 0; i < object->polygons; i++) {
       UWORD n, k;
@@ -419,13 +416,13 @@ __regargs Object3D *LoadObject3D(char *filename) {
       Log(" %ld\n", (LONG)object->polygonVertex[k]);
     }
 
-    FreeAutoMem(file);
+    MemFreeAuto(file);
     return object;
   }
 
 error:
   DeleteObject3D(object);
-  FreeAutoMem(file);
+  MemFreeAuto(file);
   return NULL;
 }
 
@@ -486,7 +483,7 @@ static __regargs LONG EdgeCompare(APTR a, APTR b) {
 }
 
 __regargs void CalculateEdges(Object3D *obj) {
-  EdgeT *edge = AllocMemSafe(sizeof(EdgeT) * obj->polygonVertices,
+  EdgeT *edge = MemAlloc(sizeof(EdgeT) * obj->polygonVertices,
                              MEMF_PUBLIC);
   WORD p, k, i, j;
 
@@ -528,12 +525,12 @@ __regargs void CalculateEdges(Object3D *obj) {
     if (EdgeCompare(&edge[i], &edge[j]))
       edge[++j] = edge[i];
 
-  obj->edge = AllocMemSafe(sizeof(EdgeT) * j, MEMF_PUBLIC);
+  obj->edge = MemAlloc(sizeof(EdgeT) * j, MEMF_PUBLIC);
   obj->edges = j;
 
   memcpy(obj->edge, edge, sizeof(EdgeT) * j);
 
   Log("Object has %ld edges.\n", (LONG)j);
 
-  FreeMem(edge, sizeof(EdgeT) * obj->polygonVertices);
+  MemFree(edge, sizeof(EdgeT) * obj->polygonVertices);
 }

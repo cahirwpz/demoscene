@@ -71,7 +71,7 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type,
     pixmap = NewPixmap(tga.width, tga.height, PM_CMAP, memoryFlags);
     pixmap->palette = NewPalette(tga.cmapLength);
 
-    data = AllocAutoMem(palSize, MEMF_PUBLIC);
+    data = MemAllocAuto(palSize, MEMF_PUBLIC);
 
     if (Read(fh, data, palSize) != palSize)
       goto error;
@@ -90,9 +90,9 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type,
       } while (--n);
     }
 
-    FreeAutoMem(data);
+    MemFreeAuto(data);
 
-    data = AllocAutoMem(imgSize, MEMF_PUBLIC);
+    data = MemAllocAuto(imgSize, MEMF_PUBLIC);
 
     if (Read(fh, data, imgSize) != imgSize)
       goto error;
@@ -114,7 +114,7 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type,
       } while (--y);
     }
 
-    FreeAutoMem(data);
+    MemFreeAuto(data);
   } 
   else if (type == PM_RGB4 && tga.imageType == TGA_RGB && tga.depth) 
   {
@@ -122,7 +122,7 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type,
 
     pixmap = NewPixmap(tga.width, tga.height, PM_RGB4, memoryFlags);
 
-    data = AllocAutoMem(imgSize, MEMF_PUBLIC);
+    data = MemAllocAuto(imgSize, MEMF_PUBLIC);
 
     if (Read(fh, data, imgSize) != imgSize)
       goto error;
@@ -148,14 +148,14 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type,
         } while (--x);
       } while (--y);
     }
-    FreeAutoMem(data);
+    MemFreeAuto(data);
   }
 
   goto end;
 
 error:
   if (data)
-    FreeAutoMem(data);
+    MemFreeAuto(data);
   if (pixmap) {
     if (pixmap->palette)
       DeletePalette(pixmap->palette);

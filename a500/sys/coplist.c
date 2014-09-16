@@ -1,10 +1,8 @@
-#include <exec/memory.h>
-#include <proto/exec.h>
-
 #include "coplist.h"
+#include "memory.h"
 
 __regargs CopListT *NewCopList(UWORD length) {
-  CopListT *list = AllocMem(sizeof(CopListT) + length * sizeof(CopInsT),
+  CopListT *list = MemAlloc(sizeof(CopListT) + length * sizeof(CopInsT),
                             MEMF_CHIP|MEMF_CLEAR);
 
   list->length = length;
@@ -15,7 +13,7 @@ __regargs CopListT *NewCopList(UWORD length) {
 }
 
 __regargs void DeleteCopList(CopListT *list) {
-  FreeMem(list, sizeof(CopListT) + list->length * sizeof(CopInsT));
+  MemFree(list, sizeof(CopListT) + list->length * sizeof(CopInsT));
 }
 
 __regargs void CopListActivate(CopListT *list) {

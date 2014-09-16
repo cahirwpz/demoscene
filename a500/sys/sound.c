@@ -1,24 +1,22 @@
-#include <exec/memory.h>
-#include <proto/exec.h>
-
 #include "hardware.h"
 #include "sound.h"
+#include "memory.h"
 
 __regargs SoundT *NewSound(ULONG length, UWORD rate) {
-  SoundT *sound = AllocMem(sizeof(SoundT), MEMF_PUBLIC|MEMF_CLEAR);
+  SoundT *sound = MemAlloc(sizeof(SoundT), MEMF_PUBLIC|MEMF_CLEAR);
 
   sound->length = length;
   sound->rate = rate;
 
   if (length)
-    sound->sample = AllocMem(sizeof(BYTE) * length, MEMF_CHIP);
+    sound->sample = MemAlloc(sizeof(BYTE) * length, MEMF_CHIP);
 
   return sound;
 }
 
 __regargs void DeleteSound(SoundT *sound) {
-  FreeMem(sound->sample, sizeof(BYTE) * sound->length);
-  FreeMem(sound, sizeof(SoundT));
+  MemFree(sound->sample, sizeof(BYTE) * sound->length);
+  MemFree(sound, sizeof(SoundT));
 }
 
 void AudioSetVolume(ChanT num, UBYTE level) {
