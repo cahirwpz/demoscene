@@ -364,24 +364,43 @@ __regargs static void CalculateTileColumns(WORD yo, WORD kyo) {
   for (k = 0; k <= SIZE && y0 < HEIGHT; k++, yi += TILESIZE) {
     WORD column = (k + kyo) & (TILES - 1);
     WORD y1 = (yi < N) ? horiz[yi] : HEIGHT;
+    WORD n = y1 - y0;
 
-    for (; y0 < y1; y0++)
+    while (--n >= 0) 
       *tileCol++ = column;
+
+    y0 = y1;
   }
 }
+
+#define STRIDE2 (STRIDE / sizeof(WORD))
 
 __regargs static void AssignColorToTileColumn(WORD k, WORD kxo) {
   UWORD *color = lineColor[active][k];
   UWORD column = (k + kxo) & (TILES - 1);
   UWORD *textureRow = &texture[column * TILES];
   UWORD *tileCol = &tileColumn[FAR_Y];
-  WORD n = HEIGHT - FAR_Y;
+  WORD n = (HEIGHT - FAR_Y) >> 3;
   UWORD reg = 2 * (column & 1) + 0x182;
 
   while (--n >= 0) {
-    color[0] = reg;
-    color[1] = textureRow[*tileCol++];
-    color += STRIDE / sizeof(UWORD);
+    color[0 + STRIDE2 * 0] = reg;
+    color[1 + STRIDE2 * 0] = textureRow[*tileCol++];
+    color[0 + STRIDE2 * 1] = reg;
+    color[1 + STRIDE2 * 1] = textureRow[*tileCol++];
+    color[0 + STRIDE2 * 2] = reg;
+    color[1 + STRIDE2 * 2] = textureRow[*tileCol++];
+    color[0 + STRIDE2 * 3] = reg;
+    color[1 + STRIDE2 * 3] = textureRow[*tileCol++];
+    color[0 + STRIDE2 * 4] = reg;
+    color[1 + STRIDE2 * 4] = textureRow[*tileCol++];
+    color[0 + STRIDE2 * 5] = reg;
+    color[1 + STRIDE2 * 5] = textureRow[*tileCol++];
+    color[0 + STRIDE2 * 6] = reg;
+    color[1 + STRIDE2 * 6] = textureRow[*tileCol++];
+    color[0 + STRIDE2 * 7] = reg;
+    color[1 + STRIDE2 * 7] = textureRow[*tileCol++];
+    color += 8 * STRIDE2;
   }
 }
 
