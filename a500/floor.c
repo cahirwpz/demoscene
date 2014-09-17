@@ -17,8 +17,10 @@
 
 #define STRIDE ((SIZE * 2 + 1) * sizeof(CopInsT))
 
-#define NEAR_Z 100
-#define FAR_Z 300
+/* These are selected in such a way so line lenght
+ * (HEIGHT - FAR_Y) is divisible by 8. */
+#define NEAR_Z 102
+#define FAR_Z 318
 #define FAR_Y (HEIGHT * NEAR_Z / FAR_Z)
 #define FAR_W (WIDTH * FAR_Z / 256)
 
@@ -26,7 +28,12 @@ static BitmapT *screen[2];
 static UWORD active = 0;
 static CopListT *cp[2];
 
-static Line2D vert[N];
+typedef struct {
+  LONG delta;
+  WORD x1, x2, y2;
+} LineDataT;
+
+static LineDataT vert[N];
 static WORD horiz[N];
 static UBYTE *linePos[2][SIZE];
 static UWORD *lineColor[2][SIZE];
@@ -52,9 +59,11 @@ static void FloorPrecalc() {
     }
     
     vert[i].x1 = far_x;
-    vert[i].y1 = FAR_Y;
     vert[i].x2 = near_x;
     vert[i].y2 = near_y;
+
+    if (near_y != FAR_Y)
+      vert[i].delta = ((X(near_x) / 2 - X(far_x) / 2) << 16) / (near_y - FAR_Y);
   }
 
   for (i = 0; i < N; i++) {
@@ -127,76 +136,85 @@ static void Init() {
 
   ITER(j, 0, 1, MakeCopperList(cp[j], j));
   CopListActivate(cp[active]);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
 
   for (i = 0; i < 2; i++) {
-    BlitterClear(screen[i], 0);
-    WaitBlitter();
-    BlitterClear(screen[i], 1);
-    WaitBlitter();
+    BlitterClearSync(screen[i], 0);
+    BlitterClearSync(screen[i], 1);
 
+    WaitBlitter();
     BlitterLineSetup(screen[i], 0, LINE_EOR, LINE_ONEDOT);
-    BlitterLine(WIDTH - 1, 0, WIDTH - 1, FAR_Y - 1);
-    WaitBlitter();
-    BlitterLine(WIDTH - 1, FAR_Y - 1, WIDTH - 1, HEIGHT);
-    WaitBlitter();
-    BlitterFill(screen[i], 0);
-    WaitBlitter();
+    BlitterLineSync(WIDTH - 1, 0, WIDTH - 1, FAR_Y - 1);
+    BlitterLineSync(WIDTH - 1, FAR_Y - 1, WIDTH - 1, HEIGHT);
+    BlitterFillSync(screen[i], 0);
 
+    WaitBlitter();
     BlitterLineSetup(screen[i], 1, LINE_EOR, LINE_ONEDOT);
-    BlitterLine(WIDTH - 1, 0, WIDTH - 1, FAR_Y - 1);
-    WaitBlitter();
-    BlitterFill(screen[i], 1);
-    WaitBlitter();
+    BlitterLineSync(WIDTH - 1, 0, WIDTH - 1, FAR_Y - 1);
+    BlitterFillSync(screen[i], 1);
+  }
+}
+
+static void ClearLine(WORD k) {
+  UBYTE *pos = linePos[active][k];
+  UBYTE x = (k < 4 ? CPX : (X(WIDTH) >> 1)) | 1;
+  WORD n = (HEIGHT - FAR_Y) / 8;
+
+  while (--n >= 0) {
+    pos[STRIDE * 0] = x;
+    pos[STRIDE * 1] = x;
+    pos[STRIDE * 2] = x;
+    pos[STRIDE * 3] = x;
+    pos[STRIDE * 4] = x;
+    pos[STRIDE * 5] = x;
+    pos[STRIDE * 6] = x;
+    pos[STRIDE * 7] = x;
+    pos += STRIDE * 8;
   }
 }
 
 static void ClearFloor() {
   BitmapT *buffer = screen[active];
-  WORD n = DEPTH;
+  UWORD bltsize = ((buffer->height - FAR_Y) << 6) + (buffer->width >> 4);
 
-  WaitBlitter();
-  custom->bltadat = 0;
-  custom->bltdmod = 0;
-  custom->bltcon0 = DEST;
-  custom->bltcon1 = 0;
-
-  while (--n >= 0) {
-    APTR bltdpt = buffer->planes[n] + FAR_Y * WIDTH / 8;
-    UWORD bltsize = ((buffer->height - FAR_Y) << 6) + (buffer->width >> 4);
-
+  {
     WaitBlitter();
-    custom->bltdpt = bltdpt;
+    custom->bltadat = 0;
+    custom->bltdmod = 0;
+    custom->bltcon0 = DEST;
+    custom->bltcon1 = 0;
+    custom->bltdpt = buffer->planes[0] + FAR_Y * WIDTH / 8;
     custom->bltsize = bltsize;
   }
+
+  ITER(i, 0, SIZE / 2 - 1, ClearLine(i));
+
+  {
+    WaitBlitter();
+    custom->bltdpt = buffer->planes[1] + FAR_Y * WIDTH / 8;
+    custom->bltsize = bltsize;
+  }
+
+  ITER(i, SIZE / 2, SIZE - 1, ClearLine(i));
 }
 
-static __regargs void CopperLine(UBYTE *pos, WORD x1, WORD y1, WORD x2, WORD y2) {
-  x1 = X(x1) / 2;
-  x2 = X(x2) / 2;
-  y1 -= FAR_Y; /* this one is always going to be zero */
-  y2 -= FAR_Y;
-
-  if (y1 != y2) {
-    WORD dy = y2 - y1;
-    WORD dx = x2 - x1;
-    LONG z = x1 << 16;
-    /* This is a long division! Precalculate if possible... */
-    LONG dz = (dx << 16) / dy;
+static __regargs void CopperLine(UBYTE *pos, WORD x1, WORD y2, LONG delta) {
+  if (y2 > FAR_Y) {
+    WORD n = y2 - FAR_Y + 1;
+    LONG x = (X(x1) / 2) << 16;
     register UBYTE one asm("d7") = 1;
 
-    while (--dy >= -1) {
-      UWORD x = swap16(z);
-      *pos = x | one;
+    while (--n >= 0) {
+      *pos = swap16(x) | one;
       pos += STRIDE;
-      z += dz;
+      x += delta;
     }
   }
 }
 
 static void DrawStripes(WORD xo, WORD kxo) {
-  Line2D first = { 0, 0, WIDTH - 1, FAR_Y };
-  Line2D *l[2];
+  LineDataT first = { 0, 0, WIDTH - 1, FAR_Y };
+  LineDataT *l[2];
   WORD k;
 
   /* Even stripes. */
@@ -219,7 +237,7 @@ static void DrawStripes(WORD xo, WORD kxo) {
 
     l[1] = &vert[xi & (N - 1)];
 
-    BlitterLineSync(l[1]->x1, l[1]->y1, l[1]->x2, l[1]->y2);
+    BlitterLineSync(l[1]->x1, FAR_Y, l[1]->x2, l[1]->y2);
 
     if (((col & 1) == 1) && (l[0]->x2 == WIDTH - 1))
       BlitterLineSync(WIDTH - 1, l[0]->y2, WIDTH - 1, l[1]->y2);
@@ -247,7 +265,7 @@ static void DrawStripes(WORD xo, WORD kxo) {
 
     l[1] = &vert[xi & (N - 1)];
 
-    BlitterLineSync(l[1]->x1, l[1]->y1, l[1]->x2, l[1]->y2);
+    BlitterLineSync(l[1]->x1, FAR_Y, l[1]->x2, l[1]->y2);
 
     if (((col & 1) == 0) && (l[0]->x2 == WIDTH - 1))
       BlitterLineSync(WIDTH - 1, l[0]->y2, WIDTH - 1, l[1]->y2);
@@ -261,62 +279,78 @@ static void DrawStripes(WORD xo, WORD kxo) {
     UBYTE **activeLinePos = linePos[active];
 
     for (k = 0; k < SIZE; k++, xi += TILESIZE) {
-      Line2D *l = &vert[xi & (N - 1)];
-      CopperLine(activeLinePos[k], l->x1, l->y1, l->x2, l->y2);
+      LineDataT *l = &vert[xi & (N - 1)];
+      CopperLine(activeLinePos[k], l->x1, l->y2, l->delta);
     }
   }
 }
 
-static void FillStripes() {
+__regargs static void AssignColorToTileColumn(WORD k, WORD kxo);
+
+static void FillStripes(WORD kxo) {
   BitmapT *buffer = screen[active];
-  WORD n = DEPTH;
+  UWORD bltsize = ((buffer->height - FAR_Y) << 6) + (buffer->width >> 4);
 
-  WaitBlitter();
-  custom->bltamod = 0;
-  custom->bltdmod = 0;
-  custom->bltcon0 = (SRCA | DEST) | A_TO_D;
-  custom->bltcon1 = BLITREVERSE | FILL_OR;
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
-
-  while (--n >= 0) {
-    UBYTE *bpl = buffer->planes[n] + buffer->bplSize - 1;
-    UWORD bltsize = ((buffer->height - FAR_Y) << 6) + (buffer->width >> 4);
+  {
+    APTR bltpt = buffer->planes[0] + buffer->bplSize - 1;
 
     WaitBlitter();
-    custom->bltapt = bpl;
-    custom->bltdpt = bpl;
+    custom->bltamod = 0;
+    custom->bltdmod = 0;
+    custom->bltcon0 = (SRCA | DEST) | A_TO_D;
+    custom->bltcon1 = BLITREVERSE | FILL_OR;
+    custom->bltafwm = -1;
+    custom->bltalwm = -1;
+    custom->bltapt = bltpt;
+    custom->bltdpt = bltpt;
     custom->bltsize = bltsize;
   }
+
+  ITER(i, 0, SIZE / 2 - 1, AssignColorToTileColumn(i, kxo));
+
+  {
+    APTR bltpt = buffer->planes[1] + buffer->bplSize - 1;
+
+    WaitBlitter();
+    custom->bltapt = bltpt;
+    custom->bltdpt = bltpt;
+    custom->bltsize = bltsize;
+  }
+
+  ITER(i, SIZE / 2, SIZE - 1, AssignColorToTileColumn(i, kxo));
 }
 
 static void HorizontalStripes(WORD yo) {
   BitmapT *buffer = screen[active];
   WORD yi = yo & (TILESIZE - 1);
-  WORD n, k, y1, y2;
+  WORD k, y1, y2;
 
   for (k = 0; k <= SIZE; k++, yi += TILESIZE) {
     y1 = horiz[(yi < N) ? yi : N - 1];
     y2 = horiz[(yi + 16 < N) ? yi + 16 : N - 1];
 
-    if (y1 == y2)
-      continue;
-
-    WaitBlitter();
-    custom->bltadat = 0;
-    custom->bltdmod = 0;
-    custom->bltcon0 = DEST;
-    custom->bltcon1 = 0;
-
-    n = DEPTH;
-
-    while (--n >= 0) {
-      APTR bltdpt = buffer->planes[n] + y1 * WIDTH / 8;
+    if (y1 != y2) {
       UWORD bltsize = ((y2 - y1) << 6) + (WIDTH >> 4);
 
-      WaitBlitter();
-      custom->bltdpt = bltdpt;
-      custom->bltsize = bltsize;
+      {
+        APTR bltdpt = buffer->planes[0] + y1 * WIDTH / 8;
+
+        WaitBlitter();
+        custom->bltadat = 0;
+        custom->bltdmod = 0;
+        custom->bltcon0 = DEST;
+        custom->bltcon1 = 0;
+        custom->bltdpt = bltdpt;
+        custom->bltsize = bltsize;
+      }
+
+      {
+        APTR bltdpt = buffer->planes[1] + y1 * WIDTH / 8;
+
+        WaitBlitter();
+        custom->bltdpt = bltdpt;
+        custom->bltsize = bltsize;
+      }
     }
   }
 }
@@ -336,54 +370,38 @@ __regargs static void CalculateTileColumns(WORD yo, WORD kyo) {
   }
 }
 
-__regargs static void AssignColorToTiles(WORD kxo) {
-  UWORD **activeLineColor = lineColor[active];
-  WORD k;
+__regargs static void AssignColorToTileColumn(WORD k, WORD kxo) {
+  UWORD *color = lineColor[active][k];
+  UWORD column = (k + kxo) & (TILES - 1);
+  UWORD *textureRow = &texture[column * TILES];
+  UWORD *tileCol = &tileColumn[FAR_Y];
+  WORD n = HEIGHT - FAR_Y;
+  UWORD reg = 2 * (column & 1) + 0x182;
 
-  for (k = 0; k < SIZE; k++) {
-    UWORD *color = activeLineColor[k];
-    UWORD column = (k + kxo) & (TILES - 1);
-    UWORD *textureRow = &texture[column * TILES];
-    UWORD *tileCol = &tileColumn[FAR_Y];
-    WORD n = HEIGHT - FAR_Y;
-    UWORD reg = 2 * (column & 1) + 0x182;
-
-    while (--n >= 0) {
-      color[0] = reg;
-      color[1] = textureRow[*tileCol++];
-      color += STRIDE / sizeof(UWORD);
-    }
-  }
-}
-
-static void ClearLines() {
-  UBYTE **activeLinePos = linePos[active];
-  WORD k;
-
-  for (k = 0; k < SIZE; k++) {
-    UBYTE *pos = activeLinePos[k];
-    UBYTE x = (k < 4 ? CPX : (X(WIDTH) >> 1)) | 1;
-    WORD n = HEIGHT - FAR_Y;
-    while (--n >= 0) {
-      *pos = x;
-      pos += STRIDE;
-    }
+  while (--n >= 0) {
+    color[0] = reg;
+    color[1] = textureRow[*tileCol++];
+    color += STRIDE / sizeof(UWORD);
   }
 }
 
 static void Render() {
-  WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
-  WORD yo = (N / 2) + normfx(COS(frameCount * 16) * (N / 2));
-  WORD kxo = 7 - xo * SIZE / N;
-  WORD kyo = 7 - yo * SIZE / N;
+  LONG lines = ReadLineCounter();
 
-  ClearLines();
-  ClearFloor();
-  DrawStripes(xo, kxo);
-  FillStripes();
-  HorizontalStripes(yo);
-  CalculateTileColumns(yo, kyo);
-  AssignColorToTiles(kxo);
+  {
+    WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
+    WORD yo = (N / 2) + normfx(COS(frameCount * 16) * (N / 2));
+    WORD kxo = 7 - xo * SIZE / N;
+    WORD kyo = 7 - yo * SIZE / N;
+
+    ClearFloor();
+    DrawStripes(xo, kxo);
+    CalculateTileColumns(yo, kyo);
+    HorizontalStripes(yo);
+    FillStripes(kxo);
+  }
+
+  Log("floor: %ld\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
   WaitVBlank();
