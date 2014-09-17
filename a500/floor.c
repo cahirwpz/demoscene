@@ -4,6 +4,8 @@
 #include "memory.h"
 #include "fx.h"
 #include "random.h"
+#include "color.h"
+#include "tga.h"
 
 #define WIDTH 320
 #define HEIGHT 212
@@ -38,7 +40,9 @@ static WORD horiz[N];
 static UBYTE *linePos[2][SIZE];
 static UWORD *lineColor[2][SIZE];
 static UWORD tileColumn[HEIGHT];
-static UWORD texture[TILES * TILES];
+static PixmapT *texture;
+static UWORD tileColor[TILES * TILES];
+static UBYTE cycleStart[TILES * TILES];
 
 static void FloorPrecalc() {
   WORD i;
@@ -77,15 +81,18 @@ static void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
 
+  texture = LoadTGA("data/floor.tga", PM_RGB4, MEMF_PUBLIC);
+
   cp[0] = NewCopList((256 - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
   cp[1] = NewCopList((256 - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
 
   FloorPrecalc();
 
-  ITER(i, 0, TILES * TILES - 1, texture[i] = random() & 0xfff);
+  ITER(i, 0, 255, cycleStart[i] = random() & 63);
 }
 
 static void UnLoad() {
+  DeletePixmap(texture);
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
   DeleteBitmap(screen[0]);
@@ -378,7 +385,7 @@ __regargs static void CalculateTileColumns(WORD yo, WORD kyo) {
 __regargs static void AssignColorToTileColumn(WORD k, WORD kxo) {
   UWORD *color = lineColor[active][k];
   UWORD column = (k + kxo) & (TILES - 1);
-  UWORD *textureRow = &texture[column * TILES];
+  UWORD *textureRow = &tileColor[column * TILES];
   UWORD *tileCol = &tileColumn[FAR_Y];
   WORD n = (HEIGHT - FAR_Y) >> 3;
   UWORD reg = 2 * (column & 1) + 0x182;
@@ -404,12 +411,32 @@ __regargs static void AssignColorToTileColumn(WORD k, WORD kxo) {
   }
 }
 
+static void ControlTileColors() {
+  UWORD *src = texture->pixels, *dst = tileColor;
+  UBYTE *cycle = cycleStart;
+  WORD n = TILES * TILES;
+
+  while (--n >= 0) {
+    UWORD f = (frameCount / 2 + *cycle++) & 63;
+    if (f < 16) {
+      *dst++ = ColorTransition(0, *src++, f);
+    } else if (f < 32) {
+      *dst++ = ColorTransition(*src++, 0xfff, f - 16);
+    } else if (f < 48) {
+      *dst++ = ColorTransition(0xfff, *src++, f - 32);
+    } else {
+      *dst++ = ColorTransition(*src++, 0, f - 48);
+    }
+  }
+}
+
 static void Render() {
   LONG lines = ReadLineCounter();
 
+  ControlTileColors();
   {
     WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
-    WORD yo = (N / 2) + normfx(COS(frameCount * 16) * (N / 2));
+    WORD yo = (N / 4) + normfx(COS(frameCount * 16) * (N / 4));
     WORD kxo = 7 - xo * SIZE / N;
     WORD kyo = 7 - yo * SIZE / N;
 
