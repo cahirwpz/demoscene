@@ -88,3 +88,16 @@ __regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start) {
   list->curr = (CopInsT *)ins;
   return ptr;
 }
+
+__regargs CopInsT *CopLoadColor(CopListT *list, UWORD start, UWORD end, UWORD color) {
+  CopInsT *ptr = list->curr;
+  UWORD *ins = (UWORD *)ptr;
+
+  while (start <= end) {
+    *ins++ = CSREG(color[start++]);
+    *ins++ = color;
+  }
+
+  list->curr = (CopInsT *)ins;
+  return ptr;
+}

@@ -14,4 +14,12 @@ static inline UWORD ColorTransition(UWORD from, UWORD to, UWORD step) {
   return (colortab[r] << 8) | (colortab[g] << 4) | colortab[b];
 }
 
+static inline UWORD ColorTransitionRGB(UBYTE sr, UBYTE sg, UBYTE sb, UBYTE dr, UBYTE dg, UBYTE db, UWORD step) {
+  WORD r = ((sr & 0xf0) << 4) | (dr & 0xf0) | step;
+  WORD g = ((sg & 0xf0) << 4) | (dg & 0xf0) | step;
+  WORD b = ((sb & 0xf0) << 4) | (db & 0xf0) | step;
+  
+  return (colortab[r] << 8) | (colortab[g] << 4) | colortab[b];
+}
+
 #endif

@@ -34,6 +34,7 @@ __regargs CopInsT *CopWait(CopListT *copList, UWORD vp, UWORD hp);
 __regargs CopInsT *CopWaitMask(CopListT *list,
                                UWORD vp, UWORD hp, UWORD vpmask, UWORD hpmask);
 __regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start);
+__regargs CopInsT *CopLoadColor(CopListT *list, UWORD start, UWORD end, UWORD color);
 
 static inline CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {
   CopInsT *ptr = list->curr;
