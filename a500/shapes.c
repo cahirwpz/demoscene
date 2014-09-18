@@ -4,12 +4,14 @@
 #include "coplist.h"
 #include "fx.h"
 #include "memory.h"
+#include "ilbm.h"
 
 #define WIDTH  320
 #define HEIGHT 256
 #define DEPTH  5
 
 static ShapeT *shape;
+static PaletteT *palette;
 static BitmapT *screen;
 static CopInsT *bplptr[5];
 static CopListT *cp;
@@ -18,6 +20,7 @@ static WORD plane, planeC;
 static void Load() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   shape = LoadShape("data/boxes.2d");
+  palette = LoadPalette("data/shapes-pal.ilbm");
   cp = NewCopList(100);
 }
 
@@ -25,24 +28,14 @@ static void UnLoad() {
   DeleteShape(shape);
   DeleteCopList(cp);
   DeleteBitmap(screen);
+  DeletePalette(palette);
 }
 
 static void MakeCopperList(CopListT *cp) {
-  UWORD i, j = 2;
-
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
   CopMakePlayfield(cp, bplptr, screen, DEPTH);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0x111);
-  for (i = 0; i < 2; i++)
-    CopSetRGB(cp, j++, 0x222);
-  for (i = 0; i < 4; i++)
-    CopSetRGB(cp, j++, 0x444);
-  for (i = 0; i < 8; i++)
-    CopSetRGB(cp, j++, 0x888);
-  for (i = 0; i < 16; i++)
-    CopSetRGB(cp, j++, 0xfff);
+  CopLoadPal(cp, palette, 0);
   CopEnd(cp);
 }
 
