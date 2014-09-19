@@ -18,6 +18,7 @@ typedef struct {
 } Line2D;
 
 __regargs PaletteT *NewPalette(UWORD count);
+__regargs PaletteT *CopyPalette(PaletteT *palette);
 __regargs void DeletePalette(PaletteT *palette);
 
 #define BM_INTERLEAVED 1

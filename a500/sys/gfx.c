@@ -67,6 +67,12 @@ __regargs PaletteT *NewPalette(UWORD count) {
   return palette;
 }
 
+__regargs PaletteT *CopyPalette(PaletteT *palette) {
+  PaletteT *copy = NewPalette(palette->count);
+  memcpy(copy->colors, palette->colors, palette->count * sizeof(ColorT));
+  return copy;
+}
+
 __regargs void DeletePalette(PaletteT *palette) {
   MemFree(palette, sizeof(PaletteT) + palette->count * sizeof(ColorT));
 }
