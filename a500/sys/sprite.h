@@ -30,4 +30,14 @@ static inline void CopMakeSprites(CopListT *list, CopInsT **sprptr, SpriteT *nul
     sprptr[i] = CopMove32(list, sprpt[i], nullspr->data);
 }
 
+static inline void CopMakeManualSprites(CopListT *list, CopInsT **sprptr, CopInsT **sprpos, CopInsT **sprctl, SpriteT *nullspr) {
+  UWORD i;
+
+  for (i = 0; i < 8; i++) {
+    sprpos[i] = CopMove16(list, spr[i].pos, nullspr->data[0]);
+    sprctl[i] = CopMove16(list, spr[i].ctl, nullspr->data[1]);
+    sprptr[i] = CopMove32(list, sprpt[i], &nullspr->data[2]);
+  }
+}
+
 #endif
