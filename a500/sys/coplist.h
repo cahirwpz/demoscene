@@ -155,12 +155,14 @@ CopMakeDispWin(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
   /* hstop  $100 .. $1ff */
   UBYTE xe = xs + w;
   UBYTE ye = ys + h;
+  UWORD ddfstrt = ((xs - 17) / 2) & ~7;
+  UWORD ddfstop = ddfstrt + (w / 2 - 8);
 
   CopMove16(list, diwstrt, (ys << 8) | xs);
   CopMove16(list, diwstop, (ye << 8) | xe);
 
-  CopMove16(list, ddfstrt, 0x38);
-  CopMove16(list, ddfstop, 0xd0);
+  CopMove16(list, ddfstrt, ddfstrt);
+  CopMove16(list, ddfstop, ddfstop);
   CopMove16(list, fmode, 0);
 }
 
@@ -172,12 +174,14 @@ CopMakeDispWinHiRes(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
   /* hstop  $100 .. $1ff */
   UBYTE xe = xs + w / 2;
   UBYTE ye = ys + h;
+  UWORD ddfstrt = ((xs - 9) / 2) & ~3;
+  UWORD ddfstop = ddfstrt + (w / 4 - 8);
 
   CopMove16(list, diwstrt, (ys << 8) | xs);
   CopMove16(list, diwstop, (ye << 8) | xe);
 
-  CopMove16(list, ddfstrt, 0x3c);
-  CopMove16(list, ddfstop, 0xd0);
+  CopMove16(list, ddfstrt, ddfstrt);
+  CopMove16(list, ddfstop, ddfstop);
   CopMove16(list, fmode, 0);
 }
 

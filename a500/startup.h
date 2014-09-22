@@ -4,7 +4,7 @@
 #include <exec/types.h>
 
 #ifndef X
-#define X(x) ((x) + 0x80)
+#define X(x) ((x) + 0x81)
 #endif
 
 #ifndef Y
