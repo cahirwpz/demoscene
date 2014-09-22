@@ -48,12 +48,12 @@ __regargs static void BLTOP_NAME() {
     custom->bltcon0 = HALF_ADDER_CARRY;
     custom->bltsize = BLTOP_SIZE;
 
+    BLTOP_WAIT;
     custom->bltapt = __dst[i];
     custom->bltbpt = __carry[k];
     custom->bltdpt = __dst[i];
     custom->bltcon0 = HALF_ADDER;
     custom->bltsize = BLTOP_SIZE;
-    BLTOP_WAIT;
   }
 
   for (i = 0; i < BLTOP_BPLS; i++) {
