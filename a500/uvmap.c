@@ -16,10 +16,10 @@ static PixmapT *chunky[2];
 static PixmapT *textureHi, *textureLo;
 static BitmapT *screen[2];
 static UWORD *uvmap;
-static PaletteT *palette;
 static UWORD active = 0;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
+static PixmapT *texture;
 
 extern APTR UVMapRenderTemplate[5];
 #define UVMapRenderSize \
@@ -30,62 +30,41 @@ void (*UVMapRender)(UBYTE *chunky asm("a0"),
 
 static void PixmapScramble(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
 {
-  UBYTE *data = image->pixels;
-  UBYTE *hi = imageHi->pixels;
-  UBYTE *lo = imageLo->pixels;
-  LONG n = image->width * image->height;
+  ULONG *data = image->pixels;
+  ULONG *hi = imageHi->pixels;
+  ULONG *lo = imageLo->pixels;
+  LONG size = image->width * image->height;
+  LONG n = size / 4;
+  register ULONG m1 asm("d6") = 0x0c0c0c0c;
+  register ULONG m2 asm("d7") = 0x03030303;
 
-  do {
-    BYTE c = *data++;
+  while (--n >= 0) {
+    ULONG c = *data++;
     /* [0 0 0 0 a0 a1 a2 a3] => [a2 a3 0 0 a0 a1 0 0] */
-    *hi++ = (c & 0x0c) | ((c & 0x03) << 6);
+    *hi++ = (c & m1) | ((c & m2) << 6);
     /* [0 0 0 0 a0 a1 a2 a3] => [ 0 0 a2 a3 0 0 a0 a1] */
-    *lo++ = ((c & 0x0c) >> 2) | ((c & 0x03) << 4);
-  } while (--n);
+    *lo++ = ((c & m1) >> 2) | ((c & m2) << 4);
+  }
+
+  /* Extra halves for cheap texture motion. */
+  memcpy(((APTR)imageHi->pixels) + size, (APTR)imageHi->pixels, size);
+  memcpy(((APTR)imageLo->pixels) + size, (APTR)imageLo->pixels, size);
 }
 
 static void Load() {
-  cp = NewCopList(1024);
   screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, FALSE);
   screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, FALSE);
 
-  {
-    PixmapT *texture = LoadTGA("data/texture-16.tga", PM_CMAP, MEMF_PUBLIC);
-    LONG size = texture->width * texture->height;
-
-    palette = texture->palette;
-
-    textureHi = NewPixmap(texture->width, texture->height * 2,
-                          PM_CMAP, MEMF_PUBLIC|MEMF_CLEAR);
-    textureLo = NewPixmap(texture->width, texture->height * 2,
-                          PM_CMAP, MEMF_PUBLIC|MEMF_CLEAR);
-    PixmapScramble(texture, textureHi, textureLo);
-
-    /* Extra halves for cheap texture motion. */
-    memcpy(textureHi->pixels + size, textureHi->pixels, size);
-    memcpy(textureLo->pixels + size, textureLo->pixels, size);
-
-    DeletePixmap(texture);
-  }
-
-  chunky[0] = NewPixmap(WIDTH, HEIGHT, PM_GRAY4, MEMF_CHIP);
-  chunky[1] = NewPixmap(WIDTH, HEIGHT, PM_GRAY4, MEMF_CHIP);
-
+  texture = LoadTGA("data/texture-16.tga", PM_CMAP, MEMF_PUBLIC);
   uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
-  UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
 }
 
 static void UnLoad() {
   MemFreeAuto(uvmap);
-  MemFree(UVMapRender, UVMapRenderSize);
-  DeletePixmap(textureHi);
-  DeletePixmap(textureLo);
-  DeletePixmap(chunky[0]);
-  DeletePixmap(chunky[1]);
+  DeletePalette(texture->palette);
+  DeletePixmap(texture);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
-  DeletePalette(palette);
-  DeleteCopList(cp);
 }
 
 static struct {
@@ -99,6 +78,14 @@ static void ChunkyToPlanar() {
 
   switch (c2p.phase) {
     case 0:
+      /* Initialize chunky to planar. */
+      custom->bltamod = 2;
+      custom->bltbmod = 2;
+      custom->bltdmod = 0;
+      custom->bltcdat = 0xf0f0;
+      custom->bltafwm = -1;
+      custom->bltalwm = -1;
+
       /* Swap 4x2, pass 1. */
       custom->bltapt = src->pixels;
       custom->bltbpt = src->pixels + 2;
@@ -133,6 +120,7 @@ static void ChunkyToPlanar() {
       CopInsSet32(bplptr[1], dst->planes[0]);
       CopInsSet32(bplptr[2], dst->planes[2]);
       CopInsSet32(bplptr[3], dst->planes[2]);
+      CopInsSet32(bplptr[4], dst->planes[4]);
       break;
 
     default:
@@ -143,10 +131,10 @@ static void ChunkyToPlanar() {
 }
 
 static __interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_BLIT) {
-    asm volatile("" ::: "d0", "d1", "a0", "a1");
+  asm volatile("" ::: "d0", "d1", "a0", "a1");
+
+  if (custom->intreqr & INTF_BLIT)
     ChunkyToPlanar();
-  }
 
   custom->intreq = INTF_LEVEL3;
   custom->intreq = INTF_LEVEL3;
@@ -158,9 +146,8 @@ static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
   CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
-  for (i = 0; i < 16; i++)
-    CopSetRGB(cp, i, 0);
-  CopLoadPal(cp, palette, 16);
+  CopLoadColor(cp, 0, 15, 0);
+  CopLoadPal(cp, texture->palette, 16);
   for (i = 0; i < HEIGHT * 2; i++) {
     CopWaitMask(cp, Y(i + 28), 0, 0xff, 0);
     CopMove16(cp, bplcon1, (i & 1) ? 0x0021 : 0x0010);
@@ -189,39 +176,49 @@ static void MakeUVMapRenderCode() {
 }
 
 static void Init() {
-  WORD i;
+  static PixmapT recycled[2];
+
+  chunky[0] = &recycled[0];
+  chunky[1] = &recycled[1];
+
+  InitSharedPixmap(chunky[0], WIDTH, HEIGHT, PM_GRAY4, screen[0]->planes[1]);
+  InitSharedPixmap(chunky[1], WIDTH, HEIGHT, PM_GRAY4, screen[1]->planes[1]);
+
+  UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
+  textureHi = NewPixmap(texture->width, texture->height * 2,
+                        PM_CMAP, MEMF_PUBLIC);
+  textureLo = NewPixmap(texture->width, texture->height * 2,
+                        PM_CMAP, MEMF_PUBLIC);
 
   MakeUVMapRenderCode();
+  PixmapScramble(texture, textureHi, textureLo);
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
 
-  for (i = 0; i < 5; i++) {
-    BlitterClearSync(screen[0], i);
-    BlitterClearSync(screen[1], i);
-  }
+  ITER(i, 0, 4, BlitterClearSync(screen[0], i));
+  ITER(i, 0, 4, BlitterClearSync(screen[1], i));
 
   memset(screen[0]->planes[4], 0x55, WIDTH * HEIGHT * 4 / 8);
   memset(screen[1]->planes[4], 0x55, WIDTH * HEIGHT * 4 / 8);
 
+  cp = NewCopList(1024);
+
   MakeCopperList(cp);
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
-
-  /* Initialize chunky to planar. */
-  custom->bltamod = 2;
-  custom->bltbmod = 2;
-  custom->bltdmod = 0;
-  custom->bltcdat = 0xf0f0;
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
 
   InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_BLIT;
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_RASTER | DMAF_BLITTER;
+  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
   custom->intena = INTF_BLIT;
+
+  DeleteCopList(cp);
+  DeletePixmap(textureHi);
+  DeletePixmap(textureLo);
+  MemFree(UVMapRender, UVMapRenderSize);
 }
 
 static void Render() {
@@ -237,7 +234,6 @@ static void Render() {
   c2p.phase = 0;
   c2p.active = active;
   ChunkyToPlanar();
-
   active ^= 1;
 }
 
