@@ -89,6 +89,12 @@ LONG P61_Init(APTR Module asm("a0"),
               APTR Buffer asm("a2"));
 
 /**
+ * @brief Main entry point from CIA/VB int or frame loop.
+ */
+
+void P61_Music();
+
+/**
  * @brief Read samples the player is about to play in this frame.
  */
 

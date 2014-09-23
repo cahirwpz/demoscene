@@ -23,7 +23,7 @@ static TextFontT *topaz8;
 static ConsoleT console;
 
 static void Load() {
-  module = ReadFile("data/jazzcat-boogie_town.p61", MEMF_CHIP);
+  module = ReadFile("data/jazzcat-sunglasses.p61", MEMF_CHIP);
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1, FALSE));
 
@@ -52,15 +52,23 @@ static void UnLoad() {
 }
 
 static __interrupt_handler void IntLevel2Handler() {
-  if (custom->intreqr & INTF_PORTS) {
-    /* Make sure all scratchpad registers are saved, because we call a function
-     * that relies on the fact that it's caller responsibility to save them. */
-    asm volatile("" ::: "d0", "d1", "a0", "a1");
+  asm volatile("" ::: "d0", "d1", "a0", "a1");
+
+  if (custom->intreqr & INTF_PORTS)
     KeyboardIntHandler();
-  }
 
   custom->intreq = INTF_PORTS;
   custom->intreq = INTF_PORTS;
+}
+
+static __interrupt_handler void IntLevel3Handler() {
+  asm volatile("" ::: "d0", "d1", "a0", "a1");
+
+  if (custom->intreqr & INTF_VERTB)
+    P61_Music();
+
+  custom->intreq = INTF_LEVEL3;
+  custom->intreq = INTF_LEVEL3;
 }
 
 static inline void putpixel(UBYTE *line, WORD x) {
@@ -111,7 +119,8 @@ static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
 static void Init() {
   KeyboardInit();
   InterruptVector->IntLevel2 = IntLevel2Handler;
-  custom->intena = INTF_SETCLR | INTF_PORTS;
+  InterruptVector->IntLevel3 = IntLevel3Handler;
+  custom->intena = INTF_SETCLR | INTF_PORTS | INTF_VERTB;
 
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
@@ -124,8 +133,8 @@ static void Init() {
     for (i = 0; i < 4; i++) {
       WORD x1 = 8 + 72 * i - 1;
       WORD x2 = 72 + 72 * i + 1;
-      WORD y1 = 80 - 1;
-      WORD y2 = 144 + 1;
+      WORD y1 = 96 - 1;
+      WORD y2 = 160 + 1;
 
       BlitterLineSync(x1, y1, x2, y1);
       BlitterLineSync(x1, y2, x2, y2);
@@ -137,18 +146,23 @@ static void Init() {
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
-  ConsolePutStr(&console, "Exit (ESC) | Pause (SPACE)\n");
+  ConsolePutStr(&console, 
+                "Pause (SPACE) Prev (LEFT) Next (RIGHT)\n"
+                "Exit (ESC)\n");
 }
 
 static void Kill() {
   P61_ControlBlock.Play = 0;
   P61_End();
+
+  custom->intena = INTF_PORTS | INTF_VERTB;
+  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
 }
 
 static void Render() {
   WORD i;
 
-  ConsoleSetCursor(&console, 0, 2);
+  ConsoleSetCursor(&console, 0, 3);
   ConsolePrint(&console, "Position : %02ld/%02ld\n\n",
                (LONG)P61_ControlBlock.Pos, (LONG)P61_ControlBlock.Row);
 
@@ -183,7 +197,7 @@ static void Render() {
 
     for (i = 0; i < 4; i++) {
       WORD x = 8 + 72 * i;
-      WORD y = 80;
+      WORD y = 96;
       BlitterCopySync(screen, 0, x, y, osc[i], 0);
     }
   }
@@ -210,6 +224,16 @@ static BOOL HandleEvent() {
     else
       custom->dmacon = DMAF_AUDIO;
   }
+
+  if (event.code == KEY_LEFT) {
+    BYTE newPos = P61_ControlBlock.Pos - 2;
+    if (newPos < 0)
+      newPos = 0;
+    P61_SetPosition(newPos);
+  }
+
+  if (event.code == KEY_RIGHT)
+    P61_SetPosition(P61_ControlBlock.Pos);
 
   return TRUE;
 }

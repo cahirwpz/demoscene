@@ -10,7 +10,7 @@ usecode = -1	;CHANGE! to the USE hexcode from P61con for a big
 
 P61pl = usecode & $400000
 
-split4 = 0	;Great time gain, but INCOMPATIBLE with F03, F02, and F01
+split4 = 1	;Great time gain, but INCOMPATIBLE with F03, F02, and F01
 		;speeds in the song! That's the ONLY reason it's default 0.
 		;So ==> PLEASE try split4=1 in ANY mode!
 		;Overrides splitchans to decrunch 1 chan/frame.
@@ -82,7 +82,7 @@ use1Fx = 0	;Optional extra effect-sync trigger (*). If your module is free
 ;BEFORE it's heard. This is good, because it allows double-buffered graphics 
 ;or effects running at < 50 fps to show the trigger synced properly.
 
-p61cia = 1	;call P61_Music on the CIA interrupt instead of every frame.
+p61cia = 0	;call P61_Music on the CIA interrupt instead of every frame.
 
 lev6 = 1	;1=keep the timer B int at least for setting DMA.
 		;0="FBI mode" - ie. "Free the B-timer Interrupt".
@@ -108,7 +108,7 @@ noshorts = 0	;1 saves ~1 scanline, requires Lev6=0. Use if no instrument is
 dupedec = 0	;0=save 500 bytes and lose 26 cycles - I don't blame you. :)
 		;1=splitchans or split4 must be on.
 
-suppF01 = 1	;0 is incompatible with CIA mode. It moves ~100 cycles of
+suppF01 = 0	;0 is incompatible with CIA mode. It moves ~100 cycles of
 		;next-pattern code to the less busy 2nd frame of a notestep.
 		;If you really need it, you have to experiment as the support 
 		;is quite complex. Basically set it to 1 and try the various 
@@ -116,7 +116,7 @@ suppF01 = 1	;0 is incompatible with CIA mode. It moves ~100 cycles of
 
 ********** CODE START **********
 
-	xdef _P61_Init, _P61_SetPosition, _P61_Osc, _P61_End
+	xdef _P61_Init, _P61_Music, _P61_SetPosition, _P61_Osc, _P61_End
         xdef _P61_ControlBlock, _P61_visuctr
 
 	section	"P6111",code
@@ -127,6 +127,13 @@ _P61_Init
 	bsr	P61_Init
 	movem.l	(sp)+,d2-d7/a2-a6
 	rts
+
+_P61_Music
+	movem.l	d2-d7/a2-a6,-(sp)
+	lea	$dff000,a6
+	bsr	P61_Music
+	movem.l	(sp)+,d2-d7/a2-a6
+        rts
 
 _P61_SetPosition
 	movem.l a3/a6,-(sp)
