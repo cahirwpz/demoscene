@@ -12,64 +12,40 @@
 #define DEPTH 5
 #define SIZE 80
 
-/* Triple buffering. */
-static BitmapT *screen[3];
+static BitmapT *screen[2];
 static WORD active = 0;
 
-static Point2D pos[3][3];
-static BitmapT *background;
+static Point2D pos[2][3];
+static BitmapT *bgLeft, *bgRight;
 static BitmapT *metaball;
 static BitmapT *carry;
-static CopInsT *bplptr[5];
+static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
 
 static void Load() {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
-  screen[2] = NewBitmap(WIDTH, HEIGHT, 5, FALSE);
-  background = LoadILBM("data/metaball-bg.ilbm", FALSE);
-  metaball = LoadILBM("data/metaball.ilbm", FALSE);
-  carry = NewBitmap(SIZE + 16, SIZE, 2, FALSE);
-  cp = NewCopList(100);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+
+  bgLeft = LoadILBM("data/metaball-bg-left-1.ilbm", FALSE);
+  DeletePalette(bgLeft->palette);
+  bgRight = LoadILBM("data/metaball-bg-right-1.ilbm", FALSE);
+  DeletePalette(bgRight->palette);
+  metaball = LoadILBM("data/metaball-1.ilbm", FALSE);
 }
 
 static void UnLoad() {
-  DeleteCopList(cp);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
-  DeleteBitmap(screen[2]);
-  DeleteBitmap(carry);
-  DeletePalette(background->palette);
-  DeleteBitmap(background);
+  DeleteBitmap(bgLeft);
+  DeleteBitmap(bgRight);
   DeletePalette(metaball->palette);
   DeleteBitmap(metaball);
-}
-
-static volatile LONG swapScreen = -1;
-
-static __interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB) {
-    if (swapScreen >= 0) {
-      BitmapT *buffer = screen[swapScreen];
-      WORD n = 5;
-
-      while (--n >= 0) {
-        CopInsSet32(bplptr[n], buffer->planes[n]);
-        custom->bplpt[n] = buffer->planes[n];
-      }
-
-      swapScreen = -1;
-    }
-  }
-
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
 }
 
 static void SetInitialPositions() {
   WORD i, j;
 
-  for (i = 0; i < 3; i++) {
+  for (i = 0; i < 2; i++) {
     for (j = 0; j < 3; j++) {
       pos[i][j].x = 160;
       pos[i][j].x = 128;
@@ -86,25 +62,33 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
+  WORD i, j;
+
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+
+  for (j = 0; j < 2; j++) {
+    for (i = 0; i < DEPTH; i++) {
+      BlitterSetSync(screen[j], i, 32, 0, WIDTH - 64, HEIGHT, 0);
+      BlitterCopySync(screen[j], i, 0, 0, bgLeft, i);
+      BlitterCopySync(screen[j], i, WIDTH - 32, 0, bgRight, i);
+    }
+  }
+
+  cp = NewCopList(100);
+  carry = NewBitmap(SIZE + 16, SIZE, 2, FALSE);
+
   SetInitialPositions();
+
   MakeCopperList(cp);
-
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
-
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
-
-  ITER(i, 0, 4, {
-    BlitterCopySync(screen[0], i, 0, 0, background, i);
-    BlitterCopySync(screen[1], i, 0, 0, background, i);
-    BlitterCopySync(screen[2], i, 0, 0, background, i);
-  });
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
-  custom->intena = INTF_VERTB;
+  custom->dmacon = DMAF_COPPER | DMAF_BLITTER | DMAF_RASTER;
+
+  DeleteBitmap(carry);
+  DeleteCopList(cp);
 }
 
 #define BLTOP_NAME ClearMetaball
@@ -169,11 +153,9 @@ static void Render() {
 
   // Log("loop: %ld\n", ReadLineCounter() - lines);
 
-  swapScreen = active;
-
-  active++;
-  if (active > 2)
-    active = 0;
+  WaitVBlank();
+  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  active ^= 1;
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, Render };
