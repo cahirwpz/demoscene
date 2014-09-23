@@ -6,6 +6,7 @@
 #include "random.h"
 #include "color.h"
 #include "tga.h"
+#include "color.h"
 
 #define WIDTH 320
 #define HEIGHT 212
@@ -83,9 +84,6 @@ static void Load() {
 
   texture = LoadTGA("data/floor.tga", PM_RGB4, MEMF_PUBLIC);
 
-  cp[0] = NewCopList((256 - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
-  cp[1] = NewCopList((256 - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
-
   FloorPrecalc();
 
   ITER(i, 0, 255, cycleStart[i] = random() & 63);
@@ -93,8 +91,6 @@ static void Load() {
 
 static void UnLoad() {
   DeletePixmap(texture);
-  DeleteCopList(cp[0]);
-  DeleteCopList(cp[1]);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }
@@ -106,16 +102,13 @@ static void MakeCopperList(CopListT *cp, WORD num) {
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopMakePlayfield(cp, NULL, screen[num], DEPTH);
-  CopSetRGB(cp, 0, 0);
-  CopSetRGB(cp, 1, 0);
-  CopSetRGB(cp, 2, 0);
-  CopSetRGB(cp, 3, 0);
+  CopLoadColor(cp, 0, 3, 0);
 
   for (i = 0; i < FAR_Y; i++) {
-    WORD c = i * 15 / FAR_Y;
+    WORD s = i * 15 / FAR_Y;
 
     CopWait(cp, Y(i), 0);
-    CopSetRGB(cp, 3, ((c / 2) << 8) | ((c / 2) << 4) | c );
+    CopSetRGB(cp, 3, ColorTransition(0, 0xADF, s));
   }
 
   for (i = FAR_Y; i < HEIGHT; i++) {
@@ -131,35 +124,36 @@ static void MakeCopperList(CopListT *cp, WORD num) {
   }
 
   CopWait(cp, Y(i) & 255, 0);
-  CopSetRGB(cp, 0, 0);
-  CopSetRGB(cp, 1, 0);
-  CopSetRGB(cp, 2, 0);
-  CopSetRGB(cp, 3, 0);
+  CopLoadColor(cp, 0, 3, 0);
   CopEnd(cp);
 }
 
 static void Init() {
   WORD i;
 
-  ITER(j, 0, 1, MakeCopperList(cp[j], j));
-  CopListActivate(cp[active]);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
 
   for (i = 0; i < 2; i++) {
     BlitterClearSync(screen[i], 0);
     BlitterClearSync(screen[i], 1);
 
-    WaitBlitter();
-    BlitterLineSetup(screen[i], 0, LINE_EOR, LINE_ONEDOT);
-    BlitterLineSync(WIDTH - 1, 0, WIDTH - 1, FAR_Y - 1);
-    BlitterLineSync(WIDTH - 1, FAR_Y - 1, WIDTH - 1, HEIGHT);
-    BlitterFillSync(screen[i], 0);
-
-    WaitBlitter();
-    BlitterLineSetup(screen[i], 1, LINE_EOR, LINE_ONEDOT);
-    BlitterLineSync(WIDTH - 1, 0, WIDTH - 1, FAR_Y - 1);
-    BlitterFillSync(screen[i], 1);
+    BlitterSetSync(screen[i], 0, 0, 0, WIDTH, FAR_Y, -1);
+    BlitterSetSync(screen[i], 1, 0, 0, WIDTH, FAR_Y, -1);
   }
+
+  cp[0] = NewCopList((HEIGHT - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
+  cp[1] = NewCopList((HEIGHT - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
+
+  ITER(j, 0, 1, MakeCopperList(cp[j], j));
+  CopListActivate(cp[active]);
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+}
+
+static void Kill() {
+  custom->dmacon = DMAF_RASTER | DMAF_BLITTER;
+
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
 }
 
 static void ClearLine(WORD k) {
@@ -454,4 +448,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };
