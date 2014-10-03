@@ -3,7 +3,6 @@
 #include "startup.h"
 #include "console.h"
 #include "hardware.h"
-#include "interrupts.h"
 #include "coplist.h"
 #include "keyboard.h"
 
@@ -41,28 +40,18 @@ static void UnLoad() {
   DeleteBitmap(screen);
 }
 
-static __interrupt_handler void IntLevel2Handler() {
-  if (custom->intreqr & INTF_PORTS) {
-    /* Make sure all scratchpad registers are saved, because we call a function
-     * that relies on the fact that it's caller responsibility to save them. */
-    asm volatile("" ::: "d0", "d1", "a0", "a1");
-    KeyboardIntHandler();
-  }
-
-  custom->intreq = INTF_PORTS;
-  custom->intreq = INTF_PORTS;
-}
-
 static void Init() {
   KeyboardInit();
-  InterruptVector->IntLevel2 = IntLevel2Handler;
-  custom->intena = INTF_SETCLR | INTF_PORTS;
 
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
+}
+
+static void Kill() {
+  custom->dmacon = DMAF_COPPER | DMAF_RASTER;
 }
 
 static BOOL HandleEvent() {
@@ -109,4 +98,4 @@ static BOOL HandleEvent() {
   return TRUE;
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, NULL, HandleEvent };
+EffectT Effect = { Load, UnLoad, Init, Kill, NULL, NULL, HandleEvent };

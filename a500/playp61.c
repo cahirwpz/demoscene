@@ -8,7 +8,6 @@
 #include "console.h"
 #include "coplist.h"
 #include "keyboard.h"
-#include "interrupts.h"
 #include "blitter.h"
 
 #define WIDTH 320
@@ -51,24 +50,9 @@ static void UnLoad() {
   DeleteBitmap(screen);
 }
 
-static __interrupt_handler void IntLevel2Handler() {
-  asm volatile("" ::: "d0", "d1", "a0", "a1");
-
-  if (custom->intreqr & INTF_PORTS)
-    KeyboardIntHandler();
-
-  custom->intreq = INTF_PORTS;
-  custom->intreq = INTF_PORTS;
-}
-
-static __interrupt_handler void IntLevel3Handler() {
-  asm volatile("" ::: "d0", "d1", "a0", "a1");
-
+static void VBlankHandler() {
   if (custom->intreqr & INTF_VERTB)
     P61_Music();
-
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
 }
 
 static inline void putpixel(UBYTE *line, WORD x) {
@@ -118,12 +102,8 @@ static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
 
 static void Init() {
   KeyboardInit();
-  InterruptVector->IntLevel2 = IntLevel2Handler;
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_PORTS | INTF_VERTB;
 
-  CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
 
   {
     WORD i;
@@ -143,6 +123,10 @@ static void Init() {
     }
   }
 
+  CopListActivate(cp);
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  custom->intena = INTF_SETCLR | INTF_VERTB;
+
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
@@ -155,8 +139,8 @@ static void Kill() {
   P61_ControlBlock.Play = 0;
   P61_End();
 
-  custom->intena = INTF_PORTS | INTF_VERTB;
   custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
+  custom->intena = INTF_VERTB;
 }
 
 static void Render() {
@@ -238,4 +222,4 @@ static BOOL HandleEvent() {
   return TRUE;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, HandleEvent };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, VBlankHandler, HandleEvent };

@@ -121,6 +121,9 @@ typedef struct {
 
 __regargs BOOL GetKeyEvent(KeyEventT *event);
 
+/* [read-only] Set to TRUE after KeyboardInit was called. */
+extern BOOL keyboardActive;
+
 void KeyboardInit();
 void KeyboardIntHandler();
 

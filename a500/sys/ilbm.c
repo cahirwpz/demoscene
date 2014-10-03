@@ -126,6 +126,8 @@ __regargs BitmapT *LoadILBM(const char *filename, BOOL interleaved) {
     }
 
     CloseIff(&iff);
+  } else {
+    Log("File '%s' missing.\n", filename);
   }
 
   return bitmap;

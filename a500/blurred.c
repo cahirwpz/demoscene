@@ -1,7 +1,6 @@
 #include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
-#include "interrupts.h"
 #include "memory.h"
 #include "ilbm.h"
 #include "2d.h"

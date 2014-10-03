@@ -9,6 +9,8 @@
 
 #include "hardware.h"
 #include "interrupts.h"
+#include "keyboard.h"
+#include "mouse.h"
 #include "print.h"
 #include "startup.h"
 
@@ -21,11 +23,36 @@ struct DosLibrary *DOSBase = NULL;
 struct GfxBase *GfxBase = NULL;
 struct Library *MathBase = NULL;
 
-static void DummyRender() {}
-static BOOL ExitOnLMB() { return !LeftMouseButton(); }
-
 LONG frameCount;
 LONG lastFrameCount;
+
+static __interrupt_handler void IntLevel2Handler() {
+  /* Make sure all scratchpad registers are saved, because we call a function
+   * that relies on the fact that it's caller responsibility to save them. */
+  asm volatile("" ::: "d0", "d1", "a0", "a1");
+
+  if (keyboardActive && (custom->intreqr & INTF_PORTS))
+    KeyboardIntHandler();
+
+  custom->intreq = INTF_PORTS;
+  custom->intreq = INTF_PORTS;
+}
+
+static __interrupt_handler void IntLevel3Handler() {
+  asm volatile("" ::: "d0", "d1", "a0", "a1");
+
+  if (mouseActive && (custom->intreqr & INTF_VERTB))
+    MouseIntHandler();
+
+  if (Effect.InterruptHandler)
+    Effect.InterruptHandler();
+
+  custom->intreq = INTF_LEVEL3;
+  custom->intreq = INTF_LEVEL3;
+}
+
+static void DummyRender() {}
+static BOOL ExitOnLMB() { return !LeftMouseButton(); }
 
 int main() {
   DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 33);
@@ -92,8 +119,16 @@ int main() {
       if (!Effect.HandleEvent)
         Effect.HandleEvent = ExitOnLMB;
 
+      InterruptVector->IntLevel2 = IntLevel2Handler;
+      InterruptVector->IntLevel3 = IntLevel3Handler;
+
       if (Effect.Init)
         Effect.Init();
+
+      if (keyboardActive)
+        custom->intena = INTF_SETCLR | INTF_PORTS;
+      if (mouseActive)
+        custom->intena = INTF_SETCLR | INTF_VERTB;
 
       lastFrameCount = ReadFrameCounter();
 
@@ -103,6 +138,8 @@ int main() {
         Effect.Render();
         lastFrameCount = t;
       }
+
+      custom->intena = INTF_VERTB | INTF_PORTS;
 
       if (Effect.Kill)
         Effect.Kill();

@@ -22,6 +22,7 @@ typedef struct MouseQueue {
   UBYTE head, tail, used;
 } MouseQueueT;
 
+BOOL mouseActive = FALSE;
 static MouseDataT mouseData;
 static MouseQueueT mouseQueue;
 
@@ -143,6 +144,8 @@ __regargs void MouseInit(WORD minX, WORD minY, WORD maxX, WORD maxY) {
   mouse->xctr = custom->joy0dat & 0xff;
   mouse->yctr = custom->joy0dat >> 8;
   mouse->button = ReadButtonState();
+
+  mouseActive = TRUE;
 }
 
 __regargs BOOL GetMouseEvent(MouseEventT *event) {

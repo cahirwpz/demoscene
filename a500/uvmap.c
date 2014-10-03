@@ -4,7 +4,6 @@
 #include "tga.h"
 #include "print.h"
 #include "file.h"
-#include "interrupts.h"
 
 #include "startup.h"
 
@@ -55,7 +54,7 @@ static void Load() {
   screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, FALSE);
   screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, FALSE);
 
-  texture = LoadTGA("data/texture-16.tga", PM_CMAP, MEMF_PUBLIC);
+  texture = LoadTGA("data/texture-16-1.tga", PM_CMAP, MEMF_PUBLIC);
   uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
 }
 
@@ -130,14 +129,10 @@ static void ChunkyToPlanar() {
   c2p.phase++;
 }
 
-static __interrupt_handler void IntLevel3Handler() {
-  asm volatile("" ::: "d0", "d1", "a0", "a1");
-
-  if (custom->intreqr & INTF_BLIT)
+static void BlitterInterrupt() {
+  if (custom->intreqr & INTF_BLIT) {
     ChunkyToPlanar();
-
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
+  }
 }
 
 static void MakeCopperList(CopListT *cp) {
@@ -206,8 +201,6 @@ static void Init() {
   MakeCopperList(cp);
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
-
-  InterruptVector->IntLevel3 = IntLevel3Handler;
   custom->intena = INTF_SETCLR | INTF_BLIT;
 }
 
@@ -237,4 +230,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, BlitterInterrupt };

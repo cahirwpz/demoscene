@@ -3,7 +3,6 @@
 #include "coplist.h"
 #include "gfx.h"
 #include "ilbm.h"
-#include "interrupts.h"
 #include "blitter.h"
 #include "2d.h"
 #include "fx.h"
@@ -28,8 +27,8 @@ static Point2D p[PNUM];
 static Point2D p_last[2][PNUM];
 
 static void Load() {
-  neon[0] = LoadILBM("data/greetz-1.ilbm", FALSE);
-  neon[1] = LoadILBM("data/greetz-2.ilbm", FALSE);
+  neon[0] = LoadILBM("data/greet_ada.ilbm", FALSE);
+  neon[1] = LoadILBM("data/greet_dcs.ilbm", FALSE);
   background = LoadILBM("data/neons.ilbm", FALSE);
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
@@ -83,14 +82,9 @@ static void RotatePalette() {
   }
 }
 
-static __interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB) {
-    asm volatile("" ::: "d0", "d1", "a0", "a1");
+static void VBlankInterrupt() {
+  if (custom->intreqr & INTF_VERTB)
     RotatePalette();
-  }
-
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
 }
 
 static void MakeCopperList(CopListT *cp) {
@@ -102,9 +96,7 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
-  MakeCopperList(cp);
-  CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
 
   ITER(i, 0, PNUM - 1, p[i].x = 0);
   ITER(i, 0, PNUM - 1, p[i].y = -128);
@@ -112,13 +104,18 @@ static void Init() {
   ITER(i, 0, 3, BlitterCopySync(screen[0], i, 0, 0, background, i));
   ITER(i, 0, 3, BlitterCopySync(screen[1], i, 0, 0, background, i));
 
-  BlitterClear(screen[0], 4);
-  WaitBlitter();
-  BlitterClear(screen[1], 4);
-  WaitBlitter();
+  BlitterClearSync(screen[0], 4);
+  BlitterClearSync(screen[1], 4);
 
-  InterruptVector->IntLevel3 = IntLevel3Handler;
+  MakeCopperList(cp);
+  CopListActivate(cp);
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
   custom->intena = INTF_SETCLR | INTF_VERTB;
+}
+
+static void Kill() {
+  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
+  custom->intena = INTF_VERTB;
 }
 
 static void ClearCliparts() {
@@ -147,8 +144,9 @@ static void DrawCliparts() {
     Point2D d = {p[i].x, p[i].y};
 
     if (ClipArea2D(&d, WIDTH, HEIGHT, &s)) {
-      ITER(i, 0, 4, BlitterCopyAreaSync(screen[active], i, d.x, d.y,
+      ITER(i, 0, 2, BlitterCopyAreaSync(screen[active], i, d.x, d.y,
                                         src, i, s.x, s.y, s.w, s.h));
+      ITER(i, 3, 4, BlitterSetSync(screen[active], i, d.x, d.y, s.w, s.h, 0xffff));
     } else {
       if (p[i].y < 0) {
         p[i].x = 96 + (random() % 112);
@@ -172,4 +170,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, VBlankInterrupt };

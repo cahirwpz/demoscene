@@ -1,6 +1,5 @@
 #include "startup.h"
 #include "hardware.h"
-#include "interrupts.h"
 #include "coplist.h"
 #include "sprite.h"
 #include "mouse.h"
@@ -40,40 +39,16 @@ static void UnLoad() {
   DeleteBitmap(screen);
 }
 
-static __interrupt_handler void IntLevel2Handler() {
-  if (custom->intreqr & INTF_PORTS) {
-    /* Make sure all scratchpad registers are saved, because we call a function
-     * that relies on the fact that it's caller responsibility to save them. */
-    asm volatile("" ::: "d0", "d1", "a0", "a1");
-    KeyboardIntHandler();
-  }
-
-  custom->intreq = INTF_PORTS;
-  custom->intreq = INTF_PORTS;
-}
-
-static __interrupt_handler void IntLevel3Handler() {
-  if (custom->intreqr & INTF_VERTB) {
-    /* Make sure all scratchpad registers are saved, because we call a function
-     * that relies on the fact that it's caller responsibility to save them. */
-    asm volatile("" ::: "d0", "d1", "a0", "a1");
-    MouseIntHandler();
-  }
-
-  custom->intreq = INTF_VERTB;
-  custom->intreq = INTF_VERTB;
-}
-
 static void Init() {
   KeyboardInit();
   MouseInit(0, 0, WIDTH - 1, HEIGHT - 1);
 
-  InterruptVector->IntLevel2 = IntLevel2Handler;
-  InterruptVector->IntLevel3 = IntLevel3Handler;
-  custom->intena = INTF_SETCLR | INTF_PORTS | INTF_VERTB;
-
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
+}
+
+static void Kill() {
+  custom->dmacon = DMAF_RASTER | DMAF_SPRITE;
 }
 
 static BOOL HandleEvent() {
@@ -101,4 +76,4 @@ static BOOL HandleEvent() {
   return TRUE;
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, NULL, HandleEvent };
+EffectT Effect = { Load, UnLoad, Init, Kill, NULL, NULL, HandleEvent };

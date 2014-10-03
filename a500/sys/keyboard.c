@@ -130,6 +130,8 @@ UBYTE rawkey[QUEUELEN];
 UBYTE head, tail, used;
 UBYTE modifier;
 
+BOOL keyboardActive = FALSE;
+
 static inline void PushRawKey(UBYTE raw) {
   if (used < QUEUELEN) {
     rawkey[tail] = raw;
@@ -202,6 +204,8 @@ void KeyboardInit() {
    * The keyboard is attached to CIA-A serial port. */
   ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_SP;
   ciaa->ciacra = (UBYTE)(~CIACRAF_SPMODE);
+
+  keyboardActive = TRUE;
 }
 
 void KeyboardIntHandler() {
