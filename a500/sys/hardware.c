@@ -34,7 +34,7 @@ __regargs void Wait280ns(ULONG delay) {
   } while (diff < delay);
 }
 
-/* All TOD registers latch on a read of  MSB event  and remain latched until
+/* All TOD registers latch on a read of MSB event and remain latched until
  * after a read of LSB event. */
 
 LONG ReadLineCounter() {
@@ -43,4 +43,13 @@ LONG ReadLineCounter() {
 
 LONG ReadFrameCounter() {
   return ((ciaa->ciatodhi << 16) | (ciaa->ciatodmid << 8) | ciaa->ciatodlow);
+}
+
+/* TOD is automatically stopped whenever a write to the register occurs. The
+ * clock will not start again until after a write to the LSB event register. */
+
+void SetFrameCounter(ULONG frame) {
+  ciaa->ciatodhi = frame >> 16;
+  ciaa->ciatodmid = frame >> 8;
+  ciaa->ciatodlow = frame;
 }

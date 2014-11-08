@@ -38,5 +38,6 @@ __regargs void Wait280ns(ULONG delay);
 
 LONG ReadLineCounter();
 LONG ReadFrameCounter();
+void SetFrameCounter(ULONG frame);
 
 #endif
