@@ -347,9 +347,9 @@ def main():
   lwob = LWOB()
   lwo2 = LWO2()
 
-  if lwob.loadFile(args.input):
+  if lwob.load(args.input):
     lwo = lwob
-  elif lwo2.loadFile(args.input):
+  elif lwo2.load(args.input):
     lwo = lwo2
   else:
     raise SystemExit('File format not recognized.')

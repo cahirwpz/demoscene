@@ -18,7 +18,7 @@ class Parser(Sequence):
     self._kind = kind
     self._chunks = []
 
-  def loadFile(self, filename):
+  def load(self, filename):
     with open(filename) as iff:
       chunk = Chunk(iff)
 
@@ -46,6 +46,10 @@ class Parser(Sequence):
         return False
 
     return True
+
+  def save(self, filename):
+    with open(filename) as iff:
+      logging.info('Writing file "%s"' % filename)
 
   def _parseChunk(self, name, data):
     orig_name = name
