@@ -44,7 +44,7 @@ class LZO(object):
     out = create_string_buffer(dst_len.value)
     memmove(out, dst, dst_len.value)
 
-    return out
+    return out.raw
 
   def decompress(self, src, dst_len):
     out = create_string_buffer(dst_len)
