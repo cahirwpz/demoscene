@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+import zlib
 
 from StringIO import StringIO
 from util.ilbm import ILBM
@@ -37,20 +38,22 @@ def UnRLE(bytes_in):
 def Deinterleave(data, width, height, depth):
   out = StringIO()
   bytesPerRow = ((width + 15) & ~15) / 8
-  modulo = bytesPerRow * (depth - 1)
 
   for i in range(depth):
     s = bytesPerRow * i
     for j in range(height):
       out.write(data[s:s + bytesPerRow])
-      s += modulo
+      s += bytesPerRow * depth
 
   return out.getvalue()
 
 
 def main():
   parser = argparse.ArgumentParser(
-    description='Compresses ILBM IFF file with LZO algorithm.')
+    description='Compresses ILBM IFF file with LZO or Deflate algorithm.')
+  parser.add_argument(
+    '-m', '--method', type=str, choices=['none', 'lzo', 'deflate'],
+    default='lzo', help='Compression method to use.')
   parser.add_argument(
     '-f', '--force', action='store_true',
     help='If the output file exists, the tool will overwrite it.')
@@ -87,17 +90,22 @@ def main():
       'BODY size before compression: %d/%d' % (len(body.data), size))
 
     if bmhd.data.compression in [0, 1, 255]:
-      if bmhd.data.compression < 2:
-        if bmhd.data.compression == 1:
-          body.data = UnRLE(body.data.read())
-        body.data = Deinterleave(
-          body.data, bmhd.data.w, bmhd.data.h, bmhd.data.nPlanes)
+      if bmhd.data.compression == 1:
+        body.data = UnRLE(body.data.read())
+      if bmhd.data.compression == 254:
+        body.data = zlib.decompress(body.data.read(), size)
       if bmhd.data.compression == 255:
-        body.data = lzo.decompress(body.data.getvalue(), size)
-      body.data = lzo.compress(body.data)
+        body.data = lzo.decompress(body.data.read(), size)
+      if args.method == 'deflate':
+        body.data = zlib.compress(body.data)
+        bmhd.data = bmhd.data._replace(compression=254)
+      if args.method == 'lzo':
+        body.data = lzo.compress(body.data)
+        bmhd.data = bmhd.data._replace(compression=255)
+      if args.method == 'none':
+        bmhd.data = bmhd.data._replace(compression=0)
       logging.info(
         'BODY size after compression: %d/%d' % (len(body.data), size))
-      bmhd.data = bmhd.data._replace(compression=255)
       ilbm.save(args.output)
     else:
       logging.warning('Unknown compression: %d' % bmhd.data.compression)

@@ -1,6 +1,9 @@
 #include "gfx.h"
 #include "iff.h"
 #include "memory.h"
+#include "lzo.h"
+
+#define USE_LZO 1
 
 #define ID_ILBM MAKE_ID('I', 'L', 'B', 'M')
 #define ID_BMHD MAKE_ID('B', 'M', 'H', 'D')
@@ -96,10 +99,15 @@ __regargs BitmapT *LoadILBM(const char *filename, BOOL interleaved) {
               ReadChunk(&iff, data);
 
               if (compression) {
-                LONG newSize = bitmap->bplSize * bitmap->depth;
+                ULONG newSize = bitmap->bplSize * bitmap->depth;
                 BYTE *uncompressed = MemAlloc(newSize, MEMF_PUBLIC);
 
-                UnRLE(data, size, uncompressed);
+                if (compression == 1)
+                  UnRLE(data, size, uncompressed);
+#if USE_LZO
+                if (compression == 255)
+                  lzo1x_decompress(data, size, uncompressed, &newSize);
+#endif
                 MemFree(data, size);
 
                 data = uncompressed;
