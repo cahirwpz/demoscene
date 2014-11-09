@@ -28,7 +28,7 @@ class LWOParserMixin(object):
       size = self.readInt16(data)
       chunk = data.read(size)
       logging.debug('Encountered %s subchunk of size %d' % (name, size))
-      chunks.append(self._parseChunk(name, chunk))
+      chunks.append(self._readChunk(name, chunk))
 
     return chunks
 
@@ -80,10 +80,10 @@ class LWOParserMixin(object):
 
   @property
   def points(self):
-    return self._getChunk('PNTS')
+    return self.get('PNTS')
 
 
-class LWO2(iff.Parser, LWOParserMixin):
+class LWO2(iff.File, LWOParserMixin):
   ChunkAliasMap = {
     'Int16': ['AXIS', 'CSYS', 'ENAB', 'IMAG', 'NEGA', 'NSTA', 'PIXB', 'PROJ',
               'SIDE'],
@@ -218,19 +218,19 @@ class LWO2(iff.Parser, LWOParserMixin):
 
   @property
   def polygons(self):
-    polyType, polygons = self['POLS'][0]
+    polyType, polygons = self.get('POLS')
     return polygons
 
   @property
   def polygonTags(self):
-    return dict(self._getChunk('PTAG', always_list=True))
+    return dict(self.get('PTAG', always_list=True))
 
   @property
   def tags(self):
-    return self._getChunk('TAGS')
+    return self.get('TAGS')
 
 
-class LWOB(iff.Parser, LWOParserMixin):
+class LWOB(iff.File, LWOParserMixin):
   # http://sandbox.de/osg/lightwave.htm
 
   ChunkAliasMap = {
@@ -245,41 +245,39 @@ class LWOB(iff.Parser, LWOParserMixin):
   def __init__(self):
     super(LWOB, self).__init__('LWOB')
 
-  def handlePOLS(self, data):
+  def readPOLS(self, data):
     polygons = []
 
     while data:
-      points = struct.unpack('>H', data[:2])[0]
-      step = (points + 2) * 2
+      points = struct.unpack('>H', data.read(2))[0]
+      pointdata = data.read((points + 2) * 2)
 
-      words = struct.unpack('>' + 'H' * (points + 1), data[2:step])
+      words = struct.unpack('>' + 'H' * (points + 1), pointdata)
       polygons.append([words[:-1], words[-1]])
-
-      data = data[step:]
 
     return polygons
 
-  def handleSRFS(self, data):
-    return [name for name in data.split('\0') if name]
+  def readSRFS(self, data):
+    return [name for name in data.read().split('\0') if name]
 
   def readSURF(self, data):
     name = self.readString(data)
     return (name, dict(self._parseMiniChunks(data.read())))
 
-  def handleTWRP(self, data):
-    return struct.unpack('>HH', data)
+  def readTWRP(self, data):
+    return struct.unpack('>HH', data.read(4))
 
   @property
   def surfaceNames(self):
-    return self._getChunk('SRFS')
+    return self.get('SRFS')
 
   @property
   def surfaces(self):
-    return dict(self._getChunk('SURF', always_list=True))
+    return dict(self.get('SURF', always_list=True))
 
   @property
   def polygons(self):
-    return self._getChunk('POLS')
+    return self.get('POLS')
 
 
 def WriteRawObject(filename, points, polygons, surfaces):
@@ -374,7 +372,7 @@ def main():
 
     surfenum = {}
 
-    for orig, name in enumerate(lwo['TAGS'][0]):
+    for orig, name in enumerate(lwo['TAGS']):
       for num, surf in enumerate(surfaces):
         if name == surf.name:
           surfenum[orig] = num
