@@ -1,5 +1,5 @@
-#include "gfx.h"
 #include "iff.h"
+#include "ilbm.h"
 #include "memory.h"
 #include "lzo.h"
 
@@ -67,7 +67,7 @@ __regargs static void Deinterleave(BYTE *data, BitmapT *bitmap) {
   } while (--planeNum >= 0);
 }
 
-__regargs BitmapT *LoadILBM(const char *filename, BOOL interleaved) {
+__regargs BitmapT *LoadILBM(const char *filename) {
   BitmapT *bitmap = NULL;
   PaletteT *palette = NULL;
   IffFileT iff;
@@ -82,7 +82,7 @@ __regargs BitmapT *LoadILBM(const char *filename, BOOL interleaved) {
         switch (iff.chunk.type) {
           case ID_BMHD:
             ReadChunk(&iff, &bmhd);
-            bitmap = NewBitmap(bmhd.w, bmhd.h, bmhd.nPlanes, interleaved);
+            bitmap = NewBitmap(bmhd.w, bmhd.h, bmhd.nPlanes);
             compression = bmhd.compression;
             break;
 
@@ -114,10 +114,10 @@ __regargs BitmapT *LoadILBM(const char *filename, BOOL interleaved) {
                 size = newSize;
               }
 
-              if (!interleaved)
-                Deinterleave(data, bitmap);
-              else
+              if (bitmap->flags & BM_INTERLEAVED)
                 memcpy(bitmap->planes[0], data, bitmap->bplSize * bitmap->depth);
+              else
+                Deinterleave(data, bitmap);
 
               MemFree(data, size);
             }

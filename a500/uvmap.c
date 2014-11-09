@@ -51,8 +51,8 @@ static void PixmapScramble(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
 }
 
 static void Load() {
-  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, FALSE);
-  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, FALSE);
+  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
+  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
 
   texture = LoadTGA("data/texture-16-1.tga", PM_CMAP, MEMF_PUBLIC);
   uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);

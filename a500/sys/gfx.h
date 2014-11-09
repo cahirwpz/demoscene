@@ -29,7 +29,7 @@ typedef struct Bitmap {
   UWORD depth;
   UWORD bytesPerRow;
   UWORD bplSize;
-  BOOL  interleaved;
+  ULONG flags;
   PaletteT *palette;
   APTR  planes[7];
 } BitmapT;
@@ -37,8 +37,7 @@ typedef struct Bitmap {
 __regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
                                 UWORD depth, BitmapT *donor);
 
-__regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
-                             BOOL interleaved);
+__regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth);
 __regargs void DeleteBitmap(BitmapT *bitmap);
 
 #endif

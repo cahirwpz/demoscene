@@ -23,10 +23,10 @@ static BitmapT *carry;
 static BitmapT *flares;
 
 static void Load() {
-  flares = LoadILBM("data/plotter-flares.ilbm", FALSE);
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
-  carry = NewBitmap(SIZE + 16, SIZE, 2, FALSE);
+  flares = LoadILBM("data/plotter-flares.ilbm");
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  carry = NewBitmap(SIZE + 16, SIZE, 2);
   cp = NewCopList(50);
 }
 

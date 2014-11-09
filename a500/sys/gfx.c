@@ -9,14 +9,13 @@ __regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
   bitmap->depth = depth;
   bitmap->bytesPerRow = (width + 7) / 8;
   bitmap->bplSize = bitmap->bytesPerRow * height;
-  bitmap->interleaved = donor->interleaved;
+  bitmap->flags = donor->flags;
   bitmap->palette = donor->palette;
 
   ITER(i, 0, depth - 1, bitmap->planes[i] = donor->planes[i]);
 }
 
-__regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
-                             BOOL interleaved)
+__regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth)
 {
   BitmapT *bitmap = MemAlloc(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
 
@@ -24,7 +23,7 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
   bitmap->height = height;
   bitmap->bytesPerRow = (width + 7) / 8;
   bitmap->depth = depth;
-  bitmap->interleaved = interleaved;
+  bitmap->flags = MEMF_CHIP;
 
   {
     APTR *planePtr;
@@ -42,7 +41,7 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth,
     planes = MemAlloc((UWORD)bplSize * depth + 2, MEMF_CHIP|MEMF_CLEAR);
     planePtr = bitmap->planes;
 
-    if (interleaved)
+    if (bitmap->flags & BM_INTERLEAVED)
       bplSize = width / 8;
 
     do {

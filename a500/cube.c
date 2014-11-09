@@ -16,8 +16,8 @@ static BitmapT *screen[2];
 static UWORD active = 0;
 
 static void Load() {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cube = LoadObject3D("data/cube.3d");
   cp = NewCopList(100);
 }

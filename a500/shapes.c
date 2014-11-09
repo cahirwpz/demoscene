@@ -18,7 +18,7 @@ static CopListT *cp;
 static WORD plane, planeC;
 
 static void Load() {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   shape = LoadShape("data/boxes.2d");
   palette = LoadPalette("data/shapes-pal.ilbm");
   cp = NewCopList(100);

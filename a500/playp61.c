@@ -23,8 +23,8 @@ static ConsoleT console;
 
 static void Load() {
   module = ReadFile("data/jazzcat-sunglasses.p61", MEMF_CHIP);
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
-  ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1, FALSE));
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1));
 
   cp = NewCopList(100);
   CopInit(cp);

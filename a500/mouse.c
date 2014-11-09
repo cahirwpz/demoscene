@@ -17,7 +17,7 @@ static SpriteT *nullspr;
 static CopInsT *sprptr[8];
 
 static void Load() {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
   nullspr = NewSprite(0, FALSE);
   pointer = CloneSystemPointer();

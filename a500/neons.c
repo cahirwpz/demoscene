@@ -27,11 +27,11 @@ static Point2D p[PNUM];
 static Point2D p_last[2][PNUM];
 
 static void Load() {
-  neon[0] = LoadILBM("data/greet_ada.ilbm", FALSE);
-  neon[1] = LoadILBM("data/greet_dcs.ilbm", FALSE);
-  background = LoadILBM("data/neons.ilbm", FALSE);
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  neon[0] = LoadILBM("data/greet_ada.ilbm");
+  neon[1] = LoadILBM("data/greet_dcs.ilbm");
+  background = LoadILBM("data/neons.ilbm");
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
   palette = NewPalette(32);
 

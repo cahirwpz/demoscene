@@ -49,15 +49,15 @@ static SpriteT *sprite[8];
 static PaletteT *spritePal;
 
 static void Load() {
-  laneBg = LoadILBM("data/highway-lane.ilbm", FALSE);
-  cityTop = LoadILBM("data/highway-city-top-2.ilbm", FALSE);
-  cityBottom = LoadILBM("data/highway-city-bottom-2.ilbm", FALSE);
-  carLeft = LoadILBM("data/highway-car-left-2.ilbm", FALSE);
-  carRight = LoadILBM("data/highway-car-right-2.ilbm", FALSE);
+  laneBg = LoadILBM("data/highway-lane.ilbm");
+  cityTop = LoadILBM("data/highway-city-top-2.ilbm");
+  cityBottom = LoadILBM("data/highway-city-bottom-2.ilbm");
+  carLeft = LoadILBM("data/highway-car-left-2.ilbm");
+  carRight = LoadILBM("data/highway-car-right-2.ilbm");
   nullspr = NewSprite(0, FALSE);
 
   {
-    BitmapT *title = LoadILBM("data/highway-sprite.ilbm", FALSE);
+    BitmapT *title = LoadILBM("data/highway-sprite.ilbm");
     ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, title, 16 * i, 0));
     spritePal = title->palette;
     DeleteBitmap(title);
@@ -148,9 +148,9 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
-  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
-  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, 4, FALSE);
-  carry = NewBitmap(HSIZE + 16, VSIZE, 2, FALSE);
+  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, 4);
+  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, 4);
+  carry = NewBitmap(HSIZE + 16, VSIZE, 2);
 
   cp = NewCopList(300);
   MakeCopperList(cp);

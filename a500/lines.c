@@ -13,7 +13,7 @@ static BitmapT *screen;
 static CopListT *cp;
 
 static void Load() {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
   CopInit(cp);
   CopMakePlayfield(cp, NULL, screen, DEPTH);

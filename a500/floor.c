@@ -79,8 +79,8 @@ static void FloorPrecalc() {
 }
 
 static void Load() {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
   texture = LoadTGA("data/floor.tga", PM_RGB4, MEMF_PUBLIC);
 

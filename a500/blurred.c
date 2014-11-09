@@ -23,13 +23,13 @@ static CopInsT *bplptr[2][DEPTH];
 static CopListT *cp;
 
 static void Load() {
-  clip = LoadILBM("data/blurred-b-clip.ilbm", FALSE);
+  clip = LoadILBM("data/blurred-b-clip.ilbm");
 
   palette[0] = LoadPalette("data/blurred-b-pal-1.ilbm");
   palette[1] = LoadPalette("data/blurred-b-pal-2.ilbm");
 
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 }
 
 static void UnLoad() {
@@ -77,8 +77,8 @@ static void Init() {
     ITER(j, 0, 3, BlitterCopySync(screen[i], j, WIDTH / 2, 0, clip, j));
   }
 
-  buffer = NewBitmap(SIZE, SIZE, 4, FALSE);
-  carry = NewBitmap(SIZE, SIZE, 2, FALSE);
+  buffer = NewBitmap(SIZE, SIZE, 4);
+  carry = NewBitmap(SIZE, SIZE, 2);
 
   cp = NewCopList(200);
   MakeCopperList(cp);

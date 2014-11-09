@@ -143,8 +143,8 @@ static __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
 }
 
 static void Load() {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, 1, FALSE);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, 1);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, 1);
   cp = NewCopList(80);
   cube = LoadLWO("data/new_2.lwo", SPFlt(80));
 

@@ -3,7 +3,7 @@
 
 #include "gfx.h"
 
-__regargs BitmapT *LoadILBM(const char *filename, BOOL interleaved);
+__regargs BitmapT *LoadILBM(const char *filename);
 __regargs PaletteT *LoadPalette(const char *filename);
 
 #endif

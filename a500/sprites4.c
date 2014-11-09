@@ -12,8 +12,8 @@ static SpriteT *sprite[3];
 static CopInsT *sprptr[8];
 
 static void Load() {
-  screen = NewBitmap(320, 256, 1, FALSE);
-  bitmap = LoadILBM("data/sprites4.ilbm", TRUE);
+  screen = NewBitmap(320, 256, 1);
+  bitmap = LoadILBM("data.bak/sprites4.ilbm");
   cp = NewCopList(100);
 
   CopInit(cp);

@@ -8,7 +8,7 @@ static BitmapT *bitmap;
 static CopListT *cp;
 
 static void Load() {
-  bitmap = LoadILBM("data/test.ilbm", FALSE);
+  bitmap = LoadILBM("data/test.ilbm");
   cp = NewCopList(100);
 }
 

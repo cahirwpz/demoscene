@@ -14,8 +14,8 @@ static CopInsT *sprptr[8];
 static void Load() {
   WORD i;
 
-  screen = NewBitmap(320, 256, 1, FALSE);
-  bitmap = LoadILBM("data/sprites16.ilbm", TRUE);
+  screen = NewBitmap(320, 256, 1);
+  bitmap = LoadILBM("data.bak/sprites16.ilbm");
   nullspr = NewSprite(0, FALSE);
   cp = NewCopList(100);
 

@@ -22,14 +22,14 @@ static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
 
 static void Load() {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, FALSE);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  bgLeft = LoadILBM("data/metaball-bg-left-1.ilbm", FALSE);
+  bgLeft = LoadILBM("data/metaball-bg-left-1.ilbm");
   DeletePalette(bgLeft->palette);
-  bgRight = LoadILBM("data/metaball-bg-right-1.ilbm", FALSE);
+  bgRight = LoadILBM("data/metaball-bg-right-1.ilbm");
   DeletePalette(bgRight->palette);
-  metaball = LoadILBM("data/metaball-1.ilbm", FALSE);
+  metaball = LoadILBM("data/metaball-1.ilbm");
 }
 
 static void UnLoad() {
@@ -74,7 +74,7 @@ static void Init() {
   }
 
   cp = NewCopList(100);
-  carry = NewBitmap(SIZE + 16, SIZE, 2, FALSE);
+  carry = NewBitmap(SIZE + 16, SIZE, 2);
 
   SetInitialPositions();
 

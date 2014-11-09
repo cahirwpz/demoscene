@@ -101,7 +101,7 @@ static inline void CopMakePlayfield(CopListT *list, CopInsT **bplptr, BitmapT *b
   CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
   CopMove16(list, bplcon3, 0);
   
-  modulo = bitmap->interleaved ? (bitmap->bytesPerRow * (depth - 1)) : 0;
+  modulo = (bitmap->flags & BM_INTERLEAVED) ? (bitmap->bytesPerRow * (depth - 1)) : 0;
 
   CopMove16(list, bpl1mod, modulo);
   CopMove16(list, bpl2mod, modulo);

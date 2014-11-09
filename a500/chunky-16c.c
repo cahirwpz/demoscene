@@ -43,7 +43,7 @@ static void Load() {
   UWORD i;
 
   cp = NewCopList(4096);
-  screen = NewBitmap(WIDTH * 2, HEIGHT * 2, 4, FALSE);
+  screen = NewBitmap(WIDTH * 2, HEIGHT * 2, 4);
 
   {
     PixmapT *pixmap = LoadTGA("data/helmet.tga", PM_CMAP, MEMF_PUBLIC);

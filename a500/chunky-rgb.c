@@ -15,7 +15,7 @@ CopInsT *lines[256];
 
 static void Load() {
   cp = NewCopList((WIDTH + 2) * HEIGHT + 100);
-  screen = NewBitmap(WIDTH * 4, HEIGHT * 2, 1, FALSE);
+  screen = NewBitmap(WIDTH * 4, HEIGHT * 2, 1);
   chunky = NewPixmap(WIDTH + 2, HEIGHT, PM_RGB4, MEMF_CHIP);
 
   /*
