@@ -15,7 +15,8 @@ __regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
   ITER(i, 0, depth - 1, bitmap->planes[i] = donor->planes[i]);
 }
 
-__regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth)
+__regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
+                                   UBYTE flags)
 {
   BitmapT *bitmap = MemAlloc(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
 
@@ -23,12 +24,13 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth)
   bitmap->height = height;
   bitmap->bytesPerRow = (width + 7) / 8;
   bitmap->depth = depth;
-  bitmap->flags = MEMF_CHIP;
+  bitmap->flags = flags & BM_FLAGMASK;
 
-  {
+  if (!(flags & BM_MINIMAL)) {
     APTR *planePtr;
     APTR planes;
     LONG bplSize;
+    ULONG memoryFlags = 0;
 
     /* Let's make it aligned to WORD boundary. */
     bplSize = bitmap->bytesPerRow * height;
@@ -36,12 +38,21 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth)
 
     bitmap->bplSize = bplSize;
 
+    /* Recover memory flags. */
+    if (flags & BM_CLEAR)
+      memoryFlags |= MEMF_CLEAR;
+
+    if (flags & BM_DISPLAYABLE)
+      memoryFlags |= MEMF_CHIP;
+    else
+      memoryFlags |= MEMF_PUBLIC;
+
     /* Allocate extra two bytes for scratchpad area.
      * Used by blitter line drawing. */
-    planes = MemAlloc((UWORD)bplSize * depth + 2, MEMF_CHIP|MEMF_CLEAR);
+    planes = MemAlloc((UWORD)bplSize * depth + 2, memoryFlags);
     planePtr = bitmap->planes;
 
-    if (bitmap->flags & BM_INTERLEAVED)
+    if (flags & BM_INTERLEAVED)
       bplSize = width / 8;
 
     do {
@@ -54,7 +65,12 @@ __regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth)
 }
 
 __regargs void DeleteBitmap(BitmapT *bitmap) {
-  MemFree(bitmap->planes[0], bitmap->bplSize * bitmap->depth + 2);
+  if (!(bitmap->flags & BM_MINIMAL)) {
+    if (bitmap->compression)
+      MemFree(bitmap->planes[0], (LONG)bitmap->planes[1]);
+    else
+      MemFree(bitmap->planes[0], bitmap->bplSize * bitmap->depth + 2);
+  }
   MemFree(bitmap, sizeof(BitmapT));
 }
 

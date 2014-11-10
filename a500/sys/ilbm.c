@@ -67,59 +67,110 @@ __regargs static void Deinterleave(BYTE *data, BitmapT *bitmap) {
   } while (--planeNum >= 0);
 }
 
-__regargs BitmapT *LoadILBM(const char *filename) {
+__regargs BOOL BitmapUnpack(BitmapT **bitmap) {
+  BitmapT *packed = *bitmap;
+
+  if (packed->compression) {
+    BitmapT *unpacked = 
+      NewBitmapCustom(packed->width, packed->height, packed->depth,
+                      (packed->flags & ~BM_INTERLEAVED) | BM_DISPLAYABLE);
+
+    ULONG packed_size = (LONG)packed->planes[1];
+    BYTE *packed_data = packed->planes[0];
+    ULONG unpacked_size = unpacked->bplSize * unpacked->depth;
+    BYTE *unpacked_data = MemAlloc(unpacked_size, MEMF_PUBLIC);
+
+    if (packed->compression == COMP_RLE)
+      UnRLE(packed_data, packed_size, unpacked_data);
+#if USE_LZO
+    if (packed->compression == COMP_LZO)
+      lzo1x_decompress(packed_data, packed_size,
+                       unpacked_data, &unpacked_size);
+#endif
+
+    unpacked->palette = packed->palette;
+    DeleteBitmap(packed);
+
+    if (unpacked->flags & BM_INTERLEAVED)
+      memcpy(unpacked->planes[0], unpacked_data,
+             unpacked->bplSize * unpacked->depth);
+    else
+      Deinterleave(unpacked_data, unpacked);
+
+    MemFree(unpacked_data, unpacked_size);
+
+    *bitmap = unpacked;
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+__regargs BitmapT *LoadILBMCustom(const char *filename, UWORD flags) {
   BitmapT *bitmap = NULL;
   PaletteT *palette = NULL;
   IffFileT iff;
 
   if (OpenIff(&iff, filename)) {
     if (iff.header.type == ID_ILBM) {
-      BOOL compression = FALSE;
-
       while (ParseChunk(&iff)) {
         BitmapHeaderT bmhd;
 
         switch (iff.chunk.type) {
           case ID_BMHD:
             ReadChunk(&iff, &bmhd);
-            bitmap = NewBitmap(bmhd.w, bmhd.h, bmhd.nPlanes);
-            compression = bmhd.compression;
+            if (flags & BM_KEEP_PACKED) {
+              bitmap = NewBitmapCustom(bmhd.w, bmhd.h, bmhd.nPlanes,
+                                       BM_MINIMAL|BM_INTERLEAVED);
+              bitmap->compression = bmhd.compression;
+            } else {
+              bitmap = NewBitmapCustom(bmhd.w, bmhd.h, bmhd.nPlanes, flags);
+            }
             break;
 
           case ID_CMAP:
-            palette = NewPalette(iff.chunk.length / sizeof(ColorT));
-            ReadChunk(&iff, palette->colors);
+            if (flags & BM_LOAD_PALETTE) {
+              palette = NewPalette(iff.chunk.length / sizeof(ColorT));
+              ReadChunk(&iff, palette->colors);
+            } else {
+              SkipChunk(&iff);
+            }
             break;
         
           case ID_BODY:
             {
               BYTE *data = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
               LONG size = iff.chunk.length;
-
               ReadChunk(&iff, data);
 
-              if (compression) {
-                ULONG newSize = bitmap->bplSize * bitmap->depth;
-                BYTE *uncompressed = MemAlloc(newSize, MEMF_PUBLIC);
+              if (flags & BM_KEEP_PACKED) {
+                bitmap->planes[0] = data;
+                bitmap->planes[1] = (APTR)size;
+                bitmap->flags &= ~BM_MINIMAL;
+              } else {
+                if (bmhd.compression) {
+                  ULONG newSize = bitmap->bplSize * bitmap->depth;
+                  BYTE *uncompressed = MemAlloc(newSize, MEMF_PUBLIC);
 
-                if (compression == 1)
-                  UnRLE(data, size, uncompressed);
+                  if (bmhd.compression == COMP_RLE)
+                    UnRLE(data, size, uncompressed);
 #if USE_LZO
-                if (compression == 255)
-                  lzo1x_decompress(data, size, uncompressed, &newSize);
+                  if (bmhd.compression == COMP_LZO)
+                    lzo1x_decompress(data, size, uncompressed, &newSize);
 #endif
+                  MemFree(data, size);
+
+                  data = uncompressed;
+                  size = newSize;
+                }
+
+                if (flags & BM_INTERLEAVED)
+                  memcpy(bitmap->planes[0], data, bitmap->bplSize * bitmap->depth);
+                else
+                  Deinterleave(data, bitmap);
+
                 MemFree(data, size);
-
-                data = uncompressed;
-                size = newSize;
               }
-
-              if (bitmap->flags & BM_INTERLEAVED)
-                memcpy(bitmap->planes[0], data, bitmap->bplSize * bitmap->depth);
-              else
-                Deinterleave(data, bitmap);
-
-              MemFree(data, size);
             }
             break;
 

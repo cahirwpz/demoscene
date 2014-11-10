@@ -21,7 +21,22 @@ __regargs PaletteT *NewPalette(UWORD count);
 __regargs PaletteT *CopyPalette(PaletteT *palette);
 __regargs void DeletePalette(PaletteT *palette);
 
-#define BM_INTERLEAVED 1
+/* Flags stored in Bitmap structure. */
+#define BM_CLEAR        1
+#define BM_DISPLAYABLE  2
+#define BM_INTERLEAVED  4
+#define BM_MINIMAL      8
+#define BM_FLAGMASK    15
+
+/* Flags than can be passed to functions that load Bitmap. */
+#define BM_LOAD_PALETTE 16
+#define BM_KEEP_PACKED  32
+
+/* Bitplane compression method. */
+#define COMP_NONE      0
+#define COMP_RLE       1
+#define COMP_DEFLATE 254
+#define COMP_LZO     255
 
 typedef struct Bitmap {
   UWORD width;
@@ -29,15 +44,20 @@ typedef struct Bitmap {
   UWORD depth;
   UWORD bytesPerRow;
   UWORD bplSize;
-  ULONG flags;
+  UBYTE flags;
+  UBYTE compression;
   PaletteT *palette;
   APTR  planes[7];
 } BitmapT;
 
 __regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
                                 UWORD depth, BitmapT *donor);
-
-__regargs BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth);
+__regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
+                                   UBYTE flags);
 __regargs void DeleteBitmap(BitmapT *bitmap);
+
+static inline BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth) {
+  return NewBitmapCustom(width, height, depth, BM_CLEAR|BM_DISPLAYABLE);
+}
 
 #endif

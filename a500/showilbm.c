@@ -8,7 +8,7 @@ static BitmapT *bitmap;
 static CopListT *cp;
 
 static void Load() {
-  bitmap = LoadILBM("data/test.ilbm");
+  bitmap = LoadILBMCustom("data/test.ilbm", BM_KEEP_PACKED|BM_LOAD_PALETTE);
   cp = NewCopList(100);
 }
 
@@ -19,6 +19,13 @@ static void UnLoad() {
 }
 
 static void Init() {
+  {
+    LONG lines = ReadLineCounter();
+    BitmapUnpack(&bitmap);
+    lines = ReadLineCounter() - lines;
+    Log("Bitmap unpacking took %ld raster lines.\n", (LONG)lines);
+  }
+
   CopInit(cp);
   CopMakePlayfield(cp, NULL, bitmap, bitmap->depth);
   CopMakeDispWin(cp, X(0), Y(0), bitmap->width, bitmap->height);
