@@ -49,22 +49,38 @@ __regargs static void UnRLE(BYTE *data, LONG size, BYTE *uncompressed) {
 }
 
 __regargs static void Deinterleave(BYTE *data, BitmapT *bitmap) { 
-  WORD modulo = bitmap->bytesPerRow * (bitmap->depth - 1);
-  WORD planeNum = bitmap->depth - 1;
+  LONG bytesPerRow = bitmap->bytesPerRow;
+  LONG modulo = (WORD)bytesPerRow * (WORD)(bitmap->depth - 1);
+  WORD bplnum = bitmap->depth;
+  WORD count = bytesPerRow / 2;
+  WORD i = count & 7;
+  WORD k = (count + 7) / 8;
+  APTR *plane = bitmap->planes;
 
   do {
-    BYTE *src = data + bitmap->bytesPerRow * planeNum;
-    BYTE *dst = bitmap->planes[planeNum];
+    BYTE *src = data;
+    BYTE *dst = *plane++;
     WORD rows = bitmap->height;
 
     do {
-      WORD bytes = bitmap->bytesPerRow - 1;
-
-      do { *dst++ = *src++; } while (--bytes != -1);
+      WORD n = k - 1;
+      switch (i) {
+        case 0: do { *((WORD *)dst)++ = *((WORD *)src)++;
+        case 7:      *((WORD *)dst)++ = *((WORD *)src)++;
+        case 6:      *((WORD *)dst)++ = *((WORD *)src)++;
+        case 5:      *((WORD *)dst)++ = *((WORD *)src)++;
+        case 4:      *((WORD *)dst)++ = *((WORD *)src)++;
+        case 3:      *((WORD *)dst)++ = *((WORD *)src)++;
+        case 2:      *((WORD *)dst)++ = *((WORD *)src)++;
+        case 1:      *((WORD *)dst)++ = *((WORD *)src)++;
+        } while (--n != -1);
+      }
 
       src += modulo;
     } while (--rows);
-  } while (--planeNum >= 0);
+
+    data += bytesPerRow;
+  } while (--bplnum);
 }
 
 __regargs BOOL BitmapUnpack(BitmapT **bitmap) {
