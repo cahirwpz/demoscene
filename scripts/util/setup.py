@@ -10,5 +10,5 @@ setup(
   ext_modules = [
     Extension("quant",
               ["quant.pyx"],
-              extra_compile_args=["-Wno-unused-value"])]
+              extra_compile_args=["-Wno-unused-value","-Wno-unused-function"])]
 )

@@ -1,11 +1,9 @@
-OBJ = quant
-
 all:
 	python setup.py build_ext --inplace
 
 clean:
 	@rm -vrf build
-	@rm -vf $(OBJ).{html,c,o,so}
-	@rm -vf *.pyc *~
+	@rm -vf zopfli.c
+	@rm -vf *.so *.pyc *~
 
 .PHONY: all
