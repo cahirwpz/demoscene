@@ -24,6 +24,12 @@ cdef extern from "zopfli.h":
                       const unsigned char *src, size_t srcsize,
                       unsigned char **out, size_t *outsize);
 
+cdef extern from "puff.h":
+  int puff(unsigned char *dest,
+           unsigned long *destlen,
+           const unsigned char *source,
+           unsigned long *sourcelen);
+
 cdef class Options:
   cdef ZopfliOptions *data
 
@@ -72,20 +78,30 @@ cdef class Options:
   def __dealloc__(self):
     PyMem_Free(self.data)
 
-cpdef enum Format:
-  GZIP = ZOPFLI_FORMAT_GZIP
-  ZLIB = ZOPFLI_FORMAT_ZLIB
-  DEFLATE = ZOPFLI_FORMAT_DEFLATE
-
-def Compress(Options options, ZopfliFormat fmt, bytes src, size_t outsize):
+def compress(Options options, bytes src, size_t outsize):
   cdef size_t srcsize = PyObject_Size(src)
   cdef unsigned char *out = <unsigned char *>malloc(outsize)
   cdef bytes py_string
 
   outsize = 0
 
-  ZopfliCompress(options.data, fmt,
+  ZopfliCompress(options.data, ZOPFLI_FORMAT_DEFLATE,
                  <const unsigned char *>src, srcsize, &out, &outsize)
+
+  try:
+    py_string = out[:outsize]
+  finally:
+    free(out)
+
+  return py_string
+
+def decompress(bytes src, unsigned long outsize):
+  cdef unsigned long srcsize = PyObject_Size(src)
+  cdef unsigned char *out = <unsigned char *>malloc(outsize)
+  cdef bytes py_string
+
+  success = puff(out, &outsize,
+                 <const unsigned char *>src, &srcsize);
 
   try:
     py_string = out[:outsize]
