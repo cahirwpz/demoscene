@@ -3,7 +3,6 @@
 import argparse
 import logging
 import os
-import zlib
 import zopfli
 
 from StringIO import StringIO
@@ -91,16 +90,16 @@ def main():
       'BODY size before compression: %d/%d' % (len(body.data), size))
 
     if bmhd.data.compression in [0, 1, 254, 255]:
+      body.data = body.data.read()
       if bmhd.data.compression == 1:
-        body.data = UnRLE(body.data.read())
+        body.data = UnRLE(body.data)
       if bmhd.data.compression == 254:
-        body.data = zlib.decompress(body.data.read())
+        body.data = zopfli.decompress(body.data, size)
       if bmhd.data.compression == 255:
-        body.data = lzo.decompress(body.data.read(), size)
+        body.data = lzo.decompress(body.data, size)
       if args.method == 'deflate':
         opts = zopfli.Options()
-        body.data = zopfli.Compress(opts, zopfli.ZLIB,
-                                    body.data, len(body.data))
+        body.data = zopfli.compress(opts, body.data, len(body.data))
         bmhd.data = bmhd.data._replace(compression=254)
       if args.method == 'lzo':
         body.data = lzo.compress(body.data)

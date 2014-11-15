@@ -2,8 +2,10 @@
 #include "ilbm.h"
 #include "memory.h"
 #include "lzo.h"
+#include "inflate.h"
 
 #define USE_LZO 1
+#define USE_DEFLATE 1
 
 #define ID_ILBM MAKE_ID('I', 'L', 'B', 'M')
 #define ID_BMHD MAKE_ID('B', 'M', 'H', 'D')
@@ -103,6 +105,10 @@ __regargs BOOL BitmapUnpack(BitmapT **bitmap) {
       lzo1x_decompress(packed_data, packed_size,
                        unpacked_data, &unpacked_size);
 #endif
+#if USE_DEFLATE
+    if (packed->compression == COMP_DEFLATE)
+      Inflate(packed_data, unpacked_data);
+#endif
 
     unpacked->palette = packed->palette;
     DeleteBitmap(packed);
@@ -173,6 +179,10 @@ __regargs BitmapT *LoadILBMCustom(const char *filename, UWORD flags) {
 #if USE_LZO
                   if (bmhd.compression == COMP_LZO)
                     lzo1x_decompress(data, size, uncompressed, &newSize);
+#endif
+#if USE_DEFLATE
+                  if (bmhd.compression == COMP_DEFLATE)
+                    Inflate(data, uncompressed);
 #endif
                   MemFree(data, size);
 
