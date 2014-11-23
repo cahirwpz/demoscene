@@ -85,47 +85,44 @@ __regargs static void Deinterleave(BYTE *data, BitmapT *bitmap) {
   } while (--bplnum);
 }
 
-__regargs BOOL BitmapUnpack(BitmapT **bitmap) {
-  BitmapT *packed = *bitmap;
+__regargs void BitmapUnpack(BitmapT *bitmap, UWORD flags) {
+  if (bitmap->compression) {
+    ULONG inLen = (LONG)bitmap->planes[1];
+    APTR inBuf = bitmap->planes[0];
+    ULONG outLen = BitmapSize(bitmap);
+    APTR outBuf = MemAlloc(outLen, MEMF_PUBLIC);
 
-  if (packed->compression) {
-    BitmapT *unpacked = 
-      NewBitmapCustom(packed->width, packed->height, packed->depth,
-                      (packed->flags & ~BM_INTERLEAVED) | BM_DISPLAYABLE);
-
-    ULONG packed_size = (LONG)packed->planes[1];
-    BYTE *packed_data = packed->planes[0];
-    ULONG unpacked_size = unpacked->bplSize * unpacked->depth;
-    BYTE *unpacked_data = MemAlloc(unpacked_size, MEMF_PUBLIC);
-
-    if (packed->compression == COMP_RLE)
-      UnRLE(packed_data, packed_size, unpacked_data);
+    if (bitmap->compression == COMP_RLE)
+      UnRLE(inBuf, inLen, outBuf);
 #if USE_LZO
-    if (packed->compression == COMP_LZO)
-      lzo1x_decompress(packed_data, packed_size,
-                       unpacked_data, &unpacked_size);
+    else if (bitmap->compression == COMP_LZO)
+      lzo1x_decompress(inBuf, inLen, outBuf, &outLen);
 #endif
 #if USE_DEFLATE
-    if (packed->compression == COMP_DEFLATE)
-      Inflate(packed_data, unpacked_data);
+    else if (bitmap->compression == COMP_DEFLATE)
+      Inflate(inBuf, outBuf);
 #endif
 
-    unpacked->palette = packed->palette;
-    DeleteBitmap(packed);
+    MemFree(inBuf, inLen);
 
-    if (unpacked->flags & BM_INTERLEAVED)
-      memcpy(unpacked->planes[0], unpacked_data,
-             unpacked->bplSize * unpacked->depth);
-    else
-      Deinterleave(unpacked_data, unpacked);
-
-    MemFree(unpacked_data, unpacked_size);
-
-    *bitmap = unpacked;
-    return TRUE;
+    bitmap->compression = COMP_NONE;
+    BitmapSetPointers(bitmap, outBuf);
   }
 
-  return FALSE;
+  if ((bitmap->flags & BM_INTERLEAVED) && !(flags & BM_INTERLEAVED)) {
+    ULONG size = BitmapSize(bitmap);
+    APTR inBuf = bitmap->planes[0];
+    APTR outBuf = MemAlloc(size, MEMF_PUBLIC);
+
+    bitmap->flags &= ~BM_INTERLEAVED;
+    BitmapSetPointers(bitmap, outBuf);
+
+    Deinterleave(inBuf, bitmap);
+    MemFree(inBuf, size);
+  }
+
+  if (flags & BM_DISPLAYABLE)
+    BitmapMakeDisplayable(bitmap);
 }
 
 __regargs BitmapT *LoadILBMCustom(const char *filename, UWORD flags) {

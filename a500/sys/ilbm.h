@@ -3,7 +3,7 @@
 
 #include "gfx.h"
 
-__regargs BOOL BitmapUnpack(BitmapT **bitmap);
+__regargs void BitmapUnpack(BitmapT *bitmap, UWORD flags);
 __regargs BitmapT *LoadILBMCustom(const char *filename, UWORD flags);
 __regargs PaletteT *LoadPalette(const char *filename);
 

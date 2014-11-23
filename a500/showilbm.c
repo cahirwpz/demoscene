@@ -21,7 +21,7 @@ static void UnLoad() {
 static void Init() {
   {
     LONG lines = ReadLineCounter();
-    BitmapUnpack(&bitmap);
+    BitmapUnpack(bitmap, BM_DISPLAYABLE);
     lines = ReadLineCounter() - lines;
     Log("Bitmap unpacking took %ld raster lines.\n", (LONG)lines);
   }

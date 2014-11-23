@@ -15,28 +15,34 @@ __regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
   ITER(i, 0, depth - 1, bitmap->planes[i] = donor->planes[i]);
 }
 
+__regargs void BitmapSetPointers(BitmapT *bitmap, APTR planes) {
+  LONG modulo =
+    (bitmap->flags & BM_INTERLEAVED) ? bitmap->bytesPerRow : bitmap->bplSize;
+  WORD depth = bitmap->depth;
+  APTR *planePtr = bitmap->planes;
+
+  do {
+    *planePtr++ = planes;
+    planes += modulo;
+  } while (depth--);
+}
+
 __regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
                                    UBYTE flags)
 {
   BitmapT *bitmap = MemAlloc(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
+  UWORD bytesPerRow = (width + 7) / 8;
 
   bitmap->width = width;
   bitmap->height = height;
-  bitmap->bytesPerRow = (width + 7) / 8;
+  bitmap->bytesPerRow = bytesPerRow;
+  /* Let's make it aligned to WORD boundary. */
+  bitmap->bplSize = (bytesPerRow * height + 1) & ~1;
   bitmap->depth = depth;
   bitmap->flags = flags & BM_FLAGMASK;
 
   if (!(flags & BM_MINIMAL)) {
-    APTR *planePtr;
-    APTR planes;
-    LONG bplSize;
     ULONG memoryFlags = 0;
-
-    /* Let's make it aligned to WORD boundary. */
-    bplSize = bitmap->bytesPerRow * height;
-    bplSize += bplSize & 1;
-
-    bitmap->bplSize = bplSize;
 
     /* Recover memory flags. */
     if (flags & BM_CLEAR)
@@ -47,18 +53,7 @@ __regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
     else
       memoryFlags |= MEMF_PUBLIC;
 
-    /* Allocate extra two bytes for scratchpad area.
-     * Used by blitter line drawing. */
-    planes = MemAlloc((UWORD)bplSize * depth + 2, memoryFlags);
-    planePtr = bitmap->planes;
-
-    if (flags & BM_INTERLEAVED)
-      bplSize = width / 8;
-
-    do {
-      *planePtr++ = planes;
-      planes += bplSize;
-    } while (depth--);
+    BitmapSetPointers(bitmap, MemAlloc(BitmapSize(bitmap), memoryFlags));
   }
 
   return bitmap;
@@ -69,9 +64,22 @@ __regargs void DeleteBitmap(BitmapT *bitmap) {
     if (bitmap->compression)
       MemFree(bitmap->planes[0], (LONG)bitmap->planes[1]);
     else
-      MemFree(bitmap->planes[0], bitmap->bplSize * bitmap->depth + 2);
+      MemFree(bitmap->planes[0], BitmapSize(bitmap));
   }
   MemFree(bitmap, sizeof(BitmapT));
+}
+
+__regargs void BitmapMakeDisplayable(BitmapT *bitmap) {
+  if (!(bitmap->flags & BM_DISPLAYABLE) && (bitmap->compression == COMP_NONE)) {
+    ULONG size = BitmapSize(bitmap);
+    APTR planes = MemAlloc(size, MEMF_CHIP);
+
+    memcpy(planes, bitmap->planes[0], size - BM_EXTRA);
+    MemFree(bitmap->planes[0], size);
+
+    bitmap->flags |= BM_DISPLAYABLE;
+    BitmapSetPointers(bitmap, planes);
+  }
 }
 
 __regargs PaletteT *NewPalette(UWORD count) {

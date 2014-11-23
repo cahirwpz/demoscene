@@ -21,6 +21,9 @@ __regargs PaletteT *NewPalette(UWORD count);
 __regargs PaletteT *CopyPalette(PaletteT *palette);
 __regargs void DeletePalette(PaletteT *palette);
 
+/* Size of extra buffer after last word of bitplanes. */
+#define BM_EXTRA sizeof(UWORD)
+
 /* Flags stored in Bitmap structure. */
 #define BM_CLEAR        1
 #define BM_DISPLAYABLE  2
@@ -52,12 +55,21 @@ typedef struct Bitmap {
 
 __regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
                                 UWORD depth, BitmapT *donor);
+__regargs void BitmapSetPointers(BitmapT *bitmap, APTR planes);
+
 __regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
                                    UBYTE flags);
 __regargs void DeleteBitmap(BitmapT *bitmap);
+__regargs void BitmapMakeDisplayable(BitmapT *bitmap);
 
 static inline BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth) {
   return NewBitmapCustom(width, height, depth, BM_CLEAR|BM_DISPLAYABLE);
+}
+
+static inline ULONG BitmapSize(BitmapT *bitmap) {
+  /* Allocate extra two bytes for scratchpad area.
+   * Used by blitter line drawing. */
+  return ((UWORD)bitmap->bplSize * (UWORD)bitmap->depth) + BM_EXTRA;
 }
 
 #endif
