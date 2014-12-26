@@ -35,7 +35,7 @@ static inline UWORD swap8(UWORD a) {
 static inline WORD div16(LONG a, WORD b) {
   asm("divs %1,%0"
       : "+d" (a)
-      : "d" (b));
+      : "dm" (b));
   return a;
 }
 

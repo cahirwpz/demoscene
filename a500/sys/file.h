@@ -3,6 +3,6 @@
 
 #include <exec/types.h>
 
-APTR ReadFile(STRPTR path, ULONG memoryFlags);
+APTR ReadFile(CONST STRPTR path, ULONG memoryFlags);
 
 #endif

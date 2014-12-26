@@ -1,29 +1,75 @@
 #include "reader.h"
 
-static inline BOOL isspace(char c) {
-  return (c == '\n') || (c == '\t') || (c == ' ');
+#define SPACE   1
+#define DIGIT   2
+#define XDIGIT  4
+#define ALPHA   8
+#define ALNUM   (ALPHA | DIGIT)
+
+static const char ctype[128] = {
+  ['\t'] = SPACE,
+  ['\n'] = SPACE,
+  ['\v'] = SPACE,
+  ['\f'] = SPACE,
+  ['\r'] = SPACE,
+  [' '] = SPACE,
+  ['0'...'9'] = DIGIT | XDIGIT,
+  ['A'...'F'] = ALPHA | XDIGIT, 
+  ['G'...'Z'] = ALPHA,
+  ['a'...'z'] = ALPHA | XDIGIT,
+  ['a'...'z'] = ALPHA
+};
+
+static inline int isspace(int c) {
+  return ctype[c] & SPACE;
 }
 
-static inline BOOL isdigit(char c) {
-  return (c >= '0' && c <= '9');
+static inline int isdigit(int c) {
+  return ctype[c] & DIGIT;
 }
 
-static inline BOOL isalpha(char c) {
-  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+static inline int isxdigit(int c) {
+  return ctype[c] & XDIGIT;
 }
 
-__regargs void SkipSpaces(char **strptr) {
-  char *str = *strptr;
-  char c;
+static inline int isalpha(int c) {
+  return ctype[c] & ALPHA;
+}
 
-  /* Skip white spaces. */
-  while ((c = *str)) {
-    if (!isspace(c))
+__regargs char *SkipSpaces(char *str) {
+  do {
+    char c = *str;
+    if (!c || !isspace(c))
       break;
     str++;
-  }
+  } while (1);
 
-  *strptr = str;
+  return str;
+}
+
+__regargs char *NextLine(char *str) {
+  do {
+    char c = *str;
+    if (!c)
+      break;
+    str++;
+    if (c == '\n')
+      break;
+  } while (1);
+
+  return str;
+}
+
+static inline WORD digit(WORD c) {
+  return c - '0';
+}
+
+static inline WORD xdigit(WORD c) {
+  if (c <= '9')
+    return c - '0';
+  if (c <= 'F')
+    return c - ('A' - 10);
+  return c - ('a' - 10);
 }
 
 __regargs BOOL ReadNumber(char **strptr, WORD *numptr) {
@@ -32,13 +78,10 @@ __regargs BOOL ReadNumber(char **strptr, WORD *numptr) {
 
   UWORD num = 0;
   BOOL minus = FALSE;
+  BOOL hex = FALSE;
 
   /* Skip white spaces. */
-  while ((c = *str)) {
-    if (!isspace(c))
-      break;
-    str++;
-  }
+  str = SkipSpaces(str);
 
   /* Read optional sign character. */
   if (*str == '-') {
@@ -46,20 +89,30 @@ __regargs BOOL ReadNumber(char **strptr, WORD *numptr) {
     str++;
   }
 
-  /* At least one digit. */
+  if (*str == '$') {
+    hex = TRUE;
+    str++;
+  }
+
+  /* Read at least one digit. */
   c = *str;
 
-  if (!isdigit(c))
-    return FALSE;
+  if (hex) {
+    if (!isxdigit(c))
+      return FALSE;
 
-  num = c - '0';
-  str++;
-
-  while ((c = *str)) {
+    while (c && isxdigit(c)) {
+      num = num * 16 + xdigit(c);
+      c = *(++str);
+    }
+  } else {
     if (!isdigit(c))
-      break;
-    num = num * 10 + (c - '0');
-    str++;
+      return FALSE;
+
+    while (c && isdigit(c)) {
+      num = num * 10 + digit(c);
+      c = *(++str);
+    }
   }
 
   *strptr = str;
@@ -72,44 +125,24 @@ __regargs BOOL ReadNumber(char **strptr, WORD *numptr) {
 
 __regargs WORD ReadSymbol(char **strptr, char **symptr) {
   char *str = *strptr;
-  char *sym = NULL;
-  char c;
+  char *sym;
 
-  /* Skip white spaces. */
-  while ((c = *str)) {
-    if (!isspace(c))
-      break;
-    str++;
-  }
+  sym = str = SkipSpaces(str);
 
-  sym = str;
-
-  if (!isalpha(c))
+  if (!isalpha(*str))
     return 0;
 
   str++;
 
-  while ((c = *str)) {
-    if (!isalpha(c) && (c != '_'))
+  do {
+    char c = *str;
+    if (!c || (!isalpha(c) && c != '_'))
       break;
     str++;
-  }
+  } while (1);
 
   *strptr = str;
   *symptr = sym;
 
   return str - sym;
-}
-
-__regargs BOOL ExpectSymbol(char **strptr, char *expect) {
-  char *symbol = NULL;
-  WORD len;
-
-  if (!(len = ReadSymbol(strptr, &symbol)))
-    return FALSE;
-
-  if (strlen(expect) != len)
-    return FALSE;
-
-  return (memcmp(symbol, expect, len) == 0);
 }

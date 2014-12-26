@@ -5,8 +5,9 @@
 #include "common.h"
 #include "file.h"
 #include "memory.h"
+#include "print.h"
 
-APTR ReadFile(STRPTR path, ULONG memoryFlags) {
+APTR ReadFile(CONST STRPTR path, ULONG memoryFlags) {
   BYTE *data = NULL;
   LONG size = -1;
   BPTR fh;
@@ -31,7 +32,7 @@ APTR ReadFile(STRPTR path, ULONG memoryFlags) {
     }
     Close(fh);
   } else {
-    Log("File '%s' missing.\n", path);
+    Print("File '%s' missing.\n", path);
   }
 
   return data;

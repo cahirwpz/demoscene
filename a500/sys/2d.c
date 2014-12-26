@@ -342,7 +342,7 @@ __regargs ShapeT *LoadShape(char *filename) {
         if (n > 0)
           break;
 
-        SkipSpaces(&data);
+        data = SkipSpaces(data);
       }
     }
 
@@ -390,7 +390,7 @@ __regargs ShapeT *LoadShape(char *filename) {
 
       i++;
 
-      SkipSpaces(&data);
+      data = SkipSpaces(data);
     }
   }
 
