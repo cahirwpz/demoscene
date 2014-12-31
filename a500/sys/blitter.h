@@ -24,26 +24,29 @@
 #define LINE_SOLID  (LINEMODE)
 #define LINE_ONEDOT (LINEMODE | ONEDOT)
 
-__regargs void BlitterClear(BitmapT *bitmap, UWORD plane);
-__regargs void BlitterFill(BitmapT *bitmap, UWORD plane);
-__regargs void BlitterFillSync(BitmapT *bitmap, UWORD plane);
+__regargs void BlitterClear(BitmapT *bitmap, WORD plane);
+__regargs void BlitterClearSync(BitmapT *bitmap, WORD plane);
+
+__regargs void BlitterFill(BitmapT *bitmap, WORD plane);
+__regargs void BlitterFillSync(BitmapT *bitmap, WORD plane);
+
+void BlitterCopySync(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
+                     BitmapT *src, WORD srcbpl);
+void BlitterCopyMaskedSync(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
+                           BitmapT *src, WORD srcbpl, BitmapT *msk);
+void BlitterCopyAreaSync(BitmapT *dst, WORD dstbpl, UWORD dx, UWORD dy,
+                         BitmapT *src, WORD srcbpl,
+                         UWORD sx, UWORD sy, UWORD sw, UWORD sh);
+
+void BlitterSetSync(BitmapT *dst, WORD dstbpl,
+                    UWORD x, UWORD y, UWORD w, UWORD h, UWORD val);
+void BlitterSetMaskedSync(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
+                          BitmapT *msk, UWORD val);
 
 __regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWORD bltcon1);
 __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2);
 __regargs void BlitterLineSync(WORD x1, WORD y1, WORD x2, WORD y2);
 
-__regargs void BlitterClearSync(BitmapT *bitmap, UWORD plane);
-void BlitterCopySync(BitmapT *dst, UWORD dstbpl, UWORD x, UWORD y,
-                     BitmapT *src, UWORD srcbpl);
-void BlitterCopyMaskedSync(BitmapT *dst, UWORD dstbpl, UWORD x, UWORD y,
-                           BitmapT *src, UWORD srcbpl, BitmapT *msk);
-void BlitterCopyAreaSync(BitmapT *dst, UWORD dstbpl, UWORD dx, UWORD dy,
-                         BitmapT *src, UWORD srcbpl,
-                         UWORD sx, UWORD sy, UWORD sw, UWORD sh);
-void BlitterSetSync(BitmapT *dst, UWORD dstbpl,
-                    UWORD x, UWORD y, UWORD w, UWORD h, UWORD val);
-void BlitterSetMaskedSync(BitmapT *dst, UWORD dstbpl, UWORD x, UWORD y,
-                          BitmapT *msk, UWORD val);
 void BlitterAddSaturatedSync(BitmapT *dst, WORD dx, WORD dy, BitmapT *src, BitmapT *carry);
 
 static inline BOOL BlitterBusy() {
