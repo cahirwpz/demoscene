@@ -26,9 +26,11 @@
 
 /* Bitplane incrementer with saturation. */
 __regargs static void BLTOP_NAME() {
-  APTR *__carry = (BLTOP_CARRY_BM)->planes;
-  APTR *__dst = (BLTOP_DST_BM)->planes;
-  WORD i, k;
+  APTR carry0 = (BLTOP_CARRY_BM)->planes[0];
+  APTR carry1 = (BLTOP_CARRY_BM)->planes[1];
+  APTR *dst = (BLTOP_DST_BM)->planes;
+  APTR ptr;
+  WORD n = BLTOP_BPLS;
 
   /* Only pixels set to one in carry[0] will be incremented. */
   
@@ -40,27 +42,35 @@ __regargs static void BLTOP_NAME() {
   custom->bltafwm = -1;
   custom->bltalwm = -1;
 
-  for (i = 0, k = 0; i < 4; i++, k ^= 1) {
+  while (--n >= 0) {
+    ptr = *dst++;
+
     BLTOP_WAIT;
-    custom->bltapt = __dst[i];
-    custom->bltbpt = __carry[k];
-    custom->bltdpt = __carry[k ^ 1];
+    custom->bltapt = ptr;
+    custom->bltbpt = carry0;
+    custom->bltdpt = carry1;
     custom->bltcon0 = HALF_ADDER_CARRY;
     custom->bltsize = BLTOP_SIZE;
 
     BLTOP_WAIT;
-    custom->bltapt = __dst[i];
-    custom->bltbpt = __carry[k];
-    custom->bltdpt = __dst[i];
+    custom->bltapt = ptr;
+    custom->bltbpt = carry0;
+    custom->bltdpt = ptr;
     custom->bltcon0 = HALF_ADDER;
     custom->bltsize = BLTOP_SIZE;
+
+    swapr(carry0, carry1);
   }
 
-  for (i = 0; i < BLTOP_BPLS; i++) {
+  dst = (BLTOP_DST_BM)->planes;
+  n = BLTOP_BPLS;
+  while (--n >= 0) {
+    ptr = *dst++;
+
     BLTOP_WAIT;
-    custom->bltapt = __dst[i];
-    custom->bltbpt = __carry[k];
-    custom->bltdpt = __dst[i];
+    custom->bltapt = ptr;
+    custom->bltbpt = carry0;
+    custom->bltdpt = ptr;
     custom->bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
     custom->bltsize = BLTOP_SIZE;
   }

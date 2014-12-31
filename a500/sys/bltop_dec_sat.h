@@ -26,10 +26,12 @@
 
 /* Bitplane decrementer with saturation. */
 __regargs static void BLTOP_NAME() {
-  APTR *__borrow = (BLTOP_BORROW_BM)->planes;
-  APTR *__dst = (BLTOP_DST_BM)->planes;
-  WORD i, k;
-  
+  APTR borrow0 = (BLTOP_BORROW_BM)->planes[0];
+  APTR borrow1 = (BLTOP_BORROW_BM)->planes[1];
+  APTR *dst = (BLTOP_DST_BM)->planes;
+  APTR ptr = *dst++;
+  WORD n = BLTOP_BPLS - 1;
+
   BLTOP_WAIT;
   custom->bltcon1 = 0;
   custom->bltamod = 0;
@@ -39,38 +41,46 @@ __regargs static void BLTOP_NAME() {
   custom->bltafwm = -1;
   custom->bltalwm = -1;
 
-  custom->bltapt = __dst[0];
-  custom->bltdpt = __borrow[0];
+  custom->bltapt = ptr;
+  custom->bltdpt = borrow0;
   custom->bltcon0 = HALF_SUB_BORROW & ~SRCB;
   custom->bltsize = BLTOP_SIZE;
 
   BLTOP_WAIT;
-  custom->bltapt = __dst[0];
-  custom->bltdpt = __dst[0];
+  custom->bltapt = ptr;
+  custom->bltdpt = ptr;
   custom->bltcon0 = HALF_SUB & ~SRCB;
   custom->bltsize = BLTOP_SIZE;
 
-  for (i = 1, k = 0; i < BLTOP_BPLS; i++, k ^= 1) {
+  while (--n >= 0) {
+    ptr = *dst++;
+
     BLTOP_WAIT;
-    custom->bltapt = __dst[i];
-    custom->bltbpt = __borrow[k];
-    custom->bltdpt = __borrow[k ^ 1];
+    custom->bltapt = ptr;
+    custom->bltbpt = borrow0;
+    custom->bltdpt = borrow1;
     custom->bltcon0 = HALF_SUB_BORROW;
     custom->bltsize = BLTOP_SIZE;
 
     BLTOP_WAIT;
-    custom->bltapt = __dst[i];
-    custom->bltbpt = __borrow[k];
-    custom->bltdpt = __dst[i];
+    custom->bltapt = ptr;
+    custom->bltbpt = borrow0;
+    custom->bltdpt = ptr;
     custom->bltcon0 = HALF_SUB;
     custom->bltsize = BLTOP_SIZE;
+
+    swapr(borrow0, borrow1);
   }
 
-  for (i = 0; i < BLTOP_BPLS; i++) {
+  dst = (BLTOP_DST_BM)->planes;
+  n = BLTOP_BPLS;
+  while (--n >= 0) {
+    ptr = *dst++;
+
     BLTOP_WAIT;
-    custom->bltapt = __dst[i];
-    custom->bltbpt = __borrow[k];
-    custom->bltdpt = __dst[i];
+    custom->bltapt = ptr;
+    custom->bltbpt = borrow0;
+    custom->bltdpt = ptr;
     custom->bltcon0 = (SRCA | SRCB | DEST) | A_AND_NOT_B;
     custom->bltsize = BLTOP_SIZE;
   }

@@ -37,77 +37,99 @@
 #endif
 
 /* Bitplane adder with saturation. */
-__regargs static void BLTOP_NAME(WORD dx, WORD dy, WORD sx, WORD sy) {
-  ULONG dst_begin = ((dx & ~15) >> 3) + ((WORD)dy * BLTOP_DST_WIDTH / 8);
-  UWORD dst_modulo = (BLTOP_DST_WIDTH - (BLTOP_HSIZE + 16)) / 8;
-  ULONG src_begin = ((sx & ~15) >> 3) + ((WORD)sy * BLTOP_SRC_WIDTH / 8);
-  UWORD src_shift = (dx & 15) << ASHIFTSHIFT;
-  APTR *__src = (BLTOP_SRC_BM)->planes;
-  APTR *__dst = (BLTOP_DST_BM)->planes;
-  APTR *__carry = (BLTOP_CARRY_BM)->planes;
-  LONG i, k;
+static __regargs void BLTOP_NAME(WORD dx, WORD dy, WORD sx, WORD sy) {
+  LONG dst_begin = ((dx & ~15) >> 3) + ((WORD)dy * BLTOP_DST_WIDTH / 8);
+  WORD dst_modulo = (BLTOP_DST_WIDTH - (BLTOP_HSIZE + 16)) / 8;
+  LONG src_begin = ((sx & ~15) >> 3) + ((WORD)sy * BLTOP_SRC_WIDTH / 8);
+  WORD src_shift = (dx & 15) << ASHIFTSHIFT;
+  APTR carry0 = (BLTOP_CARRY_BM)->planes[0];
+  APTR carry1 = (BLTOP_CARRY_BM)->planes[1];
+  APTR *src = (BLTOP_SRC_BM)->planes;
+  APTR *dst = (BLTOP_DST_BM)->planes;
 
-  BLTOP_WAIT;
+  {
+    APTR aptr = (*src++) + src_begin;
+    APTR bptr = (*dst++) + dst_begin;
 
-  /* Initialize blitter */
-  custom->bltamod = -2;
-  custom->bltbmod = dst_modulo;
-  custom->bltcmod = 0;
-  custom->bltcon1 = 0;
-  custom->bltafwm = -1;
-  custom->bltalwm = 0;
-
-  /* Bitplane 0: half adder with carry. */
-  custom->bltapt = __src[0] + src_begin;
-  custom->bltbpt = __dst[0] + dst_begin;
-  custom->bltdpt = __carry[0];
-  custom->bltdmod = 0;
-  custom->bltcon0 = HALF_ADDER_CARRY | src_shift;
-  custom->bltsize = BLTOP_SIZE;
-
-  BLTOP_WAIT;
-  custom->bltapt = __src[0] + src_begin;
-  custom->bltbpt = __dst[0] + dst_begin;
-  custom->bltdpt = __dst[0] + dst_begin;
-  custom->bltdmod = dst_modulo;
-  custom->bltcon0 = HALF_ADDER | src_shift;
-  custom->bltsize = BLTOP_SIZE;
-
-  /* Bitplane 1-5: full adder with carry. */
-  for (i = 1, k = 0; i < BLTOP_BPLS; i++, k ^= 1) {
     BLTOP_WAIT;
-    custom->bltapt = __src[i] + src_begin;
-    custom->bltbpt = __dst[i] + dst_begin;
-    custom->bltcpt = __carry[k];
-    custom->bltdpt = __carry[k ^ 1];
+
+    /* Initialize blitter */
+    custom->bltamod = -2;
+    custom->bltbmod = dst_modulo;
+    custom->bltcmod = 0;
+    custom->bltcon1 = 0;
+    custom->bltafwm = -1;
+    custom->bltalwm = 0;
+
+    /* Bitplane 0: half adder with carry. */
+    custom->bltapt = aptr;
+    custom->bltbpt = bptr;
+    custom->bltdpt = carry0;
     custom->bltdmod = 0;
-    custom->bltcon0 = FULL_ADDER_CARRY | src_shift;
+    custom->bltcon0 = HALF_ADDER_CARRY | src_shift;
     custom->bltsize = BLTOP_SIZE;
 
     BLTOP_WAIT;
-    custom->bltapt = __src[i] + src_begin;
-    custom->bltbpt = __dst[i] + dst_begin;
-    custom->bltcpt = __carry[k];
-    custom->bltdpt = __dst[i] + dst_begin;
+    custom->bltapt = aptr;
+    custom->bltbpt = bptr;
+    custom->bltdpt = bptr;
     custom->bltdmod = dst_modulo;
-    custom->bltcon0 = FULL_ADDER | src_shift;
+    custom->bltcon0 = HALF_ADDER | src_shift;
     custom->bltsize = BLTOP_SIZE;
   }
 
-  /* Apply saturation bits. */
-  BLTOP_WAIT;
-  custom->bltamod = dst_modulo;
-  custom->bltbmod = 0;
-  custom->bltdmod = dst_modulo;
-  custom->bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
-  custom->bltalwm = -1;
+  {
+    WORD n = BLTOP_BPLS - 1;
 
-  for (i = 0; i < BLTOP_BPLS; i++) {
+    /* Bitplane 1-5: full adder with carry. */
+    while (--n >= 0) {
+      APTR aptr = (*src++) + src_begin;
+      APTR bptr = (*dst++) + dst_begin;
+
+      BLTOP_WAIT;
+      custom->bltapt = aptr;
+      custom->bltbpt = bptr;
+      custom->bltcpt = carry0;
+      custom->bltdpt = carry1;
+      custom->bltdmod = 0;
+      custom->bltcon0 = FULL_ADDER_CARRY | src_shift;
+      custom->bltsize = BLTOP_SIZE;
+
+      BLTOP_WAIT;
+      custom->bltapt = aptr;
+      custom->bltbpt = bptr;
+      custom->bltcpt = carry0;
+      custom->bltdpt = bptr;
+      custom->bltdmod = dst_modulo;
+      custom->bltcon0 = FULL_ADDER | src_shift;
+      custom->bltsize = BLTOP_SIZE;
+
+      swapr(carry0, carry1);
+    }
+  }
+
+  /* Apply saturation bits. */
+  {
+    WORD n = BLTOP_BPLS;
+
+    dst = (BLTOP_DST_BM)->planes;
+
     BLTOP_WAIT;
-    custom->bltapt = __dst[i] + dst_begin;
-    custom->bltbpt = __carry[k];
-    custom->bltdpt = __dst[i] + dst_begin;
-    custom->bltsize = BLTOP_SIZE;
+    custom->bltamod = dst_modulo;
+    custom->bltbmod = 0;
+    custom->bltdmod = dst_modulo;
+    custom->bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
+    custom->bltalwm = -1;
+
+    while (--n >= 0) {
+      APTR bptr = (*dst++) + dst_begin;
+
+      BLTOP_WAIT;
+      custom->bltapt = bptr;
+      custom->bltbpt = carry0;
+      custom->bltdpt = bptr;
+      custom->bltsize = BLTOP_SIZE;
+    }
   }
 }
 

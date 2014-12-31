@@ -227,77 +227,99 @@ void BlitterSetMaskedSync(BitmapT *dst, UWORD dstbpl, UWORD x, UWORD y,
 }
 
 /* Bitplane adder with saturation. */
-void BlitterAddSaturatedSync(BitmapT *dst, WORD dx, WORD dy, BitmapT *src, BitmapT *carry) {
-  ULONG dst_begin = ((dx & ~15) >> 3) + dy * dst->bytesPerRow;
-  UWORD dst_modulo = (dst->bytesPerRow - src->bytesPerRow) - 2;
+void BlitterAddSaturatedSync(BitmapT *dst_bm, WORD dx, WORD dy, BitmapT *src_bm, BitmapT *carry_bm) {
+  ULONG dst_begin = ((dx & ~15) >> 3) + dy * (WORD)dst_bm->bytesPerRow;
+  UWORD dst_modulo = (dst_bm->bytesPerRow - src_bm->bytesPerRow) - 2;
   UWORD src_shift = (dx & 15) << ASHIFTSHIFT;
-  UWORD bltsize = (src->height << 6) | ((src->width + 16) >> 4);
-  APTR *__src = src->planes;
-  APTR *__dst = dst->planes;
-  APTR *__carry = carry->planes;
-  WORD i, k;
+  UWORD bltsize = (src_bm->height << 6) | ((src_bm->width + 16) >> 4);
+  APTR carry0 = carry_bm->planes[0];
+  APTR carry1 = carry_bm->planes[1];
+  APTR *src = src_bm->planes;
+  APTR *dst = dst_bm->planes;
 
-  WaitBlitter();
+  {
+    APTR aptr = (*src++);
+    APTR bptr = (*dst++) + dst_begin;
 
-  /* Initialize blitter */
-  custom->bltamod = -2;
-  custom->bltbmod = dst_modulo;
-  custom->bltcmod = 0;
-  custom->bltcon1 = 0;
-  custom->bltafwm = -1;
-  custom->bltalwm = 0;
-
-  /* Bitplane 0: half adder with carry. */
-  custom->bltapt = __src[0];
-  custom->bltbpt = __dst[0] + dst_begin;
-  custom->bltdpt = __carry[0];
-  custom->bltdmod = 0;
-  custom->bltcon0 = HALF_ADDER_CARRY | src_shift;
-  custom->bltsize = bltsize;
-
-  WaitBlitter();
-  custom->bltapt = __src[0];
-  custom->bltbpt = __dst[0] + dst_begin;
-  custom->bltdpt = __dst[0] + dst_begin;
-  custom->bltdmod = dst_modulo;
-  custom->bltcon0 = HALF_ADDER | src_shift;
-  custom->bltsize = bltsize;
-
-  /* Bitplane 1-n: full adder with carry. */
-  for (i = 1, k = 0; i < dst->depth; i++, k ^= 1) {
     WaitBlitter();
-    custom->bltapt = __src[i];
-    custom->bltbpt = __dst[i] + dst_begin;
-    custom->bltcpt = __carry[k];
-    custom->bltdpt = __carry[k ^ 1];
+
+    /* Initialize blitter */
+    custom->bltamod = -2;
+    custom->bltbmod = dst_modulo;
+    custom->bltcmod = 0;
+    custom->bltcon1 = 0;
+    custom->bltafwm = -1;
+    custom->bltalwm = 0;
+
+    /* Bitplane 0: half adder with carry. */
+    custom->bltapt = aptr;
+    custom->bltbpt = bptr;
+    custom->bltdpt = carry0;
     custom->bltdmod = 0;
-    custom->bltcon0 = FULL_ADDER_CARRY | src_shift;
+    custom->bltcon0 = HALF_ADDER_CARRY | src_shift;
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltapt = __src[i];
-    custom->bltbpt = __dst[i] + dst_begin;
-    custom->bltcpt = __carry[k];
-    custom->bltdpt = __dst[i] + dst_begin;
+    custom->bltapt = aptr;
+    custom->bltbpt = bptr;
+    custom->bltdpt = bptr;
     custom->bltdmod = dst_modulo;
-    custom->bltcon0 = FULL_ADDER | src_shift;
+    custom->bltcon0 = HALF_ADDER | src_shift;
     custom->bltsize = bltsize;
   }
 
-  /* Apply saturation bits. */
-  WaitBlitter();
-  custom->bltamod = dst_modulo;
-  custom->bltbmod = 0;
-  custom->bltdmod = dst_modulo;
-  custom->bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
-  custom->bltalwm = -1;
+  {
+    WORD n = dst_bm->depth - 1;
 
-  for (i = 0; i < dst->depth; i++) {
+    /* Bitplane 1-n: full adder with carry. */
+    while (--n >= 0) {
+      APTR aptr = (*src++);
+      APTR bptr = (*dst++) + dst_begin;
+
+      WaitBlitter();
+      custom->bltapt = aptr;
+      custom->bltbpt = bptr;
+      custom->bltcpt = carry0;
+      custom->bltdpt = carry1;
+      custom->bltdmod = 0;
+      custom->bltcon0 = FULL_ADDER_CARRY | src_shift;
+      custom->bltsize = bltsize;
+
+      WaitBlitter();
+      custom->bltapt = aptr;
+      custom->bltbpt = bptr;
+      custom->bltcpt = carry0;
+      custom->bltdpt = bptr;
+      custom->bltdmod = dst_modulo;
+      custom->bltcon0 = FULL_ADDER | src_shift;
+      custom->bltsize = bltsize;
+
+      swapr(carry0, carry1);
+    }
+  }
+
+  /* Apply saturation bits. */
+  {
+    WORD n = dst_bm->depth;
+
+    dst = dst_bm->planes;
+
     WaitBlitter();
-    custom->bltapt = __dst[i] + dst_begin;
-    custom->bltbpt = __carry[k];
-    custom->bltdpt = __dst[i] + dst_begin;
-    custom->bltsize = bltsize;
+    custom->bltamod = dst_modulo;
+    custom->bltbmod = 0;
+    custom->bltdmod = dst_modulo;
+    custom->bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
+    custom->bltalwm = -1;
+
+    while (--n >= 0) {
+      APTR bptr = (*dst++) + dst_begin;
+
+      WaitBlitter();
+      custom->bltapt = bptr;
+      custom->bltbpt = carry0;
+      custom->bltdpt = bptr;
+      custom->bltsize = bltsize;
+    }
   }
 }
 
