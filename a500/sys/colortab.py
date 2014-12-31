@@ -8,5 +8,6 @@ if __name__ == '__main__':
 
     for i in range(16):
       for j in range(16):
-        row = ', '.join([str(i + (j - i) * k / 15) for k in range(16)])
+        row = ', '.join(["$%.2x" % ((i + (j - i) * k / 15) * 16)
+                         for k in range(16)])
         print >>fh, '\tdc.b\t' + row
