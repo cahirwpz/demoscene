@@ -10,16 +10,17 @@
 #define MOD_POS_FRAME(pos) \
   (((((pos) >> 8) & 0xff) * 64 + ((pos) & 0x3f)) * FRAMES_PER_ROW)
 
-#define TRK_INIT(...) { TRACK_LINEAR, NULL, NULL, 0, 0, 0, 0, NULL, {__VA_ARGS__} }
+#define TRK_INIT(...) { TRACK_LINEAR, NULL, NULL, 0, 0, NULL, {__VA_ARGS__} }
 #define TRK_TYPE(type) { -2, TRACK_ ## type }
 #define TRK_KEY(pos, value) { MOD_POS_FRAME(pos), value }
 #define TRK_KEY_BIAS(pos, bias, value) { MOD_POS_FRAME(pos) + (bias), value }
 #define TRK_END { -1, 0 }
 
 typedef enum {
-  TRACK_RAMP   = 1, /* set constant value, keep track of frames */
-  TRACK_LINEAR = 2, /* lerp to the next value */
-  TRACK_SMOOTH = 3, /* smooth curve to the next value */
+  TRACK_RAMP    = 1, /* set constant value */
+  TRACK_TRIGGER = 2, /* count down from specific number of frames */
+  TRACK_LINEAR  = 3, /* lerp to the next value */
+  TRACK_SMOOTH  = 4, /* smooth curve to the next value */
 } TrackTypeT;
 
 #define END_KEY  -1
@@ -44,9 +45,6 @@ typedef struct {
   TrackKeyT *next; /* always points to data or end key */
   WORD interval;
   WORD delta;
-  /* read-only: used by TRACK_RAMP */
-  WORD frameFromStart;
-  WORD frameTillEnd;
   /* public: provided by user */
   char *name;
   TrackKeyT data[0];

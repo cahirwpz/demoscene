@@ -50,6 +50,9 @@ static __regargs TrackT *ReadTrack(char **strptr) {
           if (!memcmp(data, "ramp", 4)) {
             type = TRACK_RAMP;
             data += 4;
+          } else if (!memcmp(data, "trigger", 7)) {
+            type = TRACK_TRIGGER;
+            data += 7;
           } else if (!memcmp(data, "linear", 6)) {
             type = TRACK_LINEAR;
             data += 6;

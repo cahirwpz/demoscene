@@ -5,6 +5,8 @@ __regargs void TrackInit(TrackT *track) {
   TrackKeyT *key = track->data;
   TrackKeyT *next;
 
+  track->type = TRACK_LINEAR;
+
   while (key->frame == CTRL_KEY) {
     track->type = key->value;
     key++;
@@ -28,10 +30,15 @@ __regargs WORD TrackValueGet(TrackT *track, WORD frame) {
   WORD step;
 
   if (frame < key->frame)
-    return key->value;
+    return (track->type == TRACK_TRIGGER) ? 0 : key->value;
 
-  if (next->frame == END_KEY)
+  if (next->frame == END_KEY) {
+    if (track->type == TRACK_TRIGGER) {
+      step = frame - key->frame;
+      return (step < key->value) ? (key->value - step) : 0;
+    }
     return key->value;
+  }
 
   /* need to advance to next frame span? */
   while (frame >= next->frame) {
@@ -59,19 +66,18 @@ __regargs WORD TrackValueGet(TrackT *track, WORD frame) {
 
   switch (track->type) {
     case TRACK_RAMP:
-      track->frameFromStart = step;
-      track->frameTillEnd = next->frame - frame;
-      return key->value;
+       return key->value;
+
+    case TRACK_TRIGGER:
+       return (step < key->value) ? (key->value - step) : 0;
 
     case TRACK_LINEAR:
       return key->value + div16(step * track->delta, track->interval);
 
     case TRACK_SMOOTH:
       {
-        WORD t = div16(shift12(step), track->interval);
-        WORD t2 = normfx(t * t);
-        WORD tt = t + t;
-        WORD k = normfx(t2 * (WORD)(fx12f(3.0) - tt));
+        WORD t = div16(shift12(step) / 2, track->interval);
+        WORD k = (fx12f(1.0) - sintab[t + SIN_HALF_PI]) / 2;
         return key->value + normfx(track->delta * k);
       }
   }

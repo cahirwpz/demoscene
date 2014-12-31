@@ -36,6 +36,10 @@ static inline int isalpha(int c) {
   return ctype[c] & ALPHA;
 }
 
+static inline int isalnum(int c) {
+  return ctype[c] & ALNUM;
+}
+
 __regargs char *SkipSpaces(char *str) {
   do {
     char c = *str;
@@ -136,7 +140,7 @@ __regargs WORD ReadSymbol(char **strptr, char **symptr) {
 
   do {
     char c = *str;
-    if (!c || (!isalpha(c) && c != '_'))
+    if (!c || (!isalnum(c) && c != '_'))
       break;
     str++;
   } while (1);
