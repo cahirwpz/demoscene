@@ -41,13 +41,13 @@ __regargs void LoadIdentity2D(Matrix2D *M);
 __regargs void Translate2D(Matrix2D *M, WORD x, WORD y);
 __regargs void Scale2D(Matrix2D *M, WORD sx, WORD sy);
 __regargs void Rotate2D(Matrix2D *M, WORD a);
-__regargs void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, UWORD n);
+__regargs void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, WORD n);
 
 __regargs BOOL ClipArea2D(Point2D *dst, WORD width, WORD height, Area2D *src);
 
 extern Box2D ClipWin;
 
-__regargs void PointsInsideBox(Point2D *in, UBYTE *flags, UWORD n);
+__regargs void PointsInsideBox(Point2D *in, UBYTE *flags, WORD n);
 __regargs BOOL ClipLine2D(Line2D *line);
 __regargs UWORD ClipPolygon2D(Point2D *in, Point2D **outp, UWORD n,
                               UWORD clipFlags);

@@ -42,24 +42,23 @@ __regargs void Rotate2D(Matrix2D *M, WORD a) {
   M->m11 = normfx(m10 * sin + m11 * cos);
 }
 
-#define MULPOINT() {             \
-  LONG t0 = (*v++) * x;          \
-  LONG t1 = (*v++) * y;          \
-  WORD t2 = (*v++);              \
-  *dst++ = normfx(t0 + t1) + t2; \
-}
-
-__regargs void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, UWORD n) {
+__regargs void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, WORD n) {
   WORD *dst = (WORD *)out;
   WORD *src = (WORD *)in;
+  WORD *v = (WORD *)M;
+  WORD m00 = *v++;
+  WORD m01 = *v++;
+  WORD mx  = *v++;
+  WORD m10 = *v++;
+  WORD m11 = *v++;
+  WORD my  = *v++;
 
-  while (n--) {
-    WORD *v = (WORD *)M;
+  while (--n >= 0) {
     WORD x = *src++;
     WORD y = *src++;
 
-    MULPOINT();
-    MULPOINT();
+    *dst++ = normfx(m00 * x + m01 * y) + mx;
+    *dst++ = normfx(m10 * x + m11 * y) + my;
   }
 }
 
@@ -85,7 +84,7 @@ __regargs BOOL ClipArea2D(Point2D *dst, WORD width, WORD height, Area2D *src) {
   return (src->w > 0 && src->h > 0);
 }
 
-__regargs void PointsInsideBox(Point2D *in, UBYTE *flags, UWORD n) {
+__regargs void PointsInsideBox(Point2D *in, UBYTE *flags, WORD n) {
   WORD *src = (WORD *)in;
 
   WORD minX = ClipWin.minX;
@@ -93,18 +92,18 @@ __regargs void PointsInsideBox(Point2D *in, UBYTE *flags, UWORD n) {
   WORD maxX = ClipWin.maxX;
   WORD maxY = ClipWin.maxY;
 
-  while (n--) {
+  while (--n >= 0) {
     WORD x = *src++;
     WORD y = *src++;
     UBYTE f = 0;
 
     if (x < minX)
       f |= PF_LEFT;
-    if (x >= maxX)
+    else if (x >= maxX)
       f |= PF_RIGHT;
     if (y < minY)
       f |= PF_TOP;
-    if (y >= maxY)
+    else if (y >= maxY)
       f |= PF_BOTTOM;
 
     *flags++ = f;
