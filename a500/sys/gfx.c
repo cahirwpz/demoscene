@@ -7,12 +7,12 @@ __regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
   bitmap->width = width;
   bitmap->height = height;
   bitmap->depth = depth;
-  bitmap->bytesPerRow = (width + 7) / 8;
+  bitmap->bytesPerRow = ((width + 15) & ~15) / 8;
   bitmap->bplSize = bitmap->bytesPerRow * height;
   bitmap->flags = donor->flags;
   bitmap->palette = donor->palette;
 
-  ITER(i, 0, depth - 1, bitmap->planes[i] = donor->planes[i]);
+  BitmapSetPointers(bitmap, donor->planes[0]);
 }
 
 __regargs void BitmapSetPointers(BitmapT *bitmap, APTR planes) {
@@ -31,13 +31,13 @@ __regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
                                    UBYTE flags)
 {
   BitmapT *bitmap = MemAlloc(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
-  UWORD bytesPerRow = (width + 7) / 8;
+  UWORD bytesPerRow = ((width + 15) & ~15) / 8;
 
   bitmap->width = width;
   bitmap->height = height;
   bitmap->bytesPerRow = bytesPerRow;
   /* Let's make it aligned to WORD boundary. */
-  bitmap->bplSize = (bytesPerRow * height + 1) & ~1;
+  bitmap->bplSize = bytesPerRow * height;
   bitmap->depth = depth;
   bitmap->flags = flags & BM_FLAGMASK;
 
