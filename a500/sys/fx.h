@@ -24,7 +24,7 @@ static inline LONG shift12(WORD a) {
   asm("swap %0\n"
       "clrw %0\n"
       "asrl #4,%0\n"
-      : "=d" (b) : "d" (a));
+      : "=d" (b) : "0" (a));
   return b;
 }
 
