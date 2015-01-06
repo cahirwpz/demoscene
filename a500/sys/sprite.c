@@ -78,10 +78,9 @@ __regargs void DeleteSprite(SpriteT *sprite) {
   MemFree(sprite, sizeof(SpriteT));
 }
 
-__regargs void UpdateSprite(SpriteT *sprite) {
-  UWORD hstart = sprite->x;
-  UWORD vstart = sprite->y;
+static inline void UpdateSpriteInternal(SpriteT *sprite, UWORD hstart, UWORD vstart) {
   UWORD vstop = vstart + sprite->height + 1;
+  UBYTE lowctl = hstart & 1;
 
   /*
    * SPRxPOS:
@@ -97,26 +96,47 @@ __regargs void UpdateSprite(SpriteT *sprite) {
    *  Bit 0           The HSTART low bit
    */
 
-  UWORD sprpos = (vstart << 8) | ((hstart >> 1) & 255);
-  UWORD sprctl = (vstop << 8) | ((vstart >> 6) & 4) | ((vstop >> 7) & 2) | (hstart & 1);
+  if (vstart & 0x100)
+    lowctl |= 4;
+  if (vstop & 0x100)
+    lowctl |= 2;
 
-  sprite->data[0] = sprpos;
-  sprite->data[1] = sprctl;
+  {
+    UBYTE *spr = (UBYTE *)sprite->data;
 
-  if (sprite->attached) {
-    sprite->attached->data[0] = sprpos;
-    sprite->attached->data[1] = sprctl | 0x80;
+    *spr++ = vstart;
+    *spr++ = hstart >> 1;
+    *spr++ = vstop;
+    *spr++ = lowctl;
+  }
+}
+
+__regargs void UpdateSprite(SpriteT *sprite) {
+  SpriteT *attached = sprite->attached;
+
+  UpdateSpriteInternal(sprite, sprite->x, sprite->y);
+
+  if (attached) {
+    LONG *dst = (LONG *)attached->data;
+    LONG *src = (LONG *)sprite->data;
+    *dst = *src | 0x80;
   }
 }
 
 __regargs void UpdateSpritePos(SpriteT *sprite, UWORD hstart, UWORD vstart) {
+  SpriteT *attached = sprite->attached;
+
   sprite->x = hstart;
   sprite->y = vstart;
 
-  if (sprite->attached) {
-    sprite->attached->x = hstart;
-    sprite->attached->y = vstart;
-  }
+  UpdateSpriteInternal(sprite, hstart, vstart);
 
-  UpdateSprite(sprite);
+  if (attached) {
+    LONG *dst = (LONG *)attached->data;
+    LONG *src = (LONG *)sprite->data;
+
+    attached->x = hstart;
+    attached->y = vstart;
+    *dst = *src | 0x80;
+  }
 }
