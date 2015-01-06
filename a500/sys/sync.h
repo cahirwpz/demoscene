@@ -18,10 +18,12 @@
 
 typedef enum {
   TRACK_RAMP    = 1, /* set constant value */
-  TRACK_TRIGGER = 2, /* count down from specific number of frames */
-  TRACK_LINEAR  = 3, /* lerp to the next value */
-  TRACK_SMOOTH  = 4, /* smooth curve to the next value */
-} TrackTypeT;
+  TRACK_LINEAR  = 2, /* lerp to the next value */
+  TRACK_SMOOTH  = 3, /* smooth curve to the next value */
+  TRACK_SPLINE  = 4,
+  TRACK_TRIGGER = 5, /* count down (with every frame) from given number */
+  TRACK_EVENT   = 6  /* like ramp but value is delivered only once */
+} __attribute__((packed)) TrackTypeT;
 
 #define END_KEY  -1
 #define CTRL_KEY -2
@@ -41,10 +43,16 @@ typedef struct {
 typedef struct {
   /* private */
   TrackTypeT type;
-  TrackKeyT *key;  /* always points to data */
-  TrackKeyT *next; /* always points to data or end key */
+  /*
+   * 0 => previous,
+   * 1 => current (always points to data)
+   * 2 => next (always points to data or end key)
+   * 3 => next + 1
+   */
+  TrackKeyT *key[4]; 
   WORD interval;
   WORD delta;
+  BOOL pending;
   /* public: provided by user */
   char *name;
   TrackKeyT data[0];

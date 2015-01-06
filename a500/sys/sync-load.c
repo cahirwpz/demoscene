@@ -50,15 +50,21 @@ static __regargs TrackT *ReadTrack(char **strptr) {
           if (!memcmp(data, "ramp", 4)) {
             type = TRACK_RAMP;
             data += 4;
-          } else if (!memcmp(data, "trigger", 7)) {
-            type = TRACK_TRIGGER;
-            data += 7;
           } else if (!memcmp(data, "linear", 6)) {
             type = TRACK_LINEAR;
             data += 6;
           } else if (!memcmp(data, "smooth", 6)) {
             type = TRACK_SMOOTH;
             data += 6;
+          } else if (!memcmp(data, "spline", 6)) {
+            type = TRACK_SPLINE;
+            data += 6;
+          } else if (!memcmp(data, "trigger", 7)) {
+            type = TRACK_TRIGGER;
+            data += 7;
+          } else if (!memcmp(data, "event", 5)) {
+            type = TRACK_EVENT;
+            data += 5;
           } else {
             Print("Unknown control key!\n");
             goto quit;

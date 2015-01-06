@@ -6,70 +6,121 @@ __regargs void TrackInit(TrackT *track) {
   TrackKeyT *next;
 
   track->type = TRACK_LINEAR;
+  track->pending = TRUE;
 
   while (key->frame == CTRL_KEY) {
     track->type = key->value;
     key++;
   }
-  track->key = key;
+  track->key[0] = track->key[1] = key;
 
   next = key + 1;
   while (next->frame == CTRL_KEY)
     next++;
-  track->next = next;
+  track->key[2] = next;
 
   if (next->frame != END_KEY) {
     track->interval = next->frame - key->frame;
     track->delta = next->value - key->value;
+
+    do { next++; } while (next->frame == CTRL_KEY);
+
+    if (next->frame == END_KEY)
+      next = track->key[2];
+
+    track->key[3] = next;
   }
 }
 
+/*
+ * h00(t) := 2 * t^3 - 3 * t^2 + 1
+ * h10(t) := t^3 - 2 * t^2 + t
+ * h01(t) := -2 * t^3 + 3 * t^2
+ * h11(t) := t^3 - t^2
+ * p(t) := h00(t) * p(0) + h10(t) * m(0) + h01(t) * p(1) + h11(t) * m(1)
+ *
+ * m(k) := (p(k+1) - p(k-1)) / (t(k+1) - t(k-1))
+ *
+ * h11(t) := (t - 1) * t^2
+ * ha(t) := h11(t) - t^2
+ * hb(t) := h11(t) + ha(t)
+ * h00(t) := hb(t) + 1
+ * h10(t) := ha(t) + t
+ * h01(t) := -hb(t)
+ */
+static __regargs LONG HermiteInterpolator(WORD t, TrackKeyT *key[4]) {
+  register WORD one asm("d6") = fx12f(1.0);
+  WORD t2 = normfx(t * t);
+  WORD h11 = normfx(t2 * (WORD)(t - one));
+  WORD ha = h11 - t2;
+  WORD hb = h11 + ha;
+  WORD h00 = hb + one;
+  WORD h10 = ha + t;
+  WORD h01 = -hb;
+
+  WORD v0 = (*key++)->value;
+  WORD v1 = (*key++)->value;
+  WORD v2 = (*key++)->value;
+  WORD v3 = (*key++)->value;
+
+  return h00 * v1 + h01 * v2 +
+    ((h10 * (WORD)(v2 - v0) + h11 * (WORD)(v3 - v1)) >> 1);
+}
+
 __regargs WORD TrackValueGet(TrackT *track, WORD frame) {
-  TrackKeyT *key = track->key; 
-  TrackKeyT *next = track->next;
+  TrackKeyT *key = track->key[1]; 
+  TrackKeyT *next = track->key[2];
   WORD step;
 
-  if (frame < key->frame)
-    return (track->type == TRACK_TRIGGER) ? 0 : key->value;
-
-  if (next->frame == END_KEY) {
-    if (track->type == TRACK_TRIGGER) {
-      step = frame - key->frame;
-      return (step < key->value) ? (key->value - step) : 0;
-    }
-    return key->value;
+  if (frame < key->frame) {
+    if ((track->type != TRACK_TRIGGER) &&
+        (track->type != TRACK_EVENT))
+      return key->value;
+    return 0;
   }
 
-  /* need to advance to next frame span? */
-  while (frame >= next->frame) {
-    key++; next++;
-
-    while (key->frame == CTRL_KEY) {
-      track->type = key->value;
-      key++;
-    }
-
-    while (next->frame == CTRL_KEY)
-      next++;
-
-    track->key = key;
-    track->next = next;
-
-    if (next->frame == END_KEY)
+  if (next->frame == END_KEY) {
+    if ((track->type != TRACK_TRIGGER) &&
+        (track->type != TRACK_EVENT))
       return key->value;
+  } else {
+    /* need to advance to next frame span? */
+    while (frame >= next->frame) {
+      key++;
 
-    track->interval = next->frame - key->frame;
-    track->delta = next->value - key->value;
+      while (key->frame == CTRL_KEY) {
+        track->type = key->value;
+        key++;
+      }
+
+      do { next++; } while (next->frame == CTRL_KEY);
+
+      track->key[1] = key;
+      track->key[2] = next;
+
+      if (next->frame == END_KEY)
+        return key->value;
+
+      track->interval = next->frame - key->frame;
+      track->delta = next->value - key->value;
+      track->pending = TRUE;
+
+      if (track->type == TRACK_SPLINE) {
+        do { next++; } while (next->frame == CTRL_KEY);
+
+        if (next->frame == END_KEY)
+          next = track->key[2];
+
+        track->key[3] = next;
+      }
+    }
   }
 
   step = frame - key->frame;
 
   switch (track->type) {
     case TRACK_RAMP:
-       return key->value;
-
-    case TRACK_TRIGGER:
-       return (step < key->value) ? (key->value - step) : 0;
+      return key->value;
 
     case TRACK_LINEAR:
       return key->value + div16(step * track->delta, track->interval);
@@ -80,9 +131,28 @@ __regargs WORD TrackValueGet(TrackT *track, WORD frame) {
         WORD k = (fx12f(1.0) - sintab[t + SIN_HALF_PI]) / 2;
         return key->value + normfx(track->delta * k);
       }
-  }
 
-  return 0;
+    case TRACK_SPLINE:
+      {
+        WORD t = div16(shift12(step), track->interval);
+        return normfx(HermiteInterpolator(t, track->key));
+      }
+
+    case TRACK_TRIGGER:
+      {
+        WORD v = key->value - step;
+        return (v > 0) ? v : 0;
+      }
+
+    case TRACK_EVENT:
+      if (!track->pending)
+        return 0;
+      track->pending = FALSE;
+      return key->value;
+
+    default:
+      return 0;
+  }
 }
 
 __regargs TrackT *TrackLookup(TrackT **tracks, const char *name) {
