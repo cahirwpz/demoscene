@@ -168,4 +168,4 @@ _P61_End
 	movem.l	(sp)+,a3/a6
 	rts
 
-	include "P6111-Play.i"
+	include "P6112-Play.i"

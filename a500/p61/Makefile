@@ -4,6 +4,6 @@ ASFLAGS	:= -m68000 -nosym
 
 libp61.a: p61.o
 
-p61.o: p61.s p61.h P6111-Play.i
+p61.o: p61.s p61.h P6112-Play.i
 
 include ../Makefile.common

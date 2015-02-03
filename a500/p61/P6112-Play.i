@@ -1,8 +1,8 @@
-; vim: ft=asm68k:ts=8:sw=8:
 
 ;		#-----+-----------------------------------------#
-;		|Name:| P6111 - Optimized Player 6.1 Playroutine|
+;		|Name:| P6112 - Optimized Player 6.1 Playroutine|
 ;		+-----+-----------------------------------------+
+;		|V1.06|	P6112,E1x/E2x fix			|
 ;		|V1.05|	P6111, EDx fix,better init/exit,Dxx note|
 ;		|V1.04|	P6110, E6x command fix+new option	|
 ;		|V1.03|	P6109, compatibility changes only.	|
@@ -43,6 +43,10 @@
 ;them. To use it, just replace E8x with 80x in the module and you need change
 ;nothing else.
 
+;P6112:
+;E1x/E2x fix. One line changed in the source, in the GetNote macro used by 
+;these two effects combined with a note trigger (i.e. for F-3 E1x, not --- E1x)
+
 ;P6111:
 ;- Fix notedelay bug introduced in P6108
 ;- Fix in legacy code, CIA regs were modified in init/exit even when p61_cia=0.
@@ -63,11 +67,6 @@
 ;the Dxx command can be changed to a D00 command, which is supported.
 ;The copied pattern will only add 16 bytes or so to the filesize, and 
 ;performance will remain excellent.
-
-;Nested patternloops has not been implemented, even in the P61con player.
-
-;An issue with F01 commands was introduced in P6108. I've added a patch for 
-;this. It is tested, but only with two modules.
 
 ;---
 
@@ -131,7 +130,6 @@
 * Fixed by:  NoName, Platon42, *
 *  Tolkien and The Dark Coder  *
 ********************************
-F01patch=1
 nowaveforms=noshorts
 copdma=1-lev6
 Custom_Block_Size=16		;d7 used to replace clr.* instead of this const
@@ -443,8 +441,6 @@ P61_motuuli:
 	rts
 	endc
 
-_P61_ControlBlock:
-
 P61_Master:
 	dc.w 64
 P61_Tempo:
@@ -462,13 +458,13 @@ P61_Patt:
 P61_CRow:
 	dc.w 0
 P61_Temp0Offset:
-	dc.l P61_temp0-P61_Master ;P61_motuuli
+	dc.l P61_temp0-P61_motuuli
 P61_Temp1Offset:
-	dc.l P61_temp1-P61_Master ;P61_motuuli
+	dc.l P61_temp1-P61_motuuli
 P61_Temp2Offset:
-	dc.l P61_temp2-P61_Master ;P61_motuuli
+	dc.l P61_temp2-P61_motuuli
 P61_Temp3Offset:
-	dc.l P61_temp3-P61_Master ;P61_motuuli
+	dc.l P61_temp3-P61_motuuli
 P61_getnote:macro
 	moveq #$7e,d0
 	and.b (a5),d0
@@ -483,7 +479,7 @@ P61_getnote:macro
 	add P61_Fine(a5),d0
 	endc
 	move d0,P61_Note(a5)
-	move (a2,d0),P61_Period(a5)
+	move P61_periods-P61_cn(a3,d0),P61_Period(a5)	;P6112 fix.
 .nonote:
 	endm
 	ifeq p61system
@@ -2353,7 +2349,7 @@ P61_permdko:
 	and #$1f0,d0
 	beq.b .koto
 	ifne P61_ft
-	lea (a2,d0),a1
+	lea (a2,d0),a1			;this is not the same a2 as the fix.
 	else
 	lea (P61_samples-16)-P61_cn(a3),a1
 	add d0,a1
@@ -2754,30 +2750,27 @@ P61_playtimeCont:
 	subq #1,P61_pdelay-P61_cn(a3)
 	bne.w P61_delay
 	tst P61_speedis1-P61_cn(a3)
-	beq.s .ctdj
-	ifne F01patch
-	lea P61_temp0(pc),a5
-	moveq #channels-1,d5
-	bsr.w P61_preplay		;then do the remaining from prev frame
-	endc
-	bra.w P61_delay
-.ctdj:
+	bne.w P61_delay
 	move d7,P61_pdflag-P61_cn(a3)
 	bra.w P61_delay
 .djdj:
 	move d7,P61_pdflag-P61_cn(a3)
 	endc
-	
-	ifeq F01patch
+
 	ifne suppF01
 	tst P61_speedis1-P61_cn(a3)
 	beq.b .mo
+
 	lea P61_temp0(pc),a5
 	moveq #channels-1,d5
-	bsr.w P61_preplay		;then do the remaining from prev frame
+.chl:	bsr.w P61_preplay		;then do the remaining from prev frame
+	ifeq split4		;split4 means preplay is one-shot. So ext loop.
+	lea Channel_Block_Size-3(a5),a5
+	dbf d5,.chl
+	endc
+
 .mo:
-	endc				;suppF01
-	endc				;F01patch
+	endc	;suppF01
 
 	ifeq copdma&nowaveforms		;both must be off to skip int.
 	ifeq p61system		;main 'new note' int starter.
@@ -4056,7 +4049,6 @@ P61_Quiet:	dc.w 0	;@@this "sample" MUST be in chipmem!
 	endc
 
 	ifne visuctrs
-_P61_visuctr:
 P61_visuctr0:	dc.w $4000	;pretend long elapsed time at start
 P61_visuctr1:	dc.w $4000	;(to not show inital trigger on all channels.)
 P61_visuctr2:	dc.w $4000
