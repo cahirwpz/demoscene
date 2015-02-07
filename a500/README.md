@@ -11,6 +11,8 @@ Amiga 500 Hardware Programming Examples
 
 4. [MOTOROLA M68000 FAMILY Programmer's Reference Manual](http://www.freescale.com/files/archives/doc/ref_manual/M68000PRM.pdf)
 
+5. [DMA Time Slot Allocation / Horizontal Line](http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node02D4.gif)
+
 ### Tricks
 
 1. English Amiga Board - coders forum:
