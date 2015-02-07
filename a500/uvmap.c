@@ -1,11 +1,10 @@
-#include "blitter.h"
+#include "startup.h"
+#include "bltop.h"
 #include "coplist.h"
 #include "memory.h"
 #include "tga.h"
 #include "print.h"
 #include "file.h"
-
-#include "startup.h"
 
 #define WIDTH 160
 #define HEIGHT 100
@@ -48,6 +47,24 @@ static void PixmapScramble(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
   /* Extra halves for cheap texture motion. */
   memcpy(((APTR)imageHi->pixels) + size, (APTR)imageHi->pixels, size);
   memcpy(((APTR)imageLo->pixels) + size, (APTR)imageLo->pixels, size);
+}
+
+static void MakeUVMapRenderCode() {
+  UWORD *code = (APTR)UVMapRender;
+  UWORD *tmpl = (APTR)UVMapRenderTemplate;
+  UWORD *data = uvmap;
+  WORD n = WIDTH * HEIGHT / 2;
+
+  /* UVMap is pre-scrambled. */
+  while (n--) {
+    *code++ = tmpl[0];
+    *code++ = *data++;
+    *code++ = tmpl[2];
+    *code++ = *data++;
+    *code++ = tmpl[4];
+  }
+
+  *code++ = 0x4e75; /* return from subroutine instruction */
 }
 
 static void Load() {
@@ -152,24 +169,6 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static void MakeUVMapRenderCode() {
-  UWORD *code = (APTR)UVMapRender;
-  UWORD *tmpl = (APTR)UVMapRenderTemplate;
-  UWORD *data = uvmap;
-  WORD n = WIDTH * HEIGHT / 2;
-
-  /* UVMap is pre-scrambled. */
-  while (n--) {
-    *code++ = tmpl[0];
-    *code++ = *data++;
-    *code++ = tmpl[2];
-    *code++ = *data++;
-    *code++ = tmpl[4];
-  }
-
-  *code++ = 0x4e75; /* return from subroutine instruction */
-}
-
 static void Init() {
   static PixmapT recycled[2];
 
@@ -180,26 +179,26 @@ static void Init() {
   InitSharedPixmap(chunky[1], WIDTH, HEIGHT, PM_GRAY4, screen[1]->planes[1]);
 
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
+  MakeUVMapRenderCode();
+
   textureHi = NewPixmap(texture->width, texture->height * 2,
                         PM_CMAP, MEMF_PUBLIC);
   textureLo = NewPixmap(texture->width, texture->height * 2,
                         PM_CMAP, MEMF_PUBLIC);
-
-  MakeUVMapRenderCode();
   PixmapScramble(texture, textureHi, textureLo);
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
 
-  ITER(i, 0, 4, BlitterClearSync(screen[0], i));
-  ITER(i, 0, 4, BlitterClearSync(screen[1], i));
+  BitmapClear(screen[0], DEPTH);
+  BitmapClear(screen[1], DEPTH);
 
   memset(screen[0]->planes[4], 0x55, WIDTH * HEIGHT * 4 / 8);
   memset(screen[1]->planes[4], 0x55, WIDTH * HEIGHT * 4 / 8);
 
-  cp = NewCopList(1024);
-
+  cp = NewCopList(900);
   MakeCopperList(cp);
   CopListActivate(cp);
+
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
   custom->intena = INTF_SETCLR | INTF_BLIT;
 }
@@ -215,10 +214,12 @@ static void Kill() {
 }
 
 static void Render() {
-  UBYTE *txtHi = textureHi->pixels + (frameCount & 16383);
-  UBYTE *txtLo = textureLo->pixels + (frameCount & 16383);
+  WORD offset = frameCount & 16383;
 
   {
+    UBYTE *txtHi = textureHi->pixels + offset;
+    UBYTE *txtLo = textureLo->pixels + offset;
+
     // LONG lines = ReadLineCounter();
     (*UVMapRender)(chunky[active]->pixels, txtHi, txtLo);
     // Log("uvmap: %ld\n", ReadLineCounter() - lines);

@@ -1,5 +1,5 @@
 #include "startup.h"
-#include "blitter.h"
+#include "bltop.h"
 #include "coplist.h"
 #include "memory.h"
 #include "ilbm.h"
@@ -61,16 +61,14 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
-  WORD i, j;
+  WORD j;
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
 
   for (j = 0; j < 2; j++) {
-    for (i = 0; i < DEPTH; i++) {
-      BlitterSetSync(screen[j], i, 32, 0, WIDTH - 64, HEIGHT, 0);
-      BlitterCopySync(screen[j], i, 0, 0, bgLeft, i);
-      BlitterCopySync(screen[j], i, WIDTH - 32, 0, bgRight, i);
-    }
+    BitmapClearArea(screen[j], DEPTH, 32, 0, WIDTH - 64, HEIGHT);
+    BitmapCopy(screen[j], 0, 0, bgLeft);
+    BitmapCopy(screen[j], WIDTH - 32, 0, bgRight);
   }
 
   cp = NewCopList(100);
@@ -84,59 +82,43 @@ static void Init() {
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_COPPER | DMAF_BLITTER | DMAF_RASTER;
+  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 
   DeleteBitmap(carry);
   DeleteCopList(cp);
 }
 
-#define BLTOP_NAME ClearMetaball
-#define BLTOP_DST_BM screen[active]
-#define BLTOP_DST_WIDTH WIDTH
-#define BLTOP_HSIZE SIZE
-#define BLTOP_VSIZE SIZE
-#define BLTOP_BPLS 5
-#include "bltop_clear_simple.h"
-
-#define BLTOP_NAME CopyMetaball
-#define BLTOP_SRC_BM metaball
-#define BLTOP_DST_BM screen[active]
-#define BLTOP_DST_WIDTH WIDTH
-#define BLTOP_HSIZE SIZE
-#define BLTOP_VSIZE SIZE
-#define BLTOP_BPLS 5
-#include "bltop_copy_simple.h"
-
-#define BLTOP_NAME AddMetaball
-#define BLTOP_SRC_BM metaball
-#define BLTOP_SRC_WIDTH SIZE
-#define BLTOP_CARRY_BM carry
-#define BLTOP_DST_BM screen[active]
-#define BLTOP_DST_WIDTH WIDTH
-#define BLTOP_HSIZE SIZE
-#define BLTOP_VSIZE SIZE
-#define BLTOP_BPLS 5
-#include "bltop_add_sat.h"
-
 static void ClearMetaballs() {
-  Point2D *p = pos[active];
-  WORD j;
+  WORD *val = (WORD *)pos[active];
+  WORD n = 3;
+  LONG x, y;
 
-  for (j = 0; j < 3; j++, p++)
-    ClearMetaball(p->x, p->y);
+  while (--n >= 0) {
+    x = *val++; y = *val++;
+    BitmapClearArea(screen[active], DEPTH, x & ~15, y, SIZE + 16, SIZE);
+  }
 }
 
 static void PositionMetaballs() {
   LONG t = frameCount * 24;
+  WORD *val = (WORD *)pos[active];
 
-  pos[active][0].x = (WIDTH - SIZE) / 2 + normfx(SIN(t) * SIZE * 3 / 4);
-  pos[active][0].y = (HEIGHT - SIZE) / 2;
 
-  pos[active][1].x = (WIDTH - SIZE) / 2 - normfx(SIN(t) * SIZE * 3 / 4);
-  pos[active][1].y = (HEIGHT - SIZE) / 2;
+  *val++ = (WIDTH - SIZE) / 2 + normfx(SIN(t) * SIZE * 3 / 4);
+  *val++ = (HEIGHT - SIZE) / 2;
+  *val++ = (WIDTH - SIZE) / 2 - normfx(SIN(t) * SIZE * 3 / 4);
+  *val++ = (HEIGHT - SIZE) / 2;
+  *val++ = (WIDTH - SIZE) / 2;
+  *val++ = (HEIGHT - SIZE) / 2 + normfx(COS(t) * SIZE * 3 / 4);
+}
 
-  pos[active][2].x = (WIDTH - SIZE) / 2;
-  pos[active][2].y = (HEIGHT - SIZE) / 2 + normfx(COS(t) * SIZE * 3 / 4);
+static void DrawMetaballs() {
+  WORD *val = (WORD *)pos[active];
+  LONG x, y;
+
+  x = *val++; y = *val++; BitmapCopyFast(screen[active], x, y, metaball);
+  x = *val++; y = *val++; BitmapAddSaturated(screen[active], x, y, metaball, carry);
+  x = *val++; y = *val++; BitmapAddSaturated(screen[active], x, y, metaball, carry);
 }
 
 static void Render() {
@@ -145,12 +127,9 @@ static void Render() {
   // This takes about 100 lines. Could we do better?
   ClearMetaballs();
   PositionMetaballs();
+  DrawMetaballs();
 
-  CopyMetaball(pos[active][0].x, pos[active][0].y);
-  AddMetaball(pos[active][1].x, pos[active][1].y, 0, 0);
-  AddMetaball(pos[active][2].x, pos[active][2].y, 0, 0);
-
-  // Log("loop: %ld\n", ReadLineCounter() - lines);
+  // Log("metaballs : %ld\n", ReadLineCounter() - lines);
 
   WaitVBlank();
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));

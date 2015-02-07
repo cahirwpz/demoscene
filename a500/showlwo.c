@@ -1,5 +1,5 @@
 #include "startup.h"
-#include "blitter.h"
+#include "bltop.h"
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
@@ -222,7 +222,7 @@ static void Render() {
     Log("transform: %ld\n", ReadLineCounter() - lines);
   }
 
-  BlitterClear(screen[active], 0);
+  BitmapClear(screen[active], DEPTH);
   WaitBlitter();
 
   {

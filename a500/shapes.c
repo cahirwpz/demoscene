@@ -1,6 +1,6 @@
 #include "startup.h"
 #include "2d.h"
-#include "blitter.h"
+#include "bltop.h"
 #include "coplist.h"
 #include "fx.h"
 #include "memory.h"
@@ -20,43 +20,48 @@ static WORD plane, planeC;
 static void Load() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   shape = LoadShape("data/boxes.2d");
-  palette = LoadPalette("data/shapes-pal.ilbm");
-  cp = NewCopList(100);
+  palette = LoadPalette("data/boxes-pal.ilbm");
 }
 
 static void UnLoad() {
   DeleteShape(shape);
-  DeleteCopList(cp);
   DeleteBitmap(screen);
   DeletePalette(palette);
 }
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
-  CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
-  CopMakePlayfield(cp, bplptr, screen, DEPTH);
-  CopLoadPal(cp, palette, 0);
-  CopEnd(cp);
-}
-
 static void Init() {
-  plane = screen->depth - 1;
-  planeC = 0;
-
   /* Set up clipping window. */
   ClipWin.minX = fx4i(0);
   ClipWin.maxX = fx4i(319);
   ClipWin.minY = fx4i(0);
   ClipWin.maxY = fx4i(255);
 
-  MakeCopperList(cp);
+  plane = DEPTH - 1;
+  planeC = 0;
+
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  BitmapClear(screen, DEPTH);
+
+  cp = NewCopList(100);
+  CopInit(cp);
+  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopMakePlayfield(cp, bplptr, screen, DEPTH);
+  CopLoadPal(cp, palette, 0);
+  CopEnd(cp);
+
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+}
+
+static void Kill() {
+  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
+
+  DeleteCopList(cp);
 }
 
 static Point2D tmpPoint[2][16];
 
-static __regargs void DrawPolygon(Point2D *out, WORD n) {
+static inline void DrawPolygon(Point2D *out, WORD n) {
   WORD *pos = (WORD *)out;
   WORD x1, y1, x2, y2;
 
@@ -73,34 +78,33 @@ static __regargs void DrawPolygon(Point2D *out, WORD n) {
 }
 
 static __regargs void DrawShape(ShapeT *shape) {
-  Point2D *point = shape->viewPoint;
-  PolygonT *polygon = shape->polygon;
-  UBYTE *flags = shape->viewPointFlags;
-  UWORD *vertex = shape->polygonVertex;
-  UWORD polygons = shape->polygons;
+  const PolygonT *polygon = shape->polygon;
+  const Point2D *point = shape->viewPoint;
+  const UBYTE *flags = shape->viewPointFlags;
 
-  while (polygons--) {
-    WORD i, n = polygon->vertices;
+  do {
     UBYTE clipFlags = 0;
     UBYTE outside = 0xff;
-    Point2D *in = tmpPoint[0];
-    Point2D *out = tmpPoint[1];
-    UWORD *vxptr = &vertex[polygon->index];
 
-    for (i = 0; i < n; i++) {
-      UWORD k = *vxptr++;
-      clipFlags |= flags[k];
-      outside &= flags[k];
-      in[i] = point[k];
+    {
+      UWORD *vertex = shape->polygonVertex + polygon->index;
+      Point2D *out = tmpPoint[0];
+      WORD n = polygon->vertices;
+
+      while (--n >= 0) {
+        WORD k = *vertex++;
+        clipFlags |= flags[k];
+        outside &= flags[k];
+        *out++ = point[k];
+      }
     }
 
     if (!outside) {
-      n = ClipPolygon2D(in, &out, n, clipFlags);
+      Point2D *out = tmpPoint[1];
+      WORD n = ClipPolygon2D(tmpPoint[0], &out, polygon->vertices, clipFlags);
       DrawPolygon(out, n);
     }
-
-    polygon++;
-  }
+  } while (++polygon < shape->polygon + shape->polygons);
 }
 
 static void Render() {
@@ -121,10 +125,9 @@ static void Render() {
   BlitterFillSync(screen, plane);
   WaitBlitter();
   // Log("shape: %ld\n", ReadLineCounter() - lines);
-
   WaitVBlank();
 
-  for (i = 0; i < screen->depth; i++) {
+  for (i = 0; i < DEPTH; i++) {
     WORD j = (plane + i) % DEPTH;
     CopInsSet32(bplptr[i], screen->planes[j]);
   }
@@ -135,4 +138,4 @@ static void Render() {
   planeC ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };

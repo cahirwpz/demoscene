@@ -1,5 +1,5 @@
 #include "startup.h"
-#include "blitter.h"
+#include "bltop.h"
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
@@ -112,7 +112,7 @@ static void Render() {
   LONG a = ReadFrameCounter() * 4;
   Matrix3D t;
 
-  BlitterClear(screen[active], 0);
+  BitmapClear(screen[active], 1);
   WaitBlitter();
 
   LoadRotate3D(&t, a, a, a);

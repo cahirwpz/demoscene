@@ -3,7 +3,7 @@
 #include "coplist.h"
 #include "gfx.h"
 #include "ilbm.h"
-#include "blitter.h"
+#include "bltop.h"
 #include "circle.h"
 #include "fx.h"
 #include "2d.h"
@@ -35,7 +35,7 @@ static Car cars[CARS];
 static CopListT *cp;
 static UWORD active = 0;
 static CopInsT *sprptr[8];
-static CopInsT *bplptr[2][4];
+static CopInsT *bplptr[2][DEPTH];
 static BitmapT *carry;
 
 static BitmapT *lanes[2];
@@ -91,6 +91,7 @@ static void MakeCopperList(CopListT *cp) {
 
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopShowPlayfield(cp, cityTop);
+  CopWait(cp, Y(-18), 0);
   CopLoadPal(cp, cityTop->palette, 0);
 
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
@@ -110,12 +111,13 @@ static void MakeCopperList(CopListT *cp) {
     CopMove16(cp, dmacon, DMAF_RASTER);
   }
 
+  // use an undocumented trick to make sprites visible while bitplanes are off
   {
     WORD y0 = LANEL_Y + LANE_H + 1;
     WORD y1 = LANER_Y - 2;
 
     while (y0 < y1) {
-      CopWait(cp, Y(y0), 8);
+      CopWait(cp, Y(y0), X(-12));
       CopMove16(cp, bpldat[0], 0);
       y0++;
     }
@@ -148,8 +150,8 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
-  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, 4);
-  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, 4);
+  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, DEPTH);
+  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, DEPTH);
   carry = NewBitmap(HSIZE + 16, VSIZE, 2);
 
   cp = NewCopList(300);
@@ -184,37 +186,35 @@ static inline void CarMove(Car *car, WORD step) {
 }
 
 /* Add new car if there's a free slot. */
-static void AddCar() {
-  WORD i;
+static inline void AddCar() {
+  Car *car = cars;
+  Car *last = cars + CARS;
 
-  for (i = 0; i < CARS; i++) {
-    Car *car = &cars[i];
-
+  do {
     if (!car->active) {
       CarInit(car);
       break;
     }
-  }
+  } while (++car < last);
 }
 
 /* Draw each active cars. */
 static void DrawCars(WORD step) {
-  WORD i;
+  Car *car = cars;
+  Car *last = cars + CARS;
 
-  for (i = 0; i < CARS; i++) {
-    Car *car = &cars[i];
-
+  do {
     if (car->active) {
       WORD x = (car->x + 7) / 16;
 
       if (car->side)
-        BlitterAddSaturatedSync(lanes[active], x, car->y + LANE_H, carRight, carry);
+        BitmapAddSaturated(lanes[active], x, car->y + LANE_H, carRight, carry);
       else
-        BlitterAddSaturatedSync(lanes[active], LANE_W - x, car->y, carLeft, carry);
+        BitmapAddSaturated(lanes[active], LANE_W - x, car->y, carLeft, carry);
 
       CarMove(car, step);
     }
-  }
+  } while (++car < last);
 }
 
 static void AddCars() {
@@ -228,8 +228,8 @@ static void AddCars() {
 }
 
 static void Render() {
-  ITER(i, 0, 3, BlitterCopySync(lanes[active], i, HSIZE, 0, laneBg, i));
-  ITER(i, 0, 3, BlitterCopySync(lanes[active], i, HSIZE, LANE_H, laneBg, i));
+  BitmapCopy(lanes[active], HSIZE, 0, laneBg);
+  BitmapCopy(lanes[active], HSIZE, LANE_H, laneBg);
 
   AddCars();
   DrawCars(frameCount - lastFrameCount);

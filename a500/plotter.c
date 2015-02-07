@@ -3,9 +3,11 @@
 #include "coplist.h"
 #include "gfx.h"
 #include "ilbm.h"
-#include "blitter.h"
+#include "bltop.h"
 #include "circle.h"
 #include "fx.h"
+#include "sync.h"
+#include "memory.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -14,6 +16,9 @@
 #define NUM 37
 #define ARMS 3
 
+#define MAX_W 96
+#define MAX_H 96
+
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 static BitmapT *screen[2];
@@ -21,57 +26,55 @@ static UWORD active = 0;
 
 static BitmapT *carry;
 static BitmapT *flares;
+static BitmapT *flare[8];
 
 static void Load() {
   flares = LoadILBM("data/plotter-flares.ilbm");
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  carry = NewBitmap(SIZE + 16, SIZE, 2);
-  cp = NewCopList(50);
 }
 
 static void UnLoad() {
   DeletePalette(flares->palette);
   DeleteBitmap(flares);
-  DeleteBitmap(carry);
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
-  DeleteCopList(cp);
 }
 
-static void MakeCopperList(CopListT *cp) {
+static void Init() {
+  WORD i;
+
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+
+  for (i = 0; i < 8; i++) {
+    flare[i] = NewBitmap(SIZE, SIZE, DEPTH);
+    BitmapCopyArea(flare[i], 0, 0,
+                   flares, 0, i * SIZE, SIZE, SIZE);
+  }
+
+  carry = NewBitmap(SIZE + 16, SIZE, 2);
+  cp = NewCopList(50);
+
+  for (i = 0; i < 2; i++)
+    BitmapClear(screen[i], DEPTH);
+
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
   CopLoadPal(cp, flares->palette, 0);
   CopEnd(cp);
-}
-
-static void Init() {
-  UWORD i;
-
-  MakeCopperList(cp);
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
-
-  for (i = 0; i < DEPTH; i++) {
-    BlitterClear(screen[0], i);
-    WaitBlitter();
-    BlitterClear(screen[1], i);
-    WaitBlitter();
-  }
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
 }
 
-#define BLTOP_NAME AddFlare
-#define BLTOP_SRC_BM flares
-#define BLTOP_SRC_WIDTH SIZE
-#define BLTOP_CARRY_BM carry
-#define BLTOP_DST_BM screen[active]
-#define BLTOP_DST_WIDTH WIDTH
-#define BLTOP_HSIZE SIZE
-#define BLTOP_VSIZE SIZE
-#define BLTOP_BPLS 3
-#include "bltop_add_sat.h"
+static void Kill() {
+  custom->dmacon = DMAF_COPPER | DMAF_BLITTER | DMAF_RASTER;
+
+  ITER(i, 0, 7, DeleteBitmap(flare[i]));
+  DeleteBitmap(carry);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
+  DeleteCopList(cp);
+}
 
 static void DrawPlotter() {
   WORD i, a;
@@ -90,12 +93,13 @@ static void DrawPlotter() {
     if ((i & 1) && (frameCount & 15) < 3)
       f = 7;
 
-    AddFlare(x, y, 0, f * SIZE);
+    BitmapAddSaturated(screen[active], x, y, flare[f], carry);
   }
 }
 
 static void Render() {
-  ITER(i, 0, 2, BlitterSetSync(screen[active], i, 0, 0, 96 * 2 + SIZE, 96 * 2 + SIZE, 0));
+  BitmapClearArea(screen[active], DEPTH, 0, 0,
+                  MAX_W * 2 + SIZE, MAX_H * 2 + SIZE);
   DrawPlotter();
 
   WaitVBlank();
@@ -103,4 +107,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };

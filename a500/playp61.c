@@ -8,7 +8,7 @@
 #include "console.h"
 #include "coplist.h"
 #include "keyboard.h"
-#include "blitter.h"
+#include "bltop.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -22,7 +22,7 @@ static TextFontT *topaz8;
 static ConsoleT console;
 
 static void Load() {
-  module = ReadFile("data/jazzcat-sunglasses.p61", MEMF_CHIP);
+  module = ReadFile("data/jazzcat-sunglasses_at_night.p61", MEMF_CHIP);
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1));
 
@@ -168,7 +168,7 @@ static void Render() {
     for (i = 0; i < 4; i++) {
       P61_OscData data;
 
-      BlitterClear(osc[i], 0);
+      BitmapClear(osc[i], 1);
       WaitBlitter();
 
       if (P61_Osc(P61_CHANNEL(i), &data))
@@ -182,7 +182,7 @@ static void Render() {
     for (i = 0; i < 4; i++) {
       WORD x = 8 + 72 * i;
       WORD y = 96;
-      BlitterCopySync(screen, 0, x, y, osc[i], 0);
+      BitmapCopy(screen, x, y, osc[i]);
     }
   }
 

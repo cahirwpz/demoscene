@@ -1,5 +1,5 @@
 #include "startup.h"
-#include "blitter.h"
+#include "bltop.h"
 #include "coplist.h"
 #include "memory.h"
 #include "ilbm.h"
@@ -49,7 +49,7 @@ static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
   CopMakePlayfield(cp, bplptr[0], screen[active], DEPTH);
-  CopWait(cp, 8, 0);
+  CopWait(cp, Y(-18), 0);
   CopLoadPal(cp, palette[0], 0);
   CopWait(cp, Y(127), 0);
   CopMove16(cp, dmacon, DMAF_RASTER);
@@ -64,17 +64,17 @@ static void MakeCopperList(CopListT *cp) {
 static void Init() {
   WORD i;
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
 
   for (i = 0; i < 2; i++) {
-    ITER(j, 0, 4, BlitterClearSync(screen[i], j));
+    BitmapClear(screen[i], DEPTH);
 
     /* Make the center of blurred shape use colors from range 16-31. */
     WaitBlitter();
     CircleEdge(screen[i], 4, SIZE / 2 + 16, SIZE / 2, SIZE / 4 - 1);
     BlitterFillSync(screen[i], 4);
 
-    ITER(j, 0, 3, BlitterCopySync(screen[i], j, WIDTH / 2, 0, clip, j));
+    BitmapCopy(screen[i], WIDTH / 2, 0, clip);
   }
 
   buffer = NewBitmap(SIZE, SIZE, 4);
@@ -87,7 +87,7 @@ static void Init() {
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
+  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
 
   DeleteCopList(cp);
   DeleteBitmap(carry);
@@ -119,40 +119,25 @@ static void DrawShape() {
   WaitBlitter();
   BlitterLineSetup(carry, 0, LINE_EOR, LINE_ONEDOT);
 
-  RotatingTriangle(iterCount * 16, 0, SIZE);
-  RotatingTriangle(iterCount * 16, SIN_PI * 2 / 3, SIZE);
-  RotatingTriangle(-iterCount * 16, SIN_PI * 2 / 3, SIZE / 2);
+  RotatingTriangle(iterCount * 16, 0, SIZE - 1);
+  RotatingTriangle(iterCount * 16, SIN_PI * 2 / 3, SIZE - 1);
+  RotatingTriangle(-iterCount * 16, SIN_PI * 2 / 3, SIZE / 2 - 1);
 
   BlitterFillSync(carry, 0);
 }
-
-#define BLTOP_NAME DecrementAndSaturate
-#define BLTOP_BORROW_BM carry
-#define BLTOP_DST_BM buffer
-#define BLTOP_HSIZE SIZE
-#define BLTOP_VSIZE SIZE
-#define BLTOP_BPLS 4
-#include "bltop_dec_sat.h"
-
-#define BLTOP_NAME IncrementAndSaturate
-#define BLTOP_CARRY_BM carry
-#define BLTOP_DST_BM buffer
-#define BLTOP_HSIZE SIZE
-#define BLTOP_VSIZE SIZE
-#define BLTOP_BPLS 4
-#include "bltop_inc_sat.h"
 
 static void Render() {
   //LONG lines = ReadLineCounter();
 
   if (iterCount++ & 1)
-    DecrementAndSaturate();
+    BitmapDecSaturated(buffer, carry);
+
   DrawShape();
-  IncrementAndSaturate();
+  BitmapIncSaturated(buffer, carry);
 
-  ITER(i, 0, 3, BlitterCopySync(screen[active], i, 16, 0, buffer, i));
+  BitmapCopy(screen[active], 16, 0, buffer);
 
-  //Log("loop: %ld\n", ReadLineCounter() - lines);
+  //Log("blurred: %ld\n", ReadLineCounter() - lines);
 
   WaitVBlank();
   ITER(i, 0, DEPTH - 1, {
