@@ -2,7 +2,7 @@
 
         XDEF    _UVMapRenderTemplate
 
-        section "UVMapRender", data
+        section "UVMapRender", code
 
 ; 15 cycles per pixel
 _UVMapRenderTemplate:

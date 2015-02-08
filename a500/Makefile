@@ -3,7 +3,7 @@ CPPFLAGS = -Isys
 BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           playahx playp61 cube kbtest shapes chunky-16c chunky-rgb mouse \
           uvmap metaballs blurred circles floor parselwo showlwo neons \
-          plotter highway textscroll
+          plotter highway textscroll uvmap-rgb
 
 all:	startup.o libs $(BINS)
 
@@ -34,6 +34,7 @@ sprites16:      sprites16.o startup.o libsys.a
 textscroll:     textscroll.o startup.o libsys.a
 topaz8:         topaz8.o startup.o libsys.a
 uvmap:          uvmap.o uvmap-smc.o startup.o libsys.a
+uvmap-rgb:      uvmap-rgb.o startup.o libsys.a
 
 SUBDIRS = ahx p61 sys
 
