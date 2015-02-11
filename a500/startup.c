@@ -72,6 +72,10 @@ int main() {
           "(*) fast memory : %7ld bytes\n",
           (LONG)AvailMem(MEMF_CHIP | MEMF_LARGEST),
           (LONG)AvailMem(MEMF_FAST | MEMF_LARGEST));
+    {
+      struct Task *tc = FindTask(NULL);
+      tc->tc_TrapCode = TrapHandler;
+    }
 
     if (Effect.Load)
       Effect.Load();

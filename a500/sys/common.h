@@ -63,6 +63,8 @@ static inline void bchg(UBYTE *ptr, BYTE bit) {
 #define popl(a) \
   asm ("movel %+,%0" : "=r" (a))
 
+void TrapHandler();
+void KPutChar(char c asm("d0"));
 void Log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
 
 #endif
