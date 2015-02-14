@@ -2,6 +2,7 @@
 
 import logging
 import struct
+import binascii
 
 from chunk import Chunk as IffChunk
 from collections import Sequence
@@ -101,6 +102,7 @@ class File(Sequence):
     if handler:
       data = handler(arg)
     else:
+      data = binascii.hexlify(arg.getvalue())
       logging.warning('No handler for %s chunk.' % orig_name)
 
     return Chunk(orig_name, data)

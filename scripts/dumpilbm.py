@@ -9,6 +9,7 @@ from pprint import pprint
 
 def main():
   ilbm = ILBM()
+  ilbm.ChunkBlackList.append('JUNK')
 
   for path in sys.argv[1:]:
     ilbm.load(path)

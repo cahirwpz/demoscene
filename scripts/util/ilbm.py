@@ -10,6 +10,10 @@ BitMapHeader = namedtuple('BitMapHeader', (
   'xAspect', 'yAspect', 'pageWidth', 'pageHeight'))
 Color = namedtuple('Color', 'r g b')
 ColorRange = namedtuple('ColorRange', 'rate flags low high')
+PaletteChanges = namedtuple('PaletteChanges', (
+  'compression', 'flags', 'startLine', 'lineCount', 'changedLines',
+  'minReg', 'maxReg', 'maxChanges', 'totalChanges'))
+LineChanges = namedtuple('LineChanges', ('line', 'colorChange'))
 
 
 class ILBM(iff.File):
@@ -22,11 +26,28 @@ class ILBM(iff.File):
   def writeBMHD(self, data, out):
     out.write(struct.pack('>HHhhBBBxHBBhh', *data))
 
+  def readANNO(self, data):
+    return data.getvalue().rstrip('\x00 ')
+
+  def readPCHG(self, data):
+    pchg = PaletteChanges(*struct.unpack('>HHhHHHHHI', data.read(20)))
+    assert pchg.flags == 1, "Only PCHG_RGB12 supported!"
+    maskLength = ((pchg.lineCount + 31) & ~31) / 8
+    lines = []
+    changedLines = data.read(maskLength)
+    for line in range(pchg.lineCount):
+      mask = 1 << (7 - (line & 7))
+      if ord(changedLines[line / 8]) & mask:
+        count = struct.unpack('>Bx', data.read(2))[0]
+        changes = [data.read(2) for i in range(count)]
+        lines.append(LineChanges(line + pchg.startLine, changes))
+    return (pchg, lines)
+
   def readCAMG(self, data):
-    return struct.unpack('>H', data.read(2))[0]
+    return struct.unpack('>I', data.read(4))[0]
 
   def writeCAMG(self, data, out):
-    out.write(struct.pack('>H', data))
+    out.write(struct.pack('>I', data))
 
   def readCRNG(self, data):
     return ColorRange(*struct.unpack('>xxhhBB', data.read(8)))
