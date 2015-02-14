@@ -29,7 +29,8 @@ __regargs void DeletePalette(PaletteT *palette);
 #define BM_DISPLAYABLE  2
 #define BM_INTERLEAVED  4
 #define BM_MINIMAL      8
-#define BM_FLAGMASK    15
+#define BM_HAM         16
+#define BM_FLAGMASK    31
 
 /* Flags than can be passed to functions that load Bitmap. */
 #define BM_LOAD_PALETTE 16

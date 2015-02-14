@@ -96,7 +96,8 @@ static inline void CopMakePlayfield(CopListT *list, CopInsT **bplptr, BitmapT *b
   UWORD i, modulo;
 
   CopMove16(list, bplcon0, BPLCON0_BPU(depth) | BPLCON0_COLOR |
-            (bitmap->width > 512 ? BPLCON0_HIRES : 0));
+            (bitmap->width > 512 ? BPLCON0_HIRES : 0) |
+            (bitmap->flags & BM_HAM ? BPLCON0_HOMOD : 0));
   CopMove16(list, bplcon1, 0);
   CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
   CopMove16(list, bplcon3, 0);
