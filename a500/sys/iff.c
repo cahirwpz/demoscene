@@ -1,5 +1,6 @@
 #include <proto/dos.h> 
 
+#include "common.h"
 #include "iff.h"
 
 #define ReadStruct(fh, ptr) (Read(fh, ptr, sizeof(*(ptr))) == sizeof(*(ptr)))
@@ -7,8 +8,10 @@
 __regargs BOOL OpenIff(IffFileT *iff, const char *filename) {
   iff->fh = Open(filename, MODE_OLDFILE);
 
-  if (!iff->fh)
+  if (!iff->fh) {
+    Log("File '%s' missing.\n", filename);
     return FALSE;
+  }
 
   if (ReadStruct(iff->fh, &iff->header) &&
       (iff->header.magic == ID_FORM))

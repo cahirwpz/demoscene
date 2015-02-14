@@ -66,6 +66,7 @@ __regargs void DeleteBitmap(BitmapT *bitmap) {
     else
       MemFree(bitmap->planes[0], BitmapSize(bitmap));
   }
+  MemFreeAuto(bitmap->pchg);
   MemFree(bitmap, sizeof(BitmapT));
 }
 

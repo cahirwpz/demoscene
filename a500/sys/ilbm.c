@@ -1,3 +1,5 @@
+#include <graphics/view.h>
+
 #include "iff.h"
 #include "ilbm.h"
 #include "memory.h"
@@ -10,6 +12,8 @@
 #define ID_ILBM MAKE_ID('I', 'L', 'B', 'M')
 #define ID_BMHD MAKE_ID('B', 'M', 'H', 'D')
 #define ID_CMAP MAKE_ID('C', 'M', 'A', 'P')
+#define ID_CAMG MAKE_ID('C', 'A', 'M', 'G')
+#define ID_PCHG MAKE_ID('P', 'C', 'H', 'G')
 
 /* Masking technique. */
 #define mskNone                0
@@ -28,6 +32,27 @@ typedef struct BitmapHeader {
   UBYTE xAspect, yAspect;      /* pixel aspect, a ratio width : height */
   WORD  pageWidth, pageHeight; /* source "page" size in pixels    */
 } BitmapHeaderT;
+
+#define PCHG_COMP_NONE  0
+#define PCHGF_12BIT     1
+
+typedef struct PCHGHeader {
+  UWORD Compression;
+  UWORD Flags;
+  WORD  StartLine;
+  UWORD LineCount;
+  UWORD ChangedLines;
+  UWORD MinReg;
+  UWORD MaxReg;
+  UWORD MaxChanges;
+  ULONG TotalChanges;
+} PCHGHeaderT;
+
+typedef struct LineChanges {
+  UBYTE ChangeCount16;
+  UBYTE ChangeCount32;
+  UWORD PaletteChange[0];
+} LineChangesT;
 
 __regargs static void UnRLE(BYTE *data, LONG size, BYTE *uncompressed) {
   BYTE *src = data;
@@ -125,6 +150,123 @@ __regargs void BitmapUnpack(BitmapT *bitmap, UWORD flags) {
     BitmapMakeDisplayable(bitmap);
 }
 
+static __regargs void LoadCAMG(IffFileT *iff, BitmapT *bitmap) {
+  ULONG mode;
+
+  ReadChunk(iff, &mode);
+
+  if (mode & HAM)
+    bitmap->flags |= BM_HAM;
+  if (mode & EXTRA_HALFBRITE)
+    bitmap->flags |= BM_EHB;
+}
+
+static __regargs void LoadPCHG(IffFileT *iff, BitmapT *bitmap) {
+  BYTE *data = MemAlloc(iff->chunk.length, MEMF_PUBLIC);
+  LONG size = iff->chunk.length;
+  PCHGHeaderT *pchg = (APTR)data;
+
+  ReadChunk(iff, data);
+
+  if ((pchg->Compression == PCHG_COMP_NONE) &&
+      (pchg->Flags == PCHGF_12BIT)) 
+  {
+    LONG length = pchg->TotalChanges + bitmap->height;
+    UWORD *out = MemAllocAuto(length * sizeof(UWORD), MEMF_PUBLIC);
+    UBYTE *bitvec = (APTR)pchg + sizeof(PCHGHeaderT);
+    LineChangesT *line = (APTR)bitvec + ((pchg->LineCount + 31) & ~31) / 8;
+    WORD i = pchg->StartLine;
+
+    bitmap->pchgTotal = pchg->TotalChanges;
+    bitmap->pchg = out;
+
+    while (i-- > 0)
+      *out++ = 0;
+
+    for (i = 0; i < pchg->LineCount; i++) {
+      LONG mask = 1 << (7 - (i & 7));
+      if (bitvec[i / 8] & mask) {
+        UWORD count = line->ChangeCount16;
+        UWORD *change = line->PaletteChange;
+
+        *out++ = count;
+        while (count-- > 0)
+          *out++ = *change++;
+
+        line = (APTR)line + sizeof(LineChangesT) +
+          (line->ChangeCount16 + line->ChangeCount32) * sizeof(UWORD);
+      } else {
+        *out++ = 0;
+      }
+    }
+  }
+
+  MemFree(data, size);
+}
+
+static __regargs void LoadBODY(IffFileT *iff, BitmapT *bitmap, UWORD flags) {
+  BYTE *data = MemAlloc(iff->chunk.length, MEMF_PUBLIC);
+  LONG size = iff->chunk.length;
+
+  ReadChunk(iff, data);
+
+  if (flags & BM_KEEP_PACKED) {
+    bitmap->planes[0] = data;
+    bitmap->planes[1] = (APTR)size;
+    bitmap->flags &= ~BM_MINIMAL;
+  } else {
+    if (bitmap->compression) {
+      ULONG newSize = bitmap->bplSize * bitmap->depth;
+      BYTE *uncompressed = MemAlloc(newSize, MEMF_PUBLIC);
+
+      if (bitmap->compression == COMP_RLE)
+        UnRLE(data, size, uncompressed);
+#if USE_LZO
+      if (bitmap->compression == COMP_LZO)
+        lzo1x_decompress(data, size, uncompressed, &newSize);
+#endif
+#if USE_DEFLATE
+      if (bitmap->compression == COMP_DEFLATE)
+        Inflate(data, uncompressed);
+#endif
+      MemFree(data, size);
+
+      data = uncompressed;
+      size = newSize;
+    }
+
+    if (flags & BM_INTERLEAVED)
+      memcpy(bitmap->planes[0], data, bitmap->bplSize * bitmap->depth);
+    else
+      Deinterleave(data, bitmap);
+
+    MemFree(data, size);
+  }
+}
+
+static __regargs BitmapT *LoadBMHD(IffFileT *iff, UWORD flags) {
+  BitmapHeaderT bmhd;
+  BitmapT *bitmap;
+
+  ReadChunk(iff, &bmhd);
+
+  if (flags & BM_KEEP_PACKED) {
+    bitmap = NewBitmapCustom(bmhd.w, bmhd.h, bmhd.nPlanes,
+                             BM_MINIMAL|BM_INTERLEAVED);
+    bitmap->compression = bmhd.compression;
+  } else {
+    bitmap = NewBitmapCustom(bmhd.w, bmhd.h, bmhd.nPlanes, flags);
+  }
+
+  return bitmap;
+}
+
+static __regargs PaletteT *LoadCMAP(IffFileT *iff) {
+  PaletteT *palette = NewPalette(iff->chunk.length / sizeof(ColorT));
+  ReadChunk(iff, palette->colors);
+  return palette;
+}
+
 __regargs BitmapT *LoadILBMCustom(const char *filename, UWORD flags) {
   BitmapT *bitmap = NULL;
   PaletteT *palette = NULL;
@@ -133,69 +275,17 @@ __regargs BitmapT *LoadILBMCustom(const char *filename, UWORD flags) {
   if (OpenIff(&iff, filename)) {
     if (iff.header.type == ID_ILBM) {
       while (ParseChunk(&iff)) {
-        BitmapHeaderT bmhd;
-
         switch (iff.chunk.type) {
-          case ID_BMHD:
-            ReadChunk(&iff, &bmhd);
-            if (flags & BM_KEEP_PACKED) {
-              bitmap = NewBitmapCustom(bmhd.w, bmhd.h, bmhd.nPlanes,
-                                       BM_MINIMAL|BM_INTERLEAVED);
-              bitmap->compression = bmhd.compression;
-            } else {
-              bitmap = NewBitmapCustom(bmhd.w, bmhd.h, bmhd.nPlanes, flags);
-            }
-            break;
+          case ID_BMHD: bitmap = LoadBMHD(&iff, flags); break;
+          case ID_CAMG: LoadCAMG(&iff, bitmap); break;
+          case ID_PCHG: LoadPCHG(&iff, bitmap); break;
+          case ID_BODY: LoadBODY(&iff, bitmap, flags); break;
 
           case ID_CMAP:
             if (flags & BM_LOAD_PALETTE) {
-              palette = NewPalette(iff.chunk.length / sizeof(ColorT));
-              ReadChunk(&iff, palette->colors);
-            } else {
-              SkipChunk(&iff);
+              palette = LoadCMAP(&iff);
+              break;
             }
-            break;
-        
-          case ID_BODY:
-            {
-              BYTE *data = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
-              LONG size = iff.chunk.length;
-              ReadChunk(&iff, data);
-
-              if (flags & BM_KEEP_PACKED) {
-                bitmap->planes[0] = data;
-                bitmap->planes[1] = (APTR)size;
-                bitmap->flags &= ~BM_MINIMAL;
-              } else {
-                if (bmhd.compression) {
-                  ULONG newSize = bitmap->bplSize * bitmap->depth;
-                  BYTE *uncompressed = MemAlloc(newSize, MEMF_PUBLIC);
-
-                  if (bmhd.compression == COMP_RLE)
-                    UnRLE(data, size, uncompressed);
-#if USE_LZO
-                  if (bmhd.compression == COMP_LZO)
-                    lzo1x_decompress(data, size, uncompressed, &newSize);
-#endif
-#if USE_DEFLATE
-                  if (bmhd.compression == COMP_DEFLATE)
-                    Inflate(data, uncompressed);
-#endif
-                  MemFree(data, size);
-
-                  data = uncompressed;
-                  size = newSize;
-                }
-
-                if (flags & BM_INTERLEAVED)
-                  memcpy(bitmap->planes[0], data, bitmap->bplSize * bitmap->depth);
-                else
-                  Deinterleave(data, bitmap);
-
-                MemFree(data, size);
-              }
-            }
-            break;
 
           default:
             SkipChunk(&iff);
@@ -208,8 +298,6 @@ __regargs BitmapT *LoadILBMCustom(const char *filename, UWORD flags) {
     }
 
     CloseIff(&iff);
-  } else {
-    Log("File '%s' missing.\n", filename);
   }
 
   return bitmap;
@@ -222,16 +310,11 @@ __regargs PaletteT *LoadPalette(const char *filename) {
   if (OpenIff(&iff, filename)) {
     if (iff.header.type == ID_ILBM) {
       while (ParseChunk(&iff)) {
-        switch (iff.chunk.type) {
-          case ID_CMAP:
-            palette = NewPalette(iff.chunk.length / sizeof(ColorT));
-            ReadChunk(&iff, palette->colors);
-            break;
-
-          default:
-            SkipChunk(&iff);
-            break;
+        if (iff.chunk.type == ID_CMAP) {
+          palette = LoadCMAP(&iff);
+          break;
         }
+        SkipChunk(&iff);
       }
     }
 

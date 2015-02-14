@@ -1,4 +1,4 @@
-Amiga 500 Hardware Programming Examples
+Amiga 500
 ===
 
 ### Documentation

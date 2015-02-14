@@ -51,6 +51,8 @@ typedef struct Bitmap {
   UBYTE flags;
   UBYTE compression;
   PaletteT *palette;
+  ULONG pchgTotal;
+  UWORD *pchg;
   APTR  planes[7];
 } BitmapT;
 
