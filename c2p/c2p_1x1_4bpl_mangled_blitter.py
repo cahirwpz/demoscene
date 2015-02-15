@@ -3,12 +3,12 @@
 from common import Bit, Word, Channel, Blit, Array
 
 
-def c2p_1_1_4_blitter_mangled(bitplane_output=True):
+def c2p(bitplane_output=True):
   m0 = Word.Mask('00ff')
   m1 = Word.Mask('0f0f')
   m2 = Word.Mask('3333')
 
-  print "=[ c2p 1x1 4bpl (blitter mangled) ]=".center(48, '-')
+  print "=[ c2p 1x1 4bpl (blitter + mangled) ]=".center(48, '-')
 
   def MakeWord(c, color):
     return Word([Bit.Var(c[0], 0, color),
@@ -70,4 +70,4 @@ def c2p_1_1_4_blitter_mangled(bitplane_output=True):
     Array.Print("Swap 2x2:", *D)
 
 
-c2p_1_1_4_blitter_mangled()
+c2p()

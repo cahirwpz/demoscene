@@ -3,12 +3,12 @@
 from common import Bit, Word, Array, Blit, Blit1, Channel
 
 
-def c2p_2_1_4_blitter_mangled(fast=False, bitplane_output=True):
+def c2p(fast=False, bitplane_output=True):
   m0 = Word.Mask('00ff')
   m1 = Word.Mask('0f0f')
   m2 = Word.Mask('5555')
 
-  print "=[ c2p 2x1 4bpl (blitter mangled) ]=".center(48, '-')
+  print "=[ c2p 2x1 4bpl (blitter + mangled) ]=".center(48, '-')
 
   def MakeWord(c, color):
     return Word([Bit.Var(c[0], 0, color),
@@ -87,4 +87,4 @@ def c2p_2_1_4_blitter_mangled(fast=False, bitplane_output=True):
     Array.Print("Expand 2x1:", *D)
 
 
-c2p_2_1_4_blitter_mangled()
+c2p()

@@ -3,7 +3,7 @@
 from common import Bit, Word, Channel, Blit, Array
 
 
-def c2p_1_1_4_blitter(bitplane_output=True):
+def c2p(bitplane_output=True):
   m0 = Word.Mask('00ff')
   m1 = Word.Mask('0f0f')
   m2 = Word.Mask('3333')
@@ -67,4 +67,4 @@ def c2p_1_1_4_blitter(bitplane_output=True):
     Array.Print("Swap 1x1:", *E)
 
 
-c2p_1_1_4_blitter()
+c2p()
