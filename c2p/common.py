@@ -176,3 +176,11 @@ def Blit(fn, height, width, A, B, C):
     A.next()
     B.next()
     C.next()
+
+
+def Blit1(fn, height, width, A, B):
+  for i in range(height):
+    for j in range(width):
+      B.put(fn(A.get()))
+    A.next()
+    B.next()

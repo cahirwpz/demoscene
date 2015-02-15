@@ -88,52 +88,6 @@ def c2p_1_1_8():
   Array.Print("Swap 1x1:", d0, d1, d2, d3, d4, d5, d6, d7)
 
 
-def c2p_2_1_4_mangled():
-  m0 = Word.Mask('0f0f')
-  m1 = Word.Mask('f0f0')
-  m2 = Word.Mask('aaaaaaaa')
-  m3 = Word.Mask('55555555')
-
-  print "=[ c2p 2x1 4bpl (mangled) ]=".center(48, '-')
-
-  def MakeWord(c, color):
-    return Word([Bit.Var(c[0], 0, color),
-                 Bit.Var(c[0], 1, color),
-                 Bit.Var(c[1], 0, color),
-                 Bit.Var(c[1], 1, color),
-                 Bit.Var(c[0], 2, color),
-                 Bit.Var(c[0], 3, color),
-                 Bit.Var(c[1], 2, color),
-                 Bit.Var(c[1], 3, color),
-                 Bit.Var(c[2], 0, color),
-                 Bit.Var(c[2], 1, color),
-                 Bit.Var(c[3], 0, color),
-                 Bit.Var(c[3], 1, color),
-                 Bit.Var(c[2], 2, color),
-                 Bit.Var(c[2], 3, color),
-                 Bit.Var(c[3], 2, color),
-                 Bit.Var(c[3], 3, color)])
-
-  l0 = MakeWord("abef", color="31m")
-  l1 = MakeWord("cdgh", color="32m")
-  l2 = MakeWord("ijmn", color="33m")
-  l3 = MakeWord("klop", color="34m")
-
-  Array.Print("Data:", l0, l1, l2, l3)
-
-  a = ((l0 & m1) | ((l1 >> 4) & m0)) + ((l2 & m1) | ((l3 >> 4) & m0))
-  b = (((l0 << 4) & m1) | (l1 & m0)) + (((l2 << 4) & m1) | (l3 & m0))
-
-  Array.Print("Swap 4x2:", a, b)
-
-  x = (a & m2) | ((a >> 1) & m3)
-  y = (a & m3) | ((a >> 1) & m2)
-  z = (b & m2) | ((b >> 1) & m3)
-  w = (b & m3) | ((b >> 1) & m2)
-
-  Array.Print("Bitplanes:", x, y, z, w)
-
-
 def c2p_2_1_4_stingray():
   m0 = Word.Mask('f0f0')
   m1 = Word.Mask('0f0f')
