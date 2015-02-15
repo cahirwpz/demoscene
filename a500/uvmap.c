@@ -19,9 +19,7 @@ static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 static PixmapT *texture;
 
-extern APTR UVMapRenderTemplate[5];
-#define UVMapRenderSize \
-  (WIDTH * HEIGHT / 2 * sizeof(UVMapRenderTemplate) + 2)
+#define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
 void (*UVMapRender)(UBYTE *chunky asm("a0"),
                     UBYTE *textureHi asm("a1"),
                     UBYTE *textureLo asm("a2"));
@@ -51,20 +49,19 @@ static void PixmapScramble(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
 
 static void MakeUVMapRenderCode() {
   UWORD *code = (APTR)UVMapRender;
-  UWORD *tmpl = (APTR)UVMapRenderTemplate;
   UWORD *data = uvmap;
   WORD n = WIDTH * HEIGHT / 2;
 
   /* UVMap is pre-scrambled. */
   while (n--) {
-    *code++ = tmpl[0];
+    *code++ = 0x1029;  /* 1029 xxxx | move.b xxxx(a1),d0 */
     *code++ = *data++;
-    *code++ = tmpl[2];
+    *code++ = 0x802a;  /* 802a yyyy | or.b   yyyy(a2),d0 */
     *code++ = *data++;
-    *code++ = tmpl[4];
+    *code++ = 0x10c0;  /* 10c0      | move.b d0,(a0)+    */
   }
 
-  *code++ = 0x4e75; /* return from subroutine instruction */
+  *code++ = 0x4e75; /* rts */
 }
 
 static void Load() {
@@ -86,7 +83,10 @@ static void UnLoad() {
 static struct {
   WORD phase;
   WORD active;
-} c2p = { 5, 0 };
+} c2p = { 100, 0 };
+
+#define BPLSIZE ((WIDTH * 2) * (HEIGHT * 2) / 8) /* 8000 bytes */
+#define BLTSIZE ((WIDTH / 2) * HEIGHT)           /* 8000 bytes */
 
 static void ChunkyToPlanar() {
   BitmapT *dst = screen[c2p.active];
@@ -98,7 +98,7 @@ static void ChunkyToPlanar() {
       custom->bltamod = 2;
       custom->bltbmod = 2;
       custom->bltdmod = 0;
-      custom->bltcdat = 0xf0f0;
+      custom->bltcdat = 0xF0F0;
       custom->bltafwm = -1;
       custom->bltalwm = -1;
 
@@ -107,28 +107,30 @@ static void ChunkyToPlanar() {
       custom->bltbpt = src->pixels + 2;
       custom->bltdpt = dst->planes[0];
 
+      /* (a & 0xF0F0) | ((b >> 4) & ~0xF0F0) */
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
       custom->bltcon1 = 4 << BSHIFTSHIFT;
-      custom->bltsize = 1;
+      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
       break;
 
     case 1:
-      custom->bltsize = 1 | (976 << 6);
+      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
       break;
 
     case 2:
       /* Swap 4x2, pass 2. */
-      // custom->bltapt = src->pixels + WIDTH * HEIGHT / 2;
-      // custom->bltbpt = src->pixels + WIDTH * HEIGHT / 2 + 2;
-      custom->bltdpt = dst->planes[2] + WIDTH * HEIGHT / 4;
+      custom->bltapt = src->pixels + BLTSIZE - 4;
+      custom->bltbpt = src->pixels + BLTSIZE - 2;
+      custom->bltdpt = dst->planes[2] + BLTSIZE / 2 - 2;
 
+      /* ((a << 4) & 0xF0F0) | (b & ~0xF0F0) */
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
       custom->bltcon1 = BLITREVERSE;
-      custom->bltsize = 1;
+      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
       break;
 
     case 3:
-      custom->bltsize = 1 | (977 << 6);
+      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
       break;
 
     case 4:
