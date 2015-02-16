@@ -52,21 +52,16 @@ def scramble(uvmap):
     i += 8
 
   out.byteswap()
-
   return out
 
 
-def deinterleave(uvmap, width, height):
+def scramble2(uvmap):
   out = array("H")
 
-  for y in range(height):
-    for x in range(0, width, 2):
-      out.append(uvmap[width * y + x] * 2)
-    for x in range(1, width, 2):
-      out.append(uvmap[width * y + x] * 2)
+  for x in uvmap:
+    out.append(x * 2)
 
   out.byteswap()
-
   return out
 
 
@@ -95,11 +90,12 @@ def Anamorphosis(x, y):
 
   return (u, v)
 
+
 if __name__ == "__main__":
   with open("data/uvmap.bin", "w") as f:
     uvmap = generate(160, 100, FancyEye)
     scramble(uvmap).tofile(f)
 
   with open("data/uvmap-rgb.bin", "w") as f:
-    uvmap = generate(80, 128, FancyEye)
-    deinterleave(uvmap, 80, 128).tofile(f)
+    uvmap = generate(80, 64, Anamorphosis)
+    scramble2(uvmap).tofile(f)

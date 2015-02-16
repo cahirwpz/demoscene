@@ -65,9 +65,6 @@ static void MakeUVMapRenderCode() {
 }
 
 static void Load() {
-  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
-  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
-
   texture = LoadTGA("data/texture-16-1.tga", PM_CMAP, MEMF_PUBLIC);
   uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
 }
@@ -76,8 +73,6 @@ static void UnLoad() {
   MemFreeAuto(uvmap);
   DeletePalette(texture->palette);
   DeletePixmap(texture);
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
 }
 
 static struct {
@@ -226,6 +221,9 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
+  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
+  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
+
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
   MakeUVMapRenderCode();
 
@@ -256,6 +254,9 @@ static void Kill() {
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
   MemFree(UVMapRender, UVMapRenderSize);
+
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 static void Render() {

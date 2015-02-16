@@ -3,7 +3,7 @@
 from common import Bit, Word, Channel, Blit, Array
 
 
-def c2p(bitplane_output=True):
+def c2p():
   m0 = Word.Mask('00ff')
   m1 = Word.Mask('0f0f')
 
@@ -40,28 +40,20 @@ def c2p(bitplane_output=True):
        N / 4, 2, Channel(A, 0, 2), Channel(A, 2, 2), Channel(B, 2, 2))
   Array.Print("Swap 8x4:", *B)
 
-  if bitplane_output:
-    C = [Array.Zero(N / 4, 16) for i in range(4)]
-    Blit(lambda a, b: ((a >> 4) & m1) | (b & ~m1),
-         N / 4, 1, Channel(B, 1, 3), Channel(B, 0, 3), Channel(C[0], 0, 0))
-    Blit(lambda a, b: ((a >> 4) & m1) | (b & ~m1),
-         N / 4, 1, Channel(B, 3, 3), Channel(B, 2, 3), Channel(C[2], 0, 0))
-    Blit(lambda a, b: ((a << 4) & ~m1) | (b & m1),
-         N / 4, 1, Channel(B, 0, 3), Channel(B, 1, 3), Channel(C[1], 0, 0))
-    Blit(lambda a, b: ((a << 4) & ~m1) | (b & m1),
-         N / 4, 1, Channel(B, 2, 3), Channel(B, 3, 3), Channel(C[3], 0, 0))
-    print("Bitplanes:")
-    Array.Print("[0]:", *C[0])
-    Array.Print("[1]:", *C[1])
-    Array.Print("[2]:", *C[2])
-    Array.Print("[3]:", *C[3])
-  else:
-    C = Array.Zero(N, 16)
-    Blit(lambda a, b: ((a >> 4) & m1) | (b & ~m1),
-         N / 2, 1, Channel(B, 1, 1), Channel(B, 0, 1), Channel(C, 0, 1))
-    Blit(lambda a, b: ((a << 4) & ~m1) | (b & m1),
-         N / 2, 1, Channel(B, 0, 1), Channel(B, 1, 1), Channel(C, 1, 1))
-    Array.Print("Swap 4x2:", *C)
+  C = [Array.Zero(N / 4, 16) for i in range(4)]
+  Blit(lambda a, b: ((a >> 4) & m1) | (b & ~m1),
+       N / 4, 1, Channel(B, 1, 3), Channel(B, 0, 3), Channel(C[0]))
+  Blit(lambda a, b: ((a >> 4) & m1) | (b & ~m1),
+       N / 4, 1, Channel(B, 3, 3), Channel(B, 2, 3), Channel(C[2]))
+  Blit(lambda a, b: ((a << 4) & ~m1) | (b & m1),
+       N / 4, 1, Channel(B, 0, 3), Channel(B, 1, 3), Channel(C[1]))
+  Blit(lambda a, b: ((a << 4) & ~m1) | (b & m1),
+       N / 4, 1, Channel(B, 2, 3), Channel(B, 3, 3), Channel(C[3]))
+  print("Bitplanes:")
+  Array.Print("[0]:", *C[0])
+  Array.Print("[1]:", *C[1])
+  Array.Print("[2]:", *C[2])
+  Array.Print("[3]:", *C[3])
 
 
 c2p()
