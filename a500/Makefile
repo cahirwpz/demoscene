@@ -33,7 +33,7 @@ sprites4:       sprites4.o startup.o libsys.a
 sprites16:      sprites16.o startup.o libsys.a
 textscroll:     textscroll.o startup.o libsys.a
 topaz8:         topaz8.o startup.o libsys.a
-uvmap:          uvmap.o uvmap-smc.o startup.o libsys.a
+uvmap:          uvmap.o startup.o libsys.a
 uvmap-rgb:      uvmap-rgb.o startup.o libsys.a
 
 SUBDIRS = ahx p61 sys

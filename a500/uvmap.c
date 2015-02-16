@@ -51,7 +51,7 @@ static void MakeUVMapRenderCode() {
   UWORD *data = uvmap;
   WORD n = WIDTH * HEIGHT / 2;
 
-  /* UVMap is pre-scrambled. */
+  /* The map is pre-scrambled to avoid one c2p pass: [a B C d] => [a C B d] */
   while (n--) {
     *code++ = 0x1029;  /* 1029 xxxx | move.b xxxx(a1),d0 */
     *code++ = *data++;
