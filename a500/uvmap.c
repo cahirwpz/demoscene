@@ -8,15 +8,14 @@
 
 #define WIDTH 160
 #define HEIGHT 100
-#define DEPTH 5
+#define DEPTH 4
 
-static PixmapT *chunky[2];
 static PixmapT *textureHi, *textureLo;
 static BitmapT *screen[2];
 static UWORD *uvmap;
 static UWORD active = 0;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsT *bplptr[DEPTH + 1];
 static PixmapT *texture;
 
 #define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
@@ -36,10 +35,10 @@ static void PixmapScramble(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
 
   while (--n >= 0) {
     ULONG c = *data++;
-    /* [0 0 0 0 a0 a1 a2 a3] => [a2 a3 0 0 a0 a1 0 0] */
-    *hi++ = (c & m1) | ((c & m2) << 6);
-    /* [0 0 0 0 a0 a1 a2 a3] => [ 0 0 a2 a3 0 0 a0 a1] */
-    *lo++ = ((c & m1) >> 2) | ((c & m2) << 4);
+    /* [0 0 0 0 a0 a1 a2 a3] => [a0 a1 0 0 a2 a3 0 0] */
+    *hi++ = ((c & m1) << 4) | ((c & m2) << 2);
+    /* [0 0 0 0 b0 b1 b2 b3] => [ 0 0 b0 b1 0 0 b2 b3] */
+    *lo++ = ((c & m1) << 2) | (c & m2);
   }
 
   /* Extra halves for cheap texture motion. */
@@ -65,8 +64,8 @@ static void MakeUVMapRenderCode() {
 }
 
 static void Load() {
-  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
-  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
+  screen[0] = NewBitmap(WIDTH * 2, HEIGHT, DEPTH + 1); /* add mask bpl */
+  screen[1] = NewBitmap(WIDTH * 2, HEIGHT, DEPTH);
 
   texture = LoadTGA("data/texture-16-1.tga", PM_CMAP, MEMF_PUBLIC);
   uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
@@ -82,15 +81,14 @@ static void UnLoad() {
 
 static struct {
   WORD phase;
-  WORD active;
-} c2p = { 100, 0 };
+  APTR *bpl;
+} c2p = { 256, NULL };
 
-#define BPLSIZE ((WIDTH * 2) * (HEIGHT * 2) / 8) /* 8000 bytes */
-#define BLTSIZE ((WIDTH / 2) * HEIGHT)           /* 8000 bytes */
+#define BPLSIZE ((WIDTH * 2) * HEIGHT / 8) /* 4000 bytes */
+#define BLTSIZE ((WIDTH / 2) * HEIGHT)     /* 8000 bytes */
 
 static void ChunkyToPlanar() {
-  BitmapT *dst = screen[c2p.active];
-  PixmapT *src = chunky[c2p.active];
+  register APTR *bpl asm("a0") = c2p.bpl;
 
   switch (c2p.phase) {
     case 0:
@@ -102,10 +100,10 @@ static void ChunkyToPlanar() {
       custom->bltafwm = -1;
       custom->bltalwm = -1;
 
-      /* Swap 4x2, pass 1. */
-      custom->bltapt = src->pixels;
-      custom->bltbpt = src->pixels + 2;
-      custom->bltdpt = dst->planes[0];
+      /* Swap 4x2, pass 1, high-bits. */
+      custom->bltapt = bpl[0];
+      custom->bltbpt = bpl[0] + 2;
+      custom->bltdpt = bpl[3];
 
       /* (a & 0xF0F0) | ((b >> 4) & ~0xF0F0) */
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
@@ -114,14 +112,14 @@ static void ChunkyToPlanar() {
       break;
 
     case 1:
-      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
+      custom->bltsize = 1 | ((BLTSIZE / 8) << 6); /* overall size: BLTSIZE / 2 bytes */
       break;
 
     case 2:
-      /* Swap 4x2, pass 2. */
-      custom->bltapt = src->pixels + BLTSIZE - 4;
-      custom->bltbpt = src->pixels + BLTSIZE - 2;
-      custom->bltdpt = dst->planes[2] + BLTSIZE / 2 - 2;
+      /* Swap 4x2, pass 2, low-bits. */
+      custom->bltapt = bpl[2] - 4;
+      custom->bltbpt = bpl[2] - 2;
+      custom->bltdpt = bpl[3] - 2;
 
       /* ((a << 4) & 0xF0F0) | (b & ~0xF0F0) */
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
@@ -130,15 +128,14 @@ static void ChunkyToPlanar() {
       break;
 
     case 3:
-      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
+      custom->bltsize = 1 | ((BLTSIZE / 8) << 6); /* overall size: BLTSIZE / 2 bytes */
       break;
 
     case 4:
-      CopInsSet32(bplptr[0], dst->planes[0]);
-      CopInsSet32(bplptr[1], dst->planes[0]);
-      CopInsSet32(bplptr[2], dst->planes[2]);
-      CopInsSet32(bplptr[3], dst->planes[2]);
-      CopInsSet32(bplptr[4], dst->planes[4]);
+      CopInsSet32(bplptr[0], bpl[2]);
+      CopInsSet32(bplptr[1], bpl[2]);
+      CopInsSet32(bplptr[2], bpl[3]);
+      CopInsSet32(bplptr[3], bpl[3]);
       break;
 
     default:
@@ -149,9 +146,8 @@ static void ChunkyToPlanar() {
 }
 
 static void BlitterInterrupt() {
-  if (custom->intreqr & INTF_BLIT) {
+  if (custom->intreqr & INTF_BLIT)
     ChunkyToPlanar();
-  }
 }
 
 static void MakeCopperList(CopListT *cp) {
@@ -159,27 +155,21 @@ static void MakeCopperList(CopListT *cp) {
 
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
-  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
+  CopMakePlayfield(cp, bplptr, screen[active], DEPTH + 1);
   CopLoadColor(cp, 0, 15, 0);
   CopLoadPal(cp, texture->palette, 16);
   for (i = 0; i < HEIGHT * 2; i++) {
-    CopWaitMask(cp, Y(i + 28), 0, 0xff, 0);
-    CopMove16(cp, bplcon1, (i & 1) ? 0x0021 : 0x0010);
-    CopMove16(cp, bpl1mod, (i & 1) ? -40 : 0);
-    CopMove16(cp, bpl2mod, (i & 1) ? -40 : 0);
+    CopWait(cp, Y(i + 28), 0);
+    /* Line doubling. */
+    CopMove16(cp, bpl1mod, (i & 1) ? 0 : -40);
+    CopMove16(cp, bpl2mod, (i & 1) ? 0 : -40);
+    /* Alternating shift by one for bitplane data. */
+    CopMove16(cp, bplcon1, (i & 1) ? 0x0010 : 0x0021);
   }
   CopEnd(cp);
 }
 
 static void Init() {
-  static PixmapT recycled[2];
-
-  chunky[0] = &recycled[0];
-  chunky[1] = &recycled[1];
-
-  InitSharedPixmap(chunky[0], WIDTH, HEIGHT, PM_GRAY4, screen[0]->planes[1]);
-  InitSharedPixmap(chunky[1], WIDTH, HEIGHT, PM_GRAY4, screen[1]->planes[1]);
-
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
   MakeUVMapRenderCode();
 
@@ -194,12 +184,12 @@ static void Init() {
   BitmapClear(screen[0], DEPTH);
   BitmapClear(screen[1], DEPTH);
 
-  memset(screen[0]->planes[4], 0x55, WIDTH * HEIGHT * 4 / 8);
-  memset(screen[1]->planes[4], 0x55, WIDTH * HEIGHT * 4 / 8);
+  memset(screen[0]->planes[4], 0x55, screen[0]->bplSize);
 
   cp = NewCopList(900);
   MakeCopperList(cp);
   CopListActivate(cp);
+  CopInsSet32(bplptr[4], screen[0]->planes[4]);
 
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
   custom->intena = INTF_SETCLR | INTF_BLIT;
@@ -218,17 +208,18 @@ static void Kill() {
 static void Render() {
   WORD offset = frameCount & 16383;
 
+  /* screen's bitplane #0 & #1 are be used as a chunky buffer */
   {
     UBYTE *txtHi = textureHi->pixels + offset;
     UBYTE *txtLo = textureLo->pixels + offset;
 
     // LONG lines = ReadLineCounter();
-    (*UVMapRender)(chunky[active]->pixels, txtHi, txtLo);
+    (*UVMapRender)(screen[active]->planes[0], txtHi, txtLo);
     // Log("uvmap: %ld\n", ReadLineCounter() - lines);
   }
 
   c2p.phase = 0;
-  c2p.active = active;
+  c2p.bpl = screen[active]->planes;
   ChunkyToPlanar();
   active ^= 1;
 }
