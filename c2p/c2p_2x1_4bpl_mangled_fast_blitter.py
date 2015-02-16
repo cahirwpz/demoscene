@@ -49,23 +49,25 @@ def c2p(bitplane_output=True):
   m0 = Word.Mask('f0f0')
   m1 = Word.Mask('aaaa')
 
-  B = Array.Zero(N, 16)
+  B = [Array.Zero(N / 2, 16) for i in range(2)]
   Blit(lambda a, b: (a & m0) | ((b >> 4) & ~m0),
-       N / 2, 1, Channel(A, 0, 1), Channel(A, 1, 1), Channel(B, 0, 1))
+       N / 2, 1, Channel(A, 0, 1), Channel(A, 1, 1), Channel(B[0]))
   Blit(lambda a, b: ((a << 4) & m0) | (b & ~m0),
-       N / 2, 1, Channel(A, 0, 1), Channel(A, 1, 1), Channel(B, 1, 1))
-  Array.Print("Swap 4x2:", *B)
+       N / 2, 1, Channel(A, 0, 1), Channel(A, 1, 1), Channel(B[1]))
+  print("Swap 4x2:")
+  Array.Print("[0]:", *B[0])
+  Array.Print("[1]:", *B[1])
 
   C = [Array.Zero(N / 2, 16) for i in range(4)]
   Blit(lambda a, b: (a & m1) | ((b >> 1) & ~m1),
-       N / 2, 1, Channel(B, 0, 1), Channel(B, 0, 1), Channel(C[0], 0, 0))
+       N / 2, 1, Channel(B[0]), Channel(B[0]), Channel(C[0]))
   Blit(lambda a, b: (a & m1) | ((b >> 1) & ~m1),
-       N / 2, 1, Channel(B, 1, 1), Channel(B, 1, 1), Channel(C[2], 0, 0))
+       N / 2, 1, Channel(B[1]), Channel(B[1]), Channel(C[2]))
   Blit(lambda a, b: ((a << 1) & m1) | (b & ~m1),
-       N / 2, 1, Channel(B, 0, 1), Channel(B, 0, 1), Channel(C[1], 0, 0))
+       N / 2, 1, Channel(B[0]), Channel(B[0]), Channel(C[1]))
   Blit(lambda a, b: ((a << 1) & m1) | (b & ~m1),
-       N / 2, 1, Channel(B, 1, 1), Channel(B, 1, 1), Channel(C[3], 0, 0))
-  print("Bitplanes:")
+       N / 2, 1, Channel(B[1]), Channel(B[1]), Channel(C[3]))
+  print("Expand 2x1:")
   Array.Print("[0]:", *C[0])
   Array.Print("[1]:", *C[1])
   Array.Print("[2]:", *C[2])

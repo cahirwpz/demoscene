@@ -151,7 +151,7 @@ class Array(object):
 
 
 class Channel(object):
-  def __init__(self, data, start, modulo):
+  def __init__(self, data, start=0, modulo=0):
     self.pos = start
     self.data = data
     self.modulo = modulo
@@ -176,11 +176,3 @@ def Blit(fn, height, width, A, B, C):
     A.next()
     B.next()
     C.next()
-
-
-def Blit1(fn, height, width, A, B):
-  for i in range(height):
-    for j in range(width):
-      B.put(fn(A.get()))
-    A.next()
-    B.next()
