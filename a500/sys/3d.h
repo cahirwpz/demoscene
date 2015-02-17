@@ -26,7 +26,7 @@ __regargs void Translate3D(Matrix3D *M, WORD x, WORD y, WORD z);
 __regargs void Scale3D(Matrix3D *M, WORD sx, WORD sy, WORD sz);
 __regargs void LoadRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az);
 __regargs void Rotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az);
-__regargs void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, UWORD n);
+__regargs void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, WORD n);
 
 extern Frustum3D ClipFrustum;
 

@@ -248,9 +248,9 @@ class LWOB(iff.File, LWOParserMixin):
   def readPOLS(self, data):
     polygons = []
 
-    while data:
+    while data.tell() < len(data):
       points = struct.unpack('>H', data.read(2))[0]
-      pointdata = data.read((points + 2) * 2)
+      pointdata = data.read((points + 1) * 2)
 
       words = struct.unpack('>' + 'H' * (points + 1), pointdata)
       polygons.append([words[:-1], words[-1]])
@@ -262,7 +262,7 @@ class LWOB(iff.File, LWOParserMixin):
 
   def readSURF(self, data):
     name = self.readString(data)
-    return (name, dict(self._parseMiniChunks(data.read())))
+    return (name, self._parseMiniChunks(data.read()))
 
   def readTWRP(self, data):
     return struct.unpack('>HH', data.read(4))
@@ -353,10 +353,11 @@ def main():
     raise SystemExit('File format not recognized.')
 
   if type(lwo) == LWOB:
-    polygons = [Polygon(points, surf) for points, surf in lwo.polygons]
+    print lwo.polygons
+    polygons = [Polygon(points, surf) for points, surf in lwo.polygons.data]
     surfaces = []
     for surface in lwo['SURF']:
-      name, props = surface
+      name, props = surface.data
       color = props.get('COLR', None)
       sideness = bool(props.get('FLAG', 0) & 0x0100)
       surfaces.append(Surface(name, color, sideness))

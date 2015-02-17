@@ -150,21 +150,19 @@ __regargs void Rotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
   *dst++ = normfx(t0 + t1 + t2) + t3; \
 }
 
-__regargs void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, UWORD n) {
+__regargs void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, WORD n) {
   WORD *src = (WORD *)in;
   WORD *dst = (WORD *)out;
-  WORD *v = (WORD *)M;
 
-  while (n--) {
+  while (--n >= 0) {
+    WORD *v = (WORD *)M;
     WORD x = *src++;
     WORD y = *src++;
     WORD z = *src++;
 
-    pushl(v);
     MULVERTEX();
     MULVERTEX();
     MULVERTEX();
-    popl(v);
   }
 }
 
