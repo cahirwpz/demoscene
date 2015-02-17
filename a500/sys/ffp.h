@@ -10,6 +10,6 @@
  * the system, so we cannot use it, unfortunately. Thus we have to reimplement
  * some useful functions :( */
 
-FLOAT SPFieee(FLOAT ieeenum);
+FLOAT SPFieee(FLOAT num asm("d0"));
 
 #endif
