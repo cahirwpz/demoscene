@@ -3,7 +3,6 @@
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
-#include "iff.h"
 #include "ffp.h"
 #include "memory.h"
 
@@ -12,150 +11,18 @@
 #define DEPTH 1
 
 static Object3D *cube;
-
 static CopListT *cp;
 static BitmapT *screen[2];
 static UWORD active = 0;
 static CopInsT *bplptr[DEPTH];
 
-#define ID_LWOB MAKE_ID('L', 'W', 'O', 'B')
-#define ID_LWO2 MAKE_ID('L', 'W', 'O', '2')
-#define ID_PNTS MAKE_ID('P', 'N', 'T', 'S')
-#define ID_POLS MAKE_ID('P', 'O', 'L', 'S')
-
-static __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
-  Object3D *obj = NULL;
-  IffFileT iff;
-
-  if (OpenIff(&iff, filename)) {
-    if (iff.header.type == ID_LWOB || iff.header.type == ID_LWO2) {
-      FLOAT *pnts = NULL;
-      WORD *pols = NULL;
-      LONG pntsLength = 0;
-      LONG polsLength = 0;
-
-      while (ParseChunk(&iff)) {
-        switch (iff.chunk.type) {
-          case ID_PNTS:
-            pntsLength = iff.chunk.length;
-            pnts = MemAlloc(pntsLength, MEMF_PUBLIC);
-            ReadChunk(&iff, pnts);
-            break;
-
-          case ID_POLS:
-            polsLength = iff.chunk.length;
-            pols = MemAlloc(polsLength, MEMF_PUBLIC);
-            ReadChunk(&iff, pols);
-            break;
-
-          default:
-            SkipChunk(&iff);
-            break;
-        }
-      }
-
-      {
-        UWORD points = pntsLength / 12;
-        UWORD polygons = 0;
-        UWORD polygonVertices = 0;
-
-        LONG i = 0;
-        LONG n = polsLength / 2;
-
-        if (iff.header.type == ID_LWOB) {
-          while (i < n) {
-            WORD vertices = pols[i++];
-            polygonVertices += vertices;
-            polygons++;
-            i += vertices + 1;
-          }
-        } else {
-          i += 2;
-          while (i < n) {
-            WORD vertices = pols[i++];
-            polygonVertices += vertices;
-            polygons++;
-            i += vertices;
-          }
-        }
-
-        obj = NewObject3D(points, polygons);
-
-        Log("File '%s' has %ld points and %ld polygons.\n", 
-            filename, (LONG)points, (LONG)polygons);
-
-        /* Process points. */
-        {
-          FLOAT s = SPMul(scale, SPFlt(16));
-
-          for (i = 0; i < points; i++) {
-            obj->point[i].x = SPFix(SPMul(SPFieee(pnts[i * 3 + 0]), s));
-            obj->point[i].y = SPFix(SPMul(SPFieee(pnts[i * 3 + 1]), s));
-            obj->point[i].z = SPFix(SPMul(SPFieee(pnts[i * 3 + 2]), s));
-          }
-
-          MemFree(pnts, pntsLength);
-        }
-
-        /* Process polygons. */
-        {
-          WORD *polygonVertex = MemAlloc(sizeof(UWORD) * polygonVertices,
-                                         MEMF_PUBLIC);
-          WORD p = 0, j = 0;
-
-          i = 0;
-          n = polsLength / 2;
-
-          if (iff.header.type == ID_LWOB) {
-            while (i < n) {
-              WORD vertices = pols[i++];
-              obj->polygon[p].vertices = vertices;
-              obj->polygon[p].index = j;
-              while (--vertices >= 0)
-                polygonVertex[j++] = pols[i++];
-              i++;
-              p++;
-            }
-          } else {
-            i += 2;
-            while (i < n) {
-              WORD vertices = pols[i++];
-              obj->polygon[p].vertices = vertices;
-              obj->polygon[p].index = j;
-              while (--vertices >= 0)
-                polygonVertex[j++] = pols[i++];
-              p++;
-            }
-          }
-
-          obj->polygonVertices = polygonVertices;
-          obj->polygonVertex = polygonVertex;
-
-          MemFree(pols, polsLength);
-        }
-      }
-    }
-
-    CloseIff(&iff);
-  }
-
-  return obj;
-}
-
 static void Load() {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, 1);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, 1);
-  cp = NewCopList(80);
   cube = LoadLWO("data/new_2.lwo", SPFlt(80));
-
   CalculateEdges(cube);
 }
 
 static void UnLoad() {
   DeleteObject3D(cube);
-  DeleteCopList(cp);
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
 }
 
 static void MakeCopperList(CopListT *cp) {
@@ -168,9 +35,19 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
+  screen[0] = NewBitmap(WIDTH, HEIGHT, 1);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, 1);
+
+  cp = NewCopList(80);
   MakeCopperList(cp);
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
+}
+
+static void Kill() {
+  DeleteCopList(cp);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 __regargs static void CalculatePerspective(Point3D *p, WORD points) {
@@ -236,4 +113,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };
