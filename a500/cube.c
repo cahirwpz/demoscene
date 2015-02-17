@@ -6,45 +6,60 @@
 
 #define WIDTH  320
 #define HEIGHT 256
-#define DEPTH  1
+#define DEPTH  4
 
 static Object3D *cube;
-
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static BitmapT *screen[2];
+static BitmapT *screen;
 static UWORD active = 0;
 
 static void Load() {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  cube = LoadObject3D("data/cube.3d");
-  cp = NewCopList(100);
+  cube = LoadOBJ("data/cube.3d");
 }
 
 static void UnLoad() {
   DeleteObject3D(cube);
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
-  DeleteCopList(cp);
 }
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xfff);
+  CopMakePlayfield(cp, bplptr, screen, DEPTH);
+  CopSetRGB(cp,  0, 0x000);
+  CopSetRGB(cp,  1, 0x111);
+  CopSetRGB(cp,  2, 0x222);
+  CopSetRGB(cp,  3, 0x333);
+  CopSetRGB(cp,  4, 0x444);
+  CopSetRGB(cp,  5, 0x555);
+  CopSetRGB(cp,  6, 0x666);
+  CopSetRGB(cp,  7, 0x777);
+  CopSetRGB(cp,  8, 0x888);
+  CopSetRGB(cp,  9, 0x999);
+  CopSetRGB(cp, 10, 0xAAA);
+  CopSetRGB(cp, 11, 0xBBB);
+  CopSetRGB(cp, 12, 0xCCC);
+  CopSetRGB(cp, 13, 0xDDD);
+  CopSetRGB(cp, 14, 0xEEE);
+  CopSetRGB(cp, 15, 0xFFF);
   CopEnd(cp);
 }
 
 static void Init() {
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH * 2);
+
+  cp = NewCopList(100);
   MakeCopperList(cp);
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
 
   ClipFrustum.near = fx4i(-100);
   ClipFrustum.far = fx4i(-400);
+}
+
+static void Kill() {
+  DeleteBitmap(screen);
+  DeleteCopList(cp);
 }
 
 static Point3D tmpPoint[2][16];
@@ -92,7 +107,7 @@ static void DrawObject(Object3D *object) {
       out[i].y = div16(256 * out[i].y, out[i].z) + 128;
     }
 
-    BlitterLineSetup(screen[active], 0, LINE_OR, LINE_SOLID);
+    BlitterLineSetup(screen, active, LINE_OR, LINE_SOLID);
 
     while (--n > 0) {
 #if 0
@@ -109,11 +124,10 @@ static void DrawObject(Object3D *object) {
 }
 
 static void Render() {
-  LONG a = ReadFrameCounter() * 4;
+  LONG a = ReadFrameCounter() * 8;
   Matrix3D t;
 
-  BitmapClear(screen[active], 1);
-  WaitBlitter();
+  BlitterClearSync(screen, active);
 
   LoadRotate3D(&t, a, a, a);
   Translate3D(&t, 0, 0, fx4i(-250));
@@ -124,8 +138,15 @@ static void Render() {
   DrawObject(cube);
 
   WaitVBlank();
-  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
-  active ^= 1;
+
+  {
+    WORD n = DEPTH;
+
+    while (--n >= 0)
+      CopInsSet32(bplptr[n], screen->planes[(active + n + 1 - DEPTH) & 7]);
+  }
+
+  active = (active + 1) & 7;
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };
