@@ -419,41 +419,28 @@ __regargs void CalculateEdges(Object3D *obj) {
   {
     IndexListT **polygons = obj->polygon;
     IndexListT *polygon;
-    WORD k = 0;
+    WORD *e = (WORD *)edge;
 
     while ((polygon = *polygons++)) {
-      WORD n = polygon->count - 1;
       WORD *vertex = polygon->indices;
+      WORD n = polygon->count;
+      WORD p0 = vertex[n-1] * 6;
+      WORD p1;
 
-      edge[k].p0 = vertex[0];
-      edge[k].p1 = vertex[n];
-      k++;
+      while (--n >= 0) {
+        p1 = *vertex++ * 6;
 
-      for (; --n >= 0; k++) {
-        edge[k].p0 = *vertex++;
-        edge[k].p1 = *vertex;
+        /* Make sure lower index is first. */
+        if (p0 > p1) {
+          *e++ = p0; *e++ = p1;
+        } else {
+          *e++ = p1; *e++ = p0;
+        }
+
+        p0 = p1;
       }
     }
   }
-
-  /* Make sure lower index is first. */
-  {
-    EdgeT *e = edge;
-    WORD n = count;
-
-    while (--n >= 0) {
-      WORD p0 = e->p0 * 6;
-      WORD p1 = e->p1 * 6;
-
-      if (p0 > p1)
-        swapr(p0, p1);
-
-      e->p0 = p0;
-      e->p1 = p1;
-      e++;
-    }
-  }
-
 
   /* Sort the edges lexicographically. */
   qsort(edge, count, sizeof(EdgeT), EdgeCompare);
@@ -505,8 +492,6 @@ __regargs void CalculateVertexPolygonMap(Object3D *obj) {
       }
     }
 
-    Log("count = %ld\n", (LONG)count);
-
     count += obj->points;
 
     obj->vertexPolygon = MemAlloc(sizeof(IndexListT *) * (obj->points + 1), MEMF_PUBLIC|MEMF_CLEAR);
@@ -543,25 +528,6 @@ __regargs void CalculateVertexPolygonMap(Object3D *obj) {
         IndexListT *vp = vertexPolygons[*v++];
         vp->indices[vp->count++] = i;
       }
-
-      i++;
-    }
-  }
-
-  if (0)
-  {
-    IndexListT **vertexPolygons = obj->vertexPolygon;
-    IndexListT *vp;
-    LONG i = 0;
-
-    while ((vp = *vertexPolygons++)) {
-      WORD n = vp->count;
-      WORD *v = vp->indices;
-
-      Log("%ld [%ld] ", (LONG)i, (LONG)n);
-      while (--n >= 0)
-        Log("%ld ", (LONG)(*v++));
-      Log("\n");
 
       i++;
     }
