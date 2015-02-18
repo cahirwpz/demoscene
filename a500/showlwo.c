@@ -63,7 +63,15 @@ static void Kill() {
   DeleteBitmap(screen);
 }
 
-#define MULVERTEX(D) {                   \
+#define MULVERTEX1(D, E) {               \
+  WORD t0 = (*v++) + y;                  \
+  WORD t1 = (*v++) + x;                  \
+  LONG t2 = (*v++) * z;                  \
+  v++;                                   \
+  D = ((t0 * t1 + t2 - x * y) >> 4) + E; \
+}
+
+#define MULVERTEX2(D) {                  \
   WORD t0 = (*v++) + y;                  \
   WORD t1 = (*v++) + x;                  \
   LONG t2 = (*v++) * z;                  \
@@ -74,10 +82,14 @@ static void Kill() {
 static __regargs void Transform3D_2(Matrix3D *M, Point3D *out, Point3D *in, WORD n) {
   WORD *src = (WORD *)in;
   WORD *dst = (WORD *)out;
+  LONG m0, m1;
 
   M->x -= normfx(M->m00 * M->m01);
   M->y -= normfx(M->m10 * M->m11);
   M->z -= normfx(M->m20 * M->m21);
+
+  m0 = M->x << 8;
+  m1 = M->y << 8;
 
   /*
    * A = m00 * m01
@@ -95,14 +107,15 @@ static __regargs void Transform3D_2(Matrix3D *M, Point3D *out, Point3D *in, WORD
     WORD x = *src++;
     WORD y = *src++;
     WORD z = *src++;
-    WORD xp, yp, zp;
+    LONG xp, yp;
+    WORD zp;
 
-    MULVERTEX(xp);
-    MULVERTEX(yp);
-    MULVERTEX(zp);
+    MULVERTEX1(xp, m0);
+    MULVERTEX1(yp, m1);
+    MULVERTEX2(zp);
 
-    *dst++ = div16(xp * 256, zp) + WIDTH / 2;
-    *dst++ = div16(yp * 256, zp) + HEIGHT / 2;
+    *dst++ = div16(xp, zp) + WIDTH / 2;  /* div(xp * 256, zp) */
+    *dst++ = div16(yp, zp) + HEIGHT / 2; /* div(yp * 256, zp) */
     dst++;
   } while (--n > 0);
 }
