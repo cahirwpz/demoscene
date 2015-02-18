@@ -325,7 +325,7 @@ __regargs Object3D *NewObject3D(UWORD points, UWORD polygons) {
   object->cameraPoint = MemAlloc(sizeof(Point3D) * points, MEMF_PUBLIC);
   object->screenPoint = MemAlloc(sizeof(Point2D) * points, MEMF_PUBLIC);
   object->pointFlags = MemAlloc(points, MEMF_PUBLIC);
-  object->polygon = MemAlloc(sizeof(IndexListT *) * (polygons + 1), MEMF_PUBLIC);
+  object->polygon = MemAlloc(sizeof(IndexListT *) * (polygons + 1), MEMF_PUBLIC|MEMF_CLEAR);
   object->polygonNormal = MemAlloc(sizeof(Point3D) * polygons, MEMF_PUBLIC);
   object->polygonFlags = MemAlloc(polygons , MEMF_PUBLIC);
 
@@ -335,6 +335,8 @@ __regargs Object3D *NewObject3D(UWORD points, UWORD polygons) {
 __regargs void DeleteObject3D(Object3D *object) {
   MemFreeAuto(object->polygonData);
   MemFree(object->edge, sizeof(EdgeT) * object->edges);
+  MemFree(object->vertexPolygon, sizeof(IndexListT *) * (object->points + 1));
+  MemFreeAuto(object->vertexPolygonData);
   MemFree(object->polygonFlags, object->polygons);
   MemFree(object->polygonNormal, sizeof(Point3D) * object->polygons);
   MemFree(object->polygon, sizeof(IndexListT *) * (object->polygons + 1));
@@ -481,4 +483,87 @@ __regargs void CalculateEdges(Object3D *obj) {
  * vertices, so this procedure calculates a reverse map.
  */
 __regargs void CalculateVertexPolygonMap(Object3D *obj) {
+  WORD *polygonCount = MemAlloc(sizeof(WORD) * obj->points, MEMF_PUBLIC|MEMF_CLEAR);
+
+  /* 
+   * Count the size of the { vertex => polygon } map and for each vertex a
+   * number of polygons it belongs to.
+   */
+  {
+    IndexListT **polygons = obj->polygon;
+    IndexListT *polygon;
+    WORD count = 0;
+
+    while ((polygon = *polygons++)) {
+      WORD n = polygon->count;
+      WORD *v = polygon->indices;
+
+      count += n;
+      while (--n >= 0) {
+        WORD k = *v++;
+        polygonCount[k]++;
+      }
+    }
+
+    Log("count = %ld\n", (LONG)count);
+
+    count += obj->points;
+
+    obj->vertexPolygon = MemAlloc(sizeof(IndexListT *) * (obj->points + 1), MEMF_PUBLIC|MEMF_CLEAR);
+    obj->vertexPolygonData = MemAllocAuto(sizeof(WORD) * count, MEMF_PUBLIC|MEMF_CLEAR);
+  }
+
+  /* Set up map pointers. */
+  {
+    IndexListT **vertexPolygons = obj->vertexPolygon;
+    WORD *data = obj->vertexPolygonData;
+    WORD *count = polygonCount;
+    WORD n = obj->points;
+
+    while (--n >= 0) {
+      *vertexPolygons++ = (IndexListT *)data;
+      data += *count++ + 1;
+    }
+  }
+
+  MemFree(polygonCount, sizeof(WORD) * obj->points);
+
+  /* Finally, fill in the map. */
+  {
+    IndexListT **vertexPolygons = obj->vertexPolygon;
+    IndexListT **polygons = obj->polygon;
+    IndexListT *polygon;
+    WORD i = 0;
+
+    while ((polygon = *polygons++)) {
+      WORD n = polygon->count;
+      WORD *v = polygon->indices;
+
+      while (--n >= 0) {
+        IndexListT *vp = vertexPolygons[*v++];
+        vp->indices[vp->count++] = i;
+      }
+
+      i++;
+    }
+  }
+
+  if (0)
+  {
+    IndexListT **vertexPolygons = obj->vertexPolygon;
+    IndexListT *vp;
+    LONG i = 0;
+
+    while ((vp = *vertexPolygons++)) {
+      WORD n = vp->count;
+      WORD *v = vp->indices;
+
+      Log("%ld [%ld] ", (LONG)i, (LONG)n);
+      while (--n >= 0)
+        Log("%ld ", (LONG)(*v++));
+      Log("\n");
+
+      i++;
+    }
+  }
 } 

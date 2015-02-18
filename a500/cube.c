@@ -17,6 +17,7 @@ static UWORD active = 0;
 
 static void Load() {
   cube = LoadLWO("data/codi.lwo", SPFlt(256));
+  CalculateVertexPolygonMap(cube);
 }
 
 static void UnLoad() {
@@ -48,11 +49,16 @@ static void Kill() {
   DeleteCopList(cp);
 }
 
-static inline void DrawLine(APTR start, WORD x0, WORD y0, WORD x1, WORD y1) {
-  if (y0 > y1) {
-    swapr(x0, x1);
-    swapr(y0, y1);
-  }
+static inline void DrawLine(APTR start, Point2D *p0, Point2D *p1) {
+  WORD x0, y0, x1, y1;
+
+  if (p0->y > p1->y)
+    swapr(p0, p1);
+
+  x0 = p0->x;
+  y0 = p0->y;
+  x1 = p1->x;
+  y1 = p1->y;
 
   {
     APTR data = start + (((y0 << 5) + (x0 >> 3)) & ~1);
@@ -108,62 +114,77 @@ static void UpdatePolygonNormals2(Object3D *object) {
   IndexListT *polygon;
 
   while ((polygon = *polygons++)) {
-    UWORD *v = polygon->indices;
+    WORD *v = polygon->indices;
 
-    Point3D *p1 = &point[*v++];
-    Point3D *p2 = &point[*v++];
-    Point3D *p3 = &point[*v++];
+    WORD *p1 = (WORD *)&point[*v++];
+    WORD *p2 = (WORD *)&point[*v++];
+    WORD *p3 = (WORD *)&point[*v++];
+    WORD *p0 = p1;
 
-    WORD ax = p1->x - p2->x;
-    WORD ay = p1->y - p2->y;
-    WORD az = p1->z - p2->z;
-    WORD bx = p2->x - p3->x;
-    WORD by = p2->y - p3->y;
-    WORD bz = p2->z - p3->z;
+    WORD ax, ay, az, bx, by, bz;
+    LONG n;
 
-    WORD x = normfx(ay * bz - by * az);
-    WORD y = normfx(az * bx - bz * ax);
-    WORD z = normfx(ax * by - bx * ay);
+    ax = *p1++; bx = *p2++; ax -= bx; bx -= *p3++;
+    ay = *p1++; by = *p2++; ay -= by; by -= *p3++;
+    az = *p1++; bz = *p2++; az -= bz; bz -= *p3++;
 
-    *flags++ = (x * p1->x + y * p1->y + z * p1->z < 0);
+    n  = normfx(ay * bz - by * az) * (*p0++);
+    n += normfx(az * bx - bz * ax) * (*p0++);
+    n += normfx(ax * by - bx * ay) * (*p0++);
+
+    *flags++ = n < 0;
   }
 }
 
-static void PerspectiveProjection(Point2D *out, Point3D *in, WORD n) {
-  WORD *src = (WORD *)in;
-  WORD *dst = (WORD *)out;
+static __regargs void PerspectiveProjection(Object3D *object) {
+  WORD *src = (WORD *)object->cameraPoint;
+  WORD *dst = (WORD *)object->screenPoint;
+  IndexListT **vertexPolygons = object->vertexPolygon;
+  UBYTE *flags = object->polygonFlags;
+  WORD n = object->points;
 
-  while (--n >= 0) {
-    WORD x = *src++;
-    WORD y = *src++;
-    WORD z = *src++;
+  do {
+    IndexListT *vp = *vertexPolygons++;
+    WORD count = vp->count - 1;
+    WORD *index = vp->indices;
 
-    *dst++ = div16(256 * x, z) + WIDTH / 2;
-    *dst++ = div16(256 * y, z) + HEIGHT / 2;
-  }
+    do {
+      if (flags[*index++]) {
+        WORD x = *src++;
+        WORD y = *src++;
+        WORD z = *src++;
+
+        *dst++ = div16(x << 8, z) + WIDTH / 2;
+        *dst++ = div16(y << 8, z) + HEIGHT / 2;
+
+        goto end;
+      }
+    } while (--count != -1);
+
+    src += 3;
+    dst += 2;
+end:
+  } while (--n > 0);
 }
 
-static void DrawObject(Object3D *object) {
-  Point2D *point = object->screenPoint;
+static __regargs void DrawObject(Object3D *object, APTR start) {
   IndexListT **polygons = object->polygon;
   IndexListT *polygon;
   UBYTE *flags = object->polygonFlags;
-  APTR start = screen[active]->planes[0];
+  Point2D *point = object->screenPoint;
 
   while ((polygon = *polygons++)) {
     if (*flags++) {
       WORD *index = polygon->indices;
-      Point2D *pf = &point[*index++];
-      Point2D *p0 = pf;
-      Point2D *p1 = &point[*index];
       WORD n = polygon->count;
+      Point2D *p0 = &point[index[n - 1]];
+      Point2D *p1;
 
       while (--n >= 0) {
-        DrawLine(start, p0->x, p0->y, p1->x, p1->y);
-        p0 = p1; p1 = &point[*index++];
+        p1 = &point[*index++];
+        DrawLine(start, p0, p1);
+        p0 = p1; 
       }
-
-      DrawLine(start, p0->x, p0->y, pf->x, pf->y);
     }
   }
 }
@@ -180,7 +201,7 @@ static void Render() {
     Translate3D(&t, 0, 0, fx4i(-250));
     Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
     UpdatePolygonNormals2(cube);
-    PerspectiveProjection(cube->screenPoint, cube->cameraPoint, cube->points);
+    PerspectiveProjection(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
 
@@ -193,7 +214,7 @@ static void Render() {
 
   {
     // LONG lines = ReadLineCounter();
-    DrawObject(cube);
+    DrawObject(cube, screen[active]->planes[0]);
     // Log("draw: %ld\n", ReadLineCounter() - lines);
   }
 

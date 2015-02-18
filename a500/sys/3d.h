@@ -49,6 +49,9 @@ typedef struct {
   BYTE *polygonFlags;
   WORD *polygonData;
 
+  IndexListT **vertexPolygon;
+  WORD *vertexPolygonData;
+
   EdgeT *edge;
 } Object3D;
 
