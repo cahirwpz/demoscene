@@ -18,7 +18,7 @@ static CopInsT *bplptr[DEPTH];
 
 static void Load() {
   // cube = LoadLWO("data/new_2.lwo", SPFlt(80));
-  cube = LoadLWO("data/codi.lwo", SPFlt(300));
+  cube = LoadLWO("data/codi.lwo", SPFlt(256));
   CalculateEdges(cube);
 }
 
@@ -50,7 +50,7 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH * 2);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
 
   cp = NewCopList(80);
   MakeCopperList(cp);
@@ -63,33 +63,48 @@ static void Kill() {
   DeleteBitmap(screen);
 }
 
-#define MULVERTEX(A, N) {        \
-  LONG t0 = (*v++) * x;          \
-  LONG t1 = (*v++) * y;          \
-  LONG t2 = (*v++) * z;          \
-  LONG t3 = (*v++);              \
-  A = normfx(t0 + t1 + t2) + t3; \
+#define MULVERTEX(D) {                   \
+  WORD t0 = (*v++) + y;                  \
+  WORD t1 = (*v++) + x;                  \
+  LONG t2 = (*v++) * z;                  \
+  WORD t3 = (*v++);                      \
+  D = normfx(t0 * t1 + t2 - x * y) + t3; \
 }
 
 static __regargs void Transform3D_2(Matrix3D *M, Point3D *out, Point3D *in, WORD n) {
   WORD *src = (WORD *)in;
   WORD *dst = (WORD *)out;
 
-  while (--n >= 0) {
+  M->x -= normfx(M->m00 * M->m01);
+  M->y -= normfx(M->m10 * M->m11);
+  M->z -= normfx(M->m20 * M->m21);
+
+  /*
+   * A = m00 * m01
+   * B = m10 * m11
+   * C = m20 * m21 
+   * yx = y * x
+   *
+   * (m00 + y) * (m01 + x) + m02 * z - yx + (mx - A)
+   * (m10 + y) * (m11 + x) + m12 * z - yx + (my - B)
+   * (m20 + y) * (m21 + x) + m22 * z - yx + (mz - C)
+   */
+
+  do {
     WORD *v = (WORD *)M;
     WORD x = *src++;
     WORD y = *src++;
     WORD z = *src++;
     WORD xp, yp, zp;
 
-    MULVERTEX(xp, 0);
-    MULVERTEX(yp, 4);
-    MULVERTEX(zp, 8);
+    MULVERTEX(xp);
+    MULVERTEX(yp);
+    MULVERTEX(zp);
 
     *dst++ = div16(xp * 256, zp) + WIDTH / 2;
     *dst++ = div16(yp * 256, zp) + HEIGHT / 2;
     dst++;
-  }
+  } while (--n > 0);
 }
 
 __regargs static void DrawObject(Object3D *object) {
@@ -194,11 +209,15 @@ static void Render() {
   {
     WORD n = DEPTH;
 
-    while (--n >= 0)
-      CopInsSet32(bplptr[n], screen->planes[(active + n + 1 - DEPTH) & 7]);
+    while (--n >= 0) {
+      WORD i = (active + n + 1 - DEPTH) % 5;
+      if (i < 0)
+        i += DEPTH + 1;
+      CopInsSet32(bplptr[n], screen->planes[i]);
+    }
   }
 
-  active = (active + 1) & 7;
+  active = (active + 1) % 5;
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, Render };
