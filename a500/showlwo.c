@@ -5,6 +5,7 @@
 #include "fx.h"
 #include "ffp.h"
 #include "memory.h"
+#include "ilbm.h"
 
 #define WIDTH  256
 #define HEIGHT 256
@@ -12,17 +13,20 @@
 
 static Object3D *cube;
 static CopListT *cp;
+static PaletteT *palette;
 static BitmapT *screen;
 static UWORD active = 0;
 static CopInsT *bplptr[DEPTH];
 
 static void Load() {
   // cube = LoadLWO("data/new_2.lwo", SPFlt(80));
+  palette = LoadPalette("data/showlwo-pal.ilbm");
   cube = LoadLWO("data/codi.lwo", SPFlt(256));
   CalculateEdges(cube);
 }
 
 static void UnLoad() {
+  DeletePalette(palette);
   DeleteObject3D(cube);
 }
 
@@ -30,22 +34,7 @@ static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopMakePlayfield(cp, bplptr, screen, DEPTH);
   CopMakeDispWin(cp, X(32), Y(0), WIDTH, HEIGHT);
-  CopSetRGB(cp,  0, 0x000);
-  CopSetRGB(cp,  1, 0x111);
-  CopSetRGB(cp,  2, 0x222);
-  CopSetRGB(cp,  3, 0x333);
-  CopSetRGB(cp,  4, 0x444);
-  CopSetRGB(cp,  5, 0x555);
-  CopSetRGB(cp,  6, 0x666);
-  CopSetRGB(cp,  7, 0x777);
-  CopSetRGB(cp,  8, 0x888);
-  CopSetRGB(cp,  9, 0x999);
-  CopSetRGB(cp, 10, 0xAAA);
-  CopSetRGB(cp, 11, 0xBBB);
-  CopSetRGB(cp, 12, 0xCCC);
-  CopSetRGB(cp, 13, 0xDDD);
-  CopSetRGB(cp, 14, 0xEEE);
-  CopSetRGB(cp, 15, 0xFFF);
+  CopLoadPal(cp, palette, 0);
   CopEnd(cp);
 }
 
