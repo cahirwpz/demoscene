@@ -37,27 +37,28 @@ __regargs UWORD ClipPolygon3D(Point3D *in, Point3D **outp, UWORD n,
 typedef struct {
   UWORD points;
   UWORD polygons;
-  UWORD polygonVertices;
   UWORD edges;
 
   Point3D *point;
   Point3D *cameraPoint;
-  UBYTE *cameraPointFlags;
+  Point2D *screenPoint;
+  BYTE *pointFlags;
 
-  PolygonT *polygon;
+  IndexListT **polygon;
   Point3D *polygonNormal;
-  UWORD *polygonVertex;
+  BYTE *polygonFlags;
+  WORD *polygonData;
 
   EdgeT *edge;
 } Object3D;
 
 __regargs Object3D *NewObject3D(UWORD points, UWORD polygons);
 __regargs void DeleteObject3D(Object3D *object);
-__regargs Object3D *LoadOBJ(char *filename);
 __regargs Object3D *LoadLWO(char *filename, FLOAT scale);
 
 __regargs void UpdatePolygonNormals(Object3D *object);
 __regargs void NormalizePolygonNormals(Object3D *object);
 __regargs void CalculateEdges(Object3D *object);
+__regargs void CalculateVertexPolygonMap(Object3D *object);
 
 #endif

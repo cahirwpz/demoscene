@@ -27,10 +27,10 @@ typedef struct {
   WORD w, h;
 } Area2D;
 
-typedef struct Polygon {
-  UWORD vertices;
-  UWORD index;
-} PolygonT;
+typedef struct IndexList {
+  WORD count;
+  WORD indices[0];
+} IndexListT;
 
 typedef struct {
   WORD m00, m01, x;
@@ -53,15 +53,14 @@ __regargs UWORD ClipPolygon2D(Point2D *in, Point2D **outp, UWORD n,
                               UWORD clipFlags);
 
 typedef struct Shape {
-  UWORD points;
-  UWORD polygons;
-  UWORD polygonVertices;
+  WORD points;
+  WORD polygons;
 
   Point2D *origPoint;
   Point2D *viewPoint;
   UBYTE *viewPointFlags;
-  PolygonT *polygon;
-  UWORD *polygonVertex;
+  IndexListT **polygon;
+  WORD *polygonData;
 } ShapeT;
 
 __regargs ShapeT *NewShape(UWORD points, UWORD polygons);

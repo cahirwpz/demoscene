@@ -3,19 +3,20 @@
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
+#include "ffp.h"
 
-#define WIDTH  320
+#define WIDTH  256
 #define HEIGHT 256
-#define DEPTH  4
+#define DEPTH  1
 
 static Object3D *cube;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static BitmapT *screen;
+static BitmapT *screen[2];
 static UWORD active = 0;
 
 static void Load() {
-  cube = LoadOBJ("data/cube.3d");
+  cube = LoadLWO("data/codi.lwo", SPFlt(256));
 }
 
 static void UnLoad() {
@@ -24,101 +25,145 @@ static void UnLoad() {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, bplptr, screen, DEPTH);
+  CopMakeDispWin(cp, X(32), Y(0), WIDTH, HEIGHT);
+  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
   CopSetRGB(cp,  0, 0x000);
-  CopSetRGB(cp,  1, 0x111);
-  CopSetRGB(cp,  2, 0x222);
-  CopSetRGB(cp,  3, 0x333);
-  CopSetRGB(cp,  4, 0x444);
-  CopSetRGB(cp,  5, 0x555);
-  CopSetRGB(cp,  6, 0x666);
-  CopSetRGB(cp,  7, 0x777);
-  CopSetRGB(cp,  8, 0x888);
-  CopSetRGB(cp,  9, 0x999);
-  CopSetRGB(cp, 10, 0xAAA);
-  CopSetRGB(cp, 11, 0xBBB);
-  CopSetRGB(cp, 12, 0xCCC);
-  CopSetRGB(cp, 13, 0xDDD);
-  CopSetRGB(cp, 14, 0xEEE);
-  CopSetRGB(cp, 15, 0xFFF);
+  CopSetRGB(cp,  1, 0xFFF);
   CopEnd(cp);
 }
 
 static void Init() {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH * 2);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  cp = NewCopList(100);
+  cp = NewCopList(80);
   MakeCopperList(cp);
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
-
-  ClipFrustum.near = fx4i(-100);
-  ClipFrustum.far = fx4i(-400);
 }
 
 static void Kill() {
-  DeleteBitmap(screen);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
   DeleteCopList(cp);
 }
 
-static Point3D tmpPoint[2][16];
+static inline void DrawLine(APTR start, WORD x0, WORD y0, WORD x1, WORD y1) {
+  if (y0 > y1) {
+    swapr(x0, x1);
+    swapr(y0, y1);
+  }
+
+  {
+    APTR data = start + (((y0 << 5) + (x0 >> 3)) & ~1);
+    WORD dmax = x1 - x0;
+    WORD dmin = y1 - y0;
+    WORD derr;
+    UWORD bltcon1 = LINE_SOLID;
+
+    if (dmax < 0)
+      dmax = -dmax;
+
+    if (dmax >= dmin) {
+      if (x0 >= x1)
+        bltcon1 |= (AUL | SUD);
+      else
+        bltcon1 |= SUD;
+    } else {
+      if (x0 >= x1)
+        bltcon1 |= SUL;
+      swapr(dmax, dmin);
+    }
+
+    derr = 2 * dmin - dmax;
+    if (derr < 0)
+      bltcon1 |= SIGNFLAG;
+    bltcon1 |= rorw(x0 & 15, 4);
+
+    {
+      UWORD bltcon0 = rorw(x0 & 15, 4) | LINE_OR;
+      UWORD bltamod = derr - dmax;
+      UWORD bltbmod = 2 * dmin;
+      UWORD bltsize = (dmax << 6) + 66;
+      APTR bltapt = (APTR)(LONG)derr;
+
+      WaitBlitter();
+
+      custom->bltcon0 = bltcon0;
+      custom->bltcon1 = bltcon1;
+      custom->bltamod = bltamod;
+      custom->bltbmod = bltbmod;
+      custom->bltapt = bltapt;
+      custom->bltcpt = data;
+      custom->bltdpt = data;
+      custom->bltsize = bltsize;
+    }
+  }
+}
+
+static void UpdatePolygonNormals2(Object3D *object) {
+  Point3D *point = object->cameraPoint;
+  UBYTE *flags = object->polygonFlags;
+  IndexListT **polygons = object->polygon;
+  IndexListT *polygon;
+
+  while ((polygon = *polygons++)) {
+    UWORD *v = polygon->indices;
+
+    Point3D *p1 = &point[*v++];
+    Point3D *p2 = &point[*v++];
+    Point3D *p3 = &point[*v++];
+
+    WORD ax = p1->x - p2->x;
+    WORD ay = p1->y - p2->y;
+    WORD az = p1->z - p2->z;
+    WORD bx = p2->x - p3->x;
+    WORD by = p2->y - p3->y;
+    WORD bz = p2->z - p3->z;
+
+    WORD x = normfx(ay * bz - by * az);
+    WORD y = normfx(az * bx - bz * ax);
+    WORD z = normfx(ax * by - bx * ay);
+
+    *flags++ = (x * p1->x + y * p1->y + z * p1->z < 0);
+  }
+}
+
+static void PerspectiveProjection(Point2D *out, Point3D *in, WORD n) {
+  WORD *src = (WORD *)in;
+  WORD *dst = (WORD *)out;
+
+  while (--n >= 0) {
+    WORD x = *src++;
+    WORD y = *src++;
+    WORD z = *src++;
+
+    *dst++ = div16(256 * x, z) + WIDTH / 2;
+    *dst++ = div16(256 * y, z) + HEIGHT / 2;
+  }
+}
 
 static void DrawObject(Object3D *object) {
-  Point3D *point = object->cameraPoint;
-  PolygonT *polygon = object->polygon;
-  UBYTE *flags = object->cameraPointFlags;
-  UWORD *vertex = object->polygonVertex;
-  WORD polygons = object->polygons;
-  Point3D *normal = object->polygonNormal;
+  Point2D *point = object->screenPoint;
+  IndexListT **polygons = object->polygon;
+  IndexListT *polygon;
+  UBYTE *flags = object->polygonFlags;
+  APTR start = screen[active]->planes[0];
 
-  for (; polygons--; normal++, polygon++) {
-    WORD i, n = polygon->vertices;
-    UBYTE clipFlags = 0;
-    UBYTE outside = 0xff;
-    Point3D *in = tmpPoint[0];
-    Point3D *out = tmpPoint[1];
+  while ((polygon = *polygons++)) {
+    if (*flags++) {
+      WORD *index = polygon->indices;
+      Point2D *pf = &point[*index++];
+      Point2D *p0 = pf;
+      Point2D *p1 = &point[*index];
+      WORD n = polygon->count;
 
-    /* Check polygon visibility. */
-    {
-      Point3D *p = &point[vertex[polygon->index]];
+      while (--n >= 0) {
+        DrawLine(start, p0->x, p0->y, p1->x, p1->y);
+        p0 = p1; p1 = &point[*index++];
+      }
 
-      if (normal->x * p->x + normal->y * p->y + normal->z * p->z >= 0)
-        continue;
-    }
-
-    for (i = 0; i < n; i++) {
-      UWORD k = vertex[polygon->index + i];
-
-      clipFlags |= flags[k];
-      outside &= flags[k];
-      in[i] = point[k];
-      out[i] = point[k];
-    }
-
-    if (outside)
-      continue;
-
-    n = ClipPolygon3D(in, &out, n, clipFlags);
-
-    /* Perspective mapping. */
-    for (i = 0; i < n; i++) {
-      out[i].x = div16(256 * out[i].x, out[i].z) + 160;
-      out[i].y = div16(256 * out[i].y, out[i].z) + 128;
-    }
-
-    BlitterLineSetup(screen, active, LINE_OR, LINE_SOLID);
-
-    while (--n > 0) {
-#if 0
-      Log ("(%ld %ld %ld) - (%ld %ld %ld)\n",
-           (LONG)out[0].x, (LONG)out[0].y, (LONG)out[0].z,
-           (LONG)out[1].x, (LONG)out[1].y, (LONG)out[1].z);
-#endif
-
-      BlitterLine(out[0].x, out[0].y, out[1].x, out[1].y);
-      WaitBlitter();
-      out++;
+      DrawLine(start, p0->x, p0->y, pf->x, pf->y);
     }
   }
 }
@@ -127,26 +172,34 @@ static void Render() {
   LONG a = ReadFrameCounter() * 8;
   Matrix3D t;
 
-  BlitterClearSync(screen, active);
-
-  LoadRotate3D(&t, a, a, a);
-  Translate3D(&t, 0, 0, fx4i(-250));
-  Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
-  PointsInsideFrustum(cube->cameraPoint, cube->cameraPointFlags, cube->points);
-  UpdatePolygonNormals(cube);
-
-  DrawObject(cube);
-
-  WaitVBlank();
+  BlitterClearSync(screen[active], 0);
 
   {
-    WORD n = DEPTH;
-
-    while (--n >= 0)
-      CopInsSet32(bplptr[n], screen->planes[(active + n + 1 - DEPTH) & 7]);
+    // LONG lines = ReadLineCounter();
+    LoadRotate3D(&t, a, a, a);
+    Translate3D(&t, 0, 0, fx4i(-250));
+    Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
+    UpdatePolygonNormals2(cube);
+    PerspectiveProjection(cube->screenPoint, cube->cameraPoint, cube->points);
+    // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
 
-  active = (active + 1) & 7;
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+  custom->bltadat = 0x8000;
+  custom->bltbdat = 0xffff; /* Line texture pattern. */
+  custom->bltcmod = WIDTH / 8;
+  custom->bltdmod = WIDTH / 8;
+
+  {
+    // LONG lines = ReadLineCounter();
+    DrawObject(cube);
+    // Log("draw: %ld\n", ReadLineCounter() - lines);
+  }
+
+  WaitVBlank();
+  CopInsSet32(bplptr[0], screen[active]->planes[0]);
+  active ^= 1;
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, Render };

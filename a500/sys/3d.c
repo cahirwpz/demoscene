@@ -323,19 +323,23 @@ __regargs Object3D *NewObject3D(UWORD points, UWORD polygons) {
 
   object->point = MemAlloc(sizeof(Point3D) * points, MEMF_PUBLIC);
   object->cameraPoint = MemAlloc(sizeof(Point3D) * points, MEMF_PUBLIC);
-  object->cameraPointFlags = MemAlloc(points, MEMF_PUBLIC);
-  object->polygon = MemAlloc(sizeof(PolygonT) * polygons, MEMF_PUBLIC);
+  object->screenPoint = MemAlloc(sizeof(Point2D) * points, MEMF_PUBLIC);
+  object->pointFlags = MemAlloc(points, MEMF_PUBLIC);
+  object->polygon = MemAlloc(sizeof(IndexListT *) * (polygons + 1), MEMF_PUBLIC);
   object->polygonNormal = MemAlloc(sizeof(Point3D) * polygons, MEMF_PUBLIC);
+  object->polygonFlags = MemAlloc(polygons , MEMF_PUBLIC);
 
   return object;
 }
 
 __regargs void DeleteObject3D(Object3D *object) {
-  MemFree(object->polygonVertex, sizeof(UWORD) * object->polygonVertices);
+  MemFreeAuto(object->polygonData);
   MemFree(object->edge, sizeof(EdgeT) * object->edges);
+  MemFree(object->polygonFlags, object->polygons);
   MemFree(object->polygonNormal, sizeof(Point3D) * object->polygons);
-  MemFree(object->polygon, sizeof(PolygonT) * object->polygons);
-  MemFree(object->cameraPointFlags, object->points);
+  MemFree(object->polygon, sizeof(IndexListT *) * (object->polygons + 1));
+  MemFree(object->pointFlags, object->points);
+  MemFree(object->screenPoint, sizeof(Point2D) * object->points);
   MemFree(object->cameraPoint, sizeof(Point3D) * object->points);
   MemFree(object->point, sizeof(Point3D) * object->points);
   MemFree(object, sizeof(Object3D));
@@ -352,14 +356,13 @@ __regargs void DeleteObject3D(Object3D *object) {
  */
 
 __regargs void UpdatePolygonNormals(Object3D *object) {
-  WORD polygons = object->polygons;
   Point3D *point = object->cameraPoint;
-  PolygonT *polygon = object->polygon;
+  IndexListT **polygons = object->polygon;
   WORD *normal = (WORD *)object->polygonNormal;
-  UWORD *vertex = object->polygonVertex;
+  IndexListT *polygon;
 
-  while (polygons--) {
-    UWORD *v = &vertex[polygon->index];
+  while ((polygon = *polygons++)) {
+    WORD *v = polygon->indices;
 
     Point3D *p1 = &point[*v++];
     Point3D *p2 = &point[*v++];
@@ -375,8 +378,6 @@ __regargs void UpdatePolygonNormals(Object3D *object) {
     *normal++ = normfx(ay * bz - by * az);
     *normal++ = normfx(az * bx - bz * ax);
     *normal++ = normfx(ax * by - bx * ay);
-
-    polygon++;
   }
 }
 
@@ -398,54 +399,86 @@ static __regargs LONG EdgeCompare(APTR a, APTR b) {
 }
 
 __regargs void CalculateEdges(Object3D *obj) {
-  EdgeT *edge = MemAlloc(sizeof(EdgeT) * obj->polygonVertices,
-                             MEMF_PUBLIC);
-  WORD p, k, i, j;
+  WORD count = 0;
+  EdgeT *edge;
 
-  for (p = 0, k = 0; p < obj->polygons; p++) {
-    WORD i = obj->polygon[p].index;
-    WORD n = obj->polygon[p].vertices;
-    UWORD p0 = obj->polygonVertex[i];
-    UWORD p1 = obj->polygonVertex[i + n - 1];
+  /* Count edges. */
+  {
+    IndexListT **polygons = obj->polygon;
+    IndexListT *polygon;
 
-    edge[k].p0 = p0;
-    edge[k].p1 = p1;
-    k++;
+    while ((polygon = *polygons++))
+      count += polygon->count;
 
-    for (j = 1; j < n; j++) {
-      p1 = obj->polygonVertex[i + j];
-      edge[k].p0 = p0;
-      edge[k].p1 = p1;
+    edge = MemAllocAuto(sizeof(EdgeT) * count, MEMF_PUBLIC);
+  }
+
+  /* Create all edges. */
+  {
+    IndexListT **polygons = obj->polygon;
+    IndexListT *polygon;
+    WORD k = 0;
+
+    while ((polygon = *polygons++)) {
+      WORD n = polygon->count - 1;
+      WORD *vertex = polygon->indices;
+
+      edge[k].p0 = vertex[0];
+      edge[k].p1 = vertex[n];
       k++;
-      p0 = p1;
+
+      for (; --n >= 0; k++) {
+        edge[k].p0 = *vertex++;
+        edge[k].p1 = *vertex;
+      }
     }
   }
 
-  for (i = 0; i < obj->polygonVertices; i++) {
-    UWORD p0 = edge[i].p0 * 6;
-    UWORD p1 = edge[i].p1 * 6;
+  /* Make sure lower index is first. */
+  {
+    EdgeT *e = edge;
+    WORD n = count;
 
-    if (p0 > p1) {
-      edge[i].p0 = p1;
-      edge[i].p1 = p0;
-    } else {
-      edge[i].p0 = p0;
-      edge[i].p1 = p1;
+    while (--n >= 0) {
+      WORD p0 = e->p0 * 6;
+      WORD p1 = e->p1 * 6;
+
+      if (p0 > p1)
+        swapr(p0, p1);
+
+      e->p0 = p0;
+      e->p1 = p1;
+      e++;
     }
   }
 
-  qsort(edge, obj->polygonVertices, sizeof(EdgeT), EdgeCompare);
 
-  for (i = 1, j = 0; i < obj->polygonVertices; i++)
-    if (EdgeCompare(&edge[i], &edge[j]))
-      edge[++j] = edge[i];
+  /* Sort the edges lexicographically. */
+  qsort(edge, count, sizeof(EdgeT), EdgeCompare);
 
-  obj->edge = MemAlloc(sizeof(EdgeT) * j, MEMF_PUBLIC);
-  obj->edges = j;
+  /* Remove duplicate edges. */
+  {
+    WORD i, j;
 
-  memcpy(obj->edge, edge, sizeof(EdgeT) * j);
+    for (i = 1, j = 0; i < count; i++)
+      if (EdgeCompare(&edge[i], &edge[j]))
+        edge[++j] = edge[i];
 
-  Log("Object has %ld edges.\n", (LONG)j);
+    obj->edge = MemAlloc(sizeof(EdgeT) * j, MEMF_PUBLIC);
+    obj->edges = j;
 
-  MemFree(edge, sizeof(EdgeT) * obj->polygonVertices);
+    memcpy(obj->edge, edge, sizeof(EdgeT) * j);
+
+    Log("Object has %ld edges.\n", (LONG)j);
+  }
+
+  MemFreeAuto(edge);
 }
+
+/*
+ * Calculates a map from vertex index into a list of polygon the vertex belongs
+ * to.  mesh->polygon can be considered as a map from polygon number to polygon
+ * vertices, so this procedure calculates a reverse map.
+ */
+__regargs void CalculateVertexPolygonMap(Object3D *obj) {
+} 

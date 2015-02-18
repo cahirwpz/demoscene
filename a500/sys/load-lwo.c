@@ -42,41 +42,49 @@ __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
       }
 
       {
-        UWORD points = pntsLength / 12;
-        UWORD polygons = 0;
-        UWORD polygonVertices = 0;
+        WORD points = pntsLength / 12;
+        WORD polygons = 0;
+        WORD polygonDataSize = 0;
 
-        LONG i = 0;
-        LONG n = polsLength / 2;
+        /* Count polygons and space they use. */
+        {
+          WORD *end = (APTR)pols + polsLength;
 
-        if (iff.header.type == ID_LWOB) {
-          while (i < n) {
-            WORD vertices = pols[i++];
-            polygonVertices += vertices;
-            polygons++;
-            i += vertices + 1;
-          }
-        } else {
-          i += 2;
-          while (i < n) {
-            WORD vertices = pols[i++];
-            polygonVertices += vertices;
-            polygons++;
-            i += vertices;
+          if (iff.header.type == ID_LWOB) {
+            WORD *data = pols;
+
+            for (; data < end; polygons++) {
+              WORD count = *data++;
+              polygonDataSize += count + 1;
+              data += count + 1;
+            }
+          } else {
+            WORD *data = pols + 2;
+
+            for (; data < end; polygons++) {
+              WORD count = *data++;
+              polygonDataSize += count + 1;
+              data += count;
+            }
           }
         }
-
-        obj = NewObject3D(points, polygons);
 
         Log("File '%s' has %ld points and %ld polygons.\n", 
             filename, (LONG)points, (LONG)polygons);
 
+        obj = NewObject3D(points, polygons);
+        obj->polygonData = 
+          MemAllocAuto(sizeof(WORD) * polygonDataSize, MEMF_PUBLIC);
+
         /* Process points. */
         {
-          for (i = 0; i < points; i++) {
-            obj->point[i].x = SPFix(SPMul(SPFieee(pnts[i * 3 + 0]), scale));
-            obj->point[i].y = SPFix(SPMul(SPFieee(pnts[i * 3 + 1]), scale));
-            obj->point[i].z = SPFix(SPMul(SPFieee(pnts[i * 3 + 2]), scale));
+          FLOAT *src = pnts;
+          WORD *dst = (WORD *)obj->point;
+
+          while (--points >= 0) {
+            *dst++ = SPFix(SPMul(SPFieee(*src++), scale));
+            *dst++ = SPFix(SPMul(SPFieee(*src++), scale));
+            *dst++ = SPFix(SPMul(SPFieee(*src++), scale));
           }
 
           MemFree(pnts, pntsLength);
@@ -84,37 +92,33 @@ __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
 
         /* Process polygons. */
         {
-          WORD *polygonVertex = MemAlloc(sizeof(UWORD) * polygonVertices,
-                                         MEMF_PUBLIC);
-          WORD p = 0, j = 0;
-
-          i = 0;
-          n = polsLength / 2;
+          IndexListT **polygon = obj->polygon;
+          WORD *polygonData = obj->polygonData;
+          WORD *end = (APTR)pols + polsLength;
+          WORD j = 0, p = 0;
 
           if (iff.header.type == ID_LWOB) {
-            while (i < n) {
-              WORD vertices = pols[i++];
-              obj->polygon[p].vertices = vertices;
-              obj->polygon[p].index = j;
-              while (--vertices >= 0)
-                polygonVertex[j++] = pols[i++];
-              i++;
-              p++;
+            WORD *data = pols;
+
+            while (data < end) {
+              WORD count = *data++;
+              polygon[p++] = (IndexListT *)&obj->polygonData[j];
+              polygonData[j++] = count;
+              while (--count >= 0)
+                polygonData[j++] = *data++;
+              data++;
             }
           } else {
-            i += 2;
-            while (i < n) {
-              WORD vertices = pols[i++];
-              obj->polygon[p].vertices = vertices;
-              obj->polygon[p].index = j;
-              while (--vertices >= 0)
-                polygonVertex[j++] = pols[i++];
-              p++;
+            WORD *data = pols + 2;
+
+            while (data < end) {
+              WORD count = *data++;
+              polygon[p++] = (IndexListT *)&obj->polygonData[j];
+              polygonData[j++] = count;
+              while (--count >= 0)
+                polygonData[j++] = *data++;
             }
           }
-
-          obj->polygonVertices = polygonVertices;
-          obj->polygonVertex = polygonVertex;
 
           MemFree(pols, polsLength);
         }

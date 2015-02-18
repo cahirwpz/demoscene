@@ -300,14 +300,14 @@ __regargs ShapeT *NewShape(UWORD points, UWORD polygons) {
   shape->origPoint = MemAlloc(sizeof(Point2D) * points, MEMF_PUBLIC);
   shape->viewPoint = MemAlloc(sizeof(Point2D) * points, MEMF_PUBLIC);
   shape->viewPointFlags = MemAlloc(points, MEMF_PUBLIC);
-  shape->polygon = MemAlloc(sizeof(PolygonT) * polygons, MEMF_PUBLIC);
+  shape->polygon = MemAlloc(sizeof(IndexListT *) * polygons, MEMF_PUBLIC);
 
   return shape;
 }
 
 __regargs void DeleteShape(ShapeT *shape) {
-  MemFree(shape->polygonVertex, sizeof(UWORD) * shape->polygonVertices);
-  MemFree(shape->polygon, sizeof(PolygonT) * shape->polygons);
+  MemFreeAuto(shape->polygonData);
+  MemFree(shape->polygon, sizeof(IndexListT *) * shape->polygons);
   MemFree(shape->viewPointFlags, shape->points);
   MemFree(shape->viewPoint, sizeof(Point2D) * shape->points);
   MemFree(shape->origPoint, sizeof(Point2D) * shape->points);
@@ -316,84 +316,72 @@ __regargs void DeleteShape(ShapeT *shape) {
 
 __regargs ShapeT *LoadShape(char *filename) {
   char *file = ReadFile(filename, MEMF_PUBLIC);
-  WORD points = 0, polygons = 0;
   ShapeT *shape = NULL;
+  WORD pass = 0;
 
-  if (file) {
+  if (!file) {
+    Log("File '%s' missing.\n", filename);
+    return NULL;
+  }
+
+  for (pass = 0; pass < 2; pass++) {
+    WORD points = 0, polygons = 0;
+    WORD i = 0, j = 0, k = 0;
+    WORD origin_x, origin_y;
     char *data = file;
     WORD n;
 
-    if (ReadNumber(&data, NULL) && ReadNumber(&data, NULL)) {
-      while (*data) {
-        if (!ReadNumber(&data, &n))
-          break;
-
-        points += n;
-        polygons++;
-
-        n *= 2;
-
-        do {
-          if (!ReadNumber(&data, NULL))
-            break;
-        } while (--n > 0);
-
-        if (n > 0)
-          break;
-
-        data = SkipSpaces(data);
-      }
-    }
-
-    if (*data == 0) {
-      shape = NewShape(points, polygons);
-
-      shape->polygonVertices = points + polygons;
-      shape->polygonVertex = MemAlloc(sizeof(UWORD) * shape->polygonVertices,
-                                      MEMF_PUBLIC);
-    }
-  }
-
-  if (shape) {
-    char *data = file;
-    WORD i = 0, j = 0, k = 0;
-    WORD origin_x, origin_y;
-
-    ReadNumber(&data, &origin_x);
-    ReadNumber(&data, &origin_y);
+    if (!ReadNumber(&data, &origin_x))
+      goto error;
+    if (!ReadNumber(&data, &origin_y))
+      goto error;
 
     while (*data) {
-      WORD n, old_k;
+      if (!ReadNumber(&data, &n))
+        goto error;
 
-      ReadNumber(&data, &n);
+      points += n;
+      polygons++;
 
-      shape->polygon[i].vertices = n + 1;
-      shape->polygon[i].index = j;
-
-      old_k = k;
-
-      while (--n >= 0) {
+      if (pass) {
         WORD x, y;
+        WORD old_k = k;
 
-        ReadNumber(&data, &x);
-        ReadNumber(&data, &y);
+        shape->polygon[i++] = (IndexListT *)&shape->polygonData[j];
+        shape->polygonData[j++] = n;
 
-        shape->origPoint[k].x = (x - origin_x) * 16;
-        shape->origPoint[k].y = (y - origin_y) * 16;
-        shape->polygonVertex[j] = k;
+        while (--n >= 0) {
+          if (!ReadNumber(&data, &x))
+            goto error;
+          if (!ReadNumber(&data, &y))
+            goto error;
 
-        j++; k++;
+          shape->origPoint[k].x = (x - origin_x) * 16;
+          shape->origPoint[k].y = (y - origin_y) * 16;
+          shape->polygonData[j] = k;
+          j++; k++;
+        }
+
+        shape->polygonData[j++] = old_k;
+
+      } else {
+        n *= 2;
+        while (--n >= 0)
+          if (!ReadNumber(&data, NULL))
+            goto error;
       }
-
-      shape->polygonVertex[j++] = old_k;
-
-      i++;
 
       data = SkipSpaces(data);
     }
+
+    if (*data == '\0' && pass == 0) {
+      shape = NewShape(points, polygons);
+      shape->polygonData = 
+        MemAllocAuto(sizeof(WORD) * (points + polygons * 2), MEMF_PUBLIC);
+    }
   }
 
+error:
   MemFreeAuto(file);
   return shape;
 }
-

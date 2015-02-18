@@ -78,33 +78,33 @@ static inline void DrawPolygon(Point2D *out, WORD n) {
 }
 
 static __regargs void DrawShape(ShapeT *shape) {
-  const PolygonT *polygon = shape->polygon;
-  const Point2D *point = shape->viewPoint;
-  const UBYTE *flags = shape->viewPointFlags;
+  IndexListT **polygons = shape->polygon;
+  Point2D *point = shape->viewPoint;
+  UBYTE *flags = shape->viewPointFlags;
+  WORD n = shape->polygons;
 
-  do {
+  while (--n >= 0) {
     UBYTE clipFlags = 0;
     UBYTE outside = 0xff;
 
-    {
-      UWORD *vertex = shape->polygonVertex + polygon->index;
-      Point2D *out = tmpPoint[0];
-      WORD n = polygon->vertices;
+    Point2D *out = tmpPoint[0];
+    WORD *vertex = (WORD *)*polygons++;
+    WORD n = (*vertex++) + 1;
+    WORD m = n;
 
-      while (--n >= 0) {
-        WORD k = *vertex++;
-        clipFlags |= flags[k];
-        outside &= flags[k];
-        *out++ = point[k];
-      }
+    while (--m >= 0) {
+      WORD k = *vertex++;
+      clipFlags |= flags[k];
+      outside &= flags[k];
+      *out++ = point[k];
     }
 
     if (!outside) {
       Point2D *out = tmpPoint[1];
-      WORD n = ClipPolygon2D(tmpPoint[0], &out, polygon->vertices, clipFlags);
+      n = ClipPolygon2D(tmpPoint[0], &out, n, clipFlags);
       DrawPolygon(out, n);
     }
-  } while (++polygon < shape->polygon + shape->polygons);
+  }
 }
 
 static void Render() {
