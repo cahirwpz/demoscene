@@ -53,6 +53,8 @@ typedef struct {
   WORD *vertexPolygonData;
 
   EdgeT *edge;
+  IndexListT **edgePolygon;
+  WORD *edgePolygonData;
 } Object3D;
 
 __regargs Object3D *NewObject3D(UWORD points, UWORD polygons);

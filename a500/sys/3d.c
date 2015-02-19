@@ -327,7 +327,7 @@ __regargs Object3D *NewObject3D(UWORD points, UWORD polygons) {
   object->pointFlags = MemAlloc(points, MEMF_PUBLIC);
   object->polygon = MemAlloc(sizeof(IndexListT *) * (polygons + 1), MEMF_PUBLIC|MEMF_CLEAR);
   object->polygonNormal = MemAlloc(sizeof(Point3D) * polygons, MEMF_PUBLIC);
-  object->polygonFlags = MemAlloc(polygons , MEMF_PUBLIC);
+  object->polygonFlags = MemAlloc(polygons, MEMF_PUBLIC);
 
   return object;
 }
@@ -383,6 +383,11 @@ __regargs void UpdatePolygonNormals(Object3D *object) {
   }
 }
 
+typedef struct ExtEdge {
+  WORD p0, p1;
+  WORD poly;
+} ExtEdgeT;
+
 static __regargs LONG EdgeCompare(APTR a, APTR b) {
   EdgeT *e0 = a;
   EdgeT *e1 = b;
@@ -401,8 +406,8 @@ static __regargs LONG EdgeCompare(APTR a, APTR b) {
 }
 
 __regargs void CalculateEdges(Object3D *obj) {
+  ExtEdgeT *edge;
   WORD count = 0;
-  EdgeT *edge;
 
   /* Count edges. */
   {
@@ -412,7 +417,7 @@ __regargs void CalculateEdges(Object3D *obj) {
     while ((polygon = *polygons++))
       count += polygon->count;
 
-    edge = MemAllocAuto(sizeof(EdgeT) * count, MEMF_PUBLIC);
+    edge = MemAllocAuto(sizeof(ExtEdgeT) * count, MEMF_PUBLIC);
   }
 
   /* Create all edges. */
@@ -420,6 +425,7 @@ __regargs void CalculateEdges(Object3D *obj) {
     IndexListT **polygons = obj->polygon;
     IndexListT *polygon;
     WORD *e = (WORD *)edge;
+    WORD i = 0;
 
     while ((polygon = *polygons++)) {
       WORD *vertex = polygon->indices;
@@ -436,29 +442,53 @@ __regargs void CalculateEdges(Object3D *obj) {
         } else {
           *e++ = p1; *e++ = p0;
         }
+        *e++ = i;
 
         p0 = p1;
       }
+
+      i++;
     }
   }
 
   /* Sort the edges lexicographically. */
-  qsort(edge, count, sizeof(EdgeT), EdgeCompare);
+  qsort(edge, count, sizeof(ExtEdgeT), EdgeCompare);
 
   /* Remove duplicate edges. */
   {
-    WORD i, j;
+    WORD edges = 1;
 
-    for (i = 1, j = 0; i < count; i++)
-      if (EdgeCompare(&edge[i], &edge[j]))
-        edge[++j] = edge[i];
+    /* Count unique edges. */
+    {
+      ExtEdgeT *head = edge;
+      ExtEdgeT *next = edge + 1;
+      WORD n = count;
 
-    obj->edge = MemAlloc(sizeof(EdgeT) * j, MEMF_PUBLIC);
-    obj->edges = j;
+      while (--n > 0)
+        if (EdgeCompare(head++, next++))
+          edges++;
+    }
 
-    memcpy(obj->edge, edge, sizeof(EdgeT) * j);
+    Log("Object has %ld edges.\n", (LONG)edges);
 
-    Log("Object has %ld edges.\n", (LONG)j);
+    obj->edge = MemAlloc(sizeof(EdgeT) * edges, MEMF_PUBLIC);
+    obj->edges = edges;
+
+    /* Copy unique edges to the array. */
+    {
+      EdgeT *dst = obj->edge;
+      ExtEdgeT *head = edge;
+      ExtEdgeT *next = edge + 1;
+      WORD n = count;
+
+      while (--n > 0) {
+        if (EdgeCompare(head, next))
+          *dst++ = *(EdgeT *)head;
+        head++; next++;
+      }
+
+      *dst++ = *(EdgeT *)head;
+    }
   }
 
   MemFreeAuto(edge);
