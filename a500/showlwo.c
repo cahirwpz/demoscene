@@ -11,6 +11,7 @@
 #define HEIGHT 256
 #define DEPTH 4
 
+static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
 static PaletteT *palette;
@@ -19,15 +20,15 @@ static UWORD active = 0;
 static CopInsT *bplptr[DEPTH];
 
 static void Load() {
-  // cube = LoadLWO("data/new_2.lwo", SPFlt(80));
   palette = LoadPalette("data/showlwo-pal.ilbm");
-  cube = LoadLWO("data/codi.lwo", SPFlt(256));
-  CalculateEdges(cube);
+  // mesh = LoadLWO("data/new_2.lwo", SPFlt(80));
+  mesh = LoadLWO("data/codi.lwo", SPFlt(256));
+  CalculateEdges(mesh);
 }
 
 static void UnLoad() {
   DeletePalette(palette);
-  DeleteObject3D(cube);
+  DeleteMesh3D(mesh);
 }
 
 static void MakeCopperList(CopListT *cp) {
@@ -39,6 +40,8 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
+  cube = NewObject3D(mesh);
+
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
 
   cp = NewCopList(80);
@@ -50,6 +53,7 @@ static void Init() {
 static void Kill() {
   DeleteCopList(cp);
   DeleteBitmap(screen);
+  DeleteObject3D(cube);
 }
 
 #define MULVERTEX1(D, E) {               \
@@ -68,9 +72,11 @@ static void Kill() {
   D = normfx(t0 * t1 + t2 - x * y) + t3; \
 }
 
-static __regargs void Transform3D_2(Matrix3D *M, Point3D *out, Point3D *in, WORD n) {
-  WORD *src = (WORD *)in;
-  WORD *dst = (WORD *)out;
+static __regargs void CustomTransform3D(Object3D *object) {
+  Matrix3D *M = &object->world;
+  WORD *src = (WORD *)object->mesh->vertex;
+  WORD *dst = (WORD *)object->point;
+  WORD n = object->mesh->vertices;
   LONG m0, m1;
 
   M->x -= normfx(M->m00 * M->m01);
@@ -105,14 +111,13 @@ static __regargs void Transform3D_2(Matrix3D *M, Point3D *out, Point3D *in, WORD
 
     *dst++ = div16(xp, zp) + WIDTH / 2;  /* div(xp * 256, zp) */
     *dst++ = div16(yp, zp) + HEIGHT / 2; /* div(yp * 256, zp) */
-    dst++;
   } while (--n > 0);
 }
 
 __regargs static void DrawObject(Object3D *object) {
-  Point3D *point = object->cameraPoint;
-  WORD *edge = (WORD *)object->edge;
-  WORD edges = object->edges;
+  Point2D *point = object->point;
+  WORD *edge = (WORD *)object->mesh->edge;
+  WORD edges = object->mesh->edges;
   APTR start = screen->planes[active];
 
   custom->bltafwm = -1;
@@ -123,8 +128,8 @@ __regargs static void DrawObject(Object3D *object) {
   custom->bltdmod = WIDTH / 8;
 
   while (--edges >= 0) {
-    WORD *p0 = (APTR)point + *edge++;
-    WORD *p1 = (APTR)point + *edge++;
+    WORD *p0 = (WORD *)&point[*edge++];
+    WORD *p1 = (WORD *)&point[*edge++];
     WORD x0 = *p0++, y0 = *p0++;
     WORD x1 = *p1++, y1 = *p1++;
 
@@ -184,8 +189,6 @@ __regargs static void DrawObject(Object3D *object) {
 static Point3D rotate = { 0, 0, 0 };
 
 static void Render() {
-  Matrix3D t;
-
   rotate.x += 16;
   rotate.y += 16;
   rotate.z += 16;
@@ -194,9 +197,9 @@ static void Render() {
 
   {
     // LONG lines = ReadLineCounter();
-    LoadRotate3D(&t, rotate.x, rotate.y, rotate.z);
-    Translate3D(&t, 0, 0, fx4i(-250));
-    Transform3D_2(&t, cube->cameraPoint, cube->vertex, cube->vertices);
+    LoadRotate3D(&cube->world, rotate.x, rotate.y, rotate.z);
+    Translate3D(&cube->world, 0, 0, fx4i(-250));
+    CustomTransform3D(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
 

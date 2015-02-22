@@ -3,8 +3,7 @@
 
 #include "2d.h"
 
-#define PF_NEAR 16
-#define PF_FAR  32
+/* 3D transformations */
 
 typedef struct {
   WORD x, y, z;
@@ -16,11 +15,6 @@ typedef struct {
   WORD m20, m21, m22, z;
 } Matrix3D;
 
-typedef struct {
-  WORD near;
-  WORD far;
-} Frustum3D;
-
 __regargs void LoadIdentity3D(Matrix3D *M);
 __regargs void Translate3D(Matrix3D *M, WORD x, WORD y, WORD z);
 __regargs void Scale3D(Matrix3D *M, WORD sx, WORD sy, WORD sz);
@@ -28,11 +22,23 @@ __regargs void LoadRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az);
 __regargs void Rotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az);
 __regargs void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, WORD n);
 
+/* 3D polygon and line clipping */
+
+#define PF_NEAR 16
+#define PF_FAR  32
+
+typedef struct {
+  WORD near;
+  WORD far;
+} Frustum3D;
+
 extern Frustum3D ClipFrustum;
 
 __regargs void PointsInsideFrustum(Point3D *in, UBYTE *flags, UWORD n);
 __regargs UWORD ClipPolygon3D(Point3D *in, Point3D **outp, UWORD n,
                               UWORD clipFlags);
+
+/* 3D mesh representation */
 
 typedef struct {
   WORD vertices;
@@ -40,28 +46,34 @@ typedef struct {
   WORD edges;
 
   Point3D *vertex;
-  Point3D *cameraPoint;
-  Point2D *screenPoint;
-  BYTE *vertexFlags;
-
-  Point3D *polygonNormal;
-  BYTE *polygonFlags;
-
   EdgeT *edge;
+  IndexListT **face;       /* { #face => [#vertex] } */
+  WORD *faceData;
+  IndexListT **vertexFace; /* { #vertex => [#face] } */
+  WORD *vertexFaceData;
+} Mesh3D;
 
-  IndexListT **polygon;       /* { #face => [#vertex] } */
-  WORD *polygonData;
-  IndexListT **vertexPolygon; /* { #vertex => [#face] } */
-  WORD *vertexPolygonData;
+__regargs Mesh3D *NewMesh3D(WORD vertices, WORD faces);
+__regargs void DeleteMesh3D(Mesh3D *mesh);
+__regargs void CalculateEdges(Mesh3D *mesh);
+__regargs void CalculateVertexFaceMap(Mesh3D *mesh);
+__regargs Mesh3D *LoadLWO(char *filename, FLOAT scale);
+
+/* 3D object representation */
+
+typedef struct {
+  Matrix3D world;
+  Mesh3D *mesh;
+
+  Point3D *vertex;     /* camera coordinates */
+  BYTE *vertexFlags;   /* used by clipping */
+  Point2D *point;      /* screen coordinates */
+  Point3D *faceNormal; /* for back-face culling and lighting */
+  BYTE *faceFlags;     /* e.g. visiblity flags */
 } Object3D;
 
-__regargs Object3D *NewObject3D(WORD vertices, WORD faces);
+__regargs Object3D *NewObject3D(Mesh3D *mesh);
 __regargs void DeleteObject3D(Object3D *object);
-__regargs Object3D *LoadLWO(char *filename, FLOAT scale);
-
-__regargs void UpdatePolygonNormals(Object3D *object);
-__regargs void NormalizePolygonNormals(Object3D *object);
-__regargs void CalculateEdges(Object3D *object);
-__regargs void CalculateVertexPolygonMap(Object3D *object);
+__regargs void UpdateFaceNormals(Object3D *object);
 
 #endif

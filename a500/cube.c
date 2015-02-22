@@ -9,6 +9,7 @@
 #define HEIGHT 256
 #define DEPTH  1
 
+static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
@@ -16,12 +17,12 @@ static BitmapT *screen[2];
 static UWORD active = 0;
 
 static void Load() {
-  cube = LoadLWO("data/codi.lwo", SPFlt(256));
-  CalculateVertexPolygonMap(cube);
+  mesh = LoadLWO("data/codi.lwo", SPFlt(256));
+  CalculateVertexFaceMap(mesh);
 }
 
 static void UnLoad() {
-  DeleteObject3D(cube);
+  DeleteMesh3D(mesh);
 }
 
 static void MakeCopperList(CopListT *cp) {
@@ -34,6 +35,8 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
+  cube = NewObject3D(mesh);
+
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
@@ -47,6 +50,7 @@ static void Kill() {
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
   DeleteCopList(cp);
+  DeleteObject3D(cube);
 }
 
 static inline void DrawLine(APTR start, Point2D *p0, Point2D *p1) {
@@ -107,18 +111,18 @@ static inline void DrawLine(APTR start, Point2D *p0, Point2D *p1) {
   }
 }
 
-static void UpdatePolygonNormals2(Object3D *object) {
-  Point3D *point = object->cameraPoint;
-  UBYTE *flags = object->polygonFlags;
-  IndexListT **polygons = object->polygon;
-  IndexListT *polygon;
+static void UpdateFaceNormalsCustom(Object3D *object) {
+  Point3D *vertex = object->vertex;
+  UBYTE *flags = object->faceFlags;
+  IndexListT **faces = object->mesh->face;
+  IndexListT *face;
 
-  while ((polygon = *polygons++)) {
-    WORD *v = polygon->indices;
+  while ((face = *faces++)) {
+    WORD *v = face->indices;
 
-    WORD *p1 = (WORD *)&point[*v++];
-    WORD *p2 = (WORD *)&point[*v++];
-    WORD *p3 = (WORD *)&point[*v++];
+    WORD *p1 = (WORD *)&vertex[*v++];
+    WORD *p2 = (WORD *)&vertex[*v++];
+    WORD *p3 = (WORD *)&vertex[*v++];
     WORD *p0 = p1;
 
     WORD ax, ay, az, bx, by, bz;
@@ -137,19 +141,19 @@ static void UpdatePolygonNormals2(Object3D *object) {
 }
 
 static __regargs void PerspectiveProjection(Object3D *object) {
-  WORD *src = (WORD *)object->cameraPoint;
-  WORD *dst = (WORD *)object->screenPoint;
-  IndexListT **vertexPolygons = object->vertexPolygon;
-  UBYTE *flags = object->polygonFlags;
-  WORD n = object->vertices;
+  WORD *src = (WORD *)object->vertex;
+  WORD *dst = (WORD *)object->point;
+  IndexListT **vertexFaces = object->mesh->vertexFace;
+  UBYTE *faceFlags = object->faceFlags;
+  WORD n = object->mesh->vertices;
 
   do {
-    IndexListT *vp = *vertexPolygons++;
-    WORD count = vp->count - 1;
-    WORD *index = vp->indices;
+    IndexListT *vf = *vertexFaces++;
+    WORD count = vf->count - 1;
+    WORD *index = vf->indices;
 
     do {
-      if (flags[*index++]) {
+      if (faceFlags[*index++]) {
         WORD x = *src++;
         WORD y = *src++;
         WORD z = *src++;
@@ -168,15 +172,15 @@ end:
 }
 
 static __regargs void DrawObject(Object3D *object, APTR start) {
-  IndexListT **polygons = object->polygon;
-  IndexListT *polygon;
-  UBYTE *flags = object->polygonFlags;
-  Point2D *point = object->screenPoint;
+  IndexListT **faces = object->mesh->face;
+  IndexListT *face;
+  UBYTE *faceFlags = object->faceFlags;
+  Point2D *point = object->point;
 
-  while ((polygon = *polygons++)) {
-    if (*flags++) {
-      WORD *index = polygon->indices;
-      WORD n = polygon->count;
+  while ((face = *faces++)) {
+    if (*faceFlags++) {
+      WORD *index = face->indices;
+      WORD n = face->count;
       Point2D *p0 = &point[index[n - 1]];
       Point2D *p1;
 
@@ -191,16 +195,15 @@ static __regargs void DrawObject(Object3D *object, APTR start) {
 
 static void Render() {
   LONG a = ReadFrameCounter() * 8;
-  Matrix3D t;
 
   BlitterClearSync(screen[active], 0);
 
   {
     // LONG lines = ReadLineCounter();
-    LoadRotate3D(&t, a, a, a);
-    Translate3D(&t, 0, 0, fx4i(-250));
-    Transform3D(&t, cube->cameraPoint, cube->vertex, cube->vertices);
-    UpdatePolygonNormals2(cube);
+    LoadRotate3D(&cube->world, a, a, a);
+    Translate3D(&cube->world, 0, 0, fx4i(-250));
+    Transform3D(&cube->world, cube->vertex, cube->mesh->vertex, cube->mesh->vertices);
+    UpdateFaceNormalsCustom(cube);
     PerspectiveProjection(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }

@@ -8,8 +8,8 @@
 #define ID_PNTS MAKE_ID('P', 'N', 'T', 'S')
 #define ID_POLS MAKE_ID('P', 'O', 'L', 'S')
 
-__regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
-  Object3D *obj = NULL;
+__regargs Mesh3D *LoadLWO(char *filename, FLOAT scale) {
+  Mesh3D *mesh = NULL;
   IffFileT iff;
 
   scale = SPMul(scale, SPFlt(16));
@@ -42,9 +42,9 @@ __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
       }
 
       {
-        WORD points = pntsLength / 12;
-        WORD polygons = 0;
-        WORD polygonDataSize = 0;
+        WORD vertices = pntsLength / 12;
+        WORD faces = 0;
+        WORD faceDataSize = 0;
 
         /* Count polygons and space they use. */
         {
@@ -53,35 +53,34 @@ __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
           if (iff.header.type == ID_LWOB) {
             WORD *data = pols;
 
-            for (; data < end; polygons++) {
+            for (; data < end; faces++) {
               WORD count = *data++;
-              polygonDataSize += count + 1;
+              faceDataSize += count + 1;
               data += count + 1;
             }
           } else {
             WORD *data = pols + 2;
 
-            for (; data < end; polygons++) {
+            for (; data < end; faces++) {
               WORD count = *data++;
-              polygonDataSize += count + 1;
+              faceDataSize += count + 1;
               data += count;
             }
           }
         }
 
-        Log("File '%s' has %ld points and %ld polygons.\n", 
-            filename, (LONG)points, (LONG)polygons);
+        Log("File '%s' has %ld vertices and %ld faces.\n", 
+            filename, (LONG)vertices, (LONG)faces);
 
-        obj = NewObject3D(points, polygons);
-        obj->polygonData = 
-          MemAllocAuto(sizeof(WORD) * polygonDataSize, MEMF_PUBLIC);
+        mesh = NewMesh3D(vertices, faces);
+        mesh->faceData = MemAllocAuto(sizeof(WORD) * faceDataSize, MEMF_PUBLIC);
 
-        /* Process points. */
+        /* Process vertices. */
         {
           FLOAT *src = pnts;
-          WORD *dst = (WORD *)obj->vertex;
+          WORD *dst = (WORD *)mesh->vertex;
 
-          while (--points >= 0) {
+          while (--vertices >= 0) {
             *dst++ = SPFix(SPMul(SPFieee(*src++), scale));
             *dst++ = SPFix(SPMul(SPFieee(*src++), scale));
             *dst++ = SPFix(SPMul(SPFieee(*src++), scale));
@@ -92,8 +91,8 @@ __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
 
         /* Process polygons. */
         {
-          IndexListT **polygon = obj->polygon;
-          WORD *polygonData = obj->polygonData;
+          IndexListT **face = mesh->face;
+          WORD *faceData = mesh->faceData;
           WORD *end = (APTR)pols + polsLength;
           WORD j = 0, p = 0;
 
@@ -102,10 +101,10 @@ __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
 
             while (data < end) {
               WORD count = *data++;
-              polygon[p++] = (IndexListT *)&obj->polygonData[j];
-              polygonData[j++] = count;
+              face[p++] = (IndexListT *)&mesh->faceData[j];
+              faceData[j++] = count;
               while (--count >= 0)
-                polygonData[j++] = *data++;
+                faceData[j++] = *data++;
               data++;
             }
           } else {
@@ -113,10 +112,10 @@ __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
 
             while (data < end) {
               WORD count = *data++;
-              polygon[p++] = (IndexListT *)&obj->polygonData[j];
-              polygonData[j++] = count;
+              face[p++] = (IndexListT *)&mesh->faceData[j];
+              faceData[j++] = count;
               while (--count >= 0)
-                polygonData[j++] = *data++;
+                faceData[j++] = *data++;
             }
           }
 
@@ -128,5 +127,5 @@ __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
     CloseIff(&iff);
   }
 
-  return obj;
+  return mesh;
 }
