@@ -196,7 +196,7 @@ static void Render() {
     // LONG lines = ReadLineCounter();
     LoadRotate3D(&t, rotate.x, rotate.y, rotate.z);
     Translate3D(&t, 0, 0, fx4i(-250));
-    Transform3D_2(&t, cube->cameraPoint, cube->point, cube->points);
+    Transform3D_2(&t, cube->cameraPoint, cube->vertex, cube->vertices);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
 

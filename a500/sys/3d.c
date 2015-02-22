@@ -315,35 +315,35 @@ __regargs UWORD ClipPolygon3D(Point3D *in, Point3D **outp, UWORD n,
   return n;
 }
 
-__regargs Object3D *NewObject3D(UWORD points, UWORD polygons) {
+__regargs Object3D *NewObject3D(WORD vertices, WORD faces) {
   Object3D *object = MemAlloc(sizeof(Object3D), MEMF_PUBLIC|MEMF_CLEAR);
 
-  object->points = points;
-  object->polygons = polygons;
+  object->vertices = vertices;
+  object->faces = faces;
 
-  object->point = MemAlloc(sizeof(Point3D) * points, MEMF_PUBLIC);
-  object->cameraPoint = MemAlloc(sizeof(Point3D) * points, MEMF_PUBLIC);
-  object->screenPoint = MemAlloc(sizeof(Point2D) * points, MEMF_PUBLIC);
-  object->pointFlags = MemAlloc(points, MEMF_PUBLIC);
-  object->polygon = MemAlloc(sizeof(IndexListT *) * (polygons + 1), MEMF_PUBLIC|MEMF_CLEAR);
-  object->polygonNormal = MemAlloc(sizeof(Point3D) * polygons, MEMF_PUBLIC);
-  object->polygonFlags = MemAlloc(polygons, MEMF_PUBLIC);
+  object->vertex = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
+  object->vertexFlags = MemAlloc(vertices, MEMF_PUBLIC);
+  object->cameraPoint = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
+  object->screenPoint = MemAlloc(sizeof(Point2D) * vertices, MEMF_PUBLIC);
+  object->polygon = MemAlloc(sizeof(IndexListT *) * (faces + 1), MEMF_PUBLIC|MEMF_CLEAR);
+  object->polygonNormal = MemAlloc(sizeof(Point3D) * faces, MEMF_PUBLIC);
+  object->polygonFlags = MemAlloc(faces, MEMF_PUBLIC);
 
   return object;
 }
 
 __regargs void DeleteObject3D(Object3D *object) {
-  MemFreeAuto(object->polygonData);
   MemFree(object->edge, sizeof(EdgeT) * object->edges);
-  MemFree(object->vertexPolygon, sizeof(IndexListT *) * (object->points + 1));
   MemFreeAuto(object->vertexPolygonData);
-  MemFree(object->polygonFlags, object->polygons);
-  MemFree(object->polygonNormal, sizeof(Point3D) * object->polygons);
-  MemFree(object->polygon, sizeof(IndexListT *) * (object->polygons + 1));
-  MemFree(object->pointFlags, object->points);
-  MemFree(object->screenPoint, sizeof(Point2D) * object->points);
-  MemFree(object->cameraPoint, sizeof(Point3D) * object->points);
-  MemFree(object->point, sizeof(Point3D) * object->points);
+  MemFree(object->vertexPolygon, sizeof(IndexListT *) * (object->vertices + 1));
+  MemFree(object->polygonFlags, object->faces);
+  MemFree(object->polygonNormal, sizeof(Point3D) * object->faces);
+  MemFreeAuto(object->polygonData);
+  MemFree(object->polygon, sizeof(IndexListT *) * (object->faces + 1));
+  MemFree(object->screenPoint, sizeof(Point2D) * object->vertices);
+  MemFree(object->cameraPoint, sizeof(Point3D) * object->vertices);
+  MemFree(object->vertexFlags, object->vertices);
+  MemFree(object->vertex, sizeof(Point3D) * object->vertices);
   MemFree(object, sizeof(Object3D));
 }
 
@@ -407,12 +407,14 @@ static __regargs LONG EdgeCompare(APTR a, APTR b) {
 
 __regargs void CalculateEdges(Object3D *obj) {
   ExtEdgeT *edge;
-  WORD count = 0;
+  WORD count, edges;
 
   /* Count edges. */
   {
     IndexListT **polygons = obj->polygon;
     IndexListT *polygon;
+
+    count = 0;
 
     while ((polygon = *polygons++))
       count += polygon->count;
@@ -454,41 +456,38 @@ __regargs void CalculateEdges(Object3D *obj) {
   /* Sort the edges lexicographically. */
   qsort(edge, count, sizeof(ExtEdgeT), EdgeCompare);
 
-  /* Remove duplicate edges. */
+  /* Count unique edges. */
   {
-    WORD edges = 1;
+    ExtEdgeT *head = edge;
+    ExtEdgeT *next = edge + 1;
+    WORD n = count;
 
-    /* Count unique edges. */
-    {
-      ExtEdgeT *head = edge;
-      ExtEdgeT *next = edge + 1;
-      WORD n = count;
+    edges = 1;
 
-      while (--n > 0)
-        if (EdgeCompare(head++, next++))
-          edges++;
+    while (--n > 0)
+      if (EdgeCompare(head++, next++))
+        edges++;
+  }
+
+  Log("Object has %ld edges.\n", (LONG)edges);
+
+  obj->edge = MemAlloc(sizeof(EdgeT) * edges, MEMF_PUBLIC);
+  obj->edges = edges;
+
+  /* Copy unique edges to the array. */
+  {
+    EdgeT *dst = obj->edge;
+    ExtEdgeT *head = edge;
+    ExtEdgeT *next = edge + 1;
+    WORD n = count;
+
+    while (--n > 0) {
+      if (EdgeCompare(head, next))
+        *dst++ = *(EdgeT *)head;
+      head++; next++;
     }
 
-    Log("Object has %ld edges.\n", (LONG)edges);
-
-    obj->edge = MemAlloc(sizeof(EdgeT) * edges, MEMF_PUBLIC);
-    obj->edges = edges;
-
-    /* Copy unique edges to the array. */
-    {
-      EdgeT *dst = obj->edge;
-      ExtEdgeT *head = edge;
-      ExtEdgeT *next = edge + 1;
-      WORD n = count;
-
-      while (--n > 0) {
-        if (EdgeCompare(head, next))
-          *dst++ = *(EdgeT *)head;
-        head++; next++;
-      }
-
-      *dst++ = *(EdgeT *)head;
-    }
+    *dst++ = *(EdgeT *)head;
   }
 
   MemFreeAuto(edge);
@@ -500,7 +499,8 @@ __regargs void CalculateEdges(Object3D *obj) {
  * vertices, so this procedure calculates a reverse map.
  */
 __regargs void CalculateVertexPolygonMap(Object3D *obj) {
-  WORD *polygonCount = MemAlloc(sizeof(WORD) * obj->points, MEMF_PUBLIC|MEMF_CLEAR);
+  WORD *polygonCount = MemAlloc(sizeof(WORD) * obj->vertices,
+                                MEMF_PUBLIC|MEMF_CLEAR);
 
   /* 
    * Count the size of the { vertex => polygon } map and for each vertex a
@@ -522,10 +522,12 @@ __regargs void CalculateVertexPolygonMap(Object3D *obj) {
       }
     }
 
-    count += obj->points;
+    count += obj->vertices;
 
-    obj->vertexPolygon = MemAlloc(sizeof(IndexListT *) * (obj->points + 1), MEMF_PUBLIC|MEMF_CLEAR);
-    obj->vertexPolygonData = MemAllocAuto(sizeof(WORD) * count, MEMF_PUBLIC|MEMF_CLEAR);
+    obj->vertexPolygon = MemAlloc(sizeof(IndexListT *) * (obj->vertices + 1),
+                                  MEMF_PUBLIC|MEMF_CLEAR);
+    obj->vertexPolygonData = MemAllocAuto(sizeof(WORD) * count,
+                                          MEMF_PUBLIC|MEMF_CLEAR);
   }
 
   /* Set up map pointers. */
@@ -533,7 +535,7 @@ __regargs void CalculateVertexPolygonMap(Object3D *obj) {
     IndexListT **vertexPolygons = obj->vertexPolygon;
     WORD *data = obj->vertexPolygonData;
     WORD *count = polygonCount;
-    WORD n = obj->points;
+    WORD n = obj->vertices;
 
     while (--n >= 0) {
       *vertexPolygons++ = (IndexListT *)data;
@@ -541,7 +543,7 @@ __regargs void CalculateVertexPolygonMap(Object3D *obj) {
     }
   }
 
-  MemFree(polygonCount, sizeof(WORD) * obj->points);
+  MemFree(polygonCount, sizeof(WORD) * obj->vertices);
 
   /* Finally, fill in the map. */
   {

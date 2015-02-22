@@ -79,7 +79,7 @@ __regargs Object3D *LoadLWO(char *filename, FLOAT scale) {
         /* Process points. */
         {
           FLOAT *src = pnts;
-          WORD *dst = (WORD *)obj->point;
+          WORD *dst = (WORD *)obj->vertex;
 
           while (--points >= 0) {
             *dst++ = SPFix(SPMul(SPFieee(*src++), scale));

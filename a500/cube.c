@@ -141,7 +141,7 @@ static __regargs void PerspectiveProjection(Object3D *object) {
   WORD *dst = (WORD *)object->screenPoint;
   IndexListT **vertexPolygons = object->vertexPolygon;
   UBYTE *flags = object->polygonFlags;
-  WORD n = object->points;
+  WORD n = object->vertices;
 
   do {
     IndexListT *vp = *vertexPolygons++;
@@ -199,7 +199,7 @@ static void Render() {
     // LONG lines = ReadLineCounter();
     LoadRotate3D(&t, a, a, a);
     Translate3D(&t, 0, 0, fx4i(-250));
-    Transform3D(&t, cube->cameraPoint, cube->point, cube->points);
+    Transform3D(&t, cube->cameraPoint, cube->vertex, cube->vertices);
     UpdatePolygonNormals2(cube);
     PerspectiveProjection(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
