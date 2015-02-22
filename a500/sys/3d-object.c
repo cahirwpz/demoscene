@@ -8,6 +8,7 @@ __regargs Object3D *NewObject3D(Mesh3D *mesh) {
   Object3D *object = MemAlloc(sizeof(Object3D), MEMF_PUBLIC|MEMF_CLEAR);
   WORD vertices = mesh->vertices;
   WORD faces = mesh->faces;
+  WORD edges = mesh->edges;
 
   object->mesh = mesh;
   object->vertex = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
@@ -15,6 +16,7 @@ __regargs Object3D *NewObject3D(Mesh3D *mesh) {
   object->point = MemAlloc(sizeof(Point2D) * vertices, MEMF_PUBLIC);
   object->faceNormal = MemAlloc(sizeof(Point3D) * faces, MEMF_PUBLIC);
   object->faceFlags = MemAlloc(faces, MEMF_PUBLIC);
+  object->edgeFlags = MemAlloc(edges, MEMF_PUBLIC);
 
   return object;
 }
@@ -22,7 +24,9 @@ __regargs Object3D *NewObject3D(Mesh3D *mesh) {
 __regargs void DeleteObject3D(Object3D *object) {
   WORD vertices = object->mesh->vertices;
   WORD faces = object->mesh->faces;
+  WORD edges = object->mesh->edges;
 
+  MemFree(object->edgeFlags, edges);
   MemFree(object->faceFlags, faces);
   MemFree(object->faceNormal, sizeof(Point3D) * faces);
   MemFree(object->point, sizeof(Point2D) * vertices);

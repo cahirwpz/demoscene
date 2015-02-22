@@ -21,6 +21,7 @@ static void Load() {
   // mesh = LoadLWO("data/new_2.lwo", SPFlt(80));
   CalculateVertexFaceMap(mesh);
   CalculateFaceNormals(mesh);
+  CalculateEdges(mesh);
 }
 
 static void UnLoad() {
@@ -55,76 +56,21 @@ static void Kill() {
   DeleteObject3D(cube);
 }
 
-static inline void DrawLine(APTR start, Point2D *p0, Point2D *p1) {
-  WORD x0, y0, x1, y1;
-
-  if (p0->y > p1->y)
-    swapr(p0, p1);
-
-  x0 = p0->x;
-  y0 = p0->y;
-  x1 = p1->x;
-  y1 = p1->y;
-
-  {
-    APTR data = start + (((y0 << 5) + (x0 >> 3)) & ~1);
-    WORD dmax = x1 - x0;
-    WORD dmin = y1 - y0;
-    WORD derr;
-    UWORD bltcon1 = LINE_SOLID;
-
-    if (dmax < 0)
-      dmax = -dmax;
-
-    if (dmax >= dmin) {
-      if (x0 >= x1)
-        bltcon1 |= (AUL | SUD);
-      else
-        bltcon1 |= SUD;
-    } else {
-      if (x0 >= x1)
-        bltcon1 |= SUL;
-      swapr(dmax, dmin);
-    }
-
-    derr = 2 * dmin - dmax;
-    if (derr < 0)
-      bltcon1 |= SIGNFLAG;
-    bltcon1 |= rorw(x0 & 15, 4);
-
-    {
-      UWORD bltcon0 = rorw(x0 & 15, 4) | LINE_OR;
-      UWORD bltamod = derr - dmax;
-      UWORD bltbmod = 2 * dmin;
-      UWORD bltsize = (dmax << 6) + 66;
-      APTR bltapt = (APTR)(LONG)derr;
-
-      WaitBlitter();
-
-      custom->bltcon0 = bltcon0;
-      custom->bltcon1 = bltcon1;
-      custom->bltamod = bltamod;
-      custom->bltbmod = bltbmod;
-      custom->bltapt = bltapt;
-      custom->bltcpt = data;
-      custom->bltdpt = data;
-      custom->bltsize = bltsize;
-    }
-  }
-}
-
 static __regargs void UpdateFaceVisibility(Object3D *object) {
   WORD *src = (WORD *)object->mesh->faceNormal;
   BYTE *vertexFlags = object->vertexFlags;
-  BYTE *faceFlags = object->faceFlags;
+  BYTE *edgeFlags = object->edgeFlags;
   IndexListT **faces = object->mesh->face;
   IndexListT *face = *faces++;
+  IndexListT **faceEdges = object->mesh->faceEdge;
+  IndexListT *faceEdge = *faceEdges++;
 
   WORD m20 = object->world.m20;
   WORD m21 = object->world.m21;
   WORD m22 = object->world.m22;
 
   memset(vertexFlags, 0, object->mesh->vertices);
+  memset(edgeFlags, 0, object->mesh->edges);
 
   do {
     WORD x = *src++;
@@ -132,16 +78,26 @@ static __regargs void UpdateFaceVisibility(Object3D *object) {
     WORD z = *src++;
     BYTE visible = (m20 * x + m21 * y + m22 * z >= 0) ? -1 : 0;
 
-    *faceFlags++ = visible;
-
     if (visible) {
-      WORD n = face->count - 1;
-      WORD *index = face->indices;
-      
-      do {
-        vertexFlags[*index++] = -1;
-      } while (--n != -1);
+      WORD n = face->count - 3;
+      WORD *vi = face->indices;
+      WORD *ei = faceEdge->indices;
+
+      /* Face has at least (and usually) three vertices / edges. */
+      vertexFlags[*vi++] = -1;
+      edgeFlags[*ei++]++;
+      vertexFlags[*vi++] = -1;
+      edgeFlags[*ei++]++;
+      vertexFlags[*vi++] = -1;
+      edgeFlags[*ei++]++;
+
+      while (--n >= 0) {
+        vertexFlags[*vi++] = -1;
+        edgeFlags[*ei++]++;
+      }
     }
+
+    faceEdge = *faceEdges++;
   } while ((face = *faces++));
 }
 
@@ -212,25 +168,80 @@ static __regargs void CustomTransform3D(Object3D *object) {
 }
 
 static __regargs void DrawObject(Object3D *object, APTR start) {
-  IndexListT **faces = object->mesh->face;
-  IndexListT *face;
-  UBYTE *faceFlags = object->faceFlags;
+  WORD *edge = (WORD *)object->mesh->edge;
+  BYTE *edgeFlags = object->edgeFlags;
   Point2D *point = object->point;
+  WORD n = object->mesh->edges;
 
-  while ((face = *faces++)) {
-    if (*faceFlags++) {
-      WORD *index = face->indices;
-      WORD n = face->count;
-      Point2D *p0 = &point[index[n - 1]];
-      Point2D *p1;
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+  custom->bltadat = 0x8000;
+  custom->bltbdat = 0xffff; /* Line texture pattern. */
+  custom->bltcmod = WIDTH / 8;
+  custom->bltdmod = WIDTH / 8;
 
-      while (--n >= 0) {
-        p1 = &point[*index++];
-        DrawLine(start, p0, p1);
-        p0 = p1; 
+  do {
+    if (*edgeFlags++ > 0) {
+      WORD *p0 = (APTR)point + *edge++;
+      WORD *p1 = (APTR)point + *edge++;
+
+      WORD x0 = *p0++, y0 = *p0++;
+      WORD x1 = *p1++, y1 = *p1++;
+
+      if (y0 > y1) {
+        swapr(x0, x1);
+        swapr(y0, y1);
       }
+
+      {
+        APTR data = start + (((y0 << 5) + (x0 >> 3)) & ~1);
+        WORD dmax = x1 - x0;
+        WORD dmin = y1 - y0;
+        WORD derr;
+        UWORD bltcon1 = LINE_SOLID;
+
+        if (dmax < 0)
+          dmax = -dmax;
+
+        if (dmax >= dmin) {
+          if (x0 >= x1)
+            bltcon1 |= (AUL | SUD);
+          else
+            bltcon1 |= SUD;
+        } else {
+          if (x0 >= x1)
+            bltcon1 |= SUL;
+          swapr(dmax, dmin);
+        }
+
+        derr = 2 * dmin - dmax;
+        if (derr < 0)
+          bltcon1 |= SIGNFLAG;
+        bltcon1 |= rorw(x0 & 15, 4);
+
+        {
+          UWORD bltcon0 = rorw(x0 & 15, 4) | LINE_OR;
+          UWORD bltamod = derr - dmax;
+          UWORD bltbmod = 2 * dmin;
+          UWORD bltsize = (dmax << 6) + 66;
+          APTR bltapt = (APTR)(LONG)derr;
+
+          WaitBlitter();
+
+          custom->bltcon0 = bltcon0;
+          custom->bltcon1 = bltcon1;
+          custom->bltamod = bltamod;
+          custom->bltbmod = bltbmod;
+          custom->bltapt = bltapt;
+          custom->bltcpt = data;
+          custom->bltdpt = data;
+          custom->bltsize = bltsize;
+        }
+      }
+    } else {
+      edge += 2;
     }
-  }
+  } while (--n > 0);
 }
 
 static void Render() {
@@ -246,13 +257,6 @@ static void Render() {
     CustomTransform3D(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
-
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
-  custom->bltadat = 0x8000;
-  custom->bltbdat = 0xffff; /* Line texture pattern. */
-  custom->bltcmod = WIDTH / 8;
-  custom->bltdmod = WIDTH / 8;
 
   {
     // LONG lines = ReadLineCounter();

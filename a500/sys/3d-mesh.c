@@ -24,6 +24,8 @@ __regargs void DeleteMesh3D(Mesh3D *mesh) {
   MemFreeAuto(mesh->vertexFaceData);
   MemFree(mesh->vertexFace, sizeof(IndexListT *) * (vertices + 1));
   MemFree(mesh->faceNormal, sizeof(Point3D) * faces);
+  MemFreeAuto(mesh->faceEdgeData);
+  MemFree(mesh->faceEdge, sizeof(IndexListT *) * (faces + 1));
   MemFreeAuto(mesh->faceData);
   MemFree(mesh->face, sizeof(IndexListT *) * (faces + 1));
   MemFree(mesh->edge, sizeof(EdgeT) * edges);
@@ -33,7 +35,7 @@ __regargs void DeleteMesh3D(Mesh3D *mesh) {
 
 typedef struct ExtEdge {
   WORD p0, p1;
-  WORD poly;
+  WORD face, edge;
 } ExtEdgeT;
 
 static __regargs LONG EdgeCompare(APTR a, APTR b) {
@@ -80,19 +82,20 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
     while ((face = *faces++)) {
       WORD *vertex = face->indices;
       WORD n = face->count;
-      WORD p0 = vertex[n-1];
+      WORD p0 = vertex[n-1] * sizeof(Point2D);
       WORD p1;
 
       while (--n >= 0) {
-        p1 = *vertex++;
+        p1 = *vertex++ * sizeof(Point2D);
 
         /* Make sure lower index is first. */
         if (p0 > p1) {
-          *e++ = p0; *e++ = p1;
-        } else {
           *e++ = p1; *e++ = p0;
+        } else {
+          *e++ = p0; *e++ = p1;
         }
         *e++ = i;
+        *e++ = 0;
 
         p0 = p1;
       }
@@ -110,11 +113,16 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
     ExtEdgeT *next = edge + 1;
     WORD n = count;
 
-    edges = 1;
+    edges = 0;
+    head->edge = 0;
 
-    while (--n > 0)
+    while (--n > 0) {
       if (EdgeCompare(head++, next++))
         edges++;
+      head->edge = edges;
+    }
+
+    edges++;
   }
 
   Log("Object has %ld edges.\n", (LONG)edges);
@@ -136,6 +144,38 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
     }
 
     *dst++ = *(EdgeT *)head;
+  }
+
+  /* Construct { #face => [#edge] } map. */
+  mesh->faceEdge =
+    MemAlloc(sizeof(IndexListT *) * (mesh->faces + 1), MEMF_PUBLIC|MEMF_CLEAR);
+  mesh->faceEdgeData =
+    MemAllocAuto(sizeof(WORD) * (count + mesh->faces), MEMF_PUBLIC|MEMF_CLEAR);
+
+  /* Set up pointers. */
+  {
+    IndexListT **faceEdges = mesh->faceEdge;
+    WORD *faceEdgeData = mesh->faceEdgeData;
+    IndexListT **faces = mesh->face;
+    IndexListT *face;
+
+    while ((face = *faces++)) {
+      *faceEdges++ = (IndexListT *)faceEdgeData;
+      faceEdgeData += face->count + 1;
+    }
+  }
+
+  /* Fill in the data. */
+  {
+    IndexListT **faceEdges = mesh->faceEdge;
+    ExtEdgeT *e = edge;
+    WORD n = count;
+
+    while (n-- >= 0) {
+      IndexListT *faceEdge = faceEdges[e->face];
+      faceEdge->indices[faceEdge->count++] = e->edge;
+      e++;
+    }
   }
 
   MemFreeAuto(edge);

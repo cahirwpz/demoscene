@@ -50,6 +50,8 @@ typedef struct {
   EdgeT *edge;
   IndexListT **face;       /* { #face => [#vertex] } */
   WORD *faceData;
+  IndexListT **faceEdge;   /* { #face => [#edge] } */
+  WORD *faceEdgeData;
   IndexListT **vertexFace; /* { #vertex => [#face] } */
   WORD *vertexFaceData;
 } Mesh3D;
@@ -72,6 +74,7 @@ typedef struct {
   Point2D *point;      /* screen coordinates */
   Point3D *faceNormal; /* for back-face culling and lighting */
   BYTE *faceFlags;     /* e.g. visiblity flags */
+  BYTE *edgeFlags;
 } Object3D;
 
 __regargs Object3D *NewObject3D(Mesh3D *mesh);

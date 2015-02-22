@@ -128,8 +128,8 @@ __regargs static void DrawObject(Object3D *object) {
   custom->bltdmod = WIDTH / 8;
 
   while (--edges >= 0) {
-    WORD *p0 = (WORD *)&point[*edge++];
-    WORD *p1 = (WORD *)&point[*edge++];
+    WORD *p0 = (APTR)point + *edge++;
+    WORD *p1 = (APTR)point + *edge++;
     WORD x0 = *p0++, y0 = *p0++;
     WORD x1 = *p1++, y1 = *p1++;
 
