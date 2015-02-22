@@ -11,17 +11,23 @@ __regargs Mesh3D *NewMesh3D(WORD vertices, WORD faces) {
 
   mesh->vertex = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
   mesh->face = MemAlloc(sizeof(IndexListT *) * (faces + 1), MEMF_PUBLIC|MEMF_CLEAR);
+  mesh->faceNormal = MemAlloc(sizeof(Point3D) * faces , MEMF_PUBLIC);
 
   return mesh;
 }
 
 __regargs void DeleteMesh3D(Mesh3D *mesh) {
+  WORD vertices = mesh->vertices;
+  WORD faces = mesh->faces;
+  WORD edges = mesh->edges;
+
   MemFreeAuto(mesh->vertexFaceData);
-  MemFree(mesh->vertexFace, sizeof(IndexListT *) * (mesh->vertices + 1));
+  MemFree(mesh->vertexFace, sizeof(IndexListT *) * (vertices + 1));
+  MemFree(mesh->faceNormal, sizeof(Point3D) * faces);
   MemFreeAuto(mesh->faceData);
-  MemFree(mesh->face, sizeof(IndexListT *) * (mesh->faces + 1));
-  MemFree(mesh->edge, sizeof(EdgeT) * mesh->edges);
-  MemFree(mesh->vertex, sizeof(Point3D) * mesh->vertices);
+  MemFree(mesh->face, sizeof(IndexListT *) * (faces + 1));
+  MemFree(mesh->edge, sizeof(EdgeT) * edges);
+  MemFree(mesh->vertex, sizeof(Point3D) * vertices);
   MemFree(mesh, sizeof(Mesh3D));
 }
 
@@ -207,3 +213,57 @@ __regargs void CalculateVertexFaceMap(Mesh3D *mesh) {
     }
   }
 } 
+
+/*
+ * For given triangle T with vertices A, B and C, surface normal N is a cross
+ * product between vectors AB and BC.
+ *
+ * Ordering of vertices in polygon description is meaningful - depending on
+ * that the normal vector will be directed inwards or outwards.
+ *
+ * Clockwise convention is used.
+ */
+
+__regargs void CalculateFaceNormals(Mesh3D *mesh) {
+  Point3D *vertex = mesh->vertex;
+  IndexListT **faces = mesh->face;
+  WORD *normal = (WORD *)mesh->faceNormal;
+  IndexListT *face;
+
+  while ((face = *faces++)) {
+    WORD *v = face->indices;
+
+    Point3D *p1 = &vertex[*v++];
+    Point3D *p2 = &vertex[*v++];
+    Point3D *p3 = &vertex[*v++];
+
+    LONG x, y, z;
+    WORD l;
+
+    {
+      WORD ax = p1->x - p2->x;
+      WORD ay = p1->y - p2->y;
+      WORD az = p1->z - p2->z;
+      WORD bx = p2->x - p3->x;
+      WORD by = p2->y - p3->y;
+      WORD bz = p2->z - p3->z;
+
+      x = ay * bz - by * az;
+      y = az * bx - bz * ax;
+      z = ax * by - bx * ay;
+    }
+
+    {
+      WORD nx = normfx(x);
+      WORD ny = normfx(y);
+      WORD nz = normfx(z);
+
+      l = isqrt(nx * nx + ny * ny + nz * nz);
+    }
+
+    /* Normal vector has a unit length. */
+    *normal++ = div16(x, l);
+    *normal++ = div16(y, l);
+    *normal++ = div16(z, l);
+  }
+}

@@ -19,6 +19,7 @@ static UWORD active = 0;
 static void Load() {
   mesh = LoadLWO("data/codi.lwo", SPFlt(256));
   CalculateVertexFaceMap(mesh);
+  CalculateFaceNormals(mesh);
 }
 
 static void UnLoad() {

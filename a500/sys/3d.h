@@ -46,6 +46,7 @@ typedef struct {
   WORD edges;
 
   Point3D *vertex;
+  Point3D *faceNormal;
   EdgeT *edge;
   IndexListT **face;       /* { #face => [#vertex] } */
   WORD *faceData;
@@ -57,6 +58,7 @@ __regargs Mesh3D *NewMesh3D(WORD vertices, WORD faces);
 __regargs void DeleteMesh3D(Mesh3D *mesh);
 __regargs void CalculateEdges(Mesh3D *mesh);
 __regargs void CalculateVertexFaceMap(Mesh3D *mesh);
+__regargs void CalculateFaceNormals(Mesh3D *mesh);
 __regargs Mesh3D *LoadLWO(char *filename, FLOAT scale);
 
 /* 3D object representation */

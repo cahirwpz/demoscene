@@ -34,4 +34,6 @@ static inline LONG shift12(WORD a) {
 #define fx12f(f) \
   (WORD)((FLOAT)(f) * 4096.0)
 
+__regargs LONG isqrt(LONG x);
+
 #endif
