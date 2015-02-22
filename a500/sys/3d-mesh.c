@@ -121,8 +121,6 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
         edges++;
       head->edge = edges;
     }
-
-    edges++;
   }
 
   Log("Object has %ld edges.\n", (LONG)edges);

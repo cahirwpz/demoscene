@@ -155,7 +155,7 @@ class LWO2(iff.File, LWOParserMixin):
   def readPTAG(self, data):
     tagType = data.read(4)
 
-    assert tagType in ['SURF', 'COLR']
+    assert tagType in ['SURF', 'COLR', 'PART']
 
     tags = []
 

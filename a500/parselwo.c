@@ -22,7 +22,7 @@ struct Library *MathBase;
 #define ID_PNTS MAKE_ID('P', 'N', 'T', 'S')
 #define ID_POLS MAKE_ID('P', 'O', 'L', 'S')
 
-static LONG scale = 500;
+static LONG scale = 1000;
 
 int main() {
   UWORD len = __commandlen;
@@ -50,15 +50,16 @@ int main() {
             {
               FLOAT *pnts = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
               FLOAT s = SPFlt(scale);
+              FLOAT *p = pnts;
               WORD n = iff.chunk.length / 12;
               WORD i;
 
               ReadChunk(&iff, pnts);
 
               for (i = 0; i < n; i++) {
-                LONG x = SPFix(SPMul(SPFieee(pnts[i * 3 + 0]), s));
-                LONG y = SPFix(SPMul(SPFieee(pnts[i * 3 + 1]), s));
-                LONG z = SPFix(SPMul(SPFieee(pnts[i * 3 + 2]), s));
+                LONG x = SPFix(SPMul(SPFieee(*p++), s));
+                LONG y = SPFix(SPMul(SPFieee(*p++), s));
+                LONG z = SPFix(SPMul(SPFieee(*p++), s));
                 Print("%5ld : [%ld %ld %ld]\n", (LONG)i, x, y, z);
               }
 

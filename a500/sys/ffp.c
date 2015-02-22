@@ -10,10 +10,14 @@
 
 FLOAT SPFieee(FLOAT num asm("d0")) {
   ULONG ieee = *(ULONG *)&num;
-  ULONG s = (ieee & IEEESPSign_Mask) >> 24;
-  ULONG e = ((ieee & IEEESPExponent_Mask) >> 23) - 62;
-  ULONG m = ((ieee & IEEESPMantisse_Mask) << 8) | 0x80000000;
-  ULONG ffp = s | e | m;
+  ULONG s, e, m, ffp = 0;
+
+  if (ieee != 0) {
+    s = (ieee & IEEESPSign_Mask) >> 24;
+    e = ((ieee & IEEESPExponent_Mask) >> 23) - 62;
+    m = ((ieee & IEEESPMantisse_Mask) << 8) | 0x80000000;
+    ffp = s | e | m;
+  }
 
   return *(FLOAT *)&ffp;
 }
