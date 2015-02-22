@@ -18,6 +18,7 @@ static UWORD active = 0;
 
 static void Load() {
   mesh = LoadLWO("data/codi.lwo", SPFlt(256));
+  // mesh = LoadLWO("data/new_2.lwo", SPFlt(80));
   CalculateVertexFaceMap(mesh);
   CalculateFaceNormals(mesh);
 }
@@ -112,63 +113,101 @@ static inline void DrawLine(APTR start, Point2D *p0, Point2D *p1) {
   }
 }
 
-static void UpdateFaceNormalsCustom(Object3D *object) {
-  Point3D *vertex = object->vertex;
-  UBYTE *flags = object->faceFlags;
+static __regargs void UpdateFaceVisibility(Object3D *object) {
+  WORD *src = (WORD *)object->mesh->faceNormal;
+  BYTE *vertexFlags = object->vertexFlags;
+  BYTE *faceFlags = object->faceFlags;
   IndexListT **faces = object->mesh->face;
-  IndexListT *face;
+  IndexListT *face = *faces++;
 
-  while ((face = *faces++)) {
-    WORD *v = face->indices;
+  WORD m20 = object->world.m20;
+  WORD m21 = object->world.m21;
+  WORD m22 = object->world.m22;
 
-    WORD *p1 = (WORD *)&vertex[*v++];
-    WORD *p2 = (WORD *)&vertex[*v++];
-    WORD *p3 = (WORD *)&vertex[*v++];
-    WORD *p0 = p1;
-
-    WORD ax, ay, az, bx, by, bz;
-    LONG n;
-
-    ax = *p1++; bx = *p2++; ax -= bx; bx -= *p3++;
-    ay = *p1++; by = *p2++; ay -= by; by -= *p3++;
-    az = *p1++; bz = *p2++; az -= bz; bz -= *p3++;
-
-    n  = normfx(ay * bz - by * az) * (*p0++);
-    n += normfx(az * bx - bz * ax) * (*p0++);
-    n += normfx(ax * by - bx * ay) * (*p0++);
-
-    *flags++ = n < 0;
-  }
-}
-
-static __regargs void PerspectiveProjection(Object3D *object) {
-  WORD *src = (WORD *)object->vertex;
-  WORD *dst = (WORD *)object->point;
-  IndexListT **vertexFaces = object->mesh->vertexFace;
-  UBYTE *faceFlags = object->faceFlags;
-  WORD n = object->mesh->vertices;
+  memset(vertexFlags, 0, object->mesh->vertices);
 
   do {
-    IndexListT *vf = *vertexFaces++;
-    WORD count = vf->count - 1;
-    WORD *index = vf->indices;
+    WORD x = *src++;
+    WORD y = *src++;
+    WORD z = *src++;
+    BYTE visible = (m20 * x + m21 * y + m22 * z >= 0) ? -1 : 0;
 
-    do {
-      if (faceFlags[*index++]) {
-        WORD x = *src++;
-        WORD y = *src++;
-        WORD z = *src++;
+    *faceFlags++ = visible;
 
-        *dst++ = div16(x << 8, z) + WIDTH / 2;
-        *dst++ = div16(y << 8, z) + HEIGHT / 2;
+    if (visible) {
+      WORD n = face->count - 1;
+      WORD *index = face->indices;
+      
+      do {
+        vertexFlags[*index++] = -1;
+      } while (--n != -1);
+    }
+  } while ((face = *faces++));
+}
 
-        goto end;
-      }
-    } while (--count != -1);
+#define MULVERTEX1(D, E) {               \
+  WORD t0 = (*v++) + y;                  \
+  WORD t1 = (*v++) + x;                  \
+  LONG t2 = (*v++) * z;                  \
+  v++;                                   \
+  D = ((t0 * t1 + t2 - x * y) >> 4) + E; \
+}
 
-    src += 3;
-    dst += 2;
-end:
+#define MULVERTEX2(D) {                  \
+  WORD t0 = (*v++) + y;                  \
+  WORD t1 = (*v++) + x;                  \
+  LONG t2 = (*v++) * z;                  \
+  WORD t3 = (*v++);                      \
+  D = normfx(t0 * t1 + t2 - x * y) + t3; \
+}
+
+static __regargs void CustomTransform3D(Object3D *object) {
+  Matrix3D *M = &object->world;
+  WORD *v = (WORD *)M;
+  WORD *src = (WORD *)object->mesh->vertex;
+  WORD *dst = (WORD *)object->point;
+  BYTE *flags = object->vertexFlags;
+  WORD n = object->mesh->vertices;
+  LONG m0, m1;
+
+  M->x -= normfx(M->m00 * M->m01);
+  M->y -= normfx(M->m10 * M->m11);
+  M->z -= normfx(M->m20 * M->m21);
+
+  m0 = M->x << 8;
+  m1 = M->y << 8;
+
+  /*
+   * A = m00 * m01
+   * B = m10 * m11
+   * C = m20 * m21 
+   * yx = y * x
+   *
+   * (m00 + y) * (m01 + x) + m02 * z - yx + (mx - A)
+   * (m10 + y) * (m11 + x) + m12 * z - yx + (my - B)
+   * (m20 + y) * (m21 + x) + m22 * z - yx + (mz - C)
+   */
+
+  do {
+    if (*flags++) {
+      WORD x = *src++;
+      WORD y = *src++;
+      WORD z = *src++;
+      LONG xp, yp;
+      WORD zp;
+
+      pushl(v);
+      MULVERTEX1(xp, m0);
+      MULVERTEX1(yp, m1);
+      MULVERTEX2(zp);
+      popl(v);
+
+      *dst++ = div16(xp, zp) + WIDTH / 2;  /* div(xp * 256, zp) */
+      *dst++ = div16(yp, zp) + HEIGHT / 2; /* div(yp * 256, zp) */
+    } else {
+      src += 3;
+      dst += 2;
+    }
   } while (--n > 0);
 }
 
@@ -203,9 +242,8 @@ static void Render() {
     // LONG lines = ReadLineCounter();
     LoadRotate3D(&cube->world, a, a, a);
     Translate3D(&cube->world, 0, 0, fx4i(-250));
-    Transform3D(&cube->world, cube->vertex, cube->mesh->vertex, cube->mesh->vertices);
-    UpdateFaceNormalsCustom(cube);
-    PerspectiveProjection(cube);
+    UpdateFaceVisibility(cube);
+    CustomTransform3D(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
 
