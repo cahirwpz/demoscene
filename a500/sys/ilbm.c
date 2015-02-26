@@ -233,6 +233,8 @@ static __regargs void LoadBODY(IffFileT *iff, BitmapT *bitmap, UWORD flags) {
 
       data = uncompressed;
       size = newSize;
+
+      bitmap->compression = 0;
     }
 
     if (flags & BM_INTERLEAVED)
