@@ -5,13 +5,13 @@ from utils import constrain, lerp, dist
 
 
 if __name__ == "__main__":
-  size = (256, 256)
+  size = (128, 128)
   data = []
 
   for i in range(size[0]):
     for j in range(size[1]):
-      x = lerp(-2.0, 2.0, float(i) / size[0])
-      y = lerp(-2.0, 2.0, float(j) / size[1])
+      x = lerp(-1.5, 1.5, float(i) / size[0])
+      y = lerp(-1.5, 1.5, float(j) / size[1])
 
       pixel = 1.0 - dist(0.0, 0.0, x, y)
 
@@ -19,4 +19,4 @@ if __name__ == "__main__":
 
   light = Image.new('L', size)
   light.putdata(data)
-  light.save("data/light.tga", "TGA")
+  light.save("light.tga", "TGA")

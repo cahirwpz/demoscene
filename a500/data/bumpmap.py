@@ -4,6 +4,7 @@ import Image
 import sys
 import os
 from array import array
+from utils import constrain
 
 
 if __name__ == "__main__":
@@ -13,20 +14,26 @@ if __name__ == "__main__":
   bumpmap = array("H")
   name = os.path.splitext(sys.argv[1])[0] + ".bin"
 
-  for j in range(image.size[1]):
-    for i in range(image.size[0]):
-      this = image.getpixel((i, j))
-      if j < image.size[1] - 1:
-        down = image.getpixel((i, j + 1))
+  for y in range(image.size[1]):
+    for x in range(image.size[0]):
+      this = image.getpixel((x, y))
+      if y < image.size[1] - 1:
+        down = image.getpixel((x, y + 1))
       else:
         down = this
-      if i < image.size[0] - 1:
-        right = image.getpixel((i + 1, j))
+      if x < image.size[0] - 1:
+        right = image.getpixel((x + 1, y))
       else:
         right = this
-      u = ((down - this + 128) / 2) & 127
-      v = ((right - this + 128) / 2) & 127
+      # scale down the difference between pixels
+      du = (this - down) * 0.25
+      dv = (this - right) * 0.25
+      # light texture size is 128 * 128
+      u = (constrain(int(du), -64, 63) + y) & 127
+      v = (constrain(int(dv), -64, 63) + x) & 127
       bumpmap.append(u * 128 + v)
+
+  bumpmap.byteswap()
 
   with open(name, "w") as f:
     bumpmap.tofile(f)
