@@ -250,13 +250,11 @@ static __regargs BitmapT *LoadBMHD(IffFileT *iff, UWORD flags) {
 
   ReadChunk(iff, &bmhd);
 
-  if (flags & BM_KEEP_PACKED) {
-    bitmap = NewBitmapCustom(bmhd.w, bmhd.h, bmhd.nPlanes,
-                             BM_MINIMAL|BM_INTERLEAVED);
-    bitmap->compression = bmhd.compression;
-  } else {
-    bitmap = NewBitmapCustom(bmhd.w, bmhd.h, bmhd.nPlanes, flags);
-  }
+  if (flags & BM_KEEP_PACKED)
+    flags = BM_MINIMAL|BM_INTERLEAVED;
+
+  bitmap = NewBitmapCustom(bmhd.w, bmhd.h, bmhd.nPlanes, flags);
+  bitmap->compression = bmhd.compression;
 
   return bitmap;
 }
