@@ -35,6 +35,10 @@ static inline BOOL LeftMouseButton() {
   return !(ciaa->ciapra & CIAF_GAMEPORT0);
 }
 
+static inline BOOL RightMouseButton() {
+  return !(custom->potinp & (1 << 10));
+}
+
 __regargs void Wait280ns(ULONG delay);
 
 LONG ReadLineCounter();
