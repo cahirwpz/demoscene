@@ -38,6 +38,7 @@ textscroll:     textscroll.o startup.o libsys.a
 topaz8:         topaz8.o startup.o libsys.a
 uvmap:          uvmap.o startup.o libsys.a
 uvmap-rgb:      uvmap-rgb.o startup.o libsys.a
+tilezoomer:     tilezoomer.o startup.o libsys.a
 transparency:   transparency.o startup.o libsys.a
 
 SUBDIRS = ahx p61 sys
