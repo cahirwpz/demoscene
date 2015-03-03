@@ -26,6 +26,7 @@ sintab.s
 sprites16
 sprites4
 textscroll
+transparency
 topaz8
 uvmap
 uvmap-rgb
