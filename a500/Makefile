@@ -4,7 +4,7 @@ BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           playahx playp61 cube kbtest shapes chunky-16c chunky-rgb mouse \
           uvmap metaballs blurred circles floor parselwo showlwo neons \
           plotter highway textscroll uvmap-rgb bumpmap-rgb glitch \
-          transparency
+          transparency tilezoomer
 
 all:	startup.o libs $(BINS)
 
