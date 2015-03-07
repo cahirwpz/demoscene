@@ -4,7 +4,7 @@ BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           playahx playp61 cube kbtest shapes chunky-16c chunky-rgb mouse \
           uvmap metaballs blurred circles floor parselwo showlwo neons \
           plotter highway textscroll uvmap-rgb bumpmap-rgb glitch \
-          transparency tilezoomer twister-rgb anim
+          transparency tilezoomer twister-rgb anim showpchg
 
 all:	startup.o libs $(BINS)
 
@@ -33,6 +33,7 @@ plotter:        plotter.o startup.o libsys.a
 shapes:         shapes.o startup.o libsys.a
 showilbm:       showilbm.o startup.o libsys.a
 showlwo:        showlwo.o startup.o libsys.a
+showpchg:       showpchg.o startup.o libsys.a
 sprites4:       sprites4.o startup.o libsys.a
 sprites16:      sprites16.o startup.o libsys.a
 textscroll:     textscroll.o startup.o libsys.a
