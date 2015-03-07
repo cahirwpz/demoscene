@@ -4,7 +4,7 @@ BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           playahx playp61 cube kbtest shapes chunky-16c chunky-rgb mouse \
           uvmap metaballs blurred circles floor parselwo showlwo neons \
           plotter highway textscroll uvmap-rgb bumpmap-rgb glitch \
-          transparency tilezoomer
+          transparency tilezoomer twister-rgb
 
 all:	startup.o libs $(BINS)
 
@@ -40,6 +40,7 @@ uvmap:          uvmap.o startup.o libsys.a
 uvmap-rgb:      uvmap-rgb.o startup.o libsys.a
 tilezoomer:     tilezoomer.o startup.o libsys.a
 transparency:   transparency.o startup.o libsys.a
+twister-rgb:    twister-rgb.o startup.o libsys.a
 
 SUBDIRS = ahx p61 sys
 
