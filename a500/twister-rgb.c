@@ -38,7 +38,6 @@ static void MakeCopperList(CopListT **ptr, WORD n) {
   CopInit(cp);
   CopMakePlayfield(cp, bplptr[n], twister, DEPTH);
   CopMakeDispWin(cp, X(STARTX), Y(0), WIDTH, HEIGHT);
-  CopMove16(cp, bplcon0, 0x5200);
   CopSetRGB(cp, 0, 0);
   for (j = 1; j < 32; j++)
     CopSetRGB(cp, j, *pixels++);

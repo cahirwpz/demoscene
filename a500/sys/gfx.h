@@ -25,17 +25,17 @@ __regargs void DeletePalette(PaletteT *palette);
 #define BM_EXTRA sizeof(UWORD)
 
 /* Flags stored in Bitmap structure. */
-#define BM_CLEAR        1
-#define BM_DISPLAYABLE  2
-#define BM_INTERLEAVED  4
-#define BM_MINIMAL      8
-#define BM_HAM         16
-#define BM_EHB         32
-#define BM_FLAGMASK    63
+#define BM_CLEAR        0x01
+#define BM_DISPLAYABLE  0x02
+#define BM_INTERLEAVED  0x04
+#define BM_MINIMAL      0x08
+#define BM_HAM          0x10
+#define BM_EHB          0x20
+#define BM_FLAGMASK     0x3F
 
 /* Flags than can be passed to functions that load Bitmap. */
-#define BM_LOAD_PALETTE 16
-#define BM_KEEP_PACKED  32
+#define BM_LOAD_PALETTE 0x40
+#define BM_KEEP_PACKED  0x80
 
 /* Bitplane compression method. */
 #define COMP_NONE      0
