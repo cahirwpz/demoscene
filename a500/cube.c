@@ -17,8 +17,9 @@ static BitmapT *screen[2];
 static UWORD active = 0;
 
 static void Load() {
-  mesh = LoadLWO("data/codi.lwo", SPFlt(256));
+  // mesh = LoadLWO("data/codi.lwo", SPFlt(256));
   // mesh = LoadLWO("data/new_2.lwo", SPFlt(80));
+  mesh = LoadLWO("data/cube.lwo", SPFlt(50));
   CalculateVertexFaceMap(mesh);
   CalculateFaceNormals(mesh);
   CalculateEdges(mesh);
@@ -32,8 +33,8 @@ static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopMakeDispWin(cp, X(32), Y(0), WIDTH, HEIGHT);
   CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
-  CopSetRGB(cp,  0, 0x000);
-  CopSetRGB(cp,  1, 0xFFF);
+  CopSetRGB(cp, 0, 0x000);
+  CopSetRGB(cp, 1, 0xFFF);
   CopEnd(cp);
 }
 
@@ -257,6 +258,8 @@ static void Render() {
     CustomTransform3D(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
+
+  WaitBlitter();
 
   {
     // LONG lines = ReadLineCounter();

@@ -215,14 +215,14 @@ static void Render() {
     WORD n = DEPTH;
 
     while (--n >= 0) {
-      WORD i = (active + n + 1 - DEPTH) % 5;
+      WORD i = (active + n + 1 - DEPTH) % (DEPTH + 1);
       if (i < 0)
         i += DEPTH + 1;
       CopInsSet32(bplptr[n], screen->planes[i]);
     }
   }
 
-  active = (active + 1) % 5;
+  active = (active + 1) % (DEPTH + 1);
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, Render };

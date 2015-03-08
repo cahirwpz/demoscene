@@ -140,8 +140,6 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
         *dst++ = *(EdgeT *)head;
       head++; next++;
     }
-
-    *dst++ = *(EdgeT *)head;
   }
 
   /* Construct { #face => [#edge] } map. */
@@ -169,7 +167,7 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
     ExtEdgeT *e = edge;
     WORD n = count;
 
-    while (n-- >= 0) {
+    while (--n >= 0) {
       IndexListT *faceEdge = faceEdges[e->face];
       faceEdge->indices[faceEdge->count++] = e->edge;
       e++;
@@ -186,7 +184,7 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
  */
 __regargs void CalculateVertexFaceMap(Mesh3D *mesh) {
   WORD *faceCount = MemAlloc(sizeof(WORD) * mesh->vertices,
-                                MEMF_PUBLIC|MEMF_CLEAR);
+                             MEMF_PUBLIC|MEMF_CLEAR);
 
   /* 
    * Count the size of the { vertex => face } map and for each vertex a
