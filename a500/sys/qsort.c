@@ -2,38 +2,37 @@
 
 static inline void swap(APTR x, APTR y, WORD l) {
   UBYTE *a = x, *b = y, c;
-  while (l--) {
+  l--;
+  do {
     c = *a;
     *a++ = *b;
     *b++ = c;
-  }
+  } while (--l != -1);
 }
 
-__regargs static void sort(APTR array, LONG size,
-                           __regargs LONG (*cmp)(APTR, APTR), LONG begin, LONG end) 
+static __regargs void sort(APTR first, APTR last, LONG size, 
+                           __regargs LONG (*cmp)(CONST APTR, CONST APTR))
 {
-  if (end > begin) {
-    APTR pivot = array + begin;
-    LONG l = begin + size;
-    LONG r = end;
+  if (last - first > size) {
+    CONST APTR pivot = first;
+    APTR left = first + size;
+    APTR right = last;
 
-    while (l < r) {
-      if (cmp(array + l, pivot) <= 0) {
-        l += size;
-      } else if (cmp(array + r, pivot) > 0)  {
-        r -= size;
-      } else if (l < r) {
-        swap(array + l, array + r, size);
-      }
+    while (left < right) {
+      while ((cmp(left, pivot) <= 0) && (left < last))
+        left += size;
+      while ((cmp(right, pivot) > 0) && (right > first))
+        right -= size;
+      if (left < right)
+        swap(left, right, size);
     }
-    l -= size;
 
-    swap(array + begin, array + l, size);
-    sort(array, size, cmp, begin, l);
-    sort(array, size, cmp, r, end);
+    swap(pivot, right, size);
+    sort(first, right - size, size, cmp);
+    sort(left, last, size, cmp);
   }
 }
 
-void qsort(APTR array, LONG nitems, LONG size, __regargs LONG (*cmp)(APTR, APTR)) {
-  sort(array, size, cmp, 0, (nitems - 1) * size);
+void qsort(APTR array, LONG nitems, LONG size, __regargs LONG (*cmp)(CONST APTR, CONST APTR)) {
+  sort(array, array + (nitems - 1) * size, size, cmp);
 }
