@@ -38,9 +38,9 @@ typedef struct ExtEdge {
   WORD face, edge;
 } ExtEdgeT;
 
-static __regargs LONG EdgeCompare(APTR a, APTR b) {
-  EdgeT *e0 = a;
-  EdgeT *e1 = b;
+static __regargs LONG EdgeCompare(CONST APTR a, CONST APTR b) {
+  const EdgeT *e0 = a;
+  const EdgeT *e1 = b;
 
   if (e0->p0 < e1->p0)
     return -1;
@@ -121,6 +121,8 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
         edges++;
       head->edge = edges;
     }
+
+    edges++;
   }
 
   Log("Object has %ld edges.\n", (LONG)edges);
@@ -135,9 +137,11 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
     ExtEdgeT *next = edge + 1;
     WORD n = count;
 
+    *dst++ = *(EdgeT *)head;
+
     while (--n > 0) {
       if (EdgeCompare(head, next))
-        *dst++ = *(EdgeT *)head;
+        *dst++ = *(EdgeT *)next;
       head++; next++;
     }
   }
