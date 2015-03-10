@@ -5,58 +5,94 @@
 #include "tga.h"
 #include "fx.h"
 #include "memory.h"
-#include "random.h"
+#include "sprite.h"
 
-#define WIDTH   128
+#define WIDTH   144
 #define HEIGHT  255
 #define DEPTH   5
 #define STARTX  96
 
 static BitmapT *twister;
 static PixmapT *texture;
+static PaletteT *gradient;
 static CopListT *cp[2];
 static CopInsT *bplptr[2][DEPTH];
-static CopInsT *bplmod[2][HEIGHT - 1];
+static CopInsT *bplmod[2][HEIGHT];
 static CopInsT *colors[2][HEIGHT];
 static WORD active = 0;
 
+static SpriteT *left[2];
+static SpriteT *right[2];
+static SpriteT *nullspr;
+static CopInsT *sprptr[2][8];
+
 static void Load() {
-  twister = LoadILBM("data/twister.ilbm");
+  twister = LoadILBMCustom("data/twister.ilbm", BM_DISPLAYABLE);
   texture = LoadTGA("data/twister-texture.tga", PM_RGB4, MEMF_PUBLIC);
+  gradient = LoadPalette("data/twister-gradient.ilbm");
+
+  {
+    BitmapT *_left = LoadILBMCustom("data/twister-left.ilbm", 0);
+    BitmapT *_right = LoadILBMCustom("data/twister-right.ilbm", 0);
+
+    left[0] = NewSpriteFromBitmap(256, _left, 0, 0);
+    left[1] = NewSpriteFromBitmap(256, _left, 16, 0);
+    right[0] = NewSpriteFromBitmap(256, _right, 0, 0);
+    right[1] = NewSpriteFromBitmap(256, _right, 16, 0);
+
+    DeleteBitmap(_right);
+    DeleteBitmap(_left);
+  }
+
+  nullspr = NewSprite(0, FALSE);
 }
 
 static void UnLoad() {
-  DeletePalette(twister->palette);
+  DeleteSprite(nullspr);
+  DeleteSprite(left[0]);
+  DeleteSprite(left[1]);
+  DeleteSprite(right[0]);
+  DeleteSprite(right[1]);
   DeleteBitmap(twister);
   DeletePixmap(texture);
+  DeletePalette(gradient);
 }
 
 static void MakeCopperList(CopListT **ptr, WORD n) {
-  CopListT *cp = NewCopList(100 + HEIGHT * 3 + (32 * HEIGHT / 3));
+  CopListT *cp = NewCopList(100 + HEIGHT * 5 + (31 * HEIGHT / 3));
   WORD *pixels = texture->pixels;
   WORD i, j, k;
 
   CopInit(cp);
   CopMakePlayfield(cp, bplptr[n], twister, DEPTH);
   CopMakeDispWin(cp, X(STARTX), Y(0), WIDTH, HEIGHT);
-  CopSetRGB(cp, 0, 0);
+  CopMakeSprites(cp, sprptr[n], nullspr);
+  CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
+  CopMove16(cp, diwstrt, 0x2c81);
+  CopMove16(cp, diwstop, 0x2bc1);
+  CopSetColor(cp, 0, &gradient->colors[0]);
 
-  colors[n][0] = CopWait(cp, Y(-1), X(STARTX + WIDTH));
-  for (j = 1; j < 32; j++)
-    CopSetRGB(cp, j, *pixels++);
-
-  for (i = 0, k = 1; i < HEIGHT - 1; i++) {
+  for (i = 0, k = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(i), 0);
     bplmod[n][i] = CopMove16(cp, bpl1mod, -32);
     CopMove16(cp, bpl2mod, -32);
+    CopMove16(cp, bpldat[0], 0);
 
-    if ((i % 3) == 2) {
-      colors[n][k++] = CopWait(cp, Y(i), X(STARTX + WIDTH));
-      for (j = 1; j < 32; j++)
+    CopSetColor(cp, 0, &gradient->colors[i]);
+
+    if ((i % 3) == 0) {
+      colors[n][k++] = CopSetRGB(cp, 1, *pixels++);
+      for (j = 2; j < 32; j++)
         CopSetRGB(cp, j, *pixels++);
     }
   }
+
   CopEnd(cp);
+
+  CopInsSet32(sprptr[n][4], left[0]->data);
+  CopInsSet32(sprptr[n][5], left[1]->data);
+  CopInsSet32(sprptr[n][6], right[0]->data);
+  CopInsSet32(sprptr[n][7], right[1]->data);
 
   *ptr = cp;
 }
@@ -67,8 +103,13 @@ static void Init() {
   MakeCopperList(&cp[0], 0);
   MakeCopperList(&cp[1], 1);
 
+  UpdateSpritePos(left[0], X(0), Y(0));
+  UpdateSpritePos(left[1], X(16), Y(0));
+  UpdateSpritePos(right[0], X(320 - 32), Y(0));
+  UpdateSpritePos(right[1], X(320 - 16), Y(0));
+
   CopListActivate(cp[1]);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
 }
 
 static void Kill() {
@@ -122,7 +163,7 @@ static __regargs void SetupTexture(CopInsT **colors, WORD y) {
   pixels += y * width;
 
   while (--n >= 0) {
-    WORD *ins = (WORD *)(*colors++ + 1) + 1;
+    WORD *ins = (WORD *)(*colors++) + 1;
 
     ins[0] = *pixels++;
     ins[2] = *pixels++;

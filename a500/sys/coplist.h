@@ -186,8 +186,12 @@ CopMakeDispWinHiRes(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
   CopMove16(list, fmode, 0);
 }
 
-static inline CopInsT *CopSetRGB(CopListT *list, UWORD i, UWORD value) {
+static inline CopInsT *CopSetRGB(CopListT *list, WORD i, UWORD value) {
   return CopMove16(list, color[i], value);
+}
+
+static inline CopInsT *CopSetColor(CopListT *list, WORD i, ColorT *c) {
+  return CopMove16(list, color[i], ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4));
 }
 
 static inline void CopListRun(CopListT *list) {
