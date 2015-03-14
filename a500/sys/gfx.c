@@ -100,3 +100,17 @@ __regargs PaletteT *CopyPalette(PaletteT *palette) {
 __regargs void DeletePalette(PaletteT *palette) {
   MemFree(palette, sizeof(PaletteT) + palette->count * sizeof(ColorT));
 }
+
+__regargs void ConvertPaletteToRGB4(PaletteT *palette, UWORD *color, WORD n) {
+  UBYTE *src = (UBYTE *)palette->colors;
+
+  if (palette->count < n)
+    n = palette->count;
+
+  while (--n >= 0) {
+    UBYTE r = *src++;
+    UBYTE g = *src++;
+    UBYTE b = *src++;
+    *color++ = ((r & 0xf0) << 4) | (g & 0xf0) | ((b & 0xf0) >> 4);
+  }
+}

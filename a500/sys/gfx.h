@@ -20,6 +20,7 @@ typedef struct {
 __regargs PaletteT *NewPalette(UWORD count);
 __regargs PaletteT *CopyPalette(PaletteT *palette);
 __regargs void DeletePalette(PaletteT *palette);
+__regargs void ConvertPaletteToRGB4(PaletteT *palette, UWORD *color, WORD n);
 
 /* Size of extra buffer after last word of bitplanes. */
 #define BM_EXTRA sizeof(UWORD)
