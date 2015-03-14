@@ -116,9 +116,9 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type,
 
     MemFreeAuto(data);
   } 
-  else if (type == PM_RGB4 && tga.imageType == TGA_RGB && tga.depth) 
+  else if (type == PM_RGB4 && tga.imageType == TGA_RGB && tga.depth)
   {
-    ULONG imgSize = tga.width * tga.height * 3;
+    ULONG imgSize = tga.width * tga.height * (tga.depth / 8);
 
     pixmap = NewPixmap(tga.width, tga.height, PM_RGB4, memoryFlags);
 
@@ -133,8 +133,9 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type,
      */
     {
       UWORD *pixels = pixmap->pixels;
-      UWORD rowSize = tga.width * 3;
+      UWORD rowSize = tga.width * (tga.depth / 8);
       WORD y = tga.height;
+      BOOL alpha = (tga.depth == 32);
       
       do {
         UBYTE *colors = data + rowSize * (y - 1);
@@ -144,7 +145,12 @@ __regargs PixmapT *LoadTGA(const char *filename, PixmapTypeT type,
           UBYTE b = *colors++;
           UBYTE g = *colors++;
           UBYTE r = *colors++;
-          *pixels++ = ((r & 0xf0) << 4) | (g & 0xf0) | ((b & 0xf0) >> 4);
+          UWORD c = ((r & 0xf0) << 4) | (g & 0xf0) | ((b & 0xf0) >> 4);
+          if (alpha) {
+            UBYTE a = *colors++;
+            c |= ((~a & 0xf0) << 8);
+          }
+          *pixels++ = c;
         } while (--x);
       } while (--y);
     }
