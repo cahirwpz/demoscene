@@ -10,6 +10,7 @@ all:	startup.o libs $(BINS)
 
 anim:           anim.o startup.o libsys.a
 blurred:        blurred.o startup.o libsys.a
+blurred3d:      blurred3d.o startup.o libsys.a
 bumpmap-rgb:    bumpmap-rgb.o startup.o libsys.a
 chunky-16c:     chunky-16c.o startup.o libsys.a
 chunky-rgb:     chunky-rgb.o startup.o libsys.a
