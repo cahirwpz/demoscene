@@ -2,20 +2,22 @@
 #include "fx.h"
 
 __regargs void LoadIdentity3D(Matrix3D *M) {
-  M->m00 = fx12f(1.0);
-  M->m01 = 0;
-  M->m02 = 0;
-  M->x = 0;
+  WORD *m = &M->m00;
 
-  M->m10 = 0;
-  M->m11 = fx12f(1.0);
-  M->m12 = 0;
-  M->y = 0;
-
-  M->m20 = 0;
-  M->m21 = 0;
-  M->m22 = fx12f(1.0);
-  M->z = 0;
+  *m++ = fx12f(1.0);
+  *m++ = 0;
+  *m++ = 0;
+  *m++ = 0;
+      
+  *m++ = 0;
+  *m++ = fx12f(1.0);
+  *m++ = 0;
+  *m++ = 0;
+      
+  *m++ = 0;
+  *m++ = 0;
+  *m++ = fx12f(1.0);
+  *m++ = 0;
 }
 
 __regargs void Translate3D(Matrix3D *M, WORD x, WORD y, WORD z) {
@@ -25,20 +27,72 @@ __regargs void Translate3D(Matrix3D *M, WORD x, WORD y, WORD z) {
 }
 
 __regargs void Scale3D(Matrix3D *M, WORD sx, WORD sy, WORD sz) {
-  M->m00 = normfx(M->m00 * sx);
-  M->m01 = normfx(M->m01 * sy);
-  M->m02 = normfx(M->m02 * sz);
+  WORD *m = &M->m00;
+  WORD r;
 
-  M->m10 = normfx(M->m10 * sx);
-  M->m11 = normfx(M->m11 * sy);
-  M->m12 = normfx(M->m12 * sz);
+  r = normfx((*m) * sx); *m++ = r;
+  r = normfx((*m) * sy); *m++ = r;
+  r = normfx((*m) * sz); *m++ = r;
+  m++;
 
-  M->m20 = normfx(M->m20 * sx);
-  M->m21 = normfx(M->m21 * sy);
-  M->m22 = normfx(M->m22 * sz);
+  r = normfx((*m) * sx); *m++ = r;
+  r = normfx((*m) * sy); *m++ = r;
+  r = normfx((*m) * sz); *m++ = r;
+  m++;
+
+  r = normfx((*m) * sx); *m++ = r;
+  r = normfx((*m) * sy); *m++ = r;
+  r = normfx((*m) * sz); *m++ = r;
 }
 
+/*
+ * Rx(x) = {{1,0,0},{0,cos(x),-sin(x)},{0,sin(x),cos(x)}}
+ * Ry(y) = {{cos(y),0,sin(y)},{0,1,0},{-sin(y),0,cos(y)}}
+ * Rz(z) = {{cos(z),-sin(z),0},{sin(z),cos(z),0},{0,0,1}}
+ *
+ * Rx(x) * Ry(y) * Rz(z) :
+ *
+ * [                          cos(y)*cos(z) |                         -cos(y)*sin(z) |         sin(y) ]
+ * [ cos(x)*sin(z) + sin(x)*(sin(y)*cos(z)) | cos(x)*cos(z) - sin(x)*(sin(y)*sin(z)) | -sin(x)*cos(y) ]
+ * [ sin(x)*sin(z) - cos(x)*(sin(y)*cos(z)) | sin(x)*cos(z) + cos(x)*(sin(y)*sin(z)) |  cos(x)*cos(y) ]
+ */
 __regargs void LoadRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
+  WORD sinX = SIN(ax);
+  WORD cosX = COS(ax);
+  WORD sinY = SIN(ay);
+  WORD cosY = COS(ay);
+  WORD sinZ = SIN(az);
+  WORD cosZ = COS(az);
+  
+  WORD tmp0 = normfx(sinY * cosZ);
+  WORD tmp1 = normfx(sinY * sinZ);
+
+  WORD *m = &M->m00;
+
+  *m++ = normfx(cosY * cosZ);
+  *m++ = - normfx(cosY * sinZ);
+  *m++ = sinY;
+  *m++ = 0;
+
+  *m++ = normfx(cosX * sinZ + sinX * tmp0);
+  *m++ = normfx(cosX * cosZ - sinX * tmp1);
+  *m++ = - normfx(sinX * cosY);
+  *m++ = 0;
+
+  *m++ = normfx(sinX * sinZ - cosX * tmp0);
+  *m++ = normfx(sinX * cosZ + cosX * tmp1);
+  *m++ = normfx(cosX * cosY);
+  *m++ = 0;
+}
+
+/*
+ * Rz(z) * Ry(y) * Rx(x) :
+ *
+ * [ cos(y)*cos(z) | (sin(x)*sin(y))*cos(z) - cos(x)*sin(z) | (cos(x)*sin(y))*cos(z) + sin(x)*sin(z) ]
+ * [ cos(y)*sin(z) | (sin(x)*sin(y))*sin(z) + cos(x)*cos(z) | (cos(x)*sin(y))*sin(z) - sin(x)*cos(z) ]
+ * [       -sin(y) |                          sin(x)*cos(y) |                          cos(x)*cos(y) ]
+ */
+__regargs void LoadInvRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
   WORD sinX = SIN(ax);
   WORD cosX = COS(ax);
   WORD sinY = SIN(ay);
@@ -49,20 +103,22 @@ __regargs void LoadRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
   WORD tmp0 = normfx(sinX * sinY);
   WORD tmp1 = normfx(cosX * sinY);
 
-  M->m00 = normfx(cosY * cosZ);
-  M->m01 = normfx(cosY * sinZ);
-  M->m02 = -sinY;
-  M->x = 0;
+  WORD *m = &M->m00;
 
-  M->m10 = normfx(tmp0 * cosZ - cosX * sinZ);
-  M->m11 = normfx(tmp0 * sinZ + cosX * cosZ);
-  M->m12 = normfx(sinX * cosY);
-  M->y = 0;
+  *m++ = normfx(cosY * cosZ);
+  *m++ = normfx(tmp0 * cosZ - cosX * sinZ);
+  *m++ = normfx(tmp1 * cosZ + sinX * sinZ);
+  *m++ = 0;
 
-  M->m20 = normfx(tmp1 * cosZ + sinX * sinZ);
-  M->m21 = normfx(tmp1 * sinZ - sinX * cosZ);
-  M->m22 = normfx(cosX * cosY);
-  M->z = 0;
+  *m++ = normfx(cosY * sinZ);
+  *m++ = normfx(tmp0 * sinZ + cosX * cosZ);
+  *m++ = normfx(tmp1 * sinZ - sinX * cosZ);
+  *m++ = 0;
+
+  *m++ = -sinY;
+  *m++ = normfx(sinX * cosY);
+  *m++ = normfx(cosX * cosY);
+  *m++ = 0;
 }
 
 #define MULROW() {             \
@@ -111,15 +167,6 @@ __regargs void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb) {
 
     *d++ = (*a++) + (*b2);
   }
-}
-
-__regargs void Rotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
-  Matrix3D tmp, rot;
-
-  LoadRotate3D(&rot, ax, ay, az);
-  memcpy(&tmp, M, sizeof(Matrix3D));
-
-  Compose3D(M, &tmp, &rot);
 }
 
 #define MULVERTEX() {                 \

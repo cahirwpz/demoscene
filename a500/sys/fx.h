@@ -9,8 +9,16 @@
 
 extern WORD sintab[];
 
-#define SIN(a) sintab[(a) & SIN_MASK]
-#define COS(a) sintab[((a) + SIN_HALF_PI) & SIN_MASK]
+static inline WORD SIN(WORD a) {
+  a &= SIN_MASK;
+  return sintab[a];
+}
+
+static inline WORD COS(WORD a) {
+  a += SIN_HALF_PI;
+  a &= SIN_MASK;
+  return sintab[a];
+}
 
 static inline WORD normfx(LONG a) {
   asm("lsll #4,%0\n"
