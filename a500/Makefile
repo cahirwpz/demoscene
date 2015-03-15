@@ -2,13 +2,14 @@ CPPFLAGS = -Isys
 
 BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           playahx playp61 cube kbtest shapes chunky-16c chunky-rgb mouse \
-          uvmap metaballs blurred circles floor parselwo showlwo neons \
-          plotter highway textscroll uvmap-rgb bumpmap-rgb glitch \
-          transparency tilezoomer twister-rgb anim showpchg
+          uvmap metaballs blurred circles floor-old parselwo showlwo neons \
+          plotter highway textscroll uvmap-rgb bumpmap-rgb glitch floor \
+          transparency tilezoomer twister-rgb anim showpchg blurred3d
 
 all:	startup.o libs $(BINS)
 
 anim:           anim.o startup.o libsys.a
+ball:           ball.o startup.o libsys.a
 blurred:        blurred.o startup.o libsys.a
 blurred3d:      blurred3d.o startup.o libsys.a
 bumpmap-rgb:    bumpmap-rgb.o startup.o libsys.a
@@ -19,6 +20,7 @@ neons:          neons.o startup.o libsys.a
 copper:         copper.o startup.o libsys.a
 cube:           cube.o startup.o libsys.a
 floor:          floor.o startup.o libsys.a
+floor-old:      floor-old.o startup.o libsys.a
 highway:        highway.o startup.o libsys.a
 glitch:         glitch.o startup.o libsys.a
 lines:          lines.o startup.o libsys.a
