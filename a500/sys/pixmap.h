@@ -7,12 +7,12 @@ typedef enum { PM_GRAY, PM_CMAP, PM_RGB4, PM_GRAY4, PM_CMAP4 } PixmapTypeT;
 
 typedef struct Pixmap {
   PixmapTypeT type;
-  UWORD width, height;
+  WORD width, height;
   PaletteT *palette;
   APTR pixels;
 } PixmapT;
 
-static inline void InitSharedPixmap(PixmapT *pixmap, UWORD width, UWORD height,
+static inline void InitSharedPixmap(PixmapT *pixmap, WORD width, WORD height,
                                     PixmapTypeT type, APTR pixels) 
 {
   pixmap->type = type;
@@ -22,9 +22,12 @@ static inline void InitSharedPixmap(PixmapT *pixmap, UWORD width, UWORD height,
   pixmap->pixels = pixels;
 }
 
-__regargs PixmapT *NewPixmap(UWORD width, UWORD height, 
+__regargs PixmapT *NewPixmap(WORD width, WORD height, 
                              PixmapTypeT type, ULONG memoryAttributes);
 __regargs PixmapT *ClonePixmap(PixmapT *pixmap);
 __regargs void DeletePixmap(PixmapT *pixmap);
+
+/* [a0 a1 a2 a3 b0 b1 b2 b3] => [a0 b0 a2 b1 a1 b2 a3 b3] */
+__regargs void PixmapScramble_4_1(PixmapT *pixmap);
 
 #endif
