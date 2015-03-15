@@ -46,15 +46,28 @@ __regargs void PixmapScramble_4_1(PixmapT *pixmap) {
   if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
     ULONG *data = pixmap->pixels;
     WORD n = pixmap->width * pixmap->height / 8;
-    register ULONG m0 asm("d4") = 0xa0a0a0a0;
-    register ULONG m1 asm("d5") = 0x50505050;
-    register ULONG m2 asm("d6") = 0x0a0a0a0a;
-    register ULONG m3 asm("d7") = 0x05050505;
+    register ULONG m0 asm("d6") = 0xa5a5a5a5;
+    register ULONG m1 asm("d7") = 0x0a0a0a0a;
 
     /* [a0 a1 a2 a3 b0 b1 b2 b3] => [a0 b0 a2 b1 a1 b2 a3 b3] */
     while (--n >= 0) {
       ULONG c = *data;
-      *data++ = (c & m0) | ((c & m1) >> 3) | ((c & m2) << 3) | (c & m3);
+      *data++ = (c & m0) | ((c >> 3) & m1) | ((c & m1) << 3);
+    }
+  }
+}
+
+__regargs void PixmapScramble_4_2(PixmapT *pixmap) {
+  if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
+    ULONG *data = pixmap->pixels;
+    WORD n = pixmap->width * pixmap->height / 8;
+    register ULONG m0 asm("d6") = 0xc3c3c3c3;
+    register ULONG m1 asm("d7") = 0x0c0c0c0c;
+
+    /* [a0 a1 a2 a3 b0 b1 b2 b3] => [a0 a1 b0 b1 a2 a3 b2 b3] */
+    while (--n >= 0) {
+      ULONG c = *data;
+      *data++ = (c & m0) | ((c >> 2) & m1) | ((c & m1) << 2);
     }
   }
 }

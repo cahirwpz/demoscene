@@ -24,27 +24,30 @@ void (*UVMapRender)(UBYTE *chunky asm("a0"),
                     UBYTE *textureHi asm("a1"),
                     UBYTE *textureLo asm("a2"));
 
-static void PixmapScramble(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
-{
+static __regargs void 
+PixmapToTexture(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo) {
   ULONG *data = image->pixels;
-  ULONG *hi = imageHi->pixels;
-  ULONG *lo = imageLo->pixels;
   LONG size = image->width * image->height;
-  LONG n = size / 4;
+  /* Extra halves for cheap texture motion. */
+  ULONG *hi0 = imageHi->pixels;
+  ULONG *hi1 = imageHi->pixels + size;
+  ULONG *lo0 = imageLo->pixels;
+  ULONG *lo1 = imageLo->pixels + size;
+  WORD n = size / 4;
   register ULONG m1 asm("d6") = 0x0c0c0c0c;
   register ULONG m2 asm("d7") = 0x03030303;
 
   while (--n >= 0) {
     ULONG c = *data++;
     /* [0 0 0 0 a0 a1 a2 a3] => [a0 a1 0 0 a2 a3 0 0] */
-    *hi++ = ((c & m1) << 4) | ((c & m2) << 2);
+    ULONG hi = ((c & m1) << 4) | ((c & m2) << 2);
     /* [0 0 0 0 b0 b1 b2 b3] => [ 0 0 b0 b1 0 0 b2 b3] */
-    *lo++ = ((c & m1) << 2) | (c & m2);
+    ULONG lo = ((c & m1) << 2) | (c & m2);
+    *hi0++ = hi;
+    *hi1++ = hi;
+    *lo0++ = lo;
+    *lo1++ = lo;
   }
-
-  /* Extra halves for cheap texture motion. */
-  memcpy(((APTR)imageHi->pixels) + size, (APTR)imageHi->pixels, size);
-  memcpy(((APTR)imageLo->pixels) + size, (APTR)imageLo->pixels, size);
 }
 
 static void MakeUVMapRenderCode() {
@@ -231,7 +234,7 @@ static void Init() {
                         PM_CMAP, MEMF_PUBLIC);
   textureLo = NewPixmap(texture->width, texture->height * 2,
                         PM_CMAP, MEMF_PUBLIC);
-  PixmapScramble(texture, textureHi, textureLo);
+  PixmapToTexture(texture, textureHi, textureLo);
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
 
