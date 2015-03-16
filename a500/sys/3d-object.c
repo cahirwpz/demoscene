@@ -112,9 +112,9 @@ __regargs void UpdateObjectTransformation(Object3D *object) {
 __regargs void UpdateFaceVisibility(Object3D *object) {
   WORD *src = (WORD *)object->mesh->faceNormal;
   IndexListT **faces = object->mesh->face;
-  IndexListT *face = *faces++;
   BYTE *faceFlags = object->faceFlags;
   Point3D *vertex = object->mesh->vertex;
+  WORD n = object->mesh->faces;
   WORD cx, cy, cz; /* camera position in object space */
 
   {
@@ -130,12 +130,14 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
     cz = normfx(M->m20 * x + M->m21 * y + M->m22 * z);
   }
 
-  do {
-    Point3D *p = &vertex[face->indices[0]];
-    LONG x = (*src++) * (WORD)(cx - p->x);
-    LONG y = (*src++) * (WORD)(cy - p->y);
-    LONG z = (*src++) * (WORD)(cz - p->z);
+  while (--n >= 0) {
+    IndexListT *face = *faces++;
+    WORD *p = (WORD *)&vertex[face->indices[0]];
+    LONG x = (*src++) * (WORD)(cx - *p++);
+    LONG y = (*src++) * (WORD)(cy - *p++);
+    LONG z = (*src++) * (WORD)(cz - *p++);
+    BYTE f = (x + y + z >= 0) ? -1 : 0;
 
-    *faceFlags++ = (x + y + z >= 0) ? -1 : 0;
-  } while ((face = *faces++));
+    *faceFlags++ = f;
+  }
 }

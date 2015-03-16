@@ -63,24 +63,29 @@ static __regargs void UpdateVertexVisibility(Object3D *object) {
   BYTE *vertexFlags = object->vertexFlags;
   BYTE *faceFlags = object->faceFlags;
   IndexListT **faces = object->mesh->face;
-  IndexListT *face = *faces++;
+  WORD n = object->mesh->faces;
 
   memset(vertexFlags, 0, object->mesh->vertices);
 
-  do {
+  while (--n >= 0) {
+    IndexListT *face = *faces++;
+
     if (*faceFlags++) {
-      WORD n = face->count - 3;
       WORD *vi = face->indices;
+      WORD count = face->count;
 
-      /* Face has at least (and usually) three vertices / edges. */
-      vertexFlags[*vi++] = -1;
-      vertexFlags[*vi++] = -1;
-      vertexFlags[*vi++] = -1;
-
-      while (--n >= 0)
-        vertexFlags[*vi++] = -1;
+      /* Face has at least (and usually) three vertices. */
+      switch (count) {
+        case 6: vertexFlags[*vi++] = -1;
+        case 5: vertexFlags[*vi++] = -1;
+        case 4: vertexFlags[*vi++] = -1;
+        case 3: vertexFlags[*vi++] = -1;
+                vertexFlags[*vi++] = -1;
+                vertexFlags[*vi++] = -1;
+        default: break;
+      }
     }
-  } while ((face = *faces++));
+  }
 }
 
 #define MULVERTEX1(D, E) {               \
@@ -106,15 +111,12 @@ static __regargs void TransformVertices(Object3D *object) {
   WORD *dst = (WORD *)object->point;
   BYTE *flags = object->vertexFlags;
   register WORD n asm("d7") = object->mesh->vertices - 1;
-  LONG m0, m1;
+
+  LONG m0 = (M->x << 8) - ((M->m00 * M->m01) >> 4);
+  LONG m1 = (M->y << 8) - ((M->m10 * M->m11) >> 4);
 
   /* WARNING! This modifies camera matrix! */
-  M->x -= normfx(M->m00 * M->m01);
-  M->y -= normfx(M->m10 * M->m11);
   M->z -= normfx(M->m20 * M->m21);
-
-  m0 = M->x << 8;
-  m1 = M->y << 8;
 
   /*
    * A = m00 * m01
