@@ -18,6 +18,10 @@ __regargs Object3D *NewObject3D(Mesh3D *mesh) {
   object->faceFlags = MemAlloc(faces, MEMF_PUBLIC);
   object->edgeFlags = MemAlloc(edges, MEMF_PUBLIC);
 
+  object->scale.x = fx12f(1.0);
+  object->scale.y = fx12f(1.0);
+  object->scale.z = fx12f(1.0); 
+
   return object;
 }
 
@@ -69,4 +73,69 @@ __regargs void UpdateFaceNormals(Object3D *object) {
     *normal++ = normfx(az * bx - bz * ax);
     *normal++ = normfx(ax * by - bx * ay);
   }
+}
+
+__regargs void UpdateObjectTransformation(Object3D *object) {
+  Point3D *rotate = &object->rotate;
+  Point3D *scale = &object->scale;
+  Point3D *translate = &object->translate;
+
+  /* object -> world: Rx * Ry * Rz * S * T */
+  {
+    Matrix3D *m = &object->objectToWorld;
+    LoadRotate3D(m, rotate->x, rotate->y, rotate->z);
+    Scale3D(m, scale->x, scale->y, scale->z);
+    Translate3D(m, translate->x, translate->y, translate->z);
+  }
+
+  /* world -> object: T * S * Rz * Ry * Rx */
+  {
+    Matrix3D *m = &object->worldToObject;
+    Matrix3D m_scale, m_rotate;
+
+    LoadIdentity3D(&m_scale);
+    m_scale.m00 = div16(1 << 24, scale->x);
+    m_scale.m11 = div16(1 << 24, scale->y);
+    m_scale.m22 = div16(1 << 24, scale->z);
+
+    LoadReverseRotate3D(&m_rotate, -rotate->x, -rotate->y, -rotate->z);
+    Compose3D(m, &m_scale, &m_rotate);
+
+    /*
+     * Translation is formally first, and we achieve that in ReverseTransform3D.
+     * Matrix3D is used only to store the vector.
+     */
+    Translate3D(m, -translate->x, -translate->y, -translate->z);
+  }
+}
+
+__regargs void UpdateFaceVisibility(Object3D *object) {
+  WORD *src = (WORD *)object->mesh->faceNormal;
+  IndexListT **faces = object->mesh->face;
+  IndexListT *face = *faces++;
+  BYTE *faceFlags = object->faceFlags;
+  Point3D *vertex = object->mesh->vertex;
+  WORD cx, cy, cz; /* camera position in object space */
+
+  {
+    Matrix3D *M = &object->worldToObject;
+
+    /* camera position in world space is (0, 0, 1) */
+    WORD x = fx4i(0) + M->x;
+    WORD y = fx4i(0) + M->y;
+    WORD z = fx4i(1) + M->z;
+
+    cx = normfx(M->m00 * x + M->m01 * y + M->m02 * z);
+    cy = normfx(M->m10 * x + M->m11 * y + M->m12 * z);
+    cz = normfx(M->m20 * x + M->m21 * y + M->m22 * z);
+  }
+
+  do {
+    Point3D *p = &vertex[face->indices[0]];
+    LONG x = (*src++) * (WORD)(cx - p->x);
+    LONG y = (*src++) * (WORD)(cy - p->y);
+    LONG z = (*src++) * (WORD)(cz - p->z);
+
+    *faceFlags++ = (x + y + z >= 0) ? -1 : 0;
+  } while ((face = *faces++));
 }

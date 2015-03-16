@@ -69,6 +69,7 @@ static void MakeCopperList(CopListT *cp) {
 
 static void Init() {
   cube = NewObject3D(mesh);
+  cube->translate.z = fx4i(-250);
 
   screen0 = NewBitmap(WIDTH, HEIGHT + 1, DEPTH);
   screen1 = NewBitmap(WIDTH, HEIGHT + 1, DEPTH);
@@ -101,7 +102,7 @@ static void Kill() {
 }
 
 static __regargs void TransformVertices(Object3D *object) {
-  Matrix3D *M = &object->world;
+  Matrix3D *M = &object->objectToWorld;
   WORD *src = (WORD *)object->mesh->vertex;
   WORD *dst0 = (WORD *)object->vertex;
   WORD *dst1 = (WORD *)object->point;
@@ -140,28 +141,6 @@ static __regargs void TransformVertices(Object3D *object) {
 
     *dst1++ = div16(xp << 8, zp) + WIDTH / 2;
     *dst1++ = div16(yp << 8, zp) + HEIGHT / 2;
-  } while (--n != -1);
-}
-
-static __regargs void TransformFaceNormals(Object3D *object) {
-  Matrix3D *M = &object->world;
-  WORD *src = (WORD *)object->mesh->faceNormal;
-  WORD *dst = (WORD *)object->faceNormal;
-  register WORD n asm("d7") = object->mesh->faces - 1;
-
-  M->x = -normfx(M->m00 * M->m01);
-  M->y = -normfx(M->m10 * M->m11);
-  M->z = -normfx(M->m20 * M->m21);
-
-  do {
-    WORD *v = (WORD *)M;
-    WORD x = *src++;
-    WORD y = *src++;
-    WORD z = *src++;
-
-    MULVERTEX(*dst++);
-    MULVERTEX(*dst++);
-    MULVERTEX(*dst++);
   } while (--n != -1);
 }
 
@@ -223,8 +202,7 @@ static void DrawObject(Object3D *object) {
   APTR outbuf = carry->planes[0];
   APTR tmpbuf = scratchpad->planes[0];
   Point2D *point = object->point;
-  Point3D *vertex = object->vertex;
-  Point3D *normal = object->faceNormal;
+  BYTE *faceFlags = object->faceFlags;
   IndexListT **faceEdges = object->mesh->faceEdge;
   IndexListT **faces = object->mesh->face;
   IndexListT *face;
@@ -232,11 +210,10 @@ static void DrawObject(Object3D *object) {
   custom->bltafwm = -1;
   custom->bltalwm = -1;
 
-  for (; (face = *faces++); normal++) {
+  while ((face = *faces++)) {
     IndexListT *faceEdge = *faceEdges++;
-    Point3D *v = &vertex[face->indices[0]];
 
-    if (normal->x * v->x + normal->y * v->y + normal->z * v->z < 0) {
+    if (*faceFlags++) {
       UWORD bltmod, bltsize;
       WORD bltstart, bltend;
 
@@ -475,16 +452,16 @@ static __regargs void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
 }
 
 static void RenderObject3D() {
-  LONG a = ReadFrameCounter() * 6;
-
   BlitterClearSync(carry, 0);
 
   {
     // LONG lines = ReadLineCounter();
-    LoadRotate3D(&cube->world, a, a, a);
-    Translate3D(&cube->world, 0, 0, fx4i(-250));
+    cube->rotate.x = cube->rotate.y = cube->rotate.z =
+      ReadFrameCounter() * 6;
+
+    UpdateObjectTransformation(cube);
+    UpdateFaceVisibility(cube);
     TransformVertices(cube);
-    TransformFaceNormals(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
 

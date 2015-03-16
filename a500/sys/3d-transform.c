@@ -2,22 +2,10 @@
 #include "fx.h"
 
 __regargs void LoadIdentity3D(Matrix3D *M) {
-  WORD *m = &M->m00;
-
-  *m++ = fx12f(1.0);
-  *m++ = 0;
-  *m++ = 0;
-  *m++ = 0;
-      
-  *m++ = 0;
-  *m++ = fx12f(1.0);
-  *m++ = 0;
-  *m++ = 0;
-      
-  *m++ = 0;
-  *m++ = 0;
-  *m++ = fx12f(1.0);
-  *m++ = 0;
+  memset(M, 0, sizeof(Matrix3D));
+  M->m00 = fx12f(1.0);
+  M->m11 = fx12f(1.0);
+  M->m22 = fx12f(1.0);
 }
 
 __regargs void Translate3D(Matrix3D *M, WORD x, WORD y, WORD z) {
@@ -92,7 +80,7 @@ __regargs void LoadRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
  * [ cos(y)*sin(z) | (sin(x)*sin(y))*sin(z) + cos(x)*cos(z) | (cos(x)*sin(y))*sin(z) - sin(x)*cos(z) ]
  * [       -sin(y) |                          sin(x)*cos(y) |                          cos(x)*cos(y) ]
  */
-__regargs void LoadInvRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
+__regargs void LoadReverseRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
   WORD sinX = SIN(ax);
   WORD cosX = COS(ax);
   WORD sinY = SIN(ay);

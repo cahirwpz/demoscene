@@ -19,7 +19,7 @@ __regargs void LoadIdentity3D(Matrix3D *M);
 __regargs void Translate3D(Matrix3D *M, WORD x, WORD y, WORD z);
 __regargs void Scale3D(Matrix3D *M, WORD sx, WORD sy, WORD sz);
 __regargs void LoadRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az);
-__regargs void LoadInvRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az);
+__regargs void LoadReverseRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az);
 __regargs void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb);
 __regargs void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, WORD n);
 
@@ -67,8 +67,14 @@ __regargs Mesh3D *LoadLWO(char *filename, FLOAT scale);
 /* 3D object representation */
 
 typedef struct {
-  Matrix3D world;
   Mesh3D *mesh;
+
+  Point3D rotate;
+  Point3D scale;
+  Point3D translate;
+
+  Matrix3D objectToWorld; /* object -> world transformation */
+  Matrix3D worldToObject; /* world -> object transformation */
 
   Point3D *vertex;     /* camera coordinates */
   BYTE *vertexFlags;   /* used by clipping */
@@ -81,5 +87,7 @@ typedef struct {
 __regargs Object3D *NewObject3D(Mesh3D *mesh);
 __regargs void DeleteObject3D(Object3D *object);
 __regargs void UpdateFaceNormals(Object3D *object);
+__regargs void UpdateObjectTransformation(Object3D *object);
+__regargs void UpdateFaceVisibility(Object3D *object);
 
 #endif

@@ -41,6 +41,7 @@ static void MakeCopperList(CopListT *cp) {
 
 static void Init() {
   cube = NewObject3D(mesh);
+  cube->translate.z = fx4i(-250);
 
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
 
@@ -73,7 +74,7 @@ static void Kill() {
 }
 
 static __regargs void CustomTransform3D(Object3D *object) {
-  Matrix3D *M = &object->world;
+  Matrix3D *M = &object->objectToWorld;
   WORD *src = (WORD *)object->mesh->vertex;
   WORD *dst = (WORD *)object->point;
   WORD n = object->mesh->vertices;
@@ -186,19 +187,15 @@ __regargs static void DrawObject(Object3D *object) {
   }
 }
 
-static Point3D rotate = { 0, 0, 0 };
-
 static void Render() {
-  rotate.x += 16;
-  rotate.y += 16;
-  rotate.z += 16;
-
   BlitterClearSync(screen, active);
 
   {
     // LONG lines = ReadLineCounter();
-    LoadRotate3D(&cube->world, rotate.x, rotate.y, rotate.z);
-    Translate3D(&cube->world, 0, 0, fx4i(-250));
+
+    cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 8;
+
+    UpdateObjectTransformation(cube);
     CustomTransform3D(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }

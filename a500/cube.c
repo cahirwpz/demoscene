@@ -40,6 +40,7 @@ static void MakeCopperList(CopListT *cp) {
 
 static void Init() {
   cube = NewObject3D(mesh);
+  cube->translate.z = fx4i(-250);
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
@@ -57,29 +58,20 @@ static void Kill() {
   DeleteObject3D(cube);
 }
 
-static __regargs void UpdateFaceVisibility(Object3D *object) {
-  WORD *src = (WORD *)object->mesh->faceNormal;
+static __regargs void UpdateEdgeVisibility(Object3D *object) {
   BYTE *vertexFlags = object->vertexFlags;
   BYTE *edgeFlags = object->edgeFlags;
+  BYTE *faceFlags = object->faceFlags;
   IndexListT **faces = object->mesh->face;
   IndexListT *face = *faces++;
   IndexListT **faceEdges = object->mesh->faceEdge;
   IndexListT *faceEdge = *faceEdges++;
 
-  WORD m20 = object->world.m20;
-  WORD m21 = object->world.m21;
-  WORD m22 = object->world.m22;
-
   memset(vertexFlags, 0, object->mesh->vertices);
   memset(edgeFlags, 0, object->mesh->edges);
 
   do {
-    WORD x = *src++;
-    WORD y = *src++;
-    WORD z = *src++;
-    BYTE visible = (m20 * x + m21 * y + m22 * z >= 0) ? -1 : 0;
-
-    if (visible) {
+    if (*faceFlags++) {
       WORD n = face->count - 3;
       WORD *vi = face->indices;
       WORD *ei = faceEdge->indices;
@@ -119,12 +111,12 @@ static __regargs void UpdateFaceVisibility(Object3D *object) {
 }
 
 static __regargs void CustomTransform3D(Object3D *object) {
-  Matrix3D *M = &object->world;
+  Matrix3D *M = &object->objectToWorld;
   WORD *v = (WORD *)M;
   WORD *src = (WORD *)object->mesh->vertex;
   WORD *dst = (WORD *)object->point;
   BYTE *flags = object->vertexFlags;
-  WORD n = object->mesh->vertices;
+  register WORD n asm("d7") = object->mesh->vertices - 1;
   LONG m0, m1;
 
   M->x -= normfx(M->m00 * M->m01);
@@ -165,7 +157,7 @@ static __regargs void CustomTransform3D(Object3D *object) {
       src += 3;
       dst += 2;
     }
-  } while (--n > 0);
+  } while (--n != -1);
 }
 
 static __regargs void DrawObject(Object3D *object, APTR start) {
@@ -246,15 +238,17 @@ static __regargs void DrawObject(Object3D *object, APTR start) {
 }
 
 static void Render() {
-  LONG a = ReadFrameCounter() * 8;
-
   BlitterClearSync(screen[active], 0);
 
   {
     // LONG lines = ReadLineCounter();
-    LoadRotate3D(&cube->world, a, a, a);
-    Translate3D(&cube->world, 0, 0, fx4i(-250));
+    
+    cube->rotate.x = cube->rotate.y = cube->rotate.z = 
+      ReadFrameCounter() * 8;
+
+    UpdateObjectTransformation(cube);
     UpdateFaceVisibility(cube);
+    UpdateEdgeVisibility(cube);
     CustomTransform3D(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
