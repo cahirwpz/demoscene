@@ -1,7 +1,7 @@
 CPPFLAGS = -Isys
 
 BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
-          playahx playp61 cube kbtest shapes chunky-16c chunky-rgb mouse \
+          playahx playp61 wireframe kbtest shapes chunky-16c chunky-rgb mouse \
           uvmap metaballs blurred circles floor-old parselwo showlwo neons \
           plotter highway textscroll uvmap-rgb bumpmap-rgb glitch floor \
           transparency tilezoomer twister-rgb anim showpchg blurred3d
@@ -18,7 +18,6 @@ chunky-rgb:     chunky-rgb.o startup.o libsys.a
 circles:        circles.o startup.o libsys.a
 neons:          neons.o startup.o libsys.a
 copper:         copper.o startup.o libsys.a
-cube:           cube.o startup.o libsys.a
 floor:          floor.o startup.o libsys.a
 floor-old:      floor-old.o startup.o libsys.a
 highway:        highway.o startup.o libsys.a
@@ -40,12 +39,13 @@ showpchg:       showpchg.o startup.o libsys.a
 sprites4:       sprites4.o startup.o libsys.a
 sprites16:      sprites16.o startup.o libsys.a
 textscroll:     textscroll.o startup.o libsys.a
-topaz8:         topaz8.o startup.o libsys.a
-uvmap:          uvmap.o startup.o libsys.a
-uvmap-rgb:      uvmap-rgb.o startup.o libsys.a
 tilezoomer:     tilezoomer.o startup.o libsys.a
+topaz8:         topaz8.o startup.o libsys.a
 transparency:   transparency.o startup.o libsys.a
 twister-rgb:    twister-rgb.o startup.o libsys.a
+uvmap:          uvmap.o startup.o libsys.a
+uvmap-rgb:      uvmap-rgb.o startup.o libsys.a
+wireframe:      wireframe.o startup.o libsys.a
 
 SUBDIRS = ahx p61 sys
 
