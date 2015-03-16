@@ -111,7 +111,7 @@ static __regargs void UpdateEdgeVisibility(Object3D *object) {
   D = normfx(t0 * t1 + t2 - x * y) + t3; \
 }
 
-static __regargs void CustomTransform3D(Object3D *object) {
+static __regargs void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   WORD *v = (WORD *)M;
   WORD *src = (WORD *)object->mesh->vertex;
@@ -120,6 +120,7 @@ static __regargs void CustomTransform3D(Object3D *object) {
   register WORD n asm("d7") = object->mesh->vertices - 1;
   LONG m0, m1;
 
+  /* WARNING! This modifies camera matrix! */
   M->x -= normfx(M->m00 * M->m01);
   M->y -= normfx(M->m10 * M->m11);
   M->z -= normfx(M->m20 * M->m21);
@@ -251,7 +252,7 @@ static void Render() {
     else
       UpdateFaceVisibility(cube);
     UpdateEdgeVisibility(cube);
-    CustomTransform3D(cube);
+    TransformVertices(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
 
