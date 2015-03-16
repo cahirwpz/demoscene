@@ -4,37 +4,40 @@
 #include "3d.h"
 #include "fx.h"
 #include "ffp.h"
+#include "ilbm.h"
 
 #define WIDTH  256
 #define HEIGHT 256
-#define DEPTH  1
+#define DEPTH 4
 
 static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
-static BitmapT *screen[2];
+static PaletteT *palette;
+static BitmapT *screen;
 static UWORD active = 0;
+static CopInsT *bplptr[DEPTH];
 
 static void Load() {
-  // mesh = LoadLWO("data/codi.lwo", SPFlt(256));
+  palette = LoadPalette("data/wireframe-pal.ilbm");
+  mesh = LoadLWO("data/codi.lwo", SPFlt(256));
   // mesh = LoadLWO("data/new_2.lwo", SPFlt(80));
-  mesh = LoadLWO("data/cube.lwo", SPFlt(50));
+  // mesh = LoadLWO("data/cube.lwo", SPFlt(50));
   CalculateVertexFaceMap(mesh);
   CalculateFaceNormals(mesh);
   CalculateEdges(mesh);
 }
 
 static void UnLoad() {
+  DeletePalette(palette);
   DeleteMesh3D(mesh);
 }
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
+  CopMakePlayfield(cp, bplptr, screen, DEPTH);
   CopMakeDispWin(cp, X(32), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xFFF);
+  CopLoadPal(cp, palette, 0);
   CopEnd(cp);
 }
 
@@ -42,8 +45,7 @@ static void Init() {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(-250);
 
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
 
   cp = NewCopList(80);
   MakeCopperList(cp);
@@ -52,9 +54,8 @@ static void Init() {
 }
 
 static void Kill() {
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
   DeleteCopList(cp);
+  DeleteBitmap(screen);
   DeleteObject3D(cube);
 }
 
@@ -238,16 +239,17 @@ static __regargs void DrawObject(Object3D *object, APTR start) {
 }
 
 static void Render() {
-  BlitterClearSync(screen[active], 0);
+  BlitterClearSync(screen, active);
 
   {
     // LONG lines = ReadLineCounter();
-    
-    cube->rotate.x = cube->rotate.y = cube->rotate.z = 
-      ReadFrameCounter() * 8;
+    cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 8;
 
     UpdateObjectTransformation(cube);
-    UpdateFaceVisibility(cube);
+    if (RightMouseButton())
+      memset(cube->faceFlags, -1, cube->mesh->faces);
+    else
+      UpdateFaceVisibility(cube);
     UpdateEdgeVisibility(cube);
     CustomTransform3D(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
@@ -257,13 +259,24 @@ static void Render() {
 
   {
     // LONG lines = ReadLineCounter();
-    DrawObject(cube, screen[active]->planes[0]);
+    DrawObject(cube, screen->planes[active]);
     // Log("draw: %ld\n", ReadLineCounter() - lines);
   }
 
   WaitVBlank();
-  CopInsSet32(bplptr[0], screen[active]->planes[0]);
-  active ^= 1;
+
+  {
+    WORD n = DEPTH;
+
+    while (--n >= 0) {
+      WORD i = (active + n + 1 - DEPTH) % (DEPTH + 1);
+      if (i < 0)
+        i += DEPTH + 1;
+      CopInsSet32(bplptr[n], screen->planes[i]);
+    }
+  }
+
+  active = (active + 1) % (DEPTH + 1);
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, Render };

@@ -8,7 +8,6 @@ chunky-16c
 chunky-rgb
 colortab.s
 copper
-cube
 floor
 floor-old
 glitch
@@ -26,7 +25,6 @@ playp61
 plotter
 shapes
 showilbm
-showlwo
 showpchg
 sintab.s
 sprites16
@@ -38,4 +36,5 @@ topaz8
 twister-rgb
 uvmap
 uvmap-rgb
+wireframe
 *.7z
