@@ -94,18 +94,46 @@ __regargs void UpdateObjectTransformation(Object3D *object) {
     Matrix3D m_scale, m_rotate;
 
     LoadIdentity3D(&m_scale);
+
+    /*
+     * Translation is formally first, and we achieve that in ReverseTransform3D.
+     * Matrix3D is used only to store the vector.
+     */
+    m_scale.x = -translate->x;
+    m_scale.y = -translate->y;
+    m_scale.z = -translate->z;
+
     m_scale.m00 = div16(1 << 24, scale->x);
     m_scale.m11 = div16(1 << 24, scale->y);
     m_scale.m22 = div16(1 << 24, scale->z);
 
     LoadReverseRotate3D(&m_rotate, -rotate->x, -rotate->y, -rotate->z);
     Compose3D(m, &m_scale, &m_rotate);
+  }
 
-    /*
-     * Translation is formally first, and we achieve that in ReverseTransform3D.
-     * Matrix3D is used only to store the vector.
-     */
-    Translate3D(m, -translate->x, -translate->y, -translate->z);
+  /* calculate camera position in object space */ 
+  {
+    Matrix3D *M = &object->worldToObject;
+    WORD *camera = (WORD *)&object->camera;
+
+    /* camera position in world space is (0, 0, 0) */
+    WORD cx = M->x;
+    WORD cy = M->y;
+    WORD cz = M->z;
+
+    LONG x = M->m00 * cx + M->m01 * cy + M->m02 * cz;
+    LONG y = M->m10 * cx + M->m11 * cy + M->m12 * cz;
+    LONG z = M->m20 * cx + M->m21 * cy + M->m22 * cz;
+
+    WORD nx = normfx(x);
+    WORD ny = normfx(y);
+    WORD nz = normfx(z);
+
+    WORD l = isqrt(nx * nx + ny * ny + nz * nz);
+
+    *camera++ = div16(x, l);
+    *camera++ = div16(y, l);
+    *camera++ = div16(z, l);
   }
 }
 
@@ -115,20 +143,10 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
   BYTE *faceFlags = object->faceFlags;
   Point3D *vertex = object->mesh->vertex;
   WORD n = object->mesh->faces;
-  WORD cx, cy, cz; /* camera position in object space */
 
-  {
-    Matrix3D *M = &object->worldToObject;
-
-    /* camera position in world space is (0, 0, 1) */
-    WORD x = fx4i(0) + M->x;
-    WORD y = fx4i(0) + M->y;
-    WORD z = fx4i(1) + M->z;
-
-    cx = normfx(M->m00 * x + M->m01 * y + M->m02 * z);
-    cy = normfx(M->m10 * x + M->m11 * y + M->m12 * z);
-    cz = normfx(M->m20 * x + M->m21 * y + M->m22 * z);
-  }
+  WORD cx = object->camera.x;
+  WORD cy = object->camera.y;
+  WORD cz = object->camera.z;
 
   while (--n >= 0) {
     IndexListT *face = *faces++;
@@ -136,7 +154,10 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
     LONG x = (*src++) * (WORD)(cx - *p++);
     LONG y = (*src++) * (WORD)(cy - *p++);
     LONG z = (*src++) * (WORD)(cz - *p++);
-    BYTE f = (x + y + z >= 0) ? -1 : 0;
+    WORD f = (x + y + z) >> 20;
+
+    if (f < 0)
+      f = 0;
 
     *faceFlags++ = f;
   }

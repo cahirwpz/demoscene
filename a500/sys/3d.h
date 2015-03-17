@@ -76,6 +76,8 @@ typedef struct {
   Matrix3D objectToWorld; /* object -> world transformation */
   Matrix3D worldToObject; /* world -> object transformation */
 
+  Point3D camera;      /* camera position in object space */
+
   Point3D *vertex;     /* camera coordinates */
   BYTE *vertexFlags;   /* used by clipping */
   Point2D *point;      /* screen coordinates */

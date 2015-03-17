@@ -7,7 +7,7 @@
 
 #define WIDTH  256
 #define HEIGHT 256
-#define DEPTH  1
+#define DEPTH  3
 
 static Mesh3D *mesh;
 static Object3D *cube;
@@ -33,7 +33,13 @@ static void MakeCopperList(CopListT *cp) {
   CopMakePlayfield(cp, bplptr, screen0, DEPTH);
   CopMakeDispWin(cp, X(32), Y(0), WIDTH, HEIGHT);
   CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xFFF);
+  CopSetRGB(cp, 1, 0x333);
+  CopSetRGB(cp, 2, 0x555);
+  CopSetRGB(cp, 3, 0x777);
+  CopSetRGB(cp, 4, 0x999);
+  CopSetRGB(cp, 5, 0xBBB);
+  CopSetRGB(cp, 6, 0xDDD);
+  CopSetRGB(cp, 7, 0xFFF);
   CopEnd(cp);
 }
 
@@ -206,7 +212,7 @@ static __regargs void DrawLine(WORD x0, WORD y0, WORD x1, WORD y1) {
   }
 }
 
-static void DrawObject(Object3D *object, APTR screen, APTR buffer) {
+static void DrawObject(Object3D *object, APTR *screen, APTR buffer) {
   Point2D *point = object->point;
   BYTE *faceFlags = object->faceFlags;
   IndexListT **faceEdges = object->mesh->faceEdge;
@@ -218,8 +224,9 @@ static void DrawObject(Object3D *object, APTR screen, APTR buffer) {
 
   while ((face = *faces++)) {
     IndexListT *faceEdge = *faceEdges++;
+    BYTE color = (*faceFlags++) >> 1;
 
-    if (*faceFlags++) {
+    if (color) {
       UWORD bltmod, bltsize;
       WORD bltstart, bltend;
 
@@ -307,19 +314,32 @@ static void DrawObject(Object3D *object, APTR screen, APTR buffer) {
       /* Copy filled face to screen. */
       {
         APTR src = buffer + bltstart;
-        APTR dst = screen + bltstart;
+        BYTE mask = 1 << (DEPTH - 1);
+        WORD n = DEPTH;
 
-        WaitBlitter();
+        while (--n >= 0) {
+          APTR dst = screen[n] + bltstart;
+          UWORD bltcon0;
 
-        custom->bltcon0 = (SRCA | SRCB | DEST) | A_XOR_B;
-        custom->bltcon1 = 0;
-        custom->bltapt = src;
-        custom->bltbpt = dst;
-        custom->bltdpt = dst;
-        custom->bltamod = bltmod;
-        custom->bltbmod = bltmod;
-        custom->bltdmod = bltmod;
-        custom->bltsize = bltsize;
+          if (color & mask)
+            bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
+          else
+            bltcon0 = (SRCA | SRCB | DEST) | (NABC | NABNC);
+
+          WaitBlitter();
+
+          custom->bltcon0 = bltcon0;
+          custom->bltcon1 = 0;
+          custom->bltapt = src;
+          custom->bltbpt = dst;
+          custom->bltdpt = dst;
+          custom->bltamod = bltmod;
+          custom->bltbmod = bltmod;
+          custom->bltdmod = bltmod;
+          custom->bltsize = bltsize;
+
+          mask >>= 1;
+        }
       }
 
       /* Clear working area. */
@@ -343,21 +363,21 @@ static void Render() {
   BitmapClear(screen0, DEPTH);
 
   {
-    LONG lines = ReadLineCounter();
+    // LONG lines = ReadLineCounter();
     cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 8;
     UpdateObjectTransformation(cube);
     UpdateFaceVisibility(cube);
     UpdateVertexVisibility(cube);
     TransformVertices(cube);
-    Log("transform: %ld\n", ReadLineCounter() - lines);
+    // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
 
   WaitBlitter();
 
   {
-    LONG lines = ReadLineCounter();
-    DrawObject(cube, screen0->planes[0], buffer->planes[0]);
-    Log("draw: %ld\n", ReadLineCounter() - lines);
+    // LONG lines = ReadLineCounter();
+    DrawObject(cube, screen0->planes, buffer->planes[0]);
+    // Log("draw: %ld\n", ReadLineCounter() - lines);
   }
 
   WaitVBlank();

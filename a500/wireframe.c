@@ -118,15 +118,11 @@ static __regargs void TransformVertices(Object3D *object) {
   WORD *dst = (WORD *)object->point;
   BYTE *flags = object->vertexFlags;
   register WORD n asm("d7") = object->mesh->vertices - 1;
-  LONG m0, m1;
 
+  LONG m0 = (M->x - normfx(M->m00 * M->m01)) << 8;
+  LONG m1 = (M->y - normfx(M->m10 * M->m11)) << 8;
   /* WARNING! This modifies camera matrix! */
-  M->x -= normfx(M->m00 * M->m01);
-  M->y -= normfx(M->m10 * M->m11);
   M->z -= normfx(M->m20 * M->m21);
-
-  m0 = M->x << 8;
-  m1 = M->y << 8;
 
   /*
    * A = m00 * m01
