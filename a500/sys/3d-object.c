@@ -13,7 +13,6 @@ __regargs Object3D *NewObject3D(Mesh3D *mesh) {
   object->mesh = mesh;
   object->vertex = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
   object->vertexFlags = MemAlloc(vertices, MEMF_PUBLIC);
-  object->point = MemAlloc(sizeof(Point2D) * vertices, MEMF_PUBLIC);
   object->faceNormal = MemAlloc(sizeof(Point3D) * faces, MEMF_PUBLIC);
   object->faceFlags = MemAlloc(faces, MEMF_PUBLIC);
   object->edgeFlags = MemAlloc(edges, MEMF_PUBLIC);
@@ -33,7 +32,6 @@ __regargs void DeleteObject3D(Object3D *object) {
   MemFree(object->edgeFlags, edges);
   MemFree(object->faceFlags, faces);
   MemFree(object->faceNormal, sizeof(Point3D) * faces);
-  MemFree(object->point, sizeof(Point2D) * vertices);
   MemFree(object->vertexFlags, vertices);
   MemFree(object->vertex, sizeof(Point3D) * vertices);
   MemFree(object, sizeof(Object3D));
@@ -50,7 +48,7 @@ __regargs void DeleteObject3D(Object3D *object) {
  */
 
 __regargs void UpdateFaceNormals(Object3D *object) {
-  Point3D *point = object->vertex;
+  Point3D *vertex = object->vertex;
   IndexListT **faces = object->mesh->face;
   WORD *normal = (WORD *)object->faceNormal;
   IndexListT *face;
@@ -58,9 +56,9 @@ __regargs void UpdateFaceNormals(Object3D *object) {
   while ((face = *faces++)) {
     WORD *v = face->indices;
 
-    Point3D *p1 = &point[*v++];
-    Point3D *p2 = &point[*v++];
-    Point3D *p3 = &point[*v++];
+    Point3D *p1 = &vertex[*v++];
+    Point3D *p2 = &vertex[*v++];
+    Point3D *p3 = &vertex[*v++];
 
     WORD ax = p1->x - p2->x;
     WORD ay = p1->y - p2->y;

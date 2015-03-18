@@ -104,8 +104,7 @@ static void Kill() {
 static __regargs void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   WORD *src = (WORD *)object->mesh->vertex;
-  WORD *dst0 = (WORD *)object->vertex;
-  WORD *dst1 = (WORD *)object->point;
+  WORD *dst = (WORD *)object->vertex;
   register WORD n asm("d7") = object->mesh->vertices - 1;
 
   /* WARNING! This modifies camera matrix! */
@@ -135,12 +134,9 @@ static __regargs void TransformVertices(Object3D *object) {
     MULVERTEX(yp);
     MULVERTEX(zp);
 
-    *dst0++ = xp;
-    *dst0++ = yp;
-    *dst0++ = zp;
-
-    *dst1++ = div16(xp << 8, zp) + WIDTH / 2;
-    *dst1++ = div16(yp << 8, zp) + HEIGHT / 2;
+    *dst++ = div16(xp << 8, zp) + WIDTH / 2;
+    *dst++ = div16(yp << 8, zp) + HEIGHT / 2;
+    *dst++ = zp;
   } while (--n != -1);
 }
 
@@ -201,7 +197,7 @@ static __regargs void DrawLine(WORD x0, WORD y0, WORD x1, WORD y1) {
 static void DrawObject(Object3D *object) {
   APTR outbuf = carry->planes[0];
   APTR tmpbuf = scratchpad->planes[0];
-  Point2D *point = object->point;
+  Point3D *point = object->vertex;
   BYTE *faceFlags = object->faceFlags;
   IndexListT **faceEdges = object->mesh->faceEdge;
   IndexListT **faces = object->mesh->face;
@@ -220,7 +216,7 @@ static void DrawObject(Object3D *object) {
       /* Estimate the size of rectangle that contains a face. */
       {
         WORD *i = face->indices;
-        Point2D *p = &point[*i++];
+        Point3D *p = &point[*i++];
         WORD minX = p->x;
         WORD minY = p->y;
         WORD maxX = minX; 

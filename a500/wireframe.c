@@ -95,27 +95,27 @@ static __regargs void UpdateEdgeVisibility(Object3D *object) {
   } while ((face = *faces++));
 }
 
-#define MULVERTEX1(D, E) {               \
-  WORD t0 = (*v++) + y;                  \
-  WORD t1 = (*v++) + x;                  \
-  LONG t2 = (*v++) * z;                  \
-  v++;                                   \
-  D = ((t0 * t1 + t2 - x * y) >> 4) + E; \
+#define MULVERTEX1(D, E) {            \
+  WORD t0 = (*v++) + y;               \
+  WORD t1 = (*v++) + x;               \
+  LONG t2 = (*v++) * z;               \
+  v++;                                \
+  D = ((t0 * t1 + t2 - xy) >> 4) + E; \
 }
 
-#define MULVERTEX2(D) {                  \
-  WORD t0 = (*v++) + y;                  \
-  WORD t1 = (*v++) + x;                  \
-  LONG t2 = (*v++) * z;                  \
-  WORD t3 = (*v++);                      \
-  D = normfx(t0 * t1 + t2 - x * y) + t3; \
+#define MULVERTEX2(D) {               \
+  WORD t0 = (*v++) + y;               \
+  WORD t1 = (*v++) + x;               \
+  LONG t2 = (*v++) * z;               \
+  WORD t3 = (*v++);                   \
+  D = normfx(t0 * t1 + t2 - xy) + t3; \
 }
 
 static __regargs void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   WORD *v = (WORD *)M;
   WORD *src = (WORD *)object->mesh->vertex;
-  WORD *dst = (WORD *)object->point;
+  WORD *dst = (WORD *)object->vertex;
   BYTE *flags = object->vertexFlags;
   register WORD n asm("d7") = object->mesh->vertices - 1;
 
@@ -140,6 +140,7 @@ static __regargs void TransformVertices(Object3D *object) {
       WORD x = *src++;
       WORD y = *src++;
       WORD z = *src++;
+      LONG xy = x * y;
       LONG xp, yp;
       WORD zp;
 
@@ -151,9 +152,10 @@ static __regargs void TransformVertices(Object3D *object) {
 
       *dst++ = div16(xp, zp) + WIDTH / 2;  /* div(xp * 256, zp) */
       *dst++ = div16(yp, zp) + HEIGHT / 2; /* div(yp * 256, zp) */
+      *dst++ = zp;
     } else {
       src += 3;
-      dst += 2;
+      dst += 3;
     }
   } while (--n != -1);
 }
@@ -161,7 +163,7 @@ static __regargs void TransformVertices(Object3D *object) {
 static __regargs void DrawObject(Object3D *object, APTR start) {
   WORD *edge = (WORD *)object->mesh->edge;
   BYTE *edgeFlags = object->edgeFlags;
-  Point2D *point = object->point;
+  Point3D *point = object->vertex;
   WORD n = object->mesh->edges;
 
   custom->bltafwm = -1;

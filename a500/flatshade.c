@@ -114,7 +114,7 @@ static __regargs void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   WORD *v = (WORD *)M;
   WORD *src = (WORD *)object->mesh->vertex;
-  WORD *dst = (WORD *)object->point;
+  WORD *dst = (WORD *)object->vertex;
   BYTE *flags = object->vertexFlags;
   register WORD n asm("d7") = object->mesh->vertices - 1;
 
@@ -151,9 +151,10 @@ static __regargs void TransformVertices(Object3D *object) {
 
       *dst++ = div16(xp, zp) + WIDTH / 2;  /* div(xp * 256, zp) */
       *dst++ = div16(yp, zp) + HEIGHT / 2; /* div(yp * 256, zp) */
+      *dst++ = zp;
     } else {
       src += 3;
-      dst += 2;
+      dst += 3;
     }
   } while (--n != -1);
 }
@@ -212,28 +213,139 @@ static __regargs void DrawLine(WORD x0, WORD y0, WORD x1, WORD y1) {
   }
 }
 
+typedef struct {
+  UWORD key;
+  WORD index;
+} ItemT;
+
+static ItemT faceArray0[256];
+static ItemT faceArray1[256];
+static WORD faceCount;
+
+static __regargs void CalculateFaceDepth(Object3D *object) {
+  IndexListT **faces = object->mesh->face;
+  WORD n = object->mesh->faces;
+  Point3D *point = object->vertex;
+  BYTE *faceFlags = object->faceFlags;
+  WORD count = 0;
+  WORD index = 0;
+
+  WORD *item = (WORD *)faceArray0;
+
+  while (--n >= 0) {
+    IndexListT *face = *faces++;
+
+    if (*faceFlags++) {
+      WORD vs = face->count;
+      WORD *vi = face->indices;
+      LONG sum = 0;
+      WORD z;
+
+      while (--vs >= 0)
+        sum += point[*vi++].z;
+
+      z = div16(sum, face->count);
+
+      *item++ = z + 32768;
+      *item++ = index;
+      count++;
+    }
+    index++;
+  }
+
+  faceCount = count;
+}
+
+static __regargs void SortFaces(Object3D *object) {
+  static UBYTE bucket[16];
+
+  ItemT *item0 = faceArray0;
+  ItemT *item1 = faceArray1;
+  WORD pass = 4;
+
+  while (--pass >= 0) {
+    {
+      LONG *data = (LONG *)bucket;
+      WORD n = 4;
+
+      while (--n >= 0)
+        *data++ = 0;
+    }
+
+    /* Count how many number has the same least significant digit. */
+    {
+      ItemT *item = item0;
+      WORD n = faceCount;
+
+      while (--n >= 0) {
+        WORD digit = item->key & 15;
+        bucket[digit]++;
+        item++;
+      }
+    }
+
+    /* Calculate bucket positions. */
+    {
+      BYTE *sum = bucket;
+      WORD i = 0;
+      WORD n = 16;
+
+      while (--n >= 0) {
+        WORD c = *sum;
+        *sum++ = i;
+        i += c;
+      }
+    }
+
+    /* Move items to buckets. */
+    {
+      WORD *src = (WORD *)item0;
+      WORD n = faceCount;
+
+      while (--n >= 0) {
+        WORD key = *src++;
+        WORD digit = key & 15;
+        WORD i = bucket[digit];
+        WORD *dst = (WORD *)&item1[i];
+
+        bucket[digit]++;
+
+        *dst++ = key >> 4;
+        *dst++ = *src++;
+      }
+    }
+
+    swapr(item0, item1);
+  }
+}
+
 static void DrawObject(Object3D *object, APTR *screen, APTR buffer) {
-  Point2D *point = object->point;
+  Point3D *point = object->vertex;
   BYTE *faceFlags = object->faceFlags;
   IndexListT **faceEdges = object->mesh->faceEdge;
   IndexListT **faces = object->mesh->face;
-  IndexListT *face;
+  ItemT *item = faceArray0;
+  WORD n = faceCount;
 
   custom->bltafwm = -1;
   custom->bltalwm = -1;
 
-  while ((face = *faces++)) {
-    IndexListT *faceEdge = *faceEdges++;
-    BYTE color = (*faceFlags++) >> 1;
+  while (--n >= 0) {
+    LONG index = item->index;
+    IndexListT *face = faces[index];
+    IndexListT *faceEdge = faceEdges[index];
+    BYTE color = faceFlags[index] >> 1;
 
-    if (color) {
+    item++;
+
+    {
       UWORD bltmod, bltsize;
       WORD bltstart, bltend;
 
       /* Estimate the size of rectangle that contains a face. */
       {
         WORD *i = face->indices;
-        Point2D *p = &point[*i++];
+        Point3D *p = &point[*i++];
         WORD minX = p->x;
         WORD minY = p->y;
         WORD maxX = minX; 
@@ -370,6 +482,13 @@ static void Render() {
     UpdateVertexVisibility(cube);
     TransformVertices(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
+  }
+
+  {
+    // LONG lines = ReadLineCounter();
+    CalculateFaceDepth(cube);
+    SortFaces(cube);
+    // Log("sort: %ld\n", ReadLineCounter() - lines);
   }
 
   WaitBlitter();

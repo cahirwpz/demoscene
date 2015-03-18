@@ -82,11 +82,11 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
     while ((face = *faces++)) {
       WORD *vertex = face->indices;
       WORD n = face->count;
-      WORD p0 = vertex[n-1] * sizeof(Point2D);
+      WORD p0 = vertex[n-1] * sizeof(Point3D);
       WORD p1;
 
       while (--n >= 0) {
-        p1 = *vertex++ * sizeof(Point2D);
+        p1 = *vertex++ * sizeof(Point3D);
 
         /* Make sure lower index is first. */
         if (p0 > p1) {

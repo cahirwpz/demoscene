@@ -78,9 +78,8 @@ typedef struct {
 
   Point3D camera;      /* camera position in object space */
 
-  Point3D *vertex;     /* camera coordinates */
+  Point3D *vertex;     /* camera coordinates or screen coordinates + depth */
   BYTE *vertexFlags;   /* used by clipping */
-  Point2D *point;      /* screen coordinates */
   Point3D *faceNormal; /* for back-face culling and lighting */
   BYTE *faceFlags;     /* e.g. visiblity flags */
   BYTE *edgeFlags;
