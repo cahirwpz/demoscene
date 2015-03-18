@@ -54,7 +54,7 @@ static void Init() {
   cp = NewCopList(80);
   MakeCopperList(cp);
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
 }
 
 static void Kill() {
@@ -166,53 +166,60 @@ static __regargs void TransformVertices(Object3D *object) {
     *(ULONG *)(&custom->reg) = (((hi) << 16) | (lo))
 
 static __regargs void DrawLine(WORD x0, WORD y0, WORD x1, WORD y1) {
-  WORD dmax = x1 - x0;
-  WORD dmin = y1 - y0;
-  WORD derr;
-  UWORD bltcon1 = LINE_ONEDOT;
-
-  if (dmax < 0)
-    dmax = -dmax;
-
-  if (dmax >= dmin) {
-    if (x0 >= x1)
-      bltcon1 |= AUL;
-    bltcon1 |= SUD;
-  } else {
-    if (x0 >= x1)
-      bltcon1 |= SUL;
-    swapr(dmax, dmin);
+  if (y0 > y1) {
+    swapr(x0, x1);
+    swapr(y0, y1);
   }
 
-  derr = 2 * dmin - dmax;
-  if (derr < 0)
-    bltcon1 |= SIGNFLAG;
-  bltcon1 |= rorw(x0 & 15, 4);
-
   {
-    APTR src = buffer->planes[0];
-    WORD start = ((y0 << 5) + (x0 >> 3)) & ~1;
-    APTR dst = src + start;
-    UWORD bltcon0 = rorw(x0 & 15, 4) | LINE_EOR;
-    UWORD bltamod = derr - dmax;
-    UWORD bltbmod = 2 * dmin;
-    UWORD bltsize = (dmax << 6) + 66;
-    APTR bltapt = (APTR)(LONG)derr;
+    WORD dmax = x1 - x0;
+    WORD dmin = y1 - y0;
+    WORD derr;
+    UWORD bltcon1 = LINE_ONEDOT;
 
-    WaitBlitter();
+    if (dmax < 0)
+      dmax = -dmax;
 
-    custom->bltadat = 0x8000;
-    custom->bltbdat = 0xffff; /* Line texture pattern. */
-    custom->bltcon0 = bltcon0;
-    custom->bltcon1 = bltcon1;
-    custom->bltamod = bltamod;
-    custom->bltbmod = bltbmod;
-    custom->bltcmod = WIDTH / 8;
-    custom->bltdmod = WIDTH / 8;
-    custom->bltapt = bltapt;
-    custom->bltcpt = dst;
-    custom->bltdpt = src;
-    custom->bltsize = bltsize;
+    if (dmax >= dmin) {
+      if (x0 >= x1)
+        bltcon1 |= AUL;
+      bltcon1 |= SUD;
+    } else {
+      if (x0 >= x1)
+        bltcon1 |= SUL;
+      swapr(dmax, dmin);
+    }
+
+    derr = 2 * dmin - dmax;
+    if (derr < 0)
+      bltcon1 |= SIGNFLAG;
+    bltcon1 |= rorw(x0 & 15, 4);
+
+    {
+      APTR src = buffer->planes[0];
+      WORD start = ((y0 << 5) + (x0 >> 3)) & ~1;
+      APTR dst = src + start;
+      UWORD bltcon0 = rorw(x0 & 15, 4) | LINE_EOR;
+      UWORD bltamod = derr - dmax;
+      UWORD bltbmod = 2 * dmin;
+      UWORD bltsize = (dmax << 6) + 66;
+      APTR bltapt = (APTR)(LONG)derr;
+
+      WaitBlitter();
+
+      custom->bltadat = 0x8000;
+      custom->bltbdat = 0xffff; /* Line texture pattern. */
+      custom->bltcon0 = bltcon0;
+      custom->bltcon1 = bltcon1;
+      custom->bltamod = bltamod;
+      custom->bltbmod = bltbmod;
+      custom->bltcmod = WIDTH / 8;
+      custom->bltdmod = WIDTH / 8;
+      custom->bltapt = bltapt;
+      custom->bltcpt = dst;
+      custom->bltdpt = src;
+      custom->bltsize = bltsize;
+    }
   }
 }
 
@@ -221,38 +228,38 @@ typedef struct {
   WORD index;
 } ItemT;
 
-static ItemT faceArray0[256];
-static ItemT faceArray1[256];
+static ItemT faceArray[256];
 static WORD faceCount;
 
 static __regargs void CalculateFaceDepth(Object3D *object) {
   IndexListT **faces = object->mesh->face;
   WORD n = object->mesh->faces;
-  Point3D *point = object->vertex;
+  APTR point = object->vertex;
   BYTE *faceFlags = object->faceFlags;
   WORD count = 0;
   WORD index = 0;
 
-  WORD *item = (WORD *)faceArray0;
+  WORD *item = (WORD *)faceArray;
 
   while (--n >= 0) {
     IndexListT *face = *faces++;
 
     if (*faceFlags++) {
-      WORD vs = face->count;
       WORD *vi = face->indices;
-      LONG sum = 0;
-      WORD z;
+      WORD i1 = *vi++ << 3;
+      WORD i2 = *vi++ << 3;
+      WORD i3 = *vi++ << 3;
+      WORD z = 0;
 
-      while (--vs >= 0)
-        sum += point[*vi++].z;
+      z += *(WORD *)(point + i1 + 4);
+      z += *(WORD *)(point + i2 + 4);
+      z += *(WORD *)(point + i3 + 4);
 
-      z = div16(sum, face->count);
-
-      *item++ = z + 32768;
+      *item++ = z;
       *item++ = index;
       count++;
     }
+
     index++;
   }
 
@@ -260,74 +267,59 @@ static __regargs void CalculateFaceDepth(Object3D *object) {
 }
 
 static __regargs void SortFaces(Object3D *object) {
-  static UBYTE bucket[16];
+  ItemT *table = faceArray;
+  ItemT *ptr = table + 1;
+  register WORD n asm("d7") = faceCount - 2;
 
-  ItemT *item0 = faceArray0;
-  ItemT *item1 = faceArray1;
-  WORD pass = 4;
-
-  while (--pass >= 0) {
-    {
-      LONG *data = (LONG *)bucket;
-      WORD n = 4;
-
-      while (--n >= 0)
-        *data++ = 0;
-    }
-
-    /* Count how many number has the same least significant digit. */
-    {
-      ItemT *item = item0;
-      WORD n = faceCount;
-
-      while (--n >= 0) {
-        WORD digit = item->key & 15;
-        bucket[digit]++;
-        item++;
-      }
-    }
-
-    /* Calculate bucket positions. */
-    {
-      BYTE *sum = bucket;
-      WORD i = 0;
-      WORD n = 16;
-
-      while (--n >= 0) {
-        WORD c = *sum;
-        *sum++ = i;
-        i += c;
-      }
-    }
-
-    /* Move items to buckets. */
-    {
-      WORD *src = (WORD *)item0;
-      WORD n = faceCount;
-
-      while (--n >= 0) {
-        WORD key = *src++;
-        WORD digit = key & 15;
-        WORD i = bucket[digit];
-        WORD *dst = (WORD *)&item1[i];
-
-        bucket[digit]++;
-
-        *dst++ = key >> 4;
-        *dst++ = *src++;
-      }
-    }
-
-    swapr(item0, item1);
-  }
+  do {
+    ItemT *curr = ptr;
+    ItemT *prev = ptr - 1;
+    ItemT this = *ptr++;
+    while (prev >= table && prev->key > this.key)
+      *curr-- = *prev--;
+    *curr = this;
+  } while (--n != -1);
 }
 
-static void DrawObject(Object3D *object, APTR *screen, APTR buffer) {
-  Point3D *point = object->vertex;
+static Box2D area;
+
+static __regargs void DrawFace(IndexListT *face, APTR point) {
+  WORD *i = face->indices;
+  WORD m = face->count - 1;
+  WORD *ptr = (WORD *)(point + (WORD)(i[m] << 3));
+  WORD x0 = *ptr++;
+  WORD y0 = *ptr++;
+
+  area.minX = x0;
+  area.minY = y0;
+  area.maxX = x0;
+  area.maxY = y0;
+
+  do {
+    WORD *ptr = (WORD *)(point + (WORD)(*i++ << 3));
+    WORD x1 = *ptr++;
+    WORD y1 = *ptr++;
+
+    /* Estimate the size of rectangle that contains a face. */
+    if (x1 < area.minX)
+      area.minX = x1;
+    else if (x1 > area.maxX)
+      area.maxX = x1;
+    if (y1 < area.minY)
+      area.minY = y1;
+    else if (y1 > area.maxY)
+      area.maxY = y1;
+
+    DrawLine(x0, y0, x1, y1);
+
+    x0 = x1; y0 = y1;
+  } while (--m != -1);
+}
+
+static __regargs void DrawObject(Object3D *object, APTR *screen, APTR buffer) {
   BYTE *faceFlags = object->faceFlags;
-  IndexListT **faceEdges = object->mesh->faceEdge;
   IndexListT **faces = object->mesh->face;
-  ItemT *item = faceArray0;
+  ItemT *item = faceArray;
   WORD n = faceCount;
 
   custom->bltafwm = -1;
@@ -336,141 +328,91 @@ static void DrawObject(Object3D *object, APTR *screen, APTR buffer) {
   while (--n >= 0) {
     LONG index = item->index;
     IndexListT *face = faces[index];
-    IndexListT *faceEdge = faceEdges[index];
-    BYTE color = faceFlags[index] >> 1;
 
-    item++;
+    WORD bltstart, bltend;
+    UWORD bltmod, bltsize;
 
+    DrawFace(face, object->vertex);
+    
     {
-      UWORD bltmod, bltsize;
-      WORD bltstart, bltend;
+      /* Align to word boundary. */
+      WORD minX = (area.minX & ~15) >> 3;
+      /* to avoid case where a line is on right edge */
+      WORD maxX = ((area.maxX + 16) & ~15) >> 3;
+      WORD minY = area.minY;
+      WORD maxY = area.maxY;
 
-      /* Estimate the size of rectangle that contains a face. */
-      {
-        WORD *i = face->indices;
-        Point3D *p = &point[*i++];
-        WORD minX = p->x;
-        WORD minY = p->y;
-        WORD maxX = minX; 
-        WORD maxY = minY;
-        WORD n = face->count - 2;
+      WORD w = maxX - minX;
+      WORD h = maxY - minY + 1;
 
-        do {
-          p = &point[*i++];
+      bltstart = minX + minY * (WIDTH / 8);
+      bltend = maxX + maxY * (WIDTH / 8) - 2;
+      bltsize = (h << 6) | (w >> 1);
+      bltmod = (WIDTH / 8) - w;
+    }
 
-          if (p->x < minX)
-            minX = p->x;
-          else if (p->x > maxX)
-            maxX = p->x;
+    /* Fill face. */
+    {
+      APTR src = buffer + bltend;
 
-          if (p->y < minY)
-            minY = p->y;
-          else if (p->y > maxY)
-            maxY = p->y;
-        } while (--n != -1);
+      WaitBlitter();
 
-        /* Align to word boundary. */
-        minX &= ~15;
-        maxX += 16; /* to avoid case where a line is on right edge */
-        maxX &= ~15;
+      custom->bltcon0 = (SRCA | DEST) | A_TO_D;
+      custom->bltcon1 = BLITREVERSE | FILL_XOR;
+      custom->bltapt = src;
+      custom->bltdpt = src;
+      custom->bltamod = bltmod;
+      custom->bltdmod = bltmod;
+      custom->bltsize = bltsize;
+    }
 
-        {
-          WORD w = maxX - minX;
-          WORD h = maxY - minY + 1;
+    /* Copy filled face to screen. */
+    {
+      APTR src = buffer + bltstart;
+      BYTE mask = 1 << (DEPTH - 1);
+      WORD n = DEPTH;
+      BYTE color = (faceFlags[index] + 1) >> 1;
 
-          bltstart = (minX >> 3) + minY * WIDTH / 8;
-          bltend = (maxX >> 3) + maxY * WIDTH / 8 - 2;
-          bltsize = (h << 6) | (w >> 4);
-          bltmod = (WIDTH / 8) - (w >> 3);
-        }
-      }
+      while (--n >= 0) {
+        APTR dst = screen[n] + bltstart;
+        UWORD bltcon0;
 
-      /* Draw face. */
-      {
-        EdgeT *edges = object->mesh->edge;
-        WORD m = faceEdge->count;
-        WORD *i = faceEdge->indices;
-
-        while (--m >= 0) {
-          WORD *edge = (WORD *)&edges[*i++];
-
-          WORD *p0 = (APTR)point + *edge++;
-          WORD *p1 = (APTR)point + *edge++;
-
-          WORD x0 = *p0++;
-          WORD y0 = *p0++;
-          WORD x1 = *p1++;
-          WORD y1 = *p1++;
-
-          if (y0 > y1) {
-            swapr(x0, x1);
-            swapr(y0, y1);
-          }
-
-          DrawLine(x0, y0, x1, y1);
-        }
-      }
-
-      /* Fill face. */
-      {
-        APTR src = buffer + bltend;
+        if (color & mask)
+          bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
+        else
+          bltcon0 = (SRCA | SRCB | DEST) | (NABC | NABNC);
 
         WaitBlitter();
 
-        custom->bltcon0 = (SRCA | DEST) | A_TO_D;
-        custom->bltcon1 = BLITREVERSE | FILL_XOR;
-        custom->bltapt = src;
-        custom->bltdpt = src;
-        custom->bltamod = bltmod;
-        custom->bltdmod = bltmod;
-        custom->bltsize = bltsize;
-      }
-
-      /* Copy filled face to screen. */
-      {
-        APTR src = buffer + bltstart;
-        BYTE mask = 1 << (DEPTH - 1);
-        WORD n = DEPTH;
-
-        while (--n >= 0) {
-          APTR dst = screen[n] + bltstart;
-          UWORD bltcon0;
-
-          if (color & mask)
-            bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
-          else
-            bltcon0 = (SRCA | SRCB | DEST) | (NABC | NABNC);
-
-          WaitBlitter();
-
-          custom->bltcon0 = bltcon0;
-          custom->bltcon1 = 0;
-          custom->bltapt = src;
-          custom->bltbpt = dst;
-          custom->bltdpt = dst;
-          custom->bltamod = bltmod;
-          custom->bltbmod = bltmod;
-          custom->bltdmod = bltmod;
-          custom->bltsize = bltsize;
-
-          mask >>= 1;
-        }
-      }
-
-      /* Clear working area. */
-      {
-        APTR data = buffer + bltstart;
-
-        WaitBlitter();
-
-        custom->bltcon0 = (DEST | A_TO_D);
+        custom->bltcon0 = bltcon0;
         custom->bltcon1 = 0;
-        custom->bltadat = 0;
-        custom->bltdpt = data;
+        custom->bltapt = src;
+        custom->bltbpt = dst;
+        custom->bltdpt = dst;
+        custom->bltamod = bltmod;
+        custom->bltbmod = bltmod;
         custom->bltdmod = bltmod;
         custom->bltsize = bltsize;
+
+        mask >>= 1;
       }
     }
+
+    /* Clear working area. */
+    {
+      APTR data = buffer + bltstart;
+
+      WaitBlitter();
+
+      custom->bltcon0 = (DEST | A_TO_D);
+      custom->bltcon1 = 0;
+      custom->bltadat = 0;
+      custom->bltdmod = bltmod;
+      custom->bltdpt = data;
+      custom->bltsize = bltsize;
+    }
+
+    item++;
   }
 }
 
@@ -493,8 +435,6 @@ static void Render() {
     SortFaces(cube);
     // Log("sort: %ld\n", ReadLineCounter() - lines);
   }
-
-  WaitBlitter();
 
   {
     // LONG lines = ReadLineCounter();
