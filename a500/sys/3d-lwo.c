@@ -84,6 +84,7 @@ __regargs Mesh3D *LoadLWO(char *filename, FLOAT scale) {
             *dst++ = SPFix(SPMul(SPFieee(*src++), scale));
             *dst++ = SPFix(SPMul(SPFieee(*src++), scale));
             *dst++ = SPFix(SPMul(SPFieee(*src++), scale));
+            dst++;
           }
 
           MemFree(pnts, pntsLength);

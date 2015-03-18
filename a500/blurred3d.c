@@ -137,6 +137,8 @@ static __regargs void TransformVertices(Object3D *object) {
     *dst++ = div16(xp << 8, zp) + WIDTH / 2;
     *dst++ = div16(yp << 8, zp) + HEIGHT / 2;
     *dst++ = zp;
+
+    src++; dst++;
   } while (--n != -1);
 }
 

@@ -158,5 +158,6 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
       f = 0;
 
     *faceFlags++ = f;
+    src++;
   }
 }

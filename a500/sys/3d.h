@@ -7,6 +7,7 @@
 
 typedef struct {
   WORD x, y, z;
+  WORD pad;
 } Point3D;
 
 typedef struct {

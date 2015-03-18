@@ -305,5 +305,6 @@ __regargs void CalculateFaceNormals(Mesh3D *mesh) {
     *normal++ = div16(x, l);
     *normal++ = div16(y, l);
     *normal++ = div16(z, l);
+    normal++;
   }
 }
