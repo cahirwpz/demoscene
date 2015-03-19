@@ -165,6 +165,35 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
   }
 }
 
+__regargs void UpdateVertexVisibility(Object3D *object) {
+  BYTE *vertexFlags = object->vertexFlags;
+  BYTE *faceFlags = object->faceFlags;
+  IndexListT **faces = object->mesh->face;
+  WORD n = object->mesh->faces;
+
+  memset(vertexFlags, 0, object->mesh->vertices);
+
+  while (--n >= 0) {
+    IndexListT *face = *faces++;
+
+    if (*faceFlags++) {
+      WORD *vi = face->indices;
+      WORD count = face->count;
+
+      /* Face has at least (and usually) three vertices. */
+      switch (count) {
+        case 6: vertexFlags[*vi++] = -1;
+        case 5: vertexFlags[*vi++] = -1;
+        case 4: vertexFlags[*vi++] = -1;
+        case 3: vertexFlags[*vi++] = -1;
+                vertexFlags[*vi++] = -1;
+                vertexFlags[*vi++] = -1;
+        default: break;
+      }
+    }
+  }
+}
+
 __regargs void SortFaces(Object3D *object) {
   IndexListT **faces = object->mesh->face;
   WORD n = object->mesh->faces;

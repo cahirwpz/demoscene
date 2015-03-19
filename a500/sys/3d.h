@@ -95,6 +95,7 @@ __regargs void DeleteObject3D(Object3D *object);
 __regargs void UpdateFaceNormals(Object3D *object);
 __regargs void UpdateObjectTransformation(Object3D *object);
 __regargs void UpdateFaceVisibility(Object3D *object);
+__regargs void UpdateVertexVisibility(Object3D *object);
 __regargs void SortFaces(Object3D *object);
 
 #endif
