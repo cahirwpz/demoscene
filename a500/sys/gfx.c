@@ -4,11 +4,13 @@
 __regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
                                 UWORD depth, BitmapT *donor)
 {
+  UWORD bytesPerRow = ((width + 15) & ~15) / 8;
+
   bitmap->width = width;
   bitmap->height = height;
   bitmap->depth = depth;
-  bitmap->bytesPerRow = ((width + 15) & ~15) / 8;
-  bitmap->bplSize = bitmap->bytesPerRow * height;
+  bitmap->bytesPerRow = bytesPerRow;
+  bitmap->bplSize = bytesPerRow * height;
   bitmap->flags = donor->flags;
   bitmap->palette = donor->palette;
 
@@ -61,10 +63,9 @@ __regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
 
 __regargs void DeleteBitmap(BitmapT *bitmap) {
   if (!(bitmap->flags & BM_MINIMAL)) {
-    if (bitmap->compression)
-      MemFree(bitmap->planes[0], (LONG)bitmap->planes[1]);
-    else
-      MemFree(bitmap->planes[0], BitmapSize(bitmap));
+    ULONG size = bitmap->compression ? 
+      (ULONG)bitmap->planes[1] : BitmapSize(bitmap);
+    MemFree(bitmap->planes[0], size);
   }
   MemFreeAuto(bitmap->pchg);
   MemFree(bitmap, sizeof(BitmapT));
@@ -87,7 +88,6 @@ __regargs PaletteT *NewPalette(UWORD count) {
   PaletteT *palette = MemAlloc(sizeof(PaletteT) + count * sizeof(ColorT),
                                MEMF_PUBLIC|MEMF_CLEAR);
   palette->count = count;
-
   return palette;
 }
 
@@ -108,9 +108,9 @@ __regargs void ConvertPaletteToRGB4(PaletteT *palette, UWORD *color, WORD n) {
     n = palette->count;
 
   while (--n >= 0) {
-    UBYTE r = *src++;
-    UBYTE g = *src++;
-    UBYTE b = *src++;
-    *color++ = ((r & 0xf0) << 4) | (g & 0xf0) | ((b & 0xf0) >> 4);
+    UBYTE r = *src++ & 0xf0;
+    UBYTE g = *src++ & 0xf0;
+    UBYTE b = *src++ & 0xf0;
+    *color++ = (r << 4) | (UBYTE)(g | (b >> 4));
   }
 }
