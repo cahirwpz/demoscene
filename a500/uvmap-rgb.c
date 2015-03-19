@@ -224,9 +224,8 @@ static void MakeCopperList(CopListT *cp) {
   WORD i;
 
   CopInit(cp);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
-  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
-  CopMove16(cp, bplcon0, BPLCON0_BPU(7) | BPLCON0_COLOR | BPLCON0_HOMOD);
+  CopSetupGfxSimple(cp, MODE_HAM, 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
+  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
   CopMove16(cp, bpldat[4], 0x7777); // rgbb: 0111
   CopMove16(cp, bpldat[5], 0xcccc); // rgbb: 1100
   CopLoadColor(cp, 0, 15, 0);
@@ -244,9 +243,6 @@ static void MakeCopperList(CopListT *cp) {
 static void Init() {
   screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
-
-  screen[0]->flags |= BM_HAM;
-  screen[1]->flags |= BM_HAM;
 
   chunky[0] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);
   chunky[1] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);

@@ -14,8 +14,8 @@ static void Load() {
   cp = NewCopList(100);
 
   CopInit(cp);
-  CopMakePlayfield(cp, NULL, screen, DEPTH);
-  CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);

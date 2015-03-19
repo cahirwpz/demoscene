@@ -89,8 +89,8 @@ static void MakeCopperList(CopListT *cp) {
   CopLoadPal(cp, spritePal, 24);
   CopLoadPal(cp, spritePal, 28);
 
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopShowPlayfield(cp, cityTop);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, NULL, cityTop, DEPTH);
   CopWait(cp, Y(-18), 0);
   CopLoadPal(cp, cityTop->palette, 0);
 
@@ -100,7 +100,7 @@ static void MakeCopperList(CopListT *cp) {
     CopWait(cp, Y(LANEL_Y - 2), 8);
     CopMove16(cp, dmacon, DMAF_RASTER);
     CopLoadPal(cp, carLeft->palette, 0);
-    CopMakePlayfield(cp, bplptr[0], lanes[active], DEPTH);
+    CopSetupBitplanes(cp, bplptr[0], lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
 
@@ -126,7 +126,7 @@ static void MakeCopperList(CopListT *cp) {
   {
     CopWait(cp, Y(LANER_Y - 1), 8);
     CopLoadPal(cp, carRight->palette, 0);
-    CopMakePlayfield(cp, bplptr[1], lanes[active], DEPTH);
+    CopSetupBitplanes(cp, bplptr[1], lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
 
@@ -139,7 +139,7 @@ static void MakeCopperList(CopListT *cp) {
   {
     CopWait(cp, Y(LANER_Y + LANE_H + 1), 8);
     CopLoadPal(cp, cityBottom->palette, 0);
-    CopShowPlayfield(cp, cityBottom);
+    CopSetupBitplanes(cp, NULL, cityBottom, DEPTH);
     CopWait(cp, Y(LANER_Y + LANE_H + 2), 8);
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   }

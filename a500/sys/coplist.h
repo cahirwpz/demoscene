@@ -4,6 +4,12 @@
 #include "gfx.h"
 #include "hardware.h"
 
+#define MODE_LORES  0
+#define MODE_HIRES  BPLCON0_HIRES
+#define MODE_DUALPF BPLCON0_DBLPF
+#define MODE_LACE   BPLCON0_LACE
+#define MODE_HAM    BPLCON0_HOMOD
+
 typedef union {
   struct {
     UBYTE vp;
@@ -35,6 +41,15 @@ __regargs CopInsT *CopWaitMask(CopListT *list,
                                UWORD vp, UWORD hp, UWORD vpmask, UWORD hpmask);
 __regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start);
 __regargs CopInsT *CopLoadColor(CopListT *list, UWORD start, UWORD end, UWORD color);
+__regargs CopInsT *CopSetColor(CopListT *list, WORD i, ColorT *color);
+
+__regargs void CopSetupMode(CopListT *list, UWORD mode, UWORD depth);
+__regargs void CopSetupDisplayWindow(CopListT *list, UWORD mode, 
+                                     UWORD xs, UWORD ys, UWORD w, UWORD h);
+__regargs void CopSetupBitplaneFetch(CopListT *list, UWORD mode,
+                                     UWORD xs, UWORD w);
+__regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
+                                 BitmapT *bitmap, UWORD depth);
 
 static inline CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {
   CopInsT *ptr = list->curr;
@@ -88,110 +103,16 @@ static inline void CopInsSet16(CopInsT *ins, UWORD data) {
   ins->move.data = data;
 }
 
-static inline void CopInsSetRGB24(CopInsT *ins, UBYTE r, UBYTE g, UBYTE b) {
-  ins->move.data = ((r & 0xf0) << 4) | (g & 0xf0) | ((b & 0xf0) >> 4);
-}
- 
-static inline void CopMakePlayfield(CopListT *list, CopInsT **bplptr, BitmapT *bitmap, UWORD depth) {
-  UWORD i, modulo;
-
-  CopMove16(list, bplcon0, BPLCON0_BPU(depth) | BPLCON0_COLOR |
-            (bitmap->width > 512 ? BPLCON0_HIRES : 0) |
-            (bitmap->flags & BM_HAM ? BPLCON0_HOMOD : 0));
-  CopMove16(list, bplcon1, 0);
-  CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
-  CopMove16(list, bplcon3, 0);
-  
-  modulo = (bitmap->flags & BM_INTERLEAVED) ? (bitmap->bytesPerRow * (depth - 1)) : 0;
-
-  CopMove16(list, bpl1mod, modulo);
-  CopMove16(list, bpl2mod, modulo);
-
-  for (i = 0; i < depth; i++) {
-    CopInsT *bplpt = CopMove32(list, bplpt[i], bitmap->planes[i]);
-
-    if (bplptr)
-      bplptr[i] = bplpt;
-  }
-}
-
-static inline void CopShowPlayfield(CopListT *list, BitmapT *bitmap) {
-  UWORD i;
-
-  CopMove16(list, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR);
-  CopMove16(list, bplcon1, 0);
-  CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
-  CopMove16(list, bplcon3, 0);
-  
-  CopMove16(list, bpl1mod, 0);
-  CopMove16(list, bpl2mod, 0);
-
-  for (i = 0; i < bitmap->depth; i++)
-    CopMove32(list, bplpt[i], bitmap->planes[i]);
-}
-
-static inline void CopShowPlayfieldArea(CopListT *list, BitmapT *bitmap, UWORD xs, UWORD ys, UWORD width) {
-  UWORD i;
-  LONG start = ys * bitmap->bytesPerRow + (xs >> 3);
-  WORD modulo = bitmap->bytesPerRow - (width >> 3);
-
-  CopMove16(list, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR);
-  CopMove16(list, bplcon1, 0);
-  CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
-  CopMove16(list, bplcon3, 0);
-  
-  CopMove16(list, bpl1mod, modulo);
-  CopMove16(list, bpl2mod, modulo);
-
-  for (i = 0; i < bitmap->depth; i++)
-    CopMove32(list, bplpt[i], bitmap->planes[i] + start);
-}
-
-/* Arguments must be always specified in low resolution coordinates. */
-static inline void
-CopMakeDispWin(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
-  /* vstart  $00 ..  $ff */
-  /* hstart  $00 ..  $ff */
-  /* vstop   $80 .. $17f */
-  /* hstop  $100 .. $1ff */
-  UBYTE xe = xs + w;
-  UBYTE ye = ys + h;
-  UWORD ddfstrt = ((xs - 17) / 2) & ~7;
-  UWORD ddfstop = ddfstrt + (w / 2 - 8);
-
-  CopMove16(list, diwstrt, (ys << 8) | xs);
-  CopMove16(list, diwstop, (ye << 8) | xe);
-
-  CopMove16(list, ddfstrt, ddfstrt);
-  CopMove16(list, ddfstop, ddfstop);
-  CopMove16(list, fmode, 0);
-}
-
-static inline void
-CopMakeDispWinHiRes(CopListT *list, UBYTE xs, UBYTE ys, UWORD w, UWORD h) {
-  /* vstart  $00 ..  $ff */
-  /* hstart  $00 ..  $ff */
-  /* vstop   $80 .. $17f */
-  /* hstop  $100 .. $1ff */
-  UBYTE xe = xs + w / 2;
-  UBYTE ye = ys + h;
-  UWORD ddfstrt = ((xs - 9) / 2) & ~3;
-  UWORD ddfstop = ddfstrt + (w / 4 - 8);
-
-  CopMove16(list, diwstrt, (ys << 8) | xs);
-  CopMove16(list, diwstop, (ye << 8) | xe);
-
-  CopMove16(list, ddfstrt, ddfstrt);
-  CopMove16(list, ddfstop, ddfstop);
-  CopMove16(list, fmode, 0);
+static inline void CopSetupGfxSimple(CopListT *list, UWORD mode, UWORD depth,
+                                     UWORD xs, UWORD ys, UWORD w, UWORD h) 
+{
+  CopSetupMode(list, mode, depth);
+  CopSetupDisplayWindow(list, mode, xs, ys, w, h);
+  CopSetupBitplaneFetch(list, mode, xs, w);
 }
 
 static inline CopInsT *CopSetRGB(CopListT *list, WORD i, UWORD value) {
   return CopMove16(list, color[i], value);
-}
-
-static inline CopInsT *CopSetColor(CopListT *list, WORD i, ColorT *c) {
-  return CopMove16(list, color[i], ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4));
 }
 
 static inline void CopListRun(CopListT *list) {

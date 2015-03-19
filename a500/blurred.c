@@ -47,8 +47,8 @@ static void MakeCopperList(CopListT *cp) {
   WORD i;
 
   CopInit(cp);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, bplptr[0], screen[active], DEPTH);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, bplptr[active], screen[active], DEPTH);
   CopWait(cp, Y(-18), 0);
   CopLoadPal(cp, palette[0], 0);
   CopWait(cp, Y(127), 0);

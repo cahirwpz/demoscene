@@ -19,6 +19,11 @@ static void UnLoad() {
 }
 
 static void Init() {
+  WORD w = bitmap->width;
+  WORD h = bitmap->height;
+  WORD xs = X((320 - w) / 2);
+  WORD ys = Y((256 - h) / 2);
+
   {
     LONG lines = ReadLineCounter();
     BitmapUnpack(bitmap, BM_DISPLAYABLE);
@@ -27,8 +32,8 @@ static void Init() {
   }
 
   CopInit(cp);
-  CopMakePlayfield(cp, NULL, bitmap, bitmap->depth);
-  CopMakeDispWin(cp, X(0), Y(0), bitmap->width, bitmap->height);
+  CopSetupGfxSimple(cp, MODE_LORES, bitmap->depth, xs, ys, w, h);
+  CopSetupBitplanes(cp, NULL, bitmap, bitmap->depth);
   CopLoadPal(cp, bitmap->palette, 0);
   CopEnd(cp);
 

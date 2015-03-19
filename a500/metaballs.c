@@ -54,8 +54,8 @@ static void SetInitialPositions() {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
   CopLoadPal(cp, metaball->palette, 0);
   CopEnd(cp);
 }

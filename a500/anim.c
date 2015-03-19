@@ -50,8 +50,8 @@ static void Init() {
 
   cp = NewCopList(100);
   CopInit(cp);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, bplptr, screen, DEPTH);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
   CopLoadPal(cp, palette, 0);
   CopEnd(cp);
 

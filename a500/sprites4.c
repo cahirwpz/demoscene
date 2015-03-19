@@ -4,6 +4,10 @@
 #include "ilbm.h"
 #include "sprite.h"
 
+#define WIDTH 320
+#define HEIGHT 256
+#define DEPTH 1
+
 static BitmapT *screen;
 static BitmapT *bitmap;
 static CopListT *cp;
@@ -12,13 +16,13 @@ static SpriteT *sprite[3];
 static CopInsT *sprptr[8];
 
 static void Load() {
-  screen = NewBitmap(320, 256, 1);
-  bitmap = LoadILBM("data.bak/sprites4.ilbm");
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  bitmap = LoadILBM("data/sprites4.ilbm");
   cp = NewCopList(100);
 
   CopInit(cp);
-  CopMakePlayfield(cp, NULL, screen, screen->depth);
-  CopMakeDispWin(cp, X(0), Y(0), screen->width, screen->height);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopLoadPal(cp, bitmap->palette, 16);
   CopMakeSprites(cp, sprptr, nullspr);
   CopEnd(cp);

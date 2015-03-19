@@ -85,8 +85,8 @@ static void Init() {
 
   cp = NewCopList(100);
   CopInit(cp);
-  CopMakePlayfield(cp, NULL, screen, DEPTH);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopLoadPal(cp, background->palette, 0);
   pal = CopLoadColor(cp, 8, 31, 0);
   CopEnd(cp);

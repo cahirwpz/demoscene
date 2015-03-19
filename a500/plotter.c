@@ -58,8 +58,8 @@ static void Init() {
     BitmapClear(screen[i], DEPTH);
 
   CopInit(cp);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
   CopLoadPal(cp, flares->palette, 0);
   CopEnd(cp);
   CopListActivate(cp);

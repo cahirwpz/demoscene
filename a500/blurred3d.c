@@ -38,8 +38,8 @@ static void UnLoad() {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopMakeDispWin(cp, X(STARTX), Y(STARTY), WIDTH, HEIGHT + HEIGHT / 4);
-  CopMakePlayfield(cp, bplptr, screen0, DEPTH);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(STARTX), Y(STARTY), WIDTH, HEIGHT * 5 / 4);
+  CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
 
   {
     WORD *pixels = gradient->pixels;

@@ -35,8 +35,8 @@ static void UnLoad() {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen, DEPTH);
-  CopMakeDispWin(cp, X(32), Y(0), WIDTH, HEIGHT);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
   CopLoadPal(cp, palette, 0);
   CopEnd(cp);
 }

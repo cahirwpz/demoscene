@@ -207,8 +207,8 @@ static void MakeCopperList(CopListT *cp) {
   WORD i;
 
   CopInit(cp);
-  CopMakeDispWin(cp, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
-  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
+  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
   CopLoadPal(cp, texture->palette, 0);
   for (i = 0; i < HEIGHT * 2; i++) {
     CopWait(cp, Y(i + 28), 0);

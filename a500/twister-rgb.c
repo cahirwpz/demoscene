@@ -64,8 +64,8 @@ static void MakeCopperList(CopListT **ptr, WORD n) {
   WORD i, j, k;
 
   CopInit(cp);
-  CopMakePlayfield(cp, bplptr[n], twister, DEPTH);
-  CopMakeDispWin(cp, X(STARTX), Y(0), WIDTH, HEIGHT);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(STARTX), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, bplptr[n], twister, DEPTH);
   CopMakeSprites(cp, sprptr[n], nullspr);
   CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
   CopMove16(cp, diwstrt, 0x2c81);

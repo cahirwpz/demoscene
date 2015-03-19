@@ -84,9 +84,10 @@ static void MakeCopperList(CopListT *cp, WORD n) {
   WORD i;
 
   CopInit(cp);
-  CopMakePlayfield(cp, NULL, bitmap, DEPTH);
-  CopMakeDispWin(cp, X(-16), Y(0), WIDTH + 16, HEIGHT);
-  CopMove16(cp, diwstrt, 0x2C81);
+  CopSetupMode(cp, MODE_LORES, DEPTH);
+  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH + 16);
+  CopSetupBitplanes(cp, NULL, bitmap, DEPTH);
   CopSetRGB(cp, 0, 0);
 
   for (i = 0; i < HEIGHT; i++) {

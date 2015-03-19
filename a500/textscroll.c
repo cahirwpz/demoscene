@@ -43,8 +43,8 @@ static void UnLoad() {
 static CopListT *MakeCopperList(WORD n) {
   CopListT *cp = NewCopList(100 + 3 * HEIGHT);
   CopInit(cp);
-  CopMakePlayfield(cp, NULL, scroll, DEPTH);
-  CopMakeDispWinHiRes(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupGfxSimple(cp, MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, NULL, scroll, DEPTH);
 
   CopLoadPal(cp, font->palette, 0);
   {

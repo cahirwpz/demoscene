@@ -106,8 +106,8 @@ static void MakeCopperList(CopListT *cp, WORD num) {
   WORD i, j;
 
   CopInit(cp);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
-  CopMakePlayfield(cp, NULL, screen[num], DEPTH);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, NULL, screen[num], DEPTH);
   CopLoadColor(cp, 0, 3, 0);
 
   for (i = 0; i < FAR_Y; i++) {

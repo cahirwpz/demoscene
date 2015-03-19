@@ -106,8 +106,11 @@ static void RotatePalette() {
   WORD n = 15;
 
   while (--n >= 0) {
-    ColorT *c = &src[i++ & 15];
-    CopInsSetRGB24(ins++, c->r, c->g, c->b);
+    UBYTE *c = (UBYTE *)&src[i++ & 15];
+    UBYTE r = *c++ & 0xf0;
+    UBYTE g = *c++ & 0xf0;
+    UBYTE b = *c++ & 0xf0;
+    CopInsSet16(ins++, (r << 4) | (UBYTE)(g | (b >> 4)));
   }
 }
 
@@ -128,8 +131,8 @@ static void Init() {
   cp = NewCopList(100);
 
   CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
-  CopMakeDispWin(cp, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
   pal = CopLoadPal(cp, palette[0], 0);
   CopLoadPal(cp, palette[1], 16);
   CopLoadPal(cp, palette[2], 24);

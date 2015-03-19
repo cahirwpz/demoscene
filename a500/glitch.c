@@ -65,8 +65,8 @@ static void Init() {
 
   cp = NewCopList(100 + HEIGHT * 2);
   CopInit(cp);
-  CopMakePlayfield(cp, bplptr, screen[active], DEPTH);
-  CopMakeDispWin(cp, X(XSTART), Y(YSTART), WIDTH, HEIGHT);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(XSTART), Y(YSTART), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
   CopSetRGB(cp, 0, 0x000);
   CopSetRGB(cp, 1, 0x00F);
   CopSetRGB(cp, 2, 0x0F0);

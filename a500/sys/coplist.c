@@ -101,3 +101,97 @@ __regargs CopInsT *CopLoadColor(CopListT *list, UWORD start, UWORD end, UWORD co
   list->curr = (CopInsT *)ins;
   return ptr;
 }
+
+__regargs CopInsT *CopSetColor(CopListT *list, WORD i, ColorT *color) {
+  UBYTE *c = (UBYTE *)color;
+  UBYTE r = *c++ & 0xf0;
+  UBYTE g = *c++ & 0xf0;
+  UBYTE b = *c++ & 0xf0;
+
+  return CopMove16(list, color[i], (r << 4) | (UBYTE)(g | (b >> 4)));
+}
+
+__regargs void CopSetupMode(CopListT *list, UWORD mode, UWORD depth) {
+  CopMove16(list, bplcon0, BPLCON0_BPU(depth) | BPLCON0_COLOR | mode);
+  CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
+  CopMove16(list, bplcon3, 0);
+}
+
+/* Arguments must be always specified in low resolution coordinates. */
+__regargs void CopSetupDisplayWindow(CopListT *list, UWORD mode, 
+                                     UWORD xs, UWORD ys, UWORD w, UWORD h)
+{
+  /* vstart  $00 ..  $ff */
+  /* hstart  $00 ..  $ff */
+  /* vstop   $80 .. $17f */
+  /* hstop  $100 .. $1ff */
+  UBYTE xe, ye;
+
+  if (mode & MODE_HIRES)
+    w /= 2;
+  if (mode & MODE_LACE)
+    h /= 2;
+
+  xe = xs + w;
+  ye = ys + h;
+
+  CopMove16(list, diwstrt, (ys << 8) | xs);
+  CopMove16(list, diwstop, (ye << 8) | xe);
+}
+
+__regargs void CopSetupBitplaneFetch(CopListT *list, UWORD mode,
+                                     UWORD xs, UWORD w)
+{
+  UWORD ddfstrt, ddfstop;
+
+  if (mode & MODE_HIRES) {
+    ddfstrt = ((xs - 9) / 2) & ~3;
+    ddfstop = ddfstrt + (w / 4 - 8);
+  } else {
+    ddfstrt = ((xs - 17) / 2) & ~7;
+    ddfstop = ddfstrt + (w / 2 - 8);
+  }
+
+  CopMove16(list, ddfstrt, ddfstrt);
+  CopMove16(list, ddfstop, ddfstop);
+  CopMove16(list, fmode, 0);
+}
+ 
+__regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
+                                 BitmapT *bitmap, UWORD depth) 
+{
+  WORD i, modulo = 0;
+  
+  if (bitmap->flags & BM_INTERLEAVED)
+    modulo = bitmap->bytesPerRow * (depth - 1);
+
+  CopMove16(list, bpl1mod, modulo);
+  CopMove16(list, bpl2mod, modulo);
+
+  for (i = 0; i < depth; i++) {
+    CopInsT *bplpt = CopMove32(list, bplpt[i], bitmap->planes[i]);
+
+    if (bplptr)
+      bplptr[i] = bplpt;
+  }
+}
+
+__regargs void CopSetupBitplanesArea(CopListT *list, CopInsT **bpltptr, 
+                                     BitmapT *bitmap, UWORD xs, UWORD ys, 
+                                     UWORD width) 
+{
+  WORD i;
+  LONG start = ys * bitmap->bytesPerRow + (xs >> 3);
+  WORD modulo = bitmap->bytesPerRow - (width >> 3);
+
+  CopMove16(list, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR);
+  CopMove16(list, bplcon1, 0);
+  CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
+  CopMove16(list, bplcon3, 0);
+  
+  CopMove16(list, bpl1mod, modulo);
+  CopMove16(list, bpl2mod, modulo);
+
+  for (i = 0; i < bitmap->depth; i++)
+    CopMove32(list, bplpt[i], bitmap->planes[i] + start);
+}
