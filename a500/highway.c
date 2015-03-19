@@ -44,7 +44,6 @@ static BitmapT *carRight;
 static BitmapT *laneBg;
 static BitmapT *cityTop;
 static BitmapT *cityBottom;
-static SpriteT *nullspr;
 static SpriteT *sprite[8];
 static PaletteT *spritePal;
 
@@ -54,7 +53,6 @@ static void Load() {
   cityBottom = LoadILBM("data/highway-city-bottom-2.ilbm");
   carLeft = LoadILBM("data/highway-car-left-2.ilbm");
   carRight = LoadILBM("data/highway-car-right-2.ilbm");
-  nullspr = NewSprite(0, FALSE);
 
   {
     BitmapT *title = LoadILBM("data/highway-sprite.ilbm");
@@ -65,7 +63,6 @@ static void Load() {
 }
 
 static void UnLoad() {
-  DeleteSprite(nullspr);
   ITER(i, 0, 7, DeleteSprite(sprite[i]));
 
   DeletePalette(carLeft->palette);
@@ -83,7 +80,7 @@ static void UnLoad() {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopMakeSprites(cp, sprptr, nullspr);
+  CopMakeSprites(cp, sprptr);
   CopLoadPal(cp, spritePal, 16);
   CopLoadPal(cp, spritePal, 20);
   CopLoadPal(cp, spritePal, 24);

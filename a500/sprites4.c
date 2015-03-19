@@ -11,7 +11,6 @@
 static BitmapT *screen;
 static BitmapT *bitmap;
 static CopListT *cp;
-static SpriteT *nullspr;
 static SpriteT *sprite[3];
 static CopInsT *sprptr[8];
 
@@ -24,7 +23,7 @@ static void Load() {
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopLoadPal(cp, bitmap->palette, 16);
-  CopMakeSprites(cp, sprptr, nullspr);
+  CopMakeSprites(cp, sprptr);
   CopEnd(cp);
 
   sprite[0] = NewSpriteFromBitmap(19, bitmap, 0, 0);
@@ -33,12 +32,9 @@ static void Load() {
   UpdateSpritePos(sprite[0], X(0), Y(113));
   UpdateSpritePos(sprite[1], X(0), Y(110));
   UpdateSpritePos(sprite[2], X(0), Y(101));
-
-  nullspr = NewSprite(0, FALSE);
 }
 
 static void UnLoad() {
-  DeleteSprite(nullspr);
   DeleteSprite(sprite[0]);
   DeleteSprite(sprite[1]);
   DeleteSprite(sprite[2]);

@@ -13,6 +13,8 @@ struct Sprite {
   UWORD *data;
 };
 
+extern SpriteT *NullSprite;
+
 __regargs SpriteT *NewSprite(UWORD height, BOOL attached);
 __regargs SpriteT *NewSpriteFromBitmap(UWORD height, BitmapT *bitmap,
                                        UWORD xstart, UWORD ystart);
@@ -23,20 +25,20 @@ __regargs void DeleteSprite(SpriteT *sprite);
 __regargs void UpdateSprite(SpriteT *sprite);
 __regargs void UpdateSpritePos(SpriteT *sprite, UWORD hstart, UWORD vstart);
 
-static inline void CopMakeSprites(CopListT *list, CopInsT **sprptr, SpriteT *nullspr) {
+static inline void CopMakeSprites(CopListT *list, CopInsT **sprptr) {
   UWORD i;
 
   for (i = 0; i < 8; i++)
-    sprptr[i] = CopMove32(list, sprpt[i], nullspr->data);
+    sprptr[i] = CopMove32(list, sprpt[i], NullSprite->data);
 }
 
-static inline void CopMakeManualSprites(CopListT *list, CopInsT **sprptr, SpriteT *nullspr) {
+static inline void CopMakeManualSprites(CopListT *list, CopInsT **sprptr) {
   UWORD i;
 
   for (i = 0; i < 8; i++) {
-    sprptr[i] = CopMove16(list, spr[i].pos, nullspr->data[0]);
-    CopMove16(list, spr[i].ctl, nullspr->data[1]);
-    CopMove32(list, sprpt[i], &nullspr->data[2]);
+    sprptr[i] = CopMove16(list, spr[i].pos, NullSprite->data[0]);
+    CopMove16(list, spr[i].ctl, NullSprite->data[1]);
+    CopMove32(list, sprpt[i], &NullSprite->data[2]);
   }
 }
 

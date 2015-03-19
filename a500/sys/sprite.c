@@ -3,6 +3,7 @@
 
 #include "sprite.h"
 #include "memory.h"
+#include "common.h"
 
 __regargs SpriteT *NewSprite(UWORD height, BOOL attached) {
   SpriteT *sprite = MemAlloc(sizeof(SpriteT), MEMF_PUBLIC|MEMF_CLEAR);
@@ -140,3 +141,11 @@ __regargs void UpdateSpritePos(SpriteT *sprite, UWORD hstart, UWORD vstart) {
     *dst = *src | 0x80;
   }
 }
+
+SpriteT *NullSprite = NULL;
+
+void InitNullSprite() { NullSprite = NewSprite(0, FALSE); }
+void KillNullSprite() { DeleteSprite(NullSprite); }
+
+ADD2INIT(InitNullSprite, 0);
+ADD2EXIT(KillNullSprite, 0);

@@ -11,7 +11,6 @@
 static BitmapT *screen;
 static BitmapT *bitmap;
 static CopListT *cp;
-static SpriteT *nullspr;
 static SpriteT *sprite[12];
 static CopInsT *sprptr[8];
 
@@ -20,7 +19,6 @@ static void Load() {
 
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   bitmap = LoadILBM("data/sprites16.ilbm");
-  nullspr = NewSprite(0, FALSE);
   cp = NewCopList(100);
 
   CopInit(cp);
@@ -28,7 +26,7 @@ static void Load() {
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopSetRGB(cp, 0, 0x346);
   CopLoadPal(cp, bitmap->palette, 16);
-  CopMakeSprites(cp, sprptr, nullspr);
+  CopMakeSprites(cp, sprptr);
   CopEnd(cp);
 
   for (i = 0; i < 12; i++) {
@@ -39,8 +37,6 @@ static void Load() {
 
 static void UnLoad() {
   WORD i;
-
-  DeleteSprite(nullspr);
 
   for (i = 0; i < 12; i++)
     DeleteSprite(sprite[i]);

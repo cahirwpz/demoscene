@@ -23,7 +23,6 @@ static WORD active = 0;
 
 static SpriteT *left[2];
 static SpriteT *right[2];
-static SpriteT *nullspr;
 static CopInsT *sprptr[2][8];
 
 static void Load() {
@@ -43,12 +42,9 @@ static void Load() {
     DeleteBitmap(_right);
     DeleteBitmap(_left);
   }
-
-  nullspr = NewSprite(0, FALSE);
 }
 
 static void UnLoad() {
-  DeleteSprite(nullspr);
   DeleteSprite(left[0]);
   DeleteSprite(left[1]);
   DeleteSprite(right[0]);
@@ -66,7 +62,7 @@ static void MakeCopperList(CopListT **ptr, WORD n) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(STARTX), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr[n], twister, DEPTH);
-  CopMakeSprites(cp, sprptr[n], nullspr);
+  CopMakeSprites(cp, sprptr[n]);
   CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
   CopMove16(cp, diwstrt, 0x2c81);
   CopMove16(cp, diwstop, 0x2bc1);
