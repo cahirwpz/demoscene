@@ -47,6 +47,7 @@ static void UnLoad() {
 static void MoveSprite() {
   static UWORD counter = 0;
   static UWORD x = X(0);
+  static UWORD y[3] = { Y(113), Y(110), Y(101) };
   static WORD direction = 1;
   WORD i = (WORD)(counter * 2 / 50) % 4;
 
@@ -59,8 +60,7 @@ static void MoveSprite() {
   if (i > 2)
     i = 4 - i;
 
-  sprite[i]->x = x;
-  UpdateSprite(sprite[i]);
+  UpdateSpritePos(sprite[i], x, y[i]);
 
   if (sprptr[0])
     CopInsSet32(sprptr[0], sprite[i]->data);

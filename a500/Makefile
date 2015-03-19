@@ -3,7 +3,7 @@ CPPFLAGS = -Isys
 BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           playahx playp61 wireframe kbtest shapes mouse transparency anim \
           uvmap metaballs blurred circles floor-old parselwo neons flatshade \
-          plotter highway textscroll uvmap-rgb bumpmap-rgb glitch floor \
+          plotter highway textscroll uvmap-rgb bumpmap-rgb glitch floor ball \
           tilezoomer twister-rgb showpchg blurred3d
 
 all:	startup.o libs $(BINS)

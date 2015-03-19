@@ -19,7 +19,6 @@ static PixmapT *textureHi, *textureLo;
 static PixmapT *chunky;
 static BitmapT *bitmap;
 static SpriteT *sprite[2][4];
-static SpriteT *nullspr;
 static CopInsT *sprptr[8];
 
 static BitmapT *background;
@@ -96,11 +95,11 @@ static void UnLoad() {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopMakeDispWin(cp, X(0), Y(0), S_WIDTH, S_HEIGHT);
-  CopMakePlayfield(cp, NULL, background, S_DEPTH);
+  CopSetupGfxSimple(cp, MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
+  CopSetupBitplanes(cp, NULL, background, S_DEPTH);
   CopLoadPal(cp, background->palette, 0);
   CopLoadPal(cp, texture->palette, 16);
-  CopMakeSprites(cp, sprptr, nullspr);
+  CopMakeSprites(cp, sprptr);
   CopEnd(cp);
 
   {
@@ -131,7 +130,6 @@ static void Init() {
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
 
-  nullspr = NewSprite(0, FALSE);
   {
     WORD i, j;
 
@@ -157,7 +155,6 @@ static void Kill() {
   DeletePixmap(textureLo);
   MemFree(UVMapRender, UVMapRenderSize);
 
-  DeleteSprite(nullspr);
   {
     WORD i, j;
 
