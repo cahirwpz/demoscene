@@ -16,6 +16,7 @@ __regargs Object3D *NewObject3D(Mesh3D *mesh) {
   object->faceNormal = MemAlloc(sizeof(Point3D) * faces, MEMF_PUBLIC);
   object->faceFlags = MemAlloc(faces, MEMF_PUBLIC);
   object->edgeFlags = MemAlloc(edges, MEMF_PUBLIC);
+  object->visibleFace = MemAlloc(sizeof(SortItemT) * faces, MEMF_PUBLIC);
 
   object->scale.x = fx12f(1.0);
   object->scale.y = fx12f(1.0);
@@ -29,6 +30,7 @@ __regargs void DeleteObject3D(Object3D *object) {
   WORD faces = object->mesh->faces;
   WORD edges = object->mesh->edges;
 
+  MemFree(object->visibleFace, sizeof(SortItemT) * faces);
   MemFree(object->edgeFlags, edges);
   MemFree(object->faceFlags, faces);
   MemFree(object->faceNormal, sizeof(Point3D) * faces);
@@ -139,7 +141,7 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
   WORD *src = (WORD *)object->mesh->faceNormal;
   IndexListT **faces = object->mesh->face;
   BYTE *faceFlags = object->faceFlags;
-  Point3D *vertex = object->mesh->vertex;
+  APTR vertex = object->mesh->vertex;
   WORD n = object->mesh->faces;
 
   WORD cx = object->camera.x;
@@ -148,7 +150,7 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
 
   while (--n >= 0) {
     IndexListT *face = *faces++;
-    WORD *p = (WORD *)&vertex[face->indices[0]];
+    WORD *p = (WORD *)(vertex + (WORD)(face->indices[0] << 3));
     LONG x = (*src++) * (WORD)(cx - *p++);
     LONG y = (*src++) * (WORD)(cy - *p++);
     LONG z = (*src++) * (WORD)(cz - *p++);
@@ -158,6 +160,45 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
       f = 0;
 
     *faceFlags++ = f;
+
     src++;
   }
 }
+
+__regargs void SortFaces(Object3D *object) {
+  IndexListT **faces = object->mesh->face;
+  WORD n = object->mesh->faces;
+  APTR point = object->vertex;
+  BYTE *faceFlags = object->faceFlags;
+  WORD count = 0;
+  WORD index = 0;
+
+  WORD *item = (WORD *)object->visibleFace;
+
+  while (--n >= 0) {
+    IndexListT *face = *faces++;
+
+    if (*faceFlags++) {
+      WORD *vi = face->indices;
+      WORD i1 = *vi++ << 3;
+      WORD i2 = *vi++ << 3;
+      WORD i3 = *vi++ << 3;
+      WORD z = 0;
+
+      z += *(WORD *)(point + i1 + 4);
+      z += *(WORD *)(point + i2 + 4);
+      z += *(WORD *)(point + i3 + 4);
+
+      *item++ = z;
+      *item++ = index;
+      count++;
+    }
+
+    index++;
+  }
+
+  object->visibleFaces = count;
+
+  SortItemArray(object->visibleFace, count);
+}
+

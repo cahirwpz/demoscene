@@ -1,6 +1,7 @@
 #ifndef __3D_H__
 #define __3D_H__
 
+#include "sort.h"
 #include "2d.h"
 
 /* 3D transformations */
@@ -84,6 +85,9 @@ typedef struct {
   Point3D *faceNormal; /* for back-face culling and lighting */
   BYTE *faceFlags;     /* e.g. visiblity flags */
   BYTE *edgeFlags;
+
+  SortItemT *visibleFace;
+  WORD visibleFaces;
 } Object3D;
 
 __regargs Object3D *NewObject3D(Mesh3D *mesh);
@@ -91,5 +95,6 @@ __regargs void DeleteObject3D(Object3D *object);
 __regargs void UpdateFaceNormals(Object3D *object);
 __regargs void UpdateObjectTransformation(Object3D *object);
 __regargs void UpdateFaceVisibility(Object3D *object);
+__regargs void SortFaces(Object3D *object);
 
 #endif

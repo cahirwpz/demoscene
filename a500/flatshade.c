@@ -223,64 +223,6 @@ static __regargs void DrawLine(WORD x0, WORD y0, WORD x1, WORD y1) {
   }
 }
 
-typedef struct {
-  UWORD key;
-  WORD index;
-} ItemT;
-
-static ItemT faceArray[256];
-static WORD faceCount;
-
-static __regargs void CalculateFaceDepth(Object3D *object) {
-  IndexListT **faces = object->mesh->face;
-  WORD n = object->mesh->faces;
-  APTR point = object->vertex;
-  BYTE *faceFlags = object->faceFlags;
-  WORD count = 0;
-  WORD index = 0;
-
-  WORD *item = (WORD *)faceArray;
-
-  while (--n >= 0) {
-    IndexListT *face = *faces++;
-
-    if (*faceFlags++) {
-      WORD *vi = face->indices;
-      WORD i1 = *vi++ << 3;
-      WORD i2 = *vi++ << 3;
-      WORD i3 = *vi++ << 3;
-      WORD z = 0;
-
-      z += *(WORD *)(point + i1 + 4);
-      z += *(WORD *)(point + i2 + 4);
-      z += *(WORD *)(point + i3 + 4);
-
-      *item++ = z;
-      *item++ = index;
-      count++;
-    }
-
-    index++;
-  }
-
-  faceCount = count;
-}
-
-static __regargs void SortFaces(Object3D *object) {
-  ItemT *table = faceArray;
-  ItemT *ptr = table + 1;
-  register WORD n asm("d7") = faceCount - 2;
-
-  do {
-    ItemT *curr = ptr;
-    ItemT *prev = ptr - 1;
-    ItemT this = *ptr++;
-    while (prev >= table && prev->key > this.key)
-      *curr-- = *prev--;
-    *curr = this;
-  } while (--n != -1);
-}
-
 static Box2D area;
 
 static __regargs void DrawFace(IndexListT *face, APTR point) {
@@ -319,8 +261,8 @@ static __regargs void DrawFace(IndexListT *face, APTR point) {
 static __regargs void DrawObject(Object3D *object, APTR *screen, APTR buffer) {
   BYTE *faceFlags = object->faceFlags;
   IndexListT **faces = object->mesh->face;
-  ItemT *item = faceArray;
-  WORD n = faceCount;
+  SortItemT *item = object->visibleFace;
+  WORD n = object->visibleFaces;
 
   custom->bltafwm = -1;
   custom->bltalwm = -1;
@@ -431,7 +373,6 @@ static void Render() {
 
   {
     // LONG lines = ReadLineCounter();
-    CalculateFaceDepth(cube);
     SortFaces(cube);
     // Log("sort: %ld\n", ReadLineCounter() - lines);
   }
