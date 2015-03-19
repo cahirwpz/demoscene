@@ -42,7 +42,8 @@ __regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp) {
   {
     CopInsT *ptr = (CopInsT *)ins;
 
-    *ins++ = (vp << 8) | (hp & 0xfe) | 1;
+    *((UBYTE *)ins)++ = vp;
+    *((UBYTE *)ins)++ = hp | 1;
     *ins++ = 0xfffe;
 
     list->curr = (CopInsT *)ins;
@@ -64,8 +65,10 @@ __regargs CopInsT *CopWaitMask(CopListT *list,
   {
     CopInsT *ptr = (CopInsT *)ins;
 
-    *ins++ = (vp << 8) | (hp & 0xfe) | 1;
-    *ins++ = 0x8000 | ((vpmask << 8) & 0x7f00) | (hpmask & 0xfe);
+    *((UBYTE *)ins)++ = vp;
+    *((UBYTE *)ins)++ = hp | 1;
+    *((UBYTE *)ins)++ = 0x80 | vpmask;
+    *((UBYTE *)ins)++ = hpmask & 0xfe;
 
     list->curr = (CopInsT *)ins;
 
@@ -76,14 +79,17 @@ __regargs CopInsT *CopWaitMask(CopListT *list,
 __regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start) {
   CopInsT *ptr = list->curr;
   UWORD *ins = (UWORD *)ptr;
-  ColorT *c = palette->colors;
-  UWORD i;
-  UWORD n = min(palette->count, 32 - start);
+  UBYTE *c = (UBYTE *)palette->colors;
+  WORD n = min(palette->count, (UWORD)(32 - start)) - 1;
 
-  for (i = 0; i < n; i++, c++) {
-    *ins++ = CSREG(color[i + start]);
-    *ins++ = ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4);
-  }
+  do {
+    UBYTE r = *c++ & 0xf0;
+    UBYTE g = *c++ & 0xf0;
+    UBYTE b = *c++ & 0xf0;
+
+    *ins++ = CSREG(color[start++]);
+    *ins++ = (r << 4) | (UBYTE)(g | (b >> 4));
+  } while (--n != -1);
 
   list->curr = (CopInsT *)ins;
   return ptr;
@@ -128,9 +134,9 @@ __regargs void CopSetupDisplayWindow(CopListT *list, UWORD mode,
   UBYTE xe, ye;
 
   if (mode & MODE_HIRES)
-    w /= 2;
+    w >>= 1;
   if (mode & MODE_LACE)
-    h /= 2;
+    h >>= 1;
 
   xe = xs + w;
   ye = ys + h;
@@ -145,11 +151,15 @@ __regargs void CopSetupBitplaneFetch(CopListT *list, UWORD mode,
   UWORD ddfstrt, ddfstop;
 
   if (mode & MODE_HIRES) {
-    ddfstrt = ((xs - 9) / 2) & ~3;
-    ddfstop = ddfstrt + (w / 4 - 8);
+    xs -= 9;
+    w >>= 2;
+    ddfstrt = (xs >> 1) & ~3;
+    ddfstop = ddfstrt + w - 8;
   } else {
-    ddfstrt = ((xs - 17) / 2) & ~7;
-    ddfstop = ddfstrt + (w / 2 - 8);
+    xs -= 17;
+    w >>= 1;
+    ddfstrt = (xs >> 1) & ~7;
+    ddfstop = ddfstrt + w - 8;
   }
 
   CopMove16(list, ddfstrt, ddfstrt);
@@ -160,38 +170,26 @@ __regargs void CopSetupBitplaneFetch(CopListT *list, UWORD mode,
 __regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
                                  BitmapT *bitmap, UWORD depth) 
 {
-  WORD i, modulo = 0;
-  
-  if (bitmap->flags & BM_INTERLEAVED)
-    modulo = bitmap->bytesPerRow * (depth - 1);
+  {
+    APTR *planes = bitmap->planes;
+    WORD n = depth - 1;
+    WORD i = 0;
 
-  CopMove16(list, bpl1mod, modulo);
-  CopMove16(list, bpl2mod, modulo);
+    do {
+      CopInsT *ins = CopMove32(list, bplpt[i++], *planes++);
 
-  for (i = 0; i < depth; i++) {
-    CopInsT *bplpt = CopMove32(list, bplpt[i], bitmap->planes[i]);
-
-    if (bplptr)
-      bplptr[i] = bplpt;
+      if (bplptr)
+        *bplptr++ = ins;
+    } while (--n != -1);
   }
-}
 
-__regargs void CopSetupBitplanesArea(CopListT *list, CopInsT **bpltptr, 
-                                     BitmapT *bitmap, UWORD xs, UWORD ys, 
-                                     UWORD width) 
-{
-  WORD i;
-  LONG start = ys * bitmap->bytesPerRow + (xs >> 3);
-  WORD modulo = bitmap->bytesPerRow - (width >> 3);
+  {
+    WORD modulo = 0;
 
-  CopMove16(list, bplcon0, BPLCON0_BPU(bitmap->depth) | BPLCON0_COLOR);
-  CopMove16(list, bplcon1, 0);
-  CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
-  CopMove16(list, bplcon3, 0);
-  
-  CopMove16(list, bpl1mod, modulo);
-  CopMove16(list, bpl2mod, modulo);
+    if (bitmap->flags & BM_INTERLEAVED)
+      modulo = (WORD)bitmap->bytesPerRow * (WORD)(depth - 1);
 
-  for (i = 0; i < bitmap->depth; i++)
-    CopMove32(list, bplpt[i], bitmap->planes[i] + start);
+    CopMove16(list, bpl1mod, modulo);
+    CopMove16(list, bpl2mod, modulo);
+  }
 }
