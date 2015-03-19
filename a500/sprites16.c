@@ -26,12 +26,12 @@ static void Load() {
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopSetRGB(cp, 0, 0x346);
   CopLoadPal(cp, bitmap->palette, 16);
-  CopMakeSprites(cp, sprptr);
+  CopSetupSprites(cp, sprptr);
   CopEnd(cp);
 
   for (i = 0; i < 12; i++) {
     sprite[i] = NewSpriteFromBitmap(20, bitmap, 0, 22 * i + 1);
-    UpdateSpritePos(sprite[i], X(0), Y(128));
+    UpdateSprite(sprite[i], X(0), Y(128));
   }
 }
 
@@ -76,11 +76,11 @@ static void MoveSprite() {
   else
     i += 9;
 
-  UpdateSpritePos(sprite[i], x, y);
+  UpdateSprite(sprite[i], x, y);
 
   /* why the line below resolves a bug with shadow sprite ? */
   if (i < 11)
-    UpdateSpritePos(sprite[i+1], 0, Y(-1));
+    UpdateSprite(sprite[i+1], 0, Y(-1));
 
   if (sprptr[0] && sprptr[1]) {
     CopInsSet32(sprptr[0], sprite[i]->data);

@@ -99,7 +99,7 @@ static void MakeCopperList(CopListT *cp) {
   CopSetupBitplanes(cp, NULL, background, S_DEPTH);
   CopLoadPal(cp, background->palette, 0);
   CopLoadPal(cp, texture->palette, 16);
-  CopMakeSprites(cp, sprptr);
+  CopSetupSprites(cp, sprptr);
   CopEnd(cp);
 
   {
@@ -333,7 +333,7 @@ static __regargs void PositionSprite(SpriteT **sprite, WORD xo, WORD yo) {
   while (--n >= 0) {
     SpriteT *spr = *sprite++;
 
-    UpdateSpritePos(spr, x, y);
+    UpdateSprite(spr, x, y);
 
     CopInsSet32(*ptr++, spr->data);
     CopInsSet32(*ptr++, spr->attached->data);

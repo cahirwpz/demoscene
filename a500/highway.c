@@ -80,7 +80,7 @@ static void UnLoad() {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopMakeSprites(cp, sprptr);
+  CopSetupSprites(cp, sprptr);
   CopLoadPal(cp, spritePal, 16);
   CopLoadPal(cp, spritePal, 20);
   CopLoadPal(cp, spritePal, 24);
@@ -156,7 +156,7 @@ static void Init() {
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
 
-  ITER(i, 0, 7, UpdateSpritePos(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
+  ITER(i, 0, 7, UpdateSprite(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
 }
 
 static void Kill() {

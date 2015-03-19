@@ -23,15 +23,15 @@ static void Load() {
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopLoadPal(cp, bitmap->palette, 16);
-  CopMakeSprites(cp, sprptr);
+  CopSetupSprites(cp, sprptr);
   CopEnd(cp);
 
   sprite[0] = NewSpriteFromBitmap(19, bitmap, 0, 0);
   sprite[1] = NewSpriteFromBitmap(24, bitmap, 0, 19);
   sprite[2] = NewSpriteFromBitmap(42, bitmap, 0, 43);
-  UpdateSpritePos(sprite[0], X(0), Y(113));
-  UpdateSpritePos(sprite[1], X(0), Y(110));
-  UpdateSpritePos(sprite[2], X(0), Y(101));
+  UpdateSprite(sprite[0], X(0), Y(113));
+  UpdateSprite(sprite[1], X(0), Y(110));
+  UpdateSprite(sprite[2], X(0), Y(101));
 }
 
 static void UnLoad() {
@@ -60,7 +60,7 @@ static void MoveSprite() {
   if (i > 2)
     i = 4 - i;
 
-  UpdateSpritePos(sprite[i], x, y[i]);
+  UpdateSprite(sprite[i], x, y[i]);
 
   if (sprptr[0])
     CopInsSet32(sprptr[0], sprite[i]->data);

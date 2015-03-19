@@ -23,11 +23,11 @@ static void Load() {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopMakeSprites(cp, sprptr);
+  CopSetupSprites(cp, sprptr);
   CopEnd(cp);
 
   CopInsSet32(sprptr[0], pointer->data);
-  UpdateSpritePos(pointer, X(0), Y(0));
+  UpdateSprite(pointer, X(0), Y(0));
 }
 
 static void UnLoad() {
@@ -67,7 +67,7 @@ static BOOL HandleEvent() {
     if (cursor.button & RMB_PRESSED)
       *data &= ~value;
 
-    UpdateSpritePos(pointer, X(cursor.x), Y(cursor.y));
+    UpdateSprite(pointer, X(cursor.x), Y(cursor.y));
   }
 
   return TRUE;

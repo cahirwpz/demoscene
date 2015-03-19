@@ -62,7 +62,7 @@ static void MakeCopperList(CopListT **ptr, WORD n) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(STARTX), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr[n], twister, DEPTH);
-  CopMakeSprites(cp, sprptr[n]);
+  CopSetupSprites(cp, sprptr[n]);
   CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
   CopMove16(cp, diwstrt, 0x2c81);
   CopMove16(cp, diwstop, 0x2bc1);
@@ -99,10 +99,10 @@ static void Init() {
   MakeCopperList(&cp[0], 0);
   MakeCopperList(&cp[1], 1);
 
-  UpdateSpritePos(left[0], X(0), Y(0));
-  UpdateSpritePos(left[1], X(16), Y(0));
-  UpdateSpritePos(right[0], X(320 - 32), Y(0));
-  UpdateSpritePos(right[1], X(320 - 16), Y(0));
+  UpdateSprite(left[0], X(0), Y(0));
+  UpdateSprite(left[1], X(16), Y(0));
+  UpdateSprite(right[0], X(320 - 32), Y(0));
+  UpdateSprite(right[1], X(320 - 16), Y(0));
 
   CopListActivate(cp[1]);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;

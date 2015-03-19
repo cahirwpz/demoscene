@@ -112,7 +112,7 @@ static inline void UpdateSpriteInternal(SpriteT *sprite, UWORD hstart, UWORD vst
   }
 }
 
-__regargs void UpdateSpritePos(SpriteT *sprite, UWORD hstart, UWORD vstart) {
+__regargs void UpdateSprite(SpriteT *sprite, UWORD hstart, UWORD vstart) {
   SpriteT *attached = sprite->attached;
 
   UpdateSpriteInternal(sprite, hstart, vstart);
@@ -125,7 +125,7 @@ __regargs void UpdateSpritePos(SpriteT *sprite, UWORD hstart, UWORD vstart) {
   }
 }
 
-__regargs void CopMakeSprites(CopListT *list, CopInsT **sprptr) {
+__regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr) {
   WORD *data = NullSprite->data;
   WORD i;
 
@@ -133,14 +133,14 @@ __regargs void CopMakeSprites(CopListT *list, CopInsT **sprptr) {
     *sprptr++ = CopMove32(list, sprpt[i], data);
 }
 
-__regargs void CopMakeManualSprites(CopListT *list, CopInsT **sprptr) {
+__regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr) {
   WORD *data = NullSprite->data;
   WORD i;
 
   for (i = 0; i < 8; i++) {
-    sprptr[i] = CopMove16(list, spr[i].pos, &data[0]);
-    CopMove16(list, spr[i].ctl, &data[1]);
-    CopMove32(list, sprpt[i], &data[2]);
+    sprptr[i] = CopMove16(list, spr[i].pos, data[0]);
+    CopMove16(list, spr[i].ctl, data[1]);
+    CopMove32(list, sprpt[i], data + 2);
   }
 }
 

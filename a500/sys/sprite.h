@@ -21,9 +21,9 @@ __regargs SpriteT *CloneSystemPointer();
 __regargs void DeleteSprite(SpriteT *sprite);
 
 /* Don't call it for null sprites. */
-__regargs void UpdateSpritePos(SpriteT *sprite, UWORD hstart, UWORD vstart);
+__regargs void UpdateSprite(SpriteT *sprite, UWORD hstart, UWORD vstart);
 
-__regargs void CopMakeSprites(CopListT *list, CopInsT **sprptr);
-__regargs void CopMakeManualSprites(CopListT *list, CopInsT **sprptr);
+__regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr);
+__regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr);
 
 #endif
