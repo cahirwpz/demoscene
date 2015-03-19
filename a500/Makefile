@@ -1,7 +1,7 @@
 CPPFLAGS = -Isys
 
 BINS	= copper lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
-          playahx playp61 wireframe kbtest shapes chunky-16c chunky-rgb mouse \
+          playahx playp61 wireframe kbtest shapes chunky-rgb mouse \
           uvmap metaballs blurred circles floor-old parselwo neons flatshade \
           plotter highway textscroll uvmap-rgb bumpmap-rgb glitch floor \
           transparency tilezoomer twister-rgb anim showpchg blurred3d
@@ -13,7 +13,6 @@ ball:           ball.o startup.o libsys.a
 blurred:        blurred.o startup.o libsys.a
 blurred3d:      blurred3d.o startup.o libsys.a
 bumpmap-rgb:    bumpmap-rgb.o startup.o libsys.a
-chunky-16c:     chunky-16c.o startup.o libsys.a
 chunky-rgb:     chunky-rgb.o startup.o libsys.a
 circles:        circles.o startup.o libsys.a
 neons:          neons.o startup.o libsys.a
