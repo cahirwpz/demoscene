@@ -67,4 +67,20 @@ void TrapHandler();
 void KPutChar(char c asm("d0"));
 void Log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
 
+/*
+ * Macros for handling symbol table information (aka linker set elements).
+ */
+
+/* Add symbol 's' to list 'l' (type 't': 22=text, 24=data, 26=bss). */
+#define ADD2LIST(s, l, t) \
+  asm(".stabs \"_" #l "\"," #t ",0,0,_" #s )
+
+/* Install private constructors and destructors pri MUST be in [-127, 127] */
+#define ADD2INIT(ctor, pri) \
+  ADD2LIST(ctor, __INIT_LIST__, 22); \
+  asm(".stabs \"___INIT_LIST__\",20,0,0," #pri "+128")
+#define ADD2EXIT(dtor, pri) \
+  ADD2LIST(dtor, __EXIT_LIST__, 22); \
+  asm(".stabs \"___EXIT_LIST__\",20,0,0," #pri "+128")
+
 #endif
