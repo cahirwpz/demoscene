@@ -22,6 +22,7 @@ static StripeT stripe[STRIPES];
 static WORD active = 0;
 
 static UWORD colorSet[4] = { 0xC0F, 0xF0C, 0x80F, 0xF08 };
+static UWORD colorShades[4 * 32];
 
 static void GenerateStripes() {
   WORD *s = (WORD *)stripe;
@@ -30,7 +31,22 @@ static void GenerateStripes() {
   while (--n >= 0) {
     *s++ = (random() & (SIZE - 1)) - SIZE / 2;
     *s++ = (random() & (SIZE - 1)) - SIZE / 2;
-    *s++ = colorSet[random() & 3];
+    *s++ = random() & 0x60;
+  }
+}
+
+static void GenerateColorShades() {
+  WORD i, j;
+  UWORD *s = colorSet;
+  UWORD *d = colorShades;
+
+  for (i = 0; i < 4; i++) {
+    UWORD c = *s++;
+
+    for (j = 0; j < 16; j++)
+      *d++ = ColorTransition(0x000, c, j);
+    for (j = 0; j < 16; j++)
+      *d++ = ColorTransition(c, 0xfff, j);
   }
 }
 
@@ -54,6 +70,7 @@ void InitColorTab();
 
 static void Init() {
   GenerateStripes();
+  GenerateColorShades();
 
   cp[0] = NewCopList(HEIGHT * 2 + 100);
   cp[1] = NewCopList(HEIGHT * 2 + 100);
@@ -103,30 +120,35 @@ static void ClearLineColor() {
 static void SetLineColor(WORD *s) {
   CopInsT **lines = lineColor[active];
   WORD n = STRIPES;
+  UWORD *shades = colorShades;
 
   while (--n >= 0) {
     WORD y = *s++;
     WORD z = *s++;
-    UWORD c = *s++;
+    UWORD color = *s++;
 
-    WORD h = (z + 128) / 32;
-    WORD s = z * 32 / SIZE + 16;
-    WORD i = y + (HEIGHT - h) / 2;
+    WORD h = (WORD)(z + 128) >> 5;
+    WORD l = (z >> 2) + 16;
+    WORD i = y + ((WORD)(HEIGHT - h) >> 1);
 
-    if (s < 0)
-      c = 0;
-    else if (s < 16)
-      c = ColorTransition(0x000, c, s);
-    else if (s < 32)
-      c = ColorTransition(c, 0xfff, s - 16);
-    else
-      c = 0xfff;
-    
+    if (l < 0)
+      l = 0;
+    if (l > 31)
+      l = 31;
+
     {
       CopInsT **line = &lines[i];
+      WORD c0 = shades[color | l];
+      WORD c1 = shades[color | (l >> 1)];
+
+      h -= 2;
+
+      CopInsSet16(*line++, c1);
 
       while (--h >= 0)
-        CopInsSet16(*line++, c);
+        CopInsSet16(*line++, c0);
+
+      CopInsSet16(*line++, c1);
     }
   }
 }
