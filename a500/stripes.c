@@ -66,8 +66,6 @@ static void MakeCopperList(CopListT *cp, CopInsT **line) {
   CopEnd(cp);
 }
 
-void InitColorTab();
-
 static void Init() {
   GenerateStripes();
   GenerateColorShades();
@@ -79,7 +77,6 @@ static void Init() {
   MakeCopperList(cp[1], lineColor[1]);
 
   CopListActivate(cp[0]);
-  InitColorTab();
 }
 
 static void Kill() {
