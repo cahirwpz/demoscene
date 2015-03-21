@@ -1,22 +1,19 @@
 #include "sort.h"
 
-#if 0
-static __regargs void InsertionSort(SortItemT *table, WORD size) {
-  if (size >= 2) {
-    SortItemT *ptr = table + 1;
-    register WORD n asm("d7") = size - 2;
+static __regargs void InsertSort(SortItemT *first, SortItemT *last) {
+  SortItemT *ptr = first + 1;
 
-    do {
-      SortItemT *curr = ptr;
-      SortItemT *prev = ptr - 1;
-      SortItemT this = *ptr++;
-      while (prev >= table && prev->key > this.key)
-        *curr-- = *prev--;
-      *curr = this;
-    } while (--n != -1);
+  while (ptr <= last) {
+    SortItemT *curr = ptr;
+    SortItemT *prev = ptr - 1;
+    SortItemT this = *ptr++;
+    while (prev >= first && prev->key > this.key)
+      *curr-- = *prev--;
+    *curr = this;
   }
 }
-#endif
+
+#define THRESHOLD (12 * sizeof(SortItemT))
 
 static __regargs void QuickSort(SortItemT *first, SortItemT *last) {
   if (last > first) {
@@ -36,8 +33,15 @@ static __regargs void QuickSort(SortItemT *first, SortItemT *last) {
 
     { SortItemT tmp = *pivot; *pivot = *right; *right = tmp; }
 
-    QuickSort(first, right - 1);
-    QuickSort(left, last);
+    if ((APTR)right - (APTR)first > THRESHOLD)
+      QuickSort(first, right - 1);
+    else
+      InsertSort(first, right - 1);
+
+    if ((APTR)last - (APTR)left > THRESHOLD)
+      QuickSort(left, last);
+    else
+      InsertSort(left, last);
   }
 }
 

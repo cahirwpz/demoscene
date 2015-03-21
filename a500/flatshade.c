@@ -133,9 +133,6 @@ static __regargs void TransformVertices(Object3D *object) {
   } while (--n != -1);
 }
 
-#define MoveLong(reg, hi, lo) \
-    *(ULONG *)(&custom->reg) = (((hi) << 16) | (lo))
-
 static __regargs void DrawLine(WORD x0, WORD y0, WORD x1, WORD y1) {
   if (y0 > y1) {
     swapr(x0, x1);
@@ -355,14 +352,7 @@ static void Render() {
   }
 
   WaitVBlank();
-
-  {
-    WORD n = DEPTH;
-
-    while (--n >= 0)
-      CopInsSet32(bplptr[n], screen0->planes[n]);
-  }
-
+  CopUpdateBitplanes(bplptr, screen0, DEPTH);
   swapr(screen0, screen1);
 }
 
