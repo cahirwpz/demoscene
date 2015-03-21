@@ -119,7 +119,7 @@ __regargs CopInsT *CopSetColor(CopListT *list, WORD i, ColorT *color) {
 
 __regargs void CopSetupMode(CopListT *list, UWORD mode, UWORD depth) {
   CopMove16(list, bplcon0, BPLCON0_BPU(depth) | BPLCON0_COLOR | mode);
-  CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2);
+  CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2 | BPLCON2_PF2PRI);
   CopMove16(list, bplcon3, 0);
 }
 
@@ -192,4 +192,11 @@ __regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
     CopMove16(list, bpl1mod, modulo);
     CopMove16(list, bpl2mod, modulo);
   }
+}
+
+__regargs void CopUpdateBitplanes(CopInsT **bplptr, BitmapT *bitmap, WORD n) {
+  APTR *planes = bitmap->planes;
+
+  while (--n >= 0)
+    CopInsSet32(*bplptr++, *planes++);
 }

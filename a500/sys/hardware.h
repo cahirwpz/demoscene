@@ -18,8 +18,10 @@
 #define BPLCON0_BPU(d)  (((d) & 7) << 12)
 #define BPLCON0_COLOR   (1 << 9)
 #define BPLCON0_LACE    (1 << 2)
+#define BPLCON0_DBLPF   (1 << 10)
 #define BPLCON0_HOMOD   (1 << 11)
 #define BPLCON0_HIRES   (1 << 15)
+#define BPLCON2_PF2PRI  (1 << 6)
 #define BPLCON2_PF2P2   (1 << 5)
 #define BPLCON2_PF1P2   (1 << 2)
 

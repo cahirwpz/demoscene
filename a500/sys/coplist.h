@@ -50,6 +50,7 @@ __regargs void CopSetupBitplaneFetch(CopListT *list, UWORD mode,
                                      UWORD xs, UWORD w);
 __regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
                                  BitmapT *bitmap, UWORD depth);
+__regargs void CopUpdateBitplanes(CopInsT **bplptr, BitmapT *bitmap, WORD n);
 
 static inline CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {
   CopInsT *ptr = list->curr;
