@@ -8,33 +8,44 @@ __regargs void BitmapCopy(BitmapT *dst, UWORD x, UWORD y, BitmapT *src)
   UWORD bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
   UWORD bltshift = rorw(x & 15, 4);
   WORD n = src->depth;
+  WORD w = src->width & 15;
 
   WaitBlitter();
 
-  if (bltshift) {
-    bltsize += 1; dstmod -= 2; 
-  
-    custom->bltadat = 0xffff;
-    custom->bltbmod = -2;
-    custom->bltcmod = dstmod;
-    custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | NABC | ABNC | NANBC) | bltshift;
-    custom->bltcon1 = bltshift;
-    custom->bltalwm = 0;
-    custom->bltafwm = -1;
-    custom->bltdmod = dstmod;
+  if (bltshift || w) {
+    if ((x & 15) + w >= 16) {
+      dstmod -= 2; bltsize += 1;
+      custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | NABC | ABNC | NANBC) | bltshift;
+      custom->bltcon1 = bltshift;
+      custom->bltafwm = -1;
+      custom->bltalwm = 0;
+      custom->bltbmod = -2;
+      custom->bltadat = -1;
+      custom->bltcmod = dstmod;
+      custom->bltdmod = dstmod;
+    } else {
+      custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | NABC | ABNC | NANBC) | bltshift;
+      custom->bltcon1 = bltshift;
+      custom->bltafwm = -1;
+      custom->bltalwm = -1 << w;
+      custom->bltbmod = 0;
+      custom->bltadat = -1;
+      custom->bltcmod = dstmod;
+      custom->bltdmod = dstmod;
+    }
   } else {
     custom->bltamod = 0;
     custom->bltcon0 = (SRCA | DEST) | A_TO_D;
     custom->bltcon1 = 0;
-    custom->bltalwm = -1;
     custom->bltafwm = -1;
+    custom->bltalwm = -1;
     custom->bltdmod = dstmod;
   }
 
   for (; --n >= 0; srcbpt += src->bplSize, dstbpt += dst->bplSize) {
     WaitBlitter();
 
-    if (bltshift) {
+    if (bltshift || w) {
       custom->bltbpt = srcbpt;
       custom->bltcpt = dstbpt;
       custom->bltdpt = dstbpt;
@@ -149,8 +160,8 @@ void BitmapCopyArea(BitmapT *dst, UWORD dx, UWORD dy,
   custom->bltdmod = dstmod;
   custom->bltcon0 = (SRCA | DEST) | A_TO_D;
   custom->bltcon1 = 0;
-  custom->bltalwm = -1;
   custom->bltafwm = -1;
+  custom->bltalwm = -1;
 
   for (; --n >= 0; srcbpt += src->bplSize, dstbpt += dst->bplSize) {
     WaitBlitter();

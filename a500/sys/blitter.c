@@ -1,6 +1,9 @@
 #include "blitter.h"
 #include "hardware.h"
 
+#define MoveLong(reg, hi, lo) \
+    *(ULONG *)(&custom->reg) = (((hi) << 16) | (lo))
+
 __regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area) {
   APTR bltpt = bitmap->planes[plane];
   UWORD bltmod, bltsize;
@@ -94,19 +97,36 @@ void BlitterSetMaskArea(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
 {
   APTR dstbpt = dst->planes[dstbpl];
   APTR mskbpt = msk->planes[0];
-  UWORD bltmod, bltsize, bltshift;
+  UWORD dstmod, mskmod, bltsize, bltshift;
 
-  dstbpt += ((x >> 3) & ~1) + y * dst->bytesPerRow;
-  bltmod = dst->bytesPerRow - msk->bytesPerRow;
-  bltsize = (msk->height << 6) | (msk->bytesPerRow >> 1);
-  bltshift = rorw(x & 15, 4);
+  if (area) {
+    /* TODO: handle unaligned mx */
+    WORD mx = area->x;
+    WORD my = area->y;
+    WORD mw = area->w;
+    WORD mh = area->h;
+    WORD bytesPerRow = ((mw + 15) & ~15) >> 3;
+
+    dstbpt += ((x >> 3) & ~1) + y * dst->bytesPerRow;
+    mskbpt += ((mx >> 3) & ~1) + my * msk->bytesPerRow;
+    dstmod = dst->bytesPerRow - bytesPerRow;
+    mskmod = msk->bytesPerRow - bytesPerRow;
+    bltsize = (mh << 6) | (bytesPerRow >> 1);
+    bltshift = rorw(x & 15, 4);
+  } else {
+    dstbpt += ((x >> 3) & ~1) + y * dst->bytesPerRow;
+    dstmod = dst->bytesPerRow - msk->bytesPerRow;
+    mskmod = dstmod;
+    bltsize = (msk->height << 6) | (msk->bytesPerRow >> 1);
+    bltshift = rorw(x & 15, 4);
+  }
 
   WaitBlitter();
 
   if (bltshift) {
-    bltsize += 1; bltmod -= 2;
+    bltsize += 1; dstmod -= 2; mskmod -= 2;
 
-    custom->bltbmod = -2;
+    custom->bltbmod = mskmod;
     custom->bltcon0 = (SRCB|SRCC|DEST) | (ABC|ABNC|ANBC|NANBC) | bltshift;
     custom->bltcon1 = bltshift;
     custom->bltalwm = 0;
@@ -115,8 +135,8 @@ void BlitterSetMaskArea(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
     custom->bltbpt = mskbpt;
     custom->bltcpt = dstbpt;
     custom->bltdpt = dstbpt;
-    custom->bltcmod = bltmod;
-    custom->bltdmod = bltmod;
+    custom->bltcmod = dstmod;
+    custom->bltdmod = dstmod;
     custom->bltafwm = -1;
     custom->bltsize = bltsize;
   } else {
@@ -129,8 +149,8 @@ void BlitterSetMaskArea(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
     custom->bltbpt = mskbpt;
     custom->bltcpt = dstbpt;
     custom->bltdpt = dstbpt;
-    custom->bltcmod = bltmod;
-    custom->bltdmod = bltmod;
+    custom->bltcmod = dstmod;
+    custom->bltdmod = dstmod;
     custom->bltafwm = -1;
     custom->bltsize = bltsize;
   }
