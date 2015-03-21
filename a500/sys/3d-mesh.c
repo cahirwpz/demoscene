@@ -11,7 +11,7 @@ __regargs Mesh3D *NewMesh3D(WORD vertices, WORD faces) {
 
   mesh->vertex = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
   mesh->face = MemAlloc(sizeof(IndexListT *) * (faces + 1), MEMF_PUBLIC|MEMF_CLEAR);
-  mesh->faceNormal = MemAlloc(sizeof(Point3D) * faces , MEMF_PUBLIC);
+  mesh->faceNormal = MemAlloc(sizeof(Point3D) * faces, MEMF_PUBLIC);
 
   return mesh;
 }
@@ -23,6 +23,7 @@ __regargs void DeleteMesh3D(Mesh3D *mesh) {
 
   MemFreeAuto(mesh->vertexFaceData);
   MemFree(mesh->vertexFace, sizeof(IndexListT *) * (vertices + 1));
+  MemFree(mesh->vertexNormal, sizeof(Point3D) * vertices);
   MemFree(mesh->faceNormal, sizeof(Point3D) * faces);
   MemFreeAuto(mesh->faceEdgeData);
   MemFree(mesh->faceEdge, sizeof(IndexListT *) * (faces + 1));
@@ -253,6 +254,37 @@ __regargs void CalculateVertexFaceMap(Mesh3D *mesh) {
     }
   }
 } 
+
+__regargs void CalculateVertexNormals(Mesh3D *mesh) {
+  mesh->vertexNormal = MemAlloc(sizeof(Point3D) * mesh->vertices,
+                                MEMF_PUBLIC|MEMF_CLEAR);
+
+  {
+    WORD *normal = (WORD *)mesh->vertexNormal;
+    APTR faceNormal = mesh->faceNormal;
+
+    IndexListT **vertexFaces = mesh->vertexFace;
+    IndexListT *vertexFace;
+
+    while ((vertexFace = *vertexFaces++)) {
+      WORD n = vertexFace->count;
+      WORD *v = vertexFace->indices;
+      LONG nx = 0;
+      LONG ny = 0;
+      LONG nz = 0;
+
+      while (--n >= 0) {
+        WORD *fn = (WORD *)(faceNormal + (WORD)(*v++ << 3));
+        nx += *fn++; ny += *fn++; nz += *fn++;
+      }
+
+      *normal++ = div16(nx, n);
+      *normal++ = div16(ny, n);
+      *normal++ = div16(nz, n);
+      normal++;
+    }
+  }
+}
 
 /*
  * For given triangle T with vertices A, B and C, surface normal N is a cross
