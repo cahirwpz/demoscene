@@ -68,11 +68,11 @@ static void Init() {
 
   for (i = 0; i < 2; i++) {
     BitmapClear(screen[i], DEPTH);
+    WaitBlitter();
 
     /* Make the center of blurred shape use colors from range 16-31. */
-    WaitBlitter();
     CircleEdge(screen[i], 4, SIZE / 2 + 16, SIZE / 2, SIZE / 4 - 1);
-    BlitterFillSync(screen[i], 4);
+    BlitterFill(screen[i], 4);
 
     BitmapCopy(screen[i], WIDTH / 2, 0, clip);
   }
@@ -110,20 +110,18 @@ static void RotatingTriangle(WORD t, WORD phi, WORD size) {
 
   /* Create a bob with rotating triangle. */
   for (i = 0, j = 1; i < 3; i++, j = (i == 2 ? 0 : i + 1))
-    BlitterLineSync(p[i].x, p[i].y, p[j].x, p[j].y);
+    BlitterLine(p[i].x, p[i].y, p[j].x, p[j].y);
 }
 
 static void DrawShape() {
-  BlitterClearSync(carry, 0);
-
-  WaitBlitter();
+  BlitterClear(carry, 0);
   BlitterLineSetup(carry, 0, LINE_EOR, LINE_ONEDOT);
 
   RotatingTriangle(iterCount * 16, 0, SIZE - 1);
   RotatingTriangle(iterCount * 16, SIN_PI * 2 / 3, SIZE - 1);
   RotatingTriangle(-iterCount * 16, SIN_PI * 2 / 3, SIZE / 2 - 1);
 
-  BlitterFillSync(carry, 0);
+  BlitterFill(carry, 0);
 }
 
 static void Render() {

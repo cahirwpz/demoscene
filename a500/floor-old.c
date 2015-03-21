@@ -141,10 +141,9 @@ static void Init() {
 
   for (i = 0; i < 2; i++) {
     BitmapClear(screen[i], DEPTH);
-
-    BlitterSetSync(screen[i], 0, 0, 0, WIDTH, 36, -1);
+    BlitterSet(screen[i], 0, 0, 0, WIDTH, 36, -1);
     BitmapCopy(screen[i], 0, 36, city);
-    BlitterSetSync(screen[i], 1, 0, 0, WIDTH, FAR_Y, -1);
+    BlitterSet(screen[i], 1, 0, 0, WIDTH, FAR_Y, -1);
   }
 
   cp[0] = NewCopList((HEIGHT - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
@@ -238,7 +237,6 @@ static __regargs void DrawStripes(WORD xo, WORD kxo) {
   xo &= TILESIZE - 1;
 
   /* Even stripes. */
-  WaitBlitter();
   BlitterLineSetup(screen[active], 0, LINE_EOR, LINE_ONEDOT);
 
   l0 = &first;
@@ -260,10 +258,10 @@ static __regargs void DrawStripes(WORD xo, WORD kxo) {
 
     l1 = &vert[xi & (N - 1)];
 
-    BlitterLineSync(l1->x1, FAR_Y, l1->x2, l1->y2);
+    BlitterLine(l1->x1, FAR_Y, l1->x2, l1->y2);
 
     if ((l0->x2 == WIDTH - 1) && (col & 1))
-      BlitterLineSync(WIDTH - 1, l0->y2, WIDTH - 1, l1->y2);
+      BlitterLine(WIDTH - 1, l0->y2, WIDTH - 1, l1->y2);
 
     l0 = l1;
   }
@@ -291,10 +289,10 @@ static __regargs void DrawStripes(WORD xo, WORD kxo) {
 
     l1 = &vert[xi & (N - 1)];
 
-    BlitterLineSync(l1->x1, FAR_Y, l1->x2, l1->y2);
+    BlitterLine(l1->x1, FAR_Y, l1->x2, l1->y2);
 
     if ((l0->x2 == WIDTH - 1) && (col & 1) == 0)
-      BlitterLineSync(WIDTH - 1, l0->y2, WIDTH - 1, l1->y2);
+      BlitterLine(WIDTH - 1, l0->y2, WIDTH - 1, l1->y2);
 
     l0 = l1;
   }

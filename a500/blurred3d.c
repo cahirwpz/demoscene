@@ -450,7 +450,7 @@ static __regargs void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
 }
 
 static void RenderObject3D() {
-  BlitterClearSync(carry, 0);
+  BlitterClear(carry, 0);
 
   {
     // LONG lines = ReadLineCounter();

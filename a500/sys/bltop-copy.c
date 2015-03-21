@@ -83,7 +83,6 @@ __regargs void BitmapCopyFast(BitmapT *dst, UWORD x, UWORD y, BitmapT *src)
   }
 }
 
-
 void BitmapCopyMasked(BitmapT *dst, UWORD x, UWORD y, BitmapT *src,
                       BitmapT *msk)
 {

@@ -46,7 +46,7 @@ static void Init() {
 #if CPULINE == 1
       CpuLine(i, 0, screen->width - 1 - i, screen->height - 1);
 #else
-      BlitterLineSync(i, 0, screen->width - 1 - i, screen->height - 1);
+      BlitterLine(i, 0, screen->width - 1 - i, screen->height - 1);
 #endif
     }
 
@@ -54,7 +54,7 @@ static void Init() {
 #if CPULINE == 1
       CpuLine(0, i, screen->width - 1, screen->height - 1 - i);
 #else
-      BlitterLineSync(0, i, screen->width - 1, screen->height - 1 - i);
+      BlitterLine(0, i, screen->width - 1, screen->height - 1 - i);
 #endif
     }
 

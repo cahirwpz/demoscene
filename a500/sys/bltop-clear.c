@@ -1,25 +1,6 @@
 #include "gfx.h"
 #include "blitter.h"
 
-static inline void
-BlitterClearRaw(APTR bltpt, UWORD bltsize)
-{
-  custom->bltadat = 0;
-  custom->bltdpt = bltpt;
-  custom->bltdmod = 0;
-  custom->bltcon0 = DEST;
-  custom->bltcon1 = 0;
-  custom->bltsize = bltsize;
-}
-
-__regargs void BlitterClearSync(BitmapT *bitmap, WORD plane) {
-  register APTR bltpt asm("a1") = bitmap->planes[plane];
-  UWORD bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
-
-  WaitBlitter();
-  BlitterClearRaw(bltpt, bltsize);
-}
-
 __regargs void BitmapClear(BitmapT *dst_bm, WORD n) {
   UWORD bltsize = (dst_bm->height << 6) | (dst_bm->bytesPerRow >> 1);
   APTR *dst = dst_bm->planes;

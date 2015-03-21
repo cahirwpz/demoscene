@@ -1,9 +1,27 @@
 #include "blitter.h"
 #include "hardware.h"
 
-static inline void
-BlitterFillRaw(APTR bltpt, UWORD bltsize)
-{
+__regargs void BlitterClear(BitmapT *bitmap, WORD plane) {
+  register APTR bltpt asm("a1") = bitmap->planes[plane];
+  UWORD bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
+
+  WaitBlitter();
+
+  custom->bltadat = 0;
+  custom->bltdpt = bltpt;
+  custom->bltdmod = 0;
+  custom->bltcon0 = DEST;
+  custom->bltcon1 = 0;
+  custom->bltsize = bltsize;
+}
+
+
+__regargs void BlitterFill(BitmapT *bitmap, WORD plane) {
+  register APTR bltpt asm("a1") = bitmap->planes[plane] + bitmap->bplSize - 2;
+  UWORD bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
+
+  WaitBlitter();
+
   custom->bltapt = bltpt;
   custom->bltdpt = bltpt;
   custom->bltamod = 0;
@@ -15,22 +33,7 @@ BlitterFillRaw(APTR bltpt, UWORD bltsize)
   custom->bltsize = bltsize;
 }
 
-__regargs void BlitterFill(BitmapT *bitmap, WORD plane) {
-  register APTR bltpt asm("a1") = bitmap->planes[plane] + bitmap->bplSize - 2;
-  UWORD bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
-
-  BlitterFillRaw(bltpt, bltsize);
-}
-
-__regargs void BlitterFillSync(BitmapT *bitmap, WORD plane) {
-  register APTR bltpt asm("a1") = bitmap->planes[plane] + bitmap->bplSize - 2;
-  UWORD bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
-
-  WaitBlitter();
-  BlitterFillRaw(bltpt, bltsize);
-}
-
-void BlitterSetSync(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y, UWORD w, UWORD h, UWORD val) {
+void BlitterSet(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y, UWORD w, UWORD h, UWORD val) {
   APTR dstbpt = dst->planes[dstbpl] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
   UWORD bltsize = (h << 6) | (w >> 4);
   UWORD bltmod = dst->bytesPerRow - (w >> 3);
@@ -69,8 +72,8 @@ void BlitterSetSync(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y, UWORD w, UWORD 
   }
 }
 
-void BlitterSetMaskedSync(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
-                          BitmapT *msk, UWORD val)
+void BlitterSetMask(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
+                    BitmapT *msk, UWORD val)
 {
   APTR dstbpt = dst->planes[dstbpl] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
   APTR mskbpt = msk->planes[0];
@@ -159,6 +162,8 @@ __regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWO
   line.bltcon0 = bltcon0;
   line.bltcon1 = bltcon1;
 
+  WaitBlitter();
+
   custom->bltafwm = -1;
   custom->bltalwm = -1;
   custom->bltadat = 0x8000;
@@ -167,6 +172,7 @@ __regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWO
   custom->bltdmod = line.stride;
 }
 
+#if 0
 __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
   UBYTE *data = line.data;
   UWORD bltcon1 = line.bltcon1;
@@ -217,8 +223,9 @@ __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
 
   custom->bltsize = (dmax << 6) + 66;
 }
+#endif
 
-__regargs void BlitterLineSync(WORD x1, WORD y1, WORD x2, WORD y2) {
+__regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
   UBYTE *data = line.data;
   UWORD bltcon1 = line.bltcon1;
   WORD dmax, dmin, derr;

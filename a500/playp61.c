@@ -97,7 +97,6 @@ static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
   }
 
   BlitterFill(osc, 0);
-  WaitBlitter();
 }
 
 static void Init() {
@@ -116,10 +115,10 @@ static void Init() {
       WORD y1 = 96 - 1;
       WORD y2 = 160 + 1;
 
-      BlitterLineSync(x1, y1, x2, y1);
-      BlitterLineSync(x1, y2, x2, y2);
-      BlitterLineSync(x1, y1, x1, y2);
-      BlitterLineSync(x2, y1, x2, y2);
+      BlitterLine(x1, y1, x2, y1);
+      BlitterLine(x1, y2, x2, y2);
+      BlitterLine(x1, y1, x1, y2);
+      BlitterLine(x2, y1, x2, y2);
     }
   }
 
@@ -169,14 +168,12 @@ static void Render() {
       P61_OscData data;
 
       BitmapClear(osc[i], 1);
-      WaitBlitter();
 
       if (P61_Osc(P61_CHANNEL(i), &data))
         DrawOsc(osc[i], &data);
 
       BlitterLineSetup(osc[i], 0, LINE_OR, LINE_SOLID);
       BlitterLine(32, 0, 32, 64);
-      WaitBlitter();
     }
 
     for (i = 0; i < 4; i++) {

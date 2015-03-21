@@ -24,19 +24,16 @@
 #define LINE_SOLID  (LINEMODE)
 #define LINE_ONEDOT (LINEMODE | ONEDOT)
 
-__regargs void BlitterClearSync(BitmapT *bitmap, WORD plane);
-
+__regargs void BlitterClear(BitmapT *bitmap, WORD plane);
 __regargs void BlitterFill(BitmapT *bitmap, WORD plane);
-__regargs void BlitterFillSync(BitmapT *bitmap, WORD plane);
 
-void BlitterSetSync(BitmapT *dst, WORD dstbpl,
-                    UWORD x, UWORD y, UWORD w, UWORD h, UWORD val);
-void BlitterSetMaskedSync(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
-                          BitmapT *msk, UWORD val);
+void BlitterSet(BitmapT *dst, WORD dstbpl,
+                UWORD x, UWORD y, UWORD w, UWORD h, UWORD val);
+void BlitterSetMask(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
+                    BitmapT *msk, UWORD val);
 
 __regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWORD bltcon1);
 __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2);
-__regargs void BlitterLineSync(WORD x1, WORD y1, WORD x2, WORD y2);
 
 static inline BOOL BlitterBusy() {
   return custom->dmaconr & DMAF_BLTDONE;

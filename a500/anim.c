@@ -71,6 +71,8 @@ static void DrawSpans(UBYTE *bpl) {
   WORD n = anim->height;
   WORD stride = screen->bytesPerRow;
 
+  WaitBlitter();
+
   while (--n >= 0) {
     WORD m = *frame++;
 
@@ -92,9 +94,9 @@ static void DrawSpans(UBYTE *bpl) {
 static void Render() {
   // LONG lines = ReadLineCounter();
   {
-    BlitterClearSync(screen, active);
+    BlitterClear(screen, active);
     DrawSpans(screen->planes[active]);
-    BlitterFillSync(screen, active);
+    BlitterFill(screen, active);
   }
   // Log("anim: %ld\n", ReadLineCounter() - lines);
 

@@ -125,8 +125,8 @@ static void Init() {
   BitmapCopy(screen[0], 0, 0, background);
   BitmapCopy(screen[1], 0, 0, background);
 
-  BlitterClearSync(screen[0], 4);
-  BlitterClearSync(screen[1], 4);
+  BlitterClear(screen[0], 4);
+  BlitterClear(screen[1], 4);
 
   cp = NewCopList(100);
 
@@ -163,7 +163,7 @@ static void ClearCliparts() {
 
     if (h > 0) {
       if (h > 8) { y += h - 8; h = 8; }
-      BlitterSetSync(dst, 4, x, y, w, h, 0);
+      BlitterSet(dst, 4, x, y, w, h, 0);
       BitmapCopyArea(dst, x, y, background, x, y, w, h);
     }
 
@@ -194,8 +194,8 @@ static void DrawCliparts() {
       area->h = sh;
 
       BitmapCopyArea(dst, grt->pos.x, dy, src, 0, sy, src->width, sh);
-      BlitterSetSync(dst, 3, grt->pos.x, dy, src->width, sh, grt->color ? 0 : -1);
-      BlitterSetSync(dst, 4, grt->pos.x, dy, src->width, sh, -1);
+      BlitterSet(dst, 3, grt->pos.x, dy, src->width, sh, grt->color ? 0 : -1);
+      BlitterSet(dst, 4, grt->pos.x, dy, src->width, sh, -1);
     } else {
       area->h = 0;
     }
