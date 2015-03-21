@@ -241,7 +241,7 @@ static __regargs void DrawObject(Object3D *object, APTR start) {
 }
 
 static void Render() {
-  BlitterClearSync(screen, active);
+  BlitterClear(screen, active);
 
   {
     // LONG lines = ReadLineCounter();

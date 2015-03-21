@@ -140,10 +140,12 @@ static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
 
   for (i = 0; i < 2; i++) {
+    Area2D top = { 0, 0, WIDTH, 36 };
+    Area2D bottom = { 0, 0, WIDTH, FAR_Y };
     BitmapClear(screen[i], DEPTH);
-    BlitterSet(screen[i], 0, 0, 0, WIDTH, 36, -1);
+    BlitterSetArea(screen[i], 0, &top, -1);
     BitmapCopy(screen[i], 0, 36, city);
-    BlitterSet(screen[i], 1, 0, 0, WIDTH, FAR_Y, -1);
+    BlitterSetArea(screen[i], 1, &bottom, -1);
   }
 
   cp[0] = NewCopList((HEIGHT - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);

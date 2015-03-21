@@ -1,5 +1,4 @@
-#include "gfx.h"
-#include "blitter.h"
+#include "bltop.h"
 
 __regargs void BitmapClear(BitmapT *dst_bm, WORD n) {
   UWORD bltsize = (dst_bm->height << 6) | (dst_bm->bytesPerRow >> 1);

@@ -2,6 +2,7 @@
 #define __BLITTER_H__
 
 #include "gfx.h"
+#include "2d.h"
 #include "hardware.h"
 
 /* Values for bltcon0. */
@@ -24,13 +25,22 @@
 #define LINE_SOLID  (LINEMODE)
 #define LINE_ONEDOT (LINEMODE | ONEDOT)
 
-__regargs void BlitterClear(BitmapT *bitmap, WORD plane);
-__regargs void BlitterFill(BitmapT *bitmap, WORD plane);
+#define BlitterFill(bitmap, plane) \
+  BlitterFillArea((bitmap), (plane), NULL)
 
-void BlitterSet(BitmapT *dst, WORD dstbpl,
-                UWORD x, UWORD y, UWORD w, UWORD h, UWORD val);
-void BlitterSetMask(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
-                    BitmapT *msk, UWORD val);
+__regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area);
+
+#define BlitterClear(bitmap, plane) \
+  BlitterSetArea((bitmap), (plane), NULL, 0)
+#define BlitterClearArea(bitmap, plane, area) \
+  BlitterSetArea((bitmap), (plane), (area), 0)
+#define BlitterSet(bitmap, plane, pattern) \
+  BlitterSetArea((bitmap), (plane), NULL, (pattern))
+
+__regargs void BlitterSetArea(BitmapT *bitmap, WORD plane, Area2D *area, UWORD pattern);
+
+void BlitterSetMaskArea(BitmapT *bitmap, WORD plane, UWORD x, UWORD y,
+                        BitmapT *mask, Area2D *area, UWORD pattern);
 
 __regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWORD bltcon1);
 __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2);

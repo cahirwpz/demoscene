@@ -1,5 +1,4 @@
-#include "blitter.h"
-#include "gfx.h"
+#include "bltop.h"
 
 /* Bitplane incrementer with saturation. */
 __regargs void BitmapIncSaturated(BitmapT *dst_bm, BitmapT *carry_bm) {

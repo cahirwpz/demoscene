@@ -46,9 +46,9 @@ static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
 
   for (i = 0; i < 8; i++) {
+    Area2D flare_area = { 0, i * SIZE, SIZE, SIZE };
     flare[i] = NewBitmap(SIZE, SIZE, DEPTH);
-    BitmapCopyArea(flare[i], 0, 0,
-                   flares, 0, i * SIZE, SIZE, SIZE);
+    BitmapCopyArea(flare[i], 0, 0, flares, &flare_area);
   }
 
   carry = NewBitmap(SIZE + 16, SIZE, 2);

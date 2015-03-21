@@ -156,18 +156,16 @@ static void ClearCliparts() {
   WORD n = PNUM;
 
   while (--n >= 0) {
-    WORD x = area->x;
-    WORD y = area->y;
-    WORD w = area->w;
-    WORD h = area->h;
+    Area2D neon = *area++;
 
-    if (h > 0) {
-      if (h > 8) { y += h - 8; h = 8; }
-      BlitterSet(dst, 4, x, y, w, h, 0);
-      BitmapCopyArea(dst, x, y, background, x, y, w, h);
+    if (neon.h > 0) {
+      if (neon.h > 8) {
+        neon.y += neon.h - 8;
+        neon.h = 8; 
+      }
+      BlitterClearArea(dst, 4, &neon);
+      BitmapCopyArea(dst, neon.x, neon.y, background, &neon);
     }
-
-    area++;
   }
 }
 
@@ -188,14 +186,17 @@ static void DrawCliparts() {
     if (dy + sh >= HEIGHT) { sh = HEIGHT - dy; }
 
     if (sh > 0) {
+      Area2D bg_area = { grt->pos.x, dy, src->width, sh };
+      Area2D fg_area = { 0, sy, src->width, sh };
+
       area->x = grt->pos.x;
       area->y = dy;
       area->w = src->width;
       area->h = sh;
 
-      BitmapCopyArea(dst, grt->pos.x, dy, src, 0, sy, src->width, sh);
-      BlitterSet(dst, 3, grt->pos.x, dy, src->width, sh, grt->color ? 0 : -1);
-      BlitterSet(dst, 4, grt->pos.x, dy, src->width, sh, -1);
+      BitmapCopyArea(dst, grt->pos.x, dy, src, &fg_area);
+      BlitterSetArea(dst, 3, &bg_area, grt->color ? 0 : -1);
+      BlitterSetArea(dst, 4, &bg_area, -1);
     } else {
       area->h = 0;
     }
@@ -214,6 +215,7 @@ static void Render() {
   
   // Log("neons: %ld\n", ReadLineCounter() - lines);
 
+  WaitBlitter();
   WaitVBlank();
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   active ^= 1;

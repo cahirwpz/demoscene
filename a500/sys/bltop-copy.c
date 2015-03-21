@@ -1,5 +1,4 @@
-#include "gfx.h"
-#include "blitter.h"
+#include "bltop.h"
 
 __regargs void BitmapCopy(BitmapT *dst, UWORD x, UWORD y, BitmapT *src)
 {
@@ -131,8 +130,12 @@ void BitmapCopyMasked(BitmapT *dst, UWORD x, UWORD y, BitmapT *src,
 
 /* Restrictions: sx and sw must be multiply of 16! */
 void BitmapCopyArea(BitmapT *dst, UWORD dx, UWORD dy, 
-                    BitmapT *src, UWORD sx, UWORD sy, UWORD sw, UWORD sh)
+                    BitmapT *src, Area2D *area)
 {
+  UWORD sx = area->x;
+  UWORD sy = area->y;
+  UWORD sw = area->w;
+  UWORD sh = area->h;
   APTR srcbpt = src->planes[0] + ((sx & ~15) >> 3) + sy * src->bytesPerRow;
   APTR dstbpt = dst->planes[0] + ((dx & ~15) >> 3) + dy * dst->bytesPerRow;
   UWORD srcmod = src->bytesPerRow - (sw >> 3);

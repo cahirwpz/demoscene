@@ -11,7 +11,7 @@ __regargs void BitmapCopyFast(BitmapT *dst, UWORD x, UWORD y, BitmapT *src);
 void BitmapCopyMasked(BitmapT *dst, UWORD x, UWORD y, BitmapT *src,
                       BitmapT *mask);
 void BitmapCopyArea(BitmapT *dst, UWORD dx, UWORD dy, 
-                    BitmapT *src, UWORD sx, UWORD sy, UWORD sw, UWORD sh);
+                    BitmapT *src, Area2D *area);
 
 void BitmapAddSaturated(BitmapT *dst, WORD dx, WORD dy, BitmapT *src, BitmapT *carry);
 __regargs void BitmapDecSaturated(BitmapT *dst_bm, BitmapT *borrow_bm);

@@ -1,31 +1,33 @@
 #include "blitter.h"
 #include "hardware.h"
 
-__regargs void BlitterClear(BitmapT *bitmap, WORD plane) {
-  register APTR bltpt asm("a1") = bitmap->planes[plane];
-  UWORD bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
+__regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area) {
+  APTR bltpt = bitmap->planes[plane];
+  UWORD bltmod, bltsize;
 
-  WaitBlitter();
+  if (area) {
+    WORD x = area->x;
+    WORD y = area->y; 
+    WORD w = area->w >> 3;
+    WORD h = area->h;
 
-  custom->bltadat = 0;
-  custom->bltdpt = bltpt;
-  custom->bltdmod = 0;
-  custom->bltcon0 = DEST;
-  custom->bltcon1 = 0;
-  custom->bltsize = bltsize;
-}
+    bltpt += (((x + w) >> 3) & ~1) + ((y + h) * bitmap->bytesPerRow);
+    bltmod = bitmap->bytesPerRow - w;
+    bltsize = (h << 6) | (w >> 1);
+  } else {
+    bltpt += bitmap->bplSize;
+    bltmod = 0;
+    bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
+  }
 
-
-__regargs void BlitterFill(BitmapT *bitmap, WORD plane) {
-  register APTR bltpt asm("a1") = bitmap->planes[plane] + bitmap->bplSize - 2;
-  UWORD bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
+  bltpt -= 2;
 
   WaitBlitter();
 
   custom->bltapt = bltpt;
   custom->bltdpt = bltpt;
-  custom->bltamod = 0;
-  custom->bltdmod = 0;
+  custom->bltamod = bltmod;
+  custom->bltdmod = bltmod;
   custom->bltcon0 = (SRCA | DEST) | A_TO_D;
   custom->bltcon1 = BLITREVERSE | FILL_OR;
   custom->bltafwm = -1;
@@ -33,38 +35,53 @@ __regargs void BlitterFill(BitmapT *bitmap, WORD plane) {
   custom->bltsize = bltsize;
 }
 
-void BlitterSet(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y, UWORD w, UWORD h, UWORD val) {
-  APTR dstbpt = dst->planes[dstbpl] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
-  UWORD bltsize = (h << 6) | (w >> 4);
-  UWORD bltmod = dst->bytesPerRow - (w >> 3);
+__regargs void BlitterSetArea(BitmapT *bitmap, WORD plane,
+                              Area2D *area, UWORD pattern)
+{
+  APTR bltpt = bitmap->planes[plane];
+  UWORD bltmod, bltsize, bltshift;
 
-  x = rorw(x & 15, 4);
+  if (area) {
+    WORD x = area->x;
+    WORD y = area->y; 
+    WORD w = area->w >> 3;
+    WORD h = area->h;
+
+    bltpt += ((x >> 3) & ~1) + y * bitmap->bytesPerRow;
+
+    bltshift = rorw(x & 15, 4);
+    bltmod = bitmap->bytesPerRow - w;
+    bltsize = (h << 6) | (w >> 1);
+  } else {
+    bltshift = 0;
+    bltmod = 0;
+    bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
+  }
 
   WaitBlitter();
 
-  if (x) {
+  if (bltshift) {
     bltsize += 1; bltmod -= 2;
 
     custom->bltadat = 0xffff;
-    custom->bltbpt = dstbpt;
-    custom->bltcdat = val;
+    custom->bltbpt = bltpt;
+    custom->bltcdat = pattern;
     custom->bltbmod = -2;
     custom->bltcmod = bltmod;
-    custom->bltcon0 = (SRCB | DEST) | (NABC | NABNC | ABC | ANBC) | x;
-    custom->bltcon1 = x;
+    custom->bltcon0 = (SRCB | DEST) | (NABC | NABNC | ABC | ANBC) | bltshift;
+    custom->bltcon1 = bltshift;
 
-    custom->bltdpt = dstbpt;
+    custom->bltdpt = bltpt;
     custom->bltdmod = bltmod;
     custom->bltalwm = -1;
     custom->bltafwm = -1;
     custom->bltsize = bltsize;
   } else {
-    custom->bltadat = val;
-    custom->bltamod = 0;
+    custom->bltadat = pattern;
     custom->bltcon0 = DEST | A_TO_D;
     custom->bltcon1 = 0;
 
-    custom->bltdpt = dstbpt;
+    custom->bltdpt = bltpt;
     custom->bltdmod = bltmod;
     custom->bltalwm = -1;
     custom->bltafwm = -1;
@@ -72,27 +89,29 @@ void BlitterSet(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y, UWORD w, UWORD h, U
   }
 }
 
-void BlitterSetMask(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
-                    BitmapT *msk, UWORD val)
+void BlitterSetMaskArea(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
+                        BitmapT *msk, Area2D *area, UWORD pattern)
 {
-  APTR dstbpt = dst->planes[dstbpl] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
+  APTR dstbpt = dst->planes[dstbpl];
   APTR mskbpt = msk->planes[0];
-  UWORD bltmod = dst->bytesPerRow - msk->bytesPerRow;
-  UWORD bltsize = (msk->height << 6) | (msk->bytesPerRow >> 1);
+  UWORD bltmod, bltsize, bltshift;
 
-  x = rorw(x & 15, 4);
+  dstbpt += ((x >> 3) & ~1) + y * dst->bytesPerRow;
+  bltmod = dst->bytesPerRow - msk->bytesPerRow;
+  bltsize = (msk->height << 6) | (msk->bytesPerRow >> 1);
+  bltshift = rorw(x & 15, 4);
 
   WaitBlitter();
 
-  if (x) {
+  if (bltshift) {
     bltsize += 1; bltmod -= 2;
 
     custom->bltbmod = -2;
-    custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | ABNC | ANBC | NANBC) | x;
-    custom->bltcon1 = x;
+    custom->bltcon0 = (SRCB|SRCC|DEST) | (ABC|ABNC|ANBC|NANBC) | bltshift;
+    custom->bltcon1 = bltshift;
     custom->bltalwm = 0;
 
-    custom->bltadat = val;
+    custom->bltadat = pattern;
     custom->bltbpt = mskbpt;
     custom->bltcpt = dstbpt;
     custom->bltdpt = dstbpt;
@@ -102,11 +121,11 @@ void BlitterSetMask(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
     custom->bltsize = bltsize;
   } else {
     custom->bltbmod = 0;
-    custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | ABNC | ANBC | NANBC);
+    custom->bltcon0 = (SRCB|SRCC|DEST) | (ABC|ABNC|ANBC|NANBC);
     custom->bltcon1 = 0;
     custom->bltalwm = -1;
 
-    custom->bltadat = val;
+    custom->bltadat = pattern;
     custom->bltbpt = mskbpt;
     custom->bltcpt = dstbpt;
     custom->bltdpt = dstbpt;
@@ -171,59 +190,6 @@ __regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWO
   custom->bltcmod = line.stride;
   custom->bltdmod = line.stride;
 }
-
-#if 0
-__regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
-  UBYTE *data = line.data;
-  UWORD bltcon1 = line.bltcon1;
-  WORD dmax, dmin, derr;
-
-  /* Always draw the line downwards. */
-  if (y1 > y2) {
-    swapr(x1, x2);
-    swapr(y1, y2);
-  }
-
-  /* Word containing the first pixel of the line. */
-  data += line.stride * y1;
-  data += (x1 >> 3) & ~1;
-
-  dmax = x2 - x1;
-  dmin = y2 - y1;
-
-  if (dmax < 0)
-    dmax = -dmax;
-
-  if (dmax >= dmin) {
-    if (x1 >= x2)
-      bltcon1 |= (AUL | SUD);
-    else
-      bltcon1 |= SUD;
-  } else {
-    swapr(dmax, dmin);
-    if (x1 >= x2)
-      bltcon1 |= SUL;
-  }
-
-  derr = 2 * dmin - dmax;
-  if (derr < 0)
-    bltcon1 |= SIGNFLAG;
-
-  custom->bltcon0 = rorw(x1 & 15, 4) | line.bltcon0;
-  custom->bltcon1 = rorw(x1 & 15, 4) | bltcon1;
-
-  custom->bltamod = derr - dmax;
-  custom->bltbmod = 2 * dmin;
-
-  custom->bltapt = (APTR)(LONG)derr;
-  custom->bltcpt = data;
-  /* Uses undocumented chipset feature.
-   * First dot is drawn into bltdpt, the rest goes to bltcpt. */
-  custom->bltdpt = (bltcon1 & ONEDOT) ? line.scratch : data;
-
-  custom->bltsize = (dmax << 6) + 66;
-}
-#endif
 
 __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
   UBYTE *data = line.data;
