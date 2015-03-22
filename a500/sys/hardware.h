@@ -33,6 +33,9 @@ void WaitMouse();
 __regargs void WaitLine(ULONG line);
 static void inline WaitVBlank() { WaitLine(303); }
 
+#define MoveLong(reg, hi, lo) \
+    *(ULONG *)(&custom->reg) = (((hi) << 16) | (lo))
+
 static inline BOOL LeftMouseButton() {
   return !(ciaa->ciapra & CIAF_GAMEPORT0);
 }

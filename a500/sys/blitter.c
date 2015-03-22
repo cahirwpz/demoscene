@@ -1,9 +1,6 @@
 #include "blitter.h"
 #include "hardware.h"
 
-#define MoveLong(reg, hi, lo) \
-    *(ULONG *)(&custom->reg) = (((hi) << 16) | (lo))
-
 __regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area) {
   APTR bltpt = bitmap->planes[plane];
   UWORD bltmod, bltsize;
@@ -246,7 +243,6 @@ __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
   derr = 2 * dmin - dmax;
   if (derr < 0)
     bltcon1 |= SIGNFLAG;
-  bltcon1 |= rorw(x1 & 15, 4);
 
   {
     UWORD bltcon0 = rorw(x1 & 15, 4) | line.bltcon0;
