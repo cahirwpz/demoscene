@@ -83,4 +83,16 @@ void Log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
   ADD2LIST(dtor, __EXIT_LIST__, 22); \
   asm(".stabs \"___EXIT_LIST__\",20,0,0," #pri "+128")
 
+#define PROFILE_BEGIN(NAME)                                             \
+{                                                                       \
+  static LONG average_ ## NAME = 0;                                     \
+  static WORD count_ ## NAME = 0;                                       \
+  LONG lines_ ## NAME = ReadLineCounter();
+
+#define PROFILE_END(NAME)                                               \
+  average_ ## NAME += ReadLineCounter() - lines_ ## NAME;               \
+  count_ ## NAME ++;                                                    \
+  Log(#NAME ": %ld\n", (LONG)div16(average_ ## NAME, count_ ## NAME));  \
+}                                                                       \
+
 #endif
