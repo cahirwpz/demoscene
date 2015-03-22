@@ -208,10 +208,10 @@ __regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWO
   custom->bltdmod = line.stride;
 }
 
-__regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
+void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"), WORD x2 asm("d4"), WORD y2 asm("d5")) {
   UBYTE *data = line.data;
   UWORD bltcon1 = line.bltcon1;
-  WORD dmax, dmin, derr;
+  WORD dx, dy, derr;
 
   /* Always draw the line downwards. */
   if (y1 > y2) {
@@ -223,34 +223,35 @@ __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
   data += line.stride * y1;
   data += (x1 >> 3) & ~1;
 
-  dmax = x2 - x1;
-  dmin = y2 - y1;
+  dx = x2 - x1;
+  dy = y2 - y1;
 
-  if (dmax < 0)
-    dmax = -dmax;
-
-  if (dmax >= dmin) {
-    if (x1 >= x2)
-      bltcon1 |= (AUL | SUD);
-    else
-      bltcon1 |= SUD;
-  } else {
-    swapr(dmax, dmin);
-    if (x1 >= x2)
+  if (dx < 0) {
+    dx = -dx;
+    if (dx >= dy) {
+      bltcon1 |= AUL | SUD;
+    } else {
       bltcon1 |= SUL;
+      swapr(dx, dy);
+    }
+  } else {
+    if (dx >= dy) {
+      bltcon1 |= SUD;
+    } else {
+      swapr(dx, dy);
+    }
   }
 
-  derr = 2 * dmin - dmax;
+  derr = dy + dy - dx;
   if (derr < 0)
     bltcon1 |= SIGNFLAG;
 
   {
     UWORD bltcon0 = rorw(x1 & 15, 4) | line.bltcon0;
-    UWORD bltamod = derr - dmax;
-    UWORD bltbmod = 2 * dmin;
-    APTR bltapt = (APTR)(LONG)derr;
+    UWORD bltamod = derr - dx;
+    UWORD bltbmod = dy + dy;
     APTR bltdpt = (bltcon1 & ONEDOT) ? line.scratch : data;
-    UWORD bltsize = (dmax << 6) + 66;
+    UWORD bltsize = (dx << 6) + 66;
 
     WaitBlitter();
 
@@ -258,7 +259,7 @@ __regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2) {
     custom->bltcon1 = bltcon1;
     custom->bltamod = bltamod;
     custom->bltbmod = bltbmod;
-    custom->bltapt = bltapt;
+    custom->bltapt = (APTR)(LONG)derr;
     custom->bltcpt = data;
     custom->bltdpt = bltdpt;
     custom->bltsize = bltsize;

@@ -43,7 +43,7 @@ void BlitterSetMaskArea(BitmapT *bitmap, WORD plane, UWORD x, UWORD y,
                         BitmapT *mask, Area2D *area, UWORD pattern);
 
 __regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWORD bltcon1);
-__regargs void BlitterLine(WORD x1, WORD y1, WORD x2, WORD y2);
+void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"), WORD x2 asm("d4"), WORD y2 asm("d5"));
 
 static inline BOOL BlitterBusy() {
   return custom->dmaconr & DMAF_BLTDONE;
