@@ -121,19 +121,9 @@ __regargs void UpdateObjectTransformation(Object3D *object) {
     WORD cy = M->y;
     WORD cz = M->z;
 
-    LONG x = M->m00 * cx + M->m01 * cy + M->m02 * cz;
-    LONG y = M->m10 * cx + M->m11 * cy + M->m12 * cz;
-    LONG z = M->m20 * cx + M->m21 * cy + M->m22 * cz;
-
-    WORD nx = normfx(x);
-    WORD ny = normfx(y);
-    WORD nz = normfx(z);
-
-    WORD l = isqrt(nx * nx + ny * ny + nz * nz);
-
-    *camera++ = div16(x, l);
-    *camera++ = div16(y, l);
-    *camera++ = div16(z, l);
+    *camera++ = normfx(M->m00 * cx + M->m01 * cy + M->m02 * cz);
+    *camera++ = normfx(M->m10 * cx + M->m11 * cy + M->m12 * cz);
+    *camera++ = normfx(M->m20 * cx + M->m21 * cy + M->m22 * cz);
   }
 }
 
@@ -151,13 +141,22 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
   while (--n >= 0) {
     IndexListT *face = *faces++;
     WORD *p = (WORD *)(vertex + (WORD)(face->indices[0] << 3));
-    LONG x = (*src++) * (WORD)(cx - *p++);
-    LONG y = (*src++) * (WORD)(cy - *p++);
-    LONG z = (*src++) * (WORD)(cz - *p++);
-    WORD f = (x + y + z) >> 20;
+    WORD px = cx - *p++;
+    WORD py = cy - *p++;
+    WORD pz = cz - *p++;
+    LONG x = (*src++) * px;
+    LONG y = (*src++) * py;
+    LONG z = (*src++) * pz;
+    LONG f = x + y + z;
 
-    if (f < 0)
+    if (f >= 0) {
+      /* normalize dot product */
+      f = div16(f, isqrt(px * px + py * py + pz * pz)) >> 8;
+      if (f > 15)
+        f = 15;
+    } else {
       f = 0;
+    }
 
     *faceFlags++ = f;
 
@@ -230,4 +229,3 @@ __regargs void SortFaces(Object3D *object) {
 
   SortItemArray(object->visibleFace, count);
 }
-
