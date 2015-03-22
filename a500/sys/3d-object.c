@@ -13,7 +13,6 @@ __regargs Object3D *NewObject3D(Mesh3D *mesh) {
   object->mesh = mesh;
   object->vertex = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
   object->vertexFlags = MemAlloc(vertices, MEMF_PUBLIC);
-  object->faceNormal = MemAlloc(sizeof(Point3D) * faces, MEMF_PUBLIC);
   object->faceFlags = MemAlloc(faces, MEMF_PUBLIC);
   object->edgeFlags = MemAlloc(edges, MEMF_PUBLIC);
   object->visibleFace = MemAlloc(sizeof(SortItemT) * faces, MEMF_PUBLIC);
@@ -33,46 +32,9 @@ __regargs void DeleteObject3D(Object3D *object) {
   MemFree(object->visibleFace, sizeof(SortItemT) * faces);
   MemFree(object->edgeFlags, edges);
   MemFree(object->faceFlags, faces);
-  MemFree(object->faceNormal, sizeof(Point3D) * faces);
   MemFree(object->vertexFlags, vertices);
   MemFree(object->vertex, sizeof(Point3D) * vertices);
   MemFree(object, sizeof(Object3D));
-}
-
-/*
- * For given triangle T with vertices A, B and C, surface normal N is a cross
- * product between vectors AB and BC.
- *
- * Ordering of vertices in polygon description is meaningful - depending on
- * that the normal vector will be directed inwards or outwards.
- *
- * Clockwise convention is used.
- */
-
-__regargs void UpdateFaceNormals(Object3D *object) {
-  Point3D *vertex = object->vertex;
-  IndexListT **faces = object->mesh->face;
-  WORD *normal = (WORD *)object->faceNormal;
-  IndexListT *face;
-
-  while ((face = *faces++)) {
-    WORD *v = face->indices;
-
-    Point3D *p1 = &vertex[*v++];
-    Point3D *p2 = &vertex[*v++];
-    Point3D *p3 = &vertex[*v++];
-
-    WORD ax = p1->x - p2->x;
-    WORD ay = p1->y - p2->y;
-    WORD az = p1->z - p2->z;
-    WORD bx = p2->x - p3->x;
-    WORD by = p2->y - p3->y;
-    WORD bz = p2->z - p3->z;
-
-    *normal++ = normfx(ay * bz - by * az);
-    *normal++ = normfx(az * bx - bz * ax);
-    *normal++ = normfx(ax * by - bx * ay);
-  }
 }
 
 __regargs void UpdateObjectTransformation(Object3D *object) {

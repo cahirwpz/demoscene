@@ -50,6 +50,7 @@ typedef struct {
 
   Point3D *vertex;
   Point3D *faceNormal;
+  UBYTE *faceSurface;
   Point3D *vertexNormal;
   EdgeT *edge;
   IndexListT **face;       /* { #face => [#vertex] } */
@@ -84,7 +85,6 @@ typedef struct {
 
   Point3D *vertex;     /* camera coordinates or screen coordinates + depth */
   BYTE *vertexFlags;   /* used by clipping */
-  Point3D *faceNormal; /* for back-face culling and lighting */
   BYTE *faceFlags;     /* e.g. visiblity flags */
   BYTE *edgeFlags;
 
