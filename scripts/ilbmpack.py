@@ -84,28 +84,30 @@ def main():
     body = ilbm.get('BODY')
 
     size = ((bmhd.data.w + 15) & ~15) / 8 * bmhd.data.h * bmhd.data.nPlanes
+    payload = body.data.read()
 
     logging.info(bmhd.data)
-    logging.info(
-      'BODY size before compression: %d/%d' % (len(body.data), size))
+    logging.info('BODY size before compression: %d/%d' % (len(payload), size))
 
     if bmhd.data.compression in [0, 1, 254, 255]:
-      body.data = body.data.read()
       if bmhd.data.compression == 1:
-        body.data = UnRLE(body.data)
+        payload = UnRLE(payload)
       if bmhd.data.compression == 254:
-        body.data = zopfli.decompress(body.data, size)
+        payload = zopfli.decompress(payload, size)
       if bmhd.data.compression == 255:
-        body.data = lzo.decompress(body.data, size)
+        payload = lzo.decompress(payload, size)
+      compression = 0
       if args.method == 'deflate':
         opts = zopfli.Options()
-        body.data = zopfli.compress(opts, body.data, len(body.data))
-        bmhd.data = bmhd.data._replace(compression=254)
+        payload = zopfli.compress(opts, payload, len(payload))
+        compression = 254
       if args.method == 'lzo':
-        body.data = lzo.compress(body.data)
-        bmhd.data = bmhd.data._replace(compression=255)
+        payload = lzo.compress(payload)
+        compression = 255
       if args.method == 'none':
-        bmhd.data = bmhd.data._replace(compression=0)
+        compression = 0
+      body.data = payload
+      bmhd.data = bmhd.data._replace(compression=compression)
       logging.info(
         'BODY size after compression: %d/%d' % (len(body.data), size))
       ilbm.save(args.output)

@@ -3,53 +3,55 @@
 import logging
 import struct
 import binascii
+import StringIO
+import collections
+from chunk import Chunk
 
-from chunk import Chunk as IffChunk
-from collections import Sequence
-from StringIO import StringIO as OrigStringIO
 
-
-class StringIO(OrigStringIO):
-  def __len__(self):
-    return len(self.getvalue())
+class IffData(StringIO.StringIO):
+  def eof(self):
+    return self.tell() >= len(self.getvalue())
 
   def __repr__(self):
-    return 'Data stream of %d bytes' % len(self)
+    return "<<< binary data of %d bytes >>>" % len(self.getvalue())
 
 
-class Chunk(object):
+class IffChunk(object):
   __slots__ = ('name', 'data')
 
   def __init__(self, name, data):
     self.name = name
     self.data = data
 
-  def __repr__(self):
-    return "%s: %r" % (self.name, self.data)
 
-
-class File(Sequence):
+class IffFile(collections.Sequence):
   ChunkAliasMap = {}
   ChunkBlackList = []
 
-  def __init__(self, kind):
-    self._kind = kind
-    self._chunks = []
+  @classmethod
+  def fromFile(cls, filename):
+    iff = cls()
+    if iff.load(filename):
+      return iff
+
+  def __init__(self, form):
+    self.form = form
+    self.chunks = []
 
   def load(self, filename):
-    self._chunks = []
+    self.chunks = []
 
     with open(filename) as iff:
-      chunk = IffChunk(iff)
+      chunk = Chunk(iff)
 
-      logging.info('Reading file "%s"' % filename)
+      logging.info('Reading file "%s" as IFF/%s type.' % (filename, self.form))
 
-      if chunk.getname() == 'FORM' and chunk.read(4) == self._kind:
+      if chunk.getname() == 'FORM' and chunk.read(4) == self.form:
         iff.seek(12)
 
         while True:
           try:
-            chunk = IffChunk(iff)
+            chunk = Chunk(iff)
           except EOFError:
             break
 
@@ -62,10 +64,10 @@ class File(Sequence):
           else:
             logging.debug('Encountered %s chunk of size %d' % (name, size))
 
-            self._chunks.append(self._readChunk(name, data))
+            self.chunks.append(self.readChunk(name, data))
       else:
-        logging.error(
-          'File %s is not of IFF/%s type.' % (filename, self._kind))
+        logging.warn(
+          'File %s is not of IFF/%s type.' % (filename, self.form))
         return False
 
     return True
@@ -74,10 +76,10 @@ class File(Sequence):
     with open(filename, 'w') as iff:
       logging.info('Writing file "%s"' % filename)
 
-      iff.write('FORM' + '\000' * 4 + self._kind)
+      iff.write('FORM' + '\000' * 4 + self.form)
 
-      for chunk in self._chunks:
-        data = self._writeChunk(chunk)
+      for chunk in self.chunks:
+        data = self.writeChunk(chunk)
         if data:
           iff.write(chunk.name)
           iff.write(struct.pack('>I', len(data)))
@@ -89,7 +91,7 @@ class File(Sequence):
       iff.seek(4)
       iff.write(struct.pack('>I', size))
 
-  def _readChunk(self, name, data):
+  def readChunk(self, name, data):
     orig_name = name
 
     for alias, names in self.ChunkAliasMap.items():
@@ -97,7 +99,7 @@ class File(Sequence):
         name = alias
 
     handler = getattr(self, 'read%s' % name, None)
-    arg = StringIO(data)
+    arg = IffData(data)
 
     if handler:
       data = handler(arg)
@@ -105,9 +107,9 @@ class File(Sequence):
       data = binascii.hexlify(arg.getvalue())
       logging.warning('No handler for %s chunk.' % orig_name)
 
-    return Chunk(orig_name, data)
+    return IffChunk(orig_name, data)
 
-  def _writeChunk(self, chunk):
+  def writeChunk(self, chunk):
     name = chunk.name
 
     for alias, names in self.ChunkAliasMap.items():
@@ -115,7 +117,7 @@ class File(Sequence):
         name = alias
 
     handler = getattr(self, 'write%s' % name, None)
-    out = StringIO()
+    out = IffData()
 
     if handler:
       handler(chunk.data, out)
@@ -125,7 +127,7 @@ class File(Sequence):
     return None
 
   def get(self, name, always_list=False):
-    chunks = [c for c in self._chunks if c.name == name]
+    chunks = [c for c in self.chunks if c.name == name]
 
     if not chunks:
       raise ValueError('No chunk named %s.' % name)
@@ -139,7 +141,7 @@ class File(Sequence):
     return self.get(name)
 
   def __iter__(self):
-    return iter(self._chunks)
+    return iter(self.chunks)
 
   def __len__(self):
-    return len(self._chunks)
+    return len(self.chunks)

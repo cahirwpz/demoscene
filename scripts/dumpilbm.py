@@ -14,7 +14,7 @@ def main():
   for path in sys.argv[1:]:
     ilbm.load(path)
     for chunk in ilbm:
-      pprint(chunk)
+      pprint((chunk.name, chunk.data))
 
 
 if __name__ == '__main__':

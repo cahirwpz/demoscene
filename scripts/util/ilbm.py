@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import iff
+from iff import IffFile
 import struct
 
 from collections import namedtuple
@@ -16,7 +16,7 @@ PaletteChanges = namedtuple('PaletteChanges', (
 LineChanges = namedtuple('LineChanges', ('line', 'colorChange'))
 
 
-class ILBM(iff.File):
+class ILBM(IffFile):
   def __init__(self):
     super(ILBM, self).__init__('ILBM')
 
