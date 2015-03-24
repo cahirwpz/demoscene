@@ -9,23 +9,9 @@
 #define PF_TOP    4
 #define PF_BOTTOM 8
 
-typedef struct {
-  WORD x, y;
-} Point2D;
-
 typedef struct Edge {
   UWORD p0, p1;
 } EdgeT;
-
-typedef struct {
-  WORD minX, minY;
-  WORD maxX, maxY;
-} Box2D;
-
-typedef struct {
-  WORD x, y;
-  WORD w, h;
-} Area2D;
 
 typedef struct IndexList {
   WORD count;

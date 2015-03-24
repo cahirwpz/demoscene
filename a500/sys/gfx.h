@@ -13,9 +13,23 @@ typedef struct Palette {
 } PaletteT;
 
 typedef struct {
+  WORD x, y;
+} Point2D;
+
+typedef struct {
   WORD x1, y1;
   WORD x2, y2;
 } Line2D;
+
+typedef struct {
+  WORD minX, minY;
+  WORD maxX, maxY;
+} Box2D;
+
+typedef struct {
+  WORD x, y;
+  WORD w, h;
+} Area2D;
 
 __regargs PaletteT *NewPalette(UWORD count);
 __regargs PaletteT *CopyPalette(PaletteT *palette);
@@ -66,6 +80,7 @@ __regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
                                    UBYTE flags);
 __regargs void DeleteBitmap(BitmapT *bitmap);
 __regargs void BitmapMakeDisplayable(BitmapT *bitmap);
+__regargs BOOL ClipBitmap(const Box2D *space, Point2D *pos, Area2D *area);
 
 static inline BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth) {
   return NewBitmapCustom(width, height, depth, BM_CLEAR|BM_DISPLAYABLE);

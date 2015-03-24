@@ -114,3 +114,37 @@ __regargs void ConvertPaletteToRGB4(PaletteT *palette, UWORD *color, WORD n) {
     *color++ = (r << 4) | (UBYTE)(g | (b >> 4));
   }
 }
+
+__regargs BOOL ClipBitmap(const Box2D *space, Point2D *pos, Area2D *area) {
+  WORD minX = space->minX;
+  WORD minY = space->minY;
+  WORD maxX = space->maxX;
+  WORD maxY = space->maxY;
+  WORD posX = pos->x;
+  WORD posY = pos->y;
+
+  if ((posX + area->w <= minX) || (posX > maxX))
+    return FALSE;
+  if ((posY + area->h <= minY) || (posY > maxY))
+    return FALSE;
+
+  if (posX < minX) {
+    area->x += minX - posX;
+    area->w -= minX - posX;
+    pos->x = posX = minX;
+  }
+
+  if (posY < minY) {
+    area->y += minY - posY;
+    area->h -= minY - posY;
+    pos->y = posY = minY;
+  }
+
+  if (posX + area->w > maxX)
+    area->w = maxX - posX + 1;
+
+  if (posY + area->h > maxY)
+    area->h = maxY - posY + 1;
+
+  return TRUE;
+}
