@@ -8,31 +8,19 @@ __regargs void BitmapCopy(BitmapT *dst, UWORD x, UWORD y, BitmapT *src)
   UWORD bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
   UWORD bltshift = rorw(x & 15, 4);
   WORD n = src->depth;
-  WORD w = src->width & 15;
 
   WaitBlitter();
 
-  if (bltshift || w) {
-    if ((x & 15) + w >= 16) {
-      dstmod -= 2; bltsize += 1;
-      custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | NABC | ABNC | NANBC) | bltshift;
-      custom->bltcon1 = bltshift;
-      custom->bltafwm = -1;
-      custom->bltalwm = 0;
-      custom->bltbmod = -2;
-      custom->bltadat = -1;
-      custom->bltcmod = dstmod;
-      custom->bltdmod = dstmod;
-    } else {
-      custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | NABC | ABNC | NANBC) | bltshift;
-      custom->bltcon1 = bltshift;
-      custom->bltafwm = -1;
-      custom->bltalwm = -1 << w;
-      custom->bltbmod = 0;
-      custom->bltadat = -1;
-      custom->bltcmod = dstmod;
-      custom->bltdmod = dstmod;
-    }
+  if (bltshift) {
+    dstmod -= 2; bltsize += 1;
+    custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | NABC | ABNC | NANBC) | bltshift;
+    custom->bltcon1 = bltshift;
+    custom->bltafwm = -1;
+    custom->bltalwm = 0;
+    custom->bltbmod = -2;
+    custom->bltadat = -1;
+    custom->bltcmod = dstmod;
+    custom->bltdmod = dstmod;
   } else {
     custom->bltamod = 0;
     custom->bltcon0 = (SRCA | DEST) | A_TO_D;
@@ -45,7 +33,7 @@ __regargs void BitmapCopy(BitmapT *dst, UWORD x, UWORD y, BitmapT *src)
   for (; --n >= 0; srcbpt += src->bplSize, dstbpt += dst->bplSize) {
     WaitBlitter();
 
-    if (bltshift || w) {
+    if (bltshift) {
       custom->bltbpt = srcbpt;
       custom->bltcpt = dstbpt;
       custom->bltdpt = dstbpt;
@@ -140,34 +128,53 @@ void BitmapCopyMasked(BitmapT *dst, UWORD x, UWORD y, BitmapT *src,
 }
 
 /* Restrictions: sx and sw must be multiply of 16! */
-void BitmapCopyArea(BitmapT *dst, UWORD dx, UWORD dy, 
-                    BitmapT *src, Area2D *area)
+void BitmapCopyArea(BitmapT *dst, UWORD x, UWORD y, BitmapT *src, Area2D *area)
 {
   UWORD sx = area->x;
   UWORD sy = area->y;
   UWORD sw = area->w;
   UWORD sh = area->h;
   APTR srcbpt = src->planes[0] + ((sx & ~15) >> 3) + sy * src->bytesPerRow;
-  APTR dstbpt = dst->planes[0] + ((dx & ~15) >> 3) + dy * dst->bytesPerRow;
+  APTR dstbpt = dst->planes[0] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
   UWORD srcmod = src->bytesPerRow - (sw >> 3);
   UWORD dstmod = dst->bytesPerRow - (sw >> 3);
   UWORD bltsize = (sh << 6) | (sw >> 4);
+  UWORD bltshift = rorw(x & 15, 4);
   WORD n = src->depth;
 
   WaitBlitter();
 
-  custom->bltamod = srcmod;
-  custom->bltdmod = dstmod;
-  custom->bltcon0 = (SRCA | DEST) | A_TO_D;
-  custom->bltcon1 = 0;
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
+  if (bltshift) {
+    srcmod -= 2; dstmod -= 2; bltsize += 1;
+    custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | NABC | ABNC | NANBC) | bltshift;
+    custom->bltcon1 = bltshift;
+    custom->bltafwm = -1;
+    custom->bltalwm = 0;
+    custom->bltbmod = srcmod;
+    custom->bltadat = -1;
+    custom->bltcmod = dstmod;
+    custom->bltdmod = dstmod;
+  } else {
+    custom->bltamod = srcmod;
+    custom->bltdmod = dstmod;
+    custom->bltcon0 = (SRCA | DEST) | A_TO_D;
+    custom->bltcon1 = 0;
+    custom->bltafwm = -1;
+    custom->bltalwm = -1;
+  }
 
   for (; --n >= 0; srcbpt += src->bplSize, dstbpt += dst->bplSize) {
     WaitBlitter();
 
-    custom->bltapt = srcbpt;
-    custom->bltdpt = dstbpt;
-    custom->bltsize = bltsize;
+    if (bltshift) {
+      custom->bltbpt = srcbpt;
+      custom->bltcpt = dstbpt;
+      custom->bltdpt = dstbpt;
+      custom->bltsize = bltsize;
+    } else {
+      custom->bltapt = srcbpt;
+      custom->bltdpt = dstbpt;
+      custom->bltsize = bltsize;
+    }
   }
 }

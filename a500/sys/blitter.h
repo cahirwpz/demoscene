@@ -39,6 +39,9 @@ __regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area);
 
 __regargs void BlitterSetArea(BitmapT *bitmap, WORD plane, Area2D *area, UWORD pattern);
 
+#define BlitterSetMask(bitmap, plane, x, y, mask, pattern) \
+  BlitterSetMaskArea((bitmap), (plane), (x), (y), (mask), NULL, (pattern))
+
 void BlitterSetMaskArea(BitmapT *bitmap, WORD plane, UWORD x, UWORD y,
                         BitmapT *mask, Area2D *area, UWORD pattern);
 
