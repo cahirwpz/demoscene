@@ -116,11 +116,10 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
       f = div16(f, isqrt(px * px + py * py + pz * pz)) >> 8;
       if (f > 15)
         f = 15;
+      *faceFlags++ = f;
     } else {
-      f = 0;
+      *faceFlags++ = -1;
     }
-
-    *faceFlags++ = f;
 
     src++;
   }
@@ -137,7 +136,7 @@ __regargs void UpdateVertexVisibility(Object3D *object) {
   while (--n >= 0) {
     IndexListT *face = *faces++;
 
-    if (*faceFlags++) {
+    if (*faceFlags++ >= 0) {
       WORD *vi = face->indices;
       WORD count = face->count;
 
@@ -168,7 +167,7 @@ __regargs void SortFaces(Object3D *object) {
   while (--n >= 0) {
     IndexListT *face = *faces++;
 
-    if (*faceFlags++) {
+    if (*faceFlags++ >= 0) {
       WORD *vi = face->indices;
       WORD i1 = *vi++ << 3;
       WORD i2 = *vi++ << 3;
