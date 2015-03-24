@@ -8,7 +8,7 @@ import struct
 from collections import namedtuple
 from pprint import pprint
 
-from util.iff import IffFile, IffData
+from util.iff import IffFile, IffChunk, IffData
 
 Vertex = namedtuple('Vertex', 'x y z')
 Color = namedtuple('Color', 'r g b')
@@ -283,6 +283,13 @@ class LWOB(IffFile, LWOParserMixin):
     return self.get('POLS')
 
 
+class LwoEncoder(json.JSONEncoder):
+  def default(self, obj):
+    if isinstance(obj, IffChunk):
+      return (obj.name, obj.data)
+    return json.JSONEncoder.default(self, obj)
+
+
 def main():
   parser = argparse.ArgumentParser(
     description=(
@@ -326,7 +333,7 @@ def main():
   if args.output:
     logging.info('Writing JSON structure to %s file.' % args.output)
     with open(str(args.output), 'w') as f:
-      json.dump((lwo.form, lwo.chunks), f)
+      json.dump((lwo.form, lwo.chunks), f, cls=LwoEncoder)
       f.write('\n')
 
 
