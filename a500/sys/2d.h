@@ -29,8 +29,6 @@ __regargs void Scale2D(Matrix2D *M, WORD sx, WORD sy);
 __regargs void Rotate2D(Matrix2D *M, WORD a);
 __regargs void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, WORD n);
 
-__regargs BOOL ClipArea2D(Point2D *dst, WORD width, WORD height, Area2D *src);
-
 extern Box2D ClipWin;
 
 __regargs void PointsInsideBox(Point2D *in, UBYTE *flags, WORD n);
