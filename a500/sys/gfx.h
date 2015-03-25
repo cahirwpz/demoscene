@@ -92,4 +92,6 @@ static inline ULONG BitmapSize(BitmapT *bitmap) {
   return ((UWORD)bitmap->bplSize * (UWORD)bitmap->depth) + BM_EXTRA;
 }
 
+__regargs void ConvertPaletteToRGB4(PaletteT *palette, UWORD *color, WORD n);
+
 #endif
