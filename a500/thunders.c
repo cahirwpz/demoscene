@@ -258,8 +258,109 @@ static __regargs void DrawStripes(WORD xo, WORD kxo) {
   }
 }
 
+
+static __regargs void FillStripes(UWORD plane) {
+  APTR bltpt = screen0->planes[plane] + (HEIGHT * WIDTH) / 8 - 2;
+  UWORD bltsize = ((HEIGHT - FAR_Y - 1) << 6) | (WIDTH >> 4);
+
+  WaitBlitter();
+
+  custom->bltapt = bltpt;
+  custom->bltdpt = bltpt;
+  custom->bltamod = 0;
+  custom->bltdmod = 0;
+  custom->bltcon0 = (SRCA | DEST) | A_TO_D;
+  custom->bltcon1 = BLITREVERSE | FILL_OR;
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+  custom->bltsize = bltsize;
+}
+
+static __regargs void ColorizeUpperHalf(CopListT *cp, WORD yi, WORD kyo) {
+  WORD k;
+  WORD y0 = HEIGHT;
+  APTR pixels = tiles->pixels;
+
+  yi += (SIZE - 1) * TILESIZE - GAP;
+
+  for (k = SIZE; k >= 0; k--, yi -= TILESIZE) {
+    WORD column = ((k + kyo) & (SIZE - 1));
+    UWORD *colors = pixels + (column * SIZE + 1) * sizeof(UWORD);
+
+    CopWait(cp, Y(HEIGHT - y0), 0);
+    CopSetRGB(cp, 1, *colors++);
+    CopSetRGB(cp, 2, *colors++);
+    CopSetRGB(cp, 3, *colors++);
+    CopSetRGB(cp, 4, *colors++);
+    CopSetRGB(cp, 5, *colors++);
+    CopSetRGB(cp, 6, *colors++);
+    CopSetRGB(cp, 7, *colors++);
+
+    y0 = (yi > 0) ? horiz[yi] : FAR_Y;
+
+    {
+      WORD yj = yi + GAP;
+      WORD y1;
+
+      if (yj < 0)
+        yj = 0;
+      y1 = horiz[yj];
+
+      CopWait(cp, Y(HEIGHT - y1), 0);
+      CopSetRGB(cp, 1, BGCOL);
+      CopSetRGB(cp, 2, BGCOL);
+      CopSetRGB(cp, 3, BGCOL);
+      CopSetRGB(cp, 4, BGCOL);
+      CopSetRGB(cp, 5, BGCOL);
+      CopSetRGB(cp, 6, BGCOL);
+      CopSetRGB(cp, 7, BGCOL);
+    }
+  }
+}
+
+static __regargs void ColorizeLowerHalf(CopListT *cp, WORD yi, WORD kyo) {
+  WORD k;
+  WORD y0 = FAR_Y;
+  APTR pixels = tiles->pixels;
+
+  for (k = 0; k <= SIZE; k++, yi += TILESIZE) {
+    WORD column = ((k + kyo) & (SIZE - 1));
+    UWORD *colors = pixels + (column * SIZE + 1) * sizeof(UWORD);
+    CopWait(cp, Y(y0), 0);
+    CopSetRGB(cp, 1, *colors++);
+    CopSetRGB(cp, 2, *colors++);
+    CopSetRGB(cp, 3, *colors++);
+    CopSetRGB(cp, 4, *colors++);
+    CopSetRGB(cp, 5, *colors++);
+    CopSetRGB(cp, 6, *colors++);
+    CopSetRGB(cp, 7, *colors++);
+
+    y0 = (yi < N) ? horiz[yi] : HEIGHT;
+
+    {
+      WORD yj = yi - GAP;
+      WORD y1;
+
+      if (yj < 0)
+        yj = 0;
+      y1 = horiz[yj];
+
+      CopWait(cp, Y(y1), 0);
+      CopSetRGB(cp, 1, BGCOL);
+      CopSetRGB(cp, 2, BGCOL);
+      CopSetRGB(cp, 3, BGCOL);
+      CopSetRGB(cp, 4, BGCOL);
+      CopSetRGB(cp, 5, BGCOL);
+      CopSetRGB(cp, 6, BGCOL);
+      CopSetRGB(cp, 7, BGCOL);
+    }
+  }
+}
+
 static void MakeFloorCopperList(WORD yo, WORD kyo) {
   CopListT *cp = cp0;
+
+  FillStripes(0);
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
@@ -294,85 +395,14 @@ static void MakeFloorCopperList(WORD yo, WORD kyo) {
   CopSetRGB(cp, 0, BGCOL);
   CopLoadPal(cp, palette, 16);
 
-  {
-    WORD k;
-    WORD y0 = HEIGHT;
-    WORD yi = (yo & (TILESIZE - 1)) + (SIZE - 1) * TILESIZE - GAP;
-
-    for (k = SIZE; k >= 0; k--, yi -= TILESIZE) {
-      WORD column = ((k + kyo) & (SIZE - 1));
-      UWORD *colors = tiles->pixels + (column * SIZE + 1) * sizeof(UWORD);
-      WORD yj = yi + GAP;
-      WORD y1;
-     
-      if (yj < 0)
-        yj = 0;
-
-      y1 = horiz[yj];
-
-      CopWait(cp, Y(HEIGHT - y0), 0);
-      CopSetRGB(cp, 1, *colors++);
-      CopSetRGB(cp, 2, *colors++);
-      CopSetRGB(cp, 3, *colors++);
-      CopSetRGB(cp, 4, *colors++);
-      CopSetRGB(cp, 5, *colors++);
-      CopSetRGB(cp, 6, *colors++);
-      CopSetRGB(cp, 7, *colors++);
-
-      CopWait(cp, Y(HEIGHT - y1), 0);
-      CopSetRGB(cp, 1, BGCOL);
-      CopSetRGB(cp, 2, BGCOL);
-      CopSetRGB(cp, 3, BGCOL);
-      CopSetRGB(cp, 4, BGCOL);
-      CopSetRGB(cp, 5, BGCOL);
-      CopSetRGB(cp, 6, BGCOL);
-      CopSetRGB(cp, 7, BGCOL);
-
-      y0 = (yi > 0) ? horiz[yi] : FAR_Y;
-    }
-  }
+  ColorizeUpperHalf(cp, yo, kyo);
 
   CopWait(cp, Y(HEIGHT / 2), 0);
   CopMove16(cp, bpl1mod, 0);
   CopMove16(cp, bpl2mod, 0);
 
-  {
-    WORD k;
-    WORD y0 = FAR_Y;
-    WORD yi = yo & (TILESIZE - 1);
-
-    for (k = 0; k <= SIZE; k++, yi += TILESIZE) {
-      WORD column = ((k + kyo) & (SIZE - 1));
-      UWORD *colors = tiles->pixels + (column * SIZE + 1) * sizeof(UWORD);
-      WORD yj = yi - GAP;
-      WORD y1;
-
-      if (yj < 0)
-        yj = 0;
-
-      y1 = horiz[yj];
-
-      CopWait(cp, Y(y0), 0);
-      CopSetRGB(cp, 1, *colors++);
-      CopSetRGB(cp, 2, *colors++);
-      CopSetRGB(cp, 3, *colors++);
-      CopSetRGB(cp, 4, *colors++);
-      CopSetRGB(cp, 5, *colors++);
-      CopSetRGB(cp, 6, *colors++);
-      CopSetRGB(cp, 7, *colors++);
-
-      CopWait(cp, Y(y1), 0);
-      CopSetRGB(cp, 1, BGCOL);
-      CopSetRGB(cp, 2, BGCOL);
-      CopSetRGB(cp, 3, BGCOL);
-      CopSetRGB(cp, 4, BGCOL);
-      CopSetRGB(cp, 5, BGCOL);
-      CopSetRGB(cp, 6, BGCOL);
-      CopSetRGB(cp, 7, BGCOL);
-
-      y0 = (yi < N) ? horiz[yi] : HEIGHT;
-    }
-  }
+  FillStripes(1);
+  ColorizeLowerHalf(cp, yo, kyo);
 
   CopEnd(cp);
 }
@@ -389,14 +419,8 @@ static void Render() {
     WORD kyo = 7 - yo * SIZE / N;
 
     DrawStripes(xo, kxo);
-    MakeFloorCopperList(yo, kyo);
-  }
-
-  {
-    Area2D area = { 0, HEIGHT / 2, WIDTH, HEIGHT / 2 - 1 };
-    BlitterFillArea(screen0, 0, &area);
-    BlitterFillArea(screen0, 1, &area);
-    BlitterFillArea(screen0, 2, &area);
+    MakeFloorCopperList(yo & (TILESIZE - 1), kyo);
+    FillStripes(2);
   }
 
   // PROFILE_END(floor);
