@@ -129,8 +129,11 @@ __regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr) {
   WORD *data = NullSprite->data;
   WORD i;
 
-  for (i = 0; i < 8; i++)
-    *sprptr++ = CopMove32(list, sprpt[i], data);
+  for (i = 0; i < 8; i++) {
+    CopInsT *ins = CopMove32(list, sprpt[i], data);
+    if (sprptr)
+      *sprptr++ = ins;
+  }
 }
 
 __regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr) {

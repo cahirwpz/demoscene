@@ -4,7 +4,7 @@ BINS	= stripes lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           playahx playp61 wireframe kbtest shapes mouse transparency anim \
           uvmap metaballs blurred circles floor-old parselwo neons flatshade \
           plotter highway textscroll uvmap-rgb bumpmap-rgb glitch floor ball \
-          tilezoomer twister-rgb showpchg blurred3d
+          tilezoomer twister-rgb showpchg blurred3d thunders
 
 all:	startup.o libs $(BINS)
 
@@ -40,6 +40,7 @@ textscroll:     textscroll.o startup.o libsys.a
 tilezoomer:     tilezoomer.o startup.o libsys.a
 topaz8:         topaz8.o startup.o libsys.a
 transparency:   transparency.o startup.o libsys.a
+thunders:       thunders.o startup.o libsys.a
 twister-rgb:    twister-rgb.o startup.o libsys.a
 uvmap:          uvmap.o startup.o libsys.a
 uvmap-rgb:      uvmap-rgb.o startup.o libsys.a

@@ -8,10 +8,11 @@ __regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area) {
   if (area) {
     WORD x = area->x;
     WORD y = area->y; 
-    WORD w = area->w >> 3;
+    WORD w = area->w;
     WORD h = area->h;
 
     bltpt += (((x + w) >> 3) & ~1) + ((y + h) * bitmap->bytesPerRow);
+    w >>= 3;
     bltmod = bitmap->bytesPerRow - w;
     bltsize = (h << 6) | (w >> 1);
   } else {

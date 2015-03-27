@@ -39,6 +39,14 @@ static inline WORD div16(LONG a, WORD b) {
   return a;
 }
 
+static inline WORD mod16(LONG a, WORD b) {
+  asm("divs %1,%0\n"
+      "swap %0"
+      : "+d" (a)
+      : "dm" (b));
+  return a;
+}
+
 static inline void bclr(UBYTE *ptr, BYTE bit) {
   asm("bclr %1,%0" :: "m" (*ptr), "dI" (bit));
 }
