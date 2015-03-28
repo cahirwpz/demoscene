@@ -164,6 +164,7 @@ __regargs void CopSetupBitplaneFetch(CopListT *list, UWORD mode,
 
   CopMove16(list, ddfstrt, ddfstrt);
   CopMove16(list, ddfstop, ddfstop);
+  CopMove16(list, bplcon1, ((xs & 15) << 4) | (xs & 15));
   CopMove16(list, fmode, 0);
 }
  
@@ -191,6 +192,55 @@ __regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
 
     CopMove16(list, bpl1mod, modulo);
     CopMove16(list, bpl2mod, modulo);
+  }
+}
+
+void CopSetupBitplaneArea(CopListT *list, UWORD mode, UWORD depth,
+                          BitmapT *bitmap, WORD x, WORD y, Area2D *area)
+{
+  APTR *planes = bitmap->planes;
+  LONG start;
+  WORD modulo;
+  WORD w;
+  WORD i;
+
+  if (area) {
+    w = (area->w + 15) & ~15;
+    /* seems that bitplane fetcher has to be active for at least two words */
+    if (w < 32)
+      w = 32;
+    start = bitmap->bytesPerRow * area->y + ((area->x >> 3) & ~1);
+    modulo = bitmap->bytesPerRow - ((w >> 3) & ~1);
+    x -= (area->x & 15);
+  } else {
+    w = (bitmap->width + 15) & ~15;
+    start = 0;
+    modulo = 0;
+  }
+
+  for (i = 0; i < depth; i++)
+    CopMove32(list, bplpt[i], *planes++ + start);
+
+  CopMove16(list, bpl1mod, modulo);
+  CopMove16(list, bpl2mod, modulo);
+
+  {
+    UWORD ddfstrt, ddfstop;
+
+    if (mode & MODE_HIRES) {
+      x -= 9; w >>= 2;
+      ddfstrt = (x >> 1) & ~3;
+    } else {
+      x -= 17; w >>= 1;
+      ddfstrt = (x >> 1) & ~7;
+    }
+
+    ddfstop = ddfstrt + w - 8;
+
+    CopMove16(list, ddfstrt, ddfstrt);
+    CopMove16(list, ddfstop, ddfstop);
+    CopMove16(list, bplcon1, ((x & 15) << 4) | (x & 15));
+    CopMove16(list, fmode, 0);
   }
 }
 
