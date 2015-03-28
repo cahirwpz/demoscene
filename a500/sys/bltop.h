@@ -17,4 +17,6 @@ void BitmapAddSaturated(BitmapT *dst, WORD dx, WORD dy, BitmapT *src, BitmapT *c
 __regargs void BitmapDecSaturated(BitmapT *dst_bm, BitmapT *borrow_bm);
 __regargs void BitmapIncSaturated(BitmapT *dst_bm, BitmapT *carry_bm);
 
+__regargs BitmapT *BitmapMakeMask(BitmapT *bitmap);
+
 #endif
