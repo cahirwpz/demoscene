@@ -30,8 +30,11 @@
 static SpriteT *thunder[20];
 static BitmapT *screen0, *screen1;
 static CopListT *cp0, *cp1;
-static PixmapT *tiles;
+static PixmapT *texture;
 static PaletteT *palette;
+static UWORD tileColor[SIZE * SIZE];
+static WORD tileCycle[SIZE * SIZE];
+static WORD tileEnergy[SIZE * SIZE];
 
 typedef struct {
   WORD x1, x2, y2;
@@ -40,6 +43,8 @@ typedef struct {
 
 static LineDataT vert[N];
 static WORD horiz[N];
+
+extern void InitColorTab();
 
 static void FloorPrecalc() {
   WORD i;
@@ -69,10 +74,12 @@ static void FloorPrecalc() {
     
     horiz[i] = HEIGHT * NEAR_Z / z;
   }
+
+  InitColorTab();
 }
 
 static void Load() {
-  tiles = LoadTGA("data/thunders-floor.tga", PM_RGB4, MEMF_PUBLIC);
+  texture = LoadTGA("data/thunders-floor.tga", PM_RGB4, MEMF_PUBLIC);
 
   {
     BitmapT *bitmap = LoadILBM("data/thunders.iff");
@@ -80,9 +87,9 @@ static void Load() {
 
     for (i = 0; i < bitmap->width / 16; i++) {
       WORD xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
-      WORD yo = Y((HEIGHT - 160) / 2);
+      WORD yo = Y((HEIGHT - 128) / 2);
 
-      thunder[i] = NewSpriteFromBitmap(160, bitmap, i * 16, 0);
+      thunder[i] = NewSpriteFromBitmap(128, bitmap, i * 16, 0);
       UpdateSprite(thunder[i], xo, yo);
     }
 
@@ -91,6 +98,8 @@ static void Load() {
   }
 
   FloorPrecalc();
+
+  ITER(i, 0, SIZE * SIZE - 1, tileCycle[i] = random() & SIN_MASK);
 }
 
 static void UnLoad() {
@@ -99,7 +108,7 @@ static void UnLoad() {
   for (i = 0; i < 20; i++)
     DeleteSprite(thunder[i]);
 
-  DeletePixmap(tiles);
+  DeletePixmap(texture);
   DeletePalette(palette);
 }
 
@@ -258,7 +267,6 @@ static __regargs void DrawStripes(WORD xo, WORD kxo) {
   }
 }
 
-
 static __regargs void FillStripes(UWORD plane) {
   APTR bltpt = screen0->planes[plane] + (HEIGHT * WIDTH) / 8 - 2;
   UWORD bltsize = ((HEIGHT - FAR_Y - 1) << 6) | (WIDTH >> 4);
@@ -276,10 +284,47 @@ static __regargs void FillStripes(UWORD plane) {
   custom->bltsize = bltsize;
 }
 
+void ControlTileColors() {
+  UWORD *src = texture->pixels, *dst = tileColor;
+  WORD *energy = tileEnergy;
+  WORD *cycle = tileCycle;
+  WORD n = SIZE * SIZE ;
+
+  while (--n >= 0) {
+    WORD f = (SIN(frameCount * 16 + *cycle++) >> 10) - 4;
+    WORD e = *energy;
+    UWORD c = *src++;
+    WORD r, g, b;
+
+    if (e > 0)
+      *energy = e - 1;
+    energy++;
+
+    f += e;
+    if (f > 15)
+      f = 15;
+
+    if (f < 0) {
+      f = 16 + f;
+      /* 000 <-> RGB */
+      r = ((c >> 4) & 0x0f0) | f;
+      g = (c & 0x0f0) | f;
+      b = ((c << 4) & 0x0f0) | f;
+    } else {
+      /* RGB -> FFF */
+      r = (c & 0xf00) | 0x0f0 | f;
+      g = ((c << 4) & 0xf00) | 0x0f0 | f;
+      b = ((c << 8) & 0xf00) | 0x0f0 | f;
+    }
+
+    *dst++ = (colortab[r] << 4) | (UBYTE)(colortab[g] | (colortab[b] >> 4));
+  }
+}
+
 static __regargs void ColorizeUpperHalf(CopListT *cp, WORD yi, WORD kyo) {
   WORD k;
   WORD y0 = HEIGHT;
-  APTR pixels = tiles->pixels;
+  APTR pixels = tileColor;
 
   yi += (SIZE - 1) * TILESIZE - GAP;
 
@@ -321,7 +366,7 @@ static __regargs void ColorizeUpperHalf(CopListT *cp, WORD yi, WORD kyo) {
 static __regargs void ColorizeLowerHalf(CopListT *cp, WORD yi, WORD kyo) {
   WORD k;
   WORD y0 = FAR_Y;
-  APTR pixels = tiles->pixels;
+  APTR pixels = tileColor;
 
   for (k = 0; k <= SIZE; k++, yi += TILESIZE) {
     WORD column = ((k + kyo) & (SIZE - 1));
@@ -360,8 +405,6 @@ static __regargs void ColorizeLowerHalf(CopListT *cp, WORD yi, WORD kyo) {
 static void MakeFloorCopperList(WORD yo, WORD kyo) {
   CopListT *cp = cp0;
 
-  FillStripes(0);
-
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   {
@@ -395,32 +438,38 @@ static void MakeFloorCopperList(WORD yo, WORD kyo) {
   CopSetRGB(cp, 0, BGCOL);
   CopLoadPal(cp, palette, 16);
 
+  FillStripes(1);
   ColorizeUpperHalf(cp, yo, kyo);
 
   CopWait(cp, Y(HEIGHT / 2), 0);
   CopMove16(cp, bpl1mod, 0);
   CopMove16(cp, bpl2mod, 0);
 
-  FillStripes(1);
+  FillStripes(2);
   ColorizeLowerHalf(cp, yo, kyo);
 
   CopEnd(cp);
 }
-
 static void Render() {
   // PROFILE_BEGIN(floor);
 
   BitmapClearArea(screen0, DEPTH, 0, FAR_Y, WIDTH, HEIGHT - FAR_Y);
 
   {
-    WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
-    WORD yo = (N / 2) + normfx(COS(frameCount * 16) * (N / 2));
+    WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * N * 15 / 64);
+    WORD yo = (N / 4) + normfx(COS(frameCount * 16) * N / 4);
     WORD kxo = 7 - xo * SIZE / N;
     WORD kyo = 7 - yo * SIZE / N;
 
+    {
+      WORD cyo = 7 - (yo + SIZE * 4) * SIZE / N;
+      tileEnergy[((cyo - 3) & 7) * 8 + ((kxo - 2) & 7)] = 32;
+    }
+
     DrawStripes(xo, kxo);
+    FillStripes(0);
+    ControlTileColors();
     MakeFloorCopperList(yo & (TILESIZE - 1), kyo);
-    FillStripes(2);
   }
 
   // PROFILE_END(floor);
