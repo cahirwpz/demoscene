@@ -35,6 +35,7 @@ __regargs PaletteT *NewPalette(UWORD count);
 __regargs PaletteT *CopyPalette(PaletteT *palette);
 __regargs void DeletePalette(PaletteT *palette);
 __regargs void ConvertPaletteToRGB4(PaletteT *palette, UWORD *color, WORD n);
+void RotatePalette(PaletteT *dstpal, PaletteT *srcpal, WORD start, WORD end, WORD step);
 
 /* Size of extra buffer after last word of bitplanes. */
 #define BM_EXTRA sizeof(UWORD)

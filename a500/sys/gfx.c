@@ -115,6 +115,23 @@ __regargs void ConvertPaletteToRGB4(PaletteT *palette, UWORD *color, WORD n) {
   }
 }
 
+void RotatePalette(PaletteT *dstpal, PaletteT *srcpal, WORD start, WORD end, WORD step) {
+  ColorT *src = srcpal->colors;
+  ColorT *dst = dstpal->colors + start;
+  WORD n = end - start + 1;
+  WORD s = mod16(step, n);
+  WORD i = start + s;
+
+  if (s < 0)
+    i += n;
+
+  while (--n >= 0) {
+    *dst++ = src[i++];
+    if (i > end)
+      i = start;
+  }
+}
+
 __regargs BOOL ClipBitmap(const Box2D *space, Point2D *pos, Area2D *area) {
   WORD minX = space->minX;
   WORD minY = space->minY;
