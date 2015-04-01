@@ -7,6 +7,8 @@ void InitColorTab() {
   WORD i, j, k;
   UBYTE *ptr = colortab;
 
+  Log("[Init] Color table.\n");
+
   for (i = 0; i < 16; i++) {
     for (j = 0; j < 16; j++) {
       WORD l = j - i;
@@ -65,6 +67,5 @@ __regargs UWORD ColorDecreaseContrastRGB(WORD r, WORD g, WORD b, UWORD step) {
 
   return (r << 4) | g | (b >> 4);
 }
-
 
 ADD2INIT(InitColorTab, 0);

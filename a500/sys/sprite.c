@@ -1,5 +1,6 @@
 #include <graphics/gfxbase.h>
 #include <proto/graphics.h>
+#include <proto/exec.h>
 
 #include "sprite.h"
 #include "memory.h"
@@ -147,10 +148,18 @@ __regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr) {
   }
 }
 
-SpriteT *NullSprite = NULL;
+static SpriteT NullSpriteData = { (SpriteT *)NULL, 0, (UWORD *)NULL };
+SpriteT *NullSprite = &NullSpriteData;
 
-void InitNullSprite() { NullSprite = NewSprite(0, FALSE); }
-void KillNullSprite() { DeleteSprite(NullSprite); }
+void InitNullSprite() {
+  Log("[Init] Null sprite.\n");
+  NullSprite->data = AllocMem(4, MEMF_CHIP|MEMF_CLEAR);
+}
+
+void KillNullSprite() {
+  Log("[Quit] Null sprite.\n");
+  FreeMem(NullSprite->data, 4);
+}
 
 ADD2INIT(InitNullSprite, 0);
 ADD2EXIT(KillNullSprite, 0);
