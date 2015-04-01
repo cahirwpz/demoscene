@@ -14,11 +14,14 @@ void (*currentInterruptHandler)();
 
 static TimelineItemT *currentItem;
 
-__regargs void LoadEffects(TimelineItemT *item, WORD n) {
+__regargs void LoadEffects(TimelineItemT *item, WORD n, WORD start) {
   item += n - 1;
 
   for (; --n >= 0; item--) {
     EffectT *effect = item->effect;
+
+    if (item->start < start)
+      continue;
 
     if (effect->state & EFFECT_LOADED)
       continue;
@@ -54,10 +57,10 @@ __regargs void PrepareEffect(EffectT *effect) {
   effect->state |= EFFECT_READY;
 }
 
-__regargs void RunEffects(TimelineItemT *item, WORD n) {
+__regargs void RunEffects(TimelineItemT *item, WORD n, WORD start) {
   BOOL exit = FALSE;
 
-  SetFrameCounter(0);
+  SetFrameCounter(start);
 
   for (; --n >= 0 && !exit; item++) {
     EffectT *effect = item->effect;

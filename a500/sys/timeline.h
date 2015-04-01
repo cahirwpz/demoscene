@@ -24,9 +24,9 @@ extern WORD frameFromStart;
 extern WORD frameTillEnd;
 extern void (*currentInterruptHandler)();
 
-__regargs void LoadEffects(TimelineItemT *item, WORD n);
+__regargs void LoadEffects(TimelineItemT *item, WORD n, WORD start);
 __regargs void UnLoadEffects(TimelineItemT *item, WORD n);
-__regargs void RunEffects(TimelineItemT *item, WORD n);
+__regargs void RunEffects(TimelineItemT *item, WORD n, WORD start);
 
 __regargs void PrepareEffect(EffectT *effect);
 void UpdateFrameCount();
