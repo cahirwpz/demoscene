@@ -140,7 +140,7 @@ __regargs WORD ReadSymbol(char **strptr, char **symptr) {
 
   do {
     char c = *str;
-    if (!c || (!isalnum(c) && c != '_'))
+    if (!c || (!isalnum(c) && (c != '_') && (c != '.')))
       break;
     str++;
   } while (1);

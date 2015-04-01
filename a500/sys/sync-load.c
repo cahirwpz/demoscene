@@ -34,8 +34,13 @@ static __regargs TrackT *ReadTrack(char **strptr) {
             char *name = NULL;
             data += 5;
             name_len = ReadSymbol(&data, &name);
-            if (pass)
-              memcpy(track->name, name, name_len);
+            if (pass) {
+              char *src = name;
+              char *dst = track->name;
+              WORD n = name_len;
+              while (--n >= 0)
+                *dst++ = *src++;
+            }
           } else if (!memcmp(data, "end", 3)) {
             end = TRUE;
             data += 3;
@@ -129,7 +134,7 @@ __regargs TrackT *LoadTrack(char *filename) {
     char *data = file;
 
     if (!(track = ReadTrack(&data)))
-      Print("Error at position %ld!\n", (LONG)(data - file));
+      Print("Error at byte %ld!\n", (LONG)(data - file));
 
     MemFreeAuto(file);
   }
@@ -152,7 +157,7 @@ __regargs TrackT **LoadTrackList(char *filename) {
       TrackT *track = ReadTrack(&data);
 
       if (!track) {
-        Log("Error at position %ld!\n", (LONG)(data - file));
+        Print("Error at byte %ld!\n", (LONG)(data - file));
         while (count)
           MemFreeAuto(tmp[--count]);
         break;
