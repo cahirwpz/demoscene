@@ -1,6 +1,44 @@
 #include "blitter.h"
 #include "hardware.h"
 
+void BlitterCopy(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y, 
+                 BitmapT *src, WORD srcbpl) 
+{
+  APTR srcbpt = src->planes[srcbpl];
+  APTR dstbpt = dst->planes[dstbpl] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
+  UWORD dstmod = dst->bytesPerRow - src->bytesPerRow;
+  UWORD bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
+  UWORD bltshift = rorw(x & 15, 4);
+
+  WaitBlitter();
+
+  if (bltshift) {
+    dstmod -= 2; bltsize += 1;
+    custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | NABC | ABNC | NANBC) | bltshift;
+    custom->bltcon1 = bltshift;
+    custom->bltafwm = -1;
+    custom->bltalwm = 0;
+    custom->bltbmod = -2;
+    custom->bltadat = -1;
+    custom->bltcmod = dstmod;
+    custom->bltdmod = dstmod;
+    custom->bltbpt = srcbpt;
+    custom->bltcpt = dstbpt;
+    custom->bltdpt = dstbpt;
+    custom->bltsize = bltsize;
+  } else {
+    custom->bltamod = 0;
+    custom->bltcon0 = (SRCA | DEST) | A_TO_D;
+    custom->bltcon1 = 0;
+    custom->bltafwm = -1;
+    custom->bltalwm = -1;
+    custom->bltdmod = dstmod;
+    custom->bltapt = srcbpt;
+    custom->bltdpt = dstbpt;
+    custom->bltsize = bltsize;
+  }
+}
+
 __regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area) {
   APTR bltpt = bitmap->planes[plane];
   UWORD bltmod, bltsize;

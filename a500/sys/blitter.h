@@ -25,6 +25,9 @@
 #define LINE_SOLID  (LINEMODE)
 #define LINE_ONEDOT (LINEMODE | ONEDOT)
 
+void BlitterCopy(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
+                 BitmapT *src, WORD srcbpl);
+
 #define BlitterFill(bitmap, plane) \
   BlitterFillArea((bitmap), (plane), NULL)
 
