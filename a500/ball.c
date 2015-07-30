@@ -2,11 +2,13 @@
 #include "bltop.h"
 #include "coplist.h"
 #include "memory.h"
+#include "io.h"
 #include "tga.h"
-#include "file.h"
 #include "sprite.h"
 #include "ilbm.h"
 #include "fx.h"
+
+STRPTR __cwdpath = "data";
 
 #define S_WIDTH 320
 #define S_HEIGHT 256
@@ -79,9 +81,9 @@ static void MakeUVMapRenderCode() {
 }
 
 static void Load() {
-  background = LoadILBM("data/dragon-bg.ilbm");
-  texture = LoadTGA("data/texture-15.tga", PM_CMAP4, MEMF_PUBLIC);
-  uvmap = ReadFile("data/ball.bin", MEMF_PUBLIC);
+  background = LoadILBM("dragon-bg.ilbm");
+  texture = LoadTGA("texture-15.tga", PM_CMAP4, MEMF_PUBLIC);
+  uvmap = LoadFile("ball.bin", MEMF_PUBLIC);
 }
 
 static void UnLoad() {

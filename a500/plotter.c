@@ -9,6 +9,8 @@
 #include "sync.h"
 #include "memory.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 3
@@ -29,7 +31,7 @@ static BitmapT *flares;
 static BitmapT *flare[8];
 
 static void Load() {
-  flares = LoadILBM("data/plotter-flares.ilbm");
+  flares = LoadILBM("plotter-flares.ilbm");
 }
 
 static void UnLoad() {

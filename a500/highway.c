@@ -10,6 +10,8 @@
 #include "random.h"
 #include "sprite.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 4
@@ -48,14 +50,14 @@ static SpriteT *sprite[8];
 static PaletteT *spritePal;
 
 static void Load() {
-  laneBg = LoadILBM("data/highway-lane.ilbm");
-  cityTop = LoadILBM("data/highway-city-top-2.ilbm");
-  cityBottom = LoadILBM("data/highway-city-bottom-2.ilbm");
-  carLeft = LoadILBM("data/highway-car-left-2.ilbm");
-  carRight = LoadILBM("data/highway-car-right-2.ilbm");
+  laneBg = LoadILBM("highway-lane.ilbm");
+  cityTop = LoadILBM("highway-city-top-2.ilbm");
+  cityBottom = LoadILBM("highway-city-bottom-2.ilbm");
+  carLeft = LoadILBM("highway-car-left-2.ilbm");
+  carRight = LoadILBM("highway-car-right-2.ilbm");
 
   {
-    BitmapT *title = LoadILBM("data/highway-sprite.ilbm");
+    BitmapT *title = LoadILBM("highway-sprite.ilbm");
     ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, title, 16 * i, 0));
     spritePal = title->palette;
     DeleteBitmap(title);

@@ -1,7 +1,6 @@
-#include <proto/dos.h> 
-
 #include "memory.h"
 #include "pixmap.h"
+#include "io.h"
 #include "tga.h"
 
 #define TGA_NOIMAGE   0
@@ -30,7 +29,7 @@ typedef struct TgaHeader {
 typedef struct TgaParser {
   LONG memoryFlags;
   PixmapTypeT type;
-  BPTR fh;
+  FileT fh;
 } TgaParserT;
 
 static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, TgaParserT *tga) {
@@ -38,7 +37,7 @@ static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, TgaParserT *tga) {
   UBYTE *data = MemAllocAuto(size, MEMF_PUBLIC);
   PaletteT *palette = NULL;
 
-  if (Read(tga->fh, data, size) == size) {
+  if (FileRead(tga->fh, data, size)) {
     palette = NewPalette(hdr->cmapLength);
 
     /* TGA palette is defined as BGR value. */
@@ -123,7 +122,7 @@ static __regargs PixmapT *ReadData(TgaHeaderT *hdr, TgaParserT *tga) {
   UBYTE *data = MemAllocAuto(size, MEMF_PUBLIC);
   PixmapT *pixmap = NULL;
 
-  if (Read(tga->fh, data, size) == size) {
+  if (FileRead(tga->fh, data, size)) {
     pixmap = NewPixmap(hdr->width, hdr->height, tga->type, tga->memoryFlags);
 
     /*
@@ -145,17 +144,17 @@ static __regargs PixmapT *ReadData(TgaHeaderT *hdr, TgaParserT *tga) {
 }
 
 __regargs PixmapT *
-LoadTGA(const char *filename, PixmapTypeT type, ULONG memoryFlags) {
+LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
   PixmapT *pixmap = NULL;
   TgaParserT parser;
   TgaHeaderT hdr;
 
   parser.type = type;
   parser.memoryFlags = memoryFlags;
-  parser.fh = Open(filename, MODE_OLDFILE);
+  parser.fh = OpenFile(filename);
 
   if (parser.fh) {
-    if (Read(parser.fh, &hdr, sizeof(TgaHeaderT)) == sizeof(TgaHeaderT)) {
+    if (FileRead(parser.fh, &hdr, sizeof(TgaHeaderT))) {
       hdr.cmapFirst = swap8(hdr.cmapFirst);
       hdr.cmapLength = swap8(hdr.cmapLength);
       hdr.xOrigin = swap8(hdr.xOrigin);
@@ -163,7 +162,7 @@ LoadTGA(const char *filename, PixmapTypeT type, ULONG memoryFlags) {
       hdr.width = swap8(hdr.width);
       hdr.height = swap8(hdr.height);
 
-      (void)Seek(parser.fh, hdr.idLength, OFFSET_CURRENT);
+      (void)FileSeek(parser.fh, hdr.idLength, SEEK_SET);
 
       if (((type == PM_GRAY || type == PM_GRAY4) && 
            hdr.imageType == TGA_GRAY && hdr.depth == 8) ||
@@ -187,7 +186,7 @@ LoadTGA(const char *filename, PixmapTypeT type, ULONG memoryFlags) {
       }
     }
 
-    Close(parser.fh);
+    CloseFile(parser.fh);
   } else {
     Log("File '%s' missing.\n", filename);
   }

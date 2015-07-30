@@ -10,6 +10,8 @@
 #include "color.h"
 #include "sprite.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 3
@@ -79,10 +81,10 @@ static void FloorPrecalc() {
 }
 
 static void Load() {
-  texture = LoadTGA("data/thunders-floor.tga", PM_RGB4, MEMF_PUBLIC);
+  texture = LoadTGA("thunders-floor.tga", PM_RGB4, MEMF_PUBLIC);
 
   {
-    BitmapT *bitmap = LoadILBM("data/thunders.iff");
+    BitmapT *bitmap = LoadILBM("thunders.iff");
     WORD i;
 
     for (i = 0; i < bitmap->width / 16; i++) {

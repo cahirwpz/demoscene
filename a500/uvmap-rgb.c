@@ -2,8 +2,10 @@
 #include "bltop.h"
 #include "coplist.h"
 #include "memory.h"
-#include "file.h"
+#include "io.h"
 #include "tga.h"
+
+STRPTR __cwdpath = "data";
 
 #define WIDTH 80
 #define HEIGHT 64
@@ -74,10 +76,10 @@ static void PixmapScramble(PixmapT *image, UWORD *texture) {
 }
 
 static void Load() {
-  uvmap = ReadFile("data/uvmap-rgb.bin", MEMF_PUBLIC);
+  uvmap = LoadFile("uvmap-rgb.bin", MEMF_PUBLIC);
 
   {
-    PixmapT *image = LoadTGA("data/texture-rgb.tga", PM_RGB4, MEMF_PUBLIC);
+    PixmapT *image = LoadTGA("texture-rgb.tga", PM_RGB4, MEMF_PUBLIC);
     texture = MemAllocAuto(65536, MEMF_PUBLIC);
     PixmapScramble(image, texture);
     DeletePixmap(image);

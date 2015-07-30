@@ -1,8 +1,7 @@
-#include "file.h"
 #include "memory.h"
+#include "io.h"
 #include "reader.h"
 #include "sync.h"
-#include "print.h"
 
 static __regargs TrackT *ReadTrack(char **strptr) {
   TrackT *track = NULL;
@@ -127,7 +126,7 @@ quit:
 }
 
 __regargs TrackT *LoadTrack(char *filename) {
-  char *file = ReadFile(filename, MEMF_PUBLIC);
+  char *file = LoadFile(filename, MEMF_PUBLIC);
   TrackT *track = NULL;
 
   if (file) {
@@ -145,7 +144,7 @@ __regargs TrackT *LoadTrack(char *filename) {
 #define MAX_TRACKS 128
 
 __regargs TrackT **LoadTrackList(char *filename) {
-  char *file = ReadFile(filename, MEMF_PUBLIC);
+  char *file = LoadFile(filename, MEMF_PUBLIC);
   TrackT **tracks = NULL;
   
   if (file) {

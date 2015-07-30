@@ -1,6 +1,6 @@
 #include "2d.h"
 #include "memory.h"
-#include "file.h"
+#include "io.h"
 #include "reader.h"
 #include "fx.h"
 
@@ -293,7 +293,7 @@ __regargs void DeleteShape(ShapeT *shape) {
 }
 
 __regargs ShapeT *LoadShape(char *filename) {
-  char *file = ReadFile(filename, MEMF_PUBLIC);
+  char *file = LoadFile(filename, MEMF_PUBLIC);
   ShapeT *shape = NULL;
   WORD pass = 0;
 

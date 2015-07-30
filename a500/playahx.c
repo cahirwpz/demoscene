@@ -1,14 +1,14 @@
 #include "startup.h"
-#include "file.h"
 #include "hardware.h"
 #include "memory.h"
+#include "io.h"
 #include "ahx/ahx.h"
 #include "interrupts.h"
 
 static APTR module;
 
 static void Load() {
-  module = ReadFile("data/jazzcat-electric_city.ahx", MEMF_PUBLIC);
+  module = LoadFile("data/jazzcat-electric_city.ahx", MEMF_PUBLIC);
 }
 
 static void UnLoad() {

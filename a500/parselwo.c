@@ -1,20 +1,13 @@
-#undef __CONSTLIBBASEDECL__ 
-#include <proto/dos.h>
-#include <proto/exec.h>
-
 #include "ffp.h"
-#include "iff.h"
-#include "print.h"
 #include "memory.h"
+#include "io.h"
+#include "iff.h"
 
 int __nocommandline = 1;
-int __initlibraries = 0;
+ULONG __oslibversion = 33;
 
 extern char *__commandline;
 extern int __commandlen;
-
-struct DosLibrary *DOSBase;
-struct Library *MathBase;
 
 #define ID_LWOB MAKE_ID('L', 'W', 'O', 'B')
 #define ID_LWO2 MAKE_ID('L', 'W', 'O', '2')
@@ -27,101 +20,90 @@ static LONG scale = 1000;
 int main() {
   UWORD len = __commandlen;
   STRPTR filename = __builtin_alloca(len);
+  IffFileT iff;
 
   memcpy(filename, __commandline, len--);
   filename[len] = '\0';
 
-  DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 33);
-  MathBase = OpenLibrary("mathffp.library", 33);
+  if (OpenIff(&iff, filename)) {
+    Print("Parsing '%s':\n", filename);
 
-  if (DOSBase && MathBase) {
-    IffFileT iff;
+    Print("%.4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
 
-    if (OpenIff(&iff, filename)) {
-      Print("Parsing '%s':\n", filename);
+    while (ParseChunk(&iff)) {
+      Print(".%.4s %ld\n", (STRPTR)&iff.chunk.type, iff.chunk.length);
 
-      Print("%.4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
+      switch (iff.chunk.type) {
+        case ID_PNTS:
+          {
+            FLOAT *pnts = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
+            FLOAT s = SPFlt(scale);
+            FLOAT *p = pnts;
+            WORD n = iff.chunk.length / 12;
+            WORD i;
 
-      while (ParseChunk(&iff)) {
-        Print(".%.4s %ld\n", (STRPTR)&iff.chunk.type, iff.chunk.length);
+            ReadChunk(&iff, pnts);
 
-        switch (iff.chunk.type) {
-          case ID_PNTS:
-            {
-              FLOAT *pnts = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
-              FLOAT s = SPFlt(scale);
-              FLOAT *p = pnts;
-              WORD n = iff.chunk.length / 12;
-              WORD i;
-
-              ReadChunk(&iff, pnts);
-
-              for (i = 0; i < n; i++) {
-                LONG x = SPFix(SPMul(SPFieee(*p++), s));
-                LONG y = SPFix(SPMul(SPFieee(*p++), s));
-                LONG z = SPFix(SPMul(SPFieee(*p++), s));
-                Print("%5ld : [%ld %ld %ld]\n", (LONG)i, x, y, z);
-              }
-
-              MemFree(pnts, iff.chunk.length);
+            for (i = 0; i < n; i++) {
+              LONG x = SPFix(SPMul(SPFieee(*p++), s));
+              LONG y = SPFix(SPMul(SPFieee(*p++), s));
+              LONG z = SPFix(SPMul(SPFieee(*p++), s));
+              Print("%5ld : [%ld %ld %ld]\n", (LONG)i, x, y, z);
             }
-            break;
 
-          case ID_POLS:
-            {
-              WORD *pols = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
-              WORD n = iff.chunk.length / 2;
-              WORD i = 0, j = 0;
+            MemFree(pnts, iff.chunk.length);
+          }
+          break;
 
-              ReadChunk(&iff, pols);
+        case ID_POLS:
+          {
+            WORD *pols = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
+            WORD n = iff.chunk.length / 2;
+            WORD i = 0, j = 0;
 
-              if (iff.header.type == ID_LWOB) {
-                while (i < n) {
-                  /* Face vertex indices. */
-                  WORD vertices = pols[i++];
-                  Print("%5ld: [", (LONG)j++);
-                  while (--vertices > 0)
-                    Print("%ld ", (LONG)pols[i++]);
-                  Print("%ld] ", (LONG)pols[i++]);
+            ReadChunk(&iff, pols);
 
-                  /* Polygon flags. */
-                  Print("{%ld}\n", (LONG)pols[i++]);
-                }
-              } else {
-                Print("..%.4s\n", (STRPTR)pols);
+            if (iff.header.type == ID_LWOB) {
+              while (i < n) {
+                /* Face vertex indices. */
+                WORD vertices = pols[i++];
+                Print("%5ld: [", (LONG)j++);
+                while (--vertices > 0)
+                  Print("%ld ", (LONG)pols[i++]);
+                Print("%ld] ", (LONG)pols[i++]);
 
-                i += 2; /* Skip POLS type field. */
-
-                while (i < n) {
-                  /* Face vertex indices. */
-                  WORD vertices = pols[i++];
-                  Print("%5ld: [", (LONG)j++);
-                  while (--vertices > 0)
-                    Print("%ld ", (LONG)pols[i++]);
-                  Print("%ld]\n", (LONG)pols[i++]);
-                }
+                /* Polygon flags. */
+                Print("{%ld}\n", (LONG)pols[i++]);
               }
+            } else {
+              Print("..%.4s\n", (STRPTR)pols);
 
-              MemFree(pols, iff.chunk.length);
+              i += 2; /* Skip POLS type field. */
+
+              while (i < n) {
+                /* Face vertex indices. */
+                WORD vertices = pols[i++];
+                Print("%5ld: [", (LONG)j++);
+                while (--vertices > 0)
+                  Print("%ld ", (LONG)pols[i++]);
+                Print("%ld]\n", (LONG)pols[i++]);
+              }
             }
-            break;
 
-          default:
-            SkipChunk(&iff);
-            break;
-        }
+            MemFree(pols, iff.chunk.length);
+          }
+          break;
+
+        default:
+          SkipChunk(&iff);
+          break;
       }
-
-      CloseIff(&iff);
-    } else {
-      Print("'%s' is not an IFF file.\n", filename);
     }
-  }
 
-  if (MathBase)
-    CloseLibrary(MathBase);
-  if (DOSBase)
-    CloseLibrary((struct Library *)DOSBase);
+    CloseIff(&iff);
+  } else {
+    Print("'%s' is not an IFF file.\n", filename);
+  }
 
   return 0;
 }

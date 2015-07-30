@@ -1,3 +1,4 @@
+#include "common.h"
 #include "ffp.h"
 
 #define FFPMantisse_Mask 0xFFFFFF00 /* 24 bit for the mantisse */

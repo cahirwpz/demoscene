@@ -2,10 +2,12 @@
 #include "2d.h"
 #include "bltop.h"
 #include "coplist.h"
-#include "file.h"
 #include "memory.h"
+#include "io.h"
 #include "ilbm.h"
 #include "fx.h"
+
+STRPTR __cwdpath = "data";
 
 #define WIDTH  320
 #define HEIGHT 240
@@ -27,8 +29,8 @@ static AnimSpanT *anim;
 
 static void Load() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
-  palette = LoadPalette("data/boxes-pal.ilbm");
-  anim = ReadFile("data/running.bin", MEMF_PUBLIC);
+  palette = LoadPalette("boxes-pal.ilbm");
+  anim = LoadFile("running.bin", MEMF_PUBLIC);
 
   {
     WORD i;

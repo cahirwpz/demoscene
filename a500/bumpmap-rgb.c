@@ -1,11 +1,13 @@
 #include "startup.h"
 #include "bltop.h"
 #include "coplist.h"
-#include "memory.h"
-#include "file.h"
 #include "color.h"
+#include "memory.h"
+#include "io.h"
 #include "tga.h"
 #include "fx.h"
+
+STRPTR __cwdpath = "data";
 
 #define WIDTH 80
 #define HEIGHT 64
@@ -56,7 +58,7 @@ static void DataScramble(UWORD *data, WORD n) {
 
 static void Load() {
   {
-    PixmapT *image = LoadTGA("data/light.tga", PM_GRAY, MEMF_PUBLIC);
+    PixmapT *image = LoadTGA("light.tga", PM_GRAY, MEMF_PUBLIC);
 
     lightmap = MemAllocAuto(65536, MEMF_PUBLIC);
     {
@@ -74,7 +76,7 @@ static void Load() {
   }
 
   {
-    PixmapT *image = LoadTGA("data/bumpmap.tga", PM_CMAP, MEMF_PUBLIC);
+    PixmapT *image = LoadTGA("bumpmap.tga", PM_CMAP, MEMF_PUBLIC);
 
     colormap = MemAllocAuto(WIDTH * HEIGHT * sizeof(UWORD), MEMF_PUBLIC);
     {
@@ -106,7 +108,7 @@ static void Load() {
     DeletePixmap(image);
   }
 
-  bumpmap = ReadFile("data/bumpmap.bin", MEMF_PUBLIC);
+  bumpmap = LoadFile("bumpmap.bin", MEMF_PUBLIC);
   {
     WORD n = WIDTH * HEIGHT;
     UWORD *src = bumpmap;

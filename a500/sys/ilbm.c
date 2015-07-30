@@ -267,7 +267,7 @@ static __regargs PaletteT *LoadCMAP(IffFileT *iff) {
   return palette;
 }
 
-__regargs BitmapT *LoadILBMCustom(const char *filename, UWORD flags) {
+__regargs BitmapT *LoadILBMCustom(CONST STRPTR filename, UWORD flags) {
   BitmapT *bitmap = NULL;
   PaletteT *palette = NULL;
   IffFileT iff;
@@ -303,7 +303,7 @@ __regargs BitmapT *LoadILBMCustom(const char *filename, UWORD flags) {
   return bitmap;
 }
 
-__regargs PaletteT *LoadPalette(const char *filename) {
+__regargs PaletteT *LoadPalette(CONST STRPTR filename) {
   PaletteT *palette = NULL;
   IffFileT iff;
 

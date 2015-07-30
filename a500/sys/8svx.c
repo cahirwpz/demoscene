@@ -20,7 +20,7 @@ typedef struct VoiceHeader {
   ULONG volume;            /* playback volume from 0 to 65536 (fp16)   */
 } VoiceHeaderT;
 
-__regargs SoundT *Load8SVX(const char *filename) {
+__regargs SoundT *Load8SVX(CONST STRPTR filename) {
   SoundT *sound = NULL;
   IffFileT iff;
 

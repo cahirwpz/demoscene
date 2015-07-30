@@ -8,6 +8,8 @@
 #include "tga.h"
 #include "memory.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH  176
 #define HEIGHT 176
 #define DEPTH  4
@@ -25,8 +27,8 @@ static BitmapT *carry;
 static PixmapT *gradient;
 
 static void Load() {
-  mesh = LoadLWO("data/szescian.lwo", SPFlt(93));
-  gradient = LoadTGA("data/blurred3d-pal.tga", PM_RGB4, MEMF_PUBLIC);
+  mesh = LoadLWO("szescian.lwo", SPFlt(93));
+  gradient = LoadTGA("blurred3d-pal.tga", PM_RGB4, MEMF_PUBLIC);
   CalculateEdges(mesh);
   CalculateFaceNormals(mesh);
 }

@@ -6,6 +6,8 @@
 #include "memory.h"
 #include "ilbm.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH  320
 #define HEIGHT 256
 #define DEPTH  5
@@ -19,8 +21,8 @@ static WORD plane, planeC;
 
 static void Load() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  shape = LoadShape("data/boxes.2d");
-  palette = LoadPalette("data/boxes-pal.ilbm");
+  shape = LoadShape("boxes.2d");
+  palette = LoadPalette("boxes-pal.ilbm");
 }
 
 static void UnLoad() {

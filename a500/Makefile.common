@@ -5,7 +5,7 @@ CPPFLAGS += -DFRAMES_PER_ROW=6
 
 ASFLAGS	= -x -Faout -phxass -m68010
 LDFLAGS	= -m68000 -msmall-code
-OFLAGS	= -O2 -fomit-frame-pointer
+OFLAGS	= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	= -Wall
 
 ifeq ($(DEBUG), 1)

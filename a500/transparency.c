@@ -7,6 +7,8 @@
 #include "ilbm.h"
 #include "fx.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH   320
 #define HEIGHT  256
 #define DEPTH   5
@@ -21,8 +23,8 @@ static UWORD pal1[8];
 static UWORD pal2[4];
 
 static void Load() {
-  background = LoadILBM("data/transparency-bg.ilbm");
-  logo = LoadILBM("data/ghostown_160x128_4col.iff");
+  background = LoadILBM("transparency-bg.ilbm");
+  logo = LoadILBM("ghostown_160x128_4col.iff");
 
   {
     WORD i;

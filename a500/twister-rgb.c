@@ -7,6 +7,8 @@
 #include "memory.h"
 #include "sprite.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH   144
 #define HEIGHT  255
 #define DEPTH   5
@@ -26,13 +28,13 @@ static SpriteT *right[2];
 static CopInsT *sprptr[2][8];
 
 static void Load() {
-  twister = LoadILBMCustom("data/twister.ilbm", BM_DISPLAYABLE);
-  texture = LoadTGA("data/twister-texture.tga", PM_RGB4, MEMF_PUBLIC);
-  gradient = LoadPalette("data/twister-gradient.ilbm");
+  twister = LoadILBMCustom("twister.ilbm", BM_DISPLAYABLE);
+  texture = LoadTGA("twister-texture.tga", PM_RGB4, MEMF_PUBLIC);
+  gradient = LoadPalette("twister-gradient.ilbm");
 
   {
-    BitmapT *_left = LoadILBMCustom("data/twister-left.ilbm", 0);
-    BitmapT *_right = LoadILBMCustom("data/twister-right.ilbm", 0);
+    BitmapT *_left = LoadILBMCustom("twister-left.ilbm", 0);
+    BitmapT *_right = LoadILBMCustom("twister-right.ilbm", 0);
 
     left[0] = NewSpriteFromBitmap(256, _left, 0, 0);
     left[1] = NewSpriteFromBitmap(256, _left, 16, 0);

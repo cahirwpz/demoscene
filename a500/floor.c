@@ -9,6 +9,8 @@
 #include "color.h"
 #include "random.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 4
@@ -34,10 +36,10 @@ static WORD rotated[15];
 static UBYTE table[4096];
 
 static void Load() {
-  bitmap = LoadILBMCustom("data/floor.ilbm", BM_DISPLAYABLE);
+  bitmap = LoadILBMCustom("floor.ilbm", BM_DISPLAYABLE);
 
   {
-    PaletteT *pal = LoadPalette("data/floor-stripes.ilbm");
+    PaletteT *pal = LoadPalette("floor-stripes.ilbm");
     ConvertPaletteToRGB4(pal, stripeColor, 16);
     DeletePalette(pal);
   }

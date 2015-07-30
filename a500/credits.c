@@ -1,5 +1,3 @@
-#include <proto/dos.h>
-
 #include "startup.h"
 #include "hardware.h"
 #include "coplist.h"
@@ -19,12 +17,10 @@ static BitmapT *lower;
 static Point2D lower_pos;
 static Area2D lower_area;
 
-static BPTR lock;
+STRPTR __cwdpath = "nigiri";
 
 static void Load() {
   WORD i;
-
-  lock = CurrentDir(Lock("nigiri", ACCESS_READ));
 
   logo = LoadILBM("16_credits_logo.iff");
   floor = LoadILBM("16_floor.iff");
@@ -66,8 +62,6 @@ static void UnLoad() {
   DeletePalette(dance[0]->palette);
   for (i = 0; i < 8; i++)
     DeleteBitmap(dance[i]);
-
-  UnLock(CurrentDir(lock));
 }
 
 #define DISCO_X X((320 - disco->width) / 2)

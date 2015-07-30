@@ -5,6 +5,8 @@
 #include "ilbm.h"
 #include "bltop.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH (160 + 32)
 #define HEIGHT (128 + 32)
 #define XSTART ((320 - WIDTH) / 2)
@@ -19,7 +21,7 @@ static CopListT *cp;
 static CopInsT *line[HEIGHT];
 
 static void Load() {
-  logo = LoadILBMCustom("data/ghostown_160x128.ilbm", BM_DISPLAYABLE);
+  logo = LoadILBMCustom("ghostown_160x128.ilbm", BM_DISPLAYABLE);
 }
 
 static void UnLoad() {

@@ -2,9 +2,10 @@
 #include "bltop.h"
 #include "coplist.h"
 #include "memory.h"
+#include "io.h"
 #include "tga.h"
-#include "print.h"
-#include "file.h"
+
+STRPTR __cwdpath = "data";
 
 #define WIDTH 160
 #define HEIGHT 100
@@ -68,8 +69,8 @@ static void MakeUVMapRenderCode() {
 }
 
 static void Load() {
-  texture = LoadTGA("data/texture-16-1.tga", PM_CMAP, MEMF_PUBLIC);
-  uvmap = ReadFile("data/uvmap.bin", MEMF_PUBLIC);
+  texture = LoadTGA("texture-16-1.tga", PM_CMAP, MEMF_PUBLIC);
+  uvmap = LoadFile("uvmap.bin", MEMF_PUBLIC);
 }
 
 static void UnLoad() {

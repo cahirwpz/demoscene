@@ -9,6 +9,8 @@
 #include "ilbm.h"
 #include "color.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH 320
 #define HEIGHT 212
 #define DEPTH 2
@@ -85,9 +87,9 @@ static void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  texture = LoadTGA("data/floor.tga", PM_RGB4, MEMF_PUBLIC);
+  texture = LoadTGA("floor.tga", PM_RGB4, MEMF_PUBLIC);
 
-  city = LoadILBM("data/floor-city.ilbm");
+  city = LoadILBM("floor-city.ilbm");
 
   FloorPrecalc();
 

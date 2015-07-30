@@ -6,6 +6,8 @@
 #include "ffp.h"
 #include "ilbm.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH  256
 #define HEIGHT 256
 #define DEPTH  4
@@ -19,12 +21,12 @@ static BitmapT *screen0, *screen1;
 static BitmapT *buffer;
 
 static void Load() {
-  // mesh = LoadLWO("data/codi2.lwo", SPFlt(384));
-  mesh = LoadLWO("data/new_2.lwo", SPFlt(80));
-  // mesh = LoadLWO("data/cube.lwo", SPFlt(50));
+  // mesh = LoadLWO("codi2.lwo", SPFlt(384));
+  mesh = LoadLWO("new_2.lwo", SPFlt(80));
+  // mesh = LoadLWO("cube.lwo", SPFlt(50));
   CalculateFaceNormals(mesh);
   CalculateEdges(mesh);
-  palette = LoadPalette("data/flatshade-pal.ilbm");
+  palette = LoadPalette("flatshade-pal.ilbm");
 }
 
 static void UnLoad() {

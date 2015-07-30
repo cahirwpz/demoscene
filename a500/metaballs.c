@@ -6,6 +6,8 @@
 #include "2d.h"
 #include "fx.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 5
@@ -25,11 +27,11 @@ static void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  bgLeft = LoadILBM("data/metaball-bg-left-1.ilbm");
+  bgLeft = LoadILBM("metaball-bg-left-1.ilbm");
   DeletePalette(bgLeft->palette);
-  bgRight = LoadILBM("data/metaball-bg-right-1.ilbm");
+  bgRight = LoadILBM("metaball-bg-right-1.ilbm");
   DeletePalette(bgRight->palette);
-  metaball = LoadILBM("data/metaball-1.ilbm");
+  metaball = LoadILBM("metaball-1.ilbm");
 }
 
 static void UnLoad() {

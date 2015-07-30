@@ -8,6 +8,8 @@
 #include "fx.h"
 #include "random.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 5
@@ -33,25 +35,25 @@ typedef struct {
 } GreetingT;
 
 static GreetingT greeting[PNUM] = {
-  { 0, "data/greet_ada.ilbm" },
-  { 0, "data/greet_blacksun.ilbm" },
-  { 1, "data/greet_dcs.ilbm" },
-  { 0, "data/greet_dekadence.ilbm" },
-  { 1, "data/greet_desire.ilbm" },
-  { 0, "data/greet_dinx.ilbm" },
-  { 1, "data/greet_elude.ilbm" },
-  { 0, "data/greet_fd.ilbm" },
-  { 1, "data/greet_floppy.ilbm" },
-  { 0, "data/greet_lemon.ilbm" },
-  { 1, "data/greet_loonies.ilbm" },
-  { 1, "data/greet_moods.ilbm" },
-  { 0, "data/greet_nah.ilbm" },
-  { 0, "data/greet_rno.ilbm" },
-  { 1, "data/greet_skarla.ilbm" },
-  { 0, "data/greet_speccy.ilbm" },
-  { 0, "data/greet_tulou.ilbm" },
-  { 1, "data/greet_wanted.ilbm" },
-  { 1, "data/greet_ycrew.ilbm" }
+  { 0, "greet_ada.ilbm" },
+  { 0, "greet_blacksun.ilbm" },
+  { 1, "greet_dcs.ilbm" },
+  { 0, "greet_dekadence.ilbm" },
+  { 1, "greet_desire.ilbm" },
+  { 0, "greet_dinx.ilbm" },
+  { 1, "greet_elude.ilbm" },
+  { 0, "greet_fd.ilbm" },
+  { 1, "greet_floppy.ilbm" },
+  { 0, "greet_lemon.ilbm" },
+  { 1, "greet_loonies.ilbm" },
+  { 1, "greet_moods.ilbm" },
+  { 0, "greet_nah.ilbm" },
+  { 0, "greet_rno.ilbm" },
+  { 1, "greet_skarla.ilbm" },
+  { 0, "greet_speccy.ilbm" },
+  { 0, "greet_tulou.ilbm" },
+  { 1, "greet_wanted.ilbm" },
+  { 1, "greet_ycrew.ilbm" }
 };
 
 static void PositionGreetings() {
@@ -81,10 +83,10 @@ static void Load() {
   for (i = 0; i < PNUM; i++)
     greeting[i].bitmap = LoadILBMCustom(greeting[i].filename, BM_DISPLAYABLE);
 
-  background = LoadILBMCustom("data/neons.ilbm", BM_DISPLAYABLE|BM_LOAD_PALETTE);
+  background = LoadILBMCustom("neons.ilbm", BM_DISPLAYABLE|BM_LOAD_PALETTE);
   palette[0] = background->palette;
-  palette[1] = LoadPalette("data/greet_moods.ilbm");
-  palette[2] = LoadPalette("data/greet_rno.ilbm");
+  palette[1] = LoadPalette("greet_moods.ilbm");
+  palette[2] = LoadPalette("greet_rno.ilbm");
 
   PositionGreetings();
 }
@@ -99,7 +101,7 @@ static void UnLoad() {
   DeleteBitmap(screen[1]);
 }
 
-static void RotatePalette() {
+static void CustomRotatePalette() {
   ColorT *src = palette[0]->colors;
   CopInsT *ins = pal + 1;
   LONG i = frameCount;
@@ -116,7 +118,7 @@ static void RotatePalette() {
 
 static void VBlankInterrupt() {
   if (custom->intreqr & INTF_VERTB)
-    RotatePalette();
+    CustomRotatePalette();
 }
 
 static void Init() {

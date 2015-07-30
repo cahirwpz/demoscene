@@ -4,9 +4,11 @@
 #include "coplist.h"
 #include "gfx.h"
 #include "memory.h"
-#include "file.h"
+#include "io.h"
 #include "ilbm.h"
 #include "reader.h"
+
+STRPTR __cwdpath = "data";
 
 #define WIDTH 640
 #define HEIGHT 256
@@ -30,8 +32,8 @@ static WORD last_line = -1;
 static UBYTE *line_start;
 
 static void Load() {
-  text = ReadFile("data/text-scroll.txt", MEMF_PUBLIC);
-  font = LoadILBMCustom("data/text-scroll-font.ilbm", BM_LOAD_PALETTE);
+  text = LoadFile("text-scroll.txt", MEMF_PUBLIC);
+  font = LoadILBMCustom("text-scroll-font.ilbm", BM_LOAD_PALETTE);
 }
 
 static void UnLoad() {

@@ -6,6 +6,8 @@
 #include "ffp.h"
 #include "ilbm.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH  256
 #define HEIGHT 256
 #define DEPTH 4
@@ -19,10 +21,10 @@ static UWORD active = 0;
 static CopInsT *bplptr[DEPTH];
 
 static void Load() {
-  palette = LoadPalette("data/wireframe-pal.ilbm");
-  mesh = LoadLWO("data/codi.lwo", SPFlt(256));
-  // mesh = LoadLWO("data/new_2.lwo", SPFlt(80));
-  // mesh = LoadLWO("data/cube.lwo", SPFlt(50));
+  palette = LoadPalette("wireframe-pal.ilbm");
+  mesh = LoadLWO("codi.lwo", SPFlt(256));
+  // mesh = LoadLWO("new_2.lwo", SPFlt(80));
+  // mesh = LoadLWO("cube.lwo", SPFlt(50));
   CalculateVertexFaceMap(mesh);
   CalculateFaceNormals(mesh);
   CalculateEdges(mesh);

@@ -1,7 +1,7 @@
 #include <proto/graphics.h>
 
 #include "startup.h"
-#include "file.h"
+#include "io.h"
 #include "hardware.h"
 #include "memory.h"
 #include "p61/p61.h"
@@ -22,7 +22,7 @@ static TextFontT *topaz8;
 static ConsoleT console;
 
 static void Load() {
-  module = ReadFile("data/jazzcat-sunglasses_at_night.p61", MEMF_CHIP);
+  module = LoadFile("data/jazzcat-sunglasses_at_night.p61", MEMF_CHIP);
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1));
 

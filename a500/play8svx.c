@@ -9,9 +9,7 @@
 extern char *__commandline;
 
 int __nocommandline = 1;
-int __initlibraries = 0;
-
-struct DosLibrary *DOSBase;
+ULONG __oslibversion = 33;
 
 int main() {
   UWORD len = strlen(__commandline);
@@ -20,44 +18,40 @@ int main() {
   memcpy(filename, __commandline, len--);
   filename[len] = '\0';
 
-  if ((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library", 34))) {
-    /* Get Vector Base Register */
-    if (SysBase->AttnFlags & AFF_68010)
-      InterruptVector = (APTR)Supervisor((APTR)GetVBR);
-   
-    {
-      static SoundT *sound;
+  /* Get Vector Base Register */
+  if (SysBase->AttnFlags & AFF_68010)
+    InterruptVector = (APTR)Supervisor((APTR)GetVBR);
 
-      if ((sound = Load8SVX(filename))) {
-        Forbid();
+  {
+    static SoundT *sound;
 
-        custom->dmacon = DMAF_COPPER | DMAF_RASTER;
+    if ((sound = Load8SVX(filename))) {
+      Forbid();
 
-        /* 7kHz cut-off filter turn off. */
-        ciaa->ciapra |= CIAF_LED;
+      custom->dmacon = DMAF_COPPER | DMAF_RASTER;
 
-        AudioSetVolume(CHAN_0, 64);
-        AudioSetVolume(CHAN_2, 64);
-        AudioAttachSound(CHAN_0, sound);
-        AudioAttachSound(CHAN_2, sound);
-        AudioPlay(CHAN_0);
-        AudioPlay(CHAN_2);
-        WaitMouse();
-        AudioStop(CHAN_0);
-        AudioStop(CHAN_2);
+      /* 7kHz cut-off filter turn off. */
+      ciaa->ciapra |= CIAF_LED;
 
-        custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_SETCLR;
+      AudioSetVolume(CHAN_0, 64);
+      AudioSetVolume(CHAN_2, 64);
+      AudioAttachSound(CHAN_0, sound);
+      AudioAttachSound(CHAN_2, sound);
+      AudioPlay(CHAN_0);
+      AudioPlay(CHAN_2);
+      WaitMouse();
+      AudioStop(CHAN_0);
+      AudioStop(CHAN_2);
 
-        /* 7kHz cut-off filter turn on. */
-        ciaa->ciapra &= ~CIAF_LED;
+      custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_SETCLR;
 
-        Permit();
+      /* 7kHz cut-off filter turn on. */
+      ciaa->ciapra &= ~CIAF_LED;
 
-        DeleteSound(sound);
-      }
+      Permit();
+
+      DeleteSound(sound);
     }
-
-    CloseLibrary((struct Library *)DOSBase);
   }
 
   return 0;

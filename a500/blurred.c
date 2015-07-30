@@ -7,6 +7,8 @@
 #include "fx.h"
 #include "circle.h"
 
+STRPTR __cwdpath = "data";
+
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 5
@@ -23,10 +25,10 @@ static CopInsT *bplptr[2][DEPTH];
 static CopListT *cp;
 
 static void Load() {
-  clip = LoadILBM("data/blurred-b-clip.ilbm");
+  clip = LoadILBM("blurred-b-clip.ilbm");
 
-  palette[0] = LoadPalette("data/blurred-b-pal-1.ilbm");
-  palette[1] = LoadPalette("data/blurred-b-pal-2.ilbm");
+  palette[0] = LoadPalette("blurred-b-pal-1.ilbm");
+  palette[1] = LoadPalette("blurred-b-pal-2.ilbm");
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);

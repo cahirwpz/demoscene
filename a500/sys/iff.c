@@ -1,35 +1,32 @@
-#include <proto/dos.h> 
-
 #include "common.h"
+#include "io.h"
 #include "iff.h"
 
-#define ReadStruct(fh, ptr) (Read(fh, ptr, sizeof(*(ptr))) == sizeof(*(ptr)))
-
-__regargs BOOL OpenIff(IffFileT *iff, const char *filename) {
-  iff->fh = Open(filename, MODE_OLDFILE);
+__regargs BOOL OpenIff(IffFileT *iff, CONST STRPTR filename) {
+  iff->fh = OpenFile(filename);
 
   if (!iff->fh) {
     Log("File '%s' missing.\n", filename);
     return FALSE;
   }
 
-  if (ReadStruct(iff->fh, &iff->header) &&
+  if (FileRead(iff->fh, &iff->header, sizeof(IffHeaderT)) &&
       (iff->header.magic == ID_FORM))
     return TRUE;
 
-  Close(iff->fh);
+  CloseFile(iff->fh);
   return FALSE;
 }
 
 __regargs BOOL ParseChunk(IffFileT *iff) {
-  return ReadStruct(iff->fh, &iff->chunk);
+  return FileRead(iff->fh, &iff->chunk, sizeof(IffChunkT));
 }
 
 __regargs BOOL ReadChunk(IffFileT *iff, APTR ptr) {
-  if (Read(iff->fh, ptr, iff->chunk.length) == iff->chunk.length) {
+  if (FileRead(iff->fh, ptr, iff->chunk.length)) {
     /* Skip an extra byte if the lenght of a chunk is odd. */
     if (iff->chunk.length & 1)
-      (void)Seek(iff->fh, 1, OFFSET_CURRENT);
+      (void)FileSeek(iff->fh, 1, SEEK_CUR);
 
     return TRUE;
   }
@@ -39,9 +36,9 @@ __regargs BOOL ReadChunk(IffFileT *iff, APTR ptr) {
 
 __regargs void SkipChunk(IffFileT *iff) {
   /* Skip an extra byte if the lenght of a chunk is odd. */
-  (void)Seek(iff->fh, (iff->chunk.length + 1) & ~1, OFFSET_CURRENT);
+  (void)FileSeek(iff->fh, (iff->chunk.length + 1) & ~1, SEEK_CUR);
 }
 
 __regargs void CloseIff(IffFileT *iff) {
-  Close(iff->fh);
+  CloseFile(iff->fh);
 }

@@ -1,10 +1,10 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-OBJS = 8svx.o blitter.o common.o circle.o console.o coplist.o ffp.o file.o \
-       gfx.o hardware.o iff.o ilbm.o interrupts.o keyboard.o line.o memory.o \
-       mouse.o pixmap.o print.o qsort.o random.o reader.o sound.o sprite.o \
-       tga.o lowlevel.o 2d.o fx.o sintab.o color.o lzo.o inflate.o timeline.o \
-       sync.o sync-load.o traphandler.o sort.o \
+OBJS = 8svx.o blitter.o common.o circle.o console.o coplist.o ffp.o gfx.o \
+       hardware.o iff.o ilbm.o io-dos.o io-extra.o interrupts.o keyboard.o \
+       line.o memory.o mouse.o pixmap.o qsort.o random.o reader.o sound.o \
+       sprite.o tga.o lowlevel.o 2d.o fx.o sintab.o color.o lzo.o inflate.o \
+       timeline.o sync.o sync-load.o traphandler.o sort.o \
        3d-transform.o 3d-mesh.o 3d-object.o 3d-clip.o 3d-lwo.o \
        bltop-add-sat.o bltop-copy.o bltop-clear.o bltop-dec-sat.o \
        bltop-inc-sat.o bltop-mask.o \
