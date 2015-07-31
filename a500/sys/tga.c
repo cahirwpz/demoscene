@@ -29,7 +29,7 @@ typedef struct TgaHeader {
 typedef struct TgaParser {
   LONG memoryFlags;
   PixmapTypeT type;
-  FileT fh;
+  FileT *file;
 } TgaParserT;
 
 static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, TgaParserT *tga) {
@@ -37,7 +37,7 @@ static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, TgaParserT *tga) {
   UBYTE *data = MemAllocAuto(size, MEMF_PUBLIC);
   PaletteT *palette = NULL;
 
-  if (FileRead(tga->fh, data, size)) {
+  if (FileRead(tga->file, data, size)) {
     palette = NewPalette(hdr->cmapLength);
 
     /* TGA palette is defined as BGR value. */
@@ -122,7 +122,7 @@ static __regargs PixmapT *ReadData(TgaHeaderT *hdr, TgaParserT *tga) {
   UBYTE *data = MemAllocAuto(size, MEMF_PUBLIC);
   PixmapT *pixmap = NULL;
 
-  if (FileRead(tga->fh, data, size)) {
+  if (FileRead(tga->file, data, size)) {
     pixmap = NewPixmap(hdr->width, hdr->height, tga->type, tga->memoryFlags);
 
     /*
@@ -151,10 +151,10 @@ LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
 
   parser.type = type;
   parser.memoryFlags = memoryFlags;
-  parser.fh = OpenFile(filename);
+  parser.file = OpenFile(filename);
 
-  if (parser.fh) {
-    if (FileRead(parser.fh, &hdr, sizeof(TgaHeaderT))) {
+  if (parser.file) {
+    if (FileRead(parser.file, &hdr, sizeof(TgaHeaderT))) {
       hdr.cmapFirst = swap8(hdr.cmapFirst);
       hdr.cmapLength = swap8(hdr.cmapLength);
       hdr.xOrigin = swap8(hdr.xOrigin);
@@ -162,7 +162,7 @@ LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
       hdr.width = swap8(hdr.width);
       hdr.height = swap8(hdr.height);
 
-      (void)FileSeek(parser.fh, hdr.idLength, SEEK_SET);
+      (void)FileSeek(parser.file, hdr.idLength, SEEK_SET);
 
       if (((type == PM_GRAY || type == PM_GRAY4) && 
            hdr.imageType == TGA_GRAY && hdr.depth == 8) ||
@@ -186,7 +186,7 @@ LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
       }
     }
 
-    CloseFile(parser.fh);
+    CloseFile(parser.file);
   } else {
     Log("File '%s' missing.\n", filename);
   }

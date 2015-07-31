@@ -21,7 +21,7 @@ typedef struct IffChunk {
 } IffChunkT;
 
 typedef struct IffFile {
-  FileT fh;
+  FileT *file;
   IffHeaderT header;
   IffChunkT chunk;
 } IffFileT;

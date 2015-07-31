@@ -2,7 +2,12 @@
 #include <proto/exec.h>
 #include <proto/dos.h> 
 
+#include "memory.h"
 #include "io.h"
+
+struct File {
+  BPTR handle;
+};
 
 #define BUFLEN 80
 
@@ -36,20 +41,33 @@ void Print(const char *format, ...) {
   WriteToConsole(buffer);
 }
 
-FileT OpenFile(CONST STRPTR path asm("d1")) {
-  return Open(path, MODE_OLDFILE);
+FileT *OpenFile(CONST STRPTR path asm("d1")) {
+  FileT *file = MemAlloc(sizeof(FileT), MEMF_PUBLIC);
+
+  if ((file->handle = Open(path, MODE_OLDFILE)))
+    return file;
+
+  MemFree(file, sizeof(FileT));
+  return NULL;
 }
 
-void CloseFile(FileT fh asm("d1")) {
-  Close(fh);
+void CloseFile(FileT *file asm("a0")) {
+  if (file) {
+    Close(file->handle);
+    MemFree(file, sizeof(FileT));
+  }
 }
 
-BOOL FileRead(FileT fh asm("d1"), APTR buf asm("d2"), LONG size asm("d3")) {
-  return (Read(fh, buf, size) == size);
+BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), LONG size asm("d3")) {
+  if (file)
+    return (Read(file->handle, buf, size) == size);
+  return NULL;
 }
 
-LONG FileSeek(FileT fh asm("d1"), LONG pos asm("d2"), LONG mode asm("d3")) {
-  return Seek(fh, pos, mode);
+LONG FileSeek(FileT *file asm("a0"), LONG pos asm("d2"), LONG mode asm("d3")) {
+  if (file)
+    return Seek(file->handle, pos, mode);
+  return NULL;
 }
 
 LONG GetFileSize(CONST STRPTR path asm("d1")) {
