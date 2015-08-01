@@ -3,7 +3,7 @@
 #include "iff.h"
 
 __regargs BOOL OpenIff(IffFileT *iff, CONST STRPTR filename) {
-  iff->file = OpenFile(filename);
+  iff->file = OpenFile(filename, IOF_BUFFERED);
 
   if (!iff->file) {
     Log("File '%s' missing.\n", filename);

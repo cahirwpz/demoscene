@@ -151,7 +151,7 @@ LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
 
   parser.type = type;
   parser.memoryFlags = memoryFlags;
-  parser.file = OpenFile(filename);
+  parser.file = OpenFile(filename, IOF_BUFFERED);
 
   if (parser.file) {
     if (FileRead(parser.file, &hdr, sizeof(TgaHeaderT))) {

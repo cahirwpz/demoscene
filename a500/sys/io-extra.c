@@ -6,7 +6,7 @@ __regargs APTR LoadFile(CONST STRPTR path, ULONG memoryFlags) {
   LONG size = GetFileSize(path);
   FileT *file;
   
-  if ((size > 0) && (file = OpenFile(path))) {
+  if ((size > 0) && (file = OpenFile(path, 0))) {
     if ((data = MemAllocAuto(size + 1, memoryFlags))) {
       if (FileRead(file, data, size)) {
         MemFreeAuto(data);
