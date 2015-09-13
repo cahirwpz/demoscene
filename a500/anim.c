@@ -32,6 +32,9 @@ static void Load() {
   palette = LoadPalette("boxes-pal.ilbm");
   anim = LoadFile("running.bin", MEMF_PUBLIC);
 
+  Log("Animation has %ld frames %ld x %ld.\n", 
+      (LONG)anim->count, (LONG)anim->width, (LONG)anim->height);
+
   {
     WORD i;
 
