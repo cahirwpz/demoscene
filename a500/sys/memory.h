@@ -4,8 +4,6 @@
 #include <exec/types.h>
 #include <exec/memory.h>
 
-BOOL MemInit();
-void MemKill();
 LONG MemAvail(ULONG attributes asm("d1"));
 LONG MemUsed(ULONG attributes asm("d1"));
 
