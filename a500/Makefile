@@ -4,9 +4,12 @@ BINS	= stripes lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           playahx playp61 wireframe kbtest shapes mouse transparency anim \
           uvmap metaballs blurred circles floor-old parselwo neons flatshade \
           plotter highway textscroll uvmap-rgb bumpmap-rgb glitch floor ball \
-          tilezoomer twister-rgb showpchg blurred3d thunders credits
+          tilezoomer twister-rgb showpchg blurred3d thunders credits ExitUAE 
 
 all:	startup.o libs $(BINS)
+
+ExitUAE: CC += -fbaserel -s
+ExitUAE: ExitUAE.o
 
 anim:           anim.o startup.o libsys.a
 ball:           ball.o startup.o libsys.a

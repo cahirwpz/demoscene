@@ -1,0 +1,23 @@
+fade_in_duration = 0
+fade_out_duration = 0
+accuracy = 1
+amiga_model = A500
+chip_memory = 1024
+slow_memory = 1024
+uae_chipset = ecs_agnus
+uae_cpu_model = 68000
+automatic_input_grab = 0
+floppy_drive_0_sounds = off
+floppy_drive_speed = 100
+hard_drive_0 = /Users/cahir/Amiga/src/demoscene/a500
+hard_drive_0_label = Sources
+kickstarts_dir = /Users/cahir/Amiga/roms
+# F12 + D
+console_debugger = 1
+low_latency_vsync = 1
+scanlines = 0
+zoom = full
+window_width = 720
+window_height = 576
+serial_port = /tmp/vser
+action_pause = f8

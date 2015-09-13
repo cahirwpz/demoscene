@@ -1,0 +1,22 @@
+#!/bin/sh
+
+trap quit SIGINT
+
+function quit() {
+  kill $SOCAT
+  kill $FSUAE
+}
+
+cat >s/startup-sequence <<EOF
+$@
+ExitUAE
+EOF
+
+socat -u PTY,link=/tmp/vser,raw,echo=0 STDERR,raw &
+SOCAT=$!
+fs-uae >/dev/null &
+FSUAE=$!
+wait $FSUAE
+kill -HUP $SOCAT
+
+rm s/startup-sequence
