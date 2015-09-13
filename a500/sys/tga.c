@@ -162,7 +162,7 @@ LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
       hdr.width = swap8(hdr.width);
       hdr.height = swap8(hdr.height);
 
-      (void)FileSeek(parser.file, hdr.idLength, SEEK_SET);
+      (void)FileSeek(parser.file, hdr.idLength, SEEK_CUR);
 
       if (((type == PM_GRAY || type == PM_GRAY4) && 
            hdr.imageType == TGA_GRAY && hdr.depth == 8) ||
