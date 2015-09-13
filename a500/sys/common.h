@@ -74,6 +74,7 @@ static inline void bchg(UBYTE *ptr, BYTE bit) {
 void TrapHandler();
 void KPutChar(char c asm("d0"));
 void Log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+void MemDump(APTR ptr, LONG n);
 
 /*
  * Macros for handling symbol table information (aka linker set elements).
