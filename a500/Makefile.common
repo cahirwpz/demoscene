@@ -49,7 +49,7 @@ $(LIB):
 %.a:
 	make -C $(patsubst lib%.a,%,$@)
 
-%: %.o
+%.exe: %.o
 	@echo "LINK $@"
 	$(CC) $(LDFLAGS) -o $@ $(filter-out lib%.a,$^) \
 		$(foreach lib,$(patsubst lib%.a,%,$(filter lib%a,$^)),\
@@ -60,7 +60,7 @@ $(LIB):
 
 clean::
 	@$(RM) -v -r .deps
-	@$(RM) -v *.a *.o *~
+	@$(RM) -v *.a *.o *~ *.exe
 
 .PHONY: all clean
 
