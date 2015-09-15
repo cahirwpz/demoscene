@@ -50,37 +50,63 @@ static void DummyRender() {}
 static BOOL ExitOnLMB() { return !LeftMouseButton(); }
 
 int main() {
+  WORD kickVer, kickRev;
+  WORD cpu = 0;
+
+  if (SysBase->AttnFlags & AFF_68060)
+    cpu = 6;
+  else if (SysBase->AttnFlags & AFF_68040)
+    cpu = 4;
+  else if (SysBase->AttnFlags & AFF_68030)
+    cpu = 3;
+  else if (SysBase->AttnFlags & AFF_68020)
+    cpu = 2;
+  else if (SysBase->AttnFlags & AFF_68010)
+    cpu = 1;
+
   /* Get Vector Base Register */
-  if (SysBase->AttnFlags & AFF_68010)
+  if (cpu > 0)
     InterruptVector = (APTR)Supervisor((APTR)GetVBR);
 
-  Print("Running on Kickstart %ld.%ld.\n",
-        (LONG)SysBase->LibNode.lib_Version,
-        (LONG)SysBase->LibNode.lib_Revision);
-  Print("Largest available chunk of :\n"
-        "(*) chip memory : %7ld bytes\n"
-        "(*) fast memory : %7ld bytes\n",
-        (LONG)AvailMem(MEMF_CHIP | MEMF_LARGEST),
-        (LONG)AvailMem(MEMF_FAST | MEMF_LARGEST));
+  /* Based on WhichAmiga method. */
   {
-    struct Task *tc = FindTask(NULL);
-    tc->tc_TrapCode = TrapHandler;
+    APTR kickEnd = (APTR)0x1000000;
+    ULONG kickSize = *(ULONG *)(kickEnd - 0x14);
+    UWORD *kick = kickEnd - kickSize;
+
+    kickVer = kick[6];
+    kickRev = kick[7];
   }
+
+  Print("ROM: %ld.%ld, CPU: 680%ld0, CHIP: %ldkB, FAST: %ldkB.\n",
+        (LONG)kickVer, (LONG)kickRev, (LONG)cpu,
+        (LONG)(AvailMem(MEMF_CHIP | MEMF_LARGEST) / 1024),
+        (LONG)(AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024));
 
   if (Effect.Load)
     Effect.Load();
 
-  /* Allocate blitter. */
-  WaitBlit();
-  OwnBlitter();
-
   {
     struct View *OldView;
     UWORD OldDmacon, OldIntena, OldAdkcon;
+    ULONG OldCacheBits = 0;
+
+    {
+      struct Task *tc = FindTask(NULL);
+      tc->tc_TrapCode = TrapHandler;
+    }
+
+    /* Allocate blitter. */
+    WaitBlit();
+    OwnBlitter();
 
     /* No calls to any other library than exec beyond this point or expect
      * undefined behaviour including crashes. */
     Forbid();
+
+    /* Disable CPU caches. */
+    if (kickVer >= 36)
+      OldCacheBits = CacheControl(0, -1);
 
     /* Intercept the view of AmigaOS. */
     OldView = GfxBase->ActiView;
@@ -163,14 +189,24 @@ int main() {
     WaitTOF();
     WaitTOF();
 
+    /* Enable CPU caches. */
+    if (kickVer >= 36)
+      CacheControl(OldCacheBits, -1);
+
+    /* Restore multitasking. */
     Permit();
+
+    /* Deallocate blitter. */
+    DisownBlitter();
+
+    if (Effect.UnLoad)
+      Effect.UnLoad();
+
+    {
+      struct Task *tc = FindTask(NULL);
+      tc->tc_TrapCode = NULL;
+    }
   }
-
-  /* Deallocate blitter. */
-  DisownBlitter();
-
-  if (Effect.UnLoad)
-    Effect.UnLoad();
 
   return 0;
 }

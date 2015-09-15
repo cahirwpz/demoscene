@@ -42,6 +42,7 @@ uvmap-rgb
 wireframe
 
 ExitUAE
-nbproject
+nbproject/
+nigiri/
 
 *.7z
