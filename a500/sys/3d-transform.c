@@ -158,10 +158,13 @@ __regargs void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb) {
 }
 
 #define MULVERTEX() {                 \
-  LONG t0 = (*v++) * x;               \
-  LONG t1 = (*v++) * y;               \
-  LONG t2 = (*v++) * z;               \
-  LONG t3 = (*v++);                   \
+  WORD v0 = (*v++);                   \
+  WORD v1 = (*v++);                   \
+  WORD v2 = (*v++);                   \
+  WORD t3 = (*v++);                   \
+  LONG t0 = v0 * x;                   \
+  LONG t1 = v1 * y;                   \
+  LONG t2 = v2 * z;                   \
   *dst++ = normfx(t0 + t1 + t2) + t3; \
 }
 

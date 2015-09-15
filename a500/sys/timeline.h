@@ -7,6 +7,7 @@
 typedef struct TimelineItem {
   WORD start, end;
   EffectT *effect;
+  const char *name;
 } TimelineItemT;
 
 #ifndef FRAMES_PER_ROW
@@ -16,7 +17,7 @@ typedef struct TimelineItem {
 #define _TL(begin, end, effect) \
   { ((((begin) >> 8) & 0xff) * 64 + ((begin) & 0x3f)) * FRAMES_PER_ROW, \
     ((((end) >> 8) & 0xff) * 64 + ((end) & 0x3f)) * FRAMES_PER_ROW, \
-    effect }
+    &(effect), #effect }
 
 extern WORD frameCount;
 extern WORD lastFrameCount;

@@ -3,7 +3,7 @@
 
 #include "hardware.h"
 
-#define BAUD 9600
+#define BAUD 115200
 #define CLOCK 3546895
 
 void Log(const char *format, ...) {

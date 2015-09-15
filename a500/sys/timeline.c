@@ -26,8 +26,14 @@ __regargs void LoadEffects(TimelineItemT *item, WORD n, WORD start) {
     if (effect->state & EFFECT_LOADED)
       continue;
 
-    if (effect->Load)
+    if (effect->Load) {
       effect->Load();
+      Log("[Effect] %s loaded.\n", item->name);
+#if SHOW_MEMUSED
+      Log("[Memory] CHIP: %ld FAST: %ld\n",
+          MemUsed(MEMF_CHIP), MemUsed(MEMF_PUBLIC));
+#endif
+    }
 
     effect->state |= EFFECT_LOADED;
   }
@@ -51,8 +57,13 @@ __regargs void PrepareEffect(EffectT *effect) {
   if (effect->state & EFFECT_READY)
     return;
 
-  if (effect->Prepare)
+  if (effect->Prepare) {
     effect->Prepare();
+#if SHOW_MEMUSED
+    Log("[Memory] CHIP: %ld FAST: %ld\n",
+        MemUsed(MEMF_CHIP), MemUsed(MEMF_PUBLIC));
+#endif
+  }
 
   effect->state |= EFFECT_READY;
 }
@@ -78,9 +89,16 @@ __regargs void RunEffects(TimelineItemT *item, WORD n, WORD start) {
 
     currentItem = item;
 
-    if (!(effect->state & EFFECT_READY))
-      if (effect->Prepare)
+    if (!(effect->state & EFFECT_READY)) {
+      if (effect->Prepare) {
+        Log("[Effect] Preparing %s.\n", item->name);
         effect->Prepare();
+#if SHOW_MEMUSED
+        Log("[Memory] CHIP: %ld FAST: %ld\n",
+            MemUsed(MEMF_CHIP), MemUsed(MEMF_PUBLIC));
+#endif
+      }
+    }
     if (effect->Init)
       effect->Init();
 
@@ -116,12 +134,14 @@ __regargs void RunEffects(TimelineItemT *item, WORD n, WORD start) {
     WaitVBlank();
 
     if (effect->UnLoad) {
+      Log("[Effect] %s finished.\n", item->name);
+
       effect->UnLoad();
       effect->state &= ~EFFECT_LOADED;
 
 #if SHOW_MEMUSED
-      Log("Chip memory used   : %ld bytes.\n", MemUsed(MEMF_CHIP));
-      Log("Public memory used : %ld bytes.\n", MemUsed(MEMF_PUBLIC));
+      Log("[Memory] CHIP: %ld FAST: %ld\n",
+          MemUsed(MEMF_CHIP), MemUsed(MEMF_PUBLIC));
 #endif
     }
 

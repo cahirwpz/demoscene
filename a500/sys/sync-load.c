@@ -162,7 +162,7 @@ __regargs TrackT **LoadTrackList(char *filename) {
         break;
       }
 
-      Log("Track '%s' loaded.\n", track->name);
+      Log("[Track] Found '%s'.\n", track->name);
 
       tmp[count] = track;
     }

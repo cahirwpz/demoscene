@@ -20,6 +20,7 @@ __regargs void DeleteMesh3D(Mesh3D *mesh) {
   WORD faces = mesh->faces;
   WORD edges = mesh->edges;
 
+  MemFree(mesh->origVertex, sizeof(Point3D) * vertices);
   MemFreeAuto(mesh->vertexFaceData);
   MemFree(mesh->vertexFace, sizeof(IndexListT *) * (vertices + 1));
   MemFree(mesh->vertexNormal, sizeof(Point3D) * vertices);

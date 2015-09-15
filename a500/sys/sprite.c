@@ -73,11 +73,13 @@ __regargs SpriteT *CloneSystemPointer() {
 }
 
 __regargs void DeleteSprite(SpriteT *sprite) {
-  if (sprite->attached)
-    DeleteSprite(sprite->attached);
+  if (sprite) {
+    if (sprite->attached)
+      DeleteSprite(sprite->attached);
 
-  MemFree(sprite->data, (sprite->height + 2) * 4);
-  MemFree(sprite, sizeof(SpriteT));
+    MemFree(sprite->data, (sprite->height + 2) * 4);
+    MemFree(sprite, sizeof(SpriteT));
+  }
 }
 
 static inline void UpdateSpriteInternal(SpriteT *sprite, UWORD hstart, UWORD vstart) {

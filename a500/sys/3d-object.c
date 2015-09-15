@@ -14,7 +14,8 @@ __regargs Object3D *NewObject3D(Mesh3D *mesh) {
   object->vertex = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
   object->vertexFlags = MemAlloc(vertices, MEMF_PUBLIC);
   object->faceFlags = MemAlloc(faces, MEMF_PUBLIC);
-  object->edgeFlags = MemAlloc(edges, MEMF_PUBLIC);
+  if (edges)
+    object->edgeFlags = MemAlloc(edges, MEMF_PUBLIC);
   object->visibleFace = MemAlloc(sizeof(SortItemT) * faces, MEMF_PUBLIC);
 
   object->scale.x = fx12f(1.0);

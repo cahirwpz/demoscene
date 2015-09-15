@@ -59,6 +59,8 @@ typedef struct {
   WORD *faceEdgeData;
   IndexListT **vertexFace; /* { #vertex => [#face] } */
   WORD *vertexFaceData;
+
+  Point3D *origVertex;
 } Mesh3D;
 
 __regargs Mesh3D *NewMesh3D(WORD vertices, WORD faces);
