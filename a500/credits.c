@@ -55,9 +55,9 @@ static void UnLoad() {
   DeletePalette(floor->palette);
   DeleteBitmap(floor);
   
+  DeletePalette(member[0]->palette);
   for (i = 0; i < 5; i++)
     DeleteBitmap(member[i]);
-  DeletePalette(member[0]->palette);
 
   DeletePalette(dance[0]->palette);
   for (i = 0; i < 8; i++)
@@ -134,7 +134,9 @@ static void MakeCopperList(CopListT *cp) {
 static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
 
-  foreground = NewBitmap(floor->width, floor->height, floor->depth);
+  foreground = NewBitmap(max(floor->width, dance[0]->width),
+                         max(floor->height, dance[0]->height),
+                         floor->depth);
   BitmapClear(foreground, foreground->depth);
 
   lower = NULL;
