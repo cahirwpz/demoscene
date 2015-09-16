@@ -4,7 +4,8 @@ BINS	= stripes lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           playahx playp61 wireframe kbtest shapes mouse transparency anim \
           uvmap metaballs blurred circles floor-old parselwo neons flatshade \
           plotter highway textscroll uvmap-rgb bumpmap-rgb glitch floor ball \
-          tilezoomer twister-rgb showpchg blurred3d thunders credits ExitUAE 
+          tilezoomer twister-rgb showpchg blurred3d thunders credits parsepng \
+          ExitUAE 
 
 all:	startup.o libs $(addsuffix .exe, $(BINS))
 
@@ -30,6 +31,7 @@ mouse.exe:        mouse.o startup.o libsys.a
 kbtest.exe:       kbtest.o startup.o libsys.a
 parseiff.exe:     parseiff.o libsys.a
 parselwo.exe:     parselwo.o libsys.a
+parsepng.exe:     parsepng.o libsys.a
 play8svx.exe:     play8svx.o libsys.a
 playahx.exe:      playahx.o startup.o libsys.a libahx.a
 playp61.exe:      playp61.o startup.o libsys.a libp61.a
