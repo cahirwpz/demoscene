@@ -128,7 +128,7 @@ __regargs void BitmapUnpack(BitmapT *bitmap, UWORD flags) {
       Inflate(inBuf, outBuf);
 #endif
 
-    MemFree(inBuf, inLen);
+    MemFree(inBuf);
 
     bitmap->compression = COMP_NONE;
     BitmapSetPointers(bitmap, outBuf);
@@ -143,7 +143,7 @@ __regargs void BitmapUnpack(BitmapT *bitmap, UWORD flags) {
     BitmapSetPointers(bitmap, outBuf);
 
     Deinterleave(inBuf, bitmap);
-    MemFree(inBuf, size);
+    MemFree(inBuf);
   }
 
   if (flags & BM_DISPLAYABLE)
@@ -163,7 +163,6 @@ static __regargs void LoadCAMG(IffFileT *iff, BitmapT *bitmap) {
 
 static __regargs void LoadPCHG(IffFileT *iff, BitmapT *bitmap) {
   BYTE *data = MemAlloc(iff->chunk.length, MEMF_PUBLIC);
-  LONG size = iff->chunk.length;
   PCHGHeaderT *pchg = (APTR)data;
 
   ReadChunk(iff, data);
@@ -172,7 +171,7 @@ static __regargs void LoadPCHG(IffFileT *iff, BitmapT *bitmap) {
       (pchg->Flags == PCHGF_12BIT)) 
   {
     LONG length = pchg->TotalChanges + bitmap->height;
-    UWORD *out = MemAllocAuto(length * sizeof(UWORD), MEMF_PUBLIC);
+    UWORD *out = MemAlloc(length * sizeof(UWORD), MEMF_PUBLIC);
     UBYTE *bitvec = (APTR)pchg + sizeof(PCHGHeaderT);
     LineChangesT *line = (APTR)bitvec + ((pchg->LineCount + 31) & ~31) / 8;
     WORD i = pchg->StartLine;
@@ -201,7 +200,7 @@ static __regargs void LoadPCHG(IffFileT *iff, BitmapT *bitmap) {
     }
   }
 
-  MemFree(data, size);
+  MemFree(data);
 }
 
 static __regargs void LoadBODY(IffFileT *iff, BitmapT *bitmap, UWORD flags) {
@@ -229,7 +228,7 @@ static __regargs void LoadBODY(IffFileT *iff, BitmapT *bitmap, UWORD flags) {
       if (bitmap->compression == COMP_DEFLATE)
         Inflate(data, uncompressed);
 #endif
-      MemFree(data, size);
+      MemFree(data);
 
       data = uncompressed;
       size = newSize;
@@ -242,7 +241,7 @@ static __regargs void LoadBODY(IffFileT *iff, BitmapT *bitmap, UWORD flags) {
     else
       Deinterleave(data, bitmap);
 
-    MemFree(data, size);
+    MemFree(data);
   }
 }
 

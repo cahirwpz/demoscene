@@ -56,9 +56,8 @@ void Print(const char *format, ...) {
 }
 
 FileT *OpenFile(CONST STRPTR path asm("d1"), UWORD flags asm("d0")) {
-  FileT *file = 
-    MemAllocAuto(sizeof(FileT) + ((flags & IOF_BUFFERED) ? SECTOR : 0),
-                 MEMF_PUBLIC|MEMF_CLEAR);
+  FileT *file = MemAlloc(sizeof(FileT) + ((flags & IOF_BUFFERED) ? SECTOR : 0),
+                         MEMF_PUBLIC|MEMF_CLEAR);
 
   if ((file->handle = Open(path, MODE_OLDFILE))) {
     file->flags = flags;
@@ -66,14 +65,14 @@ FileT *OpenFile(CONST STRPTR path asm("d1"), UWORD flags asm("d0")) {
     return file;
   }
 
-  MemFreeAuto(file);
+  MemFree(file);
   return NULL;
 }
 
 void CloseFile(FileT *file asm("a0")) {
   if (file) {
     Close(file->handle);
-    MemFreeAuto(file);
+    MemFree(file);
   }
 }
 

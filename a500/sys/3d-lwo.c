@@ -38,7 +38,7 @@ static __regargs void ReadPNTS(Mesh3D *mesh, IffFileT *iff, FLOAT scale) {
     }
   }
 
-  MemFree(pnts, length);
+  MemFree(pnts);
 }
 
 static __regargs void ReadPOLS(Mesh3D *mesh, IffFileT *iff) {
@@ -76,7 +76,7 @@ static __regargs void ReadPOLS(Mesh3D *mesh, IffFileT *iff) {
 
   mesh->faces = faces;
   mesh->face = MemAlloc(sizeof(IndexListT *) * (faces + 1), MEMF_PUBLIC|MEMF_CLEAR);
-  mesh->faceData = MemAllocAuto(sizeof(WORD) * faceDataSize, MEMF_PUBLIC);
+  mesh->faceData = MemAlloc(sizeof(WORD) * faceDataSize, MEMF_PUBLIC);
   mesh->faceSurface = MemAlloc(faces, MEMF_PUBLIC|MEMF_CLEAR);
 
   /* Process polygons. */
@@ -110,7 +110,7 @@ static __regargs void ReadPOLS(Mesh3D *mesh, IffFileT *iff) {
     }
   }
 
-  MemFree(pols, length);
+  MemFree(pols);
 }
 
 __regargs Mesh3D *LoadLWO(char *filename, FLOAT scale) {

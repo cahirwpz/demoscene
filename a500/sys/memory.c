@@ -11,6 +11,11 @@ LONG __chipmem, __fastmem; /* Configuration variables placed in common area. */
 typedef struct MemHeader MemHeaderT;
 typedef struct MemChunk MemChunkT;
 
+typedef struct {
+  ULONG size;
+  UBYTE data[0];
+} MemBlockT;
+
 static MemHeaderT *chip, *fast;
 static LONG chipMin, fastMin;
 static BOOL memReady = FALSE;
@@ -102,7 +107,7 @@ static __attribute__((noreturn))
   exit();
 }
 
-APTR MemAlloc(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) {
+static inline APTR MemAllocInternal(ULONG byteSize, ULONG attributes) {
   APTR ptr;
 
 #if REDZONE
@@ -140,6 +145,13 @@ APTR MemAlloc(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) {
   return ptr;
 }
 
+
+APTR MemAlloc(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) {
+  MemBlockT *mb = MemAllocInternal(byteSize + sizeof(MemBlockT), attributes);
+  mb->size = byteSize;
+  return mb->data;
+}
+
 #if REDZONE
 static BOOL RedZoneValid(APTR memoryBlock asm("a1"), ULONG byteSize asm("d0")) {
   UBYTE *marker = memoryBlock + byteSize;
@@ -153,7 +165,7 @@ static BOOL RedZoneValid(APTR memoryBlock asm("a1"), ULONG byteSize asm("d0")) {
 }
 #endif
 
-void MemFree(APTR memoryBlock asm("a1"), ULONG byteSize asm("d0")) {
+static inline void MemFreeInternal(APTR memoryBlock, ULONG byteSize) {
   if (memoryBlock) {
     MemHeaderT *mem;
 
@@ -180,20 +192,9 @@ void MemFree(APTR memoryBlock asm("a1"), ULONG byteSize asm("d0")) {
   }
 }
 
-typedef struct {
-  ULONG size;
-  UBYTE data[0];
-} MemBlockT;
-
-APTR MemAllocAuto(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) {
-  MemBlockT *mb = MemAlloc(byteSize + sizeof(MemBlockT), attributes);
-  mb->size = byteSize;
-  return mb->data;
-}
-
-void MemFreeAuto(APTR memoryBlock asm("a1")) {
+void MemFree(APTR memoryBlock asm("a1")) {
   if (memoryBlock) {
     MemBlockT *mb = (MemBlockT *)((APTR)memoryBlock - sizeof(MemBlockT));
-    MemFree(mb, mb->size + sizeof(MemBlockT));
+    MemFreeInternal(mb, mb->size + sizeof(MemBlockT));
   }
 }

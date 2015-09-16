@@ -77,8 +77,8 @@ __regargs void DeleteSprite(SpriteT *sprite) {
     if (sprite->attached)
       DeleteSprite(sprite->attached);
 
-    MemFree(sprite->data, (sprite->height + 2) * 4);
-    MemFree(sprite, sizeof(SpriteT));
+    MemFree(sprite->data);
+    MemFree(sprite);
   }
 }
 

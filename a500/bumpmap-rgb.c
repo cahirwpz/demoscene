@@ -60,7 +60,7 @@ static void Load() {
   {
     PixmapT *image = LoadTGA("light.tga", PM_GRAY, MEMF_PUBLIC);
 
-    lightmap = MemAllocAuto(65536, MEMF_PUBLIC);
+    lightmap = MemAlloc(65536, MEMF_PUBLIC);
     {
       UBYTE *src = image->pixels;
       UWORD *dst = lightmap;
@@ -78,7 +78,7 @@ static void Load() {
   {
     PixmapT *image = LoadTGA("bumpmap.tga", PM_CMAP, MEMF_PUBLIC);
 
-    colormap = MemAllocAuto(WIDTH * HEIGHT * sizeof(UWORD), MEMF_PUBLIC);
+    colormap = MemAlloc(WIDTH * HEIGHT * sizeof(UWORD), MEMF_PUBLIC);
     {
       UWORD *dst = colormap;
       UBYTE *src = image->pixels;
@@ -88,7 +88,7 @@ static void Load() {
         *dst++ = *src++ << 6;
     }
 
-    shademap = MemAllocAuto(32 * sizeof(UWORD) * image->palette->count, MEMF_PUBLIC);
+    shademap = MemAlloc(32 * sizeof(UWORD) * image->palette->count, MEMF_PUBLIC);
     {
       ColorT *c = image->palette->colors;
       UWORD *dst = shademap;
@@ -120,10 +120,10 @@ static void Load() {
 }
 
 static void UnLoad() {
-  MemFreeAuto(bumpmap);
-  MemFreeAuto(colormap);
-  MemFreeAuto(shademap);
-  MemFreeAuto(lightmap);
+  MemFree(bumpmap);
+  MemFree(colormap);
+  MemFree(shademap);
+  MemFree(lightmap);
 }
 
 static struct {
@@ -306,8 +306,8 @@ static void Kill() {
 
   DeleteCopList(cp);
 
-  MemFree(chunky[0], (WIDTH * 4) * HEIGHT);
-  MemFree(chunky[1], (WIDTH * 4) * HEIGHT);
+  MemFree(chunky[0]);
+  MemFree(chunky[1]);
 
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);

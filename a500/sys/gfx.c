@@ -63,13 +63,10 @@ __regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
 
 __regargs void DeleteBitmap(BitmapT *bitmap) {
   if (bitmap) {
-    if (!(bitmap->flags & BM_MINIMAL)) {
-      ULONG size = bitmap->compression ? 
-        (ULONG)bitmap->planes[1] : BitmapSize(bitmap);
-      MemFree(bitmap->planes[0], size);
-    }
-    MemFreeAuto(bitmap->pchg);
-    MemFree(bitmap, sizeof(BitmapT));
+    if (!(bitmap->flags & BM_MINIMAL))
+      MemFree(bitmap->planes[0]);
+    MemFree(bitmap->pchg);
+    MemFree(bitmap);
   }
 }
 
@@ -79,7 +76,7 @@ __regargs void BitmapMakeDisplayable(BitmapT *bitmap) {
     APTR planes = MemAlloc(size, MEMF_CHIP);
 
     memcpy(planes, bitmap->planes[0], size - BM_EXTRA);
-    MemFree(bitmap->planes[0], size);
+    MemFree(bitmap->planes[0]);
 
     bitmap->flags |= BM_DISPLAYABLE;
     BitmapSetPointers(bitmap, planes);
@@ -101,7 +98,7 @@ __regargs PaletteT *CopyPalette(PaletteT *palette) {
 
 __regargs void DeletePalette(PaletteT *palette) {
   if (palette)
-    MemFree(palette, sizeof(PaletteT) + palette->count * sizeof(ColorT));
+    MemFree(palette);
 }
 
 __regargs void ConvertPaletteToRGB4(PaletteT *palette, UWORD *color, WORD n) {

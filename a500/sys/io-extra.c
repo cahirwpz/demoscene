@@ -7,9 +7,9 @@ __regargs APTR LoadFile(CONST STRPTR path, ULONG memoryFlags) {
   FileT *file;
   
   if ((size > 0) && (file = OpenFile(path, 0))) {
-    if ((data = MemAllocAuto(size + 1, memoryFlags))) {
+    if ((data = MemAlloc(size + 1, memoryFlags))) {
       if (!FileRead(file, data, size)) {
-        MemFreeAuto(data);
+        MemFree(data);
         data = NULL;
       } else {
         /* Add extra byte and mark the end of file by zero. */

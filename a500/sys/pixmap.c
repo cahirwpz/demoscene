@@ -36,10 +36,10 @@ __regargs PixmapT *ClonePixmap(PixmapT *pixmap) {
 }
 
 __regargs void DeletePixmap(PixmapT *pixmap) {
-  LONG size = BytesPerPixel(pixmap->type, pixmap->width) * pixmap->height;
-
-  MemFree(pixmap->pixels, size);
-  MemFree(pixmap, sizeof(PixmapT));
+  if (pixmap) {
+    MemFree(pixmap->pixels);
+    MemFree(pixmap);
+  }
 }
 
 __regargs void PixmapScramble_4_1(PixmapT *pixmap) {

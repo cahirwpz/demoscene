@@ -37,7 +37,7 @@ static void Load() {
 }
 
 static void UnLoad() {
-  MemFreeAuto(text);
+  MemFree(text);
   DeletePalette(font->palette);
   DeleteBitmap(font);
 }

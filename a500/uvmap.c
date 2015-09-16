@@ -74,7 +74,7 @@ static void Load() {
 }
 
 static void UnLoad() {
-  MemFreeAuto(uvmap);
+  MemFree(uvmap);
   DeletePalette(texture->palette);
   DeletePixmap(texture);
 }
@@ -257,7 +257,7 @@ static void Kill() {
   DeleteCopList(cp);
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
-  MemFree(UVMapRender, UVMapRenderSize);
+  MemFree(UVMapRender);
 
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);

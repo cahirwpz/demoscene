@@ -13,7 +13,7 @@ __regargs CopListT *NewCopList(UWORD length) {
 }
 
 __regargs void DeleteCopList(CopListT *list) {
-  MemFree(list, sizeof(CopListT) + list->length * sizeof(CopInsT));
+  MemFree(list);
 }
 
 __regargs void CopListActivate(CopListT *list) {

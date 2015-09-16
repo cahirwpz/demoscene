@@ -34,7 +34,7 @@ typedef struct TgaParser {
 
 static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, TgaParserT *tga) {
   LONG size = hdr->cmapLength * 3;
-  UBYTE *data = MemAllocAuto(size, MEMF_PUBLIC);
+  UBYTE *data = MemAlloc(size, MEMF_PUBLIC);
   PaletteT *palette = NULL;
 
   if (FileRead(tga->file, data, size)) {
@@ -55,7 +55,7 @@ static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, TgaParserT *tga) {
     }
   }
 
-  MemFreeAuto(data);
+  MemFree(data);
   return palette;
 }
 
@@ -119,7 +119,7 @@ static __regargs void ConvertDataRGB(PixmapT *pixmap, UBYTE *data, WORD depth) {
 
 static __regargs PixmapT *ReadData(TgaHeaderT *hdr, TgaParserT *tga) {
   LONG size = hdr->width * hdr->height * (hdr->depth / 8);
-  UBYTE *data = MemAllocAuto(size, MEMF_PUBLIC);
+  UBYTE *data = MemAlloc(size, MEMF_PUBLIC);
   PixmapT *pixmap = NULL;
 
   if (FileRead(tga->file, data, size)) {
@@ -139,7 +139,7 @@ static __regargs PixmapT *ReadData(TgaHeaderT *hdr, TgaParserT *tga) {
     }
   }
 
-  MemFreeAuto(data);
+  MemFree(data);
   return pixmap;
 }
 

@@ -284,12 +284,14 @@ __regargs ShapeT *NewShape(UWORD points, UWORD polygons) {
 }
 
 __regargs void DeleteShape(ShapeT *shape) {
-  MemFreeAuto(shape->polygonData);
-  MemFree(shape->polygon, sizeof(IndexListT *) * shape->polygons);
-  MemFree(shape->viewPointFlags, shape->points);
-  MemFree(shape->viewPoint, sizeof(Point2D) * shape->points);
-  MemFree(shape->origPoint, sizeof(Point2D) * shape->points);
-  MemFree(shape, sizeof(ShapeT));
+  if (shape) {
+    MemFree(shape->polygonData);
+    MemFree(shape->polygon);
+    MemFree(shape->viewPointFlags);
+    MemFree(shape->viewPoint);
+    MemFree(shape->origPoint);
+    MemFree(shape);
+  }
 }
 
 __regargs ShapeT *LoadShape(char *filename) {
@@ -354,12 +356,12 @@ __regargs ShapeT *LoadShape(char *filename) {
 
     if (*data == '\0' && pass == 0) {
       shape = NewShape(points, polygons);
-      shape->polygonData = 
-        MemAllocAuto(sizeof(WORD) * (points + polygons * 2), MEMF_PUBLIC);
+      shape->polygonData = MemAlloc(sizeof(WORD) * (points + polygons * 2),
+                                    MEMF_PUBLIC);
     }
   }
 
 error:
-  MemFreeAuto(file);
+  MemFree(file);
   return shape;
 }

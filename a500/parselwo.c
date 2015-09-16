@@ -51,7 +51,7 @@ int main() {
               Print("%5ld : [%ld %ld %ld]\n", (LONG)i, x, y, z);
             }
 
-            MemFree(pnts, iff.chunk.length);
+            MemFree(pnts);
           }
           break;
 
@@ -90,7 +90,7 @@ int main() {
               }
             }
 
-            MemFree(pols, iff.chunk.length);
+            MemFree(pols);
           }
           break;
 

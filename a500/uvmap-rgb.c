@@ -80,15 +80,15 @@ static void Load() {
 
   {
     PixmapT *image = LoadTGA("texture-rgb.tga", PM_RGB4, MEMF_PUBLIC);
-    texture = MemAllocAuto(65536, MEMF_PUBLIC);
+    texture = MemAlloc(65536, MEMF_PUBLIC);
     PixmapScramble(image, texture);
     DeletePixmap(image);
   }
 }
 
 static void UnLoad() {
-  MemFreeAuto(uvmap);
-  MemFreeAuto(texture);
+  MemFree(uvmap);
+  MemFree(texture);
 }
 
 static struct {
@@ -270,10 +270,10 @@ static void Kill() {
   custom->intena = INTF_BLIT;
 
   DeleteCopList(cp);
-  MemFree(UVMapRender, UVMapRenderSize);
+  MemFree(UVMapRender);
 
-  MemFree(chunky[0], (WIDTH * 4) * HEIGHT);
-  MemFree(chunky[1], (WIDTH * 4) * HEIGHT);
+  MemFree(chunky[0]);
+  MemFree(chunky[1]);
 
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);

@@ -119,7 +119,7 @@ int main() {
 
           case PNG_PLTE:
             {
-              RGB *plte = MemAllocAuto(chk[0], MEMF_PUBLIC|MEMF_CLEAR);
+              RGB *plte = MemAlloc(chk[0], MEMF_PUBLIC|MEMF_CLEAR);
               WORD n = chk[0] / 3;
 
               FileRead(file, plte, chk[0]);
@@ -133,7 +133,7 @@ int main() {
                         (LONG)ptr->r, (LONG)ptr->g, (LONG)ptr->b);
               }
               Print("\n");
-              MemFreeAuto(plte);
+              MemFree(plte);
             }
             break;
 
@@ -179,13 +179,13 @@ int main() {
 
           case PNG_tEXt:
             {
-              char *text = MemAllocAuto(chk[0] + 1, MEMF_PUBLIC|MEMF_CLEAR);
+              char *text = MemAlloc(chk[0] + 1, MEMF_PUBLIC|MEMF_CLEAR);
 
               FileRead(file, text, chk[0]);
 
               Print("%s %s\n", text, text + strlen(text) + 1);
 
-              MemFreeAuto(text);
+              MemFree(text);
             }
             break;
 

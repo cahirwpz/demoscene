@@ -15,8 +15,10 @@ __regargs SoundT *NewSound(ULONG length, UWORD rate) {
 }
 
 __regargs void DeleteSound(SoundT *sound) {
-  MemFree(sound->sample, sizeof(BYTE) * sound->length);
-  MemFree(sound, sizeof(SoundT));
+  if (sound) {
+    MemFree(sound->sample);
+    MemFree(sound);
+  }
 }
 
 void AudioSetVolume(ChanT num, UBYTE level) {

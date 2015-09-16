@@ -44,7 +44,7 @@ static void Load() {
 }
 
 static void UnLoad() {
-  MemFreeAuto(anim);
+  MemFree(anim);
   DeletePalette(palette);
   DeleteBitmap(screen);
 }

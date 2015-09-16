@@ -112,7 +112,7 @@ static __regargs TrackT *ReadTrack(char **strptr) {
 
     if (!pass) {
       WORD size = sizeof(TrackT) + sizeof(TrackKeyT) * (keys + 1);
-      track = MemAllocAuto(size + name_len + 1, MEMF_PUBLIC|MEMF_CLEAR);
+      track = MemAlloc(size + name_len + 1, MEMF_PUBLIC|MEMF_CLEAR);
       track->name = (char *)track + size;
     } else {
       track->data[keys].frame = END_KEY;
@@ -135,7 +135,7 @@ __regargs TrackT *LoadTrack(char *filename) {
     if (!(track = ReadTrack(&data)))
       Print("Error at byte %ld!\n", (LONG)(data - file));
 
-    MemFreeAuto(file);
+    MemFree(file);
   }
 
   return track;
@@ -158,7 +158,7 @@ __regargs TrackT **LoadTrackList(char *filename) {
       if (!track) {
         Print("Error at byte %ld!\n", (LONG)(data - file));
         while (count)
-          MemFreeAuto(tmp[--count]);
+          MemFree(tmp[--count]);
         break;
       }
 
@@ -168,12 +168,12 @@ __regargs TrackT **LoadTrackList(char *filename) {
     }
 
     if (count > 0) {
-      tracks = MemAllocAuto(sizeof(TrackT *) * (count + 1), MEMF_PUBLIC);
+      tracks = MemAlloc(sizeof(TrackT *) * (count + 1), MEMF_PUBLIC);
       memcpy(tracks, tmp, sizeof(TrackT *) * count);
       tracks[count] = NULL;
     }
 
-    MemFreeAuto(file);
+    MemFree(file);
   }
 
   return tracks;
@@ -181,6 +181,6 @@ __regargs TrackT **LoadTrackList(char *filename) {
 
 __regargs void DeleteTrackList(TrackT **tracks) {
   TrackT **tmp = tracks;
-  do { MemFreeAuto(*tmp++); } while (*tmp);
-  MemFreeAuto(tracks);
+  do { MemFree(*tmp++); } while (*tmp);
+  MemFree(tracks);
 }

@@ -26,16 +26,14 @@ __regargs Object3D *NewObject3D(Mesh3D *mesh) {
 }
 
 __regargs void DeleteObject3D(Object3D *object) {
-  WORD vertices = object->mesh->vertices;
-  WORD faces = object->mesh->faces;
-  WORD edges = object->mesh->edges;
-
-  MemFree(object->visibleFace, sizeof(SortItemT) * faces);
-  MemFree(object->edgeFlags, edges);
-  MemFree(object->faceFlags, faces);
-  MemFree(object->vertexFlags, vertices);
-  MemFree(object->vertex, sizeof(Point3D) * vertices);
-  MemFree(object, sizeof(Object3D));
+  if (object) {
+    MemFree(object->visibleFace);
+    MemFree(object->edgeFlags);
+    MemFree(object->faceFlags);
+    MemFree(object->vertexFlags);
+    MemFree(object->vertex);
+    MemFree(object);
+  }
 }
 
 __regargs void UpdateObjectTransformation(Object3D *object) {

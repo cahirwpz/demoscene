@@ -16,23 +16,21 @@ __regargs Mesh3D *NewMesh3D(WORD vertices, WORD faces) {
 }
 
 __regargs void DeleteMesh3D(Mesh3D *mesh) {
-  WORD vertices = mesh->vertices;
-  WORD faces = mesh->faces;
-  WORD edges = mesh->edges;
-
-  MemFree(mesh->origVertex, sizeof(Point3D) * vertices);
-  MemFreeAuto(mesh->vertexFaceData);
-  MemFree(mesh->vertexFace, sizeof(IndexListT *) * (vertices + 1));
-  MemFree(mesh->vertexNormal, sizeof(Point3D) * vertices);
-  MemFree(mesh->faceSurface, faces);
-  MemFree(mesh->faceNormal, sizeof(Point3D) * faces);
-  MemFreeAuto(mesh->faceEdgeData);
-  MemFree(mesh->faceEdge, sizeof(IndexListT *) * (faces + 1));
-  MemFreeAuto(mesh->faceData);
-  MemFree(mesh->face, sizeof(IndexListT *) * (faces + 1));
-  MemFree(mesh->edge, sizeof(EdgeT) * edges);
-  MemFree(mesh->vertex, sizeof(Point3D) * vertices);
-  MemFree(mesh, sizeof(Mesh3D));
+  if (mesh) {
+    MemFree(mesh->origVertex);
+    MemFree(mesh->vertexFaceData);
+    MemFree(mesh->vertexFace);
+    MemFree(mesh->vertexNormal);
+    MemFree(mesh->faceSurface);
+    MemFree(mesh->faceNormal);
+    MemFree(mesh->faceEdgeData);
+    MemFree(mesh->faceEdge);
+    MemFree(mesh->faceData);
+    MemFree(mesh->face);
+    MemFree(mesh->edge);
+    MemFree(mesh->vertex);
+    MemFree(mesh);
+  }
 }
 
 typedef struct ExtEdge {
@@ -71,7 +69,7 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
     while ((face = *faces++))
       count += face->count;
 
-    edge = MemAllocAuto(sizeof(ExtEdgeT) * count, MEMF_PUBLIC);
+    edge = MemAlloc(sizeof(ExtEdgeT) * count, MEMF_PUBLIC);
   }
 
   /* Create all edges. */
@@ -149,10 +147,10 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
   }
 
   /* Construct { #face => [#edge] } map. */
-  mesh->faceEdge =
-    MemAlloc(sizeof(IndexListT *) * (mesh->faces + 1), MEMF_PUBLIC|MEMF_CLEAR);
-  mesh->faceEdgeData =
-    MemAllocAuto(sizeof(WORD) * (count + mesh->faces), MEMF_PUBLIC|MEMF_CLEAR);
+  mesh->faceEdge = MemAlloc(sizeof(IndexListT *) * (mesh->faces + 1),
+                            MEMF_PUBLIC|MEMF_CLEAR);
+  mesh->faceEdgeData = MemAlloc(sizeof(WORD) * (count + mesh->faces),
+                                MEMF_PUBLIC|MEMF_CLEAR);
 
   /* Set up pointers. */
   {
@@ -180,7 +178,7 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
     }
   }
 
-  MemFreeAuto(edge);
+  MemFree(edge);
 }
 
 /*
@@ -216,8 +214,8 @@ __regargs void CalculateVertexFaceMap(Mesh3D *mesh) {
 
     mesh->vertexFace = MemAlloc(sizeof(IndexListT *) * (mesh->vertices + 1),
                                 MEMF_PUBLIC|MEMF_CLEAR);
-    mesh->vertexFaceData = MemAllocAuto(sizeof(WORD) * count,
-                                        MEMF_PUBLIC|MEMF_CLEAR);
+    mesh->vertexFaceData = MemAlloc(sizeof(WORD) * count,
+                                    MEMF_PUBLIC|MEMF_CLEAR);
   }
 
   /* Set up map pointers. */
@@ -233,7 +231,7 @@ __regargs void CalculateVertexFaceMap(Mesh3D *mesh) {
     }
   }
 
-  MemFree(faceCount, sizeof(WORD) * mesh->vertices);
+  MemFree(faceCount);
 
   /* Finally, fill in the map. */
   {
