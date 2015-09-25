@@ -23,6 +23,7 @@
 #define MEMF_LARGEST (1L << 17)
 #endif
 
+__regargs void MemDebug(ULONG attributes);
 __regargs LONG MemAvail(ULONG attributes);
 __regargs LONG MemUsed(ULONG attributes);
 

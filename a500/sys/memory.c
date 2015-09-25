@@ -85,30 +85,12 @@ void MemKill() {
         __chipmem - chip->minFree, __fastmem - fast->minFree);
     FreeMem(chip, __chipmem + sizeof(AreaT));
     FreeMem(fast, __fastmem + sizeof(AreaT));
+    memReady = FALSE;
   }
 }
 
 ADD2INIT(MemInit, -20);
 ADD2EXIT(MemKill, -20);
-
-__regargs LONG MemAvail(ULONG attributes) {
-  if (attributes & MEMF_CHIP)
-    return chip->freeMem;
-  if (attributes & MEMF_FAST)
-    return fast->freeMem;
-  return chip->freeMem + fast->freeMem;
-}
-
-__regargs LONG MemUsed(ULONG attributes) {
-  LONG chipUsed = __chipmem - chip->freeMem;
-  LONG fastUsed = __fastmem - fast->freeMem;
-
-  if (attributes & MEMF_CHIP)
-    return chipUsed;
-  if (attributes & MEMF_FAST)
-    return fastUsed;
-  return chipUsed + fastUsed;
-}
 
 static __regargs BOOL BlockValidMagic(BlockT *blk, AreaT *area, const char *msg) {
   if (blk->magic != BLK_MAGIC) {
@@ -150,77 +132,94 @@ static __regargs BOOL BlockValidNext(BlockT *blk, AreaT *area, const char *msg) 
   return TRUE;
 }
 
-static __regargs void MemDebug(AreaT *area) {
+static __regargs void MemDebugInternal(AreaT *area) {
   BlockT *blk = (BlockT *)area->lower;
 
-  Log("Map for %s memory:\n", area->name);
+  Log("[MemDebug] Area %lx-%lx of %s memory (%ld bytes free):\n",
+      (LONG)area->lower, (LONG)area->upper, area->name, area->freeMem);
   do {
     if (!BlockValidMagic(blk, area, "[MemDebug]") || 
         !BlockValidSize(blk, area, "[MemDebug]"))
       break;
 
     if (blk->size & BLK_USED) {
-      Log(" $%lx : used, size : %ld\n", (LONG)blk, blk->size & ~BLK_MASK);
+      Log(" $%lx U %6ld\n", (LONG)blk, blk->size & ~BLK_MASK);
     } else {
       if (!(blk->size & BLK_USED)) {
         if (!BlockValidPrev(blk, area, "[MemDebug]") ||
             !BlockValidNext(blk, area, "[MemDebug]"))
           break;
 
-        Log(" $%lx : free, size : %ld, prev : $%lx, next : $%lx\n",
+        Log(" $%lx F %6ld ($%lx, $%lx)\n",
             (LONG)blk, blk->size & ~BLK_MASK, (LONG)blk->prev, (LONG)blk->next);
       }
     }
 
     blk = (BlockT *)((APTR)blk + (blk->size & ~BLK_MASK));
-  } while (blk < area->last);
+  } while ((APTR)blk < area->upper);
+}
 
-  Log("Total free %s memory: %ld bytes.\n", area->name, area->freeMem);
+__regargs void MemDebug(ULONG attributes) {
+  if (attributes & MEMF_CHIP)
+    MemDebugInternal(chip);
+  if (attributes & MEMF_FAST)
+    MemDebugInternal(fast);
 }
 
 static __attribute__((noreturn)) __regargs
   void MemPanic(AreaT *area)
 {
-  MemDebug(area);
+  MemDebugInternal(area);
   MemKill();
   exit();
 }
 
-#define ALLOC 0
-#define FREE 1
+static __regargs void BlockCheck(BlockT *blk, AreaT *area, const char *msg) {
+  if (!blk)
+    return;
 
-static const char *action[] = {
-  "[Bug] MemAlloc: block", "[Bug] MemFree: block"
-};
+  if (!BlockValidMagic(blk, area, msg) || !BlockValidSize(blk, area, msg))
+    goto error;
 
-static void BlockCheck(LONG num, AreaT *area, BlockT *blk) {
-  if (blk) {
-    if (!BlockValidMagic(blk, area, action[num]))
-      MemPanic(area);
+  if (blk->size & BLK_USED)
+    return;
 
-    if (!BlockValidSize(blk, area, action[num]))
-      MemPanic(area);
+  if (BlockValidPrev(blk, area, msg) && BlockValidNext(blk, area, msg))
+    return;
 
-    if (!(blk->size & BLK_USED)) {
-      if (!BlockValidPrev(blk, area, action[num]))
-        MemPanic(area);
+error:
+    MemPanic(area);
+}
 
-      if (!BlockValidNext(blk, area, action[num]))
-        MemPanic(area);
-    }
-  }
+__regargs LONG MemAvail(ULONG attributes) {
+  if (attributes & MEMF_CHIP)
+    return chip->freeMem;
+  if (attributes & MEMF_FAST)
+    return fast->freeMem;
+  return chip->freeMem + fast->freeMem;
+}
+
+__regargs LONG MemUsed(ULONG attributes) {
+  LONG chipUsed = __chipmem - chip->freeMem;
+  LONG fastUsed = __fastmem - fast->freeMem;
+
+  if (attributes & MEMF_CHIP)
+    return chipUsed;
+  if (attributes & MEMF_FAST)
+    return fastUsed;
+  return chipUsed + fastUsed;
 }
 
 static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize) {
   BlockT *curr = area->first;
   ULONG size = byteSize + BLK_UNIT;
 
-  BlockCheck(ALLOC, area, area->first);
-  BlockCheck(ALLOC, area, area->last);
+  BlockCheck(area->first, area, "[MemAlloc]");
+  BlockCheck(area->last, area, "[MemAlloc]");
 
   /* First fit. */
   while (curr) {
-    BlockCheck(ALLOC, area, curr->next);
+    BlockCheck(curr->next, area, "[MemAlloc]");
 
     if (curr->size >= size)
       break;
@@ -243,7 +242,11 @@ static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize) {
 
     curr->size = size;
     curr->next = new;
+
+    area->freeMem -= BLK_UNIT;
   }
+
+  area->freeMem -= curr->size;
 
   /* Take the block out of the free list. */
   (curr->prev) ? (curr->prev->next) : (area->first) = curr->next;
@@ -251,8 +254,6 @@ static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize) {
   curr->prev = NULL;
   curr->next = NULL;
   curr->size |= BLK_USED;
-
-  area->freeMem -= size;
 
   if (area->freeMem < area->minFree) {
     // Log("[Memory] Usage peak - CHIP: %ld\n", __chipmem - chip->min);
@@ -269,10 +270,10 @@ __regargs APTR MemAlloc(ULONG byteSize, ULONG attributes) {
 
   byteSize = (byteSize + BLK_MASK) & ~BLK_MASK;
 
-  if (!blk && ((attributes & MEMF_FAST) || (attributes & MEMF_PUBLIC))) {
+  if ((attributes & MEMF_FAST) || (attributes & MEMF_PUBLIC)) {
     area = fast; blk = MemAllocInternal(fast, byteSize);
   }
-  if (!blk && ((attributes & MEMF_CHIP) || (attributes & MEMF_PUBLIC))) {
+  if ((attributes & MEMF_CHIP) || (!blk && (attributes & MEMF_PUBLIC))) {
     area = chip; blk = MemAllocInternal(chip, byteSize);
   }
 
@@ -286,7 +287,7 @@ __regargs APTR MemAlloc(ULONG byteSize, ULONG attributes) {
     else
       name = "public";
 
-    Log("Failed to allocate %ld bytes of %s memory.\n", byteSize, name);
+    Log("[MemAlloc] Failed to allocate %ld bytes of %s memory.\n", byteSize, name);
     MemPanic(area);
   }
 
@@ -299,11 +300,13 @@ __regargs APTR MemAlloc(ULONG byteSize, ULONG attributes) {
 }
 
 static void MemFreeInternal(AreaT *area, BlockT *blk) {
-  BlockCheck(FREE, area, blk);
-  BlockCheck(FREE, area, area->first);
-  BlockCheck(FREE, area, area->last);
+  BlockCheck(blk, area, "[MemFree]");
+  BlockCheck(area->first, area, "[MemFree]");
+  BlockCheck(area->last, area, "[MemFree]");
 
   blk->size &= ~BLK_USED;
+
+  area->freeMem += blk->size - BLK_UNIT;
 
   /* Put the block onto free list. */
   if (blk < area->first) {
@@ -318,7 +321,7 @@ static void MemFreeInternal(AreaT *area, BlockT *blk) {
     BlockT *pred = area->first;
 
     while (pred) {
-      BlockCheck(FREE, area, pred->next);
+      BlockCheck(pred->next, area, "[MemFree]");
 
       if (blk > pred && blk < pred->next)
         break;
@@ -343,6 +346,8 @@ static void MemFreeInternal(AreaT *area, BlockT *blk) {
     (blk->next) ? (pred->next->prev) : (area->last) = pred;
 
     blk = pred;
+
+    area->freeMem += BLK_UNIT;
   }
 
   /* Check if can merge with succeeding block. */
@@ -353,23 +358,20 @@ static void MemFreeInternal(AreaT *area, BlockT *blk) {
     blk->next = succ->next;
 
     (succ->next) ? (blk->next->prev) : (area->last) = blk;
+
+    area->freeMem += BLK_UNIT;
   }
 }
 
 __regargs void MemFree(APTR memoryBlock) {
   if (memoryBlock) {
-    AreaT *area = NULL;
     BlockT *blk = (BlockT *)((APTR)memoryBlock - BLK_UNIT);
 
     if (memoryBlock >= chip->lower && memoryBlock < chip->upper)
-      area = chip;
-    if (memoryBlock >= fast->lower && memoryBlock < fast->upper)
-      area = fast;
-
-    if (area) {
-      MemFreeInternal(area, blk);
-    } else {
-      Log("[Bug] MemFree: block $%lx not found!\n", (LONG)memoryBlock);
-    }
+      MemFreeInternal(chip, blk);
+    else if (memoryBlock >= fast->lower && memoryBlock < fast->upper)
+      MemFreeInternal(fast, blk);
+    else
+      Log("[MemFree] block $%lx not found!\n", (LONG)memoryBlock);
   }
 }
