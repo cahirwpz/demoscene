@@ -20,4 +20,5 @@ zoom = full
 window_width = 720
 window_height = 576
 serial_port = /tmp/vser
-action_pause = f8
+keyboard_key_f8 = action_pause 
+keyboard_key_f6 = action_screenshot
