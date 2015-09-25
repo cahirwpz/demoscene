@@ -6,53 +6,59 @@
 
 LONG __chipmem, __fastmem; /* Configuration variables placed in common area. */
 
-#define REDZONE 1
+#define BLK_MAGIC 0xDEADC0DE
+#define BLK_USED  1
+#define BLK_UNIT  8
+#define BLK_MASK  (BLK_UNIT - 1)
 
-typedef struct MemHeader MemHeaderT;
-typedef struct MemChunk MemChunkT;
-
-typedef struct {
+typedef struct Block {
+  ULONG magic;
   ULONG size;
-  UBYTE data[0];
-} MemBlockT;
+  struct Block *prev;
+  struct Block *next;
+} BlockT;
 
-static MemHeaderT *chip, *fast;
-static LONG chipMin, fastMin;
+typedef struct Area {
+  char   *name;   /* description */
+  BlockT *first;  /* first free region */
+  BlockT *last;   /* last free region */
+  APTR   lower;   /* lower memory bound */
+  APTR   upper;   /* upper memory bound + 1 */
+  ULONG  freeMem; /* total number of free bytes */
+  ULONG  minFree; /* minimum recorded number of free bytes */
+} __attribute__((aligned(BLK_UNIT))) AreaT;
+
+static AreaT *chip, *fast;
 static BOOL memReady = FALSE;
 
-__regargs static void MemDebug(MemHeaderT *mem) {
-  MemChunkT *mc = mem->mh_First;
+__regargs static AreaT *MemPoolAlloc(ULONG byteSize, ULONG attributes) {
+  char *const name = (attributes & MEMF_CHIP) ? "chip" : "fast";
+  AreaT *area; 
 
-  Log("Free %s memory map:\n", mem->mh_Node.ln_Name);
-  while (mc) {
-    Log("$%08lx : %ld\n", (LONG)mc, (LONG)mc->mc_Bytes);
-    mc = mc->mc_Next;
-  }
-  Log("Total free %s memory: %ld\n", mem->mh_Node.ln_Name, mem->mh_Free);
-}
-
-__regargs static MemHeaderT *MemPoolAlloc(ULONG byteSize, ULONG attributes) {
-  MemHeaderT *mem = AllocMem(byteSize + sizeof(struct MemHeader), attributes);
-  char *const memName = (attributes & MEMF_CHIP) ? "chip" : "public";
-
-  if (mem) {
+  byteSize = (byteSize + MEM_BLOCKMASK) & ~MEM_BLOCKMASK;
+  
+  if ((area = AllocMem(byteSize + sizeof(AreaT), attributes))) {
     /* Set up first chunk in the freelist */
-    MemChunkT *mc = (APTR)mem + sizeof(MemHeaderT);
-    mc->mc_Next  = NULL;
-    mc->mc_Bytes = byteSize;
+    BlockT *blk = (APTR)area + sizeof(AreaT);
 
-    mem->mh_Node.ln_Type = NT_MEMORY;
-    mem->mh_Node.ln_Name = memName;
-    mem->mh_First = mc;
-    mem->mh_Lower = (APTR)mc;
-    mem->mh_Upper = (APTR)mc + byteSize;
-    mem->mh_Free  = byteSize;
-    return mem;
+    blk->magic = BLK_MAGIC;
+    blk->size = byteSize;
+    blk->prev = NULL;
+    blk->next = NULL;
+
+    area->name = name;
+    area->first = blk;
+    area->last = blk;
+    area->lower = (APTR)blk;
+    area->upper = (APTR)blk + byteSize;
+    area->freeMem = byteSize - BLK_UNIT;
+    area->minFree = byteSize - BLK_UNIT;
+    return area;
   }
 
   Print("Failed to allocate %ld bytes of %s memory in one chunk!\n",
-        byteSize, memName);
-  return mem;
+        byteSize, name);
+  return NULL;
 }
 
 void MemInit() {
@@ -61,83 +67,230 @@ void MemInit() {
   if (__fastmem == 0)
     __fastmem = 262144;
 
-  if (!(chip = MemPoolAlloc(__chipmem, MEMF_CHIP)))
-    exit();
+  if ((chip = MemPoolAlloc(__chipmem, MEMF_CHIP))) {
+    if ((fast = MemPoolAlloc(__fastmem, MEMF_PUBLIC))) {
+      memReady = TRUE;
+      return;
+    }
+    FreeMem(chip, __chipmem + sizeof(AreaT));
+    chip = NULL;
+  }
 
-  if (!(fast = MemPoolAlloc(__fastmem, MEMF_PUBLIC)))
-    exit();
-
-  chipMin = __chipmem;
-  fastMin = __fastmem;
-  memReady = TRUE;
+  exit();
 }
 
 void MemKill() {
-  if (memReady)
+  if (memReady) {
     Log("[Memory] Max usage - CHIP: %ld FAST: %ld\n",
-        __chipmem - chipMin, __fastmem - fastMin);
-  if (chip)
-    FreeMem(chip, __chipmem + sizeof(MemHeaderT));
-  if (fast)
-    FreeMem(fast, __fastmem + sizeof(MemHeaderT));
+        __chipmem - chip->minFree, __fastmem - fast->minFree);
+    FreeMem(chip, __chipmem + sizeof(AreaT));
+    FreeMem(fast, __fastmem + sizeof(AreaT));
+  }
 }
 
 ADD2INIT(MemInit, -20);
 ADD2EXIT(MemKill, -20);
 
-LONG MemAvail(ULONG attributes asm("d1")) {
-  return (attributes & MEMF_CHIP) ? chip->mh_Free : fast->mh_Free;
+__regargs LONG MemAvail(ULONG attributes) {
+  if (attributes & MEMF_CHIP)
+    return chip->freeMem;
+  if (attributes & MEMF_FAST)
+    return fast->freeMem;
+  return chip->freeMem + fast->freeMem;
 }
 
-LONG MemUsed(ULONG attributes asm("d1")) {
-  return (attributes & MEMF_CHIP) ? 
-    (__chipmem - chip->mh_Free) : (__fastmem - fast->mh_Free);
+__regargs LONG MemUsed(ULONG attributes) {
+  LONG chipUsed = __chipmem - chip->freeMem;
+  LONG fastUsed = __fastmem - fast->freeMem;
+
+  if (attributes & MEMF_CHIP)
+    return chipUsed;
+  if (attributes & MEMF_FAST)
+    return fastUsed;
+  return chipUsed + fastUsed;
 }
 
-static __attribute__((noreturn))
-  void MemPanic(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) 
+static __regargs BOOL BlockValidMagic(BlockT *blk, AreaT *area, const char *msg) {
+  if (blk->magic != BLK_MAGIC) {
+    Log("%s $%lx : marker ($%08lx) damaged!\n", msg, (LONG)blk, blk->magic);
+    return FALSE;
+  }
+  return TRUE;
+}
+
+static __regargs BOOL BlockValidSize(BlockT *blk, AreaT *area, const char *msg) {
+  APTR ptr = (APTR)blk + (blk->size & ~BLK_MASK);
+
+  if (ptr < area->lower || ptr > area->upper) {
+    Log("%s $%lx : size ($%ld) damaged!\n", msg, (LONG)blk, blk->size);
+    return FALSE;
+  }
+  return TRUE;
+}
+
+static __regargs BOOL BlockValidPrev(BlockT *blk, AreaT *area, const char *msg) {
+  APTR ptr = blk->prev;
+
+  if (ptr && (ptr < area->lower || ptr > area->upper)) {
+    Log("%s $%lx : backward pointer ($%lx) damaged!\n",
+        msg, (LONG)blk, (LONG)blk->prev);
+    return FALSE;
+  }
+  return TRUE;
+}
+
+static __regargs BOOL BlockValidNext(BlockT *blk, AreaT *area, const char *msg) {
+  APTR ptr = blk->next;
+
+  if (ptr && (ptr < area->lower || ptr > area->upper)) {
+    Log("%s $%lx : forward pointer ($%lx) damaged!\n",
+        msg, (LONG)blk, (LONG)blk->prev);
+    return FALSE;
+  }
+  return TRUE;
+}
+
+static __regargs void MemDebug(AreaT *area) {
+  BlockT *blk = (BlockT *)area->lower;
+
+  Log("Map for %s memory:\n", area->name);
+  do {
+    if (!BlockValidMagic(blk, area, "[MemDebug]") || 
+        !BlockValidSize(blk, area, "[MemDebug]"))
+      break;
+
+    if (blk->size & BLK_USED) {
+      Log(" $%lx : used, size : %ld\n", (LONG)blk, blk->size & ~BLK_MASK);
+    } else {
+      if (!(blk->size & BLK_USED)) {
+        if (!BlockValidPrev(blk, area, "[MemDebug]") ||
+            !BlockValidNext(blk, area, "[MemDebug]"))
+          break;
+
+        Log(" $%lx : free, size : %ld, prev : $%lx, next : $%lx\n",
+            (LONG)blk, blk->size & ~BLK_MASK, (LONG)blk->prev, (LONG)blk->next);
+      }
+    }
+
+    blk = (BlockT *)((APTR)blk + (blk->size & ~BLK_MASK));
+  } while (blk < area->last);
+
+  Log("Total free %s memory: %ld bytes.\n", area->name, area->freeMem);
+}
+
+static __attribute__((noreturn)) __regargs
+  void MemPanic(AreaT *area)
 {
-  MemHeaderT *mem = (attributes & MEMF_CHIP) ? chip : fast;
-
-  Log("Failed to allocate %ld bytes of %s memory.\n",
-      byteSize, mem->mh_Node.ln_Name);
-
-  MemDebug(mem);
+  MemDebug(area);
   MemKill();
   exit();
 }
 
-static inline APTR MemAllocInternal(ULONG byteSize, ULONG attributes) {
+#define ALLOC 0
+#define FREE 1
+
+static const char *action[] = {
+  "[Bug] MemAlloc: block", "[Bug] MemFree: block"
+};
+
+static void BlockCheck(LONG num, AreaT *area, BlockT *blk) {
+  if (blk) {
+    if (!BlockValidMagic(blk, area, action[num]))
+      MemPanic(area);
+
+    if (!BlockValidSize(blk, area, action[num]))
+      MemPanic(area);
+
+    if (!(blk->size & BLK_USED)) {
+      if (!BlockValidPrev(blk, area, action[num]))
+        MemPanic(area);
+
+      if (!BlockValidNext(blk, area, action[num]))
+        MemPanic(area);
+    }
+  }
+}
+
+static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize) {
+  BlockT *curr = area->first;
+  ULONG size = byteSize + BLK_UNIT;
+
+  BlockCheck(ALLOC, area, area->first);
+  BlockCheck(ALLOC, area, area->last);
+
+  /* First fit. */
+  while (curr) {
+    BlockCheck(ALLOC, area, curr->next);
+
+    if (curr->size >= size)
+      break;
+
+    curr = curr->next;
+  }
+
+  if (!curr)
+    return NULL;
+
+  /* Split the block if can. */
+  if (curr->size >= size + BLK_UNIT * 2) {
+    BlockT *new = (BlockT *)((APTR)curr + size);
+
+    new->magic = BLK_MAGIC;
+    new->size = curr->size - size;
+    new->prev = curr;
+    new->next = curr->next;
+    (new->next) ? (new->next->prev) : (area->last) = new;
+
+    curr->size = size;
+    curr->next = new;
+  }
+
+  /* Take the block out of the free list. */
+  (curr->prev) ? (curr->prev->next) : (area->first) = curr->next;
+  (curr->next) ? (curr->next->prev) : (area->last) = curr->prev;
+  curr->prev = NULL;
+  curr->next = NULL;
+  curr->size |= BLK_USED;
+
+  area->freeMem -= size;
+
+  if (area->freeMem < area->minFree) {
+    // Log("[Memory] Usage peak - CHIP: %ld\n", __chipmem - chip->min);
+    area->minFree = area->freeMem;
+  }
+
+  return curr;
+}
+
+__regargs APTR MemAlloc(ULONG byteSize, ULONG attributes) {
+  BlockT *blk = NULL;
+  AreaT *area = NULL;
   APTR ptr;
 
-#if REDZONE
-  ptr = Allocate((attributes & MEMF_CHIP) ? chip : fast, byteSize + 4);
-  {
-    UBYTE *marker = ptr + byteSize;
-    *marker++ = 0xDE;
-    *marker++ = 0xAD;
-    *marker++ = 0xC0;
-    *marker++ = 0xDE;
+  byteSize = (byteSize + BLK_MASK) & ~BLK_MASK;
+
+  if (!blk && ((attributes & MEMF_FAST) || (attributes & MEMF_PUBLIC))) {
+    area = fast; blk = MemAllocInternal(fast, byteSize);
   }
-#else
-  ptr = Allocate((attributes & MEMF_CHIP) ? chip : fast, byteSize);
-#endif
-
-
-  if (attributes & MEMF_CHIP) {
-    if (chip->mh_Free < chipMin) {
-      // Log("[Memory] Usage peak - CHIP: %ld\n", __chipmem - chipMin);
-      chipMin = chip->mh_Free;
-    }
-  } else {
-    if (fast->mh_Free < fastMin) {
-      // Log("[Memory] Usage peak - FAST: %ld\n", __fastmem - fastMin);
-      fastMin = fast->mh_Free;
-    }
+  if (!blk && ((attributes & MEMF_CHIP) || (attributes & MEMF_PUBLIC))) {
+    area = chip; blk = MemAllocInternal(chip, byteSize);
   }
 
-  if (!ptr)
-    MemPanic(byteSize, attributes);
+  if (!blk) {
+    const char *name;
+
+    if (attributes & MEMF_CHIP)
+      name = "chip";
+    else if (attributes & MEMF_FAST)
+      name = "fast";
+    else
+      name = "public";
+
+    Log("Failed to allocate %ld bytes of %s memory.\n", byteSize, name);
+    MemPanic(area);
+  }
+
+  ptr = (APTR)blk + BLK_UNIT;
 
   if (attributes & MEMF_CLEAR)
     memset(ptr, 0, byteSize);
@@ -145,56 +298,78 @@ static inline APTR MemAllocInternal(ULONG byteSize, ULONG attributes) {
   return ptr;
 }
 
+static void MemFreeInternal(AreaT *area, BlockT *blk) {
+  BlockCheck(FREE, area, blk);
+  BlockCheck(FREE, area, area->first);
+  BlockCheck(FREE, area, area->last);
 
-APTR MemAlloc(ULONG byteSize asm("d0"), ULONG attributes asm("d1")) {
-  MemBlockT *mb = MemAllocInternal(byteSize + sizeof(MemBlockT), attributes);
-  mb->size = byteSize;
-  return mb->data;
-}
+  blk->size &= ~BLK_USED;
 
-#if REDZONE
-static BOOL RedZoneValid(APTR memoryBlock asm("a1"), ULONG byteSize asm("d0")) {
-  UBYTE *marker = memoryBlock + byteSize;
-  UBYTE d0 = *marker++;
-  UBYTE d1 = *marker++;
-  UBYTE d2 = *marker++;
-  UBYTE d3 = *marker++;
-  ULONG d = (d0 << 24) | (d1 << 16) | (d2 << 8) | d3;
+  /* Put the block onto free list. */
+  if (blk < area->first) {
+    blk->prev = NULL;
+    blk->next = area->first;
+    area->first = blk;
+  } else if (blk > area->last) {
+    blk->prev = area->last;
+    blk->next = NULL;
+    area->last = blk;
+  } else {
+    BlockT *pred = area->first;
 
-  return d == 0xDEADC0DE;
-}
-#endif
+    while (pred) {
+      BlockCheck(FREE, area, pred->next);
 
-static inline void MemFreeInternal(APTR memoryBlock, ULONG byteSize) {
-  if (memoryBlock) {
-    MemHeaderT *mem;
+      if (blk > pred && blk < pred->next)
+        break;
 
-    if (memoryBlock >= chip->mh_Lower && memoryBlock <= chip->mh_Upper) {
-      mem = chip;
-    } else if (memoryBlock >= fast->mh_Lower && memoryBlock <= fast->mh_Upper) {
-      mem = fast;
-    } else {
-      mem = NULL;
+      pred = pred->next;
     }
 
-    if (mem) {
-#if REDZONE
-      if (!RedZoneValid(memoryBlock, byteSize))
-        Log("[Bug] MemFree: block $%lx (size: $%lx) marker damaged!\n",
-            (LONG)memoryBlock, byteSize);
-      byteSize += 4;
-#endif
-      Deallocate(mem, memoryBlock, byteSize);
-    } else {
-      Log("[Bug] MemFree: block $%lx (size: $%lx) not found!\n",
-          (LONG)memoryBlock, (LONG)byteSize);
-    }
+    blk->next = pred->next;
+    blk->prev = pred;
+
+    pred->next->prev = blk;
+    pred->next = blk;
+  }
+
+  /* Check if can merge with preceding block. */
+  if (blk->prev && ((APTR)blk->prev + blk->prev->size == (APTR)blk)) {
+    BlockT *pred = blk->prev;
+
+    pred->size += blk->size;
+    pred->next = blk->next;
+    
+    (blk->next) ? (pred->next->prev) : (area->last) = pred;
+
+    blk = pred;
+  }
+
+  /* Check if can merge with succeeding block. */
+  if (blk->next && ((APTR)blk + blk->size == (APTR)blk->next)) {
+    BlockT *succ = blk->next;
+
+    blk->size += succ->size;
+    blk->next = succ->next;
+
+    (succ->next) ? (blk->next->prev) : (area->last) = blk;
   }
 }
 
-void MemFree(APTR memoryBlock asm("a1")) {
+__regargs void MemFree(APTR memoryBlock) {
   if (memoryBlock) {
-    MemBlockT *mb = (MemBlockT *)((APTR)memoryBlock - sizeof(MemBlockT));
-    MemFreeInternal(mb, mb->size + sizeof(MemBlockT));
+    AreaT *area = NULL;
+    BlockT *blk = (BlockT *)((APTR)memoryBlock - BLK_UNIT);
+
+    if (memoryBlock >= chip->lower && memoryBlock < chip->upper)
+      area = chip;
+    if (memoryBlock >= fast->lower && memoryBlock < fast->upper)
+      area = fast;
+
+    if (area) {
+      MemFreeInternal(area, blk);
+    } else {
+      Log("[Bug] MemFree: block $%lx not found!\n", (LONG)memoryBlock);
+    }
   }
 }
