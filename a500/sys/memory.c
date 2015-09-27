@@ -210,21 +210,37 @@ __regargs LONG MemUsed(ULONG attributes) {
   return chipUsed + fastUsed;
 }
 
-static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize) {
-  BlockT *curr = area->first;
+static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize, ULONG attributes)
+{
+  BlockT *curr;
   ULONG size = byteSize + BLK_UNIT;
 
   BlockCheck(area->first, area, "[MemAlloc]");
   BlockCheck(area->last, area, "[MemAlloc]");
 
   /* First fit. */
-  while (curr) {
-    BlockCheck(curr->next, area, "[MemAlloc]");
+  if (attributes & MEMF_REVERSE) {
+    curr = area->last;
 
-    if (curr->size >= size)
-      break;
+    while (curr) {
+      BlockCheck(curr->prev, area, "[MemAlloc]");
 
-    curr = curr->next;
+      if (curr->size >= size)
+        break;
+
+      curr = curr->prev;
+    }
+  } else {
+    curr = area->first;
+
+    while (curr) {
+      BlockCheck(curr->next, area, "[MemAlloc]");
+
+      if (curr->size >= size)
+        break;
+
+      curr = curr->next;
+    }
   }
 
   if (!curr)
@@ -232,16 +248,31 @@ static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize) {
 
   /* Split the block if can. */
   if (curr->size >= size + BLK_UNIT * 2) {
-    BlockT *new = (BlockT *)((APTR)curr + size);
+    if (attributes & MEMF_REVERSE) {
+      BlockT *new = (BlockT *)((APTR)curr + (curr->size - size));
 
-    new->magic = BLK_MAGIC;
-    new->size = curr->size - size;
-    new->prev = curr;
-    new->next = curr->next;
-    (new->next) ? (new->next->prev) : (area->last) = new;
+      new->magic = BLK_MAGIC;
+      new->size = size;
+      new->prev = curr;
+      new->next = curr->next;
+      (new->next) ? (new->next->prev) : (area->last) = new;
 
-    curr->size = size;
-    curr->next = new;
+      curr->size = curr->size - size;
+      curr->next = new;
+
+      curr = new;
+    } else {
+      BlockT *new = (BlockT *)((APTR)curr + size);
+
+      new->magic = BLK_MAGIC;
+      new->size = curr->size - size;
+      new->prev = curr;
+      new->next = curr->next;
+      (new->next) ? (new->next->prev) : (area->last) = new;
+
+      curr->size = size;
+      curr->next = new;
+    }
 
     area->freeMem -= BLK_UNIT;
   }
@@ -271,10 +302,10 @@ __regargs APTR MemAlloc(ULONG byteSize, ULONG attributes) {
   byteSize = (byteSize + BLK_MASK) & ~BLK_MASK;
 
   if ((attributes & MEMF_FAST) || (attributes & MEMF_PUBLIC)) {
-    area = fast; blk = MemAllocInternal(fast, byteSize);
+    area = fast; blk = MemAllocInternal(fast, byteSize, attributes);
   }
   if ((attributes & MEMF_CHIP) || (!blk && (attributes & MEMF_PUBLIC))) {
-    area = chip; blk = MemAllocInternal(chip, byteSize);
+    area = chip; blk = MemAllocInternal(chip, byteSize, attributes);
   }
 
   if (!blk) {

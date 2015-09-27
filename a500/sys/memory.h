@@ -23,6 +23,10 @@
 #define MEMF_LARGEST (1L << 17)
 #endif
 
+#ifndef MEMF_REVERSE
+#define MEMF_REVERSE (1L << 18)
+#endif
+
 __regargs void MemDebug(ULONG attributes);
 __regargs LONG MemAvail(ULONG attributes);
 __regargs LONG MemUsed(ULONG attributes);
