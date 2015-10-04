@@ -160,18 +160,10 @@ static __regargs void MemDebugInternal(AreaT *area) {
 }
 
 __regargs void MemDebug(ULONG attributes) {
-  if (attributes & MEMF_CHIP)
+  if (attributes & (MEMF_CHIP | MEMF_PUBLIC))
     MemDebugInternal(chip);
-  if (attributes & MEMF_FAST)
+  if (attributes & (MEMF_FAST | MEMF_PUBLIC))
     MemDebugInternal(fast);
-}
-
-static __attribute__((noreturn)) __regargs
-  void MemPanic(AreaT *area)
-{
-  MemDebugInternal(area);
-  MemKill();
-  exit();
 }
 
 static __regargs void BlockCheck(BlockT *blk, AreaT *area, const char *msg) {
@@ -188,7 +180,9 @@ static __regargs void BlockCheck(BlockT *blk, AreaT *area, const char *msg) {
     return;
 
 error:
-    MemPanic(area);
+  MemDebugInternal(area);
+  MemKill();
+  exit();
 }
 
 __regargs LONG MemAvail(ULONG attributes) {
@@ -255,7 +249,7 @@ static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize, ULONG attributes)
       new->size = size;
       new->prev = curr;
       new->next = curr->next;
-      (new->next) ? (new->next->prev) : (area->last) = new;
+      (new->next ? new->next->prev : area->last) = new;
 
       curr->size = curr->size - size;
       curr->next = new;
@@ -268,7 +262,7 @@ static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize, ULONG attributes)
       new->size = curr->size - size;
       new->prev = curr;
       new->next = curr->next;
-      (new->next) ? (new->next->prev) : (area->last) = new;
+      (new->next ? new->next->prev : area->last) = new;
 
       curr->size = size;
       curr->next = new;
@@ -280,8 +274,8 @@ static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize, ULONG attributes)
   area->freeMem -= curr->size;
 
   /* Take the block out of the free list. */
-  (curr->prev) ? (curr->prev->next) : (area->first) = curr->next;
-  (curr->next) ? (curr->next->prev) : (area->last) = curr->prev;
+  (curr->prev ? curr->prev->next : area->first) = curr->next;
+  (curr->next ? curr->next->prev : area->last) = curr->prev;
   curr->prev = NULL;
   curr->next = NULL;
   curr->size |= BLK_USED;
@@ -319,7 +313,9 @@ __regargs APTR MemAlloc(ULONG byteSize, ULONG attributes) {
       name = "public";
 
     Log("[MemAlloc] Failed to allocate %ld bytes of %s memory.\n", byteSize, name);
-    MemPanic(area);
+    MemDebug(attributes);
+    MemKill();
+    exit();
   }
 
   ptr = (APTR)blk + BLK_UNIT;
@@ -343,9 +339,11 @@ static void MemFreeInternal(AreaT *area, BlockT *blk) {
   if (blk < area->first) {
     blk->prev = NULL;
     blk->next = area->first;
+    blk->next->prev = blk;
     area->first = blk;
   } else if (blk > area->last) {
     blk->prev = area->last;
+    blk->prev->next = blk;
     blk->next = NULL;
     area->last = blk;
   } else {
