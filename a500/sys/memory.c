@@ -19,13 +19,13 @@ typedef struct Block {
 } BlockT;
 
 typedef struct Area {
-  char   *name;   /* description */
-  BlockT *first;  /* first free region */
-  BlockT *last;   /* last free region */
-  APTR   lower;   /* lower memory bound */
-  APTR   upper;   /* upper memory bound + 1 */
-  ULONG  freeMem; /* total number of free bytes */
-  ULONG  minFree; /* minimum recorded number of free bytes */
+  char   *name;    /* description */
+  BlockT *first;   /* first free region */
+  BlockT *last;    /* last free region */
+  APTR   lower;    /* lower memory bound */
+  APTR   upper;    /* upper memory bound + 1 */
+  ULONG  freeMem;  /* total number of free bytes */
+  ULONG  maxUsage; /* minimum recorded number of free bytes */
 } __attribute__((aligned(BLK_UNIT))) AreaT;
 
 static AreaT *chip, *fast;
@@ -35,7 +35,7 @@ __regargs static AreaT *MemPoolAlloc(ULONG byteSize, ULONG attributes) {
   char *const name = (attributes & MEMF_CHIP) ? "chip" : "fast";
   AreaT *area; 
 
-  byteSize = (byteSize + MEM_BLOCKMASK) & ~MEM_BLOCKMASK;
+  byteSize = (byteSize + BLK_MASK) & ~BLK_MASK;
   
   if ((area = AllocMem(byteSize + sizeof(AreaT), attributes))) {
     /* Set up first chunk in the freelist */
@@ -51,8 +51,8 @@ __regargs static AreaT *MemPoolAlloc(ULONG byteSize, ULONG attributes) {
     area->last = blk;
     area->lower = (APTR)blk;
     area->upper = (APTR)blk + byteSize;
-    area->freeMem = byteSize - BLK_UNIT;
-    area->minFree = byteSize - BLK_UNIT;
+    area->freeMem = byteSize;
+    area->maxUsage = 0;
     return area;
   }
 
@@ -82,7 +82,7 @@ void MemInit() {
 void MemKill() {
   if (memReady) {
     Log("[Memory] Max usage - CHIP: %ld FAST: %ld\n",
-        __chipmem - chip->minFree, __fastmem - fast->minFree);
+        chip->maxUsage, fast->maxUsage);
     FreeMem(chip, __chipmem + sizeof(AreaT));
     FreeMem(fast, __fastmem + sizeof(AreaT));
     memReady = FALSE;
@@ -185,12 +185,40 @@ error:
   exit();
 }
 
+static __regargs LONG MemLargest(AreaT *area) {
+  BlockT *curr = area->first;
+  LONG size = 0;
+
+  while (curr) {
+    BlockCheck(curr, area, "[MemLargest]");
+
+    if (curr->size > size)
+      size = curr->size;
+
+    curr = curr->next;
+  }
+
+  return size;
+}
+
 __regargs LONG MemAvail(ULONG attributes) {
-  if (attributes & MEMF_CHIP)
-    return chip->freeMem;
-  if (attributes & MEMF_FAST)
-    return fast->freeMem;
-  return chip->freeMem + fast->freeMem;
+  if (attributes & MEMF_LARGEST) {
+    if (attributes & MEMF_CHIP)
+      return MemLargest(chip);
+    else if (attributes & MEMF_FAST)
+      return MemLargest(fast);
+    else {
+      LONG chipMax = MemLargest(chip);
+      LONG fastMax = MemLargest(fast);
+      return max(chipMax, fastMax);
+    }
+  } else {
+    if (attributes & MEMF_CHIP)
+      return chip->freeMem;
+    if (attributes & MEMF_FAST)
+      return fast->freeMem;
+    return chip->freeMem + fast->freeMem;
+  }
 }
 
 __regargs LONG MemUsed(ULONG attributes) {
@@ -207,7 +235,7 @@ __regargs LONG MemUsed(ULONG attributes) {
 static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize, ULONG attributes)
 {
   BlockT *curr;
-  ULONG size = byteSize + BLK_UNIT;
+  ULONG size = (byteSize + BLK_UNIT * 2 - 1) & ~BLK_MASK;
 
   BlockCheck(area->first, area, "[MemAlloc]");
   BlockCheck(area->last, area, "[MemAlloc]");
@@ -267,8 +295,6 @@ static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize, ULONG attributes)
       curr->size = size;
       curr->next = new;
     }
-
-    area->freeMem -= BLK_UNIT;
   }
 
   area->freeMem -= curr->size;
@@ -280,9 +306,17 @@ static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize, ULONG attributes)
   curr->next = NULL;
   curr->size |= BLK_USED;
 
-  if (area->freeMem < area->minFree) {
-    // Log("[Memory] Usage peak - CHIP: %ld\n", __chipmem - chip->min);
-    area->minFree = area->freeMem;
+  {
+    BlockT *last = area->last;
+
+    if (last && ((APTR)last + last->size == area->upper)) {
+      LONG maxUsage = (APTR)last - area->lower + BLK_UNIT;
+
+      if (area->maxUsage < maxUsage)
+        area->maxUsage = maxUsage;
+    } else {
+      area->maxUsage = area->upper - area->lower;
+    }
   }
 
   return curr;
@@ -333,7 +367,7 @@ static void MemFreeInternal(AreaT *area, BlockT *blk) {
 
   blk->size &= ~BLK_USED;
 
-  area->freeMem += blk->size - BLK_UNIT;
+  area->freeMem += blk->size;
 
   /* Put the block onto free list. */
   if (blk < area->first) {
@@ -375,8 +409,6 @@ static void MemFreeInternal(AreaT *area, BlockT *blk) {
     (blk->next) ? (pred->next->prev) : (area->last) = pred;
 
     blk = pred;
-
-    area->freeMem += BLK_UNIT;
   }
 
   /* Check if can merge with succeeding block. */
@@ -387,8 +419,6 @@ static void MemFreeInternal(AreaT *area, BlockT *blk) {
     blk->next = succ->next;
 
     (succ->next) ? (blk->next->prev) : (area->last) = blk;
-
-    area->freeMem += BLK_UNIT;
   }
 }
 
