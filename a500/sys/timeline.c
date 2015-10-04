@@ -1,10 +1,6 @@
 #include "timeline.h"
 
-#define SHOW_MEMUSED 0
-
-#if SHOW_MEMUSED
-# include "memory.h"
-#endif
+#define MEMSTATS 1
 
 WORD frameFromStart;
 WORD frameTillEnd;
@@ -13,6 +9,18 @@ WORD lastFrameCount;
 void (*currentInterruptHandler)();
 
 static TimelineItemT *currentItem;
+
+#ifdef MEMSTATS
+# include "memory.h"
+# define SHOWMEM ShowMemStats
+static void ShowMemStats() {
+  Log("[Memory] CHIP: %ld/%ld FAST: %ld/%ld\n",
+      MemAvail(MEMF_CHIP|MEMF_LARGEST), MemAvail(MEMF_CHIP),
+      MemAvail(MEMF_FAST|MEMF_LARGEST), MemAvail(MEMF_FAST));
+}
+#else
+#define SHOWMEM()
+#endif;
 
 __regargs void LoadEffects(TimelineItemT *item, WORD n, WORD start) {
   item += n - 1;
@@ -29,10 +37,7 @@ __regargs void LoadEffects(TimelineItemT *item, WORD n, WORD start) {
     if (effect->Load) {
       effect->Load();
       Log("[Effect] %s loaded.\n", item->name);
-#if SHOW_MEMUSED
-      Log("[Memory] CHIP: %ld FAST: %ld\n",
-          MemUsed(MEMF_CHIP), MemUsed(MEMF_PUBLIC));
-#endif
+      SHOWMEM();
     }
 
     effect->state |= EFFECT_LOADED;
@@ -60,8 +65,6 @@ __regargs void PrepareEffect(EffectT *effect) {
   if (effect->Prepare) {
     effect->Prepare();
 #if SHOW_MEMUSED
-    Log("[Memory] CHIP: %ld FAST: %ld\n",
-        MemUsed(MEMF_CHIP), MemUsed(MEMF_PUBLIC));
 #endif
   }
 
@@ -93,10 +96,7 @@ __regargs void RunEffects(TimelineItemT *item, WORD n, WORD start) {
       if (effect->Prepare) {
         Log("[Effect] Preparing %s.\n", item->name);
         effect->Prepare();
-#if SHOW_MEMUSED
-        Log("[Memory] CHIP: %ld FAST: %ld\n",
-            MemUsed(MEMF_CHIP), MemUsed(MEMF_PUBLIC));
-#endif
+        SHOWMEM();
       }
     }
     if (effect->Init)
@@ -139,10 +139,7 @@ __regargs void RunEffects(TimelineItemT *item, WORD n, WORD start) {
       effect->UnLoad();
       effect->state &= ~EFFECT_LOADED;
 
-#if SHOW_MEMUSED
-      Log("[Memory] CHIP: %ld FAST: %ld\n",
-          MemUsed(MEMF_CHIP), MemUsed(MEMF_PUBLIC));
-#endif
+      SHOWMEM();
     }
 
     currentItem = NULL;
