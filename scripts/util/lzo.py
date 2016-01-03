@@ -15,8 +15,15 @@ class LZOError(Exception):
 
 
 class LZO(object):
+  __library__ = "lzo2"
+
   def __init__(self):
-    lzo = cdll.LoadLibrary(find_library("lzo"))
+    handle = find_library(LZO.__library__)
+
+    if handle is None:
+      raise SystemExit(LZO.__library__ + ": dynamic library missing")
+
+    lzo = cdll.LoadLibrary(handle)
 
     prototype = CFUNCTYPE(c_int, c_char_p, c_uint, c_char_p, POINTER(c_uint),
                           c_char_p)
