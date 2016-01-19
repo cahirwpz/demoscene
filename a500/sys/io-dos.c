@@ -77,14 +77,15 @@ void CloseFile(FileT *file asm("a0")) {
 }
 
 BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
-  if (!file || size == 0)
+  if (!file || size == 0 || (file->flags & IOF_ERR))
     return FALSE;
 
   // Log("[FileRead] $%lx $%lx %ld\n", (LONG)file, (LONG)buf, (LONG)size);
 
   if (file->flags & IOF_BUFFERED) {
-    while (size > 0 && !(file->flags & IOF_ERR)) {
-      if (!file->buf.left && !(file->flags & IOF_EOF)) {
+    while (size > 0) {
+      if (file->buf.left == 0) {
+        if (file->flags & IOF_EOF) break;
         /* Buffer is empty - fill it. */
         if (size >= SECTOR) {
           /* Read some sectors directly into provided buffer. */
@@ -92,7 +93,7 @@ BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
           LONG actual = Read(file->handle, buf, length);
 
           if (actual < 0) { file->flags |= IOF_ERR; break; }
-          if (actual < length) { file->flags |= IOF_EOF; break; }
+          if (actual < length) { file->flags |= IOF_EOF; }
 
           file->pos += actual;
           buf += actual; size -= actual;
@@ -101,7 +102,7 @@ BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
           LONG actual = Read(file->handle, file->buf.data, SECTOR);
 
           if (actual < 0) { file->flags |= IOF_ERR; break; }
-          if (!actual) { file->flags |= IOF_EOF; break; }
+          if (actual < SECTOR) { file->flags |= IOF_EOF; }
 
           file->pos += actual;
           file->buf.pos = file->buf.data;
@@ -109,19 +110,13 @@ BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
         }
       } else {
         /* Read to the end of buffer or less. */
-        ULONG length = min(size, file->buf.left);
+        LONG length = min(size, file->buf.left);
 
         CopyMem(file->buf.pos, buf, length);
 
         file->buf.pos += length;
         file->buf.left -= length;
         buf += length; size -= length;
-        
-        /* Did we encounter EOF condition? */
-        if (!file->buf.left && (file->pos & (SECTOR - 1))) {
-          file->flags |= IOF_EOF;
-          break;
-        }
       }
     }
   } else {
@@ -141,6 +136,8 @@ BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
 BOOL FileSeek(FileT *file asm("a0"), LONG pos asm("d2"), LONG mode asm("d3")) {
   if (file && !(file->flags & IOF_ERR)) {
     // Log("[FileSeek] $%lx %ld %ld\n", (LONG)file, (LONG)pos, (LONG)mode);
+    
+    file->flags &= ~IOF_EOF;
 
     if (file->flags & IOF_BUFFERED) {
       if (mode == SEEK_CUR) {
@@ -213,6 +210,16 @@ LONG GetFileSize(CONST STRPTR path asm("d1")) {
   }
 
   return size;
+}
+
+LONG GetCursorPos(FileT *file asm("a0")) {
+  if (file && !(file->flags & IOF_ERR)) {
+    if (file->flags & IOF_BUFFERED)
+      return file->pos - file->buf.left;
+    else
+      return file->pos;
+  }
+  return -1;
 }
 
 STRPTR __cwdpath; /* symbol is defined in common area and can be overridden */
