@@ -71,6 +71,12 @@ static inline void bchg(UBYTE *ptr, BYTE bit) {
 #define popl(a) \
   asm ("movel %+,%0" : "=r" (a))
 
+static inline APTR GetSP() {
+  APTR sp;
+  asm("movel sp,%0" : "=r" (sp));
+  return sp;
+}
+
 void TrapHandler();
 void KPutChar(char c asm("d0"));
 void KPutByte(LONG n asm("d0"));
