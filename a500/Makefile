@@ -5,7 +5,7 @@ BINS	= stripes lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           uvmap metaballs blurred circles floor-old parselwo neons flatshade \
           plotter highway textscroll uvmap-rgb bumpmap-rgb glitch floor ball \
           tilezoomer twister-rgb showpchg blurred3d thunders credits parsepng \
-          ExitUAE 
+          loadhunk ExitUAE 
 
 all:	startup.o libs $(addsuffix .exe, $(BINS))
 
@@ -26,6 +26,7 @@ floor-old.exe:    floor-old.o startup.o libsys.a
 highway.exe:      highway.o startup.o libsys.a
 glitch.exe:       glitch.o startup.o libsys.a
 lines.exe:        lines.o startup.o libsys.a
+loadhunk.exe:     loadhunk.o libsys.a
 metaballs.exe:    metaballs.o startup.o libsys.a
 mouse.exe:        mouse.o startup.o libsys.a
 kbtest.exe:       kbtest.o startup.o libsys.a
