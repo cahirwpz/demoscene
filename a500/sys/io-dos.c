@@ -227,8 +227,14 @@ static BPTR oldcwd = NULL;
 
 void InitIoDos() {
   if (__cwdpath) {
+    BPTR lock;
     Log("[Init] Current work dir: \"%s\"\n", __cwdpath);
-    oldcwd = CurrentDir(Lock(__cwdpath, ACCESS_READ));
+    if ((lock = Lock(__cwdpath, ACCESS_READ))) {
+      oldcwd = CurrentDir(lock);
+    } else {
+      Log("Lock() failed with %ld\n", IoErr());
+      exit();
+    }
   }
 }
 
