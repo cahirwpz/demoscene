@@ -1,6 +1,10 @@
         xdef    _GetVBR
         xdef    _StopCPU
         xdef    _KPutChar
+        xdef    _KPutByte
+        xdef    _KPutWord
+        xdef    _KPutLong
+        xdef    _KPutStr
         xdef    _InterruptVector
 
         include 'hardware/custom.i'
@@ -31,6 +35,42 @@ _KPutChar:
         bra     .loop
 
 .quit:  rts
+
+_KPutByte:
+        ror.l   #8,d0
+        moveq   #1,d1
+        bra     KPutInt
+
+_KPutWord:
+        swap    d0
+        moveq   #3,d1
+        bra     KPutInt
+
+_KPutLong:
+        moveq   #7,d1
+
+KPutInt:
+        lea     hex(pc),a0
+
+.loop   rol.l   #4,d0
+        move.l  d0,-(sp)
+        and.w   #$000f,d0
+        move.b  (a0,d0.w),d0
+        bsr     _KPutChar
+        move.l  (sp)+,d0
+        dbf     d1,.loop
+
+        rts
+
+hex:    dc.b    "0123456789ABCDEF"
+
+_KPutStr:
+.loop   move.b  (a0)+,d0
+        bne     .putc
+        rts
+
+.putc   bsr     _KPutChar
+        bra     .loop
 
         section "bss",bss
 

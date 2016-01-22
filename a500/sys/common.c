@@ -16,29 +16,26 @@ void Log(const char *format, ...) {
   va_end(args);
 }
 
-void MemDump(APTR ptr, LONG n) {
+__regargs void MemDump(APTR ptr, LONG n) {
   char *data = ptr;
-  char line[16 * 3];
 
   while (n > 0) {
-    char *orig = data;
-    char *s = line;
     WORD m = min(n, 16);
-    WORD i;
+    WORD i = 0;
 
-    for (i = 0; i < m; i++, n--) {
-      char byte = *data++;
-      char hi = (byte >> 4) & 15;
-      char lo = byte & 15;
+    KPutChar('$');
+    KPutLong((LONG)data);
+    KPutChar(':');
 
-      *s++ = (hi >= 10) ? (hi + 'A' - 10) : (hi + '0');
-      *s++ = (lo >= 10) ? (lo + 'A' - 10) : (lo + '0');
-      *s++ = ' ';
+    while (m--) {
+      if ((i++ & 3) == 0)
+        KPutChar(' ');
+
+      KPutByte(*data++);
+
+      n--;
     }
 
-    s[-1] = '\0';
-    data += m;
-
-    Log("%08lx : %s\n", (LONG)orig, line);
+    KPutChar('\n');
   }
 }
