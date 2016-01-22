@@ -10,7 +10,7 @@
 _StackSwap:
         movem.l a0/a6,-(sp)
         move.l  $4.w,a6
-        ; Prevent OS to see inconsistent state
+        ; Prevent OS from seeing inconsistent state
         jsr     _LVODisable(a6)
         suba.l  a1,a1
         jsr     _LVOFindTask(a6)
