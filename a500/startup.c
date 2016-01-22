@@ -91,10 +91,6 @@ int main() {
     UWORD OldDmacon, OldIntena, OldAdkcon;
     ULONG OldCacheBits = 0;
 
-    {
-      struct Task *tc = FindTask(NULL);
-      tc->tc_TrapCode = TrapHandler;
-    }
 
     /* Allocate blitter. */
     WaitBlit();
@@ -201,12 +197,24 @@ int main() {
 
     if (Effect.UnLoad)
       Effect.UnLoad();
-
-    {
-      struct Task *tc = FindTask(NULL);
-      tc->tc_TrapCode = NULL;
-    }
   }
 
   return 0;
 }
+
+void InitTrapHandler() {
+  Log("[Init] Installling trap handler\n");
+
+  {
+    struct Task *tc = FindTask(NULL);
+    tc->tc_TrapCode = TrapHandler;
+  }
+}
+
+void KillTrapHandler() {
+  struct Task *tc = FindTask(NULL);
+  tc->tc_TrapCode = NULL;
+}
+
+ADD2INIT(InitTrapHandler, -100);
+ADD2EXIT(KillTrapHandler, -100);
