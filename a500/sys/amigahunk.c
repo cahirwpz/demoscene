@@ -32,11 +32,10 @@ static __regargs BOOL AllocHunks(FileT *fh, LONG hunkNum, HunkT **hunks) {
 
     if (prev)
       prev->next = MKBADDR(&hunk->next);
+    prev = hunk;
 
     *hunks++ = hunk;
   }
-
-  *hunks = NULL;
 
   return TRUE;
 }
@@ -82,7 +81,7 @@ static __regargs BOOL LoadHunks(FileT *fh, HunkT **hunks) {
         hunkRef = (LONG)hunks[hunkNum]->data;
         while (n--) {
           FileRead(fh, ONSTACK(reloc));
-          *(LONG *)(hunk->data + reloc) += hunkRef;
+          ((LONG *)hunk->data)[reloc] += hunkRef;
         }
       } while(1);
     } else if (hunkId == HUNK_SYMBOL) {
@@ -131,7 +130,7 @@ __regargs BPTR LoadExecutable(FileT *fh) {
       hunkNum = s.last - s.first + 1;
     }
 
-    hunks = __builtin_alloca(sizeof(HunkT *) * (hunkNum + 1));
+    hunks = __builtin_alloca(sizeof(HunkT *) * hunkNum);
 
     if (AllocHunks(fh, hunkNum, hunks)) {
       BPTR seglist = MKBADDR(&(hunks[0]->next));
