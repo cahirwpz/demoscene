@@ -77,27 +77,20 @@ static inline WORD GetPixelWidth(IHDR *hdr) {
 }
 
 static inline WORD PaethPredictor(WORD a, WORD b, WORD c) {
-  WORD pa, pb, pc;
-  WORD t1, t2;
+  WORD p = a + b - c;
+  WORD pa = p - a;
+  WORD pb = p - b;
+  WORD pc = p - c;
 
-  t1 = pa = b - c;
   if (pa < 0)
     pa = -pa;
-
-  t2 = pb = a - c;
   if (pb < 0)
     pb = -pb;
-
-  pc = t1 - t2;
   if (pc < 0)
     pc = -pc;
 
-  if (pa <= pb && pa <= pc)
-    return a;
-
-  if (pb <= pc)
-   return b;
-
+  if ((pa <= pb) && (pa <= pc)) return a;
+  if (pb <= pc) return b;
   return c;
 }
 
