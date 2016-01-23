@@ -63,7 +63,7 @@ struct PngChunk {
   UBYTE data[0];
 };
 
-inline WORD GetPixelWidth(IHDR *hdr) {
+static inline WORD GetPixelWidth(IHDR *hdr) {
   WORD pixelWidth = 1;
 
   if (hdr->colour_type == PNG_TRUECOLOR)
@@ -101,43 +101,66 @@ static inline WORD PaethPredictor(WORD a, WORD b, WORD c) {
   return c;
 }
 
-static void ReconstructImage(UBYTE *pixels, UBYTE *encoded,
-                             int width, int height, int pixelWidth)
+static __regargs void ReconstructImage(UBYTE *pixels, UBYTE *encoded,
+                                       WORD width, WORD height, LONG pixelWidth)
 {
-  int row = width * pixelWidth;
-  int i, j, k;
+  LONG row = width * pixelWidth;
 
-  for (i = 0; i < height; i++) {
+  do {
     UBYTE method = *encoded++;
 
-    for (k = 0; k < pixelWidth; k++) {
-      pixels[0] = encoded[0];
-      if (method == 2 || method == 4) /* Up & Paeth */
-        pixels[0] += pixels[-row];
-      else if (method == 3) /* Average */
-        pixels[0] += pixels[-row] / 2;
+    if (method == 0) {
+      CopyMem(encoded, pixels, row);
+      encoded += row; pixels += row;
+    } else {
+      WORD j, k;
 
-      for (j = pixelWidth; j < row; j += pixelWidth) {
-        pixels[j] = encoded[j];
-        if (method == 1) /* Sub */
-          pixels[j] += pixels[j - pixelWidth];
-        else if (method == 2) /* Up */
-          pixels[j] += pixels[j - row];
-        else if (method == 3) /* Average */
-          pixels[j] += (pixels[j - pixelWidth] + pixels[j - row]) / 2;
-        else if (method == 4) /* Paeth */
-          pixels[j] += PaethPredictor(pixels[j - pixelWidth],
-                                      pixels[j - row],
-                                      pixels[j - row - pixelWidth]);
+      if (method == 1) {
+        k = pixelWidth;
+
+        do {
+          pixels[0] = encoded[0];
+          for (j = pixelWidth; j < row; j += pixelWidth)
+            pixels[j] = encoded[j] + pixels[j - pixelWidth];
+          pixels++; encoded++;
+        } while (--k);
+      } else if (method == 2) {
+        k = pixelWidth;
+
+        do {
+          pixels[0] = encoded[0] + pixels[-row];
+          for (j = pixelWidth; j < row; j += pixelWidth)
+            pixels[j] = encoded[j] + pixels[j - row];
+          pixels++; encoded++;
+        } while (--k);
+      } else if (method == 3) {
+        k = pixelWidth;
+
+        do {
+          pixels[0] = encoded[0] + pixels[-row] / 2;
+          for (j = pixelWidth; j < row; j += pixelWidth)
+            pixels[j] = encoded[j] +
+              (pixels[j - pixelWidth] + pixels[j - row]) / 2;
+          pixels++; encoded++;
+        } while (--k);
+      } else if (method == 4) {
+        k = pixelWidth;
+
+        do {
+          pixels[0] = encoded[0] + pixels[-row];
+          for (j = pixelWidth; j < row; j += pixelWidth)
+            pixels[j] = encoded[j] +
+              PaethPredictor(pixels[j - pixelWidth],
+                             pixels[j - row], 
+                             pixels[j - row - pixelWidth]);
+          pixels++; encoded++;
+        } while (--k);
       }
 
-      pixels++;
-      encoded++;
+      pixels += row - pixelWidth;
+      encoded += row - pixelWidth;
     }
-
-    pixels += row - pixelWidth;
-    encoded += row - pixelWidth;
-  }
+  } while (--height);
 }
 
 /* Collapse multiple IDAT chunks into single one. */
