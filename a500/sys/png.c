@@ -102,63 +102,52 @@ static inline WORD PaethPredictor(WORD a, WORD b, WORD c) {
 }
 
 static __regargs void ReconstructImage(UBYTE *pixels, UBYTE *encoded,
-                                       WORD width, WORD height, LONG pixelWidth)
+                                       WORD width, WORD height, WORD pixelWidth)
 {
   LONG row = width * pixelWidth;
 
   do {
     UBYTE method = *encoded++;
 
+    /*
+     * Filters are applied to bytes, not to pixels, regardless of the bit depth
+     * or colour type of the image. The filters operate on the byte sequence
+     * formed by a scanline.
+     */
+
     if (method == 0) {
       CopyMem(encoded, pixels, row);
       encoded += row; pixels += row;
-    } else {
-      WORD j, k;
-
-      if (method == 1) {
-        k = pixelWidth;
-
-        do {
-          pixels[0] = encoded[0];
-          for (j = pixelWidth; j < row; j += pixelWidth)
-            pixels[j] = encoded[j] + pixels[j - pixelWidth];
-          pixels++; encoded++;
-        } while (--k);
-      } else if (method == 2) {
-        k = pixelWidth;
-
-        do {
-          pixels[0] = encoded[0] + pixels[-row];
-          for (j = pixelWidth; j < row; j += pixelWidth)
-            pixels[j] = encoded[j] + pixels[j - row];
-          pixels++; encoded++;
-        } while (--k);
-      } else if (method == 3) {
-        k = pixelWidth;
-
-        do {
-          pixels[0] = encoded[0] + pixels[-row] / 2;
-          for (j = pixelWidth; j < row; j += pixelWidth)
-            pixels[j] = encoded[j] +
-              (pixels[j - pixelWidth] + pixels[j - row]) / 2;
-          pixels++; encoded++;
-        } while (--k);
-      } else if (method == 4) {
-        k = pixelWidth;
-
-        do {
-          pixels[0] = encoded[0] + pixels[-row];
-          for (j = pixelWidth; j < row; j += pixelWidth)
-            pixels[j] = encoded[j] +
-              PaethPredictor(pixels[j - pixelWidth],
-                             pixels[j - row], 
-                             pixels[j - row - pixelWidth]);
-          pixels++; encoded++;
-        } while (--k);
-      }
-
-      pixels += row - pixelWidth;
-      encoded += row - pixelWidth;
+    } else if (method == 1) {
+      UBYTE *left = pixels;
+      WORD j = row - 1;
+      *pixels++ = *encoded++;
+      do {
+        *pixels++ = *encoded++ + *left++;
+      } while (--j);
+    } else if (method == 2) {
+      UBYTE *up = pixels - row;
+      WORD j = row;
+      do {
+        *pixels++ = *encoded++ + *up++;
+      } while (--j);
+    } else if (method == 3) {
+      UBYTE *left = pixels;
+      UBYTE *up = pixels - row;
+      WORD j = row - 1;
+      *pixels++ = *encoded++ + *up++ / 2;
+      do {
+        *pixels++ = *encoded++ + (*left++ + *up++) / 2;
+      } while (--j);
+    } else if (method == 4) {
+      UBYTE *left = pixels;
+      UBYTE *leftup = pixels - row;
+      UBYTE *up = pixels - row;
+      WORD j = row - 1;
+      *pixels++ = *encoded++ + *up++;
+      do {
+        *pixels++ = *encoded++ + PaethPredictor(*left++, *up++, *leftup++);
+      } while (--j);
     }
   } while (--height);
 }
