@@ -98,9 +98,16 @@ static __regargs void ReconstructImage(UBYTE *pixels, UBYTE *encoded,
                                        WORD width, WORD height, WORD pixelWidth)
 {
   LONG row = width * pixelWidth;
+  WORD i;
 
-  do {
+  for (i = 0; i < height; i++) {
     UBYTE method = *encoded++;
+
+    if (method == 2 && i == 0)
+      method = 0;
+
+    if (method == 4 && i == 0)
+      method = 1;
 
     /*
      * Filters are applied to bytes, not to pixels, regardless of the bit depth
@@ -126,12 +133,19 @@ static __regargs void ReconstructImage(UBYTE *pixels, UBYTE *encoded,
       } while (--j);
     } else if (method == 3) {
       UBYTE *left = pixels;
-      UBYTE *up = pixels - row;
       WORD j = row - 1;
-      *pixels++ = *encoded++ + *up++ / 2;
-      do {
-        *pixels++ = *encoded++ + (*left++ + *up++) / 2;
-      } while (--j);
+      if (i > 0) {
+        UBYTE *up = pixels - row;
+        *pixels++ = *encoded++ + *up++ / 2;
+        do {
+          *pixels++ = *encoded++ + (*left++ + *up++) / 2;
+        } while (--j);
+      } else {
+        *pixels++ = *encoded++;
+        do {
+          *pixels++ = *encoded++ + *left++ / 2;
+        } while (--j);
+      }
     } else if (method == 4) {
       UBYTE *left = pixels;
       UBYTE *leftup = pixels - row;
@@ -142,7 +156,7 @@ static __regargs void ReconstructImage(UBYTE *pixels, UBYTE *encoded,
         *pixels++ = *encoded++ + PaethPredictor(*left++, *up++, *leftup++);
       } while (--j);
     }
-  } while (--height);
+  }
 }
 
 /* Collapse multiple IDAT chunks into single one. */
