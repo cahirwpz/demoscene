@@ -3,7 +3,7 @@
 
 #include "gfx.h"
 
-typedef enum { PM_GRAY, PM_CMAP, PM_RGB4, PM_GRAY4, PM_CMAP4 } PixmapTypeT;
+typedef enum { PM_NONE, PM_GRAY, PM_CMAP, PM_RGB4, PM_GRAY4, PM_CMAP4 } PixmapTypeT;
 
 typedef struct Pixmap {
   PixmapTypeT type;
@@ -23,7 +23,7 @@ static inline void InitSharedPixmap(PixmapT *pixmap, WORD width, WORD height,
 }
 
 __regargs PixmapT *NewPixmap(WORD width, WORD height, 
-                             PixmapTypeT type, ULONG memoryAttributes);
+                             PixmapTypeT type, ULONG memFlags);
 __regargs PixmapT *ClonePixmap(PixmapT *pixmap);
 __regargs void DeletePixmap(PixmapT *pixmap);
 
