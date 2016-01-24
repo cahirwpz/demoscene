@@ -1,6 +1,7 @@
         include 'exec/macros.i'
         include 'exec/io.i'
         include 'exec/memory.i'
+        include 'dos/dosextens.i'
         include 'dos/doshunks.i'
         include 'devices/bootblock.i'
         include 'devices/trackdisk.i'
@@ -88,10 +89,18 @@ Entry:
         move.l  a4,d0           ; oops... it failed
         beq.b   .next
 
+        ; make executable startup think it was called from CLI
+        sub.l   a1,a1
+        JSRLIB  FindTask
+        move.l  d0,a0
+        move.l  #$DEADC0DE,pr_CLI(a0)
+
         ; call executable
         lea     .cmd(pc),a0
         moveq   #1,d0
+        movem.l d2-d7/a2-a6,-(sp)
         jsr     SEG_START(a4)
+        movem.l (sp)+,d2-d7/a2-a6
 
         ; free hunk list
         move.l  a4,a0
@@ -150,7 +159,6 @@ SetupHunkFile:
         addq    #SEG_SIZE,d0
         move.l  #MEMF_PUBLIC|MEMF_CLEAR,d1
         JSRLIB  AllocMem
-        bsr     PutLong
         move.l  d0,(a3)+
         move.l  d0,a0
         move.l  d3,SEG_LEN(a0)
@@ -162,9 +170,7 @@ SetupHunkFile:
         move.l  d2,d4
         subq.l  #4,d4
 .link   move.l  (a1)+,a0        ; previous hunk
-        move.l  (a1),d0
-        addq.l  #SEG_NEXT,d0
-        move.l  d0,SEG_NEXT(a0)
+        move.l  (a1),SEG_NEXT(a0)
         subq.l  #4,d4
         bgt     .link
 
@@ -231,7 +237,21 @@ SetupHunkFile:
         rts
 
 FreeHunkFile:
+        movem.l a2,-(sp)
+        move.l  a0,a2
+
+.loop   move.l  a2,a1
+        move.l  SEG_NEXT(a1),a2
+        move.l  SEG_LEN(a1),d0
+        addq.l  #SEG_SIZE,d0
+        JSRLIB  FreeMem
+        move.l  a2,d0
+        bne     .loop
+
+        move.l  (sp)+,a2
         rts
+
+        if 0
 
 PutChar:
         and.w   #$ff,d0
@@ -263,6 +283,6 @@ PutLong:
 
 .hex    dc.b    "0123456789ABCDEF"
 
-DOSNAME dc.b    'dos.library'
+        endc
 
 ; vim: ft=asm68k:ts=8:sw=8
