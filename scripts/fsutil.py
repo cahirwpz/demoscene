@@ -153,6 +153,9 @@ def save(archive, floppy, entries, bootcode=None):
 
   files_pos = align(dirent_len) + align(names_len)
 
+  if floppy:
+    files_pos += 2 * SECTOR
+
   with open(archive, 'wb') as fh:
     if floppy:
       boot = StringIO(bootcode)
