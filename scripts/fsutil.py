@@ -12,6 +12,10 @@ from StringIO import StringIO
 # On disk format description:
 #
 # sector 0..1: bootblock
+#  [LONG] 'DOS\0'
+#  [LONG] checksum
+#  [LONG] #names
+#  ...    boot code
 #
 # sector 2..(n-1):
 #  [WORD] #files   : number of file entries
@@ -30,13 +34,14 @@ from StringIO import StringIO
 #
 
 SECTOR = 512
+FLOPPY = SECTOR * 80 * 11 * 2
 ALIGNMENT = 4
 
 
 def align(size, alignment=None):
   if alignment is None:
     alignment = ALIGNMENT
-  return (size + alignment - 1) & ~(alignment - 1)
+  return (size + alignment - 1) // alignment * alignment
 
 
 def skip_pad(fh, alignment=None):
@@ -50,10 +55,11 @@ def write_pad(fh, alignment=None):
 
 
 def checksum(data):
-  a = array('I', data)
-  a.byteswap()
-  chksum = sum(a)
-  return (chksum >> 32) + (chksum & 0xffffffff)
+  arr = array('I', data)
+  arr.byteswap()
+  chksum = sum(arr)
+  chksum = (chksum >> 32) + (chksum & 0xffffffff)
+  return (~chksum & 0xffffffff)
 
 
 class FileEntry(object):
@@ -150,7 +156,7 @@ def save(archive, floppy, entries, bootcode=None):
   with open(archive, 'wb') as fh:
     if floppy:
       boot = StringIO(bootcode)
-      boot.write(pack('>3s5xI', 'DOS', dirent_len))
+      boot.write(pack('>4s4xI', 'DOS\0', dirent_len))
       boot.seek(0, 2)
       write_pad(boot, 2 * SECTOR)
       val = checksum(boot.getvalue())
@@ -174,6 +180,9 @@ def save(archive, floppy, entries, bootcode=None):
     for entry in entries:
       fh.write(entry.data)
       write_pad(fh)
+
+    if floppy:
+      write_pad(fh, FLOPPY)
 
 
 def extract(archive, patterns, force):

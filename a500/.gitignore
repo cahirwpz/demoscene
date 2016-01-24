@@ -4,5 +4,6 @@ data/
 
 ExitUAE
 
+*.bin
 *.exe
 *.7z

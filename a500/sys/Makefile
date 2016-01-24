@@ -11,7 +11,11 @@ OBJS = 8svx.o blitter.o common.o circle.o console.o coplist.o ffp.o gfx.o \
        png.o c2p_1x1_4.o \
        __mulsi3.o __divsi3.o __udivsi3.o __modsi3.o __umodsi3.o
 
+all:	libsys.a bootloader.bin
+
 libsys.a: $(OBJS)
+
+bootloader.bin: bootloader.s
 
 sintab.s: sintab.py
 	python sintab.py

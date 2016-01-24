@@ -3,7 +3,7 @@ AS	= vasm -quiet
 CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 CPPFLAGS += -DFRAMES_PER_ROW=6
 
-ASFLAGS	= -x -Faout -phxass -m68010
+ASFLAGS	= -x -phxass -m68010
 LDFLAGS	= -m68000 -msmall-code
 OFLAGS	= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	= -Wall
@@ -37,7 +37,11 @@ endif
 
 %.o: %.s
 	@echo "AS   $<"
-	$(AS) $(ASFLAGS) -o $@ $<
+	$(AS) -Faout $(ASFLAGS) -o $@ $<
+
+%.bin: %.s
+	@echo "AS   $<"
+	$(AS) -Fbin $(ASFLAGS) -o $@ $<
 
 LIB := lib$(notdir $(CURDIR)).a
 
