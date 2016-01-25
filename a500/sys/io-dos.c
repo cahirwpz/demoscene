@@ -25,34 +25,31 @@ struct File {
 
 #define BUFLEN 80
 
-static LONG length = 0;
-static BPTR console = 0;
+struct {
+  BPTR fh;
+  LONG length;
+  char data[BUFLEN];
+} console;
 
-static __regargs void WriteToConsole(char *buffer) {
-  if (!console)
-    console = Output();
+static void ConsoleWrite(char c asm("d0")) {
+  console.data[console.length++] = c;
 
-  Write(console, buffer, length);
-
-  length = 0;
-}
-
-static void OutputToConsole(char c asm("d0"), char *buffer asm("a3")) {
-  buffer[length++] = c;
-
-  if (length == BUFLEN)
-    WriteToConsole(buffer);
+  if (console.length == BUFLEN) {
+    Write(console.fh, console.data, console.length);
+    console.length = 0;
+  }
 }
 
 void Print(const char *format, ...) {
-  char buffer[BUFLEN];
   va_list args;
 
+  console.length = 0;
+
   va_start(args, format);
-  RawDoFmt(format, args, (void (*)())OutputToConsole, buffer);
+  RawDoFmt(format, args, (void (*)())ConsoleWrite, NULL);
   va_end(args);
 
-  WriteToConsole(buffer);
+  Write(console.fh, console.data, console.length);
 }
 
 FileT *OpenFile(CONST STRPTR path asm("d1"), UWORD flags asm("d0")) {
@@ -226,6 +223,8 @@ STRPTR __cwdpath; /* symbol is defined in common area and can be overridden */
 static BPTR oldcwd = NULL;
 
 void InitIoDos() {
+  console.fh = Output();
+
   if (__cwdpath) {
     BPTR lock;
     Log("[Init] Current work dir: \"%s\"\n", __cwdpath);
