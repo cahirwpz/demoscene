@@ -12,7 +12,8 @@ $@
 ExitUAE
 EOF
 
-socat -u PTY,link=/tmp/vser,raw,echo=0 STDERR,raw &
+# With such settings I can interact with ROMWACK :-)
+socat PTY,link=/tmp/vser,raw,echo=0 STDOUT,raw,echo=0 &
 SOCAT=$!
 fs-uae >/dev/null &
 FSUAE=$!
