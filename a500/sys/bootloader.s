@@ -38,7 +38,7 @@ Entry:
         ; allocate memory for directory entries
         move.l  DirLen(pc),d0
         bsr     AlignToSector
-        move.l  #MEMF_CHIP|MEMF_CLEAR,d1
+        move.l  #MEMF_CHIP,d1
         JSRLIB  AllocMem
 
         ; [a2] directory entires
@@ -65,7 +65,7 @@ Entry:
         move.l  d3,d0
         bsr     AlignToSector
         move.l  d0,d3           ; [d3] block size (executable file)
-        move.l  #MEMF_CHIP|MEMF_CLEAR,d1
+        move.l  #MEMF_CHIP,d1
         JSRLIB  AllocMem
         move.l  d0,a3           ; [a3] block pointer (executable file)
 
@@ -102,8 +102,12 @@ Entry:
         movem.l (sp)+,d2-d7/a2-a6
 
         ; free hunk list
-        move.l  a4,a0
-        bsr     FreeHunkFile
+.free   move.l  a4,a1
+        movem.l (a1),d0/a4              ; len / next
+        addq.l  #SEG_SIZE,d0
+        JSRLIB  FreeMem
+        move.l  a4,d0
+        bne     .free
 
 .next   subq.w  #1,d7
         bgt     .loop
@@ -156,8 +160,8 @@ SetupHunkFile:
 .alloc  move.l  (a2)+,d3
         lsl.l   #2,d3           ; [d3] hunk size
         move.l  d3,d0
-        addq    #SEG_SIZE,d0
-        move.l  #MEMF_PUBLIC|MEMF_CLEAR,d1
+        addq.l  #SEG_SIZE,d0
+        move.l  #MEMF_PUBLIC,d1
         JSRLIB  AllocMem
         move.l  d0,(a3)+
         move.l  d0,a0
@@ -235,21 +239,6 @@ SetupHunkFile:
 .error  add.l   d2,sp           ; deallocate hunk array
 
         movem.l (sp)+,d2-d4/a2-a3
-        rts
-
-FreeHunkFile:
-        movem.l a2,-(sp)
-        move.l  a0,a2
-
-.loop   move.l  a2,a1
-        move.l  SEG_NEXT(a1),a2
-        move.l  SEG_LEN(a1),d0
-        addq.l  #SEG_SIZE,d0
-        JSRLIB  FreeMem
-        move.l  a2,d0
-        bne     .loop
-
-        move.l  (sp)+,a2
         rts
 
 ; vim: ft=asm68k:ts=8:sw=8
