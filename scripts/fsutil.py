@@ -14,10 +14,10 @@ from StringIO import StringIO
 # sector 0..1: bootblock
 #  [LONG] 'DOS\0'
 #  [LONG] checksum
-#  [LONG] #names
+#  [LONG] size of directory entries (aligned to sector size)
 #  ...    boot code
 #
-# sector 2..(n-1):
+# sector 2..(n-1): directory entries
 #  [WORD] #files   : number of file entries
 #  [WORD] #names   : filenames blob length in bytes
 #  repeated #files times:
@@ -159,7 +159,7 @@ def save(archive, floppy, entries, bootcode=None):
   with open(archive, 'wb') as fh:
     if floppy:
       boot = StringIO(bootcode)
-      boot.write(pack('>4s4xI', 'DOS\0', dirent_len))
+      boot.write(pack('>4s4xI', 'DOS\0', align(dirent_len)))
       boot.seek(0, 2)
       write_pad(boot, 2 * SECTOR)
       val = checksum(boot.getvalue())

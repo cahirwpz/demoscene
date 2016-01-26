@@ -22,7 +22,7 @@
 
 	dc.l	BBNAME_DOS
 	dc.l	0
-DirLen: dc.l	0
+DirLen: dc.l	0               ; sector aligned
 
         ; Boot block entry:
         ;  [a1] IOStdReq (trackdisk.device)
@@ -37,7 +37,6 @@ Entry:
 
         ; allocate memory for directory entries
         move.l  DirLen(pc),d0
-        bsr     AlignToSector
         move.l  #MEMF_CHIP,d1
         JSRLIB  AllocMem
 
@@ -46,8 +45,8 @@ Entry:
 
         ; read directory entries into memory
         move.l  DirLen(pc),d0
-        bsr     AlignToSector
-        move.l  #1024,d1
+        moveq.l #4,d1
+        lsl.l   #8,d1
         move.l  a2,a0
         bsr     ReadSectors
 
@@ -55,7 +54,11 @@ Entry:
         move.l  (a2)+,d7
         swap    d7
 
-.loop   movem.l (a2)+,d2-d3     ; offset, size
+.loop   ; [d2] file offset 
+        ; [d3] file size (executable)
+        movem.l (a2)+,d2-d3     ; offset, size
+        add.l   #TD_SECTOR-1,d3
+        and.l   #-TD_SECTOR,d3
         tst.l   d2              ; executable ?
         bge     .next
 
@@ -63,8 +66,6 @@ Entry:
 
         ; allocate memory for executable file
         move.l  d3,d0
-        bsr     AlignToSector
-        move.l  d0,d3           ; [d3] block size (executable file)
         move.l  #MEMF_CHIP,d1
         JSRLIB  AllocMem
         move.l  d0,a3           ; [a3] block pointer (executable file)
@@ -116,21 +117,14 @@ Entry:
 
 .cmd    dc.b    '\n',0
 
-; [d0] size to aligned
-AlignToSector:
-        add.l   #TD_SECTOR-1,d0
-        and.l   #-TD_SECTOR,d0
-        rts
-
 ; [d0] length in bytes (multiple of 512)
 ; [d1] offset from beginning of disk
 ; [a0] destination buffer (must be in chip memory)
 ReadSectors:
         move.l  TDIOReq(pc),a1
         move.w  #CMD_READ,IO_COMMAND(a1)
-        move.l  d0,IO_LENGTH(a1)
-        move.l  d1,IO_OFFSET(a1)
-        move.l  a0,IO_DATA(a1)
+        exg.l   d1,a0
+        movem.l d0/d1/a0,IO_LENGTH(a1)  ; length / data / offset
         JSRLIB  DoIO
         rts
 
