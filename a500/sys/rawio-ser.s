@@ -6,11 +6,16 @@
 
         include 'hardware/custom.i'
 
+BAUD    equ     115200
+CLOCK   equ     3546895
+
 custom  equ     $dff000
 
         section "code",code
 
 _KPutChar:
+        move.w  #(CLOCK/BAUD-1),custom+serper
+
         and.w   #$ff,d0
         or.w    #$100,d0
 

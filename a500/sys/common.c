@@ -4,13 +4,8 @@
 #include "rawio.h"
 #include "hardware.h"
 
-#define BAUD 115200
-#define CLOCK 3546895
-
 void Log(const char *format, ...) {
   va_list args;
-
-  custom->serper = CLOCK / BAUD - 1;
 
   va_start(args, format);
   RawDoFmt(format, args, (void (*)())DPutChar, NULL);
