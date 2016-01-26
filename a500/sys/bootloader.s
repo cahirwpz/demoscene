@@ -54,7 +54,6 @@ Entry:
         ; scan for executable files
         move.l  (a2)+,d7
         swap    d7
-        subq.w  #1,d7
 
 .loop   movem.l (a2)+,d2-d3     ; offset, size
         tst.l   d2              ; executable ?
@@ -106,7 +105,8 @@ Entry:
         move.l  a4,a0
         bsr     FreeHunkFile
 
-.next   dbf     d7,.loop
+.next   subq.w  #1,d7
+        bgt     .loop
 
 .exit   bra     .exit
 
@@ -140,18 +140,18 @@ SetupHunkFile:
         rts
 
 .setup  movem.l d2-d4/a2-a3,-(sp)
-        move.l  a0,a2
+        lea     4(a0),a2
 
         ; read number of hunks, assume there's no resident library name
-        move.l  4(a2),d2
+        move.l  (a2)+,d2
         lsl.l   #2,d2           ; [d2] hunk array size
         sub.l   d2,sp           ; [sp] hunk array
 
         ; move to hunk information
-        lea     16(a2),a2
+        addq.l  #8,a2
 
         ; allocate hunks
-        move.l  sp,a3           ; [a3] hunk array
+        move.l  sp,a3
         move.l  d2,d4
 .alloc  move.l  (a2)+,d3
         lsl.l   #2,d3           ; [d3] hunk size
@@ -177,21 +177,22 @@ SetupHunkFile:
         ; parse hunks
         move.l  sp,a3
         move.l  d2,d4
-.parse  move.l  (a2)+,d0        ; hunk type
-        cmp.l   #HUNK_CODE,d0
+.parse  move.w  (a2)+,d0        ; should always read zero
+        add.w   (a2)+,d0        ; hunk type
+        cmp.w   #HUNK_CODE,d0
         beq     .hdata
-        cmp.l   #HUNK_DATA,d0
+        cmp.w   #HUNK_DATA,d0
         beq     .hdata
-        cmp.l   #HUNK_BSS,d0
+        cmp.w   #HUNK_BSS,d0
         beq     .hbss
-        cmp.l   #HUNK_RELOC32,d0
+        cmp.w   #HUNK_RELOC32,d0
         beq     .hreloc
-        cmp.l   #HUNK_SYMBOL,d0
+        cmp.w   #HUNK_SYMBOL,d0
         beq     .hsyms
-        cmp.l   #HUNK_END,d0
+        cmp.w   #HUNK_END,d0
         beq     .hend
         moveq   #0,d0           ; report error
-        bra     .quit
+        bra     .error
 
 .hdata  move.l  (a3),a1
         lea.l   SEG_START(a1),a1
@@ -202,7 +203,7 @@ SetupHunkFile:
         JSRLIB  CopyMem
         bra     .parse
 
-.hbss   lea     4(a2),a2        ; skip bss length
+.hbss   addq.l  #4,a2           ; skip bss length
         bra     .parse
 
 .hsyms  move.l  (a2)+,d0
@@ -217,7 +218,7 @@ SetupHunkFile:
         move.l  (a2)+,d0        ; referenced hunk number
         lsl.l   #2,d0
         move.l  (sp,d0.l),d0
-        add.l   #SEG_START,d0    ; [d0] referenced hunk data address
+        addq.l  #SEG_START,d0    ; [d0] referenced hunk data address
         move.l  (a3),a1
 .reloc  move.l  (a2)+,d1
         add.l   d0,SEG_START(a1,d1.l)
@@ -225,13 +226,13 @@ SetupHunkFile:
         bgt     .reloc
         bra     .hreloc
 
-.hend   addq    #4,a3           ; go to next hunk
-        subq    #4,d4
+.hend   addq.l  #4,a3           ; go to next hunk
+        subq.l  #4,d4
         bne     .parse
 
 .quit   move.l  (sp),d0
 
-        add.l   d2,sp           ; deallocate hunk array
+.error  add.l   d2,sp           ; deallocate hunk array
 
         movem.l (sp)+,d2-d4/a2-a3
         rts
