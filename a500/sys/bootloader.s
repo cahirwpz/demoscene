@@ -251,38 +251,4 @@ FreeHunkFile:
         move.l  (sp)+,a2
         rts
 
-        if 0
-
-PutChar:
-        and.w   #$ff,d0
-        or.w    #$100,d0
-.loop   btst    #5,serdatr(a5)
-        beq     .loop
-        move.w  d0,serdat(a5)
-        cmp.b   #10,d0  ; '\n'
-        bne     .quit
-        addq.w  #3,d0   ; '\r'
-        bra     .loop
-.quit:  rts
-
-PutLong:
-        movem.l d0-d1/a0,-(sp)
-        moveq   #7,d1
-        lea     .hex(pc),a0
-.loop   rol.l   #4,d0
-        move.l  d0,-(sp)
-        and.w   #$000f,d0
-        move.b  (a0,d0.w),d0
-        bsr     PutChar
-        move.l  (sp)+,d0
-        dbf     d1,.loop
-        moveq   #'\n',d0
-        bsr     PutChar
-        movem.l (sp)+,d0-d1/a0
-        rts
-
-.hex    dc.b    "0123456789ABCDEF"
-
-        endc
-
 ; vim: ft=asm68k:ts=8:sw=8
