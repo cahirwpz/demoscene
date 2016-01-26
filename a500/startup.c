@@ -10,6 +10,7 @@
 #include "io.h"
 #include "startup.h"
 
+extern void CallHRTmon();
 extern EffectT Effect;
 
 int __nocommandline = 1;

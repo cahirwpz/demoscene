@@ -3,9 +3,10 @@
         xdef    _KPutWord
         xdef    _KPutLong
         xdef    _KPutStr
-        xdef    _CallHRTmon
 
         include 'hardware/custom.i'
+
+custom  equ     $dff000
 
         section "code",code
 
@@ -13,10 +14,10 @@ _KPutChar:
         and.w   #$ff,d0
         or.w    #$100,d0
 
-.loop   btst    #5,serdatr+$dff000
+.loop   btst    #5,custom+serdatr
         beq     .loop
 
-        move.w  d0,serdat+$dff000
+        move.w  d0,custom+serdat
 
         cmp.b   #10,d0  ; '\n'
         bne     .quit
@@ -24,7 +25,7 @@ _KPutChar:
         addq.w  #3,d0   ; '\r'
         bra     .loop
 
-.quit:  rts
+.quit   rts
 
 _KPutByte:
         ror.l   #8,d0
@@ -61,9 +62,5 @@ _KPutStr:
 
 .putc   bsr     _KPutChar
         bra     .loop
-
-_CallHRTmon:
-        lea     4(sp),sp
-        jmp     $a1000c
 
 ; vim: ft=asm68k:ts=8:sw=8

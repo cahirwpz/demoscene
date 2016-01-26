@@ -80,12 +80,6 @@ static inline APTR GetSP() {
   return sp;
 }
 
-void CallHRTmon();
-void KPutChar(char c asm("d0"));
-void KPutByte(LONG n asm("d0"));
-void KPutWord(LONG n asm("d0"));
-void KPutLong(LONG n asm("d0"));
-void KPutStr(char *str asm("d0"));
 void Log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
 __regargs void MemDump(APTR ptr, LONG n);
 

@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <proto/exec.h>
 
+#include "rawio.h"
 #include "hardware.h"
 
 #define BAUD 115200
@@ -12,7 +13,7 @@ void Log(const char *format, ...) {
   custom->serper = CLOCK / BAUD - 1;
 
   va_start(args, format);
-  RawDoFmt(format, args, (void (*)())KPutChar, NULL);
+  RawDoFmt(format, args, (void (*)())DPutChar, NULL);
   va_end(args);
 }
 
@@ -23,19 +24,19 @@ __regargs void MemDump(APTR ptr, LONG n) {
     WORD m = min(n, 16);
     WORD i = 0;
 
-    KPutChar('$');
-    KPutLong((LONG)data);
-    KPutChar(':');
+    DPutChar('$');
+    DPutLong((LONG)data);
+    DPutChar(':');
 
     while (m--) {
       if ((i++ & 3) == 0)
-        KPutChar(' ');
+        DPutChar(' ');
 
-      KPutByte(*data++);
+      DPutByte(*data++);
 
       n--;
     }
 
-    KPutChar('\n');
+    DPutChar('\n');
   }
 }
