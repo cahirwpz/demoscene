@@ -3,9 +3,6 @@
 
 #include "io.h"
 
-#define MAKE_ID(a,b,c,d) \
-        ((ULONG) (a)<<24 | (ULONG) (b)<<16 | (ULONG) (c)<<8 | (ULONG) (d))
-
 #define ID_FORM MAKE_ID('F', 'O', 'R', 'M')
 #define ID_BODY MAKE_ID('B', 'O', 'D', 'Y')
 

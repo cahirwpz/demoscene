@@ -10,6 +10,9 @@
 #define offsetof(st, m) \
   ((ULONG)((char *)&((st *)0)->m - (char *)0))
 
+#define MAKE_ID(a,b,c,d) \
+        ((ULONG) (a)<<24 | (ULONG) (b)<<16 | (ULONG) (c)<<8 | (ULONG) (d))
+
 #define ITER(_VAR, _BEGIN, _END, _EXPR) { \
   WORD _VAR; \
   for (_VAR = _BEGIN; _VAR <= _END; _VAR++) { \
