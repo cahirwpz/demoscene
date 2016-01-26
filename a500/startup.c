@@ -179,3 +179,19 @@ int main() {
 
   return 0;
 }
+
+void InitTrapHandler() {
+  if (*(LONG *)0xA10004 == MAKE_ID('H', 'R', 'T', '!')) {
+    struct Task *tc = FindTask(NULL);
+    tc->tc_TrapCode = &CallHRTmon;
+    Log("[Init] Installed trap handler.\n");
+  }
+}
+
+void KillTrapHandler() {
+  struct Task *tc = FindTask(NULL);
+  tc->tc_TrapCode = NULL;
+}
+
+ADD2INIT(InitTrapHandler, -100);
+ADD2EXIT(KillTrapHandler, -100);

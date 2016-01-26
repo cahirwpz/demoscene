@@ -80,7 +80,7 @@ static inline APTR GetSP() {
   return sp;
 }
 
-void TrapHandler();
+void CallHRTmon();
 void KPutChar(char c asm("d0"));
 void KPutByte(LONG n asm("d0"));
 void KPutWord(LONG n asm("d0"));

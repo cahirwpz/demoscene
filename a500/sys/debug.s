@@ -3,6 +3,7 @@
         xdef    _KPutWord
         xdef    _KPutLong
         xdef    _KPutStr
+        xdef    _CallHRTmon
 
         include 'hardware/custom.i'
 
@@ -60,5 +61,9 @@ _KPutStr:
 
 .putc   bsr     _KPutChar
         bra     .loop
+
+_CallHRTmon:
+        lea     4(sp),sp
+        jmp     $a1000c
 
 ; vim: ft=asm68k:ts=8:sw=8
