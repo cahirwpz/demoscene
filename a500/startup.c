@@ -111,7 +111,6 @@ int main() {
     NewList(SysBase->IntVects[INTB_PORTS].iv_Data);
     NewList(SysBase->IntVects[INTB_COPER].iv_Data);
     NewList(SysBase->IntVects[INTB_VERTB].iv_Data);
-    custom->intena = INTF_SETCLR | INTF_PORTS | INTF_COPER | INTF_VERTB;
 
     if (!Effect.Render)
       Effect.Render = DummyRender;
@@ -180,20 +179,3 @@ int main() {
 
   return 0;
 }
-
-void InitTrapHandler() {
-  Log("[Init] Installling trap handler\n");
-
-  {
-    struct Task *tc = FindTask(NULL);
-    tc->tc_TrapCode = TrapHandler;
-  }
-}
-
-void KillTrapHandler() {
-  struct Task *tc = FindTask(NULL);
-  tc->tc_TrapCode = NULL;
-}
-
-ADD2INIT(InitTrapHandler, -100);
-ADD2EXIT(KillTrapHandler, -100);

@@ -1,13 +1,15 @@
+#define USE_LZO 0
+#define USE_DEFLATE 1
+
 #include <graphics/view.h>
 
 #include "iff.h"
 #include "ilbm.h"
 #include "memory.h"
+#if USE_LZO
 #include "lzo.h"
+#endif
 #include "inflate.h"
-
-#define USE_LZO 1
-#define USE_DEFLATE 1
 
 #define ID_ILBM MAKE_ID('I', 'L', 'B', 'M')
 #define ID_BMHD MAKE_ID('B', 'M', 'H', 'D')
