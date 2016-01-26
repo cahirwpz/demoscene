@@ -145,12 +145,10 @@ static void Init() {
   CopListActivate(cp);
 
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
-  custom->intena = INTF_SETCLR | INTF_BLIT;
 }
 
 static void Kill() {
   custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
-  custom->intena = INTF_BLIT;
 
   DeleteCopList(cp);
   DeletePixmap(textureHi);

@@ -15,7 +15,7 @@ static CopListT *cp;
 static TextFontT *topaz8;
 static ConsoleT console;
 
-static void Load() {
+static void Init() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
 
@@ -26,32 +26,29 @@ static void Load() {
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
 
+  CopListActivate(cp);
+  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+
   {
     struct TextAttr textattr = { "topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
     topaz8 = OpenFont(&textattr);
   }
 
   ConsoleInit(&console, screen, topaz8);
-}
-
-static void UnLoad() {
-  CloseFont(topaz8);
-  DeleteCopList(cp);
-  DeleteBitmap(screen);
-}
-
-static void Init() {
-  KeyboardInit();
-
-  CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
-
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
+
+  KeyboardInit();
 }
 
 static void Kill() {
   custom->dmacon = DMAF_COPPER | DMAF_RASTER;
+
+  KeyboardKill();
+
+  CloseFont(topaz8);
+  DeleteCopList(cp);
+  DeleteBitmap(screen);
 }
 
 static BOOL HandleEvent() {
@@ -98,4 +95,4 @@ static BOOL HandleEvent() {
   return TRUE;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, NULL, NULL, HandleEvent };
+EffectT Effect = { NULL, NULL, Init, Kill, NULL, HandleEvent };

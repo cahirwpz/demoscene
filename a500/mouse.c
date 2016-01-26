@@ -15,7 +15,7 @@ static CopListT *cp;
 static SpriteT *pointer;
 static CopInsT *sprptr[8];
 
-static void Load() {
+static void Init() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
   pointer = CloneSystemPointer();
@@ -28,24 +28,24 @@ static void Load() {
 
   CopInsSet32(sprptr[0], pointer->data);
   UpdateSprite(pointer, X(0), Y(0));
-}
 
-static void UnLoad() {
-  DeleteSprite(pointer);
-  DeleteCopList(cp);
-  DeleteBitmap(screen);
-}
+  CopListActivate(cp);
 
-static void Init() {
   KeyboardInit();
   MouseInit(0, 0, WIDTH - 1, HEIGHT - 1);
 
-  CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
 }
 
 static void Kill() {
   custom->dmacon = DMAF_RASTER | DMAF_SPRITE;
+
+  KeyboardKill();
+  MouseKill();
+
+  DeleteSprite(pointer);
+  DeleteCopList(cp);
+  DeleteBitmap(screen);
 }
 
 static BOOL HandleEvent() {
@@ -73,4 +73,4 @@ static BOOL HandleEvent() {
   return TRUE;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, NULL, NULL, HandleEvent };
+EffectT Effect = { NULL, NULL, Init, Kill, NULL, HandleEvent };

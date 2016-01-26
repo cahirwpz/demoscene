@@ -1,4 +1,5 @@
 #include "hardware.h"
+#include "interrupts.h"
 #include "keyboard.h"
 
 static char KeyMapLower[128] = {
@@ -130,8 +131,6 @@ UBYTE rawkey[QUEUELEN];
 UBYTE head, tail, used;
 UBYTE modifier;
 
-BOOL keyboardActive = FALSE;
-
 static inline void PushRawKey(UBYTE raw) {
   if (used < QUEUELEN) {
     rawkey[tail] = raw;
@@ -143,17 +142,15 @@ static inline void PushRawKey(UBYTE raw) {
 static WORD PopRawKey() {
   WORD raw = -1;
 
-  custom->intena = INTF_PORTS;
+  Disable();
 
-  if (!(custom->intreqr & INTF_PORTS)) {
-    if (used > 0) {
-      raw = rawkey[head];
-      head = (head + 1) & (QUEUELEN - 1);
-      used--;
-    }
+  if (used > 0) {
+    raw = rawkey[head];
+    head = (head + 1) & (QUEUELEN - 1);
+    used--;
   }
 
-  custom->intena = INTF_SETCLR | INTF_PORTS;
+  Enable();
 
   return raw;
 }
@@ -197,18 +194,7 @@ __regargs BOOL GetKeyEvent(KeyEventT *event) {
   return TRUE;
 }
 
-void KeyboardInit() {
-  /* Disable all CIA-A interrupts. */
-  ciaa->ciaicr = (UBYTE)(~CIAICRF_SETCLR);
-  /* Enable keyboard interrupt.
-   * The keyboard is attached to CIA-A serial port. */
-  ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_SP;
-  ciaa->ciacra = (UBYTE)(~CIACRAF_SPMODE);
-
-  keyboardActive = TRUE;
-}
-
-void KeyboardIntHandler() {
+static __interrupt LONG KeyboardIntHandler() {
   if (ciaa->ciaicr & CIAICRF_SP) {
     /* Read keyboard data register. */
     UBYTE sdr = ciaa->ciasdr;
@@ -237,4 +223,23 @@ void KeyboardIntHandler() {
     /* Set back to input mode. */
     ciaa->ciacra &= (UBYTE)~CIACRAF_SPMODE;
   }
+
+  return 0;
+}
+
+INTERRUPT(KeyboardInterrupt, -5, KeyboardIntHandler);
+
+void KeyboardInit() {
+  /* Disable all CIA-A interrupts. */
+  ciaa->ciaicr = (UBYTE)(~CIAICRF_SETCLR);
+  /* Enable keyboard interrupt.
+   * The keyboard is attached to CIA-A serial port. */
+  ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_SP;
+  ciaa->ciacra = (UBYTE)(~CIACRAF_SPMODE);
+
+  AddIntServer(INTB_PORTS, &KeyboardInterrupt);
+}
+
+void KeyboardKill() {
+  RemIntServer(INTB_PORTS, &KeyboardInterrupt);
 }

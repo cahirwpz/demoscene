@@ -1,26 +1,22 @@
 #include <exec/execbase.h>
 #include <proto/exec.h>
 
-#include "interrupts.h"
 #include "hardware.h"
 #include "sound.h"
 #include "8svx.h"
 
 extern char *__commandline;
+extern int __commandlen;
 
 int __nocommandline = 1;
 ULONG __oslibversion = 33;
 
 int main() {
-  UWORD len = strlen(__commandline);
+  UWORD len = __commandlen;
   STRPTR filename = __builtin_alloca(len);
 
-  memcpy(filename, __commandline, len--);
+  CopyMem(__commandline, filename, len--);
   filename[len] = '\0';
-
-  /* Get Vector Base Register */
-  if (SysBase->AttnFlags & AFF_68010)
-    InterruptVector = (APTR)Supervisor((APTR)GetVBR);
 
   {
     static SoundT *sound;

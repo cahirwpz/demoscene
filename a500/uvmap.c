@@ -1,6 +1,7 @@
 #include "startup.h"
 #include "bltop.h"
 #include "coplist.h"
+#include "interrupts.h"
 #include "memory.h"
 #include "io.h"
 #include "tga.h"
@@ -193,16 +194,17 @@ static void ChunkyToPlanar() {
       break;
 
     default:
-      return;
+      break;
   }
 
   c2p.phase++;
+
+  custom->intreq = INTF_BLIT;
 }
 
-static void BlitterInterrupt() {
-  if (custom->intreqr & INTF_BLIT)
-    ChunkyToPlanar();
-}
+INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar);
+
+static struct Interrupt *oldBlitInt;
 
 static void MakeCopperList(CopListT *cp) {
   WORD i;
@@ -247,12 +249,16 @@ static void Init() {
   CopListActivate(cp);
 
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+
+  oldBlitInt = SetIntVector(INTB_BLIT, &ChunkyToPlanarInterrupt);
   custom->intena = INTF_SETCLR | INTF_BLIT;
 }
 
 static void Kill() {
   custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
+
   custom->intena = INTF_BLIT;
+  SetIntVector(INTB_BLIT, oldBlitInt);
 
   DeleteCopList(cp);
   DeletePixmap(textureHi);
@@ -282,4 +288,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, BlitterInterrupt };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };

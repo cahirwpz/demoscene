@@ -1,5 +1,6 @@
 #include "startup.h"
 #include "hardware.h"
+#include "interrupts.h"
 #include "coplist.h"
 #include "gfx.h"
 #include "ilbm.h"
@@ -101,7 +102,7 @@ static void UnLoad() {
   DeleteBitmap(screen[1]);
 }
 
-static void CustomRotatePalette() {
+static __interrupt LONG CustomRotatePalette() {
   ColorT *src = palette[0]->colors;
   CopInsT *ins = pal + 1;
   LONG i = frameCount;
@@ -114,12 +115,11 @@ static void CustomRotatePalette() {
     UBYTE b = *c++ & 0xf0;
     CopInsSet16(ins++, (r << 4) | (UBYTE)(g | (b >> 4)));
   }
+
+  return 0;
 }
 
-static void VBlankInterrupt() {
-  if (custom->intreqr & INTF_VERTB)
-    CustomRotatePalette();
-}
+INTERRUPT(RotatePaletteInterrupt, 0, CustomRotatePalette);
 
 static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
@@ -142,12 +142,14 @@ static void Init() {
 
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
+
+  AddIntServer(INTB_VERTB, &RotatePaletteInterrupt);
 }
 
 static void Kill() {
   custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
-  custom->intena = INTF_VERTB;
+
+  RemIntServer(INTB_VERTB, &RotatePaletteInterrupt);
 
   DeleteCopList(cp);
 }
@@ -223,4 +225,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, VBlankInterrupt };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };

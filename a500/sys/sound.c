@@ -50,31 +50,3 @@ void AudioPlay(ChanT num) {
 void AudioStop(ChanT num) {
   custom->dmacon = (1 << (DMAB_AUD0 + num));
 }
-
-void AudioIntActivate(ChanT num, BOOL on) {
-  custom->intena = (on ? INTF_SETCLR : 0) | (1 << (INTB_AUD0 + num));
-}
-
-void (*AudioIntHandler)(ChanT num) = NULL;
-
-__interrupt_handler void IntLevel4Handler() {
-  if (AudioIntHandler) {
-    if (custom->intreqr & INTF_AUD0)
-      AudioIntHandler(CHAN_0);
-
-    if (custom->intreqr & INTF_AUD1)
-      AudioIntHandler(CHAN_1);
-
-    if (custom->intreqr & INTF_AUD2)
-      AudioIntHandler(CHAN_2);
-
-    if (custom->intreqr & INTF_AUD3)
-      AudioIntHandler(CHAN_3);
-  }
-
-  /*
-   * Clear interrupt flags for this level to avoid infinite re-entering
-   * interrupt handler.
-   */
-  custom->intreq = INTF_LEVEL4;
-}

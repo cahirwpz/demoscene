@@ -23,7 +23,6 @@ extern WORD frameCount;
 extern WORD lastFrameCount;
 extern WORD frameFromStart;
 extern WORD frameTillEnd;
-extern void (*currentInterruptHandler)();
 
 __regargs void LoadEffects(TimelineItemT *item, WORD n, WORD start);
 __regargs void UnLoadEffects(TimelineItemT *item, WORD n);

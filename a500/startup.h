@@ -31,8 +31,6 @@ typedef struct Effect {
   void (*Kill)();
   /* Renders single frame of an effect. */
   void (*Render)();
-  /* Handles interrupts originating from vertical blank, blitter and copper. */
-  void (*InterruptHandler)();
   /* Handles all events and returns FALSE to break the loop. */
   BOOL (*HandleEvent)();
 } EffectT;

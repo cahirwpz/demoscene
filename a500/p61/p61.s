@@ -129,10 +129,11 @@ _P61_Init
 	rts
 
 _P61_Music
-	movem.l	d2-d7/a2-a6,-(sp)
-	lea	$dff000,a6
-	bsr	P61_Music
-	movem.l	(sp)+,d2-d7/a2-a6
+        movem.l	d2-d7/a2-a6,-(sp)
+        lea	$dff000,a6
+        bsr	P61_Music
+        movem.l	(sp)+,d2-d7/a2-a6
+        moveq.l #0,d0
         rts
 
 _P61_SetPosition

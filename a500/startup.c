@@ -1,15 +1,12 @@
-#include <exec/types.h>
 #include <exec/execbase.h>
 #include <graphics/gfxbase.h>
 
+#include <proto/alib.h>
 #include <proto/exec.h>
-#include <proto/dos.h>
 #include <proto/graphics.h>
 
 #include "hardware.h"
 #include "interrupts.h"
-#include "keyboard.h"
-#include "mouse.h"
 #include "io.h"
 #include "startup.h"
 
@@ -21,30 +18,9 @@ ULONG __oslibversion = 33;
 LONG frameCount;
 LONG lastFrameCount;
 
-static __interrupt_handler void IntLevel2Handler() {
-  /* Make sure all scratchpad registers are saved, because we call a function
-   * that relies on the fact that it's caller responsibility to save them. */
-  asm volatile("" ::: "d0", "d1", "a0", "a1");
-
-  if (keyboardActive && (custom->intreqr & INTF_PORTS))
-    KeyboardIntHandler();
-
-  custom->intreq = INTF_PORTS;
-  custom->intreq = INTF_PORTS;
-}
-
-static __interrupt_handler void IntLevel3Handler() {
-  asm volatile("" ::: "d0", "d1", "a0", "a1");
-
-  if (mouseActive && (custom->intreqr & INTF_VERTB))
-    MouseIntHandler();
-
-  if (Effect.InterruptHandler)
-    Effect.InterruptHandler();
-
-  custom->intreq = INTF_LEVEL3;
-  custom->intreq = INTF_LEVEL3;
-}
+static struct List PortsIntChain;
+static struct List CoperIntChain;
+static struct List VertbIntChain;
 
 static void DummyRender() {}
 static BOOL ExitOnLMB() { return !LeftMouseButton(); }
@@ -63,10 +39,6 @@ int main() {
     cpu = 2;
   else if (SysBase->AttnFlags & AFF_68010)
     cpu = 1;
-
-  /* Get Vector Base Register */
-  if (cpu > 0)
-    InterruptVector = (APTR)Supervisor((APTR)GetVBR);
 
   /* Based on WhichAmiga method. */
   {
@@ -90,7 +62,6 @@ int main() {
     struct View *OldView;
     UWORD OldDmacon, OldIntena, OldAdkcon;
     ULONG OldCacheBits = 0;
-
 
     /* Allocate blitter. */
     WaitBlit();
@@ -124,27 +95,31 @@ int main() {
     custom->intreq = (UWORD)~INTF_SETCLR;
     custom->intreq = (UWORD)~INTF_SETCLR;
 
-    SaveInterrupts();
-
     /* Enable master switches. */
     custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
     custom->intena = INTF_SETCLR | INTF_INTEN;
+
+    /* Save original interrupt server chains. */
+    CopyMem(SysBase->IntVects[INTB_PORTS].iv_Data,
+            &PortsIntChain, sizeof(struct List));
+    CopyMem(SysBase->IntVects[INTB_COPER].iv_Data,
+            &CoperIntChain, sizeof(struct List));
+    CopyMem(SysBase->IntVects[INTB_VERTB].iv_Data, 
+            &VertbIntChain, sizeof(struct List));
+
+    /* Reset system's interrupt server chains. */
+    NewList(SysBase->IntVects[INTB_PORTS].iv_Data);
+    NewList(SysBase->IntVects[INTB_COPER].iv_Data);
+    NewList(SysBase->IntVects[INTB_VERTB].iv_Data);
+    custom->intena = INTF_SETCLR | INTF_PORTS | INTF_COPER | INTF_VERTB;
 
     if (!Effect.Render)
       Effect.Render = DummyRender;
     if (!Effect.HandleEvent)
       Effect.HandleEvent = ExitOnLMB;
 
-    InterruptVector->IntLevel2 = IntLevel2Handler;
-    InterruptVector->IntLevel3 = IntLevel3Handler;
-
     if (Effect.Init)
       Effect.Init();
-
-    if (keyboardActive)
-      custom->intena = INTF_SETCLR | INTF_PORTS;
-    if (mouseActive)
-      custom->intena = INTF_SETCLR | INTF_VERTB;
 
     lastFrameCount = ReadFrameCounter();
 
@@ -154,8 +129,6 @@ int main() {
       Effect.Render();
       lastFrameCount = t;
     }
-
-    custom->intena = INTF_VERTB | INTF_PORTS;
 
     if (Effect.Kill)
       Effect.Kill();
@@ -169,7 +142,13 @@ int main() {
     custom->intreq = (UWORD)~INTF_SETCLR;
     custom->intreq = (UWORD)~INTF_SETCLR;
 
-    RestoreInterrupts();
+    /* Restore original interrupt server chains. */
+    CopyMem(&PortsIntChain, SysBase->IntVects[INTB_PORTS].iv_Data,
+            sizeof(struct List));
+    CopyMem(&CoperIntChain, SysBase->IntVects[INTB_COPER].iv_Data,
+            sizeof(struct List));
+    CopyMem(&VertbIntChain, SysBase->IntVects[INTB_VERTB].iv_Data, 
+            sizeof(struct List));
 
     /* Restore old copper list... */
     custom->cop1lc = (ULONG)GfxBase->copinit;

@@ -6,7 +6,6 @@ WORD frameFromStart;
 WORD frameTillEnd;
 WORD frameCount;
 WORD lastFrameCount;
-void (*currentInterruptHandler)();
 
 static TimelineItemT *currentItem;
 
@@ -106,8 +105,6 @@ __regargs void RunEffects(TimelineItemT *item, WORD n, WORD start) {
     frameTillEnd = item->end - item->start;
     realStart = ReadFrameCounter();
 
-    currentInterruptHandler = effect->InterruptHandler;
-
     lastFrameCount = ReadFrameCounter();
     while (frameCount < item->end) {
       WORD t = ReadFrameCounter();
@@ -125,8 +122,6 @@ __regargs void RunEffects(TimelineItemT *item, WORD n, WORD start) {
         break;
       }
     }
-
-    currentInterruptHandler = NULL;
 
     if (effect->Kill)
       effect->Kill();

@@ -23,8 +23,6 @@ typedef struct Effect {
   void (*Kill)();
   /* Renders single frame of an effect. */
   void (*Render)();
-  /* Handles interrupts originating from vertical blank, blitter and copper. */
-  void (*InterruptHandler)();
   /* Called to prepare the data for the effect - e.g. decompress, generate,
    * move to chip memory. */
   void (*Prepare)();

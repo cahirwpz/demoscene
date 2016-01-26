@@ -3,6 +3,7 @@
 #include "startup.h"
 #include "io.h"
 #include "hardware.h"
+#include "interrupts.h"
 #include "memory.h"
 #include "p61/p61.h"
 #include "console.h"
@@ -23,37 +24,13 @@ static ConsoleT console;
 
 static void Load() {
   module = LoadFile("data/jazzcat-sunglasses_at_night.p61", MEMF_CHIP);
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1));
-
-  cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xfff);
-  CopEnd(cp);
-
-  {
-    struct TextAttr textattr = { "topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
-    topaz8 = OpenFont(&textattr);
-  }
-
-  ConsoleInit(&console, screen, topaz8);
 }
 
 static void UnLoad() {
   MemFree(module);
-  CloseFont(topaz8);
-  DeleteCopList(cp);
-  ITER(i, 0, 3, DeleteBitmap(osc[i]));
-  DeleteBitmap(screen);
 }
 
-static void VBlankHandler() {
-  if (custom->intreqr & INTF_VERTB)
-    P61_Music();
-}
+INTERRUPT(P61PlayerInterrupt, 10, P61_Music);
 
 static inline void putpixel(UBYTE *line, WORD x) {
   bset(line + (x >> 3), ~x);
@@ -102,6 +79,25 @@ static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
 static void Init() {
   KeyboardInit();
 
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+
+  ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1));
+
+  cp = NewCopList(100);
+  CopInit(cp);
+  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopSetupBitplanes(cp, NULL, screen, DEPTH);
+  CopSetRGB(cp, 0, 0x000);
+  CopSetRGB(cp, 1, 0xfff);
+  CopEnd(cp);
+
+  {
+    struct TextAttr textattr = { "topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
+    topaz8 = OpenFont(&textattr);
+  }
+
+  ConsoleInit(&console, screen, topaz8);
+
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
 
   {
@@ -124,10 +120,11 @@ static void Init() {
 
   CopListActivate(cp);
   custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
-  custom->intena = INTF_SETCLR | INTF_VERTB;
 
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
+
+  AddIntServer(INTB_VERTB, &P61PlayerInterrupt);
 
   ConsolePutStr(&console, 
                 "Pause (SPACE) Prev (LEFT) Next (RIGHT)\n"
@@ -138,8 +135,14 @@ static void Kill() {
   P61_ControlBlock.Play = 0;
   P61_End();
 
+  RemIntServer(INTB_VERTB, &P61PlayerInterrupt);
+
   custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
-  custom->intena = INTF_VERTB;
+
+  CloseFont(topaz8);
+  DeleteCopList(cp);
+  ITER(i, 0, 3, DeleteBitmap(osc[i]));
+  DeleteBitmap(screen);
 }
 
 static void Render() {
@@ -219,4 +222,4 @@ static BOOL HandleEvent() {
   return TRUE;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, VBlankHandler, HandleEvent };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, HandleEvent };

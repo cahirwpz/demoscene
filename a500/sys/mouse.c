@@ -1,4 +1,5 @@
 #include "mouse.h"
+#include "interrupts.h"
 #include "hardware.h"
 
 /* data for port 1, pin 9 (right mouse button) */
@@ -22,7 +23,6 @@ typedef struct MouseQueue {
   UBYTE head, tail, used;
 } MouseQueueT;
 
-BOOL mouseActive = FALSE;
 static MouseDataT mouseData;
 static MouseQueueT mouseQueue;
 
@@ -37,18 +37,16 @@ static inline void PushMouseEvent(MouseQueueT *queue, MouseEventT *event) {
 static inline BOOL PopMouseEvent(MouseQueueT *queue, MouseEventT *event) {
   BOOL result = FALSE;
 
-  custom->intena = INTF_VERTB;
+  Disable();
 
-  if (!(custom->intreqr & INTF_VERTB)) {
-    if (queue->used > 0) {
-      *event = queue->events[queue->head];
-      queue->head = (queue->head + 1) & (QUEUELEN - 1);
-      queue->used--;
-      result = TRUE;
-    }
+  if (queue->used > 0) {
+    *event = queue->events[queue->head];
+    queue->head = (queue->head + 1) & (QUEUELEN - 1);
+    queue->used--;
+    result = TRUE;
   }
 
-  custom->intena = INTF_SETCLR | INTF_VERTB;
+  Enable();
 
   return result;
 }
@@ -131,28 +129,7 @@ static inline BOOL GetMouseButton(MouseDataT *mouse, MouseEventT *event) {
   return TRUE;
 }
 
-__regargs void MouseInit(WORD minX, WORD minY, WORD maxX, WORD maxY) {
-  MouseDataT *mouse = &mouseData;
-
-  mouse->left = minX;
-  mouse->right = maxX;
-  mouse->top = minY;
-  mouse->bottom = maxY;
-
-  mouse->x = minX;
-  mouse->y = minY;
-  mouse->xctr = custom->joy0dat & 0xff;
-  mouse->yctr = custom->joy0dat >> 8;
-  mouse->button = ReadButtonState();
-
-  mouseActive = TRUE;
-}
-
-__regargs BOOL GetMouseEvent(MouseEventT *event) {
-  return PopMouseEvent(&mouseQueue, event);
-}
-
-void MouseIntHandler() {
+static __interrupt LONG MouseIntHandler() {
   MouseDataT *mouse = &mouseData;
   MouseQueueT *queue = &mouseQueue;
   MouseEventT event;
@@ -169,4 +146,33 @@ void MouseIntHandler() {
   /* After that a change in mouse button state. */
   if (GetMouseButton(mouse, &event))
     PushMouseEvent(queue, &event);
+
+  return 0;
+}
+
+INTERRUPT(MouseInterrupt, -5, MouseIntHandler);
+
+__regargs void MouseInit(WORD minX, WORD minY, WORD maxX, WORD maxY) {
+  MouseDataT *mouse = &mouseData;
+
+  mouse->left = minX;
+  mouse->right = maxX;
+  mouse->top = minY;
+  mouse->bottom = maxY;
+
+  mouse->x = minX;
+  mouse->y = minY;
+  mouse->xctr = custom->joy0dat & 0xff;
+  mouse->yctr = custom->joy0dat >> 8;
+  mouse->button = ReadButtonState();
+
+  AddIntServer(INTB_VERTB, &MouseInterrupt);
+}
+
+void MouseKill() {
+  RemIntServer(INTB_VERTB, &MouseInterrupt);
+}
+
+__regargs BOOL GetMouseEvent(MouseEventT *event) {
+  return PopMouseEvent(&mouseQueue, event);
 }
