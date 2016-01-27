@@ -1,6 +1,6 @@
 #include <dos/dosextens.h>
+#include <exec/execbase.h>
 #include <proto/exec.h>
-#include <proto/dos.h>
 #include <setjmp.h>
 #include <strings.h>
 
@@ -68,30 +68,37 @@ LONG RunIt(BPTR seglist, STRPTR argPtr, LONG argSize) {
 }
 
 int main() {
-  STRPTR filename = __builtin_alloca(__commandlen + 1);
+  STRPTR filename = __builtin_alloca(__commandlen + 2);
   STRPTR argPtr;
   LONG argSize;
   FileT *fh;
 
+  memset(filename, 0, __commandlen + 2);
   memcpy(filename, __commandline, __commandlen);
-  filename[__commandlen] = '\0';
-  
+
   argPtr = memchr(filename, ' ', __commandlen);
-  *argPtr++ = '\0';
-  argSize = __commandlen - (argPtr - filename);
+  if (argPtr) {
+    *argPtr++ = '\0';
+    argSize = __commandlen - (argPtr - filename);
+  } else {
+    argPtr = filename + __commandlen - 1;
+    *argPtr++ = '\0';
+    *argPtr = '\n';
+    argSize = 1;
+  }
 
   if ((fh = OpenFile(filename, IOF_BUFFERED))) {
     BPTR seglist;
     Print("Parsing '%s':\n", filename);
     if ((seglist = LoadExecutable(fh))) {
       Print("'%s' returned %ld\n", filename, RunIt(seglist, argPtr, argSize));
-      UnLoadSeg(seglist);
+      FreeSegList(seglist);
     } else {
       Print("'%s' not an Amiga executable file.\n", filename);
     }
     CloseFile(fh);
   } else {
-    Print("'%s' not such file.\n", filename);
+    Print("'%s' no such file.\n", filename);
   }
 
   Print("Press CTRL+C to finish.\n");

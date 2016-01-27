@@ -1,5 +1,4 @@
 #include <proto/exec.h>
-#include <proto/dos.h>
 #include <dos/doshunks.h>
 
 #include "amigahunk.h"
@@ -136,9 +135,19 @@ __regargs BPTR LoadExecutable(FileT *fh) {
       BPTR seglist = MKBADDR(&(hunks[0]->next));
       if (LoadHunks(fh, hunks))
         return seglist;
-      UnLoadSeg(seglist);
+      FreeSegList(seglist);
     }
   }
 
   return NULL;
+}
+
+__regargs void FreeSegList(BPTR seglist) {
+  HunkT *hunk = seglist ? BADDR(seglist - 1) : NULL;
+
+  while (hunk) {
+    HunkT *next = hunk->next ? BADDR(hunk->next - 1) : NULL;
+    FreeMem(hunk, hunk->size + sizeof(HunkT));
+    hunk = next;
+  }
 }

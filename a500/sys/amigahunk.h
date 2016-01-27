@@ -11,5 +11,6 @@ typedef struct {
 } HunkT;
 
 __regargs BPTR LoadExecutable(FileT *file);
+__regargs void FreeSegList(BPTR seglist);
 
 #endif
