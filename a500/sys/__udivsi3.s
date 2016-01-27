@@ -26,7 +26,7 @@ L4:     lsr.l   #1,d1           ; shift divisor
         cmp.l   #$10000,d1      ; still divisor >= 2 ^ 16 ?
         bcc     L4
         divu.w  d1,d0           ; now we have 16 bit divisor
-        and.l   #$ffff, d0      ; mask out divisor, ignore remainder
+        and.l   #$ffff,d0       ; mask out divisor, ignore remainder
 
 ; Multiply the 16 bit tentative quotient with the 32 bit divisor.  Because of
 ; the operand ranges, this might give a 33 bit product.  If this product is

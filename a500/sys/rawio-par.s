@@ -24,10 +24,10 @@ _DPutChar:
         tst.b   (a0)                    ; waste 2 E-cycles
         tst.b   (a0)
 
-        cmp.b   #'\n',d0
+        cmp.b   #10,d0  ; '\n'
         bne     .quit
 
-        moveq   #'\r',d0
+        moveq   #13,d0  ; '\r'
         bra     .loop
 
 .quit   move.l  (sp)+,a0

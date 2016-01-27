@@ -27,7 +27,7 @@ _KPutChar:
         cmp.b   #10,d0  ; '\n'
         bne     .quit
 
-        addq.w  #3,d0   ; '\r'
+        moveq   #13,d0  ; '\r'
         bra     .loop
 
 .quit   rts

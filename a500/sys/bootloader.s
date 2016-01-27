@@ -117,6 +117,8 @@ Entry:
 
 .cmd    dc.b    '\n',0
 
+        align   1
+
 ; [d0] length in bytes (multiple of 512)
 ; [d1] offset from beginning of disk
 ; [a0] destination buffer (must be in chip memory)
