@@ -104,8 +104,7 @@ Entry:
 
         ; free hunk list
 .free   move.l  a4,a1
-        movem.l (a1),d0/a4              ; len / next
-        addq.l  #SEG_SIZE,d0
+        movem.l (a1),d0/a4              ; SEG_LEN / SEG_NEXT
         JSRLIB  FreeMem
         move.l  a4,d0
         bne     .free
@@ -116,8 +115,6 @@ Entry:
 .exit   bra     .exit
 
 .cmd    dc.b    '\n',0
-
-        align   1
 
 ; [d0] length in bytes (multiple of 512)
 ; [d1] offset from beginning of disk
@@ -155,9 +152,9 @@ SetupHunkFile:
         move.l  d2,d4
 .alloc  move.l  (a2)+,d3
         lsl.l   #2,d3           ; [d3] hunk size
+        addq.l  #SEG_SIZE,d3
         move.l  d3,d0
-        addq.l  #SEG_SIZE,d0
-        move.l  #MEMF_PUBLIC,d1
+        move.l  #MEMF_PUBLIC|MEMF_CLEAR,d1
         JSRLIB  AllocMem
         move.l  d0,(a3)+
         move.l  d0,a0

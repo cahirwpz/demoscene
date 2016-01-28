@@ -17,6 +17,8 @@ libsys.a: $(OBJS)
 sintab.s: sintab.py
 	python sintab.py
 
+bootloader.bin: ASFLAGS += -phxass
+
 include $(TOPDIR)/Makefile.common
 
 clean::
