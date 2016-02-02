@@ -19,6 +19,7 @@ ULONG __oslibversion = 33;
 LONG frameCount;
 LONG lastFrameCount;
 
+static WORD kickVer;
 static struct List PortsIntChain;
 static struct List CoperIntChain;
 static struct List VertbIntChain;
@@ -27,35 +28,6 @@ static void DummyRender() {}
 static BOOL ExitOnLMB() { return !LeftMouseButton(); }
 
 int main() {
-  WORD kickVer, kickRev;
-  WORD cpu = 0;
-
-  if (SysBase->AttnFlags & AFF_68060)
-    cpu = 6;
-  else if (SysBase->AttnFlags & AFF_68040)
-    cpu = 4;
-  else if (SysBase->AttnFlags & AFF_68030)
-    cpu = 3;
-  else if (SysBase->AttnFlags & AFF_68020)
-    cpu = 2;
-  else if (SysBase->AttnFlags & AFF_68010)
-    cpu = 1;
-
-  /* Based on WhichAmiga method. */
-  {
-    APTR kickEnd = (APTR)0x1000000;
-    ULONG kickSize = *(ULONG *)(kickEnd - 0x14);
-    UWORD *kick = kickEnd - kickSize;
-
-    kickVer = kick[6];
-    kickRev = kick[7];
-  }
-
-  Print("ROM: %ld.%ld, CPU: 680%ld0, CHIP: %ldkB, FAST: %ldkB.\n",
-        (LONG)kickVer, (LONG)kickRev, (LONG)cpu,
-        (LONG)(AvailMem(MEMF_CHIP | MEMF_LARGEST) / 1024),
-        (LONG)(AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024));
-
   if (Effect.Load)
     Effect.Load();
 
@@ -181,6 +153,37 @@ int main() {
   return 0;
 }
 
+void SystemInfo() {
+  WORD kickRev;
+  WORD cpu = 0;
+
+  if (SysBase->AttnFlags & AFF_68060)
+    cpu = 6;
+  else if (SysBase->AttnFlags & AFF_68040)
+    cpu = 4;
+  else if (SysBase->AttnFlags & AFF_68030)
+    cpu = 3;
+  else if (SysBase->AttnFlags & AFF_68020)
+    cpu = 2;
+  else if (SysBase->AttnFlags & AFF_68010)
+    cpu = 1;
+
+  /* Based on WhichAmiga method. */
+  {
+    APTR kickEnd = (APTR)0x1000000;
+    ULONG kickSize = *(ULONG *)(kickEnd - 0x14);
+    UWORD *kick = kickEnd - kickSize;
+
+    kickVer = kick[6];
+    kickRev = kick[7];
+  }
+
+  Print("ROM: %ld.%ld, CPU: 680%ld0, CHIP: %ldkB, FAST: %ldkB.\n",
+        (LONG)kickVer, (LONG)kickRev, (LONG)cpu,
+        (LONG)(AvailMem(MEMF_CHIP | MEMF_LARGEST) / 1024),
+        (LONG)(AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024));
+}
+
 void InitTrapHandler() {
   if (*(LONG *)0xA10004 == MAKE_ID('H', 'R', 'T', '!')) {
     struct Task *tc = FindTask(NULL);
@@ -194,5 +197,6 @@ void KillTrapHandler() {
   tc->tc_TrapCode = NULL;
 }
 
+ADD2INIT(SystemInfo, -110);
 ADD2INIT(InitTrapHandler, -100);
 ADD2EXIT(KillTrapHandler, -100);
