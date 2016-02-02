@@ -5,6 +5,7 @@
 #include "hardware.h"
 #include "coplist.h"
 #include "keyboard.h"
+#include "serial.h"
 
 #define WIDTH 640
 #define HEIGHT 256
@@ -38,6 +39,7 @@ static void Init() {
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
 
+  SerialInit(9600);
   KeyboardInit();
 }
 
@@ -45,6 +47,7 @@ static void Kill() {
   custom->dmacon = DMAF_COPPER | DMAF_RASTER;
 
   KeyboardKill();
+  SerialKill();
 
   CloseFont(topaz8);
   DeleteCopList(cp);
@@ -53,6 +56,12 @@ static void Kill() {
 
 static BOOL HandleEvent() {
   KeyEventT event;
+  LONG c = SerialGet();
+
+  if (c >= 0) {
+    ConsolePutChar(&console, c);
+    ConsoleDrawCursor(&console);
+  }
 
   if (!GetKeyEvent(&event))
     return TRUE;
@@ -87,8 +96,10 @@ static BOOL HandleEvent() {
       console.cursor.y = console.height;
   }
 
-  if (event.ascii)
+  if (event.ascii) {
     ConsolePutChar(&console, event.ascii);
+    SerialPut(event.ascii);
+  }
 
   ConsoleDrawCursor(&console);
 
