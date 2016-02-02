@@ -5,6 +5,8 @@
 #include "memory.h"
 #include "io.h"
 
+#ifdef IO_DOS
+
 #define SECTOR 512
 
 #define IOF_EOF 0x0002
@@ -246,3 +248,5 @@ void KillIoDos() {
 
 ADD2INIT(InitIoDos, -10);
 ADD2EXIT(KillIoDos, -10);
+
+#endif

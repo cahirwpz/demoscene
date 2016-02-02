@@ -1,7 +1,7 @@
 CC	= m68k-amigaos-gcc -noixemul
 AS	= vasm -quiet
 CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
-CPPFLAGS += -DFRAMES_PER_ROW=6
+CPPFLAGS += -DFRAMES_PER_ROW=6 -DIO_FLOPPY
 
 ASFLAGS	= -x -m68010
 LDFLAGS	= -m68000 -msmall-code
