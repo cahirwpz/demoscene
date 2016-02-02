@@ -127,9 +127,9 @@ static char KeyMapUpper[128] = {
 
 #define QUEUELEN 32
 
-UBYTE rawkey[QUEUELEN];
-UBYTE head, tail, used;
-UBYTE modifier;
+static UBYTE rawkey[QUEUELEN];
+static UBYTE head, tail, used;
+static UBYTE modifier;
 
 static inline void PushRawKey(UBYTE raw) {
   if (used < QUEUELEN) {

@@ -156,8 +156,8 @@ BOOL FileSeek(FileT *file asm("a0"), LONG pos asm("d2"), LONG mode asm("d3")) {
           LONG result;
 
           /* Go to given position and fail if not possible. */
-          result = Seek(file->handle, pos, mode);
-          if (result < 0) { file->flags |= IOF_ERR; return FALSE; }
+          if (Seek(file->handle, pos, mode) != 0)
+            return FALSE;
 
           /* Go back to the beginning of current sector. */
           (void)Seek(file->handle, pos & ~(SECTOR - 1), mode);

@@ -10,6 +10,9 @@
 #define offsetof(st, m) \
   ((ULONG)((char *)&((st *)0)->m - (char *)0))
 
+#define align(x, n) \
+  (((x) + (n) - 1) & (-(n)))
+
 #define MAKE_ID(a,b,c,d) \
         ((ULONG) (a)<<24 | (ULONG) (b)<<16 | (ULONG) (c)<<8 | (ULONG) (d))
 
