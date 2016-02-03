@@ -6,7 +6,7 @@
 
         include 'hardware/custom.i'
 
-BAUD    equ     115200
+BAUD    equ     9600
 CLOCK   equ     3546895
 
 custom  equ     $dff000
