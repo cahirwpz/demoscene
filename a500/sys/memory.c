@@ -1,6 +1,7 @@
 #include <proto/exec.h>
 
 #include "common.h"
+#include "config.h"
 #include "memory.h"
 #include "io.h"
 
@@ -63,9 +64,9 @@ __regargs static AreaT *MemPoolAlloc(ULONG byteSize, ULONG attributes) {
 
 void MemInit() {
   if (__chipmem == 0)
-    __chipmem = 262144;
+    __chipmem = DEFAULT_CHIP_CHUNK;
   if (__fastmem == 0)
-    __fastmem = 262144;
+    __fastmem = DEFAULT_FAST_CHUNK;
 
   if ((chip = MemPoolAlloc(__chipmem, MEMF_CHIP))) {
     if ((fast = MemPoolAlloc(__fastmem, MEMF_PUBLIC))) {

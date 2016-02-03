@@ -1,8 +1,6 @@
-#define USE_LZO 0
-#define USE_DEFLATE 1
-
 #include <graphics/view.h>
 
+#include "config.h"
 #include "iff.h"
 #include "ilbm.h"
 #include "memory.h"

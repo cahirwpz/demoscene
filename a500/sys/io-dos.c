@@ -2,10 +2,11 @@
 #include <proto/exec.h>
 #include <proto/dos.h> 
 
+#include "config.h"
 #include "memory.h"
 #include "io.h"
 
-#ifdef IO_DOS
+#if USE_IO_DOS
 
 #define SECTOR 512
 

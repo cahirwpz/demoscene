@@ -3,10 +3,11 @@
 #include <proto/alib.h>
 #include <proto/exec.h>
 
+#include "config.h"
 #include "memory.h"
 #include "io.h"
 
-#ifdef IO_FLOPPY
+#if USE_IO_FLOPPY
 
 #define TD_TRACK (TD_SECTOR * NUMSECS)
 #define TD_DISK (TD_TRACK * 160)
@@ -85,7 +86,7 @@ static __regargs BOOL FillBuffer(FileT *file) {
   return TRUE;
 }
 
-static FileT *NewFile(LONG length, LONG offset) {
+static __regargs FileT *NewFile(LONG length, LONG offset) {
   FileT *file = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
 
   file->length = length;

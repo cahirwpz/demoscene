@@ -1,6 +1,5 @@
+#include "config.h"
 #include "timeline.h"
-
-#define MEMSTATS 1
 
 WORD frameFromStart;
 WORD frameTillEnd;
@@ -9,7 +8,7 @@ WORD lastFrameCount;
 
 static TimelineItemT *currentItem;
 
-#ifdef MEMSTATS
+#if SHOW_MEMORY_STATS
 # include "memory.h"
 # define SHOWMEM ShowMemStats
 static void ShowMemStats() {
@@ -61,11 +60,8 @@ __regargs void PrepareEffect(EffectT *effect) {
   if (effect->state & EFFECT_READY)
     return;
 
-  if (effect->Prepare) {
+  if (effect->Prepare)
     effect->Prepare();
-#if SHOW_MEMUSED
-#endif
-  }
 
   effect->state |= EFFECT_READY;
 }

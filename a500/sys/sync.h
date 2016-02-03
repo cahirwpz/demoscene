@@ -1,6 +1,7 @@
 #ifndef __SYNC_H__
 #define __SYNC_H__
 
+#include "config.h"
 #include "common.h"
 
 #ifndef FRAMES_PER_ROW
