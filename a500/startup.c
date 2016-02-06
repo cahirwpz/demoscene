@@ -197,6 +197,6 @@ void KillTrapHandler() {
   tc->tc_TrapCode = NULL;
 }
 
-ADD2INIT(SystemInfo, -110);
 ADD2INIT(InitTrapHandler, -100);
 ADD2EXIT(KillTrapHandler, -100);
+ADD2INIT(SystemInfo, -50);

@@ -240,6 +240,8 @@ void InitIoDos() {
   }
 }
 
+ADD2INIT(InitIoDos, -55);
+
 void KillIoDos() {
   if (oldcwd) {
     Log("[Quit] Restoring original work dir.\n");
@@ -247,7 +249,6 @@ void KillIoDos() {
   }
 }
 
-ADD2INIT(InitIoDos, -10);
-ADD2EXIT(KillIoDos, -10);
+ADD2EXIT(KillIoDos, -55);
 
 #endif

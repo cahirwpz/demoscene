@@ -94,7 +94,11 @@ __regargs void MemDump(APTR ptr, LONG n);
 #define ADD2LIST(s, l, t) \
   asm(".stabs \"_" #l "\"," #t ",0,0,_" #s )
 
-/* Install private constructors and destructors pri MUST be in [-127, 127] */
+/*
+ * Install private constructors and destructors pri MUST be in [-127, 127]
+ *
+ * Note that library auto-opening happens at -60.
+ */
 #define ADD2INIT(ctor, pri) \
   ADD2LIST(ctor, __INIT_LIST__, 22); \
   asm(".stabs \"___INIT_LIST__\",20,0,0," #pri "+128")
