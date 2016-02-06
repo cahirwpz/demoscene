@@ -219,7 +219,7 @@ static __interrupt LONG KeyboardIntHandler() {
       }
     }
     /* Wait for at least 85us for handshake to be registered. */
-    Wait280ns((85 * 1000 + 279) / 280);
+    WaitTimerB(ciab, TIMER_US(85));
     /* Set back to input mode. */
     ciaa->ciacra &= (UBYTE)~CIACRAF_SPMODE;
   }

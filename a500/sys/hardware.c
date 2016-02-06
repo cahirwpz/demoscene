@@ -20,29 +20,43 @@ __regargs void WaitLine(ULONG line) {
   } while (vpos != line);
 }
 
-/* Wait for a period of time shorter than one frame.
- * This is based upon a fact that VPOS register resolution is 280ns. */
-__regargs void Wait280ns(ULONG delay) {
-  volatile LONG *vposr = (volatile LONG *)&custom->vposr;
-  LONG start = (*vposr) & 0x1ffff;
-  LONG diff;
+__regargs void WaitTimerA(volatile struct CIA *cia, UWORD delay) {
+  cia->ciacra |= CIACRAF_RUNMODE;
+  cia->ciaicr = CIAICRF_TA;
+  cia->ciatalo = delay;
+  cia->ciatahi = delay >> 8;
+  while (cia->ciaicr & CIAICRF_TA);
+}
 
-  do {
-    diff = ((*vposr) & 0x1ffff) - start;
-    if (diff < 0)
-      diff += 0x20000;
-  } while (diff < delay);
+__regargs void WaitTimerB(volatile struct CIA *cia, UWORD delay) {
+  cia->ciacra |= CIACRBF_RUNMODE;
+  cia->ciaicr = CIAICRF_TB;
+  cia->ciatalo = delay;
+  cia->ciatahi = delay >> 8;
+  while (cia->ciaicr & CIAICRF_TB);
 }
 
 /* All TOD registers latch on a read of MSB event and remain latched until
  * after a read of LSB event. */
 
 LONG ReadLineCounter() {
-  return ((ciab->ciatodhi << 16) | (ciab->ciatodmid << 8) | ciab->ciatodlow);
+  LONG res = 0;
+  res |= ciab->ciatodhi;
+  res <<= 8;
+  res |= ciab->ciatodmid;
+  res <<= 8;
+  res |= ciab->ciatodlow;
+  return res;
 }
 
 LONG ReadFrameCounter() {
-  return ((ciaa->ciatodhi << 16) | (ciaa->ciatodmid << 8) | ciaa->ciatodlow);
+  LONG res = 0;
+  res |= ciaa->ciatodhi;
+  res <<= 8;
+  res |= ciaa->ciatodmid;
+  res <<= 8;
+  res |= ciaa->ciatodlow;
+  return res;
 }
 
 /* TOD is automatically stopped whenever a write to the register occurs. The

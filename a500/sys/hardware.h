@@ -44,7 +44,12 @@ static inline BOOL RightMouseButton() {
   return !(custom->potinp & (1 << 10));
 }
 
-__regargs void Wait280ns(ULONG delay);
+#define E_CLOCK 0.709379
+#define TIMER_MS(ms) ((ms) * 1000 * E_CLOCK)
+#define TIMER_US(ms) ((ms) * E_CLOCK)
+
+__regargs void WaitTimerA(volatile struct CIA *cia, UWORD delay);
+__regargs void WaitTimerB(volatile struct CIA *cia, UWORD delay);
 
 LONG ReadLineCounter();
 LONG ReadFrameCounter();
