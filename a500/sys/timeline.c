@@ -5,8 +5,7 @@ WORD frameFromStart;
 WORD frameTillEnd;
 WORD frameCount;
 WORD lastFrameCount;
-
-static TimelineItemT *currentItem;
+TimeSlotT *currentTimeSlot;
 
 #if SHOW_MEMORY_STATS
 # include "memory.h"
@@ -20,13 +19,24 @@ static void ShowMemStats() {
 #define SHOWMEM()
 #endif;
 
-__regargs void LoadEffects(TimelineItemT *item, WORD n, WORD start) {
-  item += n - 1;
+__regargs TimeSlotT *TimelineForward(TimeSlotT *item, WORD pos) {
+  for (; item->effect; item++)
+    if ((item->start <= pos) && (pos < item->end))
+      break;
+  return item->effect ? item : NULL;
+}
 
-  for (; --n >= 0; item--) {
-    EffectT *effect = item->effect;
+__regargs void LoadEffects(TimeSlotT *item) {
+  TimeSlotT *curr = item;
+  WORD phase = item->phase;
 
-    if (item->start < start)
+  while (curr->effect)
+    curr++;
+
+  while (--curr >= item) {
+    EffectT *effect = curr->effect;
+
+    if (phase != curr->phase)
       continue;
 
     if (effect->state & EFFECT_LOADED)
@@ -34,7 +44,7 @@ __regargs void LoadEffects(TimelineItemT *item, WORD n, WORD start) {
 
     if (effect->Load) {
       effect->Load();
-      Log("[Effect] %s loaded.\n", item->name);
+      Log("[Effect] %s loaded.\n", curr->name);
       SHOWMEM();
     }
 
@@ -42,8 +52,8 @@ __regargs void LoadEffects(TimelineItemT *item, WORD n, WORD start) {
   }
 }
 
-__regargs void UnLoadEffects(TimelineItemT *item, WORD n) {
-  for (; --n >= 0; item++) {
+__regargs void UnLoadEffects(TimeSlotT *item) {
+  for (; item->effect; item++) {
     EffectT *effect = item->effect;
 
     if (!(effect->state & EFFECT_LOADED))
@@ -66,12 +76,12 @@ __regargs void PrepareEffect(EffectT *effect) {
   effect->state |= EFFECT_READY;
 }
 
-__regargs void RunEffects(TimelineItemT *item, WORD n, WORD start) {
+__regargs void RunEffects(TimeSlotT *item) {
   BOOL exit = FALSE;
 
-  SetFrameCounter(start);
+  SetFrameCounter(item->start);
 
-  for (; --n >= 0 && !exit; item++) {
+  for (; item->effect && !exit; item++) {
     EffectT *effect = item->effect;
     WORD realStart;
 
@@ -85,7 +95,7 @@ __regargs void RunEffects(TimelineItemT *item, WORD n, WORD start) {
       }
     }
 
-    currentItem = item;
+    currentTimeSlot = item;
 
     if (!(effect->state & EFFECT_READY)) {
       if (effect->Prepare) {
@@ -133,12 +143,12 @@ __regargs void RunEffects(TimelineItemT *item, WORD n, WORD start) {
       SHOWMEM();
     }
 
-    currentItem = NULL;
+    currentTimeSlot = NULL;
   }
 }
 
 void UpdateFrameCount() {
   frameCount = ReadFrameCounter();
-  frameFromStart = frameCount - currentItem->start;
-  frameTillEnd = currentItem->end - frameCount;
+  frameFromStart = frameCount - currentTimeSlot->start;
+  frameTillEnd = currentTimeSlot->end - frameCount;
 }
