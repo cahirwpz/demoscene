@@ -78,7 +78,7 @@ static inline void HeadsStepDirection(WORD inwards) {
     headDir = -2;
   }
 
-  WaitTimerB(ciab, DIRECTION_REVERSE_SETTLE);
+  WaitTimerA(ciab, DIRECTION_REVERSE_SETTLE);
 }
 
 static inline void ChangeDiskSide(WORD upper) {
@@ -156,7 +156,7 @@ __regargs void FloppyTrackRead(WORD num) {
       StepHeads();
   }
 
-  WaitTimerB(ciab, DISK_SETTLE);
+  WaitTimerA(ciab, DISK_SETTLE);
 
   custom->dsklen = 0; /* Make sure the DMA for the disk is turned off. */
   custom->intreq = INTF_DSKBLK;
