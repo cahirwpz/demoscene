@@ -32,14 +32,9 @@ typedef struct {
  * 3 1/2 inch dual density micro floppy disk drive specifications:
  * http://www.techtravels.org/wp-content/uploads/pefiles/SAMSUNG-SFD321B-070103.pdf
  *
- * Floppy disk rotates at 300 RPM, and transfer rate is 500Kbit/s - which gives
- * exactly 12500 bytes per track. With Amiga track encoding that should give
- * gap of 532 bytes between the end of sector #10 and beginning of sector #0,
- * but unfortunately FS-UAE gives around 698 bytes.
- *
- * In several places I've found that to read one track Paula needs to fetch
- * $1900 words, which would suggest that the gap has 832 bytes. Why? That's a
- * mystery to me... Let's not worry and just use this value.
+ * Floppy disk rotates at 300 RPM, and transfer rate is 500Kib/s - which gives
+ * exactly 12800 bytes per track. With Amiga track encoding that gives a gap of
+ * 832 bytes between the end of sector #10 and beginning of sector #0.
  */
 
 #define TRACK_SIZE (sizeof(SectorT) * NUMSECS + 832)
