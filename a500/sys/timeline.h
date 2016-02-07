@@ -29,7 +29,7 @@ extern TimeSlotT *currentTimeSlot;
 
 __regargs TimeSlotT *TimelineForward(TimeSlotT *slot, WORD pos);
 
-__regargs void LoadEffects(TimeSlotT *slot);
+__regargs void LoadEffects(TimeSlotT *slot, WORD phase);
 __regargs void UnLoadEffects(TimeSlotT *slot);
 __regargs void RunEffects(TimeSlotT *slot);
 __regargs void PrepareEffect(EffectT *effect);

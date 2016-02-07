@@ -26,9 +26,11 @@ __regargs TimeSlotT *TimelineForward(TimeSlotT *item, WORD pos) {
   return item->effect ? item : NULL;
 }
 
-__regargs void LoadEffects(TimeSlotT *item) {
+__regargs void LoadEffects(TimeSlotT *item, WORD phase) {
   TimeSlotT *curr = item;
-  WORD phase = item->phase;
+
+  if (phase < 0)
+    phase = item->phase;
 
   while (curr->effect)
     curr++;
