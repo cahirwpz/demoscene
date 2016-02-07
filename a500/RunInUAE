@@ -3,7 +3,8 @@
 trap quit SIGINT
 
 function quit() {
-  kill $SOCAT
+  kill -INT $SER
+  kill -INT $PAR
   kill $FSUAE
 }
 
