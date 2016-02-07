@@ -25,6 +25,10 @@
 #define BPLCON2_PF2P2   (1 << 5)
 #define BPLCON2_PF1P2   (1 << 2)
 
+#define DSK_DMAEN (1 << 15)
+#define DSK_WRITE (1 << 14)
+#define DSK_SYNC 0x4489
+
 extern volatile struct Custom* const custom;
 extern volatile struct CIA* const ciaa;
 extern volatile struct CIA* const ciab;
@@ -48,6 +52,7 @@ static inline BOOL RightMouseButton() {
 #define TIMER_MS(ms) ((ms) * 1000 * E_CLOCK)
 #define TIMER_US(ms) ((ms) * E_CLOCK)
 
+/* Maximum delay is around 92.38ms */
 __regargs void WaitTimerA(volatile struct CIA *cia, UWORD delay);
 __regargs void WaitTimerB(volatile struct CIA *cia, UWORD delay);
 

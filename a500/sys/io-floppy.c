@@ -1,11 +1,9 @@
-#include <devices/trackdisk.h>
-#include <exec/io.h>
-#include <proto/alib.h>
 #include <proto/exec.h>
 
 #include "config.h"
 #include "memory.h"
 #include "io.h"
+#include "floppy.h"
 
 #if USE_IO_FLOPPY
 
@@ -14,9 +12,6 @@
 
 #define IOF_EOF 0x0002
 #define IOF_ERR 0x8000
-
-static struct MsgPort *trackMP;
-static struct IOExtTD *trackIO;
 
 typedef struct {
   ULONG offset;
@@ -47,23 +42,10 @@ struct File {
 
 ALIAS(Print, Log);
 
-/*
- * Transfer data from the track buffer to a supplied buffer.
- *
- * If the desired sector is already in the track buffer, no disk activity is
- * initiated. If the desired sector is not in the buffer, the track containing
- * that sector is automatically read in.
- *
- * Under versions of Kickstart earlier than V36, the io_Data has to point to a
- * buffer in chip memory.
- */
 static inline BOOL ReadTrack(APTR data, LONG offset) {
-  trackIO->iotd_Req.io_Flags = IOF_QUICK;
-  trackIO->iotd_Req.io_Length = TD_TRACK;
-  trackIO->iotd_Req.io_Data = data;
-  trackIO->iotd_Req.io_Offset = offset;
-  trackIO->iotd_Req.io_Command = CMD_READ;
-  return !DoIO((struct IORequest *)trackIO);
+  FloppyTrackRead(div16(offset, TD_TRACK));
+  FloppyTrackDecode(data);
+  return TRUE;
 }
 
 static __regargs BOOL FillBuffer(FileT *file) {
@@ -91,7 +73,7 @@ static __regargs FileT *NewFile(LONG length, LONG offset) {
 
   file->length = length;
   file->offset = offset;
-  file->buf.track = MemAlloc(TD_TRACK, MEMF_CHIP);
+  file->buf.track = MemAlloc(TD_TRACK, MEMF_PUBLIC);
   file->buf.pos = file->buf.track;
 
   return file;
@@ -258,13 +240,7 @@ static void ReadDir() {
 }
 
 void InitIoFloppy() {
-  if (!(trackMP = CreatePort(NULL, 0L)))
-    exit();
-  if (!(trackIO = (struct IOExtTD *)
-        CreateExtIO(trackMP, sizeof(struct IOExtTD))))
-    exit();
-  if (OpenDevice(TD_NAME, 0L, (struct IORequest *)trackIO, 0))
-    exit();
+  InitFloppy();
   ReadDir();
 }
 
@@ -274,10 +250,7 @@ void KillIoFloppy() {
     MemFree(rootDir);
     rootDir = NULL;
   }
-  if (trackIO)
-    CloseDevice((struct IORequest *)trackIO);
-  if (trackMP)
-    DeletePort(trackMP);
+  KillFloppy();
 }
 
 ADD2INIT(InitIoFloppy, -10);
