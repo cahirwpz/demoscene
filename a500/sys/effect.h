@@ -3,10 +3,12 @@
 
 #include "common.h"
 
-#define EFFECT_LOADED 1
-#define EFFECT_READY  2
+#define EFFECT_LOADED  1
+#define EFFECT_READY   2
+#define EFFECT_RUNNING 4
 
 typedef struct Effect {
+  const char *name;
   /* AmigaOS is active during this step. Loads resources from disk. */
   void (*Load)();
   /* Frees all resources allocated by "Load" step. */
@@ -29,5 +31,14 @@ typedef struct Effect {
   /* Keeps information about state of resources related to this effect. */
   UWORD state;
 } EffectT;
+
+__regargs void EffectLoad(EffectT *effect);
+__regargs void EffectPrepare(EffectT *effect);
+__regargs void EffectInit(EffectT *effect);
+__regargs void EffectKill(EffectT *effect);
+__regargs void EffectUnLoad(EffectT *effect);
+
+#define EFFECT(NAME, A1, A2, A3, A4, A5, A6) \
+  EffectT NAME = { #NAME, (A1), (A2), (A3), (A4), (A5), (A6) };
 
 #endif

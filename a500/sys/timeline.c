@@ -1,4 +1,3 @@
-#include "config.h"
 #include "timeline.h"
 
 WORD frameFromStart;
@@ -6,18 +5,6 @@ WORD frameTillEnd;
 WORD frameCount;
 WORD lastFrameCount;
 TimeSlotT *currentTimeSlot;
-
-#if SHOW_MEMORY_STATS
-# include "memory.h"
-# define SHOWMEM ShowMemStats
-static void ShowMemStats() {
-  Log("[Memory] CHIP: %ld/%ld FAST: %ld/%ld\n",
-      MemAvail(MEMF_CHIP|MEMF_LARGEST), MemAvail(MEMF_CHIP),
-      MemAvail(MEMF_FAST|MEMF_LARGEST), MemAvail(MEMF_FAST));
-}
-#else
-#define SHOWMEM()
-#endif;
 
 __regargs TimeSlotT *TimelineForward(TimeSlotT *item, WORD pos) {
   for (; item->effect; item++)
@@ -41,41 +28,13 @@ __regargs void LoadEffects(TimeSlotT *item, WORD phase) {
     if (phase != curr->phase)
       continue;
 
-    if (effect->state & EFFECT_LOADED)
-      continue;
-
-    if (effect->Load) {
-      effect->Load();
-      Log("[Effect] %s loaded.\n", curr->name);
-      SHOWMEM();
-    }
-
-    effect->state |= EFFECT_LOADED;
+    EffectLoad(effect);
   }
 }
 
 __regargs void UnLoadEffects(TimeSlotT *item) {
-  for (; item->effect; item++) {
-    EffectT *effect = item->effect;
-
-    if (!(effect->state & EFFECT_LOADED))
-      continue;
-
-    if (effect->UnLoad)
-      effect->UnLoad();
-
-    effect->state &= ~EFFECT_LOADED;
-  }
-}
-
-__regargs void PrepareEffect(EffectT *effect) {
-  if (effect->state & EFFECT_READY)
-    return;
-
-  if (effect->Prepare)
-    effect->Prepare();
-
-  effect->state |= EFFECT_READY;
+  for (; item->effect; item++)
+    EffectUnLoad(item->effect);
 }
 
 __regargs void RunEffects(TimeSlotT *item) {
@@ -99,15 +58,8 @@ __regargs void RunEffects(TimeSlotT *item) {
 
     currentTimeSlot = item;
 
-    if (!(effect->state & EFFECT_READY)) {
-      if (effect->Prepare) {
-        Log("[Effect] Preparing %s.\n", item->name);
-        effect->Prepare();
-        SHOWMEM();
-      }
-    }
-    if (effect->Init)
-      effect->Init();
+    EffectPrepare(effect);
+    EffectInit(effect);
 
     frameFromStart = 0;
     frameTillEnd = item->end - item->start;
@@ -131,19 +83,9 @@ __regargs void RunEffects(TimeSlotT *item) {
       }
     }
 
-    if (effect->Kill)
-      effect->Kill();
-
+    EffectKill(effect);
     WaitVBlank();
-
-    if (effect->UnLoad) {
-      Log("[Effect] %s finished.\n", item->name);
-
-      effect->UnLoad();
-      effect->state &= ~EFFECT_LOADED;
-
-      SHOWMEM();
-    }
+    EffectUnLoad(effect);
 
     currentTimeSlot = NULL;
   }
