@@ -29,6 +29,10 @@
 #define DSK_WRITE (1 << 14)
 #define DSK_SYNC 0x4489
 
+#define SERDATR_RBF  (1 << 14)
+#define SERDATR_TBE  (1 << 13)
+#define SERDATR_TSRE (1 << 12) 
+
 extern volatile struct Custom* const custom;
 extern volatile struct CIA* const ciaa;
 extern volatile struct CIA* const ciab;

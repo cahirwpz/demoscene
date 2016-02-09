@@ -1,3 +1,5 @@
+#include <stdarg.h>
+
 #include "serial.h"
 #include "interrupts.h"
 #include "hardware.h"
@@ -6,7 +8,8 @@
 #define QUEUELEN 512
 
 typedef struct {
-  UWORD head, tail, used;
+  UWORD head, tail;
+  volatile UWORD used;
   UBYTE data[QUEUELEN];
 } CharQueueT;
 
@@ -15,38 +18,47 @@ static struct {
   CharQueueT recvq;
 } serial;
 
-static inline BOOL PushChar(CharQueueT *queue, UBYTE data) {
-  if (queue->used == QUEUELEN)
-    return FALSE;
+static void PushChar(CharQueueT *queue, UBYTE data) {
+  while (queue->used == QUEUELEN);
 
-  queue->data[queue->tail] = data;
-  queue->tail = (queue->tail + 1) & (QUEUELEN - 1);
-  queue->used++;
-  return TRUE;
+  custom->intena = INTF_TBE;
+  {
+    queue->data[queue->tail] = data;
+    queue->tail = (queue->tail + 1) & (QUEUELEN - 1);
+    queue->used++;
+  }
+  custom->intena = INTF_SETCLR | INTF_TBE;
 }
 
-static inline LONG PopChar(CharQueueT *queue) {
+static LONG PopChar(CharQueueT *queue) {
   LONG result;
 
   if (queue->used == 0)
     return -1;
 
-  result = queue->data[queue->head];
-  queue->head = (queue->head + 1) & (QUEUELEN - 1);
-  queue->used--;
+  custom->intena = INTF_RBF;
+  {
+    result = queue->data[queue->head];
+    queue->head = (queue->head + 1) & (QUEUELEN - 1);
+    queue->used--;
+  }
+  custom->intena = INTF_SETCLR | INTF_RBF;
+
   return result;
 }
 
 static void SendIntHandler() {
-  LONG data = PopChar(&serial.sendq);
+  LONG data;
+  custom->intreq = INTF_TBE;
+  data = PopChar(&serial.sendq);
   if (data >= 0)
     custom->serdat = data | 0x100;
-  custom->intreq = INTF_TBE;
 }
 
 static void RecvIntHandler() {
-  PushChar(&serial.recvq, custom->serdatr & 0xff);
+  UWORD serdatr = custom->serdatr;
   custom->intreq = INTF_RBF;
+  PushChar(&serial.recvq, serdatr);
 }
 
 INTERRUPT(RecvInterrupt, 0, RecvIntHandler);
@@ -63,37 +75,35 @@ __regargs void SerialInit(LONG baud) {
   oldTBE = SetIntVector(INTB_TBE, &SendInterrupt);
   oldRBF = SetIntVector(INTB_RBF, &RecvInterrupt);
 
-  custom->intena = INTF_SETCLR | INTF_TBE;
-  custom->intena = INTF_SETCLR | INTF_RBF;
+  custom->intreq = INTF_TBE | INTF_RBF;
+  custom->intena = INTF_SETCLR | INTF_TBE | INTF_RBF;
 }
 
 void SerialKill() {
+  custom->intena = INTF_TBE | INTF_RBF;
+  custom->intreq = INTF_TBE | INTF_RBF;
+
   SetIntVector(INTB_RBF, oldRBF);
   SetIntVector(INTB_TBE, oldTBE);
 }
 
-#define TSRE 0x2000
-
 __regargs void SerialPut(UBYTE data) {
-  Disable();
-
-  if (custom->serdatr & TSRE)
-    custom->serdat = data | 0x100;
-  else
-    PushChar(&serial.sendq, data);
-
+  PushChar(&serial.sendq, data);
   if (data == '\n')
     PushChar(&serial.sendq, '\r');
+  custom->intena = INTF_TBE;
+  if (custom->serdatr & SERDATR_TBE)
+    SendIntHandler();
+  custom->intena = INTF_SETCLR | INTF_TBE;
+}
 
-  Enable();
+void SerialPrint(const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  RawDoFmt(format, args, (void (*)())SerialPut, NULL);
+  va_end(args);
 }
 
 LONG SerialGet() {
-  LONG result;
-
-  Disable();
-  result = PopChar(&serial.recvq);
-  Enable();
-
-  return result;
+  return PopChar(&serial.recvq);
 }
