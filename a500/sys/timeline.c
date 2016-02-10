@@ -1,4 +1,7 @@
 #include "timeline.h"
+#if REMOTE_CONTROL
+# include "serial.h"
+#endif
 
 WORD frameFromStart;
 WORD frameTillEnd;
@@ -40,6 +43,12 @@ __regargs void UnLoadEffects(TimeSlotT *item) {
 __regargs void RunEffects(TimeSlotT *item) {
   BOOL exit = FALSE;
 
+#if REMOTE_CONTROL
+  char cmd[16];
+  WORD cmdLen = 0;
+  memset(cmd, 0, sizeof(cmd));
+#endif
+
   SetFrameCounter(item->start);
 
   for (; item->effect && !exit; item++) {
@@ -68,6 +77,9 @@ __regargs void RunEffects(TimeSlotT *item) {
     lastFrameCount = ReadFrameCounter();
     while (frameCount < item->end) {
       WORD t = ReadFrameCounter();
+#if REMOTE_CONTROL
+      SerialPrint("F %ld\n", (LONG)t);
+#endif
       frameCount = t;
       frameFromStart = frameCount - realStart;
       frameTillEnd = item->end - frameCount;
@@ -81,6 +93,21 @@ __regargs void RunEffects(TimeSlotT *item) {
         exit = TRUE;
         break;
       }
+#if REMOTE_CONTROL
+      {
+        LONG c;
+
+        while ((c = SerialGet()) >= 0) {
+          if (c == '\n') {
+            Log("[Serial] Received line '%s'\n", cmd);
+            memset(cmd, 0, sizeof(cmd));
+            cmdLen = 0;
+          } else {
+            cmd[cmdLen++] = c;
+          }
+        }
+      }
+#endif
     }
 
     EffectKill(effect);
