@@ -1,51 +1,40 @@
-#include <stdlib.h>
-
-#include "std/debug.h"
 #include "std/fastmath.h"
 #include "std/math.h"
-#include "std/memory.h"
-
 #include "gfx/blit.h"
 #include "gfx/png.h"
-#include "tools/frame.h"
 #include "tools/gradient.h"
-#include "tools/loopevent.h"
-#include "tools/profiling.h"
 
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/vblank.h"
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
 static PixBufT *canvas;
-static PixBufT *map1;
-static PixBufT *map2;
+static PixBufT *map[2];
 static PixBufT *shade;
 static PixBufT *lighten;
 static PixBufT *darken;
 static PixBufT *image;
 static PaletteT *imagePal;
 
-void AcquireResources() {
+static void Load() {
   LoadPngImage(&image, &imagePal, "data/samkaat-absinthe.png");
   LoadPngImage(&darken, NULL, "data/samkaat-absinthe-darken.png");
   LoadPngImage(&lighten, NULL, "data/samkaat-absinthe-lighten.png");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   MemUnref(lighten);
   MemUnref(darken);
   MemUnref(image);
   MemUnref(imagePal);
 }
 
-void SetupEffect() {
+static void Init() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
-  map1 = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
-  map2 = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  map[0] = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  map[1] = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
   shade = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
 
   {
@@ -54,42 +43,39 @@ void SetupEffect() {
     FPointT pb = { WIDTH, HEIGHT };
 
     FLineInitFromPoints(&line, &pa, &pb);
-    LinearGradient(map1, &line);
+    LinearGradient(map[0], &line);
   }
 
   {
     FPointT center = { WIDTH / 2, HEIGHT / 2 };
-    CircularGradient(map2, &center);
+    CircularGradient(map[1], &center);
   }
 
   InitDisplay(WIDTH, HEIGHT, DEPTH);
   LoadPalette(imagePal);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   MemUnref(canvas);
-  MemUnref(map1);
-  MemUnref(map2);
+  MemUnref(map[0]);
+  MemUnref(map[1]);
   MemUnref(shade);
 }
 
-static int Effect = 0;
-static const int LastEffect = 4;
+static int effect = 0;
+static const int lastEffect = 4;
 
-void RenderChunky(int frameNumber) {
-  PixBufT *map;
-
+static void RenderChunky(int frameNumber) {
   int change = (frameNumber * 2) % 256;
 
-  switch (Effect) {
+  switch (effect) {
     case 0:
-      map = map1;
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
       PROFILE(PixBufAddAndClamp)
-        PixBufAddAndClamp(shade, map, change);
+        PixBufAddAndClamp(shade, map[0], change);
       PixBufSetColorMap(shade, lighten);
       PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
@@ -97,11 +83,10 @@ void RenderChunky(int frameNumber) {
       break;
 
     case 1:
-      map = map1;
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
       PROFILE(PixBufAddAndClamp)
-        PixBufAddAndClamp(shade, map, change - 64);
+        PixBufAddAndClamp(shade, map[0], change - 64);
       PixBufSetColorMap(shade, darken);
       PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
@@ -109,11 +94,10 @@ void RenderChunky(int frameNumber) {
       break;
 
     case 2:
-      map = map2;
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
       PROFILE(PixBufAddAndClamp)
-        PixBufAddAndClamp(shade, map, change - 64);
+        PixBufAddAndClamp(shade, map[1], change - 64);
       PixBufSetColorMap(shade, lighten);
       PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
@@ -121,11 +105,10 @@ void RenderChunky(int frameNumber) {
       break;
 
     case 3:
-      map = map2;
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
       PROFILE(PixBufAddAndClamp)
-        PixBufAddAndClamp(shade, map, change - 64);
+        PixBufAddAndClamp(shade, map[1], change - 64);
       PixBufSetColorMap(shade, darken);
       PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
@@ -139,7 +122,7 @@ void RenderChunky(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -148,11 +131,11 @@ void MainLoop() {
     int frameNumber = GetVBlankCounter();
 
     if (event == LOOP_NEXT)
-      Effect = (Effect + 1) % LastEffect;
+      effect = (effect + 1) % lastEffect;
     if (event == LOOP_PREV) {
-      Effect--;
-      if (Effect < 0)
-        Effect += LastEffect;
+      effect--;
+      if (effect < 0)
+        effect += lastEffect;
     }
 
     RenderChunky(frameNumber);
@@ -162,3 +145,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "ColorMap", Load, UnLoad, Init, Kill, Loop };

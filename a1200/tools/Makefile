@@ -1,6 +1,6 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-OBJS = curves.o frame.o gradient.o loopevent.o profiling.o
+OBJS = curves.o effect.o frame.o gradient.o loopevent.o profiling.o
 
 libtools.a: $(OBJS)
 

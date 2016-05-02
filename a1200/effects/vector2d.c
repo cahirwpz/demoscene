@@ -1,18 +1,11 @@
 #include <math.h>
 
-#include "std/debug.h"
-#include "std/memory.h"
-
 #include "gfx/ellipse.h"
 #include "gfx/line.h"
 #include "gfx/ms2d.h"
 #include "gfx/triangle.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
 
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/vblank.h"
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -31,13 +24,7 @@ static PointT crossToDraw[12];
 static PointT triangle[] = { {-15, -10}, {10, -5}, {0, 20} };
 static PointT triangleToDraw[3];
 
-void AcquireResources() {
-}
-
-void ReleaseResources() {
-}
-
-void SetupEffect() {
+static void Init() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   PixBufClear(canvas);
 
@@ -46,17 +33,17 @@ void SetupEffect() {
   InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   MemUnref(canvas);
   MemUnref(ms);
 }
 
-int effect = 0;
-const int lastEffect = 3;
+static int effect = 0;
+static const int lastEffect = 3;
 
-void RenderVector(int frameNumber) {
+static void RenderVector(int frameNumber) {
   PointT *toDraw = triangleToDraw;
 
   float s = sin(frameNumber * 3.14159265f / 22.5f);
@@ -106,7 +93,7 @@ void RenderVector(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -132,3 +119,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "Vector2D", NULL, NULL, Init, Kill, Loop };

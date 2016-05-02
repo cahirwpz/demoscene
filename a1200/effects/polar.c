@@ -1,25 +1,16 @@
 #include <stdlib.h>
 
-#include "std/debug.h"
 #include "std/math.h"
-#include "std/memory.h"
 #include "std/random.h"
-
 #include "gfx/blit.h"
-#include "gfx/pixbuf.h"
 #include "gfx/palette.h"
 #include "gfx/png.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
-#include "tools/profiling.h"
+#include "system/fileio.h"
 #include "tools/gradient.h"
 #include "uvmap/generate.h"
 #include "uvmap/render.h"
 
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/fileio.h"
-#include "system/vblank.h"
+#include "startup.h"
 
 const int WIDTH = 256;
 const int HEIGHT = 256;
@@ -63,15 +54,15 @@ static PixBufT *polarBuf;
 static PixBufT *origU;
 static PixBufT *origV;
 
-void AcquireResources() {
+static void Load() {
   LoadPngImage(&polarImg, NULL, "data/polar-map.png");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   MemUnref(polarImg);
 }
 
-void SetupEffect() {
+static void Init() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 
   polarMap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
@@ -99,7 +90,7 @@ void SetupEffect() {
   InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   MemUnref(canvas);
@@ -110,7 +101,7 @@ void TearDownEffect() {
   MemUnref(polarBuf);
 }
 
-void RenderPolar(PixBufT *canvas, int frameNumber) {
+static void RenderPolar(PixBufT *canvas, int frameNumber) {
   UNUSED float a = frameNumber * M_PI / 256;
   UNUSED float u = sin(a) * 32.0f;
   UNUSED float v = cos(a) * 32.0f;
@@ -146,14 +137,14 @@ void RenderPolar(PixBufT *canvas, int frameNumber) {
   UVMapRender(cartesianMap, canvas);
 }
 
-void RenderEffect(int frameNumber) {
+static void RenderEffect(int frameNumber) {
   PROFILE(Polar)
     RenderPolar(canvas, frameNumber);
   PROFILE(C2P)
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -168,3 +159,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "Polar", Load, UnLoad, Init, Kill, Loop };

@@ -1,22 +1,13 @@
-#include "std/debug.h"
-#include "std/memory.h"
-
-#include "gfx/pixbuf.h"
 #include "gfx/palette.h"
 #include "gfx/png.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
-#include "tools/profiling.h"
+#include "system/fileio.h"
 #include "uvmap/common.h"
 
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/fileio.h"
-#include "system/vblank.h"
+#include "startup.h"
 
-const int WIDTH = 320;
-const int HEIGHT = 256;
-const int DEPTH = 8;
+static const int WIDTH = 320;
+static const int HEIGHT = 256;
+static const int DEPTH = 8;
 
 static PixBufT *canvas;
 static PixBufT *heightMap;
@@ -117,15 +108,15 @@ RenderBumpMap(PixBufT *canvas, UVMapT *bumpMap, PixBufT *reflectionMap,
 #endif
 }
 
-void AcquireResources() {
+static void Load() {
   LoadPngImage(&heightMap, NULL, "data/samkaat-absinthe.png");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   MemUnref(heightMap);
 }
 
-void SetupEffect() {
+static void Init() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 
   bumpMap = NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256);
@@ -136,7 +127,7 @@ void SetupEffect() {
   InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   MemUnref(canvas);
@@ -144,7 +135,7 @@ void TearDownEffect() {
   MemUnref(reflectionMap);
 }
 
-void RenderEffect(int frameNumber) {
+static void RenderEffect(int frameNumber) {
   PROFILE(BumpMap) {
     RenderBumpMap(canvas, bumpMap, reflectionMap,
                   64 * sin((frameNumber & 255) * M_PI / 128) + 32, 0);
@@ -153,7 +144,7 @@ void RenderEffect(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -168,3 +159,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "BumpMap", Load, UnLoad, Init, Kill, Loop };

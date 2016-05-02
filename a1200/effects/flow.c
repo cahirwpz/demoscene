@@ -1,19 +1,11 @@
 #include <stdlib.h>
 
-#include "std/debug.h"
-#include "std/memory.h"
 #include "std/random.h"
-
 #include "gfx/pixbuf.h"
 #include "gfx/palette.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
-#include "tools/profiling.h"
-
-#include "system/c2p.h"
-#include "system/display.h"
 #include "system/fileio.h"
-#include "system/vblank.h"
+
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -34,29 +26,29 @@ static PixBufT *canvas;
 static VelocityT *flow;
 static ParticleT *particles;
 
-void AcquireResources() {
+static void Load() {
   flow = ReadFileSimple("data/flow.bin");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   MemUnref(flow);
 }
 
-void SetupEffect() {
+static void Init() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   particles = NewTable(ParticleT, PARTICLES);
 
   InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   MemUnref(canvas);
   MemUnref(particles);
 }
 
-__regargs static void 
+static __regargs void 
 GetFilteredVelocity(VelocityT *array, VelocityT *v, float x, float y) 
 {
   float xi, yi;
@@ -78,7 +70,7 @@ GetFilteredVelocity(VelocityT *array, VelocityT *v, float x, float y)
   v->v = dv31 + ((dv42 - dv31) * xf);
 }
 
-void RenderFlow(PixBufT *canvas) {
+static void RenderFlow(PixBufT *canvas) {
   int i, j;
 
   for (i = 0; i < PARTICLES; i++) {
@@ -118,7 +110,7 @@ void RenderFlow(PixBufT *canvas) {
   }
 }
 
-void RenderEffect(int frameNumber) {
+static void RenderEffect(int frameNumber) {
   int n = canvas->width * canvas->height;
   uint8_t *data = canvas->data;
 
@@ -136,7 +128,7 @@ void RenderEffect(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -151,3 +143,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "Flow", Load, UnLoad, Init, Kill, Loop };

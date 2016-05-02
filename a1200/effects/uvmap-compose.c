@@ -1,21 +1,12 @@
-#include "std/debug.h"
-#include "std/memory.h"
-
 #include "gfx/blit.h"
 #include "gfx/ellipse.h"
 #include "gfx/palette.h"
 #include "gfx/png.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
-#include "tools/profiling.h"
-
-#include "system/c2p.h"
-#include "system/display.h"
 #include "system/fileio.h"
-#include "system/vblank.h"
-
 #include "uvmap/misc.h"
 #include "uvmap/render.h"
+
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -29,19 +20,19 @@ static UVMapT *uvmap[2];
 static PixBufT *canvas;
 static uint8_t *colorFunc;
 
-void AcquireResources() {
+static void Load() {
   LoadPngImage(&texture[0], &texturePal[0], "data/texture-128-01.png");
   LoadPngImage(&texture[1], &texturePal[1], "data/texture-128-02.png");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   MemUnref(texture[0]);
   MemUnref(texturePal[0]);
   MemUnref(texture[1]);
   MemUnref(texturePal[1]);
 }
 
-void SetupEffect() {
+static void Init() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 
   uvmap[0] = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
@@ -63,7 +54,7 @@ void SetupEffect() {
   InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   UnlinkPalettes(texturePal[0]);
@@ -76,13 +67,13 @@ void TearDownEffect() {
   MemUnref(colorFunc);
 }
 
-static int EffectNum = 0;
+static int effectNum = 0;
 
-void RenderChunky(int frameNumber) {
+static void RenderChunky(int frameNumber) {
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
 
-  if (EffectNum == 0) {
+  if (effectNum == 0) {
     int i;
 
     for (i = 0; i < 256; i++) {
@@ -112,7 +103,7 @@ void RenderChunky(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -121,9 +112,9 @@ void MainLoop() {
     int frameNumber = GetVBlankCounter();
 
     if (event == LOOP_NEXT)
-      EffectNum = (EffectNum + 1) % 2;
+      effectNum = (effectNum + 1) % 2;
     if (event == LOOP_PREV)
-      EffectNum = (EffectNum - 1) % 2;
+      effectNum = (effectNum - 1) % 2;
 
     RenderChunky(frameNumber);
     RenderFrameNumber(frameNumber);
@@ -132,3 +123,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "UVMapCompose", Load, UnLoad, Init, Kill, Loop };

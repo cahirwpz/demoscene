@@ -1,22 +1,14 @@
-#include "std/debug.h"
 #include "std/math.h"
 #include "std/fastmath.h"
-#include "std/memory.h"
-
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/timer.h"
-#include "system/vblank.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
-#include "tools/profiling.h"
-
-#include "engine/matrix3d.h"
 #include "gfx/blit.h"
 #include "gfx/png.h"
+#include "engine/matrix3d.h"
+#include "system/timer.h"
 #include "uvmap/raycast.h"
 #include "uvmap/render.h"
 #include "uvmap/scaling.h"
+
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -67,18 +59,18 @@ static uint8_t *CalculateLightFunc() {
   return array;
 }
 
-void AcquireResources() {
+static void Load() {
   LoadPngImage(&texture, &texturePal, "data/texture-shades.png");
   LoadPngImage(&colorMap, NULL, "data/texture-shades-map.png");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   MemUnref(texture);
   MemUnref(texturePal);
   MemUnref(colorMap);
 }
 
-void SetupEffect() {
+static void Init() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   PixBufClear(canvas);
 
@@ -93,7 +85,7 @@ void SetupEffect() {
   InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   MemUnref(canvas);
@@ -103,7 +95,7 @@ void TearDownEffect() {
   MemUnref(lightFunc);
 }
 
-void RaycastCalculateView(int frameNumber) {
+static void RaycastCalculateView(int frameNumber) {
   Matrix3D transformation;
   Vector3D *transformed = CameraView.Transformed;
   Vector3D *nominal = CameraView.Nominal;
@@ -130,7 +122,7 @@ static void RenderShadeMap(PixBufT *shades, uint16_t *map) {
   } while (--n);
 }
 
-void RenderEffect(int frameNumber) {
+static void RenderEffect(int frameNumber) {
   RaycastCalculateView(frameNumber);
 
   PROFILE(RaycastTunnel)
@@ -158,7 +150,7 @@ void RenderEffect(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   SetVBlankCounter(0);
 
   do {
@@ -171,3 +163,5 @@ void MainLoop() {
     DisplaySwap();
   } while (ReadLoopEvent() != LOOP_EXIT);
 }
+
+EffectT Effect = { "RayTunnel", Load, UnLoad, Init, Kill, Loop };

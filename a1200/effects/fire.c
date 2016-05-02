@@ -1,18 +1,8 @@
 #include <stdlib.h>
 
-#include "std/debug.h"
-#include "std/memory.h"
-
-#include "gfx/pixbuf.h"
 #include "gfx/palette.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
-#include "tools/profiling.h"
 
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/fileio.h"
-#include "system/vblank.h"
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -27,12 +17,6 @@ void CalculateFire(uint8_t *fire asm("a0"),
 
 static PixBufT *canvas;
 static PaletteT *palette;
-
-void AcquireResources() {
-}
-
-void ReleaseResources() {
-}
 
 static void MakePalette(RGB *colors) {
   int i;
@@ -70,7 +54,7 @@ static void MakePalette(RGB *colors) {
   } 
 }
 
-void SetupEffect() {
+static void Init() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT + 2);
 
   InitDisplay(WIDTH, HEIGHT, DEPTH);
@@ -80,7 +64,7 @@ void SetupEffect() {
   LoadPalette(palette);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   MemUnref(palette);
@@ -98,7 +82,7 @@ static __regargs void IgniteBottom(uint8_t *fire, int16_t width) {
   } while (--width > 0);
 }
 
-__regargs void RenderFire(PixBufT *canvas) {
+static __regargs void RenderFire(PixBufT *canvas) {
   int16_t width = canvas->width;
   uint8_t *fire = &canvas->data[width * (canvas->height - 1)];
 
@@ -107,14 +91,14 @@ __regargs void RenderFire(PixBufT *canvas) {
   CalculateFire(fire, width, 60);
 }
 
-void RenderEffect(int frameNumber) {
+static void RenderEffect(int frameNumber) {
   PROFILE(Fire)
     RenderFire(canvas);
   PROFILE(C2P)
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -129,3 +113,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "Fire", NULL, NULL, Init, Kill, Loop };

@@ -1,24 +1,15 @@
 #include <math.h>
 
-#include "std/debug.h"
-#include "std/memory.h"
-
 #include "gfx/blit.h"
 #include "gfx/hsl.h"
 #include "gfx/line.h"
 #include "gfx/palette.h"
 #include "gfx/png.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
-#include "tools/profiling.h"
-
-#include "system/c2p.h"
-#include "system/display.h"
 #include "system/fileio.h"
-#include "system/vblank.h"
-
 #include "uvmap/generate.h"
 #include "uvmap/render.h"
+
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -34,13 +25,13 @@ static PaletteT *whelpzPal;
 static PaletteT *effectPal;
 static UVMapT *tunnelMap;
 
-void AcquireResources() {
+static void Load() {
   LoadPngImage(&texture, &texturePal, "data/texture-01.png");
   LoadPngImage(&credits, &creditsPal, "data/code.png");
   LoadPngImage(&whelpz, &whelpzPal, "data/whelpz.png");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   MemUnref(texture);
   MemUnref(texturePal);
   MemUnref(credits);
@@ -49,7 +40,7 @@ void ReleaseResources() {
   MemUnref(whelpzPal);
 }
 
-void SetupEffect() {
+static void Init() {
   static TunnelPetalsT petals = { 3, 0.333333f, 0.33333f };
 
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
@@ -64,12 +55,12 @@ void SetupEffect() {
   PixBufRemap(whelpz, whelpzPal);
   PixBufSetBlitMode(whelpz, BLIT_TRANSPARENT);
 
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
   LinkPalettes(texturePal, whelpzPal, creditsPal, NULL);
   LoadPalette(texturePal);
-  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   UnlinkPalettes(texturePal);
@@ -80,21 +71,21 @@ void TearDownEffect() {
 
 typedef void (*PaletteFunctorT)(int frameNumber, HSL *hsl);
 
-void CyclicHue(int frameNumber, HSL *hsl) {
+static void CyclicHue(int frameNumber, HSL *hsl) {
   hsl->h += (float)(frameNumber & 255) / 256.0f;
 
   if (hsl->h > 1.0f)
     hsl->h -= 1.0f;
 }
 
-void PulsingSaturation(int frameNumber, HSL *hsl) {
+static void PulsingSaturation(int frameNumber, HSL *hsl) {
   float s = sin(frameNumber * M_PI / 50.0f) * 1.00f;
   float change = (s > 0.0f) ? (1.0f - hsl->s) : (hsl->s);
 
   hsl->s += change * s;
 }
 
-void PulsingLuminosity(int frameNumber, HSL *hsl) {
+static void PulsingLuminosity(int frameNumber, HSL *hsl) {
   float s = sin(frameNumber * M_PI / 12.5f) * 0.66f;
   float change = (s > 0.0f) ? (1.0f - hsl->l) : (hsl->l);
 
@@ -107,7 +98,9 @@ static PaletteFunctorT PalEffects[] = {
   PulsingLuminosity
 };
 
-void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst, PaletteFunctorT *func) {
+static void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst,
+                          PaletteFunctorT *func)
+{
   while (src) {
     int i;
 
@@ -128,7 +121,7 @@ void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst, PaletteFunctor
   }
 }
 
-void RenderTunnel(int frameNumber) {
+static void RenderTunnel(int frameNumber) {
   UVMapSetOffset(tunnelMap, 0, frameNumber);
   UVMapSetTexture(tunnelMap, texture);
   PROFILE (UVMapRender)
@@ -148,10 +141,7 @@ void RenderTunnel(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
-void MainLoop() {
+static void Loop() {
   SetVBlankCounter(0);
 
   do {
@@ -167,3 +157,5 @@ void MainLoop() {
     DisplaySwap();
   } while (ReadLoopEvent() != LOOP_EXIT);
 }
+
+EffectT Effect = { "Tunnel", Load, UnLoad, Init, Kill, Loop };

@@ -1,34 +1,28 @@
-#include <clib/exec_protos.h>
-#include <proto/exec.h>
-
-#include "std/debug.h"
 #include "std/exception.h"
 #include "system/check.h"
 #include "system/display.h"
 #include "system/input.h"
 #include "system/timer.h"
 #include "system/vblank.h"
-#include "tools/profiling.h"
 
 #include "startup.h"
 
 int __nocommandline = 1;
 
-extern void AcquireResources();
-extern void ReleaseResources();
-extern void SetupEffect();
-extern void TearDownEffect();
-extern void MainLoop();
+void AcquireResources() {}
+void ReleaseResources() {}
+void SetupEffect() {}
+void TearDownEffect() {}
+void MainLoop() {}
 
-bool SetupDisplay() {
-  return false;
-}
+extern EffectT Effect;
 
 int main() {
   if (SystemCheck()) {
     LOG("Adding resources.");
 
-    AcquireResources();
+    if (Effect.Load)
+      Effect.Load();
 
     SetupTimer();
     StartEventQueue();
@@ -37,11 +31,11 @@ int main() {
 
     TRY {
       LOG("Setting up the effect.");
-      SetupEffect();
+      Effect.Init();
       LOG("Running up main loop.");
-      MainLoop();
+      Effect.Loop();
       LOG("Tearing down the effect.");
-      TearDownEffect();
+      Effect.Kill();
     }
     CATCH {
       LOG("Effect crashed!");
@@ -52,7 +46,8 @@ int main() {
     StopEventQueue();
     KillTimer();
 
-    ReleaseResources();
+    if (Effect.UnLoad)
+      Effect.UnLoad();
   }
 
   return 0;

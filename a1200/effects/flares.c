@@ -1,19 +1,13 @@
 #include <math.h>
 
-#include "std/debug.h"
-#include "std/memory.h"
 
 #include "gfx/blit.h"
 #include "gfx/spline.h"
 #include "gfx/line.h"
 #include "tools/curves.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
 #include "txtgen/procedural.h"
 
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/vblank.h"
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -30,15 +24,37 @@ static PixBufT *canvas;
 static SplineT *splineX;
 static SplineT *splineY;
 
-void AcquireResources() {
-  points = NewTable(PointT, SEGMENTS + 1);
-  flare = NewPixBuf(PIXBUF_GRAY, 32, 32);
+static void Init() {
+  float lightRadius = 1.0f;
+
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  PixBufClear(canvas);
+
+  flare = NewPixBuf(PIXBUF_GRAY, 32, 32);
+  GeneratePixels(flare, (GenPixelFuncT)LightNormalFalloff, &lightRadius);
+  PixBufSetBlitMode(flare, BLIT_ADDITIVE_CLIP);
+
   splineX = NewSpline(4, TRUE);
   splineY = NewSpline(4, TRUE);
+  splineX->knots[0].value = 64;
+  splineY->knots[0].value = 128;
+  splineX->knots[1].value = 128;
+  splineY->knots[1].value = 64;
+  splineX->knots[2].value = 192;
+  splineY->knots[2].value = 192;
+  splineX->knots[3].value = 256;
+  splineY->knots[3].value = 128;
+  SplineAttachCatmullRomTangents(splineX);
+  SplineAttachCatmullRomTangents(splineY);
+
+  points = NewTable(PointT, SEGMENTS + 1);
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-void ReleaseResources() {
+static void Kill() {
+  KillDisplay();
+
   MemUnref(points);
   MemUnref(flare);
   MemUnref(canvas);
@@ -46,39 +62,10 @@ void ReleaseResources() {
   MemUnref(splineY);
 }
 
-void SetupEffect() {
-  float lightRadius = 1.0f;
+static int curve = 8;
+static const int lastCurve = 9;
 
-  PixBufClear(canvas);
-  GeneratePixels(flare, (GenPixelFuncT)LightNormalFalloff, &lightRadius);
-  PixBufSetBlitMode(flare, BLIT_ADDITIVE_CLIP);
-
-  splineX->knots[0].value = 64;
-  splineY->knots[0].value = 128;
-
-  splineX->knots[1].value = 128;
-  splineY->knots[1].value = 64;
-
-  splineX->knots[2].value = 192;
-  splineY->knots[2].value = 192;
-
-  splineX->knots[3].value = 256;
-  splineY->knots[3].value = 128;
-
-  SplineAttachCatmullRomTangents(splineX);
-  SplineAttachCatmullRomTangents(splineY);
-
-  InitDisplay(WIDTH, HEIGHT, DEPTH);
-}
-
-void TearDownEffect() {
-  KillDisplay();
-}
-
-static int Curve = 8;
-static const int LastCurve = 9;
-
-void RenderFlares(int frameNumber) {
+static void RenderFlares(int frameNumber) {
   PixBufClear(canvas);
 
   {
@@ -89,7 +76,7 @@ void RenderFlares(int frameNumber) {
     for (i = 0; i <= SEGMENTS; i++) {
       float x, y;
 
-      switch (Curve) {
+      switch (curve) {
         case 0: /* LineSegment */
           CurveLineSegment(t + (float)i / POINTS, -80, -64, 80, 64, &x, &y);
           break;
@@ -159,7 +146,7 @@ void RenderFlares(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -168,11 +155,11 @@ void MainLoop() {
     int frameNumber = GetVBlankCounter();
 
     if (event == LOOP_NEXT)
-      Curve = (Curve + 1) % LastCurve;
+      curve = (curve + 1) % lastCurve;
     if (event == LOOP_PREV) {
-      Curve--;
-      if (Curve < 0)
-        Curve += LastCurve;
+      curve--;
+      if (curve < 0)
+        curve += lastCurve;
     }
 
     RenderFlares(frameNumber);
@@ -181,3 +168,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "Flares", NULL, NULL, Init, Kill, Loop };

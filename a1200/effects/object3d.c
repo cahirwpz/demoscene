@@ -1,19 +1,12 @@
 #include <math.h>
 
-#include "std/debug.h"
-#include "std/memory.h"
-
 #include "engine/ms3d.h"
 #include "engine/object.h"
 #include "engine/scene.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
-#include "tools/profiling.h"
-
-#include "system/c2p.h"
-#include "system/display.h"
+#include "gfx/png.h"
 #include "system/input.h"
-#include "system/vblank.h"
+
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -24,13 +17,13 @@ static SceneT *scene;
 static MeshT *mesh;
 static PaletteT *palette;
 
-void AcquireResources() {
+static void Load() {
 #if 0
   ResAdd("Mesh", NewMeshFromFile("data/shattered_ball.robj"));
   ResAdd("ColorMap", NewPixBufFromFile("data/shattered_ball_cmap.8"));
-  ResAddPngImage("ColorMap", "Palette", "data/wecan_logo_cmap.png");
   ResAdd("Palette", NewPaletteFromFile("data/shattered_ball_cmap.pal"));
 #else
+  LoadPngImage(NULL, &palette, "data/wecan_logo_cmap.png");
   mesh = NewMeshFromFile("data/wecan_logo.robj");
 #endif
 
@@ -42,25 +35,29 @@ void AcquireResources() {
   RenderAllFaces = false;
 }
 
-void ReleaseResources() {
+static void UnLoad() {
+  MemUnref(mesh);
 }
 
-void SetupEffect() {
+static void Init() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   PixBufClear(canvas);
 
   scene = NewScene();
   SceneAddObject(scene, NewSceneObject("Object", mesh));
 
-  LoadPalette(palette);
   InitDisplay(WIDTH, HEIGHT, DEPTH);
+  LoadPalette(palette);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
+
+  MemUnref(canvas);
+  MemUnref(scene);
 }
 
-void RenderMesh(int frameNumber_) {
+static void RenderMesh(int frameNumber_) {
   float frameNumber = frameNumber_;
   float s = sin(frameNumber * 3.14159265f / 90.0f) + 1.0f;
 
@@ -84,7 +81,7 @@ void RenderMesh(int frameNumber_) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -122,3 +119,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "Object3D", Load, UnLoad, Init, Kill, Loop };

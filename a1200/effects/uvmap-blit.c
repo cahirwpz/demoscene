@@ -1,20 +1,11 @@
-#include "std/debug.h"
-#include "std/memory.h"
-
 #include "gfx/blit.h"
 #include "gfx/palette.h"
 #include "gfx/png.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
 #include "txtgen/procedural.h"
-
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/fileio.h"
-#include "system/vblank.h"
-
 #include "uvmap/misc.h"
 #include "uvmap/render.h"
+
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -28,16 +19,16 @@ static UVMapT *uvmap;
 static PixBufT *texture;
 static PaletteT *texturePal;
 
-void AcquireResources() {
+static void Load() {
   LoadPngImage(&texture, &texturePal, "data/texture-01.png");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   MemUnref(&texture);
   MemUnref(&texturePal);
 }
 
-void SetupEffect() {
+static void Init() {
   float lightRadius = 1.0f;
   int i;
 
@@ -65,7 +56,7 @@ void SetupEffect() {
   LoadPalette(texturePal);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   MemUnref(origU);
@@ -75,7 +66,7 @@ void TearDownEffect() {
   MemUnref(canvas);
 }
 
-void RenderChunky(int frameNumber) {
+static void RenderChunky(int frameNumber) {
   PixBufT *umap;
 
   int du = frameNumber;
@@ -102,7 +93,7 @@ void RenderChunky(int frameNumber) {
   MemUnref(umap);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -116,3 +107,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "UVMapBlit", Load, UnLoad, Init, Kill, Loop };

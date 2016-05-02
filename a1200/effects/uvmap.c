@@ -1,19 +1,10 @@
-#include "std/debug.h"
-#include "std/memory.h"
-
 #include "gfx/palette.h"
 #include "gfx/png.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
-#include "tools/profiling.h"
-
-#include "system/c2p.h"
-#include "system/display.h"
 #include "system/fileio.h"
-#include "system/vblank.h"
-
 #include "uvmap/misc.h"
 #include "uvmap/render.h"
+
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -33,7 +24,7 @@ static void (*generate[])(UVMapT *) = {
   UVMapGenerate8, UVMapGenerate9, UVMapGenerate10
 };
 
-void ChangeMap(int newMap) {
+static void ChangeMap(int newMap) {
   while (newMap < 0)
     newMap += maps;
 
@@ -48,17 +39,16 @@ void ChangeMap(int newMap) {
   }
 }
 
-void AcquireResources() {
+static void Load() {
   LoadPngImage(&texture, &texturePal, "data/texture.png");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   MemUnref(texture);
   MemUnref(texturePal);
 }
 
-
-void SetupEffect() {
+static void Init() {
   uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 
@@ -68,14 +58,14 @@ void SetupEffect() {
   LoadPalette(texturePal);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   MemUnref(uvmap);
   MemUnref(canvas);
 }
 
-void RenderChunky(int frameNumber) {
+static void RenderChunky(int frameNumber) {
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
 
@@ -86,7 +76,7 @@ void RenderChunky(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -106,3 +96,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "UVMap", Load, UnLoad, Init, Kill, Loop };

@@ -2,10 +2,18 @@
 #define __STARTUP_EFFECT_H__
 
 #include "std/types.h"
+#include "std/debug.h"
+#include "std/memory.h"
 
-void MainLoop();
-bool SetupDisplay();
-void TearDownEffect();
-void SetupEffect();
+#include "gfx/pixbuf.h"
+
+#include "system/c2p.h"
+#include "system/display.h"
+#include "system/vblank.h"
+
+#include "tools/effect.h"
+#include "tools/frame.h"
+#include "tools/loopevent.h"
+#include "tools/profiling.h"
 
 #endif

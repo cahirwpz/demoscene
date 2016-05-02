@@ -1,21 +1,13 @@
 #include <stdlib.h>
 
-#include "std/debug.h"
 #include "std/fastmath.h"
 #include "std/math.h"
-#include "std/memory.h"
-
 #include "gfx/ellipse.h"
 #include "gfx/layers.h"
 #include "gfx/rectangle.h"
 #include "gfx/png.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
-#include "tools/profiling.h"
 
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/vblank.h"
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 200;
@@ -26,13 +18,13 @@ static PixBufT *layerMap;
 static PixBufT *image[3];
 static PaletteT *imagePal[3];
 
-void AcquireResources() {
+static void Load() {
   LoadPngImage(&image[0], &imagePal[0], "data/last-hope-64.png");
   LoadPngImage(&image[1], &imagePal[1], "data/bus-stop-64.png");
   LoadPngImage(&image[2], &imagePal[2], "data/dragon-128.png");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   int i;
 
   for (i = 0; i < 3; i++) {
@@ -41,7 +33,7 @@ void ReleaseResources() {
   }
 }
 
-void SetupEffect() {
+static void Init() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   layerMap = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
 
@@ -53,22 +45,24 @@ void SetupEffect() {
   InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
+
   UnlinkPalettes(imagePal[0]);
+
   MemUnref(canvas);
   MemUnref(layerMap);
 }
 
-static int Effect = 0;
-static const int LastEffect = 1;
+static int effect = 0;
+static const int lastEffect = 1;
 
-void RenderChunky(int frameNumber) {
+static void RenderChunky(int frameNumber) {
   int x = 160.0 * sin(M_PI * frameNumber / 100);
   int y = 100.0 * sin(M_PI * frameNumber / 100);
 
   PROFILE(DrawComposeMap)
-    switch (Effect) {
+    switch (effect) {
       case 0:
         PixBufClear(layerMap);
         layerMap->fgColor = 2;
@@ -89,7 +83,7 @@ void RenderChunky(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -98,11 +92,11 @@ void MainLoop() {
     int frameNumber = GetVBlankCounter();
 
     if (event == LOOP_NEXT)
-      Effect = (Effect + 1) % LastEffect;
+      effect = (effect + 1) % lastEffect;
     if (event == LOOP_PREV) {
-      Effect--;
-      if (Effect < 0)
-        Effect += LastEffect;
+      effect--;
+      if (effect < 0)
+        effect += lastEffect;
     }
 
     RenderChunky(frameNumber);
@@ -112,3 +106,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "Layers", Load, UnLoad, Init, Kill, Loop };

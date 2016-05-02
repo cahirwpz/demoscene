@@ -1,21 +1,15 @@
-#include "std/debug.h"
 #include "std/math.h"
-#include "std/memory.h"
-
 #include "audio/stream.h"
 #include "gfx/blit.h"
 #include "gfx/line.h"
 #include "gfx/palette.h"
 #include "gfx/png.h"
-#include "tools/frame.h"
+#include "system/audio.h"
+#include "system/input.h"
 #include "uvmap/generate.h"
 #include "uvmap/render.h"
 
-#include "system/audio.h"
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/input.h"
-#include "system/vblank.h"
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -32,20 +26,20 @@ static PixBufT *canvas;
 static PixBufT *darken;
 static AudioStreamT *audio;
 
-void AcquireResources() {
+static void Load() {
   LoadPngImage(&image, &imagePal, "data/samkaat-absinthe.png");
   LoadPngImage(&darken, NULL, "data/samkaat-absinthe-darken.png");
   audio = AudioStreamOpen("data/chembro.wav");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   MemUnref(audio);
   MemUnref(darken);
   MemUnref(imagePal);
   MemUnref(image);
 }
 
-void SetupEffect() {
+static void Init() {
   texture = NewPixBuf(PIXBUF_GRAY, 256, 256);
   shade = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
   uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
@@ -59,7 +53,7 @@ void SetupEffect() {
   InitAudio();
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillAudio();
   KillDisplay();
 
@@ -69,7 +63,7 @@ void TearDownEffect() {
   MemUnref(texture);
 }
 
-void RenderChunky(int frameNumber) {
+static void RenderChunky(int frameNumber) {
   AudioBufferT *buffer = AudioStreamGetBuffer(audio);
   static int array[256];
   int i;
@@ -104,7 +98,7 @@ void RenderChunky(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   bool finish = FALSE;
 
   AudioStreamPlay(audio);
@@ -162,3 +156,5 @@ void MainLoop() {
 
   AudioStreamStop(audio);
 }
+
+EffectT Effect = { "PlayAudio", Load, UnLoad, Init, Kill, Loop };

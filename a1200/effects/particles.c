@@ -1,21 +1,14 @@
 #include <stdlib.h>
 
-#include "std/debug.h"
 #include "std/math.h"
-#include "std/memory.h"
-
 #include "engine/plane.h"
 #include "engine/sphere.h"
 #include "engine/vector3d.h"
 #include "gfx/blit.h"
 #include "gfx/ellipse.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
 #include "txtgen/procedural.h"
 
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/vblank.h"
+#include "startup.h"
 
 const int WIDTH = 320;
 const int HEIGHT = 256;
@@ -129,13 +122,7 @@ static ParticleEngineT *engine;
 static PixBufT *canvas;
 static PixBufT *flare;
 
-void AcquireResources() {
-}
-
-void ReleaseResources() {
-}
-
-void SetupEffect() {
+static void Init() {
   float lightRadius = 1.0f;
 
   flare = NewPixBuf(PIXBUF_GRAY, 32, 32);
@@ -149,7 +136,7 @@ void SetupEffect() {
   InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   MemUnref(flare);
@@ -157,7 +144,7 @@ void TearDownEffect() {
   MemUnref(engine);
 }
 
-void RenderFlares(int frameNumber) {
+static void RenderFlares(int frameNumber) {
   int i;
 
   PixBufClear(canvas);
@@ -180,7 +167,7 @@ void RenderFlares(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-void MainLoop() {
+static void Loop() {
   SetVBlankCounter(0);
 
   do {
@@ -192,3 +179,5 @@ void MainLoop() {
     DisplaySwap();
   } while (ReadLoopEvent() != LOOP_EXIT);
 }
+
+EffectT Effect = { "Particles", NULL, NULL, Init, Kill, Loop };

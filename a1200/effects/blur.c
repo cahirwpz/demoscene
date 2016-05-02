@@ -1,58 +1,52 @@
-#include "std/memory.h"
-
 #include "gfx/blit.h"
 #include "gfx/filter.h"
 #include "gfx/png.h"
-#include "tools/frame.h"
-#include "tools/loopevent.h"
 
-#include "system/c2p.h"
-#include "system/display.h"
-#include "system/vblank.h"
+#include "startup.h"
 
-const int WIDTH = 320;
-const int HEIGHT = 256;
-const int DEPTH = 8;
+static const int WIDTH = 320;
+static const int HEIGHT = 256;
+static const int DEPTH = 8;
 
 static PixBufT *canvas;
 static PixBufT *buffer;
 static PixBufT *image;
 
-void AcquireResources() {
+static void Load() {
   LoadPngImage(&image, NULL, "data/samkaat-absinthe.png");
 }
 
-void ReleaseResources() {
+static void UnLoad() {
   MemUnref(image);
 }
 
-void SetupEffect() {
+static void Init() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   buffer = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 
   InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-void TearDownEffect() {
+static void Kill() {
   KillDisplay();
 
   MemUnref(canvas);
   MemUnref(buffer);
 }
 
-static bool Init = true;
-static int Effect = 0;
-static const int LastEffect = 2;
+static bool init = true;
+static int effect = 0;
+static const int lastEffect = 2;
 
-void RenderEffect(int frameNumber) {
-  if (Init) {
+static void RenderEffect(int frameNumber) {
+  if (init) {
     PixBufCopy(buffer, image);
-    Init = false;
+    init = false;
   }
 
-  if (Effect == 0)
+  if (effect == 0)
     BlurV3(canvas, buffer);
-  if (Effect == 1)
+  if (effect == 1)
     BlurH3(canvas, buffer);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
@@ -60,7 +54,7 @@ void RenderEffect(int frameNumber) {
   PixBufSwapData(canvas, buffer);
 }
 
-void MainLoop() {
+static void Loop() {
   LoopEventT event = LOOP_CONTINUE;
 
   SetVBlankCounter(0);
@@ -69,14 +63,14 @@ void MainLoop() {
     int frameNumber = GetVBlankCounter();
 
     if (event == LOOP_NEXT) {
-      Effect = (Effect + 1) % LastEffect;
-      Init = true;
+      effect = (effect + 1) % lastEffect;
+      init = true;
     }
     if (event == LOOP_PREV) {
-      Effect--;
-      if (Effect < 0)
-        Effect += LastEffect;
-      Init = true;
+      effect--;
+      if (effect < 0)
+        effect += lastEffect;
+      init = true;
     }
 
     RenderEffect(frameNumber);
@@ -85,3 +79,5 @@ void MainLoop() {
     DisplaySwap();
   } while ((event = ReadLoopEvent()) != LOOP_EXIT);
 }
+
+EffectT Effect = { "Blur", Load, UnLoad, Init, Kill, Loop };
