@@ -1,6 +1,6 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-BINS := spy-shs10 wpz-wcca
+BINS := 
 OBJS := spy-shs10.o wpz-wcca.o config.o timeline.o demo.o envelope.o
 LIBS := libaudio.a libengine.a libuvmap.a libjson.a libtools.a libgfx.a \
 	libsystem.a libstd.a 

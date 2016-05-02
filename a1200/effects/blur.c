@@ -1,5 +1,4 @@
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "gfx/blit.h"
 #include "gfx/filter.h"
@@ -15,47 +14,39 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("Buffer", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAddPngImage("Image", NULL, "data/samkaat-absinthe.png");
+static PixBufT *canvas;
+static PixBufT *buffer;
+static PixBufT *image;
+
+void AcquireResources() {
+  LoadPngImage(&image, NULL, "data/samkaat-absinthe.png");
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+  MemUnref(image);
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  buffer = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
+  MemUnref(canvas);
+  MemUnref(buffer);
 }
 
-/*
- * Effect rendering functions.
- */
 static bool Init = true;
 static int Effect = 0;
 static const int LastEffect = 2;
 
 void RenderEffect(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-  PixBufT *buffer = R_("Buffer");
-
   if (Init) {
-    PixBufCopy(R_("Buffer"), R_("Image"));
+    PixBufCopy(buffer, image);
     Init = false;
   }
 
@@ -69,9 +60,6 @@ void RenderEffect(int frameNumber) {
   PixBufSwapData(canvas, buffer);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 

@@ -3,7 +3,6 @@
 
 #include "std/debug.h"
 #include "std/exception.h"
-#include "std/resource.h"
 #include "system/check.h"
 #include "system/display.h"
 #include "system/input.h"
@@ -14,19 +13,19 @@
 
 int __nocommandline = 1;
 
-extern void MainLoop();
+extern void AcquireResources();
+extern void ReleaseResources();
 extern bool SetupDisplay();
-extern void TearDownEffect();
 extern void SetupEffect();
-extern void AddInitialResources();
+extern void TearDownEffect();
+extern void MainLoop();
 
 int main() {
   if (SystemCheck()) {
     LOG("Adding resources.");
-    StartResourceManager();
 
     TRY {
-      AddInitialResources();
+      AcquireResources();
     }
     CATCH {
       return 1;
@@ -56,7 +55,7 @@ int main() {
 
     KillTimer();
     StopEventQueue();
-    StopResourceManager();
+    ReleaseResources();
   }
 
   return 0;

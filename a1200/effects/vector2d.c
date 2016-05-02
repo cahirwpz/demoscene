@@ -2,7 +2,6 @@
 
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "gfx/ellipse.h"
 #include "gfx/line.h"
@@ -19,57 +18,43 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  static PointT Cross[] = {
-    {1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {2, 2}, {2, 3}, {1, 3}, {1, 2}, {0, 2}, {0, 1}, {1, 1}
-  };
-  static PointT CrossToDraw[12];
+static PixBufT *canvas;
+static MatrixStack2D *ms;
 
-  static PointT Triangle[] = { {-15, -10}, {10, -5}, {0, 20} };
-  static PointT TriangleToDraw[3];
+static PointT cross[] = {
+  {1, 0}, {2, 0}, {2, 1}, {3, 1},
+  {3, 2}, {2, 2}, {2, 3}, {1, 3},
+  {1, 2}, {0, 2}, {0, 1}, {1, 1}
+};
+static PointT crossToDraw[12];
 
-  ResAddStatic("Cross", Cross);
-  ResAddStatic("CrossToDraw", CrossToDraw);
-  ResAddStatic("Triangle", Triangle);
-  ResAddStatic("TriangleToDraw", TriangleToDraw);
+static PointT triangle[] = { {-15, -10}, {10, -5}, {0, 20} };
+static PointT triangleToDraw[3];
 
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("ms2d", NewMatrixStack2D());
+void AcquireResources() {
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
-  PixBufClear(R_("Canvas"));
+  ms = NewMatrixStack2D();
+  PixBufClear(canvas);
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
 }
 
-/*
- * Effect rendering functions.
- */
 int effect = 0;
 const int lastEffect = 3;
 
 void RenderVector(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-  PointT *toDraw = R_("TriangleToDraw");
-  MatrixStack2D *ms = R_("ms2d");
+  PointT *toDraw = triangleToDraw;
 
   float s = sin(frameNumber * 3.14159265f / 22.5f);
   float c = cos(frameNumber * 3.14159265f / 45.0f);
@@ -80,11 +65,11 @@ void RenderVector(int frameNumber) {
   PushRotation2D(ms, (float)(frameNumber * -3));
   PushTranslation2D(ms, (float)(WIDTH/2) + c * (WIDTH/4), (float)(HEIGHT/2));
 
-  Transform2D(R_("CrossToDraw"), R_("Cross"), 12, GetMatrix2D(ms, 0));
+  Transform2D(crossToDraw, cross, 12, GetMatrix2D(ms, 0));
 
   if (effect == 0) {
     PixBufClear(canvas);
-    DrawPolyLine(canvas, R_("CrossToDraw"), 12, TRUE);
+    DrawPolyLine(canvas, crossToDraw, 12, TRUE);
   }
 
   StackReset(ms);
@@ -93,7 +78,7 @@ void RenderVector(int frameNumber) {
   PushRotation2D(ms, (float)(frameNumber*5*c));
   PushTranslation2D(ms, WIDTH/2 + c * 50, HEIGHT/2 + s * 20);
 
-  Transform2D(R_("TriangleToDraw"), R_("Triangle"), 3, GetMatrix2D(ms, 0));
+  Transform2D(triangleToDraw, triangle, 3, GetMatrix2D(ms, 0));
 
   frameNumber &= 255;
 
@@ -118,9 +103,6 @@ void RenderVector(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 
@@ -130,7 +112,7 @@ void MainLoop() {
     int frameNumber = GetVBlankCounter();
 
     if (event != LOOP_CONTINUE) {
-      PixBufClear(R_("Canvas"));
+      PixBufClear(canvas);
 
       if (event == LOOP_NEXT)
         effect = (effect + 1) % lastEffect;

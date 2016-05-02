@@ -1,6 +1,5 @@
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "gfx/blit.h"
 #include "gfx/colorfunc.h"
@@ -23,104 +22,90 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAddPngImage("Texture1", "Texture1Pal", "data/texture-128-01.png");
-  ResAddPngImage("Texture2", "Texture2Pal", "data/texture-128-02.png");
-  ResAdd("Map1", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
-  ResAdd("Map2", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
-  ResAdd("ComposeMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("ColFunc", NewColorFunc());
+static PixBufT *texture[2];
+static PaletteT *texturePal[2];
+static PixBufT *composeMap;
+static PixBufT *component;
+static UVMapT *uvmap[2];
+static PixBufT *canvas;
+static uint8_t *colorFunc;
+
+void AcquireResources() {
+  LoadPngImage(&texture[0], &texturePal[0], "data/texture-128-01.png");
+  LoadPngImage(&texture[1], &texturePal[1], "data/texture-128-02.png");
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
-  UVMapT *map1 = R_("Map1");
-  UVMapT *map2 = R_("Map2");
+  uvmap[0] = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
+  uvmap[1] = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
+  composeMap = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  colorFunc = NewColorFunc();
 
-  LinkPalettes(R_("Texture1Pal"), R_("Texture2Pal"), NULL);
-  LoadPalette(R_("Texture1Pal"));
+  LinkPalettes(texturePal[0], texturePal[1], NULL);
+  LoadPalette(texturePal[0]);
 
-  PixBufRemap(R_("Texture2"), R_("Texture2Pal"));
+  PixBufRemap(texture[1], texturePal[1]);
 
-  UVMapGenerate3(map1);
-  UVMapSetTexture(map1, R_("Texture1"));
+  UVMapGenerate3(uvmap[0]);
+  UVMapSetTexture(uvmap[0], texture[0]);
 
-  UVMapGenerate4(map2);
-  UVMapSetTexture(map2, R_("Texture2"));
+  UVMapGenerate4(uvmap[1]);
+  UVMapSetTexture(uvmap[1], texture[1]);
 
-  ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, map2->map.fast.v));
+  component = NewPixBufWrapper(WIDTH, HEIGHT, uvmap[1]->map.fast.v);
 
   StartProfiling();
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
-  UnlinkPalettes(R_("Texture1Pal"));
+  UnlinkPalettes(texturePal[0]);
   StopProfiling();
 }
-
-/*
- * Effect rendering functions.
- */
 
 static int EffectNum = 0;
 
 void RenderChunky(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-  PixBufT *compMap = R_("ComposeMap");
-  UVMapT *map1 = R_("Map1");
-  UVMapT *map2 = R_("Map2");
-  PixBufT *comp = R_("Component");
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
 
   if (EffectNum == 0) {
-    uint8_t *cfunc = R_("ColFunc");
     int i;
 
-    for (i = 0; i < 256; i++)
-      cfunc[i] = ((128 - ((frameNumber * 2) % 256 + i)) & 0xff) >= 128 ? 1 : 0;
+    for (i = 0; i < 256; i++) {
+      int v = 128 - ((frameNumber * 2) % 256 + i);
+      colorFunc[i] = (v & 0xff) >= 128 ? 1 : 0;
+    }
 
-    PixBufSetColorFunc(comp, cfunc);
-    PixBufSetBlitMode(comp, BLIT_COLOR_FUNC);
-    PixBufBlit(compMap, 0, 0, comp, NULL);
+    PixBufSetColorFunc(component, colorFunc);
+    PixBufSetBlitMode(component, BLIT_COLOR_FUNC);
+    PixBufBlit(composeMap, 0, 0, component, NULL);
   } else {
-    PixBufClear(compMap);
-    compMap->fgColor = 1;
-    DrawEllipse(compMap,
+    PixBufClear(composeMap);
+    composeMap->fgColor = 1;
+    DrawEllipse(composeMap,
                 160, 128,
                 40 + sin((float)frameNumber / (4.0f * M_PI)) * 40.0f,
                 32 + sin((float)frameNumber / (4.0f * M_PI)) * 32.0f);
   }
 
-  UVMapSetOffset(map1, du, dv);
-  UVMapSetOffset(map2, -du, -dv);
+  UVMapSetOffset(uvmap[0], du, dv);
+  UVMapSetOffset(uvmap[1], -du, -dv);
   PROFILE (UVMapCompose1)
-    UVMapComposeAndRender(map1, canvas, compMap, 0);
+    UVMapComposeAndRender(uvmap[0], canvas, composeMap, 0);
   PROFILE (UVMapCompose2)
-    UVMapComposeAndRender(map2, canvas, compMap, 1);
+    UVMapComposeAndRender(uvmap[1], canvas, composeMap, 1);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 

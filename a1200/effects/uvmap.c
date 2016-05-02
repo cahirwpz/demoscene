@@ -1,6 +1,5 @@
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "gfx/palette.h"
 #include "gfx/png.h"
@@ -20,6 +19,12 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
+static UVMapT *uvmap;
+static PixBufT *texture;
+static PixBufT *canvas;
+static PixBufT *texture;
+static PaletteT *texturePal;
+
 static const int maps = 11;
 static int lastMap = -1;
 
@@ -30,103 +35,84 @@ void ChangeMap(int newMap) {
   newMap = newMap % maps;
 
   if (newMap != lastMap) {
-    UVMapT *map = R_("Map");
-
     switch (newMap) {
       case 0:
-        UVMapGenerate0(map);
+        UVMapGenerate0(uvmap);
         break;
       case 1:
-        UVMapGenerate1(map);
+        UVMapGenerate1(uvmap);
         break;
       case 2:
-        UVMapGenerate2(map);
+        UVMapGenerate2(uvmap);
         break;
       case 3:
-        UVMapGenerate3(map);
+        UVMapGenerate3(uvmap);
         break;
       case 4:
-        UVMapGenerate4(map);
+        UVMapGenerate4(uvmap);
         break;
       case 5:
-        UVMapGenerate5(map);
+        UVMapGenerate5(uvmap);
         break;
       case 6:
-        UVMapGenerate6(map);
+        UVMapGenerate6(uvmap);
         break;
       case 7:
-        UVMapGenerate7(map);
+        UVMapGenerate7(uvmap);
         break;
       case 8:
-        UVMapGenerate8(map);
+        UVMapGenerate8(uvmap);
         break;
       case 9:
-        UVMapGenerate9(map);
+        UVMapGenerate9(uvmap);
         break;
       case 10:
-        UVMapGenerate10(map);
+        UVMapGenerate10(uvmap);
         break;
       default:
         break;
     }
 
-    UVMapSetTexture(map, R_("Texture"));
+    UVMapSetTexture(uvmap, texture);
 
     lastMap = newMap;
   }
 }
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAddPngImage("Texture", "TexturePal", "data/texture.png");
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
+void AcquireResources() {
+  LoadPngImage(&texture, &texturePal, "data/texture.png");
+  uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   ChangeMap(0);
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
-  LoadPalette(R_("TexturePal"));
+  LoadPalette(texturePal);
   StartProfiling();
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
   StopProfiling();
 }
 
-/*
- * Effect rendering functions.
- */
 void RenderChunky(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
 
-  UVMapSetOffset(R_("Map"), du, dv);
+  UVMapSetOffset(uvmap, du, dv);
   PROFILE(UVMapRender)
-    UVMapRender(R_("Map"), canvas);
+    UVMapRender(uvmap, canvas);
   PROFILE(C2P)
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 

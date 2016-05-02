@@ -2,7 +2,6 @@
 
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "gfx/blit.h"
 #include "gfx/hsl.h"
@@ -25,56 +24,55 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAddPngImage("Texture", "TexturePal", "data/texture-01.png");
-  ResAddPngImage("CreditsImg", "CreditsPal", "data/code.png");
-  ResAddPngImage("WhelpzImg", "WhelpzPal", "data/whelpz.png");
-  ResAdd("TunnelMap", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
+static PixBufT *canvas;
+static PixBufT *texture;
+static PixBufT *credits;
+static PixBufT *whelpz;
+static PaletteT *texturePal;
+static PaletteT *creditsPal;
+static PaletteT *whelpzPal;
+static PaletteT *effectPal;
+static UVMapT *tunnelMap;
+
+void AcquireResources() {
+  LoadPngImage(&texture, &texturePal, "data/texture-01.png");
+  LoadPngImage(&credits, &creditsPal, "data/code.png");
+  LoadPngImage(&whelpz, &whelpzPal, "data/whelpz.png");
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
   static TunnelPetalsT petals = { 3, 0.333333f, 0.33333f };
 
-  UVMapGenerateTunnel(R_("TunnelMap"), 32.0f, 1, 16.0f / 9.0f, 0.5f, 0.5f, &petals);
+  tunnelMap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 
-  LinkPalettes(R_("TexturePal"), R_("WhelpzPal"), R_("CreditsPal"), NULL);
-  LoadPalette(R_("TexturePal"));
+  UVMapGenerateTunnel(tunnelMap, 32.0f, 1, 16.0f / 9.0f, 0.5f, 0.5f, &petals);
 
-  ResAdd("EffectPal", MemClone(R_("TexturePal")));
+  LinkPalettes(texturePal, whelpzPal, creditsPal, NULL);
+  LoadPalette(texturePal);
 
-  PixBufRemap(R_("CreditsImg"), R_("CreditsPal"));
-  PixBufRemap(R_("WhelpzImg"), R_("WhelpzPal"));
-  PixBufSetBlitMode(R_("CreditsImg"), BLIT_TRANSPARENT);
-  PixBufSetBlitMode(R_("WhelpzImg"), BLIT_TRANSPARENT);
+  effectPal = MemClone(texturePal);
+
+  PixBufRemap(credits, creditsPal);
+  PixBufRemap(whelpz, whelpzPal);
+  PixBufSetBlitMode(credits, BLIT_TRANSPARENT);
+  PixBufSetBlitMode(whelpz, BLIT_TRANSPARENT);
 
   StartProfiling();
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
-  UnlinkPalettes(R_("TexturePal"));
+  UnlinkPalettes(texturePal);
   StopProfiling();
 }
 
-/*
- * Effect rendering functions.
- */
 typedef void (*PaletteFunctorT)(int frameNumber, HSL *hsl);
 
 void CyclicHue(int frameNumber, HSL *hsl) {
@@ -126,21 +124,19 @@ void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst, PaletteFunctor
 }
 
 void RenderTunnel(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-
-  UVMapSetOffset(R_("TunnelMap"), 0, frameNumber);
-  UVMapSetTexture(R_("TunnelMap"), R_("Texture"));
+  UVMapSetOffset(tunnelMap, 0, frameNumber);
+  UVMapSetTexture(tunnelMap, texture);
   PROFILE (UVMapRender)
-    UVMapRender(R_("TunnelMap"), canvas);
+    UVMapRender(tunnelMap, canvas);
 
   PROFILE (PixBufBlit)
-    PixBufBlit(canvas, 0, 137, R_("WhelpzImg"), NULL);
+    PixBufBlit(canvas, 0, 137, whelpz, NULL);
 
   {
     float rad = (float)(frameNumber % 150) / 150 * 2 * M_PI;
     int w = sin(rad) * 80;
     PROFILE (PixBufBlitScaled)
-      PixBufBlitScaled(canvas, 200 + (80 - abs(w)) / 2, 20, w, 33, R_("CreditsImg"));
+      PixBufBlitScaled(canvas, 200 + (80 - abs(w)) / 2, 20, w, 33, credits);
   }
 
   PROFILE (c2p)
@@ -156,8 +152,8 @@ void MainLoop() {
   do {
     int frameNumber = GetVBlankCounter();
 
-    PaletteEffect(frameNumber, R_("TexturePal"), R_("EffectPal"), PalEffects);
-    LoadPalette(R_("EffectPal"));
+    PaletteEffect(frameNumber, texturePal, effectPal, PalEffects);
+    LoadPalette(effectPal);
 
     RenderTunnel(frameNumber);
     RenderFrameNumber(frameNumber);

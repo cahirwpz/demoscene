@@ -4,7 +4,6 @@
 #include "std/math.h"
 #include "std/memory.h"
 #include "std/random.h"
-#include "std/resource.h"
 
 #include "gfx/blit.h"
 #include "gfx/pixbuf.h"
@@ -56,70 +55,60 @@ static void UVMapGenerateToPolar(UVMapT *map) {
 
 UVMapGenerate(ToCartesian, a / (2.0f * M_PI), r / M_SQRT2);
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAddPngImage("PolarImg", NULL, "data/polar-map.png");
-  ResAdd("PolarBuf", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("MapToPolar", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
-  ResAdd("MapToCartesian", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
-  ResAdd("OrigU", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAdd("OrigV", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
+static UVMapT *cartesianMap;
+static UVMapT *polarMap;
+static PixBufT *canvas;
+static PixBufT *polarImg;
+static PixBufT *polarBuf;
+static PixBufT *origU;
+static PixBufT *origV;
+
+void AcquireResources() {
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  LoadPngImage(&polarImg, NULL, "data/polar-map.png");
+  polarBuf = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  polarMap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
+  cartesianMap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
+  origU = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  origV = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
-  UVMapT *uvmap = R_("MapToCartesian");
-
-  UVMapGenerateToPolar(R_("MapToPolar"));
-  UVMapGenerateToCartesian(R_("MapToCartesian"));
+  UVMapGenerateToPolar(polarMap);
+  UVMapGenerateToCartesian(cartesianMap);
 
   if (false)
   {
     FPointT p = {128.0, 128.0};
-    CircularGradient(R_("PolarImg"), &p);
+    CircularGradient(polarImg, &p);
   }
 
-  PixBufBlit(R_("OrigU"), 0, 0,
-             NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u), NULL);
-  PixBufBlit(R_("OrigV"), 0, 0,
-             NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.v), NULL);
+  PixBufBlit(origU, 0, 0,
+             NewPixBufWrapper(WIDTH, HEIGHT, cartesianMap->map.fast.u), NULL);
+  PixBufBlit(origV, 0, 0,
+             NewPixBufWrapper(WIDTH, HEIGHT, cartesianMap->map.fast.v), NULL);
 
   StartProfiling();
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
   StopProfiling();
 }
-
-/*
- * Effect rendering functions.
- */
 
 void RenderPolar(PixBufT *canvas, int frameNumber) {
   UNUSED float a = frameNumber * M_PI / 256;
   UNUSED float u = sin(a) * 32.0f;
   UNUSED float v = cos(a) * 32.0f;
-  UVMapT *polarMap = R_("MapToPolar");
-  UVMapT *cartesianMap = R_("MapToCartesian");
-  PixBufT *polarBuf = R_("PolarBuf");
 
   UVMapSetOffset(polarMap, (int)u, (int)v);
-  UVMapSetTexture(polarMap, R_("PolarImg"));
+  UVMapSetTexture(polarMap, polarImg);
   UVMapRender(polarMap, polarBuf);
 
   {
@@ -150,17 +139,12 @@ void RenderPolar(PixBufT *canvas, int frameNumber) {
 }
 
 void RenderEffect(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-
   PROFILE(Polar)
     RenderPolar(canvas, frameNumber);
   PROFILE(C2P)
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 

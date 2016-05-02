@@ -1,6 +1,5 @@
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "gfx/blit.h"
 #include "gfx/colorfunc.h"
@@ -23,61 +22,50 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAddPngImage("Texture", "TexturePal", "data/texture-shades.png");
-  ResAddPngImage("ColorMap", NULL, "data/texture-shades-map.png");
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
-  ResAdd("Shades", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("ColFunc", NewColorFunc());
+static UVMapT *uvmap;
+static PixBufT *canvas;
+static PixBufT *shades;
+static PixBufT *texture;
+static PixBufT *colorMap;
+static PixBufT *component;
+static PaletteT *texturePal;
+static uint8_t *colorFunc;
+
+void AcquireResources() {
+  LoadPngImage(&texture, &texturePal, "data/texture-shades.png");
+  LoadPngImage(&colorMap, NULL, "data/texture-shades-map.png");
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
-  UVMapT *uvmap = R_("Map");
-  PixBufT *shades = R_("Shades");
+  uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
+  shades = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  colorFunc = NewColorFunc();
 
-  LoadPalette(R_("TexturePal"));
+  LoadPalette(texturePal);
 
   UVMapGenerate4(uvmap);
-  UVMapSetTexture(uvmap, R_("Texture"));
+  UVMapSetTexture(uvmap, texture);
   uvmap->lightMap = shades;
-  PixBufSetColorMap(shades, R_("ColorMap"));
+  PixBufSetColorMap(shades, colorMap);
 
-  ResAdd("Component", NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u));
+  component = NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u);
 
   StartProfiling();
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
   StopProfiling();
 }
 
-/*
- * Effect rendering functions.
- */
 void RenderEffect(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-  UVMapT *uvmap = R_("Map");
-  PixBufT *comp = R_("Component");
-  PixBufT *shades = R_("Shades");
-  uint8_t *cfunc = R_("ColFunc");
-
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
 
@@ -88,16 +76,16 @@ void RenderEffect(int frameNumber) {
       uint8_t v = i + du;
 
       if (v >= 128)
-        cfunc[i] = ~v * 2;
+        colorFunc[i] = ~v * 2;
       else 
-        cfunc[i] = v * 2;
+        colorFunc[i] = v * 2;
     }
   }
 
-  PixBufSetBlitMode(comp, BLIT_COLOR_FUNC);
-  PixBufSetColorFunc(comp, cfunc);
+  PixBufSetBlitMode(component, BLIT_COLOR_FUNC);
+  PixBufSetColorFunc(component, colorFunc);
   PROFILE (PixBufBlitWithColorFunc)
-    PixBufBlit(shades, 0, 0, comp, NULL);
+    PixBufBlit(shades, 0, 0, component, NULL);
 
   UVMapSetOffset(uvmap, du, dv);
   PROFILE (UVMapRenderFast)
@@ -106,9 +94,6 @@ void RenderEffect(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 

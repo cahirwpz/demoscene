@@ -4,7 +4,6 @@
 #include "std/fastmath.h"
 #include "std/math.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "gfx/ellipse.h"
 #include "gfx/layers.h"
@@ -22,15 +21,24 @@ const int WIDTH = 320;
 const int HEIGHT = 200;
 const int DEPTH = 8;
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("LayerMap", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAddPngImage("Image1", "Image1Pal", "data/last-hope-64.png");
-  ResAddPngImage("Image2", "Image2Pal", "data/bus-stop-64.png");
-  ResAddPngImage("Image3", "Image3Pal", "data/dragon-128.png");
+static PixBufT *canvas;
+static PixBufT *layerMap;
+static PixBufT *image[3];
+static PaletteT *imagePal[3];
+
+void AcquireResources() {
+  LoadPngImage(&image[0], &imagePal[0], "data/last-hope-64.png");
+  LoadPngImage(&image[1], &imagePal[1], "data/bus-stop-64.png");
+  LoadPngImage(&image[2], &imagePal[2], "data/dragon-128.png");
+}
+
+void ReleaseResources() {
+  int i;
+
+  for (i = 0; i < 3; i++) {
+    MemUnref(image[i]);
+    MemUnref(imagePal[i]);
+  }
 }
 
 /*
@@ -44,11 +52,14 @@ bool SetupDisplay() {
  * Set up effect function.
  */
 void SetupEffect() {
-  LinkPalettes(R_("Image1Pal"), R_("Image2Pal"), R_("Image3Pal"), NULL);
-  LoadPalette(R_("Image1Pal"));
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  layerMap = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
 
-  PixBufRemap(R_("Image2"), R_("Image2Pal"));
-  PixBufRemap(R_("Image3"), R_("Image3Pal"));
+  LinkPalettes(imagePal[0], imagePal[1], imagePal[2], NULL);
+  LoadPalette(imagePal[0]);
+
+  PixBufRemap(image[1], imagePal[1]);
+  PixBufRemap(image[2], imagePal[2]);
 
   StartProfiling();
 }
@@ -57,8 +68,11 @@ void SetupEffect() {
  * Tear down effect function.
  */
 void TearDownEffect() {
-  UnlinkPalettes(R_("Image1Pal"));
   StopProfiling();
+
+  UnlinkPalettes(imagePal[0]);
+  MemUnref(canvas);
+  MemUnref(layerMap);
 }
 
 /*
@@ -68,22 +82,18 @@ static int Effect = 0;
 static const int LastEffect = 1;
 
 void RenderChunky(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-  PixBufT *map = R_("LayerMap");
-  PixBufT *image[3] = { R_("Image1"), R_("Image2"), R_("Image3") };
-
   int x = 160.0 * sin(M_PI * frameNumber / 100);
   int y = 100.0 * sin(M_PI * frameNumber / 100);
 
   PROFILE(DrawComposeMap)
     switch (Effect) {
       case 0:
-        PixBufClear(map);
-        map->fgColor = 2;
-        DrawRectangle(map, 0, 0, 160 + x, 100 + y);
-        DrawRectangle(map, 160 - x, 100 - y, 320, 200);
-        map->fgColor = 1;
-        DrawEllipse(map, 160, 100, -x, -y);
+        PixBufClear(layerMap);
+        layerMap->fgColor = 2;
+        DrawRectangle(layerMap, 0, 0, 160 + x, 100 + y);
+        DrawRectangle(layerMap, 160 - x, 100 - y, 320, 200);
+        layerMap->fgColor = 1;
+        DrawEllipse(layerMap, 160, 100, -x, -y);
         break;
       
       default:
@@ -91,7 +101,7 @@ void RenderChunky(int frameNumber) {
     }
 
   PROFILE(LayersCompose)
-    LayersCompose(canvas, map, image, 3);
+    LayersCompose(canvas, layerMap, image, 3);
 
   PROFILE(ChunkyToPlanar)
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);

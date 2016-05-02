@@ -1,6 +1,5 @@
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "gfx/blit.h"
 #include "gfx/palette.h"
@@ -21,64 +20,55 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAddPngImage("Texture", "TexturePal", "data/texture-01.png");
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("OrigU", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAdd("OrigV", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAdd("Flare", NewPixBuf(PIXBUF_GRAY, 64, 64));
+static PixBufT *canvas;
+static PixBufT *flare;
+static PixBufT *origU;
+static PixBufT *origV;
+static UVMapT *uvmap;
+static PixBufT *texture;
+static PaletteT *texturePal;
 
-  UVMapGenerateTunnel(R_("Map"), 32.0f, 3, 4.0 / 3.0, 0.5, 0.5, NULL);
-  UVMapSetTexture(R_("Map"), R_("Texture"));
+void AcquireResources() {
+  LoadPngImage(&texture, &texturePal, "data/texture-01.png");
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
-  PixBufT *flare = R_("Flare");
-  UVMapT *uvmap = R_("Map");
   float lightRadius = 1.0f;
   int i;
 
-  LoadPalette(R_("TexturePal"));
-  PixBufClear(R_("Canvas"));
+  uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  origU = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  origV = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  flare = NewPixBuf(PIXBUF_GRAY, 64, 64);
+
+  UVMapGenerateTunnel(uvmap, 32.0f, 3, 4.0 / 3.0, 0.5, 0.5, NULL);
+  UVMapSetTexture(uvmap, texture);
+
+  LoadPalette(texturePal);
+  PixBufClear(canvas);
   GeneratePixels(flare, (GenPixelFuncT)LightLinearFalloff, &lightRadius);
 
   for (i = 0; i < flare->width * flare->height; i++)
     flare->data[i] /= 4;
 
-  PixBufBlit(R_("OrigU"), 0, 0,
+  PixBufBlit(origU, 0, 0,
              NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u), NULL);
-  PixBufBlit(R_("OrigV"), 0, 0,
+  PixBufBlit(origV, 0, 0,
              NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.v), NULL);
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
 }
 
-/*
- * Effect rendering functions.
- */
 void RenderChunky(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-  UVMapT *uvmap = R_("Map");
-  PixBufT *flare = R_("Flare");
-  PixBufT *origU = R_("OrigU");
   PixBufT *umap;
 
   int du = frameNumber;
@@ -87,7 +77,7 @@ void RenderChunky(int frameNumber) {
 
   umap = NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u);
 
-  UVMapSetOffset(R_("Map"), du, dv);
+  UVMapSetOffset(uvmap, du, dv);
   PixBufBlit(umap, 0, 0, origU, NULL);
 
   for (i = 0; i < 8; i++) {
@@ -98,16 +88,13 @@ void RenderChunky(int frameNumber) {
                flare, NULL);
   }
 
-  UVMapRender(R_("Map"), canvas);
+  UVMapRender(uvmap, canvas);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 
   MemUnref(umap);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 

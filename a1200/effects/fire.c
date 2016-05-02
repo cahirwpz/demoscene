@@ -2,7 +2,6 @@
 
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "gfx/pixbuf.h"
 #include "gfx/palette.h"
@@ -26,26 +25,22 @@ void InitFireTables();
 void CalculateFire(uint8_t *fire asm("a0"),
                    uint16_t width asm("d0"), uint16_t height asm("d1"));
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT + 2));
-  ResAdd("Palette", NewPalette(256));
+static PixBufT *canvas;
+static PaletteT *palette;
+
+void AcquireResources() {
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT + 2);
+  palette = NewPalette(256);
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
-  PaletteT *palette = R_("Palette");
   RGB *colors = palette->colors;
   int i;
 
@@ -85,16 +80,9 @@ void SetupEffect() {
   StartProfiling();
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
   StopProfiling();
 }
-
-/*
- * Effect rendering functions.
- */
 
 static __regargs void IgniteBottom(uint8_t *fire, int16_t width) {
   /* draw random bottom line in fire array */
@@ -117,17 +105,12 @@ __regargs void RenderFire(PixBufT *canvas) {
 }
 
 void RenderEffect(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-
   PROFILE(Fire)
     RenderFire(canvas);
   PROFILE(C2P)
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 

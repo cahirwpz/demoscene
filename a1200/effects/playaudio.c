@@ -1,7 +1,6 @@
 #include "std/debug.h"
 #include "std/math.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "audio/stream.h"
 #include "gfx/blit.h"
@@ -24,50 +23,44 @@ const int DEPTH = 8;
 
 UVMapGenerate(Polar, (1.0f - r * 0.7f), a);
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAddPngImage("Image", "ImagePal", "data/samkaat-absinthe.png");
-  ResAddPngImage("Darken", NULL, "data/samkaat-absinthe-darken.png");
-  ResAdd("Texture", NewPixBuf(PIXBUF_GRAY, 256, 256));
-  ResAdd("Shade", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAdd("Map", NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256));
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("Audio", AudioStreamOpen("data/chembro.wav"));
+static PixBufT *texture;
+static PixBufT *image;
+static PaletteT *imagePal;
+static PixBufT *shade;
+static UVMapT *uvmap;
+static PixBufT *canvas;
+static PixBufT *darken;
+static AudioStreamT *audio;
+
+void AcquireResources() {
+  LoadPngImage(&image, &imagePal, "data/samkaat-absinthe.png");
+  LoadPngImage(&darken, NULL, "data/samkaat-absinthe-darken.png");
+  audio = AudioStreamOpen("data/chembro.wav");
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH) && InitAudio();
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
-  UVMapGeneratePolar(R_("Map"));
-  LoadPalette(R_("ImagePal"));
+  texture = NewPixBuf(PIXBUF_GRAY, 256, 256);
+  shade = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+
+  UVMapGeneratePolar(uvmap);
+  LoadPalette(imagePal);
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
   KillAudio();
 }
 
-/*
- * Effect rendering functions.
- */
-
 void RenderChunky(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-  PixBufT *texture = R_("Texture");
-  PixBufT *shade = R_("Shade");
-  AudioBufferT *buffer = AudioStreamGetBuffer(R_("Audio"));
+  AudioBufferT *buffer = AudioStreamGetBuffer(audio);
   static int array[256];
   int i;
 
@@ -88,24 +81,20 @@ void RenderChunky(int frameNumber) {
     texture->fgColor = 255;
   }
 
-  PixBufCopy(canvas, R_("Image"));
+  PixBufCopy(canvas, image);
 
-  UVMapSetTexture(R_("Map"), R_("Texture"));
-  UVMapSetOffset(R_("Map"), 0, 0);
-  UVMapRender(R_("Map"), shade);
+  UVMapSetTexture(uvmap, texture);
+  UVMapSetOffset(uvmap, 0, 0);
+  UVMapRender(uvmap, shade);
 
-  PixBufSetColorMap(shade, R_("Darken"));
+  PixBufSetColorMap(shade, darken);
   PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
   PixBufBlit(canvas, 0, 0, shade, NULL);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
-  AudioStreamT *audio = R_("Audio");
   bool finish = FALSE;
 
   AudioStreamPlay(audio);

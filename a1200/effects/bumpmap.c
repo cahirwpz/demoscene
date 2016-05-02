@@ -1,6 +1,5 @@
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "gfx/pixbuf.h"
 #include "gfx/palette.h"
@@ -113,57 +112,44 @@ RenderBumpMap(PixBufT *canvas, UVMapT *bumpMap, PixBufT *reflectionMap,
 #endif
 }
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("BumpMap", NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256));
-  ResAddPngImage("HeightMap", NULL, "data/samkaat-absinthe.png");
-  ResAdd("ReflectionMap", CreateReflectionMap());
+static PixBufT *canvas;
+static PixBufT *heightMap;
+static UVMapT *bumpMap;
+static PixBufT *reflectionMap;
 
-  CalculateBumpMap(R_("BumpMap"), R_("HeightMap"));
+void AcquireResources() {
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  bumpMap = NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256);
+  LoadPngImage(&heightMap, NULL, "data/samkaat-absinthe.png");
+  reflectionMap = CreateReflectionMap();
+
+  CalculateBumpMap(bumpMap, heightMap);
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
   StartProfiling();
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
   StopProfiling();
 }
 
-/*
- * Effect rendering functions.
- */
-
 void RenderEffect(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-
   PROFILE(BumpMap) {
-    RenderBumpMap(canvas, R_("BumpMap"), R_("ReflectionMap"),
+    RenderBumpMap(canvas, bumpMap, reflectionMap,
                   64 * sin((frameNumber & 255) * M_PI / 128) + 32, 0);
   }
   PROFILE(C2P)
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 

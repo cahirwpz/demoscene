@@ -55,6 +55,6 @@ typedef struct {
 PngT *PngLoadFromFile(const char *filepath);
 bool PngDecodeImage(PngT *png, PixBufT *pixbuf);
 
-void ResAddPngImage(const char *imgName, const char *palName, const char *pngFile);
+void LoadPngImage(PixBufT **imgPtr, PaletteT **palPtr, const char *pngFile);
 
 #endif

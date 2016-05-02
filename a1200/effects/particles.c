@@ -3,7 +3,6 @@
 #include "std/debug.h"
 #include "std/math.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "engine/plane.h"
 #include "engine/sphere.h"
@@ -123,49 +122,38 @@ static void AddParticles(ParticleEngineT *engine) {
       break;
     }
   }
-};
-
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAdd("Flare", NewPixBuf(PIXBUF_GRAY, 32, 32));
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("Engine", NewParticleEngine(30, AddParticles));
 }
 
-/*
- * Set up display function.
- */
+static PixBufT *flare;
+static ParticleEngineT *engine;
+static PixBufT *canvas;
+static PixBufT *flare;
+
+void AcquireResources() {
+  flare = NewPixBuf(PIXBUF_GRAY, 32, 32);
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  engine = NewParticleEngine(30, AddParticles);
+}
+
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
-  PixBufT *flare = R_("Flare");
   float lightRadius = 1.0f;
 
-  PixBufClear(R_("Canvas"));
+  PixBufClear(canvas);
   GeneratePixels(flare, (GenPixelFuncT)LightNormalFalloff, &lightRadius);
   PixBufSetBlitMode(flare, BLIT_SUBSTRACTIVE_CLIP);
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
 }
 
-/*
- * Effect rendering functions.
- */
 void RenderFlares(int frameNumber) {
-  ParticleEngineT *engine = R_("Engine");
-  PixBufT *canvas = R_("Canvas");
-  PixBufT *flare = R_("Flare");
   int i;
 
   PixBufClear(canvas);
@@ -188,9 +176,6 @@ void RenderFlares(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   SetVBlankCounter(0);
 

@@ -1,6 +1,5 @@
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/resource.h"
 #include "system/rwops.h"
 #include "gfx/png.h"
 #include "tinf/tinf.h"
@@ -335,16 +334,16 @@ static PaletteT *PngToPalette(PngT *png) {
   return NULL;
 }
 
-void ResAddPngImage(const char *imgName, const char *palName, const char *pngFile) {
+void LoadPngImage(PixBufT **imgPtr, PaletteT **palPtr, const char *pngFile) {
   PngT *png = PngLoadFromFile(pngFile);
 
   if (!png)
     PANIC("Could not load '%s' file.", pngFile);
 
-  if (imgName)
-    ResAdd(imgName, PngToPixBuf(png));
-  if (palName)
-    ResAdd(palName, PngToPalette(png));
+  if (imgPtr)
+    *imgPtr = PngToPixBuf(png);
+  if (palPtr)
+    *palPtr = PngToPalette(png);
 
   MemUnref(png);
 }

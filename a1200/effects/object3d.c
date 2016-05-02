@@ -2,7 +2,6 @@
 
 #include "std/debug.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "engine/ms3d.h"
 #include "engine/object.h"
@@ -20,65 +19,52 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("Scene", NewScene());
+static PixBufT *canvas;
+static SceneT *scene;
+static MeshT *mesh;
+static PaletteT *palette;
+
+void AcquireResources() {
 #if 0
   ResAdd("Mesh", NewMeshFromFile("data/shattered_ball.robj"));
   ResAdd("ColorMap", NewPixBufFromFile("data/shattered_ball_cmap.8"));
   ResAddPngImage("ColorMap", "Palette", "data/wecan_logo_cmap.png");
   ResAdd("Palette", NewPaletteFromFile("data/shattered_ball_cmap.pal"));
 #else
-  ResAdd("Mesh", NewMeshFromFile("data/wecan_logo.robj"));
+  mesh = NewMeshFromFile("data/wecan_logo.robj");
 #endif
 
-  {
-    MeshT *mesh = R_("Mesh");
-
-    CalculateSurfaceNormals(mesh);
-    NormalizeMeshSize(mesh);
-    MeshApplyPalette(mesh, R_("Palette"));
-  }
-
-  SceneAddObject(R_("Scene"), NewSceneObject("Object", R_("Mesh")));
+  CalculateSurfaceNormals(mesh);
+  NormalizeMeshSize(mesh);
+  MeshApplyPalette(mesh, palette);
 
   RenderMode = RENDER_GOURAUD_SHADING;
   RenderAllFaces = false;
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
-  PixBufClear(R_("Canvas"));
-  LoadPalette(R_("Palette"));
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  scene = NewScene();
+
+  SceneAddObject(scene, NewSceneObject("Object", mesh));
+
+  PixBufClear(canvas);
+  LoadPalette(palette);
   StartProfiling();
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
   StopProfiling();
 }
 
-/*
- * Effect rendering functions.
- */
-
 void RenderMesh(int frameNumber_) {
-  PixBufT *canvas = R_("Canvas");
-  SceneT *scene = R_("Scene");
   float frameNumber = frameNumber_;
   float s = sin(frameNumber * 3.14159265f / 90.0f) + 1.0f;
 

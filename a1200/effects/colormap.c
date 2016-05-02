@@ -4,7 +4,6 @@
 #include "std/fastmath.h"
 #include "std/math.h"
 #include "std/memory.h"
-#include "std/resource.h"
 
 #include "gfx/blit.h"
 #include "gfx/png.h"
@@ -21,31 +20,37 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("Map1", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAdd("Map2", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
-  ResAddPngImage("Image", "ImagePal", "data/samkaat-absinthe.png");
-  ResAddPngImage("Darken", NULL, "data/samkaat-absinthe-darken.png");
-  ResAddPngImage("Lighten", NULL, "data/samkaat-absinthe-lighten.png");
-  ResAdd("Shade", NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT));
+static PixBufT *canvas;
+static PixBufT *map1;
+static PixBufT *map2;
+static PixBufT *shade;
+static PixBufT *lighten;
+static PixBufT *darken;
+static PixBufT *image;
+static PaletteT *imagePal;
+
+void AcquireResources() {
+  LoadPngImage(&image, &imagePal, "data/samkaat-absinthe.png");
+  LoadPngImage(&darken, NULL, "data/samkaat-absinthe-darken.png");
+  LoadPngImage(&lighten, NULL, "data/samkaat-absinthe-lighten.png");
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+  MemUnref(lighten);
+  MemUnref(darken);
+  MemUnref(image);
+  MemUnref(imagePal);
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
-  StartProfiling();
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  map1 = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  map2 = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  shade = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
 
   {
     FLineT line;
@@ -53,82 +58,80 @@ void SetupEffect() {
     FPointT pb = { WIDTH, HEIGHT };
 
     FLineInitFromPoints(&line, &pa, &pb);
-    LinearGradient(R_("Map1"), &line);
+    LinearGradient(map1, &line);
   }
 
   {
     FPointT center = { WIDTH / 2, HEIGHT / 2 };
-    CircularGradient(R_("Map2"), &center);
+    CircularGradient(map2, &center);
   }
 
-  LoadPalette(R_("ImagePal"));
+  LoadPalette(imagePal);
+
+  StartProfiling();
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
   StopProfiling();
+
+  MemUnref(canvas);
+  MemUnref(map1);
+  MemUnref(map2);
+  MemUnref(shade);
 }
 
-/*
- * Effect rendering functions.
- */
 static int Effect = 0;
 static const int LastEffect = 4;
 
 void RenderChunky(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
-  PixBufT *image = R_("Image");
   PixBufT *map;
-  PixBufT *shade = R_("Shade");
 
   int change = (frameNumber * 2) % 256;
 
   switch (Effect) {
     case 0:
-      map = R_("Map1");
+      map = map1;
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
       PROFILE(PixBufAddAndClamp)
         PixBufAddAndClamp(shade, map, change);
-      PixBufSetColorMap(shade, R_("Lighten"));
+      PixBufSetColorMap(shade, lighten);
       PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
         PixBufBlit(canvas, 0, 0, shade, NULL);
       break;
 
     case 1:
-      map = R_("Map1");
+      map = map1;
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
       PROFILE(PixBufAddAndClamp)
         PixBufAddAndClamp(shade, map, change - 64);
-      PixBufSetColorMap(shade, R_("Darken"));
+      PixBufSetColorMap(shade, darken);
       PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
         PixBufBlit(canvas, 0, 0, shade, NULL);
       break;
 
     case 2:
-      map = R_("Map2");
+      map = map2;
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
       PROFILE(PixBufAddAndClamp)
         PixBufAddAndClamp(shade, map, change - 64);
-      PixBufSetColorMap(shade, R_("Lighten"));
+      PixBufSetColorMap(shade, lighten);
       PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
         PixBufBlit(canvas, 0, 0, shade, NULL);
       break;
 
     case 3:
-      map = R_("Map2");
+      map = map2;
       PROFILE(PixBufCopy)
         PixBufCopy(canvas, image);
       PROFILE(PixBufAddAndClamp)
         PixBufAddAndClamp(shade, map, change - 64);
-      PixBufSetColorMap(shade, R_("Darken"));
+      PixBufSetColorMap(shade, darken);
       PixBufSetBlitMode(shade, BLIT_COLOR_MAP);
       PROFILE(PixBufBlit)
         PixBufBlit(canvas, 0, 0, shade, NULL);
@@ -141,9 +144,6 @@ void RenderChunky(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 

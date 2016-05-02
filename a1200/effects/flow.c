@@ -3,7 +3,6 @@
 #include "std/debug.h"
 #include "std/memory.h"
 #include "std/random.h"
-#include "std/resource.h"
 
 #include "gfx/pixbuf.h"
 #include "gfx/palette.h"
@@ -31,39 +30,30 @@ typedef struct Particle {
   bool active;
 } ParticleT;
 
-/*
- * Set up resources.
- */
-void AddInitialResources() {
-  ResAdd("Canvas", NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT));
-  ResAdd("FlowArray", ReadFileSimple("data/flow.bin"));
-  ResAdd("FlowParticles", NewTable(ParticleT, PARTICLES));
+static PixBufT *canvas;
+static VelocityT *flow;
+static ParticleT *particles;
+
+void AcquireResources() {
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  flow = ReadFileSimple("data/flow.bin");
+  particles = NewTable(ParticleT, PARTICLES);
 }
 
-/*
- * Set up display function.
- */
+void ReleaseResources() {
+}
+
 bool SetupDisplay() {
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Set up effect function.
- */
 void SetupEffect() {
   StartProfiling();
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
   StopProfiling();
 }
-
-/*
- * Effect rendering functions.
- */
 
 __regargs static void 
 GetFilteredVelocity(VelocityT *array, VelocityT *v, float x, float y) 
@@ -88,14 +78,12 @@ GetFilteredVelocity(VelocityT *array, VelocityT *v, float x, float y)
 }
 
 void RenderFlow(PixBufT *canvas) {
-  VelocityT *flow = R_("FlowArray");
-  ParticleT *particle = R_("FlowParticles");
   int i, j;
 
   for (i = 0; i < PARTICLES; i++) {
-    if (particle[i].active) {
-      float x = particle[i].x;
-      float y = particle[i].y;
+    if (particles[i].active) {
+      float x = particles[i].x;
+      float y = particles[i].y;
       VelocityT v;
 
       GetFilteredVelocity(flow, &v, x * 160.0f, y * 128.0f);
@@ -104,12 +92,12 @@ void RenderFlow(PixBufT *canvas) {
       y += v.v * 750;
 
       if ((x < 0.0) || (x >= 1.0) || (y < 0.0) || (y >= 1.0)) {
-        particle[i].active = false;
+        particles[i].active = false;
       } if ((v.u < 2 * 10e-8) && (v.v < 2 * 10e-8)) {
-        particle[i].active = false;
+        particles[i].active = false;
       } else {
-        particle[i].x = x;
-        particle[i].y = y;
+        particles[i].x = x;
+        particles[i].y = y;
 
         PutPixel(canvas, x * 320.0, y * 256.0, 255);
       }
@@ -117,12 +105,12 @@ void RenderFlow(PixBufT *canvas) {
   }
 
   for (i = 0, j = 5; i < PARTICLES && j > 0; i++) {
-    if (!particle[i].active) {
+    if (!particles[i].active) {
       static int r = 0xb3a1778;
 
-      particle[i].x = 0.0f;
-      particle[i].y = (RandomInt32(&r) & 255) / 256.0f;
-      particle[i].active = true;
+      particles[i].x = 0.0f;
+      particles[i].y = (RandomInt32(&r) & 255) / 256.0f;
+      particles[i].active = true;
 
       j--;
     }
@@ -130,20 +118,16 @@ void RenderFlow(PixBufT *canvas) {
 }
 
 void RenderEffect(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
+  int n = canvas->width * canvas->height;
+  uint8_t *data = canvas->data;
 
-  {
-    int n = canvas->width * canvas->height;
-    uint8_t *data = canvas->data;
-
-    do {
-      int p = *data;
-      p -= 32;
-      if (p < 0)
-        p = 0;
-      *data++ = p;
-    } while (--n);
-  }
+  do {
+    int p = *data;
+    p -= 32;
+    if (p < 0)
+      p = 0;
+    *data++ = p;
+  } while (--n);
 
   PROFILE(Flow)
     RenderFlow(canvas);
@@ -151,9 +135,6 @@ void RenderEffect(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 
