@@ -4,7 +4,6 @@
 #include "engine/ms3d.h"
 #include "engine/scene.h"
 #include "gfx/blit.h"
-#include "gfx/colorfunc.h"
 #include "gfx/palette.h"
 #include "gfx/png.h"
 #include "tools/frame.h"

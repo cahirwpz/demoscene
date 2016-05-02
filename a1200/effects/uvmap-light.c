@@ -2,7 +2,6 @@
 #include "std/memory.h"
 
 #include "gfx/blit.h"
-#include "gfx/colorfunc.h"
 #include "gfx/palette.h"
 #include "gfx/png.h"
 #include "tools/frame.h"
@@ -47,7 +46,7 @@ void SetupEffect() {
   uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
   shades = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
-  colorFunc = NewColorFunc();
+  colorFunc = NewTable(uint8_t, 256);
 
   LoadPalette(texturePal);
 
