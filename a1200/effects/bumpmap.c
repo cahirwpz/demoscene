@@ -134,11 +134,9 @@ bool SetupDisplay() {
 }
 
 void SetupEffect() {
-  StartProfiling();
 }
 
 void TearDownEffect() {
-  StopProfiling();
 }
 
 void RenderEffect(int frameNumber) {

@@ -60,16 +60,12 @@ void SetupEffect() {
 
   PixBufRemap(image[1], imagePal[1]);
   PixBufRemap(image[2], imagePal[2]);
-
-  StartProfiling();
 }
 
 /*
  * Tear down effect function.
  */
 void TearDownEffect() {
-  StopProfiling();
-
   UnlinkPalettes(imagePal[0]);
   MemUnref(canvas);
   MemUnref(layerMap);

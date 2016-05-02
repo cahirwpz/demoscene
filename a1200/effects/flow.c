@@ -48,11 +48,9 @@ bool SetupDisplay() {
 }
 
 void SetupEffect() {
-  StartProfiling();
 }
 
 void TearDownEffect() {
-  StopProfiling();
 }
 
 __regargs static void 

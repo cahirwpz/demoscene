@@ -77,11 +77,9 @@ void SetupEffect() {
   } 
 
   LoadPalette(palette);
-  StartProfiling();
 }
 
 void TearDownEffect() {
-  StopProfiling();
 }
 
 static __regargs void IgniteBottom(uint8_t *fire, int16_t width) {

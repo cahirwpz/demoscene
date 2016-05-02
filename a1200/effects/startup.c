@@ -8,6 +8,7 @@
 #include "system/input.h"
 #include "system/timer.h"
 #include "system/vblank.h"
+#include "tools/profiling.h"
 
 #include "startup.h"
 
@@ -24,15 +25,11 @@ int main() {
   if (SystemCheck()) {
     LOG("Adding resources.");
 
-    TRY {
-      AcquireResources();
-    }
-    CATCH {
-      return 1;
-    }
+    AcquireResources();
 
     SetupTimer();
     StartEventQueue();
+    StartProfiling();
 
     if (SetupDisplay()) {
       InstallVBlankIntServer();
@@ -53,8 +50,10 @@ int main() {
       KillDisplay();
     }
 
-    KillTimer();
+    StopProfiling();
     StopEventQueue();
+    KillTimer();
+
     ReleaseResources();
   }
 

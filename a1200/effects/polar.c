@@ -94,12 +94,9 @@ void SetupEffect() {
              NewPixBufWrapper(WIDTH, HEIGHT, cartesianMap->map.fast.u), NULL);
   PixBufBlit(origV, 0, 0,
              NewPixBufWrapper(WIDTH, HEIGHT, cartesianMap->map.fast.v), NULL);
-
-  StartProfiling();
 }
 
 void TearDownEffect() {
-  StopProfiling();
 }
 
 void RenderPolar(PixBufT *canvas, int frameNumber) {

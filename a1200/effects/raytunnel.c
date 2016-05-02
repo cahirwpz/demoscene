@@ -89,11 +89,9 @@ bool SetupDisplay() {
 void SetupEffect() {
   LoadPalette(texturePal);
   PixBufClear(canvas);
-  StartProfiling();
 }
 
 void TearDownEffect() {
-  StopProfiling();
 }
 
 void RaycastCalculateView(int frameNumber) {

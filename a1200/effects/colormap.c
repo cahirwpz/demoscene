@@ -67,13 +67,9 @@ void SetupEffect() {
   }
 
   LoadPalette(imagePal);
-
-  StartProfiling();
 }
 
 void TearDownEffect() {
-  StopProfiling();
-
   MemUnref(canvas);
   MemUnref(map1);
   MemUnref(map2);

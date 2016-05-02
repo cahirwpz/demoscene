@@ -64,13 +64,10 @@ void SetupEffect() {
   PixBufRemap(whelpz, whelpzPal);
   PixBufSetBlitMode(credits, BLIT_TRANSPARENT);
   PixBufSetBlitMode(whelpz, BLIT_TRANSPARENT);
-
-  StartProfiling();
 }
 
 void TearDownEffect() {
   UnlinkPalettes(texturePal);
-  StopProfiling();
 }
 
 typedef void (*PaletteFunctorT)(int frameNumber, HSL *hsl);

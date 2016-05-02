@@ -57,11 +57,9 @@ void SetupEffect() {
 
   PixBufClear(canvas);
   LoadPalette(palette);
-  StartProfiling();
 }
 
 void TearDownEffect() {
-  StopProfiling();
 }
 
 void RenderMesh(int frameNumber_) {

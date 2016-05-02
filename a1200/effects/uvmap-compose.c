@@ -60,13 +60,10 @@ void SetupEffect() {
   UVMapSetTexture(uvmap[1], texture[1]);
 
   component = NewPixBufWrapper(WIDTH, HEIGHT, uvmap[1]->map.fast.v);
-
-  StartProfiling();
 }
 
 void TearDownEffect() {
   UnlinkPalettes(texturePal[0]);
-  StopProfiling();
 }
 
 static int EffectNum = 0;

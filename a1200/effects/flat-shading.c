@@ -74,13 +74,9 @@ void SetupEffect() {
   PixBufBlit(orig, 0, 0, map, NULL);
 
   SceneAddObject(scene, NewSceneObject("Object", mesh));
-
-  StartProfiling();
 }
 
 void TearDownEffect() {
-  StopProfiling();
-
   MemUnref(uvmap);
   MemUnref(shades);
   MemUnref(canvas);

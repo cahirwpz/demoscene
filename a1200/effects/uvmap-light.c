@@ -56,12 +56,9 @@ void SetupEffect() {
   PixBufSetColorMap(shades, colorMap);
 
   component = NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u);
-
-  StartProfiling();
 }
 
 void TearDownEffect() {
-  StopProfiling();
 }
 
 void RenderEffect(int frameNumber) {

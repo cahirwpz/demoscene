@@ -27,6 +27,11 @@ static PaletteT *texturePal;
 
 static const int maps = 11;
 static int lastMap = -1;
+static void (*generate[])(UVMapT *) = {
+  UVMapGenerate0, UVMapGenerate1, UVMapGenerate2, UVMapGenerate3,
+  UVMapGenerate4, UVMapGenerate5, UVMapGenerate6, UVMapGenerate7,
+  UVMapGenerate8, UVMapGenerate9, UVMapGenerate10
+};
 
 void ChangeMap(int newMap) {
   while (newMap < 0)
@@ -35,43 +40,7 @@ void ChangeMap(int newMap) {
   newMap = newMap % maps;
 
   if (newMap != lastMap) {
-    switch (newMap) {
-      case 0:
-        UVMapGenerate0(uvmap);
-        break;
-      case 1:
-        UVMapGenerate1(uvmap);
-        break;
-      case 2:
-        UVMapGenerate2(uvmap);
-        break;
-      case 3:
-        UVMapGenerate3(uvmap);
-        break;
-      case 4:
-        UVMapGenerate4(uvmap);
-        break;
-      case 5:
-        UVMapGenerate5(uvmap);
-        break;
-      case 6:
-        UVMapGenerate6(uvmap);
-        break;
-      case 7:
-        UVMapGenerate7(uvmap);
-        break;
-      case 8:
-        UVMapGenerate8(uvmap);
-        break;
-      case 9:
-        UVMapGenerate9(uvmap);
-        break;
-      case 10:
-        UVMapGenerate10(uvmap);
-        break;
-      default:
-        break;
-    }
+    generate[newMap](uvmap);
 
     UVMapSetTexture(uvmap, texture);
 
@@ -81,25 +50,28 @@ void ChangeMap(int newMap) {
 
 void AcquireResources() {
   LoadPngImage(&texture, &texturePal, "data/texture.png");
-  uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
-  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 }
 
 void ReleaseResources() {
+  MemUnref(texture);
+  MemUnref(texturePal);
 }
 
 bool SetupDisplay() {
-  ChangeMap(0);
   return InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void SetupEffect() {
+  uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+
+  ChangeMap(0);
   LoadPalette(texturePal);
-  StartProfiling();
 }
 
 void TearDownEffect() {
-  StopProfiling();
+  MemUnref(uvmap);
+  MemUnref(canvas);
 }
 
 void RenderChunky(int frameNumber) {
