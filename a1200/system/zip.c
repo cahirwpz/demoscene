@@ -1,7 +1,7 @@
 #include "std/debug.h"
 #include "std/memory.h"
+#include "system/inflate.h"
 #include "system/zip.h"
-#include "tinf/tinf.h"
 
 #define ZIP_FILE_SIG  0x04034b50
 #define ZIP_ENTRY_SIG 0x02014b50
@@ -147,18 +147,9 @@ RwOpsT *ZipRead(ZipT *zip, const char *path) {
 
     if (entry->comp_size != entry->orig_size) {
       void *orig_data = MemNew(entry->orig_size);
-      ASSERT(tinf_uncompress(orig_data, &size, data, entry->comp_size) == TINF_OK,
-             "Decompression failed!");
+      Inflate(data, orig_data);
       MemUnref(data);
       data = orig_data;
-    }
-
-    {
-#ifndef NDEBUG
-      uint32_t crc = tinf_crc32(0, data, size);
-#endif
-      ASSERT(crc == entry->crc32,
-             "Bad CRC checksum (orig: $%8x) vs. (curr: $%8x)!", entry->crc32, crc);
     }
 
     return RwOpsFromMemory(data, size);

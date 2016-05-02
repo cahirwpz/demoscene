@@ -1,8 +1,8 @@
 #include "std/debug.h"
 #include "std/memory.h"
+#include "system/inflate.h"
 #include "system/rwops.h"
 #include "gfx/png.h"
-#include "tinf/tinf.h"
 
 #define PNG_ID0 MAKE_ID(0x89, 0x50, 0x4e, 0x47)
 #define PNG_ID1 MAKE_ID(0x0d, 0x0a, 0x1a, 0x0a)
@@ -128,14 +128,12 @@ bool PngDecodeImage(PngT *png, PixBufT *pixbuf) {
 
     LOG("Uncompressing the image.");
 
-    ASSERT(tinf_uncompress(encoded, &dstLength,
-                           png->idat.data + 2, png->idat.length - 2) == TINF_OK,
-           "Decompression failed.");
-    ASSERT(length + png->ihdr.height == dstLength, "Decompressed data size differs.");
+    Inflate(png->idat.data + 2, encoded);
 
     LOG("Decoding pixels.");
 
-    ReconstructImage(pixbuf->data, encoded, png->ihdr.width, png->ihdr.height, pixelWidth);
+    ReconstructImage(pixbuf->data, encoded,
+                     png->ihdr.width, png->ihdr.height, pixelWidth);
 
     MemUnref(encoded);
 
@@ -170,20 +168,18 @@ static bool ReadPNG(PngT *png, RwOpsT *stream) {
   memset(&chunk, 0, sizeof(chunk));
 
   while (chunk.id != PNG_IEND && !error) {
-    uint32_t their_crc, my_crc;
+    uint32_t their_crc;
     uint8_t *ptr;
 
     if (IoRead(stream, &chunk, 8) != 8)
       return false;
 
-    my_crc = tinf_crc32(0, (void *)&chunk.id, 4);
+    LOG("%.4s: length: %d", (char *)&chunk.id, chunk.length);
 
     ptr = MemNew(chunk.length);
 
     if (IoRead(stream, ptr, chunk.length) != chunk.length)
       return false;
-
-    my_crc = tinf_crc32(my_crc, ptr, chunk.length);
 
     if (chunk.id == PNG_IHDR) {
       MemCopy(&png->ihdr, ptr, sizeof(IhdrT));
@@ -221,12 +217,6 @@ static bool ReadPNG(PngT *png, RwOpsT *stream) {
       MemUnref(ptr);
 
     if (!IoRead32(stream, &their_crc))
-      return false;
-
-    LOG("%.4s: length: %d, crc: %s",
-        (char *)&chunk.id, chunk.length, their_crc == my_crc ? "ok" : "bad");
-
-    if (their_crc != my_crc)
       return false;
   }
 

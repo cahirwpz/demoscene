@@ -9,9 +9,9 @@ benchmark: benchmark.o libgfx.a libtools.a $(LIBS)
 exception: exception.o $(LIBS)
 json: json.o libjson.a $(LIBS)
 wave-file: wave-file.o libaudio.a $(LIBS)
-unzip: unzip.o $(LIBS) libtinf.a 
+unzip: unzip.o $(LIBS)
 parseiff: parseiff.o $(LIBS)
-readpng: readpng.o libgfx.a libtinf.a $(LIBS)
+readpng: readpng.o libgfx.a $(LIBS)
 
 archive:
 	7z a "bins-$$(date +%F).7z" $(BINS) data

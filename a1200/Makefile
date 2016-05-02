@@ -2,7 +2,7 @@ TOPDIR = $(CURDIR)
 
 export TOPDIR
 
-SUBDIRS = audio engine json gfx std system tinf tools txtgen uvmap 
+SUBDIRS = audio engine json gfx std system tools txtgen uvmap 
 
 all:: libs
 	@$(MAKE) -C tests

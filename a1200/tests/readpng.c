@@ -3,7 +3,6 @@
 #include "std/debug.h"
 #include "std/memory.h"
 #include "gfx/png.h"
-#include "tinf/tinf.h"
 
 void LoadPng(const char *path) {
   PngT *png = PngLoadFromFile(path);

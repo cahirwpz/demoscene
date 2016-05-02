@@ -20,7 +20,7 @@ BINS := blur \
 	uvmap-light \
 	vector2d
 
-LIBS := libgfx.a libtools.a libsystem.a libstd.a libtinf.a
+LIBS := libgfx.a libtools.a libsystem.a libstd.a
 
 all:: $(BINS)
 
