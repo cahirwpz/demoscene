@@ -1,6 +1,5 @@
 #include <stdlib.h>
 
-#include "std/array.h"
 #include "std/debug.h"
 #include "std/math.h"
 #include "std/memory.h"
@@ -40,7 +39,7 @@ typedef struct ParticleEngine ParticleEngineT;
 typedef void (*ParticleEngineFuncT)(ParticleEngineT *engine);
 
 struct ParticleEngine {
-  ArrayT *particles; /* array of ParticleT */
+  ParticleT *particles;
   ParticleEngineFuncT adder;
 };
 
@@ -50,47 +49,15 @@ static void DeleteParticleEngine(ParticleEngineT *self) {
 
 TYPEDECL(ParticleEngineT, (FreeFuncT)DeleteParticleEngine);
 
-ParticleEngineT *NewParticleEngine(size_t maxParticles, ParticleEngineFuncT adder) {
+ParticleEngineT *NewParticleEngine(size_t maxParticles,
+                                   ParticleEngineFuncT adder)
+{
   ParticleEngineT *engine = NewInstance(ParticleEngineT);
 
-  engine->particles = NewArray(maxParticles, sizeof(ParticleT), TRUE);
+  engine->particles = MemNewTable(maxParticles, sizeof(ParticleT));
   engine->adder = adder;
 
   return engine;
-}
-
-static void ClearForces(ParticleT *particle) {
-  particle->force.x = 0;
-  particle->force.y = 0;
-  particle->force.z = 0;
-}
-
-static void DetectCollisions(ParticleT *particle, SphereT *sphere) {
-  float before, after;
-  Vector3D newPosition;
-
-  V3D_Add(&newPosition, &particle->position, &particle->velocity);
- 
-  before = PointDistanceFromSphere(sphere, &particle->position);
-  after = PointDistanceFromSphere(sphere, &newPosition);
-
-  if (before * after < 0)
-    particle->flags.inactive = TRUE;
-}
-
-static bool ParticleActive(ParticleT *particle) {
-  return BOOL(!particle->flags.inactive);
-}
-
-static void MoveParticle(ParticleT *particle) {
-  if (!particle->flags.inactive) {
-    V3D_Add(&particle->velocity, &particle->velocity, &particle->force);
-    V3D_Add(&particle->position, &particle->position, &particle->velocity);
-  }
-}
-
-static void IncrementAge(ParticleT *particle) {
-  particle->age++;
 }
 
 /*
@@ -104,43 +71,59 @@ static void IncrementAge(ParticleT *particle) {
  */
 void ParticleEngineStep(ParticleEngineT *engine) {
   static SphereT sphere = { {0.0, 0.0, 0.0}, 80.0f };
+  int i;
 
-  ArrayForEach(engine->particles, (IterFuncT)ClearForces, NULL);
+  for (i = 0; i < TableSize(engine->particles); i++) {
+    ParticleT *particle = &engine->particles[i];
+
+    particle->force.x = 0;
+    particle->force.y = 0;
+    particle->force.z = 0;
+  }
 
   if (engine->adder)
     engine->adder(engine);
 
   /* No forces right now */
+  for (i = 0; i < TableSize(engine->particles); i++) {
+    ParticleT *particle = &engine->particles[i];
 
-  ArrayForEach(engine->particles, (IterFuncT)DetectCollisions, &sphere);
-  ArrayFilterFast(engine->particles, (PredicateT)ParticleActive);
-  ArrayForEach(engine->particles, (IterFuncT)MoveParticle, NULL);
-  ArrayForEach(engine->particles, (IterFuncT)IncrementAge, NULL);
+    float before, after;
+    Vector3D newPosition;
+
+    V3D_Add(&newPosition, &particle->position, &particle->velocity);
+
+    before = PointDistanceFromSphere(&sphere, &particle->position);
+    after = PointDistanceFromSphere(&sphere, &newPosition);
+
+    particle->flags.inactive = BOOL(before * after < 0);
+
+    if (!particle->flags.inactive) {
+      V3D_Add(&particle->velocity, &particle->velocity, &particle->force);
+      V3D_Add(&particle->position, &particle->position, &particle->velocity);
+      particle->age++;
+    }
+  }
 }
 
 static void AddParticles(ParticleEngineT *engine) {
   static uint16_t seed[3] = { 0xDEAD, 0x1EE7, 0xC0DE };
+  int i;
 
-  if (engine->particles->size < engine->particles->reserved) {
-    ParticleT *p = ArrayAppend(engine->particles, NULL);
+  for (i = 0; i < TableSize(engine->particles); i++) {
+    ParticleT *p = &engine->particles[i];
 
-    float radian = erand48(seed) * 4 * M_PI;
-    float radius = erand48(seed) * 3 + 1;
+    if (p->flags.inactive) {
+      float radian = erand48(seed) * 4 * M_PI;
+      float radius = erand48(seed) * 3 + 1;
 
-    p->velocity.x = cos(radian) * radius;
-    p->velocity.y = sin(radian) * radius;
-    p->velocity.z = 0.0f;
+      p->velocity.x = cos(radian) * radius;
+      p->velocity.y = sin(radian) * radius;
+      p->velocity.z = 0.0f;
+      break;
+    }
   }
 };
-
-static void ParticleDraw(ParticleT *particle, PixBufT *pixbuf) {
-  PixBufT *flare = R_("Flare");
-  PointT point = { particle->position.x + WIDTH / 2,
-                   particle->position.y + HEIGHT / 2 };
-
-  PixBufBlit(pixbuf, point.x - flare->width / 2, point.y - flare->height / 2,
-             flare, NULL);
-}
 
 /*
  * Set up resources.
@@ -180,8 +163,10 @@ void TearDownEffect() {
  * Effect rendering functions.
  */
 void RenderFlares(int frameNumber) {
-  PixBufT *canvas = R_("Canvas");
   ParticleEngineT *engine = R_("Engine");
+  PixBufT *canvas = R_("Canvas");
+  PixBufT *flare = R_("Flare");
+  int i;
 
   PixBufClear(canvas);
   ParticleEngineStep(engine);
@@ -191,7 +176,14 @@ void RenderFlares(int frameNumber) {
   canvas->fgColor = 64;
   DrawEllipse(canvas, WIDTH / 2, HEIGHT / 2, 70, 70);
 
-  ArrayForEach(engine->particles, (IterFuncT)ParticleDraw, canvas);
+  for (i = 0; i < TableSize(engine->particles); i++) {
+    ParticleT *particle = &engine->particles[i];
+    PointT point = { particle->position.x + WIDTH / 2,
+                     particle->position.y + HEIGHT / 2 };
+
+    PixBufBlit(canvas, point.x - flare->width / 2, point.y - flare->height / 2,
+               flare, NULL);
+  }
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }

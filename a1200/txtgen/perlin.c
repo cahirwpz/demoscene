@@ -2,20 +2,20 @@
 #include "std/types.h"
 #include "gfx/pixbuf.h"
 
-static int AddRandom(int value asm("d1"), int size asm("d2"), RandomT *random asm("a0")) {
-  value += (NextRandom(random) & (size - 1)) - (size >> 1);
+static inline int AddRandom(int value, int size, int32_t *random) {
+  value += (RandomInt32(random) & (size - 1)) - (size >> 1);
 
   return max(min(value, 255), 0);
 }
 
-void GeneratePerlinNoise(PixBufT *pixbuf, RandomT *random) {
+void GeneratePerlinNoise(PixBufT *pixbuf, int32_t *random) {
   size_t size = pixbuf->width;
   size_t n = size / 2;
 
-  PutPixel(pixbuf, 0, 0, NextRandom(random));
-  PutPixel(pixbuf, n, 0, NextRandom(random));
-  PutPixel(pixbuf, 0, n, NextRandom(random));
-  PutPixel(pixbuf, n, n, NextRandom(random));
+  PutPixel(pixbuf, 0, 0, RandomInt32(random));
+  PutPixel(pixbuf, n, 0, RandomInt32(random));
+  PutPixel(pixbuf, 0, n, RandomInt32(random));
+  PutPixel(pixbuf, n, n, RandomInt32(random));
 
   while (n > 1) {
     size_t x, y;

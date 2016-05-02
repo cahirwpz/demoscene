@@ -1,13 +1,17 @@
 ; vim: ft=asm68k:ts=8:sw=8:
 
-        XDEF    _RawBlitNormal
-        XDEF    _RawBlitTransparent
-        XDEF    _RawBlitColorMap
-        XDEF    _RawBlitColorFunc
-        XDEF    _RawAddAndClamp
-        XDEF    _RawSubAndClamp
+        xdef    _RawBlitNormal
+        xdef    _RawBlitTransparent
+        xdef    _RawBlitColorMap
+        xdef    _RawBlitColorFunc
 
-        section GfxRaw, code
+        section code
+
+width   equr    d0
+height  equr    d1
+dstride equr    a5
+sstride equr    a6
+saved   equrl   d2-d3/a5-a6
 
 ; a0 [uint8_t *] dst
 ; a1 [uint8_t *] src
@@ -15,13 +19,6 @@
 ; d1 [int] height
 ; d2 [int] sstride
 ; d3 [int] dstride
-
-width   equr d0
-height  equr d1
-sstride equr a5
-dstride equr a6
-
-saved   equrl d2-d3/a5-a6
 
 _RawBlitNormal:
         movem.l saved,-(sp)
@@ -50,13 +47,6 @@ _RawBlitNormal:
 ; d1 [int] height
 ; d2 [int] sstride
 ; d3 [int] dstride
-
-width   equr d0
-height  equr d1
-sstride equr a5
-dstride equr a6
-
-saved   equrl d2-d3/a5-a6
 
 _RawBlitTransparent:
         movem.l saved,-(sp)
@@ -95,8 +85,6 @@ _RawBlitTransparent:
 ; d2 [int] sstride
 ; d3 [int] dstride
 
-saved   equrl d2-d3/a5-a6
-
 _RawBlitColorMap:
         movem.l saved,-(sp)
         subq.l  #1,height
@@ -129,8 +117,6 @@ _RawBlitColorMap:
 ; d2 [int] sstride
 ; d3 [int] dstride
 
-saved   equrl d2-d3/a5-a6
-
 _RawBlitColorFunc:
         movem.l saved,-(sp)
         subq.l  #1,height
@@ -154,79 +140,3 @@ _RawBlitColorFunc:
 
         movem.l (sp)+,saved
 	rts
-
-; a0 [uint8_t *] dst
-; a1 [uint8_t *] src
-; d0 [int] size
-; d1 [uint8_t] value
-
-saved   equrl   d2-d3
-
-_RawAddAndClamp:
-        movem.l saved,-(sp)
-        clr.l   d3
-
-.loop: 
-        move.l  (a1)+,d2        ; abcd
-        add.b   d1,d2
-        scs.b   d3              ; d-mask
-        ror.l   #8,d2
-        ror.l   #8,d3
-        add.b   d1,d2
-        scs.b   d3              ; c-mask
-        ror.l   #8,d2
-        ror.l   #8,d3
-        add.b   d1,d2
-        scs.b   d3              ; b-mask
-        ror.l   #8,d2
-        ror.l   #8,d3
-        add.b   d1,d2
-        scs.b   d3              ; a-mask
-        ror.l   #8,d2
-        ror.l   #8,d3
-        or.l    d3,d2
-        move.l  d2,(a0)+
-
-        subq.l  #4,d0
-        bgt.s   .loop
-
-        movem.l (sp)+,saved
-        rts
-
-; a0 [uint8_t *] dst
-; a1 [uint8_t *] src
-; d0 [int] size
-; d1 [uint8_t] value
-
-saved   equrl   d2-d3
-
-_RawSubAndClamp:
-        movem.l saved,-(sp)
-        clr.l   d3
-
-.loop: 
-        move.l  (a1)+,d2        ; abcd
-        sub.b   d1,d2
-        scc.b   d3              ; d-mask
-        ror.l   #8,d2
-        ror.l   #8,d3
-        sub.b   d1,d2
-        scc.b   d3              ; c-mask
-        ror.l   #8,d2
-        ror.l   #8,d3
-        sub.b   d1,d2
-        scc.b   d3              ; b-mask
-        ror.l   #8,d2
-        ror.l   #8,d3
-        sub.b   d1,d2
-        scc.b   d3              ; a-mask
-        ror.l   #8,d2
-        ror.l   #8,d3
-        and.l   d3,d2
-        move.l  d2,(a0)+
-
-        subq.l  #4,d0
-        bgt.s   .loop
-
-        movem.l (sp)+,saved
-        rts

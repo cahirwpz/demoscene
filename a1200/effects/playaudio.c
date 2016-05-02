@@ -69,7 +69,7 @@ void RenderChunky(int frameNumber) {
   PixBufT *shade = R_("Shade");
   AudioBufferT *buffer = AudioStreamGetBuffer(R_("Audio"));
   static int array[256];
-  int i, j;
+  int i;
 
   PixBufClear(texture);
 

@@ -95,7 +95,6 @@ void RenderEffect(int frameNumber) {
   PixBufT *canvas = R_("Canvas");
   UVMapT *uvmap = R_("Map");
   PixBufT *shades = R_("Shades");
-  PixBufT *orig = R_("Orig");
   PixBufT *umap;
 
   int du = 2 * frameNumber;

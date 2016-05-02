@@ -3,7 +3,7 @@
 #include "gfx/pixbuf.h"
 #include "gfx/spline.h"
 
-void GeneratePerlinPlasma(PixBufT *pixbuf, size_t step, RandomT *random) {
+void GeneratePerlinPlasma(PixBufT *pixbuf, size_t step, int32_t *random) {
   size_t size = pixbuf->height / step;
   size_t x, y, i;
 
@@ -15,7 +15,7 @@ void GeneratePerlinPlasma(PixBufT *pixbuf, size_t step, RandomT *random) {
     }
 
     for (i = 0; i < size; i++)
-      colors->knots[i].value = NextRandomFloat(random, 0.0f, 255.0f);
+      colors->knots[i].value = RandomFloat(random) * 255.0f;
 
     SplineAttachCatmullRomTangents(colors);
     SplineInterpolate(colors, step, pixbuf, (SetItemFuncT)PutDataColumn);
