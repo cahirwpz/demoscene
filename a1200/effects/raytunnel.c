@@ -70,28 +70,37 @@ static uint8_t *CalculateLightFunc() {
 void AcquireResources() {
   LoadPngImage(&texture, &texturePal, "data/texture-shades.png");
   LoadPngImage(&colorMap, NULL, "data/texture-shades-map.png");
-  shades = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
-  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
-  smallMap = NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256);
-  uvmap = NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256);
-  lightFunc = CalculateLightFunc();
-  
-  UVMapSetTexture(uvmap, texture);
 }
 
 void ReleaseResources() {
-}
-
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
+  MemUnref(texture);
+  MemUnref(texturePal);
+  MemUnref(colorMap);
 }
 
 void SetupEffect() {
-  LoadPalette(texturePal);
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   PixBufClear(canvas);
+
+  uvmap = NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256);
+  UVMapSetTexture(uvmap, texture);
+
+  shades = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  smallMap = NewUVMap(H_RAYS, V_RAYS, UV_ACCURATE, 256, 256);
+  lightFunc = CalculateLightFunc();
+
+  LoadPalette(texturePal);
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
+  MemUnref(canvas);
+  MemUnref(uvmap);
+  MemUnref(shades);
+  MemUnref(smallMap);
+  MemUnref(lightFunc);
 }
 
 void RaycastCalculateView(int frameNumber) {

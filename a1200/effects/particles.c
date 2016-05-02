@@ -130,27 +130,31 @@ static PixBufT *canvas;
 static PixBufT *flare;
 
 void AcquireResources() {
-  flare = NewPixBuf(PIXBUF_GRAY, 32, 32);
-  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
-  engine = NewParticleEngine(30, AddParticles);
 }
 
 void ReleaseResources() {
 }
 
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
-}
-
 void SetupEffect() {
   float lightRadius = 1.0f;
+
+  flare = NewPixBuf(PIXBUF_GRAY, 32, 32);
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  engine = NewParticleEngine(30, AddParticles);
 
   PixBufClear(canvas);
   GeneratePixels(flare, (GenPixelFuncT)LightNormalFalloff, &lightRadius);
   PixBufSetBlitMode(flare, BLIT_SUBSTRACTIVE_CLIP);
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
+  MemUnref(flare);
+  MemUnref(canvas);
+  MemUnref(engine);
 }
 
 void RenderFlares(int frameNumber) {

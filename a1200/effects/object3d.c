@@ -45,21 +45,19 @@ void AcquireResources() {
 void ReleaseResources() {
 }
 
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
-}
-
 void SetupEffect() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
-  scene = NewScene();
+  PixBufClear(canvas);
 
+  scene = NewScene();
   SceneAddObject(scene, NewSceneObject("Object", mesh));
 
-  PixBufClear(canvas);
   LoadPalette(palette);
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void TearDownEffect() {
+  KillDisplay();
 }
 
 void RenderMesh(int frameNumber_) {
@@ -85,10 +83,6 @@ void RenderMesh(int frameNumber_) {
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
-
-/*
- * Main loop.
- */
 
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;

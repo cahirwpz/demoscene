@@ -33,39 +33,46 @@ void AcquireResources() {
 }
 
 void ReleaseResources() {
-}
-
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
+  MemUnref(&texture);
+  MemUnref(&texturePal);
 }
 
 void SetupEffect() {
   float lightRadius = 1.0f;
   int i;
 
-  uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
-  origU = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
-  origV = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
-  flare = NewPixBuf(PIXBUF_GRAY, 64, 64);
+  PixBufClear(canvas);
 
+  uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
   UVMapGenerateTunnel(uvmap, 32.0f, 3, 4.0 / 3.0, 0.5, 0.5, NULL);
   UVMapSetTexture(uvmap, texture);
 
-  LoadPalette(texturePal);
-  PixBufClear(canvas);
+  flare = NewPixBuf(PIXBUF_GRAY, 64, 64);
   GeneratePixels(flare, (GenPixelFuncT)LightLinearFalloff, &lightRadius);
-
   for (i = 0; i < flare->width * flare->height; i++)
     flare->data[i] /= 4;
 
+  origU = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
   PixBufBlit(origU, 0, 0,
              NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u), NULL);
+
+  origV = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
   PixBufBlit(origV, 0, 0,
              NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.v), NULL);
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
+  LoadPalette(texturePal);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
+  MemUnref(origU);
+  MemUnref(origU);
+  MemUnref(flare);
+  MemUnref(uvmap);
+  MemUnref(canvas);
 }
 
 void RenderChunky(int frameNumber) {

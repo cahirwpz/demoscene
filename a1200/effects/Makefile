@@ -1,11 +1,25 @@
 TOPDIR = $(realpath $(CURDIR)/..)
 
-OBJS := blur.o colormap.o flares.o layers.o object3d.o particles.o \
-	playaudio.o raytunnel.o tunnel.o uvmap.o uvmap-blit.o uvmap-compose.o \
-	uvmap-light.o vector2d.o startup.o fire.o bumpmap.o polar.o flow.o
-BINS := blur colormap flares flat-shading layers object3d particles playaudio \
-	raytunnel tunnel uvmap uvmap-blit uvmap-compose uvmap-light vector2d \
-	fire bumpmap polar flow
+BINS := blur \
+	bumpmap \
+	colormap \
+	fire \
+	flares \
+	flat-shading \
+	flow \
+	layers \
+	object3d \
+	particles \
+	playaudio \
+	polar \
+	raytunnel \
+	tunnel \
+	uvmap \
+	uvmap-blit \
+	uvmap-compose \
+	uvmap-light \
+	vector2d
+
 LIBS := libgfx.a libtools.a libsystem.a libstd.a libtinf.a
 
 all:: $(BINS)

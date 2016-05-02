@@ -16,10 +16,13 @@ int __nocommandline = 1;
 
 extern void AcquireResources();
 extern void ReleaseResources();
-extern bool SetupDisplay();
 extern void SetupEffect();
 extern void TearDownEffect();
 extern void MainLoop();
+
+bool SetupDisplay() {
+  return false;
+}
 
 int main() {
   if (SystemCheck()) {
@@ -30,26 +33,21 @@ int main() {
     SetupTimer();
     StartEventQueue();
     StartProfiling();
+    InstallVBlankIntServer();
 
-    if (SetupDisplay()) {
-      InstallVBlankIntServer();
-
-      TRY {
-        LOG("Setting up the effect.");
-        SetupEffect();
-        LOG("Running up main loop.");
-        MainLoop();
-        LOG("Tearing down the effect.");
-        TearDownEffect();
-      }
-      CATCH {
-        LOG("Effect crashed!");
-      }
-
-      RemoveVBlankIntServer();
-      KillDisplay();
+    TRY {
+      LOG("Setting up the effect.");
+      SetupEffect();
+      LOG("Running up main loop.");
+      MainLoop();
+      LOG("Tearing down the effect.");
+      TearDownEffect();
+    }
+    CATCH {
+      LOG("Effect crashed!");
     }
 
+    RemoveVBlankIntServer();
     StopProfiling();
     StopEventQueue();
     KillTimer();

@@ -39,10 +39,10 @@ void AcquireResources() {
 }
 
 void ReleaseResources() {
-}
-
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH) && InitAudio();
+  MemUnref(audio);
+  MemUnref(darken);
+  MemUnref(imagePal);
+  MemUnref(image);
 }
 
 void SetupEffect() {
@@ -52,11 +52,21 @@ void SetupEffect() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 
   UVMapGeneratePolar(uvmap);
+
   LoadPalette(imagePal);
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
+
+  InitAudio();
 }
 
 void TearDownEffect() {
   KillAudio();
+  KillDisplay();
+
+  MemUnref(canvas);
+  MemUnref(uvmap);
+  MemUnref(shade);
+  MemUnref(texture);
 }
 
 void RenderChunky(int frameNumber) {

@@ -29,19 +29,12 @@ static PixBufT *canvas;
 static PaletteT *palette;
 
 void AcquireResources() {
-  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT + 2);
-  palette = NewPalette(256);
 }
 
 void ReleaseResources() {
 }
 
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
-}
-
-void SetupEffect() {
-  RGB *colors = palette->colors;
+static void MakePalette(RGB *colors) {
   int i;
 
   /* create a suitable fire palette, this is crucial for a good effect */
@@ -75,11 +68,23 @@ void SetupEffect() {
     colors[i + 224].g = 255;
     colors[i + 224].b = 224 + i;
   } 
+}
 
+void SetupEffect() {
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT + 2);
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
+
+  palette = NewPalette(256);
+  MakePalette(palette->colors);
   LoadPalette(palette);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
+  MemUnref(palette);
+  MemUnref(canvas);
 }
 
 static __regargs void IgniteBottom(uint8_t *fire, int16_t width) {

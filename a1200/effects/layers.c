@@ -41,39 +41,25 @@ void ReleaseResources() {
   }
 }
 
-/*
- * Set up display function.
- */
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
-}
-
-/*
- * Set up effect function.
- */
 void SetupEffect() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   layerMap = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
 
-  LinkPalettes(imagePal[0], imagePal[1], imagePal[2], NULL);
-  LoadPalette(imagePal[0]);
-
   PixBufRemap(image[1], imagePal[1]);
   PixBufRemap(image[2], imagePal[2]);
+
+  LinkPalettes(imagePal[0], imagePal[1], imagePal[2], NULL);
+  LoadPalette(imagePal[0]);
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
-/*
- * Tear down effect function.
- */
 void TearDownEffect() {
+  KillDisplay();
   UnlinkPalettes(imagePal[0]);
   MemUnref(canvas);
   MemUnref(layerMap);
 }
 
-/*
- * Effect rendering functions.
- */
 static int Effect = 0;
 static const int LastEffect = 1;
 
@@ -103,9 +89,6 @@ void RenderChunky(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-/*
- * Main loop.
- */
 void MainLoop() {
   LoopEventT event = LOOP_CONTINUE;
 

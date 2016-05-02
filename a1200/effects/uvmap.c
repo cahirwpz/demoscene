@@ -57,19 +57,20 @@ void ReleaseResources() {
   MemUnref(texturePal);
 }
 
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
-}
 
 void SetupEffect() {
   uvmap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 
   ChangeMap(0);
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
   LoadPalette(texturePal);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
   MemUnref(uvmap);
   MemUnref(canvas);
 }

@@ -42,10 +42,6 @@ void ReleaseResources() {
   MemUnref(imagePal);
 }
 
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
-}
-
 void SetupEffect() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   map1 = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
@@ -66,10 +62,13 @@ void SetupEffect() {
     CircularGradient(map2, &center);
   }
 
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
   LoadPalette(imagePal);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
   MemUnref(canvas);
   MemUnref(map1);
   MemUnref(map2);

@@ -32,22 +32,25 @@ static PointT triangle[] = { {-15, -10}, {10, -5}, {0, 20} };
 static PointT triangleToDraw[3];
 
 void AcquireResources() {
-  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 }
 
 void ReleaseResources() {
 }
 
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
-}
-
 void SetupEffect() {
-  ms = NewMatrixStack2D();
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   PixBufClear(canvas);
+
+  ms = NewMatrixStack2D();
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
+  MemUnref(canvas);
+  MemUnref(ms);
 }
 
 int effect = 0;

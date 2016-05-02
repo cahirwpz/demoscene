@@ -41,33 +41,41 @@ void AcquireResources() {
 }
 
 void ReleaseResources() {
-}
-
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
+  MemUnref(texture);
+  MemUnref(texturePal);
+  MemUnref(credits);
+  MemUnref(creditsPal);
+  MemUnref(whelpz);
+  MemUnref(whelpzPal);
 }
 
 void SetupEffect() {
   static TunnelPetalsT petals = { 3, 0.333333f, 0.33333f };
 
-  tunnelMap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
 
+  tunnelMap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
   UVMapGenerateTunnel(tunnelMap, 32.0f, 1, 16.0f / 9.0f, 0.5f, 0.5f, &petals);
-
-  LinkPalettes(texturePal, whelpzPal, creditsPal, NULL);
-  LoadPalette(texturePal);
 
   effectPal = MemClone(texturePal);
 
   PixBufRemap(credits, creditsPal);
-  PixBufRemap(whelpz, whelpzPal);
   PixBufSetBlitMode(credits, BLIT_TRANSPARENT);
+  PixBufRemap(whelpz, whelpzPal);
   PixBufSetBlitMode(whelpz, BLIT_TRANSPARENT);
+
+  LinkPalettes(texturePal, whelpzPal, creditsPal, NULL);
+  LoadPalette(texturePal);
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
   UnlinkPalettes(texturePal);
+  MemUnref(tunnelMap);
+  MemUnref(canvas);
+  MemUnref(effectPal);
 }
 
 typedef void (*PaletteFunctorT)(int frameNumber, HSL *hsl);

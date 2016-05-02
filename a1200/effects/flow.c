@@ -35,22 +35,25 @@ static VelocityT *flow;
 static ParticleT *particles;
 
 void AcquireResources() {
-  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   flow = ReadFileSimple("data/flow.bin");
-  particles = NewTable(ParticleT, PARTICLES);
 }
 
 void ReleaseResources() {
-}
-
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
+  MemUnref(flow);
 }
 
 void SetupEffect() {
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+  particles = NewTable(ParticleT, PARTICLES);
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
+  MemUnref(canvas);
+  MemUnref(particles);
 }
 
 __regargs static void 

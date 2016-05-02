@@ -64,24 +64,20 @@ static PixBufT *origU;
 static PixBufT *origV;
 
 void AcquireResources() {
-  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   LoadPngImage(&polarImg, NULL, "data/polar-map.png");
-  polarBuf = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
-  polarMap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
-  cartesianMap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
-  origU = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
-  origV = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
 }
 
 void ReleaseResources() {
-}
-
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
+  MemUnref(polarImg);
 }
 
 void SetupEffect() {
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+
+  polarMap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
   UVMapGenerateToPolar(polarMap);
+
+  cartesianMap = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
   UVMapGenerateToCartesian(cartesianMap);
 
   if (false)
@@ -90,13 +86,28 @@ void SetupEffect() {
     CircularGradient(polarImg, &p);
   }
 
+  origU = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
   PixBufBlit(origU, 0, 0,
              NewPixBufWrapper(WIDTH, HEIGHT, cartesianMap->map.fast.u), NULL);
+
+  origV = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
   PixBufBlit(origV, 0, 0,
              NewPixBufWrapper(WIDTH, HEIGHT, cartesianMap->map.fast.v), NULL);
+
+  polarBuf = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
+  MemUnref(canvas);
+  MemUnref(polarMap);
+  MemUnref(cartesianMap);
+  MemUnref(origU);
+  MemUnref(origV);
+  MemUnref(polarBuf);
 }
 
 void RenderPolar(PixBufT *canvas, int frameNumber) {

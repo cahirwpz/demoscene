@@ -53,10 +53,6 @@ void ReleaseResources() {
   MemUnref(colorMap);
 }
 
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
-}
-
 void SetupEffect() {
   PixBufT *map = NewPixBufWrapper(WIDTH, HEIGHT, uvmap->map.fast.u);
 
@@ -66,17 +62,20 @@ void SetupEffect() {
   scene = NewScene();
   orig = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
 
-  LoadPalette(texturePal);
-
   UVMapGenerate2(uvmap);
   UVMapSetTexture(uvmap, texture);
 
   PixBufBlit(orig, 0, 0, map, NULL);
 
   SceneAddObject(scene, NewSceneObject("Object", mesh));
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
+  LoadPalette(texturePal);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
   MemUnref(uvmap);
   MemUnref(shades);
   MemUnref(canvas);

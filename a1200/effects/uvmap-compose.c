@@ -35,35 +35,45 @@ void AcquireResources() {
 }
 
 void ReleaseResources() {
-}
-
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
+  MemUnref(texture[0]);
+  MemUnref(texturePal[0]);
+  MemUnref(texture[1]);
+  MemUnref(texturePal[1]);
 }
 
 void SetupEffect() {
-  uvmap[0] = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
-  uvmap[1] = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
-  composeMap = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
-  colorFunc = NewTable(uint8_t, 256);
 
-  LinkPalettes(texturePal[0], texturePal[1], NULL);
-  LoadPalette(texturePal[0]);
-
-  PixBufRemap(texture[1], texturePal[1]);
-
+  uvmap[0] = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
   UVMapGenerate3(uvmap[0]);
   UVMapSetTexture(uvmap[0], texture[0]);
 
+  uvmap[1] = NewUVMap(WIDTH, HEIGHT, UV_FAST, 256, 256);
   UVMapGenerate4(uvmap[1]);
   UVMapSetTexture(uvmap[1], texture[1]);
 
   component = NewPixBufWrapper(WIDTH, HEIGHT, uvmap[1]->map.fast.v);
+  composeMap = NewPixBuf(PIXBUF_GRAY, WIDTH, HEIGHT);
+  colorFunc = NewTable(uint8_t, 256);
+
+  PixBufRemap(texture[1], texturePal[1]);
+
+  LinkPalettes(texturePal[0], texturePal[1], NULL);
+  LoadPalette(texturePal[0]);
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
   UnlinkPalettes(texturePal[0]);
+
+  MemUnref(canvas);
+  MemUnref(uvmap[0]);
+  MemUnref(uvmap[1]);
+  MemUnref(component);
+  MemUnref(composeMap);
+  MemUnref(colorFunc);
 }
 
 static int EffectNum = 0;

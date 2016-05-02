@@ -26,16 +26,16 @@ void ReleaseResources() {
   MemUnref(image);
 }
 
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
-}
-
 void SetupEffect() {
   canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
   buffer = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
   MemUnref(canvas);
   MemUnref(buffer);
 }

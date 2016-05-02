@@ -46,10 +46,6 @@ void ReleaseResources() {
   MemUnref(splineY);
 }
 
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
-}
-
 void SetupEffect() {
   float lightRadius = 1.0f;
 
@@ -71,9 +67,12 @@ void SetupEffect() {
 
   SplineAttachCatmullRomTangents(splineX);
   SplineAttachCatmullRomTangents(splineY);
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void TearDownEffect() {
+  KillDisplay();
 }
 
 static int Curve = 8;

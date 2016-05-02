@@ -18,6 +18,11 @@ const int WIDTH = 320;
 const int HEIGHT = 256;
 const int DEPTH = 8;
 
+static PixBufT *canvas;
+static PixBufT *heightMap;
+static UVMapT *bumpMap;
+static PixBufT *reflectionMap;
+
 void RenderBumpMapOptimized(int16_t *mapU asm("a0"), int16_t *mapV asm("a1"),
                             uint8_t *rmap asm("a2"), uint8_t *dst asm("a3"),
                             int16_t width asm("d0"), int16_t height asm("d1"),
@@ -112,31 +117,31 @@ RenderBumpMap(PixBufT *canvas, UVMapT *bumpMap, PixBufT *reflectionMap,
 #endif
 }
 
-static PixBufT *canvas;
-static PixBufT *heightMap;
-static UVMapT *bumpMap;
-static PixBufT *reflectionMap;
-
 void AcquireResources() {
-  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
-  bumpMap = NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256);
   LoadPngImage(&heightMap, NULL, "data/samkaat-absinthe.png");
-  reflectionMap = CreateReflectionMap();
-
-  CalculateBumpMap(bumpMap, heightMap);
 }
 
 void ReleaseResources() {
-}
-
-bool SetupDisplay() {
-  return InitDisplay(WIDTH, HEIGHT, DEPTH);
+  MemUnref(heightMap);
 }
 
 void SetupEffect() {
+  canvas = NewPixBuf(PIXBUF_CLUT, WIDTH, HEIGHT);
+
+  bumpMap = NewUVMap(WIDTH, HEIGHT, UV_NORMAL, 256, 256);
+  CalculateBumpMap(bumpMap, heightMap);
+
+  reflectionMap = CreateReflectionMap();
+
+  InitDisplay(WIDTH, HEIGHT, DEPTH);
 }
 
 void TearDownEffect() {
+  KillDisplay();
+
+  MemUnref(canvas);
+  MemUnref(bumpMap);
+  MemUnref(reflectionMap);
 }
 
 void RenderEffect(int frameNumber) {
