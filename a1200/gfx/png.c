@@ -26,18 +26,21 @@ static inline int GetPixelWidth(PngT *png) {
   return pixelWidth;
 }
 
-static inline int PaethPredictor(uint8_t a, uint8_t b, uint8_t c) {
+static inline int PaethPredictor(int a, int b, int c) {
   int p = a + b - c;
-  int pa = abs(p - a);
-  int pb = abs(p - b);
-  int pc = abs(p - c);
+  int pa = p - a;
+  int pb = p - b;
+  int pc = p - c;
 
-  if (pa <= pb && pa <= pc)
-    return a;
+  if (pa < 0)
+    pa = -pa;
+  if (pb < 0)
+    pb = -pb;
+  if (pc < 0)
+    pc = -pc;
 
-  if (pb <= pc)
-   return b;
-
+  if ((pa <= pb) && (pa <= pc)) return a;
+  if (pb <= pc) return b;
   return c;
 }
 
@@ -45,38 +48,64 @@ static void ReconstructImage(uint8_t *pixels, uint8_t *encoded,
                              int width, int height, int pixelWidth)
 {
   int row = width * pixelWidth;
-  int i, j, k;
+  int i;
 
   for (i = 0; i < height; i++) {
     uint8_t method = *encoded++;
 
-    for (k = 0; k < pixelWidth; k++) {
-      pixels[0] = encoded[0];
-      if (method == 2 || method == 4) /* Up & Paeth */
-        pixels[0] += pixels[-row];
-      else if (method == 3) /* Average */
-        pixels[0] += pixels[-row] / 2;
+    if (method == 2 && i == 0)
+      method = 0;
 
-      for (j = pixelWidth; j < row; j += pixelWidth) {
-        pixels[j] = encoded[j];
-        if (method == 1) /* Sub */
-          pixels[j] += pixels[j - pixelWidth];
-        else if (method == 2) /* Up */
-          pixels[j] += pixels[j - row];
-        else if (method == 3) /* Average */
-          pixels[j] += (pixels[j - pixelWidth] + pixels[j - row]) / 2;
-        else if (method == 4) /* Paeth */
-          pixels[j] += PaethPredictor(pixels[j - pixelWidth],
-                                      pixels[j - row],
-                                      pixels[j - row - pixelWidth]);
+    if (method == 4 && i == 0)
+      method = 1;
+
+    /*
+     * Filters are applied to bytes, not to pixels, regardless of the bit depth
+     * or colour type of the image. The filters operate on the byte sequence
+     * formed by a scanline.
+     */
+
+    if (method == 0) {
+      memcpy(pixels, encoded, row);
+      encoded += row; pixels += row;
+    } else if (method == 1) {
+      uint8_t *left = pixels;
+      int16_t j = row - 1;
+      *pixels++ = *encoded++;
+      do {
+        *pixels++ = *encoded++ + *left++;
+      } while (--j);
+    } else if (method == 2) {
+      uint8_t *up = pixels - row;
+      int16_t j = row;
+      do {
+        *pixels++ = *encoded++ + *up++;
+      } while (--j);
+    } else if (method == 3) {
+      uint8_t *left = pixels;
+      int16_t j = row - 1;
+      if (i > 0) {
+        uint8_t *up = pixels - row;
+        *pixels++ = *encoded++ + *up++ / 2;
+        do {
+          *pixels++ = *encoded++ + (*left++ + *up++) / 2;
+        } while (--j);
+      } else {
+        *pixels++ = *encoded++;
+        do {
+          *pixels++ = *encoded++ + *left++ / 2;
+        } while (--j);
       }
-
-      pixels++;
-      encoded++;
+    } else if (method == 4) {
+      uint8_t *left = pixels;
+      uint8_t *leftup = pixels - row;
+      uint8_t *up = pixels - row;
+      int16_t j = row - 1;
+      *pixels++ = *encoded++ + *up++;
+      do {
+        *pixels++ = *encoded++ + PaethPredictor(*left++, *up++, *leftup++);
+      } while (--j);
     }
-
-    pixels += row - pixelWidth;
-    encoded += row - pixelWidth;
   }
 }
 
