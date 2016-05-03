@@ -8,7 +8,7 @@
 #include "p61/p61.h"
 #include "console.h"
 #include "coplist.h"
-#include "keyboard.h"
+#include "event.h"
 #include "bltop.h"
 
 #define WIDTH 320
@@ -190,18 +190,21 @@ static void Render() {
 }
 
 static BOOL HandleEvent() {
-  KeyEventT event;
+  EventT ev;
 
-  if (!GetKeyEvent(&event))
+  if (!PopEvent(&ev))
     return TRUE;
 
-  if (event.modifier & MOD_PRESSED)
+  if (ev.type == EV_MOUSE)
     return TRUE;
 
-  if (event.code == KEY_ESCAPE)
+  if (ev.key.modifier & MOD_PRESSED)
+    return TRUE;
+
+  if (ev.key.code == KEY_ESCAPE)
     return FALSE;
 
-  if (event.code == KEY_SPACE) {
+  if (ev.key.code == KEY_SPACE) {
     P61_ControlBlock.Play ^= 1;
     if (P61_ControlBlock.Play)
       custom->dmacon = DMAF_SETCLR | DMAF_AUDIO;
@@ -209,14 +212,14 @@ static BOOL HandleEvent() {
       custom->dmacon = DMAF_AUDIO;
   }
 
-  if (event.code == KEY_LEFT) {
+  if (ev.key.code == KEY_LEFT) {
     BYTE newPos = P61_ControlBlock.Pos - 2;
     if (newPos < 0)
       newPos = 0;
     P61_SetPosition(newPos);
   }
 
-  if (event.code == KEY_RIGHT)
+  if (ev.key.code == KEY_RIGHT)
     P61_SetPosition(P61_ControlBlock.Pos);
 
   return TRUE;

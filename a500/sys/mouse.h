@@ -3,21 +3,21 @@
 
 #include "common.h"
 
-typedef enum {
-  LMB_PRESSED  = 1,
-  RMB_PRESSED  = 2,
-  LMB_RELEASED = 4,
-  RMB_RELEASED = 8
-} __attribute__((packed)) MouseButtonT;
+#define EV_MOUSE 2
+
+#define LMB_PRESSED  1
+#define RMB_PRESSED  2
+#define LMB_RELEASED 4
+#define RMB_RELEASED 8
 
 typedef struct {
-  WORD x, y;
-  BYTE xrel, yrel;
-  MouseButtonT button;
+  UBYTE type;
+  UBYTE button;
+  WORD  x, y;
+  BYTE  xrel, yrel;
 } MouseEventT;
 
 __regargs void MouseInit(WORD minX, WORD minY, WORD maxX, WORD maxY);
 void MouseKill();
-__regargs BOOL GetMouseEvent(MouseEventT *event);
 
 #endif

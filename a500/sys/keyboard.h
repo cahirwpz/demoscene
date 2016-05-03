@@ -1,6 +1,8 @@
 #ifndef __KEYBOARD_H__
 #define __KEYBOARD_H__
 
+#include "common.h"
+
 typedef enum {
   KEY_BACKQUOTE = 0x00,
   KEY_1 = 0x01,
@@ -113,7 +115,10 @@ typedef enum {
   MOD_AMIGA = MOD_LAMIGA | MOD_RAMIGA
 } __attribute__((packed)) KeyModT;
 
+#define EV_KEY 1
+
 typedef struct {
+  UBYTE type;
   KeyModT modifier;
   KeyCodeT code;
   char ascii;
@@ -121,6 +126,5 @@ typedef struct {
 
 void KeyboardInit();
 void KeyboardKill();
-__regargs BOOL GetKeyEvent(KeyEventT *event);
 
 #endif

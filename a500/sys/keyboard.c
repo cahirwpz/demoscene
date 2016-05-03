@@ -1,8 +1,9 @@
 #include "hardware.h"
 #include "interrupts.h"
 #include "keyboard.h"
+#include "event.h"
 
-static char KeyMapLower[128] = {
+static const char KeyMapLower[128] = {
   [KEY_BACKQUOTE] '`',
   [KEY_1] '1',
   [KEY_2] '2',
@@ -75,7 +76,7 @@ static char KeyMapLower[128] = {
   [KEY_KP_PLUS] '+'
 };
 
-static char KeyMapUpper[128] = {
+static const char KeyMapUpper[128] = {
   [KEY_BACKQUOTE] '~',
   [KEY_1] '!',
   [KEY_2] '@',
@@ -125,44 +126,12 @@ static char KeyMapUpper[128] = {
   [KEY_SLASH] '?'
 };
 
-#define QUEUELEN 32
-
-static UBYTE rawkey[QUEUELEN];
-static UBYTE head, tail, used;
 static UBYTE modifier;
 
-static inline void PushRawKey(UBYTE raw) {
-  if (used < QUEUELEN) {
-    rawkey[tail] = raw;
-    tail = (tail + 1) & (QUEUELEN - 1);
-    used++;
-  }
-}
-
-static WORD PopRawKey() {
-  WORD raw = -1;
-
-  Disable();
-
-  if (used > 0) {
-    raw = rawkey[head];
-    head = (head + 1) & (QUEUELEN - 1);
-    used--;
-  }
-
-  Enable();
-
-  return raw;
-}
-
-__regargs BOOL GetKeyEvent(KeyEventT *event) {
-  WORD raw = PopRawKey();
-  UBYTE code, mod;
-
-  if (raw < 0)
-    return FALSE;
-
-  code = raw & 0x7f;
+static __regargs void PushKeyEvent(UBYTE raw) {
+  KeyEventT event;
+  UBYTE code = raw & 0x7f;
+  UBYTE mod;
 
   if (code == KEY_LSHIFT)
     mod = MOD_LSHIFT;
@@ -187,11 +156,12 @@ __regargs BOOL GetKeyEvent(KeyEventT *event) {
   else
     modifier |= (mod | MOD_PRESSED);
 
-  event->code = code;
-  event->modifier = modifier;
-  event->ascii = ((modifier & MOD_SHIFT) ? KeyMapUpper : KeyMapLower)[code];
+  event.type = EV_KEY;
+  event.code = code;
+  event.modifier = modifier;
+  event.ascii = ((modifier & MOD_SHIFT) ? KeyMapUpper : KeyMapLower)[code];
 
-  return TRUE;
+  PushEvent((EventT *)&event);
 }
 
 static __interrupt LONG KeyboardIntHandler() {
@@ -205,18 +175,13 @@ static __interrupt LONG KeyboardIntHandler() {
     /* Save raw key in the queue. Filter out exceptional conditions. */
     {
       UBYTE raw = ((sdr >> 1) | (sdr << 7)) ^ 0xff;
-      switch (raw) {
-        case 0x78: /* Reset warning. */
-        case 0xf9: /* Last key code bad. */
-        case 0xfa: /* Keyboard key buffer overflow. */
-        case 0xfc: /* Keyboard self-test fail. */
-        case 0xfd: /* Initiate power-up key stream. */
-        case 0xfe: /* Terminate power-up key stream. */
-          break;
-        default:
-          PushRawKey(raw);
-          break;
-      }
+      if (raw != 0x78 && /* Reset warning. */
+          raw != 0xf9 && /* Last key code bad. */
+          raw != 0xfa && /* Keyboard key buffer overflow. */
+          raw != 0xfc && /* Keyboard self-test fail. */
+          raw != 0xfd && /* Initiate power-up key stream. */
+          raw != 0xfe)   /* Terminate power-up key stream. */
+        PushKeyEvent(raw);
     }
     /* Wait for at least 85us for handshake to be registered. */
     WaitTimerB(ciab, TIMER_US(85));

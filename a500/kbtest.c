@@ -4,7 +4,7 @@
 #include "console.h"
 #include "hardware.h"
 #include "coplist.h"
-#include "keyboard.h"
+#include "event.h"
 #include "serial.h"
 
 #define WIDTH 640
@@ -55,7 +55,7 @@ static void Kill() {
 }
 
 static BOOL HandleEvent() {
-  KeyEventT event;
+  EventT ev;
   LONG c = SerialGet();
 
   if (c >= 0) {
@@ -63,42 +63,45 @@ static BOOL HandleEvent() {
     ConsoleDrawCursor(&console);
   }
 
-  if (!GetKeyEvent(&event))
+  if (!PopEvent(&ev))
     return TRUE;
 
-  if (event.modifier & MOD_PRESSED)
+  if (ev.type != EV_KEY)
     return TRUE;
 
-  if (event.code == KEY_ESCAPE)
+  if (ev.key.modifier & MOD_PRESSED)
+    return TRUE;
+
+  if (ev.key.code == KEY_ESCAPE)
     return FALSE;
 
   ConsoleDrawCursor(&console);
 
-  if (event.code == KEY_LEFT) {
+  if (ev.key.code == KEY_LEFT) {
     if (console.cursor.x > 0)
       console.cursor.x--;
   }
 
-  if (event.code == KEY_RIGHT) {
+  if (ev.key.code == KEY_RIGHT) {
     console.cursor.x++;
     if (console.cursor.x >= console.width)
       console.cursor.x = console.width;
   }
 
-  if (event.code == KEY_UP) {
+  if (ev.key.code == KEY_UP) {
     if (console.cursor.y > 0)
       console.cursor.y--;
   }
 
-  if (event.code == KEY_DOWN) {
+  if (ev.key.code == KEY_DOWN) {
     console.cursor.y++;
     if (console.cursor.y >= console.height)
       console.cursor.y = console.height;
   }
 
-  if (event.ascii) {
-    ConsolePutChar(&console, event.ascii);
-    SerialPut(event.ascii);
+  if (ev.key.ascii) {
+    ConsolePutChar(&console, ev.key.ascii);
+    SerialPut(ev.key.ascii);
   }
 
   ConsoleDrawCursor(&console);

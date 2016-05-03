@@ -2,8 +2,7 @@
 #include "hardware.h"
 #include "coplist.h"
 #include "sprite.h"
-#include "mouse.h"
-#include "keyboard.h"
+#include "event.h"
 #include "io.h"
 
 #define WIDTH 320
@@ -49,25 +48,26 @@ static void Kill() {
 }
 
 static BOOL HandleEvent() {
-  MouseEventT cursor;
-  KeyEventT key;
+  EventT ev;
 
-  if (GetKeyEvent(&key)) {
-    if (!(key.modifier & MOD_PRESSED) && (key.code == KEY_ESCAPE))
+  if (!PopEvent(&ev))
+    return TRUE;
+
+  if (ev.type == EV_KEY)
+   if (!(ev.key.modifier & MOD_PRESSED) && ev.key.code == KEY_ESCAPE)
       return FALSE;
-  }
 
-  if (GetMouseEvent(&cursor)) {
+  if (ev.type == EV_MOUSE) {
     UBYTE *data = screen->planes[0] + 
-      cursor.x / 8 + cursor.y * screen->bytesPerRow;
-    UBYTE value = 1 << (7 - (cursor.x & 7));
+      ev.mouse.x / 8 + ev.mouse.y * screen->bytesPerRow;
+    UBYTE value = 1 << (7 - (ev.mouse.x & 7));
 
-    if (cursor.button & LMB_PRESSED)
+    if (ev.mouse.button & LMB_PRESSED)
       *data |= value;
-    if (cursor.button & RMB_PRESSED)
+    if (ev.mouse.button & RMB_PRESSED)
       *data &= ~value;
 
-    UpdateSprite(pointer, X(cursor.x), Y(cursor.y));
+    UpdateSprite(pointer, X(ev.mouse.x), Y(ev.mouse.y));
   }
 
   return TRUE;
