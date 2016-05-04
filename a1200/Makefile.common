@@ -2,7 +2,7 @@ SUFFIXES += .P
 
 CC	 = m68k-amigaos-gcc -noixemul
 AS	 = vasm -quiet
-CPPFLAGS = -I$(realpath $(TOPDIR))
+CPPFLAGS = -I$(realpath $(TOPDIR)) -DFRAMERATE=50
 LDFLAGS  = -m68060 -mnobitfield -fbaserel -msmall-code
 ASFLAGS  = -Faout -phxass -m68060 -m68882
 CFLAGS   = $(LDFLAGS) $(OFLAGS) $(WFLAGS)

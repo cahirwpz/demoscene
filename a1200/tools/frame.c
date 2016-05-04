@@ -4,7 +4,6 @@
 #include <stdarg.h>
 
 #include "std/math.h"
-#include "system/vblank.h"
 #include "tools/frame.h"
 
 static void RenderText(char *text, int x, int y) {

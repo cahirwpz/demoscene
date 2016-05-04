@@ -8,7 +8,7 @@
 #include "std/debug.h"
 #include "std/memory.h"
 #include "system/audio.h"
-#include "system/vblank.h"
+#include "system/hardware.h"
 
 struct AudioStream {
   /* hardware audio data */
@@ -195,7 +195,7 @@ void AudioStreamSetVolume(AudioStreamT *audio, float volume) {
 
 void AudioStreamUpdatePos(AudioStreamT *audio) {
   AudioStreamStop(audio);
-  WaveFileChangePosition(&audio->wave, (float)GetVBlankCounter() / FRAMERATE);
+  WaveFileChangePosition(&audio->wave, (float)ReadFrameCounter() / FRAMERATE);
   AudioStreamPlay(audio);
 }
 

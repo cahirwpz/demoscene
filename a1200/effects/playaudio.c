@@ -51,9 +51,11 @@ static void Init() {
   InitDisplay(WIDTH, HEIGHT, DEPTH);
 
   InitAudio();
+  AudioStreamPlay(audio);
 }
 
 static void Kill() {
+  AudioStreamStop(audio);
   KillAudio();
   KillDisplay();
 
@@ -63,7 +65,7 @@ static void Kill() {
   MemUnref(texture);
 }
 
-static void RenderChunky(int frameNumber) {
+static void Render(int frameNumber) {
   AudioBufferT *buffer = AudioStreamGetBuffer(audio);
   static int array[256];
   int i;
@@ -96,65 +98,32 @@ static void RenderChunky(int frameNumber) {
   PixBufBlit(canvas, 0, 0, shade, NULL);
 
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
+
+  AudioStreamFeed(audio);
 }
 
-static void Loop() {
-  bool finish = FALSE;
+static void HandleEvent(InputEventT *event) {
+  int frameCounter = ReadFrameCounter();
+  bool changed = false;
 
-  AudioStreamPlay(audio);
+  if (KEY_RELEASED(event, KEY_UP)) {
+    frameCounter -= 10 * FRAMERATE;
+    changed = true;
+  } else if (KEY_RELEASED(event, KEY_DOWN)) {
+    frameCounter += 10 * FRAMERATE;
+    changed = true;
+  } else if (KEY_RELEASED(event, KEY_LEFT)) {
+    frameCounter -= FRAMERATE;
+    changed = true;
+  } else if (KEY_RELEASED(event, KEY_RIGHT)) {
+    frameCounter += FRAMERATE;
+    changed = true;
+  }
 
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    RenderChunky(frameNumber);
-    RenderFrameNumber(frameNumber);
-
-    DisplaySwap();
-
-    AudioStreamFeed(audio);
-
-    {
-      InputEventT event; 
-
-      while (EventQueuePop(&event)) {
-        switch (event.ie_Class) {
-          case IECLASS_RAWKEY:
-            if (event.ie_Code & IECODE_UP_PREFIX) {
-              switch (event.ie_Code & ~IECODE_UP_PREFIX) {
-                case KEY_UP:
-                  ChangeVBlankCounter(-10 * FRAMERATE);
-                  AudioStreamUpdatePos(audio);
-                  break;
-                case KEY_DOWN:
-                  ChangeVBlankCounter(10 * FRAMERATE);
-                  AudioStreamUpdatePos(audio);
-                  break;
-                case KEY_LEFT:
-                  ChangeVBlankCounter(-FRAMERATE);
-                  AudioStreamUpdatePos(audio);
-                  break;
-                case KEY_RIGHT:
-                  ChangeVBlankCounter(FRAMERATE);
-                  AudioStreamUpdatePos(audio);
-                  break;
-                case KEY_ESCAPE:
-                  finish = TRUE;
-                  break;
-                default:
-                  break;
-              }
-            }
-
-          default:
-            break;
-        }
-      }
-    }
-  } while (!finish);
-
-  AudioStreamStop(audio);
+  if (changed) {
+    SetFrameCounter(frameCounter);
+    AudioStreamUpdatePos(audio);
+  }
 }
 
-EffectT Effect = { "PlayAudio", Load, UnLoad, Init, Kill, Loop };
+EffectT Effect = { "PlayAudio", Load, UnLoad, Init, Kill, Render, HandleEvent };

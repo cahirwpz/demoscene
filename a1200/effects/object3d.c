@@ -84,13 +84,13 @@ static void Render(int frameNumber_) {
 static void HandleEvent(InputEventT *event) {
   static bool paused = FALSE;
   static int oldFrameNumber = 0;
-  int frameNumber = GetVBlankCounter();
+  int frameNumber = ReadFrameCounter();
 
   if (KEY_RELEASED(event, KEY_SPACE))
     paused = !paused;
 
   if (paused) {
-    SetVBlankCounter(oldFrameNumber);
+    SetFrameCounter(oldFrameNumber);
     frameNumber = oldFrameNumber;
   } else {
     oldFrameNumber = frameNumber;

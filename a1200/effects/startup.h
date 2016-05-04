@@ -9,7 +9,7 @@
 
 #include "system/c2p.h"
 #include "system/display.h"
-#include "system/vblank.h"
+#include "system/hardware.h"
 
 #include "tools/effect.h"
 #include "tools/frame.h"
