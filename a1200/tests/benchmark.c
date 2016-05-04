@@ -3,7 +3,6 @@
 #include "std/debug.h"
 #include "std/memory.h"
 #include "std/random.h"
-#include "system/timer.h"
 #include "tools/profiling.h"
 
 typedef struct Line {
@@ -17,8 +16,6 @@ int main() {
 
   PixBufT *canvas = NewPixBuf(PIXBUF_GRAY, 256, 256);
   LineT *lines = NewTable(LineT, n);
-
-  SetupTimer();
 
   LOG("Generating %d random lines.", n);
 
@@ -52,8 +49,6 @@ int main() {
 
   MemUnref(lines);
   MemUnref(canvas);
-
-  KillTimer();
 
   return 0;
 }

@@ -1,13 +1,12 @@
 #include "std/debug.h"
 #include "std/hashmap.h"
 #include "std/memory.h"
-#include "system/timer.h"
+#include "system/hardware.h"
 #include "tools/profiling.h"
 
 struct Timing {
-  double min, max, sum;
-  int n;
-  uint64_t start;
+  int min, max, sum, n;
+  int start;
   bool active;
 };
 
@@ -24,8 +23,8 @@ void StopProfiling() {
       TimingT *timing = (TimingT *)value;
 
       printf("%s: %.2fms (min: %.2fms, max: %.2fms)\n\r",
-             key, timing->sum * 1000.0f / timing->n,
-             timing->min * 1000.0f, timing->max * 1000.0f);
+             key, timing->sum * 1000.0f / (timing->n * 64.0f),
+             timing->min * 1000.0f / 64.0f, timing->max * 1000.0f / 64.0f);
     }
 
     LOG("Timing measurements:");
@@ -41,7 +40,6 @@ __regargs TimingT *ProfileGetTiming(const char *name) {
 
   if (!timing) {
     timing = NewRecord(TimingT);
-    timing->min = 60.0f;
     HashMapAdd(Timings, name, timing);
     LOG("Added timing '%s'.", name);
   }
@@ -51,11 +49,15 @@ __regargs TimingT *ProfileGetTiming(const char *name) {
 
 __regargs bool Profile(TimingT *timing) {
   if (!timing->active) {
-    timing->start = TimerRead();
+    timing->start = ReadLineCounter();
     timing->active = true;
   } else {
-    double value = TimerDiff(timing->start, TimerRead());
-
+    int value = timing->start - ReadLineCounter();
+   
+    /* Check for counter overflow. */
+    if (value < 0)
+      value += 1 << 24;
+   
     if (timing->min > value)
       timing->min = value;
     if (timing->max < value)

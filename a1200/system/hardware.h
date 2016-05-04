@@ -13,4 +13,8 @@ extern volatile struct Custom* const custom;
 extern volatile struct CIA* const ciaa;
 extern volatile struct CIA* const ciab;
 
+int ReadLineCounter();
+int ReadFrameCounter();
+void SetFrameCounter(int frame);
+
 #endif

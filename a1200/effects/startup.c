@@ -2,7 +2,6 @@
 #include "system/check.h"
 #include "system/display.h"
 #include "system/input.h"
-#include "system/timer.h"
 #include "system/vblank.h"
 
 #include "startup.h"
@@ -18,7 +17,6 @@ int main() {
     if (Effect.Load)
       Effect.Load();
 
-    SetupTimer();
     StartEventQueue();
     StartProfiling();
     InstallVBlankIntServer();
@@ -62,7 +60,6 @@ int main() {
     RemoveVBlankIntServer();
     StopProfiling();
     StopEventQueue();
-    KillTimer();
 
     if (Effect.UnLoad)
       Effect.UnLoad();

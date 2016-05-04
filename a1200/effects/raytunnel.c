@@ -3,7 +3,6 @@
 #include "gfx/blit.h"
 #include "gfx/png.h"
 #include "engine/matrix3d.h"
-#include "system/timer.h"
 #include "uvmap/raycast.h"
 #include "uvmap/render.h"
 #include "uvmap/scaling.h"
