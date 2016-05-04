@@ -121,7 +121,10 @@ static void PaletteEffect(int frameNumber, PaletteT *src, PaletteT *dst,
   }
 }
 
-static void RenderTunnel(int frameNumber) {
+static void Render(int frameNumber) {
+  PaletteEffect(frameNumber, texturePal, effectPal, PalEffects);
+  LoadPalette(effectPal);
+
   UVMapSetOffset(tunnelMap, 0, frameNumber);
   UVMapSetTexture(tunnelMap, texture);
   PROFILE (UVMapRender)
@@ -141,21 +144,4 @@ static void RenderTunnel(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-static void Loop() {
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    PaletteEffect(frameNumber, texturePal, effectPal, PalEffects);
-    LoadPalette(effectPal);
-
-    RenderTunnel(frameNumber);
-    RenderFrameNumber(frameNumber);
-    RenderFramesPerSecond(frameNumber);
-
-    DisplaySwap();
-  } while (ReadLoopEvent() != LOOP_EXIT);
-}
-
-EffectT Effect = { "Tunnel", Load, UnLoad, Init, Kill, Loop };
+EffectT Effect = { "Tunnel", Load, UnLoad, Init, Kill, Render };

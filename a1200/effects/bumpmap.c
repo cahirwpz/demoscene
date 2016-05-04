@@ -135,7 +135,7 @@ static void Kill() {
   MemUnref(reflectionMap);
 }
 
-static void RenderEffect(int frameNumber) {
+static void Render(int frameNumber) {
   PROFILE(BumpMap) {
     RenderBumpMap(canvas, bumpMap, reflectionMap,
                   64 * sin((frameNumber & 255) * M_PI / 128) + 32, 0);
@@ -144,20 +144,4 @@ static void RenderEffect(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-static void Loop() {
-  LoopEventT event = LOOP_CONTINUE;
-
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    RenderEffect(frameNumber);
-    RenderFrameNumber(frameNumber);
-    RenderFramesPerSecond(frameNumber);
-
-    DisplaySwap();
-  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
-}
-
-EffectT Effect = { "BumpMap", Load, UnLoad, Init, Kill, Loop };
+EffectT Effect = { "BumpMap", Load, UnLoad, Init, Kill, Render };

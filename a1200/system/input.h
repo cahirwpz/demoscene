@@ -116,4 +116,13 @@ void StopEventQueue();
 void EventQueueReset();
 bool EventQueuePop(InputEventT *event);
 
+#define KEY_PRESSED(ev, key) \
+  (((ev)->ie_Class == IECLASS_RAWKEY) && \
+   (((ev)->ie_Code & IECODE_UP_PREFIX) == (key)))
+
+#define KEY_RELEASED(ev, key) \
+  (((ev)->ie_Class == IECLASS_RAWKEY) && \
+   ((ev)->ie_Code & IECODE_UP_PREFIX) && \
+   (((ev)->ie_Code & ~IECODE_UP_PREFIX) == (key)))
+
 #endif

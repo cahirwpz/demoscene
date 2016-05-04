@@ -2,6 +2,7 @@
 #define __TOOLS_EFFECT_H__
 
 #include "std/types.h"
+#include "system/input.h"
 
 typedef enum {
   EFFECT_LOADED = 1,
@@ -15,7 +16,8 @@ typedef struct Effect {
   void (*UnLoad)();
   void (*Init)();
   void (*Kill)();
-  void (*Loop)();
+  void (*Render)(int frameNumber);
+  void (*HandleEvent)(InputEventT *event);
   EffectStateT state;
 } EffectT;
 
@@ -24,7 +26,7 @@ __regargs void EffectInit(EffectT *effect);
 __regargs void EffectKill(EffectT *effect);
 __regargs void EffectUnLoad(EffectT *effect);
 
-#define EFFECT(NAME, A1, A2, A3, A4, A5) \
-  EffectT NAME = { #NAME, (A1), (A2), (A3), (A4), (A5) };
+#define EFFECT(NAME, A1, A2, A3, A4, A5, A6) \
+  EffectT NAME = { #NAME, (A1), (A2), (A3), (A4), (A5), (A6) };
 
 #endif

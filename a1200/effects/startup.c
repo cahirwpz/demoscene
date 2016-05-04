@@ -9,12 +9,6 @@
 
 int __nocommandline = 1;
 
-void AcquireResources() {}
-void ReleaseResources() {}
-void SetupEffect() {}
-void TearDownEffect() {}
-void MainLoop() {}
-
 extern EffectT Effect;
 
 int main() {
@@ -33,7 +27,31 @@ int main() {
       LOG("Setting up the effect.");
       Effect.Init();
       LOG("Running up main loop.");
-      Effect.Loop();
+      {
+        bool loopExit = false; 
+
+        SetVBlankCounter(0);
+
+        do {
+          int frameNumber = GetVBlankCounter();
+          InputEventT event; 
+
+          while (EventQueuePop(&event)) {
+            if (event.ie_Class == IECLASS_RAWKEY)
+              if (event.ie_Code & IECODE_UP_PREFIX)
+                if ((event.ie_Code & ~IECODE_UP_PREFIX) == KEY_ESCAPE)
+                  loopExit = true;
+            if (Effect.HandleEvent && !loopExit)
+              Effect.HandleEvent(&event);
+          }
+
+          Effect.Render(frameNumber);
+          RenderFrameNumber(frameNumber);
+          RenderFramesPerSecond(frameNumber);
+
+          DisplaySwap();
+        } while (!loopExit);
+      }
       LOG("Tearing down the effect.");
       Effect.Kill();
     }

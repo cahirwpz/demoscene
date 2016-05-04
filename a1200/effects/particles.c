@@ -144,7 +144,7 @@ static void Kill() {
   MemUnref(engine);
 }
 
-static void RenderFlares(int frameNumber) {
+static void Render(int frameNumber) {
   int i;
 
   PixBufClear(canvas);
@@ -167,17 +167,4 @@ static void RenderFlares(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-static void Loop() {
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    RenderFlares(frameNumber);
-    RenderFrameNumber(frameNumber);
-
-    DisplaySwap();
-  } while (ReadLoopEvent() != LOOP_EXIT);
-}
-
-EffectT Effect = { "Particles", NULL, NULL, Init, Kill, Loop };
+EffectT Effect = { "Particles", NULL, NULL, Init, Kill, Render };

@@ -122,7 +122,7 @@ static void RenderShadeMap(PixBufT *shades, uint16_t *map) {
   } while (--n);
 }
 
-static void RenderEffect(int frameNumber) {
+static void Render(int frameNumber) {
   RaycastCalculateView(frameNumber);
 
   PROFILE(RaycastTunnel)
@@ -150,18 +150,4 @@ static void RenderEffect(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-static void Loop() {
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    RenderEffect(frameNumber);
-    RenderFrameNumber(frameNumber);
-    RenderFramesPerSecond(frameNumber);
-
-    DisplaySwap();
-  } while (ReadLoopEvent() != LOOP_EXIT);
-}
-
-EffectT Effect = { "RayTunnel", Load, UnLoad, Init, Kill, Loop };
+EffectT Effect = { "RayTunnel", Load, UnLoad, Init, Kill, Render };

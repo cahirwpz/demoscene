@@ -91,27 +91,11 @@ static __regargs void RenderFire(PixBufT *canvas) {
   CalculateFire(fire, width, 60);
 }
 
-static void RenderEffect(int frameNumber) {
+static void Render(int frameNumber) {
   PROFILE(Fire)
     RenderFire(canvas);
   PROFILE(C2P)
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-static void Loop() {
-  LoopEventT event = LOOP_CONTINUE;
-
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    RenderEffect(frameNumber);
-    RenderFrameNumber(frameNumber);
-    RenderFramesPerSecond(frameNumber);
-
-    DisplaySwap();
-  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
-}
-
-EffectT Effect = { "Fire", NULL, NULL, Init, Kill, Loop };
+EffectT Effect = { "Fire", NULL, NULL, Init, Kill, Render };

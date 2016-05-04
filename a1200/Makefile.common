@@ -39,6 +39,10 @@ endif
 	@echo "CC   $(subst $(TOPDIR)/,,$(realpath $<))"
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
+%.o: %.c
+	@echo "CC   $(subst $(TOPDIR)/,,$(realpath $<))"
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+
 %.s: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -S -o $@ $<
 

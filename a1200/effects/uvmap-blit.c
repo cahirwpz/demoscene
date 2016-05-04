@@ -66,7 +66,7 @@ static void Kill() {
   MemUnref(canvas);
 }
 
-static void RenderChunky(int frameNumber) {
+static void Render(int frameNumber) {
   PixBufT *umap;
 
   int du = frameNumber;
@@ -93,19 +93,4 @@ static void RenderChunky(int frameNumber) {
   MemUnref(umap);
 }
 
-static void Loop() {
-  LoopEventT event = LOOP_CONTINUE;
-
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    RenderChunky(frameNumber);
-    RenderFrameNumber(frameNumber);
-
-    DisplaySwap();
-  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
-}
-
-EffectT Effect = { "UVMapBlit", Load, UnLoad, Init, Kill, Loop };
+EffectT Effect = { "UVMapBlit", Load, UnLoad, Init, Kill, Render };

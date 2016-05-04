@@ -69,7 +69,7 @@ static void Kill() {
 
 static int effectNum = 0;
 
-static void RenderChunky(int frameNumber) {
+static void Render(int frameNumber) {
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
 
@@ -103,25 +103,11 @@ static void RenderChunky(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-static void Loop() {
-  LoopEventT event = LOOP_CONTINUE;
-
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    if (event == LOOP_NEXT)
-      effectNum = (effectNum + 1) % 2;
-    if (event == LOOP_PREV)
-      effectNum = (effectNum - 1) % 2;
-
-    RenderChunky(frameNumber);
-    RenderFrameNumber(frameNumber);
-    RenderFramesPerSecond(frameNumber);
-
-    DisplaySwap();
-  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
+static void HandleEvent(InputEventT *event) {
+  if (KEY_RELEASED(event, KEY_RIGHT))
+    effectNum = (effectNum + 1) % 2;
+  if (KEY_RELEASED(event, KEY_LEFT))
+    effectNum = (effectNum - 1) % 2;
 }
 
-EffectT Effect = { "UVMapCompose", Load, UnLoad, Init, Kill, Loop };
+EffectT Effect = { "UVMapCompose", Load, UnLoad, Init, Kill, Render, HandleEvent };

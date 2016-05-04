@@ -65,7 +65,7 @@ static void Kill() {
   MemUnref(canvas);
 }
 
-static void RenderChunky(int frameNumber) {
+static void Render(int frameNumber) {
   int du = 2 * frameNumber;
   int dv = 4 * frameNumber;
 
@@ -76,25 +76,11 @@ static void RenderChunky(int frameNumber) {
     c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-static void Loop() {
-  LoopEventT event = LOOP_CONTINUE;
-
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    if (event == LOOP_NEXT)
-      ChangeMap(lastMap + 1);
-    if (event == LOOP_PREV)
-      ChangeMap(lastMap - 1);
-
-    RenderChunky(frameNumber);
-    RenderFrameNumber(frameNumber);
-    RenderFramesPerSecond(frameNumber);
-
-    DisplaySwap();
-  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
+static void HandleEvent(InputEventT *event) {
+  if (KEY_RELEASED(event, KEY_RIGHT))
+    ChangeMap(lastMap + 1);
+  if (KEY_RELEASED(event, KEY_LEFT))
+    ChangeMap(lastMap - 1);
 }
 
-EffectT Effect = { "UVMap", Load, UnLoad, Init, Kill, Loop };
+EffectT Effect = { "UVMap", Load, UnLoad, Init, Kill, Render, HandleEvent };

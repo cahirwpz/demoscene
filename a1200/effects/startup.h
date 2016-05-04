@@ -13,7 +13,6 @@
 
 #include "tools/effect.h"
 #include "tools/frame.h"
-#include "tools/loopevent.h"
 #include "tools/profiling.h"
 
 #endif

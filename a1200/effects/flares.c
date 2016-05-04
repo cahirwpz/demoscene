@@ -65,7 +65,7 @@ static void Kill() {
 static int curve = 8;
 static const int lastCurve = 9;
 
-static void RenderFlares(int frameNumber) {
+static void Render(int frameNumber) {
   PixBufClear(canvas);
 
   {
@@ -146,27 +146,14 @@ static void RenderFlares(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-static void Loop() {
-  LoopEventT event = LOOP_CONTINUE;
-
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    if (event == LOOP_NEXT)
-      curve = (curve + 1) % lastCurve;
-    if (event == LOOP_PREV) {
-      curve--;
-      if (curve < 0)
-        curve += lastCurve;
-    }
-
-    RenderFlares(frameNumber);
-    RenderFrameNumber(frameNumber);
-
-    DisplaySwap();
-  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
+static void HandleEvent(InputEventT *event) {
+  if (KEY_RELEASED(event, KEY_RIGHT))
+    curve = (curve + 1) % lastCurve;
+  if (KEY_RELEASED(event, KEY_LEFT)) {
+    curve--;
+    if (curve < 0)
+      curve += lastCurve;
+  }
 }
 
-EffectT Effect = { "Flares", NULL, NULL, Init, Kill, Loop };
+EffectT Effect = { "Flares", NULL, NULL, Init, Kill, Render, HandleEvent };

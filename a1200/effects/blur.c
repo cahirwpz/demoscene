@@ -38,7 +38,7 @@ static bool init = true;
 static int effect = 0;
 static const int lastEffect = 2;
 
-static void RenderEffect(int frameNumber) {
+static void Render(int frameNumber) {
   if (init) {
     PixBufCopy(buffer, image);
     init = false;
@@ -54,30 +54,17 @@ static void RenderEffect(int frameNumber) {
   PixBufSwapData(canvas, buffer);
 }
 
-static void Loop() {
-  LoopEventT event = LOOP_CONTINUE;
-
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    if (event == LOOP_NEXT) {
-      effect = (effect + 1) % lastEffect;
-      init = true;
-    }
-    if (event == LOOP_PREV) {
-      effect--;
-      if (effect < 0)
-        effect += lastEffect;
-      init = true;
-    }
-
-    RenderEffect(frameNumber);
-    RenderFrameNumber(frameNumber);
-
-    DisplaySwap();
-  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
+static void HandleEvent(InputEventT *event) {
+  if (KEY_RELEASED(event, KEY_RIGHT)) {
+    effect = (effect + 1) % lastEffect;
+    init = true;
+  }
+  if (KEY_RELEASED(event, KEY_LEFT)) {
+    effect--;
+    if (effect < 0)
+      effect += lastEffect;
+    init = true;
+  }
 }
 
-EffectT Effect = { "Blur", Load, UnLoad, Init, Kill, Loop };
+EffectT Effect = { "Blur", Load, UnLoad, Init, Kill, Render, HandleEvent };

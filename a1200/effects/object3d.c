@@ -57,7 +57,7 @@ static void Kill() {
   MemUnref(scene);
 }
 
-static void RenderMesh(int frameNumber_) {
+static void Render(int frameNumber_) {
   float frameNumber = frameNumber_;
   float s = sin(frameNumber * 3.14159265f / 90.0f) + 1.0f;
 
@@ -81,43 +81,31 @@ static void RenderMesh(int frameNumber_) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-static void Loop() {
-  LoopEventT event = LOOP_CONTINUE;
+static void HandleEvent(InputEventT *event) {
+  static bool paused = FALSE;
+  static int oldFrameNumber = 0;
+  int frameNumber = GetVBlankCounter();
 
-  SetVBlankCounter(0);
+  if (KEY_RELEASED(event, KEY_SPACE))
+    paused = !paused;
 
-  do {
-    static bool paused = FALSE;
-    static int oldFrameNumber = 0;
-    int frameNumber = GetVBlankCounter();
+  if (paused) {
+    SetVBlankCounter(oldFrameNumber);
+    frameNumber = oldFrameNumber;
+  } else {
+    oldFrameNumber = frameNumber;
+  }
 
-    if (event == LOOP_PAUSE)
-      paused = !paused;
+  if (KEY_RELEASED(event, KEY_RETURN)) {
+    RenderMode++;
+    if (RenderMode > 4)
+      RenderMode = 0;
 
-    if (paused) {
-      SetVBlankCounter(oldFrameNumber);
-      frameNumber = oldFrameNumber;
-    } else {
-      oldFrameNumber = frameNumber;
-    }
-
-    if (event == LOOP_TRIGGER) {
-      RenderMode++;
-      if (RenderMode > 4)
-        RenderMode = 0;
-
-      if (RenderMode < RENDER_FILLED)
-        RenderAllFaces = true;
-      else
-        RenderAllFaces = false;
-    }
-
-    RenderMesh(frameNumber);
-    RenderFrameNumber(frameNumber);
-    RenderFramesPerSecond(frameNumber);
-
-    DisplaySwap();
-  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
+    if (RenderMode < RENDER_FILLED)
+      RenderAllFaces = true;
+    else
+      RenderAllFaces = false;
+  }
 }
 
-EffectT Effect = { "Object3D", Load, UnLoad, Init, Kill, Loop };
+EffectT Effect = { "Object3D", Load, UnLoad, Init, Kill, Render, HandleEvent };

@@ -43,7 +43,7 @@ static void Kill() {
 static int effect = 0;
 static const int lastEffect = 3;
 
-static void RenderVector(int frameNumber) {
+static void Render(int frameNumber) {
   PointT *toDraw = triangleToDraw;
 
   float s = sin(frameNumber * 3.14159265f / 22.5f);
@@ -93,31 +93,16 @@ static void RenderVector(int frameNumber) {
   c2p1x1_8_c5_bm(canvas->data, GetCurrentBitMap(), WIDTH, HEIGHT, 0, 0);
 }
 
-static void Loop() {
-  LoopEventT event = LOOP_CONTINUE;
+static void HandleEvent(InputEventT *event) {
+  PixBufClear(canvas);
 
-  SetVBlankCounter(0);
-
-  do {
-    int frameNumber = GetVBlankCounter();
-
-    if (event != LOOP_CONTINUE) {
-      PixBufClear(canvas);
-
-      if (event == LOOP_NEXT)
-        effect = (effect + 1) % lastEffect;
-      if (event == LOOP_PREV) {
-        effect--;
-        if (effect < 0)
-          effect += lastEffect;
-      }
-    }
-
-    RenderVector(frameNumber);
-    RenderFrameNumber(frameNumber);
-
-    DisplaySwap();
-  } while ((event = ReadLoopEvent()) != LOOP_EXIT);
+  if (KEY_RELEASED(event, KEY_RIGHT))
+    effect = (effect + 1) % lastEffect;
+  if (KEY_RELEASED(event, KEY_LEFT)) {
+    effect--;
+    if (effect < 0)
+      effect += lastEffect;
+  }
 }
 
-EffectT Effect = { "Vector2D", NULL, NULL, Init, Kill, Loop };
+EffectT Effect = { "Vector2D", NULL, NULL, Init, Kill, Render, HandleEvent };
