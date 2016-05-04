@@ -98,21 +98,26 @@ static inline BOOL GetMouseButton(MouseDataT *mouse, MouseEventT *event) {
 }
 
 static __interrupt LONG MouseIntHandler() {
-  MouseEventT event = { EV_MOUSE };
+  MouseEventT event;
   MouseDataT *mouse = &mouseData;
+  BOOL moveX, moveY;
+
+  memset(&event, 0, sizeof(event));
+  event.type = EV_MOUSE;
 
   /* Register mouse position change first. */
-  BOOL moveX = GetMouseX(mouse, &event);
-  BOOL moveY = GetMouseY(mouse, &event);
+  moveX = GetMouseX(mouse, &event);
+  moveY = GetMouseY(mouse, &event);
 
-  if (moveX || moveY) {
-    event.button = mouse->button;
+  if (moveX || moveY)
     PushEvent((EventT *)&event);
-  }
 
   /* After that a change in mouse button state. */
-  if (GetMouseButton(mouse, &event))
+  if (GetMouseButton(mouse, &event)) {
+    event.x = mouse->x;
+    event.y = mouse->y;
     PushEvent((EventT *)&event);
+  }
 
   return 0;
 }
