@@ -7,30 +7,9 @@
 #include "std/memory.h"
 #include "system/fileio.h"
 
-char *AbsPath(const char *fileName) {
-  char *path = MemNew(sizeof("PROGDIR:") + strlen(fileName) + 1);
-  strcpy(path, "PROGDIR:");
-  strcat(path, fileName);
-  return path;
-}
-
-bool FileReadable(const char *fileName) {
-  char *path = AbsPath(fileName);
-  bool readable = false;
-  BPTR lock;
-
-  if ((lock = Lock(path, ACCESS_READ))) {
-    readable = true;
-    UnLock(lock);
-  }
-
-  return readable;
-}
-
-static PtrT ReadFileToMemory(const char *fileName, bool text) {
+static PtrT ReadFileToMemory(const char *path, bool text) {
   BPTR fh;
   PtrT data = NULL;
-  PtrT path = AbsPath(fileName);
   
   if ((fh = Open(path, MODE_OLDFILE))) {
     struct FileInfoBlock *infoBlock;
@@ -51,8 +30,6 @@ static PtrT ReadFileToMemory(const char *fileName, bool text) {
     Close(fh);
   }
 
-  MemUnref(path);
-
   return data;
 }
 
@@ -64,9 +41,8 @@ char *ReadTextSimple(const char *fileName) {
   return ReadFileToMemory(fileName, true);
 }
 
-void WriteFileSimple(const char *fileName, PtrT data, size_t length) {
+void WriteFileSimple(const char *path, PtrT data, size_t length) {
   BPTR fh;
-  PtrT path = AbsPath(fileName);
 
   if ((fh = Open(path, MODE_NEWFILE))) {
     Write(fh, data, length);
