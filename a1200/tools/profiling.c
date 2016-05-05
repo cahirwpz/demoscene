@@ -5,7 +5,8 @@
 #include "tools/profiling.h"
 
 struct Timing {
-  int min, max, sum, n;
+  float min, max, sum;
+  int n;
   int start;
   bool active;
 };
@@ -22,9 +23,8 @@ void StopProfiling() {
     void PrintTiming(const char *key, PtrT value) {
       TimingT *timing = (TimingT *)value;
 
-      printf("%s: %.2fms (min: %.2fms, max: %.2fms)\n\r",
-             key, timing->sum * 1000.0f / (timing->n * 64.0f),
-             timing->min * 1000.0f / 64.0f, timing->max * 1000.0f / 64.0f);
+      printf("%s: %.2fms (min: %.2fms, max: %.2fms)\n\r", key,
+             timing->sum / timing->n, timing->min, timing->max);
     }
 
     LOG("Timing measurements:");
@@ -40,6 +40,9 @@ __regargs TimingT *ProfileGetTiming(const char *name) {
 
   if (!timing) {
     timing = NewRecord(TimingT);
+    timing->active = false;
+    timing->min = FLT_MAX;
+    timing->max = FLT_MIN;
     HashMapAdd(Timings, name, timing);
     LOG("Added timing '%s'.", name);
   }
@@ -52,11 +55,15 @@ __regargs bool Profile(TimingT *timing) {
     timing->start = ReadLineCounter();
     timing->active = true;
   } else {
-    int value = timing->start - ReadLineCounter();
+    int ticks = ReadLineCounter() - timing->start;
+    float value;
    
     /* Check for counter overflow. */
-    if (value < 0)
-      value += 1 << 24;
+    if (ticks < 0)
+      ticks += 1 << 24;
+
+    /* Each line has 64us, but we count miliseconds. */
+    value = (float)ticks * 64.0f / 1000.0f;
    
     if (timing->min > value)
       timing->min = value;

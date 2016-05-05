@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <limits.h>
 #include <sys/types.h>
 
 #define UNUSED __attribute__((unused))
