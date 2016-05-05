@@ -79,6 +79,10 @@ FileSeek(RwOpsT *stream asm("a0"),
   return -1;
 }
 
+static int FileSize(RwOpsT *stream asm("a0")) {
+  return stream->u.memory.stop - stream->u.memory.base;
+}
+
 static int FileTell(RwOpsT *stream asm("a0")) {
   if (stream->opened)
     return stream->u.memory.here - stream->u.memory.base;
@@ -103,6 +107,7 @@ RwOpsT *RwOpsFromMemory(void *ptr, uint32_t size) {
   stream->read = FileRead;
   stream->write = FileWrite;
   stream->seek = FileSeek;
+  stream->size = FileSize;
   stream->tell = FileTell;
   stream->close = FileClose;
 

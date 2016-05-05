@@ -5,7 +5,6 @@
 #include "gfx/blit.h"
 #include "gfx/palette.h"
 #include "gfx/png.h"
-#include "system/fileio.h"
 #include "tools/gradient.h"
 #include "uvmap/generate.h"
 #include "uvmap/render.h"

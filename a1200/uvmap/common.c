@@ -1,7 +1,7 @@
 #include "std/debug.h"
 #include "std/math.h"
 #include "std/memory.h"
-#include "system/fileio.h"
+#include "system/rwops.h"
 #include "uvmap/common.h"
 
 static void DeleteUVMap(UVMapT *map) {

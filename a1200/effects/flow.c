@@ -3,7 +3,7 @@
 #include "std/random.h"
 #include "gfx/pixbuf.h"
 #include "gfx/palette.h"
-#include "system/fileio.h"
+#include "system/rwops.h"
 
 #include "startup.h"
 

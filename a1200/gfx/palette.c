@@ -3,7 +3,7 @@
 
 #include "std/debug.h"
 #include "std/memory.h"
-#include "system/fileio.h"
+#include "system/rwops.h"
 #include "gfx/palette.h"
 
 static void DeletePalette(PaletteT *palette) {

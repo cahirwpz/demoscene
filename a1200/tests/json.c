@@ -2,7 +2,7 @@
 
 #include "json/json.h"
 #include "std/memory.h"
-#include "system/fileio.h"
+#include "system/rwops.h"
 
 static void Usage(const char *program) {
   printf("Usage: %s file.json [path1 path2 ...]\n", program);

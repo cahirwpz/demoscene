@@ -65,6 +65,19 @@ FileSeek(RwOpsT *stream asm("a0"),
   return 0;
 }
 
+static int FileSize(RwOpsT *stream asm("a0")) {
+  struct FileInfoBlock *fib;
+  size_t size = -1;
+
+  if ((fib = (struct FileInfoBlock *) AllocDosObject(DOS_FIB, NULL))) {
+    if (ExamineFH(stream->u.file.fd, fib))
+      size = fib->fib_Size;
+    FreeDosObject(DOS_FIB, fib);
+  }
+
+  return size;
+}
+
 static int FileTell(RwOpsT *stream asm("a0")) {
   return Seek(stream->u.file.fd, 0, OFFSET_CURRENT);
 }
@@ -93,6 +106,7 @@ RwOpsT *RwOpsFromFile(const char *file, const char *mode) {
   stream->read = FileRead;
   stream->write = FileWrite;
   stream->seek = FileSeek;
+  stream->size = FileSize;
   stream->tell = FileTell;
   stream->close = FileClose;
 
@@ -103,4 +117,46 @@ RwOpsT *RwOpsFromFile(const char *file, const char *mode) {
 
 
   return stream;
+}
+
+/*
+ * Auxiliary functions.
+ */
+
+static PtrT ReadFileToMemory(const char *path, bool text) {
+  RwOpsT *fh;
+  PtrT data = NULL;
+  
+  if ((fh = RwOpsFromFile(path, "r"))) {
+    int size = IoSize(fh);
+
+    if (size > 0) {
+      if ((data = MemNew(size + (text ? 1 : 0)))) {
+        if (size != IoRead(fh, data, size)) {
+          MemUnref(data);
+          data = NULL;
+        }
+      }
+    }
+    IoClose(fh);
+  }
+
+  return data;
+}
+
+__regargs void *ReadFileSimple(const char *path) {
+  return ReadFileToMemory(path, false);
+}
+
+__regargs char *ReadTextSimple(const char *path) {
+  return ReadFileToMemory(path, true);
+}
+
+__regargs void WriteFileSimple(const char *path, PtrT data, size_t length) {
+  RwOpsT *fh;
+  
+  if ((fh = RwOpsFromFile(path, "w"))) {
+    IoWrite(fh, data, length);
+    IoClose(fh);
+  }
 }

@@ -1,6 +1,5 @@
 #include "gfx/palette.h"
 #include "gfx/png.h"
-#include "system/fileio.h"
 #include "uvmap/misc.h"
 #include "uvmap/render.h"
 

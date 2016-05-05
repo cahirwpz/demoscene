@@ -5,7 +5,6 @@
 #include "gfx/line.h"
 #include "gfx/palette.h"
 #include "gfx/png.h"
-#include "system/fileio.h"
 #include "uvmap/generate.h"
 #include "uvmap/render.h"
 

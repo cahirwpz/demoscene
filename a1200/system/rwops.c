@@ -2,15 +2,6 @@
 #include "std/memory.h"
 #include "system/rwops.h"
 
-__regargs int IoSize(RwOpsT *stream) {
-  int curr, size;
-  curr = IoTell(stream);
-  IoSeek(stream, 0, IO_SEEK_END);
-  size = IoTell(stream);
-  IoSeek(stream, curr, IO_SEEK_SET);
-  return size;
-}
-
 __regargs bool IoRead8(RwOpsT *stream, uint8_t *data) {
   return (IoRead(stream, data, sizeof(uint8_t)) == sizeof(uint8_t));
 }

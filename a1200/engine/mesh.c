@@ -3,7 +3,7 @@
 #include "std/debug.h"
 #include "std/memory.h"
 #include "std/table.h"
-#include "system/fileio.h"
+#include "system/rwops.h"
 #include "engine/mesh.h"
 
 static void DeleteSurface(SurfaceT *surface) {
