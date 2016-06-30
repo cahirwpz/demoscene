@@ -11,19 +11,33 @@ void DumpInterrupts() {
     struct IntVector *intvec = &SysBase->IntVects[i];
     struct Node *node = intvec->iv_Node;
 
-    Log("INT%ld: [%lx, %lx]\n", i + 1, 
-        (LONG)intvec->iv_Code, (LONG)intvec->iv_Data);
-
     if ((i == INTB_PORTS) || (i == INTB_COPER) || (i == INTB_VERTB) || 
         (i == INTB_EXTER) || (i == INTB_NMI))
     {
-      struct List *chain = (struct List *)intvec->iv_Data;
-      node = chain->lh_Head;
-    }
+      struct List *list = (struct List *)intvec->iv_Data;
 
-    while (node) {
-      Log("> %lx (%ld) '%s'\n", (LONG)node, (LONG)node->ln_Pri, node->ln_Name);
-      node = node->ln_Succ;
+      if (IsListEmpty(list))
+        continue;
+
+      node = list->lh_Head;
+
+      Log("INT%ld: [%lx, %lx]\n", i, 
+          (LONG)intvec->iv_Code, (LONG)intvec->iv_Data);
+      for (;;) {
+        Log("> %lx (%ld) '%s'\n", (LONG)node, (LONG)node->ln_Pri, node->ln_Name);
+        if (node == list->lh_TailPred)
+          break;
+        node = node->ln_Succ;
+      }
+    } else {
+      if (!intvec->iv_Code)
+        continue;
+      Log("INT%ld: [%lx, %lx]\n", i, 
+          (LONG)intvec->iv_Code, (LONG)intvec->iv_Data);
+      while (node) {
+        Log("> %lx (%ld) '%s'\n", (LONG)node, (LONG)node->ln_Pri, node->ln_Name);
+        node = node->ln_Succ;
+      }
     }
   }
 }
