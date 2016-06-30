@@ -14,10 +14,11 @@ typedef struct TimeSlot {
 #error "FRAMES_PER_ROW: not defined!"
 #endif
 
+#define PT_FRAME(pos) \
+  (((((pos) >> 8) & 0xff) * 64 + ((pos) & 0x3f)) * FRAMES_PER_ROW)
+
 #define _TS(begin, end, phase, effect) \
-  { ((((begin) >> 8) & 0xff) * 64 + ((begin) & 0x3f)) * FRAMES_PER_ROW, \
-    ((((end) >> 8) & 0xff) * 64 + ((end) & 0x3f)) * FRAMES_PER_ROW, \
-    phase, &(effect) }
+  { PT_FRAME(begin), PT_FRAME(end), phase, &(effect) }
 
 #define _TS_END() {0, 0, 0, NULL}
 
