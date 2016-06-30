@@ -65,11 +65,17 @@ clean-libs:
 clean::	clean-libs
 	rm -f *.7z
 
+ctags:
+	ctags -R .
+
+cscope:
+	cscope -b sys/*.[ch]
+
 archive:
 	7z a "a500-$$(date +%F-%H%M).7z" $(BINS) data
 
 include Makefile.common
 
-.PHONY:	libs clean-libs
+.PHONY:	cscope tags libs clean-libs
 
 # vim: ts=8 sw=8 expandtab

@@ -7,3 +7,7 @@ ExitUAE
 *.bin
 *.exe
 *.7z
+
+*.taghl
+tags
+cscope.out
