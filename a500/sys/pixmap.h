@@ -3,7 +3,9 @@
 
 #include "gfx.h"
 
-typedef enum { PM_NONE, PM_GRAY, PM_CMAP, PM_RGB4, PM_GRAY4, PM_CMAP4 } PixmapTypeT;
+typedef enum {
+  PM_NONE, PM_GRAY, PM_CMAP, PM_RGB, PM_RGB4, PM_GRAY4, PM_CMAP4 
+} PixmapTypeT;
 
 typedef struct Pixmap {
   PixmapTypeT type;
@@ -33,6 +35,6 @@ __regargs void PixmapScramble_4_1(PixmapT *pixmap);
 /* [a0 a1 a2 a3 b0 b1 b2 b3] => [a0 a1 b0 b1 a2 a3 b2 b3] */
 __regargs void PixmapScramble_4_2(PixmapT *pixmap);
 
-__regargs void PixmapExpandPixels(PixmapT *pixmap);
+__regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type);
 
 #endif

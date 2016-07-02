@@ -4,7 +4,7 @@
 #include "interrupts.h"
 #include "memory.h"
 #include "io.h"
-#include "tga.h"
+#include "png.h"
 
 STRPTR __cwdpath = "data";
 
@@ -80,10 +80,13 @@ static void Load() {
   uvmap = LoadFile("uvmap-rgb.bin", MEMF_PUBLIC);
 
   {
-    PixmapT *image = LoadTGA("texture-rgb.tga", PM_RGB4, MEMF_PUBLIC);
+    PngT *png = LoadPNG("texture-rgb.png", 0);
+    PixmapT *image = PixmapFromPNG(png, MEMF_PUBLIC);
+    PixmapConvert(image, PM_RGB4);
     texture = MemAlloc(65536, MEMF_PUBLIC);
     PixmapScramble(image, texture);
     DeletePixmap(image);
+    DeletePNG(png);
   }
 }
 

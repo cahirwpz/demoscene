@@ -4,7 +4,7 @@
 #include "interrupts.h"
 #include "memory.h"
 #include "io.h"
-#include "tga.h"
+#include "png.h"
 
 STRPTR __cwdpath = "data";
 
@@ -70,7 +70,11 @@ static void MakeUVMapRenderCode() {
 }
 
 static void Load() {
-  texture = LoadTGA("texture-16-1.tga", PM_CMAP, MEMF_PUBLIC);
+  PngT *png = LoadPNG("texture-16-1.png", 0);
+  texture = PixmapFromPNG(png, MEMF_PUBLIC);
+  texture->palette = PaletteFromPNG(png);
+  PixmapConvert(texture, PM_CMAP);
+  DeletePNG(png);
   uvmap = LoadFile("uvmap.bin", MEMF_PUBLIC);
 }
 

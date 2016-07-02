@@ -3,7 +3,9 @@
 
 __regargs LONG PixmapSize(PixmapT *pixmap) {
   WORD width = pixmap->width;
-  if (pixmap->type == PM_RGB4)
+  if (pixmap->type == PM_RGB)
+    width *= 3;
+  else if (pixmap->type == PM_RGB4)
     width *= 2;
   else if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4)
     width /= 2;
@@ -69,29 +71,44 @@ __regargs void PixmapScramble_4_2(PixmapT *pixmap) {
   }
 }
 
-__regargs void PixmapExpandPixels(PixmapT *pixmap) {
-  if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
+__regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type) {
+  if ((pixmap->type == PM_GRAY4 && type == PM_GRAY) ||
+      (pixmap->type == PM_CMAP4 && type == PM_CMAP) ||
+      (pixmap->type == PM_RGB && type == PM_RGB4))
+  {
     UBYTE *pixels = pixmap->pixels;
-    LONG n = PixmapSize(pixmap);
 
     if (pixmap->type == PM_GRAY4)
       pixmap->type = PM_GRAY;
-    if (pixmap->type == PM_CMAP4)
+    else if (pixmap->type == PM_CMAP4)
       pixmap->type = PM_CMAP;
+    else if (pixmap->type == PM_RGB)
+      pixmap->type = PM_RGB4;
 
     pixmap->pixels = MemAlloc(PixmapSize(pixmap), MemTypeOf(pixmap->pixels));
 
     {
       UBYTE *src = pixels;
-      UBYTE *dst = pixmap->pixels;
+      LONG n = pixmap->width * pixmap->height;
 
-      Log("[Pixmap] Expand pixels: %ld -> %ld\n", n, PixmapSize(pixmap));
-
-      do {
-        UBYTE c = *src++;
-        *dst++ = c >> 4;
-        *dst++ = c & 15;
-      } while (--n);
+      if (pixmap->type == PM_RGB4) {
+        UWORD *dst = pixmap->pixels;
+        do {
+          UBYTE r = *src++;
+          UBYTE g = *src++;
+          UBYTE b = *src++;
+          UBYTE lo = (g & 0xf0) | ((b & 0xf0) >> 4);
+          *dst++ = ((r & 0xf0) << 4) | lo;
+        } while (--n);
+      } else {
+        UBYTE *dst = pixmap->pixels;
+        n /= 2;
+        do {
+          UBYTE c = *src++;
+          *dst++ = c >> 4;
+          *dst++ = c & 15;
+        } while (--n);
+      }
     }
 
     MemFree(pixels);
