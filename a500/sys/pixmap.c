@@ -1,5 +1,3 @@
-#include <proto/exec.h>
-
 #include "memory.h"
 #include "pixmap.h"
 
@@ -27,7 +25,7 @@ __regargs PixmapT *NewPixmap(WORD width, WORD height,
 
 __regargs PixmapT *ClonePixmap(PixmapT *pixmap) {
   PixmapT *clone = NewPixmap(pixmap->width, pixmap->height,
-                             pixmap->type, TypeOfMem(pixmap->pixels));
+                             pixmap->type, MemTypeOf(pixmap->pixels));
 
   memcpy(clone->pixels, pixmap->pixels, PixmapSize(pixmap));
 

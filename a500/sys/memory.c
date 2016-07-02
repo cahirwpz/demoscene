@@ -435,3 +435,11 @@ __regargs void MemFree(APTR memoryBlock) {
       Log("[MemFree] block $%lx not found!\n", (LONG)memoryBlock);
   }
 }
+
+__regargs LONG MemTypeOf(APTR address) {
+  if (address >= chip->lower && address < chip->upper)
+    return MEMF_CHIP;
+  if (address >= fast->lower && address < fast->upper)
+    return MEMF_FAST;
+  return -1;
+}

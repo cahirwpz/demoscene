@@ -33,5 +33,6 @@ __regargs LONG MemUsed(ULONG attributes);
 
 __regargs APTR MemAlloc(ULONG byteSize, ULONG attributes);
 __regargs void MemFree(APTR memoryBlock);
+__regargs LONG MemTypeOf(APTR address);
 
 #endif
