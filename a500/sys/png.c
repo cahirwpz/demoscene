@@ -66,14 +66,27 @@ struct PngChunk {
 static inline WORD GetRowSize(IHDR *ihdr) {
   WORD pixelWidth = ihdr->bit_depth;
 
-  if (ihdr->colour_type == PNG_TRUECOLOR)
-    pixelWidth *= 3;
-  else if (ihdr->colour_type == PNG_GRAYSCALE_ALPHA)
+  if (ihdr->colour_type == PNG_GRAYSCALE_ALPHA)
     pixelWidth *= 2;
+  else if (ihdr->colour_type == PNG_TRUECOLOR)
+    pixelWidth *= 3;
   else if (ihdr->colour_type == PNG_TRUECOLOR_ALPHA)
     pixelWidth *= 4;
 
   return (pixelWidth * ihdr->width + 7) >> 3;
+}
+
+static inline WORD GetPixelSize(IHDR *ihdr) {
+  WORD pixelWidth = ihdr->bit_depth;
+
+  if (ihdr->colour_type == PNG_GRAYSCALE_ALPHA)
+    pixelWidth *= 2;
+  else if (ihdr->colour_type == PNG_TRUECOLOR)
+    pixelWidth *= 3;
+  else if (ihdr->colour_type == PNG_TRUECOLOR_ALPHA)
+    pixelWidth *= 4;
+
+  return (pixelWidth + 7) >> 3;
 }
 
 static inline WORD PaethPredictor(WORD a, WORD b, WORD c) {
@@ -94,12 +107,13 @@ static inline WORD PaethPredictor(WORD a, WORD b, WORD c) {
   return c;
 }
 
-static __regargs void ReconstructImage(UBYTE *pixels, UBYTE *encoded, LONG row,
-                                       WORD height)
-{
-  WORD i;
+static __regargs void 
+ReconstructImage(UBYTE *pixels, UBYTE *encoded, IHDR *ihdr) {
+  WORD i, j;
+  LONG row = GetRowSize(ihdr);
+  LONG pixel = GetPixelSize(ihdr);
 
-  for (i = 0; i < height; i++) {
+  for (i = 0; i < ihdr->height; i++) {
     UBYTE method = *encoded++;
 
     if (method == 2 && i == 0)
@@ -109,9 +123,9 @@ static __regargs void ReconstructImage(UBYTE *pixels, UBYTE *encoded, LONG row,
       method = 1;
 
     /*
-     * Filters are applied to bytes, not to pixels, regardless of the bit depth
-     * or colour type of the image. The filters operate on the byte sequence
-     * formed by a scanline.
+     * Filters are applied to corresponding (!) bytes, not to pixels, regardless
+     * of the bit depth or colour type of the image. The filters operate on the
+     * byte sequence formed by a scanline.
      */
 
     if (method == 0) {
@@ -119,38 +133,35 @@ static __regargs void ReconstructImage(UBYTE *pixels, UBYTE *encoded, LONG row,
       encoded += row; pixels += row;
     } else if (method == 1) {
       UBYTE *left = pixels;
-      WORD j = row - 1;
-      *pixels++ = *encoded++;
-      do {
-        *pixels++ = *encoded++ + *left++;
-      } while (--j);
+      j = pixel;
+      do *pixels++ = *encoded++; while (--j);
+      j = row - pixel;
+      do *pixels++ = *encoded++ + *left++; while (--j);
     } else if (method == 2) {
       UBYTE *up = pixels - row;
-      WORD j = row;
-      do {
-        *pixels++ = *encoded++ + *up++;
-      } while (--j);
+      j = row;
+      do *pixels++ = *encoded++ + *up++; while (--j);
     } else if (method == 3) {
       UBYTE *left = pixels;
-      WORD j = row - 1;
       if (i > 0) {
         UBYTE *up = pixels - row;
-        *pixels++ = *encoded++ + *up++ / 2;
-        do {
-          *pixels++ = *encoded++ + (*left++ + *up++) / 2;
-        } while (--j);
+        j = pixel; 
+        do *pixels++ = *encoded++ + *up++ / 2; while (--j);
+        j = row - pixel;
+        do *pixels++ = *encoded++ + (*left++ + *up++) / 2; while (--j);
       } else {
-        *pixels++ = *encoded++;
-        do {
-          *pixels++ = *encoded++ + *left++ / 2;
-        } while (--j);
+        j = pixel; 
+        do *pixels++ = *encoded++; while (--j);
+        j = row - pixel;
+        do *pixels++ = *encoded++ + *left++ / 2; while (--j);
       }
     } else if (method == 4) {
       UBYTE *left = pixels;
       UBYTE *leftup = pixels - row;
       UBYTE *up = pixels - row;
-      WORD j = row - 1;
-      *pixels++ = *encoded++ + *up++;
+      j = pixel;
+      do *pixels++ = *encoded++ + *up++; while (--j);
+      j = row - pixel;
       do {
         *pixels++ = *encoded++ + PaethPredictor(*left++, *up++, *leftup++);
       } while (--j);
@@ -240,10 +251,11 @@ __regargs PixmapT *PixmapFromPNG(PngT *png, ULONG memFlags) {
         type = (ihdr->bit_depth == 8) ? PM_GRAY : PM_GRAY4;
       if (ihdr->colour_type == PNG_INDEXED)
         type = (ihdr->bit_depth == 8) ? PM_CMAP : PM_CMAP4;
+      if (ihdr->colour_type == PNG_TRUECOLOR)
+        type = PM_RGB;
 
       if (type > PM_NONE) {
-        WORD row = GetRowSize(ihdr);
-        LONG length = row * ihdr->height;
+        LONG length = GetRowSize(ihdr) * ihdr->height;
         PngT *idat = MergeIDAT(png);
         UBYTE *encoded = MemAlloc(length + ihdr->height, MEMF_PUBLIC);
 
@@ -253,7 +265,7 @@ __regargs PixmapT *PixmapFromPNG(PngT *png, ULONG memFlags) {
         Inflate(idat->data + 2, encoded);
 
         Log("[PNG] Decoding pixels.\n");
-        ReconstructImage(pixmap->pixels, encoded, row, pixmap->height);
+        ReconstructImage(pixmap->pixels, encoded, ihdr);
 
         MemFree(encoded);
       }
