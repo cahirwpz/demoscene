@@ -68,3 +68,32 @@ __regargs void PixmapScramble_4_2(PixmapT *pixmap) {
     }
   }
 }
+
+__regargs void PixmapExpandPixels(PixmapT *pixmap) {
+  if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
+    UBYTE *pixels = pixmap->pixels;
+    LONG n = PixmapSize(pixmap);
+
+    if (pixmap->type == PM_GRAY4)
+      pixmap->type = PM_GRAY;
+    if (pixmap->type == PM_CMAP4)
+      pixmap->type = PM_CMAP;
+
+    pixmap->pixels = MemAlloc(PixmapSize(pixmap), MemTypeOf(pixmap->pixels));
+
+    {
+      UBYTE *src = pixels;
+      UBYTE *dst = pixmap->pixels;
+
+      Log("[Pixmap] Expand pixels: %ld -> %ld\n", n, PixmapSize(pixmap));
+
+      do {
+        UBYTE c = *src++;
+        *dst++ = c >> 4;
+        *dst++ = c & 15;
+      } while (--n);
+    }
+
+    MemFree(pixels);
+  }
+}

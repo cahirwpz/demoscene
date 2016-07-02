@@ -63,17 +63,17 @@ struct PngChunk {
   UBYTE data[0];
 };
 
-static inline WORD GetPixelWidth(IHDR *hdr) {
-  WORD pixelWidth = 1;
+static inline WORD GetRowSize(IHDR *ihdr) {
+  WORD pixelWidth = ihdr->bit_depth;
 
-  if (hdr->colour_type == PNG_TRUECOLOR)
-    pixelWidth = 3;
-  else if (hdr->colour_type == PNG_GRAYSCALE_ALPHA)
-    pixelWidth = 2;
-  else if (hdr->colour_type == PNG_TRUECOLOR_ALPHA)
-    pixelWidth = 4;
+  if (ihdr->colour_type == PNG_TRUECOLOR)
+    pixelWidth *= 3;
+  else if (ihdr->colour_type == PNG_GRAYSCALE_ALPHA)
+    pixelWidth *= 2;
+  else if (ihdr->colour_type == PNG_TRUECOLOR_ALPHA)
+    pixelWidth *= 4;
 
-  return pixelWidth;
+  return (pixelWidth * ihdr->width + 7) >> 3;
 }
 
 static inline WORD PaethPredictor(WORD a, WORD b, WORD c) {
@@ -94,10 +94,9 @@ static inline WORD PaethPredictor(WORD a, WORD b, WORD c) {
   return c;
 }
 
-static __regargs void ReconstructImage(UBYTE *pixels, UBYTE *encoded,
-                                       WORD width, WORD height, WORD pixelWidth)
+static __regargs void ReconstructImage(UBYTE *pixels, UBYTE *encoded, LONG row,
+                                       WORD height)
 {
-  LONG row = width * pixelWidth;
   WORD i;
 
   for (i = 0; i < height; i++) {
@@ -231,30 +230,30 @@ __regargs PixmapT *PixmapFromPNG(PngT *png, ULONG memFlags) {
 
     if (ihdr->interlace_method != 0) {
       Log("[PNG] Interlaced image not supported!\n");
-    } else if (ihdr->bit_depth != 8) {
-      Log("[PNG] Non 8-bit components not supported!\n");
+    } else if (ihdr->bit_depth != 4 && ihdr->bit_depth != 8) {
+      Log("[PNG] Images with %ld-bit components not supported!\n",
+          (LONG)ihdr->bit_depth);
     } else {
       PixmapTypeT type = PM_NONE;
 
       if (ihdr->colour_type == PNG_GRAYSCALE)
-        type = PM_GRAY;
+        type = (ihdr->bit_depth == 8) ? PM_GRAY : PM_GRAY4;
       if (ihdr->colour_type == PNG_INDEXED)
-        type = PM_CMAP;
+        type = (ihdr->bit_depth == 8) ? PM_CMAP : PM_CMAP4;
 
       if (type > PM_NONE) {
-        WORD pixelWidth = GetPixelWidth(ihdr);
-        LONG length = ihdr->width * ihdr->height * pixelWidth;
+        WORD row = GetRowSize(ihdr);
+        LONG length = row * ihdr->height;
         PngT *idat = MergeIDAT(png);
         UBYTE *encoded = MemAlloc(length + ihdr->height, MEMF_PUBLIC);
 
         pixmap = NewPixmap(ihdr->width, ihdr->height, type, memFlags);
 
-        Log("[PNG] Inflating IDAT chunk\n");
+        Log("[PNG] Inflating IDAT chunk (%ld)\n", (LONG)length);
         Inflate(idat->data + 2, encoded);
 
-        Log("[PNG] Decoding pixels\n");
-        ReconstructImage(pixmap->pixels, encoded,
-                         pixmap->width, pixmap->height, pixelWidth);
+        Log("[PNG] Decoding pixels.\n");
+        ReconstructImage(pixmap->pixels, encoded, row, pixmap->height);
 
         MemFree(encoded);
       }
@@ -270,7 +269,7 @@ __regargs PaletteT *PaletteFromPNG(PngT *png) {
   if (png && (png->id == PNG_IHDR)) {
     IHDR *ihdr = (IHDR *)png->data;
 
-    if ((ihdr->bit_depth == 8) && (ihdr->colour_type == PNG_INDEXED)) {
+    if (ihdr->colour_type == PNG_INDEXED) {
       while (png->id && (png->id != PNG_PLTE))
         png = png->next;
 
@@ -287,7 +286,7 @@ __regargs PaletteT *PaletteFromPNG(PngT *png) {
 
 #define ONSTACK(x) (&(x)), sizeof((x))
 
-__regargs PngT *LoadPNG(CONST STRPTR filename, ULONG flags) {
+__regargs PngT *LoadPNG(CONST STRPTR filename, ULONG pngFlags) {
   PngT *root = NULL;
   FileT *fh;
 
@@ -305,9 +304,9 @@ __regargs PngT *LoadPNG(CONST STRPTR filename, ULONG flags) {
           break;
 
         if (chk.id == PNG_IHDR ||
-            (chk.id == PNG_IDAT && !(flags & PNG_SKIP_IDAT)) ||
-            (chk.id == PNG_PLTE && !(flags & PNG_SKIP_PLTE)) ||
-            (chk.id == PNG_tRNS && !(flags & PNG_SKIP_tRNS)))
+            (chk.id == PNG_IDAT && !(pngFlags & PNG_SKIP_IDAT)) ||
+            (chk.id == PNG_PLTE && !(pngFlags & PNG_SKIP_PLTE)) ||
+            (chk.id == PNG_tRNS && !(pngFlags & PNG_SKIP_tRNS)))
         {
           this = MemAlloc(sizeof(PngT) + chk.size, MEMF_PUBLIC);
           this->size = chk.size;
