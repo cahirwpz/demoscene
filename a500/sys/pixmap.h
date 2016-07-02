@@ -22,6 +22,7 @@ static inline void InitSharedPixmap(PixmapT *pixmap, WORD width, WORD height,
   pixmap->pixels = pixels;
 }
 
+__regargs LONG PixmapSize(PixmapT *pixmap);
 __regargs PixmapT *NewPixmap(WORD width, WORD height, 
                              PixmapTypeT type, ULONG memFlags);
 __regargs PixmapT *ClonePixmap(PixmapT *pixmap);

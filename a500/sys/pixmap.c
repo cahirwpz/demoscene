@@ -3,24 +3,24 @@
 #include "memory.h"
 #include "pixmap.h"
 
-static __regargs WORD BytesPerPixel(PixmapTypeT type, WORD width) {
-  if (type == PM_RGB4)
+__regargs LONG PixmapSize(PixmapT *pixmap) {
+  WORD width = pixmap->width;
+  if (pixmap->type == PM_RGB4)
     width *= 2;
-  else if (type == PM_GRAY4 || type == PM_CMAP4)
+  else if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4)
     width /= 2;
-  return width;
+  return width * pixmap->height;
 }
 
 __regargs PixmapT *NewPixmap(WORD width, WORD height, 
                              PixmapTypeT type, ULONG memoryAttributes)
 {
   PixmapT *pixmap = MemAlloc(sizeof(PixmapT), MEMF_PUBLIC|MEMF_CLEAR);
-  LONG size = BytesPerPixel(type, width) * height;
 
   pixmap->type = type;
   pixmap->width = width;
   pixmap->height = height;
-  pixmap->pixels = MemAlloc(size, memoryAttributes);
+  pixmap->pixels = MemAlloc(PixmapSize(pixmap), memoryAttributes);
 
   return pixmap;
 }
@@ -28,9 +28,8 @@ __regargs PixmapT *NewPixmap(WORD width, WORD height,
 __regargs PixmapT *ClonePixmap(PixmapT *pixmap) {
   PixmapT *clone = NewPixmap(pixmap->width, pixmap->height,
                              pixmap->type, TypeOfMem(pixmap->pixels));
-  LONG size = BytesPerPixel(pixmap->type, pixmap->width) * pixmap->height;
 
-  memcpy(clone->pixels, pixmap->pixels, size);
+  memcpy(clone->pixels, pixmap->pixels, PixmapSize(pixmap));
 
   return clone;
 }
