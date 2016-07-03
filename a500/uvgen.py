@@ -1,7 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python -B
 
 from math import floor, atan2, cos, sin, sqrt
 from array import array
+import Image
 
 
 def frpart(x):
@@ -51,7 +52,6 @@ def scramble(uvmap):
     out.append(uvmap[i + 7])
     i += 8
 
-  out.byteswap()
   return out
 
 
@@ -61,7 +61,6 @@ def scramble2(uvmap):
   for x in uvmap:
     out.append(x * 2)
 
-  out.byteswap()
   return out
 
 
@@ -92,10 +91,12 @@ def Anamorphosis(x, y):
 
 
 if __name__ == "__main__":
-  with open("data/uvmap.bin", "w") as f:
-    uvmap = generate(160, 100, FancyEye)
-    scramble(uvmap).tofile(f)
+  uvmap = generate(160, 100, FancyEye)
+  im = Image.new('I', (160, 100))
+  im.putdata(scramble(uvmap))
+  im.save('data/uvmap.png', 'PNG')
 
-  with open("data/uvmap-rgb.bin", "w") as f:
-    uvmap = generate(80, 64, Anamorphosis)
-    scramble2(uvmap).tofile(f)
+  uvmap = generate(80, 64, Anamorphosis)
+  im = Image.new('I', (80, 64))
+  im.putdata(scramble2(uvmap))
+  im.save('data/uvmap-rgb.png', 'PNG')

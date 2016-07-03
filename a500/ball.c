@@ -123,9 +123,9 @@ static void Init() {
   MakeUVMapRenderCode();
 
   textureHi = NewPixmap(texture->width, texture->height * 2,
-                        PM_CMAP, MEMF_PUBLIC);
+                        PM_CMAP8, MEMF_PUBLIC);
   textureLo = NewPixmap(texture->width, texture->height * 2,
-                        PM_CMAP, MEMF_PUBLIC);
+                        PM_CMAP8, MEMF_PUBLIC);
 
   PixmapScramble_4_1(texture);
   PixmapToTexture(texture, textureHi, textureLo);

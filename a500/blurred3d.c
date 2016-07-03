@@ -28,7 +28,7 @@ static PixmapT *gradient;
 
 static void Load() {
   mesh = LoadLWO("szescian.lwo", SPFlt(93));
-  gradient = LoadTGA("blurred3d-pal.tga", PM_RGB4, MEMF_PUBLIC);
+  gradient = LoadTGA("blurred3d-pal.tga", PM_RGB12, MEMF_PUBLIC);
   CalculateEdges(mesh);
   CalculateFaceNormals(mesh);
 }

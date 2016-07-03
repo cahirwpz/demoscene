@@ -29,7 +29,7 @@ static CopInsT *sprptr[2][8];
 
 static void Load() {
   twister = LoadILBMCustom("twister.ilbm", BM_DISPLAYABLE);
-  texture = LoadTGA("twister-texture.tga", PM_RGB4, MEMF_PUBLIC);
+  texture = LoadTGA("twister-texture.tga", PM_RGB12, MEMF_PUBLIC);
   gradient = LoadPalette("twister-gradient.ilbm");
 
   {

@@ -15,17 +15,17 @@ STRPTR __cwdpath = "data";
 static BitmapT *screen[2];
 static UWORD active = 0;
 static UWORD *texture;
-static UWORD *uvmap;
 static UWORD *chunky[2];
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
+static PixmapT *uvmap;
 
 #define UVMapRenderSize (WIDTH * HEIGHT * 8 + 2)
 static void (*UVMapRender)(UWORD *chunky asm("a0"), UWORD *texture asm("a1"));
 
 static void MakeUVMapRenderCode() {
   UWORD *code = (APTR)UVMapRender;
-  UWORD *data = uvmap;
+  UWORD *data = uvmap->pixels;
   WORD n = WIDTH * HEIGHT;
 
   while (--n >= 0) {
@@ -77,16 +77,16 @@ static void PixmapScramble(PixmapT *image, UWORD *texture) {
 }
 
 static void Load() {
-  PixmapT *image = LoadPNG("texture-rgb.png", PM_RGB4, MEMF_PUBLIC);
+  PixmapT *image = LoadPNG("texture-rgb.png", PM_RGB12, MEMF_PUBLIC);
   texture = MemAlloc(65536, MEMF_PUBLIC);
   PixmapScramble(image, texture);
   DeletePixmap(image);
 
-  uvmap = LoadFile("uvmap-rgb.bin", MEMF_PUBLIC);
+  uvmap = LoadPNG("uvmap-rgb.png", PM_GRAY16, MEMF_PUBLIC);
 }
 
 static void UnLoad() {
-  MemFree(uvmap);
+  DeletePixmap(uvmap);
   MemFree(texture);
 }
 

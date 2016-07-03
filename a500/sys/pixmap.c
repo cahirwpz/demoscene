@@ -1,15 +1,18 @@
 #include "memory.h"
 #include "pixmap.h"
 
+static WORD bitdepth[] = { 0, 1, 2, 4, 8, 16 };
+
 __regargs LONG PixmapSize(PixmapT *pixmap) {
-  WORD width = pixmap->width;
-  if (pixmap->type == PM_RGB)
-    width *= 3;
-  else if (pixmap->type == PM_RGB4)
-    width *= 2;
-  else if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4)
-    width /= 2;
-  return width * pixmap->height;
+  WORD bitsPerPixel = bitdepth[pixmap->type & PM_DEPTH_MASK];
+  WORD bytesPerRow;
+  if (pixmap->type & _PM_RGB) {
+    bitsPerPixel = (bitsPerPixel * 3 + 7) >> 3;
+    bytesPerRow = bitsPerPixel * pixmap->width;
+  } else {
+    bytesPerRow = (bitsPerPixel * pixmap->width + 7) >> 3;
+  }
+  return bytesPerRow * pixmap->height;
 }
 
 __regargs PixmapT *NewPixmap(WORD width, WORD height, 
@@ -72,23 +75,23 @@ __regargs void PixmapScramble_4_2(PixmapT *pixmap) {
 }
 
 __regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type) {
-  if ((pixmap->type == PM_GRAY4 && type == PM_GRAY) ||
-      (pixmap->type == PM_CMAP4 && type == PM_CMAP) ||
-      (pixmap->type == PM_GRAY && type == PM_GRAY4) ||
-      (pixmap->type == PM_CMAP && type == PM_CMAP4) ||
-      (pixmap->type == PM_RGB && type == PM_RGB4))
+  if ((pixmap->type == PM_GRAY4 && type == PM_GRAY8) ||
+      (pixmap->type == PM_CMAP4 && type == PM_CMAP8) ||
+      (pixmap->type == PM_GRAY8 && type == PM_GRAY4) ||
+      (pixmap->type == PM_CMAP8 && type == PM_CMAP4) ||
+      (pixmap->type == PM_RGB24 && type == PM_RGB12))
   {
     UBYTE *pixels = pixmap->pixels;
 
     if (pixmap->type == PM_GRAY4)
-      pixmap->type = PM_GRAY;
+      pixmap->type = PM_GRAY8;
     else if (pixmap->type == PM_CMAP4)
-      pixmap->type = PM_CMAP;
-    else if (pixmap->type == PM_RGB)
-      pixmap->type = PM_RGB4;
-    else if (pixmap->type == PM_GRAY)
+      pixmap->type = PM_CMAP8;
+    else if (pixmap->type == PM_RGB24)
+      pixmap->type = PM_RGB12;
+    else if (pixmap->type == PM_GRAY8)
       pixmap->type = PM_GRAY4;
-    else if (pixmap->type == PM_CMAP)
+    else if (pixmap->type == PM_CMAP8)
       pixmap->type = PM_CMAP4;
 
     pixmap->pixels = MemAlloc(PixmapSize(pixmap), MemTypeOf(pixmap->pixels));
@@ -97,7 +100,7 @@ __regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type) {
       UBYTE *src = pixels;
       LONG n = pixmap->width * pixmap->height;
 
-      if (pixmap->type == PM_RGB4) {
+      if (pixmap->type == PM_RGB12) {
         UWORD *dst = pixmap->pixels;
         do {
           UBYTE r = *src++;

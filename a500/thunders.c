@@ -81,7 +81,7 @@ static void FloorPrecalc() {
 }
 
 static void Load() {
-  texture = LoadTGA("thunders-floor.tga", PM_RGB4, MEMF_PUBLIC);
+  texture = LoadTGA("thunders-floor.tga", PM_RGB12, MEMF_PUBLIC);
 
   {
     BitmapT *bitmap = LoadILBM("thunders.iff");

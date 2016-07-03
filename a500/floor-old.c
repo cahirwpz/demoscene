@@ -87,7 +87,7 @@ static void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  texture = LoadTGA("floor.tga", PM_RGB4, MEMF_PUBLIC);
+  texture = LoadTGA("floor.tga", PM_RGB12, MEMF_PUBLIC);
 
   city = LoadILBM("floor-city.ilbm");
 

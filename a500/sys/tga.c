@@ -26,7 +26,7 @@ typedef struct TgaHeader {
   UBYTE descriptor;
 } __attribute__((packed)) TgaHeaderT;
 
-static PixmapTypeT tgaType[] = { PM_NONE, PM_CMAP, PM_RGB, PM_GRAY };
+static PixmapTypeT tgaType[] = { PM_NONE, _PM_CMAP, _PM_RGB, _PM_GRAY };
 
 static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, FileT *tga) {
   LONG size = hdr->cmapLength * 3;

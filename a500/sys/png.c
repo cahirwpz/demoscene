@@ -21,6 +21,8 @@
 #define PNG_GRAYSCALE_ALPHA 4
 #define PNG_TRUECOLOR_ALPHA 6
 
+static PixmapTypeT pngType[] = { _PM_GRAY, PM_NONE, _PM_RGB, _PM_CMAP };
+
 typedef struct {
   ULONG width;
   ULONG height;
@@ -231,20 +233,23 @@ __regargs PixmapT *PixmapFromPNG(PngT *png, ULONG memFlags) {
 
     if (ihdr->interlace_method != 0) {
       Log("[PNG] Interlaced image not supported!\n");
-    } else if (ihdr->bit_depth != 4 && ihdr->bit_depth != 8) {
-      Log("[PNG] Images with %ld-bit components not supported!\n",
-          (LONG)ihdr->bit_depth);
+    } else if (ihdr->colour_type >= PNG_GRAYSCALE_ALPHA) {
+      Log("[PNG] Images with alpha channel not supported!\n");
     } else {
-      PixmapTypeT type = PM_NONE;
+      PixmapTypeT type = pngType[ihdr->colour_type];
 
-      if (ihdr->colour_type == PNG_GRAYSCALE)
-        type = (ihdr->bit_depth == 8) ? PM_GRAY : PM_GRAY4;
-      if (ihdr->colour_type == PNG_INDEXED)
-        type = (ihdr->bit_depth == 8) ? PM_CMAP : PM_CMAP4;
-      if (ihdr->colour_type == PNG_TRUECOLOR)
-        type = PM_RGB;
+      if (ihdr->bit_depth == 1)
+        type |= PM_DEPTH_1;
+      else if (ihdr->bit_depth == 2)
+        type |= PM_DEPTH_2;
+      else if (ihdr->bit_depth == 4)
+        type |= PM_DEPTH_4;
+      else if (ihdr->bit_depth == 8)
+        type |= PM_DEPTH_8;
+      else
+        type |= PM_DEPTH_16;
 
-      if (type > PM_NONE) {
+      {
         WORD row = BYTES(GetBitsPerPixel(ihdr) * (WORD)ihdr->width);
         LONG length = row * (WORD)ihdr->height;
         PngT *idat = MergeIDAT(png);
@@ -368,7 +373,7 @@ LoadPNG(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
 
   if (png) {
     pixmap = PixmapFromPNG(png, memoryFlags);
-    if (pixmap->type & PM_CMAP)
+    if (pixmap->type & _PM_CMAP)
       pixmap->palette = PaletteFromPNG(png);
     PixmapConvert(pixmap, type);
     DeletePNG(png);

@@ -15,11 +15,10 @@ STRPTR __cwdpath = "data";
 
 static PixmapT *textureHi, *textureLo;
 static BitmapT *screen[2];
-static UWORD *uvmap;
 static UWORD active = 0;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static PixmapT *texture, *gradient;
+static PixmapT *texture, *gradient, *uvmap;
 
 #define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
 void (*UVMapRender)(UBYTE *chunky asm("a0"),
@@ -54,8 +53,8 @@ PixmapToTexture(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo) {
 
 static void MakeUVMapRenderCode() {
   UWORD *code = (APTR)UVMapRender;
-  UWORD *data = uvmap;
-  WORD n = WIDTH * HEIGHT / 2;
+  UWORD *data = uvmap->pixels;
+  WORD n = uvmap->width * uvmap->height / 2;
 
   /* The map is pre-scrambled to avoid one c2p pass: [a B C d] => [a C B d] */
   while (n--) {
@@ -70,9 +69,9 @@ static void MakeUVMapRenderCode() {
 }
 
 static void Load() {
-  texture = LoadPNG("texture-16-1.png", PM_CMAP, MEMF_PUBLIC);
-  gradient = LoadPNG("gradient.png", PM_RGB4, MEMF_PUBLIC);
-  uvmap = LoadFile("uvmap.bin", MEMF_PUBLIC);
+  texture = LoadPNG("texture-16-1.png", PM_CMAP8, MEMF_PUBLIC);
+  gradient = LoadPNG("gradient.png", PM_RGB12, MEMF_PUBLIC);
+  uvmap = LoadPNG("uvmap.png", PM_GRAY16, MEMF_PUBLIC);
 }
 
 static void UnLoad() {
@@ -240,9 +239,9 @@ static void Init() {
   MakeUVMapRenderCode();
 
   textureHi = NewPixmap(texture->width, texture->height * 2,
-                        PM_CMAP, MEMF_PUBLIC);
+                        PM_CMAP8, MEMF_PUBLIC);
   textureLo = NewPixmap(texture->width, texture->height * 2,
-                        PM_CMAP, MEMF_PUBLIC);
+                        PM_CMAP8, MEMF_PUBLIC);
   PixmapToTexture(texture, textureHi, textureLo);
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
