@@ -77,17 +77,12 @@ static void PixmapScramble(PixmapT *image, UWORD *texture) {
 }
 
 static void Load() {
-  uvmap = LoadFile("uvmap-rgb.bin", MEMF_PUBLIC);
+  PixmapT *image = LoadPNG("texture-rgb.png", PM_RGB4, MEMF_PUBLIC);
+  texture = MemAlloc(65536, MEMF_PUBLIC);
+  PixmapScramble(image, texture);
+  DeletePixmap(image);
 
-  {
-    PngT *png = LoadPNG("texture-rgb.png", 0);
-    PixmapT *image = PixmapFromPNG(png, MEMF_PUBLIC);
-    PixmapConvert(image, PM_RGB4);
-    texture = MemAlloc(65536, MEMF_PUBLIC);
-    PixmapScramble(image, texture);
-    DeletePixmap(image);
-    DeletePNG(png);
-  }
+  uvmap = LoadFile("uvmap-rgb.bin", MEMF_PUBLIC);
 }
 
 static void UnLoad() {

@@ -70,11 +70,7 @@ static void MakeUVMapRenderCode() {
 }
 
 static void Load() {
-  PngT *png = LoadPNG("texture-16-1.png", 0);
-  texture = PixmapFromPNG(png, MEMF_PUBLIC);
-  texture->palette = PaletteFromPNG(png);
-  PixmapConvert(texture, PM_CMAP);
-  DeletePNG(png);
+  texture = LoadPNG("texture-16-1.png", PM_CMAP, MEMF_PUBLIC);
   uvmap = LoadFile("uvmap.bin", MEMF_PUBLIC);
 }
 

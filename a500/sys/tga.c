@@ -26,18 +26,14 @@ typedef struct TgaHeader {
   UBYTE descriptor;
 } __attribute__((packed)) TgaHeaderT;
 
-typedef struct TgaParser {
-  LONG memoryFlags;
-  PixmapTypeT type;
-  FileT *file;
-} TgaParserT;
+static PixmapTypeT tgaType[] = { PM_NONE, PM_CMAP, PM_RGB, PM_GRAY };
 
-static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, TgaParserT *tga) {
+static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, FileT *tga) {
   LONG size = hdr->cmapLength * 3;
   UBYTE *data = MemAlloc(size, MEMF_PUBLIC);
   PaletteT *palette = NULL;
 
-  if (FileRead(tga->file, data, size)) {
+  if (FileRead(tga, data, size)) {
     palette = NewPalette(hdr->cmapLength);
 
     /* TGA palette is defined as BGR value. */
@@ -59,102 +55,57 @@ static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, TgaParserT *tga) {
   return palette;
 }
 
-static __regargs void ConvertData8(PixmapT *pixmap, UBYTE *data) {
-  UBYTE *dst = pixmap->pixels;
-  WORD y = pixmap->height;
-  WORD width = pixmap->width;
-
-  while (--y >= 0) {
-    UBYTE *src = data + width * y;
-    WORD n = width;
-
-    while (--n >= 0)
-      *dst++ = *src++;
-  }
-}
-
-static __regargs void ConvertData4(PixmapT *pixmap, UBYTE *data) {
-  UBYTE *dst = pixmap->pixels;
-  WORD y = pixmap->height;
-  WORD width = pixmap->width;
-
-  while (--y >= 0) {
-    UBYTE *src = data + width * y;
-    WORD n = width / 2;
-
-    while (--n >= 0) {
-      UBYTE a = *src++;
-      UBYTE b = *src++;
-      *dst++ = (a << 4) | b;
-    }
-  }
-}
-
-static __regargs void ConvertDataRGB(PixmapT *pixmap, UBYTE *data, WORD depth) {
-  UWORD *dst = pixmap->pixels;
-  WORD y = pixmap->height;
-  WORD bytesPerRow = pixmap->width * depth / 8;
-  BOOL alpha = (depth == 32);
-
-  while (--y >= 0) {
-    UBYTE *src = data + bytesPerRow * y;
-    WORD n = pixmap->width;
-
-    while (--n >= 0) {
-      UBYTE b = *src++;
-      UBYTE g = *src++;
-      UBYTE r = *src++;
-      UBYTE lo = (g & 0xf0) | ((b & 0xf0) >> 4);
-
-      if (alpha) {
-        UBYTE a = *src++;
-        UBYTE hi = (~a & 0xf0) | ((r & 0xf0) >> 4);
-        *dst++ = (hi << 8) | lo;
-      } else {
-        *dst++ = ((r & 0xf0) << 4) | lo;
-      }
-    }
-  }
-}
-
-static __regargs PixmapT *ReadData(TgaHeaderT *hdr, TgaParserT *tga) {
-  LONG size = hdr->width * hdr->height * (hdr->depth / 8);
+static __regargs void ReadData(TgaHeaderT *hdr, FileT *tga, PixmapT *pixmap) {
+  WORD bytesPerRow = hdr->width * hdr->depth >> 3;
+  LONG size = bytesPerRow * hdr->height;
   UBYTE *data = MemAlloc(size, MEMF_PUBLIC);
-  PixmapT *pixmap = NULL;
 
-  if (FileRead(tga->file, data, size)) {
-    pixmap = NewPixmap(hdr->width, hdr->height, tga->type, tga->memoryFlags);
-
+  if (FileRead(tga, data, size)) {
     /*
      * Assume descriptor field is 0 - i.e. image starts from bottom left.
      * TGA true-color pixels are defined as BGR value.
      */
-    
-    if (tga->type == PM_CMAP || tga->type == PM_GRAY) {
-      ConvertData8(pixmap, data);
-    } else if (tga->type == PM_CMAP4 || tga->type == PM_GRAY4) {
-      ConvertData4(pixmap, data);
-    } else if (tga->type == PM_RGB4) {
-      ConvertDataRGB(pixmap, data, hdr->depth);
+
+    {
+      UBYTE *dst = pixmap->pixels;
+      WORD y = hdr->height;
+      BOOL alpha = (hdr->depth == 32);
+
+      while (--y >= 0) {
+        UBYTE *src = data + bytesPerRow * y;
+        WORD n = hdr->width;
+
+        if (hdr->imageType == TGA_GRAY || hdr->imageType == TGA_CMAP) {
+          while (--n >= 0)
+            *dst++ = *src++;
+        } else if (hdr->imageType == TGA_RGB) {
+          while (--n >= 0) {
+            UBYTE b = *src++;
+            UBYTE g = *src++;
+            UBYTE r = *src++;
+            *dst++ = r;
+            *dst++ = g;
+            *dst++ = b;
+
+            if (alpha)
+              src++;
+          }
+        }
+      }
     }
   }
 
   MemFree(data);
-  return pixmap;
 }
 
 __regargs PixmapT *
 LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
   PixmapT *pixmap = NULL;
-  TgaParserT parser;
   TgaHeaderT hdr;
+  FileT *tga;
 
-  parser.type = type;
-  parser.memoryFlags = memoryFlags;
-  parser.file = OpenFile(filename, IOF_BUFFERED);
-
-  if (parser.file) {
-    if (FileRead(parser.file, &hdr, sizeof(TgaHeaderT))) {
+  if ((tga = OpenFile(filename, IOF_BUFFERED))) {
+    if (FileRead(tga, &hdr, sizeof(TgaHeaderT))) {
       hdr.cmapFirst = swap8(hdr.cmapFirst);
       hdr.cmapLength = swap8(hdr.cmapLength);
       hdr.xOrigin = swap8(hdr.xOrigin);
@@ -162,31 +113,29 @@ LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
       hdr.width = swap8(hdr.width);
       hdr.height = swap8(hdr.height);
 
-      (void)FileSeek(parser.file, hdr.idLength, SEEK_CUR);
+      (void)FileSeek(tga, hdr.idLength, SEEK_CUR);
 
-      if (((type == PM_GRAY || type == PM_GRAY4) && 
-           hdr.imageType == TGA_GRAY && hdr.depth == 8) ||
-          (type == PM_RGB4 && hdr.imageType == TGA_RGB &&
-           (hdr.depth == 24 || hdr.depth == 32)))
       {
-        pixmap = ReadData(&hdr, &parser);
-      } 
-      else if ((type == PM_CMAP || type == PM_CMAP4) &&
-               hdr.imageType == TGA_CMAP && hdr.depth == 8 &&
-               hdr.cmapEntrySize == 24)
-      {
-        PaletteT *palette;
-        
-        if ((palette = ReadColorMap(&hdr, &parser))) {
-          if ((pixmap = ReadData(&hdr, &parser)))
-            pixmap->palette = palette;
-          else
-            DeletePalette(palette);
+        BOOL gray = (hdr.imageType == TGA_GRAY) && (hdr.depth == 8);
+        BOOL cmap = (hdr.imageType == TGA_CMAP) && (hdr.depth == 8) &&
+          (hdr.cmapEntrySize == 24);
+        BOOL rgb = (hdr.imageType == TGA_RGB) &&
+          (hdr.depth == 24 || hdr.depth == 32);
+
+        if (gray || cmap || rgb) {
+          pixmap = NewPixmap(hdr.width, hdr.height, 
+                             tgaType[hdr.imageType], memoryFlags);
+          if (cmap)
+            pixmap->palette = ReadColorMap(&hdr, tga);
+          ReadData(&hdr, tga, pixmap);
+          PixmapConvert(pixmap, type);
+        } else {
+          Log("[TGA] Image type not supported!\n");
         }
       }
     }
 
-    CloseFile(parser.file);
+    CloseFile(tga);
   } else {
     Log("File '%s' missing.\n", filename);
   }

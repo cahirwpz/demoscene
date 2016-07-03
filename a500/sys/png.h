@@ -11,8 +11,11 @@ typedef struct PngChunk PngT;
 
 __regargs PixmapT *PixmapFromPNG(PngT *png, ULONG memFlags);
 __regargs PaletteT *PaletteFromPNG(PngT *png);
-__regargs PngT *LoadPNG(CONST STRPTR filename, ULONG pngFlags);
+__regargs PngT *ReadPNG(CONST STRPTR filename, ULONG pngFlags);
 __regargs void DeletePNG(PngT *png);
 __regargs void PrintPNG(PngT *png);
+
+__regargs PixmapT *
+LoadPNG(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags);
 
 #endif

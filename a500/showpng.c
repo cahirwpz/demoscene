@@ -12,7 +12,7 @@ static BitmapT *bitmap;
 static CopListT *cp;
 
 static void Load() {
-  image = LoadPNG("data/curiousity_by_fool2.png", 0);
+  image = ReadPNG("data/curiousity_by_fool2.png", 0);
   PrintPNG(image);
 }
 

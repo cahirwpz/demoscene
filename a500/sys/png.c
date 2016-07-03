@@ -63,30 +63,19 @@ struct PngChunk {
   UBYTE data[0];
 };
 
-static inline WORD GetRowSize(IHDR *ihdr) {
-  WORD pixelWidth = ihdr->bit_depth;
+#define BYTES(x) (((x) + 7) >> 3)
+
+static __regargs WORD GetBitsPerPixel(IHDR *ihdr) {
+  WORD bpp = ihdr->bit_depth;
 
   if (ihdr->colour_type == PNG_GRAYSCALE_ALPHA)
-    pixelWidth *= 2;
+    bpp *= 2;
   else if (ihdr->colour_type == PNG_TRUECOLOR)
-    pixelWidth *= 3;
+    bpp *= 3;
   else if (ihdr->colour_type == PNG_TRUECOLOR_ALPHA)
-    pixelWidth *= 4;
+    bpp *= 4;
 
-  return (pixelWidth * ihdr->width + 7) >> 3;
-}
-
-static inline WORD GetPixelSize(IHDR *ihdr) {
-  WORD pixelWidth = ihdr->bit_depth;
-
-  if (ihdr->colour_type == PNG_GRAYSCALE_ALPHA)
-    pixelWidth *= 2;
-  else if (ihdr->colour_type == PNG_TRUECOLOR)
-    pixelWidth *= 3;
-  else if (ihdr->colour_type == PNG_TRUECOLOR_ALPHA)
-    pixelWidth *= 4;
-
-  return (pixelWidth + 7) >> 3;
+  return bpp;
 }
 
 static inline WORD PaethPredictor(WORD a, WORD b, WORD c) {
@@ -110,8 +99,9 @@ static inline WORD PaethPredictor(WORD a, WORD b, WORD c) {
 static __regargs void 
 ReconstructImage(UBYTE *pixels, UBYTE *encoded, IHDR *ihdr) {
   WORD i, j;
-  LONG row = GetRowSize(ihdr);
-  LONG pixel = GetPixelSize(ihdr);
+  WORD bpp = GetBitsPerPixel(ihdr);
+  LONG row = BYTES(bpp * (WORD)ihdr->width);
+  LONG pixel = BYTES(bpp);
 
   for (i = 0; i < ihdr->height; i++) {
     UBYTE method = *encoded++;
@@ -133,38 +123,38 @@ ReconstructImage(UBYTE *pixels, UBYTE *encoded, IHDR *ihdr) {
       encoded += row; pixels += row;
     } else if (method == 1) {
       UBYTE *left = pixels;
-      j = pixel;
-      do *pixels++ = *encoded++; while (--j);
-      j = row - pixel;
-      do *pixels++ = *encoded++ + *left++; while (--j);
+      j = pixel - 1;
+      do *pixels++ = *encoded++; while (--j != -1);
+      j = row - pixel - 1;
+      do *pixels++ = *encoded++ + *left++; while (--j != -1);
     } else if (method == 2) {
       UBYTE *up = pixels - row;
-      j = row;
-      do *pixels++ = *encoded++ + *up++; while (--j);
+      j = row - 1;
+      do *pixels++ = *encoded++ + *up++; while (--j != -1);
     } else if (method == 3) {
       UBYTE *left = pixels;
       if (i > 0) {
         UBYTE *up = pixels - row;
-        j = pixel; 
-        do *pixels++ = *encoded++ + *up++ / 2; while (--j);
-        j = row - pixel;
-        do *pixels++ = *encoded++ + (*left++ + *up++) / 2; while (--j);
+        j = pixel - 1;
+        do *pixels++ = *encoded++ + *up++ / 2; while (--j != -1);
+        j = row - pixel - 1;
+        do *pixels++ = *encoded++ + (*left++ + *up++) / 2; while (--j != -1);
       } else {
-        j = pixel; 
-        do *pixels++ = *encoded++; while (--j);
-        j = row - pixel;
-        do *pixels++ = *encoded++ + *left++ / 2; while (--j);
+        j = pixel - 1; 
+        do *pixels++ = *encoded++; while (--j != -1);
+        j = row - pixel - 1;
+        do *pixels++ = *encoded++ + *left++ / 2; while (--j != -1);
       }
     } else if (method == 4) {
       UBYTE *left = pixels;
       UBYTE *leftup = pixels - row;
       UBYTE *up = pixels - row;
-      j = pixel;
-      do *pixels++ = *encoded++ + *up++; while (--j);
-      j = row - pixel;
+      j = pixel - 1;
+      do *pixels++ = *encoded++ + *up++; while (--j != -1);
+      j = row - pixel - 1;
       do {
         *pixels++ = *encoded++ + PaethPredictor(*left++, *up++, *leftup++);
-      } while (--j);
+      } while (--j != -1);
     }
   }
 }
@@ -255,7 +245,8 @@ __regargs PixmapT *PixmapFromPNG(PngT *png, ULONG memFlags) {
         type = PM_RGB;
 
       if (type > PM_NONE) {
-        LONG length = GetRowSize(ihdr) * ihdr->height;
+        WORD row = BYTES(GetBitsPerPixel(ihdr) * (WORD)ihdr->width);
+        LONG length = row * (WORD)ihdr->height;
         PngT *idat = MergeIDAT(png);
         UBYTE *encoded = MemAlloc(length + ihdr->height, MEMF_PUBLIC);
 
@@ -298,7 +289,7 @@ __regargs PaletteT *PaletteFromPNG(PngT *png) {
 
 #define ONSTACK(x) (&(x)), sizeof((x))
 
-__regargs PngT *LoadPNG(CONST STRPTR filename, ULONG pngFlags) {
+__regargs PngT *ReadPNG(CONST STRPTR filename, ULONG pngFlags) {
   PngT *root = NULL;
   FileT *fh;
 
@@ -368,4 +359,20 @@ __regargs void PrintPNG(PngT *png) {
       png = png->next;
     }
   }
+}
+
+__regargs PixmapT *
+LoadPNG(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
+  PngT *png = ReadPNG(filename, 0);
+  PixmapT *pixmap = NULL;
+
+  if (png) {
+    pixmap = PixmapFromPNG(png, memoryFlags);
+    if (pixmap->type & PM_CMAP)
+      pixmap->palette = PaletteFromPNG(png);
+    PixmapConvert(pixmap, type);
+    DeletePNG(png);
+  }
+
+  return pixmap;
 }

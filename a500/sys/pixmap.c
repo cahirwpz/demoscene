@@ -74,6 +74,8 @@ __regargs void PixmapScramble_4_2(PixmapT *pixmap) {
 __regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type) {
   if ((pixmap->type == PM_GRAY4 && type == PM_GRAY) ||
       (pixmap->type == PM_CMAP4 && type == PM_CMAP) ||
+      (pixmap->type == PM_GRAY && type == PM_GRAY4) ||
+      (pixmap->type == PM_CMAP && type == PM_CMAP4) ||
       (pixmap->type == PM_RGB && type == PM_RGB4))
   {
     UBYTE *pixels = pixmap->pixels;
@@ -84,6 +86,10 @@ __regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type) {
       pixmap->type = PM_CMAP;
     else if (pixmap->type == PM_RGB)
       pixmap->type = PM_RGB4;
+    else if (pixmap->type == PM_GRAY)
+      pixmap->type = PM_GRAY4;
+    else if (pixmap->type == PM_CMAP)
+      pixmap->type = PM_CMAP4;
 
     pixmap->pixels = MemAlloc(PixmapSize(pixmap), MemTypeOf(pixmap->pixels));
 
@@ -99,6 +105,14 @@ __regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type) {
           UBYTE b = *src++;
           UBYTE lo = (g & 0xf0) | ((b & 0xf0) >> 4);
           *dst++ = ((r & 0xf0) << 4) | lo;
+        } while (--n);
+      } else if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
+        UBYTE *dst = pixmap->pixels;
+        n /= 2;
+        do {
+          UBYTE c = *src++;
+          UBYTE d = *src++;
+          *dst++ = c << 4 | d;
         } while (--n);
       } else {
         UBYTE *dst = pixmap->pixels;
