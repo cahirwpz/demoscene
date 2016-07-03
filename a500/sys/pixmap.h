@@ -4,7 +4,7 @@
 #include "gfx.h"
 
 typedef enum {
-  PM_NONE, PM_GRAY, PM_CMAP, PM_RGB, PM_GRAY4, PM_CMAP4, PM_RGB4
+  PM_NONE, PM_GRAY = 1, PM_CMAP, PM_RGB, PM_GRAY4 = 5, PM_CMAP4, PM_RGB4
 } PixmapTypeT;
 
 typedef struct Pixmap {

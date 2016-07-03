@@ -225,9 +225,9 @@ __regargs PixmapT *PixmapFromPNG(PngT *png, ULONG memFlags) {
   if (png && (png->id == PNG_IHDR)) {
     IHDR *ihdr = (IHDR *)png->data;
 
-    Log("[PNG] w: %ld, h: %ld, bd: %ld, c: %ld, i: %ld\n",
+    Log("[PNG] width: %ld, height: %ld, bpp: %ld, type: %ld\n",
         (LONG)ihdr->width, (LONG)ihdr->height, (LONG)ihdr->bit_depth,
-        (LONG)ihdr->colour_type, (LONG)ihdr->interlace_method);
+        (LONG)ihdr->colour_type);
 
     if (ihdr->interlace_method != 0) {
       Log("[PNG] Interlaced image not supported!\n");
