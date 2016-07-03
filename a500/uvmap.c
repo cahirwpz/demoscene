@@ -11,7 +11,7 @@ STRPTR __cwdpath = "data";
 #define WIDTH 160
 #define HEIGHT 100
 #define DEPTH 4
-#define FULLPIXEL 0
+#define FULLPIXEL 1
 
 static PixmapT *textureHi, *textureLo;
 static BitmapT *screen[2];
@@ -19,7 +19,7 @@ static UWORD *uvmap;
 static UWORD active = 0;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static PixmapT *texture;
+static PixmapT *texture, *gradient;
 
 #define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
 void (*UVMapRender)(UBYTE *chunky asm("a0"),
@@ -71,6 +71,7 @@ static void MakeUVMapRenderCode() {
 
 static void Load() {
   texture = LoadPNG("texture-16-1.png", PM_CMAP, MEMF_PUBLIC);
+  gradient = LoadPNG("gradient.png", PM_RGB4, MEMF_PUBLIC);
   uvmap = LoadFile("uvmap.bin", MEMF_PUBLIC);
 }
 
@@ -78,6 +79,7 @@ static void UnLoad() {
   MemFree(uvmap);
   DeletePalette(texture->palette);
   DeletePixmap(texture);
+  DeletePixmap(gradient);
 }
 
 static struct {
@@ -207,7 +209,8 @@ INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar);
 static struct Interrupt *oldBlitInt;
 
 static void MakeCopperList(CopListT *cp) {
-  WORD i;
+  WORD *pixels = gradient->pixels;
+  WORD i, j;
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
@@ -222,6 +225,9 @@ static void MakeCopperList(CopListT *cp) {
     /* Alternating shift by one for bitplane data. */
     CopMove16(cp, bplcon1, (i & 1) ? 0x0010 : 0x0021);
 #endif
+    if (i % 12 == 11)
+      for (j = 0; j < 16; j++)
+        CopSetRGB(cp, j, *pixels++);
   }
   CopEnd(cp);
 }
@@ -244,7 +250,7 @@ static void Init() {
   BitmapClear(screen[0], DEPTH);
   BitmapClear(screen[1], DEPTH);
 
-  cp = NewCopList(900);
+  cp = NewCopList(900 + 256);
   MakeCopperList(cp);
   CopListActivate(cp);
 
@@ -270,7 +276,7 @@ static void Kill() {
 }
 
 static void Render() {
-  WORD offset = frameCount & 16383;
+  WORD offset = (frameCount * 127) & 16383;
 
   /* screen's bitplane #0 is used as a chunky buffer */
   {
