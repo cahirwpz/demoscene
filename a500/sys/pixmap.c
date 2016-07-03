@@ -83,17 +83,7 @@ __regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type) {
   {
     UBYTE *pixels = pixmap->pixels;
 
-    if (pixmap->type == PM_GRAY4)
-      pixmap->type = PM_GRAY8;
-    else if (pixmap->type == PM_CMAP4)
-      pixmap->type = PM_CMAP8;
-    else if (pixmap->type == PM_RGB24)
-      pixmap->type = PM_RGB12;
-    else if (pixmap->type == PM_GRAY8)
-      pixmap->type = PM_GRAY4;
-    else if (pixmap->type == PM_CMAP8)
-      pixmap->type = PM_CMAP4;
-
+    pixmap->type = type;
     pixmap->pixels = MemAlloc(PixmapSize(pixmap), MemTypeOf(pixmap->pixels));
 
     {
