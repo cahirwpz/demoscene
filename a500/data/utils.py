@@ -29,3 +29,6 @@ def dist(x1, y1, x2, y2):
   dx = x2 - x1
   dy = y2 - y1
   return sqrt(dx * dx + dy * dy)
+
+def ccir601(rgb):
+  return 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
