@@ -41,43 +41,58 @@ static void DrawText(GuiStateT *gui, WORD x, WORD y, UBYTE *text) {
   }
 }
 
+static void DrawFrame(BitmapT *bitmap, Area2D *area, GuiFrameT frame) {
+  WORD x1 = area->x;
+  WORD y1 = area->y;
+  WORD x2 = area->x + area->w - 1;
+  WORD y2 = area->y + area->h - 1;
+
+  if (frame) {
+    /* WC_FRAME_IN = 0b10 */
+    BlitterLineSetup(bitmap, 1, LINE_OR, LINE_SOLID);
+    BlitterLine(x1, y1, x2, y1);
+    BlitterLine(x1, y2, x2, y2);
+    BlitterLine(x1, y1 + 1, x1, y2 - 1);
+    BlitterLine(x2, y1 + 1, x2, y2 - 1);
+
+    /* WC_FRAME_OUT = 0b11 */
+    BlitterLineSetup(bitmap, 0, LINE_EOR, LINE_SOLID);
+
+    if (frame == FRAME_IN) {
+      BlitterLine(x2, y1 + 1, x2, y2);
+      BlitterLine(x1 + 1, y2, x2 - 1, y2);
+    } else if (frame == FRAME_OUT) {
+      BlitterLine(x1, y1, x2, y1);
+      BlitterLine(x1, y1 + 1, x1, y2);
+    }
+  }
+}
+
 static void LabelRedraw(GuiStateT *gui, LabelT *wg) {
+  BlitterSetArea(gui->screen, 0, &wg->area, 0);
+  BlitterSetArea(gui->screen, 1, &wg->area, 0);
   BlitterSetArea(gui->screen, 2, &wg->area, 0);
-  DrawText(gui, wg->area.x, wg->area.y, wg->text);
+
+  if (wg->frame) {
+    DrawFrame(gui->screen, &wg->area, 1);
+    DrawText(gui, wg->area.x + 1, wg->area.y + 1, wg->text);
+  } else {
+    DrawText(gui, wg->area.x, wg->area.y, wg->text);
+  }
 }
 
 static void ButtonRedraw(GuiStateT *gui, ButtonT *wg) {
-  WORD x1 = wg->area.x;
-  WORD y1 = wg->area.y;
-  WORD x2 = wg->area.x + wg->area.w - 1;
-  WORD y2 = wg->area.y + wg->area.h - 1;
   BOOL active = (wg->state & WS_ACTIVE) ? 1 : 0;
   BOOL pressed = (wg->state & WS_PRESSED) ? 1 : 0;
 
   BlitterSetArea(gui->screen, 0, &wg->area, active ? -1 : 0);
   BlitterSetArea(gui->screen, 1, &wg->area, 0);
-
-  /* WC_FRAME_IN = 0b10 */
-  BlitterLineSetup(gui->screen, 1, LINE_OR, LINE_SOLID);
-  BlitterLine(x1, y1, x2, y1);
-  BlitterLine(x1, y2, x2, y2);
-  BlitterLine(x1, y1 + 1, x1, y2 - 1);
-  BlitterLine(x2, y1 + 1, x2, y2 - 1);
-
-  /* WC_FRAME_OUT = 0b11 */
-  BlitterLineSetup(gui->screen, 0, LINE_EOR, LINE_SOLID);
-
-  if (active ^ pressed) {
-    BlitterLine(x2, y1 + 1, x2, y2);
-    BlitterLine(x1 + 1, y2, x2 - 1, y2);
-  } else {
-    BlitterLine(x1, y1, x2, y1);
-    BlitterLine(x1, y1 + 1, x1, y2);
-  }
+  DrawFrame(gui->screen, &wg->area,
+            (active ^ pressed) ? FRAME_IN : FRAME_OUT);
 
   if (wg->label) {
     BlitterSetArea(gui->screen, 2, &wg->area, 0);
-    DrawText(gui, x1 + 1, y1 + 1, wg->label);
+    DrawText(gui, wg->area.x + 1, wg->area.y + 1, wg->label);
   }
 }
 
@@ -90,17 +105,21 @@ static void ButtonPress(GuiStateT *gui, ButtonT *wg) {
 static void ButtonRelease(GuiStateT *gui, ButtonT *wg) {
   wg->state &= ~WS_PRESSED;
   ButtonRedraw(gui, wg);
-  PushGuiEvent((WidgetT *)wg, WA_RELEASED);
+  if (gui->lastPressed == (WidgetBaseT *)wg)
+    PushGuiEvent((WidgetT *)wg, WA_RELEASED);
 }
 
 static void ButtonLeave(GuiStateT *gui, ButtonT *wg) {
   wg->state &= ~WS_ACTIVE;
+  wg->state &= ~WS_PRESSED;
   ButtonRedraw(gui, wg);
   PushGuiEvent((WidgetT *)wg, WA_LEFT);
 }
 
 static void ButtonEnter(GuiStateT *gui, ButtonT *wg) {
   wg->state |= WS_ACTIVE;
+  if (gui->lastPressed == (WidgetBaseT *)wg)
+    wg->state |= WS_PRESSED;
   ButtonRedraw(gui, wg);
   PushGuiEvent((WidgetT *)wg, WA_ENTERED);
 }
@@ -162,19 +181,24 @@ void GuiRedraw(GuiStateT *gui) {
 }
 
 void GuiHandleMouseEvent(GuiStateT *gui, struct MouseEvent *mouse) {
-  WidgetBaseT *wg = gui->lastWidget;
+  WidgetBaseT *wg = gui->lastEntered;
 
   if (wg) {
     if (InsideArea(mouse->x, mouse->y, &wg->area)) {
-      if (mouse->button & LMB_PRESSED)
+      if (mouse->button & LMB_PRESSED) {
         WidgetPress(gui, wg);
-      else if (mouse->button & LMB_RELEASED)
+        gui->lastPressed = wg;
+      } else if (mouse->button & LMB_RELEASED) {
         WidgetRelease(gui, wg);
+        gui->lastPressed = NULL;
+      }
       return;
-    } else {
-      WidgetLeave(gui, wg);
     }
+    WidgetLeave(gui, wg);
   }
+
+  if (mouse->button & LMB_RELEASED)
+    gui->lastPressed = NULL;
   
   /* Find the widget a pointer is hovering on. */
   {
@@ -185,7 +209,7 @@ void GuiHandleMouseEvent(GuiStateT *gui, struct MouseEvent *mouse) {
         break;
   }
 
-  gui->lastWidget = wg;
+  gui->lastEntered = wg;
 
   if (wg)
     WidgetEnter(gui, wg);

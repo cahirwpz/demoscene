@@ -22,7 +22,7 @@ static GUI_BUTTON(_b1, 48, 20, 64, 10, "Pause");
 static GUI_BUTTON(_b2, 96, 40, 48, 10, "Stop");
 static GUI_BUTTON(_b3, 144, 60, 80, 10, "Forward");
 static GUI_BUTTON(_b4, 192, 80, 80, 10, "Reverse");
-static GUI_LABEL(_l0, 0, 192, 320, 8, 40);
+static GUI_LABEL(_l0, 0, 192, 320, 10, FRAME_FLAT, 40);
 static GUI_GROUP(_buttons, _b0, _b1, _b2, _b3, _b4, _l0);
 static GUI_MAIN(_buttons);
 

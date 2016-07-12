@@ -13,7 +13,11 @@ typedef enum {
   UI_FRAME_OUT   = 3,
   UI_FG_INACTIVE = 4,
   UI_FG_ACTIVE   = 5,
-} UIColorT;
+} GuiColorT;
+
+typedef enum {
+  FRAME_NONE, FRAME_FLAT, FRAME_IN, FRAME_OUT
+} GuiFrameT;
 
 typedef enum { 
   WT_LABEL, WT_BUTTON, WT_LAST
@@ -43,6 +47,7 @@ typedef struct {
   WIDGET_BASE
   char *text;
   WORD length;
+  GuiFrameT frame;
 } LabelT;
 
 typedef struct {
@@ -67,7 +72,8 @@ typedef struct GuiEvent {
 
 typedef struct GuiState {
   WidgetT **widgets;
-  WidgetBaseT *lastWidget;
+  WidgetBaseT *lastEntered;
+  WidgetBaseT *lastPressed;
   BitmapT *screen;
   BitmapT *font;
 } GuiStateT;
@@ -78,9 +84,9 @@ typedef void (*WidgetFuncT)(GuiStateT *, WidgetT *);
   WidgetT name[1] = {(WidgetT)(ButtonT)                                  \
     {WT_BUTTON, {(x), (y), (w), (h)}, 0, (label)}}
 
-#define GUI_LABEL(name, x, y, w, h, n)                                   \
+#define GUI_LABEL(name, x, y, w, h, frame, n)                            \
   WidgetT name[1] = {(WidgetT)(LabelT)                                   \
-    {WT_LABEL, {(x), (y), (w), (h)}, 0, (char[(n)]){0}, (n)}}
+    {WT_LABEL, {(x), (y), (w), (h)}, 0, (char[(n)]){0}, (n), (frame)}}
 
 #define GUI_GROUP(name, ...) \
   WidgetT *name[] = { __VA_ARGS__, NULL }
