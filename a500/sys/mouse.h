@@ -10,7 +10,7 @@
 #define LMB_RELEASED 4
 #define RMB_RELEASED 8
 
-typedef struct {
+typedef struct MouseEvent {
   UBYTE type;
   UBYTE button;
   WORD  x, y;

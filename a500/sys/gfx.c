@@ -165,3 +165,12 @@ __regargs BOOL ClipBitmap(const Box2D *space, Point2D *pos, Area2D *area) {
 
   return TRUE;
 }
+
+__regargs BOOL InsideArea(WORD x, WORD y, Area2D *area) {
+  WORD x1 = area->x;
+  WORD y1 = area->y;
+  WORD x2 = area->x + area->w - 1;
+  WORD y2 = area->y + area->h - 1;
+
+  return (x1 <= x && x <= x2 && y1 <= y && y <= y2);
+}

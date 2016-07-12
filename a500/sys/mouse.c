@@ -24,8 +24,10 @@ static inline BOOL GetMouseX(MouseDataT *mouse, MouseEventT *event) {
   BYTE xrel = xctr - mouse->xctr;
   WORD x = mouse->x;
 
-  if (!xrel)
+  if (!xrel) {
+    event->x = x;
     return FALSE;
+  }
 
   x += xrel;
 
@@ -48,8 +50,10 @@ static inline BOOL GetMouseY(MouseDataT *mouse, MouseEventT *event) {
   BYTE yrel = yctr - mouse->yctr;
   WORD y = mouse->y;
 
-  if (!yrel)
+  if (!yrel) {
+    event->y = y;
     return FALSE;
+  }
 
   y += yrel;
 

@@ -84,6 +84,8 @@ static inline APTR GetSP() {
 }
 
 void Log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+void FmtStr(char *str, ULONG size, const char *format, ...)
+  __attribute__ ((format (printf, 3, 4)));
 __regargs void MemDump(APTR ptr, LONG n);
 
 /*

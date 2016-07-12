@@ -82,6 +82,7 @@ __regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
 __regargs void DeleteBitmap(BitmapT *bitmap);
 __regargs void BitmapMakeDisplayable(BitmapT *bitmap);
 __regargs BOOL ClipBitmap(const Box2D *space, Point2D *pos, Area2D *area);
+__regargs BOOL InsideArea(WORD x, WORD y, Area2D *area);
 
 static inline BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth) {
   return NewBitmapCustom(width, height, depth, BM_CLEAR|BM_DISPLAYABLE);

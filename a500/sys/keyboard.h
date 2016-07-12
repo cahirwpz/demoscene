@@ -117,7 +117,7 @@ typedef enum {
 
 #define EV_KEY 1
 
-typedef struct {
+typedef struct KeyEvent {
   UBYTE type;
   KeyModT modifier;
   KeyCodeT code;
