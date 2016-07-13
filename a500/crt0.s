@@ -17,10 +17,6 @@
                 xref    ___INIT_LIST__
                 xref    ___EXIT_LIST__
 
-                xref    ___nocommandline
-                xref    ___initlibraries
-                xref    ___cpucheck
-
                 section code
 
 start:
@@ -35,7 +31,7 @@ start:
                 JSRLIB  FindTask
                 move.l  d0,a3
                 tst.l   pr_CLI(a3)
-                bne.w   fromCLI
+                bne     fromCLI
 
 fromWB:         lea     pr_MsgPort(a3),a0
                 JSRLIB  WaitPort
@@ -60,7 +56,7 @@ __exit:         lea     ___EXIT_LIST__+4,a2
                 move.l  $4.w,a6
 
                 move.l  __WBenchMsg,d2
-                beq.w   todos
+                beq     todos
                 JSRLIB  Forbid
                 move.l  d2,a1
                 JSRLIB  ReplyMsg
@@ -100,12 +96,6 @@ oldpri:         move.l  (a3)+,d0
 ; one source for both code models
 
 _geta4:         rts
-
-                section data
-
-                dc.l    ___nocommandline
-                dc.l    ___initlibraries
-                dc.l    ___cpucheck
 
                 section bss
 

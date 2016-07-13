@@ -12,9 +12,7 @@
 
 extern void CallHRTmon();
 extern EffectT Effect;
-
-int __nocommandline = 1;
-ULONG __oslibversion = 33;
+extern BOOL execOnly;
 
 LONG frameCount;
 LONG lastFrameCount;
@@ -42,6 +40,7 @@ int main() {
 
     /* No calls to any other library than exec beyond this point or expect
      * undefined behaviour including crashes. */
+    execOnly = TRUE;
     Forbid();
 
     /* Disable CPU caches. */
@@ -142,6 +141,7 @@ int main() {
 
     /* Restore multitasking. */
     Permit();
+    execOnly = FALSE;
 
     /* Deallocate blitter. */
     DisownBlitter();
@@ -196,6 +196,42 @@ void KillTrapHandler() {
   struct Task *tc = FindTask(NULL);
   tc->tc_TrapCode = NULL;
 }
+
+typedef struct LibDesc {
+  struct Library *base;
+  char *name;
+} LibDescT;
+
+extern LibDescT *__LIB_LIST__[];
+
+#define OSLIBVERSION 33
+
+void InitLibraries() {
+  LibDescT **list = __LIB_LIST__;
+  ULONG numbases = (ULONG)*list++;
+
+  while (numbases-- > 0) {
+    LibDescT *lib = *list++;
+    if (!(lib->base = OpenLibrary(lib->name, OSLIBVERSION))) {
+      Log("Cannot open '%s'!\n", lib->name);
+      exit(20);
+    }
+  }
+}
+
+void KillLibraries() {
+  LibDescT **list = __LIB_LIST__;
+  ULONG numbases = (ULONG)*list++;
+
+  while (numbases-- > 0) {
+    LibDescT *lib = *list++;
+    if (lib->base)
+      CloseLibrary(lib->base);
+  }
+}
+
+ADD2INIT(InitLibraries, -120);
+ADD2EXIT(KillLibraries, -120);
 
 ADD2INIT(InitTrapHandler, -100);
 ADD2EXIT(KillTrapHandler, -100);
