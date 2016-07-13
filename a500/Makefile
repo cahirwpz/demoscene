@@ -7,10 +7,9 @@ BINS	= stripes lines parseiff play8svx showilbm sprites4 sprites16 topaz8 \
           tilezoomer twister-rgb showpchg blurred3d thunders credits parsepng \
           loadhunk showpng ExitUAE 
 
-all:	startup.o libs $(addsuffix .exe, $(BINS))
+all: crt0.o startup.o libs $(addsuffix .exe, $(BINS))
 
-ExitUAE: CC += -fbaserel -s
-ExitUAE: ExitUAE.o
+ExitUAE:          ExitUAE.o
 
 anim.exe:         anim.o startup.o libsys.a
 ball.exe:         ball.o startup.o libsys.a

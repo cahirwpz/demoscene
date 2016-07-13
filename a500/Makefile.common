@@ -3,7 +3,7 @@ AS	= vasm -quiet
 CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 
 ASFLAGS	= -x -m68010
-LDFLAGS	= -m68000 -msmall-code
+LDFLAGS	= -m68000 -msmall-code -nostartfiles
 OFLAGS	= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	= -Wall
 
@@ -16,7 +16,7 @@ DFLAGS	= -D__CONSTLIBBASEDECL__=const
 
 # libnix13.a contains a few functions that don't depend on utility.library
 # which is not present in Kickstart 1.3
-LDLIBS	= -lnix13
+LDLIBS	= -lnix13 -lstubs
 
 OBJS	= $(patsubst %.c,%.o,$(wildcard *.c))
 DEPFILES := $(patsubst %.o,.deps/%.P,$(OBJS))
@@ -52,7 +52,7 @@ $(LIB):
 %.a:
 	make -C $(patsubst lib%.a,%,$@)
 
-%.exe: %.o
+%.exe: crt0.o %.o 
 	@echo "LINK $@"
 	$(CC) $(LDFLAGS) -o $@ $(filter-out lib%.a,$^) \
 		$(foreach lib,$(patsubst lib%.a,%,$(filter lib%a,$^)),\
