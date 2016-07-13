@@ -11,6 +11,8 @@
 #define HEIGHT 256
 #define DEPTH 3
 
+STRPTR __cwdpath = "data";
+
 static BitmapT *screen;
 static CopListT *cp;
 static SpriteT *pointer;
@@ -28,7 +30,7 @@ static GUI_GROUP(_buttons, _b0, _b1, _b2, _b3, _b4, _l0);
 static GUI_MAIN(_buttons);
 
 static void Load() {
-  font = LoadPNG("data/koi8r.8x8.png", PM_GRAY1, MEMF_PUBLIC);
+  font = LoadPNG("koi8r.8x8.png", PM_GRAY1, MEMF_PUBLIC);
 }
 
 static void UnLoad() {

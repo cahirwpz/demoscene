@@ -178,17 +178,17 @@ void SystemInfo() {
     kickRev = kick[7];
   }
 
-  Print("ROM: %ld.%ld, CPU: 680%ld0, CHIP: %ldkB, FAST: %ldkB.\n",
-        (LONG)kickVer, (LONG)kickRev, (LONG)cpu,
-        (LONG)(AvailMem(MEMF_CHIP | MEMF_LARGEST) / 1024),
-        (LONG)(AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024));
+  Log("[Init] ROM: %ld.%ld, CPU: 680%ld0, CHIP: %ldkB, FAST: %ldkB\n",
+      (LONG)kickVer, (LONG)kickRev, (LONG)cpu,
+      (LONG)(AvailMem(MEMF_CHIP | MEMF_LARGEST) / 1024),
+      (LONG)(AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024));
 }
 
 void InitTrapHandler() {
   if (*(LONG *)0xA10004 == MAKE_ID('H', 'R', 'T', '!')) {
     struct Task *tc = FindTask(NULL);
     tc->tc_TrapCode = &CallHRTmon;
-    Log("[Init] Installed trap handler.\n");
+    Log("[Init] Installed trap handler\n");
   }
 }
 

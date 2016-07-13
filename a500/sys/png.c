@@ -260,7 +260,7 @@ __regargs PixmapT *PixmapFromPNG(PngT *png, ULONG memFlags) {
         Log("[PNG] Inflating IDAT chunk (%ld)\n", (LONG)length);
         Inflate(idat->data + 2, encoded);
 
-        Log("[PNG] Decoding pixels.\n");
+        Log("[PNG] Decoding pixels\n");
         ReconstructImage(pixmap->pixels, encoded, ihdr);
 
         MemFree(encoded);
@@ -305,6 +305,8 @@ __regargs PngT *ReadPNG(CONST STRPTR filename, ULONG pngFlags) {
     {
       PngT *prev = NULL, *this;
 
+      Log("[PNG] Reading '%s'\n", filename);
+
       while (FileRead(fh, ONSTACK(chk))) {
         // Log("%4s : %ld\n", (STRPTR)&chk.id, chk.size);
 
@@ -335,7 +337,7 @@ __regargs PngT *ReadPNG(CONST STRPTR filename, ULONG pngFlags) {
         FileSeek(fh, 4, SEEK_CUR);
       }
     } else {
-      Print("'%s' : not a PNG file!\n", filename);
+      Log("'%s' : not a PNG file!\n", filename);
     }
 
     CloseFile(fh);

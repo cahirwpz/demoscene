@@ -1,4 +1,3 @@
-#include <stdarg.h>
 #include <proto/exec.h>
 #include <proto/dos.h> 
 
@@ -25,35 +24,6 @@ struct File {
     UBYTE data[0];
   } buf;
 };
-
-#define BUFLEN 80
-
-struct {
-  BPTR fh;
-  LONG length;
-  char data[BUFLEN];
-} console;
-
-static void ConsoleWrite(char c asm("d0")) {
-  console.data[console.length++] = c;
-
-  if (console.length == BUFLEN) {
-    Write(console.fh, console.data, console.length);
-    console.length = 0;
-  }
-}
-
-void Print(const char *format, ...) {
-  va_list args;
-
-  console.length = 0;
-
-  va_start(args, format);
-  RawDoFmt(format, args, (void (*)())ConsoleWrite, NULL);
-  va_end(args);
-
-  Write(console.fh, console.data, console.length);
-}
 
 FileT *OpenFile(CONST STRPTR path asm("d1"), UWORD flags asm("d0")) {
   FileT *file = MemAlloc(sizeof(FileT) + ((flags & IOF_BUFFERED) ? SECTOR : 0),
@@ -226,8 +196,6 @@ STRPTR __cwdpath; /* symbol is defined in common area and can be overridden */
 static BPTR oldcwd = NULL;
 
 void InitIoDos() {
-  console.fh = Output();
-
   if (__cwdpath) {
     BPTR lock;
     Log("[Init] Current work dir: \"%s\"\n", __cwdpath);

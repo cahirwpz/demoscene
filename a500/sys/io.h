@@ -17,7 +17,6 @@ BOOL FileRead(FileT *fh asm("a0"), APTR buf asm("d2"), ULONG size asm("d3"));
 BOOL FileSeek(FileT *fh asm("a0"), LONG pos asm("d2"), LONG mode asm("d3"));
 LONG GetCursorPos(FileT *fh asm("a0"));
 
-void Print(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
 __regargs APTR LoadFile(CONST STRPTR path, ULONG memoryFlags);
 
 #endif

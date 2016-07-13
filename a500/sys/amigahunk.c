@@ -95,7 +95,7 @@ static __regargs BOOL LoadHunks(FileT *fh, HunkT **hunks) {
         hunkIdx++;
       }
     } else {
-      Print("Unknown hunk $%08lx!\n", hunkCode);
+      Log("Unknown hunk $%08lx!\n", hunkCode);
       return FALSE;
     }
   }

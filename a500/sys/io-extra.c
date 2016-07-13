@@ -18,7 +18,7 @@ __regargs APTR LoadFile(CONST STRPTR path, ULONG memoryFlags) {
     }
     CloseFile(file);
   } else {
-    Print("File '%s' missing.\n", path);
+    Log("File '%s' missing.\n", path);
   }
 
   return data;

@@ -44,7 +44,7 @@ static __regargs TrackT *ReadTrack(char **strptr) {
             end = TRUE;
             data += 3;
           } else {
-            Print("Unknown directive!\n");
+            Log("Unknown directive!\n");
             goto quit;
           }
           break;
@@ -70,7 +70,7 @@ static __regargs TrackT *ReadTrack(char **strptr) {
             type = TRACK_EVENT;
             data += 5;
           } else {
-            Print("Unknown control key!\n");
+            Log("Unknown control key!\n");
             goto quit;
           }
 
@@ -83,17 +83,17 @@ static __regargs TrackT *ReadTrack(char **strptr) {
 
         case '$':
           if (!ReadNumber(&data, &pos) || (pos < 0)) {
-            Print("Module position is an invalid number!\n");
+            Log("Module position is an invalid number!\n");
             goto quit;
           }
           if (last_pos >= pos) {
-            Print("Frame number does not grow monotonically : %lx -> %lx!\n",
+            Log("Frame number does not grow monotonically : %lx -> %lx!\n",
                 (LONG)last_pos, (LONG)pos);
             goto quit;
           }
           last_pos = pos;
           if (!ReadNumber(&data, &value)) {
-            Print("Value is not a number!\n");
+            Log("Value is not a number!\n");
             goto quit;
           }
 
@@ -105,7 +105,7 @@ static __regargs TrackT *ReadTrack(char **strptr) {
           break;
 
         default:
-          Print("Syntax error!\n");
+          Log("Syntax error!\n");
           goto quit;
       }
     }
@@ -133,7 +133,7 @@ __regargs TrackT *LoadTrack(char *filename) {
     char *data = file;
 
     if (!(track = ReadTrack(&data)))
-      Print("Error at byte %ld!\n", (LONG)(data - file));
+      Log("Error at byte %ld!\n", (LONG)(data - file));
 
     MemFree(file);
   }
@@ -156,7 +156,7 @@ __regargs TrackT **LoadTrackList(char *filename) {
       TrackT *track = ReadTrack(&data);
 
       if (!track) {
-        Print("Error at byte %ld!\n", (LONG)(data - file));
+        Log("Error at byte %ld!\n", (LONG)(data - file));
         while (count)
           MemFree(tmp[--count]);
         break;

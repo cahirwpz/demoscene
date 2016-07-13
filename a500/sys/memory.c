@@ -57,8 +57,8 @@ __regargs static AreaT *MemPoolAlloc(ULONG byteSize, ULONG attributes) {
     return area;
   }
 
-  Print("Failed to allocate %ld bytes of %s memory in one chunk!\n",
-        byteSize, name);
+  Log("Failed to allocate %ld bytes of %s memory in one chunk!\n",
+      byteSize, name);
   return NULL;
 }
 
