@@ -57,7 +57,7 @@ __regargs static AreaT *MemPoolAlloc(ULONG byteSize, ULONG attributes) {
     return area;
   }
 
-  Log("Failed to allocate %ld bytes of %s memory in one chunk!\n",
+  Log("[Mem] Failed to allocate %ld bytes of %s memory in one chunk!\n",
       byteSize, name);
   return NULL;
 }
@@ -82,8 +82,8 @@ void MemInit() {
 
 void MemKill() {
   if (memReady) {
-    Log("[Memory] Max usage - CHIP: %ld FAST: %ld\n",
-        chip->maxUsage, fast->maxUsage);
+    Log("[Mem] Max usage - CHIP: %ldkB FAST: %ldkB\n",
+        (chip->maxUsage + 1023) >> 10, (fast->maxUsage + 1023) >> 10);
     FreeMem(chip, __chipmem + sizeof(AreaT));
     FreeMem(fast, __fastmem + sizeof(AreaT));
     memReady = FALSE;

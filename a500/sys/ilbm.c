@@ -271,33 +271,30 @@ __regargs BitmapT *LoadILBMCustom(CONST STRPTR filename, UWORD flags) {
   PaletteT *palette = NULL;
   IffFileT iff;
 
-  if (OpenIff(&iff, filename)) {
-    if (iff.header.type == ID_ILBM) {
-      while (ParseChunk(&iff)) {
-        switch (iff.chunk.type) {
-          case ID_BMHD: bitmap = LoadBMHD(&iff, flags); break;
-          case ID_CAMG: LoadCAMG(&iff, bitmap); break;
-          case ID_PCHG: LoadPCHG(&iff, bitmap); break;
-          case ID_BODY: LoadBODY(&iff, bitmap, flags); break;
+  OpenIff(&iff, filename);
 
-          case ID_CMAP:
-            if (flags & BM_LOAD_PALETTE) {
-              palette = LoadCMAP(&iff);
-              break;
-            }
+  if (iff.header.type != ID_ILBM)
+    Panic("[ILBM] File '%s' has wrong type!\n", filename);
 
-          default:
-            SkipChunk(&iff);
-            break;
-        }
-      }
-
-      if (bitmap)
-        bitmap->palette = palette;
-    }
-
-    CloseIff(&iff);
+  while (ParseChunk(&iff)) {
+    if (iff.chunk.type == ID_BMHD)
+      bitmap = LoadBMHD(&iff, flags);
+    else if (iff.chunk.type == ID_CAMG)
+      LoadCAMG(&iff, bitmap);
+    else if (iff.chunk.type == ID_PCHG)
+      LoadPCHG(&iff, bitmap);
+    else if (iff.chunk.type == ID_BODY)
+      LoadBODY(&iff, bitmap, flags);
+    else if ((iff.chunk.type == ID_CMAP) && (flags & BM_LOAD_PALETTE))
+      palette = LoadCMAP(&iff);
+    else
+      SkipChunk(&iff);
   }
+
+  if (bitmap)
+    bitmap->palette = palette;
+
+  CloseIff(&iff);
 
   return bitmap;
 }
@@ -306,19 +303,20 @@ __regargs PaletteT *LoadPalette(CONST STRPTR filename) {
   PaletteT *palette = NULL;
   IffFileT iff;
 
-  if (OpenIff(&iff, filename)) {
-    if (iff.header.type == ID_ILBM) {
-      while (ParseChunk(&iff)) {
-        if (iff.chunk.type == ID_CMAP) {
-          palette = LoadCMAP(&iff);
-          break;
-        }
-        SkipChunk(&iff);
-      }
-    }
+  OpenIff(&iff, filename);
 
-    CloseIff(&iff);
+  if (iff.header.type != ID_ILBM)
+    Panic("[ILBM] File '%s' has wrong type!\n", filename);
+
+  while (ParseChunk(&iff)) {
+    if (iff.chunk.type == ID_CMAP) {
+      palette = LoadCMAP(&iff);
+      break;
+    }
+    SkipChunk(&iff);
   }
+
+  CloseIff(&iff);
 
   return palette;
 }

@@ -24,35 +24,28 @@ __regargs SoundT *Load8SVX(CONST STRPTR filename) {
   SoundT *sound = NULL;
   IffFileT iff;
 
-  if (OpenIff(&iff, filename)) {
-    if (iff.header.type == ID_8SVX) {
-      while (ParseChunk(&iff)) {
-        switch (iff.chunk.type) {
-          case ID_VHDR:
-            {
-              VoiceHeaderT vhdr;
+  OpenIff(&iff, filename);
 
-              ReadChunk(&iff, &vhdr);
-              sound = NewSound(0, vhdr.samplesPerSec);
-              sound->volume = (vhdr.volume - 1) >> 10;
-            }
-            break;
+  if (iff.header.type != ID_8SVX)
+    Panic("[8SVX] File '%s' has wrong type!\n", filename);
 
-          case ID_BODY:
-            sound->length = iff.chunk.length;
-            sound->sample = MemAlloc(iff.chunk.length, MEMF_CHIP);
-            ReadChunk(&iff, sound->sample);
-            break;
+  while (ParseChunk(&iff)) {
+    if (iff.chunk.type == ID_VHDR) {
+      VoiceHeaderT vhdr;
 
-          default:
-            SkipChunk(&iff);
-            break;
-        }
-      }
+      ReadChunk(&iff, &vhdr);
+      sound = NewSound(0, vhdr.samplesPerSec);
+      sound->volume = (vhdr.volume - 1) >> 10;
+    } else if (iff.chunk.type == ID_BODY) {
+      sound->length = iff.chunk.length;
+      sound->sample = MemAlloc(iff.chunk.length, MEMF_CHIP);
+      ReadChunk(&iff, sound->sample);
+    } else {
+      SkipChunk(&iff);
     }
-
-    CloseIff(&iff);
   }
+
+  CloseIff(&iff);
 
   return sound;
 }

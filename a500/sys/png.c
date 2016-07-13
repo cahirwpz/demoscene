@@ -1,7 +1,6 @@
 #include <proto/exec.h>
 
 #include "io.h"
-#include "iff.h"
 #include "png.h"
 #include "memory.h"
 #include "inflate.h"
@@ -232,9 +231,9 @@ __regargs PixmapT *PixmapFromPNG(PngT *png, ULONG memFlags) {
         (LONG)ihdr->colour_type);
 
     if (ihdr->interlace_method != 0) {
-      Log("[PNG] Interlaced image not supported!\n");
+      Panic("[PNG] Interlaced image not supported!\n");
     } else if (ihdr->colour_type >= PNG_GRAYSCALE_ALPHA) {
-      Log("[PNG] Images with alpha channel not supported!\n");
+      Panic("[PNG] Images with alpha channel not supported!\n");
     } else {
       PixmapTypeT type = pngType[ihdr->colour_type];
 
@@ -296,54 +295,49 @@ __regargs PaletteT *PaletteFromPNG(PngT *png) {
 
 __regargs PngT *ReadPNG(CONST STRPTR filename, ULONG pngFlags) {
   PngT *root = NULL;
-  FileT *fh;
+  FileT *fh = OpenFile(filename, IOF_BUFFERED);
 
-  if ((fh = OpenFile(filename, IOF_BUFFERED))) {
-    struct { LONG size, id; } chk;
+  struct { LONG size, id; } chk;
 
-    if (FileRead(fh, ONSTACK(chk)) && chk.size == PNG_ID0 && chk.id == PNG_ID1)
-    {
-      PngT *prev = NULL, *this;
+  Log("[PNG] Reading '%s'\n", filename);
 
-      Log("[PNG] Reading '%s'\n", filename);
+  if (FileRead(fh, ONSTACK(chk)) && chk.size == PNG_ID0 && chk.id == PNG_ID1) {
+    PngT *prev = NULL, *this;
 
-      while (FileRead(fh, ONSTACK(chk))) {
-        // Log("%4s : %ld\n", (STRPTR)&chk.id, chk.size);
+    while (FileRead(fh, ONSTACK(chk))) {
+      // Log("%4s : %ld\n", (STRPTR)&chk.id, chk.size);
 
-        if (chk.id == PNG_IEND)
-          break;
+      if (chk.id == PNG_IEND)
+        break;
 
-        if (chk.id == PNG_IHDR ||
-            (chk.id == PNG_IDAT && !(pngFlags & PNG_SKIP_IDAT)) ||
-            (chk.id == PNG_PLTE && !(pngFlags & PNG_SKIP_PLTE)) ||
-            (chk.id == PNG_tRNS && !(pngFlags & PNG_SKIP_tRNS)))
-        {
-          this = MemAlloc(sizeof(PngT) + chk.size, MEMF_PUBLIC);
-          this->size = chk.size;
-          this->id = chk.id;
-          FileRead(fh, this->data, chk.size);
+      if (chk.id == PNG_IHDR ||
+          (chk.id == PNG_IDAT && !(pngFlags & PNG_SKIP_IDAT)) ||
+          (chk.id == PNG_PLTE && !(pngFlags & PNG_SKIP_PLTE)) ||
+          (chk.id == PNG_tRNS && !(pngFlags & PNG_SKIP_tRNS)))
+      {
+        this = MemAlloc(sizeof(PngT) + chk.size, MEMF_PUBLIC);
+        this->size = chk.size;
+        this->id = chk.id;
+        FileRead(fh, this->data, chk.size);
 
-          if (prev)
-            prev->next = this;
-          else
-            root = this;
+        if (prev)
+          prev->next = this;
+        else
+          root = this;
 
-          prev = this;
-        } else {
-          FileSeek(fh, chk.size, SEEK_CUR);
-        }
-
-        /* skip CRC */
-        FileSeek(fh, 4, SEEK_CUR);
+        prev = this;
+      } else {
+        FileSeek(fh, chk.size, SEEK_CUR);
       }
-    } else {
-      Log("'%s' : not a PNG file!\n", filename);
-    }
 
-    CloseFile(fh);
+      /* skip CRC */
+      FileSeek(fh, 4, SEEK_CUR);
+    }
   } else {
-    Log("File '%s' missing.\n", filename);
+    Panic("[PNG] Not a PNG file!\n");
   }
+
+  CloseFile(fh);
 
   return root;
 }

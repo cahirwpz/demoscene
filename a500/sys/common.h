@@ -88,6 +88,8 @@ void FmtStr(char *str, ULONG size, const char *format, ...)
   __attribute__ ((format (printf, 3, 4)));
 __regargs void MemDump(APTR ptr, LONG n);
 
+#define Panic(args...) do { Log(args); exit(10); } while (0)
+
 /*
  * Macros for handling symbol table information (aka linker set elements).
  */

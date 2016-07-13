@@ -117,27 +117,25 @@ __regargs Mesh3D *LoadLWO(char *filename, FLOAT scale) {
   Mesh3D *mesh = NULL;
   IffFileT iff;
 
-  if (OpenIff(&iff, filename)) {
-    if (iff.header.type == ID_LWOB || iff.header.type == ID_LWO2) {
-      mesh = MemAlloc(sizeof(Mesh3D), MEMF_PUBLIC|MEMF_CLEAR);
+  OpenIff(&iff, filename);
 
-      Log("Reading '%s' file", filename);
+  if (iff.header.type != ID_LWOB && iff.header.type != ID_LWO2)
+    Panic("[LWO] File '%s' has wrong type!\n", filename);
 
-      while (ParseChunk(&iff)) {
-        switch (iff.chunk.type) {
-          case ID_PNTS: ReadPNTS(mesh, &iff, scale); break;
-          case ID_POLS: ReadPOLS(mesh, &iff); break;
-          default: SkipChunk(&iff); break;
-        }
-      }
+  mesh = MemAlloc(sizeof(Mesh3D), MEMF_PUBLIC|MEMF_CLEAR);
 
-      Log(".\n");
-    }
+  Log("[LWO] Reading '%s' file\n", filename);
 
-    CloseIff(&iff);
-  } else {
-    Log("File '%s' missing.\n", filename);
+  while (ParseChunk(&iff)) {
+    if (iff.chunk.type == ID_PNTS)
+      ReadPNTS(mesh, &iff, scale);
+    else if (iff.chunk.type == ID_POLS)
+      ReadPOLS(mesh, &iff);
+    else
+      SkipChunk(&iff);
   }
+
+  CloseIff(&iff);
 
   return mesh;
 }

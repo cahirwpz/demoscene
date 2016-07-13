@@ -2,20 +2,14 @@
 #include "io.h"
 #include "iff.h"
 
-__regargs BOOL OpenIff(IffFileT *iff, CONST STRPTR filename) {
+__regargs void OpenIff(IffFileT *iff, CONST STRPTR filename) {
   iff->file = OpenFile(filename, IOF_BUFFERED);
 
-  if (!iff->file) {
-    Log("File '%s' missing.\n", filename);
-    return FALSE;
-  }
+  if (FileRead(iff->file, &iff->header, sizeof(IffHeaderT)))
+    if (iff->header.magic == ID_FORM)
+      return;
 
-  if (FileRead(iff->file, &iff->header, sizeof(IffHeaderT)) &&
-      (iff->header.magic == ID_FORM))
-    return TRUE;
-
-  CloseFile(iff->file);
-  return FALSE;
+  Panic("[IFF] File '%s' is not an IFF file!\n", filename);
 }
 
 __regargs BOOL ParseChunk(IffFileT *iff) {

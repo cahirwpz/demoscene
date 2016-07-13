@@ -102,43 +102,43 @@ __regargs PixmapT *
 LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
   PixmapT *pixmap = NULL;
   TgaHeaderT hdr;
-  FileT *tga;
+  FileT *tga = OpenFile(filename, IOF_BUFFERED);
 
-  if ((tga = OpenFile(filename, IOF_BUFFERED))) {
-    if (FileRead(tga, &hdr, sizeof(TgaHeaderT))) {
-      hdr.cmapFirst = swap8(hdr.cmapFirst);
-      hdr.cmapLength = swap8(hdr.cmapLength);
-      hdr.xOrigin = swap8(hdr.xOrigin);
-      hdr.yOrigin = swap8(hdr.yOrigin);
-      hdr.width = swap8(hdr.width);
-      hdr.height = swap8(hdr.height);
+  Panic("[TGA] Reading '%s'\n", filename);
 
-      (void)FileSeek(tga, hdr.idLength, SEEK_CUR);
+  if (FileRead(tga, &hdr, sizeof(TgaHeaderT))) {
+    hdr.cmapFirst = swap8(hdr.cmapFirst);
+    hdr.cmapLength = swap8(hdr.cmapLength);
+    hdr.xOrigin = swap8(hdr.xOrigin);
+    hdr.yOrigin = swap8(hdr.yOrigin);
+    hdr.width = swap8(hdr.width);
+    hdr.height = swap8(hdr.height);
 
-      {
-        BOOL gray = (hdr.imageType == TGA_GRAY) && (hdr.depth == 8);
-        BOOL cmap = (hdr.imageType == TGA_CMAP) && (hdr.depth == 8) &&
-          (hdr.cmapEntrySize == 24);
-        BOOL rgb = (hdr.imageType == TGA_RGB) &&
-          (hdr.depth == 24 || hdr.depth == 32);
+    (void)FileSeek(tga, hdr.idLength, SEEK_CUR);
 
-        if (gray || cmap || rgb) {
-          pixmap = NewPixmap(hdr.width, hdr.height, 
-                             tgaType[hdr.imageType], memoryFlags);
-          if (cmap)
-            pixmap->palette = ReadColorMap(&hdr, tga);
-          ReadData(&hdr, tga, pixmap);
-          PixmapConvert(pixmap, type);
-        } else {
-          Log("[TGA] Image type not supported!\n");
-        }
+    {
+      BOOL gray = (hdr.imageType == TGA_GRAY) && (hdr.depth == 8);
+      BOOL cmap = (hdr.imageType == TGA_CMAP) && (hdr.depth == 8) &&
+        (hdr.cmapEntrySize == 24);
+      BOOL rgb = (hdr.imageType == TGA_RGB) &&
+        (hdr.depth == 24 || hdr.depth == 32);
+
+      if (gray || cmap || rgb) {
+        pixmap = NewPixmap(hdr.width, hdr.height, 
+                           tgaType[hdr.imageType], memoryFlags);
+        if (cmap)
+          pixmap->palette = ReadColorMap(&hdr, tga);
+        ReadData(&hdr, tga, pixmap);
+        PixmapConvert(pixmap, type);
+      } else {
+        Panic("[TGA] Image type not supported!\n");
       }
     }
-
-    CloseFile(tga);
   } else {
-    Log("File '%s' missing.\n", filename);
+    Panic("[TGA] Not a TGA file!\n");
   }
+
+  CloseFile(tga);
 
   return pixmap;
 }

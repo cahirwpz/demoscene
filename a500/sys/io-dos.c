@@ -29,14 +29,12 @@ FileT *OpenFile(CONST STRPTR path asm("d1"), UWORD flags asm("d0")) {
   FileT *file = MemAlloc(sizeof(FileT) + ((flags & IOF_BUFFERED) ? SECTOR : 0),
                          MEMF_PUBLIC|MEMF_CLEAR);
 
-  if ((file->handle = Open(path, MODE_OLDFILE))) {
-    file->flags = flags;
-    file->buf.pos = file->buf.data;
-    return file;
-  }
+  if (!(file->handle = Open(path, MODE_OLDFILE)))
+    Panic("[IO] File '%s' is missing!\n", path);
 
-  MemFree(file);
-  return NULL;
+  file->flags = flags;
+  file->buf.pos = file->buf.data;
+  return file;
 }
 
 void CloseFile(FileT *file asm("a0")) {

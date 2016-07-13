@@ -299,11 +299,6 @@ __regargs ShapeT *LoadShape(char *filename) {
   ShapeT *shape = NULL;
   WORD pass = 0;
 
-  if (!file) {
-    Log("File '%s' missing.\n", filename);
-    return NULL;
-  }
-
   for (pass = 0; pass < 2; pass++) {
     WORD points = 0, polygons = 0;
     WORD i = 0, j = 0, k = 0;

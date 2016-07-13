@@ -23,7 +23,7 @@ typedef struct IffFile {
   IffChunkT chunk;
 } IffFileT;
 
-__regargs BOOL OpenIff(IffFileT *iff, CONST STRPTR filename);
+__regargs void OpenIff(IffFileT *iff, CONST STRPTR filename);
 __regargs BOOL ParseChunk(IffFileT *iff);
 __regargs BOOL ReadChunk(IffFileT *iff, APTR ptr);
 __regargs void SkipChunk(IffFileT *iff);
