@@ -4,7 +4,8 @@
 #include "sprite.h"
 #include "gui.h"
 #include "event.h"
-#include "ilbm.h"
+#include "memory.h"
+#include "png.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -14,24 +15,24 @@ static BitmapT *screen;
 static CopListT *cp;
 static SpriteT *pointer;
 static CopInsT *sprptr[8];
-static BitmapT *font;
+static PixmapT *font;
 
 /* Test program */
-static GUI_BUTTON(_b0, 0, 0, 48, 10, "Play");
-static GUI_BUTTON(_b1, 48, 20, 64, 10, "Pause");
-static GUI_BUTTON(_b2, 96, 40, 48, 10, "Stop");
-static GUI_BUTTON(_b3, 144, 60, 80, 10, "Forward");
-static GUI_BUTTON(_b4, 192, 80, 80, 10, "Reverse");
-static GUI_LABEL(_l0, 0, 192, 320, 10, FRAME_FLAT, 40);
+static GUI_BUTTON(_b0, 0, 0, 48, 12, "Play");
+static GUI_BUTTON(_b1, 48, 20, 64, 12, "Pause");
+static GUI_BUTTON(_b2, 96, 40, 48, 12, "Stop");
+static GUI_BUTTON(_b3, 144, 60, 80, 12, "Forward");
+static GUI_BUTTON(_b4, 192, 80, 80, 12, "Reverse");
+static GUI_LABEL(_l0, 0, 192, 320, 12, FRAME_FLAT, 40);
 static GUI_GROUP(_buttons, _b0, _b1, _b2, _b3, _b4, _l0);
 static GUI_MAIN(_buttons);
 
 static void Load() {
-  font = LoadILBMCustom("data/text-scroll-font.ilbm", 0);
+  font = LoadPNG("data/koi8r.8x8.png", PM_GRAY1, MEMF_PUBLIC);
 }
 
 static void UnLoad() {
-  DeleteBitmap(font);
+  DeletePixmap(font);
 }
 
 static void Init() {

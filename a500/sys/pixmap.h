@@ -12,6 +12,7 @@ typedef enum {
 
 #define PM_CMAP4  (_PM_CMAP|PM_DEPTH_4)
 #define PM_CMAP8  (_PM_CMAP|PM_DEPTH_8)
+#define PM_GRAY1  (_PM_GRAY|PM_DEPTH_1)
 #define PM_GRAY4  (_PM_GRAY|PM_DEPTH_4)
 #define PM_GRAY8  (_PM_GRAY|PM_DEPTH_8)
 #define PM_GRAY16 (_PM_GRAY|PM_DEPTH_16)

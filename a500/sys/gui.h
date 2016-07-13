@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "gfx.h"
+#include "pixmap.h"
 
 #define EV_GUI 3
 
@@ -75,7 +76,7 @@ typedef struct GuiState {
   WidgetBaseT *lastEntered;
   WidgetBaseT *lastPressed;
   BitmapT *screen;
-  BitmapT *font;
+  PixmapT *font;
 } GuiStateT;
 
 typedef void (*WidgetFuncT)(GuiStateT *, WidgetT *);
@@ -99,7 +100,7 @@ typedef void (*WidgetFuncT)(GuiStateT *, WidgetT *);
 
 struct MouseEvent;
 
-void GuiInit(GuiStateT *gui, BitmapT *screen, BitmapT *font);
+void GuiInit(GuiStateT *gui, BitmapT *screen, PixmapT *font);
 void GuiRedraw(GuiStateT *gui);
 void GuiHandleMouseEvent(GuiStateT *gui, struct MouseEvent *ev);
 void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg);

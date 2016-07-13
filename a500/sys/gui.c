@@ -11,9 +11,9 @@ static inline void PushGuiEvent(WidgetT *wg, WORD event) {
 
 /* Widget handling functions. */
 static void DrawText(GuiStateT *gui, WORD x, WORD y, UBYTE *text) {
-  WORD swidth = gui->font->bytesPerRow;
+  WORD swidth = gui->font->width / 8;
   WORD dwidth = gui->screen->bytesPerRow;
-  UBYTE *src = gui->font->planes[0];
+  UBYTE *src = gui->font->pixels;
   UBYTE *dst = gui->screen->planes[2] + y * dwidth;
   WORD n = strlen(text);
   WORD k = (x + 7) >> 3;
@@ -75,7 +75,7 @@ static void LabelRedraw(GuiStateT *gui, LabelT *wg) {
 
   if (wg->frame) {
     DrawFrame(gui->screen, &wg->area, 1);
-    DrawText(gui, wg->area.x + 1, wg->area.y + 1, wg->text);
+    DrawText(gui, wg->area.x + 2, wg->area.y + 2, wg->text);
   } else {
     DrawText(gui, wg->area.x, wg->area.y, wg->text);
   }
@@ -92,7 +92,7 @@ static void ButtonRedraw(GuiStateT *gui, ButtonT *wg) {
 
   if (wg->label) {
     BlitterSetArea(gui->screen, 2, &wg->area, 0);
-    DrawText(gui, wg->area.x + 1, wg->area.y + 1, wg->label);
+    DrawText(gui, wg->area.x + 2, wg->area.y + 2, wg->label);
   }
 }
 
@@ -167,7 +167,7 @@ static WidgetFuncT WidgetReleaseFunc[WT_LAST] = {
 #define WidgetRelease(gui, wg) \
   WidgetReleaseFunc[(wg)->type]((gui), (WidgetT *)wg)
 
-void GuiInit(GuiStateT *gui, BitmapT *screen, BitmapT *font) {
+void GuiInit(GuiStateT *gui, BitmapT *screen, PixmapT *font) {
   gui->screen = screen;
   gui->font = font;
 }
