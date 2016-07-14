@@ -415,6 +415,56 @@ __regargs void MemFree(APTR memoryBlock) {
   }
 }
 
+__regargs void MemResize(APTR memoryBlock, ULONG byteSize) {
+  AreaT *area = FindAreaOf(memoryBlock);
+
+  if (area) {
+    BlockT *blk = (BlockT *)(memoryBlock - offsetof(BlockT, data));
+    LONG blkSize = -blk->size;
+    LONG size = align(offsetof(BlockT, data) + byteSize, BLK_UNIT);
+
+    CheckBlock(blk, area, "[MemResize]");
+    CheckBlock(area->first, area, "[MemResize]");
+    CheckBlock(area->last, area, "[MemResize]");
+
+    if (size < blkSize) {
+      ULONG leftover = blkSize - size;
+
+      /* shrink block if unused memory at the end of block is large enough */
+      if (leftover >= sizeof(BlockT)) {
+        BlockT *new = (APTR)blk + size;
+
+        blk->size = -size;
+        new->magic = BLK_MAGIC;
+        new->size = -leftover;
+
+        FreeBlock(new, area);
+        MergeBlock(new, area);
+      }
+    } else if (size > blkSize) {
+      BlockT *succ = BlockAfter(blk);
+
+      CheckBlock(succ, area, "[MemResize]");
+
+      if (succ->size >= size - blkSize) {
+        /* expand block if enough free space in successor block */
+        SplitBlockForward(succ, area, size - blkSize);
+        AllocBlock(succ, area);
+
+        blk->size = -size;
+      } else {
+        /* the block would've had to be moved to satisfy the request */
+        Log("[MemResize] Failed to resize $%lx to %ldB.\n",
+            (LONG)blk, byteSize);
+        MemDebugInternal(area, "[MemResize]");
+        exit(10);
+      }
+    }
+  } else {
+    Panic("[MemResize] block $%lx not found!\n", (LONG)memoryBlock);
+  }
+}
+
 __regargs LONG MemTypeOf(APTR address) {
   if (INSIDE(address, chip))
     return MEMF_CHIP;
