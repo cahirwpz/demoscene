@@ -10,27 +10,39 @@
 LONG __chipmem, __fastmem; /* Configuration variables placed in common area. */
 
 #define BLK_MAGIC 0xDEADC0DE
-#define BLK_USED  1
 #define BLK_UNIT  8
-#define BLK_MASK  (BLK_UNIT - 1)
 #define BLK_ALIGN __attribute__((aligned(BLK_UNIT)))
 
-typedef struct Block {
-  ULONG magic;
-  ULONG size;
-  struct Block *prev;
-  struct Block *next;
-} BLK_ALIGN BlockT;
+typedef struct Block BlockT;
 
-typedef struct Area {
-  char   *name;    /* description */
-  BlockT *first;   /* first free region */
-  BlockT *last;    /* last free region */
-  APTR   upper;    /* upper memory bound + 1 */
-  ULONG  freeMem;  /* total number of free bytes */
-  ULONG  maxUsage; /* minimum recorded number of free bytes */
-  BlockT lower[0]; /* first block */
-} AreaT;
+struct Block {
+  LONG magic;
+  LONG size;         /* including header; size < 0 => used, size > 0 => free */
+  union {
+    struct {
+      BlockT *_prev;
+      BlockT *_next;
+    } list;
+    UBYTE _data[0];
+  } u;
+} BLK_ALIGN;
+
+#define prev u.list._prev
+#define next u.list._next
+#define data u._data
+
+typedef struct Area AreaT;
+
+struct Area {
+  AreaT  *succ;      /* link to next area */
+  ULONG  attributes; /* memory attributes */
+  BlockT *first;     /* first free block */
+  BlockT *last;      /* last free block */
+  APTR   upper;      /* upper memory bound + 1 */
+  ULONG  freeMem;    /* total number of free bytes */
+  ULONG  maxUsage;   /* minimum recorded number of free bytes */
+  BlockT lower[0];   /* first block */
+};
 
 #define INSIDE(ptr, area) \
   ((APTR)(ptr) >= (APTR)((area)->lower) && (APTR)(ptr) <= (APTR)((area)->upper))
@@ -39,17 +51,25 @@ typedef struct Area {
 
 static AreaT *chip, *fast;
 
+static const char *MemoryName(ULONG attributes) {
+  if (attributes & MEMF_CHIP)
+    return "chip";
+  if (attributes & MEMF_FAST)
+    return "fast";
+  return "public";
+}
+
 __regargs static AreaT *MemPoolAlloc(ULONG byteSize, ULONG attributes) {
-  char *const name = (attributes & MEMF_CHIP) ? "chip" : "fast";
   AreaT *area; 
 
-  byteSize = (byteSize + BLK_MASK) & ~BLK_MASK;
+  byteSize = align(byteSize, BLK_UNIT);
   
   if (!(area = AllocMem(byteSize + sizeof(AreaT), attributes)))
     Panic("[Mem] Failed to allocate %s memory pool of %ldkB!\n",
-          name, KB(byteSize));
+          MemoryName(attributes), KB(byteSize));
 
-  area->name = name;
+  area->succ = NULL;
+  area->attributes = attributes | MEMF_PUBLIC;
   area->first = area->lower;
   area->last = area->lower;
   area->upper = (APTR)area->lower + byteSize;
@@ -72,7 +92,9 @@ void MemInit() {
 
   if (__fastmem == 0)
     __fastmem = DEFAULT_FAST_CHUNK;
-  fast = MemPoolAlloc(__fastmem, MEMF_PUBLIC);
+  fast = MemPoolAlloc(__fastmem, MEMF_FAST);
+
+  fast->succ = chip;
 }
 
 void MemKill() {
@@ -89,16 +111,29 @@ void MemKill() {
 ADD2INIT(MemInit, -20);
 ADD2EXIT(MemKill, -20);
 
-static __regargs BOOL BlockCheckInternal(BlockT *blk, AreaT *area) {
+static inline BlockT *BlockAfter(BlockT *blk) {
+  return (APTR)blk + abs(blk->size);
+}
+
+static __regargs AreaT *FindAreaOf(APTR memoryBlock) {
+  AreaT *area = fast;
+
+  while (area && OUTSIDE(memoryBlock, area))
+    area = area->succ;
+
+  return area;
+}
+
+static __regargs BOOL CheckBlockInternal(BlockT *blk, AreaT *area) {
   if (!blk)
     return TRUE;
   /* block marker damaged ? */
   if (blk->magic != BLK_MAGIC)
     return FALSE;
   /* block size damaged ? */
-  if (OUTSIDE((APTR)blk + (blk->size & ~BLK_MASK), area))
+  if (OUTSIDE(BlockAfter(blk), area))
     return FALSE;
-  if (blk->size & BLK_USED)
+  if (blk->size < 0)
     return TRUE;
   /* backward pointer damaged ? */
   if (blk->prev && OUTSIDE(blk->prev, area))
@@ -112,33 +147,37 @@ static __regargs BOOL BlockCheckInternal(BlockT *blk, AreaT *area) {
 static __regargs void MemDebugInternal(AreaT *area, const char *msg) {
   BlockT *blk = (BlockT *)area->lower;
 
-  Log("%s Area $%lx - $%lx of %s memory (%ldkB free):\n", msg,
-      (LONG)area->lower, (LONG)area->upper, area->name, KB(area->freeMem));
+  Log("%s Area $%lx - $%lx of %s memory (%ldkB free)\n",
+      msg, (LONG)area->lower, (LONG)area->upper, 
+      MemoryName(area->attributes), KB(area->freeMem));
 
   do {
-    if (blk->size & BLK_USED) {
-      Log(" $%lx U %6ld\n", (LONG)blk, blk->size & ~BLK_MASK);
+    if (blk->size < 0) {
+      Log(" $%lx U %6ld\n", (LONG)blk, -blk->size);
     } else {
       Log(" $%lx F %6ld ($%lx, $%lx)\n",
-          (LONG)blk, blk->size & ~BLK_MASK, (LONG)blk->prev, (LONG)blk->next);
+          (LONG)blk, blk->size, (LONG)blk->prev, (LONG)blk->next);
     }
 
-    if (!BlockCheckInternal(blk, area))
+    if (!CheckBlockInternal(blk, area))
       Panic("%s Block at $%lx damaged!\n", msg, (LONG)blk);
 
-    blk = (BlockT *)((APTR)blk + (blk->size & ~BLK_MASK));
+    blk = BlockAfter(blk);
   } while ((APTR)blk < area->upper);
 }
 
 __regargs void MemDebug(ULONG attributes) {
-  if (attributes & (MEMF_CHIP | MEMF_PUBLIC))
-    MemDebugInternal(chip, "[MemDebug]");
-  if (attributes & (MEMF_FAST | MEMF_PUBLIC))
-    MemDebugInternal(fast, "[MemDebug]");
+  AreaT *area = fast;
+  
+  while (area) {
+    if (area->attributes & attributes)
+      MemDebugInternal(area, "[MemDebug]");
+    area = area->succ;
+  }
 }
 
-static __regargs void BlockCheck(BlockT *blk, AreaT *area, const char *msg) {
-  if (!BlockCheckInternal(blk, area))
+static __regargs void CheckBlock(BlockT *blk, AreaT *area, const char *msg) {
+  if (!CheckBlockInternal(blk, area))
     MemDebugInternal(area, msg);
 }
 
@@ -147,7 +186,7 @@ static __regargs LONG MemLargest(AreaT *area) {
   LONG size = 0;
 
   while (curr) {
-    BlockCheck(curr, area, "[MemLargest]");
+    CheckBlock(curr, area, "[MemLargest]");
     if (curr->size > size)
       size = curr->size;
     curr = curr->next;
@@ -187,74 +226,69 @@ __regargs LONG MemUsed(ULONG attributes) {
   return chipUsed + fastUsed;
 }
 
-static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize, ULONG attributes)
-{
-  BlockT *curr;
-  ULONG size = (byteSize + BLK_UNIT * 2 - 1) & ~BLK_MASK;
+static BlockT *FindBlockForward(AreaT *area, LONG size) {
+  BlockT *blk = area->first;
 
-  BlockCheck(area->first, area, "[MemAlloc]");
-  BlockCheck(area->last, area, "[MemAlloc]");
-
-  /* First fit. */
-  if (attributes & MEMF_REVERSE) {
-    curr = area->last;
-
-    while (curr) {
-      BlockCheck(curr->prev, area, "[MemAlloc]");
-      if (curr->size >= size)
-        break;
-      curr = curr->prev;
-    }
-  } else {
-    curr = area->first;
-
-    while (curr) {
-      BlockCheck(curr->next, area, "[MemAlloc]");
-      if (curr->size >= size)
-        break;
-      curr = curr->next;
-    }
+  while (blk) {
+    CheckBlock(blk, area, "[MemAlloc]");
+    if (blk->size >= size)
+      break;
+    blk = blk->next;
   }
 
-  if (!curr)
-    return NULL;
+  return blk;
+}
 
-  /* Split the block if can. */
-  if (curr->size >= size + BLK_UNIT * 2) {
-    if (attributes & MEMF_REVERSE) {
-      BlockT *new = (BlockT *)((APTR)curr + (curr->size - size));
+static BlockT *FindBlockReverse(AreaT *area, LONG size) {
+  BlockT *blk = area->last;
 
-      new->magic = BLK_MAGIC;
-      new->size = size;
-      new->prev = curr;
-      new->next = curr->next;
-      (new->next ? new->next->prev : area->last) = new;
-
-      curr->size = curr->size - size;
-      curr->next = new;
-      curr = new;
-    } else {
-      BlockT *new = (BlockT *)((APTR)curr + size);
-
-      new->magic = BLK_MAGIC;
-      new->size = curr->size - size;
-      new->prev = curr;
-      new->next = curr->next;
-      (new->next ? new->next->prev : area->last) = new;
-
-      curr->size = size;
-      curr->next = new;
-    }
+  while (blk) {
+    CheckBlock(blk, area, "[MemAlloc]");
+    if (blk->size >= size)
+      break;
+    blk = blk->prev;
   }
 
-  area->freeMem -= curr->size;
+  return blk;
+}
+
+static void SplitBlockForward(BlockT *blk, AreaT *area, LONG size) {
+  BlockT *new = (BlockT *)((APTR)blk + size);
+
+  new->magic = BLK_MAGIC;
+  new->size = blk->size - size;
+  new->prev = blk;
+  new->next = blk->next;
+  (new->next ? new->next->prev : area->last) = new;
+
+  blk->size = size;
+  blk->next = new;
+}
+
+static BlockT *SplitBlockReverse(BlockT *blk, AreaT *area, LONG size) {
+  BlockT *new = (BlockT *)((APTR)blk + (blk->size - size));
+
+  new->magic = BLK_MAGIC;
+  new->size = size;
+  new->prev = blk;
+  new->next = blk->next;
+  (new->next ? new->next->prev : area->last) = new;
+
+  blk->size = blk->size - size;
+  blk->next = new;
+
+  return new;
+}
+
+static void AllocBlock(BlockT *blk, AreaT *area) {
+  area->freeMem -= blk->size;
 
   /* Take the block out of the free list. */
-  (curr->prev ? curr->prev->next : area->first) = curr->next;
-  (curr->next ? curr->next->prev : area->last) = curr->prev;
-  curr->prev = NULL;
-  curr->next = NULL;
-  curr->size |= BLK_USED;
+  (blk->prev ? blk->prev->next : area->first) = blk->next;
+  (blk->next ? blk->next->prev : area->last) = blk->prev;
+  blk->prev = NULL;
+  blk->next = NULL;
+  blk->size = -blk->size;
 
   {
     BlockT *last = area->last;
@@ -267,57 +301,49 @@ static BlockT *MemAllocInternal(AreaT *area, ULONG byteSize, ULONG attributes)
       area->maxUsage = (APTR)area->upper - (APTR)area->lower;
     }
   }
-
-  return curr;
 }
 
 __regargs APTR MemAlloc(ULONG byteSize, ULONG attributes) {
+  ULONG size = align(offsetof(BlockT, data) + byteSize, BLK_UNIT);
+  AreaT *area = fast;
   BlockT *blk = NULL;
-  AreaT *area = NULL;
-  APTR ptr;
 
-  byteSize = (byteSize + BLK_MASK) & ~BLK_MASK;
-
-  if ((attributes & MEMF_FAST) || (attributes & MEMF_PUBLIC)) {
-    area = fast; blk = MemAllocInternal(fast, byteSize, attributes);
-  }
-  if ((attributes & MEMF_CHIP) || (!blk && (attributes & MEMF_PUBLIC))) {
-    area = chip; blk = MemAllocInternal(chip, byteSize, attributes);
+  while (area) {
+    if (area->attributes & attributes) {
+      if (attributes & MEMF_REVERSE)
+        blk = FindBlockReverse(area, size);
+      else
+        blk = FindBlockForward(area, size);
+      if (blk)
+        break;
+    }
+    area = area->succ;
   }
 
   if (!blk) {
-    const char *name;
-
-    if (attributes & MEMF_CHIP)
-      name = "chip";
-    else if (attributes & MEMF_FAST)
-      name = "fast";
-    else
-      name = "public";
-
-    Log("[MemAlloc] Failed to allocate %ld bytes of %s memory.\n",
-        byteSize, name);
+    Log("[MemAlloc] Failed to allocate %ldB of %s memory.\n",
+        byteSize, MemoryName(attributes));
     MemDebug(attributes);
     exit(10);
   }
 
-  ptr = (APTR)blk + BLK_UNIT;
+  /* Split the block if can. */
+  if (blk->size >= size + sizeof(BlockT)) {
+    if (attributes & MEMF_REVERSE)
+      blk = SplitBlockReverse(blk, area, size);
+    else
+      SplitBlockForward(blk, area, size);
+  }
+
+  AllocBlock(blk, area);
 
   if (attributes & MEMF_CLEAR)
-    memset(ptr, 0, byteSize);
+    memset(blk->data, 0, byteSize);
 
-  return ptr;
+  return blk->data;
 }
 
-static void MemFreeInternal(AreaT *area, BlockT *blk) {
-  BlockCheck(blk, area, "[MemFree]");
-  BlockCheck(area->first, area, "[MemFree]");
-  BlockCheck(area->last, area, "[MemFree]");
-
-  blk->size &= ~BLK_USED;
-
-  area->freeMem += blk->size;
-
+static void FreeBlock(BlockT *blk, AreaT *area) {
   /* Put the block onto free list. */
   if (blk < area->first) {
     blk->prev = NULL;
@@ -333,7 +359,7 @@ static void MemFreeInternal(AreaT *area, BlockT *blk) {
     BlockT *pred = area->first;
 
     while (pred) {
-      BlockCheck(pred->next, area, "[MemFree]");
+      CheckBlock(pred->next, area, "[MemFree]");
       if (blk > pred && blk < pred->next)
         break;
       pred = pred->next;
@@ -345,8 +371,13 @@ static void MemFreeInternal(AreaT *area, BlockT *blk) {
     pred->next = blk;
   }
 
+  blk->size = -blk->size;
+  area->freeMem += blk->size;
+}
+
+static void MergeBlock(BlockT *blk, AreaT *area) {
   /* Check if can merge with preceding block. */
-  if (blk->prev && ((APTR)blk->prev + blk->prev->size == (APTR)blk)) {
+  if (blk->prev && (BlockAfter(blk->prev) == blk)) {
     BlockT *pred = blk->prev;
 
     pred->size += blk->size;
@@ -356,7 +387,7 @@ static void MemFreeInternal(AreaT *area, BlockT *blk) {
   }
 
   /* Check if can merge with succeeding block. */
-  if (blk->next && ((APTR)blk + blk->size == (APTR)blk->next)) {
+  if (BlockAfter(blk) == blk->next) {
     BlockT *succ = blk->next;
 
     blk->size += succ->size;
@@ -367,14 +398,20 @@ static void MemFreeInternal(AreaT *area, BlockT *blk) {
 
 __regargs void MemFree(APTR memoryBlock) {
   if (memoryBlock) {
-    BlockT *blk = (BlockT *)((APTR)memoryBlock - BLK_UNIT);
+    AreaT *area = FindAreaOf(memoryBlock);
 
-    if (INSIDE(memoryBlock, chip))
-      MemFreeInternal(chip, blk);
-    else if (INSIDE(memoryBlock, fast))
-      MemFreeInternal(fast, blk);
-    else
-      Log("[MemFree] block $%lx not found!\n", (LONG)memoryBlock);
+    if (area) {
+      BlockT *blk = (BlockT *)(memoryBlock - offsetof(BlockT, data));
+
+      CheckBlock(blk, area, "[MemFree]");
+      CheckBlock(area->first, area, "[MemFree]");
+      CheckBlock(area->last, area, "[MemFree]");
+
+      FreeBlock(blk, area);
+      MergeBlock(blk, area);
+    } else {
+      Panic("[MemFree] block $%lx not found!\n", (LONG)memoryBlock);
+    }
   }
 }
 
