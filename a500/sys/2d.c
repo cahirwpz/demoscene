@@ -301,58 +301,55 @@ __regargs ShapeT *LoadShape(char *filename) {
 
   for (pass = 0; pass < 2; pass++) {
     WORD points = 0, polygons = 0;
-    WORD i = 0, j = 0, k = 0;
+    WORD i = 0, j = 0, k = 0, old_k = 0;
     WORD origin_x, origin_y;
     char *data = file;
-    WORD n;
+    WORD n = 0;
 
-    if (!ReadNumber(&data, &origin_x))
+    if (!(ReadShort(&data, &origin_x) &&
+          ReadShort(&data, &origin_y) &&
+          EndOfLine(&data)))
       goto error;
-    if (!ReadNumber(&data, &origin_y))
-      goto error;
 
-    while (*data) {
-      if (!ReadNumber(&data, &n))
-        goto error;
+    do {
+      if (n == 0) {
+        if (!(ReadShort(&data, &n) && EndOfLine(&data)))
+          goto error;
 
-      points += n;
-      polygons++;
+        points += n;
+        polygons++;
 
-      if (pass) {
+        if (pass == 1) {
+          old_k = k;
+          shape->polygon[i++] = (IndexListT *)&shape->polygonData[j];
+          shape->polygonData[j++] = n;
+        }
+      } else {
         WORD x, y;
-        WORD old_k = k;
 
-        shape->polygon[i++] = (IndexListT *)&shape->polygonData[j];
-        shape->polygonData[j++] = n;
+        if (!(ReadShort(&data, &x) && 
+              ReadShort(&data, &y) && 
+              EndOfLine(&data)))
+          goto error;
 
-        while (--n >= 0) {
-          if (!ReadNumber(&data, &x))
-            goto error;
-          if (!ReadNumber(&data, &y))
-            goto error;
+        n--;
 
+        if (pass == 1) {
           shape->origPoint[k].x = (x - origin_x) * 16;
           shape->origPoint[k].y = (y - origin_y) * 16;
           shape->polygonData[j] = k;
           j++; k++;
+
+          if (n == 0)
+            shape->polygonData[j++] = old_k;
         }
-
-        shape->polygonData[j++] = old_k;
-
-      } else {
-        n *= 2;
-        while (--n >= 0)
-          if (!ReadNumber(&data, NULL))
-            goto error;
       }
+    } while (NextLine(&data) || n > 0);
 
-      data = SkipSpaces(data);
-    }
-
-    if (*data == '\0' && pass == 0) {
+    if (pass == 0) {
       shape = NewShape(points, polygons);
-      shape->polygonData = MemAlloc(sizeof(WORD) * (points + polygons * 2),
-                                    MEMF_PUBLIC);
+      shape->polygonData =
+        MemAlloc(sizeof(WORD) * (points + polygons * 2), MEMF_PUBLIC);
     }
   }
 

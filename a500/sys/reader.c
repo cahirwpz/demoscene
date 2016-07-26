@@ -40,28 +40,93 @@ static inline int isalnum(int c) {
   return ctype[c] & ALNUM;
 }
 
-__regargs char *SkipSpaces(char *str) {
-  do {
-    char c = *str;
-    if (!c || !isspace(c))
-      break;
-    str++;
-  } while (1);
+/* Moves cursor to next word in a line. Returns FALSE if encountered end of line
+ * or file. Always updates the pointer! Understands escape character '\' and
+ * single line comments beginning with '#' character.  */
+__regargs BOOL NextWord(char **strptr) {
+  char *str = *strptr;
+  BOOL escape = FALSE;
+  BOOL comment = FALSE;
+  BOOL found = FALSE;
+  char c;
 
-  return str;
+  while ((c = *str) && !found) {
+    if (!escape) {
+      if (c == '#')
+        comment = TRUE;
+      else if (c == '\n')
+        break;
+      else if (!comment && !isspace(c))
+        found = TRUE;
+    }
+    str++;
+    escape = (!escape && c == '\\');
+  }
+
+  *strptr = str;
+  return found;
 }
 
-__regargs char *NextLine(char *str) {
-  do {
-    char c = *str;
-    if (!c)
-      break;
-    str++;
-    if (c == '\n')
-      break;
-  } while (1);
+/* Moves cursor to first white space character after next word. Understands
+ * escape character '\'. */
+__regargs void SkipWord(char **strptr) {
+  char *str = *strptr;
+  BOOL escape = FALSE;
 
-  return str;
+  if (NextWord(&str)) {
+    char c;
+
+    while ((c = *str)) {
+      if (!escape && isspace(c))
+        break;
+      str++;
+      escape = (!escape && c == '\\');
+    }
+
+    *strptr = str;
+  }
+}
+
+/* Checks if the cursor can move through comments and white spaces to the end of
+ * line or file. If so, it updates the position of cursor and returns TRUE. */
+__regargs BOOL EndOfLine(char **strptr) {
+  char *str = *strptr;
+
+  if (NextWord(&str))
+    return FALSE;
+
+  *strptr = str;
+  return TRUE;
+}
+
+/* Moves cursor to next word of a non-empty line. Returns FALSE if there's no
+ * next line. */
+__regargs BOOL NextLine(char **strptr) {
+  char *str = *strptr;
+
+  while (!NextWord(&str)) {
+    if (*str == '\n')
+      str++;
+    if (*str == '\0')
+      break;
+  }
+
+  *strptr = str;
+  return *str;
+}
+
+/* Moves cursor to the first character of next line. If there's no next line
+ * moves cursor to '\0' character. */
+__regargs void SkipLine(char **strptr) {
+  char *str = *strptr;
+
+  while (NextWord(&str))
+    SkipWord(&str);
+
+  if (*str == '\n')
+    str++;
+
+  *strptr = str;
 }
 
 static inline WORD digit(WORD c) {
@@ -76,16 +141,24 @@ static inline WORD xdigit(WORD c) {
   return c - ('a' - 10);
 }
 
-__regargs BOOL ReadNumber(char **strptr, WORD *numptr) {
+__regargs BOOL ReadShort(char **strptr, WORD *numptr) {
+  LONG num;
+  BOOL res = ReadInt(strptr, &num);
+  *numptr = num;
+  return res;
+}
+
+__regargs BOOL ReadInt(char **strptr, LONG *numptr) {
   char *str = *strptr;
   char c;
 
-  UWORD num = 0;
+  ULONG num = 0;
   BOOL minus = FALSE;
   BOOL hex = FALSE;
 
   /* Skip white spaces. */
-  str = SkipSpaces(str);
+  if (!NextWord(&str))
+    return FALSE;
 
   /* Read optional sign character. */
   if (*str == '-') {
@@ -105,7 +178,7 @@ __regargs BOOL ReadNumber(char **strptr, WORD *numptr) {
     if (!isxdigit(c))
       return FALSE;
 
-    while (c && isxdigit(c)) {
+    while (isxdigit(c)) {
       num = num * 16 + xdigit(c);
       c = *(++str);
     }
@@ -113,7 +186,7 @@ __regargs BOOL ReadNumber(char **strptr, WORD *numptr) {
     if (!isdigit(c))
       return FALSE;
 
-    while (c && isdigit(c)) {
+    while (isdigit(c)) {
       num = num * 10 + digit(c);
       c = *(++str);
     }
@@ -127,26 +200,29 @@ __regargs BOOL ReadNumber(char **strptr, WORD *numptr) {
   return TRUE;
 }
 
+/* Symbol is defined by "[a-zA-Z][a-zA-Z0-9_\.]*" regular expression. */
 __regargs WORD ReadSymbol(char **strptr, char **symptr) {
   char *str = *strptr;
-  char *sym;
+  WORD n = 1;
 
-  sym = str = SkipSpaces(str);
-
-  if (!isalpha(*str))
+  if (!NextWord(&str))
     return 0;
 
-  str++;
+  *symptr = str;
 
-  do {
-    char c = *str;
-    if (!c || (!isalnum(c) && (c != '_') && (c != '.')))
-      break;
-    str++;
-  } while (1);
+  {
+    char c = *str++;
+
+    if (!isalpha(c))
+      return 0;
+
+    while (isalnum(c) || (c == '_') || (c == '.')) {
+      c = *str++;
+      n++;
+    }
+  }
 
   *strptr = str;
-  *symptr = sym;
 
-  return str - sym;
+  return n;
 }

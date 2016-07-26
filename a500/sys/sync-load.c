@@ -16,17 +16,11 @@ static __regargs TrackT *ReadTrack(char **strptr) {
 
     data = *strptr;
 
-    while (*data && !end) {
+    while (NextLine(&data) || !end) {
       TrackTypeT type;
       WORD pos = -1, value;
 
-      data = SkipSpaces(data);
-
       switch (*data) {
-        case '#':
-          data = NextLine(data);
-          break;
-
         case '@':
           data++;
           if (!memcmp(data, "track", 5)) {
@@ -82,7 +76,7 @@ static __regargs TrackT *ReadTrack(char **strptr) {
           break;
 
         case '$':
-          if (!ReadNumber(&data, &pos) || (pos < 0)) {
+          if (!ReadShort(&data, &pos) || (pos < 0)) {
             Log("Module position is an invalid number!\n");
             goto quit;
           }
@@ -92,7 +86,7 @@ static __regargs TrackT *ReadTrack(char **strptr) {
             goto quit;
           }
           last_pos = pos;
-          if (!ReadNumber(&data, &value)) {
+          if (!ReadShort(&data, &value)) {
             Log("Value is not a number!\n");
             goto quit;
           }
@@ -108,6 +102,11 @@ static __regargs TrackT *ReadTrack(char **strptr) {
           Log("Syntax error!\n");
           goto quit;
       }
+
+      if (!EndOfLine(&data)) {
+        Log("Cannot parse extra data!\n");
+        goto quit;
+      }
     }
 
     if (!pass) {
@@ -121,7 +120,7 @@ static __regargs TrackT *ReadTrack(char **strptr) {
   }
 
 quit:
-  *strptr = SkipSpaces(data);
+  *strptr = data;
   return track;
 }
 
