@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
 import argparse
-import json
 import logging
 import os
 import struct
 from collections import namedtuple
 from pprint import pprint
 
-from util.iff import IffFile, IffChunk, IffData
+from util.iff import IffFile, IffData
 
 Vertex = namedtuple('Vertex', 'x y z')
 Color = namedtuple('Color', 'r g b')
@@ -17,7 +16,7 @@ Surface = namedtuple('Surface', 'name color sideness')
 
 
 class LWOParserMixin(object):
-  def parseMiniChunks(self, string, as_dict=False):
+  def parseMiniChunks(self, string):
     data = IffData(string)
     chunks = []
 
@@ -28,10 +27,7 @@ class LWOParserMixin(object):
       logging.debug('Encountered %s subchunk of size %d' % (name, size))
       chunks.append(self.readChunk(name, chunk))
 
-    if as_dict:
-      chunks = dict((c.name, c.data) for c in chunks)
-
-    return chunks
+    return dict((c.name, c.data) for c in chunks)
 
   def readColor(self, data):
     return Color(*struct.unpack('>BBBx', data.read(4)))
@@ -90,7 +86,8 @@ class LWO2(IffFile, LWOParserMixin):
               'SIDE'],
     'Int32': ['FLAG', 'VERS'],
     'FloatWithEnvelope': ['ALPH', 'DIFF', 'GLOS', 'LUMI', 'SPEC', 'WRPH',
-                          'WRPW', 'TRAN', 'TRNL', 'BUMP', 'RIND', 'REFL'],
+                          'WRPW', 'TRAN', 'TRNL', 'BUMP', 'RIND', 'REFL',
+                          'TAMP'],
     'Float': ['NZOM', 'SMAN'],
     'String': ['OREF', 'STIL'],
     'Color12': ['COLR'],
@@ -144,7 +141,7 @@ class LWO2(IffFile, LWOParserMixin):
       indices = struct.unpack('>' + 'H' * points, data.read(2 * points))
       polygons.append(indices)
 
-    return [polyType, polygons]
+    return (polyType, polygons)
 
   def readNLOC(self, data):
     return [self.readFloat(data), self.readFloat(data)]
@@ -164,12 +161,12 @@ class LWO2(IffFile, LWOParserMixin):
     while not data.eof():
       tags.append(struct.unpack('>HH', data.read(4)))
 
-    return [tagType, tags]
+    return (tagType, tags)
 
   def readSURF(self, data):
     name = self.readString(data)
     source = self.readString(data)
-    chunks = self.parseMiniChunks(data.read(), True)
+    chunks = self.parseMiniChunks(data.read())
     return (name, source, chunks)
 
   def readTAGS(self, data):
@@ -200,7 +197,7 @@ class LWO2(IffFile, LWOParserMixin):
       values = [self.readFloat(data) for i in range(dimensions)]
       mapping.append((vert, values))
 
-    return [tag, dimensions, name, mapping]
+    return (tag, dimensions, name, mapping)
 
   def readVMAD(self, data):
     tag = data.read(4)
@@ -234,7 +231,7 @@ class LWO2(IffFile, LWOParserMixin):
 
 
 class LWOB(IffFile, LWOParserMixin):
-  # http://sandbox.de/osg/lightwave.htm
+  """ http://sandbox.de/osg/lightwave.htm """
 
   ChunkAliasMap = {
       'Int16': ['FLAG', 'DIFF', 'LUMI', 'SPEC', 'GLOS', 'TFLG', 'REFL', 'TRAN',
@@ -265,7 +262,7 @@ class LWOB(IffFile, LWOParserMixin):
 
   def readSURF(self, data):
     name = self.readString(data)
-    return (name, self.parseMiniChunks(data.read(), True))
+    return (name, self.parseMiniChunks(data.read()))
 
   def readTWRP(self, data):
     return struct.unpack('>HH', data.read(4))
@@ -283,25 +280,112 @@ class LWOB(IffFile, LWOParserMixin):
     return self.get('POLS')
 
 
-class LwoEncoder(json.JSONEncoder):
-  def default(self, obj):
-    if isinstance(obj, IffChunk):
-      return (obj.name, obj.data)
-    return json.JSONEncoder.default(self, obj)
+def convertLWO2(lwo, output):
+  def out(s):
+    print >>output, str(s)
+
+  tags = list(lwo['TAGS'].data)
+  clips = lwo.get('CLIP', always_list=True)
+
+  out('@imag.cnt %d\n' % len(clips))
+
+  for clip in clips:
+    index, imag = clip.data
+    out('@imag %d' % index)
+    out('stil "%s"' % imag['STIL'])
+    out('@end\n')
+
+  txuv = {}
+  for vmap in lwo.get('VMAP', always_list=True):
+    if vmap.data[0] == 'TXUV':
+      txuv[vmap.data[2]] = vmap.data[3]
+
+  srfs = list(tags)
+  for surf in lwo.get('SURF', always_list=True):
+    i = tags.index(surf.data[0])
+    srfs[i] = (surf.data[0], surf.data[2])
+
+  out('@surf.cnt %d\n' % len(tags))
+
+  surf_vmap = {}
+  for surf in srfs:
+    if type(surf) is str:
+      continue
+    name, surf = surf
+    out('@surf %d' % tags.index(name))
+    for key, value in surf.items():
+      if key == 'COLR':
+        out('colr %d %d %d' % value)
+      if key == 'SIDE':
+        out('side %d' % value)
+      if key == 'BLOK':
+        for key, value in value.items():
+          if key == 'IMAG':
+            out('imag %d' % value)
+          if key == 'VMAP':
+            surf_vmap[value] = tags.index(name)
+    out('@end\n')
+
+  pnts = lwo['PNTS']
+  out('@pnts %d' % len(pnts.data))
+  for point in pnts.data:
+    out('%f %f %f' % point)
+  out('@end\n')
+
+  vmap_txuv = []
+  for name, values in txuv.items():
+    surface = surf_vmap[name]
+    for vertex, uv in values:
+      vmap_txuv.append((surface, vertex, tuple(uv)))
+
+  out('@pnts.txuv %d' % len(vmap_txuv))
+  for _, _, uv in vmap_txuv:
+    out('%f %f' % uv)
+  out('@end\n')
+
+  pols = lwo['POLS'].data[1]
+  out('@pols %d' % len(pols))
+  for polygon in pols:
+    out('%d %s' % (len(polygon), ' '.join(map(str, polygon))))
+  out('@end\n')
+
+  pols_surf = {}
+  for ptag in lwo['PTAG']:
+    if ptag.data[0] == 'SURF':
+      ptag = ptag.data[1]
+      out('@pols.surf %d' % len(ptag))
+      for polygon, surface in ptag:
+        out(surface)
+        pols_surf[polygon] = surface
+      out('@end\n')
+
+  pols_txuv = {}
+  for i, txuv in enumerate(vmap_txuv):
+    surface, vertex, _ = txuv
+    surf_dict = pols_txuv.get(surface, {})
+    surf_dict[vertex] = i
+    pols_txuv[surface] = surf_dict
+
+  out('@pols.txuv %d' % len(pols))
+  for i, vertices in enumerate(pols):
+    surface = pols_surf[i]
+    vertices = [pols_txuv[surface][v] for v in vertices]
+    out(' '.join(map(str, vertices)))
+  out('@end\n')
 
 
 def main():
   parser = argparse.ArgumentParser(
     description=(
-      'Converts Lightwave Object (LWOB/LWO2) file to JSON representation.'))
+      'Converts Lightwave Object (LWOB/LWO2) file to textual representation.'))
   parser.add_argument(
     '-f', '--force', action='store_true',
     help='If the output object exists, the tool will' 'overwrite it.')
   parser.add_argument(
     'input', metavar='LWO', type=str, help='Input LightWave object file name.')
   parser.add_argument(
-    'output', metavar='JSON', type=str, nargs='?',
-    help='Output JSON file name.')
+    'output', metavar='OBJ', type=str, nargs='?',
+    help='Output object file name.')
   args = parser.parse_args()
 
   args.input = os.path.abspath(args.input)
@@ -310,16 +394,12 @@ def main():
     raise SystemExit('Input file "%s" does not exists!' % args.input)
 
   if args.output:
-    if not args.output.endswith('.json'):
-      try:
-        name = args.output.rsplit('.', 1)[0]
-      except:
-        pass
-      args.output = os.path.join(name + '.json')
+    name, _ = os.path.splitext(args.output)
+    args.output = os.path.join(name + '.3d')
 
     if os.path.exists(args.output) and not args.force:
       raise SystemExit(
-        'JSON file "%s" already exists (use "-f" to override).' % args.output)
+        'Object file "%s" already exists (use "-f" to override).' % args.output)
 
   lwo = LWOB.fromFile(args.input)
   if not lwo:
@@ -330,12 +410,10 @@ def main():
   for chunk in lwo.chunks:
     pprint((chunk.name, chunk.data))
 
-  if args.output:
-    logging.info('Writing JSON structure to %s file.' % args.output)
+  if args.output and lwo.form == 'LWO2':
+    logging.info('Writing object structure to %s file.' % args.output)
     with open(str(args.output), 'w') as f:
-      json.dump((lwo.form, lwo.chunks), f, cls=LwoEncoder)
-      f.write('\n')
-
+      convertLWO2(lwo, f)
 
 if __name__ == '__main__':
   logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
