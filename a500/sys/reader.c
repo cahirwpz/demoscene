@@ -40,6 +40,20 @@ static inline int isalnum(int c) {
   return ctype[c] & ALNUM;
 }
 
+__regargs BOOL MatchString(char **strptr, char *pattern) {
+  char *str = *strptr;
+
+  while (*str == *pattern) {
+    str++, pattern++;
+  }
+
+  if (*pattern)
+    return FALSE;
+
+  *strptr = str;
+  return TRUE;
+}
+
 /* Moves cursor to next word in a line. Returns FALSE if encountered end of line
  * or file. Always updates the pointer! Understands escape character '\' and
  * single line comments beginning with '#' character.  */
@@ -56,8 +70,10 @@ __regargs BOOL NextWord(char **strptr) {
         comment = TRUE;
       else if (c == '\n')
         break;
-      else if (!comment && !isspace(c))
+      else if (!comment && !isspace(c)) {
         found = TRUE;
+        break;
+      }
     }
     str++;
     escape = (!escape && c == '\\');

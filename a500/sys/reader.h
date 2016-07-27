@@ -3,6 +3,7 @@
 
 #include "common.h"
 
+__regargs BOOL MatchString(char **strptr, char *symbol);
 __regargs BOOL NextWord(char **strptr);
 __regargs void SkipWord(char **strptr);
 __regargs BOOL NextLine(char **strptr);

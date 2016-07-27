@@ -269,22 +269,108 @@ __regargs UWORD ClipPolygon2D(Point2D *in, Point2D **outp, UWORD n,
   return n;
 }
 
-__regargs ShapeT *NewShape(UWORD points, UWORD polygons) {
+#define TOPLEVEL 0
+#define PNTS 1
+#define POLS 2
+
+__regargs ShapeT *LoadShape(char *filename) {
+  char *file = LoadFile(filename, MEMF_PUBLIC);
+  char *data = file;
   ShapeT *shape = MemAlloc(sizeof(ShapeT), MEMF_PUBLIC|MEMF_CLEAR);
 
-  shape->points = points;
-  shape->polygons = polygons;
+  WORD origin_x = 0, origin_y = 0;
+  WORD points = 0, polygons = 0;
+  WORD i = 0, j = 0, k = 0;
+  WORD state = TOPLEVEL;
 
-  shape->origPoint = MemAlloc(sizeof(Point2D) * points, MEMF_PUBLIC);
-  shape->viewPoint = MemAlloc(sizeof(Point2D) * points, MEMF_PUBLIC);
-  shape->viewPointFlags = MemAlloc(points, MEMF_PUBLIC);
-  shape->polygon = MemAlloc(sizeof(IndexListT *) * polygons, MEMF_PUBLIC);
+  Log("[2D] Parsing '%s' shape\n", filename);
+
+  while (NextLine(&data)) {
+    if (state == TOPLEVEL) {
+      if (MatchString(&data, "@origin")) {
+        if (!(ReadShort(&data, &origin_x) &&
+              ReadShort(&data, &origin_y) &&
+              EndOfLine(&data)))
+          goto error;
+        Log("[2D] Origin is (%ld, %ld)\n", (LONG)origin_x, (LONG)origin_y);
+      } else if (MatchString(&data, "@pnts")) {
+        if (!(ReadShort(&data, &points) && EndOfLine(&data)))
+          goto error;
+        Log("[2D] Shape has %ld points\n", (LONG)points);
+
+        state = PNTS, i = 0;
+
+        shape->points = points;
+        shape->origPoint = MemAlloc(sizeof(Point2D) * points, MEMF_PUBLIC);
+        shape->viewPoint = MemAlloc(sizeof(Point2D) * points, MEMF_PUBLIC);
+        shape->viewPointFlags = MemAlloc(points, MEMF_PUBLIC);
+      } else if (MatchString(&data, "@pols")) {
+        if (!(ReadShort(&data, &polygons) && EndOfLine(&data)))
+          goto error;
+        Log("[2D] Shape has %ld polygons\n", (LONG)polygons);
+
+        state = POLS, i = 0, j = 0, k = 0;
+
+        shape->polygons = polygons;
+        shape->polygon = 
+          MemAlloc(sizeof(IndexListT *) * polygons, MEMF_PUBLIC);
+        shape->polygonFlags = 
+          MemAlloc(sizeof(UBYTE) * polygons, MEMF_PUBLIC);
+        shape->polygonData =
+          MemAlloc(sizeof(WORD) * (polygons * 2 + points), MEMF_PUBLIC);
+      }
+    } else if (state == PNTS) {
+      if (MatchString(&data, "@end")) {
+        if (i != points)
+          goto error;
+        state = TOPLEVEL;
+      } else {
+        WORD x, y;
+
+        if (!(ReadShort(&data, &x) && ReadShort(&data, &y) && EndOfLine(&data)))
+          goto error;
+
+        shape->origPoint[i].x = (x - origin_x) * 16;
+        shape->origPoint[i].y = (y - origin_y) * 16;
+        i++;
+      }
+    } else if (state == POLS) {
+      if (MatchString(&data, "@end")) {
+        if (i != polygons)
+          goto error;
+        state = TOPLEVEL;
+      } else {
+        WORD flags, n, first = k;
+
+        if (!(ReadShort(&data, &flags) &&
+              ReadShort(&data, &n) &&
+              EndOfLine(&data)))
+          goto error;
+
+        shape->polygon[i] = (IndexListT *)&shape->polygonData[j];
+        shape->polygonFlags[i] = flags;
+        shape->polygonData[j++] = n;
+        do {
+          shape->polygonData[j++] = k++;
+        } while (--n);
+        shape->polygonData[j++] = first;
+        i++;
+      }
+    }
+  }
 
   return shape;
+
+error:
+  Log("[2D] Parse error at position %ld!\n", (LONG)(data - file));
+  DeleteShape(shape);
+  MemFree(file);
+  return NULL;
 }
 
 __regargs void DeleteShape(ShapeT *shape) {
   if (shape) {
+    MemFree(shape->polygonFlags);
     MemFree(shape->polygonData);
     MemFree(shape->polygon);
     MemFree(shape->viewPointFlags);
@@ -292,68 +378,4 @@ __regargs void DeleteShape(ShapeT *shape) {
     MemFree(shape->origPoint);
     MemFree(shape);
   }
-}
-
-__regargs ShapeT *LoadShape(char *filename) {
-  char *file = LoadFile(filename, MEMF_PUBLIC);
-  ShapeT *shape = NULL;
-  WORD pass = 0;
-
-  for (pass = 0; pass < 2; pass++) {
-    WORD points = 0, polygons = 0;
-    WORD i = 0, j = 0, k = 0, old_k = 0;
-    WORD origin_x, origin_y;
-    char *data = file;
-    WORD n = 0;
-
-    if (!(ReadShort(&data, &origin_x) &&
-          ReadShort(&data, &origin_y) &&
-          EndOfLine(&data)))
-      goto error;
-
-    do {
-      if (n == 0) {
-        if (!(ReadShort(&data, &n) && EndOfLine(&data)))
-          goto error;
-
-        points += n;
-        polygons++;
-
-        if (pass == 1) {
-          old_k = k;
-          shape->polygon[i++] = (IndexListT *)&shape->polygonData[j];
-          shape->polygonData[j++] = n;
-        }
-      } else {
-        WORD x, y;
-
-        if (!(ReadShort(&data, &x) && 
-              ReadShort(&data, &y) && 
-              EndOfLine(&data)))
-          goto error;
-
-        n--;
-
-        if (pass == 1) {
-          shape->origPoint[k].x = (x - origin_x) * 16;
-          shape->origPoint[k].y = (y - origin_y) * 16;
-          shape->polygonData[j] = k;
-          j++; k++;
-
-          if (n == 0)
-            shape->polygonData[j++] = old_k;
-        }
-      }
-    } while (NextLine(&data) || n > 0);
-
-    if (pass == 0) {
-      shape = NewShape(points, polygons);
-      shape->polygonData =
-        MemAlloc(sizeof(WORD) * (points + polygons * 2), MEMF_PUBLIC);
-    }
-  }
-
-error:
-  MemFree(file);
-  return shape;
 }

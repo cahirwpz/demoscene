@@ -44,11 +44,11 @@ typedef struct Shape {
   Point2D *viewPoint;
   UBYTE *viewPointFlags;
   IndexListT **polygon;
+  UBYTE *polygonFlags;
   WORD *polygonData;
 } ShapeT;
 
-__regargs ShapeT *NewShape(UWORD points, UWORD polygons);
-__regargs void DeleteShape(ShapeT *shape);
 __regargs ShapeT *LoadShape(char *filename);
+__regargs void DeleteShape(ShapeT *shape);
 
 #endif

@@ -21,7 +21,7 @@ static WORD plane, planeC;
 
 static void Load() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  shape = LoadShape("boxes.2d");
+  shape = LoadShape("night.2d");
   palette = LoadPalette("boxes-pal.ilbm");
 }
 
