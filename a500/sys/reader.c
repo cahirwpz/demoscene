@@ -1,4 +1,5 @@
 #include "reader.h"
+#include "ffp.h"
 
 #define SPACE   1
 #define DIGIT   2
@@ -40,7 +41,7 @@ static inline int isalnum(int c) {
   return ctype[c] & ALNUM;
 }
 
-__regargs BOOL MatchString(char **strptr, char *pattern) {
+__regargs BOOL MatchString(char **strptr, const char *pattern) {
   char *str = *strptr;
 
   while (*str == *pattern) {
@@ -157,6 +158,13 @@ static inline WORD xdigit(WORD c) {
   return c - ('a' - 10);
 }
 
+__regargs BOOL ReadByte(char **strptr, BYTE *numptr) {
+  LONG num;
+  BOOL res = ReadInt(strptr, &num);
+  *numptr = num;
+  return res;
+}
+
 __regargs BOOL ReadShort(char **strptr, WORD *numptr) {
   LONG num;
   BOOL res = ReadInt(strptr, &num);
@@ -168,7 +176,7 @@ __regargs BOOL ReadInt(char **strptr, LONG *numptr) {
   char *str = *strptr;
   char c;
 
-  ULONG num = 0;
+  LONG num = 0;
   BOOL minus = FALSE;
   BOOL hex = FALSE;
 
@@ -177,15 +185,11 @@ __regargs BOOL ReadInt(char **strptr, LONG *numptr) {
     return FALSE;
 
   /* Read optional sign character. */
-  if (*str == '-') {
-    minus = TRUE;
-    str++;
-  }
+  if (*str == '-')
+    str++, minus = TRUE;
 
-  if (*str == '$') {
-    hex = TRUE;
-    str++;
-  }
+  if (*str == '$')
+    str++, hex = TRUE;
 
   /* Read at least one digit. */
   c = *str;
@@ -212,6 +216,46 @@ __regargs BOOL ReadInt(char **strptr, LONG *numptr) {
 
   if (numptr)
     *numptr = minus ? -num : num;
+
+  return TRUE;
+}
+
+__regargs BOOL ReadFloat(char **strptr, FLOAT *numptr) {
+  char *str = *strptr;
+  char c;
+
+  LONG p = 0, q = 1;
+  BOOL minus = FALSE, dot = FALSE;
+
+  /* Skip white spaces. */
+  if (!NextWord(&str))
+    return FALSE;
+
+  /* Read optional sign character. */
+  if (*str == '-')
+    str++, minus = TRUE;
+
+  /* Read at least one digit. */
+  if (!isdigit(c = *str++))
+    return FALSE;
+
+  while (1) {
+    if (!dot && c == '.') {
+      dot = TRUE;
+    } else if (!isdigit(c)) {
+      break;
+    } else {
+      p = p * 10 + digit(c);
+      if (dot)
+        q *= 10;
+    }
+    c = *str++;
+  }
+
+  *strptr = str;
+
+  if (numptr)
+    *numptr = SPDiv(SPFlt(minus ? -p : p), SPFlt(q));
 
   return TRUE;
 }

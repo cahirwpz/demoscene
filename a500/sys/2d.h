@@ -40,12 +40,13 @@ typedef struct Shape {
   WORD points;
   WORD polygons;
 
+  Point2D origin;
+
   Point2D *origPoint;
   Point2D *viewPoint;
   UBYTE *viewPointFlags;
   IndexListT **polygon;
   UBYTE *polygonFlags;
-  WORD *polygonData;
 } ShapeT;
 
 __regargs ShapeT *LoadShape(char *filename);
