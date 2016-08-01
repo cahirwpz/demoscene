@@ -287,12 +287,13 @@ def convertLWO2(lwo, output):
   tags = list(lwo['TAGS'].data)
   clips = lwo.get('CLIP', always_list=True)
 
-  out('@imag.cnt %d\n' % len(clips))
+  if clips:
+    out('@image.cnt %d\n' % len(clips))
 
   for clip in clips:
     index, imag = clip.data
-    out('@imag %d' % index)
-    out('stil "%s"' % imag['STIL'])
+    out('@image %d' % index)
+    out('file "%s"' % imag['STIL'])
     out('@end\n')
 
   txuv = {}
@@ -315,13 +316,13 @@ def convertLWO2(lwo, output):
     out('@surf %d' % tags.index(name))
     for key, value in surf.items():
       if key == 'COLR':
-        out('colr %d %d %d' % value)
+        out('color %d %d %d' % value)
       if key == 'SIDE':
         out('side %d' % value)
       if key == 'BLOK':
         for key, value in value.items():
           if key == 'IMAG':
-            out('imag %d' % value)
+            out('texture %d' % value)
           if key == 'VMAP':
             surf_vmap[value] = tags.index(name)
     out('@end\n')
@@ -338,40 +339,39 @@ def convertLWO2(lwo, output):
     for vertex, uv in values:
       vmap_txuv.append((surface, vertex, tuple(uv)))
 
-  out('@pnts.txuv %d' % len(vmap_txuv))
-  for _, _, uv in vmap_txuv:
-    out('%f %f' % uv)
-  out('@end\n')
-
-  pols = lwo['POLS'].data[1]
-  out('@pols %d' % len(pols))
-  for polygon in pols:
-    out('%d %s' % (len(polygon), ' '.join(map(str, polygon))))
-  out('@end\n')
+  if vmap_txuv:
+    out('@pnts.uv %d' % len(vmap_txuv))
+    for _, _, uv in vmap_txuv:
+      out('%f %f' % uv)
+    out('@end\n')
 
   pols_surf = {}
-  for ptag in lwo['PTAG']:
+  for ptag in lwo.get('PTAG', always_list=True):
     if ptag.data[0] == 'SURF':
       ptag = ptag.data[1]
-      out('@pols.surf %d' % len(ptag))
       for polygon, surface in ptag:
-        out(surface)
         pols_surf[polygon] = surface
-      out('@end\n')
 
-  pols_txuv = {}
-  for i, txuv in enumerate(vmap_txuv):
-    surface, vertex, _ = txuv
-    surf_dict = pols_txuv.get(surface, {})
-    surf_dict[vertex] = i
-    pols_txuv[surface] = surf_dict
-
-  out('@pols.txuv %d' % len(pols))
-  for i, vertices in enumerate(pols):
-    surface = pols_surf[i]
-    vertices = [pols_txuv[surface][v] for v in vertices]
-    out(' '.join(map(str, vertices)))
+  pols = lwo['POLS'].data[1]
+  out('@pols %d %d' % (len(pols), sum(map(len, lwo['POLS'].data[1]))))
+  for i, polygon in enumerate(pols):
+    out('%d %s' % (pols_surf[i], ' '.join(map(str, polygon))))
   out('@end\n')
+
+  if vmap_txuv:
+    pols_txuv = {}
+    for i, txuv in enumerate(vmap_txuv):
+      surface, vertex, _ = txuv
+      surf_dict = pols_txuv.get(surface, {})
+      surf_dict[vertex] = i
+      pols_txuv[surface] = surf_dict
+
+    out('@pols.uv %d %d' % (len(pols), sum(map(len, lwo['POLS'].data[1]))))
+    for i, vertices in enumerate(pols):
+      surface = pols_surf[i]
+      vertices = [pols_txuv[surface][v] for v in vertices]
+      out(' '.join(map(str, vertices)))
+    out('@end\n')
 
 
 def main():

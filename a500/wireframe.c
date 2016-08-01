@@ -22,9 +22,7 @@ static CopInsT *bplptr[DEPTH];
 
 static void Load() {
   palette = LoadPalette("wireframe-pal.ilbm");
-  mesh = LoadLWO("codi.lwo", SPFlt(256));
-  // mesh = LoadLWO("new_2.lwo", SPFlt(80));
-  // mesh = LoadLWO("cube.lwo", SPFlt(50));
+  mesh = LoadMesh3D("pilka.3d", SPFlt(50));
   CalculateVertexFaceMap(mesh);
   CalculateFaceNormals(mesh);
   CalculateEdges(mesh);

@@ -129,7 +129,7 @@ class IffFile(collections.Sequence):
   def get(self, name, always_list=False):
     chunks = [c for c in self.chunks if c.name == name]
 
-    if not chunks:
+    if not chunks and not always_list:
       raise ValueError('No chunk named %s.' % name)
 
     if len(chunks) == 1 and not always_list:

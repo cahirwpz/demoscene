@@ -44,9 +44,8 @@ static inline int isalnum(int c) {
 __regargs BOOL MatchString(char **data, const char *pattern) {
   char *str = *data;
 
-  while (*str == *pattern) {
+  while (*str == *pattern)
     str++, pattern++;
-  }
 
   if (*pattern)
     return FALSE;
@@ -62,26 +61,24 @@ __regargs BOOL NextWord(char **data) {
   char *str = *data;
   BOOL escape = FALSE;
   BOOL comment = FALSE;
-  BOOL found = FALSE;
   char c;
 
-  while ((c = *str) && !found) {
+  while ((c = *str)) {
     if (!escape) {
       if (c == '#')
         comment = TRUE;
       else if (c == '\n')
         break;
       else if (!comment && !isspace(c)) {
-        found = TRUE;
-        break;
+        *data = str;
+        return TRUE;
       }
     }
     str++;
     escape = (!escape && c == '\\');
   }
 
-  *data = str;
-  return found;
+  return FALSE;
 }
 
 /* Moves cursor to first white space character after next word. Understands
@@ -236,7 +233,9 @@ __regargs BOOL ReadFloat(char **data, FLOAT *numptr) {
     str++, minus = TRUE;
 
   /* Read at least one digit. */
-  if (!isdigit(c = *str++))
+  c = *str;
+
+  if (!isdigit(c))
     return FALSE;
 
   while (1) {
@@ -249,13 +248,13 @@ __regargs BOOL ReadFloat(char **data, FLOAT *numptr) {
       if (dot)
         q *= 10;
     }
-    c = *str++;
+    c = *(++str);
   }
 
   *data = str;
 
   if (numptr)
-    *numptr = SPDiv(SPFlt(minus ? -p : p), SPFlt(q));
+    *numptr = SPDiv(SPFlt(q), SPFlt(minus ? -p : p));
 
   return TRUE;
 }

@@ -3,8 +3,13 @@
 
 #include "sort.h"
 #include "2d.h"
+#include "pixmap.h"
 
 /* 3D transformations */
+
+typedef struct {
+  WORD u, v;
+} UVCoord;
 
 typedef struct {
   WORD x, y, z;
@@ -44,32 +49,48 @@ __regargs UWORD ClipPolygon3D(Point3D *in, Point3D **outp, UWORD n,
 /* 3D mesh representation */
 
 typedef struct {
+  PixmapT *pixmap;
+  char filename[0];
+} MeshImageT;
+
+typedef struct {
+  UBYTE r, g, b;
+  UBYTE sideness;
+  WORD  texture;
+} MeshSurfaceT;
+
+typedef struct {
   WORD vertices;
   WORD faces;
   WORD edges;
+  WORD surfaces;
+  WORD images;
 
+  FLOAT scale;
+
+  Point3D *origVertex;
   Point3D *vertex;
+  UVCoord *uv;
   Point3D *faceNormal;
   UBYTE *faceSurface;
   Point3D *vertexNormal;
   EdgeT *edge;
   IndexListT **face;       /* { #face => [#vertex] } */
-  WORD *faceData;
   IndexListT **faceEdge;   /* { #face => [#edge] } */
-  WORD *faceEdgeData;
+  IndexListT **faceUV;     /* { #face => [#uv] } */
   IndexListT **vertexFace; /* { #vertex => [#face] } */
-  WORD *vertexFaceData;
 
-  Point3D *origVertex;
+  MeshImageT **image;
+  MeshSurfaceT *surface;
 } Mesh3D;
 
-__regargs Mesh3D *NewMesh3D(WORD vertices, WORD faces);
+__regargs Mesh3D *LoadMesh3D(char *filename, FLOAT scale);
 __regargs void DeleteMesh3D(Mesh3D *mesh);
+
 __regargs void CalculateEdges(Mesh3D *mesh);
 __regargs void CalculateVertexFaceMap(Mesh3D *mesh);
 __regargs void CalculateVertexNormals(Mesh3D *mesh);
 __regargs void CalculateFaceNormals(Mesh3D *mesh);
-__regargs Mesh3D *LoadLWO(char *filename, FLOAT scale);
 
 /* 3D object representation */
 
