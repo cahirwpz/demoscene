@@ -3,138 +3,102 @@
 #include "reader.h"
 #include "sync.h"
 
-static __regargs TrackT *ReadTrack(char **strptr) {
-  TrackT *track = NULL;
-  char *data;
-  WORD pass;
+static WORD ParseTrack(char **data, TrackT *track) {
+  WORD keys = 0;
+  WORD last_pos = -1;
 
-  for (pass = 0; pass < 2; pass++) {
-    WORD keys = 0;
-    WORD last_pos = -1;
-    WORD name_len = 0;
-    BOOL end = FALSE;
+  while (NextLine(data) && !MatchString(data, "@end")) {
+    TrackTypeT type = 0;
+    WORD pos = -1, value = 0;
 
-    data = *strptr;
-
-    while (NextLine(&data) || !end) {
-      TrackTypeT type;
-      WORD pos = -1, value;
-
-      switch (*data) {
-        case '@':
-          data++;
-          if (!memcmp(data, "track", 5)) {
-            char *name = NULL;
-            data += 5;
-            name_len = ReadSymbol(&data, &name);
-            if (pass) {
-              char *src = name;
-              char *dst = track->name;
-              WORD n = name_len;
-              while (--n >= 0)
-                *dst++ = *src++;
-            }
-          } else if (!memcmp(data, "end", 3)) {
-            end = TRUE;
-            data += 3;
-          } else {
-            Log("Unknown directive!\n");
-            goto quit;
-          }
-          break;
-
-        case '!':
-          data++;
-          if (!memcmp(data, "ramp", 4)) {
-            type = TRACK_RAMP;
-            data += 4;
-          } else if (!memcmp(data, "linear", 6)) {
-            type = TRACK_LINEAR;
-            data += 6;
-          } else if (!memcmp(data, "smooth", 6)) {
-            type = TRACK_SMOOTH;
-            data += 6;
-          } else if (!memcmp(data, "spline", 6)) {
-            type = TRACK_SPLINE;
-            data += 6;
-          } else if (!memcmp(data, "trigger", 7)) {
-            type = TRACK_TRIGGER;
-            data += 7;
-          } else if (!memcmp(data, "event", 5)) {
-            type = TRACK_EVENT;
-            data += 5;
-          } else {
-            Log("Unknown control key!\n");
-            goto quit;
-          }
-
-          if (pass) {
-            track->data[keys].frame = CTRL_KEY;
-            track->data[keys].value = type;
-          }
-          keys++;
-          break;
-
-        case '$':
-          if (!ReadShort(&data, &pos) || (pos < 0)) {
-            Log("Module position is an invalid number!\n");
-            goto quit;
-          }
-          if (last_pos >= pos) {
-            Log("Frame number does not grow monotonically : %lx -> %lx!\n",
-                (LONG)last_pos, (LONG)pos);
-            goto quit;
-          }
-          last_pos = pos;
-          if (!ReadShort(&data, &value)) {
-            Log("Value is not a number!\n");
-            goto quit;
-          }
-
-          if (pass) {
-            track->data[keys].frame = MOD_POS_FRAME(pos);
-            track->data[keys].value = value;
-          }
-          keys++;
-          break;
-
-        default:
-          Log("Syntax error!\n");
-          goto quit;
+    if (MatchString(data, "!ramp")) {
+      type = TRACK_RAMP;
+    } else if (MatchString(data, "!linear")) {
+      type = TRACK_LINEAR;
+    } else if (MatchString(data, "!smooth")) {
+      type = TRACK_SMOOTH;
+    } else if (MatchString(data, "!spline")) {
+      type = TRACK_SPLINE;
+    } else if (MatchString(data, "!trigger")) {
+      type = TRACK_TRIGGER;
+    } else if (MatchString(data, "!event")) {
+      type = TRACK_EVENT;
+    } else if (ReadShort(data, &pos)) {
+      if (pos < 0) {
+        Log("Module position is negative!\n");
+        return 0;
       }
-
-      if (!EndOfLine(&data)) {
-        Log("Cannot parse extra data!\n");
-        goto quit;
+      if (last_pos >= pos) {
+        Log("Frame number does not grow monotonically : %lx -> %lx!\n",
+            (LONG)last_pos, (LONG)pos);
+        return 0;
       }
-    }
-
-    if (!pass) {
-      WORD size = sizeof(TrackT) + sizeof(TrackKeyT) * (keys + 1);
-      track = MemAlloc(size + name_len + 1, MEMF_PUBLIC|MEMF_CLEAR);
-      track->name = (char *)track + size;
+      if (!ReadShort(data, &value))
+        Log("Number expected!\n");
+      last_pos = pos;
+      if (!ReadShort(data, &value)) {
+        Log("Value is not a number!\n");
+        return 0;
+      }
     } else {
-      track->data[keys].frame = END_KEY;
-      TrackInit(track);
+      char c = **data;
+
+      if (c == '!') {
+        Log("Unknown control key!\n");
+      } else if (c == '@') {
+        Log("Unknown directive!\n");
+      } else {
+        Log("Syntax error!\n");
+      }
+
+      return 0;
     }
+
+    if (!EndOfLine(data)) {
+      Log("Cannot parse extra data!\n");
+      return 0;
+    }
+
+    if (track) {
+      if (type) {
+        track->data[keys].frame = CTRL_KEY;
+        track->data[keys].value = type;
+      } else {
+        track->data[keys].frame = MOD_POS_FRAME(pos);
+        track->data[keys].value = value;
+      }
+    }
+
+    keys++;
   }
 
-quit:
-  *strptr = data;
-  return track;
+  if (track) {
+    track->data[keys].frame = END_KEY;
+    TrackInit(track);
+  }
+
+  return keys;
 }
 
-__regargs TrackT *LoadTrack(char *filename) {
-  char *file = LoadFile(filename, MEMF_PUBLIC);
+static TrackT *ReadTrack(char **data) {
+  char *bogus, *name = NULL;
   TrackT *track = NULL;
+  WORD name_len, keys = 0;
 
-  if (file) {
-    char *data = file;
+  if (!((name_len = ReadSymbol(data, &name)) && EndOfLine(data))) {
+    Log("'@track' directive expects one argument\n");
+    return NULL;
+  }
 
-    if (!(track = ReadTrack(&data)))
-      Log("Error at byte %ld!\n", (LONG)(data - file));
+  bogus = *data;
 
-    MemFree(file);
+  if ((keys = ParseTrack(&bogus, NULL))) {
+    track = MemAlloc(sizeof(TrackT) +
+                     sizeof(TrackKeyT) * (keys + 1) + 
+                     name_len + 1, MEMF_PUBLIC|MEMF_CLEAR);
+    track->name = (char *)&track->data[keys + 1];
+    memcpy(track->name, name, name_len);
+    ParseTrack(data, track);
   }
 
   return track;

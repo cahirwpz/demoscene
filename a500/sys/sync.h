@@ -63,7 +63,6 @@ __regargs void TrackInit(TrackT *track);
 __regargs WORD TrackValueGet(TrackT *track, WORD frame);
 __regargs TrackT *TrackLookup(TrackT **tracks, const char *name);
 
-__regargs TrackT *LoadTrack(char *filename);
 __regargs TrackT **LoadTrackList(char *filename);
 __regargs void DeleteTrackList(TrackT **tracks);
 
