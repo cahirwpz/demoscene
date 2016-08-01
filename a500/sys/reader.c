@@ -17,8 +17,8 @@ static const char ctype[128] = {
   ['0'...'9'] = DIGIT | XDIGIT,
   ['A'...'F'] = ALPHA | XDIGIT, 
   ['G'...'Z'] = ALPHA,
-  ['a'...'z'] = ALPHA | XDIGIT,
-  ['a'...'z'] = ALPHA
+  ['a'...'f'] = ALPHA | XDIGIT,
+  ['g'...'z'] = ALPHA
 };
 
 static inline int isspace(int c) {
@@ -41,8 +41,8 @@ static inline int isalnum(int c) {
   return ctype[c] & ALNUM;
 }
 
-__regargs BOOL MatchString(char **strptr, const char *pattern) {
-  char *str = *strptr;
+__regargs BOOL MatchString(char **data, const char *pattern) {
+  char *str = *data;
 
   while (*str == *pattern) {
     str++, pattern++;
@@ -51,15 +51,15 @@ __regargs BOOL MatchString(char **strptr, const char *pattern) {
   if (*pattern)
     return FALSE;
 
-  *strptr = str;
+  *data = str;
   return TRUE;
 }
 
 /* Moves cursor to next word in a line. Returns FALSE if encountered end of line
  * or file. Always updates the pointer! Understands escape character '\' and
  * single line comments beginning with '#' character.  */
-__regargs BOOL NextWord(char **strptr) {
-  char *str = *strptr;
+__regargs BOOL NextWord(char **data) {
+  char *str = *data;
   BOOL escape = FALSE;
   BOOL comment = FALSE;
   BOOL found = FALSE;
@@ -80,14 +80,14 @@ __regargs BOOL NextWord(char **strptr) {
     escape = (!escape && c == '\\');
   }
 
-  *strptr = str;
+  *data = str;
   return found;
 }
 
 /* Moves cursor to first white space character after next word. Understands
  * escape character '\'. */
-__regargs void SkipWord(char **strptr) {
-  char *str = *strptr;
+__regargs void SkipWord(char **data) {
+  char *str = *data;
   BOOL escape = FALSE;
 
   if (NextWord(&str)) {
@@ -100,26 +100,26 @@ __regargs void SkipWord(char **strptr) {
       escape = (!escape && c == '\\');
     }
 
-    *strptr = str;
+    *data = str;
   }
 }
 
 /* Checks if the cursor can move through comments and white spaces to the end of
  * line or file. If so, it updates the position of cursor and returns TRUE. */
-__regargs BOOL EndOfLine(char **strptr) {
-  char *str = *strptr;
+__regargs BOOL EndOfLine(char **data) {
+  char *str = *data;
 
   if (NextWord(&str))
     return FALSE;
 
-  *strptr = str;
+  *data = str;
   return TRUE;
 }
 
 /* Moves cursor to next word of a non-empty line. Returns FALSE if there's no
  * next line. */
-__regargs BOOL NextLine(char **strptr) {
-  char *str = *strptr;
+__regargs BOOL NextLine(char **data) {
+  char *str = *data;
 
   while (!NextWord(&str)) {
     if (*str == '\n')
@@ -128,14 +128,14 @@ __regargs BOOL NextLine(char **strptr) {
       break;
   }
 
-  *strptr = str;
+  *data = str;
   return *str;
 }
 
 /* Moves cursor to the first character of next line. If there's no next line
  * moves cursor to '\0' character. */
-__regargs void SkipLine(char **strptr) {
-  char *str = *strptr;
+__regargs void SkipLine(char **data) {
+  char *str = *data;
 
   while (NextWord(&str))
     SkipWord(&str);
@@ -143,7 +143,7 @@ __regargs void SkipLine(char **strptr) {
   if (*str == '\n')
     str++;
 
-  *strptr = str;
+  *data = str;
 }
 
 static inline WORD digit(WORD c) {
@@ -158,22 +158,22 @@ static inline WORD xdigit(WORD c) {
   return c - ('a' - 10);
 }
 
-__regargs BOOL ReadByte(char **strptr, BYTE *numptr) {
+__regargs BOOL ReadByte(char **data, BYTE *numptr) {
   LONG num;
-  BOOL res = ReadInt(strptr, &num);
+  BOOL res = ReadInt(data, &num);
   *numptr = num;
   return res;
 }
 
-__regargs BOOL ReadShort(char **strptr, WORD *numptr) {
+__regargs BOOL ReadShort(char **data, WORD *numptr) {
   LONG num;
-  BOOL res = ReadInt(strptr, &num);
+  BOOL res = ReadInt(data, &num);
   *numptr = num;
   return res;
 }
 
-__regargs BOOL ReadInt(char **strptr, LONG *numptr) {
-  char *str = *strptr;
+__regargs BOOL ReadInt(char **data, LONG *numptr) {
+  char *str = *data;
   char c;
 
   LONG num = 0;
@@ -212,7 +212,7 @@ __regargs BOOL ReadInt(char **strptr, LONG *numptr) {
     }
   }
 
-  *strptr = str;
+  *data = str;
 
   if (numptr)
     *numptr = minus ? -num : num;
@@ -220,8 +220,8 @@ __regargs BOOL ReadInt(char **strptr, LONG *numptr) {
   return TRUE;
 }
 
-__regargs BOOL ReadFloat(char **strptr, FLOAT *numptr) {
-  char *str = *strptr;
+__regargs BOOL ReadFloat(char **data, FLOAT *numptr) {
+  char *str = *data;
   char c;
 
   LONG p = 0, q = 1;
@@ -252,7 +252,7 @@ __regargs BOOL ReadFloat(char **strptr, FLOAT *numptr) {
     c = *str++;
   }
 
-  *strptr = str;
+  *data = str;
 
   if (numptr)
     *numptr = SPDiv(SPFlt(minus ? -p : p), SPFlt(q));
@@ -260,29 +260,37 @@ __regargs BOOL ReadFloat(char **strptr, FLOAT *numptr) {
   return TRUE;
 }
 
-/* Symbol is defined by "[a-zA-Z][a-zA-Z0-9_\.]*" regular expression. */
-__regargs WORD ReadSymbol(char **strptr, char **symptr) {
-  char *str = *strptr;
-  WORD n = 1;
+__regargs WORD ReadString(char **data, char *buf, WORD buflen) {
+  char *str = *data;
+  BOOL escape = FALSE;
+  WORD n = 0;
+  char c;
 
   if (!NextWord(&str))
     return 0;
 
-  *symptr = str;
-
-  {
-    char c = *str++;
-
-    if (!isalpha(c))
-      return 0;
-
-    while (isalnum(c) || (c == '_') || (c == '.')) {
-      c = *str++;
-      n++;
+  while ((c = *str) && n < buflen - 1) {
+    if (!escape) {
+      if (c == '#')
+        break;
+      if (isspace(c))
+        break;
+      *buf++ = c, n++;
+    } else if (c != '\n') {
+      if (c == 't') c = '\t';
+      if (c == 'n') c = '\n';
+      if (c == 'r') c = '\r';
+      if (c == '0') c = '\0';
+      *buf++ = c, n++;
     }
+    str++;
+    escape = (!escape && c == '\\');
   }
 
-  *strptr = str;
+  if (n == buflen)
+    return -1;
 
+  buf[n] = '\0';
+  *data = str;
   return n;
 }

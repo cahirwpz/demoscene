@@ -81,11 +81,12 @@ static WORD ParseTrack(char **data, TrackT *track) {
 }
 
 static TrackT *ReadTrack(char **data) {
-  char *bogus, *name = NULL;
+  char name[80];
+  char *bogus;
   TrackT *track = NULL;
   WORD name_len, keys = 0;
 
-  if (!((name_len = ReadSymbol(data, &name)) && EndOfLine(data))) {
+  if (!((name_len = ReadString(data, name, sizeof(name))) && EndOfLine(data))) {
     Log("'@track' directive expects one argument\n");
     return NULL;
   }
