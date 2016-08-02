@@ -62,7 +62,7 @@ static BOOL ParsePolygons(char **data, ShapeT *shape) {
   shape->polygons = n;
   shape->polygon = MemAlloc(sizeof(IndexListT *) * (n + 1) + 
                             sizeof(WORD) * (n * 2 + shape->points),
-                            MEMF_PUBLIC);
+                            MEMF_PUBLIC|MEMF_CLEAR);
   shape->polygonFlags = MemAlloc(sizeof(UBYTE) * n, MEMF_PUBLIC);
 
   polygons = shape->polygon;
@@ -91,7 +91,7 @@ static BOOL ParsePolygons(char **data, ShapeT *shape) {
 }
 
 static ParserT TopLevelParser[] = {
-  { "@origin", &ParseOrigin},
+  { "@origin", &ParseOrigin },
   { "@pnts", &ParsePoints },
   { "@pols", &ParsePolygons },
   { NULL, NULL }

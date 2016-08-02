@@ -61,24 +61,27 @@ __regargs BOOL NextWord(char **data) {
   char *str = *data;
   BOOL escape = FALSE;
   BOOL comment = FALSE;
+  BOOL found = FALSE;
   char c;
 
-  while ((c = *str)) {
-    if (!escape) {
-      if (c == '#')
-        comment = TRUE;
-      else if (c == '\n')
-        break;
-      else if (!comment && !isspace(c)) {
-        *data = str;
-        return TRUE;
-      }
+  while ((c = *str)) { 
+    if (escape) {
+      escape = FALSE;
+    } else if (c == '\\') {
+      escape = TRUE;
+    } else if (c == '#') {
+      comment = TRUE;
+    } else if (c == '\n') {
+      break;
+    } else if (!comment && !isspace(c)) {
+      found = TRUE;
+      break;
     }
     str++;
-    escape = (!escape && c == '\\');
   }
 
-  return FALSE;
+  *data = str;
+  return found;
 }
 
 /* Moves cursor to first white space character after next word. Understands
@@ -91,10 +94,14 @@ __regargs void SkipWord(char **data) {
     char c;
 
     while ((c = *str)) {
-      if (!escape && isspace(c))
+      if (escape) {
+        escape = FALSE;
+      } else if (c == '\\') {
+        escape = TRUE;
+      } else if (isspace(c)) {
         break;
+      }
       str++;
-      escape = (!escape && c == '\\');
     }
 
     *data = str;
