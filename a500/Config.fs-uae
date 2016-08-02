@@ -9,6 +9,7 @@ uae_cpu_model = 68000
 automatic_input_grab = 0
 floppy_drive_0 = /Users/cahir/Amiga/src/demoscene/a500/test.adf
 floppy_drive_speed = 800
+floppy_drive_volume = 0
 hard_drive_0 = /Users/cahir/Amiga/src/demoscene/a500
 hard_drive_0_label = Sources
 uae_cart_internal = hrtmon

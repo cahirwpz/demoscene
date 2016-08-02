@@ -2,13 +2,20 @@
 
 trap quit SIGINT
 
-function quit() {
+function cleanup() {
   kill -INT $SER
   kill -INT $PAR
+  stty isig ixon icrnl brkint imaxbel ignpar opost
+  rm -f s/startup-sequence
+}
+
+function quit() {
   kill $FSUAE
+  cleanup
 }
 
 cat >s/startup-sequence <<EOF
+echo $@
 $@
 ExitUAE
 EOF
@@ -21,7 +28,4 @@ PAR=$!
 fs-uae >/dev/null &
 FSUAE=$!
 wait $FSUAE
-kill -INT $SER
-kill -INT $PAR
-
-rm s/startup-sequence
+cleanup
