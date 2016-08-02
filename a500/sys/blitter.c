@@ -227,15 +227,15 @@ struct {
   WORD stride;
   UWORD bltcon0;
   UWORD bltcon1;
-} line;
+} line[1];
 
 __regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWORD bltcon1) 
 {
-  line.data = bitmap->planes[plane];
-  line.scratch = bitmap->planes[bitmap->depth];
-  line.stride = bitmap->bytesPerRow;
-  line.bltcon0 = bltcon0;
-  line.bltcon1 = bltcon1;
+  line->data = bitmap->planes[plane];
+  line->scratch = bitmap->planes[bitmap->depth];
+  line->stride = bitmap->bytesPerRow;
+  line->bltcon0 = bltcon0;
+  line->bltcon1 = bltcon1;
 
   WaitBlitter();
 
@@ -243,13 +243,13 @@ __regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWO
   custom->bltalwm = -1;
   custom->bltadat = 0x8000;
   custom->bltbdat = 0xffff; /* Line texture pattern. */
-  custom->bltcmod = line.stride;
-  custom->bltdmod = line.stride;
+  custom->bltcmod = line->stride;
+  custom->bltdmod = line->stride;
 }
 
 void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"), WORD x2 asm("d4"), WORD y2 asm("d5")) {
-  UBYTE *data = line.data;
-  UWORD bltcon1 = line.bltcon1;
+  UBYTE *data = line->data;
+  UWORD bltcon1 = line->bltcon1;
   WORD dx, dy, derr;
 
   /* Always draw the line downwards. */
@@ -259,7 +259,7 @@ void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"), WORD x2 asm("d4"), WORD y
   }
 
   /* Word containing the first pixel of the line. */
-  data += line.stride * y1;
+  data += line->stride * y1;
   data += (x1 >> 3) & ~1;
 
   dx = x2 - x1;
@@ -286,10 +286,10 @@ void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"), WORD x2 asm("d4"), WORD y
     bltcon1 |= SIGNFLAG;
 
   {
-    UWORD bltcon0 = rorw(x1 & 15, 4) | line.bltcon0;
+    UWORD bltcon0 = rorw(x1 & 15, 4) | line->bltcon0;
     UWORD bltamod = derr - dx;
     UWORD bltbmod = dy + dy;
-    APTR bltdpt = (bltcon1 & ONEDOT) ? line.scratch : data;
+    APTR bltdpt = (bltcon1 & ONEDOT) ? line->scratch : data;
     UWORD bltsize = (dx << 6) + 66;
 
     WaitBlitter();

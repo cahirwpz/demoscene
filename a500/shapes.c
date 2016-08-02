@@ -41,7 +41,7 @@ static void Init() {
   plane = DEPTH - 1;
   planeC = 0;
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
   BitmapClear(screen, DEPTH);
 
   cp = NewCopList(100);
@@ -63,7 +63,7 @@ static void Kill() {
 
 static Point2D tmpPoint[2][16];
 
-static inline void DrawPolygon(Point2D *out, WORD n) {
+static void DrawPolygon(Point2D *out, WORD n) {
   WORD *pos = (WORD *)out;
   WORD x1, y1, x2, y2;
 
@@ -124,7 +124,6 @@ static void Render() {
   BlitterLineSetup(screen, plane, LINE_EOR, LINE_ONEDOT);
   DrawShape(shape);
   BlitterFill(screen, plane);
-  WaitBlitter();
   // Log("shape: %ld\n", ReadLineCounter() - lines);
   WaitVBlank();
 
