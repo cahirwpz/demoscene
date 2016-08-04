@@ -5,8 +5,6 @@
 #include "gfx.h"
 #include "pixmap.h"
 
-#define EV_GUI 3
-
 typedef enum {
   UI_BG_INACTIVE = 0,
   UI_BG_ACTIVE   = 1,
@@ -64,12 +62,6 @@ typedef union Widget {
   ButtonT button;
   WidgetBaseT base;
 } WidgetT;
-
-typedef struct GuiEvent {
-  UBYTE type;
-  UBYTE action;
-  WidgetT *widget;
-} GuiEventT;
 
 typedef struct GuiState {
   WidgetT **widgets;

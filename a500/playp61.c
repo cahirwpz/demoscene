@@ -8,6 +8,7 @@
 #include "p61/p61.h"
 #include "console.h"
 #include "coplist.h"
+#include "keyboard.h"
 #include "event.h"
 #include "bltop.h"
 

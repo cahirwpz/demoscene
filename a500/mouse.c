@@ -4,6 +4,8 @@
 #include "sprite.h"
 #include "gui.h"
 #include "event.h"
+#include "keyboard.h"
+#include "mouse.h"
 #include "memory.h"
 #include "png.h"
 

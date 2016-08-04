@@ -115,15 +115,6 @@ typedef enum {
   MOD_AMIGA = MOD_LAMIGA | MOD_RAMIGA
 } __attribute__((packed)) KeyModT;
 
-#define EV_KEY 1
-
-typedef struct KeyEvent {
-  UBYTE type;
-  KeyModT modifier;
-  KeyCodeT code;
-  char ascii;
-} KeyEventT;
-
 void KeyboardInit();
 void KeyboardKill();
 

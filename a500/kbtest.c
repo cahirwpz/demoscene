@@ -5,6 +5,7 @@
 #include "hardware.h"
 #include "coplist.h"
 #include "event.h"
+#include "keyboard.h"
 #include "serial.h"
 
 #define WIDTH 640
