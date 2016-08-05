@@ -25,8 +25,16 @@
 #define LINE_SOLID  (LINEMODE)
 #define LINE_ONEDOT (LINEMODE | ONEDOT)
 
-void BlitterCopy(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
-                 BitmapT *src, WORD srcbpl);
+extern UWORD FirstWordMask[16];
+extern UWORD LastWordMask[16];
+
+__regargs void BlitterCopySetup(BitmapT *dst, UWORD x, UWORD y, BitmapT *src);
+__regargs void BlitterCopyStart(WORD dstbpl, WORD srcbpl);
+
+#define BlitterCopy(dst, dstbpl, x, y, src, srcbpl) ({  \
+  BlitterCopySetup((dst), (x), (y), (src));             \
+  BlitterCopyStart((dstbpl), (srcbpl));                 \
+})
 
 #define BlitterFill(bitmap, plane) \
   BlitterFillArea((bitmap), (plane), NULL)

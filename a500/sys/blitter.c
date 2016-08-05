@@ -1,58 +1,15 @@
 #include "blitter.h"
 #include "hardware.h"
 
-static UWORD fwmask[16] = {
+UWORD FirstWordMask[16] = {
   0xFFFF, 0x7FFF, 0x3FFF, 0x1FFF, 0x0FFF, 0x07FF, 0x03FF, 0x01FF,
   0x00FF, 0x007F, 0x003F, 0x001F, 0x000F, 0x0007, 0x0003, 0x0001
 };
 
-static UWORD lwmask[16] = {
+UWORD LastWordMask[16] = {
   0xFFFF, 0x8000, 0xC000, 0xE000, 0xF000, 0xF800, 0xFC00, 0xFE00,
   0xFF00, 0xFF80, 0xFFC0, 0xFFE0, 0xFFF0, 0xFFF8, 0xFFFC, 0xFFFE
 };
-
-void BlitterCopy(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y, 
-                 BitmapT *src, WORD srcbpl) 
-{
-  APTR srcbpt = src->planes[srcbpl];
-  APTR dstbpt = dst->planes[dstbpl] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
-  /* Calculate real blit width. It can be greater than src->bytesPerRow! */
-  UWORD width = (x & 15) + src->width;
-  UWORD bytesPerRow = ((width + 15) & ~15) >> 3;
-  UWORD srcmod = src->bytesPerRow - bytesPerRow;
-  UWORD dstmod = dst->bytesPerRow - bytesPerRow;
-  UWORD bltsize = (src->height << 6) | (bytesPerRow >> 1);
-  UWORD bltshift = rorw(x & 15, 4);
-  UWORD bltafwm = fwmask[x & 15];
-  UWORD bltalwm = lwmask[width & 15];
-
-  WaitBlitter();
-
-  if (bltshift) {
-    custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | NABC | ABNC | NANBC);
-    custom->bltcon1 = bltshift;
-    custom->bltafwm = bltafwm;
-    custom->bltalwm = bltalwm;
-    custom->bltbmod = srcmod;
-    custom->bltadat = -1;
-    custom->bltcmod = dstmod;
-    custom->bltdmod = dstmod;
-    custom->bltbpt = srcbpt;
-    custom->bltcpt = dstbpt;
-    custom->bltdpt = dstbpt;
-    custom->bltsize = bltsize;
-  } else {
-    custom->bltamod = 0;
-    custom->bltcon0 = (SRCA | DEST) | A_TO_D;
-    custom->bltcon1 = 0;
-    custom->bltafwm = bltafwm;
-    custom->bltalwm = bltalwm;
-    custom->bltdmod = dstmod;
-    custom->bltapt = srcbpt;
-    custom->bltdpt = dstbpt;
-    custom->bltsize = bltsize;
-  }
-}
 
 __regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area) {
   APTR bltpt = bitmap->planes[plane];
