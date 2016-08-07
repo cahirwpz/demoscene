@@ -65,8 +65,8 @@ class ILBM(IffFile):
     return cmap
 
   def writeCMAP(self, data, out):
-    for color in data:
-      out.write(struct.pack('>BBB', *color))
+    for r, g, b in data:
+      out.write(struct.pack('>BBB', r, g, b))
 
   def readBODY(self, data):
     return data

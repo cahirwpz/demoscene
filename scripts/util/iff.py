@@ -145,3 +145,6 @@ class IffFile(collections.Sequence):
 
   def __len__(self):
     return len(self.chunks)
+
+  def append(self, chunk):
+    self.chunks.append(chunk)
