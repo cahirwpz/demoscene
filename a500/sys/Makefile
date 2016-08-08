@@ -8,7 +8,7 @@ OBJS = 8svx.o blitter.o common.o circle.o console.o coplist.o ffp.o gfx.o \
        3d-transform.o 3d-mesh.o 3d-object.o 3d-clip.o 3d-load.o interrupts.o \
        bltop-add-sat.o bltop-clear.o bltop-dec-sat.o bltop-inc-sat.o \
        bltop-copy.o bltop-copy-area.o bltop-copy-fast.o bltop-copy-mask.o \
-       serial.o bltop-mask.o rawio-ser.o rawio-par.o io-floppy.o \
+       bltop-mask.o bltop-set.o serial.o rawio-ser.o rawio-par.o io-floppy.o \
        __mulsi3.o __divsi3.o __udivsi3.o __modsi3.o __umodsi3.o floppy.o \
        effect.o event.o tasks.o gui.o 2d.o 2d-clip.o 2d-load.o
 

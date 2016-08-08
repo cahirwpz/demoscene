@@ -6,6 +6,8 @@
 __regargs void BitmapClear(BitmapT *dst, WORD n);
 void BitmapClearArea(BitmapT *dst, WORD n, UWORD x, UWORD y, UWORD w, UWORD h);
 
+__regargs void BitmapSetArea(BitmapT *bitmap, Area2D *area, UWORD color);
+
 __regargs void BitmapCopy(BitmapT *dst, UWORD x, UWORD y, BitmapT *src);
 __regargs void BitmapCopyFast(BitmapT *dst, UWORD x, UWORD y, BitmapT *src);
 void BitmapCopyMasked(BitmapT *dst, UWORD x, UWORD y, BitmapT *src,

@@ -46,60 +46,6 @@ __regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area) {
   custom->bltsize = bltsize;
 }
 
-__regargs void BlitterSetArea(BitmapT *bitmap, WORD plane,
-                              Area2D *area, UWORD pattern)
-{
-  APTR bltpt = bitmap->planes[plane];
-  UWORD bltmod, bltsize, bltshift;
-
-  if (area) {
-    WORD x = area->x;
-    WORD y = area->y; 
-    WORD w = area->w >> 3;
-    WORD h = area->h;
-
-    bltpt += ((x >> 3) & ~1) + y * bitmap->bytesPerRow;
-
-    bltshift = rorw(x & 15, 4);
-    bltmod = bitmap->bytesPerRow - w;
-    bltsize = (h << 6) | (w >> 1);
-  } else {
-    bltshift = 0;
-    bltmod = 0;
-    bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
-  }
-
-  WaitBlitter();
-
-  if (bltshift) {
-    bltsize += 1; bltmod -= 2;
-
-    custom->bltadat = 0xffff;
-    custom->bltbpt = bltpt;
-    custom->bltcdat = pattern;
-    custom->bltbmod = -2;
-    custom->bltcmod = bltmod;
-    custom->bltcon0 = (SRCB | DEST) | (NABC | NABNC | ABC | ANBC) | bltshift;
-    custom->bltcon1 = bltshift;
-
-    custom->bltdpt = bltpt;
-    custom->bltdmod = bltmod;
-    custom->bltalwm = -1;
-    custom->bltafwm = -1;
-    custom->bltsize = bltsize;
-  } else {
-    custom->bltadat = pattern;
-    custom->bltcon0 = DEST | A_TO_D;
-    custom->bltcon1 = 0;
-
-    custom->bltdpt = bltpt;
-    custom->bltdmod = bltmod;
-    custom->bltalwm = -1;
-    custom->bltafwm = -1;
-    custom->bltsize = bltsize;
-  }
-}
-
 void BlitterSetMaskArea(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
                         BitmapT *msk, Area2D *area, UWORD pattern)
 {

@@ -13,6 +13,8 @@
 #define A_AND_B (ABC | ABNC)
 #define A_AND_NOT_B (ANBC | ANBNC)
 
+#define C_TO_D (ABC | NABC | ANBC | NANBC)
+
 #define HALF_ADDER ((SRCA | SRCB | DEST) | A_XOR_B)
 #define HALF_ADDER_CARRY ((SRCA | SRCB | DEST) | A_AND_B)
 #define FULL_ADDER ((SRCA | SRCB | SRCC | DEST) | (NANBC | NABNC | ANBNC | ABC))
@@ -48,7 +50,13 @@ __regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area);
 #define BlitterSet(bitmap, plane, pattern) \
   BlitterSetArea((bitmap), (plane), NULL, (pattern))
 
-__regargs void BlitterSetArea(BitmapT *bitmap, WORD plane, Area2D *area, UWORD pattern);
+__regargs void BlitterSetAreaSetup(BitmapT *bitmap, Area2D *area);
+__regargs void BlitterSetAreaStart(WORD bplnum, UWORD pattern);
+
+#define BlitterSetArea(bm, bplnum, area, pattern) ({    \
+  BlitterSetAreaSetup((bm), (area));                    \
+  BlitterSetAreaStart((bplnum), (pattern));             \
+})
 
 #define BlitterSetMask(bitmap, plane, x, y, mask, pattern) \
   BlitterSetMaskArea((bitmap), (plane), (x), (y), (mask), NULL, (pattern))
