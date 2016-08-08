@@ -2,6 +2,7 @@
 #define __GUI_H__
 
 #include "common.h"
+#include "event.h"
 #include "gfx.h"
 #include "pixmap.h"
 
@@ -19,7 +20,7 @@ typedef enum {
 } GuiFrameT;
 
 typedef enum { 
-  WT_LABEL, WT_BUTTON, WT_LAST
+  WT_GROUP, WT_LABEL, WT_BUTTON, WT_RADIOBT, WT_LAST
 } WidgetTypeT;
 
 typedef enum {
@@ -29,18 +30,28 @@ typedef enum {
 typedef enum {
   WS_ACTIVE  = 1,
   WS_PRESSED = 2,
+  WS_TOGGLED = 4,
 } WidgetStateT;
+
+typedef union Widget WidgetT;
 
 #define WIDGET_BASE             \
   UBYTE type;                   \
   /* widget definition */       \
   Area2D area;                  \
   /* widget internal state */   \
-  WidgetStateT state;
+  WidgetStateT state;           \
+  /* pointer to parent */       \
+  WidgetT *parent;
 
 typedef struct {
   WIDGET_BASE
 } WidgetBaseT;
+
+typedef struct {
+  WIDGET_BASE
+  WidgetT **widgets;
+} GroupT;
 
 typedef struct {
   WIDGET_BASE
@@ -56,15 +67,16 @@ typedef struct {
 
 #undef WIDGET_BASE
 
-typedef union Widget {
+union Widget {
   UBYTE   type;
+  GroupT  group;
   LabelT  label;
   ButtonT button;
   WidgetBaseT base;
-} WidgetT;
+};
 
 typedef struct GuiState {
-  WidgetT **widgets;
+  WidgetT *root;
   WidgetBaseT *lastEntered;
   WidgetBaseT *lastPressed;
   BitmapT *screen;
@@ -75,26 +87,30 @@ typedef void (*WidgetFuncT)(GuiStateT *, WidgetT *);
 
 #define GUI_BUTTON(name, x, y, w, h, label)                              \
   WidgetT name[1] = {(WidgetT)(ButtonT)                                  \
-    {WT_BUTTON, {(x), (y), (w), (h)}, 0, (label)}}
+    {WT_BUTTON, {(x), (y), (w), (h)}, 0, NULL, (label)}}
+
+#define GUI_RADIOBT(name, x, y, w, h, label)                            \
+  WidgetT name[1] = {(WidgetT)(ButtonT)                                 \
+    {WT_RADIOBT, {(x), (y), (w), (h)}, 0, NULL, (label)}}
 
 #define GUI_LABEL(name, x, y, w, h, frame, n)                            \
   WidgetT name[1] = {(WidgetT)(LabelT)                                   \
-    {WT_LABEL, {(x), (y), (w), (h)}, 0, (char[(n)]){0}, (n), (frame)}}
+    {WT_LABEL, {(x), (y), (w), (h)}, 0, NULL, (char[(n)]){0}, (n), (frame)}}
 
-#define GUI_GROUP(name, ...) \
-  WidgetT *name[] = { __VA_ARGS__, NULL }
+#define GUI_GROUP(name, ...)                                            \
+  WidgetT *name ## _tbl [] = {__VA_ARGS__, NULL};                       \
+  WidgetT name[1] = {(WidgetT)(GroupT)                                  \
+    {WT_GROUP, {0, 0, 0, 0}, 0, NULL, (WidgetT **)name ## _tbl}}
 
-#define GUI_MAIN(widgets) \
-  GuiStateT gui[1] = {{widgets, NULL}}
+#define GUI_MAIN(root) \
+  GuiStateT gui[1] = {{root}}
 
 #define LabelFmtStr(wg, str, args...) \
   FmtStr(((LabelT *)(wg))->text, ((LabelT *)(wg))->length, (str), args)
 
-struct MouseEvent;
-
 void GuiInit(GuiStateT *gui, BitmapT *screen, PixmapT *font);
 void GuiRedraw(GuiStateT *gui);
-void GuiHandleMouseEvent(GuiStateT *gui, struct MouseEvent *ev);
+void GuiHandleMouseEvent(GuiStateT *gui, MouseEventT *ev);
 void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg);
 
 #endif

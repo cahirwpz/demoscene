@@ -1,8 +1,7 @@
 #include "gui.h"
 #include "gfx.h"
 #include "mouse.h"
-#include "event.h"
-#include "blitter.h"
+#include "bltop.h"
 
 static inline void PushGuiEvent(WidgetT *wg, WORD event) {
   GuiEventT ev = { EV_GUI, event, wg };
@@ -68,10 +67,18 @@ static void DrawFrame(BitmapT *bitmap, Area2D *area, GuiFrameT frame) {
   }
 }
 
+inline void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg);
+
+static void GroupRedraw(GuiStateT *gui, GroupT *wg) {
+  WidgetT **widgets = wg->widgets;
+  WidgetT *w;
+
+  while ((w = *widgets++))
+    GuiWidgetRedraw(gui, w);
+}
+
 static void LabelRedraw(GuiStateT *gui, LabelT *wg) {
-  BlitterSetArea(gui->screen, 0, &wg->area, 0);
-  BlitterSetArea(gui->screen, 1, &wg->area, 0);
-  BlitterSetArea(gui->screen, 2, &wg->area, 0);
+  BitmapSetArea(gui->screen, &wg->area, UI_BG_INACTIVE);
 
   if (wg->frame) {
     DrawFrame(gui->screen, &wg->area, 1);
@@ -84,16 +91,15 @@ static void LabelRedraw(GuiStateT *gui, LabelT *wg) {
 static void ButtonRedraw(GuiStateT *gui, ButtonT *wg) {
   BOOL active = (wg->state & WS_ACTIVE) ? 1 : 0;
   BOOL pressed = (wg->state & WS_PRESSED) ? 1 : 0;
+  BOOL toggled = (wg->state & WS_TOGGLED) ? 1 : 0;
 
-  BlitterSetArea(gui->screen, 0, &wg->area, active ? -1 : 0);
-  BlitterSetArea(gui->screen, 1, &wg->area, 0);
+  BitmapSetArea(gui->screen, &wg->area,
+                active ? UI_BG_ACTIVE : UI_BG_INACTIVE);
   DrawFrame(gui->screen, &wg->area,
-            (active ^ pressed) ? FRAME_IN : FRAME_OUT);
+            (active ^ pressed ^ toggled) ? FRAME_IN : FRAME_OUT);
 
-  if (wg->label) {
-    BlitterSetArea(gui->screen, 2, &wg->area, 0);
+  if (wg->label)
     DrawText(gui, wg->area.x + 2, wg->area.y + 2, wg->label);
-  }
 }
 
 static void ButtonPress(GuiStateT *gui, ButtonT *wg) {
@@ -107,6 +113,27 @@ static void ButtonRelease(GuiStateT *gui, ButtonT *wg) {
   ButtonRedraw(gui, wg);
   if (gui->lastPressed == (WidgetBaseT *)wg)
     PushGuiEvent((WidgetT *)wg, WA_RELEASED);
+}
+
+static void RadioButtonRelease(GuiStateT *gui, ButtonT *wg) {
+  wg->state &= ~WS_PRESSED;
+  if (gui->lastPressed == (WidgetBaseT *)wg) {
+    PushGuiEvent((WidgetT *)wg, WA_RELEASED);
+    if (!(wg->state & WS_TOGGLED)) {
+      WidgetT **widgets = wg->parent->group.widgets;
+      WidgetT *child;
+
+      while ((child = *widgets++)) {
+        if (child->base.state & WS_TOGGLED) {
+          child->base.state &= ~WS_TOGGLED;
+          GuiWidgetRedraw(gui, child);
+        }
+      }
+
+      wg->state |= WS_TOGGLED;
+    }
+  }
+  ButtonRedraw(gui, wg);
 }
 
 static void ButtonLeave(GuiStateT *gui, ButtonT *wg) {
@@ -129,7 +156,9 @@ static void WidgetDummyFunc(GuiStateT *gui, ButtonT *wg) {}
 
 inline void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg) {
   static WidgetFuncT WidgetRedrawFunc[WT_LAST] = {
+    (WidgetFuncT)GroupRedraw, 
     (WidgetFuncT)LabelRedraw, 
+    (WidgetFuncT)ButtonRedraw,
     (WidgetFuncT)ButtonRedraw,
   };
   WidgetRedrawFunc[(wg)->type](gui, (WidgetT *)wg);
@@ -137,6 +166,8 @@ inline void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg) {
 
 static WidgetFuncT WidgetEnterFunc[WT_LAST] = {
   (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)ButtonEnter,
   (WidgetFuncT)ButtonEnter,
 };
 
@@ -145,6 +176,8 @@ static WidgetFuncT WidgetEnterFunc[WT_LAST] = {
 
 static WidgetFuncT WidgetLeaveFunc[WT_LAST] = {
   (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)ButtonLeave,
   (WidgetFuncT)ButtonLeave,
 };
 
@@ -153,6 +186,8 @@ static WidgetFuncT WidgetLeaveFunc[WT_LAST] = {
 
 static WidgetFuncT WidgetPressFunc[WT_LAST] = {
   (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)ButtonPress,
   (WidgetFuncT)ButtonPress,
 };
 
@@ -161,23 +196,50 @@ static WidgetFuncT WidgetPressFunc[WT_LAST] = {
 
 static WidgetFuncT WidgetReleaseFunc[WT_LAST] = {
   (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)WidgetDummyFunc,
   (WidgetFuncT)ButtonRelease,
+  (WidgetFuncT)RadioButtonRelease,
 };
 
 #define WidgetRelease(gui, wg) \
   WidgetReleaseFunc[(wg)->type]((gui), (WidgetT *)wg)
 
+static WidgetT *FindWidgetByMouse(WidgetT *wg, WORD x, WORD y) {
+  if (wg->type == WT_GROUP) {
+    WidgetT **widgets = wg->group.widgets;
+    WidgetT *child;
+
+    while ((child = *widgets++))
+      if ((wg = FindWidgetByMouse(child, x, y)))
+        return wg;
+
+    return NULL;
+  }
+
+  return InsideArea(x, y, &wg->base.area) ? wg : NULL;
+}
+
+static void InitWidget(WidgetT *wg, WidgetT *parent) {
+  if (wg->type == WT_GROUP) {
+    WidgetT **widgets = wg->group.widgets;
+    WidgetT *child;
+
+    while ((child = *widgets++))
+      InitWidget(child, wg);
+  } else {
+    wg->base.parent = parent;
+  }
+}
+
 void GuiInit(GuiStateT *gui, BitmapT *screen, PixmapT *font) {
   gui->screen = screen;
   gui->font = font;
+
+  InitWidget(gui->root, NULL);
 }
 
 void GuiRedraw(GuiStateT *gui) {
-  WidgetT **widgets = gui->widgets;
-  WidgetT *wg;
-  
-  while ((wg = *widgets++))
-    GuiWidgetRedraw(gui, wg);
+  GuiWidgetRedraw(gui, gui->root);
 }
 
 void GuiHandleMouseEvent(GuiStateT *gui, struct MouseEvent *mouse) {
@@ -201,13 +263,7 @@ void GuiHandleMouseEvent(GuiStateT *gui, struct MouseEvent *mouse) {
     gui->lastPressed = NULL;
   
   /* Find the widget a pointer is hovering on. */
-  {
-    WidgetBaseT **widgets = (WidgetBaseT **)gui->widgets;
-
-    while ((wg = *widgets++))
-      if (InsideArea(mouse->x, mouse->y, &wg->area))
-        break;
-  }
+  wg = (WidgetBaseT *)FindWidgetByMouse(gui->root, mouse->x, mouse->y);
 
   gui->lastEntered = wg;
 

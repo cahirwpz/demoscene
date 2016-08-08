@@ -27,9 +27,17 @@ static GUI_BUTTON(_b1, 48, 20, 64, 12, "Pause");
 static GUI_BUTTON(_b2, 96, 40, 48, 12, "Stop");
 static GUI_BUTTON(_b3, 144, 60, 80, 12, "Forward");
 static GUI_BUTTON(_b4, 192, 80, 80, 12, "Reverse");
+static GUI_GROUP(_bg0, _b0, _b1, _b2, _b3, _b4);
+
+static GUI_RADIOBT(_rb0, 250, 14, 20, 12, "A");
+static GUI_RADIOBT(_rb1, 251, 28, 20, 12, "B");
+static GUI_RADIOBT(_rb2, 252, 42, 20, 12, "C");
+static GUI_RADIOBT(_rb3, 253, 56, 20, 12, "D");
+static GUI_GROUP(_bg1, _rb0, _rb1, _rb2, _rb3);
+
 static GUI_LABEL(_l0, 0, 192, 320, 12, FRAME_FLAT, 40);
-static GUI_GROUP(_buttons, _b0, _b1, _b2, _b3, _b4, _l0);
-static GUI_MAIN(_buttons);
+static GUI_GROUP(_root, _bg0, _bg1, _l0);
+static GUI_MAIN(_root);
 
 static void Load() {
   font = LoadPNG("koi8r.8x8.png", PM_GRAY1, MEMF_PUBLIC);
@@ -96,7 +104,7 @@ static BOOL HandleEvent() {
   } else if (ev->type == EV_GUI) {
     WidgetT *wg = ev->gui.widget;
 
-    if (wg->type == WT_BUTTON) {
+    if (wg->type == WT_BUTTON || wg->type == WT_RADIOBT) {
       ButtonT *bt = &wg->button;
       static char *action[] = {"Entered", "Left", "Pressed", "Released"};
 
