@@ -7,7 +7,7 @@
 #include "keyboard.h"
 #include "mouse.h"
 #include "memory.h"
-#include "png.h"
+#include "ilbm.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -19,20 +19,20 @@ static BitmapT *screen;
 static CopListT *cp;
 static SpriteT *pointer;
 static CopInsT *sprptr[8];
-static PixmapT *font;
+static BitmapT *font;
 
 /* Test program */
-static GUI_BUTTON(_b0, 0, 0, 48, 12, "Play");
-static GUI_BUTTON(_b1, 48, 20, 64, 12, "Pause");
-static GUI_BUTTON(_b2, 96, 40, 48, 12, "Stop");
+static GUI_BUTTON(_b0,   0,  0, 48, 12, "Play");
+static GUI_BUTTON(_b1,  48, 20, 64, 12, "Pause");
+static GUI_BUTTON(_b2,  96, 40, 48, 12, "Stop");
 static GUI_BUTTON(_b3, 144, 60, 80, 12, "Forward");
 static GUI_BUTTON(_b4, 192, 80, 80, 12, "Reverse");
 static GUI_GROUP(_bg0, _b0, _b1, _b2, _b3, _b4);
 
-static GUI_RADIOBT(_rb0, 250, 14, 20, 12, "A");
-static GUI_RADIOBT(_rb1, 251, 28, 20, 12, "B");
-static GUI_RADIOBT(_rb2, 252, 42, 20, 12, "C");
-static GUI_RADIOBT(_rb3, 253, 56, 20, 12, "D");
+static GUI_RADIOBT(_rb0, 250, 14, 12, 12, "A");
+static GUI_RADIOBT(_rb1, 251, 28, 12, 12, "B");
+static GUI_RADIOBT(_rb2, 252, 42, 12, 12, "C");
+static GUI_RADIOBT(_rb3, 253, 56, 12, 12, "D");
 static GUI_GROUP(_bg1, _rb0, _rb1, _rb2, _rb3);
 
 static GUI_LABEL(_l0, 0, 192, 320, 12, FRAME_FLAT, 40);
@@ -40,11 +40,11 @@ static GUI_GROUP(_root, _bg0, _bg1, _l0);
 static GUI_MAIN(_root);
 
 static void Load() {
-  font = LoadPNG("koi8r.8x8.png", PM_GRAY1, MEMF_PUBLIC);
+  font = LoadILBMCustom("koi8r.8x8.ilbm", BM_DISPLAYABLE);
 }
 
 static void UnLoad() {
-  DeletePixmap(font);
+  DeleteBitmap(font);
 }
 
 static void Init() {

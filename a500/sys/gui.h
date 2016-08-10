@@ -4,7 +4,6 @@
 #include "common.h"
 #include "event.h"
 #include "gfx.h"
-#include "pixmap.h"
 
 typedef enum {
   UI_BG_INACTIVE = 0,
@@ -80,7 +79,7 @@ typedef struct GuiState {
   WidgetBaseT *lastEntered;
   WidgetBaseT *lastPressed;
   BitmapT *screen;
-  PixmapT *font;
+  BitmapT *font;
 } GuiStateT;
 
 typedef void (*WidgetFuncT)(GuiStateT *, WidgetT *);
@@ -108,7 +107,7 @@ typedef void (*WidgetFuncT)(GuiStateT *, WidgetT *);
 #define LabelFmtStr(wg, str, args...) \
   FmtStr(((LabelT *)(wg))->text, ((LabelT *)(wg))->length, (str), args)
 
-void GuiInit(GuiStateT *gui, BitmapT *screen, PixmapT *font);
+void GuiInit(GuiStateT *gui, BitmapT *screen, BitmapT *font);
 void GuiRedraw(GuiStateT *gui);
 void GuiHandleMouseEvent(GuiStateT *gui, MouseEventT *ev);
 void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg);

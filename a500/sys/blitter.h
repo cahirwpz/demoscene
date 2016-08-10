@@ -38,6 +38,15 @@ __regargs void BlitterCopyStart(WORD dstbpl, WORD srcbpl);
   BlitterCopyStart((dstbpl), (srcbpl));                 \
 })
 
+void BlitterCopyAreaSetup(BitmapT *dst, UWORD x, UWORD y,
+                          BitmapT *src, Area2D *area);
+__regargs void BlitterCopyAreaStart(WORD dstbpl, WORD srcbpl);
+
+#define BlitterCopyArea(dst, dstbpl, x, y, src, srcbpl, area) ({        \
+  BlitterCopyAreaSetup((dst), (x), (y), (src), (area));                 \
+  BlitterCopyAreaStart((dstbpl), (srcbpl));                             \
+})
+
 #define BlitterFill(bitmap, plane) \
   BlitterFillArea((bitmap), (plane), NULL)
 

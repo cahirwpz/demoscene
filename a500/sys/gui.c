@@ -10,32 +10,17 @@ static inline void PushGuiEvent(WidgetT *wg, WORD event) {
 
 /* Widget handling functions. */
 static void DrawText(GuiStateT *gui, WORD x, WORD y, UBYTE *text) {
-  WORD swidth = gui->font->width / 8;
-  WORD dwidth = gui->screen->bytesPerRow;
-  UBYTE *src = gui->font->pixels;
-  UBYTE *dst = gui->screen->planes[2] + y * dwidth;
-  WORD n = strlen(text);
-  WORD k = (x + 7) >> 3;
+  Area2D area = { 0, 0, 8, 8 };
+  WORD px = x;
+  WORD c;
 
-  while (--n >= 0) {
-    WORD i = *text++;
-    WORD j = k++;
-    WORD h = 8;
-
-    if (i == '\n') {
-      dst += dwidth * 8;
-      k = x >> 3;
-    }
-
-    i -= 32;
-
-    if (i < 0)
-      continue;
-
-    while (--h >= 0) {
-      dst[j] |= src[i];
-      i += swidth;
-      j += dwidth;
+  while ((c = *text++)) {
+    if (c == '\n') {
+      x = px, y += 8;
+    } else {
+      area.x = (c - 32) * 8;
+      BlitterCopyArea(gui->screen, 2, x, y, gui->font, 0, &area);
+      x += 8;
     }
   }
 }
@@ -231,7 +216,7 @@ static void InitWidget(WidgetT *wg, WidgetT *parent) {
   }
 }
 
-void GuiInit(GuiStateT *gui, BitmapT *screen, PixmapT *font) {
+void GuiInit(GuiStateT *gui, BitmapT *screen, BitmapT *font) {
   gui->screen = screen;
   gui->font = font;
 
