@@ -19,7 +19,7 @@ static BitmapT *screen;
 static CopListT *cp;
 static SpriteT *pointer;
 static CopInsT *sprptr[8];
-static BitmapT *font;
+static FontT *font;
 
 /* Test program */
 static GUI_BUTTON(_b0,   0,  0, 48, 12, "Play");
@@ -40,11 +40,11 @@ static GUI_GROUP(_root, _bg0, _bg1, _l0);
 static GUI_MAIN(_root);
 
 static void Load() {
-  font = LoadILBMCustom("koi8r.8x8.ilbm", BM_DISPLAYABLE);
+  font = LoadFont("koi8r.8x8.font");
 }
 
 static void UnLoad() {
-  DeleteBitmap(font);
+  DeleteFont(font);
 }
 
 static void Init() {

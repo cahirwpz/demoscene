@@ -8,23 +8,6 @@ static inline void PushGuiEvent(WidgetT *wg, WORD event) {
   PushEvent((EventT *)&ev);
 }
 
-/* Widget handling functions. */
-static void DrawText(GuiStateT *gui, WORD x, WORD y, UBYTE *text) {
-  Area2D area = { 0, 0, 8, 8 };
-  WORD px = x;
-  WORD c;
-
-  while ((c = *text++)) {
-    if (c == '\n') {
-      x = px, y += 8;
-    } else {
-      area.x = (c - 32) * 8;
-      BlitterCopyArea(gui->screen, 2, x, y, gui->font, 0, &area);
-      x += 8;
-    }
-  }
-}
-
 static void DrawFrame(BitmapT *bitmap, Area2D *area, GuiFrameT frame) {
   WORD x1 = area->x;
   WORD y1 = area->y;
@@ -67,9 +50,9 @@ static void LabelRedraw(GuiStateT *gui, LabelT *wg) {
 
   if (wg->frame) {
     DrawFrame(gui->screen, &wg->area, 1);
-    DrawText(gui, wg->area.x + 2, wg->area.y + 2, wg->text);
+    DrawText(wg->area.x + 2, wg->area.y + 2, wg->text);
   } else {
-    DrawText(gui, wg->area.x, wg->area.y, wg->text);
+    DrawText(wg->area.x, wg->area.y, wg->text);
   }
 }
 
@@ -84,7 +67,7 @@ static void ButtonRedraw(GuiStateT *gui, ButtonT *wg) {
             (active ^ pressed ^ toggled) ? FRAME_IN : FRAME_OUT);
 
   if (wg->label)
-    DrawText(gui, wg->area.x + 2, wg->area.y + 2, wg->label);
+    DrawText(wg->area.x + 2, wg->area.y + 2, wg->label);
 }
 
 static void ButtonPress(GuiStateT *gui, ButtonT *wg) {
@@ -216,11 +199,12 @@ static void InitWidget(WidgetT *wg, WidgetT *parent) {
   }
 }
 
-void GuiInit(GuiStateT *gui, BitmapT *screen, BitmapT *font) {
+void GuiInit(GuiStateT *gui, BitmapT *screen, FontT *font) {
   gui->screen = screen;
   gui->font = font;
 
   InitWidget(gui->root, NULL);
+  DrawTextSetup(gui->screen, 2, gui->font);
 }
 
 void GuiRedraw(GuiStateT *gui) {
