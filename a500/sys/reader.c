@@ -67,6 +67,11 @@ __regargs BOOL NextWord(char **data) {
   while ((c = *str)) { 
     if (escape) {
       escape = FALSE;
+      if (c != '\n') {
+        found = TRUE;
+        str--;
+        break;
+      }
     } else if (c == '\\') {
       escape = TRUE;
     } else if (c == '#') {
@@ -279,24 +284,30 @@ __regargs WORD ReadString(char **data, char *buf, WORD buflen) {
     if (!escape) {
       if (c == '#')
         break;
-      if (isspace(c))
+      else if (c == '\\')
+        escape = TRUE;
+      else if (isspace(c))
         break;
-      *buf++ = c, n++;
-    } else if (c != '\n') {
-      if (c == 't') c = '\t';
-      if (c == 'n') c = '\n';
-      if (c == 'r') c = '\r';
-      if (c == '0') c = '\0';
-      *buf++ = c, n++;
+      else
+        *buf++ = c, n++;
+    } else {
+      escape = FALSE;
+
+      if (c != '\n') {
+        if (c == 't') c = '\t';
+        if (c == 'n') c = '\n';
+        if (c == 'r') c = '\r';
+        if (c == '0') c = '\0';
+        *buf++ = c, n++;
+      }
     }
     str++;
-    escape = (!escape && c == '\\');
   }
 
   if (n == buflen)
     return -1;
 
-  buf[n] = '\0';
+  *buf = '\0';
   *data = str;
   return n;
 }
