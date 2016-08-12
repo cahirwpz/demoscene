@@ -21,9 +21,9 @@ static BitmapT *screen0, *screen1;
 static BitmapT *buffer;
 
 static void Load() {
-  // mesh = LoadLWO("codi2.lwo", SPFlt(384));
-  mesh = LoadLWO("new_2.lwo", SPFlt(80));
-  // mesh = LoadLWO("cube.lwo", SPFlt(50));
+  // mesh = LoadMesh3D("codi2.3d", SPFlt(384));
+  mesh = LoadMesh3D("new_2.3d", SPFlt(80));
+  // mesh = LoadMesh3D("cube.3d", SPFlt(50));
   CalculateFaceNormals(mesh);
   CalculateEdges(mesh);
   palette = LoadPalette("flatshade-pal.ilbm");

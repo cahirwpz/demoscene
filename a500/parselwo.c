@@ -25,85 +25,81 @@ int main() {
   memcpy(filename, __commandline, len--);
   filename[len] = '\0';
 
-  if (OpenIff(&iff, filename)) {
-    Print("Parsing '%s':\n", filename);
+  OpenIff(&iff, filename);
+  Log("Parsing '%s':\n", filename);
+  Log("%.4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
 
-    Print("%.4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
+  while (ParseChunk(&iff)) {
+    Log(".%.4s %ld\n", (STRPTR)&iff.chunk.type, iff.chunk.length);
 
-    while (ParseChunk(&iff)) {
-      Print(".%.4s %ld\n", (STRPTR)&iff.chunk.type, iff.chunk.length);
+    switch (iff.chunk.type) {
+      case ID_PNTS:
+        {
+          FLOAT *pnts = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
+          FLOAT s = SPFlt(scale);
+          FLOAT *p = pnts;
+          WORD n = iff.chunk.length / 12;
+          WORD i;
 
-      switch (iff.chunk.type) {
-        case ID_PNTS:
-          {
-            FLOAT *pnts = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
-            FLOAT s = SPFlt(scale);
-            FLOAT *p = pnts;
-            WORD n = iff.chunk.length / 12;
-            WORD i;
+          ReadChunk(&iff, pnts);
 
-            ReadChunk(&iff, pnts);
-
-            for (i = 0; i < n; i++) {
-              LONG x = SPFix(SPMul(SPFieee(*p++), s));
-              LONG y = SPFix(SPMul(SPFieee(*p++), s));
-              LONG z = SPFix(SPMul(SPFieee(*p++), s));
-              Print("%5ld : [%ld %ld %ld]\n", (LONG)i, x, y, z);
-            }
-
-            MemFree(pnts);
+          for (i = 0; i < n; i++) {
+            LONG x = SPFix(SPMul(SPFieee(*p++), s));
+            LONG y = SPFix(SPMul(SPFieee(*p++), s));
+            LONG z = SPFix(SPMul(SPFieee(*p++), s));
+            Log("%5ld : [%ld %ld %ld]\n", (LONG)i, x, y, z);
           }
-          break;
 
-        case ID_POLS:
-          {
-            WORD *pols = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
-            WORD n = iff.chunk.length / 2;
-            WORD i = 0, j = 0;
+          MemFree(pnts);
+        }
+        break;
 
-            ReadChunk(&iff, pols);
+      case ID_POLS:
+        {
+          WORD *pols = MemAlloc(iff.chunk.length, MEMF_PUBLIC);
+          WORD n = iff.chunk.length / 2;
+          WORD i = 0, j = 0;
 
-            if (iff.header.type == ID_LWOB) {
-              while (i < n) {
-                /* Face vertex indices. */
-                WORD vertices = pols[i++];
-                Print("%5ld: [", (LONG)j++);
-                while (--vertices > 0)
-                  Print("%ld ", (LONG)pols[i++]);
-                Print("%ld] ", (LONG)pols[i++]);
+          ReadChunk(&iff, pols);
 
-                /* Polygon flags. */
-                Print("{%ld}\n", (LONG)pols[i++]);
-              }
-            } else {
-              Print("..%.4s\n", (STRPTR)pols);
+          if (iff.header.type == ID_LWOB) {
+            while (i < n) {
+              /* Face vertex indices. */
+              WORD vertices = pols[i++];
+              Log("%5ld: [", (LONG)j++);
+              while (--vertices > 0)
+                Log("%ld ", (LONG)pols[i++]);
+              Log("%ld] ", (LONG)pols[i++]);
 
-              i += 2; /* Skip POLS type field. */
-
-              while (i < n) {
-                /* Face vertex indices. */
-                WORD vertices = pols[i++];
-                Print("%5ld: [", (LONG)j++);
-                while (--vertices > 0)
-                  Print("%ld ", (LONG)pols[i++]);
-                Print("%ld]\n", (LONG)pols[i++]);
-              }
+              /* Polygon flags. */
+              Log("{%ld}\n", (LONG)pols[i++]);
             }
+          } else {
+            Log("..%.4s\n", (STRPTR)pols);
 
-            MemFree(pols);
+            i += 2; /* Skip POLS type field. */
+
+            while (i < n) {
+              /* Face vertex indices. */
+              WORD vertices = pols[i++];
+              Log("%5ld: [", (LONG)j++);
+              while (--vertices > 0)
+                Log("%ld ", (LONG)pols[i++]);
+              Log("%ld]\n", (LONG)pols[i++]);
+            }
           }
-          break;
 
-        default:
-          SkipChunk(&iff);
-          break;
-      }
+          MemFree(pols);
+        }
+        break;
+
+      default:
+        SkipChunk(&iff);
+        break;
     }
-
-    CloseIff(&iff);
-  } else {
-    Print("'%s' is not an IFF file.\n", filename);
   }
+
+  CloseIff(&iff);
 
   return 0;
 }

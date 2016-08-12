@@ -88,7 +88,7 @@ int main() {
   memcpy(filename, __commandline, len--);
   filename[len] = '\0';
 
-  Print("Parsing '%s'.\n", filename);
+  Log("Parsing '%s'.\n", filename);
 
   if ((file = OpenFile(filename, IOF_BUFFERED))) {
     ULONG chk[3];
@@ -104,16 +104,16 @@ int main() {
         if (!FileRead(file, &chk, 8))
           break;
 
-        Print("> %4s [%ld]\n", (STRPTR)&chk[1], chk[0]);
+        Log("> %4s [%ld]\n", (STRPTR)&chk[1], chk[0]);
 
         switch (chk[1]) {
           case PNG_IHDR:
             {
               FileRead(file, &ihdr, sizeof(ihdr));
 
-              Print("size : %ld x %ld, %s, bit depth : %ld, %s\n",
-                    ihdr.width, ihdr.height, s_type[ihdr.colour_type], 
-                    (LONG)ihdr.bit_depth, s_interlace[ihdr.interlace_method]);
+              Log("size : %ld x %ld, %s, bit depth : %ld, %s\n",
+                  ihdr.width, ihdr.height, s_type[ihdr.colour_type], 
+                  (LONG)ihdr.bit_depth, s_interlace[ihdr.interlace_method]);
             }
             break;
 
@@ -124,15 +124,15 @@ int main() {
 
               FileRead(file, plte, chk[0]);
 
-              Print("%ld : ", (LONG)n);
+              Log("%ld : ", (LONG)n);
               {
                 RGB *ptr = plte;
                 WORD i;
                 for (i = 0; i < n; i++, ptr++)
-                  Print("#%02lx%02lx%02lx ",
-                        (LONG)ptr->r, (LONG)ptr->g, (LONG)ptr->b);
+                  Log("#%02lx%02lx%02lx ",
+                      (LONG)ptr->r, (LONG)ptr->g, (LONG)ptr->b);
               }
-              Print("\n");
+              Log("\n");
               MemFree(plte);
             }
             break;
@@ -145,17 +145,17 @@ int main() {
               FileRead(file, &trns, chk[0]);
 
               if (type == PNG_GRAYSCALE)
-                Print("#%ld\n", (LONG)trns.type0.v);
+                Log("#%ld\n", (LONG)trns.type0.v);
               else if (type == PNG_TRUECOLOR)
-                Print("#%02lx%02lx%02lx\n",
-                      (LONG)trns.type2.r, (LONG)trns.type2.g, (LONG)trns.type2.b);
+                Log("#%02lx%02lx%02lx\n",
+                    (LONG)trns.type2.r, (LONG)trns.type2.g, (LONG)trns.type2.b);
               else if (type == PNG_INDEXED) {
                 WORD n = chk[0];
                 WORD i;
 
                 for (i = 0; i < n; i++)
-                  Print("#%02lx ", (LONG)trns.type3.alpha[i]);
-                Print("\n");
+                  Log("#%02lx ", (LONG)trns.type3.alpha[i]);
+                Log("\n");
               }
             }
             break;
@@ -168,12 +168,12 @@ int main() {
               FileRead(file, &bkgd, chk[0]);
 
               if (type == PNG_GRAYSCALE)
-                Print("#%ld\n", (LONG)bkgd.type0.v);
+                Log("#%ld\n", (LONG)bkgd.type0.v);
               else if (type == PNG_TRUECOLOR)
-                Print("#%02lx%02lx%02lx\n",
-                      (LONG)bkgd.type2.r, (LONG)bkgd.type2.g, (LONG)bkgd.type2.b);
+                Log("#%02lx%02lx%02lx\n",
+                    (LONG)bkgd.type2.r, (LONG)bkgd.type2.g, (LONG)bkgd.type2.b);
               else if (type == PNG_INDEXED)
-                Print("#%ld\n", (LONG)bkgd.type3.v);
+                Log("#%ld\n", (LONG)bkgd.type3.v);
             }
             break;
 
@@ -183,7 +183,7 @@ int main() {
 
               FileRead(file, text, chk[0]);
 
-              Print("%s %s\n", text, text + strlen(text) + 1);
+              Log("%s %s\n", text, text + strlen(text) + 1);
 
               MemFree(text);
             }
@@ -197,7 +197,7 @@ int main() {
         FileSeek(file, 4, SEEK_CUR); // skip CRC
       }
     } else {
-      Print("'%s' is not a PNG file!\n", filename);
+      Log("'%s' is not a PNG file!\n", filename);
     }
 
     CloseFile(file);

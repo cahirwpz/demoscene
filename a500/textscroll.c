@@ -29,7 +29,7 @@ static BitmapT *scroll;
 static BitmapT *font;
 
 static WORD last_line = -1;
-static UBYTE *line_start;
+static char *line_start;
 
 static void Load() {
   text = LoadFile("text-scroll.txt", MEMF_PUBLIC);
@@ -130,8 +130,12 @@ static void RenderNextLineIfNeeded() {
   if (s > last_line) {
     APTR ptr = scroll->planes[0];
     WORD line_num = (s % (LINES + 2)) * SIZE;
-    UBYTE *line_end = NextLine(line_start);
-    WORD size = (line_end - line_start) - 1;
+    char *line_end;
+    WORD size;
+
+    line_end = line_start;
+    NextLine(&line_end);
+    size = (line_end - line_start) - 1;
 
     ptr += line_num * scroll->bytesPerRow;
 
@@ -140,7 +144,7 @@ static void RenderNextLineIfNeeded() {
     RenderLine(ptr, line_start, min(size, COLUMNS));
 
     last_line = s;
-    line_start = NextLine(line_start);
+    NextLine(&line_start);
   }
 }
 

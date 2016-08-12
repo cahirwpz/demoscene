@@ -89,19 +89,19 @@ int main() {
 
   if ((fh = OpenFile(filename, IOF_BUFFERED))) {
     BPTR seglist;
-    Print("Parsing '%s':\n", filename);
+    Log("Parsing '%s':\n", filename);
     if ((seglist = LoadExecutable(fh))) {
-      Print("'%s' returned %ld\n", filename, RunIt(seglist, argPtr, argSize));
+      Log("'%s' returned %ld\n", filename, RunIt(seglist, argPtr, argSize));
       FreeSegList(seglist);
     } else {
-      Print("'%s' not an Amiga executable file.\n", filename);
+      Log("'%s' not an Amiga executable file.\n", filename);
     }
     CloseFile(fh);
   } else {
-    Print("'%s' no such file.\n", filename);
+    Log("'%s' no such file.\n", filename);
   }
 
-  Print("Press CTRL+C to finish.\n");
+  Log("Press CTRL+C to finish.\n");
   Wait(SIGBREAKF_CTRL_C);
 
   return 0;

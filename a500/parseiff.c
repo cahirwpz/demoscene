@@ -15,20 +15,16 @@ int main() {
   memcpy(filename, __commandline, len--);
   filename[len] = '\0';
 
-  if (OpenIff(&iff, filename)) {
-    Print("Parsing '%s':\n", filename);
+  OpenIff(&iff, filename);
+  Log("Parsing '%s':\n", filename);
+  Log("%.4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
 
-    Print("%.4s %ld\n", (STRPTR)&iff.header.type, iff.header.length);
-
-    while (ParseChunk(&iff)) {
-      Print(".%.4s %ld\n", (STRPTR)&iff.chunk.type, iff.chunk.length);
-      SkipChunk(&iff);
-    }
-
-    CloseIff(&iff);
-  } else {
-    Print("'%s' is not an IFF file.\n", filename);
+  while (ParseChunk(&iff)) {
+    Log(".%.4s %ld\n", (STRPTR)&iff.chunk.type, iff.chunk.length);
+    SkipChunk(&iff);
   }
+
+  CloseIff(&iff);
 
   return 0;
 }
