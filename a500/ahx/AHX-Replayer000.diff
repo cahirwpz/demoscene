@@ -1,0 +1,36 @@
+@ 0396          _LVOAllocMem
+- 4eaeff3a
++ 610029a4
+@ 03be          _LVOAllocMem
+- 4eaeff3a
++ 6100297c
+@ 02a6          _LVOFreeMem
+- 4eaeff2e
++ 61002a98
+@ 02bc          _LVOFreeMem
+- 4eaeff2e
++ 61002a82
+@ 03f6          _LVOOpen
+- 4eaeffe2
++ 6100294c
+@ 044c          _LVOOpen
+- 4eaeffe2
++ 610028f6
+@ 0416          _LVORead
+- 4eaeffd6
++ 61002930
+@ 046c          _LVORead
+- 4eaeffd6
++ 610028da
+@ 041e          _LVOClose
+- 4eaeffdc
++ 6100292c
+@ 047e          _LVOClose
+- 4eaeffdc
++ 610028cc
+@ 03ec          "S:ahxWaves.Location" -> "ahxWaves.Location"
+- 0426
++ 0428
+@ 0736
+- 2a7af8f4      move.l  _Ahx+4(pc),a5
++ 600000b8      bra.w   LAB_005C

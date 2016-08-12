@@ -5,13 +5,20 @@
 #include "io.h"
 #include "ahx/ahx.h"
 
+LONG __chipmem = 100 * 1024;
+LONG __fastmem = 420 * 1024;
+STRPTR __cwdpath = "data";
+
 static APTR module;
 
 static void Load() {
-  module = LoadFile("data/jazzcat-electric_city.ahx", MEMF_PUBLIC);
+  module = LoadFile("jazzcat-electric_city.ahx", MEMF_PUBLIC);
+  if (AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS) != 0)
+    exit(10);
 }
 
 static void UnLoad() {
+  AhxKillPlayer();
   MemFree(module);
 }
 
@@ -41,12 +48,9 @@ static void Init() {
   /* Run CIA Timer A in continuous / normal mode, increment every 10 cycles. */
   ciaa->ciacra &= (UBYTE)(~CIACRAF_RUNMODE & ~CIACRAF_INMODE & ~CIACRAF_PBON);
 
-  /* Use AHX_EXPLICIT_WAVES_PRECALCING flag,
-   * because dos.library is not usable at this point. */
-  if (AhxInitCIA((APTR)AhxSetTempo, AHX_KILL_SYSTEM) == 0)
-    if (AhxInitPlayer(AHX_EXPLICIT_WAVES_PRECALCING, AHX_FILTERS) == 0)
-      if (AhxInitModule(module) == 0)
-        AhxInitSubSong(0, 0);
+  if (AhxInitHardware((APTR)AhxSetTempo, AHX_KILL_SYSTEM) == 0)
+    if (AhxInitModule(module) == 0)
+      AhxInitSubSong(0, 0);
 
   AddIntServer(INTB_PORTS, &AhxPlayerInterrupt);
 }
@@ -55,8 +59,7 @@ static void Kill() {
   RemIntServer(INTB_PORTS, &AhxPlayerInterrupt);
 
   AhxStopSong();
-  AhxKillPlayer();
-  AhxKillCIA();
+  AhxKillHardware();
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, NULL };

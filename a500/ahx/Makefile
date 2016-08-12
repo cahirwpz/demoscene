@@ -1,5 +1,12 @@
 libahx.a: ahx.o
 
-ahx.o: ahx.s ahx.h
+AHX-Replayer000.BIN.patched: AHX-Replayer000.BIN AHX-Replayer000.diff
+	@echo "FIX  $<"
+	../../scripts/binpatch.py $^ $@
+
+ahx.o: ahx.s ahx.h AHX-Replayer000.BIN.patched
+
+clean::
+	@$(RM) -v -r AHX-Replayer000.BIN.patched
 
 include ../Makefile.common
