@@ -3,18 +3,19 @@
 
 #include <exec/types.h>
 
+#define AHX_SAMPLE_LEN 320
+
 typedef struct AhxVoiceTemp {
   BYTE Track;
   BYTE Transpose;
   BYTE NextTrack;
   BYTE NextTranspose;
   BYTE ADSRVolume;
-  BYTE pad0[87];
+  BYTE pad0[91];
   APTR AudioPointer;
-  BYTE pad1[4];
   WORD AudioPeriod;
   WORD AudioVolume;
-  BYTE pad2[128];
+  BYTE pad1[128];
 } AhxVoiceTempT; /* sizeof(AhxVoiceTempT) == 232 */
 
 typedef struct AhxInfo {
@@ -23,8 +24,13 @@ typedef struct AhxInfo {
   BYTE Subsongs;
   BYTE SongEnd;
   BYTE Playing;
-  BYTE pad[9];
+  BYTE pad1[3];
+  LONG FrameCount;
+  BYTE pad2[2];
   AhxVoiceTempT VoiceTemp[4];
+  BYTE pad3[156];
+  WORD Row;
+  WORD Pos;
 } AhxInfoT;
 
 struct AhxPlayer {

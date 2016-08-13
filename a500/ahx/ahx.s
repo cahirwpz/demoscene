@@ -39,6 +39,7 @@ Ahx:
         cargs #Ahx+$9bc, _AhxNextPattern
         cargs #Ahx+$9d0, _AhxPrevPattern
         cargs #Ahx+$9ea, _AhxInterrupt
+        cargs #Ahx+$1650, _AhxSetupVoice
 
 jumptable:
         bra.w   _AllocMem
