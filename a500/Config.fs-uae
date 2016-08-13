@@ -26,3 +26,4 @@ keyboard_key_f11 = action_hard_reset
 keyboard_key_f10 = action_activate_cartridge
 keyboard_key_f9 = action_pause 
 keyboard_key_f8 = action_screenshot
+joystick_port_1_mode = nothing

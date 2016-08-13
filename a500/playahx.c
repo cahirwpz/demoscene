@@ -153,7 +153,7 @@ static void UnLoad() {
 
 static __interrupt LONG AhxPlayerIntHandler() {
   /* Handle CIA Timer A interrupt. */
-  if (ciaa->ciaicr & CIAICRF_TA) {
+  if (ReadICR(ciaa) & CIAICRF_TA) {
     custom->color[0] = 0x448;
     AhxInterrupt();
     custom->color[0] = 0;
@@ -276,8 +276,10 @@ static BOOL HandleEvent() {
   if (ev.key.code == KEY_ESCAPE)
     return FALSE;
 
-  if (ev.key.code == KEY_SPACE)
+  if (ev.key.code == KEY_SPACE) {
     Ahx.Public->Playing = ~Ahx.Public->Playing;
+    custom->dmacon = (Ahx.Public->Playing ? DMAF_SETCLR : 0) | DMAF_AUDIO;
+  }
 
   if (ev.key.code == KEY_LEFT)
     AhxPrevPattern();

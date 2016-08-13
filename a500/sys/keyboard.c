@@ -165,7 +165,7 @@ static __regargs void PushKeyEvent(UBYTE raw) {
 }
 
 static __interrupt LONG KeyboardIntHandler() {
-  if (ciaa->ciaicr & CIAICRF_SP) {
+  if (ReadICR(ciaa) & CIAICRF_SP) {
     /* Read keyboard data register. */
     UBYTE sdr = ciaa->ciasdr;
     /* Set serial port to output mode. */

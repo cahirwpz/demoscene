@@ -20,6 +20,14 @@ __regargs void WaitLine(ULONG line) {
   } while (vpos != line);
 }
 
+__regargs LONG ReadICR(volatile struct CIA *cia) {
+  static LONG oldicr = 0;
+  UBYTE newicr = cia->ciaicr;
+  if (newicr)
+    oldicr = newicr;
+  return oldicr;
+}
+
 __regargs void WaitTimerA(volatile struct CIA *cia, UWORD delay) {
   cia->ciacra |= CIACRAF_RUNMODE;
   cia->ciaicr = CIAICRF_TA;

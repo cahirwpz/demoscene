@@ -59,6 +59,7 @@ static inline BOOL RightMouseButton() {
 /* Maximum delay is around 92.38ms */
 __regargs void WaitTimerA(volatile struct CIA *cia, UWORD delay);
 __regargs void WaitTimerB(volatile struct CIA *cia, UWORD delay);
+__regargs LONG ReadICR(volatile struct CIA *cia);
 
 LONG ReadLineCounter();
 LONG ReadFrameCounter();
