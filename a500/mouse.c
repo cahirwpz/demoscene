@@ -42,7 +42,8 @@ static GUI_DEF(_bg1, GUI_GROUP(WG_ITEM(_rb0, 250, 14, -1, -1),
                                WG_ITEM(_rb2, 252, 42, -1, -1),
                                WG_ITEM(_rb3, 253, 56, -1, -1)));
 
-static GUI_DEF(_t0, GUI_BUTTON(GUI_IMAGE("toggle_0.ilbm")));
+static GUI_DEF(_t0, GUI_TOGGLE(GUI_IMAGE("toggle_0.ilbm"),
+                               GUI_IMAGE("toggle_1.ilbm")));
 static GUI_DEF(_l0, GUI_LABEL_N(40));
 static GUI_DEF(_f0, GUI_FRAME(FRAME_FLAT, _l0));
 static GUI_DEF(_root, GUI_GROUP(WG_ITEM(_bg0, 0, 0, -1, -1),

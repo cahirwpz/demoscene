@@ -4,6 +4,23 @@
 #include "mouse.h"
 #include "bltop.h"
 
+#define WidgetRedraw(gui, wg) \
+  GuiWidgetRedraw((gui), (WidgetT *)wg)
+#define WidgetEnter(gui, wg) \
+  GuiWidgetEnter((gui), (WidgetT *)wg)
+#define WidgetLeave(gui, wg) \
+  GuiWidgetLeave((gui), (WidgetT *)wg)
+#define WidgetPress(gui, wg) \
+  GuiWidgetPress((gui), (WidgetT *)wg)
+#define WidgetRelease(gui, wg) \
+  GuiWidgetRelease((gui), (WidgetT *)wg)
+
+inline void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg);
+inline void GuiWidgetEnter(GuiStateT *gui, WidgetT *wg);
+inline void GuiWidgetLeave(GuiStateT *gui, WidgetT *wg);
+inline void GuiWidgetPress(GuiStateT *gui, WidgetT *wg);
+inline void GuiWidgetRelease(GuiStateT *gui, WidgetT *wg);
+
 static inline void PushGuiEvent(WidgetT *wg, WORD event) {
   GuiEventT ev = { EV_GUI, event, wg };
   PushEvent((EventT *)&ev);
@@ -36,14 +53,12 @@ static void DrawFrame(BitmapT *bitmap, Area2D *area, GuiFrameT frame) {
   }
 }
 
-inline void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg);
-
 static void GroupRedraw(GuiStateT *gui, GroupT *wg) {
   GroupItemT *item;
   WORD n;
 
   for (item = wg->item, n = wg->count; n--; item++)
-    GuiWidgetRedraw(gui, item->widget);
+    WidgetRedraw(gui, item->widget);
 }
 
 static void LabelRedraw(GuiStateT *gui, LabelT *wg) {
@@ -63,7 +78,7 @@ static void FrameRedraw(GuiStateT *gui, FrameT *wg) {
   DrawFrame(gui->screen, &wg->area, 1);
 
   if (wg->widget)
-    GuiWidgetRedraw(gui, wg->widget);
+    WidgetRedraw(gui, wg->widget);
 }
 
 static void ButtonRedraw(GuiStateT *gui, ButtonT *wg) {
@@ -77,20 +92,34 @@ static void ButtonRedraw(GuiStateT *gui, ButtonT *wg) {
             (active ^ pressed ^ toggled) ? FRAME_IN : FRAME_OUT);
 
   if (wg->widget)
-    GuiWidgetRedraw(gui, wg->widget);
+    WidgetRedraw(gui, wg->widget);
+}
+
+static void ToggleRedraw(GuiStateT *gui, ToggleT *wg) {
+  BOOL active = (wg->state & WS_ACTIVE) ? 1 : 0;
+  BOOL pressed = (wg->state & WS_PRESSED) ? 1 : 0;
+  BOOL toggled = (wg->state & WS_TOGGLED) ? 1 : 0;
+
+  BitmapSetArea(gui->screen, &wg->area,
+                active ? UI_BG_ACTIVE : UI_BG_INACTIVE);
+  DrawFrame(gui->screen, &wg->area,
+            (active ^ pressed) ? FRAME_IN : FRAME_OUT);
+
+  if (wg->widget[toggled])
+    WidgetRedraw(gui, wg->widget[toggled]);
 }
 
 static void ButtonPress(GuiStateT *gui, ButtonT *wg) {
   wg->state |= WS_PRESSED;
-  ButtonRedraw(gui, wg);
   PushGuiEvent((WidgetT *)wg, WA_PRESSED);
+  WidgetRedraw(gui, wg);
 }
 
 static void ButtonRelease(GuiStateT *gui, ButtonT *wg) {
   wg->state &= ~WS_PRESSED;
-  ButtonRedraw(gui, wg);
   if (gui->lastPressed == (WidgetBaseT *)wg)
     PushGuiEvent((WidgetT *)wg, WA_RELEASED);
+  WidgetRedraw(gui, wg);
 }
 
 static void RadioButtonRelease(GuiStateT *gui, ButtonT *wg) {
@@ -105,29 +134,38 @@ static void RadioButtonRelease(GuiStateT *gui, ButtonT *wg) {
         WidgetT *child = group->item[i].widget;
         if (child->base.state & WS_TOGGLED) {
           child->base.state &= ~WS_TOGGLED;
-          GuiWidgetRedraw(gui, child);
+          WidgetRedraw(gui, child);
         }
       }
 
       wg->state |= WS_TOGGLED;
     }
   }
-  ButtonRedraw(gui, wg);
+  WidgetRedraw(gui, wg);
+}
+
+static void ToggleRelease(GuiStateT *gui, ToggleT *wg) {
+  wg->state &= ~WS_PRESSED;
+  if (gui->lastPressed == (WidgetBaseT *)wg) {
+    wg->state ^= WS_TOGGLED;
+    PushGuiEvent((WidgetT *)wg, WA_RELEASED);
+  }
+  WidgetRedraw(gui, wg);
 }
 
 static void ButtonLeave(GuiStateT *gui, ButtonT *wg) {
   wg->state &= ~WS_ACTIVE;
   wg->state &= ~WS_PRESSED;
-  ButtonRedraw(gui, wg);
   PushGuiEvent((WidgetT *)wg, WA_LEFT);
+  WidgetRedraw(gui, wg);
 }
 
 static void ButtonEnter(GuiStateT *gui, ButtonT *wg) {
   wg->state |= WS_ACTIVE;
   if (gui->lastPressed == (WidgetBaseT *)wg)
     wg->state |= WS_PRESSED;
-  ButtonRedraw(gui, wg);
   PushGuiEvent((WidgetT *)wg, WA_ENTERED);
+  WidgetRedraw(gui, wg);
 }
 
 /* Dynamic function dispatch. */
@@ -135,63 +173,68 @@ static void WidgetDummyFunc(GuiStateT *gui, ButtonT *wg) {}
 
 inline void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg) {
   static WidgetFuncT WidgetRedrawFunc[WT_LAST] = {
-    (WidgetFuncT)GroupRedraw,
-    (WidgetFuncT)FrameRedraw,
-    (WidgetFuncT)LabelRedraw,
-    (WidgetFuncT)ImageRedraw,
-    (WidgetFuncT)ButtonRedraw,
-    (WidgetFuncT)ButtonRedraw,
+    [WT_GROUP] = (WidgetFuncT)GroupRedraw,
+    [WT_FRAME] = (WidgetFuncT)FrameRedraw,
+    [WT_LABEL] = (WidgetFuncT)LabelRedraw,
+    [WT_IMAGE] = (WidgetFuncT)ImageRedraw,
+    [WT_BUTTON] = (WidgetFuncT)ButtonRedraw,
+    [WT_RADIOBT] = (WidgetFuncT)ButtonRedraw,
+    [WT_TOGGLE] = (WidgetFuncT)ToggleRedraw,
   };
-  WidgetRedrawFunc[(wg)->type](gui, (WidgetT *)wg);
+  WidgetRedrawFunc[(wg)->type](gui, wg);
 }
 
-static WidgetFuncT WidgetEnterFunc[WT_LAST] = {
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)ButtonEnter,
-  (WidgetFuncT)ButtonEnter,
-};
+inline void GuiWidgetEnter(GuiStateT *gui, WidgetT *wg) {
+  static WidgetFuncT WidgetEnterFunc[WT_LAST] = {
+    [WT_GROUP] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_FRAME] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_LABEL] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_IMAGE] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_BUTTON] = (WidgetFuncT)ButtonEnter,
+    [WT_RADIOBT] = (WidgetFuncT)ButtonEnter,
+    [WT_TOGGLE] = (WidgetFuncT)ButtonEnter,
+  };
+  WidgetEnterFunc[(wg)->type]((gui), wg);
+}
 
-#define WidgetEnter(gui, wg) \
-  WidgetEnterFunc[(wg)->type]((gui), (WidgetT *)wg)
+inline void GuiWidgetLeave(GuiStateT *gui, WidgetT *wg) {
+  static WidgetFuncT WidgetLeaveFunc[WT_LAST] = {
+    [WT_GROUP] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_FRAME] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_LABEL] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_IMAGE] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_BUTTON] = (WidgetFuncT)ButtonLeave,
+    [WT_RADIOBT] = (WidgetFuncT)ButtonLeave,
+    [WT_TOGGLE] = (WidgetFuncT)ButtonLeave,
+  };
+  WidgetLeaveFunc[(wg)->type]((gui), wg);
+}
 
-static WidgetFuncT WidgetLeaveFunc[WT_LAST] = {
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)ButtonLeave,
-  (WidgetFuncT)ButtonLeave,
-};
+inline void GuiWidgetPress(GuiStateT *gui, WidgetT *wg) {
+  static WidgetFuncT WidgetPressFunc[WT_LAST] = {
+    [WT_GROUP] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_FRAME] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_LABEL] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_IMAGE] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_BUTTON] = (WidgetFuncT)ButtonPress,
+    [WT_RADIOBT] = (WidgetFuncT)ButtonPress,
+    [WT_TOGGLE] = (WidgetFuncT)ButtonPress,
+  };
+  WidgetPressFunc[(wg)->type]((gui), wg);
+}
 
-#define WidgetLeave(gui, wg) \
-  WidgetLeaveFunc[(wg)->type]((gui), (WidgetT *)wg)
-
-static WidgetFuncT WidgetPressFunc[WT_LAST] = {
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)ButtonPress,
-  (WidgetFuncT)ButtonPress,
-};
-
-#define WidgetPress(gui, wg) \
-  WidgetPressFunc[(wg)->type]((gui), (WidgetT *)wg)
-
-static WidgetFuncT WidgetReleaseFunc[WT_LAST] = {
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)WidgetDummyFunc,
-  (WidgetFuncT)ButtonRelease,
-  (WidgetFuncT)RadioButtonRelease,
-};
-
-#define WidgetRelease(gui, wg) \
-  WidgetReleaseFunc[(wg)->type]((gui), (WidgetT *)wg)
+inline void GuiWidgetRelease(GuiStateT *gui, WidgetT *wg) {
+  static WidgetFuncT WidgetReleaseFunc[WT_LAST] = {
+    [WT_GROUP] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_FRAME] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_LABEL] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_IMAGE] = (WidgetFuncT)WidgetDummyFunc,
+    [WT_BUTTON] = (WidgetFuncT)ButtonRelease,
+    [WT_RADIOBT] = (WidgetFuncT)RadioButtonRelease,
+    [WT_TOGGLE] = (WidgetFuncT)ToggleRelease,
+  };
+  WidgetReleaseFunc[(wg)->type]((gui), wg);
+}
 
 static WidgetT *FindWidgetByMouse(WidgetT *wg, WORD x, WORD y) {
   if (wg->type == WT_GROUP) {
@@ -223,6 +266,9 @@ static void WidgetInit(GuiStateT *gui, WidgetT *wg, WidgetT *parent) {
       WidgetInit(gui, wg->group.item[i].widget, wg);
   } else if (wg->type == WT_BUTTON || wg->type == WT_RADIOBT) {
     WidgetInit(gui, wg->button.widget, wg);
+  } else if (wg->type == WT_TOGGLE) {
+    WidgetInit(gui, wg->toggle.widget[0], wg);
+    WidgetInit(gui, wg->toggle.widget[1], wg);
   } else if (wg->type == WT_FRAME) {
     WidgetInit(gui, wg->frame.widget, wg);
   } else if (wg->type == WT_IMAGE) {
@@ -246,6 +292,9 @@ static void WidgetCalcPos(GuiStateT *gui, WidgetT *wg, WORD x, WORD y) {
 
     if (wg->type == WT_BUTTON || wg->type == WT_RADIOBT) {
       WidgetCalcPos(gui, wg->button.widget, x + 2, y + 2);
+    } else if (wg->type == WT_TOGGLE) {
+      WidgetCalcPos(gui, wg->toggle.widget[0], x + 2, y + 2);
+      WidgetCalcPos(gui, wg->toggle.widget[1], x + 2, y + 2);
     } else if (wg->type == WT_FRAME) {
       WidgetCalcPos(gui, wg->frame.widget, x + 2, y + 2);
     }
@@ -276,6 +325,16 @@ static void WidgetCalcSize(GuiStateT *gui, WidgetT *wg, WORD w, WORD h) {
     WidgetCalcSize(gui, wg->button.widget, w - 4, h - 4);
     WIDTH(wg) = max(w, WIDTH(wg->button.widget) + 4);
     HEIGHT(wg) = max(h, HEIGHT(wg->button.widget) + 4);
+  } else if (wg->type == WT_TOGGLE) {
+    WidgetT *w_off = wg->toggle.widget[0];
+    WidgetT *w_on = wg->toggle.widget[1];
+    WORD nw, nh;
+    WidgetCalcSize(gui, w_off, w - 4, h - 4);
+    WidgetCalcSize(gui, w_on, w - 4, h - 4);
+    nw = max(WIDTH(w_off), WIDTH(w_on));
+    nh = max(HEIGHT(w_off), HEIGHT(w_on));
+    WIDTH(wg) = max(w, nw + 4);
+    HEIGHT(wg) = max(h, nh + 4);
   } else if (wg->type == WT_FRAME) {
     WidgetCalcSize(gui, wg->frame.widget, w - 4, h - 4);
     WIDTH(wg) = max(w, WIDTH(wg->frame.widget) + 4);
@@ -302,7 +361,7 @@ void GuiRedraw(GuiStateT *gui, BitmapT *screen) {
 
   WidgetCalcPos(gui, gui->root, 0, 0);
   WidgetCalcSize(gui, gui->root, screen->width, screen->height);
-  GuiWidgetRedraw(gui, gui->root);
+  WidgetRedraw(gui, gui->root);
 }
 
 void GuiHandleMouseEvent(GuiStateT *gui, struct MouseEvent *mouse) {

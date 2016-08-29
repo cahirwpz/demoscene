@@ -20,7 +20,8 @@ typedef enum {
 } GuiFrameT;
 
 typedef enum { 
-  WT_GROUP, WT_FRAME, WT_LABEL, WT_IMAGE, WT_BUTTON, WT_RADIOBT, WT_LAST
+  WT_GROUP, WT_FRAME, WT_LABEL, WT_IMAGE, WT_BUTTON, WT_RADIOBT, WT_TOGGLE,
+  WT_LAST
 } WidgetTypeT;
 
 typedef enum {
@@ -82,6 +83,11 @@ typedef struct {
   WidgetT *widget;
 } ButtonT;
 
+typedef struct {
+  WIDGET_BASE
+  WidgetT *widget[2];
+} ToggleT;
+
 #undef WIDGET_BASE
 
 union Widget {
@@ -91,6 +97,7 @@ union Widget {
   ImageT  image;
   LabelT  label;
   ButtonT button;
+  ToggleT toggle;
   WidgetBaseT base;
 };
 
@@ -130,6 +137,9 @@ typedef void (*WidgetFuncT)(GuiStateT *, WidgetT *);
 
 #define GUI_RADIOBT(inner)                                              \
   GUI_WIDGET(ButtonT, WT_RADIOBT, (inner))
+
+#define GUI_TOGGLE(inner_off, inner_on)                                 \
+  GUI_WIDGET(ToggleT, WT_TOGGLE, {(inner_off), (inner_on)})
 
 #define GUI_GROUP_ITEMS(count, ...)                                     \
   count, (GroupItemT[count]){##__VA_ARGS__}
