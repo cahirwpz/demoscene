@@ -2,7 +2,7 @@
 #include "blitter.h"
 #include "coplist.h"
 #include "ilbm.h"
-#include "tga.h"
+#include "png.h"
 #include "fx.h"
 #include "memory.h"
 #include "sprite.h"
@@ -29,7 +29,7 @@ static CopInsT *sprptr[2][8];
 
 static void Load() {
   twister = LoadILBMCustom("twister.ilbm", BM_DISPLAYABLE);
-  texture = LoadTGA("twister-texture.tga", PM_RGB12, MEMF_PUBLIC);
+  texture = LoadPNG("twister-texture.png", PM_RGB12, MEMF_PUBLIC);
   gradient = LoadPalette("twister-gradient.ilbm");
 
   {

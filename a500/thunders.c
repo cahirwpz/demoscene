@@ -5,7 +5,7 @@
 #include "fx.h"
 #include "random.h"
 #include "color.h"
-#include "tga.h"
+#include "png.h"
 #include "ilbm.h"
 #include "color.h"
 #include "sprite.h"
@@ -81,7 +81,7 @@ static void FloorPrecalc() {
 }
 
 static void Load() {
-  texture = LoadTGA("thunders-floor.tga", PM_RGB12, MEMF_PUBLIC);
+  texture = LoadPNG("thunders-floor.png", PM_RGB12, MEMF_PUBLIC);
 
   {
     BitmapT *bitmap = LoadILBM("thunders.iff");

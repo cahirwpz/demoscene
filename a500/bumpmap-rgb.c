@@ -5,7 +5,7 @@
 #include "interrupts.h"
 #include "memory.h"
 #include "io.h"
-#include "tga.h"
+#include "png.h"
 #include "fx.h"
 
 STRPTR __cwdpath = "data";
@@ -59,7 +59,7 @@ static void DataScramble(UWORD *data, WORD n) {
 
 static void Load() {
   {
-    PixmapT *image = LoadTGA("light.tga", PM_GRAY8, MEMF_PUBLIC);
+    PixmapT *image = LoadPNG("light.png", PM_GRAY8, MEMF_PUBLIC);
 
     lightmap = MemAlloc(65536, MEMF_PUBLIC);
     {
@@ -77,7 +77,7 @@ static void Load() {
   }
 
   {
-    PixmapT *image = LoadTGA("bumpmap.tga", PM_CMAP8, MEMF_PUBLIC);
+    PixmapT *image = LoadPNG("bumpmap.png", PM_CMAP8, MEMF_PUBLIC);
 
     colormap = MemAlloc(WIDTH * HEIGHT * sizeof(UWORD), MEMF_PUBLIC);
     {

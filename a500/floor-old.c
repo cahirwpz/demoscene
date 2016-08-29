@@ -5,7 +5,7 @@
 #include "fx.h"
 #include "random.h"
 #include "color.h"
-#include "tga.h"
+#include "png.h"
 #include "ilbm.h"
 #include "color.h"
 
@@ -87,7 +87,7 @@ static void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  texture = LoadTGA("floor.tga", PM_RGB12, MEMF_PUBLIC);
+  texture = LoadPNG("floor.png", PM_RGB12, MEMF_PUBLIC);
 
   city = LoadILBM("floor-city.ilbm");
 

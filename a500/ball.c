@@ -3,7 +3,7 @@
 #include "coplist.h"
 #include "memory.h"
 #include "io.h"
-#include "tga.h"
+#include "png.h"
 #include "sprite.h"
 #include "ilbm.h"
 #include "fx.h"
@@ -82,7 +82,7 @@ static void MakeUVMapRenderCode() {
 
 static void Load() {
   background = LoadILBM("dragon-bg.ilbm");
-  texture = LoadTGA("texture-15.tga", PM_CMAP4, MEMF_PUBLIC);
+  texture = LoadPNG("texture-15.png", PM_CMAP4, MEMF_PUBLIC);
   uvmap = LoadFile("ball.bin", MEMF_PUBLIC);
 }
 

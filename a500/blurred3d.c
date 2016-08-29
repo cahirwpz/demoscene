@@ -5,7 +5,7 @@
 #include "fx.h"
 #include "ffp.h"
 #include "ilbm.h"
-#include "tga.h"
+#include "png.h"
 #include "memory.h"
 
 STRPTR __cwdpath = "data";
@@ -28,7 +28,7 @@ static PixmapT *gradient;
 
 static void Load() {
   mesh = LoadMesh3D("szescian.3d", SPFlt(93));
-  gradient = LoadTGA("blurred3d-pal.tga", PM_RGB12, MEMF_PUBLIC);
+  gradient = LoadPNG("blurred3d-pal.png", PM_RGB12, MEMF_PUBLIC);
   CalculateEdges(mesh);
   CalculateFaceNormals(mesh);
 }

@@ -3,7 +3,6 @@
 #include "coplist.h"
 #include "gfx.h"
 #include "ilbm.h"
-#include "tga.h"
 #include "memory.h"
 #include "fx.h"
 #include "color.h"
