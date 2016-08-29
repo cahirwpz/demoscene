@@ -66,7 +66,7 @@ static void Init() {
   scroll = NewBitmap(WIDTH, HEIGHT + 16, 1);
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
-  BitmapClear(scroll, DEPTH);
+  BitmapClear(scroll);
 
   line_start = text;
 
@@ -125,6 +125,7 @@ static void SetupLinePointers() {
 }
 
 static void RenderNextLineIfNeeded() {
+  Area2D rect = {0, 0, WIDTH, SIZE};
   WORD s = frameCount / 16;
 
   if (s > last_line) {
@@ -139,7 +140,8 @@ static void RenderNextLineIfNeeded() {
 
     ptr += line_num * scroll->bytesPerRow;
 
-    BitmapClearArea(scroll, DEPTH, 0, line_num, WIDTH, SIZE);
+    rect.y = line_num;
+    BitmapClearArea(scroll, &rect);
     WaitBlitter();
     RenderLine(ptr, line_start, min(size, COLUMNS));
 

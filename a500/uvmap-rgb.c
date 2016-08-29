@@ -254,8 +254,8 @@ static void Init() {
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
 
-  BitmapClear(screen[0], DEPTH);
-  BitmapClear(screen[1], DEPTH);
+  BitmapClear(screen[0]);
+  BitmapClear(screen[1]);
 
   cp = NewCopList(1200);
   MakeCopperList(cp);

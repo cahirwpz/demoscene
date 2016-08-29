@@ -16,6 +16,9 @@
 #define VA_NARGS_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
 #define VA_NARGS(...) VA_NARGS_IMPL(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
 
+#define STRUCT(ctype, ...) \
+  (ctype[1]){(ctype){##__VA_ARGS__}}
+
 #define MAKE_ID(a,b,c,d) \
         ((ULONG) (a)<<24 | (ULONG) (b)<<16 | (ULONG) (c)<<8 | (ULONG) (d))
 

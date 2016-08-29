@@ -111,7 +111,7 @@ static void WaveScopeDrawChannel(WORD num) {
   LONG i, di, volume;
   WORD n;
 
-  BitmapClear(bm, 1);
+  BitmapClear(bm);
 
   multab = wavescope.multab;
   samples = ch->samples;

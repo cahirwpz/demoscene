@@ -69,7 +69,7 @@ static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
 
   for (i = 0; i < 2; i++) {
-    BitmapClear(screen[i], DEPTH);
+    BitmapClear(screen[i]);
     WaitBlitter();
 
     /* Make the center of blurred shape use colors from range 16-31. */

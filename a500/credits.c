@@ -137,7 +137,7 @@ static void Init() {
   foreground = NewBitmap(max(floor->width, dance[0]->width),
                          max(floor->height, dance[0]->height),
                          floor->depth);
-  BitmapClear(foreground, foreground->depth);
+  BitmapClear(foreground);
 
   lower = NULL;
 

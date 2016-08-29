@@ -324,7 +324,7 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
 }
 
 static void Render() {
-  BitmapClear(screen0, DEPTH);
+  BitmapClear(screen0);
 
   {
     // LONG lines = ReadLineCounter();

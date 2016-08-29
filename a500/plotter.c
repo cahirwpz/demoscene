@@ -57,7 +57,7 @@ static void Init() {
   cp = NewCopList(50);
 
   for (i = 0; i < 2; i++)
-    BitmapClear(screen[i], DEPTH);
+    BitmapClear(screen[i]);
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
@@ -100,8 +100,8 @@ static void DrawPlotter() {
 }
 
 static void Render() {
-  BitmapClearArea(screen[active], DEPTH, 0, 0,
-                  MAX_W * 2 + SIZE, MAX_H * 2 + SIZE);
+  BitmapClearArea(screen[active], 
+                  STRUCT(Area2D, 0, 0, MAX_W * 2 + SIZE, MAX_H * 2 + SIZE));
   DrawPlotter();
 
   WaitVBlank();

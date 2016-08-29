@@ -68,7 +68,7 @@ static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
 
   for (j = 0; j < 2; j++) {
-    BitmapClearArea(screen[j], DEPTH, 32, 0, WIDTH - 64, HEIGHT);
+    BitmapClearArea(screen[j], STRUCT(Area2D, 32, 0, WIDTH - 64, HEIGHT));
     BitmapCopy(screen[j], 0, 0, bgLeft);
     BitmapCopy(screen[j], WIDTH - 32, 0, bgRight);
   }
@@ -91,13 +91,14 @@ static void Kill() {
 }
 
 static void ClearMetaballs() {
+  Area2D mball = {0, 0, SIZE + 16, SIZE};
   WORD *val = (WORD *)pos[active];
   WORD n = 3;
-  LONG x, y;
 
   while (--n >= 0) {
-    x = *val++; y = *val++;
-    BitmapClearArea(screen[active], DEPTH, x & ~15, y, SIZE + 16, SIZE);
+    mball.x = *val++ & ~15;
+    mball.y = *val++;
+    BitmapClearArea(screen[active], &mball);
   }
 }
 

@@ -51,7 +51,7 @@ static void UnLoad() {
 
 static void Init() {
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
-  BitmapClear(screen, DEPTH);
+  BitmapClear(screen);
 
   cp = NewCopList(100);
   CopInit(cp);

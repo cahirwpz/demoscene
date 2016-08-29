@@ -3,8 +3,8 @@
 
 #include "blitter.h"
 
-__regargs void BitmapClear(BitmapT *dst, WORD n);
-void BitmapClearArea(BitmapT *dst, WORD n, UWORD x, UWORD y, UWORD w, UWORD h);
+#define BitmapClear(dst) BitmapSetArea((dst), NULL, 0)
+#define BitmapClearArea(dst, area) BitmapSetArea((dst), (area), 0)
 
 __regargs void BitmapSetArea(BitmapT *bitmap, Area2D *area, UWORD color);
 

@@ -171,7 +171,7 @@ static void Render() {
     for (i = 0; i < 4; i++) {
       P61_OscData data;
 
-      BitmapClear(osc[i], 1);
+      BitmapClear(osc[i]);
 
       if (P61_Osc(P61_CHANNEL(i), &data))
         DrawOsc(osc[i], &data);

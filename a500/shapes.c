@@ -42,7 +42,7 @@ static void Init() {
   planeC = 0;
 
   custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
-  BitmapClear(screen, DEPTH);
+  BitmapClear(screen);
 
   cp = NewCopList(100);
   CopInit(cp);

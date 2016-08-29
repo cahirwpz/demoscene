@@ -455,7 +455,7 @@ static void MakeFloorCopperList(WORD yo, WORD kyo) {
 static void Render() {
   // PROFILE_BEGIN(floor);
 
-  BitmapClearArea(screen0, DEPTH, 0, FAR_Y, WIDTH, HEIGHT - FAR_Y);
+  BitmapClearArea(screen0, STRUCT(Area2D, 0, FAR_Y, WIDTH, HEIGHT - FAR_Y));
 
   {
     WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * N * 15 / 64);

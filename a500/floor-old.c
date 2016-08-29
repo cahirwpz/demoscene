@@ -144,7 +144,7 @@ static void Init() {
   for (i = 0; i < 2; i++) {
     Area2D top = { 0, 0, WIDTH, 36 };
     Area2D bottom = { 0, 0, WIDTH, FAR_Y };
-    BitmapClear(screen[i], DEPTH);
+    BitmapClear(screen[i]);
     BlitterSetArea(screen[i], 0, &top, -1);
     BitmapCopy(screen[i], 0, 36, city);
     BlitterSetArea(screen[i], 1, &bottom, -1);
