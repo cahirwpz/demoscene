@@ -274,11 +274,15 @@ __regargs BOOL ReadFloat(char **data, FLOAT *numptr) {
 __regargs WORD ReadString(char **data, char *buf, WORD buflen) {
   char *str = *data;
   BOOL escape = FALSE;
+  BOOL quote = FALSE;
   WORD n = 0;
   char c;
 
   if (!NextWord(&str))
     return 0;
+
+  if (*str == '"')
+    str++, quote = TRUE;
 
   while ((c = *str) && n < buflen - 1) {
     if (!escape) {
@@ -286,7 +290,9 @@ __regargs WORD ReadString(char **data, char *buf, WORD buflen) {
         break;
       else if (c == '\\')
         escape = TRUE;
-      else if (isspace(c))
+      else if (c == '"' && quote) {
+        str++; break;
+      } else if (isspace(c) && !quote)
         break;
       else
         *buf++ = c, n++;
