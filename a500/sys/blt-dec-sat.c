@@ -1,4 +1,4 @@
-#include "bltop.h"
+#include "blitter.h"
 
 /* Bitplane decrementer with saturation. */
 __regargs void BitmapDecSaturated(BitmapT *dst_bm, BitmapT *borrow_bm) {

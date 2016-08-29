@@ -1,5 +1,5 @@
 #include "font.h"
-#include "bltop.h"
+#include "blitter.h"
 
 __regargs void DrawTextN(FontDrawCtxT *ctx, UBYTE *text, UWORD n) {
   FontT *font = ctx->font;

@@ -1,5 +1,5 @@
 #include "startup.h"
-#include "bltop.h"
+#include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
 #include "fx.h"

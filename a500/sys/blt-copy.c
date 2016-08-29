@@ -1,4 +1,4 @@
-#include "bltop.h"
+#include "blitter.h"
 
 typedef struct {
   BitmapT *src;
@@ -10,7 +10,7 @@ typedef struct {
 static StateT state[1];
 
 /* Supports any (x, y) and any source bitmap width. */
-__regargs void BlitterCopySetup(BitmapT *dst, UWORD x, UWORD y, BitmapT *src)
+void BlitterCopySetup(BitmapT *dst, UWORD x, UWORD y, BitmapT *src)
 {
   /* Calculate real blit width. It can be greater than src->bytesPerRow! */
   UWORD width = (x & 15) + src->width;

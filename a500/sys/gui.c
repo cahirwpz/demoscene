@@ -2,7 +2,7 @@
 #include "gfx.h"
 #include "ilbm.h"
 #include "mouse.h"
-#include "bltop.h"
+#include "blitter.h"
 
 #define WidgetRedraw(gui, wg) \
   GuiWidgetRedraw((gui), (WidgetT *)wg)

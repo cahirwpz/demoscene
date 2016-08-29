@@ -3,7 +3,7 @@
 #include "coplist.h"
 #include "gfx.h"
 #include "color.h"
-#include "bltop.h"
+#include "blitter.h"
 #include "ilbm.h"
 #include "fx.h"
 

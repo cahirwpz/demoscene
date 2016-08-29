@@ -1,4 +1,4 @@
-#include "bltop.h"
+#include "blitter.h"
 
 __regargs BitmapT *BitmapMakeMask(BitmapT *bitmap) {
   BitmapT *mask = NewBitmap(bitmap->width, bitmap->height, 1);

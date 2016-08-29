@@ -1,6 +1,6 @@
 #include "startup.h"
 #include "2d.h"
-#include "bltop.h"
+#include "blitter.h"
 #include "coplist.h"
 #include "fx.h"
 #include "memory.h"

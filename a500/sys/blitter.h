@@ -27,10 +27,22 @@
 #define LINE_SOLID  (LINEMODE)
 #define LINE_ONEDOT (LINEMODE | ONEDOT)
 
+/* Precalculated masks for bltafwm and bltalwm registers. */
 extern UWORD FirstWordMask[16];
 extern UWORD LastWordMask[16];
 
-__regargs void BlitterCopySetup(BitmapT *dst, UWORD x, UWORD y, BitmapT *src);
+/* Common blitter macros. */
+static inline BOOL BlitterBusy() {
+  return custom->dmaconr & DMAF_BLTDONE;
+}
+
+static inline void WaitBlitter() {
+  asm("1: btst #6,0xdff002\n"
+      "   bnes 1b");
+}
+
+/* Blitter copy. */
+void BlitterCopySetup(BitmapT *dst, UWORD x, UWORD y, BitmapT *src);
 __regargs void BlitterCopyStart(WORD dstbpl, WORD srcbpl);
 
 #define BlitterCopy(dst, dstbpl, x, y, src, srcbpl) ({  \
@@ -38,6 +50,7 @@ __regargs void BlitterCopyStart(WORD dstbpl, WORD srcbpl);
   BlitterCopyStart((dstbpl), (srcbpl));                 \
 })
 
+/* Blitter copy area. */
 void BlitterCopyAreaSetup(BitmapT *dst, UWORD x, UWORD y,
                           BitmapT *src, Area2D *area);
 __regargs void BlitterCopyAreaStart(WORD dstbpl, WORD srcbpl);
@@ -47,20 +60,40 @@ __regargs void BlitterCopyAreaStart(WORD dstbpl, WORD srcbpl);
   BlitterCopyAreaStart((dstbpl), (srcbpl));                             \
 })
 
+/* Bitmap copy. */
+__regargs void BitmapCopy(BitmapT *dst, UWORD x, UWORD y, BitmapT *src);
+__regargs void BitmapCopyFast(BitmapT *dst, UWORD x, UWORD y, BitmapT *src);
+void BitmapCopyMasked(BitmapT *dst, UWORD x, UWORD y, BitmapT *src,
+                      BitmapT *mask);
+void BitmapCopyArea(BitmapT *dst, UWORD dx, UWORD dy, 
+                    BitmapT *src, Area2D *area);
+
+/* Blitter fill. */
+__regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area);
+
 #define BlitterFill(bitmap, plane) \
   BlitterFillArea((bitmap), (plane), NULL)
 
-__regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area);
-
+/* Blitter clear. */
 #define BlitterClear(bitmap, plane) \
   BlitterSetArea((bitmap), (plane), NULL, 0)
 #define BlitterClearArea(bitmap, plane, area) \
   BlitterSetArea((bitmap), (plane), (area), 0)
+
+#define BitmapClear(dst) \
+  BitmapSetArea((dst), NULL, 0)
+#define BitmapClearArea(dst, area) \
+  BitmapSetArea((dst), (area), 0)
+
+/* Blitter set. */
+void BlitterSetAreaSetup(BitmapT *bitmap, Area2D *area);
+__regargs void BlitterSetAreaStart(WORD bplnum, UWORD pattern);
+
+void BlitterSetMaskArea(BitmapT *bitmap, WORD plane, UWORD x, UWORD y,
+                        BitmapT *mask, Area2D *area, UWORD pattern);
+
 #define BlitterSet(bitmap, plane, pattern) \
   BlitterSetArea((bitmap), (plane), NULL, (pattern))
-
-__regargs void BlitterSetAreaSetup(BitmapT *bitmap, Area2D *area);
-__regargs void BlitterSetAreaStart(WORD bplnum, UWORD pattern);
 
 #define BlitterSetArea(bm, bplnum, area, pattern) ({    \
   BlitterSetAreaSetup((bm), (area));                    \
@@ -70,19 +103,24 @@ __regargs void BlitterSetAreaStart(WORD bplnum, UWORD pattern);
 #define BlitterSetMask(bitmap, plane, x, y, mask, pattern) \
   BlitterSetMaskArea((bitmap), (plane), (x), (y), (mask), NULL, (pattern))
 
-void BlitterSetMaskArea(BitmapT *bitmap, WORD plane, UWORD x, UWORD y,
-                        BitmapT *mask, Area2D *area, UWORD pattern);
+/* Bitmap set. */
 
-__regargs void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWORD bltcon1);
-void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"), WORD x2 asm("d4"), WORD y2 asm("d5"));
+__regargs void BitmapSetArea(BitmapT *bitmap, Area2D *area, UWORD color);
 
-static inline BOOL BlitterBusy() {
-  return custom->dmaconr & DMAF_BLTDONE;
-}
+/* Blitter line. */
 
-static inline void WaitBlitter() {
-  asm("1: btst #6,0xdff002\n"
-      "   bnes 1b");
-}
+void BlitterLineSetup(BitmapT *bitmap, UWORD plane,
+                      UWORD bltcon0, UWORD bltcon1);
+void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"),
+                 WORD x2 asm("d4"), WORD y2 asm("d5"));
+
+/* Other operations. */
+void BitmapAddSaturated(BitmapT *dst, WORD dx, WORD dy,
+                        BitmapT *src, BitmapT *carry);
+
+__regargs void BitmapDecSaturated(BitmapT *dst_bm, BitmapT *borrow_bm);
+__regargs void BitmapIncSaturated(BitmapT *dst_bm, BitmapT *carry_bm);
+
+__regargs BitmapT *BitmapMakeMask(BitmapT *bitmap);
 
 #endif

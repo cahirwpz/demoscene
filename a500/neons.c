@@ -4,7 +4,7 @@
 #include "coplist.h"
 #include "gfx.h"
 #include "ilbm.h"
-#include "bltop.h"
+#include "blitter.h"
 #include "2d.h"
 #include "fx.h"
 #include "random.h"

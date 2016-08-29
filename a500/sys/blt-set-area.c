@@ -1,4 +1,4 @@
-#include "bltop.h"
+#include "blitter.h"
 
 typedef struct {
   BitmapT *bitmap;
@@ -10,7 +10,7 @@ static StateT state[1];
 
 /* Supports any area dimensions,
  * but is optimized for 'x' and 'w' divisible by 16. */
-__regargs void BlitterSetAreaSetup(BitmapT *bitmap, Area2D *area) {
+void BlitterSetAreaSetup(BitmapT *bitmap, Area2D *area) {
   UWORD bltafwm, bltalwm, bltmod, bytesPerRow;
   UWORD x = 0, y = 0, width = bitmap->width, height = bitmap->height;
 

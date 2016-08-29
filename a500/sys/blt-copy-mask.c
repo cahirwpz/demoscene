@@ -1,4 +1,4 @@
-#include "bltop.h"
+#include "blitter.h"
 
 typedef struct {
   BitmapT *src;

@@ -1,4 +1,4 @@
-#include "bltop.h"
+#include "blitter.h"
 
 /* Bitplane adder with saturation. */
 void BitmapAddSaturated(BitmapT *dst_bm, WORD dx, WORD dy, BitmapT *src_bm, BitmapT *carry_bm) {

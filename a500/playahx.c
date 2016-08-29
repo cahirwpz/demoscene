@@ -10,7 +10,7 @@
 #include "coplist.h"
 #include "keyboard.h"
 #include "event.h"
-#include "bltop.h"
+#include "blitter.h"
 
 LONG __chipmem = 100 * 1024;
 LONG __fastmem = 420 * 1024;

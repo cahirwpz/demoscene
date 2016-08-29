@@ -10,7 +10,7 @@
 #include "coplist.h"
 #include "keyboard.h"
 #include "event.h"
-#include "bltop.h"
+#include "blitter.h"
 
 #define WIDTH 320
 #define HEIGHT 256
