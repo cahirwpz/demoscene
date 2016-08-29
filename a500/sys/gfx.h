@@ -27,6 +27,10 @@ typedef struct {
 } Box2D;
 
 typedef struct {
+  WORD w, h;
+} Size2D;
+
+typedef struct {
   WORD x, y;
   WORD w, h;
 } Area2D;

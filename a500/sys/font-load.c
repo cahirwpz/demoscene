@@ -40,7 +40,7 @@ static BOOL ParseCharMap(char **data, FontT *font) {
 
     i = *key - 33;
     if (i >= CHARMAP_SIZE) {
-      Log("[Font] %s character ignored\n", key);
+      Log("[Font] '%s' character ignored\n", key);
       SkipLine(data);
       continue;
     }

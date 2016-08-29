@@ -1,5 +1,6 @@
 #include "gui.h"
 #include "gfx.h"
+#include "ilbm.h"
 #include "mouse.h"
 #include "bltop.h"
 
@@ -38,22 +39,31 @@ static void DrawFrame(BitmapT *bitmap, Area2D *area, GuiFrameT frame) {
 inline void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg);
 
 static void GroupRedraw(GuiStateT *gui, GroupT *wg) {
-  WidgetT **widgets = wg->widgets;
-  WidgetT *w;
+  GroupItemT *item;
+  WORD n;
 
-  while ((w = *widgets++))
-    GuiWidgetRedraw(gui, w);
+  for (item = wg->item, n = wg->count; n--; item++)
+    GuiWidgetRedraw(gui, item->widget);
 }
 
 static void LabelRedraw(GuiStateT *gui, LabelT *wg) {
-  BitmapSetArea(gui->screen, &wg->area, UI_BG_INACTIVE);
+  FontDrawCtxT ctx = { gui->font, gui->screen, &wg->area, 2 };
+  BOOL active = (wg->parent->base.state & WS_ACTIVE) ? TRUE : FALSE;
 
-  if (wg->frame) {
-    DrawFrame(gui->screen, &wg->area, 1);
-    DrawText(wg->area.x + 2, wg->area.y + 2, wg->text);
-  } else {
-    DrawText(wg->area.x, wg->area.y, wg->text);
-  }
+  BitmapSetArea(gui->screen, &wg->area, active ? UI_BG_ACTIVE : UI_BG_INACTIVE);
+  DrawText(&ctx, wg->text);
+}
+
+static void ImageRedraw(GuiStateT *gui, ImageT *wg) {
+  BlitterCopy(gui->screen, 2, wg->area.x, wg->area.y, wg->bm, 0);
+}
+
+static void FrameRedraw(GuiStateT *gui, FrameT *wg) {
+  BitmapSetArea(gui->screen, &wg->area, UI_BG_INACTIVE);
+  DrawFrame(gui->screen, &wg->area, 1);
+
+  if (wg->widget)
+    GuiWidgetRedraw(gui, wg->widget);
 }
 
 static void ButtonRedraw(GuiStateT *gui, ButtonT *wg) {
@@ -66,8 +76,8 @@ static void ButtonRedraw(GuiStateT *gui, ButtonT *wg) {
   DrawFrame(gui->screen, &wg->area,
             (active ^ pressed ^ toggled) ? FRAME_IN : FRAME_OUT);
 
-  if (wg->label)
-    DrawText(wg->area.x + 2, wg->area.y + 2, wg->label);
+  if (wg->widget)
+    GuiWidgetRedraw(gui, wg->widget);
 }
 
 static void ButtonPress(GuiStateT *gui, ButtonT *wg) {
@@ -88,10 +98,11 @@ static void RadioButtonRelease(GuiStateT *gui, ButtonT *wg) {
   if (gui->lastPressed == (WidgetBaseT *)wg) {
     PushGuiEvent((WidgetT *)wg, WA_RELEASED);
     if (!(wg->state & WS_TOGGLED)) {
-      WidgetT **widgets = wg->parent->group.widgets;
-      WidgetT *child;
+      GroupT *group = &wg->parent->group;
+      WORD i;
 
-      while ((child = *widgets++)) {
+      for (i = 0; i < group->count; i++) {
+        WidgetT *child = group->item[i].widget;
         if (child->base.state & WS_TOGGLED) {
           child->base.state &= ~WS_TOGGLED;
           GuiWidgetRedraw(gui, child);
@@ -124,8 +135,10 @@ static void WidgetDummyFunc(GuiStateT *gui, ButtonT *wg) {}
 
 inline void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg) {
   static WidgetFuncT WidgetRedrawFunc[WT_LAST] = {
-    (WidgetFuncT)GroupRedraw, 
-    (WidgetFuncT)LabelRedraw, 
+    (WidgetFuncT)GroupRedraw,
+    (WidgetFuncT)FrameRedraw,
+    (WidgetFuncT)LabelRedraw,
+    (WidgetFuncT)ImageRedraw,
     (WidgetFuncT)ButtonRedraw,
     (WidgetFuncT)ButtonRedraw,
   };
@@ -133,6 +146,8 @@ inline void GuiWidgetRedraw(GuiStateT *gui, WidgetT *wg) {
 }
 
 static WidgetFuncT WidgetEnterFunc[WT_LAST] = {
+  (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)WidgetDummyFunc,
   (WidgetFuncT)WidgetDummyFunc,
   (WidgetFuncT)WidgetDummyFunc,
   (WidgetFuncT)ButtonEnter,
@@ -145,6 +160,8 @@ static WidgetFuncT WidgetEnterFunc[WT_LAST] = {
 static WidgetFuncT WidgetLeaveFunc[WT_LAST] = {
   (WidgetFuncT)WidgetDummyFunc,
   (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)WidgetDummyFunc,
   (WidgetFuncT)ButtonLeave,
   (WidgetFuncT)ButtonLeave,
 };
@@ -153,6 +170,8 @@ static WidgetFuncT WidgetLeaveFunc[WT_LAST] = {
   WidgetLeaveFunc[(wg)->type]((gui), (WidgetT *)wg)
 
 static WidgetFuncT WidgetPressFunc[WT_LAST] = {
+  (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)WidgetDummyFunc,
   (WidgetFuncT)WidgetDummyFunc,
   (WidgetFuncT)WidgetDummyFunc,
   (WidgetFuncT)ButtonPress,
@@ -165,6 +184,8 @@ static WidgetFuncT WidgetPressFunc[WT_LAST] = {
 static WidgetFuncT WidgetReleaseFunc[WT_LAST] = {
   (WidgetFuncT)WidgetDummyFunc,
   (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)WidgetDummyFunc,
+  (WidgetFuncT)WidgetDummyFunc,
   (WidgetFuncT)ButtonRelease,
   (WidgetFuncT)RadioButtonRelease,
 };
@@ -174,11 +195,11 @@ static WidgetFuncT WidgetReleaseFunc[WT_LAST] = {
 
 static WidgetT *FindWidgetByMouse(WidgetT *wg, WORD x, WORD y) {
   if (wg->type == WT_GROUP) {
-    WidgetT **widgets = wg->group.widgets;
-    WidgetT *child;
+    GroupT *group = &wg->group;
+    WORD i;
 
-    while ((child = *widgets++))
-      if ((wg = FindWidgetByMouse(child, x, y)))
+    for (i = 0; i < group->count; i++)
+      if ((wg = FindWidgetByMouse(group->item[i].widget, x, y)))
         return wg;
 
     return NULL;
@@ -187,27 +208,100 @@ static WidgetT *FindWidgetByMouse(WidgetT *wg, WORD x, WORD y) {
   return InsideArea(x, y, &wg->base.area) ? wg : NULL;
 }
 
-static void InitWidget(WidgetT *wg, WidgetT *parent) {
-  if (wg->type == WT_GROUP) {
-    WidgetT **widgets = wg->group.widgets;
-    WidgetT *child;
+#define POS_X(wg) ((wg)->base.area.x)
+#define POS_Y(wg) ((wg)->base.area.y)
+#define WIDTH(wg) ((wg)->base.area.w)
+#define HEIGHT(wg) ((wg)->base.area.h)
 
-    while ((child = *widgets++))
-      InitWidget(child, wg);
-  } else {
-    wg->base.parent = parent;
+/* Initialize pointers to a parent. Load resources. */
+static void WidgetInit(GuiStateT *gui, WidgetT *wg, WidgetT *parent) {
+  wg->base.parent = parent;
+
+  if (wg->type == WT_GROUP) {
+    WORD i;
+    for (i = 0; i < wg->group.count; i++)
+      WidgetInit(gui, wg->group.item[i].widget, wg);
+  } else if (wg->type == WT_BUTTON || wg->type == WT_RADIOBT) {
+    WidgetInit(gui, wg->button.widget, wg);
+  } else if (wg->type == WT_FRAME) {
+    WidgetInit(gui, wg->frame.widget, wg);
+  } else if (wg->type == WT_IMAGE) {
+    if (!wg->image.bm)
+      wg->image.bm = LoadILBMCustom(wg->image.path, BM_DISPLAYABLE);
   }
 }
 
-void GuiInit(GuiStateT *gui, BitmapT *screen, FontT *font) {
-  gui->screen = screen;
-  gui->font = font;
+/* Calculates widget position in top-down approach. */
+static void WidgetCalcPos(GuiStateT *gui, WidgetT *wg, WORD x, WORD y) {
+  if (wg->type == WT_GROUP) {
+    GroupT *group = &wg->group;
+    WORD i;
 
-  InitWidget(gui->root, NULL);
-  DrawTextSetup(gui->screen, 2, gui->font);
+    for (i = 0; i < group->count; i++) {
+      GroupItemT *item = &group->item[i];
+      WidgetCalcPos(gui, item->widget, item->req.x, item->req.y);
+    }
+  } else {
+    POS_X(wg) = x, POS_Y(wg) = y;
+
+    if (wg->type == WT_BUTTON || wg->type == WT_RADIOBT) {
+      WidgetCalcPos(gui, wg->button.widget, x + 2, y + 2);
+    } else if (wg->type == WT_FRAME) {
+      WidgetCalcPos(gui, wg->frame.widget, x + 2, y + 2);
+    }
+  }
 }
 
-void GuiRedraw(GuiStateT *gui) {
+static void WidgetCalcSize(GuiStateT *gui, WidgetT *wg, WORD w, WORD h) {
+  if (wg->type == WT_GROUP) {
+    GroupT *group = &wg->group;
+    WORD i, nw = 0, nh = 0;
+
+    /* Calculate largest box containing all children.
+     * Make children calculate their requested size. */
+    for (i = 0; i < group->count; i++) {
+      GroupItemT *item = &group->item[i];
+
+      WidgetCalcSize(gui, item->widget, item->req.w, item->req.h);
+      if (WIDTH(item->widget) > nw)
+        nw = WIDTH(item->widget);
+      if (HEIGHT(item->widget) > nh)
+        nh = HEIGHT(item->widget);
+    }
+
+    /* If user didn't specify group size use calculated one. */
+    WIDTH(wg) = max(nw, w);
+    HEIGHT(wg) = max(nh, h);
+  } else if (wg->type == WT_BUTTON || wg->type == WT_RADIOBT) {
+    WidgetCalcSize(gui, wg->button.widget, w - 4, h - 4);
+    WIDTH(wg) = max(w, WIDTH(wg->button.widget) + 4);
+    HEIGHT(wg) = max(h, HEIGHT(wg->button.widget) + 4);
+  } else if (wg->type == WT_FRAME) {
+    WidgetCalcSize(gui, wg->frame.widget, w - 4, h - 4);
+    WIDTH(wg) = max(w, WIDTH(wg->frame.widget) + 4);
+    HEIGHT(wg) = max(h, HEIGHT(wg->frame.widget) + 4);
+  } else if (wg->type == WT_LABEL) {
+    Size2D size = DrawTextSizeN(gui->font, wg->label.text, wg->label.length);
+    WIDTH(wg) = max(w, size.w);
+    HEIGHT(wg) = max(h, size.h);
+  } else if (wg->type == WT_IMAGE) {
+    if (!wg->image.bm)
+      wg->image.bm = LoadILBMCustom(wg->image.path, BM_DISPLAYABLE);
+    WIDTH(wg) = max(w, wg->image.bm->width);
+    HEIGHT(wg) = max(h, wg->image.bm->height);
+  }
+}
+
+void GuiInit(GuiStateT *gui, FontT *font) {
+  gui->font = font;
+  WidgetInit(gui, gui->root, NULL);
+}
+
+void GuiRedraw(GuiStateT *gui, BitmapT *screen) {
+  gui->screen = screen;
+
+  WidgetCalcPos(gui, gui->root, 0, 0);
+  WidgetCalcSize(gui, gui->root, screen->width, screen->height);
   GuiWidgetRedraw(gui, gui->root);
 }
 
