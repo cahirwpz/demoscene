@@ -1,31 +1,53 @@
-#!/bin/sh
+#!/usr/bin/env python3
 
-trap quit SIGINT
+import asyncore
+import socket
+import argparse
+import subprocess
+import signal
+import time
+import sys
 
-function cleanup() {
-  kill -INT $SER
-  kill -INT $PAR
-  stty isig ixon icrnl brkint imaxbel ignpar opost
-  rm -f s/startup-sequence
-}
 
-function quit() {
-  kill $FSUAE
-  cleanup
-}
+class RawIOClient(asyncore.dispatcher):
+    def __init__(self, port):
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connect(("127.0.0.1", port))
 
-cat >s/startup-sequence <<EOF
-echo $@
-$@
-ExitUAE
-EOF
+    def handle_connect(self):
+        pass
 
-# With such settings I can interact with ROMWACK :-)
-socat PTY,link=/tmp/vser,raw,echo=0 STDOUT,raw,echo=0 &
-SER=$!
-socat -u PTY,link=/tmp/vpar,raw,echo=0 STDERR,raw,echo=0 &
-PAR=$!
-fs-uae >/dev/null &
-FSUAE=$!
-wait $FSUAE
-cleanup
+    def handle_close(self):
+        self.close()
+
+    def handle_read(self):
+        sys.stdout.write(self.recv(8192).decode())
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Run binary in FS-UAE.')
+    parser.add_argument('binary', metavar='BINARY', type=str,
+                        help='AmigaHunk executable file.')
+
+    args = parser.parse_args()
+
+    with open("s/startup-sequence", "w") as ss:
+        print("echo " + args.binary, file=ss)
+        print(args.binary, file=ss)
+        print("ExitUAE", file=ss)
+
+    uae = subprocess.Popen(["fs-uae"],
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
+    try:
+        time.sleep(1)
+        serport = RawIOClient(8000)
+        parport = RawIOClient(8001)
+        asyncore.loop()
+        uae.wait()
+    except KeyboardInterrupt:
+        uae.send_signal(signal.SIGINT)
+
