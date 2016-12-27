@@ -452,6 +452,7 @@ static void MakeFloorCopperList(WORD yo, WORD kyo) {
 
   CopEnd(cp);
 }
+
 static void Render() {
   // PROFILE_BEGIN(floor);
 

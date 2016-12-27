@@ -1,0 +1,10 @@
+CPPFLAGS = -I../../sys -I../
+LDLIBS = -L../../sys -lsys
+
+%.exe: ../../crt0.o %.o ../startup.o
+	@echo "LINK $@"
+	$(CC) $(LDFLAGS) -o $@ $(filter-out lib%.a,$^) \
+		$(foreach lib,$(patsubst lib%.a,%,$(filter lib%a,$^)),\
+		-L$(lib) -l$(lib)) $(LDLIBS)
+
+include ../../Makefile.common
