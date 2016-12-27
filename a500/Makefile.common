@@ -19,18 +19,17 @@ DFLAGS	= -D__CONSTLIBBASEDECL__=const
 LDLIBS	= -lnix13 -lstubs
 
 OBJS	= $(patsubst %.c,%.o,$(wildcard *.c))
-DEPFILES := $(patsubst %.o,.deps/%.P,$(OBJS))
+DEPFILES := $(patsubst %.o,.%.P,$(OBJS))
 
 ifeq ($(words $(findstring $(MAKECMDGOALS), clean)), 0)
   -include $(DEPFILES)
 endif
 
-.deps/%.P: %.c
+.%.P: %.c
 	@echo "DEP  $<"
-	@mkdir -p .deps
 	$(CC) $(CPPFLAGS) -MM -MG -o $@ $<
 
-%.o: %.c .deps/%.P 
+%.o: %.c .%.P 
 	@echo "CC   $<"
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
@@ -52,18 +51,11 @@ $(LIB):
 %.a:
 	make -C $(patsubst lib%.a,%,$@)
 
-%.exe: crt0.o %.o 
-	@echo "LINK $@"
-	$(CC) $(LDFLAGS) -o $@ $(filter-out lib%.a,$^) \
-		$(foreach lib,$(patsubst lib%.a,%,$(filter lib%a,$^)),\
-		-L$(lib) -l$(lib)) $(LDLIBS)
-
 %.s: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -S -fverbose-asm -o $@ $<
 
 clean::
-	@$(RM) -v -r .deps
-	@$(RM) -v *.a *.o *~ *.exe
+	@$(RM) -v .*.P *.a *.o *~ *.exe *.taghl
 
 .PHONY: all clean
 

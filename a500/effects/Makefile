@@ -12,6 +12,9 @@ clean::
 	  $(MAKE) -C $$d clean;		\
 	done
 
+archive:
+	7z a "a500-$$(date +%F-%H%M).7z" $(SUBDIRS)
+
 .PHONY: all clean $(SUBDIRS)
 
 include ../Makefile.common
