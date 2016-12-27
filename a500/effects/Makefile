@@ -1,4 +1,4 @@
-CPPFLAGS = -I../sys
+CPPFLAGS = -I../include
 SUBDIRS = $(shell find . -mindepth 1 -maxdepth 1 -type d | sed 's,./,,')
 
 all: startup.o $(SUBDIRS)

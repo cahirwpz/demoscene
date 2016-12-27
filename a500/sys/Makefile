@@ -1,4 +1,5 @@
 TOPDIR = $(realpath $(CURDIR)/..)
+CPPFLAGS = -I$(TOPDIR)/include
 
 OBJS = 8svx.o blitter.o common.o circle.o console.o coplist.o ffp.o gfx.o \
        hardware.o iff.o ilbm.o inflate.o io-dos.o io-extra.o keyboard.o \

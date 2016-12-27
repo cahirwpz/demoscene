@@ -1,4 +1,4 @@
-CPPFLAGS = -I../../sys -I../
+CPPFLAGS = -I../../include -I../
 LDLIBS = -L../../sys -lsys
 
 %.exe: ../../crt0.o %.o ../startup.o
