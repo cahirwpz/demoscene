@@ -5,7 +5,7 @@
 #include "hardware.h"
 #include "interrupts.h"
 #include "memory.h"
-#include "ahx/ahx.h"
+#include "ahx.h"
 #include "console.h"
 #include "coplist.h"
 #include "keyboard.h"
