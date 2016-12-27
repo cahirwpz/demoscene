@@ -29,7 +29,7 @@ static AnimSpanT *anim;
 
 static void Load() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
-  palette = LoadPalette("boxes-pal.ilbm");
+  palette = LoadPalette("running-pal.ilbm");
   anim = LoadFile("running.bin", MEMF_PUBLIC);
 
   Log("Animation has %ld frames %ld x %ld.\n", 
