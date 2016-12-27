@@ -41,15 +41,10 @@ endif
 	@echo "AS   $<"
 	$(AS) -Fbin $(ASFLAGS) -o $@ $<
 
-LIB := lib$(notdir $(CURDIR)).a
-
-$(LIB):
+%.a:	$(OBJS)
 	@echo "LIB  $@"
 	@m68k-amigaos-ar cr $@ $^
 	@m68k-amigaos-ranlib $@
-
-%.a:
-	make -C $(patsubst lib%.a,%,$@)
 
 %.s: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -S -fverbose-asm -o $@ $<

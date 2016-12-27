@@ -1,5 +1,5 @@
 CPPFLAGS = -Iinclude
-SUBDIRS = ahx p61 sys effects
+SUBDIRS = $(wildcard lib*) effects
 
 BINS = ExitUAE 
 
