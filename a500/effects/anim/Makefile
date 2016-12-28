@@ -1,9 +1,9 @@
 all: anim.exe data/running.bin
 
-data/running.asm: data/running.gif
+data/%.asm: data/%.gif
 	./gen-anim.py $< > $@
 
-data/running.bin: data/running.asm
+data/%.bin: data/%.asm
 	$(AS) -Fbin -o $@ $<
 
 include ../Makefile.common
