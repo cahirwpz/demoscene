@@ -1,3 +1,6 @@
+DATA = data/running.bin         \
+       data/running-pal.ilbm    \
+
 all: anim.exe data/running.bin
 
 data/%.asm: data/%.gif
@@ -9,4 +12,4 @@ data/%.bin: data/%.asm
 include ../Makefile.common
 
 clean::
-	$(RM) -f data/running.{bin,asm}
+	$(RM) -v -f data/running.bin

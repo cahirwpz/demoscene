@@ -138,6 +138,8 @@ def save(archive, floppy, entries, bootcode=None):
         bootcode = fh.read()
       if len(bootcode) > 2 * SECTOR:
         raise SystemExit('Boot code is larger than 1024 bytes!')
+    else:
+      raise SystemExit('Boot code file does not exists!')
   else:
     bootcode = ''
 

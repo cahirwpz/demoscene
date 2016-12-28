@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+
+import asyncore
+import socket
+import argparse
+import subprocess
+import signal
+import string
+import os.path
+import time
+import sys
+
+
+class RawIOClient(asyncore.dispatcher):
+    def __init__(self, port):
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connect(("127.0.0.1", port))
+
+    def handle_connect(self):
+        pass
+
+    def handle_close(self):
+        self.close()
+
+    def handle_read(self):
+        sys.stdout.write(self.recv(8192).decode())
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Run binary in FS-UAE.')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='Prepare terminal for use with UAE debugger.')
+    parser.add_argument('adf', metavar='ADF', type=str,
+                        help='Amiga disk file.')
+
+    args = parser.parse_args()
+
+    if args.debug:
+        stdout = None
+        stderr = None
+    else:
+        stdout = subprocess.PIPE
+        stderr = subprocess.PIPE
+
+    topdir = os.path.realpath(os.path.dirname(sys.argv[0]))
+    cfg = os.path.join(topdir, 'Config.fs-uae')
+    adf = os.path.realpath(args.adf)
+
+    uae = subprocess.Popen(['fs-uae', cfg, '--floppy_drive_0=%s' % adf],
+                           stdout=stdout, stderr=stderr)
+    try:
+        if not args.debug:
+            time.sleep(1)
+            serport = RawIOClient(8000)
+            parport = RawIOClient(8001)
+            asyncore.loop()
+        uae.wait()
+    except KeyboardInterrupt:
+        uae.send_signal(signal.SIGINT)

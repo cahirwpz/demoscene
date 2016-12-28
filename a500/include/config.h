@@ -1,8 +1,8 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define USE_IO_FLOPPY 0
-#define USE_IO_DOS    1
+#define USE_IO_FLOPPY 1
+#define USE_IO_DOS    0
 #define USE_LZO       0
 #define USE_DEFLATE   1
 

@@ -17,4 +17,13 @@ $(foreach lib,$(LIBFILES),$(eval $(call emit_lib_rule,$(lib))))
 	@echo "LINK $@"
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-.PHONY: $(LIBFILES)
+%.adf: %.exe $(DATA)
+	../../tools/fsutil.py -b ../../bootloader.bin create $@ $^
+
+run: $(notdir $(PWD)).adf
+	../RunInUAE $^
+
+clean::
+	$(RM) -v -f *.adf
+
+.PHONY: run $(LIBFILES)

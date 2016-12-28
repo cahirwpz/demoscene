@@ -13,18 +13,11 @@ OBJS = 8svx.o blitter.o common.o circle.o console.o coplist.o ffp.o gfx.o \
        __mulsi3.o __divsi3.o __udivsi3.o __modsi3.o __umodsi3.o floppy.o \
        event.o tasks.o gui.o font.o font-load.o
 
-all:	libsys.a bootloader.bin
+all:	libsys.a
 
 libsys.a: $(OBJS)
 
 sintab.s: sintab.py
 	python sintab.py
 
-bootloader.bin: ASFLAGS += -phxass
-
 include $(TOPDIR)/Makefile.common
-
-clean::
-	rm -vf bootloader.bin
-
-# vim: sw=8 ts=8
