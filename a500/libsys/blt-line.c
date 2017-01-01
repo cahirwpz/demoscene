@@ -38,7 +38,9 @@ struct {
   UWORD bltcon1;
 } line[1];
 
-void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD mode) {
+void BlitterLineSetupFull(BitmapT *bitmap, UWORD plane,
+                          UWORD mode, UWORD pattern)
+{
   line->data = bitmap->planes[plane];
   line->scratch = bitmap->planes[bitmap->depth];
   line->stride = bitmap->bytesPerRow;
@@ -50,7 +52,7 @@ void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD mode) {
   custom->bltafwm = -1;
   custom->bltalwm = -1;
   custom->bltadat = 0x8000;
-  custom->bltbdat = 0xffff; /* Line texture pattern. */
+  custom->bltbdat = pattern; /* Line texture pattern. */
   custom->bltcmod = line->stride;
   custom->bltdmod = line->stride;
 }

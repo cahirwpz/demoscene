@@ -108,8 +108,11 @@ void BlitterSetMaskArea(BitmapT *bitmap, WORD plane, UWORD x, UWORD y,
 __regargs void BitmapSetArea(BitmapT *bitmap, Area2D *area, UWORD color);
 
 /* Blitter line. */
+#define BlitterLineSetup(bitmap, plane, mode) \
+  BlitterLineSetupFull((bitmap), (plane), (mode), -1)
 
-void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD mode);
+void BlitterLineSetupFull(BitmapT *bitmap, UWORD plane,
+                          UWORD mode, UWORD pattern);
 void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"),
                  WORD x2 asm("d4"), WORD y2 asm("d5"));
 
