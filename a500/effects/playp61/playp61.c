@@ -104,7 +104,7 @@ static void Init() {
   {
     WORD i;
 
-    BlitterLineSetup(screen, 0, LINE_OR, LINE_SOLID);
+    BlitterLineSetup(screen, 0, LINE_OR|LINE_SOLID);
 
     for (i = 0; i < 4; i++) {
       WORD x1 = 8 + 72 * i - 1;
@@ -176,7 +176,7 @@ static void Render() {
       if (P61_Osc(P61_CHANNEL(i), &data))
         DrawOsc(osc[i], &data);
 
-      BlitterLineSetup(osc[i], 0, LINE_OR, LINE_SOLID);
+      BlitterLineSetup(osc[i], 0, LINE_OR|LINE_SOLID);
       BlitterLine(32, 0, 32, 64);
     }
 

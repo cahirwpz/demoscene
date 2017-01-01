@@ -241,7 +241,7 @@ static __regargs void DrawStripes(WORD xo, WORD kxo) {
   xo &= TILESIZE - 1;
 
   /* Even stripes. */
-  BlitterLineSetup(screen[active], 0, LINE_EOR, LINE_ONEDOT);
+  BlitterLineSetup(screen[active], 0, LINE_EOR|LINE_ONEDOT);
 
   l0 = &first;
   k = SIZE;
@@ -272,7 +272,7 @@ static __regargs void DrawStripes(WORD xo, WORD kxo) {
 
   /* Odd stripes. */
   WaitBlitter();
-  BlitterLineSetup(screen[active], 1, LINE_EOR, LINE_ONEDOT);
+  BlitterLineSetup(screen[active], 1, LINE_EOR|LINE_ONEDOT);
 
   l0 = &first;
   k = SIZE;

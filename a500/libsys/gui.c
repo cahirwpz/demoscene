@@ -34,14 +34,14 @@ static void DrawFrame(BitmapT *bitmap, Area2D *area, GuiFrameT frame) {
 
   if (frame) {
     /* WC_FRAME_IN = 0b10 */
-    BlitterLineSetup(bitmap, 1, LINE_OR, LINE_SOLID);
+    BlitterLineSetup(bitmap, 1, LINE_OR|LINE_SOLID);
     BlitterLine(x1, y1, x2, y1);
     BlitterLine(x1, y2, x2, y2);
     BlitterLine(x1, y1 + 1, x1, y2 - 1);
     BlitterLine(x2, y1 + 1, x2, y2 - 1);
 
     /* WC_FRAME_OUT = 0b11 */
-    BlitterLineSetup(bitmap, 0, LINE_EOR, LINE_SOLID);
+    BlitterLineSetup(bitmap, 0, LINE_EOR|LINE_SOLID);
 
     if (frame == FRAME_IN) {
       BlitterLine(x2, y1 + 1, x2, y2);

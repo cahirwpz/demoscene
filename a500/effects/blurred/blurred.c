@@ -117,7 +117,7 @@ static void RotatingTriangle(WORD t, WORD phi, WORD size) {
 
 static void DrawShape() {
   BlitterClear(carry, 0);
-  BlitterLineSetup(carry, 0, LINE_EOR, LINE_ONEDOT);
+  BlitterLineSetup(carry, 0, LINE_EOR|LINE_ONEDOT);
 
   RotatingTriangle(iterCount * 16, 0, SIZE - 1);
   RotatingTriangle(iterCount * 16, SIN_PI * 2 / 3, SIZE - 1);

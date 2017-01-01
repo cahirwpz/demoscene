@@ -121,7 +121,7 @@ static void Render() {
   Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
   Transform2D(&t, shape->viewPoint, shape->origPoint, shape->points);
   PointsInsideBox(shape->viewPoint, shape->viewPointFlags, shape->points);
-  BlitterLineSetup(screen, plane, LINE_EOR, LINE_ONEDOT);
+  BlitterLineSetup(screen, plane, LINE_EOR|LINE_ONEDOT);
   DrawShape(shape);
   BlitterFill(screen, plane);
   // Log("shape: %ld\n", ReadLineCounter() - lines);

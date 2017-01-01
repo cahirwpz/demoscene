@@ -6,9 +6,6 @@
 #include "hardware.h"
 
 /* Values for bltcon0. */
-#define LINE_OR  ((ABC | ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
-#define LINE_EOR ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
-
 #define A_XOR_B (ANBC | NABC | ANBNC | NABNC)
 #define A_AND_B (ABC | ABNC)
 #define A_AND_NOT_B (ANBC | ANBNC)
@@ -23,13 +20,16 @@
 #define HALF_SUB ((SRCA | SRCB | DEST) | A_XOR_B)
 #define HALF_SUB_BORROW ((SRCA | SRCB | DEST) | (NABC | NABNC))
 
-/* Values for bltcon1. */
-#define LINE_SOLID  (LINEMODE)
-#define LINE_ONEDOT (LINEMODE | ONEDOT)
+/* Line drawing modes. */
+#define LINE_OR 0
+#define LINE_EOR 1
+#define LINE_SOLID 0
+#define LINE_ONEDOT 2
 
 /* Precalculated masks for bltafwm and bltalwm registers. */
 extern UWORD FirstWordMask[16];
 extern UWORD LastWordMask[16];
+extern UWORD LineMode[4][2];
 
 /* Common blitter macros. */
 static inline BOOL BlitterBusy() {
@@ -109,8 +109,7 @@ __regargs void BitmapSetArea(BitmapT *bitmap, Area2D *area, UWORD color);
 
 /* Blitter line. */
 
-void BlitterLineSetup(BitmapT *bitmap, UWORD plane,
-                      UWORD bltcon0, UWORD bltcon1);
+void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD mode);
 void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"),
                  WORD x2 asm("d4"), WORD y2 asm("d5"));
 

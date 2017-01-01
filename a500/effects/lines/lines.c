@@ -39,7 +39,7 @@ static void Init() {
 #if CPULINE == 1
     CpuLineSetup(screen, 0);
 #else
-    BlitterLineSetup(screen, 0, LINE_OR, LINE_SOLID);
+    BlitterLineSetup(screen, 0, LINE_OR|LINE_SOLID);
 #endif
 
     for (i = 0; i < screen->width; i += 2) {

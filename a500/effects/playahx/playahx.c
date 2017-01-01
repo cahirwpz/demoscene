@@ -66,7 +66,7 @@ static void InitWaveScope() {
   }
 
   bm = NewBitmap(64, 32, 1);
-  BlitterLineSetup(bm, 0, LINE_EOR, LINE_ONEDOT);
+  BlitterLineSetup(bm, 0, LINE_EOR|LINE_ONEDOT);
   BlitterLine(32, 0, 1, 31);
   BlitterLine(32, 0, 63, 31);
   BlitterFill(bm, 0);
@@ -173,7 +173,7 @@ static void AhxSetTempo(UWORD tempo asm("d0")) {
 static void DrawFrames() {
   WORD i;
 
-  BlitterLineSetup(screen, 0, LINE_OR, LINE_SOLID);
+  BlitterLineSetup(screen, 0, LINE_OR|LINE_SOLID);
 
   for (i = 0; i < 4; i++) {
     WORD x1 = 8 + 72 * i - 1;

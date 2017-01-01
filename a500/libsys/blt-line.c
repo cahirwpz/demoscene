@@ -38,13 +38,12 @@ struct {
   UWORD bltcon1;
 } line[1];
 
-void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD bltcon0, UWORD bltcon1) 
-{
+void BlitterLineSetup(BitmapT *bitmap, UWORD plane, UWORD mode) {
   line->data = bitmap->planes[plane];
   line->scratch = bitmap->planes[bitmap->depth];
   line->stride = bitmap->bytesPerRow;
-  line->bltcon0 = bltcon0;
-  line->bltcon1 = bltcon1;
+  line->bltcon0 = LineMode[mode][0];
+  line->bltcon1 = LineMode[mode][1];
 
   WaitBlitter();
 
