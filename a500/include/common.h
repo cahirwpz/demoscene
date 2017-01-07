@@ -29,6 +29,27 @@
   } \
 }
 
+/* assumes that abs(idx) < 32768 */
+static inline WORD getword(APTR tab, WORD idx) {
+  WORD res;
+  asm("addw  %1,%1\n"
+      "movew (%2,%1:w),%0\n"
+      : "=d" (res)
+      : "0" (idx), "a" (tab));
+  return res;
+}
+
+/* assumes that abs(idx) < 16384 */
+static inline LONG getlong(APTR tab, WORD idx) {
+  LONG res;
+  asm("addw  %1,%1\n"
+      "addw  %1,%1\n"
+      "movel (%2,%1:w),%0\n"
+      : "=d" (res)
+      : "0" (idx), "a" (tab));
+  return res;
+}
+
 static inline WORD absw(WORD a) {
   if (a < 0)
     return -a;

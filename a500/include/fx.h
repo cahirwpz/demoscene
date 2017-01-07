@@ -10,14 +10,11 @@
 extern WORD sintab[];
 
 static inline WORD SIN(WORD a) {
-  a &= SIN_MASK;
-  return sintab[a];
+  return getword(sintab, a & SIN_MASK);
 }
 
 static inline WORD COS(WORD a) {
-  a += SIN_HALF_PI;
-  a &= SIN_MASK;
-  return sintab[a];
+  return getword(sintab, (a + SIN_HALF_PI) & SIN_MASK);
 }
 
 static inline WORD normfx(LONG a) {
