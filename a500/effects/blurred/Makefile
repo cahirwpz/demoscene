@@ -1,6 +1,6 @@
-DATA := data/blurred-b-clip.ilbm \
-	data/blurred-b-pal-1.ilbm \
-	data/blurred-b-pal-2.ilbm
+DATA := data/blurred-clip.ilbm \
+	data/blurred-pal-1.ilbm \
+	data/blurred-pal-2.ilbm
 
 all: blurred.exe
 

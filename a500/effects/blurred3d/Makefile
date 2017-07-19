@@ -3,6 +3,9 @@ DATA := data/szescian.3d \
 
 LIBS := lib3d
 
-all: blurred3d.exe
+all: data/szescian.3d blurred3d.exe
 
 include ../build.mk
+
+clean::
+	$(RM) data/szescian.3d

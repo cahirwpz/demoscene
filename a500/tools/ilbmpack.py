@@ -47,10 +47,13 @@ def Deinterleave(data, width, height, depth):
 
 def main():
   parser = argparse.ArgumentParser(
-    description='Compresses ILBM IFF file with LZO or Deflate algorithm.')
+    description='Compresses ILBM IFF file with Deflate algorithm.')
   parser.add_argument(
-    '-m', '--method', type=str, choices=['none', 'lzo', 'deflate'],
-    default='lzo', help='Compression method to use.')
+    '-m', '--method', type=str, choices=['none', 'deflate'],
+    default='deflate', help='Compression method to use.')
+  parser.add_argument(
+    '-q', '--quiet', action='store_true',
+    help='Silence out diagnostic messages.')
   parser.add_argument(
     '-f', '--force', action='store_true',
     help='If the output file exists, the tool will overwrite it.')
@@ -61,6 +64,9 @@ def main():
     'output', metavar='OUTPUT', type=str, nargs='?',
     help='Output ILBM IFF file name.')
   args = parser.parse_args()
+
+  logLevel = [logging.INFO, logging.WARNING][args.quiet]
+  logging.basicConfig(level=logLevel, format="%(levelname)s: %(message)s")
 
   if args.output is None:
     args.output = args.input
@@ -91,8 +97,6 @@ def main():
         payload = UnRLE(payload)
       if bmhd.data.compression == 254:
         payload = zopfli.decompress(payload, size)
-      if bmhd.data.compression == 255:
-        payload = lzo.decompress(payload, size)
       compression = 0
       if args.method == 'deflate':
         opts = zopfli.Options()
@@ -110,6 +114,5 @@ def main():
 
 
 if __name__ == '__main__':
-  logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
   main()

@@ -14,6 +14,12 @@ ifeq ($(DEBUG), 1)
 CC += -g
 endif
 
+# Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
+ifneq ($(VERBOSE), 1)
+.SILENT:
+QUIET := --quiet
+endif
+
 # Don't reload library base for each call.
 DFLAGS := -D__CONSTLIBBASEDECL__=const
 
@@ -24,11 +30,14 @@ CPPFLAGS := -I$(TOPDIR)/base/include
 
 # Common tools definition
 RM := rm -v -f
+PYTHON := PYTHONPATH="$(TOPDIR)/pylib:$$PYTHONPATH" python2.7 
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 RUNINUAE := $(TOPDIR)/effects/RunInUAE
-ILBMPACK := $(TOPDIR)/tools/ilbmpack.py
-DUMPLWO := $(TOPDIR)/tools/dumplwo.py
+ILBMCONV := $(TOPDIR)/tools/ilbmconv.py
+ILBMPACK := $(TOPDIR)/tools/ilbmpack.py $(QUIET)
+DUMPLWO := $(TOPDIR)/tools/dumplwo.py $(QUIET)
+OPTIPNG := optipng $(QUIET)
 
 # Rules for recursive build
 DIR = $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))
@@ -83,8 +92,3 @@ clean::
 	@$(RM) .*.P *.a *.o *~ *.exe *.taghl
 
 .PHONY: all clean
-
-# Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
-ifneq ($(VERBOSE), 1)
-.SILENT:
-endif

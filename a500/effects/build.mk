@@ -14,11 +14,20 @@ LDLIBS += $(foreach lib,$(LIBS),$(TOPDIR)/base/$(lib)/$(lib).a)
 	@echo "[$(DIR):conv] $< -> $@"
 	$(DUMPLWO) $< $@
 
+%.ilbm: %.png
+	@echo "[$(DIR):conv] $< -> $@"
+	$(ILBMCONV) $< $@
+	$(ILBMPACK) -f $@
+
+%.bin: %.asm
+	@echo "[$(DIR):bin] $< -> $@"
+	$(AS) -Fbin -o $@ $<
+
 %.adf: %.exe $(DATA)
 	$(FSUTIL) -b $(TOPDIR)/base/bootloader.bin create $@ $^
 
-run: $(notdir $(PWD)).adf
-	$(RUNINUAE) $^
+run: all $(notdir $(PWD)).adf
+	$(RUNINUAE) $(lastword $^)
 
 clean::
 	@$(RM) *.adf *.exe

@@ -4,37 +4,38 @@ SUBDIRS := \
 	anim \
 	ball \
 	blurred \
-	blurred3d \
 	bumpmap-rgb \
 	circles \
-	credits \
-	flatshade \
 	floor \
-	floor-old \
 	glitch \
 	highway \
 	kbtest \
 	lines \
 	metaballs \
+	prisms \
+	stripes \
+	tilezoomer \
+	transparency \
+	twister-rgb \
+
+FAILURES := \
+	blurred3d \
+	credits \
+	flatshade \
+	floor-old \
+	gui \
 	neons \
 	playahx \
 	playp61 \
 	plotter \
-	prisms \
 	shapes \
-	stripes \
 	tests \
 	textscroll \
 	thunders \
-	tilezoomer \
-	transparency \
-	twister-rgb \
 	uvmap \
 	uvmap-rgb \
 	vscaler \
 	wireframe
-
-	# gui 
 		
 all: startup.o $(foreach dir,$(SUBDIRS),build-$(dir))
 
