@@ -1,3 +1,3 @@
-highway.exe:
+all: highway.exe
 
-include ../Makefile.common
+include ../build.mk

@@ -1,3 +1,3 @@
-plotter.exe:
+all: plotter.exe
 
-include ../Makefile.common
+include ../build.mk

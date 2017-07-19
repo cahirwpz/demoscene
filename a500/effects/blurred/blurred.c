@@ -25,10 +25,10 @@ static CopInsT *bplptr[2][DEPTH];
 static CopListT *cp;
 
 static void Load() {
-  clip = LoadILBM("blurred-b-clip.ilbm");
+  clip = LoadILBM("blurred-clip.ilbm");
 
-  palette[0] = LoadPalette("blurred-b-pal-1.ilbm");
-  palette[1] = LoadPalette("blurred-b-pal-2.ilbm");
+  palette[0] = LoadPalette("blurred-pal-1.ilbm");
+  palette[1] = LoadPalette("blurred-pal-2.ilbm");
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);

@@ -1,3 +1,3 @@
-uvmap-rgb.exe:
+all: uvmap-rgb.exe
 
-include ../Makefile.common
+include ../build.mk

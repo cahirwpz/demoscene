@@ -1,3 +1,3 @@
-twister-rgb.exe:
+all: twister-rgb.exe
 
-include ../Makefile.common
+include ../build.mk

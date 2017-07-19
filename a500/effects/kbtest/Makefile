@@ -1,3 +1,3 @@
-kbtest.exe:
+all: kbtest.exe
 
-include ../Makefile.common
+include ../build.mk

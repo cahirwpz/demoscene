@@ -1,3 +1,3 @@
-thunders.exe:
+all: thunders.exe
 
-include ../Makefile.common
+include ../build.mk

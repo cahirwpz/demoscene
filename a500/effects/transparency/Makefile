@@ -1,3 +1,3 @@
-transparency.exe:
+all: transparency.exe
 
-include ../Makefile.common
+include ../build.mk

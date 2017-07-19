@@ -1,3 +1,3 @@
-neons.exe:
+all: neons.exe
 
-include ../Makefile.common
+include ../build.mk

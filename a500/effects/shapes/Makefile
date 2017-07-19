@@ -1,5 +1,5 @@
-LIBS = lib2d
+LIBS := lib2d
 
-shapes.exe:
+all: shapes.exe
 
-include ../Makefile.common
+include ../build.mk

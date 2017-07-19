@@ -1,3 +1,3 @@
-textscroll.exe:
+all: textscroll.exe
 
-include ../Makefile.common
+include ../build.mk

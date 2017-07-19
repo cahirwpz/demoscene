@@ -1,3 +1,6 @@
-floor.exe:
+DATA := data/floor-stripes.ilbm \
+	data/floor.ilbm
 
-include ../Makefile.common
+all: floor.exe
+
+include ../build.mk

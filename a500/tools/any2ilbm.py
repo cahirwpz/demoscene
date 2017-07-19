@@ -4,8 +4,8 @@ import Image
 import math
 import argparse
 from array import array
-from util.iff import IffChunk
-from util.ilbm import ILBM, BitMapHeader, Color
+from iff.iff import IffChunk
+from iff.ilbm import ILBM, BitMapHeader, Color
 
 
 def c2p(pix, width, height, depth):

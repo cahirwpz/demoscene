@@ -1,3 +1,6 @@
-floor-old.exe:
+DATA := data/floor-city.ilbm \
+	data/floor.png
 
-include ../Makefile.common
+all: floor-old.exe
+
+include ../build.mk

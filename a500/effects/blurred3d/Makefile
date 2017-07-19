@@ -1,5 +1,8 @@
-LIBS = lib3d
+DATA := data/szescian.3d \
+	data/blurred3d-pal.png
 
-blurred3d.exe:
+LIBS := lib3d
 
-include ../Makefile.common
+all: blurred3d.exe
+
+include ../build.mk

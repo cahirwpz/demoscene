@@ -7,7 +7,7 @@ import struct
 from collections import namedtuple
 from pprint import pprint
 
-from util.iff import IffFile, IffData
+from iff.iff import IffFile, IffData
 
 Vertex = namedtuple('Vertex', 'x y z')
 Color = namedtuple('Color', 'r g b')
@@ -335,7 +335,9 @@ def convertLWO2(lwo, output):
 
   vmap_txuv = []
   for name, values in txuv.items():
-    surface = surf_vmap[name]
+    surface = surf_vmap.get(name, None)
+    if not surface:
+      continue
     for vertex, uv in values:
       vmap_txuv.append((surface, vertex, tuple(uv)))
 

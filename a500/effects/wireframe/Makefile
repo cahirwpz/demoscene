@@ -1,5 +1,5 @@
-LIBS = lib3d
+LIBS := lib3d
 
-wireframe.exe:
+all: wireframe.exe
 
-include ../Makefile.common
+include ../build.mk

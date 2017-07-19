@@ -1,5 +1,5 @@
-LIBS = libp61
+LIBS := libp61
 
-playp61.exe:
+all: playp61.exe
 
-include ../Makefile.common
+include ../build.mk

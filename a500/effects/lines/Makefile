@@ -1,3 +1,3 @@
-lines.exe:
+all: lines.exe
 
-include ../Makefile.common
+include ../build.mk

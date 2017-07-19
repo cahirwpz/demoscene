@@ -1,3 +1,3 @@
-uvmap.exe:
+all: uvmap.exe
 
-include ../Makefile.common
+include ../build.mk

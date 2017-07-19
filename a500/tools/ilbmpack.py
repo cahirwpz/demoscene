@@ -6,10 +6,7 @@ import os
 import zopfli
 
 from StringIO import StringIO
-from util.ilbm import ILBM
-from util.lzo import LZO
-
-lzo = LZO()
+from iff.ilbm import ILBM
 
 
 def UnRLE(bytes_in):
@@ -101,9 +98,6 @@ def main():
         opts = zopfli.Options()
         payload = zopfli.compress(opts, payload, len(payload))
         compression = 254
-      if args.method == 'lzo':
-        payload = lzo.compress(payload)
-        compression = 255
       if args.method == 'none':
         compression = 0
       body.data = payload

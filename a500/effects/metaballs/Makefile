@@ -1,3 +1,3 @@
-metaballs.exe:
+all: metaballs.exe
 
-include ../Makefile.common
+include ../build.mk

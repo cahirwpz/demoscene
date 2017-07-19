@@ -1,5 +1,11 @@
-LIBS = lib3d
+DATA := data/flatshade-pal.ilbm \
+	data/codi.3d
 
-flatshade.exe:
+LIBS := lib3d
 
-include ../Makefile.common
+all: data/codi.3d flatshade.exe
+
+include ../build.mk
+
+clean::
+	$(RM) data/codi.3d

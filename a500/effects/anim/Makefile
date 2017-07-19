@@ -1,15 +1,17 @@
-DATA = data/running.bin         \
-       data/running-pal.ilbm    \
+DATA := data/running.bin \
+	data/running-pal.ilbm
 
 all: anim.exe data/running.bin
 
+include ../build.mk
+
 data/%.asm: data/%.gif
+	@echo "[$(DIR):gen] $< -> $@"
 	./gen-anim.py $< > $@
 
 data/%.bin: data/%.asm
+	@echo "[$(DIR):bin] $< -> $@"
 	$(AS) -Fbin -o $@ $<
 
-include ../Makefile.common
-
 clean::
-	$(RM) -v -f data/running.bin
+	$(RM) anim.exe data/running.bin

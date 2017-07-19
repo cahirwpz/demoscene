@@ -1,5 +1,5 @@
-LIBS = libahx
+LIBS := libahx
 
-playahx.exe:
+all: playahx.exe
 
-include ../Makefile.common
+include ../build.mk

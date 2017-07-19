@@ -1,4 +1,4 @@
-FILES = \
+FILES := \
 	showilbm.exe	\
 	showpchg.exe	\
 	showpng.exe	\
@@ -8,4 +8,4 @@ FILES = \
 
 all: $(FILES)
 
-include ../Makefile.common
+include ../build.mk
