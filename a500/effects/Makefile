@@ -7,12 +7,15 @@ SUBDIRS := \
 	bumpmap-rgb \
 	circles \
 	floor \
+	gui \
 	glitch \
 	highway \
 	kbtest \
 	lines \
 	metaballs \
+	playp61 \
 	prisms \
+	shapes \
 	stripes \
 	tilezoomer \
 	transparency \
@@ -23,12 +26,9 @@ FAILURES := \
 	credits \
 	flatshade \
 	floor-old \
-	gui \
 	neons \
 	playahx \
-	playp61 \
 	plotter \
-	shapes \
 	tests \
 	textscroll \
 	thunders \

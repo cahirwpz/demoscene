@@ -1,10 +1,10 @@
 TOPDIR = $(realpath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 
-include $(TOPDIR)/build.mk
-
 LIBS += libsys libc
 CPPFLAGS += -I$(TOPDIR)/effects
 LDLIBS += $(foreach lib,$(LIBS),$(TOPDIR)/base/$(lib)/$(lib).a)
+
+include $(TOPDIR)/build.mk
 
 %.exe: $(TOPDIR)/base/crt0.o %.o $(TOPDIR)/effects/startup.o
 	@echo "[$(DIR):ld] $@"
@@ -24,6 +24,7 @@ LDLIBS += $(foreach lib,$(LIBS),$(TOPDIR)/base/$(lib)/$(lib).a)
 	$(AS) -Fbin -o $@ $<
 
 %.adf: %.exe $(DATA)
+	@echo "[$(DIR):adf] $^ -> $@"
 	$(FSUTIL) -b $(TOPDIR)/base/bootloader.bin create $@ $^
 
 run: all $(notdir $(PWD)).adf

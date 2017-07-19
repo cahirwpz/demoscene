@@ -25,8 +25,8 @@ DFLAGS := -D__CONSTLIBBASEDECL__=const
 
 # libnix13.a contains a few functions that don't depend on utility.library
 # which is not present in Kickstart 1.3
-LDLIBS	:= -lnix13 -lstubs
-CPPFLAGS := -I$(TOPDIR)/base/include
+LDLIBS	+= -lnix13 -lstubs
+CPPFLAGS += -I$(TOPDIR)/base/include
 
 # Common tools definition
 RM := rm -v -f

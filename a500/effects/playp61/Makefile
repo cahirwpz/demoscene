@@ -1,4 +1,4 @@
-DATA := data/jazzcat-sunglasses_at_night.mod
+DATA := data/jazzcat-sunglasses_at_night.p61
 
 LIBS := libp61
 
