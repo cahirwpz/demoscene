@@ -7,6 +7,7 @@ SUBDIRS := \
 	bumpmap-rgb \
 	circles \
 	floor \
+	floor-old \
 	gui \
 	glitch \
 	highway \
@@ -25,7 +26,6 @@ FAILURES := \
 	blurred3d \
 	credits \
 	flatshade \
-	floor-old \
 	neons \
 	playahx \
 	plotter \

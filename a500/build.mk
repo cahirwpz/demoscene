@@ -1,9 +1,9 @@
-TOPDIR = $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+TOPDIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
 # Compiler tools & flags definitions
 CC	:= m68k-amigaos-gcc -noixemul
 AS	:= vasm -quiet
-CFLAGS	:= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
+CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 
 ASFLAGS	:= -x -m68010
 LDFLAGS	:= -m68000 -msmall-code -nostartfiles
@@ -40,7 +40,7 @@ DUMPLWO := $(TOPDIR)/tools/dumplwo.py $(QUIET)
 OPTIPNG := optipng $(QUIET)
 
 # Rules for recursive build
-DIR = $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))
+DIR := $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))
 
 build-%:
 	$(MAKE) -C $(@:build-%=%)
