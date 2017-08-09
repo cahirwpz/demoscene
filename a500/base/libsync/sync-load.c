@@ -6,12 +6,15 @@
 static WORD ParseTrack(char **data, TrackT *track) {
   WORD keys = 0;
   WORD last_pos = -1;
+  BOOL done = FALSE;
 
-  while (NextLine(data) && !MatchString(data, "@end")) {
+  while (NextLine(data) && !done) {
     TrackTypeT type = 0;
     WORD pos = -1, value = 0;
 
-    if (MatchString(data, "!ramp")) {
+    if (MatchString(data, "@end")) {
+      done = TRUE;
+    } else if (MatchString(data, "!ramp")) {
       type = TRACK_RAMP;
     } else if (MatchString(data, "!linear")) {
       type = TRACK_LINEAR;
@@ -33,13 +36,11 @@ static WORD ParseTrack(char **data, TrackT *track) {
             (LONG)last_pos, (LONG)pos);
         return 0;
       }
-      if (!ReadShort(data, &value))
-        Log("Number expected!\n");
-      last_pos = pos;
       if (!ReadShort(data, &value)) {
-        Log("Value is not a number!\n");
+        Log("Number expected!\n");
         return 0;
       }
+      last_pos = pos;
     } else {
       char c = **data;
 
@@ -86,10 +87,17 @@ static TrackT *ReadTrack(char **data) {
   TrackT *track = NULL;
   WORD name_len, keys = 0;
 
+  if (!(NextWord(data) && MatchString(data, "@track"))) {
+    Log("No '@track' directive found\n");
+    return NULL;
+  }
+
   if (!((name_len = ReadString(data, name, sizeof(name))) && EndOfLine(data))) {
     Log("'@track' directive expects one argument\n");
     return NULL;
   }
+
+  Log("[Track] Found '%s'.\n", name);
 
   bogus = *data;
 
@@ -98,7 +106,9 @@ static TrackT *ReadTrack(char **data) {
                      sizeof(TrackKeyT) * (keys + 1) + 
                      name_len + 1, MEMF_PUBLIC|MEMF_CLEAR);
     track->name = (char *)&track->data[keys + 1];
-    memcpy(track->name, name, name_len);
+    strcpy(track->name, name);
+    /* BUG: Why this crashes? */
+    /* memcpy(track->name, name, name_len); */
     ParseTrack(data, track);
   }
 
@@ -125,8 +135,6 @@ __regargs TrackT **LoadTrackList(char *filename) {
           MemFree(tmp[--count]);
         break;
       }
-
-      Log("[Track] Found '%s'.\n", track->name);
 
       tmp[count] = track;
     }
