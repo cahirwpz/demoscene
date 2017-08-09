@@ -1,7 +1,7 @@
 TOPDIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
 # Compiler tools & flags definitions
-CC	:= m68k-amigaos-gcc -noixemul
+CC	:= m68k-amigaos-gcc -noixemul -g
 AS	:= vasm -quiet
 CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 
@@ -9,10 +9,6 @@ ASFLAGS	:= -x -m68010
 LDFLAGS	:= -m68000 -msmall-code -nostartfiles
 OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	:= -Wall
-
-ifeq ($(DEBUG), 1)
-CC += -g
-endif
 
 # Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
 ifneq ($(VERBOSE), 1)
@@ -29,15 +25,18 @@ LDLIBS	+= -lnix13 -lstubs
 CPPFLAGS += -I$(TOPDIR)/base/include
 
 # Common tools definition
+CP := cp -a
 RM := rm -v -f
-PYTHON := PYTHONPATH="$(TOPDIR)/pylib:$$PYTHONPATH" python2.7 
+PYTHON := PYTHONPATH="$(TOPDIR)/pylib:$$PYTHONPATH" python2 
+PYTHON3 := PYTHONPATH="$(TOPDIR)/pylib:$$PYTHONPATH" python3
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
-RUNINUAE := $(TOPDIR)/effects/RunInUAE
+RUNINUAE := $(PYTHON3) $(TOPDIR)/effects/RunInUAE
 ILBMCONV := $(TOPDIR)/tools/ilbmconv.py
 ILBMPACK := $(TOPDIR)/tools/ilbmpack.py $(QUIET)
 DUMPLWO := $(TOPDIR)/tools/dumplwo.py $(QUIET)
 OPTIPNG := optipng $(QUIET)
+STRIP := m68k-amigaos-strip -s
 
 # Rules for recursive build
 DIR := $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))

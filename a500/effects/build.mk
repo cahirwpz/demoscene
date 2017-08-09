@@ -8,7 +8,9 @@ include $(TOPDIR)/build.mk
 
 %.exe: $(TOPDIR)/base/crt0.o %.o $(TOPDIR)/effects/startup.o
 	@echo "[$(DIR):ld] $@"
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CC) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $^ $(LDLIBS)
+	$(CP) $@ $@.dbg
+	$(STRIP) $@
 
 %.3d: %.lwo
 	@echo "[$(DIR):conv] $< -> $@"
@@ -28,7 +30,7 @@ include $(TOPDIR)/build.mk
 	$(FSUTIL) -b $(TOPDIR)/base/bootloader.bin create $@ $^
 
 run: all $(notdir $(PWD)).adf
-	$(RUNINUAE) $(lastword $^)
+	$(RUNINUAE) -e $(notdir $(PWD)).exe.dbg $(lastword $^)
 
 clean::
 	@$(RM) *.adf *.exe
