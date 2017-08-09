@@ -1,5 +1,8 @@
-LIBS = lib2d
+DATA := data/boxes-pal.ilbm \
+	data/night.2d
 
-shapes.exe:
+LIBS := lib2d
 
-include ../Makefile.common
+all: shapes.exe
+
+include ../build.mk

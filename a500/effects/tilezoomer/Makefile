@@ -1,3 +1,3 @@
-tilezoomer.exe:
+all: tilezoomer.exe
 
-include ../Makefile.common
+include ../build.mk

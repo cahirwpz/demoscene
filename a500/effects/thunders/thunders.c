@@ -84,7 +84,7 @@ static void Load() {
   texture = LoadPNG("thunders-floor.png", PM_RGB12, MEMF_PUBLIC);
 
   {
-    BitmapT *bitmap = LoadILBM("thunders.iff");
+    BitmapT *bitmap = LoadILBM("thunders.ilbm");
     WORD i;
 
     for (i = 0; i < bitmap->width / 16; i++) {

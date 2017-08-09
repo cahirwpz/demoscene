@@ -24,7 +24,7 @@ static TextFontT *topaz8;
 static ConsoleT console;
 
 static void Load() {
-  module = LoadFile("data/jazzcat-sunglasses_at_night.p61", MEMF_CHIP);
+  module = LoadFile("jazzcat-sunglasses_at_night.p61", MEMF_CHIP);
 }
 
 static void UnLoad() {

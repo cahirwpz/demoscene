@@ -1,61 +1,116 @@
 #!/usr/bin/env python3
 
-import asyncore
-import socket
 import argparse
-import subprocess
-import signal
-import string
+import asyncio
+import asyncio.subprocess
+import linecache
+import logging
+import io
+import os
 import os.path
-import time
+import re
+import signal
 import sys
 
+from amidev.debug.info import DebugInfo, Segment
+from amidev.debug.uae import UaeLaunch, UaeProcess, UaeDebuggerProtocol
 
-class RawIOClient(asyncore.dispatcher):
-    def __init__(self, port):
-        asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connect(("127.0.0.1", port))
 
-    def handle_connect(self):
-        pass
+class ExtendedUaeDebuggerProtocol(UaeDebuggerProtocol):
+    async def fetch_segments(self):
+        # fetch ExecBase
+        execbase = await self.read_long(4)
+        # fetch ThisTask
+        thistask = await self.read_long(execbase + 276)
+        # fetch tc_UserData
+        userdata = await self.read_long(thistask + 88)
+        # browse linked list of segments
+        segments = []
+        while userdata:
+            start = userdata + 8
+            size = await self.read_long(userdata) - 8
+            userdata = await self.read_long(userdata + 4)
+            segments.append(Segment(start, size))
+        return segments
 
-    def handle_close(self):
-        self.close()
 
-    def handle_read(self):
-        sys.stdout.write(self.recv(8192).decode())
+class ExtendedUaeProcess(UaeProcess):
+    def __init__(self, *args, **kwargs):
+        super(ExtendedUaeProcess, self).__init__(*args, **kwargs)
+
+        self.serial = None
+        self.parallel = None
+
+    async def tcp_to_stdout(self, host, port):
+        reader, _ = await asyncio.open_connection(host, port, loop=self.loop)
+
+        try:
+            async for line in transport:
+                text = line.decode()
+                print(text.rstrip())
+        except ConnectionResetError:
+            pass
+
+    async def serial_connection(self, host, port):
+        logging.info('Serial port active!')
+        self.tcp_to_stdout(host, port)
+        logging.info('Serial port connection closed!')
+
+    async def parallel_connection(self, host, port):
+        logging.info('Parallel port active!')
+        self.tcp_to_stdout(host, port)
+        logging.info('Parallel port connection closed!')
+
+    def handle_log(self, text):
+        # init phase, serial & parallel port device
+        match = re.match(r'\[UAE\] (.*) port device: tcp://(.*):(.*)', text)
+        if match:
+            device, host, port = match.groups()
+            if device == 'serial':
+                self.serial = (host, port)
+            if device == 'Parallel':
+                self.parallel = (host, port)
+
+        # init phase, serial & parallel listening port
+        match = re.match(r'\[UAE\] TCP: Listening on (.*) port (.*)', text)
+        if match:
+            host, port = match.groups()
+            if match.groups() == self.serial:
+                self.loop.create_task(self.serial_connection(host, int(port)))
+            if match.groups() == self.parallel:
+                self.loop.create_task(self.parallel_connection(host, int(port)))
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Run binary in FS-UAE.')
-    parser.add_argument('-d', '--debug', action='store_true',
-                        help='Prepare terminal for use with UAE debugger.')
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+    # logging.getLogger('asyncio').setLevel(logging.DEBUG)
+
+    if sys.platform == 'win32':
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+    else:
+        loop = asyncio.get_event_loop()
+    # loop.set_debug(True)
+
+    parser = argparse.ArgumentParser(description='Run binary in FS-UAE.')
+    parser.add_argument('-e', '--executable', type=str,
+                        help='Executable file being run.')
     parser.add_argument('adf', metavar='ADF', type=str,
                         help='Amiga disk file.')
 
     args = parser.parse_args()
 
-    if args.debug:
-        stdout = None
-        stderr = None
-    else:
-        stdout = subprocess.PIPE
-        stderr = subprocess.PIPE
-
     topdir = os.path.realpath(os.path.dirname(sys.argv[0]))
-    cfg = os.path.join(topdir, 'Config.fs-uae')
-    adf = os.path.realpath(args.adf)
 
-    uae = subprocess.Popen(['fs-uae', cfg, '--floppy_drive_0=%s' % adf],
-                           stdout=stdout, stderr=stderr)
+    uae_args = ['--stdout=1',
+                '--floppy_drive_0=' + os.path.realpath(args.adf),
+                os.path.join(topdir, 'Config.fs-uae')]
+
     try:
-        if not args.debug:
-            time.sleep(1)
-            serport = RawIOClient(8000)
-            parport = RawIOClient(8001)
-            asyncore.loop()
-        uae.wait()
+        loop.run_until_complete(UaeLaunch(loop, *uae_args,
+                                          process=ExtendedUaeProcess,
+                                          protocol=ExtendedUaeDebuggerProtocol))
     except KeyboardInterrupt:
-        uae.send_signal(signal.SIGINT)
+        pass
+
+    loop.close()

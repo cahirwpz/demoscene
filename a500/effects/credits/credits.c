@@ -22,24 +22,24 @@ STRPTR __cwdpath = "nigiri";
 static void Load() {
   WORD i;
 
-  logo = LoadILBM("16_credits_logo.iff");
-  floor = LoadILBM("16_floor.iff");
-  disco = LoadILBM("16_discoball.iff");
+  logo = LoadILBM("credits_logo.iff");
+  floor = LoadILBM("floor.iff");
+  disco = LoadILBM("discoball.iff");
 
-  dance[0] = LoadILBM("16_01_cahir.iff");
-  dance[1] = LoadILBMCustom("16_02_slayer.iff", BM_DISPLAYABLE);
-  dance[2] = LoadILBMCustom("16_03_jazzcat.iff", BM_DISPLAYABLE);
-  dance[3] = LoadILBMCustom("16_04_dkl.iff", BM_DISPLAYABLE);
-  dance[4] = LoadILBMCustom("16_05_dance1.iff", BM_DISPLAYABLE);
-  dance[5] = LoadILBMCustom("16_06_dance2.iff", BM_DISPLAYABLE);
-  dance[6] = LoadILBMCustom("16_07_dance3.iff", BM_DISPLAYABLE);
-  dance[7] = LoadILBMCustom("16_08_dance4.iff", BM_DISPLAYABLE);
+  dance[0] = LoadILBM("01_cahir.iff");
+  dance[1] = LoadILBMCustom("02_slayer.iff", BM_DISPLAYABLE);
+  dance[2] = LoadILBMCustom("03_jazzcat.iff", BM_DISPLAYABLE);
+  dance[3] = LoadILBMCustom("04_dkl.iff", BM_DISPLAYABLE);
+  dance[4] = LoadILBMCustom("05_dance1.iff", BM_DISPLAYABLE);
+  dance[5] = LoadILBMCustom("06_dance2.iff", BM_DISPLAYABLE);
+  dance[6] = LoadILBMCustom("07_dance3.iff", BM_DISPLAYABLE);
+  dance[7] = LoadILBMCustom("08_dance4.iff", BM_DISPLAYABLE);
 
-  member[0] = LoadILBM("16_txt_cahir.iff");
-  member[1] = LoadILBMCustom("16_txt_slay.iff", BM_DISPLAYABLE);
-  member[2] = LoadILBMCustom("16_txt_jazz.iff", BM_DISPLAYABLE);
-  member[3] = LoadILBMCustom("16_txt_dkl.iff", BM_DISPLAYABLE);
-  member[4] = LoadILBMCustom("16_txt_codi.iff", BM_DISPLAYABLE);
+  member[0] = LoadILBM("txt_cahir.iff");
+  member[1] = LoadILBMCustom("txt_slay.iff", BM_DISPLAYABLE);
+  member[2] = LoadILBMCustom("txt_jazz.iff", BM_DISPLAYABLE);
+  member[3] = LoadILBMCustom("txt_dkl.iff", BM_DISPLAYABLE);
+  member[4] = LoadILBMCustom("txt_codi.iff", BM_DISPLAYABLE);
 
   for (i = 1; i < 5; i++)
     member[i]->palette = member[0]->palette;

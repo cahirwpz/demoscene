@@ -1,3 +1,6 @@
-textscroll.exe:
+DATA := data/text-scroll-font.ilbm \
+	data/text-scroll.txt
 
-include ../Makefile.common
+all: textscroll.exe
+
+include ../build.mk

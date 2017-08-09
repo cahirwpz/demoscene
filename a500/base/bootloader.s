@@ -1,6 +1,7 @@
         include 'exec/macros.i'
         include 'exec/io.i'
         include 'exec/memory.i'
+        include 'exec/tasks.i'
         include 'dos/dosextens.i'
         include 'dos/doshunks.i'
         include 'devices/bootblock.i'
@@ -99,6 +100,9 @@ Entry:
         JSRLIB  FindTask
         move.l  d0,a0
         move.l  #$DEADC0DE,pr_CLI(a0)
+
+        ; put segment list into Task's user data for debugging purposes
+        move.l  a4,TC_Userdata(a0)
 
         ; call executable
         lea     .cmd(pc),a0

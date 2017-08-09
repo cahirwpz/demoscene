@@ -1,20 +1,49 @@
-CPPFLAGS = -I../include
-SUBDIRS = $(shell find . -mindepth 1 -maxdepth 1 -type d | sed 's,./,,')
+TOPDIR := $(realpath ..)
 
-all: startup.o $(SUBDIRS)
+SUBDIRS := \
+	anim \
+	ball \
+	blurred \
+	bumpmap-rgb \
+	circles \
+	floor \
+	floor-old \
+	gui \
+	glitch \
+	highway \
+	kbtest \
+	lines \
+	metaballs \
+	playp61 \
+	prisms \
+	shapes \
+	stripes \
+	tilezoomer \
+	transparency \
+	twister-rgb \
 
-$(SUBDIRS):
-	echo "MAKE $@"
-	$(MAKE) -C $@
+FAILURES := \
+	blurred3d \
+	credits \
+	flatshade \
+	neons \
+	playahx \
+	plotter \
+	tests \
+	textscroll \
+	thunders \
+	uvmap \
+	uvmap-rgb \
+	vscaler \
+	wireframe
+		
+all: startup.o $(foreach dir,$(SUBDIRS),build-$(dir))
 
-clean::
-	@for d in $(SUBDIRS); do	\
-	  $(MAKE) -C $$d clean;		\
-	done
+include $(TOPDIR)/build.mk
+
+clean:: $(foreach dir,$(SUBDIRS),clean-$(dir))
 
 archive:
 	7z a "a500-$$(date +%F-%H%M).7z" $(SUBDIRS)
 
-.PHONY: all clean $(SUBDIRS)
-
-include ../Makefile.common
+.PHONY: archive

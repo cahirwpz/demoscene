@@ -1,5 +1,8 @@
-LIBS = lib3d
+DATA := data/pilka.3d \
+	data/wireframe-pal.ilbm
 
-wireframe.exe:
+LIBS := lib3d
 
-include ../Makefile.common
+all: wireframe.exe
+
+include ../build.mk

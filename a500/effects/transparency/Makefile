@@ -1,3 +1,6 @@
-transparency.exe:
+DATA := data/ghostown_160x128_4col.iff \
+	data/transparency-bg.ilbm
 
-include ../Makefile.common
+all: transparency.exe
+
+include ../build.mk

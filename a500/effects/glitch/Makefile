@@ -1,3 +1,5 @@
-glitch.exe:
+DATA := data/ghostown_160x128.ilbm
 
-include ../Makefile.common
+all: glitch.exe
+
+include ../build.mk

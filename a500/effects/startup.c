@@ -26,8 +26,10 @@ static void DummyRender() {}
 static BOOL ExitOnLMB() { return !LeftMouseButton(); }
 
 int main() {
-  if (Effect.Load)
+  if (Effect.Load) {
     Effect.Load();
+    Log("[Main] Effect loading finished\n");
+  }
 
   {
     struct View *OldView;
@@ -89,8 +91,10 @@ int main() {
     if (!Effect.HandleEvent)
       Effect.HandleEvent = ExitOnLMB;
 
-    if (Effect.Init)
+    if (Effect.Init) {
       Effect.Init();
+      Log("[Main] Effect initialization done\n");
+    }
 
     lastFrameCount = ReadFrameCounter();
 
@@ -178,7 +182,7 @@ void SystemInfo() {
     kickRev = kick[7];
   }
 
-  Log("[Init] ROM: %ld.%ld, CPU: 680%ld0, CHIP: %ldkB, FAST: %ldkB\n",
+  Log("[Main] ROM: %ld.%ld, CPU: 680%ld0, CHIP: %ldkB, FAST: %ldkB\n",
       (LONG)kickVer, (LONG)kickRev, (LONG)cpu,
       (LONG)(AvailMem(MEMF_CHIP | MEMF_LARGEST) / 1024),
       (LONG)(AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024));
@@ -188,7 +192,7 @@ void InitTrapHandler() {
   if (*(LONG *)0xA10004 == MAKE_ID('H', 'R', 'T', '!')) {
     struct Task *tc = FindTask(NULL);
     tc->tc_TrapCode = &CallHRTmon;
-    Log("[Init] Installed trap handler\n");
+    Log("[Main] Installed trap handler\n");
   }
 }
 

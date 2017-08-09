@@ -1,3 +1,3 @@
-circles.exe:
+all: circles.exe
 
-include ../Makefile.common
+include ../build.mk

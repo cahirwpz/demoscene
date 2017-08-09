@@ -1,3 +1,6 @@
-uvmap-rgb.exe:
+DATA := data/texture-rgb.png \
+	data/uvmap-rgb.png
 
-include ../Makefile.common
+all: uvmap-rgb.exe
+
+include ../build.mk

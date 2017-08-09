@@ -1,3 +1,6 @@
-thunders.exe:
+DATA := data/thunders-floor.png \
+	data/thunders.ilbm
 
-include ../Makefile.common
+all: thunders.exe
+
+include ../build.mk

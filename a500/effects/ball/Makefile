@@ -1,3 +1,7 @@
-ball.exe:
+DATA := data/dragon-bg.ilbm \
+	data/texture-15.png \
+	data/ball.bin
 
-include ../Makefile.common
+all: ball.exe
+
+include ../build.mk

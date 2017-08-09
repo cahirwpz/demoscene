@@ -7,7 +7,7 @@ import struct
 from collections import namedtuple
 from pprint import pprint
 
-from util.iff import IffFile, IffData
+from iff.iff import IffFile, IffData
 
 Vertex = namedtuple('Vertex', 'x y z')
 Color = namedtuple('Color', 'r g b')
@@ -335,7 +335,9 @@ def convertLWO2(lwo, output):
 
   vmap_txuv = []
   for name, values in txuv.items():
-    surface = surf_vmap[name]
+    surface = surf_vmap.get(name, None)
+    if not surface:
+      continue
     for vertex, uv in values:
       vmap_txuv.append((surface, vertex, tuple(uv)))
 
@@ -379,6 +381,9 @@ def main():
     description=(
       'Converts Lightwave Object (LWOB/LWO2) file to textual representation.'))
   parser.add_argument(
+    '-q', '--quiet', action='store_true',
+    help='Silence out diagnostic messages.')
+  parser.add_argument(
     '-f', '--force', action='store_true',
     help='If the output object exists, the tool will' 'overwrite it.')
   parser.add_argument(
@@ -389,6 +394,9 @@ def main():
   args = parser.parse_args()
 
   args.input = os.path.abspath(args.input)
+
+  logLevel = [logging.INFO, logging.WARNING][args.quiet]
+  logging.basicConfig(level=logLevel, format='%(levelname)s: %(message)s')
 
   if not os.path.isfile(args.input):
     raise SystemExit('Input file "%s" does not exists!' % args.input)
@@ -401,14 +409,15 @@ def main():
       raise SystemExit(
         'Object file "%s" already exists (use "-f" to override).' % args.output)
 
-  lwo = LWOB.fromFile(args.input)
+  lwo = LWO2.fromFile(args.input)
   if not lwo:
-    lwo = LWO2.fromFile(args.input)
+    lwo = LWOB.fromFile(args.input)
   if not lwo:
     raise SystemExit('File format not recognized.')
 
-  for chunk in lwo.chunks:
-    pprint((chunk.name, chunk.data))
+  if not args.output:
+    for chunk in lwo.chunks:
+      pprint((chunk.name, chunk.data))
 
   if args.output and lwo.form == 'LWO2':
     logging.info('Writing object structure to %s file.' % args.output)
@@ -416,5 +425,4 @@ def main():
       convertLWO2(lwo, f)
 
 if __name__ == '__main__':
-  logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
   main()

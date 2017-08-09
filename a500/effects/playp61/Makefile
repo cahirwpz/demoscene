@@ -1,5 +1,7 @@
-LIBS = libp61
+DATA := data/jazzcat-sunglasses_at_night.p61
 
-playp61.exe:
+LIBS := libp61
 
-include ../Makefile.common
+all: playp61.exe
+
+include ../build.mk

@@ -1,5 +1,5 @@
-DATA = data/sprite.ilbm
+DATA := data/sprite.ilbm
 
-prisms.exe:
+all: prisms.exe
 
-include ../Makefile.common
+include ../build.mk

@@ -1,3 +1,3 @@
-stripes.exe:
+all: stripes.exe
 
-include ../Makefile.common
+include ../build.mk

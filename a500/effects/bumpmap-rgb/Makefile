@@ -1,3 +1,7 @@
-bumpmap-rgb.exe:
+DATA := data/light.png \
+	data/bumpmap.png \
+	data/bumpmap.bin
 
-include ../Makefile.common
+all: bumpmap-rgb.exe
+
+include ../build.mk

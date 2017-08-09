@@ -1,5 +1,9 @@
-LIBS = libahx
+DATA := data/ahxWaves \
+	data/ahxWaves.Location \
+	data/jazzcat-electric_city.ahx
 
-playahx.exe:
+LIBS := libahx
 
-include ../Makefile.common
+all: playahx.exe
+
+include ../build.mk

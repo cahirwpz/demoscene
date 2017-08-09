@@ -1,3 +1,9 @@
-twister-rgb.exe:
+DATA := data/twister-gradient.ilbm \
+	data/twister-left.ilbm \
+	data/twister-right.ilbm \
+	data/twister-texture.png \
+	data/twister.ilbm
 
-include ../Makefile.common
+all: twister-rgb.exe
+
+include ../build.mk
