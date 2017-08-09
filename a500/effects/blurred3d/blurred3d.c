@@ -151,7 +151,7 @@ static __regargs void DrawLine(WORD x0, WORD y0, WORD x1, WORD y1) {
   WORD dmax = x1 - x0;
   WORD dmin = y1 - y0;
   WORD derr;
-  UWORD bltcon1 = LINE_ONEDOT;
+  UWORD bltcon1 = LINEMODE | ONEDOT;
 
   if (dmax < 0)
     dmax = -dmax;
@@ -175,7 +175,7 @@ static __regargs void DrawLine(WORD x0, WORD y0, WORD x1, WORD y1) {
     APTR src = scratchpad->planes[0];
     WORD start = ((y0 * WIDTH / 8) + (x0 >> 3)) & ~1;
     APTR dst = src + start;
-    UWORD bltcon0 = rorw(x0 & 15, 4) | LINE_EOR;
+    UWORD bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
     UWORD bltamod = derr - dmax;
     UWORD bltbmod = 2 * dmin;
     UWORD bltsize = (dmax << 6) + 66;

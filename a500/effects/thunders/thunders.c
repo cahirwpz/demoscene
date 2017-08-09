@@ -153,7 +153,7 @@ static void Kill() {
 }
 
 static void DrawLine(APTR data asm("a2"), WORD x1 asm("d2"), WORD y1 asm("d3"), WORD x2 asm("d4"), WORD y2 asm("d5")) {
-  UWORD bltcon1 = LINE_ONEDOT;
+  UWORD bltcon1 = LINEMODE | ONEDOT;
   APTR start = data;
   WORD dx, dy, derr;
 
@@ -191,7 +191,7 @@ static void DrawLine(APTR data asm("a2"), WORD x1 asm("d2"), WORD y1 asm("d3"), 
     bltcon1 |= SIGNFLAG;
 
   {
-    UWORD bltcon0 = rorw(x1 & 15, 4) | LINE_EOR;
+    UWORD bltcon0 = rorw(x1 & 15, 4) | BC0F_LINE_EOR;
     UWORD bltamod = derr - dx;
     UWORD bltbmod = dy + dy;
     UWORD bltsize = (dx << 6) + 66;

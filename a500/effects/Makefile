@@ -4,6 +4,7 @@ SUBDIRS := \
 	anim \
 	ball \
 	blurred \
+	blurred3d \
 	bumpmap-rgb \
 	circles \
 	floor \
@@ -18,12 +19,13 @@ SUBDIRS := \
 	prisms \
 	shapes \
 	stripes \
+	thunders \
 	tilezoomer \
 	transparency \
 	twister-rgb \
+	wireframe
 
 FAILURES := \
-	blurred3d \
 	credits \
 	flatshade \
 	neons \
@@ -31,11 +33,9 @@ FAILURES := \
 	plotter \
 	tests \
 	textscroll \
-	thunders \
 	uvmap \
 	uvmap-rgb \
-	vscaler \
-	wireframe
+	vscaler
 		
 all: startup.o $(foreach dir,$(SUBDIRS),build-$(dir))
 

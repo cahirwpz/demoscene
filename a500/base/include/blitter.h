@@ -20,6 +20,9 @@
 #define HALF_SUB ((SRCA | SRCB | DEST) | A_XOR_B)
 #define HALF_SUB_BORROW ((SRCA | SRCB | DEST) | (NABC | NABNC))
 
+#define BC0F_LINE_OR ((ABC | ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
+#define BC0F_LINE_EOR ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
+
 /* Line drawing modes. */
 #define LINE_OR 0
 #define LINE_EOR 1

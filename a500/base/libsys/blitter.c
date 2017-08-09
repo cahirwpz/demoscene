@@ -10,14 +10,9 @@ UWORD LastWordMask[16] = {
   0xFF00, 0xFF80, 0xFFC0, 0xFFE0, 0xFFF0, 0xFFF8, 0xFFFC, 0xFFFE
 };
 
-#define L_OR     ((ABC | ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
-#define L_EOR    ((ABNC | NABC | NANBC) | (SRCA | SRCC | DEST))
-#define L_SOLID  (LINEMODE)
-#define L_ONEDOT (LINEMODE | ONEDOT)
-
 UWORD LineMode[4][2] = {
-  {  L_OR, L_SOLID },
-  { L_EOR, L_SOLID }, 
-  {  L_OR, L_ONEDOT },
-  { L_EOR, L_ONEDOT }
+  {  BC0F_LINE_OR, LINEMODE },
+  { BC0F_LINE_EOR, LINEMODE }, 
+  {  BC0F_LINE_OR, LINEMODE | ONEDOT },
+  { BC0F_LINE_EOR, LINEMODE | ONEDOT }
 };

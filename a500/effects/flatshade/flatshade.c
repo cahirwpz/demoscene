@@ -196,16 +196,16 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
           if (dx < 0) {
             dx = -dx;
             if (dx >= dy) {
-              bltcon1 = AUL | SUD | LINE_ONEDOT;
+              bltcon1 = AUL | SUD | LINEMODE | ONEDOT;
             } else {
-              bltcon1 = SUL | LINE_ONEDOT;
+              bltcon1 = SUL | LINEMODE | ONEDOT;
               swapr(dx, dy);
             }
           } else {
             if (dx >= dy) {
-              bltcon1 = SUD | LINE_ONEDOT;
+              bltcon1 = SUD | LINEMODE | ONEDOT;
             } else {
-              bltcon1 = LINE_ONEDOT;
+              bltcon1 = LINEMODE | ONEDOT;
               swapr(dx, dy);
             }
           }
@@ -217,7 +217,7 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
           {
             WORD start = ((y0 << 5) + (x0 >> 3)) & ~1;
             APTR dst = temp + start;
-            UWORD bltcon0 = rorw(x0 & 15, 4) | LINE_EOR;
+            UWORD bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
             UWORD bltamod = derr - dx;
             UWORD bltbmod = dy + dy;
             UWORD bltsize = (dx << 6) + 66;

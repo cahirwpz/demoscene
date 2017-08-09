@@ -88,6 +88,6 @@ endif
 	$(CC) $(CPPFLAGS) $(CFLAGS) -S -fverbose-asm -o $@ $<
 
 clean::
-	@$(RM) .*.P *.a *.o *~ *.exe *.taghl
+	@$(RM) .*.P *.a *.o *~ *.exe *.exe.dbg *.exe.map *.taghl
 
 .PHONY: all clean
