@@ -204,28 +204,33 @@ static ParserT TopLevelParser[] = {
 
 __regargs Mesh3D *LoadMesh3D(char *filename, FLOAT scale) {
   char *file = LoadFile(filename, MEMF_PUBLIC);
-  char *data = file;
-  Mesh3D *mesh = MemAlloc(sizeof(Mesh3D), MEMF_PUBLIC|MEMF_CLEAR);
 
-  Log("[3D] Parsing '%s' file\n", filename);
+  if (file) {
+    Mesh3D *mesh = MemAlloc(sizeof(Mesh3D), MEMF_PUBLIC|MEMF_CLEAR);
+    char *data = file;
 
-  mesh->scale = scale;
+    Log("[3D] Parsing '%s' file\n", filename);
 
-  while (NextLine(&data)) {
-    ParserT *parser = TopLevelParser;
-    
-    for (; parser->name; parser++) {
-      if (!MatchString(&data, parser->name))
-        continue;
-      if (parser->func(&data, mesh))
-        break;
-      Log("[3D] Syntax error at %ld position!\n", (LONG)(data - file));
-      DeleteMesh3D(mesh);
-      return NULL;
+    mesh->scale = scale;
+
+    while (NextLine(&data)) {
+      ParserT *parser = TopLevelParser;
+      
+      for (; parser->name; parser++) {
+        if (!MatchString(&data, parser->name))
+          continue;
+        if (parser->func(&data, mesh))
+          break;
+        Log("[3D] Syntax error at %ld position!\n", (LONG)(data - file));
+        DeleteMesh3D(mesh);
+        return NULL;
+      }
     }
+
+    return mesh;
   }
 
-  return mesh;
+  return NULL;
 }
 
 __regargs void DeleteMesh3D(Mesh3D *mesh) {
