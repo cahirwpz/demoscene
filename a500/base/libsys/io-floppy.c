@@ -82,10 +82,9 @@ static __regargs FileT *NewFile(LONG length, LONG offset) {
 static FileEntryT *LookupFile(CONST STRPTR path asm("d1")) {
   FileEntryT *entry = rootDir->file;
 
-  do {
+  for (entry = rootDir->file; entry->name; entry++)
     if (strcmp(path, entry->name) == 0)
       return entry;
-  } while (++entry);
 
   return NULL;
 }
