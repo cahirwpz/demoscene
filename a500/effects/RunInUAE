@@ -45,7 +45,7 @@ class ExtendedUaeProcess(UaeProcess):
         reader, _ = await asyncio.open_connection(host, port, loop=self.loop)
 
         try:
-            async for line in transport:
+            async for line in reader:
                 text = line.decode()
                 print(text.rstrip())
         except ConnectionResetError:
@@ -53,12 +53,12 @@ class ExtendedUaeProcess(UaeProcess):
 
     async def serial_connection(self, host, port):
         logging.info('Serial port active!')
-        self.tcp_to_stdout(host, port)
+        await self.tcp_to_stdout(host, port)
         logging.info('Serial port connection closed!')
 
     async def parallel_connection(self, host, port):
         logging.info('Parallel port active!')
-        self.tcp_to_stdout(host, port)
+        await self.tcp_to_stdout(host, port)
         logging.info('Parallel port connection closed!')
 
     def handle_log(self, text):

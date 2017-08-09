@@ -6,6 +6,8 @@ ExitUAE
 
 *.bin
 *.exe
+*.exe.dbg
+*.exe.map
 *.7z
 
 *.taghl
