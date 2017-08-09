@@ -304,7 +304,7 @@ __regargs void CalculateFaceNormals(Mesh3D *mesh) {
       }
 
       if (l == 0)
-        Log("[3D] Face normal vector has zero length!\n");
+        Panic("[3D] Face normal vector has zero length!\n");
 
       /* Normal vector has a unit length. */
       *normal++ = div16(x, l);
