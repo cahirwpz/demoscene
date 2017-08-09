@@ -3,10 +3,11 @@
 
 __regargs APTR LoadFile(CONST STRPTR path, ULONG memoryFlags) {
   BYTE *data = NULL;
-  FileT *file = OpenFile(path, 0);
   LONG size = GetFileSize(path);
-  
-  if ((data = MemAlloc(size + 1, memoryFlags))) {
+
+  if (size > 0 && (data = MemAlloc(size + 1, memoryFlags))) {
+    FileT *file = OpenFile(path, 0);
+
     if (!FileRead(file, data, size)) {
       MemFree(data);
       data = NULL;
@@ -14,9 +15,9 @@ __regargs APTR LoadFile(CONST STRPTR path, ULONG memoryFlags) {
       /* Add extra byte and mark the end of file by zero. */
       data[size] = 0;
     }
-  }
 
-  CloseFile(file);
+    CloseFile(file);
+  }
 
   return data;
 }
