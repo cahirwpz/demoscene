@@ -119,5 +119,7 @@ __regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type) {
     }
 
     MemFree(pixels);
+  } else {
+    Panic("Pixmap conversion not supported!\n");
   }
 }
