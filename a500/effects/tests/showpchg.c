@@ -59,7 +59,7 @@ static void Init() {
   Log("Used copper list slots: %ld\n", (LONG)(cp->curr - cp->entry));
 
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill() {

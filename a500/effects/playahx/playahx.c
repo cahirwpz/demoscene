@@ -162,7 +162,7 @@ static __interrupt LONG AhxPlayerIntHandler() {
   return 0;
 }
 
-INTERRUPT(AhxPlayerInterrupt, 10, AhxPlayerIntHandler);
+INTERRUPT(AhxPlayerInterrupt, 10, AhxPlayerIntHandler, NULL);
 
 static void AhxSetTempo(UWORD tempo asm("d0")) {
   ciaa->ciatalo = tempo & 0xff;
@@ -207,7 +207,7 @@ static void Init() {
 
   ConsoleInit(&console, screen, topaz8);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER;
+  EnableDMA(DMAF_BLITTER | DMAF_RASTER);
 
   ConsolePutStr(&console, 
                 "Pause (SPACE) Prev (LEFT) Next (RIGHT)\n"
@@ -220,13 +220,13 @@ static void Init() {
     if (AhxInitModule(module) == 0)
       AhxInitSubSong(0, 0);
 
-  AddIntServer(INTB_PORTS, &AhxPlayerInterrupt);
+  AddIntServer(INTB_PORTS, AhxPlayerInterrupt);
 }
 
 static void Kill() {
-  RemIntServer(INTB_PORTS, &AhxPlayerInterrupt);
+  RemIntServer(INTB_PORTS, AhxPlayerInterrupt);
 
-  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER)
 
   KillWaveScope();
   AhxStopSong();

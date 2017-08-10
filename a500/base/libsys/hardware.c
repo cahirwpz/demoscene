@@ -8,6 +8,14 @@ void WaitMouse() {
   while (ciaa->ciapra & CIAF_GAMEPORT0);
 }
 
+void EnableDMA(UWORD mask) {
+  custom->dmacon = INTF_SETCLR | mask;
+}
+
+void DisableDMA(UWORD mask) {
+  custom->dmacon = mask;
+}
+
 __regargs void WaitLine(ULONG line) {
   ULONG mask = 0x1ff00;
   ULONG vpos;

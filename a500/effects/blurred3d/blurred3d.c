@@ -78,12 +78,12 @@ static void Init() {
   carry = NewBitmap(WIDTH, HEIGHT, 2);
   scratchpad = NewBitmap(WIDTH, HEIGHT, 2);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   cp = NewCopList(80 + gradient->height * (gradient->width + 1));
   MakeCopperList(cp);
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill() {

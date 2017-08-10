@@ -38,7 +38,7 @@ static void Init() {
   CopEnd(cp);
 
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 }
 
 EffectT Effect = { Load, UnLoad, Init, NULL, NULL };

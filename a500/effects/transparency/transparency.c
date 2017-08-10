@@ -82,7 +82,7 @@ static void BitplaneCopyFast(BitmapT *dst, WORD d, UWORD x, UWORD y,
 static void Init() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  EnableDMA(DMAF_BLITTER);
   BitmapCopy(screen, 0, 0, background);
 
   cp = NewCopList(100);
@@ -94,7 +94,7 @@ static void Init() {
   CopEnd(cp);
 
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill() {

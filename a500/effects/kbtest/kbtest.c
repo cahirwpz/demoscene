@@ -29,7 +29,7 @@ static void Init() {
   CopEnd(cp);
 
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 
   {
     struct TextAttr textattr = { "topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
@@ -45,7 +45,7 @@ static void Init() {
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_COPPER | DMAF_RASTER;
+  DisableDMA(DMAF_COPPER | DMAF_RASTER);
 
   KeyboardKill();
   SerialKill();

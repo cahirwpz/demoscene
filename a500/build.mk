@@ -8,7 +8,7 @@ CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 ASFLAGS	:= -x -m68010
 LDFLAGS	:= -m68000 -msmall-code -nostartfiles
 OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce
-WFLAGS	:= -Wall
+WFLAGS	:= -Wall -Werror
 
 # Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
 ifneq ($(VERBOSE), 1)

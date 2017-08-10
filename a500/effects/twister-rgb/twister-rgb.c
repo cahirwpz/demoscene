@@ -96,7 +96,7 @@ static void MakeCopperList(CopListT **ptr, WORD n) {
 }
 
 static void Init() {
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  EnableDMA(DMAF_BLITTER);
 
   MakeCopperList(&cp[0], 0);
   MakeCopperList(&cp[1], 1);
@@ -107,7 +107,7 @@ static void Init() {
   UpdateSprite(right[1], X(320 - 16), Y(0));
 
   CopListActivate(cp[1]);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
+  EnableDMA(DMAF_RASTER | DMAF_SPRITE);
 }
 
 static void Kill() {

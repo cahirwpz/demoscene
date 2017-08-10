@@ -41,7 +41,7 @@ static void Init() {
   plane = DEPTH - 1;
   planeC = 0;
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
   BitmapClear(screen);
 
   cp = NewCopList(100);
@@ -52,11 +52,11 @@ static void Init() {
   CopEnd(cp);
 
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   DeleteCopList(cp);
 }

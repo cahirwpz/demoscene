@@ -131,7 +131,7 @@ static void Init() {
   MakeCopperList(coplist[1], 1);
 
   CopListActivate(coplist[active ^ 1]);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 
   SetFrameCounter(0);
 }

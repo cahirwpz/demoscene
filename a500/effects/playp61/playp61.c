@@ -31,7 +31,7 @@ static void UnLoad() {
   MemFree(module);
 }
 
-INTERRUPT(P61PlayerInterrupt, 10, P61_Music);
+INTERRUPT(P61PlayerInterrupt, 10, P61_Music, NULL);
 
 static inline void putpixel(UBYTE *line, WORD x) {
   bset(line + (x >> 3), ~x);
@@ -99,7 +99,7 @@ static void Init() {
 
   ConsoleInit(&console, screen, topaz8);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  EnableDMA(DMAF_BLITTER);
 
   {
     WORD i;
@@ -120,12 +120,12 @@ static void Init() {
   }
 
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
-  AddIntServer(INTB_VERTB, &P61PlayerInterrupt);
+  AddIntServer(INTB_VERTB, P61PlayerInterrupt);
 
   ConsolePutStr(&console, 
                 "Pause (SPACE) Prev (LEFT) Next (RIGHT)\n"
@@ -136,9 +136,9 @@ static void Kill() {
   P61_ControlBlock.Play = 0;
   P61_End();
 
-  RemIntServer(INTB_VERTB, &P61PlayerInterrupt);
+  RemIntServer(INTB_VERTB, P61PlayerInterrupt);
 
-  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   CloseFont(topaz8);
   DeleteCopList(cp);
@@ -208,9 +208,9 @@ static BOOL HandleEvent() {
   if (ev.key.code == KEY_SPACE) {
     P61_ControlBlock.Play ^= 1;
     if (P61_ControlBlock.Play)
-      custom->dmacon = DMAF_SETCLR | DMAF_AUDIO;
+      EnableDMA(DMAF_AUDIO);
     else
-      custom->dmacon = DMAF_AUDIO;
+      DisableDMA(DMAF_AUDIO);
   }
 
   if (ev.key.code == KEY_LEFT) {

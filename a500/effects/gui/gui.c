@@ -86,13 +86,13 @@ static void Init() {
   KeyboardInit();
   MouseInit(0, 0, WIDTH - 1, HEIGHT - 1);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
+  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
   GuiRedraw(gui, screen);
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
+  DisableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
   KeyboardKill();
   MouseKill();

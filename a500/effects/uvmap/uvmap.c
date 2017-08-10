@@ -203,7 +203,7 @@ static void ChunkyToPlanar() {
   custom->intreq = INTF_BLIT;
 }
 
-INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar);
+INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar, NULL);
 
 static struct Interrupt *oldBlitInt;
 
@@ -244,7 +244,7 @@ static void Init() {
                         PM_CMAP8, MEMF_PUBLIC);
   PixmapToTexture(texture, textureHi, textureLo);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  EnableDMA(DMAF_BLITTER);
 
   BitmapClear(screen[0]);
   BitmapClear(screen[1]);
@@ -253,16 +253,16 @@ static void Init() {
   MakeCopperList(cp);
   CopListActivate(cp);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 
-  oldBlitInt = SetIntVector(INTB_BLIT, &ChunkyToPlanarInterrupt);
-  custom->intena = INTF_SETCLR | INTF_BLIT;
+  oldBlitInt = SetIntVector(INTB_BLIT, ChunkyToPlanarInterrupt);
+  EnableINT(INTF_BLIT);
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
-  custom->intena = INTF_BLIT;
+  DisableINT(INTF_BLIT)
   SetIntVector(INTB_BLIT, oldBlitInt);
 
   DeleteCopList(cp);

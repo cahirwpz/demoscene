@@ -65,7 +65,7 @@ static CopListT *MakeCopperList(WORD n) {
 static void Init() {
   scroll = NewBitmap(WIDTH, HEIGHT + 16, 1);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  EnableDMA(DMAF_BLITTER);
   BitmapClear(scroll);
 
   line_start = text;
@@ -75,7 +75,7 @@ static void Init() {
 
   CopListActivate(cp[active]);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill() {

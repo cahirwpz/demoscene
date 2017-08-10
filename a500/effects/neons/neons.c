@@ -119,10 +119,10 @@ static __interrupt LONG CustomRotatePalette() {
   return 0;
 }
 
-INTERRUPT(RotatePaletteInterrupt, 0, CustomRotatePalette);
+INTERRUPT(RotatePaletteInterrupt, 0, CustomRotatePalette, NULL);
 
 static void Init() {
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  EnableDMA(DMAF_BLITTER);
 
   BitmapCopy(screen[0], 0, 0, background);
   BitmapCopy(screen[1], 0, 0, background);
@@ -141,15 +141,15 @@ static void Init() {
   CopEnd(cp);
 
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 
-  AddIntServer(INTB_VERTB, &RotatePaletteInterrupt);
+  AddIntServer(INTB_VERTB, RotatePaletteInterrupt);
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER;
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER)
 
-  RemIntServer(INTB_VERTB, &RotatePaletteInterrupt);
+  RemIntServer(INTB_VERTB, RotatePaletteInterrupt);
 
   DeleteCopList(cp);
 }

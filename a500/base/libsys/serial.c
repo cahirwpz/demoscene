@@ -61,8 +61,8 @@ static void RecvIntHandler() {
   PushChar(&serial.recvq, serdatr);
 }
 
-INTERRUPT(RecvInterrupt, 0, RecvIntHandler);
-INTERRUPT(SendInterrupt, 0, SendIntHandler);
+INTERRUPT(RecvInterrupt, 0, RecvIntHandler, NULL);
+INTERRUPT(SendInterrupt, 0, SendIntHandler, NULL);
 
 static struct Interrupt *oldTBE;
 static struct Interrupt *oldRBF;
@@ -72,8 +72,8 @@ __regargs void SerialInit(LONG baud) {
 
   custom->serper = CLOCK / baud - 1;
 
-  oldTBE = SetIntVector(INTB_TBE, &SendInterrupt);
-  oldRBF = SetIntVector(INTB_RBF, &RecvInterrupt);
+  oldTBE = SetIntVector(INTB_TBE, SendInterrupt);
+  oldRBF = SetIntVector(INTB_RBF, RecvInterrupt);
 
   custom->intreq = INTF_TBE | INTF_RBF;
   custom->intena = INTF_SETCLR | INTF_TBE | INTF_RBF;

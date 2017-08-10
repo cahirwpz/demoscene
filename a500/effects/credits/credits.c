@@ -132,7 +132,7 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init() {
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   foreground = NewBitmap(max(floor->width, dance[0]->width),
                          max(floor->height, dance[0]->height),
@@ -145,13 +145,13 @@ static void Init() {
   cp1 = NewCopList(300);
   MakeCopperList(cp0);
   CopListActivate(cp0);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 
   SetFrameCounter(0);
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
+  DisableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG)
   DeleteCopList(cp0);
   DeleteCopList(cp1);
   DeleteBitmap(foreground);

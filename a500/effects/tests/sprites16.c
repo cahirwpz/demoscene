@@ -92,7 +92,7 @@ static void MoveSprite() {
 
 static void Init() {
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
+  EnableDMA(DMAF_RASTER | DMAF_SPRITE);
 }
 
 static void Render() {

@@ -130,7 +130,7 @@ static void Init() {
   PixmapScramble_4_1(texture);
   PixmapToTexture(texture, textureHi, textureLo);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   {
     WORD i, j;
@@ -144,11 +144,11 @@ static void Init() {
   MakeCopperList(cp);
   CopListActivate(cp);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
+  EnableDMA(DMAF_RASTER | DMAF_SPRITE);
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
   DeleteCopList(cp);
   DeletePixmap(textureHi);

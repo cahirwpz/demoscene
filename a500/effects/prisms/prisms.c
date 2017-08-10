@@ -95,7 +95,7 @@ static void GeneratePrisms() {
 }
 
 static void GenerateLines() {
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  EnableDMA(DMAF_BLITTER);
 
   BlitterLineSetup(stripes, 0, LINE_OR|LINE_ONEDOT);
   BlitterLine(WIDTH / 2 - 1, 0, 0, WIDTH / 2 - 1);
@@ -103,7 +103,7 @@ static void GenerateLines() {
   BlitterFill(stripes, 0);
   WaitBlitter();
 
-  custom->dmacon = DMAF_BLITTER;
+  DisableDMA(DMAF_BLITTER);
 
   {
     WORD i;
@@ -169,7 +169,7 @@ static void Init() {
   ITER(i, 0, 7, UpdateSprite(sprite[i], X(96 + 16 * i), Y((256 - 24) / 2)));
 
   CopListActivate(cp[0]);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE;
+  EnableDMA(DMAF_RASTER | DMAF_SPRITE);
 }
 
 static void Kill() {

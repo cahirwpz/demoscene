@@ -192,7 +192,7 @@ static __interrupt LONG KeyboardIntHandler() {
   return 0;
 }
 
-INTERRUPT(KeyboardInterrupt, -5, KeyboardIntHandler);
+INTERRUPT(KeyboardInterrupt, -5, KeyboardIntHandler, NULL);
 
 void KeyboardInit() {
   /* Disable all CIA-A interrupts. */
@@ -202,9 +202,9 @@ void KeyboardInit() {
   ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_SP;
   ciaa->ciacra = (UBYTE)(~CIACRAF_SPMODE);
 
-  AddIntServer(INTB_PORTS, &KeyboardInterrupt);
+  AddIntServer(INTB_PORTS, KeyboardInterrupt);
 }
 
 void KeyboardKill() {
-  RemIntServer(INTB_PORTS, &KeyboardInterrupt);
+  RemIntServer(INTB_PORTS, KeyboardInterrupt);
 }

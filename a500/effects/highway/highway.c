@@ -156,13 +156,13 @@ static void Init() {
   cp = NewCopList(300);
   MakeCopperList(cp);
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
+  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
   ITER(i, 0, 7, UpdateSprite(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE;
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
   DeleteBitmap(lanes[0]);
   DeleteBitmap(lanes[1]);

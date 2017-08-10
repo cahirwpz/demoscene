@@ -126,7 +126,7 @@ static __interrupt LONG MouseIntHandler() {
   return 0;
 }
 
-INTERRUPT(MouseInterrupt, -5, MouseIntHandler);
+INTERRUPT(MouseInterrupt, -5, MouseIntHandler, NULL);
 
 __regargs void MouseInit(WORD minX, WORD minY, WORD maxX, WORD maxY) {
   MouseDataT *mouse = &mouseData;
@@ -142,9 +142,9 @@ __regargs void MouseInit(WORD minX, WORD minY, WORD maxX, WORD maxY) {
   mouse->yctr = custom->joy0dat >> 8;
   mouse->button = ReadButtonState();
 
-  AddIntServer(INTB_VERTB, &MouseInterrupt);
+  AddIntServer(INTB_VERTB, MouseInterrupt);
 }
 
 void MouseKill() {
-  RemIntServer(INTB_VERTB, &MouseInterrupt);
+  RemIntServer(INTB_VERTB, MouseInterrupt);
 }

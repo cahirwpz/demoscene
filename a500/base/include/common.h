@@ -110,6 +110,8 @@ static inline APTR GetSP() {
   return sp;
 }
 
+#define Breakpoint(n) { asm ("bkpt %0" :: "n" (n)); }
+
 void Log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
 void FmtStr(char *str, ULONG size, const char *format, ...)
   __attribute__ ((format (printf, 3, 4)));
@@ -119,6 +121,8 @@ __regargs void MemDump(APTR ptr, LONG n);
 
 /*
  * Macros for handling symbol table information (aka linker set elements).
+ *
+ * https://sourceware.org/gdb/onlinedocs/stabs/Non_002dStab-Symbol-Types.html
  */
 
 /* Add symbol 's' to list 'l' (type 't': 22=text, 24=data, 26=bss). */

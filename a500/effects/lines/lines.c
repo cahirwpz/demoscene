@@ -30,7 +30,7 @@ static void UnLoad() {
 
 static void Init() {
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG;
+  EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 
   {
     WORD i;

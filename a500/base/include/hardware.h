@@ -37,6 +37,9 @@ extern volatile struct Custom* const custom;
 extern volatile struct CIA* const ciaa;
 extern volatile struct CIA* const ciab;
 
+void EnableDMA(UWORD mask);
+void DisableDMA(UWORD mask);
+
 void WaitMouse();
 __regargs void WaitLine(ULONG line);
 static void inline WaitVBlank() { WaitLine(303); }

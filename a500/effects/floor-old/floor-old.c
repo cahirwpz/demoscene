@@ -139,7 +139,7 @@ static void MakeCopperList(CopListT *cp, WORD num) {
 static void Init() {
   WORD i;
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  EnableDMA(DMAF_BLITTER);
 
   for (i = 0; i < 2; i++) {
     Area2D top = { 0, 0, WIDTH, 36 };
@@ -155,11 +155,11 @@ static void Init() {
 
   ITER(j, 0, 1, MakeCopperList(cp[j], j));
   CopListActivate(cp[active]);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_RASTER | DMAF_BLITTER;
+  DisableDMA(DMAF_RASTER | DMAF_BLITTER);
 
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);

@@ -66,7 +66,7 @@ static void MakeCopperList(CopListT *cp) {
 static void Init() {
   WORD i;
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER | DMAF_BLITHOG;
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   for (i = 0; i < 2; i++) {
     BitmapClear(screen[i]);
@@ -85,11 +85,11 @@ static void Init() {
   cp = NewCopList(200);
   MakeCopperList(cp);
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG;
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 
   DeleteCopList(cp);
   DeleteBitmap(carry);

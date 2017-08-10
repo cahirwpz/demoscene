@@ -1,4 +1,4 @@
-#include "hardware.h"
+#include "interrupts.h"
 #include "memory.h"
 #include "floppy.h"
 
@@ -111,11 +111,14 @@ static void FloppyMotorOff() {
 }
 
 void InitFloppy() {
+  Log("[Init] Floppy drive driver!\n");
+
   custom->dsksync = DSK_SYNC;
   custom->adkcon = ADKF_SETCLR | ADKF_MFMPREC | ADKF_WORDSYNC | ADKF_FAST;
-  custom->intena = INTF_DSKBLK;
-  custom->intreq = INTF_DSKBLK;
-  custom->dmacon = DMAF_DISK;
+
+  DisableINT(INTF_DSKBLK);
+  ClearIRQ(INTF_DSKBLK);
+  DisableDMA(DMAF_DISK);
 
   track = MemAlloc(TRACK_SIZE, MEMF_CHIP|MEMF_CLEAR);
 
@@ -154,18 +157,18 @@ __regargs void FloppyTrackRead(WORD num) {
   WaitTimerA(ciab, DISK_SETTLE);
 
   custom->dsklen = 0; /* Make sure the DMA for the disk is turned off. */
-  custom->intreq = INTF_DSKBLK;
-  custom->dmacon = DMAF_SETCLR | DMAF_DISK;
+  ClearIRQ(INTF_DSKBLK);
+  EnableDMA(DMAF_DISK);
 
   custom->dskpt = (APTR)track;
   /* Write track size twice to initiate DMA transfer. */
   custom->dsklen = DSK_DMAEN | (TRACK_SIZE / sizeof(WORD));
   custom->dsklen = DSK_DMAEN | (TRACK_SIZE / sizeof(WORD));
 
-  while (!(custom->intreqr & INTF_DSKBLK));
+  WaitIRQ(INTF_DSKBLK);
 
   custom->dsklen = 0;
-  custom->dmacon = DMAF_DISK;
+  DisableDMA(DMAF_DISK);
 }
 
 #define DecodeMFM(odd, even, mask) \

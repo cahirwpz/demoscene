@@ -45,7 +45,7 @@ static void Init() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  custom->dmacon = DMAF_SETCLR | DMAF_BLITTER;
+  EnableDMA(DMAF_BLITTER);
 
   for (i = 0; i < 8; i++) {
     Area2D flare_area = { 0, i * SIZE, SIZE, SIZE };
@@ -65,11 +65,11 @@ static void Init() {
   CopLoadPal(cp, flares->palette, 0);
   CopEnd(cp);
   CopListActivate(cp);
-  custom->dmacon = DMAF_SETCLR | DMAF_RASTER;
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill() {
-  custom->dmacon = DMAF_COPPER | DMAF_BLITTER | DMAF_RASTER;
+  DisableDMA(DMAF_COPPER | DMAF_BLITTER | DMAF_RASTER)
 
   ITER(i, 0, 7, DeleteBitmap(flare[i]));
   DeleteBitmap(carry);
