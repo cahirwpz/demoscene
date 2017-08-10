@@ -75,6 +75,9 @@ __regargs void PixmapScramble_4_2(PixmapT *pixmap) {
 }
 
 __regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type) {
+  if (pixmap->type == type)
+    return;
+
   if ((pixmap->type == PM_GRAY4 && type == PM_GRAY8) ||
       (pixmap->type == PM_CMAP4 && type == PM_CMAP8) ||
       (pixmap->type == PM_GRAY8 && type == PM_GRAY4) ||
