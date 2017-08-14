@@ -262,7 +262,7 @@ static void Init() {
 static void Kill() {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
-  DisableINT(INTF_BLIT)
+  DisableINT(INTF_BLIT);
   SetIntVector(INTB_BLIT, oldBlitInt);
 
   DeleteCopList(cp);

@@ -135,7 +135,7 @@ static void RenderNextLineIfNeeded() {
     WORD size;
 
     line_end = line_start;
-    NextLine(&line_end);
+    SkipLine(&line_end);
     size = (line_end - line_start) - 1;
 
     ptr += line_num * scroll->bytesPerRow;
@@ -146,7 +146,7 @@ static void RenderNextLineIfNeeded() {
     RenderLine(ptr, line_start, min(size, COLUMNS));
 
     last_line = s;
-    NextLine(&line_start);
+    SkipLine(&line_start);
   }
 }
 

@@ -19,10 +19,13 @@ SUBDIRS := \
 	prisms \
 	shapes \
 	stripes \
+	textscroll \
 	thunders \
 	tilezoomer \
 	transparency \
 	twister-rgb \
+	uvmap \
+	uvmap-rgb \
 	wireframe
 
 FAILURES := \
@@ -32,9 +35,6 @@ FAILURES := \
 	playahx \
 	plotter \
 	tests \
-	textscroll \
-	uvmap \
-	uvmap-rgb \
 	vscaler
 		
 all: startup.o $(foreach dir,$(SUBDIRS),build-$(dir))
