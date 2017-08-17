@@ -3,10 +3,46 @@
 .ropeproject
 _UAEFSDB.___
 artwork/
-data/
+
+# executable files, floppy images and archives
+*.adf
+*.exe
+*.exe.dbg
+*.exe.map
+*.7z
+
+# AmigaOS files
+*.info
+
+# Backup files
+*.bak
+*.old
 *~
+
+# Build system files
 *.pyc
 *.o
 *.a
-*.info
 *.P
+
+# data files
+*.8svx
+*.bin
+*.ahx
+*.iff
+*.ilbm
+*.bin
+*.png
+*.lwo
+*.mod
+*.pal
+*.gif
+*.p61
+*.tga
+p61.*
+smp.*
+
+# source index files
+*.taghl
+tags
+cscope.out

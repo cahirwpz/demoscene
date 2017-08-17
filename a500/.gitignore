@@ -1,15 +1,7 @@
-nbproject/
-nigiri/
-data/
-
-ExitUAE
-
-*.bin
-*.exe
-*.exe.dbg
-*.exe.map
-*.7z
-
-*.taghl
-tags
-cscope.out
+# data files
+*.2d
+*.3d
+*.psf
+*.psfu
+*.thx
+ahxWaves*
