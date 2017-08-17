@@ -13,6 +13,9 @@ __regargs CopListT *NewCopList(UWORD length) {
 }
 
 __regargs void DeleteCopList(CopListT *list) {
+  LONG unused = list->length - (list->curr - list->entry);
+  if (unused >= 100)
+    Log("Unused copper list entries: %ld.\n", unused);
   MemFree(list);
 }
 
@@ -27,53 +30,95 @@ __regargs void CopListActivate(CopListT *list) {
 }
 
 __regargs void CopInit(CopListT *list) {
-  list->flags = 0;
   list->curr = list->entry;
 }
 
-__regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp) {
-  UWORD *ins = (UWORD *)list->curr;
+__regargs CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {
+  CopInsT *ptr = list->curr;
+  UWORD *ins = (UWORD *)ptr;
 
-  if ((vp >= 256) && (!list->flags)) {
-    *((ULONG *)ins)++ = 0xffdffffe;
-    list->flags |= 1;
-  }
+  *ins++ = reg & 0x01fe;
+  *ins++ = data;
 
-  {
-    CopInsT *ptr = (CopInsT *)ins;
-
-    *((UBYTE *)ins)++ = vp;
-    *((UBYTE *)ins)++ = hp | 1;
-    *ins++ = 0xfffe;
-
-    list->curr = (CopInsT *)ins;
-
-    return ptr;
-  }
+  list->curr = (CopInsT *)ins;
+  return ptr;
 }
 
-__regargs CopInsT *CopWaitMask(CopListT *list,
-                               UWORD vp, UWORD hp, UWORD vpmask, UWORD hpmask)
+__regargs CopInsT *CopMoveLong(CopListT *list, UWORD reg, APTR data) {
+  CopInsT *ptr = list->curr;
+  UWORD *ins = (UWORD *)ptr;
+
+  reg &= 0x01fe;
+
+  *ins++ = reg;
+  *ins++ = (ULONG)data >> 16;
+  *ins++ = reg + 2;
+  *ins++ = (ULONG)data;
+
+  list->curr = (CopInsT *)ins;
+  return ptr;
+}
+
+__regargs void CopEnd(CopListT *list) {
+  ULONG *ins = (ULONG *)list->curr;
+
+  *ins++ = 0xfffffffe;
+
+  list->curr = (CopInsT *)ins;
+}
+
+__regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp) {
+  CopInsT *ptr = list->curr;
+  APTR ins = ptr;
+
+  *((UBYTE *)ins)++ = vp;
+  *((UBYTE *)ins)++ = hp | 1;
+  *((UWORD *)ins)++ = 0xfffe;
+
+  list->curr = (CopInsT *)ins;
+  return ptr;
+}
+
+__regargs CopInsT *CopWaitMask(CopListT *list, UWORD vp, UWORD hp,
+                               UWORD vpmask asm("d2"), UWORD hpmask asm("d3"))
 {
-  UWORD *ins = (UWORD *)list->curr;
+  CopInsT *ptr = list->curr;
+  UBYTE *ins = (UBYTE *)ptr;
 
-  if ((vp >= 256) && (!list->flags)) {
-    *((ULONG *)ins)++ = 0xffdffffe;
-    list->flags |= 1;
-  }
+  *ins++ = vp;
+  *ins++ = hp | 1;
+  *ins++ = 0x80 | vpmask;
+  *ins++ = hpmask & 0xfe;
 
-  {
-    CopInsT *ptr = (CopInsT *)ins;
+  list->curr = (CopInsT *)ins;
+  return ptr;
+}
 
-    *((UBYTE *)ins)++ = vp;
-    *((UBYTE *)ins)++ = hp | 1;
-    *((UBYTE *)ins)++ = 0x80 | vpmask;
-    *((UBYTE *)ins)++ = hpmask & 0xfe;
+__regargs CopInsT *CopSkip(CopListT *list, UWORD vp, UWORD hp) {
+  CopInsT *ptr = list->curr;
+  APTR ins = ptr;
 
-    list->curr = (CopInsT *)ins;
+  *((UBYTE *)ins)++ = vp;
+  *((UBYTE *)ins)++ = hp | 1;
+  *((UWORD *)ins)++ = 0xffff;
 
-    return ptr;
-  }
+  list->curr = (CopInsT *)ins;
+  return ptr;
+}
+
+__regargs CopInsT *CopSkipMask(CopListT *list, UWORD vp, UWORD hp,
+                               UWORD vpmask asm("d2"), UWORD hpmask asm("d3"))
+{
+  CopInsT *ptr = (CopInsT *)list->curr;
+  UBYTE *ins = (UBYTE *)ptr;
+
+  *ins++ = vp;
+  *ins++ = hp | 1;
+  *ins++ = 0x80 | vpmask;
+  *ins++ = hpmask | 1;
+
+  list->curr = (CopInsT *)ins;
+  return ptr;
 }
 
 __regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start) {
