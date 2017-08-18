@@ -15,12 +15,15 @@ SUBDIRS := \
 	kbtest \
 	lines \
 	metaballs \
+	plasma \
 	playp61 \
 	prisms \
 	shapes \
 	stripes \
 	textscroll \
 	thunders \
+	tiles8 \
+	tiles16 \
 	tilezoomer \
 	transparency \
 	twister-rgb \
