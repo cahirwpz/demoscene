@@ -34,8 +34,9 @@ static inline WORD getword(APTR tab, WORD idx) {
   WORD res;
   asm("addw  %1,%1\n"
       "movew (%2,%1:w),%0\n"
-      : "=d" (res)
-      : "0" (idx), "a" (tab));
+      : "=r" (res)
+      : "d" (idx), "a" (tab)
+      : "1");
   return res;
 }
 
@@ -45,8 +46,9 @@ static inline LONG getlong(APTR tab, WORD idx) {
   asm("addw  %1,%1\n"
       "addw  %1,%1\n"
       "movel (%2,%1:w),%0\n"
-      : "=d" (res)
-      : "0" (idx), "a" (tab));
+      : "=r" (res)
+      : "d" (idx), "a" (tab)
+      : "1");
   return res;
 }
 

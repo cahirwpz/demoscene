@@ -39,6 +39,7 @@ artwork/
 *.gif
 *.p61
 *.tga
+*.dat
 p61.*
 smp.*
 

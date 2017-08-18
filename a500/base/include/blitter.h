@@ -40,8 +40,9 @@ static inline BOOL BlitterBusy() {
 }
 
 static inline void WaitBlitter() {
-  asm("1: btst #6,0xdff002\n"
-      "   bnes 1b");
+  asm("1: btst #6,%0@(2)\n" /* dmaconr */
+      "   bnes 1b"
+      :: "a" (custom));
 }
 
 /* Blitter copy. */
