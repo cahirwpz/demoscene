@@ -216,7 +216,7 @@ static void MakeCopperList(CopListT *cp) {
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
   CopLoadPal(cp, texture->palette, 0);
   for (i = 0; i < HEIGHT * 2; i++) {
-    CopWait(cp, Y(i + 28), 0);
+    CopWaitSafe(cp, Y(i + 28), 0);
     /* Line doubling. */
     CopMove16(cp, bpl1mod, (i & 1) ? 0 : -40);
     CopMove16(cp, bpl2mod, (i & 1) ? 0 : -40);

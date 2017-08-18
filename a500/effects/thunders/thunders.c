@@ -373,7 +373,8 @@ static __regargs void ColorizeLowerHalf(CopListT *cp, WORD yi, WORD kyo) {
   for (k = 0; k <= SIZE; k++, yi += TILESIZE) {
     WORD column = ((k + kyo) & (SIZE - 1));
     UWORD *colors = pixels + (column * SIZE + 1) * sizeof(UWORD);
-    CopWait(cp, Y(y0), 0);
+
+    CopWaitSafe(cp, Y(y0), 0);
     CopSetRGB(cp, 1, *colors++);
     CopSetRGB(cp, 2, *colors++);
     CopSetRGB(cp, 3, *colors++);
@@ -381,8 +382,6 @@ static __regargs void ColorizeLowerHalf(CopListT *cp, WORD yi, WORD kyo) {
     CopSetRGB(cp, 5, *colors++);
     CopSetRGB(cp, 6, *colors++);
     CopSetRGB(cp, 7, *colors++);
-
-    y0 = (yi < N) ? horiz[yi] : HEIGHT;
 
     {
       WORD yj = yi - GAP;
@@ -392,7 +391,7 @@ static __regargs void ColorizeLowerHalf(CopListT *cp, WORD yi, WORD kyo) {
         yj = 0;
       y1 = horiz[yj];
 
-      CopWait(cp, Y(y1), 0);
+      CopWaitSafe(cp, Y(y1), 0);
       CopSetRGB(cp, 1, BGCOL);
       CopSetRGB(cp, 2, BGCOL);
       CopSetRGB(cp, 3, BGCOL);
@@ -401,6 +400,8 @@ static __regargs void ColorizeLowerHalf(CopListT *cp, WORD yi, WORD kyo) {
       CopSetRGB(cp, 6, BGCOL);
       CopSetRGB(cp, 7, BGCOL);
     }
+
+    y0 = (yi < N) ? horiz[yi] : HEIGHT;
   }
 }
 
@@ -443,7 +444,7 @@ static void MakeFloorCopperList(WORD yo, WORD kyo) {
   FillStripes(1);
   ColorizeUpperHalf(cp, yo, kyo);
 
-  CopWait(cp, Y(HEIGHT / 2), 0);
+  CopWaitV(cp, Y(HEIGHT / 2 - 1));
   CopMove16(cp, bpl1mod, 0);
   CopMove16(cp, bpl2mod, 0);
 

@@ -269,7 +269,7 @@ static void MakeCopperList(CopListT *cp) {
   CopMove16(cp, bpldat[5], 0xcccc); // rgbb: 1100
   CopLoadColor(cp, 0, 15, 0);
   for (i = 0; i < HEIGHT * 4; i++) {
-    CopWait(cp, Y(i), 0);
+    CopWaitSafe(cp, Y(i));
     /* Line quadrupling. */
     CopMove16(cp, bpl1mod, ((i & 3) != 3) ? -40 : 0);
     CopMove16(cp, bpl2mod, ((i & 3) != 3) ? -40 : 0);
@@ -319,14 +319,29 @@ static void Kill() {
   DeleteBitmap(screen[1]);
 }
 
+#define OPTIMIZED 1
+
 static __regargs void BumpMapRender(APTR lmap) {
   APTR smap = shademap;
   UWORD *cmap = colormap;
   UWORD *bmap = bumpmap;
   UWORD *dst = chunky[active];
-  WORD n = HEIGHT * WIDTH / 2;
+  WORD n = HEIGHT * WIDTH / 2 - 1;
 
-  while (--n >= 0) {
+  do {
+#if OPTIMIZED
+    asm volatile("movew %1@+,d0\n"
+                 "movew %3@(d0:w),d0\n"
+                 "orw   %2@+,d0\n"
+                 "movew %4@(d0:w),%0@+\n"
+                 "movew %1@+,d0\n"
+                 "movew %3@(d0:w),d0\n"
+                 "orw   %2@+,d0\n"
+                 "movew %4@(d0:w),%0@+\n"
+                 : "+a" (dst), "+a" (bmap), "+a" (cmap)
+                 : "a" (lmap), "a" (smap)
+                 : "d0");
+#else
     {
       WORD s = *(WORD *)(lmap + (*bmap++)) | *cmap++;
       *dst++ = *(UWORD *)(smap + s);
@@ -335,7 +350,8 @@ static __regargs void BumpMapRender(APTR lmap) {
       WORD s = *(WORD *)(lmap + (*bmap++)) | *cmap++;
       *dst++ = *(UWORD *)(smap + s);
     }
-  }
+#endif
+  } while (--n >= 0);
 }
 
 static void Render() {

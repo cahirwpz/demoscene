@@ -69,7 +69,7 @@ static void Init() {
 }
 
 static void Kill() {
-  DisableDMA(DMAF_COPPER | DMAF_BLITTER | DMAF_RASTER)
+  DisableDMA(DMAF_COPPER | DMAF_BLITTER | DMAF_RASTER);
 
   ITER(i, 0, 7, DeleteBitmap(flare[i]));
   DeleteBitmap(carry);

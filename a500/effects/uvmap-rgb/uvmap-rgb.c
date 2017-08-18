@@ -232,7 +232,7 @@ static void MakeCopperList(CopListT *cp) {
   CopMove16(cp, bpldat[5], 0xcccc); // rgbb: 1100
   CopLoadColor(cp, 0, 15, 0);
   for (i = 0; i < HEIGHT * 4; i++) {
-    CopWait(cp, Y(i), 0);
+    CopWaitSafe(cp, Y(i), 0);
     /* Line quadrupling. */
     CopMove16(cp, bpl1mod, ((i & 3) != 3) ? -40 : 0);
     CopMove16(cp, bpl2mod, ((i & 3) != 3) ? -40 : 0);

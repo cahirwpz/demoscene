@@ -54,7 +54,7 @@ static CopListT *MakeCopperList(WORD n) {
     APTR ptr = scroll->planes[0];
 
     for (i = 0; i < HEIGHT; i++, ptr += scroll->bytesPerRow) {
-      CopWait(cp, Y(i), 0);
+      CopWaitSafe(cp, Y(i), 0);
       linebpl[n][i] = CopMove32(cp, bplpt[0], ptr);
     }
   }

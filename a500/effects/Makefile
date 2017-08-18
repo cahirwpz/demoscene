@@ -7,6 +7,8 @@ SUBDIRS := \
 	blurred3d \
 	bumpmap-rgb \
 	circles \
+	credits \
+	flatshade \
 	floor \
 	floor-old \
 	gui \
@@ -15,8 +17,10 @@ SUBDIRS := \
 	kbtest \
 	lines \
 	metaballs \
+	neons \
 	plasma \
 	playp61 \
+	plotter \
 	prisms \
 	shapes \
 	stripes \
@@ -32,11 +36,7 @@ SUBDIRS := \
 	wireframe
 
 FAILURES := \
-	credits \
-	flatshade \
-	neons \
 	playahx \
-	plotter \
 	tests \
 	vscaler
 		

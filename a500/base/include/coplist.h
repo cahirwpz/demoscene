@@ -24,6 +24,9 @@
  * WAIT takes 3 color clocks (last to wake up)
  */
 
+/* Last Horizontal Position in line one can reliably wait on. */
+#define LASTHP 0xDE
+
 typedef union {
   struct {
     UBYTE vp;
@@ -37,9 +40,12 @@ typedef union {
   } move;
 } CopInsT;
 
+#define CLF_VPOVF 1 /* Vertical Position counter overflowed */
+
 typedef struct {
   CopInsT *curr;
   UWORD length;
+  UWORD flags;
   CopInsT entry[0]; 
 } CopListT;
 
@@ -60,10 +66,15 @@ __regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp);
 __regargs CopInsT *CopWaitMask(CopListT *list, UWORD vp, UWORD hp, 
                                UWORD vpmask asm("d2"), UWORD hpmask asm("d3"));
 
+/* Handles Copper Vertical Position counter overflow, by inserting CopWaitEOL
+ * at first WAIT instruction with VP >= 256. */
+__regargs CopInsT *CopWaitSafe(CopListT *list, UWORD vp, UWORD hp);
+
 /* The most significant bit of vertical position cannot be masked out (overlaps
  * with blitter-finished-disable bit), so we have to pass upper bit as well. */
 #define CopWaitH(cp, vp, hp) CopWaitMask(cp, vp & 128, hp, 0, 255)
 #define CopWaitV(cp, vp) CopWaitMask(cp, vp, 0, 255, 0)
+#define CopWaitEOL(cp, vp) CopWait(cp, vp, LASTHP)
 
 __regargs CopInsT *CopSkip(CopListT *list, UWORD vp, UWORD hp);
 __regargs CopInsT *CopSkipMask(CopListT *list, UWORD vp, UWORD hp, 

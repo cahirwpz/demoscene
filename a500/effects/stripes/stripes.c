@@ -57,7 +57,7 @@ static void MakeCopperList(CopListT *cp, CopInsT **line) {
   CopSetRGB(cp, 0, BGCOL);
 
   for (i = 0; i < HEIGHT; i++) {
-    CopWait(cp, Y(i), 8);
+    CopWaitSafe(cp, Y(i), 8);
     *line++ = CopSetRGB(cp, 0, 0);
   }
 

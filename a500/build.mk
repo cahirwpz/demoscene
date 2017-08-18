@@ -7,6 +7,8 @@ CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 
 ASFLAGS	:= -x -m68010
 LDFLAGS	:= -m68000 -msmall-code -nostartfiles
+# The '-O2' option does not turn on optimizations '-funroll-loops',
+# '-funroll-all-loops' and `-fstrict-aliasing'.
 OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	:= -Wall -Werror
 

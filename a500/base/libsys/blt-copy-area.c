@@ -6,6 +6,7 @@ typedef struct {
   ULONG src_start;
   ULONG dst_start;
   UWORD size;
+  BOOL fast;
 } StateT;
 
 static StateT state[1];
@@ -44,9 +45,11 @@ void BlitterCopyAreaSetup(BitmapT *dst, UWORD x, UWORD y,
     state->dst_start += (area->h - 1) * dst->bytesPerRow + bytesPerRow - 2;
   }
 
+  state->fast = (dxo || wo) == 0;
+
   WaitBlitter();
 
-  if (dxo || wo) {
+  if (!state->fast) {
     custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | NABC | ABNC | NANBC);
     custom->bltcon1 = bltshift | (reverse ? BLITREVERSE : 0);
     custom->bltadat = -1;
@@ -61,8 +64,12 @@ void BlitterCopyAreaSetup(BitmapT *dst, UWORD x, UWORD y,
     custom->bltcmod = dstmod;
     custom->bltdmod = dstmod;
   } else {
-    custom->bltamod = 0;
     custom->bltcon0 = (SRCA | DEST) | A_TO_D;
+    custom->bltcon1 = 0;
+    custom->bltafwm = -1;
+    custom->bltalwm = -1;
+    custom->bltamod = srcmod;
+    custom->bltdmod = dstmod;
   }
 }
 
@@ -71,12 +78,20 @@ __regargs void BlitterCopyAreaStart(WORD dstbpl, WORD srcbpl) {
   APTR dstbpt = state->dst->planes[dstbpl] + state->dst_start;
   UWORD bltsize = state->size;
 
-  WaitBlitter();
+  if (state->fast) {
+    WaitBlitter();
 
-  custom->bltbpt = srcbpt;
-  custom->bltcpt = dstbpt;
-  custom->bltdpt = dstbpt;
-  custom->bltsize = bltsize;
+    custom->bltapt = srcbpt;
+    custom->bltdpt = dstbpt;
+    custom->bltsize = bltsize;
+  } else {
+    WaitBlitter();
+
+    custom->bltbpt = srcbpt;
+    custom->bltcpt = dstbpt;
+    custom->bltdpt = dstbpt;
+    custom->bltsize = bltsize;
+  }
 }
 
 void BitmapCopyArea(BitmapT *dst, UWORD x, UWORD y,

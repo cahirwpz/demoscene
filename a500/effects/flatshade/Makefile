@@ -3,9 +3,8 @@ DATA := data/flatshade-pal.ilbm \
 
 LIBS := lib3d
 
-all: data/codi.3d flatshade.exe
+all: build-data flatshade.exe
 
 include ../build.mk
 
-clean::
-	$(RM) data/codi.3d
+clean:: clean-data

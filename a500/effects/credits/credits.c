@@ -17,7 +17,7 @@ static BitmapT *lower;
 static Point2D lower_pos;
 static Area2D lower_area;
 
-STRPTR __cwdpath = "nigiri";
+STRPTR __cwdpath = "data";
 
 static void Load() {
   WORD i;
@@ -78,19 +78,19 @@ static void MakeCopperList(CopListT *cp) {
   CopMove16(cp, dmacon, DMAF_RASTER);
 
   /* Display disco ball. */
-  CopWait(cp, DISCO_Y - 1, 0);
+  CopWaitSafe(cp, DISCO_Y - 1, 0);
   CopLoadPal(cp, disco->palette, 0);
   CopSetupMode(cp, MODE_LORES, disco->depth);
   CopSetupBitplanes(cp, NULL, disco, disco->depth);
   CopSetupBitplaneFetch(cp, MODE_LORES, DISCO_X, disco->width);
 
-  CopWait(cp, DISCO_Y, 0);
+  CopWaitSafe(cp, DISCO_Y, 0);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   CopWait(cp, DISCO_Y + disco->height, 0);
   CopMove16(cp, dmacon, DMAF_RASTER);
 
   /* Display logo & credits. */
-  CopWait(cp, FLOOR_Y - 1, 0);
+  CopWaitSafe(cp, FLOOR_Y - 1, 0);
   CopLoadPal(cp, floor->palette, 0);
   CopLoadPal(cp, dance[0]->palette, 8);
   CopSetupMode(cp, MODE_DUALPF, 6);
@@ -109,22 +109,22 @@ static void MakeCopperList(CopListT *cp) {
   }
   CopSetupBitplaneFetch(cp, MODE_LORES, FLOOR_X, floor->width);
 
-  CopWait(cp, FLOOR_Y, 0);
+  CopWaitSafe(cp, FLOOR_Y, 0);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  CopWait(cp, FLOOR_Y + floor->height, 0);
+  CopWaitSafe(cp, FLOOR_Y + floor->height + 1, 0);
   CopMove16(cp, dmacon, DMAF_RASTER);
 
   /* Display logo and textual credits. */
   if (lower) {
-    CopWait(cp, LOGO_Y - 1, 0);
+    CopWaitSafe(cp, LOGO_Y - 1, 0);
     CopLoadPal(cp, lower->palette, 0);
     CopSetupMode(cp, MODE_LORES, lower->depth);
     CopSetupBitplaneArea(cp, MODE_LORES, lower->depth,
                          lower, X(lower_pos.x), Y(lower_pos.y), &lower_area);
 
-    CopWait(cp, LOGO_Y, 0);
+    CopWaitSafe(cp, LOGO_Y, 0);
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-    CopWait(cp, LOGO_Y + lower->height, 0);
+    CopWaitSafe(cp, LOGO_Y + lower->height, 0);
     CopMove16(cp, dmacon, DMAF_RASTER);
   }
 
@@ -151,7 +151,7 @@ static void Init() {
 }
 
 static void Kill() {
-  DisableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG)
+  DisableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
   DeleteCopList(cp0);
   DeleteCopList(cp1);
   DeleteBitmap(foreground);

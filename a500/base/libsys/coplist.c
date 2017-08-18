@@ -31,6 +31,7 @@ __regargs void CopListActivate(CopListT *list) {
 
 __regargs void CopInit(CopListT *list) {
   list->curr = list->entry;
+  list->flags = 0;
 }
 
 __regargs CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {
@@ -77,6 +78,16 @@ __regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp) {
 
   list->curr = (CopInsT *)ins;
   return ptr;
+}
+
+__regargs CopInsT *CopWaitSafe(CopListT *list, UWORD vp, UWORD hp) {
+  if (!(list->flags & CLF_VPOVF) && (vp >= 256)) {
+    /* Wait for last waitable position to control when overflow occurs. */
+    CopWaitEOL(list, 255);
+    list->flags |= CLF_VPOVF;
+  }
+
+  return CopWait(list, vp, hp);
 }
 
 __regargs CopInsT *CopWaitMask(CopListT *list, UWORD vp, UWORD hp,

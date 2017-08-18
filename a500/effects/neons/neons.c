@@ -147,7 +147,7 @@ static void Init() {
 }
 
 static void Kill() {
-  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER)
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   RemIntServer(INTB_VERTB, RotatePaletteInterrupt);
 
