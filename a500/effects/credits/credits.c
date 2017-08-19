@@ -22,6 +22,9 @@ STRPTR __cwdpath = "data";
 static void Load() {
   WORD i;
 
+  /* 'credits_logo.iff' and 'txt_*.iff' must have empty 16 pixels on the left
+   * and on the right. Otherwise Display Data Fetcher will show some artifact
+   * when image crosses edge of the screen. */
   logo = LoadILBM("credits_logo.iff");
   floor = LoadILBM("floor.iff");
   disco = LoadILBM("discoball.iff");
@@ -86,7 +89,7 @@ static void MakeCopperList(CopListT *cp) {
 
   CopWaitSafe(cp, DISCO_Y, 0);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  CopWait(cp, DISCO_Y + disco->height, 0);
+  CopWaitSafe(cp, DISCO_Y + disco->height - 1, LASTHP);
   CopMove16(cp, dmacon, DMAF_RASTER);
 
   /* Display logo & credits. */
@@ -111,12 +114,16 @@ static void MakeCopperList(CopListT *cp) {
 
   CopWaitSafe(cp, FLOOR_Y, 0);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  CopWaitSafe(cp, FLOOR_Y + floor->height + 1, 0);
+  CopWaitSafe(cp, FLOOR_Y + floor->height, LASTHP);
   CopMove16(cp, dmacon, DMAF_RASTER);
 
   /* Display logo and textual credits. */
   if (lower) {
-    CopWaitSafe(cp, LOGO_Y - 1, 0);
+    /* There're some differences between OCS and ECS that make an artifact
+     * visible (on ECS) while 'lower' bitmap is on the left side of the screen.
+     * I found 'X(56) / 2' to be the least working horizontal position,
+     * but I cannot provide any sound explanation why is it so? */
+    CopWaitSafe(cp, LOGO_Y - 1, X(56) / 2);
     CopLoadPal(cp, lower->palette, 0);
     CopSetupMode(cp, MODE_LORES, lower->depth);
     CopSetupBitplaneArea(cp, MODE_LORES, lower->depth,
@@ -124,7 +131,7 @@ static void MakeCopperList(CopListT *cp) {
 
     CopWaitSafe(cp, LOGO_Y, 0);
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-    CopWaitSafe(cp, LOGO_Y + lower->height, 0);
+    CopWaitSafe(cp, LOGO_Y + lower->height - 1, LASTHP);
     CopMove16(cp, dmacon, DMAF_RASTER);
   }
 
@@ -184,7 +191,7 @@ static void Render() {
   if (lower) {
     static const Box2D window = { 0, 0, 319, 255 }; 
 
-    lower_pos.x = ((320 - lower->width) / 2) + (SIN(frameCount * 32) >> 6);
+    lower_pos.x = ((320 - lower->width) / 2) + (SIN(frameCount * 16) >> 4);
     lower_pos.y = 256 - 64;
     lower_area.x = 0;
     lower_area.y = 0;
