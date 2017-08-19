@@ -16,6 +16,10 @@ _DPutChar:
 
         lea     $bfd000,a0              ; [a0] ciab, ciaa = ciab + $1001
 
+        tst.b   _parallel
+        beq     .check
+        blt     .quit
+
 .loop   btst    #CIAB_PRTRBUSY,(a0)     ; is printer buffer empty ?
         bne     .loop
 
@@ -32,6 +36,14 @@ _DPutChar:
 
 .quit   move.l  (sp)+,a0
         rts
+
+.check  move.b  #1,_parallel
+
+        btst    #CIAB_PRTRBUSY,(a0)
+        beq     .loop
+
+.noprt  move.b  #-1,_parallel
+        bra     .quit
 
 _DPutByte:
         ror.l   #8,d0
@@ -68,5 +80,10 @@ _DPutStr:
 
 .putc   bsr     _DPutChar
         bra     .loop
+
+        section bss,bss_p
+
+_parallel:
+        ds.b    1
 
 ; vim: ft=asm68k:ts=8:sw=8
