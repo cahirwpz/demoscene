@@ -226,7 +226,7 @@ static void Init() {
 static void Kill() {
   RemIntServer(INTB_PORTS, AhxPlayerInterrupt);
 
-  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER)
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   KillWaveScope();
   AhxStopSong();

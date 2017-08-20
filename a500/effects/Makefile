@@ -19,6 +19,7 @@ SUBDIRS := \
 	metaballs \
 	neons \
 	plasma \
+	playahx \
 	playp61 \
 	plotter \
 	prisms \
@@ -36,7 +37,6 @@ SUBDIRS := \
 	wireframe
 
 FAILURES := \
-	playahx \
 	tests \
 	vscaler
 		

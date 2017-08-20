@@ -10,6 +10,9 @@
 @ 02bc          _LVOFreeMem
 - 4eaeff2e
 + 61002a82
+@ 03e4          _LVOOldOpenLibrary dos.library
+- 4eaefe68
++ 4e714e71
 @ 03f6          _LVOOpen
 - 4eaeffe2
 + 6100294c
@@ -28,9 +31,12 @@
 @ 047e          _LVOClose
 - 4eaeffdc
 + 610028cc
+@ 0488          _LVOCloseLibrary DOSBase
+- 4eaefe62
++ 4e714e71
 @ 03ec          "S:ahxWaves.Location" -> "ahxWaves.Location"
 - 0426
 + 0428
-@ 0736
+@ 0736          ???
 - 2a7af8f4      move.l  _Ahx+4(pc),a5
 + 600000b8      bra.w   LAB_005C
