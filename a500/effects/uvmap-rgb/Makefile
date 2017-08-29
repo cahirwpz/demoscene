@@ -1,6 +1,8 @@
 DATA := data/texture-rgb.png \
 	data/uvmap-rgb.png
 
-all: uvmap-rgb.exe
+all: build-data uvmap-rgb.exe
 
 include ../build.mk
+
+clean:: clean-data
