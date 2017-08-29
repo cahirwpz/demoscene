@@ -24,7 +24,7 @@ static UWORD pal2[4];
 
 static void Load() {
   background = LoadILBM("transparency-bg.ilbm");
-  logo = LoadILBM("ghostown_160x128_4col.iff");
+  logo = LoadILBM("ghostown-logo.ilbm");
 
   {
     WORD i;

@@ -1,4 +1,4 @@
-DATA := data/ghostown_160x128_4col.iff \
+DATA := data/ghostown-logo.ilbm \
 	data/transparency-bg.ilbm
 
 all: transparency.exe
