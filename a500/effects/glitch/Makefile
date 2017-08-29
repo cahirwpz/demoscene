@@ -1,5 +1,5 @@
-DATA := data/ghostown_160x128.ilbm
+DATA := data/ghostown-logo.ilbm
 
-all: glitch.exe
+all: build-data glitch.exe
 
 include ../build.mk
