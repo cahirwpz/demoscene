@@ -1,0 +1,4 @@
+*.gif filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+*.lwo filter=lfs diff=lfs merge=lfs -text
+*.ilbm filter=lfs diff=lfs merge=lfs -text
