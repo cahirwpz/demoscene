@@ -9,4 +9,5 @@ jobs:
 
     steps:
       - checkout
+      - run: 'git lfs install'
       - run: 'cd a500 && make'
