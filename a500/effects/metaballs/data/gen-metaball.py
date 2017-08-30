@@ -1,7 +1,7 @@
 #!/usr/bin/env python -B
 
 import Image
-from utils import lerp, sq, constrain
+from utils import dist, lerp, sq, constrain
 
 
 if __name__ == "__main__":

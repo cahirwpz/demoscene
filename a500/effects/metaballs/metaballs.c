@@ -20,6 +20,7 @@ static Point2D pos[2][3];
 static BitmapT *bgLeft, *bgRight;
 static BitmapT *metaball;
 static BitmapT *carry;
+static PaletteT *palette;
 static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
 
@@ -27,11 +28,11 @@ static void Load() {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  bgLeft = LoadILBM("metaball-bg-left-1.ilbm");
-  DeletePalette(bgLeft->palette);
-  bgRight = LoadILBM("metaball-bg-right-1.ilbm");
-  DeletePalette(bgRight->palette);
-  metaball = LoadILBM("metaball-1.ilbm");
+  bgLeft = LoadILBMCustom("metaball-bg-left-1.ilbm",
+                          BM_DISPLAYABLE | BM_LOAD_PALETTE);
+  bgRight = LoadILBMCustom("metaball-bg-right-1.ilbm", BM_DISPLAYABLE);
+  metaball = LoadILBMCustom("metaball.ilbm", BM_DISPLAYABLE);
+  palette = bgLeft->palette;
 }
 
 static void UnLoad() {
@@ -39,8 +40,8 @@ static void UnLoad() {
   DeleteBitmap(screen[1]);
   DeleteBitmap(bgLeft);
   DeleteBitmap(bgRight);
-  DeletePalette(metaball->palette);
   DeleteBitmap(metaball);
+  DeletePalette(palette);
 }
 
 static void SetInitialPositions() {
@@ -58,7 +59,7 @@ static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopLoadPal(cp, metaball->palette, 0);
+  CopLoadPal(cp, palette, 0);
   CopEnd(cp);
 }
 
