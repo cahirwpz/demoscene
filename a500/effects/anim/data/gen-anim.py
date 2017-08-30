@@ -1,6 +1,6 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python2
 
-import Image
+from PIL import Image
 import sys
 
 
