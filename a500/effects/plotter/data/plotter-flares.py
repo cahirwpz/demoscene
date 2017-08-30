@@ -1,6 +1,6 @@
 #!/usr/bin/env python -B
 
-import Image
+from PIL import Image
 from utils import lerp, sq, constrain
 from math import sqrt
 

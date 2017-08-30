@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import Image
+from PIL import Image
 from color import Color
 from math import atan2, floor, sqrt, pi
 

@@ -1,0 +1,12 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: cahirwpz/demoscene:latest
+
+    working_directory: ~/demoscene
+
+    steps:
+      - checkout
+      - run: 'cd a500 && make'

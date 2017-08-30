@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
-import Image
+from PIL import Image
 import math
 import argparse
 from array import array

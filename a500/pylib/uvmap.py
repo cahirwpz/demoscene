@@ -1,9 +1,9 @@
+import subprocess
+
 from math import atan2, cos, sin, pi
 from utils import dist, lerp
 from array import array
-
-import Image
-import subprocess
+from PIL import Image
 
 
 def FancyEye(x, y):

@@ -2,8 +2,8 @@
 
 from __future__ import print_function
 
-import Image
 import sys
+from PIL import Image
 from array import array
 from pprint import pprint
 from collections import namedtuple

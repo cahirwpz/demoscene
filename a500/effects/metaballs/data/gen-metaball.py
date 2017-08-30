@@ -1,6 +1,6 @@
 #!/usr/bin/env python -B
 
-import Image
+from PIL import Image
 from utils import dist, lerp, sq, constrain
 
 
