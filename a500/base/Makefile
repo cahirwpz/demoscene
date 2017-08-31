@@ -3,6 +3,7 @@ SOURCES_ASM := \
 	crt0.s
 
 SUBDIRS := \
+	libc \
 	lib2d \
 	lib3d \
 	libahx \

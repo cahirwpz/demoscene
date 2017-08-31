@@ -6,5 +6,3 @@ DATA := data/gradient.png \
 all: build-data uvmap.exe
 
 include ../build.mk
-
-clean:: clean-data

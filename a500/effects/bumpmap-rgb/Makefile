@@ -1,7 +1,7 @@
 DATA := data/light.png \
-	data/bumpmap.png \
+	data/dragon.png \
 	data/bumpmap.bin
 
-all: bumpmap-rgb.exe
+all: build-data bumpmap-rgb.exe
 
 include ../build.mk

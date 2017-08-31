@@ -4,6 +4,6 @@ DATA := data/twister-gradient.ilbm \
 	data/twister-texture.png \
 	data/twister.ilbm
 
-all: twister-rgb.exe
+all: build-data twister-rgb.exe
 
 include ../build.mk

@@ -3,6 +3,6 @@ DATA := data/pilka.3d \
 
 LIBS := lib3d
 
-all: wireframe.exe
+all: build-data wireframe.exe
 
 include ../build.mk

@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
-import Image
+from PIL import Image
 import math
 import argparse
 from array import array
@@ -40,7 +40,11 @@ def convert(input, output):
     bmhd = BitMapHeader(width, height, 0, 0, depth,
                         0, 0, 0,
                         1, 1, width, height)
-    cmap = [Color(*pal[i*3:(i+1)*3]) for i in range(colors)]
+    if pal is None:
+        grays = [int(i * 255.0 / colors) for i in range(colors)]
+        cmap = [Color(g, g, g) for g in grays]
+    else:
+        cmap = [Color(*pal[i*3:(i+1)*3]) for i in range(colors)]
     body = c2p(pix, width, height, depth)
 
     ilbm = ILBM()

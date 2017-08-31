@@ -1,5 +1,5 @@
 DATA := data/sprite.ilbm
 
-all: prisms.exe
+all: build-data prisms.exe
 
 include ../build.mk

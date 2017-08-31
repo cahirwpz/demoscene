@@ -1,0 +1,22 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: cahirwpz/demoscene:latest
+
+    working_directory: ~/demoscene
+
+    steps:
+      - checkout
+      - run:
+          name: Git LFS (install Git Large File Storage)
+          command: |
+            apt-get install -y --no-install-recommends openssh-client
+            mkdir -p ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+            ssh git@github.com git-lfs-authenticate "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" download
+            git lfs pull
+      - run:
+          name: Amiga 500 (compile code base)
+          command: 'cd a500 && make'

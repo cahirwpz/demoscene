@@ -1,0 +1,9 @@
+ahxWaves filter=lfs diff=lfs merge=lfs -text
+*.mod filter=lfs diff=lfs merge=lfs -text
+*.p61 filter=lfs diff=lfs merge=lfs -text
+*.ahx filter=lfs diff=lfs merge=lfs -text
+*.gif filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+*.lwo filter=lfs diff=lfs merge=lfs -text
+*.ilbm filter=lfs diff=lfs merge=lfs -text
+*.psfu filter=lfs diff=lfs merge=lfs -text

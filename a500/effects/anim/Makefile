@@ -4,5 +4,3 @@ DATA := data/running.bin \
 all: build-data anim.exe 
 
 include ../build.mk
-
-clean::	clean-data

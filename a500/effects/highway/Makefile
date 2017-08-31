@@ -5,6 +5,6 @@ DATA := data/highway-car-left-2.ilbm \
 	data/highway-lane.ilbm \
 	data/highway-sprite.ilbm
 
-all: highway.exe
+all: build-data highway.exe
 
 include ../build.mk

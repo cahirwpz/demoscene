@@ -21,6 +21,11 @@ include $(TOPDIR)/build.mk
 	$(ILBMCONV) $< $@
 	$(ILBMPACK) -f $@
 
+%.png: %.psfu
+	@echo "[$(DIR):conv] $< -> $@"
+	$(PSFTOPNG) $<
+	$(OPTIPNG) $@
+
 %.bin: %.asm
 	@echo "[$(DIR):bin] $< -> $@"
 	$(AS) -Fbin -o $@ $<

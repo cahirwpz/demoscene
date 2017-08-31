@@ -6,5 +6,3 @@ LIBS := lib3d
 all: build-data flatshade.exe
 
 include ../build.mk
-
-clean:: clean-data

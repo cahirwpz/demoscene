@@ -21,7 +21,7 @@ static CopListT *cp;
 static CopInsT *line[HEIGHT];
 
 static void Load() {
-  logo = LoadILBMCustom("ghostown_160x128.ilbm", BM_DISPLAYABLE);
+  logo = LoadILBMCustom("ghostown-logo.ilbm", BM_DISPLAYABLE);
 }
 
 static void UnLoad() {
