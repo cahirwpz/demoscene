@@ -1,4 +1,4 @@
-#!/usr/bin/env python -B
+#!/usr/bin/env python2
 
 from PIL import Image
 from subprocess import call
@@ -44,7 +44,7 @@ def Neon3(i, j):
     if r == 0:
         return 0
 
-    return r * 64
+    return int(r * 64)
 
 
 if __name__ == "__main__":

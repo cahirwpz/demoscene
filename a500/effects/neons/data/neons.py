@@ -1,4 +1,4 @@
-#!/usr/bin/env python -B
+#!/usr/bin/env python2
 
 from PIL import Image
 from utils import lerp
