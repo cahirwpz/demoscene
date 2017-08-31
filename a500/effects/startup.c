@@ -188,19 +188,6 @@ void SystemInfo() {
       (LONG)(AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024));
 }
 
-void InitTrapHandler() {
-  if (*(LONG *)0xA10004 == MAKE_ID('H', 'R', 'T', '!')) {
-    struct Task *tc = FindTask(NULL);
-    tc->tc_TrapCode = &CallHRTmon;
-    Log("[Main] Installed trap handler\n");
-  }
-}
-
-void KillTrapHandler() {
-  struct Task *tc = FindTask(NULL);
-  tc->tc_TrapCode = NULL;
-}
-
 typedef struct LibDesc {
   struct Library *base;
   char *name;
@@ -237,6 +224,4 @@ void KillLibraries() {
 ADD2INIT(InitLibraries, -120);
 ADD2EXIT(KillLibraries, -120);
 
-ADD2INIT(InitTrapHandler, -100);
-ADD2EXIT(KillTrapHandler, -100);
 ADD2INIT(SystemInfo, -50);
