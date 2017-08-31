@@ -3,10 +3,9 @@
 import os.path
 import struct
 import argparse
-import Image
-import subprocess
 import logging
 
+from PIL import Image
 from array import array
 from collections import Mapping
 
@@ -115,19 +114,17 @@ if __name__ == '__main__':
 
   last = 127
 
-  font = Image.new('L', ((last - 32) * 8, psf.height))
+  font = Image.new('L', (psf.height, (last - 33) * 8))
   im = font.load()
 
-  for i in range(last - 32):
-    uchar = struct.pack('B', i + 32).decode('latin2')
+  for i in range(last - 33):
+    uchar = struct.pack('B', i + 33).decode('latin2')
     data = psf.get(uchar, None)
     if data:
       for j in range(psf.height):
         for k in range(8):
-          im[i * 8 + k, j] = 255 if data[j] & (1 << (7 - k)) else 0
+          im[k, i * 8 + j] = 255 if data[j] & (1 << (7 - k)) else 0
 
   font.save(output)
-
-  subprocess.call(['optipng', '-o7', output])
 
 # vim:expandtab ts=2 sw=2:

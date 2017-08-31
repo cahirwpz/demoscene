@@ -37,6 +37,7 @@ RUNINUAE := $(PYTHON3) $(TOPDIR)/effects/RunInUAE
 ILBMCONV := $(TOPDIR)/tools/ilbmconv.py
 ILBMPACK := $(TOPDIR)/tools/ilbmpack.py $(QUIET)
 DUMPLWO := $(TOPDIR)/tools/dumplwo.py $(QUIET)
+PSFTOPNG := $(TOPDIR)/tools/psftopng.py
 OPTIPNG := optipng $(QUIET)
 STRIP := m68k-amigaos-strip -s
 
