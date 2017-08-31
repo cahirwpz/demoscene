@@ -1,4 +1,4 @@
-all: running.bin
+all: running.bin running-pal.ilbm
 
 include ../../build.mk
 
@@ -7,6 +7,6 @@ include ../../build.mk
 	$(PYTHON) gen-anim.py $< > $@
 
 clean::
-	$(RM) running.bin running.asm
+	$(RM) running.bin running.asm running-pal.ilbm
 
 .PRECIOUS: %.asm

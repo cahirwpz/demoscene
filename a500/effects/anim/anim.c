@@ -11,7 +11,7 @@ STRPTR __cwdpath = "data";
 
 #define WIDTH  320
 #define HEIGHT 240
-#define DEPTH  5
+#define DEPTH  4
 
 static PaletteT *palette;
 static BitmapT *screen;

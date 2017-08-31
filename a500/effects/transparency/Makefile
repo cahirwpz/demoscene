@@ -1,6 +1,6 @@
 DATA := data/ghostown-logo.ilbm \
 	data/transparency-bg.ilbm
 
-all: transparency.exe
+all: build-data transparency.exe
 
 include ../build.mk

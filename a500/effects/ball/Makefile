@@ -5,5 +5,3 @@ DATA := data/dragon-bg.ilbm \
 all: build-data ball.exe
 
 include ../build.mk
-
-clean:: clean-data

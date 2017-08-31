@@ -10,19 +10,19 @@ STRPTR __cwdpath = "data";
 
 #define WIDTH  320
 #define HEIGHT 256
-#define DEPTH  5
+#define DEPTH  4
 
 static ShapeT *shape;
 static PaletteT *palette;
 static BitmapT *screen;
-static CopInsT *bplptr[5];
+static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
 static WORD plane, planeC;
 
 static void Load() {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   shape = LoadShape("night.2d");
-  palette = LoadPalette("boxes-pal.ilbm");
+  palette = LoadPalette("shapes-pal.ilbm");
 }
 
 static void UnLoad() {

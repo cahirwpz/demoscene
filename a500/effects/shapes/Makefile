@@ -1,8 +1,8 @@
-DATA := data/boxes-pal.ilbm \
+DATA := data/shapes-pal.ilbm \
 	data/night.2d
 
 LIBS := lib2d
 
-all: shapes.exe
+all: build-data shapes.exe
 
 include ../build.mk

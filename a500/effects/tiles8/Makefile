@@ -6,5 +6,3 @@ DATA := data/tiles.png \
 all: build-data tiles8.exe
 
 include ../build.mk
-
-clean:: clean-data
