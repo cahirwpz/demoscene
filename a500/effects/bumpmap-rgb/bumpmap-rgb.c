@@ -77,7 +77,7 @@ static void Load() {
   }
 
   {
-    PixmapT *image = LoadPNG("bumpmap.png", PM_CMAP8, MEMF_PUBLIC);
+    PixmapT *image = LoadPNG("dragon.png", PM_CMAP8, MEMF_PUBLIC);
 
     colormap = MemAlloc(WIDTH * HEIGHT * sizeof(UWORD), MEMF_PUBLIC);
     {
