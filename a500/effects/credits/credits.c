@@ -22,27 +22,27 @@ STRPTR __cwdpath = "data";
 static void Load() {
   WORD i;
 
-  /* 'credits_logo.iff' and 'txt_*.iff' must have empty 16 pixels on the left
+  /* 'credits_logo.ilbm' and 'txt_*.ilbm' must have empty 16 pixels on the left
    * and on the right. Otherwise Display Data Fetcher will show some artifact
    * when image crosses edge of the screen. */
-  logo = LoadILBM("credits_logo.iff");
-  floor = LoadILBM("floor.iff");
-  disco = LoadILBM("discoball.iff");
+  logo = LoadILBM("credits_logo.ilbm");
+  floor = LoadILBM("floor.ilbm");
+  disco = LoadILBM("discoball.ilbm");
 
-  dance[0] = LoadILBM("01_cahir.iff");
-  dance[1] = LoadILBMCustom("02_slayer.iff", BM_DISPLAYABLE);
-  dance[2] = LoadILBMCustom("03_jazzcat.iff", BM_DISPLAYABLE);
-  dance[3] = LoadILBMCustom("04_dkl.iff", BM_DISPLAYABLE);
-  dance[4] = LoadILBMCustom("05_dance1.iff", BM_DISPLAYABLE);
-  dance[5] = LoadILBMCustom("06_dance2.iff", BM_DISPLAYABLE);
-  dance[6] = LoadILBMCustom("07_dance3.iff", BM_DISPLAYABLE);
-  dance[7] = LoadILBMCustom("08_dance4.iff", BM_DISPLAYABLE);
+  dance[0] = LoadILBM("01_cahir.ilbm");
+  dance[1] = LoadILBMCustom("02_slayer.ilbm", BM_DISPLAYABLE);
+  dance[2] = LoadILBMCustom("03_jazzcat.ilbm", BM_DISPLAYABLE);
+  dance[3] = LoadILBMCustom("04_dkl.ilbm", BM_DISPLAYABLE);
+  dance[4] = LoadILBMCustom("05_dance1.ilbm", BM_DISPLAYABLE);
+  dance[5] = LoadILBMCustom("06_dance2.ilbm", BM_DISPLAYABLE);
+  dance[6] = LoadILBMCustom("07_dance3.ilbm", BM_DISPLAYABLE);
+  dance[7] = LoadILBMCustom("08_dance4.ilbm", BM_DISPLAYABLE);
 
-  member[0] = LoadILBM("txt_cahir.iff");
-  member[1] = LoadILBMCustom("txt_slay.iff", BM_DISPLAYABLE);
-  member[2] = LoadILBMCustom("txt_jazz.iff", BM_DISPLAYABLE);
-  member[3] = LoadILBMCustom("txt_dkl.iff", BM_DISPLAYABLE);
-  member[4] = LoadILBMCustom("txt_codi.iff", BM_DISPLAYABLE);
+  member[0] = LoadILBM("txt_cahir.ilbm");
+  member[1] = LoadILBMCustom("txt_slay.ilbm", BM_DISPLAYABLE);
+  member[2] = LoadILBMCustom("txt_jazz.ilbm", BM_DISPLAYABLE);
+  member[3] = LoadILBMCustom("txt_dkl.ilbm", BM_DISPLAYABLE);
+  member[4] = LoadILBMCustom("txt_codi.ilbm", BM_DISPLAYABLE);
 
   for (i = 1; i < 5; i++)
     member[i]->palette = member[0]->palette;

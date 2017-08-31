@@ -1,21 +1,21 @@
-DATA := data/01_cahir.iff \
-	data/02_slayer.iff \
-	data/03_jazzcat.iff \
-	data/04_dkl.iff \
-	data/05_dance1.iff \
-	data/06_dance2.iff \
-	data/07_dance3.iff \
-	data/08_dance4.iff \
-	data/credits_logo.iff \
-	data/discoball.iff \
-	data/floor.iff \
-	data/insert_coin.iff \
-	data/txt_cahir.iff \
-	data/txt_codi.iff \
-	data/txt_dkl.iff \
-	data/txt_jazz.iff \
-	data/txt_slay.iff
+DATA := data/01_cahir.ilbm \
+	data/02_slayer.ilbm \
+	data/03_jazzcat.ilbm \
+	data/04_dkl.ilbm \
+	data/05_dance1.ilbm \
+	data/06_dance2.ilbm \
+	data/07_dance3.ilbm \
+	data/08_dance4.ilbm \
+	data/credits_logo.ilbm \
+	data/discoball.ilbm \
+	data/floor.ilbm \
+	data/insert_coin.ilbm \
+	data/txt_cahir.ilbm \
+	data/txt_codi.ilbm \
+	data/txt_dkl.ilbm \
+	data/txt_jazz.ilbm \
+	data/txt_slay.ilbm
 
-all: credits.exe
+all: build-data credits.exe
 
 include ../build.mk
