@@ -19,6 +19,6 @@ DATA := data/greet_ada.ilbm \
 	data/greet_ycrew.ilbm \
 	data/neons.ilbm
 
-all: neons.exe
+all: build-data neons.exe
 
 include ../build.mk
