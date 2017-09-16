@@ -1,6 +1,8 @@
 #ifndef __TASKS_H__
 #define __TASKS_H__
 
+#include <exec/lists.h>
+
 void DumpTasks();
 
 /* @brief Volunatily release CPU time.
@@ -12,13 +14,15 @@ void TaskYield();
 
 /* @brief Suspends a task in wait for an event.
  * @param event is a list of tasks awaiting the event to happen.
- *
- * XXX Only call it from user mode! */
-void TaskWait(struct List *event);
+ * @note Only call it from user mode! */
+void TaskWait(struct List *event asm("a0"));
 
 /* @brief Awakes all tasks waiting for given event.
- *
- * XXX Only call it from within interrupt context! */
-void TaskSignal(struct List *event);
+ * @note Only call it from user mode! */
+void TaskSignal(struct List *event asm("a0"));
+
+/* @brief Awakes all tasks waiting for given event.
+ * @note Only call it from within interrupt context! */
+void TaskSignalIntr(struct List *event asm("a0"));
 
 #endif

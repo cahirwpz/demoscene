@@ -33,6 +33,16 @@ static struct {
 static void DummyRender() {}
 static BOOL ExitOnLMB() { return !LeftMouseButton(); }
 
+#define IDLETASK 0
+
+#if IDLETASK
+static void IdleTask() {
+  for (;;) {
+    custom->color[0] = 0x00f;
+  }
+}
+#endif
+
 void KillOS() {
   Log("[Startup] Save AmigaOS state.\n");
 
@@ -160,19 +170,27 @@ struct List *VBlankEvent = &(struct List){};
 
 /* Wake up tasks asleep in wait for VBlank interrupt. */
 static LONG VBlankEventHandler() {
-  TaskSignal(VBlankEvent);
+  TaskSignalIntr(VBlankEvent);
   return 0;
 }
 
 INTERRUPT(VBlankWakeUp, 10, VBlankEventHandler, NULL);
 
 int main() {
+#if IDLETASK
+  struct Task *idleTask = NULL;
+#endif
+
   if (Effect.Load) {
     Effect.Load();
     Log("[Main] Effect loading finished\n");
   }
 
   KillOS();
+
+#if IDLETASK
+  idleTask = CreateTask("IdleTask", -10, IdleTask, 1024);
+#endif
 
   NewList(VBlankEvent);
   AddIntServer(INTB_VERTB, VBlankWakeUp);
@@ -200,6 +218,10 @@ int main() {
     Effect.Kill();
 
   RemIntServer(INTB_VERTB, VBlankWakeUp);
+
+#if IDLETASK
+  RemTask(idleTask);
+#endif
 
   RestoreOS();
 

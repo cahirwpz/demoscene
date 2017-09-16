@@ -54,7 +54,8 @@ SOURCES_ASM := \
 	inflate.s \
 	rawio-par.s \
 	rawio-ser.s \
-	sintab.s
+	sintab.s \
+	tasks-ll.s
 
 all: libsys.a
 
