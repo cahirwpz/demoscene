@@ -14,7 +14,7 @@ include $(TOPDIR)/build.mk
 
 %.3d: %.lwo
 	@echo "[$(DIR):conv] $< -> $@"
-	$(DUMPLWO) $< $@
+	$(DUMPLWO) -f $< $@
 
 %.ilbm: %.png
 	@echo "[$(DIR):conv] $< -> $@"

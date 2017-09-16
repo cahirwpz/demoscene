@@ -3,6 +3,7 @@ TOPDIR := $(realpath ..)
 SUBDIRS := \
 	anim \
 	ball \
+	bobs3d \
 	blurred \
 	blurred3d \
 	bumpmap-rgb \
