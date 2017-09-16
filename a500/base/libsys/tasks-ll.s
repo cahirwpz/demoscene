@@ -75,66 +75,55 @@ _TaskWaitSV:
 ; a0 [struct List *] event
 _TaskSignal:
         ; Quit if the list of waiting tasks is empty.
-        IFEMPTY a0,.quit
+        IFEMPTY a0,.empty
 
         movem.l a2/a5/a6,-(sp)
-        ; Fetch ExecBase
-        move.l  $4.w,a6
-        ; Disable interrupts!
-        JSRLIB  Disable
-        ; Fetch first task.
-        move.l  LH_HEAD(a0),a2
-        ; Clear the list by reinitializing it.
-        NEWLIST a0
+        move.l  $4.w,a6                 ; Fetch ExecBase.
+        JSRLIB  Disable                 ; Disable interrupts!
+        move.l  a0,a2
+        bra.b   .iter
 
-.loop   ; Mark it as ready to run.
-        move.b  #TS_READY,TC_STATE(a2)
-        ; Put it on a ready task queue.
-        lea     TaskReady(a6),a0
-        move.l  a2,a1
+.loop   move.l  d0,a1
+        move.b  #TS_READY,TC_STATE(a1)  ; Mark this task as ready to run.
+        lea     TaskReady(a6),a0        ; Put it on a ready task queue.
         JSRLIB  Enqueue
-        ; Repeat if there's next task to wake up.
-        TSTNODE a2,a2
-        bne     .loop
-
-        ; Enable interrupts!
-        JSRLIB  Enable
-        ; Force the scheduler to take action!
-        lea     _LVOSchedule(a6),a5
+        move.l  a2,a0
+.iter   JSRLIB  RemHead                 ; Remove next task from the list.
+        tst.l   d0                      ; Is there anything to wake up?
+        bne.b   .loop
+        
+        JSRLIB  Enable                  ; Enable interrupts!
+        lea     _LVOSchedule(a6),a5     ; Force the scheduler to take action!
         JSRLIB  Supervisor
         movem.l (sp)+,a2/a5/a6
 
-.quit   rts
+.empty  rts
 
 
 ; TaskSignalIntr must be executed only in interrupt context!
 ; a0 [struct List *] event
 _TaskSignalIntr:
         ; Quit if the list of waiting tasks is empty.
-        IFEMPTY a0,.quit
+        IFEMPTY a0,.empty
 
         movem.l a2/a6,-(sp)
-        ; Fetch ExecBase
-        move.l  $4.w,a6
-        ; Fetch first task.
-        move.l  LH_HEAD(a0),a2
-        ; Clear the list by reinitializing it.
-        NEWLIST a0
+        move.l  $4.w,a6                 ; Fetch ExecBase.
+        move.l  a0,a2
+        bra.b   .iter
 
-.loop   ; Mark it as ready to run.
-        move.b  #TS_READY,TC_STATE(a2)
-        ; Put it on a ready task queue.
-        lea     TaskReady(a6),a0
-        move.l  a2,a1
+.loop   move.l  d0,a1
+        move.b  #TS_READY,TC_STATE(a1)  ; Mark this task as ready to run.
+        lea     TaskReady(a6),a0        ; Put it on a ready task queue.
         JSRLIB  Enqueue
-        ; Repeat if there's next task to wake up.
-        TSTNODE a2,a2
-        bne     .loop
+        move.l  a2,a0
+.iter   JSRLIB  RemHead                 ; Remove next task from the list.
+        tst.l   d0                      ; Is there anything to wake up?
+        bne.b   .loop
         
         ; Force a scheduler to take action while returning from interrupt!
         bset.b  #SFB_SAR-8,SysFlags(a6)
         movem.l (sp)+,a2/a6
 
-.quit   rts
+.empty  rts
 
 ; vim: ft=asm68k:ts=8:sw=8
