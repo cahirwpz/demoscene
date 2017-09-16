@@ -8,6 +8,7 @@
 #include "fx.h"
 #include "sync.h"
 #include "memory.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -61,6 +62,7 @@ static void Init() {
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  CopWait(cp, Y(-1), 0);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
   CopLoadPal(cp, flares->palette, 0);
   CopEnd(cp);
@@ -104,8 +106,8 @@ static void Render() {
                   STRUCT(Area2D, 0, 0, MAX_W * 2 + SIZE, MAX_H * 2 + SIZE));
   DrawPlotter();
 
-  WaitVBlank();
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

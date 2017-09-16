@@ -5,6 +5,7 @@
 #include "fx.h"
 #include "memory.h"
 #include "ilbm.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -125,12 +126,13 @@ static void Render() {
   DrawShape(shape);
   BlitterFill(screen, plane);
   // Log("shape: %ld\n", ReadLineCounter() - lines);
-  WaitVBlank();
 
   for (i = 0; i < DEPTH; i++) {
     WORD j = (plane + i) % DEPTH;
     CopInsSet32(bplptr[i], screen->planes[j]);
   }
+
+  TaskWait(VBlankEvent);
 
   if (planeC & 1)
     plane = (plane + 1) % DEPTH;

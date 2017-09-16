@@ -3,6 +3,7 @@
 #include "coplist.h"
 #include "memory.h"
 #include "random.h"
+#include "tasks.h"
 
 /* Add tile sized margins on every side to hide visual artifacts. */
 #define WIDTH   (256 + 32)
@@ -154,9 +155,9 @@ static void Render() {
   MoveTiles();
   // Log("tilezoomer: %ld\n", ReadLineCounter() - lines);
 
-  WaitVBlank();
   CopInsSet32(bplptr[0], screen1->planes[0] + 2 + WIDTH * TILESIZE / 8);
   CopInsSet32(bplptr[1], screen1->planes[1] + 2 + WIDTH * TILESIZE / 8);
+  TaskWait(VBlankEvent);
   swapr(screen0, screen1);
 }
 

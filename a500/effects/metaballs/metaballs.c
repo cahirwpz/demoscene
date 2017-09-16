@@ -5,6 +5,7 @@
 #include "ilbm.h"
 #include "2d.h"
 #include "fx.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -135,8 +136,8 @@ static void Render() {
 
   // Log("metaballs : %ld\n", ReadLineCounter() - lines);
 
-  WaitVBlank();
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

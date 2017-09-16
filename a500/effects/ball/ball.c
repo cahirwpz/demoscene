@@ -7,6 +7,7 @@
 #include "sprite.h"
 #include "ilbm.h"
 #include "fx.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -359,7 +360,7 @@ static void Render() {
     // Log("uvmap: %ld\n", ReadLineCounter() - lines);
   }
 
-  WaitVBlank();
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

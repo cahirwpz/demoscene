@@ -5,6 +5,7 @@
 #include "ilbm.h"
 #include "blitter.h"
 #include "fx.h"
+#include "tasks.h"
 
 #define WIDTH 256
 #define HEIGHT 144
@@ -203,7 +204,8 @@ static void Render() {
   }
 
   MakeCopperList(cp1);
-  CopListActivate(cp1);
+  CopListRun(cp1);
+  TaskWait(VBlankEvent);
   swapr(cp0, cp1);
 }
 

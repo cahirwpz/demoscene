@@ -9,6 +9,7 @@
 #include "2d.h"
 #include "random.h"
 #include "sprite.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -233,7 +234,6 @@ static void Render() {
   AddCars();
   DrawCars(frameCount - lastFrameCount);
 
-  WaitVBlank();
   {
     WORD i;
 
@@ -244,6 +244,8 @@ static void Render() {
       CopInsSet32(bplptr[1][i], bplpt + stride * LANE_H);
     }
   }
+
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

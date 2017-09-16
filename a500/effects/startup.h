@@ -13,6 +13,7 @@
 
 extern LONG frameCount;
 extern LONG lastFrameCount;
+extern struct List *VBlankEvent;
 
 typedef struct Effect {
   /* AmigaOS is active during this step. Loads resources from disk. */

@@ -6,6 +6,7 @@
 #include "fx.h"
 #include "memory.h"
 #include "sprite.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -210,8 +211,8 @@ static void Render() {
   SetupTexture(colors[active], frameCount);
   // Log("twister: %ld\n", ReadLineCounter() - lines);
 
-  WaitVBlank();
-  CopListActivate(cp[active]);
+  CopListRun(cp[active]);
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

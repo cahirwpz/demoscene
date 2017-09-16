@@ -9,6 +9,7 @@
 #include "ilbm.h"
 #include "color.h"
 #include "sprite.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -479,7 +480,7 @@ static void Render() {
   // PROFILE_END(floor);
 
   CopListRun(cp0);
-  WaitVBlank();
+  TaskWait(VBlankEvent);
   { CopListT *tmp = cp0; cp0 = cp1; cp1 = tmp; }
   { BitmapT *tmp = screen0; screen0 = screen1; screen1 = tmp; }
 }

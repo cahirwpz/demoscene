@@ -40,6 +40,9 @@ extern volatile struct CIA* const ciab;
 void EnableDMA(UWORD mask);
 void DisableDMA(UWORD mask);
 
+/* @briref Returns number of lines passes since the beginning of the raster. */
+LONG RasterLine();
+
 void WaitMouse();
 __regargs void WaitLine(ULONG line);
 static void inline WaitVBlank() { WaitLine(303); }

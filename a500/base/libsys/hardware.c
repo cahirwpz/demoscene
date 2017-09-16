@@ -16,6 +16,13 @@ void DisableDMA(UWORD mask) {
   custom->dmacon = mask;
 }
 
+LONG RasterLine() {
+  ULONG vpos = *(volatile ULONG *)&custom->vposr;
+  vpos &= 0x1ff00;
+  vpos >>= 8;
+  return vpos;
+}
+
 __regargs void WaitLine(ULONG line) {
   ULONG mask = 0x1ff00;
   ULONG vpos;

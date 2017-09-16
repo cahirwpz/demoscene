@@ -51,8 +51,16 @@ typedef struct {
 
 __regargs CopListT *NewCopList(UWORD length);
 __regargs void DeleteCopList(CopListT *list);
-__regargs void CopListActivate(CopListT *list);
 __regargs void CopInit(CopListT *list);
+
+/* @brief Enable copper and activate copper list.
+ * @warning This function busy-waits for vertical blank. */
+__regargs void CopListActivate(CopListT *list);
+
+/* @brief Set up copper list to start after vertical blank. */
+static inline void CopListRun(CopListT *list) {
+  custom->cop1lc = (ULONG)list->entry;
+}
 
 /* Low-level functions */
 __regargs CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data);
@@ -123,10 +131,6 @@ static inline void CopSetupGfxSimple(CopListT *list, UWORD mode, UWORD depth,
 
 static inline CopInsT *CopSetRGB(CopListT *list, WORD i, UWORD value) {
   return CopMove16(list, color[i], value);
-}
-
-static inline void CopListRun(CopListT *list) {
-  custom->cop1lc = (ULONG)list->entry;
 }
 
 #endif

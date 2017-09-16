@@ -4,6 +4,7 @@
 #include "fx.h"
 #include "random.h"
 #include "color.h"
+#include "tasks.h"
 
 #define WIDTH   320
 #define HEIGHT  256
@@ -178,8 +179,8 @@ static void Render() {
   RenderStripes(SIN(frameCount * 4) * 2);
   // Log("hstripes: %ld\n", ReadLineCounter() - lines);
 
-  CopListActivate(cp[active]);
-  WaitVBlank();
+  CopListRun(cp[active]);
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

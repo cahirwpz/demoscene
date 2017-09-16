@@ -6,6 +6,7 @@
 #include "2d.h"
 #include "fx.h"
 #include "circle.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -127,7 +128,7 @@ static void DrawShape() {
 }
 
 static void Render() {
-  //LONG lines = ReadLineCounter();
+  // LONG lines = ReadLineCounter();
 
   if (iterCount++ & 1)
     BitmapDecSaturated(buffer, carry);
@@ -137,13 +138,14 @@ static void Render() {
 
   BitmapCopy(screen[active], 16, 0, buffer);
 
-  //Log("blurred: %ld\n", ReadLineCounter() - lines);
+  // Log("blurred: %ld\n", ReadLineCounter() - lines);
 
-  WaitVBlank();
   ITER(i, 0, DEPTH - 1, {
     CopInsSet32(bplptr[0][i], screen[active]->planes[i]);
     CopInsSet32(bplptr[1][i], screen[active]->planes[i] - WIDTH / 16);
     });
+
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

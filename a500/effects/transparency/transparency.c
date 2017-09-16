@@ -6,6 +6,7 @@
 #include "blitter.h"
 #include "ilbm.h"
 #include "fx.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -113,6 +114,8 @@ static void Render() {
   
   for (i = 0; i < 24; i++)
     CopInsSet16(pal + i, ColorTransition(pal1[i & 7], pal2[i / 8 + 1], s));
+
+  TaskWait(VBlankEvent);
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, Render };

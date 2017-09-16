@@ -8,6 +8,7 @@
 #include "png.h"
 #include "ilbm.h"
 #include "color.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -468,7 +469,7 @@ static void Render() {
   // Log("floor: %ld\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
-  WaitVBlank();
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

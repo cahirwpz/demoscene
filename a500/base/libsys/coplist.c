@@ -20,13 +20,12 @@ __regargs void DeleteCopList(CopListT *list) {
 }
 
 __regargs void CopListActivate(CopListT *list) {
-  WaitVBlank();
-  /* Write copper list address. */
-  custom->cop1lc = (ULONG)list->entry;
-  /* Activate it immediately */
-  custom->copjmp1 = 0;
   /* Enable copper DMA */
   custom->dmacon = DMAF_MASTER | DMAF_COPPER | DMAF_SETCLR;
+  /* Write copper list address. */
+  custom->cop1lc = (ULONG)list->entry;
+  /* Wait for vertical blank to make sure the list is active. */
+  WaitVBlank();
 }
 
 __regargs void CopInit(CopListT *list) {

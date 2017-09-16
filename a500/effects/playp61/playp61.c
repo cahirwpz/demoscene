@@ -11,6 +11,7 @@
 #include "keyboard.h"
 #include "event.h"
 #include "blitter.h"
+#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -187,7 +188,7 @@ static void Render() {
     }
   }
 
-  WaitVBlank();
+  TaskWait(VBlankEvent);
 }
 
 static BOOL HandleEvent() {

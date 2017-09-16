@@ -6,6 +6,7 @@
 #include "png.h"
 #include "random.h"
 #include "fx.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -226,8 +227,8 @@ static void Render() {
   RenderTiles();
   Log("render: %ld\n", ReadLineCounter() - lines);
 
-  WaitVBlank();
   CopUpdateBitplanes(bplptr, screen0, DEPTH);
+  TaskWait(VBlankEvent);
   swapr(screen0, screen1);
 }
 

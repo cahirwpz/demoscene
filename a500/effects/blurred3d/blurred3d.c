@@ -7,6 +7,7 @@
 #include "ilbm.h"
 #include "png.h"
 #include "memory.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -489,13 +490,14 @@ static void Render() {
 
   // Log("blurred3d: %ld\n", ReadLineCounter() - lines);
 
-  WaitVBlank();
   {
     WORD n = DEPTH;
 
     while (--n >= 0)
       CopInsSet32(bplptr[n], screen0->planes[n]);
   }
+
+  TaskWait(VBlankEvent);
   swapr(screen0, screen1);
 }
 

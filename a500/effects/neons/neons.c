@@ -8,6 +8,7 @@
 #include "2d.h"
 #include "fx.h"
 #include "random.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -214,14 +215,14 @@ static void DrawCliparts() {
 static void Render() {
   // LONG lines = ReadLineCounter();
 
+  WaitBlitter();
   ClearCliparts();
   DrawCliparts();
   
   // Log("neons: %ld\n", ReadLineCounter() - lines);
 
-  WaitBlitter();
-  WaitVBlank();
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

@@ -4,6 +4,7 @@
 #include "gfx.h"
 #include "ilbm.h"
 #include "blitter.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -57,7 +58,6 @@ static void BitplaneCopyFast(BitmapT *dst, WORD d, UWORD x, UWORD y,
   custom->bltdpt = dstbpt;
   custom->bltsize = bltsize;
 }
-
 
 static void Init() {
   WORD i;
@@ -136,8 +136,8 @@ static void Render() {
 
   // Log("glitch: %ld\n", ReadLineCounter() - lines);
 
-  WaitVBlank();
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

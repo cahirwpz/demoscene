@@ -6,6 +6,7 @@
 #include "ilbm.h"
 #include "blitter.h"
 #include "random.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -130,8 +131,8 @@ static void Render() {
   UpdateTiles();
   Log("update: %ld\n", ReadLineCounter() - lines);
 
-  WaitVBlank();
   CopUpdateBitplanes(bplptr, screen0, DEPTH);
+  TaskWait(VBlankEvent);
   swapr(screen0, screen1);
 }
 

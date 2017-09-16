@@ -6,6 +6,7 @@
 #include "png.h"
 #include "random.h"
 #include "fx.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -180,8 +181,8 @@ static void Render() {
   Log("update: %ld\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
+  TaskWait(VBlankEvent);
   active ^= 1;
-  WaitVBlank();
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, Render };

@@ -7,6 +7,7 @@
 #include "fx.h"
 #include "random.h"
 #include "color.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -336,8 +337,8 @@ static void Render() {
   RenderPrisms(frameCount << 3);
   Log("prisms: %ld\n", ReadLineCounter() - start);
 
-  CopListActivate(cp[active]);
-  WaitVBlank();
+  CopListRun(cp[active]);
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

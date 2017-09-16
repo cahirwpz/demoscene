@@ -7,6 +7,7 @@
 #include "fx.h"
 #include "color.h"
 #include "random.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -244,7 +245,8 @@ static void Render() {
   }
   // Log("floor2: %ld\n", ReadLineCounter() - lines);
 
-  CopListActivate(coplist[active]);
+  CopListRun(coplist[active]);
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

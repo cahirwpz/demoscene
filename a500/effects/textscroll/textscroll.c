@@ -7,6 +7,7 @@
 #include "io.h"
 #include "ilbm.h"
 #include "reader.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -154,8 +155,8 @@ static void Render() {
   SetupLinePointers();
   RenderNextLineIfNeeded();
 
-  WaitVBlank();
-  CopListActivate(cp[active]);
+  CopListRun(cp[active]);
+  TaskWait(VBlankEvent);
   active ^= 1;
 }
 

@@ -9,8 +9,8 @@
 #include "interrupts.h"
 #include "io.h"
 #include "startup.h"
+#include "tasks.h"
 
-extern void CallHRTmon();
 extern EffectT Effect;
 extern BOOL execOnly;
 
@@ -21,9 +21,150 @@ static WORD kickVer;
 static struct List PortsIntChain;
 static struct List CoperIntChain;
 static struct List VertbIntChain;
+static struct List OrigTaskReady;
+static struct List OrigTaskWait;
+
+static struct {
+  struct View *view;
+  UWORD dmacon, intena, adkcon;
+  ULONG cacheBits;
+} old;
 
 static void DummyRender() {}
 static BOOL ExitOnLMB() { return !LeftMouseButton(); }
+
+void KillOS() {
+  Log("[Startup] Save AmigaOS state.\n");
+
+  /* Allocate blitter. */
+  WaitBlit();
+  OwnBlitter();
+
+  /* No calls to any other library than exec beyond this point or expect
+   * undefined behaviour including crashes. */
+  execOnly = TRUE;
+  Forbid();
+
+  /* Disable CPU caches. */
+  if (kickVer >= 36)
+    old.cacheBits = CacheControl(0, -1);
+
+  /* Intercept the view of AmigaOS. */
+  old.view = GfxBase->ActiView;
+  LoadView(NULL);
+  WaitTOF();
+  WaitTOF();
+
+  /* DMA & interrupts take-over. */
+  old.adkcon = custom->adkconr;
+  old.dmacon = custom->dmaconr;
+  old.intena = custom->intenar;
+
+  /* Prohibit dma & interrupts. */
+  custom->adkcon = (UWORD)~ADKF_SETCLR;
+  custom->dmacon = (UWORD)~DMAF_SETCLR;
+  custom->intena = (UWORD)~INTF_SETCLR;
+  WaitVBlank();
+
+  /* Clear all interrupt requests. Really. */
+  custom->intreq = (UWORD)~INTF_SETCLR;
+  custom->intreq = (UWORD)~INTF_SETCLR;
+
+  /* Enable master switches...
+   * .. and SOFTINT which is presumably used by Exec's scheduler. */
+  custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
+  custom->intena = INTF_SETCLR | INTF_INTEN | INTF_SOFTINT;
+
+  /* Save original interrupt server chains. */
+  CopyMem(SysBase->IntVects[INTB_PORTS].iv_Data,
+          &PortsIntChain, sizeof(struct List));
+  CopyMem(SysBase->IntVects[INTB_COPER].iv_Data,
+          &CoperIntChain, sizeof(struct List));
+  CopyMem(SysBase->IntVects[INTB_VERTB].iv_Data, 
+          &VertbIntChain, sizeof(struct List));
+
+  /* Reset system's interrupt server chains. */
+  NewList(SysBase->IntVects[INTB_PORTS].iv_Data);
+  NewList(SysBase->IntVects[INTB_COPER].iv_Data);
+  NewList(SysBase->IntVects[INTB_VERTB].iv_Data);
+
+  /* Save original task lists. */
+  CopyMem(&SysBase->TaskReady, &OrigTaskReady, sizeof(struct List));
+  CopyMem(&SysBase->TaskWait, &OrigTaskWait, sizeof(struct List));
+
+  /* Reset system's task lists. */
+  NewList(&SysBase->TaskReady);
+  NewList(&SysBase->TaskWait);
+
+  /* Restore multitasking. */
+  Permit();
+
+  SetTaskPri(SysBase->ThisTask, 0);
+}
+
+void RestoreOS() {
+  Log("[Startup] Restore AmigaOS state.\n");
+
+  /* Suspend multitasking. */
+  Forbid();
+
+  /* firstly... disable dma and interrupts that were used in Main */
+  custom->dmacon = (UWORD)~DMAF_SETCLR;
+  custom->intena = (UWORD)~INTF_SETCLR;
+  WaitVBlank();
+
+  /* Clear all interrupt requests. Really. */
+  custom->intreq = (UWORD)~INTF_SETCLR;
+  custom->intreq = (UWORD)~INTF_SETCLR;
+
+  /* Restore original task lists. */
+  CopyMem(&OrigTaskReady, &SysBase->TaskReady, sizeof(struct List));
+  CopyMem(&OrigTaskWait, &SysBase->TaskWait, sizeof(struct List));
+
+  /* Restore original interrupt server chains. */
+  CopyMem(&PortsIntChain, SysBase->IntVects[INTB_PORTS].iv_Data,
+          sizeof(struct List));
+  CopyMem(&CoperIntChain, SysBase->IntVects[INTB_COPER].iv_Data,
+          sizeof(struct List));
+  CopyMem(&VertbIntChain, SysBase->IntVects[INTB_VERTB].iv_Data, 
+          sizeof(struct List));
+
+  /* Restore AmigaOS state of dma & interrupts. */
+  custom->dmacon = old.dmacon | DMAF_SETCLR;
+  custom->intena = old.intena | INTF_SETCLR;
+  custom->adkcon = old.adkcon | ADKF_SETCLR;
+
+  /* Restore old copper list... */
+  custom->cop1lc = (ULONG)GfxBase->copinit;
+  WaitVBlank();
+
+  /* ... and original view. */
+  LoadView(old.view);
+  WaitTOF();
+  WaitTOF();
+
+  /* Enable CPU caches. */
+  if (kickVer >= 36)
+    CacheControl(old.cacheBits, -1);
+
+  /* Restore multitasking. */
+  Permit();
+  execOnly = FALSE;
+
+  /* Deallocate blitter. */
+  DisownBlitter();
+}
+
+/* VBlank event list. */
+struct List *VBlankEvent = &(struct List){};
+
+/* Wake up tasks asleep in wait for VBlank interrupt. */
+static LONG VBlankEventHandler() {
+  TaskSignal(VBlankEvent);
+  return 0;
+}
+
+INTERRUPT(VBlankWakeUp, 10, VBlankEventHandler, NULL);
 
 int main() {
   if (Effect.Load) {
@@ -31,128 +172,39 @@ int main() {
     Log("[Main] Effect loading finished\n");
   }
 
-  {
-    struct View *OldView;
-    UWORD OldDmacon, OldIntena, OldAdkcon;
-    ULONG OldCacheBits = 0;
+  KillOS();
 
-    /* Allocate blitter. */
-    WaitBlit();
-    OwnBlitter();
+  NewList(VBlankEvent);
+  AddIntServer(INTB_VERTB, VBlankWakeUp);
 
-    /* No calls to any other library than exec beyond this point or expect
-     * undefined behaviour including crashes. */
-    execOnly = TRUE;
-    Forbid();
+  if (!Effect.Render)
+    Effect.Render = DummyRender;
+  if (!Effect.HandleEvent)
+    Effect.HandleEvent = ExitOnLMB;
 
-    /* Disable CPU caches. */
-    if (kickVer >= 36)
-      OldCacheBits = CacheControl(0, -1);
-
-    /* Intercept the view of AmigaOS. */
-    OldView = GfxBase->ActiView;
-    LoadView(NULL);
-    WaitTOF();
-    WaitTOF();
-
-    /* DMA & interrupts take-over. */
-    OldAdkcon = custom->adkconr;
-    OldDmacon = custom->dmaconr;
-    OldIntena = custom->intenar;
-
-    /* Prohibit dma & interrupts. */
-    custom->dmacon = (UWORD)~DMAF_SETCLR;
-    custom->intena = (UWORD)~INTF_SETCLR;
-    WaitVBlank();
-
-    /* Clear all interrupt requests. Really. */
-    custom->intreq = (UWORD)~INTF_SETCLR;
-    custom->intreq = (UWORD)~INTF_SETCLR;
-
-    /* Enable master switches. */
-    custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
-    custom->intena = INTF_SETCLR | INTF_INTEN;
-
-    /* Save original interrupt server chains. */
-    CopyMem(SysBase->IntVects[INTB_PORTS].iv_Data,
-            &PortsIntChain, sizeof(struct List));
-    CopyMem(SysBase->IntVects[INTB_COPER].iv_Data,
-            &CoperIntChain, sizeof(struct List));
-    CopyMem(SysBase->IntVects[INTB_VERTB].iv_Data, 
-            &VertbIntChain, sizeof(struct List));
-
-    /* Reset system's interrupt server chains. */
-    NewList(SysBase->IntVects[INTB_PORTS].iv_Data);
-    NewList(SysBase->IntVects[INTB_COPER].iv_Data);
-    NewList(SysBase->IntVects[INTB_VERTB].iv_Data);
-
-    if (!Effect.Render)
-      Effect.Render = DummyRender;
-    if (!Effect.HandleEvent)
-      Effect.HandleEvent = ExitOnLMB;
-
-    if (Effect.Init) {
-      Effect.Init();
-      Log("[Main] Effect initialization done\n");
-    }
-
-    lastFrameCount = ReadFrameCounter();
-
-    while (Effect.HandleEvent()) {
-      LONG t = ReadFrameCounter();
-      frameCount = t;
-      Effect.Render();
-      lastFrameCount = t;
-    }
-
-    if (Effect.Kill)
-      Effect.Kill();
-
-    /* firstly... disable dma and interrupts that were used in Main */
-    custom->dmacon = (UWORD)~DMAF_SETCLR;
-    custom->intena = (UWORD)~INTF_SETCLR;
-    WaitVBlank();
-
-    /* Clear all interrupt requests. Really. */
-    custom->intreq = (UWORD)~INTF_SETCLR;
-    custom->intreq = (UWORD)~INTF_SETCLR;
-
-    /* Restore original interrupt server chains. */
-    CopyMem(&PortsIntChain, SysBase->IntVects[INTB_PORTS].iv_Data,
-            sizeof(struct List));
-    CopyMem(&CoperIntChain, SysBase->IntVects[INTB_COPER].iv_Data,
-            sizeof(struct List));
-    CopyMem(&VertbIntChain, SysBase->IntVects[INTB_VERTB].iv_Data, 
-            sizeof(struct List));
-
-    /* Restore old copper list... */
-    custom->cop1lc = (ULONG)GfxBase->copinit;
-    WaitVBlank();
-
-    /* Restore AmigaOS state of dma & interrupts. */
-    custom->dmacon = OldDmacon | DMAF_SETCLR;
-    custom->intena = OldIntena | INTF_SETCLR;
-    custom->adkcon = OldAdkcon | ADKF_SETCLR;
-
-    /* ... and original view. */
-    LoadView(OldView);
-    WaitTOF();
-    WaitTOF();
-
-    /* Enable CPU caches. */
-    if (kickVer >= 36)
-      CacheControl(OldCacheBits, -1);
-
-    /* Restore multitasking. */
-    Permit();
-    execOnly = FALSE;
-
-    /* Deallocate blitter. */
-    DisownBlitter();
-
-    if (Effect.UnLoad)
-      Effect.UnLoad();
+  if (Effect.Init) {
+    Effect.Init();
+    Log("[Main] Effect initialization done\n");
   }
+
+  lastFrameCount = ReadFrameCounter();
+
+  while (Effect.HandleEvent()) {
+    LONG t = ReadFrameCounter();
+    frameCount = t;
+    Effect.Render();
+    lastFrameCount = t;
+  }
+
+  if (Effect.Kill)
+    Effect.Kill();
+
+  RemIntServer(INTB_VERTB, VBlankWakeUp);
+
+  RestoreOS();
+
+  if (Effect.UnLoad)
+    Effect.UnLoad();
 
   return 0;
 }

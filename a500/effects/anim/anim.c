@@ -6,6 +6,7 @@
 #include "io.h"
 #include "ilbm.h"
 #include "fx.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -105,8 +106,6 @@ static void Render() {
   }
   // Log("anim: %ld\n", ReadLineCounter() - lines);
 
-  WaitVBlank();
-
   {
     WORD n = DEPTH;
 
@@ -117,6 +116,8 @@ static void Render() {
       CopInsSet32(bplptr[n], screen->planes[i]);
     }
   }
+
+  TaskWait(VBlankEvent);
 
   active = (active + 1) % (DEPTH + 1);
 }

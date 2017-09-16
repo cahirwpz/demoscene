@@ -5,6 +5,7 @@
 #include "fx.h"
 #include "ffp.h"
 #include "ilbm.h"
+#include "tasks.h"
 
 STRPTR __cwdpath = "data";
 
@@ -346,8 +347,8 @@ static void Render() {
     // Log("draw: %ld\n", ReadLineCounter() - lines);
   }
 
-  WaitVBlank();
   CopUpdateBitplanes(bplptr, screen0, DEPTH);
+  TaskWait(VBlankEvent);
   swapr(screen0, screen1);
 }
 
