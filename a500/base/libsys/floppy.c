@@ -44,7 +44,7 @@ static WORD trackNum;
 static SectorT *track;
 
 static inline void WaitDiskReady() {
- while (ciaa->ciapra & CIAF_DSKRDY);
+  while (ciaa->ciapra & CIAF_DSKRDY);
 }
 
 #define STEP_SETTLE TIMER_MS(3)
@@ -120,7 +120,7 @@ void InitFloppy() {
   ClearIRQ(INTF_DSKBLK);
   DisableDMA(DMAF_DISK);
 
-  track = MemAlloc(TRACK_SIZE, MEMF_CHIP|MEMF_CLEAR);
+  track = MemAlloc(TRACK_SIZE, MEMF_CHIP);
 
   FloppyMotorOn();
   HeadsStepDirection(OUTWARDS);
@@ -171,8 +171,9 @@ __regargs void FloppyTrackRead(WORD num) {
   DisableDMA(DMAF_DISK);
 }
 
-#define DecodeMFM(odd, even, mask) \
-  ((((odd) & (mask)) << 1) | ((even) & (mask)))
+static inline ULONG DecodeMFM(ULONG odd, ULONG even, ULONG mask) {
+  return ((odd & mask) << 1) | (even & mask);
+}
 
 __regargs void FloppyTrackDecode(ULONG *buf) {
   WORD secnum = NUMSECS;
@@ -200,7 +201,7 @@ __regargs void FloppyTrackDecode(ULONG *buf) {
                                 *(ULONG *)&sec->info[1], mask);
 
 #if 0
-    Log("[Floppy] Decode: data = %lx, sector=%ld, track=%ld\n",
+    Log("[Floppy] Decode: data=%lx, sector=%ld, track=%ld\n",
         (LONG)sec, (LONG)info.sectorNum, (LONG)info.trackNum);
 #endif
 

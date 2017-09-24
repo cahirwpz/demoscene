@@ -24,7 +24,7 @@ typedef struct {
   FileEntryT file[0];
 } RootDirT;
 
-RootDirT *rootDir = NULL;
+static RootDirT *rootDir = NULL;
 
 struct File {
   ULONG offset;
