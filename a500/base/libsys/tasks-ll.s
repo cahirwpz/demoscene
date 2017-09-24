@@ -77,7 +77,7 @@ _TaskSignal:
         ; Quit if the list of waiting tasks is empty.
         IFEMPTY a0,.empty
 
-        movem.l a2/a5/a6,-(sp)
+        movem.l a2/a6,-(sp)
         move.l  $4.w,a6                 ; Fetch ExecBase.
         JSRLIB  Disable                 ; Disable interrupts!
         move.l  a0,a2
@@ -92,13 +92,12 @@ _TaskSignal:
         tst.l   d0                      ; Is there anything to wake up?
         bne.b   .loop
         
+        ; Force a scheduler to take action on next interrupt!
+        bset.b  #SFB_SAR-8,SysFlags(a6)
         JSRLIB  Enable                  ; Enable interrupts!
-        lea     _LVOSchedule(a6),a5     ; Force the scheduler to take action!
-        JSRLIB  Supervisor
-        movem.l (sp)+,a2/a5/a6
+        movem.l (sp)+,a2/a6
 
 .empty  rts
-
 
 ; TaskSignalIntr must be executed only in interrupt context!
 ; a0 [struct List *] event
