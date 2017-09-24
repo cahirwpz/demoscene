@@ -1,3 +1,5 @@
+MAKEFLAGS += --no-builtin-rules
+
 TOPDIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
 # Compiler tools & flags definitions
@@ -11,6 +13,7 @@ LDFLAGS	:= -m68000 -msmall-code -nostartfiles
 # '-funroll-all-loops' and `-fstrict-aliasing'.
 OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	:= -Wall -Werror
+CRT0	:= $(TOPDIR)/base/crt0.o
 
 # Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
 ifneq ($(VERBOSE), 1)
@@ -44,11 +47,15 @@ STRIP := m68k-amigaos-strip -s
 # Rules for recursive build
 DIR := $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))
 
-build-%:
+build-%: FORCE
 	$(MAKE) -C $(@:build-%=%)
 
-clean-%:
+clean-%: FORCE
 	$(MAKE) -C $(@:clean-%=%) clean
+
+# Check if library is up-to date if someone is asking explicitely
+$(TOPDIR)/base/lib%.a: FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
 
 # Generate dependencies automatically
 SOURCES = $(SOURCES_C) $(SOURCES_ASM)
@@ -93,4 +100,4 @@ endif
 clean::
 	@$(RM) .*.P *.a *.o *~ *.exe *.exe.dbg *.exe.map *.taghl
 
-.PHONY: all clean
+.PHONY: all clean FORCE

@@ -2,11 +2,12 @@ TOPDIR = $(realpath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 
 LIBS += libsys libc
 CPPFLAGS += -I$(TOPDIR)/effects
-LDLIBS += $(foreach lib,$(LIBS),$(TOPDIR)/base/$(lib)/$(lib).a)
+LDEXTRA = $(foreach lib,$(LIBS),$(TOPDIR)/base/$(lib)/$(lib).a)
+STARTUP = $(TOPDIR)/effects/startup.o 
 
 include $(TOPDIR)/build.mk
 
-%.exe: $(TOPDIR)/base/crt0.o %.o $(TOPDIR)/effects/startup.o
+%.exe: $(CRT0) %.o $(STARTUP) $(LDEXTRA)
 	@echo "[$(DIR):ld] $@"
 	$(CC) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $^ $(LDLIBS)
 	$(CP) $@ $@.dbg
