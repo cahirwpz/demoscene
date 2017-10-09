@@ -4,13 +4,17 @@
 #include "gfx.h"
 #include "ilbm.h"
 
+#define WIDTH 320
+#define HEIGHT 256
 #define DEPTH 6
+
+STRPTR __cwdpath = "data";
 
 static BitmapT *bitmap;
 static CopListT *cp;
 
 static void Load() {
-  bitmap = LoadILBMCustom("data/face-pchg.ilbm", BM_KEEP_PACKED|BM_LOAD_PALETTE);
+  bitmap = LoadILBMCustom("face-pchg.ilbm", BM_KEEP_PACKED|BM_LOAD_PALETTE);
 }
 
 static void UnLoad() {
@@ -21,8 +25,8 @@ static void UnLoad() {
 static void Init() {
   WORD w = bitmap->width;
   WORD h = bitmap->height;
-  WORD xs = X((320 - w) / 2);
-  WORD ys = Y((256 - h) / 2);
+  WORD xs = X((WIDTH - w) / 2);
+  WORD ys = Y((HEIGHT - h) / 2);
 
   {
     LONG lines = ReadLineCounter();
