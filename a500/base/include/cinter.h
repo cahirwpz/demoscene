@@ -23,7 +23,8 @@ typedef struct CinterPlayer {
   WORD c_waitline;
   APTR c_Instruments[32*2];
   WORD c_Sinus[CINTER_DEGREES];
-} __attribute__((packed)) CinterPlayerT;
+  LONG c_fix[3]; /* those are getting trashed by CinterInit */
+} CinterPlayerT;
 
 void CinterInit(APTR music asm("a2"), APTR instruments asm("a4"), 
                 CinterPlayerT *player asm("a6"));

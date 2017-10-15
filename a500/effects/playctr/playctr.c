@@ -17,7 +17,9 @@
 #define HEIGHT 256
 #define DEPTH 1
 
-static APTR module, instruments, samples;
+STRPTR __cwdpath = "data";
+
+static APTR module, instruments;
 static CinterPlayerT *player;
 static BitmapT *screen;
 static CopListT *cp;
@@ -33,17 +35,18 @@ static UWORD *musicStart;
 
 static void Load() {
   LONG samples_len = GetFileSize("JazzCat-Automatic.smp");
+  APTR samples = LoadFile("JazzCat-Automatic.smp", MEMF_FAST);
+  Log("Raw samples length: %ld\n", samples_len);
   module = LoadFile("JazzCat-Automatic.ctr", MEMF_FAST);
-  samples = LoadFile("JazzCat-Automatic.smp", MEMF_FAST);
   instruments = MemAlloc(INSTRUMENTS_TOTAL, MEMF_CHIP|MEMF_CLEAR);
   player = MemAlloc(sizeof(CinterPlayerT), MEMF_FAST|MEMF_CLEAR);
   memcpy(instruments, samples, samples_len);
+  MemFree(samples);
 }
 
 static void UnLoad() {
   MemFree(player);
   MemFree(instruments);
-  MemFree(samples);
   MemFree(module);
 }
 
@@ -77,15 +80,12 @@ static void Init() {
 
   ConsoleInit(&console, screen, topaz8);
 
-  EnableDMA(DMAF_BLITTER);
-
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
   ConsoleSetCursor(&console, 0, 0);
   ConsolePutStr(&console, "Initializing Cinter... please wait!\n");
   CinterInit(module, instruments, player);
-  
   musicStart = player->c_MusicPointer;
 
   AddIntServer(INTB_VERTB, CinterPlayerInterrupt);
