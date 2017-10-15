@@ -18,9 +18,11 @@ SUBDIRS := \
 	kbtest \
 	lines \
 	metaballs \
+	multipipe \
 	neons \
 	plasma \
 	playahx \
+	playctr \
 	playp61 \
 	plotter \
 	prisms \

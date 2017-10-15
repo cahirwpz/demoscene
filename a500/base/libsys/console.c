@@ -36,14 +36,15 @@ __regargs void ConsoleDrawChar(ConsoleT *console, UWORD x, UWORD y, char c) {
   UBYTE *dst = console->bitmap->planes[0];
   WORD swidth = console->font->tf_Modulo;
   WORD dwidth = console->bitmap->bytesPerRow;
-  WORD i = c - 32;
-  WORD j = console->bitmap->width * y + x;
   WORD h = 7;
 
+  c -= 32;
+  src += (WORD)c;
+  dst += (WORD)console->bitmap->width * (WORD)y;
+  dst += (WORD)x;
+
   do {
-    dst[j] = src[i];
-    i += swidth;
-    j += dwidth;
+    *dst = *src; src += swidth; dst += dwidth;
   } while (--h >= 0);
 }
 
