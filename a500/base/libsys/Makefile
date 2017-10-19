@@ -44,6 +44,7 @@ SOURCES_C := \
 	random.c \
 	reader.c \
 	serial.c \
+	sintab.c \
 	sort.c \
 	sound.c \
 	sprite.c \
@@ -54,7 +55,6 @@ SOURCES_ASM := \
 	inflate.s \
 	rawio-par.s \
 	rawio-ser.s \
-	sintab.s \
 	tasks-ll.s
 
 all: libsys.a
@@ -63,5 +63,5 @@ include ../../build.mk
 
 libsys.a: $(OBJECTS)
 
-sintab.s: sintab.py
-	python sintab.py
+sintab.c: sintab.py
+	$(PYTHON) sintab.py
