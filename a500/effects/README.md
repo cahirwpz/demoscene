@@ -34,9 +34,10 @@ documentation if needed.
 
 2. Follow up with [demoscene](https://github.com/cahirwpz/demoscene/blob/master/Dockerfile)
    _Dockerfile_. If you haven't had [Git LFS](https://git-lfs.github.com/)
-   installed previously, you'll have to issue `git lfs init` command. Then clone
-   *demoscene* repository once again to pull in binary files, otherwise you'll
-   get links instead of real data.
+   installed previously, you'll have to issue `git lfs install` command. Then
+   clone *demoscene* repository once again to pull in binary files, otherwise
+   you'll get links instead of real data – which you can fix by issuing
+   `git lfs pull` command.
 
 Set up the emulator
 ---
