@@ -17,6 +17,8 @@
 #define HEIGHT 256
 #define DEPTH 1
 
+STRPTR __cwdpath = "data";
+
 static APTR module;
 static BitmapT *screen;
 static BitmapT *osc[4];
