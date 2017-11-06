@@ -1,4 +1,4 @@
-MODULE := JazzCat-Automatic
+MODULE := JazzCat-RitchieGlitchie
 
 all: $(MODULE).ctr
 
