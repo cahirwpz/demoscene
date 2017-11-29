@@ -4,6 +4,44 @@ from iff import IffFile
 import struct
 
 from collections import namedtuple
+from StringIO import StringIO
+
+
+def UnRLE(bytes_in):
+  bytes_in = bytearray(bytes_in)
+  bytes_out = StringIO()
+
+  while bytes_in:
+    cmd = bytes_in.pop(0)
+
+    if cmd <= 127:
+      l = cmd + 1
+      s = bytes_in[:l]
+      bytes_in = bytes_in[l:]
+      bytes_out.write(s)
+    else:
+      l = 257 - cmd
+      s = bytes_in.pop(0)
+      bytes_out.write(chr(s) * l)
+
+  out = bytes_out.getvalue()
+  bytes_out.close()
+
+  return out
+
+
+def Deinterleave(data, width, height, depth):
+  out = StringIO()
+  bytesPerRow = ((width + 15) & ~15) / 8
+
+  for i in range(depth):
+    s = bytesPerRow * i
+    for j in range(height):
+      out.write(data[s:s + bytesPerRow])
+      s += bytesPerRow * depth
+
+  return out.getvalue()
+
 
 BitMapHeader = namedtuple('BitMapHeader', (
   'w', 'h', 'x', 'y', 'nPlanes', 'masking', 'compression', 'transparentColor',
