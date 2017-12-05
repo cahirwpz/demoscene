@@ -1,5 +1,4 @@
 SOURCES_C := \
-	8svx.c \
 	amigahunk.c \
 	circle.c \
 	color.c \
@@ -30,7 +29,6 @@ SOURCES_C := \
 	serial.c \
 	sintab.c \
 	sort.c \
-	sound.c \
 	sprite.c \
 	tasks.c
 
