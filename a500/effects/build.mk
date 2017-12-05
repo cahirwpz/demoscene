@@ -1,6 +1,6 @@
 TOPDIR = $(realpath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 
-LIBS += libblit libsys libc
+LIBS += libblit libgfx libsys libc
 CPPFLAGS += -I$(TOPDIR)/effects
 LDEXTRA = $(foreach lib,$(LIBS),$(TOPDIR)/base/$(lib)/$(lib).a)
 STARTUP = $(TOPDIR)/effects/startup.o 
