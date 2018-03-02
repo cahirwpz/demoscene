@@ -12,6 +12,7 @@ jobs:
       - run:
           name: Git LFS (install Git Large File Storage)
           command: |
+            apt-get -q update && apt-get upgrade -y
             apt-get install -y --no-install-recommends openssh-client
             mkdir -p ~/.ssh
             ssh-keyscan -H github.com >> ~/.ssh/known_hosts
