@@ -73,22 +73,22 @@ static __regargs void UpdateEdgeVisibility(Object3D *object) {
   memset(edgeFlags, 0, object->mesh->edges);
 
   do {
-    if (*faceFlags++) {
+    if (*faceFlags++ >= 0) {
       WORD n = face->count - 3;
       WORD *vi = face->indices;
       WORD *ei = faceEdge->indices;
 
       /* Face has at least (and usually) three vertices / edges. */
       vertexFlags[*vi++] = -1;
-      edgeFlags[*ei++]++;
+      edgeFlags[*ei++] = -1;
       vertexFlags[*vi++] = -1;
-      edgeFlags[*ei++]++;
+      edgeFlags[*ei++] = -1;
       vertexFlags[*vi++] = -1;
-      edgeFlags[*ei++]++;
+      edgeFlags[*ei++] = -1;
 
       while (--n >= 0) {
         vertexFlags[*vi++] = -1;
-        edgeFlags[*ei++]++;
+        edgeFlags[*ei++] = -1;
       }
     }
 
@@ -178,7 +178,7 @@ static __regargs void DrawObject(Object3D *object, APTR start) {
   custom->bltdmod = WIDTH / 8;
 
   do {
-    if (*edgeFlags++ > 0) {
+    if (*edgeFlags++) {
       WORD *p0 = (APTR)point + *edge++;
       WORD *p1 = (APTR)point + *edge++;
 
@@ -250,7 +250,7 @@ static void Render() {
 
     UpdateObjectTransformation(cube);
     if (RightMouseButton())
-      memset(cube->faceFlags, -1, cube->mesh->faces);
+      memset(cube->faceFlags, 0, cube->mesh->faces);
     else
       UpdateFaceVisibility(cube);
     UpdateEdgeVisibility(cube);
