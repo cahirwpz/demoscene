@@ -15,8 +15,8 @@ void BlitterSetMaskArea(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
     WORD mh = area->h;
     WORD bytesPerRow = ((mw + 15) & ~15) >> 3;
 
-    dstbpt += ((x >> 3) & ~1) + y * dst->bytesPerRow;
-    mskbpt += ((mx >> 3) & ~1) + my * msk->bytesPerRow;
+    dstbpt += ((x >> 3) & ~1) + (WORD)y * (WORD)dst->bytesPerRow;
+    mskbpt += ((mx >> 3) & ~1) + (WORD)my * (WORD)msk->bytesPerRow;
     dstmod = dst->bytesPerRow - bytesPerRow;
     mskmod = msk->bytesPerRow - bytesPerRow;
     bltsize = (mh << 6) | (bytesPerRow >> 1);
