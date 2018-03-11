@@ -21,6 +21,7 @@ static WORD kickVer;
 static struct List PortsIntChain;
 static struct List CoperIntChain;
 static struct List VertbIntChain;
+static struct List ExterIntChain;
 static struct List OrigTaskReady;
 static struct List OrigTaskWait;
 
@@ -92,11 +93,14 @@ void KillOS() {
           &CoperIntChain, sizeof(struct List));
   CopyMem(SysBase->IntVects[INTB_VERTB].iv_Data, 
           &VertbIntChain, sizeof(struct List));
+  CopyMem(SysBase->IntVects[INTB_EXTER].iv_Data, 
+          &ExterIntChain, sizeof(struct List));
 
   /* Reset system's interrupt server chains. */
   NewList(SysBase->IntVects[INTB_PORTS].iv_Data);
   NewList(SysBase->IntVects[INTB_COPER].iv_Data);
   NewList(SysBase->IntVects[INTB_VERTB].iv_Data);
+  NewList(SysBase->IntVects[INTB_EXTER].iv_Data);
 
   /* Save original task lists. */
   CopyMem(&SysBase->TaskReady, &OrigTaskReady, sizeof(struct List));
@@ -139,6 +143,8 @@ void RestoreOS() {
   CopyMem(&CoperIntChain, SysBase->IntVects[INTB_COPER].iv_Data,
           sizeof(struct List));
   CopyMem(&VertbIntChain, SysBase->IntVects[INTB_VERTB].iv_Data, 
+          sizeof(struct List));
+  CopyMem(&ExterIntChain, SysBase->IntVects[INTB_EXTER].iv_Data, 
           sizeof(struct List));
 
   /* Restore AmigaOS state of dma & interrupts. */
