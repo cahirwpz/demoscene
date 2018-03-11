@@ -48,7 +48,7 @@ __regargs void WaitTimerA(volatile struct CIA *cia, UWORD delay) {
   cia->ciaicr = CIAICRF_TA;
   cia->ciatalo = delay;
   cia->ciatahi = delay >> 8;
-  while (cia->ciaicr & CIAICRF_TA);
+  while (!(cia->ciaicr & CIAICRF_TA));
 }
 
 __regargs void WaitTimerB(volatile struct CIA *cia, UWORD delay) {
@@ -56,7 +56,7 @@ __regargs void WaitTimerB(volatile struct CIA *cia, UWORD delay) {
   cia->ciaicr = CIAICRF_TB;
   cia->ciatalo = delay;
   cia->ciatahi = delay >> 8;
-  while (cia->ciaicr & CIAICRF_TB);
+  while (!(cia->ciaicr & CIAICRF_TB));
 }
 
 /* All TOD registers latch on a read of MSB event and remain latched until

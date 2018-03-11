@@ -58,9 +58,9 @@ static inline BOOL RightMouseButton() {
   return !(custom->potinp & (1 << 10));
 }
 
-#define E_CLOCK 0.709379
-#define TIMER_MS(ms) ((ms) * 1000 * E_CLOCK)
-#define TIMER_US(ms) ((ms) * E_CLOCK)
+#define E_CLOCK 709379 /* ticks per second */
+#define TIMER_MS(ms) ((ms) * E_CLOCK / 1000)
+#define TIMER_US(us) ((us) * E_CLOCK / (1000 * 1000))
 
 /* Maximum delay is around 92.38ms */
 __regargs void WaitTimerA(volatile struct CIA *cia, UWORD delay);
