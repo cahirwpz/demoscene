@@ -112,6 +112,8 @@ void KillOS() {
   SetTaskPri(SysBase->ThisTask, 0);
 }
 
+ADD2INIT(KillOS, -20);
+
 void RestoreOS() {
   Log("[Startup] Restore AmigaOS state.\n");
 
@@ -165,6 +167,8 @@ void RestoreOS() {
   DisownBlitter();
 }
 
+ADD2EXIT(RestoreOS, -20);
+
 /* VBlank event list. */
 struct List *VBlankEvent = &(struct List){};
 
@@ -178,18 +182,7 @@ INTERRUPT(VBlankWakeUp, 10, VBlankEventHandler, NULL);
 
 int main() {
 #if IDLETASK
-  struct Task *idleTask = NULL;
-#endif
-
-  if (Effect.Load) {
-    Effect.Load();
-    Log("[Main] Effect loading finished\n");
-  }
-
-  KillOS();
-
-#if IDLETASK
-  idleTask = CreateTask("IdleTask", -10, IdleTask, 1024);
+  struct Task *idleTask = CreateTask("IdleTask", -10, IdleTask, 1024);
 #endif
 
   NewList(VBlankEvent);
@@ -222,11 +215,6 @@ int main() {
 #if IDLETASK
   RemTask(idleTask);
 #endif
-
-  RestoreOS();
-
-  if (Effect.UnLoad)
-    Effect.UnLoad();
 
   return 0;
 }
@@ -262,6 +250,8 @@ void SystemInfo() {
       (LONG)(AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024));
 }
 
+ADD2INIT(SystemInfo, -50);
+
 typedef struct LibDesc {
   struct Library *base;
   char *name;
@@ -284,6 +274,8 @@ void InitLibraries() {
   }
 }
 
+ADD2INIT(InitLibraries, -120);
+
 void KillLibraries() {
   LibDescT **list = __LIB_LIST__;
   ULONG numbases = (ULONG)*list++;
@@ -295,7 +287,24 @@ void KillLibraries() {
   }
 }
 
-ADD2INIT(InitLibraries, -120);
 ADD2EXIT(KillLibraries, -120);
 
-ADD2INIT(SystemInfo, -50);
+void LoadEffect(void) {
+  if (Effect.Load) {
+    Effect.Load();
+    Log("[Main] Effect loading finished\n");
+  }
+}
+
+#if USE_IO_DOS
+ADD2INIT(LoadEffect, -40);
+#else
+ADD2INIT(LoadEffect, 0);
+#endif
+
+void UnLoadEffect(void) {
+  if (Effect.UnLoad)
+    Effect.UnLoad();
+}
+
+ADD2EXIT(UnLoadEffect, 0);
