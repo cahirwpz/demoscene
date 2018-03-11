@@ -2,6 +2,8 @@
 #include "memory.h"
 #include "floppy.h"
 
+#define DEBUG 0
+
 #define LOWER 0
 #define UPPER 1
 
@@ -160,6 +162,10 @@ __regargs void FloppyTrackRead(WORD num) {
   ClearIRQ(INTF_DSKBLK);
   EnableDMA(DMAF_DISK);
 
+#if DEBUG
+  Log("[Floppy] Read track %ld.\n", (LONG)num);
+#endif
+
   custom->dskpt = (APTR)track;
   /* Write track size twice to initiate DMA transfer. */
   custom->dsklen = DSK_DMAEN | (TRACK_SIZE / sizeof(WORD));
@@ -191,16 +197,15 @@ __regargs void FloppyTrackDecode(ULONG *buf) {
     SectorT *sec;
 
     /* Find synchronization marker and move to first location after it. */
-    do {
-      while (*data++ != DSK_SYNC);
-    } while (*data == DSK_SYNC);
+    while (*data != DSK_SYNC) data++;
+    while (*data == DSK_SYNC) data++;
 
     sec = (SectorT *)((APTR)data - offsetof(SectorT, info[0]));
 
     *(ULONG *)&info = DecodeMFM(*(ULONG *)&sec->info[0], 
                                 *(ULONG *)&sec->info[1], mask);
 
-#if 0
+#if DEBUG
     Log("[Floppy] Decode: data=%lx, sector=%ld, track=%ld\n",
         (LONG)sec, (LONG)info.sectorNum, (LONG)info.trackNum);
 #endif
