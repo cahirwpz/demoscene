@@ -2,6 +2,7 @@ SOURCES_C := \
 	amigahunk.c \
 	common.c \
 	console.c \
+	debug-intr.c \
 	event.c \
 	ffp.c \
 	floppy.c \
