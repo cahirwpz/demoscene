@@ -63,10 +63,19 @@ __regargs static AreaT *MemPoolAlloc(ULONG byteSize, ULONG attributes) {
   AreaT *area; 
 
   byteSize = align(byteSize, BLK_UNIT);
+
+tryagain:
+  if (!(area = AllocMem(byteSize + sizeof(AreaT), attributes))) {
+    /* Allocate from public memory if there's not enough fast memory. */
+    if (attributes & MEMF_FAST) {
+      attributes |= MEMF_PUBLIC;
+      attributes &= ~MEMF_FAST;
+      goto tryagain;
+    }
   
-  if (!(area = AllocMem(byteSize + sizeof(AreaT), attributes)))
     Panic("[Mem] Failed to allocate %s memory pool of %ldkB!\n",
           MemoryName(attributes), KB(byteSize));
+  } 
 
   area->succ = NULL;
   area->attributes = attributes | MEMF_PUBLIC;
