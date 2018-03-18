@@ -204,6 +204,8 @@ int main() {
     Log("[Main] Effect initialization done\n");
   }
 
+  SetFrameCounter(0);
+
   lastFrameCount = ReadFrameCounter();
 
   while (Effect.HandleEvent()) {
