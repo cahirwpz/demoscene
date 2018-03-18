@@ -23,7 +23,7 @@ static CopInsT *bplptr[DEPTH];
 
 static void Load() {
   palette = LoadPalette("wireframe-pal.ilbm");
-  mesh = LoadMesh3D("pilka.3d", SPFlt(50));
+  mesh = LoadMesh3D("pilka.3d", SPFlt(65));
   CalculateVertexFaceMap(mesh);
   CalculateFaceNormals(mesh);
   CalculateEdges(mesh);
@@ -51,13 +51,50 @@ static void Init() {
   cp = NewCopList(80);
   MakeCopperList(cp);
   CopListActivate(cp);
-  EnableDMA(DMAF_BLITTER | DMAF_RASTER);
+  EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 }
 
 static void Kill() {
   DeleteCopList(cp);
   DeleteBitmap(screen);
   DeleteObject3D(cube);
+}
+
+static __regargs void UpdateFaceVisibilityFast(Object3D *object) {
+  WORD *src = (WORD *)object->mesh->faceNormal;
+  IndexListT **faces = object->mesh->face;
+  BYTE *faceFlags = object->faceFlags;
+  APTR vertex = object->mesh->vertex;
+  WORD n = object->mesh->faces - 1;
+
+  WORD cx = object->camera.x;
+  WORD cy = object->camera.y;
+  WORD cz = object->camera.z;
+
+  do {
+    IndexListT *face = *faces++;
+    WORD px, py, pz;
+    LONG f;
+
+    {
+      WORD *p = (WORD *)(vertex + (WORD)(*face->indices << 3));
+      px = cx - *p++;
+      py = cy - *p++;
+      pz = cz - *p++;
+    }
+
+    {
+      LONG x = *src++ * px;
+      LONG y = *src++ * py;
+      LONG z = *src++ * pz;
+      f = x + y + z;
+    }
+
+    /* This depends on condition codes set by previous calculations! */
+    asm volatile("smi %0@+" : "+a" (faceFlags) : "d" (f));
+
+    src++;
+  } while (--n != -1);
 }
 
 static __regargs void UpdateEdgeVisibility(Object3D *object) {
@@ -68,9 +105,9 @@ static __regargs void UpdateEdgeVisibility(Object3D *object) {
   IndexListT *face = *faces++;
   IndexListT **faceEdges = object->mesh->faceEdge;
   IndexListT *faceEdge = *faceEdges++;
-
-  memset(vertexFlags, 0, object->mesh->vertices);
-  memset(edgeFlags, 0, object->mesh->edges);
+  
+  bzero(vertexFlags, object->mesh->vertices);
+  bzero(edgeFlags, object->mesh->edges);
 
   do {
     if (*faceFlags++ >= 0) {
@@ -83,17 +120,16 @@ static __regargs void UpdateEdgeVisibility(Object3D *object) {
       edgeFlags[*ei++] = -1;
       vertexFlags[*vi++] = -1;
       edgeFlags[*ei++] = -1;
-      vertexFlags[*vi++] = -1;
-      edgeFlags[*ei++] = -1;
 
-      while (--n >= 0) {
+      do {
         vertexFlags[*vi++] = -1;
         edgeFlags[*ei++] = -1;
-      }
+      } while (--n != -1);
     }
 
     faceEdge = *faceEdges++;
-  } while ((face = *faces++));
+    face = *faces++;
+  } while (face);
 }
 
 #define MULVERTEX1(D, E) {            \
@@ -164,12 +200,15 @@ static __regargs void TransformVertices(Object3D *object) {
   } while (--n != -1);
 }
 
-static __regargs void DrawObject(Object3D *object, APTR start) {
+static __regargs void DrawObject(Object3D *object, APTR bplpt,
+                                 CustomPtrT custom asm("a6"))
+{
   WORD *edge = (WORD *)object->mesh->edge;
   BYTE *edgeFlags = object->edgeFlags;
   Point3D *point = object->vertex;
-  WORD n = object->mesh->edges;
+  WORD n = object->mesh->edges - 1;
 
+  WaitBlitter();
   custom->bltafwm = -1;
   custom->bltalwm = -1;
   custom->bltadat = 0x8000;
@@ -179,11 +218,20 @@ static __regargs void DrawObject(Object3D *object, APTR start) {
 
   do {
     if (*edgeFlags++) {
-      WORD *p0 = (APTR)point + *edge++;
-      WORD *p1 = (APTR)point + *edge++;
+      APTR data;
+      WORD x0, y0, x1, y1;
 
-      WORD x0 = *p0++, y0 = *p0++;
-      WORD x1 = *p1++, y1 = *p1++;
+      {
+        WORD *p0 = (APTR)point + *edge++;
+        x0 = *p0++;
+        y0 = *p0++;
+      }
+      
+      {
+        WORD *p1 = (APTR)point + *edge++;
+        x1 = *p1++;
+        y1 = *p1++;
+      }
 
       if (y0 > y1) {
         swapr(x0, x1);
@@ -191,7 +239,6 @@ static __regargs void DrawObject(Object3D *object, APTR start) {
       }
 
       {
-        APTR data = start + (((y0 << 5) + (x0 >> 3)) & ~1);
         WORD dmax = x1 - x0;
         WORD dmin = y1 - y0;
         WORD derr;
@@ -211,7 +258,15 @@ static __regargs void DrawObject(Object3D *object, APTR start) {
           swapr(dmax, dmin);
         }
 
-        derr = 2 * dmin - dmax;
+        {
+          WORD y0_ = y0 << 5;
+          WORD x0_ = x0 >> 3;
+          WORD start = (y0_ + x0_) & ~1;
+          data = bplpt + start;
+        }
+
+        dmin <<= 1;
+        derr = dmin - dmax;
         if (derr < 0)
           bltcon1 |= SIGNFLAG;
         bltcon1 |= rorw(x0 & 15, 4);
@@ -219,7 +274,7 @@ static __regargs void DrawObject(Object3D *object, APTR start) {
         {
           UWORD bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_OR;
           UWORD bltamod = derr - dmax;
-          UWORD bltbmod = 2 * dmin;
+          UWORD bltbmod = dmin;
           UWORD bltsize = (dmax << 6) + 66;
           APTR bltapt = (APTR)(LONG)derr;
 
@@ -238,7 +293,7 @@ static __regargs void DrawObject(Object3D *object, APTR start) {
     } else {
       edge += 2;
     }
-  } while (--n > 0);
+  } while (--n != -1);
 }
 
 static void Render() {
@@ -252,30 +307,30 @@ static void Render() {
 
     UpdateObjectTransformation(cube);
     if (RightMouseButton())
-      memset(cube->faceFlags, 0, cube->mesh->faces);
+      bzero(cube->faceFlags, cube->mesh->faces);
     else
-      UpdateFaceVisibility(cube);
+      UpdateFaceVisibilityFast(cube);
     UpdateEdgeVisibility(cube);
     TransformVertices(cube);
     // Log("transform: %ld\n", ReadLineCounter() - lines);
   }
 
-  WaitBlitter();
-
   {
     // LONG lines = ReadLineCounter();
-    DrawObject(cube, screen->planes[active]);
+    DrawObject(cube, screen->planes[active], custom);
     // Log("draw: %ld\n", ReadLineCounter() - lines);
   }
 
   {
+    APTR *planes = screen->planes;
     WORD n = DEPTH;
+    WORD i = active;
 
     while (--n >= 0) {
-      WORD i = (active + n + 1 - DEPTH) % (DEPTH + 1);
-      if (i < 0)
-        i += DEPTH + 1;
-      CopInsSet32(bplptr[n], screen->planes[i]);
+      CopInsSet32(bplptr[n], planes[i]);
+      if (i == 0)
+        i = DEPTH + 1;
+      i--;
     }
   }
 
@@ -283,7 +338,9 @@ static void Render() {
 
   TaskWait(VBlankEvent);
 
-  active = (active + 1) % (DEPTH + 1);
+  active++;
+  if (active > DEPTH)
+    active = 0;
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, Render };
