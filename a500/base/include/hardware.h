@@ -33,9 +33,12 @@
 #define SERDATR_TBE  (1 << 13)
 #define SERDATR_TSRE (1 << 12) 
 
-extern volatile struct Custom* const custom;
-extern volatile struct CIA* const ciaa;
-extern volatile struct CIA* const ciab;
+typedef volatile struct Custom *const CustomPtrT;
+typedef volatile struct CIA *const CIAPtrT;
+
+extern CustomPtrT custom;
+extern CIAPtrT ciaa;
+extern CIAPtrT ciab;
 
 void EnableDMA(UWORD mask);
 void DisableDMA(UWORD mask);
