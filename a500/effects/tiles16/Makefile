@@ -1,4 +1,5 @@
-DATA := data/tiles.ilbm
+DATA := data/MagicLand-map.bin \
+	data/MagicLand-tiles.ilbm
 
 all: build-data tiles16.exe
 

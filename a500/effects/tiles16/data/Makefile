@@ -1,12 +1,11 @@
-DATA := tiles.png tiles.dat tiles.ilbm
+DATA := MagicLand.h MagicLand-tiles.ilbm
 
 all: $(DATA)
 
-tiles.png tiles.dat: gen-tiles.py Tiny16.png
-	@echo "[$(DIR):conv] $^ -> $@"
-	$(PYTHON) $^
+MagicLand-tiles.png: MagicLand.h
+MagicLand-tiles.ilbm: MagicLand-tiles.png
 
 include ../../build.mk
 
 clean::
-	$(RM) $(DATA)
+	$(RM) $(DATA) MagicLand-tiles.png MagicLand-map.bin

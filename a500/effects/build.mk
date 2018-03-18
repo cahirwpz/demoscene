@@ -31,6 +31,10 @@ include $(TOPDIR)/build.mk
 	@echo "[$(DIR):bin] $< -> $@"
 	$(AS) -Fbin -o $@ $<
 
+%.h: %.tmx
+	@echo "[$(DIR):conv] $< -> $@"
+	$(TMXCONV) $<
+
 %.adf: %.exe $(DATA)
 	@echo "[$(DIR):adf] $^ -> $@"
 	$(FSUTIL) -b $(TOPDIR)/base/bootloader.bin create $@ $^
