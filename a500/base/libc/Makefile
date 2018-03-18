@@ -3,7 +3,8 @@ SOURCES_ASM := \
 	__modsi3.s \
 	__mulsi3.s \
 	__udivsi3.s \
-	__umodsi3.s
+	__umodsi3.s \
+	bzero.s
 
 all: libc.a
 
