@@ -39,11 +39,13 @@ static inline BOOL BlitterBusy() {
   return custom->dmaconr & DMAF_BLTDONE;
 }
 
-static inline void WaitBlitter() {
+static inline void _WaitBlitter(CustomPtrT custom) {
   asm("1: btst #6,%0@(2)\n" /* dmaconr */
       "   bnes 1b"
       :: "a" (custom));
 }
+
+#define WaitBlitter() _WaitBlitter(custom)
 
 /* Blitter copy. */
 void BlitterCopySetup(BitmapT *dst, UWORD x, UWORD y, BitmapT *src);
