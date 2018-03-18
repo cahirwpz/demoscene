@@ -22,8 +22,8 @@ static BitmapT *screen0, *screen1;
 static BitmapT *buffer;
 
 static void Load() {
-  mesh = LoadMesh3D("codi.3d", SPFlt(384));
-  // mesh = LoadMesh3D("cube.3d", SPFlt(50));
+  // mesh = LoadMesh3D("codi.3d", SPFlt(384+104));
+  mesh = LoadMesh3D("pilka.3d", SPFlt(65));
   CalculateFaceNormals(mesh);
   palette = LoadPalette("flatshade-pal.ilbm");
 }
@@ -322,8 +322,27 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
   }
 }
 
+static __regargs void BitmapClearFast(BitmapT *dst) {
+  UWORD height = (WORD)dst->height * (WORD)dst->depth;
+  UWORD bltsize = (height << 6) | (dst->bytesPerRow >> 1);
+  APTR bltpt = dst->planes[0];
+
+  WaitBlitter();
+
+  custom->bltcon0 = DEST | A_TO_D;
+  custom->bltcon1 = 0;
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+  custom->bltadat = 0;
+  custom->bltdmod = 0;
+  custom->bltdpt = bltpt;
+  custom->bltsize = bltsize;
+}
+
 static void Render() {
-  BitmapClear(screen0);
+  LONG lines = ReadLineCounter();
+
+  BitmapClearFast(screen0);
 
   {
     // LONG lines = ReadLineCounter();
@@ -346,6 +365,8 @@ static void Render() {
     DrawObject(cube, custom);
     // Log("draw: %ld\n", ReadLineCounter() - lines);
   }
+
+  Log("all: %ld\n", ReadLineCounter() - lines);
 
   CopUpdateBitplanes(bplptr, screen0, DEPTH);
   TaskWait(VBlankEvent);

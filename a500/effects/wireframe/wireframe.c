@@ -242,6 +242,8 @@ static __regargs void DrawObject(Object3D *object, APTR start) {
 }
 
 static void Render() {
+  LONG lines = ReadLineCounter();
+
   BlitterClear(screen, active);
 
   {
@@ -276,6 +278,8 @@ static void Render() {
       CopInsSet32(bplptr[n], screen->planes[i]);
     }
   }
+
+  Log("all: %ld\n", ReadLineCounter() - lines);
 
   TaskWait(VBlankEvent);
 

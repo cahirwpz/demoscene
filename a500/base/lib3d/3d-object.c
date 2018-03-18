@@ -1,3 +1,4 @@
+#include <strings.h>
 #include "memory.h"
 #include "io.h"
 #include "reader.h"
@@ -88,39 +89,81 @@ __regargs void UpdateObjectTransformation(Object3D *object) {
   }
 }
 
+static BYTE t_sqrt8[256];
+
+void InitSqrtTab8(void){
+  BYTE *data = t_sqrt8;
+  WORD i = 16;
+  WORD n = 0;
+  BYTE k = 0;
+  do {
+    WORD j = n;
+    do { *data++ = k; } while (--j != -1);
+    k += 1;
+    n += 2;
+  } while (--i > 0);
+}
+
+ADD2INIT(InitSqrtTab8, 0);
+
 __regargs void UpdateFaceVisibility(Object3D *object) {
   WORD *src = (WORD *)object->mesh->faceNormal;
   IndexListT **faces = object->mesh->face;
   BYTE *faceFlags = object->faceFlags;
   APTR vertex = object->mesh->vertex;
   WORD n = object->mesh->faces;
+  BYTE *sqrt = t_sqrt8;
 
-  WORD cx = object->camera.x;
-  WORD cy = object->camera.y;
-  WORD cz = object->camera.z;
+  WORD *camera = (WORD *)&object->camera;
 
   while (--n >= 0) {
     IndexListT *face = *faces++;
-    WORD *p = (WORD *)(vertex + (WORD)(face->indices[0] << 3));
-    WORD px = cx - *p++;
-    WORD py = cy - *p++;
-    WORD pz = cz - *p++;
-    LONG x = (*src++) * px;
-    LONG y = (*src++) * py;
-    LONG z = (*src++) * pz;
-    LONG f = x + y + z;
+    WORD px, py, pz;
+    LONG f;
 
-    if (f >= 0) {
-      /* normalize dot product */
-      f = div16(f, isqrt(px * px + py * py + pz * pz)) >> 8;
-      if (f > 15)
-        f = 15;
-      *faceFlags++ = f;
-    } else {
-      *faceFlags++ = -1;
+    {
+      WORD *p = (WORD *)(vertex + (WORD)(*face->indices << 3));
+      WORD *c = camera;
+      px = *c++ - *p++;
+      py = *c++ - *p++;
+      pz = *c++ - *p++;
+    }
+
+    {
+      LONG x = *src++ * px;
+      LONG y = *src++ * py;
+      LONG z = *src++ * pz;
+      f = x + y + z;
     }
 
     src++;
+
+    if (f >= 0) {
+      /* normalize dot product */
+      WORD l;
+#if 0
+      LONG s = px * px + py * py + pz * pz;
+      s = swap16(s); /* s >>= 16, ignore upper word */
+#else
+      WORD s;
+      asm("mulsw %0,%0\n"
+          "mulsw %1,%1\n"
+          "mulsw %2,%2\n"
+          "addl  %1,%0\n"
+          "addl  %2,%0\n"
+          "swap  %0\n"
+          : "+d" (px), "+d" (py), "+d" (pz));
+      s = px;
+#endif
+      f = swap16(f); /* f >>= 16, ignore upper word */
+      l = div16((WORD)f * (WORD)f, s);
+      if (l >= 256)
+        *faceFlags++ = 15;
+      else
+        *faceFlags++ = sqrt[l];
+    } else {
+      *faceFlags++ = -1;
+    }
   }
 }
 
@@ -130,7 +173,7 @@ __regargs void UpdateVertexVisibility(Object3D *object) {
   IndexListT **faces = object->mesh->face;
   WORD n = object->mesh->faces;
 
-  memset(vertexFlags, 0, object->mesh->vertices);
+  bzero(vertexFlags, object->mesh->vertices);
 
   while (--n >= 0) {
     IndexListT *face = *faces++;
