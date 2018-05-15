@@ -10,6 +10,7 @@
 #include "tasks.h"
 
 STRPTR __cwdpath = "data";
+LONG __chipmem = 300 * 1024;
 
 #define WIDTH (320 + 16)
 #define HEIGHT (256 + 16)
@@ -62,8 +63,10 @@ static void Load() {
   {
     LONG n = Map.width * Map.height;
     LONG i;
-    for (i = 0; i < n; i++)
+    for (i = 0; i < n; i++) {
       Map.map[i] <<= 2;
+      Map.map[i] |= 3;
+    }
   }
 }
 
@@ -85,10 +88,15 @@ static void MakeCopperList(CopListT *cp, LONG i) {
 }
 
 static void Init() {
+  /* extra memory for horizontal scrolling */
+  WORD extra = div16(Map.width * Tiles.width, WIDTH);
+
+  Log("Allocate %ld extra lines!\n", (LONG)extra);
+
   /* Use interleaved mode to limit number of issued blitter operations. */
-  screen[0] = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
+  screen[0] = NewBitmapCustom(WIDTH, HEIGHT + extra, DEPTH,
                               BM_CLEAR | BM_DISPLAYABLE | BM_INTERLEAVED);
-  screen[1] = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
+  screen[1] = NewBitmapCustom(WIDTH, HEIGHT + extra, DEPTH,
                               BM_CLEAR | BM_DISPLAYABLE | BM_INTERLEAVED);
 
   cp[0] = NewCopList(100);
@@ -111,7 +119,7 @@ static void Kill() {
   DeleteBitmap(screen[1]);
 }
 
-static __regargs void TriggerRefresh(WORD x, WORD y, WORD w, WORD h) {
+__regargs void TriggerRefresh(WORD x, WORD y, WORD w, WORD h) {
   WORD *tiles = Map.map;
   LONG tilemod = Map.width - HTILES;
 
@@ -141,7 +149,7 @@ static __regargs void UpdateTiles(BitmapT *screen, WORD x, WORD y,
 {
   WORD *tiles = Map.map;
   APTR ptrs = Tiles.ptrs;
-  APTR dst = screen->planes[0];
+  APTR dst = screen->planes[0] + (x << 1);
   WORD size = ((16 * DEPTH) << 6) | 1;
   LONG tilemod = Map.width - HTILES;
   WORD current = active + 1;
@@ -195,13 +203,21 @@ static void Render() {
   WORD x = tile % (Map.width - HTILES);
   WORD y = 35;
 
-  if ((t & 15) == 0)
-    TriggerRefresh(x, y, HTILES, VTILES);
   UpdateTiles(screen[active], x, y, custom);
-  Log("update: %ld\n", ReadLineCounter() - lines);
 
+  {
+    WORD i;
+    CopInsT **_bplptr = bplptr[active];
+    APTR *_planes = screen[active]->planes;
+    LONG offset = x << 1;
+
+    for (i = 0; i < DEPTH; i++)
+      CopInsSet32(_bplptr[i], _planes[i] + offset);
+  }
   CopInsSet16(bplcon1[active], pixel | (pixel << 4));
   CopListRun(cp[active]);
+  Log("all: %ld\n", ReadLineCounter() - lines);
+
   TaskWait(VBlankEvent);
   active ^= 1;
 }
