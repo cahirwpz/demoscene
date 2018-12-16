@@ -19,5 +19,10 @@ jobs:
             ssh git@github.com git-lfs-authenticate "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" download
             git lfs pull
       - run:
+          name: Archive source tree
+          command: 'cd ~ && tar cvzf /demoscene.tar.gz demoscene'
+      - run:
           name: Amiga 500 (compile code base)
           command: 'cd a500 && make'
+      - store_artifacts:
+          path: /demoscene.tar.gz
