@@ -8,6 +8,9 @@ SUBDIRS := \
 	lib2d \
 	lib3d \
 	libahx \
+	libblit \
+	libgui \
+	libgfx \
 	libp61 \
 	libsync \
 	libsys \
