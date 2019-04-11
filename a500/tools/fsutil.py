@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import os
@@ -6,7 +6,7 @@ import stat
 from array import array
 from fnmatch import fnmatch
 from struct import pack, unpack
-from StringIO import StringIO
+from io import BytesIO
 
 #
 # On disk format description:
@@ -51,7 +51,7 @@ def skip_pad(fh, alignment=None):
 
 def write_pad(fh, alignment=None):
   pos = fh.tell()
-  fh.write('\0' * (align(pos, alignment) - pos))
+  fh.write(b'\0' * (align(pos, alignment) - pos))
 
 
 def checksum(data):
@@ -160,8 +160,8 @@ def save(archive, floppy, entries, bootcode=None):
 
   with open(archive, 'wb') as fh:
     if floppy:
-      boot = StringIO(bootcode)
-      boot.write(pack('>4s4xI', 'DOS\0', align(dirent_len)))
+      boot = BytesIO(bootcode)
+      boot.write(pack('>4s4xI', b'DOS\0', align(dirent_len)))
       boot.seek(0, 2)
       write_pad(boot, 2 * SECTOR)
       val = checksum(boot.getvalue())
@@ -178,8 +178,8 @@ def save(archive, floppy, entries, bootcode=None):
     write_pad(fh)
 
     for entry in entries:
-      fh.write(entry.name)
-      fh.write('\0')
+      fh.write(entry.name.encode())
+      fh.write(b'\0')
     write_pad(fh)
 
     for entry in entries:
@@ -195,12 +195,12 @@ def extract(archive, patterns, force):
     for entry in archive:
       if fnmatch(entry.name, pattern):
         if os.path.exists(entry.name) and not force:
-          print 'extract: skipping %s - file is present on disk' % entry.name
+          print('extract: skipping %s - file is present on disk' % entry.name)
         else:
-          print 'extracting %s' % entry.name
+          print('extracting %s' % entry.name)
           with open(entry.name, 'wb') as fh:
             fh.write(entry.data)
-          os.chmod(entry.name, [0644, 0755][entry.exe])
+          os.chmod(entry.name, [0o644, 0o755][entry.exe])
 
 
 if __name__ == '__main__':
@@ -236,12 +236,12 @@ if __name__ == '__main__':
   if args.action == 'create':
     archive = collect(args.files)
     for entry in archive:
-      print entry
+      print(entry)
     save(args.image, args.floppy, archive, args.bootcode)
   elif args.action == 'list':
     archive = load(args.image, args.floppy)
     for entry in archive:
-      print entry
+      print(entry)
   elif args.action == 'extract':
     archive = load(args.image, args.floppy)
     extract(archive, args.files, args.force)
