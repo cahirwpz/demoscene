@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import logging
 import sys
 
-from iff.ilbm import ILBM
+from .iff.ilbm import ILBM
 from pprint import pprint
 
 
