@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-from iff import IffFile
+from .iff import IffFile
 import struct
 
 from collections import namedtuple
-from StringIO import StringIO
+from io import StringIO
 
 
 def UnRLE(bytes_in):
