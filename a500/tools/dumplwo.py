@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import logging
@@ -7,7 +7,7 @@ import struct
 from collections import namedtuple
 from pprint import pprint
 
-from iff.iff import IffFile, IffData
+from .iff.iff import IffFile, IffData
 
 Vertex = namedtuple('Vertex', 'x y z')
 Color = namedtuple('Color', 'r g b')
