@@ -1,14 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import logging
 import struct
 import binascii
-import StringIO
+import io
 import collections
 from chunk import Chunk
 
 
-class IffData(StringIO.StringIO):
+class IffData(io.BytesIO):
   def eof(self):
     return self.tell() >= len(self.getvalue())
 
@@ -66,14 +66,14 @@ class IffFile(collections.Sequence):
 
             self.chunks.append(self.readChunk(name, data))
       else:
-        logging.warn(
+        logging.warning(
           'File %s is not of IFF/%s type.' % (filename, self.form))
         return False
 
     return True
 
   def save(self, filename):
-    with open(filename, 'w') as iff:
+    with open(filename, 'wb') as iff:
       logging.info('Writing file "%s"' % filename)
 
       iff.write('FORM' + '\000' * 4 + self.form)
@@ -85,7 +85,7 @@ class IffFile(collections.Sequence):
           iff.write(struct.pack('>I', len(data)))
           iff.write(data)
           if len(data) % 2 == 1:
-            iff.write('\000')
+            iff.write(b'\000')
 
       size = iff.tell() - 8
       iff.seek(4)
