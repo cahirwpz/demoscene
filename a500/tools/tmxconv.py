@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-from __future__ import print_function
+#!/usr/bin/env python3
 
 from array import array
 import argparse
@@ -90,8 +88,8 @@ class Layer(object):
         self.tiles = [i - 1 for i in tiles]
 
     def get(self, x, y):
-        assert(x >= 0 and x < self.width)
-        assert(y >= 0 and y < self.height)
+        assert(0 <= x < self.width)
+        assert(0 <= y < self.height)
         return self.tiles[x + y * self.width]
 
     def optimize(self, unique_tiles):
