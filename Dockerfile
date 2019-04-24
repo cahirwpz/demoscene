@@ -4,6 +4,8 @@ WORKDIR /root
 
 ADD https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh \
     script.deb.sh
+# Temporary solution. Need to update amigaos-cross-toolchain image.
+RUN apt-get -q update && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends gnupg && bash script.deb.sh
 RUN apt-get install -y --no-install-recommends \
             ctags cscope git-lfs optipng \
