@@ -7,7 +7,7 @@ import struct
 from collections import namedtuple
 from pprint import pprint
 
-from .iff.iff import IffFile, IffData
+from iff.iff import IffFile, IffData
 
 Vertex = namedtuple('Vertex', 'x y z')
 Color = namedtuple('Color', 'r g b')
@@ -21,7 +21,7 @@ class LWOParserMixin(object):
     chunks = []
 
     while not data.eof():
-      name = data.read(4)
+      name = data.read(4).decode()
       size = self.readInt16(data)
       chunk = data.read(size)
       logging.debug('Encountered %s subchunk of size %d' % (name, size))
@@ -54,11 +54,11 @@ class LWOParserMixin(object):
 
   def readString(self, data):
     begin = data.tell()
-    string = data.getvalue()
-    end = string.index('\0', begin) + 1
+    byteData = data.getvalue()
+    end = byteData.index(b'\0', begin) + 1
     if end & 1:
       end += 1
-    return data.read(end - begin).rstrip('\0')
+    return data.read(end - begin).decode("utf-8").rstrip('\0')
 
   def readVertex(self, data):
     return Vertex(*struct.unpack('>fff', data.read(12)))
@@ -73,7 +73,7 @@ class LWOParserMixin(object):
 
   def readCLIP(self, data):
     index = self.readInt32(data)
-    return (index, self.parseMiniChunks(data.read()))
+    return index, self.parseMiniChunks(data.read())
 
   @property
   def points(self):
@@ -152,7 +152,7 @@ class LWO2(IffFile, LWOParserMixin):
     return [name, self.parseMiniChunks(data.read(size))]
 
   def readPTAG(self, data):
-    tagType = data.read(4)
+    tagType = data.read(4).decode()
 
     assert tagType in ['SURF', 'COLR', 'PART']
 
@@ -282,7 +282,8 @@ class LWOB(IffFile, LWOParserMixin):
 
 def convertLWO2(lwo, output):
   def out(s):
-    print >>output, str(s)
+    string_as_bytes = "{0}\n".format(s).encode()
+    output.write(string_as_bytes)
 
   tags = list(lwo['TAGS'].data)
   clips = lwo.get('CLIP', always_list=True)
@@ -421,7 +422,7 @@ def main():
 
   if args.output and lwo.form == 'LWO2':
     logging.info('Writing object structure to %s file.' % args.output)
-    with open(str(args.output), 'w') as f:
+    with open(str(args.output), 'wb') as f:
       convertLWO2(lwo, f)
 
 if __name__ == '__main__':

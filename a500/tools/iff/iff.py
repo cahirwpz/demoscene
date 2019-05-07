@@ -41,12 +41,12 @@ class IffFile(collections.Sequence):
   def load(self, filename):
     self.chunks = []
 
-    with open(filename) as iff:
+    with open(filename, 'rb') as iff:
       chunk = Chunk(iff)
 
       logging.info('Reading file "%s" as IFF/%s type.' % (filename, self.form))
 
-      if chunk.getname() == 'FORM' and chunk.read(4) == self.form:
+      if chunk.getname().decode() == 'FORM' and chunk.read(4).decode() == self.form:
         iff.seek(12)
 
         while True:
@@ -55,7 +55,7 @@ class IffFile(collections.Sequence):
           except EOFError:
             break
 
-          name = chunk.getname()
+          name = chunk.getname().decode()
           size = chunk.getsize()
           data = chunk.read()
 
@@ -76,12 +76,12 @@ class IffFile(collections.Sequence):
     with open(filename, 'wb') as iff:
       logging.info('Writing file "%s"' % filename)
 
-      iff.write('FORM' + '\000' * 4 + self.form)
+      iff.write(b'FORM' + b'\000' * 4 + self.form.encode())
 
       for chunk in self.chunks:
         data = self.writeChunk(chunk)
         if data:
-          iff.write(chunk.name)
+          iff.write(chunk.name.encode())
           iff.write(struct.pack('>I', len(data)))
           iff.write(data)
           if len(data) % 2 == 1:
