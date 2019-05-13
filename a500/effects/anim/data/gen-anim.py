@@ -1,11 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 from PIL import Image
 import sys
 
 
 def println(stmt, *args):
-  print "\t%s\t%s" % (stmt, ", ".join(str(arg) for arg in args))
+  print("\t%s\t%s" % (stmt, ", ".join(str(arg) for arg in args)))
 
 
 def main():
@@ -21,7 +21,7 @@ def main():
     except EOFError:
       break
 
-  print "; vim:ft=asm68k"
+  print("; vim:ft=asm68k")
   println("section", "data", "data_p")
 
   println("dc.w", *img.size)
@@ -30,7 +30,7 @@ def main():
     println("dc.l", ".frame%d" % n)
 
   for n in range(frames):
-    print ".frame%d:" % n
+    print(".frame%d:" % n)
     img.seek(n)
     pix = img.load()
     for y in range(img.size[1]):
