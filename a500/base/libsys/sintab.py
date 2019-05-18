@@ -1,4 +1,4 @@
-#!/usr/bin/env python -B
+#!/usr/bin/env python3
 
 from math import sin, pi
 
@@ -6,24 +6,24 @@ if __name__ == '__main__':
   with open('sintab.c', 'w') as fh:
     prec = 4096
 
-    print >>fh, '#include "common.h"\n'
-    print >>fh, 'WORD sintab[%d] = {' % prec
+    print('#include "common.h"\n', file=fh)
+    print('WORD sintab[%d] = {' % prec, file=fh)
 
     sintab = [int(sin(i * 2 * pi / prec) * prec) for i in range(prec)]
     prev = 0
 
     for a in sintab:
-      print >>fh, '\t%d,' % (a - prev)
+      print('\t%d,' % (a - prev), file=fh)
       prev = a
 
-    print >>fh, '};'
-    print >>fh, '\nvoid InitSinTab() {'
-    print >>fh, '  WORD sum = 0, n = %d;' % prec
-    print >>fh, '  WORD *tab = sintab;'
-    print >>fh, '  Log("[Init] Preparing sinus table\n");'
-    print >>fh, '  while (--n >= 0) {'
-    print >>fh, '    sum += *tab;'
-    print >>fh, '    *tab++ = sum;'
-    print >>fh, '  }'
-    print >>fh, '}'
-    print >>fh, '\nADD2INIT(InitSinTab, 0);'
+    print('};', file=fh)
+    print('\nvoid InitSinTab() {', file=fh)
+    print('  WORD sum = 0, n = %d;' % prec, file=fh)
+    print('  WORD *tab = sintab;', file=fh)
+    print('  Log("[Init] Preparing sinus table\n");', file=fh)
+    print('  while (--n >= 0) {', file=fh)
+    print('    sum += *tab;', file=fh)
+    print('    *tab++ = sum;', file=fh)
+    print('  }', file=fh)
+    print('}', file=fh)
+    print('\nADD2INIT(InitSinTab, 0);', file=fh)
