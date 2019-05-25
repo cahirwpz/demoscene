@@ -35,7 +35,7 @@ if __name__ == "__main__":
         for j in range(height):
             pix[i + width / 2, j] = j % 15 + 1
 
-    W = width / 2 - B
+    W = width // 2 - B
     minY = 0
     maxY = height
 
