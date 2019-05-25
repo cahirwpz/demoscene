@@ -35,5 +35,5 @@ if __name__ == "__main__":
 
     bumpmap.byteswap()
 
-    with open(name, "w") as f:
+    with open(name, "wb") as f:
         bumpmap.tofile(f)
