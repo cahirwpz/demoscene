@@ -3,8 +3,7 @@
 import argparse
 import logging
 import os
-from zopfli.zlib import compress
-from zlib import decompress
+import zopfli
 
 from iff.ilbm import ILBM, UnRLE
 
@@ -60,17 +59,16 @@ def main():
       if bmhd.data.compression == 1:
         payload = UnRLE(payload)
       if bmhd.data.compression == 254:
-        payload = decompress(payload)
+        decompressor = zopfli.ZopfliDecompressor(zopfli.ZOPFLI_FORMAT_DEFLATE)
+        payload = decompressor.decompress(payload) + decompressor.flush()
       compression = 0
       if args.method == 'deflate':
-        # Default ZopfliZlibCompress compression used, should be ZopfliDeflate.
-        # Py-zopfli do not provide api for ZopfliDeflate compression.
-        payload = compress(payload)
+        compressor = zopfli.ZopfliCompressor(zopfli.ZOPFLI_FORMAT_DEFLATE)
+        payload = compressor.compress(payload) + compressor.flush()
         compression = 254
       if args.method == 'none':
         compression = 0
-          # Removed zlib container bytes.
-      body.data = payload[2:len(payload)-4]
+      body.data = payload
       bmhd.data = bmhd.data._replace(compression=compression)
       logging.info(
         'BODY size after compression: %d/%d' % (len(body.data), size))
