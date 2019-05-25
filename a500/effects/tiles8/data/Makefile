@@ -4,7 +4,7 @@ all: $(DATA)
 
 twist.png twist-colors.png: twist.py
 	@echo "[$(DIR):conv] $< -> $@"
-	$(PYTHON) $^
+	$(PYTHON3) $^
 
 include ../../build.mk
 

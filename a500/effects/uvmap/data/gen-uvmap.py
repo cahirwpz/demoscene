@@ -1,4 +1,4 @@
-#!/usr/bin/env python -B
+#!/usr/bin/env python3 -B
 
 from array import array
 from uvmap import UVMap, FancyEye

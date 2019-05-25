@@ -1,4 +1,4 @@
-#!/usr/bin/env python -B
+#!/usr/bin/env python3 -B
 
 import Image
 from utils import lerp, sq, constrain, ccir601
