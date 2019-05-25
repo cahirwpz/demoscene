@@ -1,9 +1,9 @@
-all: ExitUAE build-zopfli
+all: ExitUAE
 
 include ../build.mk
 
 ExitUAE: ExitUAE.o
 
-clean:: clean-zopfli
+clean::
 	$(RM) ExitUAE
 
