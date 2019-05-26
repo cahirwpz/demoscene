@@ -14,13 +14,13 @@ class TrackRow:
 
 class Instrument:
 	def __init__(self, f):
-		self.name = f.read(22).rstrip('\0')
+		self.name = f.read(22).rstrip(b'\0').decode()
 		self.length, self.finetune, self.volume, self.repoffset, self.replen = struct.unpack(">HBBHH", f.read(8))
 		self.samples = None
 
 class Module:
 	def __init__(self, f):
-		self.name = f.read(20).rstrip('\0')
+		self.name = f.read(20).rstrip(b'\0').decode()
 		self.instruments = [None] * 32
 		for i in range(1,32):
 			self.instruments[i] = Instrument(f)
@@ -46,32 +46,32 @@ class Module:
 def notename(n):
 	if n is None:
 		return "   "
-	return ["C-","C#","D-","D#","E-","F-","F#","G-","G#","A-","A#","B-"][n % 12] + str(n / 12 + 1)
+	return ["C-","C#","D-","D#","E-","F-","F#","G-","G#","A-","A#","B-"][n % 12] + str(n // 12 + 1)
 
 def printpattern(pat):
 	for r in range(64):
 		for t in range(4):
 			tr = pat[r][t]
 			sys.stdout.write(" %3s %2X %1X %02X   " % (notename(tr.note), tr.inst, tr.cmd, tr.arg))
-		print
+		print()
 
 n_errors = 0
 reported_errors = set()
 def error(msg, p, t, r):
 	if (msg, p, t, r) not in reported_errors:
-		print "%s in pattern %d track %d row %d" % (msg, p, t, r)
+		print("%s in pattern %d track %d row %d" % (msg, p, t, r))
 	reported_errors.add((msg, p, t, r))
 
 
 # Commandline
 if len(sys.argv) <3:
-	print "Usage: %s <input module file> <output binary data file> [<output raw instrument file>]" % sys.argv[0]
+	print("Usage: %s <input module file> <output binary data file> [<output raw instrument file>]" % sys.argv[0])
 	sys.exit(1)
 module_file = sys.argv[1]
 output_file = sys.argv[2]
 raw_inst_file = sys.argv[3] if len(sys.argv) > 3 else None
 
-print "Converting module file %s..." % module_file
+print("Converting module file %s..." % module_file)
 module = Module(open(module_file, "rb"))
 
 
@@ -183,9 +183,9 @@ while not stopped and not looped:
 			restart = vblank + 1
 
 		for row_number, row_data in enumerate(row):
-                        t, tr, cmd, arg1, arg2 = row_data
-                        # print(pos, r, row_number)
-                        # print(tr.cmd, notename(tr.note), tr.inst)
+			t, tr, cmd, arg1, arg2 = row_data
+			# print(pos, r, row_number)
+			# print(tr.cmd, notename(tr.note), tr.inst)
 			# Volume data
 			if tr.inst != 0:
 				volume[t] = module.instruments[tr.inst].volume
@@ -246,7 +246,7 @@ while not stopped and not looped:
 					offset_value[t] = tr.arg
 				elif offset_value[t] == 0:
 					error("No previous offset", p, t, r)
- 				offset = offset_value[t]
+				offset = offset_value[t]
 				if inst[t] != 0 and tr.note and offset * 128 >= module.instruments[inst[t]].length:
 					error("Offset beyond end of sample", p, t, r)
 					offset = (module.instruments[inst[t]].length - 1) / 128
@@ -375,7 +375,7 @@ for inst in inst_list:
 	note_id_start.append(note_id)
 
 if note_id > 512:
-	print "More than 512 different note IDs!"
+	print("More than 512 different note IDs!")
 	n_errors += 1
 
 
@@ -431,13 +431,13 @@ while restart > 0 and all(track_data[t][restart-1] == track_data[t][-1] for t in
 		track_data[t].pop()
 	restart -= 1
 
-notes_data = ""
+notes_data = b''
 for track in [3,2,1,0]:
 	notes_data += struct.pack(">%dH" % len(track_data[track]), *track_data[track])
-musiclength = len(notes_data) / 8
+musiclength = len(notes_data) // 8
 
 # Export note ranges
-note_range_data = ""
+note_range_data = b''
 for note_min,note_max,offset in note_range_list:
 	note_range_data += struct.pack(">BBH", note_min, note_max - note_min + 1, offset * 128)
 note_range_data += struct.pack(">h", (restart - musiclength + 1) * 2)
@@ -449,20 +449,20 @@ raw_inst_size = 0
 total_inst_size = 0
 total_inst_time = 1.0
 last_nonempty_inst = max(i for i in range(1, 32) if module.instruments[i].name.strip() != "" or i in inst_list)
-print
-print "Inst Name                   Length Repeat Idx Count  Low High 9xx  IDs  Error?"
+print()
+print("Inst Name                   Length Repeat Idx Count  Low High 9xx  IDs  Error?")
 for i in range(1, last_nonempty_inst + 1):
 	inst = module.instruments[i]
 
 	# Unused instrument?
 	if i not in inst_list:
-		print "%02d   %-22s" % (i, inst.name)
+		print("%02d   %-22s" % (i, inst.name))
 		continue
 
 	# General statistics
 	index = inst_list.index(i)
-	min_note = min(note_min for ((inst,offset),(note_min,note_max)) in minmax_note.iteritems() if inst == i)
-	max_note = max(note_max for ((inst,offset),(note_min,note_max)) in minmax_note.iteritems() if inst == i)
+	min_note = min(note_min for ((inst,offset),(note_min,note_max)) in minmax_note.items() if inst == i)
+	max_note = max(note_max for ((inst,offset),(note_min,note_max)) in minmax_note.items() if inst == i)
 	offsets = [offset for oi,offset in minmax_note if oi == i]
 	n_note_ids = note_id_start[index+1] - note_id_start[index]
 	msg = ""
@@ -508,25 +508,25 @@ for i in range(1, last_nonempty_inst + 1):
 		raw_inst_size += length
 		inst_type = "R"
 
-	print "%02d %c %-22s %6d %6s  %2d %5d  %3s  %3s %3d %4d  %s" % (
+	print("%02d %c %-22s %6d %6s  %2d %5d  %3s  %3s %3d %4d  %s" % (
 		i, inst_type, inst.name, length * 2, "" if not replen else replen * 2, index, inst_counts[i],
 		notename(min_note), notename(max_note), len(offsets) - 1, n_note_ids, msg
-	)
+	))
 
 	if msg != "":
 		n_errors += 1
 
-insts_data = ""
+insts_data = b''
 if len(raw_instruments) > 0:
 	insts_data += struct.pack(">h", -len(raw_instruments))
-	insts_data += "".join(inst_data[:len(raw_instruments)])
+	insts_data += b''.join(inst_data[:len(raw_instruments)])
 insts_data += struct.pack(">h", len(inst_list)-len(raw_instruments)-1)
-insts_data += "".join(inst_data[len(raw_instruments):])
+insts_data += b''.join(inst_data[len(raw_instruments):])
 
 # Write output file
 fout = open(output_file, "wb")
 fout.write(insts_data)
-fout.write(struct.pack(">hh", len(notes_data) / 4, len(note_range_data)))
+fout.write(struct.pack(">hh", len(notes_data) // 4, len(note_range_data)))
 fout.write(note_range_data)
 fout.write(notes_data)
 out_size = fout.tell()
@@ -539,26 +539,26 @@ if raw_inst_file is not None:
 		fout.write(inst.samples[:inst.length*2])
 	fout.close()
 
-print
-print "Uncompressed music data size: %7d bytes" % out_size
+print()
+print("Uncompressed music data size: %7d bytes" % out_size)
 if raw_inst_size > 0:
-	print "Total raw instrument size:    %7d bytes" % (raw_inst_size * 2)
-print "Total instrument memory:      %7d bytes" % (total_inst_size * 2)
-print "Appr. precalc time on 68000:  %7d seconds" % int(total_inst_time + 0.5)
-print "Music duration:               %7d vblanks (%d:%02d)" % (musiclength, (musiclength + 25) / 3000, (musiclength + 25) % 3000 / 50)
-print "Restart position:             %7d vblanks (%d:%02d)" % (restart, (restart + 25) / 3000, (restart + 25) % 3000 / 50)
-print "Number of different note IDs:   %5d" % note_id
-print "Number of different data words: %5d" % len(dataset)
-print
+	print("Total raw instrument size:    %7d bytes" % (raw_inst_size * 2))
+print("Total instrument memory:      %7d bytes" % (total_inst_size * 2))
+print("Appr. precalc time on 68000:  %7d seconds" % int(total_inst_time + 0.5))
+print("Music duration:               %7d vblanks (%d:%02d)" % (musiclength, (musiclength + 25) / 3000, (musiclength + 25) % 3000 / 50))
+print("Restart position:             %7d vblanks (%d:%02d)" % (restart, (restart + 25) / 3000, (restart + 25) % 3000 / 50))
+print("Number of different note IDs:   %5d" % note_id)
+print("Number of different data words: %5d" % len(dataset))
+print()
 n_errors += len(reported_errors)
 if n_errors == 0:
-	print "No errors."
+	print("No errors.")
 else:
-	print "%d error%s." % (n_errors, "s" if n_errors > 1 else "")
+	print("%d error%s." % (n_errors, "s" if n_errors > 1 else ""))
 
 if raw_inst_size > 0 and raw_inst_file is None:
-	print
-	print "Warning: Raw instruments used, but no raw instrument output file specified!"
+	print()
+	print("Warning: Raw instruments used, but no raw instrument output file specified!")
 if raw_inst_size == 0 and raw_inst_file is not None:
-	print
-	print "Warning: Raw instrument output file specified, but no raw instruments used!"
+	print()
+	print("Warning: Raw instrument output file specified, but no raw instruments used!")
