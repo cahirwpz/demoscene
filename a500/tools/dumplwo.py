@@ -379,8 +379,8 @@ def convertLWO2(lwo, output):
 
 def main():
   parser = argparse.ArgumentParser(
-      description=(
-          'Converts Lightwave Object (LWOB/LWO2) file to textual representation.'))
+      description=("Converts Lightwave Object(LWOB/LWO2) "
+                   "file to textual representation."))
   parser.add_argument(
       '-q', '--quiet', action='store_true',
       help='Silence out diagnostic messages.')
@@ -388,7 +388,8 @@ def main():
       '-f', '--force', action='store_true',
       help='If the output object exists, the tool will' 'overwrite it.')
   parser.add_argument(
-      'input', metavar='LWO', type=str, help='Input LightWave object file name.')
+      'input', metavar='LWO', type=str,
+      help='Input LightWave object file name.')
   parser.add_argument(
       'output', metavar='OBJ', type=str, nargs='?',
       help='Output object file name.')
@@ -408,7 +409,8 @@ def main():
 
     if os.path.exists(args.output) and not args.force:
       raise SystemExit(
-          'Object file "%s" already exists (use "-f" to override).' % args.output)
+          'Object file "%s" already exists '
+          '(use "-f" to override).' % args.output)
 
   lwo = LWO2.fromFile(args.input)
   if not lwo:

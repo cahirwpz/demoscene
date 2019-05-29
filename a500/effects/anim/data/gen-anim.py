@@ -34,13 +34,13 @@ def main():
     img.seek(n)
     pix = img.load()
     for y in range(img.size[1]):
-      l = []
+      line = []
       p = 1
       for x in range(img.size[0]):
         if p != pix[x, y]:
           p = pix[x, y]
-          l.append(x)
-      println("dc.b", len(l), *l)
+          line.append(x)
+      println("dc.b", len(line), *line)
 
 
 if __name__ == '__main__':

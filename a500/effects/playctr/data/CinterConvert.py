@@ -11,14 +11,16 @@ class TrackRow:
     self.period = i4_period & 0x0fff
     self.inst = (i0_cmd >> 4) | ((i4_period & 0xf000) >> 8)
     self.cmd = i0_cmd & 0x0f
-    self.note = int(round(math.log(856.0 / self.period, 2) * 12.0)) if self.period > 0 else None
+    self.note = int(
+        round(math.log(
+            856.0 / self.period, 2) * 12.0)) if self.period > 0 else None
 
 
 class Instrument:
   def __init__(self, f):
     self.name = f.read(22).rstrip(b'\0').decode()
-    self.length, self.finetune, self.volume, self.repoffset, self.replen = struct.unpack(
-        ">HBBHH", f.read(8))
+    self.length, self.finetune, self.volume, self.repoffset, self.replen = (
+        struct.unpack(">HBBHH", f.read(8)))
     self.samples = None
 
 
@@ -50,7 +52,9 @@ class Module:
 def notename(n):
   if n is None:
     return "   "
-  return ["C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"][n % 12] + str(n // 12 + 1)
+  return [
+      "C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"
+  ][n % 12] + str(n // 12 + 1)
 
 
 def printpattern(pat):
@@ -74,8 +78,8 @@ def error(msg, p, t, r):
 
 # Commandline
 if len(sys.argv) < 3:
-  print(
-      "Usage: %s <input module file> <output binary data file> [<output raw instrument file>]" % sys.argv[0])
+  print("Usage: %s <input module file> <output binary data file> "
+        "[<output raw instrument file>]" % sys.argv[0])
   sys.exit(1)
 module_file = sys.argv[1]
 output_file = sys.argv[2]
@@ -146,8 +150,9 @@ while not stopped and not looped:
       # Skip first row after patterndelay + patternbreak
       skip = False
       continue
-    state = (pos, r, musicspeed, tuple(inst), tuple(period), tuple(volume), tuple(
-        portamento_target), tuple(portamento_speed), tuple(offset_value))
+    state = (pos, r, musicspeed, tuple(inst), tuple(period), tuple(volume),
+             tuple(portamento_target), tuple(portamento_speed),
+             tuple(offset_value))
     if state in states:
       restart = states[state]
       looped = True
@@ -261,7 +266,8 @@ while not stopped and not looped:
         elif offset_value[t] == 0:
           error("No previous offset", p, t, r)
         offset = offset_value[t]
-        if inst[t] != 0 and tr.note and offset * 128 >= module.instruments[inst[t]].length:
+        if inst[t] != 0 and tr.note and offset * 128 >= (
+                module.instruments[inst[t]].length):
           error("Offset beyond end of sample", p, t, r)
           offset = (module.instruments[inst[t]].length - 1) / 128
         offsetdata[t] += [offset] + [0] * (speed - 1)
@@ -294,8 +300,9 @@ while not stopped and not looped:
           error("Portamento with no source", p, t, r)
           period[t] = periodtable[0]
         slide = -tr.arg if cmd == 0x1 else tr.arg
-        perioddata[t] += [max(periodtable[-1], min(period[t] +
-                                                   i * slide, periodtable[0])) for i in range(speed)]
+        perioddata[t] += [max(periodtable[-1],
+                              min(period[t] + i * slide, periodtable[0]))
+                          for i in range(speed)]
         period[t] = perioddata[t][-1]
       elif cmd in [0x3, 0x5]:
         # Toneportamento
@@ -357,7 +364,8 @@ while not stopped and not looped:
 minmax_note = dict()
 inst_counts = [0] * 32
 for track in range(4):
-  for inst, per, offset in zip(notedata[track], perioddata[track], offsetdata[track]):
+  for inst, per, offset in zip(notedata[track],
+                               perioddata[track], offsetdata[track]):
     if inst != 0:
       inst_counts[inst] += 1
       note = periodtable.index(per)
@@ -373,7 +381,8 @@ for track in range(4):
 # List of used instruments
 inst_list = [inst for inst in range(32) if inst_counts[inst] != 0]
 inst_list.sort(key=(
-    lambda i: 99999 - i if inst_params[i] is None else inst_counts[i]), reverse=True)
+    lambda i: 99999 - i if inst_params[i] is None else inst_counts[i]),
+    reverse=True)
 
 
 # Build note ID mapping table
@@ -410,12 +419,15 @@ for track in range(4):
   pvol = 0
   pper = 0
   pdper = 0
-  for (pat, row), vol, per, inst, offset in zip(posdata, volumedata[track], perioddata[track], notedata[track], offsetdata[track]):
+  for (pat, row), vol, per, inst, offset in zip(
+      posdata, volumedata[track], perioddata[track], notedata[track],
+          offsetdata[track]):
     if vol == 64:
       vol = 63
     if inst != 0:
       note = periodtable.index(per)
-      data = 0x8000 | (note_ids[(inst, offset, note)] << NOTE_SHIFT) | (vol << VOLUME_SHIFT)
+      data = 0x8000 | (
+          note_ids[(inst, offset, note)] << NOTE_SHIFT) | (vol << VOLUME_SHIFT)
       initial = False
       pdper = 0
     elif initial:
@@ -446,7 +458,8 @@ for track in range(4):
   if stopped:
     track_data[track].append(0)
 
-while restart > 0 and all(track_data[t][restart - 1] == track_data[t][-1] for t in range(4)):
+while restart > 0 and all(track_data[t][restart - 1] == track_data[t][-1]
+                          for t in range(4)):
   for t in range(4):
     track_data[t].pop()
   restart -= 1
@@ -473,7 +486,8 @@ total_inst_time = 1.0
 last_nonempty_inst = max(i for i in range(
     1, 32) if module.instruments[i].name.strip() != "" or i in inst_list)
 print()
-print("Inst Name                   Length Repeat Idx Count  Low High 9xx  IDs  Error?")
+print("Inst Name                   Length Repeat Idx Count  "
+      "Low High 9xx  IDs  Error?")
 for i in range(1, last_nonempty_inst + 1):
   inst = module.instruments[i]
 
@@ -500,7 +514,8 @@ for i in range(1, last_nonempty_inst + 1):
   if inst.repoffset == 0 and inst.replen in [0, 1]:
     replen = 0
     max_offset = max(offsets) * 128
-    while length > max_offset and inst.samples[(length - 1) * 2:length * 2] == "\0\0":
+    while length > max_offset and inst.samples[
+            (length - 1) * 2:length * 2] == "\0\0":
       length -= 1
   else:
     replen = inst.replen
@@ -528,7 +543,8 @@ for i in range(1, last_nonempty_inst + 1):
     dist = (p[8] << 12) | (p[9] << 8) | (p[10] << 4) | p[11]
 
     inst_data[index] = struct.pack(">11H", length, replen, mpitch, mod,
-                                   bpitch, attack, dist, decay, mpitchdecay, moddecay, bpitchdecay)
+                                   bpitch, attack, dist, decay, mpitchdecay,
+                                   moddecay, bpitchdecay)
     total_inst_time += (20 + p[8] + p[9] + p[10] + p[11]) * length * 0.000017
     inst_type = "C"
   else:
@@ -591,7 +607,9 @@ else:
 
 if raw_inst_size > 0 and raw_inst_file is None:
   print()
-  print("Warning: Raw instruments used, but no raw instrument output file specified!")
+  print("Warning: Raw instruments used, "
+        "but no raw instrument output file specified!")
 if raw_inst_size == 0 and raw_inst_file is not None:
   print()
-  print("Warning: Raw instrument output file specified, but no raw instruments used!")
+  print("Warning: Raw instrument output file specified, "
+        "but no raw instruments used!")

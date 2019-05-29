@@ -46,7 +46,8 @@ class IffFile(collections.Sequence):
 
       logging.info('Reading file "%s" as IFF/%s type.' % (filename, self.form))
 
-      if chunk.getname().decode() == 'FORM' and chunk.read(4).decode() == self.form:
+      if chunk.getname().decode() == 'FORM' and (
+              chunk.read(4).decode() == self.form):
         iff.seek(12)
 
         while True:

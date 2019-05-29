@@ -11,5 +11,6 @@ if __name__ == '__main__':
       for i in range(16):
         for j in range(16):
           row = ', '.join(
-              ["${:02x}".format((i + (j - i) * k // 15) * 16) for k in range(16)])
+              ["${:02x}".format((i + (j - i) * k // 15) * 16)
+               for k in range(16)])
           print('\tdc.b\t' + row)

@@ -15,14 +15,14 @@ def UnRLE(bytes_in):
     cmd = bytes_in.pop(0)
 
     if cmd <= 127:
-      l = cmd + 1
-      s = bytes_in[:l]
-      bytes_in = bytes_in[l:]
+      m = cmd + 1
+      s = bytes_in[:m]
+      bytes_in = bytes_in[m:]
       bytes_out.write(s)
     else:
-      l = 257 - cmd
+      m = 257 - cmd
       s = bytes_in.pop(0)
-      bytes_out.write(chr(s) * l)
+      bytes_out.write(chr(s) * m)
 
   out = bytes_out.getvalue()
   bytes_out.close()
@@ -44,13 +44,14 @@ def Deinterleave(data, width, height, depth):
 
 
 BitMapHeader = namedtuple('BitMapHeader', (
-  'w', 'h', 'x', 'y', 'nPlanes', 'masking', 'compression', 'transparentColor',
-  'xAspect', 'yAspect', 'pageWidth', 'pageHeight'))
+    'w', 'h', 'x', 'y', 'nPlanes', 'masking', 'compression',
+    'transparentColor', 'xAspect', 'yAspect', 'pageWidth',
+    'pageHeight'))
 Color = namedtuple('Color', 'r g b')
 ColorRange = namedtuple('ColorRange', 'rate flags low high')
 PaletteChanges = namedtuple('PaletteChanges', (
-  'compression', 'flags', 'startLine', 'lineCount', 'changedLines',
-  'minReg', 'maxReg', 'maxChanges', 'totalChanges'))
+    'compression', 'flags', 'startLine', 'lineCount', 'changedLines',
+    'minReg', 'maxReg', 'maxChanges', 'totalChanges'))
 LineChanges = namedtuple('LineChanges', ('line', 'colorChange'))
 
 
