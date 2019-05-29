@@ -3,7 +3,7 @@
 PYFILES=$(find a500 \( -name '*.py' -printf 'a500/%P\n' \))
 PYEXTRA=""
 
-pycodestyle --ignore=E111,W191,E121,E231 ${PYEXTRA} ${PYFILES}
+pycodestyle --ignore=E111,E114 ${PYEXTRA} ${PYFILES}
 RES=$?
 
 if ! [ $RES -eq 0 ]
