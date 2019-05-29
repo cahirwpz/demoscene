@@ -205,26 +205,26 @@ def extract(archive, patterns, force):
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(
-    description='Tool for handling Read-Only FileSystem.')
+      description='Tool for handling Read-Only FileSystem.')
   parser.add_argument(
-    'action', metavar='ACTION', type=str,
-    choices=['create', 'extract', 'list'],
-    help='Action to perform of filesystem image.')
+      'action', metavar='ACTION', type=str,
+      choices=['create', 'extract', 'list'],
+      help='Action to perform of filesystem image.')
   parser.add_argument(
-    '-f', '--force', action='store_true',
-    help='If output file exist, the tool will overwrite it.')
+      '-f', '--force', action='store_true',
+      help='If output file exist, the tool will overwrite it.')
   parser.add_argument(
-    '--floppy', action='store_true',
-    help='Filesystem image will be tuned to disk floppy representation.')
+      '--floppy', action='store_true',
+      help='Filesystem image will be tuned to disk floppy representation.')
   parser.add_argument(
-    '-b', '--bootcode', metavar='BOOTCODE', type=str,
-    help='Boot code to be embedded into floppy disk representation.')
+      '-b', '--bootcode', metavar='BOOTCODE', type=str,
+      help='Boot code to be embedded into floppy disk representation.')
   parser.add_argument(
-    'image', metavar='IMAGE', type=str,
-    help='FileSystem image file.')
+      'image', metavar='IMAGE', type=str,
+      help='FileSystem image file.')
   parser.add_argument(
-    'files', metavar='FILES', type=str, nargs='*',
-    help='Files to add to / extract from filesystem image.')
+      'files', metavar='FILES', type=str, nargs='*',
+      help='Files to add to / extract from filesystem image.')
   args = parser.parse_args()
 
   if args.bootcode:

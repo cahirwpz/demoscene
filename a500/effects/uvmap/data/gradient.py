@@ -7,7 +7,8 @@ from math import sqrt
 
 def getcolors(im):
   pal = im.getpalette()
-  return [(pal[i*3], pal[i*3+1], pal[i*3+2]) for _, i in im.getcolors()]
+  return [(pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2]) for _, i in im.getcolors()]
+
 
 if __name__ == "__main__":
   im1 = Image.open('texture-16-1.png')

@@ -26,7 +26,7 @@ if __name__ == "__main__":
       x = lerp(-D, D, float(i) / size[0])
       y = lerp(-D, D, float(j) / size[1])
 
-      d = dist(x, y, 0, 0);
+      d = dist(x, y, 0, 0)
 
       if d < D:
         p = constrain(int(sq(1.0 - d) * 128), 0, 31)

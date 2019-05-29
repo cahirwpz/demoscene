@@ -82,16 +82,16 @@ class LWOParserMixin(object):
 
 class LWO2(IffFile, LWOParserMixin):
   ChunkAliasMap = {
-    'Int16': ['AXIS', 'CSYS', 'ENAB', 'IMAG', 'NEGA', 'NSTA', 'PIXB', 'PROJ',
-              'SIDE'],
-    'Int32': ['FLAG', 'VERS'],
-    'FloatWithEnvelope': ['ALPH', 'DIFF', 'GLOS', 'LUMI', 'SPEC', 'WRPH',
-                          'WRPW', 'TRAN', 'TRNL', 'BUMP', 'RIND', 'REFL',
-                          'TAMP'],
-    'Float': ['NZOM', 'SMAN'],
-    'String': ['OREF', 'STIL'],
-    'Color12': ['COLR'],
-    'CNTR': ['ROTA', 'SIZE']}
+      'Int16': ['AXIS', 'CSYS', 'ENAB', 'IMAG', 'NEGA', 'NSTA', 'PIXB', 'PROJ',
+                'SIDE'],
+      'Int32': ['FLAG', 'VERS'],
+      'FloatWithEnvelope': ['ALPH', 'DIFF', 'GLOS', 'LUMI', 'SPEC', 'WRPH',
+                            'WRPW', 'TRAN', 'TRNL', 'BUMP', 'RIND', 'REFL',
+                            'TAMP'],
+      'Float': ['NZOM', 'SMAN'],
+      'String': ['OREF', 'STIL'],
+      'Color12': ['COLR'],
+      'CNTR': ['ROTA', 'SIZE']}
 
   def __init__(self):
     super(LWO2, self).__init__('LWO2')
@@ -379,19 +379,19 @@ def convertLWO2(lwo, output):
 
 def main():
   parser = argparse.ArgumentParser(
-    description=(
-      'Converts Lightwave Object (LWOB/LWO2) file to textual representation.'))
+      description=(
+          'Converts Lightwave Object (LWOB/LWO2) file to textual representation.'))
   parser.add_argument(
-    '-q', '--quiet', action='store_true',
-    help='Silence out diagnostic messages.')
+      '-q', '--quiet', action='store_true',
+      help='Silence out diagnostic messages.')
   parser.add_argument(
-    '-f', '--force', action='store_true',
-    help='If the output object exists, the tool will' 'overwrite it.')
+      '-f', '--force', action='store_true',
+      help='If the output object exists, the tool will' 'overwrite it.')
   parser.add_argument(
-    'input', metavar='LWO', type=str, help='Input LightWave object file name.')
+      'input', metavar='LWO', type=str, help='Input LightWave object file name.')
   parser.add_argument(
-    'output', metavar='OBJ', type=str, nargs='?',
-    help='Output object file name.')
+      'output', metavar='OBJ', type=str, nargs='?',
+      help='Output object file name.')
   args = parser.parse_args()
 
   args.input = os.path.abspath(args.input)
@@ -408,7 +408,7 @@ def main():
 
     if os.path.exists(args.output) and not args.force:
       raise SystemExit(
-        'Object file "%s" already exists (use "-f" to override).' % args.output)
+          'Object file "%s" already exists (use "-f" to override).' % args.output)
 
   lwo = LWO2.fromFile(args.input)
   if not lwo:
@@ -424,6 +424,7 @@ def main():
     logging.info('Writing object structure to %s file.' % args.output)
     with open(str(args.output), 'wb') as f:
       convertLWO2(lwo, f)
+
 
 if __name__ == '__main__':
   main()

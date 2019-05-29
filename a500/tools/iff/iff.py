@@ -67,7 +67,7 @@ class IffFile(collections.Sequence):
             self.chunks.append(self.readChunk(name, data))
       else:
         logging.warning(
-          'File %s is not of IFF/%s type.' % (filename, self.form))
+            'File %s is not of IFF/%s type.' % (filename, self.form))
         return False
 
     return True

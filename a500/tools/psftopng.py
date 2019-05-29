@@ -99,7 +99,7 @@ if __name__ == '__main__':
   logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
 
   parser = argparse.ArgumentParser(
-    description='Convert PSF font file to PNG image.')
+      description='Convert PSF font file to PNG image.')
   parser.add_argument('input', metavar='INPUT', type=str,
                       help='PC Screen Font file.')
   args = parser.parse_args()
