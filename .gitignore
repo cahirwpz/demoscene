@@ -3,6 +3,9 @@
 .ropeproject
 _UAEFSDB.___
 artwork/
+# ide folders
+.idea
+.vscode
 
 # executable files, floppy images and archives
 *.adf
