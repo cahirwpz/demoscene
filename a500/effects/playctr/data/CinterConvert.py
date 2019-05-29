@@ -554,8 +554,8 @@ for i in range(1, last_nonempty_inst + 1):
     inst_type = "R"
 
   print("%02d %c %-22s %6d %6s  %2d %5d  %3s  %3s %3d %4d  %s" % (
-      i, inst_type, inst.name, length *
-        2, "" if not replen else replen * 2, index, inst_counts[i],
+      i, inst_type, inst.name, length * 2,
+      "" if not replen else replen * 2, index, inst_counts[i],
         notename(min_note), notename(max_note), len(
             offsets) - 1, n_note_ids, msg
         ))

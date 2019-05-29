@@ -37,8 +37,8 @@ def Neon3(i, j):
   y = lerp(-0.8, 1.2, float(j) / height)
 
   a = atan2(x, y)
-  r = dist(x, y, 0.0, 0.0) + 0.2 * saw(5.0 * a /
-                                       (2.0 * pi)) + 0.1 * abs(sin(5.0 * a))
+  r = dist(x, y, 0.0, 0.0) + 0.2 * saw(
+      5.0 * a / (2.0 * pi)) + 0.1 * abs(sin(5.0 * a))
   # r = dist(x, y, 0.0, 0.0) + 0.2 * abs(sin(5.0 * a))
 
   if r == 0:
