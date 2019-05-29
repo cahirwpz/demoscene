@@ -10,7 +10,7 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - run: './check-pep8.sh'
+      - run: './style-python.sh'
 
   build:
     <<: *defaults
