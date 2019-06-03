@@ -1,12 +1,19 @@
 version: 2
 
-jobs:
-  build:
+defaults: &defaults
+    working_directory: ~/demoscene
     docker:
       - image: cahirwpz/demoscene:latest
 
-    working_directory: ~/demoscene
+jobs:
+  check_style:
+    <<: *defaults
+    steps:
+      - checkout
+      - run: './style-python.sh'
 
+  build:
+    <<: *defaults
     steps:
       - checkout
       - run:
@@ -26,3 +33,10 @@ jobs:
           command: 'cd a500 && make'
       - store_artifacts:
           path: /demoscene.tar.gz
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - check_style
+      - build

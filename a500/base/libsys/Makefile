@@ -37,4 +37,4 @@ include ../../build.mk
 libsys.a: $(OBJECTS)
 
 sintab.c: sintab.py
-	$(PYTHON) sintab.py
+	$(PYTHON3) sintab.py

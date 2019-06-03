@@ -1,14 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import logging
 import struct
 import binascii
-import StringIO
+import io
 import collections
 from chunk import Chunk
 
 
-class IffData(StringIO.StringIO):
+class IffData(io.BytesIO):
   def eof(self):
     return self.tell() >= len(self.getvalue())
 
@@ -41,12 +41,13 @@ class IffFile(collections.Sequence):
   def load(self, filename):
     self.chunks = []
 
-    with open(filename) as iff:
+    with open(filename, 'rb') as iff:
       chunk = Chunk(iff)
 
       logging.info('Reading file "%s" as IFF/%s type.' % (filename, self.form))
 
-      if chunk.getname() == 'FORM' and chunk.read(4) == self.form:
+      if chunk.getname().decode() == 'FORM' and (
+              chunk.read(4).decode() == self.form):
         iff.seek(12)
 
         while True:
@@ -55,7 +56,7 @@ class IffFile(collections.Sequence):
           except EOFError:
             break
 
-          name = chunk.getname()
+          name = chunk.getname().decode()
           size = chunk.getsize()
           data = chunk.read()
 
@@ -66,26 +67,26 @@ class IffFile(collections.Sequence):
 
             self.chunks.append(self.readChunk(name, data))
       else:
-        logging.warn(
-          'File %s is not of IFF/%s type.' % (filename, self.form))
+        logging.warning(
+            'File %s is not of IFF/%s type.' % (filename, self.form))
         return False
 
     return True
 
   def save(self, filename):
-    with open(filename, 'w') as iff:
+    with open(filename, 'wb') as iff:
       logging.info('Writing file "%s"' % filename)
 
-      iff.write('FORM' + '\000' * 4 + self.form)
+      iff.write(b'FORM' + b'\000' * 4 + self.form.encode())
 
       for chunk in self.chunks:
         data = self.writeChunk(chunk)
         if data:
-          iff.write(chunk.name)
+          iff.write(chunk.name.encode())
           iff.write(struct.pack('>I', len(data)))
           iff.write(data)
           if len(data) % 2 == 1:
-            iff.write('\000')
+            iff.write(b'\000')
 
       size = iff.tell() - 8
       iff.seek(4)

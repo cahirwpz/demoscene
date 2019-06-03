@@ -32,7 +32,6 @@ CPPFLAGS += -I$(TOPDIR)/base/include
 # Common tools definition
 CP := cp -a
 RM := rm -v -f
-PYTHON := PYTHONPATH="$(TOPDIR)/pylib:$$PYTHONPATH" python2 
 PYTHON3 := PYTHONPATH="$(TOPDIR)/pylib:$$PYTHONPATH" python3
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py

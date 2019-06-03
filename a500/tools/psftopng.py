@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os.path
 import struct
@@ -14,8 +14,8 @@ PSF1_MAGIC = '\x36\x04'
 PSF1_MODE512 = 0x01
 PSF1_MODEHASTAB = 0x02
 PSF1_MODEHASSEQ = 0x04
-PSF1_SEPARATOR = u'\uFFFF'
-PSF1_STARTSEQ = u'\uFFFE'
+PSF1_SEPARATOR = '\uFFFF'
+PSF1_STARTSEQ = '\uFFFE'
 
 PSF2_MAGIC = '\x72\xb5\x4a\x86'
 PSF2_HAS_UNICODE_TABLE = 0x01
@@ -74,7 +74,7 @@ class PSF(Mapping):
         if uchar == '':
           break
         if uchar == PSF2_SEPARATOR:
-          for uchar in ustr.decode('utf-8'):
+          for uchar in ustr:
             self._char_map[uchar] = index
           index += 1
           ustr = ''
@@ -82,13 +82,13 @@ class PSF(Mapping):
           ustr += uchar
 
   def fromFile(self, path):
-    with open(path) as f:
-      if f.read(2) == PSF1_MAGIC:
+    with open(path, 'rb') as f:
+      if f.read(2).decode("utf-8") == PSF1_MAGIC:
         return self.readPSF1(f)
       logging.info("Data doesn't start with PSF1 magic prefix.")
 
-    with open(path) as f:
-      if f.read(4) == PSF2_MAGIC:
+    with open(path, 'rb') as f:
+      if f.read(4).decode("utf-8") == PSF2_MAGIC:
         return self.readPSF2(f)
       logging.info("Data doesn't start with PSF2 magic prefix.")
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
   logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
 
   parser = argparse.ArgumentParser(
-    description='Convert PSF font file to PNG image.')
+      description='Convert PSF font file to PNG image.')
   parser.add_argument('input', metavar='INPUT', type=str,
                       help='PC Screen Font file.')
   args = parser.parse_args()

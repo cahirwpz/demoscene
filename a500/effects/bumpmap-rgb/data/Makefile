@@ -4,11 +4,11 @@ include ../../build.mk
 
 bumpmap.bin: bumpmap.py bumpmap.png
 	@echo "[$(DIR):gen] $< -> $@"
-	$(PYTHON) bumpmap.py bumpmap.png
+	$(PYTHON3) bumpmap.py bumpmap.png
 
 light.png: light.py
 	@echo "[$(DIR):gen] $< -> $@"
-	$(PYTHON) light.py
+	$(PYTHON3) light.py
 
 clean::
 	$(RM) light.png bumpmap.bin

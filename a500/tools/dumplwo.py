@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import logging
@@ -21,7 +21,7 @@ class LWOParserMixin(object):
     chunks = []
 
     while not data.eof():
-      name = data.read(4)
+      name = data.read(4).decode()
       size = self.readInt16(data)
       chunk = data.read(size)
       logging.debug('Encountered %s subchunk of size %d' % (name, size))
@@ -54,11 +54,11 @@ class LWOParserMixin(object):
 
   def readString(self, data):
     begin = data.tell()
-    string = data.getvalue()
-    end = string.index('\0', begin) + 1
+    byteData = data.getvalue()
+    end = byteData.index(b'\0', begin) + 1
     if end & 1:
       end += 1
-    return data.read(end - begin).rstrip('\0')
+    return data.read(end - begin).decode("utf-8").rstrip('\0')
 
   def readVertex(self, data):
     return Vertex(*struct.unpack('>fff', data.read(12)))
@@ -73,7 +73,7 @@ class LWOParserMixin(object):
 
   def readCLIP(self, data):
     index = self.readInt32(data)
-    return (index, self.parseMiniChunks(data.read()))
+    return index, self.parseMiniChunks(data.read())
 
   @property
   def points(self):
@@ -82,16 +82,16 @@ class LWOParserMixin(object):
 
 class LWO2(IffFile, LWOParserMixin):
   ChunkAliasMap = {
-    'Int16': ['AXIS', 'CSYS', 'ENAB', 'IMAG', 'NEGA', 'NSTA', 'PIXB', 'PROJ',
-              'SIDE'],
-    'Int32': ['FLAG', 'VERS'],
-    'FloatWithEnvelope': ['ALPH', 'DIFF', 'GLOS', 'LUMI', 'SPEC', 'WRPH',
-                          'WRPW', 'TRAN', 'TRNL', 'BUMP', 'RIND', 'REFL',
-                          'TAMP'],
-    'Float': ['NZOM', 'SMAN'],
-    'String': ['OREF', 'STIL'],
-    'Color12': ['COLR'],
-    'CNTR': ['ROTA', 'SIZE']}
+      'Int16': ['AXIS', 'CSYS', 'ENAB', 'IMAG', 'NEGA', 'NSTA', 'PIXB', 'PROJ',
+                'SIDE'],
+      'Int32': ['FLAG', 'VERS'],
+      'FloatWithEnvelope': ['ALPH', 'DIFF', 'GLOS', 'LUMI', 'SPEC', 'WRPH',
+                            'WRPW', 'TRAN', 'TRNL', 'BUMP', 'RIND', 'REFL',
+                            'TAMP'],
+      'Float': ['NZOM', 'SMAN'],
+      'String': ['OREF', 'STIL'],
+      'Color12': ['COLR'],
+      'CNTR': ['ROTA', 'SIZE']}
 
   def __init__(self):
     super(LWO2, self).__init__('LWO2')
@@ -152,7 +152,7 @@ class LWO2(IffFile, LWOParserMixin):
     return [name, self.parseMiniChunks(data.read(size))]
 
   def readPTAG(self, data):
-    tagType = data.read(4)
+    tagType = data.read(4).decode()
 
     assert tagType in ['SURF', 'COLR', 'PART']
 
@@ -282,7 +282,8 @@ class LWOB(IffFile, LWOParserMixin):
 
 def convertLWO2(lwo, output):
   def out(s):
-    print >>output, str(s)
+    string_as_bytes = "{0}\n".format(s).encode()
+    output.write(string_as_bytes)
 
   tags = list(lwo['TAGS'].data)
   clips = lwo.get('CLIP', always_list=True)
@@ -378,19 +379,20 @@ def convertLWO2(lwo, output):
 
 def main():
   parser = argparse.ArgumentParser(
-    description=(
-      'Converts Lightwave Object (LWOB/LWO2) file to textual representation.'))
+      description=("Converts Lightwave Object(LWOB/LWO2) "
+                   "file to textual representation."))
   parser.add_argument(
-    '-q', '--quiet', action='store_true',
-    help='Silence out diagnostic messages.')
+      '-q', '--quiet', action='store_true',
+      help='Silence out diagnostic messages.')
   parser.add_argument(
-    '-f', '--force', action='store_true',
-    help='If the output object exists, the tool will' 'overwrite it.')
+      '-f', '--force', action='store_true',
+      help='If the output object exists, the tool will' 'overwrite it.')
   parser.add_argument(
-    'input', metavar='LWO', type=str, help='Input LightWave object file name.')
+      'input', metavar='LWO', type=str,
+      help='Input LightWave object file name.')
   parser.add_argument(
-    'output', metavar='OBJ', type=str, nargs='?',
-    help='Output object file name.')
+      'output', metavar='OBJ', type=str, nargs='?',
+      help='Output object file name.')
   args = parser.parse_args()
 
   args.input = os.path.abspath(args.input)
@@ -407,7 +409,8 @@ def main():
 
     if os.path.exists(args.output) and not args.force:
       raise SystemExit(
-        'Object file "%s" already exists (use "-f" to override).' % args.output)
+          'Object file "%s" already exists '
+          '(use "-f" to override).' % args.output)
 
   lwo = LWO2.fromFile(args.input)
   if not lwo:
@@ -421,8 +424,9 @@ def main():
 
   if args.output and lwo.form == 'LWO2':
     logging.info('Writing object structure to %s file.' % args.output)
-    with open(str(args.output), 'w') as f:
+    with open(str(args.output), 'wb') as f:
       convertLWO2(lwo, f)
+
 
 if __name__ == '__main__':
   main()

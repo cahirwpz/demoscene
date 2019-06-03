@@ -4,7 +4,7 @@ include ../../build.mk
 
 plotter-flares.png:
 	@echo "[$(DIR):gen] $@"
-	$(PYTHON) plotter-flares.py
+	$(PYTHON3) plotter-flares.py
 	$(OPTIPNG) $@
 
 clean::

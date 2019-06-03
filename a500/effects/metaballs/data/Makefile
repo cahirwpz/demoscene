@@ -11,7 +11,7 @@ include ../../build.mk
 
 metaball.png: gen-metaball.py
 	@echo "[$(DIR):gen] $< -> $@"
-	$(PYTHON) $<
+	$(PYTHON3) $<
 
 clean::
 	$(RM) $(IMAGES)
