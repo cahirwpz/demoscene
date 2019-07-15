@@ -78,8 +78,8 @@ class Layer(object):
     height = int(node.attrib['height'])
     data = node[0].text
     tiles = array('I')
-    tiles.fromstring(zlib.decompress(base64.b64decode(data),
-                                     16 + zlib.MAX_WBITS))
+    tiles.frombytes(zlib.decompress(base64.b64decode(data),
+                                    16 + zlib.MAX_WBITS))
     return cls(name, width, height, tiles)
 
   def __init__(self, name, width, height, tiles):
@@ -101,7 +101,7 @@ class Layer(object):
     tab = array('H', self.tiles)
     tab.byteswap()
     with open(name, 'wb') as f:
-      f.write(tab.tostring())
+      f.write(tab.tobytes())
 
 
 def preview(name, layer, tileset):
