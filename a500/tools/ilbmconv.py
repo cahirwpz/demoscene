@@ -25,7 +25,7 @@ def c2p(pix, width, height, depth):
         data.append(word)
 
   data.byteswap()
-  return data.tostring()
+  return data.tobytes()
 
 
 def convert(input, output):
