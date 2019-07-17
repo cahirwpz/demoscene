@@ -145,6 +145,9 @@ void bzero(APTR s, ULONG n);
   ADD2LIST(dtor, __EXIT_LIST__, 22); \
   asm(".stabs \"___EXIT_LIST__\",20,0,0," #pri "+128")
 
+/* Add to library auto-open list. */
+#define ADD2LIB(a) ADD2LIST(a, __LIB_LIST__, 24)
+
 /* Make symbol alias from a to b. */
 #define ALIAS(a,b) \
   asm(".stabs \"_" #a "\",11,0,0,0;.stabs \"_" #b "\",1,0,0,0")

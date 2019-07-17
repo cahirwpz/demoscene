@@ -8,7 +8,7 @@ AS	:= vasm -quiet
 CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 
 ASFLAGS	:= -x -m68010
-LDFLAGS	:= -m68000 -msmall-code -nostartfiles
+LDFLAGS	:= -m68000 -msmall-code -nostartfiles -nostdlib
 # The '-O2' option does not turn on optimizations '-funroll-loops',
 # '-funroll-all-loops' and `-fstrict-aliasing'.
 OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce
@@ -24,9 +24,7 @@ endif
 # Don't reload library base for each call.
 DFLAGS := -D__CONSTLIBBASEDECL__=const
 
-# libnix13.a contains a few functions that don't depend on utility.library
-# which is not present in Kickstart 1.3
-LDLIBS	+= -lnix13 -lstubs
+LDLIBS	=
 CPPFLAGS += -I$(TOPDIR)/base/include
 
 # Common tools definition

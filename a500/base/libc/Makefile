@@ -4,7 +4,11 @@ SOURCES_ASM := \
 	__mulsi3.s \
 	__udivsi3.s \
 	__umodsi3.s \
-	bzero.s
+	bzero.s \
+	memcpy.s \
+	memset.s \
+	strcmp.s \
+	strcpy.s
 
 all: libc.a
 

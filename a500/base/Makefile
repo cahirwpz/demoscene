@@ -13,8 +13,7 @@ SUBDIRS := \
 	libgfx \
 	libp61 \
 	libsync \
-	libsys \
-	tests
+	libsys
 
 all: crt0.o bootloader.bin ctags cscope $(foreach dir,$(SUBDIRS),build-$(dir))
 

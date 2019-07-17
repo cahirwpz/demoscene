@@ -13,6 +13,9 @@ SOURCES_C := \
 	io-dos.c \
 	io-extra.c \
 	io-floppy.c \
+	lib-graphics.c \
+	lib-mathffp.c \
+	lib-list.c \
 	keyboard.c \
 	memory.c \
 	mouse.c \
