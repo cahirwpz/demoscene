@@ -1,7 +1,7 @@
 #!/bin/sh
 
-PYFILES=$(find a500 \( -name '*.py' -printf 'a500/%P\n' \))
-PYEXTRA=""
+PYFILES=$(find a500 -name '*.py')
+PYEXTRA="a500/effects/RunInUAE"
 
 pycodestyle --ignore=E111,E114 ${PYEXTRA} ${PYFILES}
 RES=$?
