@@ -39,4 +39,6 @@ workflows:
   build_and_test:
     jobs:
       - check_style
-      - build
+      - build:
+          requires:
+            - check_style
