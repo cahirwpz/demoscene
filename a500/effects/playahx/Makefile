@@ -1,6 +1,6 @@
 DATA := data/ahxWaves \
 	data/ahxWaves.Location \
-	data/jazzcat-electric_city.ahx
+	$(wildcard data/*.ahx)
 
 LIBS := libahx
 

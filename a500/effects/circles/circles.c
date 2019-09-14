@@ -9,7 +9,7 @@
 static BitmapT *screen;
 static CopListT *cp;
 
-static void Load() {
+static void Load(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
 
@@ -21,24 +21,24 @@ static void Load() {
   CopEnd(cp);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
 
-static void Init() {
+static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
   {
-    LONG lines = ReadLineCounter();
-    WORD r;
+    int lines = ReadLineCounter();
+    short r;
 
     for (r = 2; r < screen->height / 2 - 2; r += 2)
       Circle(screen, 0, screen->width / 2, screen->height / 2, r);
 
-    Log("circles: %ld\n", ReadLineCounter() - lines);
+    Log("circles: %d\n", ReadLineCounter() - lines);
   }
 }
 
-EffectT Effect = { Load, UnLoad, Init };
+EffectT Effect = { Load, UnLoad, Init, NULL, NULL, NULL };

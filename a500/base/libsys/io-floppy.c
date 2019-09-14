@@ -1,5 +1,3 @@
-#include <proto/exec.h>
-
 #include "config.h"
 #include "memory.h"
 #include "io.h"
@@ -14,61 +12,61 @@
 #define IOF_ERR 0x8000
 
 typedef struct {
-  ULONG offset;
-  ULONG length;
-  STRPTR name;
+  u_int offset;
+  u_int length;
+  char *name;
 } FileEntryT;
 
 typedef struct {
-  STRPTR names;
+  char *names;
   FileEntryT file[0];
 } RootDirT;
 
 static RootDirT *rootDir = NULL;
 
 struct File {
-  ULONG offset;
-  ULONG length;
+  u_int offset;
+  u_int length;
 
-  UWORD flags;
-  LONG pos;
+  u_short flags;
+  u_int pos;
 
   struct {
-    LONG left;
-    UBYTE *pos;
-    UBYTE *track;
+    u_int left;
+    u_char *pos;
+    u_char *track;
   } buf;
 };
 
 ALIAS(Print, Log);
 
-static inline BOOL ReadTrack(APTR data, LONG offset) {
+static inline bool ReadTrack(void *data, int offset) {
   FloppyTrackRead(div16(offset, TD_TRACK));
   FloppyTrackDecode(data);
-  return TRUE;
+  return true;
 }
 
-static __regargs BOOL FillBuffer(FileT *file) {
-  LONG abspos = file->offset + file->pos;
-  LONG waste = mod16(abspos, TD_TRACK);
+static __regargs bool FillBuffer(FileT *file) {
+  u_int abspos = file->offset + file->pos;
+  u_int waste = mod16(abspos, TD_TRACK);
 
   if (file->pos == file->length) {
     file->flags |= IOF_EOF;
-    return FALSE;
+    return false;
   }
 
   if (!ReadTrack(file->buf.track, abspos - waste)) {
     file->flags |= IOF_ERR;
-    return FALSE;
+    return false;
   }
 
   file->buf.pos = file->buf.track + waste;
   file->buf.left = min(file->length - file->pos, TD_TRACK - waste);
   file->pos += file->buf.left;
-  return TRUE;
+  return true;
 }
 
-static __regargs FileT *NewFile(LONG length, LONG offset) {
+static __regargs FileT *NewFile(int length, int offset) {
   FileT *file = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
 
   file->length = length;
@@ -79,7 +77,7 @@ static __regargs FileT *NewFile(LONG length, LONG offset) {
   return file;
 }
 
-static FileEntryT *LookupFile(CONST STRPTR path asm("d1")) {
+static FileEntryT *LookupFile(const char *path asm("d1")) {
   FileEntryT *entry = rootDir->file;
 
   for (entry = rootDir->file; entry->name; entry++)
@@ -89,10 +87,10 @@ static FileEntryT *LookupFile(CONST STRPTR path asm("d1")) {
   return NULL;
 }
 
-FileT *OpenFile(CONST STRPTR path asm("d1"), UWORD flags asm("d0")) {
+FileT *OpenFile(const char *path asm("d1"), u_short flags asm("d0") __unused) {
   FileEntryT *entry;
   if ((entry = LookupFile(path))) {
-    Log("Found '%s', length: %ld, offset: %ld\n",
+    Log("Found '%s', length: %d, offset: %d\n",
         path, entry->length, entry->offset);
     return NewFile(entry->length, entry->offset);
   }
@@ -106,11 +104,11 @@ void CloseFile(FileT *file asm("a0")) {
   }
 }
 
-BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
+bool FileRead(FileT *file asm("a0"), void *buf asm("d2"), u_int size asm("d3")) {
   if (!file || size == 0 || (file->flags & IOF_ERR))
-    return FALSE;
+    return false;
 
-  // Log("[FileRead] $%lx $%lx %ld\n", (LONG)file, (LONG)buf, (LONG)size);
+  // Log("[FileRead] $%p $%p %d\n", file, buf, size);
 
   while (size > 0) {
     if (!file->buf.left && !FillBuffer(file))
@@ -118,9 +116,9 @@ BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
 
     {
       /* Read to the end of buffer or less. */
-      LONG length = min(size, file->buf.left);
+      int length = min(size, file->buf.left);
 
-      CopyMem(file->buf.pos, buf, length);
+      memcpy(buf, file->buf.pos, length);
 
       file->buf.pos += length;
       file->buf.left -= length;
@@ -131,11 +129,11 @@ BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
   return size == 0; /* have we read everything? */
 }
 
-BOOL FileSeek(FileT *file asm("a0"), LONG pos asm("d2"), LONG mode asm("d3")) {
+bool FileSeek(FileT *file asm("a0"), int pos asm("d2"), int mode asm("d3")) {
   if (!file || (file->flags & IOF_ERR))
-    return FALSE;
+    return false;
   
-  // Log("[FileSeek] $%lx %ld %ld\n", (LONG)file, (LONG)pos, (LONG)mode);
+  // Log("[FileSeek] $%p %d %d\n", file, pos, mode);
 
   file->flags &= ~IOF_EOF;
 
@@ -145,36 +143,36 @@ BOOL FileSeek(FileT *file asm("a0"), LONG pos asm("d2"), LONG mode asm("d3")) {
   }
 
   if (mode == SEEK_SET) {
-    LONG bufsize = file->buf.pos - file->buf.track + (LONG)file->buf.left;
-    LONG bufstart = file->pos - bufsize;
-    LONG bufend = file->pos;
+    int bufsize = file->buf.pos - file->buf.track + (int)file->buf.left;
+    int bufstart = file->pos - bufsize;
+    int bufend = file->pos;
 
     /* New position is within buffer boundaries. */
     if ((pos >= bufstart) && (pos < bufend)) {
       file->buf.pos = file->buf.track + pos - bufstart;
       file->buf.left = file->pos - pos;
-      return TRUE;
+      return true;
     }
 
     /* New position is not within file. */
-    if ((pos < 0) || (pos > file->length))
-      return FALSE;
+    if ((pos < 0) || (pos > (int)file->length))
+      return false;
 
     file->pos = pos;
     return FillBuffer(file);
   }
 
-  return FALSE;
+  return false;
 }
 
-LONG GetFileSize(CONST STRPTR path asm("d1")) {
+int GetFileSize(const char *path asm("d1")) {
   FileEntryT *entry;
   if ((entry = LookupFile(path)))
     return entry->length;
   return -1;
 }
 
-LONG GetCursorPos(FileT *file asm("a0")) {
+int GetCursorPos(FileT *file asm("a0")) {
   if (file && !(file->flags & IOF_ERR))
     return file->pos - file->buf.left;
   return -1;
@@ -183,20 +181,20 @@ LONG GetCursorPos(FileT *file asm("a0")) {
 #define ONSTACK(x) (&(x)), sizeof((x))
 
 typedef struct {
-  ULONG offset;
-  ULONG length;
+  u_int offset;
+  u_int length;
 } DirEntT;
 
 typedef struct {
-  UWORD files;
-  UWORD names;
+  u_short files;
+  u_short names;
   DirEntT dirent[0];
 } DirT;
 
-static void ReadDir() {
+static void ReadDir(void) {
   DirT dir;
   FileT *fh;
-  ULONG dirLen, rootDirLen;
+  u_int dirLen, rootDirLen;
 
   /* Create a file that represent whole floppy disk without boot sector. */
   fh = NewFile(TD_DISK - TD_SECTOR * 2, TD_SECTOR * 2);
@@ -212,7 +210,7 @@ static void ReadDir() {
 
   /* read directory entries */
   {
-    WORD n = dir.files;
+    short n = dir.files;
     FileEntryT *entry = rootDir->file;
 
     do {
@@ -227,7 +225,7 @@ static void ReadDir() {
 
   /* associate names with file entries */
   {
-    STRPTR name = rootDir->names;
+    char *name = rootDir->names;
     FileEntryT *entry = rootDir->file;
 
     while (entry->length) {
@@ -238,12 +236,12 @@ static void ReadDir() {
   }
 }
 
-void InitIoFloppy() {
+void InitIoFloppy(void) {
   InitFloppy();
   ReadDir();
 }
 
-void KillIoFloppy() {
+void KillIoFloppy(void) {
   if (rootDir) {
     MemFree(rootDir->names);
     MemFree(rootDir);

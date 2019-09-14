@@ -7,26 +7,26 @@
 #define DATLY (1 << 10)
 
 typedef struct {
-  BYTE xctr, yctr;
-  WORD x, y;
-  WORD button;
+  char xctr, yctr;
+  short x, y;
+  short button;
 
-  WORD left;
-  WORD right;
-  WORD top;
-  WORD bottom;
+  short left;
+  short right;
+  short top;
+  short bottom;
 } MouseDataT;
 
 static MouseDataT mouseData;
 
-static inline BOOL GetMouseX(MouseDataT *mouse, MouseEventT *event) {
-  BYTE xctr = custom->joy0dat & 0xff;
-  BYTE xrel = xctr - mouse->xctr;
-  WORD x = mouse->x;
+static inline bool GetMouseX(MouseDataT *mouse, MouseEventT *event) {
+  char xctr = custom->joy0dat & 0xff;
+  char xrel = xctr - mouse->xctr;
+  short x = mouse->x;
 
   if (!xrel) {
     event->x = x;
-    return FALSE;
+    return false;
   }
 
   x += xrel;
@@ -42,17 +42,17 @@ static inline BOOL GetMouseX(MouseDataT *mouse, MouseEventT *event) {
   mouse->x = x;
   mouse->xctr = xctr;
 
-  return TRUE;
+  return true;
 }
 
-static inline BOOL GetMouseY(MouseDataT *mouse, MouseEventT *event) {
-  BYTE yctr = custom->joy0dat >> 8;
-  BYTE yrel = yctr - mouse->yctr;
-  WORD y = mouse->y;
+static inline bool GetMouseY(MouseDataT *mouse, MouseEventT *event) {
+  char yctr = custom->joy0dat >> 8;
+  char yrel = yctr - mouse->yctr;
+  short y = mouse->y;
 
   if (!yrel) {
     event->y = y;
-    return FALSE;
+    return false;
   }
 
   y += yrel;
@@ -68,11 +68,11 @@ static inline BOOL GetMouseY(MouseDataT *mouse, MouseEventT *event) {
   mouse->y = y;
   mouse->yctr = yctr;
 
-  return TRUE;
+  return true;
 }
 
-static inline UBYTE ReadButtonState() {
-  UBYTE state = 0;
+static inline u_char ReadButtonState(void) {
+  u_char state = 0;
 
 	if (!(ciaa->ciapra & CIAF_GAMEPORT0))
     state |= LMB_PRESSED;
@@ -82,12 +82,12 @@ static inline UBYTE ReadButtonState() {
   return state;
 }
 
-static inline BOOL GetMouseButton(MouseDataT *mouse, MouseEventT *event) {
-  UBYTE button = ReadButtonState();
-  UBYTE change = (mouse->button ^ button) & (LMB_PRESSED | RMB_PRESSED);
+static inline bool GetMouseButton(MouseDataT *mouse, MouseEventT *event) {
+  u_char button = ReadButtonState();
+  u_char change = (mouse->button ^ button) & (LMB_PRESSED | RMB_PRESSED);
 
   if (!change)
-    return FALSE;
+    return false;
 
   mouse->button = button;
   event->button = 0;
@@ -98,13 +98,13 @@ static inline BOOL GetMouseButton(MouseDataT *mouse, MouseEventT *event) {
   if (change & RMB_PRESSED)
     event->button |= (button & RMB_PRESSED) ? RMB_PRESSED : RMB_RELEASED;
   
-  return TRUE;
+  return true;
 }
 
-static __interrupt LONG MouseIntHandler() {
+static __interrupt int MouseIntHandler(void) {
   MouseEventT event;
   MouseDataT *mouse = &mouseData;
-  BOOL moveX, moveY;
+  bool moveX, moveY;
 
   memset(&event, 0, sizeof(event));
   event.type = EV_MOUSE;
@@ -128,7 +128,7 @@ static __interrupt LONG MouseIntHandler() {
 
 INTERRUPT(MouseInterrupt, -5, MouseIntHandler, NULL);
 
-__regargs void MouseInit(WORD minX, WORD minY, WORD maxX, WORD maxY) {
+__regargs void MouseInit(short minX, short minY, short maxX, short maxY) {
   MouseDataT *mouse = &mouseData;
 
   mouse->left = minX;

@@ -11,7 +11,7 @@
 #include "sprite.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -27,16 +27,16 @@ STRPTR __cwdpath = "data";
 #define LANER_Y (HEIGHT / 2 + 16)
 
 typedef struct {
-  WORD speed;
-  WORD x, y;
-  BOOL active;
-  BOOL side;
+  short speed;
+  short x, y;
+  bool active;
+  bool side;
 } Car;
 
 static Car cars[CARS];
 
 static CopListT *cp;
-static UWORD active = 0;
+static u_short active = 0;
 static CopInsT *sprptr[8];
 static CopInsT *bplptr[2][DEPTH];
 static BitmapT *carry;
@@ -50,7 +50,7 @@ static BitmapT *cityBottom;
 static SpriteT *sprite[8];
 static PaletteT *spritePal;
 
-static void Load() {
+static void Load(void) {
   laneBg = LoadILBM("highway-lane.ilbm");
   cityTop = LoadILBM("highway-city-top-2.ilbm");
   cityBottom = LoadILBM("highway-city-bottom-2.ilbm");
@@ -65,7 +65,7 @@ static void Load() {
   }
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   ITER(i, 0, 7, DeleteSprite(sprite[i]));
 
   DeletePalette(carLeft->palette);
@@ -113,8 +113,8 @@ static void MakeCopperList(CopListT *cp) {
 
   // use an undocumented trick to make sprites visible while bitplanes are off
   {
-    WORD y0 = LANEL_Y + LANE_H + 1;
-    WORD y1 = LANER_Y - 2;
+    short y0 = LANEL_Y + LANE_H + 1;
+    short y1 = LANER_Y - 2;
 
     while (y0 < y1) {
       CopWait(cp, Y(y0), X(-12));
@@ -149,7 +149,7 @@ static void MakeCopperList(CopListT *cp) {
   ITER(i, 0, 7, CopInsSet32(sprptr[i], sprite[i]->data));
 }
 
-static void Init() {
+static void Init(void) {
   lanes[0] = NewBitmap(LANE_W, LANE_H * 2, DEPTH);
   lanes[1] = NewBitmap(LANE_W, LANE_H * 2, DEPTH);
   carry = NewBitmap(HSIZE + 16, VSIZE, 2);
@@ -162,7 +162,7 @@ static void Init() {
   ITER(i, 0, 7, UpdateSprite(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
   DeleteBitmap(lanes[0]);
@@ -175,18 +175,18 @@ static inline void CarInit(Car *car) {
   car->speed = random() & 15;
   car->x = 0;
   car->y = (random() & 3) * 10;
-  car->active = TRUE;
+  car->active = true;
   car->side = random() & 1;
 }
 
-static inline void CarMove(Car *car, WORD step) {
+static inline void CarMove(Car *car, short step) {
   car->x += (car->speed + 32) * step;
   if (car->x >= fx4i(LANE_W))
-    car->active = FALSE;
+    car->active = false;
 }
 
 /* Add new car if there's a free slot. */
-static inline void AddCar() {
+static inline void AddCar(void) {
   Car *car = cars;
   Car *last = cars + CARS;
 
@@ -199,13 +199,13 @@ static inline void AddCar() {
 }
 
 /* Draw each active cars. */
-static void DrawCars(WORD step) {
+static void DrawCars(short step) {
   Car *car = cars;
   Car *last = cars + CARS;
 
   do {
     if (car->active) {
-      WORD x = (car->x + 7) / 16;
+      short x = (car->x + 7) / 16;
 
       if (car->side)
         BitmapAddSaturated(lanes[active], x, car->y + LANE_H, carRight, carry);
@@ -217,8 +217,8 @@ static void DrawCars(WORD step) {
   } while (++car < last);
 }
 
-static void AddCars() {
-  static WORD iterCount = 0;
+static void AddCars(void) {
+  static short iterCount = 0;
 
   iterCount += frameCount - lastFrameCount;
   while (iterCount > 10) {
@@ -227,7 +227,7 @@ static void AddCars() {
   }
 }
 
-static void Render() {
+static void Render(void) {
   BitmapCopy(lanes[active], HSIZE, 0, laneBg);
   BitmapCopy(lanes[active], HSIZE, LANE_H, laneBg);
 
@@ -235,11 +235,11 @@ static void Render() {
   DrawCars(frameCount - lastFrameCount);
 
   {
-    WORD i;
+    short i;
 
     for (i = 0; i < DEPTH; i++) {
-      APTR bplpt = lanes[active]->planes[i] + 4;
-      UWORD stride = lanes[active]->bytesPerRow;
+      void *bplpt = lanes[active]->planes[i] + 4;
+      u_short stride = lanes[active]->bytesPerRow;
       CopInsSet32(bplptr[0][i], bplpt);
       CopInsSet32(bplptr[1][i], bplpt + stride * LANE_H);
     }
@@ -249,4 +249,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

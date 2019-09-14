@@ -1,6 +1,6 @@
-        XDEF    ___mulsi3
+        xdef    ___mulsi3
 
-        SECTION "__mulsi3",CODE
+        section '.text',code
 
 ___mulsi3:
         move.w  4(sp),d0      ; x0 -> d0

@@ -2,8 +2,8 @@
 
 typedef struct {
   BitmapT *bitmap;
-  ULONG start;
-  UWORD size;
+  u_int start;
+  u_short size;
 } StateT;
 
 static StateT state[1];
@@ -11,8 +11,8 @@ static StateT state[1];
 /* Supports any area dimensions,
  * but is optimized for 'x' and 'w' divisible by 16. */
 void BlitterSetAreaSetup(BitmapT *bitmap, Area2D *area) {
-  UWORD bltafwm, bltalwm, bltmod, bytesPerRow;
-  UWORD x = 0, y = 0, width = bitmap->width, height = bitmap->height;
+  u_short bltafwm, bltalwm, bltmod, bytesPerRow;
+  u_short x = 0, y = 0, width = bitmap->width, height = bitmap->height;
 
   if (area)
     x = area->x, y = area->y, width = area->w, height = area->h;
@@ -44,9 +44,9 @@ void BlitterSetAreaSetup(BitmapT *bitmap, Area2D *area) {
   custom->bltalwm = bltalwm;
 }
 
-__regargs void BlitterSetAreaStart(WORD bplnum, UWORD pattern) {
-  APTR bltpt = state->bitmap->planes[bplnum] + state->start;
-  UWORD bltsize = state->size;
+__regargs void BlitterSetAreaStart(short bplnum, u_short pattern) {
+  void *bltpt = state->bitmap->planes[bplnum] + state->start;
+  u_short bltsize = state->size;
 
   WaitBlitter();
 
@@ -56,8 +56,8 @@ __regargs void BlitterSetAreaStart(WORD bplnum, UWORD pattern) {
   custom->bltsize = bltsize;
 }
 
-__regargs void BitmapSetArea(BitmapT *bitmap, Area2D *area, UWORD color) {
-  WORD i;
+__regargs void BitmapSetArea(BitmapT *bitmap, Area2D *area, u_short color) {
+  short i;
 
   BlitterSetAreaSetup(bitmap, area);
   for (i = 0; i < bitmap->depth; i++) {

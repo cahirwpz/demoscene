@@ -22,7 +22,7 @@ static const char *IntName[] = {
 };
 
 void DumpInterrupts() {
-  LONG i;
+  int i;
 
   for (i = 0; i < 16; i++) {
     struct IntVector *intvec = &SysBase->IntVects[i];
@@ -38,13 +38,11 @@ void DumpInterrupts() {
 
       node = list->lh_Head;
 
-      Log("%s: [C:%lx, D:%lx]\n", IntName[i], 
-          (LONG)intvec->iv_Code, (LONG)intvec->iv_Data);
+      Log("%s: [C:%p, D:%p]\n", IntName[i], intvec->iv_Code, intvec->iv_Data);
       for (;;) {
         struct Interrupt *intr = (struct Interrupt *)node;
-        Log(" - %lx [C:%lx, D:%lx] (%ld) '%s'\n",
-            (LONG)node, (LONG)intr->is_Code, (LONG)intr->is_Data,
-            (LONG)node->ln_Pri, node->ln_Name);
+        Log(" - %p [C:%p, D:%p] (%d) '%s'\n",
+            node, intr->is_Code, intr->is_Data, node->ln_Pri, node->ln_Name);
         if (node == list->lh_TailPred)
           break;
         node = node->ln_Succ;
@@ -52,11 +50,9 @@ void DumpInterrupts() {
     } else {
       if (!intvec->iv_Code)
         continue;
-      Log("%s: [C:%lx, D:%lx]\n", IntName[i], 
-          (LONG)intvec->iv_Code, (LONG)intvec->iv_Data);
+      Log("%s: [C:%p, D:%p]\n", IntName[i], intvec->iv_Code, intvec->iv_Data);
       while (node) {
-        Log(" - %lx (%ld) '%s'\n",
-            (LONG)node, (LONG)node->ln_Pri, node->ln_Name);
+        Log(" - %p (%d) '%s'\n", node, node->ln_Pri, node->ln_Name);
         node = node->ln_Succ;
       }
     }

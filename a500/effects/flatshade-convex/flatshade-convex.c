@@ -7,7 +7,7 @@
 #include "ilbm.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH  256
 #define HEIGHT 256
@@ -19,9 +19,9 @@ static Object3D *cube;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 static BitmapT *screen[2];
-static WORD active;
+static short active;
 
-static void Load() {
+static void Load(void) {
   // mesh = LoadMesh3D("ball.3d", SPFlt(110));
   mesh = LoadMesh3D("pilka.3d", SPFlt(65));
   CalculateVertexFaceMap(mesh);
@@ -30,7 +30,7 @@ static void Load() {
   palette = LoadPalette("flatshade-pal.ilbm");
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeletePalette(palette);
   DeleteMesh3D(mesh);
 }
@@ -43,7 +43,7 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(-250);
 
@@ -56,7 +56,7 @@ static void Init() {
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 }
 
-static void Kill() {
+static void Kill(void) {
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
   DeleteCopList(cp);
@@ -64,9 +64,9 @@ static void Kill() {
 }
 
 static __regargs void UpdateEdgeVisibilityConvex(Object3D *object) {
-  BYTE *vertexFlags = object->vertexFlags;
-  BYTE *edgeFlags = object->edgeFlags;
-  BYTE *faceFlags = object->faceFlags;
+  char *vertexFlags = object->vertexFlags;
+  char *edgeFlags = object->edgeFlags;
+  char *faceFlags = object->faceFlags;
   IndexListT **faces = object->mesh->face;
   IndexListT *face = *faces++;
   IndexListT **faceEdges = object->mesh->faceEdge;
@@ -76,12 +76,12 @@ static __regargs void UpdateEdgeVisibilityConvex(Object3D *object) {
   bzero(edgeFlags, object->mesh->edges);
 
   do {
-    BYTE f = *faceFlags++;
+    char f = *faceFlags++;
 
     if (f >= 0) {
-      WORD n = face->count - 3;
-      WORD *vi = face->indices;
-      WORD *ei = faceEdge->indices;
+      short n = face->count - 3;
+      short *vi = face->indices;
+      short *ei = faceEdge->indices;
 
       /* Face has at least (and usually) three vertices / edges. */
       vertexFlags[*vi++] = -1;
@@ -101,33 +101,33 @@ static __regargs void UpdateEdgeVisibilityConvex(Object3D *object) {
 }
 
 #define MULVERTEX1(D, E) {               \
-  WORD t0 = (*v++) + y;                  \
-  WORD t1 = (*v++) + x;                  \
-  LONG t2 = (*v++) * z;                  \
+  short t0 = (*v++) + y;                  \
+  short t1 = (*v++) + x;                  \
+  int t2 = (*v++) * z;                  \
   v++;                                   \
   D = ((t0 * t1 + t2 - x * y) >> 4) + E; \
 }
 
 #define MULVERTEX2(D) {                  \
-  WORD t0 = (*v++) + y;                  \
-  WORD t1 = (*v++) + x;                  \
-  LONG t2 = (*v++) * z;                  \
-  WORD t3 = (*v++);                      \
+  short t0 = (*v++) + y;                  \
+  short t1 = (*v++) + x;                  \
+  int t2 = (*v++) * z;                  \
+  short t3 = (*v++);                      \
   D = normfx(t0 * t1 + t2 - x * y) + t3; \
 }
 
 static __regargs void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
-  WORD *v = (WORD *)M;
-  WORD *src = (WORD *)object->mesh->vertex;
-  WORD *dst = (WORD *)object->vertex;
-  BYTE *flags = object->vertexFlags;
-  register WORD n asm("d7") = object->mesh->vertices - 1;
+  short *v = (short *)M;
+  short *src = (short *)object->mesh->vertex;
+  short *dst = (short *)object->vertex;
+  char *flags = object->vertexFlags;
+  register short n asm("d7") = object->mesh->vertices - 1;
 
-  LONG m0 = (M->x << 8) - ((M->m00 * M->m01) >> 4);
-  LONG m1 = (M->y << 8) - ((M->m10 * M->m11) >> 4);
+  int m0 = (M->x << 8) - ((M->m00 * M->m01) >> 4);
+  int m1 = (M->y << 8) - ((M->m10 * M->m11) >> 4);
 
-  WORD cnt = 0;
+  short cnt = 0;
 
   /* WARNING! This modifies camera matrix! */
   M->z -= normfx(M->m20 * M->m21);
@@ -145,11 +145,11 @@ static __regargs void TransformVertices(Object3D *object) {
 
   do {
     if (*flags++) {
-      WORD x = *src++;
-      WORD y = *src++;
-      WORD z = *src++;
-      LONG xp, yp;
-      WORD zp;
+      short x = *src++;
+      short y = *src++;
+      short z = *src++;
+      int xp, yp;
+      short zp;
 
       pushl(v);
       MULVERTEX1(xp, m0);
@@ -174,11 +174,11 @@ static __regargs void TransformVertices(Object3D *object) {
 static __regargs void DrawObject(BitmapT *screen, Object3D *object,
                                  CustomPtrT custom asm("a6"))
 {
-  WORD *edge = (WORD *)object->mesh->edge;
-  BYTE *edgeFlags = object->edgeFlags;
+  short *edge = (short *)object->mesh->edge;
+  char *edgeFlags = object->edgeFlags;
   Point3D *point = object->vertex;
-  WORD n = object->mesh->edges - 1;
-  APTR planes = screen->planes[0];
+  short n = object->mesh->edges - 1;
+  void *planes = screen->planes[0];
 
   WaitBlitter();
   custom->bltafwm = -1;
@@ -189,20 +189,20 @@ static __regargs void DrawObject(BitmapT *screen, Object3D *object,
   custom->bltdmod = WIDTH / 8;
 
   do {
-    BYTE f = *edgeFlags++;
+    char f = *edgeFlags++;
 
     if (f) {
-      WORD x0, y0, x1, y1;
-      APTR data;
+      short x0, y0, x1, y1;
+      void *data;
 
       {
-        WORD *p0 = (APTR)point + *edge++;
+        short *p0 = (void *)point + *edge++;
         x0 = *p0++;
         y0 = *p0++;
       }
       
       {
-        WORD *p1 = (APTR)point + *edge++;
+        short *p1 = (void *)point + *edge++;
         x1 = *p1++;
         y1 = *p1++;
       }
@@ -213,10 +213,10 @@ static __regargs void DrawObject(BitmapT *screen, Object3D *object,
       }
 
       {
-        WORD dmax = x1 - x0;
-        WORD dmin = y1 - y0;
-        WORD derr;
-        UWORD bltcon1 = LINEMODE | ONEDOT;
+        short dmax = x1 - x0;
+        short dmin = y1 - y0;
+        short derr;
+        u_short bltcon1 = LINEMODE | ONEDOT;
 
         if (dmax < 0)
           dmax = -dmax;
@@ -233,9 +233,9 @@ static __regargs void DrawObject(BitmapT *screen, Object3D *object,
         }
 
         {
-          WORD y0_ = y0 << 5;
-          WORD x0_ = x0 >> 3;
-          WORD start = (y0_ + x0_) & ~1;
+          short y0_ = y0 << 5;
+          short x0_ = x0 >> 3;
+          short start = (y0_ + x0_) & ~1;
           data = planes + start;
         }
 
@@ -246,11 +246,11 @@ static __regargs void DrawObject(BitmapT *screen, Object3D *object,
         bltcon1 |= rorw(x0 & 15, 4);
 
         {
-          UWORD bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
-          UWORD bltamod = derr - dmax;
-          UWORD bltbmod = dmin;
-          UWORD bltsize = (dmax << 6) + 66;
-          APTR bltapt = (APTR)(LONG)derr;
+          u_short bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
+          u_short bltamod = derr - dmax;
+          u_short bltbmod = dmin;
+          u_short bltsize = (dmax << 6) + 66;
+          void *bltapt = (void *)(int)derr;
           
 #define DRAWLINE()                      \
           WaitBlitter();                \
@@ -279,9 +279,9 @@ static __regargs void DrawObject(BitmapT *screen, Object3D *object,
 }
 
 static __regargs void BitmapClearFast(BitmapT *dst) {
-  UWORD height = (WORD)dst->height * (WORD)dst->depth;
-  UWORD bltsize = (height << 6) | (dst->bytesPerRow >> 1);
-  APTR bltpt = dst->planes[0];
+  u_short height = (short)dst->height * (short)dst->depth;
+  u_short bltsize = (height << 6) | (dst->bytesPerRow >> 1);
+  void *bltpt = dst->planes[0];
 
   WaitBlitter();
 
@@ -296,8 +296,8 @@ static __regargs void BitmapClearFast(BitmapT *dst) {
 }
 
 static __regargs void BitmapFillFast(BitmapT *dst) {
-  APTR bltpt = dst->planes[0] + (dst->bplSize * DEPTH) - 2;
-  UWORD bltsize = (0 << 6) | (WIDTH >> 4);
+  void *bltpt = dst->planes[0] + (dst->bplSize * DEPTH) - 2;
+  u_short bltsize = (0 << 6) | (WIDTH >> 4);
 
   WaitBlitter();
 
@@ -314,8 +314,8 @@ static __regargs void BitmapFillFast(BitmapT *dst) {
   WaitBlitter();
 }
 
-static void Render() {
-  LONG lines = ReadLineCounter();
+static void Render(void) {
+  int lines = ReadLineCounter();
  
   BitmapClearFast(screen[active]);
 
@@ -323,31 +323,31 @@ static void Render() {
    cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 8;
 
   {
-    // LONG lines = ReadLineCounter();
+    // int lines = ReadLineCounter();
     UpdateObjectTransformation(cube); // 18 lines
     UpdateFaceVisibility(cube); // 211 lines O(faces)
     UpdateEdgeVisibilityConvex(cube); // 78 lines O(edge)
     TransformVertices(cube); // 89 lines O(vertex)
-    // Log("transform: %ld\n", ReadLineCounter() - lines);
+    // Log("transform: %d\n", ReadLineCounter() - lines);
   }
 
   {
-    // LONG lines = ReadLineCounter();
+    // int lines = ReadLineCounter();
     DrawObject(screen[active], cube, custom); // 237 lines
-    // Log("draw: %ld\n", ReadLineCounter() - lines);
+    // Log("draw: %d\n", ReadLineCounter() - lines);
   }
 
   {
-    // LONG lines = ReadLineCounter();
+    // int lines = ReadLineCounter();
     BitmapFillFast(screen[active]); // 287 lines
-    // Log("fill: %ld\n", ReadLineCounter() - lines);
+    // Log("fill: %d\n", ReadLineCounter() - lines);
   }
 
-  Log("all: %ld\n", ReadLineCounter() - lines);
+  Log("all: %d\n", ReadLineCounter() - lines);
 
   CopUpdateBitplanes(bplptr, screen[active], DEPTH);
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

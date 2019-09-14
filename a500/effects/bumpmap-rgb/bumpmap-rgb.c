@@ -8,45 +8,45 @@
 #include "png.h"
 #include "fx.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 80
 #define HEIGHT 64
 #define DEPTH 4
 
 static BitmapT *screen[2];
-static UWORD active = 0;
-static UWORD *lightmap;
-static UWORD *shademap;
-static UWORD *colormap;
-static UWORD *bumpmap;
-static UWORD *chunky[2];
+static u_short active = 0;
+static u_short *lightmap;
+static u_short *shademap;
+static u_short *colormap;
+static u_short *bumpmap;
+static u_short *chunky[2];
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 
-static UWORD bluetab[16] = {
+static u_short bluetab[16] = {
   0x0000, 0x0003, 0x0030, 0x0033, 0x0300, 0x0303, 0x0330, 0x0333,
   0x3000, 0x3003, 0x3030, 0x3033, 0x3300, 0x3303, 0x3330, 0x3333,
 };
 
-static UWORD greentab[16] = {
+static u_short greentab[16] = {
   0x0000, 0x0004, 0x0040, 0x0044, 0x0400, 0x0404, 0x0440, 0x0444,
   0x4000, 0x4004, 0x4040, 0x4044, 0x4400, 0x4404, 0x4440, 0x4444,
 };
 
-static UWORD redtab[16] = {
+static u_short redtab[16] = {
   0x0000, 0x0008, 0x0080, 0x0088, 0x0800, 0x0808, 0x0880, 0x0888,
   0x8000, 0x8008, 0x8080, 0x8088, 0x8800, 0x8808, 0x8880, 0x8888,
 };
 
-static void DataScramble(UWORD *data, WORD n) {
-  UBYTE *in = (UBYTE *)data;
-  UWORD *out = data;
+static void DataScramble(u_short *data, short n) {
+  u_char *in = (u_char *)data;
+  u_short *out = data;
 
   while (--n >= 0) {
-    WORD ri = *in++;
-    WORD gi = *in++;
-    WORD bi = gi;
+    short ri = *in++;
+    short gi = *in++;
+    short bi = gi;
 
     /* [-- -- -- -- 11 10  9  8  7  6  5  4  3  2  1  0] */
     /* [-- -- -- -- r0 r1 r2 r3 g0 g1 g2 g3 b0 b1 b2 b3] */
@@ -60,15 +60,15 @@ static void DataScramble(UWORD *data, WORD n) {
   }
 }
 
-static void Load() {
+static void Load(void) {
   {
     PixmapT *image = LoadPNG("light.png", PM_GRAY8, MEMF_PUBLIC);
 
     lightmap = MemAlloc(65536, MEMF_PUBLIC);
     {
-      UBYTE *src = image->pixels;
-      UWORD *dst = lightmap;
-      WORD n = 16384;
+      u_char *src = image->pixels;
+      u_short *dst = lightmap;
+      short n = 16384;
 
       while (--n >= 0)
         *dst++ = ((*src++) >> 2) & 0x3e;
@@ -82,22 +82,22 @@ static void Load() {
   {
     PixmapT *image = LoadPNG("dragon.png", PM_CMAP8, MEMF_PUBLIC);
 
-    colormap = MemAlloc(WIDTH * HEIGHT * sizeof(UWORD), MEMF_PUBLIC);
+    colormap = MemAlloc(WIDTH * HEIGHT * sizeof(u_short), MEMF_PUBLIC);
     {
-      UWORD *dst = colormap;
-      UBYTE *src = image->pixels;
-      WORD n = WIDTH * HEIGHT;
+      u_short *dst = colormap;
+      u_char *src = image->pixels;
+      short n = WIDTH * HEIGHT;
 
       while (--n >= 0)
         *dst++ = *src++ << 6;
     }
 
-    shademap = MemAlloc(32 * sizeof(UWORD) * image->palette->count, MEMF_PUBLIC);
+    shademap = MemAlloc(32 * sizeof(u_short) * image->palette->count, MEMF_PUBLIC);
     {
       ColorT *c = image->palette->colors;
-      UWORD *dst = shademap;
-      WORD n = image->palette->count;
-      WORD i;
+      u_short *dst = shademap;
+      short n = image->palette->count;
+      short i;
 
       while (--n >= 0) {
         for (i = 0; i < 16; i++)
@@ -114,16 +114,16 @@ static void Load() {
 
   bumpmap = LoadFile("bumpmap.bin", MEMF_PUBLIC);
   {
-    WORD n = WIDTH * HEIGHT;
-    UWORD *src = bumpmap;
-    UWORD *dst = bumpmap;
+    short n = WIDTH * HEIGHT;
+    u_short *src = bumpmap;
+    u_short *dst = bumpmap;
 
     while (--n >= 0)
       *dst++ = *src++ << 1;
   }
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   MemFree(bumpmap);
   MemFree(colormap);
   MemFree(shademap);
@@ -131,18 +131,18 @@ static void UnLoad() {
 }
 
 static struct {
-  WORD phase;
-  APTR *bpl;
-  APTR chunky;
-} c2p = { 256, NULL };
+  short phase;
+  void **bpl;
+  void *chunky;
+} c2p = { 256, NULL, NULL };
 
 #define BPLSIZE ((WIDTH * 4) * HEIGHT / 8) /* 2560 bytes */
 #define BLTSIZE ((WIDTH * 4) * HEIGHT / 2) /* 10240 bytes */
 
-static void ChunkyToPlanar() {
-  APTR src = c2p.chunky;
-  APTR dst = c2p.chunky + BLTSIZE;
-  APTR *bpl = c2p.bpl;
+static void ChunkyToPlanar(void) {
+  void *src = c2p.chunky;
+  void *dst = c2p.chunky + BLTSIZE;
+  void **bpl = c2p.bpl;
 
   switch (c2p.phase) {
     case 0:
@@ -263,7 +263,7 @@ INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar, NULL);
 static struct Interrupt *oldBlitInt;
 
 static void MakeCopperList(CopListT *cp) {
-  WORD i;
+  short i;
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_HAM, 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
@@ -282,7 +282,7 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
 
@@ -307,7 +307,7 @@ static void Init() {
   EnableINT(INTF_BLIT);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER);
 
   DisableINT(INTF_BLIT);
@@ -324,12 +324,12 @@ static void Kill() {
 
 #define OPTIMIZED 1
 
-static __regargs void BumpMapRender(APTR lmap) {
-  APTR smap = shademap;
-  UWORD *cmap = colormap;
-  UWORD *bmap = bumpmap;
-  UWORD *dst = chunky[active];
-  WORD n = HEIGHT * WIDTH / 2 - 1;
+static __regargs void BumpMapRender(void *lmap) {
+  void *smap = shademap;
+  u_short *cmap = colormap;
+  u_short *bmap = bumpmap;
+  u_short *dst = chunky[active];
+  short n = HEIGHT * WIDTH / 2 - 1;
 
   do {
 #if OPTIMIZED
@@ -346,25 +346,25 @@ static __regargs void BumpMapRender(APTR lmap) {
                  : "d0");
 #else
     {
-      WORD s = *(WORD *)(lmap + (*bmap++)) | *cmap++;
-      *dst++ = *(UWORD *)(smap + s);
+      short s = *(short *)(lmap + (*bmap++)) | *cmap++;
+      *dst++ = *(u_short *)(smap + s);
     }
     {
-      WORD s = *(WORD *)(lmap + (*bmap++)) | *cmap++;
-      *dst++ = *(UWORD *)(smap + s);
+      short s = *(short *)(lmap + (*bmap++)) | *cmap++;
+      *dst++ = *(u_short *)(smap + s);
     }
 #endif
   } while (--n >= 0);
 }
 
-static void Render() {
-  LONG lines = ReadLineCounter();
+static void Render(void) {
+  int lines = ReadLineCounter();
   {
-    WORD xo = normfx(SIN(frameCount * 16) * HEIGHT / 2) + 24;
-    WORD yo = normfx(COS(frameCount * 16) * HEIGHT / 2) + 32;
+    short xo = normfx(SIN(frameCount * 16) * HEIGHT / 2) + 24;
+    short yo = normfx(COS(frameCount * 16) * HEIGHT / 2) + 32;
     BumpMapRender(&lightmap[(yo * 128 + xo) & 16383]);
   }
-  Log("bumpmap: %ld\n", ReadLineCounter() - lines);
+  Log("bumpmap: %d\n", ReadLineCounter() - lines);
 
   c2p.phase = 0;
   c2p.chunky = chunky[active];
@@ -373,4 +373,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

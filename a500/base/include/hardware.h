@@ -1,14 +1,13 @@
 #ifndef __HARDWARE_H__
 #define __HARDWARE_H__
 
+#include "types.h"
+
 #include <hardware/adkbits.h>
 #include <hardware/cia.h>
 #include <hardware/custom.h>
 #include <hardware/dmabits.h>
-#include <hardware/intbits.h>
 #include <hardware/blit.h>
-
-#include "common.h"
 
 #define INTF_LEVEL1 (INTF_SOFTINT | INTF_DSKBLK | INTF_TBE)
 #define INTF_LEVEL3 (INTF_VERTB | INTF_BLIT | INTF_COPER)
@@ -40,24 +39,24 @@ extern CustomPtrT custom;
 extern CIAPtrT ciaa;
 extern CIAPtrT ciab;
 
-void EnableDMA(UWORD mask);
-void DisableDMA(UWORD mask);
+void EnableDMA(u_short mask);
+void DisableDMA(u_short mask);
 
 /* @briref Returns number of lines passes since the beginning of the raster. */
-LONG RasterLine();
+int RasterLine(void);
 
-void WaitMouse();
-__regargs void WaitLine(ULONG line);
-static void inline WaitVBlank() { WaitLine(303); }
+void WaitMouse(void);
+__regargs void WaitLine(u_int line);
+static inline void WaitVBlank(void) { WaitLine(303); }
 
 #define MoveLong(reg, hi, lo) \
-    *(ULONG *)(&custom->reg) = (((hi) << 16) | (lo))
+    *(u_int *)(&custom->reg) = (((hi) << 16) | (lo))
 
-static inline BOOL LeftMouseButton() {
+static inline bool LeftMouseButton(void) {
   return !(ciaa->ciapra & CIAF_GAMEPORT0);
 }
 
-static inline BOOL RightMouseButton() {
+static inline bool RightMouseButton(void) {
   return !(custom->potinp & (1 << 10));
 }
 
@@ -66,12 +65,12 @@ static inline BOOL RightMouseButton() {
 #define TIMER_US(us) ((us) * E_CLOCK / (1000 * 1000))
 
 /* Maximum delay is around 92.38ms */
-__regargs void WaitTimerA(volatile struct CIA *cia, UWORD delay);
-__regargs void WaitTimerB(volatile struct CIA *cia, UWORD delay);
-__regargs LONG ReadICR(volatile struct CIA *cia);
+__regargs void WaitTimerA(volatile struct CIA *cia, u_short delay);
+__regargs void WaitTimerB(volatile struct CIA *cia, u_short delay);
+__regargs int ReadICR(volatile struct CIA *cia);
 
-LONG ReadLineCounter();
-LONG ReadFrameCounter();
-void SetFrameCounter(ULONG frame);
+int ReadLineCounter(void);
+int ReadFrameCounter(void);
+void SetFrameCounter(u_int frame);
 
 #endif

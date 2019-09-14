@@ -20,12 +20,14 @@ SOURCES_C := \
 	memory.c \
 	mouse.c \
 	qsort.c \
+	print.c \
 	random.c \
 	reader.c \
 	serial.c \
 	sintab.c \
 	sort.c \
-	tasks.c
+	tasks.c \
+	uae.c
 
 SOURCES_ASM := \
 	inflate.s \
@@ -41,3 +43,6 @@ libsys.a: $(OBJECTS)
 
 sintab.c: sintab.py
 	$(PYTHON3) sintab.py
+
+clean::
+	$(RM) -f sintab.c

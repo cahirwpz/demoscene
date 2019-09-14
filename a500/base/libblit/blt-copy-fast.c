@@ -3,18 +3,18 @@
 typedef struct {
   BitmapT *src;
   BitmapT *dst;
-  ULONG start;
-  UWORD size;
+  u_int start;
+  u_short size;
 } StateT;
 
 static StateT state[1];
 
-__regargs void BlitterFastCopySetup(BitmapT *dst, UWORD x, UWORD y,
+__regargs void BlitterFastCopySetup(BitmapT *dst, u_short x, u_short y,
                                     BitmapT *src) 
 {
-  UWORD dstmod = dst->bytesPerRow - src->bytesPerRow;
-  UWORD bltshift = rorw(x & 15, 4);
-  UWORD bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
+  u_short dstmod = dst->bytesPerRow - src->bytesPerRow;
+  u_short bltshift = rorw(x & 15, 4);
+  u_short bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
 
   if (bltshift)
     bltsize++, dstmod -= 2;
@@ -40,10 +40,10 @@ __regargs void BlitterFastCopySetup(BitmapT *dst, UWORD x, UWORD y,
   custom->bltafwm = -1;
 }
 
-__regargs void BlitterFastCopyStart(WORD dstbpl, WORD srcbpl) {
-  APTR srcbpt = state->src->planes[srcbpl];
-  APTR dstbpt = state->dst->planes[dstbpl] + state->start;
-  UWORD bltsize = state->size;
+__regargs void BlitterFastCopyStart(short dstbpl, short srcbpl) {
+  void *srcbpt = state->src->planes[srcbpl];
+  void *dstbpt = state->dst->planes[dstbpl] + state->start;
+  u_short bltsize = state->size;
 
   WaitBlitter();
 
@@ -52,8 +52,8 @@ __regargs void BlitterFastCopyStart(WORD dstbpl, WORD srcbpl) {
   custom->bltsize = bltsize;
 }
 
-__regargs void BitmapCopyFast(BitmapT *dst, UWORD x, UWORD y, BitmapT *src) {
-  WORD i, n = min(dst->depth, src->depth);
+__regargs void BitmapCopyFast(BitmapT *dst, u_short x, u_short y, BitmapT *src) {
+  short i, n = min(dst->depth, src->depth);
 
   BlitterFastCopySetup(dst, x, y, src);
   for (i = 0; i < n; i++)

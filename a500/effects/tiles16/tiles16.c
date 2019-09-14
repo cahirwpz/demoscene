@@ -9,8 +9,8 @@
 #include "random.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
-LONG __chipmem = 300 * 1024;
+const char *__cwdpath = "data";
+int __chipmem = 300 * 1024;
 
 #define WIDTH (320 + 16)
 #define HEIGHT (256 + 16)
@@ -25,34 +25,38 @@ static CopInsT *bplptr[2][DEPTH];
 static BitmapT *screen[2];
 static CopInsT *bplcon1[2];
 static CopListT *cp[2];
-static WORD active;
+static short active;
 
 typedef struct TileSet {
-  UWORD width, height;
-  UWORD count;
-  char *path;
+  u_short width, height;
+  u_short count;
+  const char *path;
   BitmapT *tiles;
-  APTR *ptrs;
+  void **ptrs;
 } TileSetT;
 
+#define TILESET(w, h, count, path) {(w), (h), (count), (path), NULL, NULL}
+
 typedef struct TileMap {
-  UWORD width, height;
-  char *path;
-  WORD *map;
+  u_short width, height;
+  const char *path;
+  short *map;
 } TileMapT;
+
+#define TILEMAP(w, h, path) {(w), (h), (path), NULL}
 
 #include "data/MagicLand.h"
 #define Tiles MagicLand_tiles
 #define Map MagicLand_map
 
-static void Load() {
+static void Load(void) {
   Tiles.tiles = LoadILBMCustom(Tiles.path,
                                BM_DISPLAYABLE | BM_INTERLEAVED | BM_LOAD_PALETTE);
-  Tiles.ptrs = MemAlloc(sizeof(APTR) * Tiles.count, MEMF_PUBLIC);
+  Tiles.ptrs = MemAlloc(sizeof(void *) * Tiles.count, MEMF_PUBLIC);
   {
-    WORD n = Tiles.count;
-    APTR base = Tiles.tiles->planes[0];
-    APTR *ptrs = Tiles.ptrs;
+    short n = Tiles.count;
+    void *base = Tiles.tiles->planes[0];
+    void **ptrs = Tiles.ptrs;
     while (--n >= 0) {
       *ptrs++ = base;
       base += TILESIZE;
@@ -61,8 +65,8 @@ static void Load() {
 
   Map.map = LoadFile(Map.path, MEMF_PUBLIC);
   {
-    LONG n = Map.width * Map.height;
-    LONG i;
+    int n = Map.width * Map.height;
+    int i;
     for (i = 0; i < n; i++) {
       Map.map[i] <<= 2;
       Map.map[i] |= 3;
@@ -70,13 +74,13 @@ static void Load() {
   }
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeletePalette(Tiles.tiles->palette);
   DeleteBitmap(Tiles.tiles);
   MemFree(Map.map);
 }
 
-static void MakeCopperList(CopListT *cp, LONG i) {
+static void MakeCopperList(CopListT *cp, int i) {
   CopInit(cp);
   CopSetupMode(cp, MODE_LORES, DEPTH);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH - 16, HEIGHT - 16);
@@ -87,11 +91,11 @@ static void MakeCopperList(CopListT *cp, LONG i) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   /* extra memory for horizontal scrolling */
-  WORD extra = div16(Map.width * Tiles.width, WIDTH);
+  short extra = div16(Map.width * Tiles.width, WIDTH);
 
-  Log("Allocate %ld extra lines!\n", (LONG)extra);
+  Log("Allocate %d extra lines!\n", extra);
 
   /* Use interleaved mode to limit number of issued blitter operations. */
   screen[0] = NewBitmapCustom(WIDTH, HEIGHT + extra, DEPTH,
@@ -109,7 +113,7 @@ static void Init() {
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 
   DeleteCopList(cp[0]);
@@ -119,16 +123,17 @@ static void Kill() {
   DeleteBitmap(screen[1]);
 }
 
-__regargs void TriggerRefresh(WORD x, WORD y, WORD w, WORD h) {
-  WORD *tiles = Map.map;
-  LONG tilemod = Map.width - HTILES;
+__regargs void TriggerRefresh(short x, short y, short w __unused, short h __unused)
+{
+  short *tiles = Map.map;
+  int tilemod = Map.width - HTILES;
 
-  tiles += x + (WORD)y * (WORD)Map.width;
+  tiles += x + (short)y * (short)Map.width;
 
   {
-    WORD j = VTILES - 1;
+    short j = VTILES - 1;
     do {
-      WORD i = HTILES - 1;
+      short i = HTILES - 1;
 
       do {
         *tiles++ |= 3;
@@ -144,17 +149,17 @@ __regargs void TriggerRefresh(WORD x, WORD y, WORD w, WORD h) {
       "   bnes 1b"                              \
       :: "a" (custom));
 
-static __regargs void UpdateTiles(BitmapT *screen, WORD x, WORD y,
+static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
                                   volatile struct Custom* const custom asm("a6"))
 {
-  WORD *tiles = Map.map;
-  APTR ptrs = Tiles.ptrs;
-  APTR dst = screen->planes[0] + (x << 1);
-  WORD size = ((16 * DEPTH) << 6) | 1;
-  LONG tilemod = Map.width - HTILES;
-  WORD current = active + 1;
+  short *tiles = Map.map;
+  void *ptrs = Tiles.ptrs;
+  void *dst = screen->planes[0] + (x << 1);
+  short size = ((16 * DEPTH) << 6) | 1;
+  int tilemod = Map.width - HTILES;
+  short current = active + 1;
 
-  tiles += x + (WORD)y * (WORD)Map.width;
+  tiles += x + (short)y * (short)Map.width;
 
   WAITBLT();
 
@@ -166,16 +171,16 @@ static __regargs void UpdateTiles(BitmapT *screen, WORD x, WORD y,
   custom->bltcon1 = 0;
 
   {
-    WORD j = VTILES - 1;
+    short j = VTILES - 1;
 
     do {
-      WORD i = HTILES - 1;
+      short i = HTILES - 1;
 
       do {
-        WORD tile = *tiles++;
+        short tile = *tiles++;
 
         if (tile & current) {
-          APTR src = *(APTR *)(ptrs + (tile & ~3));
+          void *src = *(void **)(ptrs + (tile & ~3));
 
           WAITBLT();
           custom->bltapt = src;
@@ -194,32 +199,32 @@ static __regargs void UpdateTiles(BitmapT *screen, WORD x, WORD y,
   }
 }
 
-static void Render() {
-  LONG lines = ReadLineCounter();
-  WORD t = frameCount;
-  WORD tile = t >> 4;
-  WORD pixel = 15 - (t & 15);
+static void Render(void) {
+  int lines = ReadLineCounter();
+  short t = frameCount;
+  short tile = t >> 4;
+  short pixel = 15 - (t & 15);
 
-  WORD x = tile % (Map.width - HTILES);
-  WORD y = 35;
+  short x = tile % (Map.width - HTILES);
+  short y = 35;
 
   UpdateTiles(screen[active], x, y, custom);
 
   {
-    WORD i;
+    short i;
     CopInsT **_bplptr = bplptr[active];
-    APTR *_planes = screen[active]->planes;
-    LONG offset = x << 1;
+    void **_planes = screen[active]->planes;
+    int offset = x << 1;
 
     for (i = 0; i < DEPTH; i++)
       CopInsSet32(_bplptr[i], _planes[i] + offset);
   }
   CopInsSet16(bplcon1[active], pixel | (pixel << 4));
   CopListRun(cp[active]);
-  Log("all: %ld\n", ReadLineCounter() - lines);
+  Log("all: %d\n", ReadLineCounter() - lines);
 
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

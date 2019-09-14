@@ -13,7 +13,7 @@ static __regargs void InsertSort(SortItemT *first, SortItemT *last) {
   }
 }
 
-#define THRESHOLD (12 * sizeof(SortItemT))
+#define THRESHOLD (int)(12 * sizeof(SortItemT))
 
 static __regargs void QuickSort(SortItemT *first, SortItemT *last) {
   if (last > first) {
@@ -33,18 +33,18 @@ static __regargs void QuickSort(SortItemT *first, SortItemT *last) {
 
     { SortItemT tmp = *pivot; *pivot = *right; *right = tmp; }
 
-    if ((APTR)right - (APTR)first > THRESHOLD)
+    if ((void *)right - (void *)first > THRESHOLD)
       QuickSort(first, right - 1);
     else
       InsertSort(first, right - 1);
 
-    if ((APTR)last - (APTR)left > THRESHOLD)
+    if ((void *)last - (void *)left > THRESHOLD)
       QuickSort(left, last);
     else
       InsertSort(left, last);
   }
 }
 
-__regargs void SortItemArray(SortItemT *table, WORD size) {
+__regargs void SortItemArray(SortItemT *table, short size) {
   QuickSort(table, &table[size - 1]);
 }

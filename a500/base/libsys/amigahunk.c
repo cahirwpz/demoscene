@@ -6,8 +6,8 @@
 
 #define ONSTACK(x) (&(x)), sizeof((x))
 
-static __regargs BOOL AllocHunks(FileT *fh, LONG hunkNum, HunkT **hunks) {
-  LONG memFlags, n, size;
+static __regargs bool AllocHunks(FileT *fh, int hunkNum, HunkT **hunks) {
+  int memFlags, n, size;
   HunkT *hunk, *prev = NULL;
 
   while (hunkNum--) {
@@ -23,10 +23,10 @@ static __regargs BOOL AllocHunks(FileT *fh, LONG hunkNum, HunkT **hunks) {
     else
       memFlags = MEMF_PUBLIC;
 
-    if (!(hunk = AllocMem(sizeof(HunkT) + n * sizeof(LONG), memFlags)))
-      return FALSE;
+    if (!(hunk = AllocMem(sizeof(HunkT) + size * sizeof(int), memFlags)))
+      return false;
 
-    hunk->size = n * sizeof(LONG);
+    hunk->size = n * sizeof(int);
     hunk->next = NULL;
 
     if (prev)
@@ -36,27 +36,27 @@ static __regargs BOOL AllocHunks(FileT *fh, LONG hunkNum, HunkT **hunks) {
     *hunks++ = hunk;
   }
 
-  return TRUE;
+  return true;
 }
 
-static __regargs BOOL LoadHunks(FileT *fh, HunkT **hunks) {
-  LONG n, hunkCode, hunkNum;
-  WORD hunkIdx = 0;
-  BOOL hunkRoot = TRUE;
+static __regargs bool LoadHunks(FileT *fh, HunkT **hunks) {
+  int n, hunkCode, hunkNum;
+  short hunkIdx = 0;
+  bool hunkRoot = true;
 
-  while (FileRead(fh, &hunkCode, sizeof(LONG))) {
-    WORD hunkId = hunkCode; /* hunkId = 10xx, so we can ignore upper bits */
+  while (FileRead(fh, &hunkCode, sizeof(int))) {
+    short hunkId = hunkCode; /* hunkId = 10xx, so we can ignore upper bits */
     HunkT *hunk = hunks[hunkIdx];
 
     if (hunkId == HUNK_CODE || hunkId == HUNK_DATA || hunkId == HUNK_BSS) {
-      hunkRoot = TRUE;
+      hunkRoot = true;
       FileRead(fh, ONSTACK(n));
       if (hunkId != HUNK_BSS)
-        FileRead(fh, hunk->data, n * sizeof(LONG));
+        FileRead(fh, hunk->data, n * sizeof(int));
       else
-        memset(hunk->data, 0, n * sizeof(LONG));
+        memset(hunk->data, 0, n * sizeof(int));
       {
-        char *hunkType;
+        const char *hunkType;
 
         if (hunkId == HUNK_CODE)
           hunkType = "CODE";
@@ -65,47 +65,46 @@ static __regargs BOOL LoadHunks(FileT *fh, HunkT **hunks) {
         else
           hunkType = " BSS";
 
-        Log("%s: %lx - %lx\n", hunkType, 
-            (LONG)hunk->data, (LONG)(hunk->data + hunk->size));
+        Log("%s: %p - %p\n", hunkType, hunk->data, hunk->data + hunk->size);
       }
     } else if (hunkId == HUNK_DEBUG) {
       FileRead(fh, ONSTACK(n));
-      FileSeek(fh, n * sizeof(LONG), SEEK_CUR);
+      FileSeek(fh, n * sizeof(int), SEEK_CUR);
     } else if (hunkId == HUNK_RELOC32) {
-      LONG hunkRef, reloc;
+      int hunkRef, reloc;
       do {
         FileRead(fh, ONSTACK(n));
         if (n == 0) break;
         FileRead(fh, ONSTACK(hunkNum));
-        hunkRef = (LONG)hunks[hunkNum]->data;
+        hunkRef = (int)hunks[hunkNum]->data;
         while (n--) {
           FileRead(fh, ONSTACK(reloc));
-          ((LONG *)hunk->data)[reloc] += hunkRef;
+          ((int *)hunk->data)[reloc] += hunkRef;
         }
       } while(1);
     } else if (hunkId == HUNK_SYMBOL) {
       do {
         FileRead(fh, ONSTACK(n));
         if (n == 0) break;
-        FileSeek(fh, (n + 1) * sizeof(LONG), SEEK_CUR);
+        FileSeek(fh, (n + 1) * sizeof(int), SEEK_CUR);
       } while(1);
     } else if (hunkId == HUNK_END) {
       if (hunkRoot) {
-        hunkRoot = FALSE;
+        hunkRoot = false;
         hunkIdx++;
       }
     } else {
-      Log("Unknown hunk $%08lx!\n", hunkCode);
-      return FALSE;
+      Log("Unknown hunk $%08lx!\n", (long)hunkCode);
+      return false;
     }
   }
 
-  return TRUE;
+  return true;
 }
 
 __regargs BPTR LoadExecutable(FileT *fh) {
   HunkT **hunks;
-  LONG n, hunkId, hunkNum;
+  int n, hunkId, hunkNum;
  
   FileRead(fh, ONSTACK(hunkId));
   hunkId &= 0x3FFFFFFF;
@@ -115,7 +114,7 @@ __regargs BPTR LoadExecutable(FileT *fh) {
     do {
       FileRead(fh, ONSTACK(n));
       if (n == 0) break;
-      FileSeek(fh, n * sizeof(LONG), SEEK_CUR);
+      FileSeek(fh, n * sizeof(int), SEEK_CUR);
     } while(1);
 
     /*
@@ -124,7 +123,7 @@ __regargs BPTR LoadExecutable(FileT *fh) {
      * number of the last (root) hunk
      */
     {
-      struct { LONG hunks, first, last; } s;
+      struct { int hunks, first, last; } s;
       FileRead(fh, ONSTACK(s));
       hunkNum = s.last - s.first + 1;
     }

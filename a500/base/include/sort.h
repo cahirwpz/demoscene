@@ -4,9 +4,9 @@
 #include "common.h"
 
 typedef struct {
-  WORD key, index;
+  short key, index;
 } SortItemT;
 
-__regargs void SortItemArray(SortItemT *table, WORD size);
+__regargs void SortItemArray(SortItemT *table, short size);
 
 #endif

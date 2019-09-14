@@ -8,15 +8,15 @@ __regargs void LoadIdentity3D(Matrix3D *M) {
   M->m22 = fx12f(1.0);
 }
 
-__regargs void Translate3D(Matrix3D *M, WORD x, WORD y, WORD z) {
+__regargs void Translate3D(Matrix3D *M, short x, short y, short z) {
   M->x += x;
   M->y += y;
   M->z += z;
 }
 
-__regargs void Scale3D(Matrix3D *M, WORD sx, WORD sy, WORD sz) {
-  WORD *m = &M->m00;
-  WORD r;
+__regargs void Scale3D(Matrix3D *M, short sx, short sy, short sz) {
+  short *m = &M->m00;
+  short r;
 
   r = normfx((*m) * sx); *m++ = r;
   r = normfx((*m) * sy); *m++ = r;
@@ -44,18 +44,18 @@ __regargs void Scale3D(Matrix3D *M, WORD sx, WORD sy, WORD sz) {
  * [ cos(x)*sin(z) + sin(x)*(sin(y)*cos(z)) | cos(x)*cos(z) - sin(x)*(sin(y)*sin(z)) | -sin(x)*cos(y) ]
  * [ sin(x)*sin(z) - cos(x)*(sin(y)*cos(z)) | sin(x)*cos(z) + cos(x)*(sin(y)*sin(z)) |  cos(x)*cos(y) ]
  */
-__regargs void LoadRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
-  WORD sinX = SIN(ax);
-  WORD cosX = COS(ax);
-  WORD sinY = SIN(ay);
-  WORD cosY = COS(ay);
-  WORD sinZ = SIN(az);
-  WORD cosZ = COS(az);
+__regargs void LoadRotate3D(Matrix3D *M, short ax, short ay, short az) {
+  short sinX = SIN(ax);
+  short cosX = COS(ax);
+  short sinY = SIN(ay);
+  short cosY = COS(ay);
+  short sinZ = SIN(az);
+  short cosZ = COS(az);
   
-  WORD tmp0 = normfx(sinY * cosZ);
-  WORD tmp1 = normfx(sinY * sinZ);
+  short tmp0 = normfx(sinY * cosZ);
+  short tmp1 = normfx(sinY * sinZ);
 
-  WORD *m = &M->m00;
+  short *m = &M->m00;
 
   *m++ = normfx(cosY * cosZ);
   *m++ = - normfx(cosY * sinZ);
@@ -80,18 +80,18 @@ __regargs void LoadRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
  * [ cos(y)*sin(z) | (sin(x)*sin(y))*sin(z) + cos(x)*cos(z) | (cos(x)*sin(y))*sin(z) - sin(x)*cos(z) ]
  * [       -sin(y) |                          sin(x)*cos(y) |                          cos(x)*cos(y) ]
  */
-__regargs void LoadReverseRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
-  WORD sinX = SIN(ax);
-  WORD cosX = COS(ax);
-  WORD sinY = SIN(ay);
-  WORD cosY = COS(ay);
-  WORD sinZ = SIN(az);
-  WORD cosZ = COS(az);
+__regargs void LoadReverseRotate3D(Matrix3D *M, short ax, short ay, short az) {
+  short sinX = SIN(ax);
+  short cosX = COS(ax);
+  short sinY = SIN(ay);
+  short cosY = COS(ay);
+  short sinZ = SIN(az);
+  short cosZ = COS(az);
 
-  WORD tmp0 = normfx(sinX * sinY);
-  WORD tmp1 = normfx(cosX * sinY);
+  short tmp0 = normfx(sinX * sinY);
+  short tmp1 = normfx(cosX * sinY);
 
-  WORD *m = &M->m00;
+  short *m = &M->m00;
 
   *m++ = normfx(cosY * cosZ);
   *m++ = normfx(tmp0 * cosZ - cosX * sinZ);
@@ -110,20 +110,20 @@ __regargs void LoadReverseRotate3D(Matrix3D *M, WORD ax, WORD ay, WORD az) {
 }
 
 #define MULROW() {             \
-  LONG t0 = (*a++) * (*b0++);  \
-  LONG t1 = (*a++) * (*b1++);  \
-  LONG t2 = (*a++) * (*b2++);  \
+  int t0 = (*a++) * (*b0++);  \
+  int t1 = (*a++) * (*b1++);  \
+  int t2 = (*a++) * (*b2++);  \
   *d++ = normfx(t0 + t1 + t2); \
 }
 
 __regargs void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb) {
-  WORD *a = &ma->m00;
-  WORD *d = &md->m00;
+  short *a = &ma->m00;
+  short *d = &md->m00;
 
   {
-    WORD *b0 = &mb->m00;
-    WORD *b1 = &mb->m10;
-    WORD *b2 = &mb->m20;
+    short *b0 = &mb->m00;
+    short *b1 = &mb->m10;
+    short *b2 = &mb->m20;
 
     MULROW(); a -= 3;
     MULROW(); a -= 3;
@@ -133,9 +133,9 @@ __regargs void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb) {
   }
 
   {
-    WORD *b0 = &mb->m00;
-    WORD *b1 = &mb->m10;
-    WORD *b2 = &mb->m20;
+    short *b0 = &mb->m00;
+    short *b1 = &mb->m10;
+    short *b2 = &mb->m20;
 
     MULROW(); a -= 3;
     MULROW(); a -= 3;
@@ -145,9 +145,9 @@ __regargs void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb) {
   }
 
   {
-    WORD *b0 = &mb->m00;
-    WORD *b1 = &mb->m10;
-    WORD *b2 = &mb->m20;
+    short *b0 = &mb->m00;
+    short *b1 = &mb->m10;
+    short *b2 = &mb->m20;
 
     MULROW(); a -= 3;
     MULROW(); a -= 3;
@@ -158,25 +158,25 @@ __regargs void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb) {
 }
 
 #define MULVERTEX() {                 \
-  WORD v0 = (*v++);                   \
-  WORD v1 = (*v++);                   \
-  WORD v2 = (*v++);                   \
-  WORD t3 = (*v++);                   \
-  LONG t0 = v0 * x;                   \
-  LONG t1 = v1 * y;                   \
-  LONG t2 = v2 * z;                   \
+  short v0 = (*v++);                   \
+  short v1 = (*v++);                   \
+  short v2 = (*v++);                   \
+  short t3 = (*v++);                   \
+  int t0 = v0 * x;                   \
+  int t1 = v1 * y;                   \
+  int t2 = v2 * z;                   \
   *dst++ = normfx(t0 + t1 + t2) + t3; \
 }
 
-__regargs void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, WORD n) {
-  WORD *src = (WORD *)in;
-  WORD *dst = (WORD *)out;
+__regargs void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, short n) {
+  short *src = (short *)in;
+  short *dst = (short *)out;
 
   while (--n >= 0) {
-    WORD *v = (WORD *)M;
-    WORD x = *src++;
-    WORD y = *src++;
-    WORD z = *src++;
+    short *v = (short *)M;
+    short x = *src++;
+    short y = *src++;
+    short z = *src++;
 
     MULVERTEX();
     MULVERTEX();

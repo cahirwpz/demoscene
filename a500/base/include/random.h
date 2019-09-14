@@ -1,8 +1,8 @@
 #ifndef __RANDOM_H__
 #define __RANDOM_H__
 
-#include <exec/types.h>
+#include "types.h"
 
-ULONG random();
+u_int random(void);
 
 #endif

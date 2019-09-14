@@ -9,16 +9,21 @@
 #define IEEESPExponent_Mask 0x7F800000 /*  8 bit for the exponent */
 #define IEEESPSign_Mask     0x80000000
 
-FLOAT SPFieee(FLOAT num asm("d0")) {
-  ULONG ieee = *(ULONG *)&num;
-  ULONG s, e, m, ffp = 0;
+typedef union {
+  u_int i;
+  float f;
+} binflt_t;
 
-  if (ieee != 0) {
-    s = (ieee & IEEESPSign_Mask) >> 24;
-    e = ((ieee & IEEESPExponent_Mask) >> 23) - 62;
-    m = ((ieee & IEEESPMantisse_Mask) << 8) | 0x80000000;
-    ffp = s | e | m;
+float SPFieee(float num asm("d0")) {
+  binflt_t src = { .f = num };
+  binflt_t dst = { .i = 0 };
+
+  if (src.i != 0) {
+    u_int s = (src.i & IEEESPSign_Mask) >> 24;
+    u_int e = ((src.i & IEEESPExponent_Mask) >> 23) - 62;
+    u_int m = ((src.i & IEEESPMantisse_Mask) << 8) | 0x80000000;
+    dst.i = s | e | m;
   }
 
-  return *(FLOAT *)&ffp;
+  return dst.f;
 }

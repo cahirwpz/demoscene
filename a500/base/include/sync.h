@@ -30,8 +30,8 @@ typedef enum {
 #define CTRL_KEY -2
 
 typedef struct {
-  WORD frame;
-  WORD value;
+  short frame;
+  short value;
 } TrackKeyT;
 
 /*
@@ -51,16 +51,16 @@ typedef struct {
    * 3 => next + 1
    */
   TrackKeyT *key[4]; 
-  WORD interval;
-  WORD delta;
-  BOOL pending;
+  short interval;
+  short delta;
+  bool pending;
   /* public: provided by user */
   char *name;
   TrackKeyT data[0];
 } TrackT;
 
 __regargs void TrackInit(TrackT *track);
-__regargs WORD TrackValueGet(TrackT *track, WORD frame);
+__regargs short TrackValueGet(TrackT *track, short frame);
 __regargs TrackT *TrackLookup(TrackT **tracks, const char *name);
 
 __regargs TrackT **LoadTrackList(char *filename);

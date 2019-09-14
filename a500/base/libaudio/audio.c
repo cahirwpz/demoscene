@@ -1,21 +1,21 @@
 #include "hardware.h"
 #include "sound.h"
 
-void AudioSetVolume(ChanT num, UBYTE level) {
-  custom->aud[num].ac_vol = (UWORD)level;
+void AudioSetVolume(ChanT num, u_char level) {
+  custom->aud[num].ac_vol = (u_short)level;
 }
 
-void AudioSetPeriod(ChanT num, UWORD period) {
+void AudioSetPeriod(ChanT num, u_short period) {
   custom->aud[num].ac_per = period;
 }
 
-void AudioSetSampleRate(ChanT num, UWORD rate) {
-  custom->aud[num].ac_per = (UWORD)(3579546L / rate);
+void AudioSetSampleRate(ChanT num, u_short rate) {
+  custom->aud[num].ac_per = (u_short)(3579546L / rate);
 }
 
-void AudioAttachSample(ChanT num, APTR data, ULONG length) {
-  custom->aud[num].ac_ptr = (UWORD *)data;
-  custom->aud[num].ac_len = (UWORD)(length >> 1);
+void AudioAttachSample(ChanT num, void *data, u_int length) {
+  custom->aud[num].ac_ptr = (u_short *)data;
+  custom->aud[num].ac_len = (u_short)(length >> 1);
 }
 
 void AudioAttachSound(ChanT num, SoundT *sound) {

@@ -8,7 +8,7 @@
 #include "fx.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH (320 - 32)
 #define HEIGHT 256
@@ -29,18 +29,18 @@ STRPTR __cwdpath = "data";
 static CopInsT *chunky[2][VTILES];
 static CopListT *cp[2];
 static PixmapT *colors;
-static LONG active = 0;
+static int active = 0;
 
-static BYTE tab1[256], tab2[256], tab3[256];
-static UBYTE a0, a1, a2, a3, a4;
-static BYTE xbuf[HTILES], ybuf[VTILES];
+static char tab1[256], tab2[256], tab3[256];
+static u_char a0, a1, a2, a3, a4;
+static u_char xbuf[HTILES], ybuf[VTILES];
 
-static void GeneratePlasmaTables() {
-  WORD i;
+static void GeneratePlasmaTables(void) {
+  short i;
 
   /* Generate plasma tables */
   for (i = 0; i < 256; i++) {
-    WORD rad = i * 16;
+    short rad = i * 16;
 
     tab1[i] = fx4i(3 * 47) * SIN(rad * 2) >> 16;
     tab2[i] = fx4i(3 * 31) * COS(rad * 2) >> 16;
@@ -48,13 +48,13 @@ static void GeneratePlasmaTables() {
   }
 }
 
-static void Load() {
+static void Load(void) {
   colors = LoadPNG("plasma-colors.png", PM_RGB12, MEMF_PUBLIC);
 
   GeneratePlasmaTables();
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeletePixmap(colors);
 }
 
@@ -76,7 +76,7 @@ static void UnLoad() {
  * UAE copper debugger facility was used to find the right spot.
  */
 static void MakeCopperList(CopListT *cp, CopInsT **row) {
-  WORD x, y;
+  short x, y;
 
   CopInit(cp);
   CopWaitV(cp, VP(0));
@@ -96,7 +96,7 @@ static void MakeCopperList(CopListT *cp, CopInsT **row) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   cp[0] = NewCopList(80 + (HTILES + 5) * VTILES);
   cp[1] = NewCopList(80 + (HTILES + 5) * VTILES);
 
@@ -106,19 +106,19 @@ static void Init() {
   CopListActivate(cp[1]);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER);
 
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
 }
 
-static void UpdateXBUF() {
-  UBYTE _a0 = a0;
-  UBYTE _a1 = a1;
-  UBYTE _a2 = a2;
-  UBYTE *_buf = xbuf;
-  WORD n = HTILES - 1;
+static void UpdateXBUF(void) {
+  u_char _a0 = a0;
+  u_char _a1 = a1;
+  u_char _a2 = a2;
+  u_char *_buf = xbuf;
+  short n = HTILES - 1;
 
   do {
     *_buf++ = tab1[_a0] + tab2[_a1] + tab3[_a2];
@@ -126,11 +126,11 @@ static void UpdateXBUF() {
   } while (--n >= 0);
 }
 
-static void UpdateYBUF() {
-  UBYTE _a3 = a3;
-  UBYTE _a4 = a4;
-  UBYTE *_buf = ybuf;
-  WORD n = VTILES - 1;
+static void UpdateYBUF(void) {
+  u_char _a3 = a3;
+  u_char _a4 = a4;
+  u_char *_buf = ybuf;
+  short n = VTILES - 1;
 
   do {
     *_buf++ = tab1[_a3] + tab2[_a4];
@@ -140,9 +140,9 @@ static void UpdateYBUF() {
 
 #define OPTIMIZED 1
 
-static void UpdateChunky() {
-  UWORD *cmap = colors->pixels;
-  WORD y;
+static void UpdateChunky(void) {
+  u_short *cmap = colors->pixels;
+  short y;
 
   UpdateXBUF();
   UpdateYBUF();
@@ -150,9 +150,9 @@ static void UpdateChunky() {
   a0 += 1; a1 += 3; a2 += 2; a3 += 1; a4 -= 1;
 
   for (y = 0; y < VTILES; y++) {
-    UWORD *ins = &chunky[active][y]->move.data;
+    short *ins = &chunky[active][y]->move.data;
 
-    WORD x = HTILES - 1;
+    short x = HTILES - 1;
     do {
 #if OPTIMIZED
       asm volatile("moveq #0,d0\n"
@@ -165,7 +165,7 @@ static void UpdateChunky() {
                    : "a" (xbuf), "d" (x), "a" (ybuf), "d" (y), "a" (cmap)
                    : "d0");
 #else
-      UBYTE v = xbuf[x] + ybuf[y];
+      u_char v = xbuf[x] + ybuf[y];
       *ins++ = cmap[v];
       ins++;
 #endif
@@ -173,16 +173,16 @@ static void UpdateChunky() {
   }
 }
 
-static void Render() {
-  LONG lines;
+static void Render(void) {
+  int lines;
 
   lines = ReadLineCounter();
   UpdateChunky();
-  Log("update: %ld\n", ReadLineCounter() - lines);
+  Log("update: %d\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

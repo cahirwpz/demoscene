@@ -45,11 +45,11 @@ static void UnLoad() {
 }
 
 static void MoveSprite() {
-  static UWORD counter = 0;
-  static UWORD x = X(0);
-  static UWORD y[3] = { Y(113), Y(110), Y(101) };
-  static WORD direction = 1;
-  WORD i = (WORD)(counter * 2 / 50) % 4;
+  static u_short counter = 0;
+  static u_short x = X(0);
+  static u_short y[3] = { Y(113), Y(110), Y(101) };
+  static short direction = 1;
+  short i = (short)(counter * 2 / 50) % 4;
 
   if (x >= X(304))
     direction = -1;

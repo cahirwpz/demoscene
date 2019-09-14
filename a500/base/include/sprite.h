@@ -8,20 +8,20 @@ typedef struct Sprite SpriteT;
 
 struct Sprite {
   SpriteT *attached;
-  UWORD height;
-  UWORD *data;
+  u_short height;
+  u_short *data;
 };
 
 extern SpriteT *NullSprite;
 
-__regargs SpriteT *NewSprite(UWORD height, BOOL attached);
-__regargs SpriteT *NewSpriteFromBitmap(UWORD height, BitmapT *bitmap,
-                                       UWORD xstart, UWORD ystart);
-__regargs SpriteT *CloneSystemPointer();
+__regargs SpriteT *NewSprite(u_short height, bool attached);
+__regargs SpriteT *NewSpriteFromBitmap(u_short height, BitmapT *bitmap,
+                                       u_short xstart, u_short ystart);
+__regargs SpriteT *CloneSystemPointer(void);
 __regargs void DeleteSprite(SpriteT *sprite);
 
 /* Don't call it for null sprites. */
-__regargs void UpdateSprite(SpriteT *sprite, UWORD hstart, UWORD vstart);
+__regargs void UpdateSprite(SpriteT *sprite, u_short hstart, u_short vstart);
 
 __regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr);
 __regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr);

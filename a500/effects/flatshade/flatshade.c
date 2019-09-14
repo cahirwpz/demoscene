@@ -7,7 +7,7 @@
 #include "ilbm.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH  256
 #define HEIGHT 256
@@ -21,14 +21,14 @@ static CopInsT *bplptr[DEPTH];
 static BitmapT *screen0, *screen1;
 static BitmapT *buffer;
 
-static void Load() {
+static void Load(void) {
   // mesh = LoadMesh3D("codi.3d", SPFlt(384+104));
   mesh = LoadMesh3D("pilka.3d", SPFlt(65));
   CalculateFaceNormals(mesh);
   palette = LoadPalette("flatshade-pal.ilbm");
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeletePalette(palette);
   DeleteMesh3D(mesh);
 }
@@ -41,7 +41,7 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(-250);
 
@@ -55,7 +55,7 @@ static void Init() {
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 }
 
-static void Kill() {
+static void Kill(void) {
   DeleteBitmap(screen0);
   DeleteBitmap(screen1);
   DeleteBitmap(buffer);
@@ -64,31 +64,31 @@ static void Kill() {
 }
 
 #define MULVERTEX1(D, E) {               \
-  WORD t0 = (*v++) + y;                  \
-  WORD t1 = (*v++) + x;                  \
-  LONG t2 = (*v++) * z;                  \
+  short t0 = (*v++) + y;                  \
+  short t1 = (*v++) + x;                  \
+  int t2 = (*v++) * z;                  \
   v++;                                   \
   D = ((t0 * t1 + t2 - x * y) >> 4) + E; \
 }
 
 #define MULVERTEX2(D) {                  \
-  WORD t0 = (*v++) + y;                  \
-  WORD t1 = (*v++) + x;                  \
-  LONG t2 = (*v++) * z;                  \
-  WORD t3 = (*v++);                      \
+  short t0 = (*v++) + y;                  \
+  short t1 = (*v++) + x;                  \
+  int t2 = (*v++) * z;                  \
+  short t3 = (*v++);                      \
   D = normfx(t0 * t1 + t2 - x * y) + t3; \
 }
 
 static __regargs void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
-  WORD *v = (WORD *)M;
-  WORD *src = (WORD *)object->mesh->vertex;
-  WORD *dst = (WORD *)object->vertex;
-  BYTE *flags = object->vertexFlags;
-  register WORD n asm("d7") = object->mesh->vertices - 1;
+  short *v = (short *)M;
+  short *src = (short *)object->mesh->vertex;
+  short *dst = (short *)object->vertex;
+  char *flags = object->vertexFlags;
+  register short n asm("d7") = object->mesh->vertices - 1;
 
-  LONG m0 = (M->x << 8) - ((M->m00 * M->m01) >> 4);
-  LONG m1 = (M->y << 8) - ((M->m10 * M->m11) >> 4);
+  int m0 = (M->x << 8) - ((M->m00 * M->m01) >> 4);
+  int m1 = (M->y << 8) - ((M->m10 * M->m11) >> 4);
 
   /* WARNING! This modifies camera matrix! */
   M->z -= normfx(M->m20 * M->m21);
@@ -106,11 +106,11 @@ static __regargs void TransformVertices(Object3D *object) {
 
   do {
     if (*flags++) {
-      WORD x = *src++;
-      WORD y = *src++;
-      WORD z = *src++;
-      LONG xp, yp;
-      WORD zp;
+      short x = *src++;
+      short y = *src++;
+      short z = *src++;
+      int xp, yp;
+      short zp;
 
       pushl(v);
       MULVERTEX1(xp, m0);
@@ -134,28 +134,28 @@ static __regargs void TransformVertices(Object3D *object) {
 static void DrawObject(Object3D *object, volatile struct Custom* const custom asm("a6")) {
   IndexListT **faces = object->mesh->face;
   SortItemT *item = object->visibleFace;
-  BYTE *faceFlags = object->faceFlags;
-  WORD n = object->visibleFaces;
-  APTR point = object->vertex;
-  APTR temp = buffer->planes[0];
+  char *faceFlags = object->faceFlags;
+  short n = object->visibleFaces;
+  void *point = object->vertex;
+  void *temp = buffer->planes[0];
 
   custom->bltafwm = -1;
   custom->bltalwm = -1;
 
   for (; --n >= 0; item++) {
-    WORD index = item->index;
+    short index = item->index;
     IndexListT *face = faces[index];
 
-    WORD minX, minY, maxX, maxY;
+    short minX, minY, maxX, maxY;
 
     /* Draw edges and calculate bounding box. */
     {
-      WORD *i = face->indices;
-      register WORD m asm("d7") = face->count - 1;
-      WORD *ptr = (WORD *)(point + (WORD)(i[m] << 3));
-      WORD xs = *ptr++;
-      WORD ys = *ptr++;
-      WORD xe, ye;
+      short *i = face->indices;
+      register short m asm("d7") = face->count - 1;
+      short *ptr = (short *)(point + (short)(i[m] << 3));
+      short xs = *ptr++;
+      short ys = *ptr++;
+      short xe, ye;
 
       minX = xs;
       minY = ys;
@@ -163,7 +163,7 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
       maxY = ys;
 
       do {
-        ptr = (WORD *)(point + (WORD)(*i++ << 3));
+        ptr = (short *)(point + (short)(*i++ << 3));
         xe = *ptr++;
         ye = *ptr++;
 
@@ -179,8 +179,8 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
 
         /* Draw an edge. */
         {
-          WORD x0, y0, dx, dy, derr;
-          UWORD bltcon1;
+          short x0, y0, dx, dy, derr;
+          u_short bltcon1;
 
           if (ys < ye) {
             x0 = xs; y0 = ys;
@@ -214,21 +214,21 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
             bltcon1 |= SIGNFLAG;
 
           {
-            WORD start = ((y0 << 5) + (x0 >> 3)) & ~1;
-            APTR dst = temp + start;
-            UWORD bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
-            UWORD bltamod = derr - dx;
-            UWORD bltbmod = dy + dy;
-            UWORD bltsize = (dx << 6) + 66;
+            short start = ((y0 << 5) + (x0 >> 3)) & ~1;
+            void *dst = temp + start;
+            u_short bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
+            u_short bltamod = derr - dx;
+            u_short bltbmod = dy + dy;
+            u_short bltsize = (dx << 6) + 66;
 
             WaitBlitter();
 
-            MoveLong(bltbdat, 0xffff, 0x8000);
-
+            custom->bltbdat = 0xffff;
+            custom->bltadat = 0x8000;
             custom->bltcon0 = bltcon0;
             custom->bltcon1 = bltcon1;
             custom->bltcpt = dst;
-            custom->bltapt = (APTR)(LONG)derr;
+            custom->bltapt = (void *)(int)derr;
             custom->bltdpt = temp;
             custom->bltcmod = WIDTH / 8;
             custom->bltbmod = bltbmod;
@@ -243,8 +243,8 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
     }
 
     {
-      WORD bltstart, bltend;
-      UWORD bltmod, bltsize;
+      short bltstart, bltend;
+      u_short bltmod, bltsize;
 
       /* Align to word boundary. */
       minX = (minX & ~15) >> 3;
@@ -252,8 +252,8 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
       maxX = ((maxX + 16) & ~15) >> 3;
 
       {
-        WORD w = maxX - minX;
-        WORD h = maxY - minY + 1;
+        short w = maxX - minX;
+        short h = maxY - minY + 1;
 
         bltstart = minX + minY * (WIDTH / 8);
         bltend = maxX + maxY * (WIDTH / 8) - 2;
@@ -263,7 +263,7 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
 
       /* Fill face. */
       {
-        APTR src = temp + bltend;
+        void *src = temp + bltend;
 
         WaitBlitter();
 
@@ -279,15 +279,15 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
 
       /* Copy filled face to screen. */
       {
-        APTR *screen = &screen0->planes[DEPTH];
-        APTR src = temp + bltstart;
-        BYTE mask = 1 << (DEPTH - 1);
-        BYTE color = faceFlags[index];
-        WORD n = DEPTH;
+        void **screen = &screen0->planes[DEPTH];
+        void *src = temp + bltstart;
+        char mask = 1 << (DEPTH - 1);
+        char color = faceFlags[index];
+        short n = DEPTH;
 
         while (--n >= 0) {
-          APTR dst = *(--screen) + bltstart;
-          UWORD bltcon0;
+          void *dst = *(--screen) + bltstart;
+          u_short bltcon0;
 
           if (color & mask)
             bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
@@ -309,7 +309,7 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
 
       /* Clear working area. */
       {
-        APTR data = temp + bltstart;
+        void *data = temp + bltstart;
 
         WaitBlitter();
 
@@ -323,9 +323,9 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
 }
 
 static __regargs void BitmapClearFast(BitmapT *dst) {
-  UWORD height = (WORD)dst->height * (WORD)dst->depth;
-  UWORD bltsize = (height << 6) | (dst->bytesPerRow >> 1);
-  APTR bltpt = dst->planes[0];
+  u_short height = (short)dst->height * (short)dst->depth;
+  u_short bltsize = (height << 6) | (dst->bytesPerRow >> 1);
+  void *bltpt = dst->planes[0];
 
   WaitBlitter();
 
@@ -339,38 +339,38 @@ static __regargs void BitmapClearFast(BitmapT *dst) {
   custom->bltsize = bltsize;
 }
 
-static void Render() {
-  LONG lines = ReadLineCounter();
+static void Render(void) {
+  int lines = ReadLineCounter();
 
   BitmapClearFast(screen0);
 
   {
-    // LONG lines = ReadLineCounter();
+    // int lines = ReadLineCounter();
     cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 8;
     UpdateObjectTransformation(cube);
     UpdateFaceVisibility(cube);
     UpdateVertexVisibility(cube);
     TransformVertices(cube);
-    // Log("transform: %ld\n", ReadLineCounter() - lines);
+    // Log("transform: %d\n", ReadLineCounter() - lines);
   }
 
   {
-    // LONG lines = ReadLineCounter();
+    // int lines = ReadLineCounter();
     SortFaces(cube);
-    // Log("sort: %ld\n", ReadLineCounter() - lines);
+    // Log("sort: %d\n", ReadLineCounter() - lines);
   }
 
   {
-    // LONG lines = ReadLineCounter();
+    // int lines = ReadLineCounter();
     DrawObject(cube, custom);
-    // Log("draw: %ld\n", ReadLineCounter() - lines);
+    // Log("draw: %d\n", ReadLineCounter() - lines);
   }
 
-  Log("all: %ld\n", ReadLineCounter() - lines);
+  Log("all: %d\n", ReadLineCounter() - lines);
 
   CopUpdateBitplanes(bplptr, screen0, DEPTH);
   TaskWait(VBlankEvent);
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

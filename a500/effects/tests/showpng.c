@@ -22,30 +22,30 @@ static void UnLoad() {
 
 static void Init() {
   {
-    LONG lines = ReadLineCounter();
+    int lines = ReadLineCounter();
     pixmap = PixmapFromPNG(image, MEMF_PUBLIC);
     lines = ReadLineCounter() - lines;
-    Log("Png decoding took %ld raster lines.\n", (LONG)lines);
+    Log("Png decoding took %d raster lines.\n", lines);
   }
 
   bitmap = NewBitmap(pixmap->width, pixmap->height, 4);
   bitmap->palette = PaletteFromPNG(image);
 
   {
-    LONG lines = ReadLineCounter();
+    int lines = ReadLineCounter();
     c2p_1x1_4(pixmap->pixels, bitmap->planes[0], 
               pixmap->width, pixmap->height, bitmap->bplSize);
     lines = ReadLineCounter() - lines;
-    Log("Chunky to planar took %ld raster lines.\n", (LONG)lines);
+    Log("Chunky to planar took %d raster lines.\n", lines);
   }
 
   cp = NewCopList(100);
 
   {
-    WORD w = bitmap->width;
-    WORD h = bitmap->height;
-    WORD xs = X((320 - w) / 2);
-    WORD ys = Y((256 - h) / 2);
+    short w = bitmap->width;
+    short h = bitmap->height;
+    short xs = X((320 - w) / 2);
+    short ys = Y((256 - h) / 2);
 
     CopInit(cp);
     CopSetupGfxSimple(cp, MODE_LORES, bitmap->depth, xs, ys, w, h);

@@ -1,20 +1,20 @@
 #include "line.h"
 
 static struct {
-  UBYTE *pixels;
-  LONG stride;
+  u_char *pixels;
+  int stride;
 } line;
 
-__regargs void CpuLineSetup(BitmapT *bitmap, UWORD plane) {
+__regargs void CpuLineSetup(BitmapT *bitmap, u_short plane) {
   line.pixels = bitmap->planes[plane];
   line.stride = bitmap->bytesPerRow;
 }
 
-void CpuLine(WORD xs asm("d0"), WORD ys asm("d1"), WORD xe asm("d2"), WORD ye asm("d3")) {
-  register UBYTE *pixels asm("a0") = line.pixels;
-  register LONG stride asm("a1") = line.stride;
-  UBYTE color;
-  WORD dx, dy;
+void CpuLine(short xs asm("d0"), short ys asm("d1"), short xe asm("d2"), short ye asm("d3")) {
+  register u_char *pixels asm("a0") = line.pixels;
+  register int stride asm("a1") = line.stride;
+  u_char color;
+  short dx, dy;
 
   if (ys > ye) {
     swapr(xs, xe);
@@ -24,15 +24,15 @@ void CpuLine(WORD xs asm("d0"), WORD ys asm("d1"), WORD xe asm("d2"), WORD ye as
   dx = abs(xe - xs);
   dy = ye - ys;
 
-  pixels += ys * (WORD)stride;
-  pixels += (LONG)xs >> 3;
+  pixels += ys * (short)stride;
+  pixels += (int)xs >> 3;
 
   color = 0x80 >> (xs & 7);
 
   if (dx < dy) {
-    WORD dg2 = 2 * dx;
-    WORD dg = dg2 - dy;
-    WORD dg1 = dg - dy;
+    short dg2 = 2 * dx;
+    short dg = dg2 - dy;
+    short dg1 = dg - dy;
 
     if (dy == 0)
       return;
@@ -69,9 +69,9 @@ void CpuLine(WORD xs asm("d0"), WORD ys asm("d1"), WORD xe asm("d2"), WORD ye as
       } while (--dy != -1);
     }
   } else {
-    WORD dg2 = 2 * dy;
-    WORD dg = dg2 - dx;
-    WORD dg1 = dg - dx;
+    short dg2 = 2 * dy;
+    short dg = dg2 - dx;
+    short dg1 = dg - dx;
 
     if (dx == 0)
       return;
@@ -110,27 +110,27 @@ void CpuLine(WORD xs asm("d0"), WORD ys asm("d1"), WORD xe asm("d2"), WORD ye as
   }
 }
 
-void CpuEdge(WORD x1 asm("d0"), WORD y1 asm("d1"), WORD x2 asm("d2"), WORD y2 asm("d3")) {
-  register UBYTE *pixels asm("a0") = line.pixels;
-  register LONG stride asm("a1") = line.stride;
+void CpuEdge(short x1 asm("d0"), short y1 asm("d1"), short x2 asm("d2"), short y2 asm("d3")) {
+  register u_char *pixels asm("a0") = line.pixels;
+  register int stride asm("a1") = line.stride;
 
   if (y1 == y2)
     return;
 
   {
-    WORD dy = y2 - y1;
-    WORD dx = x2 - x1;
-    UBYTE color = 0x80 >> (x1 & 7);
+    short dy = y2 - y1;
+    short dx = x2 - x1;
+    u_char color = 0x80 >> (x1 & 7);
 
-    pixels += (LONG)((WORD)y1 * (WORD)stride);
+    pixels += (int)((short)y1 * (short)stride);
     pixels += x1 >> 3;
 
     if (dx < 0)
       dx = -dx;
 
     if (dx <= dy) {
-      WORD err = dy / 2;
-      WORD n = dy - 1;
+      short err = dy / 2;
+      short n = dy - 1;
 
       if (x1 <= x2) {
         do {
@@ -160,8 +160,8 @@ void CpuEdge(WORD x1 asm("d0"), WORD y1 asm("d1"), WORD x2 asm("d2"), WORD y2 as
         } while (--n != -1);
       } 
     } else {
-      WORD err = dx / 2; /* Makes line symmetric on both ends... I guess */
-      WORD n = dx - 1;
+      short err = dx / 2; /* Makes line symmetric on both ends... I guess */
+      short n = dx - 1;
 
       if (x1 <= x2) {
         do {

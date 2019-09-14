@@ -9,7 +9,7 @@
 #include "reader.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 640
 #define HEIGHT 256
@@ -22,28 +22,28 @@ STRPTR __cwdpath = "data";
 
 static char *text;
 
-static WORD active = 0;
+static short active = 0;
 
 static CopListT *cp[2];
 static CopInsT *linebpl[2][HEIGHT];
 static BitmapT *scroll;
 static BitmapT *font;
 
-static WORD last_line = -1;
+static short last_line = -1;
 static char *line_start;
 
-static void Load() {
+static void Load(void) {
   text = LoadFile("text-scroll.txt", MEMF_PUBLIC);
   font = LoadILBMCustom("text-scroll-font.ilbm", BM_LOAD_PALETTE);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   MemFree(text);
   DeletePalette(font->palette);
   DeleteBitmap(font);
 }
 
-static CopListT *MakeCopperList(WORD n) {
+static CopListT *MakeCopperList(short n) {
   CopListT *cp = NewCopList(100 + 3 * HEIGHT);
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
@@ -51,8 +51,8 @@ static CopListT *MakeCopperList(WORD n) {
 
   CopLoadPal(cp, font->palette, 0);
   {
-    UWORD i;
-    APTR ptr = scroll->planes[0];
+    u_short i;
+    void *ptr = scroll->planes[0];
 
     for (i = 0; i < HEIGHT; i++, ptr += scroll->bytesPerRow) {
       CopWaitSafe(cp, Y(i), 0);
@@ -63,7 +63,7 @@ static CopListT *MakeCopperList(WORD n) {
   return cp;
 }
 
-static void Init() {
+static void Init(void) {
   scroll = NewBitmap(WIDTH, HEIGHT + 16, 1);
 
   EnableDMA(DMAF_BLITTER);
@@ -79,22 +79,22 @@ static void Init() {
   EnableDMA(DMAF_RASTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
   DeleteBitmap(scroll);
 }
 
-static void RenderLine(UBYTE *dst, UBYTE *line, WORD size) {
-  WORD dwidth = scroll->bytesPerRow;
-  WORD swidth = font->bytesPerRow;
-  UBYTE *src = font->planes[0];
-  WORD x = 0;
+static void RenderLine(u_char *dst, char *line, short size) {
+  short dwidth = scroll->bytesPerRow;
+  short swidth = font->bytesPerRow;
+  u_char *src = font->planes[0];
+  short x = 0;
 
   while (--size >= 0) {
-    WORD i = (*line++) - 32;
-    WORD j = x++;
-    WORD h = 8;
+    short i = (*line++) - 32;
+    short j = x++;
+    short h = 8;
 
     if (i < 0)
       continue;
@@ -107,15 +107,15 @@ static void RenderLine(UBYTE *dst, UBYTE *line, WORD size) {
   }
 }
 
-static void SetupLinePointers() {
+static void SetupLinePointers(void) {
   CopInsT **ins = linebpl[active];
-  APTR plane = scroll->planes[0];
-  LONG stride = scroll->bytesPerRow;
-  LONG bplsize = scroll->bplSize;
-  WORD y = (LONG)(frameCount / 2 + 8) % (WORD)scroll->height;
-  APTR start = plane + (WORD)stride * y;
-  APTR end = plane + bplsize;
-  WORD n = HEIGHT;
+  void *plane = scroll->planes[0];
+  int stride = scroll->bytesPerRow;
+  int bplsize = scroll->bplSize;
+  short y = (int)(frameCount / 2 + 8) % (short)scroll->height;
+  void *start = plane + (short)stride * y;
+  void *end = plane + bplsize;
+  short n = HEIGHT;
 
   while (--n >= 0) {
     if (start >= end)
@@ -125,15 +125,15 @@ static void SetupLinePointers() {
   }
 }
 
-static void RenderNextLineIfNeeded() {
+static void RenderNextLineIfNeeded(void) {
   Area2D rect = {0, 0, WIDTH, SIZE};
-  WORD s = frameCount / 16;
+  short s = frameCount / 16;
 
   if (s > last_line) {
-    APTR ptr = scroll->planes[0];
-    WORD line_num = (s % (LINES + 2)) * SIZE;
+    void *ptr = scroll->planes[0];
+    short line_num = (s % (LINES + 2)) * SIZE;
     char *line_end;
-    WORD size;
+    short size;
 
     line_end = line_start;
     SkipLine(&line_end);
@@ -151,7 +151,7 @@ static void RenderNextLineIfNeeded() {
   }
 }
 
-static void Render() {
+static void Render(void) {
   SetupLinePointers();
   RenderNextLineIfNeeded();
 
@@ -160,4 +160,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

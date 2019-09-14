@@ -5,27 +5,26 @@
 
 typedef struct {
   const char *name;
-  BOOL (*func)(char **, ShapeT *);
+  bool (*func)(char **, ShapeT *);
 } ParserT;
 
-static BOOL ParseOrigin(char **data, ShapeT *shape) {
+static bool ParseOrigin(char **data, ShapeT *shape) {
   if (!(ReadShort(data, &shape->origin.x) &&
         ReadShort(data, &shape->origin.y) &&
         EndOfLine(data)))
-    return FALSE;
-  Log("[2D] Origin is (%ld, %ld)\n", 
-      (LONG)shape->origin.x, (LONG)shape->origin.y);
-  return TRUE;
+    return false;
+  Log("[2D] Origin is (%d, %d)\n", shape->origin.x, shape->origin.y);
+  return true;
 }
 
-static BOOL ParsePoints(char **data, ShapeT *shape) {
+static bool ParsePoints(char **data, ShapeT *shape) {
   Point2D *point;
-  WORD n;
+  short n;
 
   if (!(ReadShort(data, &n) && EndOfLine(data)))
-    return FALSE;
+    return false;
 
-  Log("[2D] Shape has %ld points\n", (LONG)n);
+  Log("[2D] Shape has %d points\n", n);
 
   shape->points = n;
   shape->origPoint = MemAlloc(sizeof(Point2D) * n, MEMF_PUBLIC);
@@ -35,10 +34,10 @@ static BOOL ParsePoints(char **data, ShapeT *shape) {
   point = shape->origPoint;
 
   while (NextLine(data) && !MatchString(data, "@end") && n > 0) {
-    WORD x, y;
+    short x, y;
 
     if (!(ReadShort(data, &x) && ReadShort(data, &y) && EndOfLine(data)))
-      return FALSE;
+      return false;
 
     point->x = (x - shape->origin.x) * 16;
     point->y = (y - shape->origin.y) * 16;
@@ -48,33 +47,33 @@ static BOOL ParsePoints(char **data, ShapeT *shape) {
   return (n == 0);
 }
 
-static BOOL ParsePolygons(char **data, ShapeT *shape) {
+static bool ParsePolygons(char **data, ShapeT *shape) {
   IndexListT **polygons;
-  UBYTE *polygonFlags;
-  WORD *index;
-  WORD k = 0, n;
+  u_char *polygonFlags;
+  short *index;
+  short k = 0, n;
 
   if (!(ReadShort(data, &n) && EndOfLine(data)))
-    return FALSE;
+    return false;
 
-  Log("[2D] Shape has %ld polygons\n", (LONG)n);
+  Log("[2D] Shape has %d polygons\n", n);
 
   shape->polygons = n;
   shape->polygon = MemAlloc(sizeof(IndexListT *) * (n + 1) + 
-                            sizeof(WORD) * (n * 2 + shape->points),
+                            sizeof(short) * (n * 2 + shape->points),
                             MEMF_PUBLIC|MEMF_CLEAR);
-  shape->polygonFlags = MemAlloc(sizeof(UBYTE) * n, MEMF_PUBLIC);
+  shape->polygonFlags = MemAlloc(sizeof(u_char) * n, MEMF_PUBLIC);
 
   polygons = shape->polygon;
   polygonFlags = shape->polygonFlags;
-  index = (WORD *)&shape->polygon[n + 1];
+  index = (short *)&shape->polygon[n + 1];
 
   while (NextLine(data) && !MatchString(data, "@end") && n > 0) {
-    WORD count, first = k;
+    short count, first = k;
 
-    if (!(ReadByte(data, polygonFlags++) && ReadShort(data, &count) &&
+    if (!(ReadByteU(data, polygonFlags++) && ReadShort(data, &count) &&
           EndOfLine(data)))
-      return FALSE;
+      return false;
 
     *polygons++ = (IndexListT *)index;
 
@@ -97,7 +96,7 @@ static ParserT TopLevelParser[] = {
   { NULL, NULL }
 };
 
-__regargs ShapeT *LoadShape(char *filename) {
+__regargs ShapeT *LoadShape(const char *filename) {
   char *file = LoadFile(filename, MEMF_PUBLIC);
   char *data = file;
   ShapeT *shape = MemAlloc(sizeof(ShapeT), MEMF_PUBLIC|MEMF_CLEAR);
@@ -112,7 +111,7 @@ __regargs ShapeT *LoadShape(char *filename) {
         continue;
       if (parser->func(&data, shape))
         break;
-      Log("[2D] Parse error at position %ld!\n", (LONG)(data - file));
+      Log("[2D] Parse error at position %ld!\n", (ptrdiff_t)(data - file));
       DeleteShape(shape);
       MemFree(file);
       return NULL;

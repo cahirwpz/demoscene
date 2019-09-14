@@ -1,5 +1,3 @@
-#include <proto/graphics.h>
-
 #include "startup.h"
 #include "console.h"
 #include "hardware.h"
@@ -14,10 +12,9 @@
 
 static BitmapT *screen;
 static CopListT *cp;
-static TextFontT *topaz8;
 static ConsoleT console;
 
-static void Init() {
+static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
 
@@ -31,12 +28,7 @@ static void Init() {
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
-  {
-    struct TextAttr textattr = { "topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
-    topaz8 = OpenFont(&textattr);
-  }
-
-  ConsoleInit(&console, screen, topaz8);
+  ConsoleInit(&console, screen);
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
 
@@ -44,20 +36,20 @@ static void Init() {
   KeyboardInit();
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER);
 
   KeyboardKill();
   SerialKill();
 
-  CloseFont(topaz8);
+  ConsoleKill(&console);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
 
-static BOOL HandleEvent() {
+static bool HandleEvent(void) {
   EventT ev;
-  LONG c = SerialGet();
+  int c = SerialGet();
 
   if (c >= 0) {
     ConsolePutChar(&console, c);
@@ -65,16 +57,16 @@ static BOOL HandleEvent() {
   }
 
   if (!PopEvent(&ev))
-    return TRUE;
+    return true;
 
   if (ev.type != EV_KEY)
-    return TRUE;
+    return true;
 
   if (ev.key.modifier & MOD_PRESSED)
-    return TRUE;
+    return true;
 
   if (ev.key.code == KEY_ESCAPE)
-    return FALSE;
+    return false;
 
   ConsoleDrawCursor(&console);
 
@@ -107,7 +99,7 @@ static BOOL HandleEvent() {
 
   ConsoleDrawCursor(&console);
 
-  return TRUE;
+  return true;
 }
 
 EffectT Effect = { NULL, NULL, Init, Kill, NULL, HandleEvent };

@@ -37,7 +37,7 @@ typedef enum {
 typedef union Widget WidgetT;
 
 #define WIDGET_BASE                                                     \
-  UBYTE type;                                                           \
+  u_char type;                                                           \
   /* widget absolute position and size */                               \
   Area2D area;                                                          \
   /* widget internal state */                                           \
@@ -56,7 +56,7 @@ typedef struct {
 
 typedef struct {
   WIDGET_BASE
-  WORD count;
+  short count;
   GroupItemT *item;
 } GroupT;
 
@@ -68,13 +68,13 @@ typedef struct {
 
 typedef struct {
   WIDGET_BASE
-  char *text;
-  WORD length;
+  const char *text;
+  short length;
 } LabelT;
 
 typedef struct {
   WIDGET_BASE
-  char *path;
+  const char *path;
   BitmapT *bm;
 } ImageT;
 
@@ -91,7 +91,7 @@ typedef struct {
 #undef WIDGET_BASE
 
 union Widget {
-  UBYTE   type;
+  u_char  type;
   GroupT  group;
   FrameT  frame;
   ImageT  image;
@@ -111,48 +111,35 @@ typedef struct GuiState {
 
 typedef void (*WidgetFuncT)(GuiStateT *, WidgetT *);
 
-#define WG_ITEM(widget, x, y, w, h) \
-  ((GroupItemT){(widget), (Area2D){(x), (y), (w), (h)}})
+#define WG_ITEM(wdg, x, y, w, h)                                        \
+  {.widget = (wdg), .req = {(x), (y), (w), (h)}}
 
-#define GUI_DEF(name, widget)                                           \
-  WidgetT name[1] = widget
+#define GUI_DEF(name, wdg)                                              \
+  WidgetT name[1] = {wdg}
 
-#define GUI_WIDGET(ctype, wtype, ...)                                   \
-  (WidgetT[1]){(WidgetT)(ctype){(wtype), (Area2D){0}, 0, NULL, ##__VA_ARGS__}}
+#define GUI_WIDGET(variant, wtype, ...)                                 \
+  (WidgetT){.variant = {                                               \
+    .type = (wtype), .area = {0, 0, 0, 0}, .state = 0, .parent = NULL,  \
+    __VA_ARGS__}}
 
-#define GUI_FRAME(frame, widget)                                        \
-  GUI_WIDGET(FrameT, WT_FRAME, (frame), (widget))
+#define GUI_FRAME(frm, wdg) GUI_WIDGET(frame, WT_FRAME, (frm), (wdg))
+#define GUI_LABEL(text) GUI_WIDGET(label, WT_LABEL, text, sizeof(text) + 1)
+#define GUI_LABEL_N(size) GUI_WIDGET(label, WT_LABEL, (char[(size)]){0}, (size))
+#define GUI_IMAGE(path) GUI_WIDGET(image, WT_IMAGE, (path), NULL)
+#define GUI_BUTTON(inner) GUI_WIDGET(button, WT_BUTTON, (inner))
+#define GUI_RADIOBT(inner) GUI_WIDGET(button, WT_RADIOBT, (inner))
+#define GUI_TOGGLE(off, on) GUI_WIDGET(toggle, WT_TOGGLE, {(off), (on)})
 
-#define GUI_LABEL(text)                                                 \
-  GUI_WIDGET(LabelT, WT_LABEL, text, sizeof(text) + 1)
+#define GUI_GROUP(cnt, ...)                                             \
+  GUI_WIDGET(group, WT_GROUP,                                           \
+             .count = (cnt), .item = (GroupItemT[cnt]){__VA_ARGS__})
 
-#define GUI_LABEL_N(size)                                               \
-  GUI_WIDGET(LabelT, WT_LABEL, (char[(size)]){0}, (size))
+#define GUI_MAIN(root)                                                  \
+  GuiStateT *gui = &(GuiStateT){root, NULL, NULL, NULL, NULL}
 
-#define GUI_IMAGE(path)                                                 \
-  GUI_WIDGET(ImageT, WT_IMAGE, (path), NULL)
-
-#define GUI_BUTTON(inner)                                               \
-  GUI_WIDGET(ButtonT, WT_BUTTON, (inner))
-
-#define GUI_RADIOBT(inner)                                              \
-  GUI_WIDGET(ButtonT, WT_RADIOBT, (inner))
-
-#define GUI_TOGGLE(inner_off, inner_on)                                 \
-  GUI_WIDGET(ToggleT, WT_TOGGLE, {(inner_off), (inner_on)})
-
-#define GUI_GROUP_ITEMS(count, ...)                                     \
-  count, (GroupItemT[count]){##__VA_ARGS__}
-
-#define GUI_GROUP(...)                                                  \
-  GUI_WIDGET(GroupT, WT_GROUP,                                          \
-             GUI_GROUP_ITEMS(VA_NARGS(__VA_ARGS__), __VA_ARGS__))
-
-#define GUI_MAIN(root) \
-  GuiStateT gui[1] = {{root}}
-
-#define LabelFmtStr(wg, str, ...) \
-  FmtStr(((LabelT *)(wg))->text, ((LabelT *)(wg))->length, (str), __VA_ARGS__)
+#define LabelFmtStr(wg, str, ...)                                       \
+  snprintf(__DECONST(char *, ((LabelT *)(wg))->text),                   \
+           ((LabelT *)(wg))->length, (str), __VA_ARGS__)
 
 void GuiInit(GuiStateT *gui, FontT *font);
 void GuiRedraw(GuiStateT *gui, BitmapT *screen);

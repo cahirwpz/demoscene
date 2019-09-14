@@ -10,9 +10,9 @@
 typedef struct Effect {
   const char *name;
   /* AmigaOS is active during this step. Loads resources from disk. */
-  void (*Load)();
+  void (*Load)(void);
   /* Frees all resources allocated by "Load" step. */
-  void (*UnLoad)();
+  void (*UnLoad)(void);
   /*
    * Does all initialization steps required to launch the effect.
    * 1) Allocate required memory.
@@ -20,16 +20,16 @@ typedef struct Effect {
    * 2) Generate copper lists.
    * 3) Set up interrupts and DMA channels.
    */
-  void (*Init)();
+  void (*Init)(void);
   /* Frees all resources allocated by "Init" step. */
-  void (*Kill)();
+  void (*Kill)(void);
   /* Renders single frame of an effect. */
-  void (*Render)();
+  void (*Render)(void);
   /* Called to prepare the data for the effect - e.g. decompress, generate,
    * move to chip memory. */
-  void (*Prepare)();
+  void (*Prepare)(void);
   /* Keeps information about state of resources related to this effect. */
-  UWORD state;
+  u_short state;
 } EffectT;
 
 __regargs void EffectLoad(EffectT *effect);

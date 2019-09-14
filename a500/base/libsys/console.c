@@ -1,19 +1,27 @@
-#include <stdarg.h>
-
-#include <proto/exec.h>
+#include <graphics/text.h>
+#include <proto/graphics.h>
 
 #include "console.h"
 
-void ConsoleInit(ConsoleT *console, BitmapT *bitmap, TextFontT *font) {
+void ConsoleInit(ConsoleT *console, BitmapT *bitmap) {
   console->bitmap = bitmap;
-  console->font = font;
   console->width = bitmap->width / 8;
   console->height = bitmap->height / 8;
   console->cursor.x = 0;
   console->cursor.y = 0;
+
+  {
+    struct TextAttr textattr = {
+      __DECONST(STRPTR, "topaz.font"), 8, FS_NORMAL, FPF_ROMFONT };
+    console->font = OpenFont(&textattr);
+  }
 }
 
-__regargs void ConsoleSetCursor(ConsoleT *console, UWORD x, UWORD y) {
+void ConsoleKill(ConsoleT *console) {
+  CloseFont(console->font);
+}
+
+__regargs void ConsoleSetCursor(ConsoleT *console, u_short x, u_short y) {
   console->cursor.x = x;
   console->cursor.y = y;
 }
@@ -31,17 +39,17 @@ static __regargs void ConsoleNextChar(ConsoleT *console) {
   }
 }
 
-__regargs void ConsoleDrawChar(ConsoleT *console, UWORD x, UWORD y, char c) {
-  UBYTE *src = console->font->tf_CharData;
-  UBYTE *dst = console->bitmap->planes[0];
-  WORD swidth = console->font->tf_Modulo;
-  WORD dwidth = console->bitmap->bytesPerRow;
-  WORD h = 7;
+__regargs void ConsoleDrawChar(ConsoleT *console, u_short x, u_short y, char c) {
+  u_char *src = console->font->tf_CharData;
+  u_char *dst = console->bitmap->planes[0];
+  short swidth = console->font->tf_Modulo;
+  short dwidth = console->bitmap->bytesPerRow;
+  short h = 7;
 
   c -= 32;
-  src += (WORD)c;
-  dst += (WORD)console->bitmap->width * (WORD)y;
-  dst += (WORD)x;
+  src += (short)c;
+  dst += (short)console->bitmap->width * (short)y;
+  dst += (short)x;
 
   do {
     *dst = *src; src += swidth; dst += dwidth;
@@ -49,17 +57,19 @@ __regargs void ConsoleDrawChar(ConsoleT *console, UWORD x, UWORD y, char c) {
 }
 
 __regargs void ConsoleDrawCursor(ConsoleT *console) {
-  UBYTE *dst = console->bitmap->planes[0];
-  WORD dwidth = console->bitmap->bytesPerRow;
-  WORD i = console->bitmap->width * console->cursor.y + console->cursor.x;
-  WORD h = 7;
+  u_char *dst = console->bitmap->planes[0];
+  short dwidth = console->bitmap->bytesPerRow;
+  short i = console->bitmap->width * console->cursor.y + console->cursor.x;
+  short h = 7;
 
   do {
     dst[i] = ~dst[i]; i += dwidth;
   } while (--h >= 0);
 }
 
-__regargs void ConsoleDrawBox(ConsoleT *console, UWORD x, UWORD y, UWORD w, UWORD h) {
+__regargs void ConsoleDrawBox(ConsoleT *console, u_short x, u_short y,
+                              u_short w, u_short h)
+{
   int i;
 
   w += x - 1;
@@ -105,7 +115,7 @@ __regargs void ConsolePutStr(ConsoleT *console, const char *str)
     ConsolePutChar(console, c);
 }
 
-static void OutputToConsole(char c asm("d0"), ConsoleT *console asm("a3")) {
+static __regargs void OutputToConsole(char c, ConsoleT *console) {
   ConsolePutChar(console, c);
 }
 
@@ -113,6 +123,6 @@ void ConsolePrint(ConsoleT *console, const char *format, ...) {
   va_list args;
 
   va_start(args, format);
-  RawDoFmt(format, args, (void (*)())OutputToConsole, console);
+  kvprintf(format, (kvprintf_fn_t *)OutputToConsole, console, args);
   va_end(args);
 }

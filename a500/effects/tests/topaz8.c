@@ -1,5 +1,4 @@
 #include <exec/execbase.h>
-#include <proto/graphics.h>
 #include <proto/exec.h>
 
 #include "startup.h"
@@ -13,7 +12,6 @@
 
 static BitmapT *screen;
 static CopListT *cp;
-static TextFontT *topaz8;
 static ConsoleT console;
 
 static void Load() {
@@ -27,16 +25,11 @@ static void Load() {
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
 
-  {
-    struct TextAttr textattr = { "topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
-    topaz8 = OpenFont(&textattr);
-  }
-
-  ConsoleInit(&console, screen, topaz8);
+  ConsoleInit(&console, screen);
 }
 
 static void UnLoad() {
-  CloseFont(topaz8);
+  ConsoleKill(topaz8);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
@@ -47,9 +40,9 @@ static void Init() {
 
   ConsoleDrawBox(&console, 10, 10, 20, 20);
   ConsoleSetCursor(&console, 2, 2);
-  ConsolePrint(&console, "Running on Kickstart %ld.%ld.\n",
-               (LONG)SysBase->LibNode.lib_Version,
-               (LONG)SysBase->LibNode.lib_Revision);
+  ConsolePrint(&console, "Running on Kickstart %d.%d.\n",
+               SysBase->LibNode.lib_Version,
+               SysBase->LibNode.lib_Revision);
   ConsolePutStr(&console, "The quick brown fox jumps\nover the lazy dog\n");
 }
 

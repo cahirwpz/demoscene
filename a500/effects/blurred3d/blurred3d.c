@@ -9,7 +9,7 @@
 #include "memory.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH  176
 #define HEIGHT 176
@@ -27,14 +27,14 @@ static BitmapT *scratchpad;
 static BitmapT *carry;
 static PixmapT *gradient;
 
-static void Load() {
+static void Load(void) {
   mesh = LoadMesh3D("szescian.3d", SPFlt(93));
   gradient = LoadPNG("blurred3d-pal.png", PM_RGB12, MEMF_PUBLIC);
   CalculateEdges(mesh);
   CalculateFaceNormals(mesh);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeletePixmap(gradient);
   DeleteMesh3D(mesh);
 }
@@ -45,8 +45,8 @@ static void MakeCopperList(CopListT *cp) {
   CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
 
   {
-    WORD *pixels = gradient->pixels;
-    WORD i, j;
+    short *pixels = gradient->pixels;
+    short i, j;
 
     for (i = 0; i < HEIGHT / 8; i++) {
       CopWait(cp, Y(STARTY + i * 8 - 1), 0xde);
@@ -70,7 +70,7 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(-250);
 
@@ -87,7 +87,7 @@ static void Init() {
   EnableDMA(DMAF_RASTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DeleteBitmap(screen0);
   DeleteBitmap(screen1);
   DeleteBitmap(scratchpad);
@@ -97,18 +97,18 @@ static void Kill() {
 }
 
 #define MULVERTEX(D) {                   \
-  WORD t0 = (*v++) + y;                  \
-  WORD t1 = (*v++) + x;                  \
-  LONG t2 = (*v++) * z;                  \
-  WORD t3 = (*v++);                      \
+  short t0 = (*v++) + y;                  \
+  short t1 = (*v++) + x;                  \
+  int t2 = (*v++) * z;                  \
+  short t3 = (*v++);                      \
   D = normfx(t0 * t1 + t2 - x * y) + t3; \
 }
 
 static __regargs void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
-  WORD *src = (WORD *)object->mesh->vertex;
-  WORD *dst = (WORD *)object->vertex;
-  register WORD n asm("d7") = object->mesh->vertices - 1;
+  short *src = (short *)object->mesh->vertex;
+  short *dst = (short *)object->vertex;
+  register short n asm("d7") = object->mesh->vertices - 1;
 
   /* WARNING! This modifies camera matrix! */
   M->x -= normfx(M->m00 * M->m01);
@@ -127,11 +127,11 @@ static __regargs void TransformVertices(Object3D *object) {
    */
 
   do {
-    WORD *v = (WORD *)M;
-    WORD x = *src++;
-    WORD y = *src++;
-    WORD z = *src++;
-    WORD xp, yp, zp;
+    short *v = (short *)M;
+    short x = *src++;
+    short y = *src++;
+    short z = *src++;
+    short xp, yp, zp;
 
     MULVERTEX(xp);
     MULVERTEX(yp);
@@ -145,14 +145,11 @@ static __regargs void TransformVertices(Object3D *object) {
   } while (--n != -1);
 }
 
-#define MoveLong(reg, hi, lo) \
-    *(ULONG *)(&custom->reg) = (((hi) << 16) | (lo))
-
-static __regargs void DrawLine(WORD x0, WORD y0, WORD x1, WORD y1) {
-  WORD dmax = x1 - x0;
-  WORD dmin = y1 - y0;
-  WORD derr;
-  UWORD bltcon1 = LINEMODE | ONEDOT;
+static __regargs void DrawLine(short x0, short y0, short x1, short y1) {
+  short dmax = x1 - x0;
+  short dmin = y1 - y0;
+  short derr;
+  u_short bltcon1 = LINEMODE | ONEDOT;
 
   if (dmax < 0)
     dmax = -dmax;
@@ -173,14 +170,14 @@ static __regargs void DrawLine(WORD x0, WORD y0, WORD x1, WORD y1) {
   bltcon1 |= rorw(x0 & 15, 4);
 
   {
-    APTR src = scratchpad->planes[0];
-    WORD start = ((y0 * WIDTH / 8) + (x0 >> 3)) & ~1;
-    APTR dst = src + start;
-    UWORD bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
-    UWORD bltamod = derr - dmax;
-    UWORD bltbmod = 2 * dmin;
-    UWORD bltsize = (dmax << 6) + 66;
-    APTR bltapt = (APTR)(LONG)derr;
+    void *src = scratchpad->planes[0];
+    short start = ((y0 * WIDTH / 8) + (x0 >> 3)) & ~1;
+    void *dst = src + start;
+    u_short bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
+    u_short bltamod = derr - dmax;
+    u_short bltbmod = 2 * dmin;
+    u_short bltsize = (dmax << 6) + 66;
+    void *bltapt = (void *)(int)derr;
 
     WaitBlitter();
 
@@ -200,10 +197,10 @@ static __regargs void DrawLine(WORD x0, WORD y0, WORD x1, WORD y1) {
 }
 
 static void DrawObject(Object3D *object) {
-  APTR outbuf = carry->planes[0];
-  APTR tmpbuf = scratchpad->planes[0];
+  void *outbuf = carry->planes[0];
+  void *tmpbuf = scratchpad->planes[0];
   Point3D *point = object->vertex;
-  BYTE *faceFlags = object->faceFlags;
+  char *faceFlags = object->faceFlags;
   IndexListT **faceEdges = object->mesh->faceEdge;
   IndexListT **faces = object->mesh->face;
   IndexListT *face;
@@ -215,18 +212,18 @@ static void DrawObject(Object3D *object) {
     IndexListT *faceEdge = *faceEdges++;
 
     if (*faceFlags++) {
-      UWORD bltmod, bltsize;
-      WORD bltstart, bltend;
+      u_short bltmod, bltsize;
+      short bltstart, bltend;
 
       /* Estimate the size of rectangle that contains a face. */
       {
-        WORD *i = face->indices;
+        short *i = face->indices;
         Point3D *p = &point[*i++];
-        WORD minX = p->x;
-        WORD minY = p->y;
-        WORD maxX = minX; 
-        WORD maxY = minY;
-        WORD n = face->count - 2;
+        short minX = p->x;
+        short minY = p->y;
+        short maxX = minX; 
+        short maxY = minY;
+        short n = face->count - 2;
 
         do {
           p = &point[*i++];
@@ -248,8 +245,8 @@ static void DrawObject(Object3D *object) {
         maxX &= ~15;
 
         {
-          WORD w = maxX - minX;
-          WORD h = maxY - minY + 1;
+          short w = maxX - minX;
+          short h = maxY - minY + 1;
 
           bltstart = (minX >> 3) + minY * WIDTH / 8;
           bltend = (maxX >> 3) + maxY * WIDTH / 8 - 2;
@@ -261,19 +258,19 @@ static void DrawObject(Object3D *object) {
       /* Draw face. */
       {
         EdgeT *edges = object->mesh->edge;
-        WORD m = faceEdge->count;
-        WORD *i = faceEdge->indices;
+        short m = faceEdge->count;
+        short *i = faceEdge->indices;
 
         while (--m >= 0) {
-          WORD *edge = (WORD *)&edges[*i++];
+          short *edge = (short *)&edges[*i++];
 
-          WORD *p0 = (APTR)point + *edge++;
-          WORD *p1 = (APTR)point + *edge++;
+          short *p0 = (void *)point + *edge++;
+          short *p1 = (void *)point + *edge++;
 
-          WORD x0 = *p0++;
-          WORD y0 = *p0++;
-          WORD x1 = *p1++;
-          WORD y1 = *p1++;
+          short x0 = *p0++;
+          short y0 = *p0++;
+          short x1 = *p1++;
+          short y1 = *p1++;
 
           if (y0 > y1) {
             swapr(x0, x1);
@@ -286,7 +283,7 @@ static void DrawObject(Object3D *object) {
 
       /* Fill face. */
       {
-        APTR src = tmpbuf + bltend;
+        void *src = tmpbuf + bltend;
 
         WaitBlitter();
 
@@ -301,8 +298,8 @@ static void DrawObject(Object3D *object) {
 
       /* Copy filled face to outbuf. */
       {
-        APTR src = tmpbuf + bltstart;
-        APTR dst = outbuf + bltstart;
+        void *src = tmpbuf + bltstart;
+        void *dst = outbuf + bltstart;
 
         WaitBlitter();
 
@@ -319,7 +316,7 @@ static void DrawObject(Object3D *object) {
 
       /* Clear working area. */
       {
-        APTR data = tmpbuf + bltstart;
+        void *data = tmpbuf + bltstart;
 
         WaitBlitter();
 
@@ -335,13 +332,13 @@ static void DrawObject(Object3D *object) {
 }
 
 static __regargs void BitmapDecSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
-  APTR borrow0 = carry->planes[0];
-  APTR borrow1 = carry->planes[1];
-  APTR *srcbpl = srcbm->planes;
-  APTR *dstbpl = dstbm->planes;
-  APTR src = *srcbpl++;
-  APTR dst = *dstbpl++;
-  WORD n = DEPTH - 1;
+  void *borrow0 = carry->planes[0];
+  void *borrow1 = carry->planes[1];
+  void **srcbpl = srcbm->planes;
+  void **dstbpl = dstbm->planes;
+  void *src = *srcbpl++;
+  void *dst = *dstbpl++;
+  short n = DEPTH - 1;
 
   WaitBlitter();
   custom->bltcon1 = 0;
@@ -400,11 +397,11 @@ static __regargs void BitmapDecSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
 }
 
 static __regargs void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
-  APTR carry0 = carry->planes[0];
-  APTR carry1 = carry->planes[1];
-  APTR *srcbpl = srcbm->planes;
-  APTR *dstbpl = dstbm->planes;
-  WORD n = DEPTH;
+  void *carry0 = carry->planes[0];
+  void *carry1 = carry->planes[1];
+  void **srcbpl = srcbm->planes;
+  void **dstbpl = dstbm->planes;
+  short n = DEPTH;
 
   /* Only pixels set to one in carry[0] will be incremented. */
   
@@ -417,8 +414,8 @@ static __regargs void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
   custom->bltalwm = -1;
 
   while (--n >= 0) {
-    APTR src = *srcbpl++;
-    APTR dst = *dstbpl++;
+    void *src = *srcbpl++;
+    void *dst = *dstbpl++;
 
     WaitBlitter();
     custom->bltapt = src;
@@ -441,7 +438,7 @@ static __regargs void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
   n = DEPTH;
 
   while (--n >= 0) {
-    APTR dst = *dstbpl++;
+    void *dst = *dstbpl++;
 
     WaitBlitter();
     custom->bltapt = dst;
@@ -452,31 +449,31 @@ static __regargs void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
   }
 }
 
-static void RenderObject3D() {
+static void RenderObject3D(void) {
   BlitterClear(carry, 0);
 
   {
-    // LONG lines = ReadLineCounter();
+    // int lines = ReadLineCounter();
     cube->rotate.x = cube->rotate.y = cube->rotate.z =
       ReadFrameCounter() * 6;
 
     UpdateObjectTransformation(cube);
     UpdateFaceVisibility(cube);
     TransformVertices(cube);
-    // Log("transform: %ld\n", ReadLineCounter() - lines);
+    // Log("transform: %d\n", ReadLineCounter() - lines);
   }
 
   {
-    // LONG lines = ReadLineCounter();
+    // int lines = ReadLineCounter();
     DrawObject(cube);
-    // Log("draw: %ld\n", ReadLineCounter() - lines);
+    // Log("draw: %d\n", ReadLineCounter() - lines);
   }
 }
 
-static WORD iterCount = 0;
+static short iterCount = 0;
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
+static void Render(void) {
+  // int lines = ReadLineCounter();
   BitmapT *source = screen1;
 
   if (iterCount++ & 1) {
@@ -488,10 +485,10 @@ static void Render() {
 
   BitmapIncSaturatedFast(screen0, source);
 
-  // Log("blurred3d: %ld\n", ReadLineCounter() - lines);
+  // Log("blurred3d: %d\n", ReadLineCounter() - lines);
 
   {
-    WORD n = DEPTH;
+    short n = DEPTH;
 
     while (--n >= 0)
       CopInsSet32(bplptr[n], screen0->planes[n]);
@@ -501,4 +498,4 @@ static void Render() {
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

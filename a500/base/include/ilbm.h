@@ -3,11 +3,11 @@
 
 #include "gfx.h"
 
-__regargs void BitmapUnpack(BitmapT *bitmap, UWORD flags);
-__regargs BitmapT *LoadILBMCustom(CONST STRPTR filename, UWORD flags);
-__regargs PaletteT *LoadPalette(CONST STRPTR filename);
+__regargs void BitmapUnpack(BitmapT *bitmap, u_short flags);
+__regargs BitmapT *LoadILBMCustom(const char *filename, u_short flags);
+__regargs PaletteT *LoadPalette(const char *filename);
 
-static inline BitmapT *LoadILBM(CONST STRPTR filename) {
+static inline BitmapT *LoadILBM(const char *filename) {
   return LoadILBMCustom(filename, BM_DISPLAYABLE|BM_LOAD_PALETTE);
 }
 

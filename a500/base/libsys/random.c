@@ -1,10 +1,10 @@
 #include "random.h"
 
-static ULONG seed[] = { 123456789, 362436069, 521288629, 88675123 };
+static u_int seed[] = { 123456789, 362436069, 521288629, 88675123 };
 
-ULONG random() {
-  register ULONG *data asm("a0") = seed;
-  ULONG t = data[0] ^ (data[0] << 11);
+u_int random() {
+  register u_int *data asm("a0") = seed;
+  u_int t = data[0] ^ (data[0] << 11);
   data[0] = data[1];
   data[1] = data[2];
   data[2] = data[3];

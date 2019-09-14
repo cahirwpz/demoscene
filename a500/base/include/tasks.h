@@ -3,14 +3,14 @@
 
 #include <exec/lists.h>
 
-void DumpTasks();
+void DumpTasks(void);
 
 /* @brief Volunatily release CPU time.
  *
  * Scheduler will choose next task to run. If calling task is the only in READY
  * state this function will return immediately.
  */
-void TaskYield();
+void TaskYield(void);
 
 /* @brief Suspends a task in wait for an event.
  * @param event is a list of tasks awaiting the event to happen.

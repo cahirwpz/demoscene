@@ -8,11 +8,13 @@ AS	:= vasm -quiet
 CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 
 ASFLAGS	:= -x -m68010
-LDFLAGS	:= -m68000 -msmall-code -nostartfiles -nostdlib
+LDFLAGS	:= -g -m68000 -msmall-code -nostartfiles -nostdlib
 # The '-O2' option does not turn on optimizations '-funroll-loops',
 # '-funroll-all-loops' and `-fstrict-aliasing'.
 OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce
-WFLAGS	:= -Wall -Werror
+WFLAGS	:= -Wall -W -Werror -Wundef -Wsign-compare -Wredundant-decls
+WFLAGS  += -Wnested-externs -Wwrite-strings -Wstrict-prototypes
+ 
 CRT0	:= $(TOPDIR)/base/crt0.o
 
 # Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
@@ -22,7 +24,7 @@ QUIET := --quiet
 endif
 
 # Don't reload library base for each call.
-DFLAGS := -D__CONSTLIBBASEDECL__=const
+DFLAGS := -D__CONSTLIBBASEDECL__=const -DUSE_IO_DOS=0
 
 LDLIBS	=
 CPPFLAGS += -I$(TOPDIR)/base/include
@@ -98,4 +100,5 @@ endif
 clean::
 	@$(RM) .*.P *.a *.o *~ *.exe *.exe.dbg *.exe.map *.taghl
 
+.PRECIOUS: %.o
 .PHONY: all clean FORCE

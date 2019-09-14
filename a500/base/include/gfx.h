@@ -4,45 +4,45 @@
 #include "common.h"
 
 typedef struct Color {
-  UBYTE r, g, b;
+  u_char r, g, b;
 } ColorT;
 
 typedef struct Palette {
-  UWORD count;
+  u_short count;
   ColorT colors[0];
 } PaletteT;
 
 typedef struct {
-  WORD x, y;
+  short x, y;
 } Point2D;
 
 typedef struct {
-  WORD x1, y1;
-  WORD x2, y2;
+  short x1, y1;
+  short x2, y2;
 } Line2D;
 
 typedef struct {
-  WORD minX, minY;
-  WORD maxX, maxY;
+  short minX, minY;
+  short maxX, maxY;
 } Box2D;
 
 typedef struct {
-  WORD w, h;
+  short w, h;
 } Size2D;
 
 typedef struct {
-  WORD x, y;
-  WORD w, h;
+  short x, y;
+  short w, h;
 } Area2D;
 
-__regargs PaletteT *NewPalette(UWORD count);
+__regargs PaletteT *NewPalette(u_short count);
 __regargs PaletteT *CopyPalette(PaletteT *palette);
 __regargs void DeletePalette(PaletteT *palette);
-__regargs void ConvertPaletteToRGB4(PaletteT *palette, UWORD *color, WORD n);
-void RotatePalette(PaletteT *dstpal, PaletteT *srcpal, WORD start, WORD end, WORD step);
+__regargs void ConvertPaletteToRGB4(PaletteT *palette, u_short *color, short n);
+void RotatePalette(PaletteT *dstpal, PaletteT *srcpal, short start, short end, short step);
 
 /* Size of extra buffer after last word of bitplanes. */
-#define BM_EXTRA sizeof(UWORD)
+#define BM_EXTRA sizeof(u_short)
 
 /* Flags stored in Bitmap structure. */
 #define BM_CLEAR        0x01
@@ -64,40 +64,38 @@ void RotatePalette(PaletteT *dstpal, PaletteT *srcpal, WORD start, WORD end, WOR
 #define COMP_LZO     255
 
 typedef struct Bitmap {
-  UWORD width;
-  UWORD height;
-  UWORD depth;
-  UWORD bytesPerRow;
-  UWORD bplSize;
-  UBYTE flags;
-  UBYTE compression;
+  u_short width;
+  u_short height;
+  u_short depth;
+  u_short bytesPerRow;
+  u_short bplSize;
+  u_char flags;
+  u_char compression;
   PaletteT *palette;
-  ULONG pchgTotal;
-  UWORD *pchg;
-  APTR  planes[7];
+  u_int pchgTotal;
+  u_short *pchg;
+  void *planes[7];
 } BitmapT;
 
-__regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
-                                UWORD depth, BitmapT *donor);
-__regargs void BitmapSetPointers(BitmapT *bitmap, APTR planes);
+__regargs void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
+                                u_short depth, BitmapT *donor);
+__regargs void BitmapSetPointers(BitmapT *bitmap, void *planes);
 
-__regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
-                                   UBYTE flags);
+__regargs BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
+                                   u_char flags);
 __regargs void DeleteBitmap(BitmapT *bitmap);
 __regargs void BitmapMakeDisplayable(BitmapT *bitmap);
-__regargs BOOL ClipBitmap(const Box2D *space, Point2D *pos, Area2D *area);
-__regargs BOOL InsideArea(WORD x, WORD y, Area2D *area);
+__regargs bool ClipBitmap(const Box2D *space, Point2D *pos, Area2D *area);
+__regargs bool InsideArea(short x, short y, Area2D *area);
 
-static inline BitmapT *NewBitmap(UWORD width, UWORD height, UWORD depth) {
+static inline BitmapT *NewBitmap(u_short width, u_short height, u_short depth) {
   return NewBitmapCustom(width, height, depth, BM_CLEAR|BM_DISPLAYABLE);
 }
 
-static inline ULONG BitmapSize(BitmapT *bitmap) {
+static inline u_int BitmapSize(BitmapT *bitmap) {
   /* Allocate extra two bytes for scratchpad area.
    * Used by blitter line drawing. */
-  return ((UWORD)bitmap->bplSize * (UWORD)bitmap->depth) + BM_EXTRA;
+  return ((u_short)bitmap->bplSize * (u_short)bitmap->depth) + BM_EXTRA;
 }
-
-__regargs void ConvertPaletteToRGB4(PaletteT *palette, UWORD *color, WORD n);
 
 #endif

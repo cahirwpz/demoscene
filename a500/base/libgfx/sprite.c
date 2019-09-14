@@ -6,30 +6,30 @@
 #include "memory.h"
 #include "common.h"
 
-__regargs SpriteT *NewSprite(UWORD height, BOOL attached) {
+__regargs SpriteT *NewSprite(u_short height, bool attached) {
   SpriteT *sprite = MemAlloc(sizeof(SpriteT), MEMF_PUBLIC|MEMF_CLEAR);
 
   sprite->height = height;
   sprite->data = MemAlloc((height ? (height + 2) : 1) * 4, MEMF_CHIP|MEMF_CLEAR);
 
   if (attached)
-    sprite->attached = NewSprite(height, FALSE);
+    sprite->attached = NewSprite(height, false);
 
   return sprite;
 }
 
-__regargs SpriteT *NewSpriteFromBitmap(UWORD height, BitmapT *bitmap,
-                                       UWORD xstart, UWORD ystart)
+__regargs SpriteT *NewSpriteFromBitmap(u_short height, BitmapT *bitmap,
+                                       u_short xstart, u_short ystart)
 {
   SpriteT *sprite = NewSprite(height, bitmap->depth == 4);
-  WORD yend = ystart + sprite->height;
-  LONG start = ystart * bitmap->bytesPerRow / 2 + xstart / 16;
-  LONG stride = bitmap->bytesPerRow / 2;
+  short yend = ystart + sprite->height;
+  int start = ystart * bitmap->bytesPerRow / 2 + xstart / 16;
+  int stride = bitmap->bytesPerRow / 2;
 
   if (bitmap->depth == 2) {
-    UWORD *data = &sprite->data[2];
-    UWORD *bpl0 = (UWORD *)bitmap->planes[0] + start;
-    UWORD *bpl1 = (UWORD *)bitmap->planes[1] + start;
+    u_short *data = &sprite->data[2];
+    u_short *bpl0 = (u_short *)bitmap->planes[0] + start;
+    u_short *bpl1 = (u_short *)bitmap->planes[1] + start;
 
     for (; ystart < yend; ystart++) {
       *data++ = *bpl0;
@@ -39,12 +39,12 @@ __regargs SpriteT *NewSpriteFromBitmap(UWORD height, BitmapT *bitmap,
       bpl1 += stride;
     }
   } else {
-    UWORD *data0 = &sprite->data[2];
-    UWORD *data1 = &sprite->attached->data[2];
-    UWORD *bpl0 = (UWORD *)bitmap->planes[0] + start;
-    UWORD *bpl1 = (UWORD *)bitmap->planes[1] + start;
-    UWORD *bpl2 = (UWORD *)bitmap->planes[2] + start;
-    UWORD *bpl3 = (UWORD *)bitmap->planes[3] + start;
+    u_short *data0 = &sprite->data[2];
+    u_short *data1 = &sprite->attached->data[2];
+    u_short *bpl0 = (u_short *)bitmap->planes[0] + start;
+    u_short *bpl1 = (u_short *)bitmap->planes[1] + start;
+    u_short *bpl2 = (u_short *)bitmap->planes[2] + start;
+    u_short *bpl3 = (u_short *)bitmap->planes[3] + start;
 
     for (; ystart < yend; ystart++) {
       *data0++ = *bpl0;
@@ -64,10 +64,10 @@ __regargs SpriteT *NewSpriteFromBitmap(UWORD height, BitmapT *bitmap,
 
 __regargs SpriteT *CloneSystemPointer() {
   struct SimpleSprite *sprite = GfxBase->SimpleSprites[0];
-  UWORD height = sprite->height;
-  SpriteT *pointer = NewSprite(height, FALSE);
+  u_short height = sprite->height;
+  SpriteT *pointer = NewSprite(height, false);
 
-  memcpy(pointer->data + 2, sprite->posctldata + 2, height * sizeof(LONG));
+  memcpy(pointer->data + 2, sprite->posctldata + 2, height * sizeof(int));
 
   return pointer;
 }
@@ -82,9 +82,9 @@ __regargs void DeleteSprite(SpriteT *sprite) {
   }
 }
 
-static inline void UpdateSpriteInternal(SpriteT *sprite, UWORD hstart, UWORD vstart) {
-  UWORD vstop = vstart + sprite->height + 1;
-  UBYTE lowctl = hstart & 1;
+static inline void UpdateSpriteInternal(SpriteT *sprite, u_short hstart, u_short vstart) {
+  u_short vstop = vstart + sprite->height + 1;
+  u_char lowctl = hstart & 1;
 
   /*
    * SPRxPOS:
@@ -106,7 +106,7 @@ static inline void UpdateSpriteInternal(SpriteT *sprite, UWORD hstart, UWORD vst
     lowctl |= 2;
 
   {
-    UBYTE *spr = (UBYTE *)sprite->data;
+    u_char *spr = (u_char *)sprite->data;
 
     *spr++ = vstart;
     *spr++ = hstart >> 1;
@@ -115,22 +115,22 @@ static inline void UpdateSpriteInternal(SpriteT *sprite, UWORD hstart, UWORD vst
   }
 }
 
-__regargs void UpdateSprite(SpriteT *sprite, UWORD hstart, UWORD vstart) {
+__regargs void UpdateSprite(SpriteT *sprite, u_short hstart, u_short vstart) {
   SpriteT *attached = sprite->attached;
 
   UpdateSpriteInternal(sprite, hstart, vstart);
 
   if (attached) {
-    LONG *dst = (LONG *)attached->data;
-    LONG *src = (LONG *)sprite->data;
+    int *dst = (int *)attached->data;
+    int *src = (int *)sprite->data;
 
     *dst = *src | 0x80;
   }
 }
 
 __regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr) {
-  WORD *data = NullSprite->data;
-  WORD i;
+  u_short *data = NullSprite->data;
+  short i;
 
   for (i = 0; i < 8; i++) {
     CopInsT *ins = CopMove32(list, sprpt[i], data);
@@ -140,8 +140,8 @@ __regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr) {
 }
 
 __regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr) {
-  WORD *data = NullSprite->data;
-  WORD i;
+  u_short *data = NullSprite->data;
+  short i;
 
   for (i = 0; i < 8; i++) {
     sprptr[i] = CopMove16(list, spr[i].pos, data[0]);
@@ -150,15 +150,15 @@ __regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr) {
   }
 }
 
-static SpriteT NullSpriteData = { (SpriteT *)NULL, 0, (UWORD *)NULL };
+static SpriteT NullSpriteData = { (SpriteT *)NULL, 0, (u_short *)NULL };
 SpriteT *NullSprite = &NullSpriteData;
 
-void InitNullSprite() {
+void InitNullSprite(void) {
   Log("[Init] Null sprite.\n");
   NullSprite->data = AllocMem(4, MEMF_CHIP|MEMF_CLEAR);
 }
 
-void KillNullSprite() {
+void KillNullSprite(void) {
   Log("[Quit] Null sprite.\n");
   FreeMem(NullSprite->data, 4);
 }

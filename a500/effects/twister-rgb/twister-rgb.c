@@ -8,7 +8,7 @@
 #include "sprite.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH   144
 #define HEIGHT  255
@@ -22,13 +22,13 @@ static CopListT *cp[2];
 static CopInsT *bplptr[2][DEPTH];
 static CopInsT *bplmod[2][HEIGHT];
 static CopInsT *colors[2][HEIGHT];
-static WORD active = 0;
+static short active = 0;
 
 static SpriteT *left[2];
 static SpriteT *right[2];
 static CopInsT *sprptr[2][8];
 
-static void Load() {
+static void Load(void) {
   twister = LoadILBMCustom("twister.ilbm", BM_DISPLAYABLE);
   texture = LoadPNG("twister-texture.png", PM_RGB12, MEMF_PUBLIC);
   gradient = LoadPalette("twister-gradient.ilbm");
@@ -47,7 +47,7 @@ static void Load() {
   }
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeleteSprite(left[0]);
   DeleteSprite(left[1]);
   DeleteSprite(right[0]);
@@ -57,10 +57,10 @@ static void UnLoad() {
   DeletePalette(gradient);
 }
 
-static void MakeCopperList(CopListT **ptr, WORD n) {
+static void MakeCopperList(CopListT **ptr, short n) {
   CopListT *cp = NewCopList(100 + HEIGHT * 5 + (31 * HEIGHT / 3));
-  WORD *pixels = texture->pixels;
-  WORD i, j, k;
+  short *pixels = texture->pixels;
+  short i, j, k;
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(STARTX), Y(0), WIDTH, HEIGHT);
@@ -96,7 +96,7 @@ static void MakeCopperList(CopListT **ptr, WORD n) {
   *ptr = cp;
 }
 
-static void Init() {
+static void Init(void) {
   EnableDMA(DMAF_BLITTER);
 
   MakeCopperList(&cp[0], 0);
@@ -111,24 +111,24 @@ static void Init() {
   EnableDMA(DMAF_RASTER | DMAF_SPRITE);
 }
 
-static void Kill() {
+static void Kill(void) {
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
 }
 
-static inline WORD rotate(WORD f) {
+static inline short rotate(short f) {
   return (COS(f) >> 3) & 255;
 }
 
-static void SetupLines(WORD f) {
-  WORD y0 = rotate(f);
+static void SetupLines(short f) {
+  short y0 = rotate(f);
 
   /* first line */
   {
-    LONG y = (WORD)twister->bytesPerRow * y0;
-    APTR *planes = twister->planes;
+    int y = (short)twister->bytesPerRow * y0;
+    void **planes = twister->planes;
     CopInsT **bpl = bplptr[active];
-    WORD n = DEPTH;
+    short n = DEPTH;
 
     while (--n >= 0)
       CopInsSet32(*bpl++, (*planes++) + y);
@@ -136,11 +136,11 @@ static void SetupLines(WORD f) {
 
   /* consecutive lines */
   {
-    WORD **modptr = (WORD **)bplmod[active];
-    WORD y1, i, m;
+    short **modptr = (short **)bplmod[active];
+    short y1, i, m;
 
     for (i = 1; i < HEIGHT; i++, y0 = y1, f += 2) {
-      WORD *mod = *modptr++;
+      short *mod = *modptr++;
 
       y1 = rotate(f);
       m = ((y1 - y0) - 1) * (WIDTH / 8);
@@ -151,18 +151,18 @@ static void SetupLines(WORD f) {
   }
 }
 
-static __regargs void SetupTexture(CopInsT **colors, WORD y) {
-  WORD *pixels = texture->pixels;
-  WORD height = texture->height;
-  WORD width = texture->width;
-  WORD n = height;
+static __regargs void SetupTexture(CopInsT **colors, short y) {
+  short *pixels = texture->pixels;
+  short height = texture->height;
+  short width = texture->width;
+  short n = height;
 
   y %= height;
 
   pixels += y * width;
 
   while (--n >= 0) {
-    WORD *ins = (WORD *)(*colors++) + 1;
+    short *ins = (short *)(*colors++) + 1;
 
     ins[0] = *pixels++;
     ins[2] = *pixels++;
@@ -205,15 +205,15 @@ static __regargs void SetupTexture(CopInsT **colors, WORD y) {
   }
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
+static void Render(void) {
+  // int lines = ReadLineCounter();
   SetupLines(frameCount * 16);
   SetupTexture(colors[active], frameCount);
-  // Log("twister: %ld\n", ReadLineCounter() - lines);
+  // Log("twister: %d\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

@@ -8,7 +8,12 @@ SOURCES_ASM := \
 	memcpy.s \
 	memset.s \
 	strcmp.s \
-	strcpy.s
+	strcpy.s \
+	strlen.s
+
+SOURCES_C := \
+	kvprintf.c \
+	snprintf.c
 
 all: libc.a
 

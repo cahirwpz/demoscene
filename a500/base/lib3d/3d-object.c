@@ -6,9 +6,9 @@
 
 __regargs Object3D *NewObject3D(Mesh3D *mesh) {
   Object3D *object = MemAlloc(sizeof(Object3D), MEMF_PUBLIC|MEMF_CLEAR);
-  WORD vertices = mesh->vertices;
-  WORD faces = mesh->faces;
-  WORD edges = mesh->edges;
+  short vertices = mesh->vertices;
+  short faces = mesh->faces;
+  short edges = mesh->edges;
 
   object->mesh = mesh;
   object->vertex = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
@@ -75,12 +75,12 @@ __regargs void UpdateObjectTransformation(Object3D *object) {
   /* calculate camera position in object space */ 
   {
     Matrix3D *M = &object->worldToObject;
-    WORD *camera = (WORD *)&object->camera;
+    short *camera = (short *)&object->camera;
 
     /* camera position in world space is (0, 0, 0) */
-    WORD cx = M->x;
-    WORD cy = M->y;
-    WORD cz = M->z;
+    short cx = M->x;
+    short cy = M->y;
+    short cz = M->z;
 
     *camera++ = normfx(M->m00 * cx + M->m01 * cy + M->m02 * cz);
     *camera++ = normfx(M->m10 * cx + M->m11 * cy + M->m12 * cz);
@@ -88,15 +88,15 @@ __regargs void UpdateObjectTransformation(Object3D *object) {
   }
 }
 
-static BYTE t_sqrt8[256];
+static char t_sqrt8[256];
 
 void InitSqrtTab8(void){
-  BYTE *data = t_sqrt8;
-  WORD i = 16;
-  WORD n = 0;
-  BYTE k = 0;
+  char *data = t_sqrt8;
+  short i = 16;
+  short n = 0;
+  char k = 0;
   do {
-    WORD j = n;
+    short j = n;
     do { *data++ = k; } while (--j != -1);
     k += 1;
     n += 2;
@@ -106,32 +106,32 @@ void InitSqrtTab8(void){
 ADD2INIT(InitSqrtTab8, 0);
 
 __regargs void UpdateFaceVisibility(Object3D *object) {
-  WORD *src = (WORD *)object->mesh->faceNormal;
+  short *src = (short *)object->mesh->faceNormal;
   IndexListT **faces = object->mesh->face;
-  BYTE *faceFlags = object->faceFlags;
-  APTR vertex = object->mesh->vertex;
-  WORD n = object->mesh->faces;
-  BYTE *sqrt = t_sqrt8;
+  char *faceFlags = object->faceFlags;
+  void *vertex = object->mesh->vertex;
+  short n = object->mesh->faces;
+  char *sqrt = t_sqrt8;
 
-  WORD *camera = (WORD *)&object->camera;
+  short *camera = (short *)&object->camera;
 
   while (--n >= 0) {
     IndexListT *face = *faces++;
-    WORD px, py, pz;
-    LONG f;
+    short px, py, pz;
+    int f;
 
     {
-      WORD *p = (WORD *)(vertex + (WORD)(*face->indices << 3));
-      WORD *c = camera;
+      short *p = (short *)(vertex + (short)(*face->indices << 3));
+      short *c = camera;
       px = *c++ - *p++;
       py = *c++ - *p++;
       pz = *c++ - *p++;
     }
 
     {
-      LONG x = *src++ * px;
-      LONG y = *src++ * py;
-      LONG z = *src++ * pz;
+      int x = *src++ * px;
+      int y = *src++ * py;
+      int z = *src++ * pz;
       f = x + y + z;
     }
 
@@ -139,12 +139,12 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
 
     if (f >= 0) {
       /* normalize dot product */
-      WORD l;
+      short l;
 #if 0
-      LONG s = px * px + py * py + pz * pz;
+      int s = px * px + py * py + pz * pz;
       s = swap16(s); /* s >>= 16, ignore upper word */
 #else
-      WORD s;
+      short s;
       asm("mulsw %0,%0\n"
           "mulsw %1,%1\n"
           "mulsw %2,%2\n"
@@ -155,7 +155,7 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
       s = px;
 #endif
       f = swap16(f); /* f >>= 16, ignore upper word */
-      l = div16((WORD)f * (WORD)f, s);
+      l = div16((short)f * (short)f, s);
       if (l >= 256)
         *faceFlags++ = 15;
       else
@@ -167,10 +167,10 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
 }
 
 __regargs void UpdateVertexVisibility(Object3D *object) {
-  BYTE *vertexFlags = object->vertexFlags;
-  BYTE *faceFlags = object->faceFlags;
+  char *vertexFlags = object->vertexFlags;
+  char *faceFlags = object->faceFlags;
   IndexListT **faces = object->mesh->face;
-  WORD n = object->mesh->faces;
+  short n = object->mesh->faces;
 
   bzero(vertexFlags, object->mesh->vertices);
 
@@ -178,8 +178,8 @@ __regargs void UpdateVertexVisibility(Object3D *object) {
     IndexListT *face = *faces++;
 
     if (*faceFlags++ >= 0) {
-      WORD *vi = face->indices;
-      WORD count = face->count;
+      short *vi = face->indices;
+      short count = face->count;
 
       /* Face has at least (and usually) three vertices. */
       switch (count) {
@@ -197,27 +197,27 @@ __regargs void UpdateVertexVisibility(Object3D *object) {
 
 __regargs void SortFaces(Object3D *object) {
   IndexListT **faces = object->mesh->face;
-  WORD n = object->mesh->faces;
-  APTR point = object->vertex;
-  BYTE *faceFlags = object->faceFlags;
-  WORD count = 0;
-  WORD index = 0;
+  short n = object->mesh->faces;
+  void *point = object->vertex;
+  char *faceFlags = object->faceFlags;
+  short count = 0;
+  short index = 0;
 
-  WORD *item = (WORD *)object->visibleFace;
+  short *item = (short *)object->visibleFace;
 
   while (--n >= 0) {
     IndexListT *face = *faces++;
 
     if (*faceFlags++ >= 0) {
-      WORD *vi = face->indices;
-      WORD i1 = *vi++ << 3;
-      WORD i2 = *vi++ << 3;
-      WORD i3 = *vi++ << 3;
-      WORD z = 0;
+      short *vi = face->indices;
+      short i1 = *vi++ << 3;
+      short i2 = *vi++ << 3;
+      short i3 = *vi++ << 3;
+      short z = 0;
 
-      z += *(WORD *)(point + i1 + 4);
-      z += *(WORD *)(point + i2 + 4);
-      z += *(WORD *)(point + i3 + 4);
+      z += *(short *)(point + i1 + 4);
+      z += *(short *)(point + i2 + 4);
+      z += *(short *)(point + i3 + 4);
 
       *item++ = z;
       *item++ = index;

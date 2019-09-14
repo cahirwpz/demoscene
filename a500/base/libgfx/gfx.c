@@ -1,10 +1,10 @@
 #include "memory.h"
 #include "gfx.h"
 
-__regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
-                                UWORD depth, BitmapT *donor)
+__regargs void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
+                                u_short depth, BitmapT *donor)
 {
-  UWORD bytesPerRow = ((width + 15) & ~15) / 8;
+  u_short bytesPerRow = ((width + 15) & ~15) / 8;
 
   bitmap->width = width;
   bitmap->height = height;
@@ -17,11 +17,11 @@ __regargs void InitSharedBitmap(BitmapT *bitmap, UWORD width, UWORD height,
   BitmapSetPointers(bitmap, donor->planes[0]);
 }
 
-__regargs void BitmapSetPointers(BitmapT *bitmap, APTR planes) {
-  LONG modulo =
+__regargs void BitmapSetPointers(BitmapT *bitmap, void *planes) {
+  int modulo =
     (bitmap->flags & BM_INTERLEAVED) ? bitmap->bytesPerRow : bitmap->bplSize;
-  WORD depth = bitmap->depth;
-  APTR *planePtr = bitmap->planes;
+  short depth = bitmap->depth;
+  void **planePtr = bitmap->planes;
 
   do {
     *planePtr++ = planes;
@@ -29,22 +29,22 @@ __regargs void BitmapSetPointers(BitmapT *bitmap, APTR planes) {
   } while (depth--);
 }
 
-__regargs BitmapT *NewBitmapCustom(UWORD width, UWORD height, UWORD depth,
-                                   UBYTE flags)
+__regargs BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
+                                   u_char flags)
 {
   BitmapT *bitmap = MemAlloc(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
-  UWORD bytesPerRow = ((width + 15) & ~15) / 8;
+  u_short bytesPerRow = ((width + 15) & ~15) / 8;
 
   bitmap->width = width;
   bitmap->height = height;
   bitmap->bytesPerRow = bytesPerRow;
-  /* Let's make it aligned to WORD boundary. */
+  /* Let's make it aligned to short boundary. */
   bitmap->bplSize = bytesPerRow * height;
   bitmap->depth = depth;
   bitmap->flags = flags & BM_FLAGMASK;
 
   if (!(flags & BM_MINIMAL)) {
-    ULONG memoryFlags = 0;
+    u_int memoryFlags = 0;
 
     /* Recover memory flags. */
     if (flags & BM_CLEAR)
@@ -72,8 +72,8 @@ __regargs void DeleteBitmap(BitmapT *bitmap) {
 
 __regargs void BitmapMakeDisplayable(BitmapT *bitmap) {
   if (!(bitmap->flags & BM_DISPLAYABLE) && (bitmap->compression == COMP_NONE)) {
-    ULONG size = BitmapSize(bitmap);
-    APTR planes = MemAlloc(size, MEMF_CHIP);
+    u_int size = BitmapSize(bitmap);
+    void *planes = MemAlloc(size, MEMF_CHIP);
 
     memcpy(planes, bitmap->planes[0], size - BM_EXTRA);
     MemFree(bitmap->planes[0]);
@@ -83,7 +83,7 @@ __regargs void BitmapMakeDisplayable(BitmapT *bitmap) {
   }
 }
 
-__regargs PaletteT *NewPalette(UWORD count) {
+__regargs PaletteT *NewPalette(u_short count) {
   PaletteT *palette = MemAlloc(sizeof(PaletteT) + count * sizeof(ColorT),
                                MEMF_PUBLIC|MEMF_CLEAR);
   palette->count = count;
@@ -101,26 +101,26 @@ __regargs void DeletePalette(PaletteT *palette) {
     MemFree(palette);
 }
 
-__regargs void ConvertPaletteToRGB4(PaletteT *palette, UWORD *color, WORD n) {
-  UBYTE *src = (UBYTE *)palette->colors;
+__regargs void ConvertPaletteToRGB4(PaletteT *palette, u_short *color, short n) {
+  u_char *src = (u_char *)palette->colors;
 
   if (palette->count < n)
     n = palette->count;
 
   while (--n >= 0) {
-    UBYTE r = *src++ & 0xf0;
-    UBYTE g = *src++ & 0xf0;
-    UBYTE b = *src++ & 0xf0;
-    *color++ = (r << 4) | (UBYTE)(g | (b >> 4));
+    u_char r = *src++ & 0xf0;
+    u_char g = *src++ & 0xf0;
+    u_char b = *src++ & 0xf0;
+    *color++ = (r << 4) | (u_char)(g | (b >> 4));
   }
 }
 
-void RotatePalette(PaletteT *dstpal, PaletteT *srcpal, WORD start, WORD end, WORD step) {
+void RotatePalette(PaletteT *dstpal, PaletteT *srcpal, short start, short end, short step) {
   ColorT *src = srcpal->colors;
   ColorT *dst = dstpal->colors + start;
-  WORD n = end - start + 1;
-  WORD s = mod16(step, n);
-  WORD i = start + s;
+  short n = end - start + 1;
+  short s = mod16(step, n);
+  short i = start + s;
 
   if (s < 0)
     i += n;
@@ -132,18 +132,18 @@ void RotatePalette(PaletteT *dstpal, PaletteT *srcpal, WORD start, WORD end, WOR
   }
 }
 
-__regargs BOOL ClipBitmap(const Box2D *space, Point2D *pos, Area2D *area) {
-  WORD minX = space->minX;
-  WORD minY = space->minY;
-  WORD maxX = space->maxX;
-  WORD maxY = space->maxY;
-  WORD posX = pos->x;
-  WORD posY = pos->y;
+__regargs bool ClipBitmap(const Box2D *space, Point2D *pos, Area2D *area) {
+  short minX = space->minX;
+  short minY = space->minY;
+  short maxX = space->maxX;
+  short maxY = space->maxY;
+  short posX = pos->x;
+  short posY = pos->y;
 
   if ((posX + area->w <= minX) || (posX > maxX))
-    return FALSE;
+    return false;
   if ((posY + area->h <= minY) || (posY > maxY))
-    return FALSE;
+    return false;
 
   if (posX < minX) {
     area->x += minX - posX;
@@ -163,14 +163,14 @@ __regargs BOOL ClipBitmap(const Box2D *space, Point2D *pos, Area2D *area) {
   if (posY + area->h > maxY)
     area->h = maxY - posY + 1;
 
-  return TRUE;
+  return true;
 }
 
-__regargs BOOL InsideArea(WORD x, WORD y, Area2D *area) {
-  WORD x1 = area->x;
-  WORD y1 = area->y;
-  WORD x2 = area->x + area->w - 1;
-  WORD y2 = area->y + area->h - 1;
+__regargs bool InsideArea(short x, short y, Area2D *area) {
+  short x1 = area->x;
+  short y1 = area->y;
+  short x2 = area->x + area->w - 1;
+  short y2 = area->y + area->h - 1;
 
   return (x1 <= x && x <= x2 && y1 <= y && y <= y2);
 }

@@ -4,18 +4,18 @@ typedef struct {
   BitmapT *src;
   BitmapT *dst;
   BitmapT *msk;
-  ULONG start;
-  UWORD size;
+  u_int start;
+  u_short size;
 } StateT;
 
 static StateT state[1];
 
-__regargs void BlitterCopyMaskedSetup(BitmapT *dst, UWORD x, UWORD y,
+__regargs void BlitterCopyMaskedSetup(BitmapT *dst, u_short x, u_short y,
                                       BitmapT *src, BitmapT *msk)
 {
-  UWORD dstmod = dst->bytesPerRow - src->bytesPerRow;
-  UWORD bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
-  UWORD bltshift = rorw(x & 15, 4);
+  u_short dstmod = dst->bytesPerRow - src->bytesPerRow;
+  u_short bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
+  u_short bltshift = rorw(x & 15, 4);
 
   state->src = src;
   state->dst = dst;
@@ -48,11 +48,11 @@ __regargs void BlitterCopyMaskedSetup(BitmapT *dst, UWORD x, UWORD y,
   }
 }
 
-__regargs void BlitterCopyMaskedStart(WORD dstbpl, WORD srcbpl) {
-  APTR srcbpt = state->src->planes[srcbpl];
-  APTR dstbpt = state->dst->planes[dstbpl] + state->start;
-  APTR mskbpt = state->msk->planes[0];
-  UWORD bltsize = state->size;
+__regargs void BlitterCopyMaskedStart(short dstbpl, short srcbpl) {
+  void *srcbpt = state->src->planes[srcbpl];
+  void *dstbpt = state->dst->planes[dstbpl] + state->start;
+  void *mskbpt = state->msk->planes[0];
+  u_short bltsize = state->size;
 
   WaitBlitter();
 
@@ -63,10 +63,10 @@ __regargs void BlitterCopyMaskedStart(WORD dstbpl, WORD srcbpl) {
   custom->bltsize = bltsize;
 }
 
-void BitmapCopyMasked(BitmapT *dst, UWORD x, UWORD y,
+void BitmapCopyMasked(BitmapT *dst, u_short x, u_short y,
                       BitmapT *src, BitmapT *msk) 
 {
-  WORD i, n = min(dst->depth, src->depth);
+  short i, n = min(dst->depth, src->depth);
 
   BlitterCopyMaskedSetup(dst, x, y, src, msk);
   for (i = 0; i < n; i++)

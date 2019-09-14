@@ -6,10 +6,10 @@
 #define TD_SECTOR 512
 #define NUMSECS 11
 
-void InitFloppy();
-void KillFloppy();
+void InitFloppy(void);
+void KillFloppy(void);
 
-__regargs void FloppyTrackRead(WORD num);
-__regargs void FloppyTrackDecode(ULONG *buf);
+__regargs void FloppyTrackRead(short num);
+__regargs void FloppyTrackDecode(u_int *buf);
 
 #endif

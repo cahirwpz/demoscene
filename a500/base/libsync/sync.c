@@ -6,7 +6,7 @@ __regargs void TrackInit(TrackT *track) {
   TrackKeyT *next;
 
   track->type = TRACK_LINEAR;
-  track->pending = TRUE;
+  track->pending = true;
 
   while (key->frame == CTRL_KEY) {
     track->type = key->value;
@@ -48,29 +48,29 @@ __regargs void TrackInit(TrackT *track) {
  * h10(t) := ha(t) + t
  * h01(t) := -hb(t)
  */
-static __regargs LONG HermiteInterpolator(WORD t, TrackKeyT *key[4]) {
-  register WORD one asm("d6") = fx12f(1.0);
-  WORD t2 = normfx(t * t);
-  WORD h11 = normfx(t2 * (WORD)(t - one));
-  WORD ha = h11 - t2;
-  WORD hb = h11 + ha;
-  WORD h00 = hb + one;
-  WORD h10 = ha + t;
-  WORD h01 = -hb;
+static __regargs int HermiteInterpolator(short t, TrackKeyT *key[4]) {
+  register short one asm("d6") = fx12f(1.0);
+  short t2 = normfx(t * t);
+  short h11 = normfx(t2 * (short)(t - one));
+  short ha = h11 - t2;
+  short hb = h11 + ha;
+  short h00 = hb + one;
+  short h10 = ha + t;
+  short h01 = -hb;
 
-  WORD v0 = (*key++)->value;
-  WORD v1 = (*key++)->value;
-  WORD v2 = (*key++)->value;
-  WORD v3 = (*key++)->value;
+  short v0 = (*key++)->value;
+  short v1 = (*key++)->value;
+  short v2 = (*key++)->value;
+  short v3 = (*key++)->value;
 
   return h00 * v1 + h01 * v2 +
-    ((h10 * (WORD)(v2 - v0) + h11 * (WORD)(v3 - v1)) >> 1);
+    ((h10 * (short)(v2 - v0) + h11 * (short)(v3 - v1)) >> 1);
 }
 
-__regargs WORD TrackValueGet(TrackT *track, WORD frame) {
+__regargs short TrackValueGet(TrackT *track, short frame) {
   TrackKeyT *key = track->key[1]; 
   TrackKeyT *next = track->key[2];
-  WORD step;
+  short step;
 
   if (frame < key->frame) {
     if ((track->type != TRACK_TRIGGER) &&
@@ -103,7 +103,7 @@ __regargs WORD TrackValueGet(TrackT *track, WORD frame) {
 
       track->interval = next->frame - key->frame;
       track->delta = next->value - key->value;
-      track->pending = TRUE;
+      track->pending = true;
 
       if (track->type == TRACK_SPLINE) {
         do { next++; } while (next->frame == CTRL_KEY);
@@ -127,27 +127,27 @@ __regargs WORD TrackValueGet(TrackT *track, WORD frame) {
 
     case TRACK_SMOOTH:
       {
-        WORD t = div16(shift12(step) / 2, track->interval);
-        WORD k = (fx12f(1.0) - sintab[t + SIN_HALF_PI]) / 2;
+        short t = div16(shift12(step) / 2, track->interval);
+        short k = (fx12f(1.0) - sintab[t + SIN_HALF_PI]) / 2;
         return key->value + normfx(track->delta * k);
       }
 
     case TRACK_SPLINE:
       {
-        WORD t = div16(shift12(step), track->interval);
+        short t = div16(shift12(step), track->interval);
         return normfx(HermiteInterpolator(t, track->key));
       }
 
     case TRACK_TRIGGER:
       {
-        WORD v = key->value - step;
+        short v = key->value - step;
         return (v > 0) ? v : 0;
       }
 
     case TRACK_EVENT:
       if (!track->pending)
         return 0;
-      track->pending = FALSE;
+      track->pending = false;
       return key->value;
 
     default:

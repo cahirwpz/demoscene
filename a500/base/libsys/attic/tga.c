@@ -12,25 +12,25 @@
 #define TGA_RLE_GRAY  11
 
 typedef struct TgaHeader {
-  UBYTE idLength;
-  UBYTE cmapPresent;
-  UBYTE imageType;
-  UWORD cmapFirst;
-  UWORD cmapLength;
-  UBYTE cmapEntrySize;
-  UWORD xOrigin;
-  UWORD yOrigin;
-  UWORD width;
-  UWORD height;
-  UBYTE depth;
-  UBYTE descriptor;
+  u_char idLength;
+  u_char cmapPresent;
+  u_char imageType;
+  u_short cmapFirst;
+  u_short cmapLength;
+  u_char cmapEntrySize;
+  u_short xOrigin;
+  u_short yOrigin;
+  u_short width;
+  u_short height;
+  u_char depth;
+  u_char descriptor;
 } __attribute__((packed)) TgaHeaderT;
 
 static PixmapTypeT tgaType[] = { PM_NONE, _PM_CMAP, _PM_RGB, _PM_GRAY };
 
 static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, FileT *tga) {
-  LONG size = hdr->cmapLength * 3;
-  UBYTE *data = MemAlloc(size, MEMF_PUBLIC);
+  int size = hdr->cmapLength * 3;
+  u_char *data = MemAlloc(size, MEMF_PUBLIC);
   PaletteT *palette = NULL;
 
   if (FileRead(tga, data, size)) {
@@ -39,8 +39,8 @@ static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, FileT *tga) {
     /* TGA palette is defined as BGR value. */
     {
       ColorT *dst = palette->colors;
-      UBYTE *src = data;
-      WORD n = hdr->cmapLength;
+      u_char *src = data;
+      short n = hdr->cmapLength;
 
       while (--n >= 0) {
         dst->b = *src++;
@@ -56,9 +56,9 @@ static __regargs PaletteT *ReadColorMap(TgaHeaderT *hdr, FileT *tga) {
 }
 
 static __regargs void ReadData(TgaHeaderT *hdr, FileT *tga, PixmapT *pixmap) {
-  WORD bytesPerRow = hdr->width * hdr->depth >> 3;
-  LONG size = bytesPerRow * hdr->height;
-  UBYTE *data = MemAlloc(size, MEMF_PUBLIC);
+  short bytesPerRow = hdr->width * hdr->depth >> 3;
+  int size = bytesPerRow * hdr->height;
+  u_char *data = MemAlloc(size, MEMF_PUBLIC);
 
   if (FileRead(tga, data, size)) {
     /*
@@ -67,22 +67,22 @@ static __regargs void ReadData(TgaHeaderT *hdr, FileT *tga, PixmapT *pixmap) {
      */
 
     {
-      UBYTE *dst = pixmap->pixels;
-      WORD y = hdr->height;
-      BOOL alpha = (hdr->depth == 32);
+      u_char *dst = pixmap->pixels;
+      short y = hdr->height;
+      bool alpha = (hdr->depth == 32);
 
       while (--y >= 0) {
-        UBYTE *src = data + bytesPerRow * y;
-        WORD n = hdr->width;
+        u_char *src = data + bytesPerRow * y;
+        short n = hdr->width;
 
         if (hdr->imageType == TGA_GRAY || hdr->imageType == TGA_CMAP) {
           while (--n >= 0)
             *dst++ = *src++;
         } else if (hdr->imageType == TGA_RGB) {
           while (--n >= 0) {
-            UBYTE b = *src++;
-            UBYTE g = *src++;
-            UBYTE r = *src++;
+            u_char b = *src++;
+            u_char g = *src++;
+            u_char r = *src++;
             *dst++ = r;
             *dst++ = g;
             *dst++ = b;
@@ -99,7 +99,7 @@ static __regargs void ReadData(TgaHeaderT *hdr, FileT *tga, PixmapT *pixmap) {
 }
 
 __regargs PixmapT *
-LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
+LoadTGA(const char *filename, PixmapTypeT type, u_int memoryFlags) {
   PixmapT *pixmap = NULL;
   TgaHeaderT hdr;
   FileT *tga = OpenFile(filename, IOF_BUFFERED);
@@ -117,10 +117,10 @@ LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
     (void)FileSeek(tga, hdr.idLength, SEEK_CUR);
 
     {
-      BOOL gray = (hdr.imageType == TGA_GRAY) && (hdr.depth == 8);
-      BOOL cmap = (hdr.imageType == TGA_CMAP) && (hdr.depth == 8) &&
+      bool gray = (hdr.imageType == TGA_GRAY) && (hdr.depth == 8);
+      bool cmap = (hdr.imageType == TGA_CMAP) && (hdr.depth == 8) &&
         (hdr.cmapEntrySize == 24);
-      BOOL rgb = (hdr.imageType == TGA_RGB) &&
+      bool rgb = (hdr.imageType == TGA_RGB) &&
         (hdr.depth == 24 || hdr.depth == 32);
 
       if (gray || cmap || rgb) {

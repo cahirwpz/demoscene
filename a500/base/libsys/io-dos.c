@@ -1,4 +1,3 @@
-#include <proto/exec.h>
 #include <proto/dos.h> 
 
 #include "config.h"
@@ -14,18 +13,18 @@
 
 struct File {
   BPTR handle;
-  UWORD flags;
+  u_short flags;
 
-  LONG pos;
+  int pos;
   
   struct {
-    LONG left;
-    UBYTE *pos;
-    UBYTE data[0];
+    int left;
+    u_char *pos;
+    u_char data[0];
   } buf;
 };
 
-FileT *OpenFile(CONST STRPTR path asm("d1"), UWORD flags asm("d0")) {
+FileT *OpenFile(const char *path asm("d1"), u_short flags asm("d0")) {
   FileT *file = MemAlloc(sizeof(FileT) + ((flags & IOF_BUFFERED) ? SECTOR : 0),
                          MEMF_PUBLIC|MEMF_CLEAR);
 
@@ -44,11 +43,11 @@ void CloseFile(FileT *file asm("a0")) {
   }
 }
 
-BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
+bool FileRead(FileT *file asm("a0"), void *buf asm("d2"), u_int size asm("d3")) {
   if (!file || size == 0 || (file->flags & IOF_ERR))
-    return FALSE;
+    return false;
 
-  // Log("[FileRead] $%lx $%lx %ld\n", (LONG)file, (LONG)buf, (LONG)size);
+  // Log("[FileRead] $%p $%p %d\n", file, buf, size);
 
   if (file->flags & IOF_BUFFERED) {
     while (size > 0) {
@@ -57,8 +56,8 @@ BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
         /* Buffer is empty - fill it. */
         if (size >= SECTOR) {
           /* Read some sectors directly into provided buffer. */
-          ULONG length = size & ~(SECTOR - 1);
-          LONG actual = Read(file->handle, buf, length);
+          u_int length = size & ~(SECTOR - 1);
+          int actual = Read(file->handle, buf, length);
 
           if (actual < 0) { file->flags |= IOF_ERR; break; }
           if (actual < length) { file->flags |= IOF_EOF; }
@@ -67,7 +66,7 @@ BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
           buf += actual; size -= actual;
         } else {
           /* Read one sector into file buffer. */
-          LONG actual = Read(file->handle, file->buf.data, SECTOR);
+          int actual = Read(file->handle, file->buf.data, SECTOR);
 
           if (actual < 0) { file->flags |= IOF_ERR; break; }
           if (actual < SECTOR) { file->flags |= IOF_EOF; }
@@ -78,9 +77,9 @@ BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
         }
       } else {
         /* Read to the end of buffer or less. */
-        LONG length = min(size, file->buf.left);
+        int length = min(size, file->buf.left);
 
-        CopyMem(file->buf.pos, buf, length);
+        memcpy(buf, file->buf.pos, length);
 
         file->buf.pos += length;
         file->buf.left -= length;
@@ -88,7 +87,7 @@ BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
       }
     }
   } else {
-    LONG actual = Read(file->handle, buf, size);
+    int actual = Read(file->handle, buf, size);
 
     if (actual < 0) file->flags |= IOF_ERR;
     if (!actual) file->flags |= IOF_EOF;
@@ -101,9 +100,9 @@ BOOL FileRead(FileT *file asm("a0"), APTR buf asm("d2"), ULONG size asm("d3")) {
   return size == 0; /* have we read everything? */
 }
 
-BOOL FileSeek(FileT *file asm("a0"), LONG pos asm("d2"), LONG mode asm("d3")) {
+bool FileSeek(FileT *file asm("a0"), int pos asm("d2"), int mode asm("d3")) {
   if (file && !(file->flags & IOF_ERR)) {
-    // Log("[FileSeek] $%lx %ld %ld\n", (LONG)file, (LONG)pos, (LONG)mode);
+    // Log("[FileSeek] $%p %d %d\n", file, pos, mode);
     
     file->flags &= ~IOF_EOF;
 
@@ -114,9 +113,9 @@ BOOL FileSeek(FileT *file asm("a0"), LONG pos asm("d2"), LONG mode asm("d3")) {
       }
 
       if (mode == SEEK_SET) {
-        LONG bufsize = file->buf.pos - file->buf.data + (LONG)file->buf.left;
-        LONG bufstart = file->pos - bufsize;
-        LONG bufend = file->pos;
+        int bufsize = file->buf.pos - file->buf.data + (int)file->buf.left;
+        int bufstart = file->pos - bufsize;
+        int bufend = file->pos;
 
         if ((pos >= bufstart) && (pos < bufend)) {
           /* New position is within buffer boundaries. */
@@ -124,11 +123,11 @@ BOOL FileSeek(FileT *file asm("a0"), LONG pos asm("d2"), LONG mode asm("d3")) {
           file->buf.left = file->pos - pos;
         } else {
           /* Read buffer from new position (aligned to sector size). */
-          LONG result;
+          int result;
 
           /* Go to given position and fail if not possible. */
           if (Seek(file->handle, pos, mode) != 0)
-            return FALSE;
+            return false;
 
           /* Go back to the beginning of current sector. */
           (void)Seek(file->handle, pos & ~(SECTOR - 1), mode);
@@ -136,7 +135,7 @@ BOOL FileSeek(FileT *file asm("a0"), LONG pos asm("d2"), LONG mode asm("d3")) {
           /* Read one sector into file buffer. */
           result = Read(file->handle, file->buf.data, SECTOR);
 
-          if (result < 0) { file->flags |= IOF_ERR; return FALSE; }
+          if (result < 0) { file->flags |= IOF_ERR; return false; }
           if (!result) file->flags |= IOF_EOF;
 
           file->pos = (pos & ~(SECTOR - 1)) + result;
@@ -153,7 +152,7 @@ BOOL FileSeek(FileT *file asm("a0"), LONG pos asm("d2"), LONG mode asm("d3")) {
           if (!file->buf.left && (result < SECTOR))
             file->flags |= IOF_EOF;
 
-          return TRUE;
+          return true;
         }
       }
     } else {
@@ -161,11 +160,11 @@ BOOL FileSeek(FileT *file asm("a0"), LONG pos asm("d2"), LONG mode asm("d3")) {
     }
   }
 
-  return FALSE;
+  return false;
 }
 
-LONG GetFileSize(CONST STRPTR path asm("d1")) {
-  LONG size = -1;
+int GetFileSize(const char *path asm("d1")) {
+  int size = -1;
   BPTR fh;
 
   if ((fh = Lock(path, ACCESS_READ))) {
@@ -180,7 +179,7 @@ LONG GetFileSize(CONST STRPTR path asm("d1")) {
   return size;
 }
 
-LONG GetCursorPos(FileT *file asm("a0")) {
+int GetCursorPos(FileT *file asm("a0")) {
   if (file && !(file->flags & IOF_ERR)) {
     if (file->flags & IOF_BUFFERED)
       return file->pos - file->buf.left;
@@ -190,7 +189,8 @@ LONG GetCursorPos(FileT *file asm("a0")) {
   return -1;
 }
 
-STRPTR __cwdpath; /* symbol is defined in common area and can be overridden */
+/* symbol is defined in common area and can be overridden */
+const char *__cwdpath;
 static BPTR oldcwd = NULL;
 
 void InitIoDos() {
@@ -200,7 +200,7 @@ void InitIoDos() {
     if ((lock = Lock(__cwdpath, ACCESS_READ))) {
       oldcwd = CurrentDir(lock);
     } else {
-      Log("Lock() failed with %ld\n", IoErr());
+      Log("Lock() failed with %d\n", IoErr());
       exit();
     }
   }

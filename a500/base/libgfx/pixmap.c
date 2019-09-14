@@ -1,11 +1,11 @@
 #include "memory.h"
 #include "pixmap.h"
 
-static WORD bitdepth[] = { 0, 1, 2, 4, 8, 16 };
+static short bitdepth[] = { 0, 1, 2, 4, 8, 16 };
 
-__regargs LONG PixmapSize(PixmapT *pixmap) {
-  WORD bitsPerPixel = bitdepth[pixmap->type & PM_DEPTH_MASK];
-  WORD bytesPerRow;
+__regargs int PixmapSize(PixmapT *pixmap) {
+  short bitsPerPixel = bitdepth[pixmap->type & PM_DEPTH_MASK];
+  short bytesPerRow;
   if (pixmap->type & _PM_RGB) {
     bitsPerPixel = (bitsPerPixel * 3 + 7) >> 3;
     bytesPerRow = bitsPerPixel * pixmap->width;
@@ -15,8 +15,8 @@ __regargs LONG PixmapSize(PixmapT *pixmap) {
   return bytesPerRow * pixmap->height;
 }
 
-__regargs PixmapT *NewPixmap(WORD width, WORD height, 
-                             PixmapTypeT type, ULONG memoryAttributes)
+__regargs PixmapT *NewPixmap(short width, short height, 
+                             PixmapTypeT type, u_int memoryAttributes)
 {
   PixmapT *pixmap = MemAlloc(sizeof(PixmapT), MEMF_PUBLIC|MEMF_CLEAR);
 
@@ -46,14 +46,14 @@ __regargs void DeletePixmap(PixmapT *pixmap) {
 
 __regargs void PixmapScramble_4_1(PixmapT *pixmap) {
   if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
-    ULONG *data = pixmap->pixels;
-    WORD n = pixmap->width * pixmap->height / 8;
-    register ULONG m0 asm("d6") = 0xa5a5a5a5;
-    register ULONG m1 asm("d7") = 0x0a0a0a0a;
+    u_int *data = pixmap->pixels;
+    short n = pixmap->width * pixmap->height / 8;
+    register u_int m0 asm("d6") = 0xa5a5a5a5;
+    register u_int m1 asm("d7") = 0x0a0a0a0a;
 
     /* [a0 a1 a2 a3 b0 b1 b2 b3] => [a0 b0 a2 b1 a1 b2 a3 b3] */
     while (--n >= 0) {
-      ULONG c = *data;
+      u_int c = *data;
       *data++ = (c & m0) | ((c >> 3) & m1) | ((c & m1) << 3);
     }
   }
@@ -61,14 +61,14 @@ __regargs void PixmapScramble_4_1(PixmapT *pixmap) {
 
 __regargs void PixmapScramble_4_2(PixmapT *pixmap) {
   if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
-    ULONG *data = pixmap->pixels;
-    WORD n = pixmap->width * pixmap->height / 8;
-    register ULONG m0 asm("d6") = 0xc3c3c3c3;
-    register ULONG m1 asm("d7") = 0x0c0c0c0c;
+    u_int *data = pixmap->pixels;
+    short n = pixmap->width * pixmap->height / 8;
+    register u_int m0 asm("d6") = 0xc3c3c3c3;
+    register u_int m1 asm("d7") = 0x0c0c0c0c;
 
     /* [a0 a1 a2 a3 b0 b1 b2 b3] => [a0 a1 b0 b1 a2 a3 b2 b3] */
     while (--n >= 0) {
-      ULONG c = *data;
+      u_int c = *data;
       *data++ = (c & m0) | ((c >> 2) & m1) | ((c & m1) << 2);
     }
   }
@@ -84,37 +84,37 @@ __regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type) {
       (pixmap->type == PM_CMAP8 && type == PM_CMAP4) ||
       (pixmap->type == PM_RGB24 && type == PM_RGB12))
   {
-    UBYTE *pixels = pixmap->pixels;
+    u_char *pixels = pixmap->pixels;
 
     pixmap->type = type;
     pixmap->pixels = MemAlloc(PixmapSize(pixmap), MemTypeOf(pixmap->pixels));
 
     {
-      UBYTE *src = pixels;
-      LONG n = pixmap->width * pixmap->height;
+      u_char *src = pixels;
+      int n = pixmap->width * pixmap->height;
 
       if (pixmap->type == PM_RGB12) {
-        UWORD *dst = pixmap->pixels;
+        u_short *dst = pixmap->pixels;
         do {
-          UBYTE r = *src++;
-          UBYTE g = *src++;
-          UBYTE b = *src++;
-          UBYTE lo = (g & 0xf0) | ((b & 0xf0) >> 4);
+          u_char r = *src++;
+          u_char g = *src++;
+          u_char b = *src++;
+          u_char lo = (g & 0xf0) | ((b & 0xf0) >> 4);
           *dst++ = ((r & 0xf0) << 4) | lo;
         } while (--n);
       } else if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
-        UBYTE *dst = pixmap->pixels;
+        u_char *dst = pixmap->pixels;
         n /= 2;
         do {
-          UBYTE c = *src++;
-          UBYTE d = *src++;
+          u_char c = *src++;
+          u_char d = *src++;
           *dst++ = c << 4 | d;
         } while (--n);
       } else {
-        UBYTE *dst = pixmap->pixels;
+        u_char *dst = pixmap->pixels;
         n /= 2;
         do {
-          UBYTE c = *src++;
+          u_char c = *src++;
           *dst++ = c >> 4;
           *dst++ = c & 15;
         } while (--n);

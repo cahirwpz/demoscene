@@ -2,8 +2,8 @@
 #include "io.h"
 #include "iff.h"
 
-__regargs void OpenIff(IffFileT *iff, CONST STRPTR filename) {
-  iff->file = OpenFile(filename, IOF_BUFFERED);
+__regargs void OpenIff(IffFileT *iff, const char *filename) {
+  iff->file = OpenFile(__DECONST(char *, filename), IOF_BUFFERED);
 
   if (FileRead(iff->file, &iff->header, sizeof(IffHeaderT)))
     if (iff->header.magic == ID_FORM)
@@ -12,20 +12,20 @@ __regargs void OpenIff(IffFileT *iff, CONST STRPTR filename) {
   Panic("[IFF] File '%s' is not an IFF file!\n", filename);
 }
 
-__regargs BOOL ParseChunk(IffFileT *iff) {
+__regargs bool ParseChunk(IffFileT *iff) {
   return FileRead(iff->file, &iff->chunk, sizeof(IffChunkT));
 }
 
-__regargs BOOL ReadChunk(IffFileT *iff, APTR ptr) {
+__regargs bool ReadChunk(IffFileT *iff, void *ptr) {
   if (FileRead(iff->file, ptr, iff->chunk.length)) {
     /* Skip an extra byte if the lenght of a chunk is odd. */
     if (iff->chunk.length & 1)
       (void)FileSeek(iff->file, 1, SEEK_CUR);
 
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 __regargs void SkipChunk(IffFileT *iff) {

@@ -18,10 +18,10 @@ static BitmapT *lower;
 static Point2D lower_pos;
 static Area2D lower_area;
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
-static void Load() {
-  WORD i;
+static void Load(void) {
+  short i;
 
   /* 'credits_logo.ilbm' and 'txt_*.ilbm' must have empty 16 pixels on the left
    * and on the right. Otherwise Display Data Fetcher will show some artifact
@@ -49,8 +49,8 @@ static void Load() {
     member[i]->palette = member[0]->palette;
 }
 
-static void UnLoad() {
-  WORD i;
+static void UnLoad(void) {
+  short i;
 
   DeletePalette(logo->palette);
   DeleteBitmap(logo);
@@ -99,9 +99,9 @@ static void MakeCopperList(CopListT *cp) {
   CopLoadPal(cp, dance[0]->palette, 8);
   CopSetupMode(cp, MODE_DUALPF, 6);
   {
-    APTR *planes0 = floor->planes;
-    APTR *planes1 = foreground->planes;
-    WORD i;
+    void **planes0 = floor->planes;
+    void **planes1 = foreground->planes;
+    short i;
 
     for (i = 0; i < 6;) {
       CopMove32(cp, bplpt[i++], *planes0++);
@@ -139,7 +139,7 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   foreground = NewBitmap(max(floor->width, dance[0]->width),
@@ -158,16 +158,16 @@ static void Init() {
   SetFrameCounter(0);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
   DeleteCopList(cp0);
   DeleteCopList(cp1);
   DeleteBitmap(foreground);
 }
 
-static void Render() {
+static void Render(void) {
   if (frameCount > 600) {
-    WORD i = div16(frameCount - 250, 8) & 3;
+    short i = div16(frameCount - 250, 8) & 3;
     lower = logo;
     BitmapCopy(foreground, 80, 0, dance[i + 4]);
   } else if (frameCount > 500) {
@@ -209,4 +209,4 @@ static void Render() {
   swapr(cp0, cp1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

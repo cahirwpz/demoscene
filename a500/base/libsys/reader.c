@@ -41,45 +41,45 @@ static inline int isalnum(int c) {
   return ctype[c] & ALNUM;
 }
 
-__regargs BOOL MatchString(char **data, const char *pattern) {
+__regargs bool MatchString(char **data, const char *pattern) {
   char *str = *data;
 
   while (*str == *pattern)
     str++, pattern++;
 
   if (*pattern)
-    return FALSE;
+    return false;
 
   *data = str;
-  return TRUE;
+  return true;
 }
 
-/* Moves cursor to next word in a line. Returns FALSE if encountered end of line
+/* Moves cursor to next word in a line. Returns false if encountered end of line
  * or file. Always updates the pointer! Understands escape character '\' and
  * single line comments beginning with '#' character.  */
-__regargs BOOL NextWord(char **data) {
+__regargs bool NextWord(char **data) {
   char *str = *data;
-  BOOL escape = FALSE;
-  BOOL comment = FALSE;
-  BOOL found = FALSE;
+  bool escape = false;
+  bool comment = false;
+  bool found = false;
   char c;
 
   while ((c = *str)) { 
     if (escape) {
-      escape = FALSE;
+      escape = false;
       if (c != '\n') {
-        found = TRUE;
+        found = true;
         str--;
         break;
       }
     } else if (c == '\\') {
-      escape = TRUE;
+      escape = true;
     } else if (c == '#') {
-      comment = TRUE;
+      comment = true;
     } else if (c == '\n') {
       break;
     } else if (!comment && !isspace(c)) {
-      found = TRUE;
+      found = true;
       break;
     }
     str++;
@@ -93,16 +93,16 @@ __regargs BOOL NextWord(char **data) {
  * escape character '\'. */
 __regargs void SkipWord(char **data) {
   char *str = *data;
-  BOOL escape = FALSE;
+  bool escape = false;
 
   if (NextWord(&str)) {
     char c;
 
     while ((c = *str)) {
       if (escape) {
-        escape = FALSE;
+        escape = false;
       } else if (c == '\\') {
-        escape = TRUE;
+        escape = true;
       } else if (isspace(c)) {
         break;
       }
@@ -114,20 +114,20 @@ __regargs void SkipWord(char **data) {
 }
 
 /* Checks if the cursor can move through comments and white spaces to the end of
- * line or file. If so, it updates the position of cursor and returns TRUE. */
-__regargs BOOL EndOfLine(char **data) {
+ * line or file. If so, it updates the position of cursor and returns true. */
+__regargs bool EndOfLine(char **data) {
   char *str = *data;
 
   if (NextWord(&str))
-    return FALSE;
+    return false;
 
   *data = str;
-  return TRUE;
+  return true;
 }
 
-/* Moves cursor to next word of a non-empty line. Returns FALSE if there's no
+/* Moves cursor to next word of a non-empty line. Returns false if there's no
  * next line. */
-__regargs BOOL NextLine(char **data) {
+__regargs bool NextLine(char **data) {
   char *str = *data;
 
   while (!NextWord(&str)) {
@@ -155,11 +155,11 @@ __regargs void SkipLine(char **data) {
   *data = str;
 }
 
-static inline WORD digit(WORD c) {
+static inline short digit(short c) {
   return c - '0';
 }
 
-static inline WORD xdigit(WORD c) {
+static inline short xdigit(short c) {
   if (c <= '9')
     return c - '0';
   if (c <= 'F')
@@ -167,45 +167,45 @@ static inline WORD xdigit(WORD c) {
   return c - ('a' - 10);
 }
 
-__regargs BOOL ReadByte(char **data, BYTE *numptr) {
-  LONG num;
-  BOOL res = ReadInt(data, &num);
+__regargs bool ReadByte(char **data, char *numptr) {
+  int num;
+  bool res = ReadInt(data, &num);
   *numptr = num;
   return res;
 }
 
-__regargs BOOL ReadShort(char **data, WORD *numptr) {
-  LONG num;
-  BOOL res = ReadInt(data, &num);
+__regargs bool ReadShort(char **data, short *numptr) {
+  int num;
+  bool res = ReadInt(data, &num);
   *numptr = num;
   return res;
 }
 
-__regargs BOOL ReadInt(char **data, LONG *numptr) {
+__regargs bool ReadInt(char **data, int *numptr) {
   char *str = *data;
   char c;
 
-  LONG num = 0;
-  BOOL minus = FALSE;
-  BOOL hex = FALSE;
+  int num = 0;
+  bool minus = false;
+  bool hex = false;
 
   /* Skip white spaces. */
   if (!NextWord(&str))
-    return FALSE;
+    return false;
 
   /* Read optional sign character. */
   if (*str == '-')
-    str++, minus = TRUE;
+    str++, minus = true;
 
   if (*str == '$')
-    str++, hex = TRUE;
+    str++, hex = true;
 
   /* Read at least one digit. */
   c = *str;
 
   if (hex) {
     if (!isxdigit(c))
-      return FALSE;
+      return false;
 
     while (isxdigit(c)) {
       num = num * 16 + xdigit(c);
@@ -213,7 +213,7 @@ __regargs BOOL ReadInt(char **data, LONG *numptr) {
     }
   } else {
     if (!isdigit(c))
-      return FALSE;
+      return false;
 
     while (isdigit(c)) {
       num = num * 10 + digit(c);
@@ -226,33 +226,33 @@ __regargs BOOL ReadInt(char **data, LONG *numptr) {
   if (numptr)
     *numptr = minus ? -num : num;
 
-  return TRUE;
+  return true;
 }
 
-__regargs BOOL ReadFloat(char **data, FLOAT *numptr) {
+__regargs bool ReadFloat(char **data, float *numptr) {
   char *str = *data;
   char c;
 
-  LONG p = 0, q = 1;
-  BOOL minus = FALSE, dot = FALSE;
+  int p = 0, q = 1;
+  bool minus = false, dot = false;
 
   /* Skip white spaces. */
   if (!NextWord(&str))
-    return FALSE;
+    return false;
 
   /* Read optional sign character. */
   if (*str == '-')
-    str++, minus = TRUE;
+    str++, minus = true;
 
   /* Read at least one digit. */
   c = *str;
 
   if (!isdigit(c))
-    return FALSE;
+    return false;
 
   while (1) {
     if (!dot && c == '.') {
-      dot = TRUE;
+      dot = true;
     } else if (!isdigit(c)) {
       break;
     } else {
@@ -268,28 +268,28 @@ __regargs BOOL ReadFloat(char **data, FLOAT *numptr) {
   if (numptr)
     *numptr = SPDiv(SPFlt(q), SPFlt(minus ? -p : p));
 
-  return TRUE;
+  return true;
 }
 
-__regargs WORD ReadString(char **data, char *buf, WORD buflen) {
+__regargs short ReadString(char **data, char *buf, short buflen) {
   char *str = *data;
-  BOOL escape = FALSE;
-  BOOL quote = FALSE;
-  WORD n = 0;
+  bool escape = false;
+  bool quote = false;
+  short n = 0;
   char c;
 
   if (!NextWord(&str))
     return 0;
 
   if (*str == '"')
-    str++, quote = TRUE;
+    str++, quote = true;
 
   while ((c = *str) && n < buflen - 1) {
     if (!escape) {
       if (c == '#')
         break;
       else if (c == '\\')
-        escape = TRUE;
+        escape = true;
       else if (c == '"' && quote) {
         str++; break;
       } else if (isspace(c) && !quote)
@@ -297,7 +297,7 @@ __regargs WORD ReadString(char **data, char *buf, WORD buflen) {
       else
         *buf++ = c, n++;
     } else {
-      escape = FALSE;
+      escape = false;
 
       if (c != '\n') {
         if (c == 't') c = '\t';

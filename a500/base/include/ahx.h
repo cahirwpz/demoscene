@@ -1,69 +1,69 @@
 #ifndef __AHX_H__
 #define __AHX_H__
 
-#include <exec/types.h>
+#include "types.h"
 
 #define AHX_SAMPLE_LEN 320
 
 typedef struct AhxVoiceTemp {
-  BYTE Track;
-  BYTE Transpose;
-  BYTE NextTrack;
-  BYTE NextTranspose;
-  BYTE ADSRVolume;
-  BYTE pad0[91];
-  APTR AudioPointer;
-  WORD AudioPeriod;
-  WORD AudioVolume;
-  BYTE pad1[128];
+  char Track;
+  char Transpose;
+  char NextTrack;
+  char NextTranspose;
+  char ADSRVolume;
+  char pad0[91];
+  void *AudioPointer;
+  short AudioPeriod;
+  short AudioVolume;
+  char pad1[128];
 } AhxVoiceTempT; /* sizeof(AhxVoiceTempT) == 232 */
 
 typedef struct AhxInfo {
-  BYTE ExternalTiming;
-  BYTE MainVolume;
-  BYTE Subsongs;
-  BYTE SongEnd;
-  BYTE Playing;
-  BYTE pad1[3];
-  LONG FrameCount;
-  BYTE pad2[2];
+  char ExternalTiming;
+  char MainVolume;
+  char Subsongs;
+  char SongEnd;
+  char Playing;
+  char pad1[3];
+  int FrameCount;
+  char pad2[2];
   AhxVoiceTempT VoiceTemp[4];
-  BYTE pad3[156];
-  WORD Row;
-  WORD Pos;
+  char pad3[156];
+  short Row;
+  short Pos;
 } AhxInfoT;
 
 struct AhxPlayer {
   AhxInfoT *Public;   // pointer to ahx's public (fast) memory block
-  APTR  Chip;         // pointer to ahx's explicit chip memory block
-  ULONG PublicSize;   // size of public memory (intern use only!)
-  ULONG ChipSize;     // size of chip memory (intern use only!)
-  APTR  Module;       // pointer to ahxModule after InitModule
-  ULONG IsCIA;        // byte flag (using ANY (intern/own) cia?)
-  ULONG Tempo;        // word to cia tempo (normally NOT needed to xs)
+  void *Chip;         // pointer to ahx's explicit chip memory block
+  u_int PublicSize;   // size of public memory (intern use only!)
+  u_int ChipSize;     // size of chip memory (intern use only!)
+  void *Module;       // pointer to ahxModule after InitModule
+  u_int IsCIA;        // byte flag (using ANY (intern/own) cia?)
+  u_int Tempo;        // word to cia tempo (normally NOT needed to xs)
 };
 
 #define AHX_SYSTEM_FRIENDLY 0
 #define AHX_KILL_SYSTEM 1
 
-LONG AhxInitHardware(VOID (*ciaInt)() asm("a0"), LONG system asm("d0"));
+int AhxInitHardware(void (*ciaInt)(void) asm("a0"), int system asm("d0"));
 
 #define AHX_LOAD_WAVES_FILE 0
 #define AHX_EXPLICIT_WAVES_PRECALCING 1
 #define AHX_FILTERS 0
 #define AHX_NO_FILTERS 1
 
-LONG AhxInitPlayer(LONG waves asm("d0"), LONG filters asm("d1"));
+int AhxInitPlayer(int waves asm("d0"), int filters asm("d1"));
 
-LONG AhxInitModule(APTR module asm("a0"));
-LONG AhxInitSubSong(LONG subsong asm("d0"), LONG waitPlay asm("d1"));
-VOID AhxInterrupt();
-VOID AhxStopSong();
-VOID AhxKillPlayer();
-VOID AhxKillHardware();
-VOID AhxNextPattern();
-VOID AhxPrevPattern();
+int AhxInitModule(void *module asm("a0"));
+int AhxInitSubSong(int subsong asm("d0"), int waitPlay asm("d1"));
+void AhxInterrupt(void);
+void AhxStopSong(void);
+void AhxKillPlayer(void);
+void AhxKillHardware(void);
+void AhxNextPattern(void);
+void AhxPrevPattern(void);
 
-extern struct AhxPlayer Ahx;
+extern volatile struct AhxPlayer Ahx;
 
 #endif

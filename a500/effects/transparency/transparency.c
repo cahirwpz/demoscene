@@ -8,7 +8,7 @@
 #include "fx.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH   320
 #define HEIGHT  256
@@ -20,15 +20,15 @@ static BitmapT *logo;
 static CopListT *cp;
 static CopInsT *pal;
 
-static UWORD pal1[8];
-static UWORD pal2[4];
+static u_short pal1[8];
+static u_short pal2[4];
 
-static void Load() {
+static void Load(void) {
   background = LoadILBM("transparency-bg.ilbm");
   logo = LoadILBM("ghostown-logo.ilbm");
 
   {
-    WORD i;
+    short i;
 
     for (i = 0; i < 8; i++) {
       ColorT *c = &background->palette->colors[i];
@@ -43,21 +43,21 @@ static void Load() {
 
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeletePalette(logo->palette);
   DeleteBitmap(logo);
   DeletePalette(background->palette);
   DeleteBitmap(background);
 }
 
-static void BitplaneCopyFast(BitmapT *dst, WORD d, UWORD x, UWORD y,
-                             BitmapT *src, WORD s)
+static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
+                             BitmapT *src, short s)
 {
-  APTR srcbpt = src->planes[s];
-  APTR dstbpt = dst->planes[d] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
-  UWORD dstmod = dst->bytesPerRow - src->bytesPerRow;
-  UWORD bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
-  UWORD bltshift = rorw(x & 15, 4);
+  void *srcbpt = src->planes[s];
+  void *dstbpt = dst->planes[d] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
+  u_short dstmod = dst->bytesPerRow - src->bytesPerRow;
+  u_short bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
+  u_short bltshift = rorw(x & 15, 4);
 
   WaitBlitter();
 
@@ -80,7 +80,7 @@ static void BitplaneCopyFast(BitmapT *dst, WORD d, UWORD x, UWORD y,
   custom->bltsize = bltsize;
 }
 
-static void Init() {
+static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
   EnableDMA(DMAF_BLITTER);
@@ -98,16 +98,16 @@ static void Init() {
   EnableDMA(DMAF_RASTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DeleteBitmap(screen);
   DeleteCopList(cp);
 }
 
-static void Render() {
-  WORD xo = normfx(SIN(frameCount * 8) * 32);
-  WORD yo = normfx(SIN(frameCount * 16) * 32);
-  WORD s = normfx(SIN(frameCount * 64) * 6) + 8;
-  WORD i;
+static void Render(void) {
+  short xo = normfx(SIN(frameCount * 8) * 32);
+  short yo = normfx(SIN(frameCount * 16) * 32);
+  short s = normfx(SIN(frameCount * 64) * 6) + 8;
+  short i;
 
   BitplaneCopyFast(screen, 3, 80 + xo, 64 + yo, logo, 0);
   BitplaneCopyFast(screen, 4, 80 + xo, 64 + yo, logo, 1);
@@ -118,4 +118,4 @@ static void Render() {
   TaskWait(VBlankEvent);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

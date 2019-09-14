@@ -115,7 +115,7 @@ typedef enum {
   MOD_AMIGA = MOD_LAMIGA | MOD_RAMIGA
 } __attribute__((packed)) KeyModT;
 
-void KeyboardInit();
-void KeyboardKill();
+void KeyboardInit(void);
+void KeyboardKill(void);
 
 #endif

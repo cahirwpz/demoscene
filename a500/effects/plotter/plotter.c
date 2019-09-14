@@ -10,7 +10,7 @@
 #include "memory.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -25,23 +25,23 @@ STRPTR __cwdpath = "data";
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 static BitmapT *screen[2];
-static UWORD active = 0;
+static u_short active = 0;
 
 static BitmapT *carry;
 static BitmapT *flares;
 static BitmapT *flare[8];
 
-static void Load() {
+static void Load(void) {
   flares = LoadILBM("plotter-flares.ilbm");
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeletePalette(flares->palette);
   DeleteBitmap(flares);
 }
 
-static void Init() {
-  WORD i;
+static void Init(void) {
+  short i;
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
@@ -70,7 +70,7 @@ static void Init() {
   EnableDMA(DMAF_RASTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_BLITTER | DMAF_RASTER);
 
   ITER(i, 0, 7, DeleteBitmap(flare[i]));
@@ -80,16 +80,16 @@ static void Kill() {
   DeleteCopList(cp);
 }
 
-static void DrawPlotter() {
-  WORD i, a;
-  WORD t = frameCount * 5;
-  WORD da = 2 * SIN_PI / NUM;
+static void DrawPlotter(void) {
+  short i, a;
+  short t = frameCount * 5;
+  short da = 2 * SIN_PI / NUM;
 
   for (i = 0, a = t; i < NUM; i++, a += da) {
-    WORD g = SIN(ARMS * a);
-    WORD x = normfx(normfx(SIN(t + a) * g) * 96) + 96;
-    WORD y = normfx(normfx(COS(t + a) * g) * 96) + 96;
-    WORD f = normfx(g * 3);
+    short g = SIN(ARMS * a);
+    short x = normfx(normfx(SIN(t + a) * g) * 96) + 96;
+    short y = normfx(normfx(COS(t + a) * g) * 96) + 96;
+    short f = normfx(g * 3);
 
     if (f < 0)
       f = -f;
@@ -101,7 +101,7 @@ static void DrawPlotter() {
   }
 }
 
-static void Render() {
+static void Render(void) {
   BitmapClearArea(screen[active], 
                   STRUCT(Area2D, 0, 0, MAX_W * 2 + SIZE, MAX_H * 2 + SIZE));
   DrawPlotter();
@@ -111,4 +111,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

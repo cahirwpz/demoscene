@@ -7,7 +7,7 @@
 #include "fx.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -15,7 +15,7 @@ STRPTR __cwdpath = "data";
 #define SIZE 80
 
 static BitmapT *screen[2];
-static WORD active = 0;
+static short active = 0;
 
 static Point2D pos[2][3];
 static BitmapT *bgLeft, *bgRight;
@@ -25,7 +25,7 @@ static PaletteT *palette;
 static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
 
-static void Load() {
+static void Load(void) {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
@@ -36,7 +36,7 @@ static void Load() {
   palette = bgLeft->palette;
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
   DeleteBitmap(bgLeft);
@@ -45,8 +45,8 @@ static void UnLoad() {
   DeletePalette(palette);
 }
 
-static void SetInitialPositions() {
-  WORD i, j;
+static void SetInitialPositions(void) {
+  short i, j;
 
   for (i = 0; i < 2; i++) {
     for (j = 0; j < 3; j++) {
@@ -64,8 +64,8 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static void Init() {
-  WORD j;
+static void Init(void) {
+  short j;
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
@@ -85,17 +85,17 @@ static void Init() {
   EnableDMA(DMAF_RASTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 
   DeleteBitmap(carry);
   DeleteCopList(cp);
 }
 
-static void ClearMetaballs() {
+static void ClearMetaballs(void) {
   Area2D mball = {0, 0, SIZE + 16, SIZE};
-  WORD *val = (WORD *)pos[active];
-  WORD n = 3;
+  short *val = (short *)pos[active];
+  short n = 3;
 
   while (--n >= 0) {
     mball.x = *val++ & ~15;
@@ -104,9 +104,9 @@ static void ClearMetaballs() {
   }
 }
 
-static void PositionMetaballs() {
-  LONG t = frameCount * 24;
-  WORD *val = (WORD *)pos[active];
+static void PositionMetaballs(void) {
+  int t = frameCount * 24;
+  short *val = (short *)pos[active];
 
 
   *val++ = (WIDTH - SIZE) / 2 + normfx(SIN(t) * SIZE * 3 / 4);
@@ -117,28 +117,28 @@ static void PositionMetaballs() {
   *val++ = (HEIGHT - SIZE) / 2 + normfx(COS(t) * SIZE * 3 / 4);
 }
 
-static void DrawMetaballs() {
-  WORD *val = (WORD *)pos[active];
-  LONG x, y;
+static void DrawMetaballs(void) {
+  short *val = (short *)pos[active];
+  int x, y;
 
   x = *val++; y = *val++; BitmapCopyFast(screen[active], x, y, metaball);
   x = *val++; y = *val++; BitmapAddSaturated(screen[active], x, y, metaball, carry);
   x = *val++; y = *val++; BitmapAddSaturated(screen[active], x, y, metaball, carry);
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
+static void Render(void) {
+  // int lines = ReadLineCounter();
 
   // This takes about 100 lines. Could we do better?
   ClearMetaballs();
   PositionMetaballs();
   DrawMetaballs();
 
-  // Log("metaballs : %ld\n", ReadLineCounter() - lines);
+  // Log("metaballs : %d\n", ReadLineCounter() - lines);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

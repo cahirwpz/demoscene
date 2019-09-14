@@ -15,7 +15,7 @@ static SpriteT *sprite[12];
 static CopInsT *sprptr[8];
 
 static void Load() {
-  WORD i;
+  short i;
 
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   bitmap = LoadILBM("data/sprites16.ilbm");
@@ -36,7 +36,7 @@ static void Load() {
 }
 
 static void UnLoad() {
-  WORD i;
+  short i;
 
   for (i = 0; i < 12; i++)
     DeleteSprite(sprite[i]);
@@ -47,15 +47,15 @@ static void UnLoad() {
   DeleteBitmap(screen);
 }
 
-static UWORD move[] = { 0, 1, 0, 2, 0 };
+static u_short move[] = { 0, 1, 0, 2, 0 };
 
 static void MoveSprite() {
-  static UWORD counter = 0;
-  static UWORD x = X(0);
-  static UWORD y = Y(0);
-  static WORD dx = 1;
-  static WORD dy = 1;
-  UWORD i;
+  static u_short counter = 0;
+  static u_short x = X(0);
+  static u_short y = Y(0);
+  static short dx = 1;
+  static short dy = 1;
+  u_short i;
 
   if (x >= X(304))
     dx = -1;

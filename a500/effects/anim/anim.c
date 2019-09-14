@@ -8,7 +8,7 @@
 #include "fx.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH  320
 #define HEIGHT 240
@@ -18,39 +18,39 @@ static PaletteT *palette;
 static BitmapT *screen;
 static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
-static WORD active = 0;
+static short active = 0;
 
 typedef struct {
-  WORD width, height;
-  WORD current, count;
-  UBYTE *frame[0];
+  short width, height;
+  short current, count;
+  u_char *frame[0];
 } AnimSpanT;
 
 static AnimSpanT *anim;
 
-static void Load() {
+static void Load(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
   palette = LoadPalette("running-pal.ilbm");
   anim = LoadFile("running.bin", MEMF_PUBLIC);
 
-  Log("Animation has %ld frames %ld x %ld.\n", 
-      (LONG)anim->count, (LONG)anim->width, (LONG)anim->height);
+  Log("Animation has %d frames %d x %d.\n", 
+      anim->count, anim->width, anim->height);
 
   {
-    WORD i;
+    short i;
 
     for (i = 0; i < anim->count; i++)
-      anim->frame[i] = (APTR)anim->frame[i] + (LONG)anim;
+      anim->frame[i] = (void *)anim->frame[i] + (int)anim;
   }
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   MemFree(anim);
   DeletePalette(palette);
   DeleteBitmap(screen);
 }
 
-static void Init() {
+static void Init(void) {
   EnableDMA(DMAF_BLITTER);
   BitmapClear(screen);
 
@@ -65,25 +65,25 @@ static void Init() {
   EnableDMA(DMAF_RASTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   DeleteCopList(cp);
 }
 
-static void DrawSpans(UBYTE *bpl) {
-  UBYTE *frame = anim->frame[anim->current];
-  WORD f = normfx(SIN(frameCount * 32) * 48);
-  WORD n = anim->height;
-  WORD stride = screen->bytesPerRow;
+static void DrawSpans(u_char *bpl) {
+  u_char *frame = anim->frame[anim->current];
+  short f = normfx(SIN(frameCount * 32) * 48);
+  short n = anim->height;
+  short stride = screen->bytesPerRow;
 
   WaitBlitter();
 
   while (--n >= 0) {
-    WORD m = *frame++;
+    short m = *frame++;
 
     while (--m >= 0) {
-      WORD x = *frame++;
+      short x = *frame++;
       x += f;
       bset(bpl + (x >> 3), ~x);
     }
@@ -97,20 +97,20 @@ static void DrawSpans(UBYTE *bpl) {
     anim->current -= anim->count;
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
+static void Render(void) {
+  // int lines = ReadLineCounter();
   {
     BlitterClear(screen, active);
     DrawSpans(screen->planes[active]);
     BlitterFill(screen, active);
   }
-  // Log("anim: %ld\n", ReadLineCounter() - lines);
+  // Log("anim: %d\n", ReadLineCounter() - lines);
 
   {
-    WORD n = DEPTH;
+    short n = DEPTH;
 
     while (--n >= 0) {
-      WORD i = (active + n + 1 - DEPTH) % (DEPTH + 1);
+      short i = (active + n + 1 - DEPTH) % (DEPTH + 1);
       if (i < 0)
         i += DEPTH + 1;
       CopInsSet32(bplptr[n], screen->planes[i]);
@@ -122,4 +122,4 @@ static void Render() {
   active = (active + 1) % (DEPTH + 1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

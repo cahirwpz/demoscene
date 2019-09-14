@@ -1,7 +1,7 @@
 #ifndef __MEMORY_H__
 #define __MEMORY_H__
 
-#include <exec/types.h>
+#include "types.h"
 
 #ifndef MEMF_PUBLIC
 #define MEMF_PUBLIC (1L << 0)
@@ -27,13 +27,13 @@
 #define MEMF_REVERSE (1L << 18)
 #endif
 
-__regargs void MemDebug(ULONG attributes);
-__regargs LONG MemAvail(ULONG attributes);
-__regargs LONG MemUsed(ULONG attributes);
+__regargs void MemDebug(u_int attributes);
+__regargs int MemAvail(u_int attributes);
+__regargs int MemUsed(u_int attributes);
 
-__regargs APTR MemAlloc(ULONG byteSize, ULONG attributes);
-__regargs void MemResize(APTR memoryBlock, ULONG byteSize);
-__regargs void MemFree(APTR memoryBlock);
-__regargs LONG MemTypeOf(APTR address);
+__regargs void *MemAlloc(u_int byteSize, u_int attributes);
+__regargs void MemResize(void *memoryBlock, u_int byteSize);
+__regargs void MemFree(void *memoryBlock);
+__regargs int MemTypeOf(void *address);
 
 #endif

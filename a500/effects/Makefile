@@ -10,6 +10,7 @@ SUBDIRS := \
 	circles \
 	credits \
 	flatshade \
+	flatshade-convex \
 	floor \
 	floor-old \
 	gui \
@@ -27,6 +28,7 @@ SUBDIRS := \
 	plotter \
 	prisms \
 	shapes \
+	showpchg \
 	stripes \
 	textscroll \
 	thunders \
@@ -35,6 +37,7 @@ SUBDIRS := \
 	tilezoomer \
 	transparency \
 	twister-rgb \
+	uvlight \
 	uvmap \
 	uvmap-rgb \
 	wireframe
@@ -48,6 +51,13 @@ all: startup.o $(foreach dir,$(SUBDIRS),build-$(dir))
 include $(TOPDIR)/build.mk
 
 clean:: $(foreach dir,$(SUBDIRS),clean-$(dir))
+
+run:
+	for dir in $(SUBDIRS); do 	\
+	  oldcwd=`pwd`;			\
+	  cd $$dir && make run;		\
+	  cd $$oldcwd;			\
+	done
 
 archive:
 	7z a "a500-$$(date +%F-%H%M).7z" $(SUBDIRS)

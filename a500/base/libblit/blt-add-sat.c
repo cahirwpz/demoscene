@@ -1,19 +1,19 @@
 #include "blitter.h"
 
 /* Bitplane adder with saturation. */
-void BitmapAddSaturated(BitmapT *dst_bm, WORD dx, WORD dy, BitmapT *src_bm, BitmapT *carry_bm) {
-  ULONG dst_begin = ((dx & ~15) >> 3) + dy * (WORD)dst_bm->bytesPerRow;
-  UWORD dst_modulo = (dst_bm->bytesPerRow - src_bm->bytesPerRow) - 2;
-  UWORD src_shift = rorw(dx & 15, 4);
-  UWORD bltsize = ((src_bm->height << 6) | (src_bm->bytesPerRow >> 1)) + 1;
-  APTR carry0 = carry_bm->planes[0];
-  APTR carry1 = carry_bm->planes[1];
-  APTR *src = src_bm->planes;
-  APTR *dst = dst_bm->planes;
+void BitmapAddSaturated(BitmapT *dst_bm, short dx, short dy, BitmapT *src_bm, BitmapT *carry_bm) {
+  u_int dst_begin = ((dx & ~15) >> 3) + dy * (short)dst_bm->bytesPerRow;
+  u_short dst_modulo = (dst_bm->bytesPerRow - src_bm->bytesPerRow) - 2;
+  u_short src_shift = rorw(dx & 15, 4);
+  u_short bltsize = ((src_bm->height << 6) | (src_bm->bytesPerRow >> 1)) + 1;
+  void *carry0 = carry_bm->planes[0];
+  void *carry1 = carry_bm->planes[1];
+  void **src = src_bm->planes;
+  void **dst = dst_bm->planes;
 
   {
-    APTR aptr = (*src++);
-    APTR bptr = (*dst++) + dst_begin;
+    void *aptr = (*src++);
+    void *bptr = (*dst++) + dst_begin;
 
     WaitBlitter();
 
@@ -43,12 +43,12 @@ void BitmapAddSaturated(BitmapT *dst_bm, WORD dx, WORD dy, BitmapT *src_bm, Bitm
   }
 
   {
-    WORD n = src_bm->depth - 1;
+    short n = src_bm->depth - 1;
 
     /* Bitplane 1-n: full adder with carry. */
     while (--n >= 0) {
-      APTR aptr = (*src++);
-      APTR bptr = (*dst++) + dst_begin;
+      void *aptr = (*src++);
+      void *bptr = (*dst++) + dst_begin;
 
       WaitBlitter();
       custom->bltapt = aptr;
@@ -74,7 +74,7 @@ void BitmapAddSaturated(BitmapT *dst_bm, WORD dx, WORD dy, BitmapT *src_bm, Bitm
 
   /* Apply saturation bits. */
   {
-    WORD n = src_bm->depth;
+    short n = src_bm->depth;
 
     dst = dst_bm->planes;
 
@@ -86,7 +86,7 @@ void BitmapAddSaturated(BitmapT *dst_bm, WORD dx, WORD dy, BitmapT *src_bm, Bitm
     custom->bltalwm = -1;
 
     while (--n >= 0) {
-      APTR bptr = (*dst++) + dst_begin;
+      void *bptr = (*dst++) + dst_begin;
 
       WaitBlitter();
       custom->bltapt = bptr;

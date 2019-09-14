@@ -9,7 +9,7 @@ static void DumpTaskList(struct List *list) {
   struct Node *node = list->lh_Head;
 
   for (;;) {
-    Log("> %lx (%ld) '%s'\n", (LONG)node, (LONG)node->ln_Pri, node->ln_Name);
+    Log("> %p (%d) '%s'\n", node, node->ln_Pri, node->ln_Name);
     if (node == list->lh_TailPred)
       break;
     node = node->ln_Succ;
@@ -21,7 +21,7 @@ void DumpTasks() {
   struct Node *node = (struct Node *)FindTask(NULL);
 
   Log("Task running:\n");
-  Log("> %lx (%ld) '%s'\n", (LONG)node, (LONG)node->ln_Pri, node->ln_Name);
+  Log("> %p (%d) '%s'\n", node, node->ln_Pri, node->ln_Name);
  
   list = &SysBase->TaskReady;
   if (!IsListEmpty(list)) {

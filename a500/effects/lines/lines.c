@@ -12,7 +12,7 @@
 static BitmapT *screen;
 static CopListT *cp;
 
-static void Load() {
+static void Load(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
   CopInit(cp);
@@ -23,18 +23,18 @@ static void Load() {
   CopEnd(cp);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
 
-static void Init() {
+static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 
   {
-    WORD i;
-    LONG lines = ReadLineCounter();
+    short i;
+    int lines = ReadLineCounter();
 
 #if CPULINE == 1
     CpuLineSetup(screen, 0);
@@ -58,8 +58,8 @@ static void Init() {
 #endif
     }
 
-    Log("lines: %ld\n", ReadLineCounter() - lines);
+    Log("lines: %d\n", ReadLineCounter() - lines);
   }
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, NULL };
+EffectT Effect = { Load, UnLoad, Init, NULL, NULL, NULL };

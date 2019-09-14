@@ -2,13 +2,13 @@
 
 __regargs BitmapT *BitmapMakeMask(BitmapT *bitmap) {
   BitmapT *mask = NewBitmap(bitmap->width, bitmap->height, 1);
-  UWORD bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
-  APTR *planes = bitmap->planes;
-  APTR dst = mask->planes[0];
-  WORD n = bitmap->depth;
+  u_short bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
+  void **planes = bitmap->planes;
+  void *dst = mask->planes[0];
+  short n = bitmap->depth;
 
   while (--n >= 0) {
-    APTR src = *planes++;
+    void *src = *planes++;
 
     WaitBlitter();
 

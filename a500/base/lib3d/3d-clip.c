@@ -2,14 +2,14 @@
 
 Frustum3D ClipFrustum;
 
-__regargs void PointsInsideFrustum(Point3D *in, UBYTE *flags, UWORD n) {
-  WORD *src = (WORD *)in;
+__regargs void PointsInsideFrustum(Point3D *in, u_char *flags, u_short n) {
+  short *src = (short *)in;
 
   while (n--) {
-    WORD x = *src++;
-    WORD y = *src++;
-    WORD z = *src++;
-    UBYTE f = 0;
+    short x = *src++;
+    short y = *src++;
+    short z = *src++;
+    u_char f = 0;
 
     if (x < z)
       f |= PF_LEFT;
@@ -28,7 +28,7 @@ __regargs void PointsInsideFrustum(Point3D *in, UBYTE *flags, UWORD n) {
   }
 }
 
-static __regargs BOOL CheckInside(Point3D *p, UWORD plane) {
+static __regargs bool CheckInside(Point3D *p, u_short plane) {
   if (plane & PF_LEFT)
     return (p->x > p->z);
   if (plane & PF_RIGHT)
@@ -41,19 +41,19 @@ static __regargs BOOL CheckInside(Point3D *p, UWORD plane) {
     return (p->z < ClipFrustum.near);
   if (plane & PF_FAR)
     return (p->z > ClipFrustum.far);
-  return FALSE;
+  return false;
 }
 
-static __regargs void ClipEdge(Point3D *o, Point3D *s, Point3D *e, UWORD plane)
+static __regargs void ClipEdge(Point3D *o, Point3D *s, Point3D *e, u_short plane)
 {
-  WORD dx = e->x - s->x;
-  WORD dy = e->y - s->y;
-  WORD dz = e->z - s->z;
+  short dx = e->x - s->x;
+  short dy = e->y - s->y;
+  short dz = e->z - s->z;
 
 #if 0
   if (plane & PF_LEFT) {
-    WORD n = s->z - s->x;
-    WORD d = dx - dz;
+    short n = s->z - s->x;
+    short d = dx - dz;
 
     o->x = e->x + div16(dx * n, d);
     o->y = e->y + div16(dy * n, d);
@@ -64,13 +64,13 @@ static __regargs void ClipEdge(Point3D *o, Point3D *s, Point3D *e, UWORD plane)
   }
 #endif
   if (plane & PF_NEAR) {
-    WORD n = ClipFrustum.near - s->z;
+    short n = ClipFrustum.near - s->z;
 
     o->x = s->x + div16(dx * n, dz);
     o->y = s->y + div16(dy * n, dz);
     o->z = ClipFrustum.near;
   } else if (plane & PF_FAR) {
-    WORD n = ClipFrustum.far - s->z;
+    short n = ClipFrustum.far - s->z;
 
     o->x = s->x + div16(dx * n, dz);
     o->y = s->y + div16(dy * n, dz);
@@ -78,22 +78,22 @@ static __regargs void ClipEdge(Point3D *o, Point3D *s, Point3D *e, UWORD plane)
   }
 }
 
-static __regargs UWORD ClipPolygon(Point3D *S, Point3D *O,
-                                   UWORD n, UWORD plane)
+static __regargs u_short ClipPolygon(Point3D *S, Point3D *O,
+                                   u_short n, u_short plane)
 {
   Point3D *E = S + 1;
 
-  BOOL S_inside = CheckInside(S, plane);
-  BOOL needClose = TRUE;
-  UWORD m = 0;
+  bool S_inside = CheckInside(S, plane);
+  bool needClose = true;
+  u_short m = 0;
 
   if (S_inside) {
-    needClose = FALSE;
+    needClose = false;
     O[m++] = *S;
   }
 
   while (--n) {
-    BOOL E_inside = CheckInside(E, plane);
+    bool E_inside = CheckInside(E, plane);
 
     if (S_inside && E_inside) {
       O[m++] = *E;
@@ -113,8 +113,8 @@ static __regargs UWORD ClipPolygon(Point3D *S, Point3D *O,
 
   return m;
 }
-__regargs UWORD ClipPolygon3D(Point3D *in, Point3D **outp, UWORD n,
-                              UWORD clipFlags)
+__regargs u_short ClipPolygon3D(Point3D *in, Point3D **outp, u_short n,
+                              u_short clipFlags)
 {
   Point3D *out = *outp;
 

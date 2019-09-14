@@ -6,14 +6,14 @@
 #define CHARMAP_SIZE ('~' - '!' + 1)
 
 typedef struct {
-  UWORD y;
-  UWORD width;
+  u_short y;
+  u_short width;
 } FontCharT;
 
 typedef struct {
   BitmapT *data;
-  UWORD height;
-  UWORD space;
+  u_short height;
+  u_short space;
   FontCharT charmap[CHARMAP_SIZE];
 } FontT;
 
@@ -21,16 +21,16 @@ typedef struct {
   FontT *font;
   BitmapT *bm;
   Area2D *area;
-  UWORD bpl;
+  u_short bpl;
 } FontDrawCtxT;
 
-__regargs void DrawTextN(FontDrawCtxT *ctx, UBYTE *text, UWORD n);
-__regargs Size2D DrawTextSizeN(FontT *font, UBYTE *text, UWORD n);
+__regargs void DrawTextN(FontDrawCtxT *ctx, const char *text, u_short n);
+__regargs Size2D DrawTextSizeN(FontT *font, const char *text, u_short n);
 
 #define DrawText(font, text) DrawTextN((font), (text), 65535);
 #define DrawTextSize(font, text) DrawTextSizeN((font), (text), 65535);
 
-__regargs FontT *LoadFont(char *filename);
+__regargs FontT *LoadFont(const char *filename);
 __regargs void DeleteFont(FontT *font);
 
 #endif

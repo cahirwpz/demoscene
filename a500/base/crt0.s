@@ -17,7 +17,7 @@
                 xref    ___INIT_LIST__
                 xref    ___EXIT_LIST__
 
-                section code
+                section '.text', code
 
 start:
                 move.l  a0,___commandline
@@ -97,7 +97,7 @@ oldpri:         move.l  (a3)+,d0
 
 _geta4:         rts
 
-                section bss
+                section '.bss', bss
 
 ___commandline: ds.l    1
 ___commandlen:  ds.l    1

@@ -13,21 +13,21 @@
 #define BGCOL   0x204
 
 typedef struct {
-  WORD y, z;
-  WORD color;
+  short y, z;
+  short color;
 } StripeT;
 
 static CopListT *cp[2];
 static CopInsT *lineColor[2][HEIGHT];
 static StripeT stripe[STRIPES];
-static WORD active = 0;
+static short active = 0;
 
-static UWORD colorSet[4] = { 0xC0F, 0xF0C, 0x80F, 0xF08 };
-static UWORD colorShades[4 * 32];
+static u_short colorSet[4] = { 0xC0F, 0xF0C, 0x80F, 0xF08 };
+static u_short colorShades[4 * 32];
 
-static void GenerateStripes() {
-  WORD *s = (WORD *)stripe;
-  WORD n = STRIPES;
+static void GenerateStripes(void) {
+  short *s = (short *)stripe;
+  short n = STRIPES;
 
   while (--n >= 0) {
     *s++ = (random() & (SIZE - 1)) - SIZE / 2;
@@ -36,13 +36,13 @@ static void GenerateStripes() {
   }
 }
 
-static void GenerateColorShades() {
-  WORD i, j;
-  UWORD *s = colorSet;
-  UWORD *d = colorShades;
+static void GenerateColorShades(void) {
+  short i, j;
+  u_short *s = colorSet;
+  u_short *d = colorShades;
 
   for (i = 0; i < 4; i++) {
-    UWORD c = *s++;
+    u_short c = *s++;
 
     for (j = 0; j < 16; j++)
       *d++ = ColorTransition(0x000, c, j);
@@ -52,7 +52,7 @@ static void GenerateColorShades() {
 }
 
 static void MakeCopperList(CopListT *cp, CopInsT **line) {
-  WORD i;
+  short i;
 
   CopInit(cp);
   CopSetRGB(cp, 0, BGCOL);
@@ -67,7 +67,7 @@ static void MakeCopperList(CopListT *cp, CopInsT **line) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   GenerateStripes();
   GenerateColorShades();
 
@@ -80,26 +80,26 @@ static void Init() {
   CopListActivate(cp[0]);
 }
 
-static void Kill() {
+static void Kill(void) {
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
 }
 
-static WORD centerY = 0;
-static WORD centerZ = 192;
+static short centerY = 0;
+static short centerZ = 192;
 
-static void RotateStripes(WORD *d, WORD *s, WORD rotate) {
-  WORD n = STRIPES;
-  LONG cy = centerY << 8;
-  WORD cz = centerZ;
+static void RotateStripes(short *d, short *s, short rotate) {
+  short n = STRIPES;
+  int cy = centerY << 8;
+  short cz = centerZ;
 
   while (--n >= 0) {
-    WORD sinA = SIN(rotate);
-    WORD cosA = COS(rotate);
-    WORD y = *s++;
-    WORD z = *s++;
-    LONG yp = (y * cosA - z * sinA) >> 4; 
-    WORD zp = normfx(y * sinA + z * cosA);
+    short sinA = SIN(rotate);
+    short cosA = COS(rotate);
+    short y = *s++;
+    short z = *s++;
+    int yp = (y * cosA - z * sinA) >> 4; 
+    short zp = normfx(y * sinA + z * cosA);
 
     *d++ = div16(yp + cy, zp + cz);
     *d++ = zp;
@@ -107,27 +107,27 @@ static void RotateStripes(WORD *d, WORD *s, WORD rotate) {
   }
 }
 
-static void ClearLineColor() {
+static void ClearLineColor(void) {
   CopInsT **line = lineColor[active];
-  WORD n = HEIGHT;
+  short n = HEIGHT;
 
   while (--n >= 0)
     CopInsSet16(*line++, BGCOL);
 }
 
-static void SetLineColor(WORD *s) {
+static void SetLineColor(short *s) {
   CopInsT **lines = lineColor[active];
-  WORD n = STRIPES;
-  UWORD *shades = colorShades;
+  short n = STRIPES;
+  u_short *shades = colorShades;
 
   while (--n >= 0) {
-    WORD y = *s++;
-    WORD z = *s++;
-    UWORD color = *s++;
+    short y = *s++;
+    short z = *s++;
+    u_short color = *s++;
 
-    WORD h = (WORD)(z + 128) >> 5;
-    WORD l = (z >> 2) + 16;
-    WORD i = y + ((WORD)(HEIGHT - h) >> 1);
+    short h = (short)(z + 128) >> 5;
+    short l = (z >> 2) + 16;
+    short i = y + ((short)(HEIGHT - h) >> 1);
 
     if (l < 0)
       l = 0;
@@ -136,8 +136,8 @@ static void SetLineColor(WORD *s) {
 
     {
       CopInsT **line = &lines[i];
-      WORD c0 = shades[color | l];
-      WORD c1 = shades[color | (l >> 1)];
+      short c0 = shades[color | l];
+      short c1 = shades[color | (l >> 1)];
 
       h -= 2;
 
@@ -153,7 +153,7 @@ static void SetLineColor(WORD *s) {
 
 static void SortStripes(StripeT *table) {
   StripeT *ptr = table + 1;
-  register WORD n asm("d7") = STRIPES - 2;
+  register short n asm("d7") = STRIPES - 2;
 
   do {
     StripeT *curr = ptr;
@@ -165,23 +165,23 @@ static void SortStripes(StripeT *table) {
   } while (--n != -1);
 }
 
-static void RenderStripes(WORD rotate) {
+static void RenderStripes(short rotate) {
   static StripeT temp[STRIPES];
 
-  RotateStripes((WORD *)temp, (WORD *)stripe, rotate);
+  RotateStripes((short *)temp, (short *)stripe, rotate);
   SortStripes(temp);
   ClearLineColor();
-  SetLineColor((WORD *)temp);
+  SetLineColor((short *)temp);
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
+static void Render(void) {
+  // int lines = ReadLineCounter();
   RenderStripes(SIN(frameCount * 4) * 2);
-  // Log("hstripes: %ld\n", ReadLineCounter() - lines);
+  // Log("hstripes: %d\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

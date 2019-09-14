@@ -2,12 +2,12 @@
 
 /* Bitplane decrementer with saturation. */
 __regargs void BitmapDecSaturated(BitmapT *dst_bm, BitmapT *borrow_bm) {
-  APTR borrow0 = borrow_bm->planes[0];
-  APTR borrow1 = borrow_bm->planes[1];
-  APTR *dst = dst_bm->planes;
-  APTR ptr = *dst++;
-  UWORD bltsize = (dst_bm->height << 6) | (dst_bm->bytesPerRow >> 1);
-  WORD n = dst_bm->depth - 1;
+  void *borrow0 = borrow_bm->planes[0];
+  void *borrow1 = borrow_bm->planes[1];
+  void **dst = dst_bm->planes;
+  void *ptr = *dst++;
+  u_short bltsize = (dst_bm->height << 6) | (dst_bm->bytesPerRow >> 1);
+  short n = dst_bm->depth - 1;
 
   WaitBlitter();
   custom->bltcon1 = 0;

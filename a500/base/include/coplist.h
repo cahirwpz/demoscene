@@ -29,14 +29,14 @@
 
 typedef union {
   struct {
-    UBYTE vp;
-    UBYTE hp;
-    UBYTE vpmask;
-    UBYTE hpmask;
+    u_char vp;
+    u_char hp;
+    u_char vpmask;
+    u_char hpmask;
   } wait;
   struct {
-    WORD reg;
-    WORD data;
+    short reg;
+    short data;
   } move;
 } CopInsT;
 
@@ -44,12 +44,12 @@ typedef union {
 
 typedef struct {
   CopInsT *curr;
-  UWORD length;
-  UWORD flags;
+  u_short length;
+  u_short flags;
   CopInsT entry[0]; 
 } CopListT;
 
-__regargs CopListT *NewCopList(UWORD length);
+__regargs CopListT *NewCopList(u_short length);
 __regargs void DeleteCopList(CopListT *list);
 __regargs void CopInit(CopListT *list);
 
@@ -59,24 +59,24 @@ __regargs void CopListActivate(CopListT *list);
 
 /* @brief Set up copper list to start after vertical blank. */
 static inline void CopListRun(CopListT *list) {
-  custom->cop1lc = (ULONG)list->entry;
+  custom->cop1lc = (u_int)list->entry;
 }
 
 /* Low-level functions */
-__regargs CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data);
-__regargs CopInsT *CopMoveLong(CopListT *list, UWORD reg, APTR data);
+__regargs CopInsT *CopMoveWord(CopListT *list, u_short reg, u_short data);
+__regargs CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data);
 
-#define CSREG(reg) (UWORD)offsetof(struct Custom, reg)
+#define CSREG(reg) (u_short)offsetof(struct Custom, reg)
 #define CopMove16(cp, reg, data) CopMoveWord(cp, CSREG(reg), data)
 #define CopMove32(cp, reg, data) CopMoveLong(cp, CSREG(reg), data)
 
-__regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp);
-__regargs CopInsT *CopWaitMask(CopListT *list, UWORD vp, UWORD hp, 
-                               UWORD vpmask asm("d2"), UWORD hpmask asm("d3"));
+__regargs CopInsT *CopWait(CopListT *list, u_short vp, u_short hp);
+__regargs CopInsT *CopWaitMask(CopListT *list, u_short vp, u_short hp, 
+                               u_short vpmask asm("d2"), u_short hpmask asm("d3"));
 
 /* Handles Copper Vertical Position counter overflow, by inserting CopWaitEOL
  * at first WAIT instruction with VP >= 256. */
-__regargs CopInsT *CopWaitSafe(CopListT *list, UWORD vp, UWORD hp);
+__regargs CopInsT *CopWaitSafe(CopListT *list, u_short vp, u_short hp);
 
 /* The most significant bit of vertical position cannot be masked out (overlaps
  * with blitter-finished-disable bit), so we have to pass upper bit as well. */
@@ -84,16 +84,16 @@ __regargs CopInsT *CopWaitSafe(CopListT *list, UWORD vp, UWORD hp);
 #define CopWaitV(cp, vp) CopWaitMask(cp, vp, 0, 255, 0)
 #define CopWaitEOL(cp, vp) CopWait(cp, vp, LASTHP)
 
-__regargs CopInsT *CopSkip(CopListT *list, UWORD vp, UWORD hp);
-__regargs CopInsT *CopSkipMask(CopListT *list, UWORD vp, UWORD hp, 
-                               UWORD vpmask asm("d2"), UWORD hpmask asm("d3"));
+__regargs CopInsT *CopSkip(CopListT *list, u_short vp, u_short hp);
+__regargs CopInsT *CopSkipMask(CopListT *list, u_short vp, u_short hp, 
+                               u_short vpmask asm("d2"), u_short hpmask asm("d3"));
 
 #define CopSkipH(cp, vp, hp) CopSkipMask(cp, vp & 128, hp, 0, 255)
 #define CopSkipV(cp, vp) CopSkipMask(cp, vp, 0, 255, 0)
 
 __regargs void CopEnd(CopListT *list);
 
-static inline void CopInsSet32(CopInsT *ins, APTR data) {
+static inline void CopInsSet32(CopInsT *ins, void *data) {
   asm volatile("movew %0,%2\n"
                "swap  %0\n"
                "movew %0,%1\n"
@@ -101,35 +101,35 @@ static inline void CopInsSet32(CopInsT *ins, APTR data) {
                : "m" (ins[0].move.data), "m" (ins[1].move.data));
 }
 
-static inline void CopInsSet16(CopInsT *ins, UWORD data) {
+static inline void CopInsSet16(CopInsT *ins, u_short data) {
   ins->move.data = data;
 }
 
 /* High-level functions */
-__regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start);
-__regargs CopInsT *CopLoadColor(CopListT *list, UWORD start, UWORD end, UWORD color);
-__regargs CopInsT *CopSetColor(CopListT *list, WORD i, ColorT *color);
+__regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, u_short start);
+__regargs CopInsT *CopLoadColor(CopListT *list, u_short start, u_short end, u_short color);
+__regargs CopInsT *CopSetColor(CopListT *list, short i, ColorT *color);
 
-__regargs void CopSetupMode(CopListT *list, UWORD mode, UWORD depth);
-__regargs void CopSetupDisplayWindow(CopListT *list, UWORD mode, 
-                                     UWORD xs, UWORD ys, UWORD w, UWORD h);
-__regargs void CopSetupBitplaneFetch(CopListT *list, UWORD mode,
-                                     UWORD xs, UWORD w);
+__regargs void CopSetupMode(CopListT *list, u_short mode, u_short depth);
+__regargs void CopSetupDisplayWindow(CopListT *list, u_short mode, 
+                                     u_short xs, u_short ys, u_short w, u_short h);
+__regargs void CopSetupBitplaneFetch(CopListT *list, u_short mode,
+                                     u_short xs, u_short w);
 __regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
-                                 BitmapT *bitmap, UWORD depth);
-void CopSetupBitplaneArea(CopListT *list, UWORD mode, UWORD depth,
-                          BitmapT *bitmap, WORD x, WORD y, Area2D *area);
-__regargs void CopUpdateBitplanes(CopInsT **bplptr, BitmapT *bitmap, WORD n);
+                                 BitmapT *bitmap, u_short depth);
+void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
+                          BitmapT *bitmap, short x, short y, Area2D *area);
+__regargs void CopUpdateBitplanes(CopInsT **bplptr, BitmapT *bitmap, short n);
 
-static inline void CopSetupGfxSimple(CopListT *list, UWORD mode, UWORD depth,
-                                     UWORD xs, UWORD ys, UWORD w, UWORD h) 
+static inline void CopSetupGfxSimple(CopListT *list, u_short mode, u_short depth,
+                                     u_short xs, u_short ys, u_short w, u_short h) 
 {
   CopSetupMode(list, mode, depth);
   CopSetupDisplayWindow(list, mode, xs, ys, w, h);
   CopSetupBitplaneFetch(list, mode, xs, w);
 }
 
-static inline CopInsT *CopSetRGB(CopListT *list, WORD i, UWORD value) {
+static inline CopInsT *CopSetRGB(CopListT *list, short i, u_short value) {
   return CopMove16(list, color[i], value);
 }
 

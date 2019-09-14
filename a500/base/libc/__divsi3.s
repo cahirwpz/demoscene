@@ -1,7 +1,7 @@
-        XDEF    ___divsi3
-        XREF    ___udivsi3
+        xdef    ___divsi3
+        xref    ___udivsi3
 
-        SECTION "__divsi3",CODE
+        section '.text',code
 
 ___divsi3:
         move.l  d2,-(sp)

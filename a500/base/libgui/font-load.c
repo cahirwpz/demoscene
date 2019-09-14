@@ -6,37 +6,37 @@
 
 typedef struct {
   const char *name;
-  BOOL (*func)(char **, FontT *);
+  bool (*func)(char **, FontT *);
 } ParserT;
 
-static BOOL ParseBitmap(char **data, FontT *font) {
+static bool ParseBitmap(char **data, FontT *font) {
   char path[80];
   if (!(ReadString(data, path, sizeof(path)) && EndOfLine(data)))
-    return FALSE;
+    return false;
   font->data = LoadILBMCustom(path, BM_DISPLAYABLE);
-  return TRUE;
+  return true;
 }
 
-static BOOL ParseHeight(char **data, FontT *font) {
-  return ReadShort(data, &font->height) && EndOfLine(data);
+static bool ParseHeight(char **data, FontT *font) {
+  return ReadShortU(data, &font->height) && EndOfLine(data);
 }
 
-static BOOL ParseSpace(char **data, FontT *font) {
-  return ReadShort(data, &font->space) && EndOfLine(data);
+static bool ParseSpace(char **data, FontT *font) {
+  return ReadShortU(data, &font->space) && EndOfLine(data);
 }
 
-static BOOL ParseCharMap(char **data, FontT *font) {
-  WORD n = 0;
+static bool ParseCharMap(char **data, FontT *font) {
+  short n = 0;
 
   if (!EndOfLine(data))
-    return FALSE;
+    return false;
 
   while (NextLine(data) && !MatchString(data, "@end")) {
     char key[2];
-    UWORD i;
+    u_short i;
 
     if (!(ReadString(data, key, sizeof(key))))
-      return FALSE;
+      return false;
 
     i = *key - 33;
     if (i >= CHARMAP_SIZE) {
@@ -45,17 +45,17 @@ static BOOL ParseCharMap(char **data, FontT *font) {
       continue;
     }
 
-    if (!(ReadShort(data, &font->charmap[i].y) &&
-          ReadShort(data, &font->charmap[i].width) &&
+    if (!(ReadShortU(data, &font->charmap[i].y) &&
+          ReadShortU(data, &font->charmap[i].width) &&
           EndOfLine(data)))
-      return FALSE;
+      return false;
 
     n++;
   }
 
-  Log("[Font] %ld characters defined\n", (LONG)n);
+  Log("[Font] %d characters defined\n", n);
 
-  return TRUE;
+  return true;
 }
 
 static ParserT TopLevelParser[] = {
@@ -66,26 +66,34 @@ static ParserT TopLevelParser[] = {
   { NULL, NULL }
 };
 
-__regargs FontT *LoadFont(char *filename) {
+static bool ParseWith(ParserT *parsers, char **data, FontT *font) {
+  ParserT *parser;
+
+  while (NextLine(data)) {
+    for (parser = parsers; parser->name; parser++) {
+      if (!MatchString(data, parser->name))
+        continue;
+      if (parser->func(data, font))
+        break;
+      return false;
+    }
+  }
+
+  return true;
+}
+
+__regargs FontT *LoadFont(const char *filename) {
   char *file = LoadFile(filename, MEMF_PUBLIC);
   char *data = file;
   FontT *font = MemAlloc(sizeof(FontT), MEMF_PUBLIC|MEMF_CLEAR);
 
   Log("[Font] Parsing '%s' file\n", filename);
 
-  while (NextLine(&data)) {
-    ParserT *parser = TopLevelParser;
-    
-    for (; parser->name; parser++) {
-      if (!MatchString(&data, parser->name))
-        continue;
-      if (parser->func(&data, font))
-        break;
-      Log("[Font] Parse error at position %ld!\n", (LONG)(data - file));
-      DeleteFont(font);
-      MemFree(file);
-      return NULL;
-    }
+  if (!ParseWith(TopLevelParser, &data, font)) {
+    Log("[Font] Parse error at position %ld!\n", (ptrdiff_t)(data - file));
+    DeleteFont(font);
+    MemFree(file);
+    return NULL;
   }
 
   MemFree(file);

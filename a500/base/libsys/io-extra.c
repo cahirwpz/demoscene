@@ -1,9 +1,9 @@
 #include "memory.h"
 #include "io.h"
 
-__regargs APTR LoadFile(CONST STRPTR path, ULONG memoryFlags) {
-  BYTE *data = NULL;
-  LONG size = GetFileSize(path);
+__regargs void *LoadFile(const char *path, u_int memoryFlags) {
+  char *data = NULL;
+  int size = GetFileSize(path);
 
   if (size > 0 && (data = MemAlloc(size + 1, memoryFlags))) {
     FileT *file = OpenFile(path, 0);

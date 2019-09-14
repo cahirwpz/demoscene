@@ -18,20 +18,20 @@
 static BitmapT *screen0, *screen1;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static WORD tiles[(TILES - 1) * (TILES -1) * 4];
+static short tiles[(TILES - 1) * (TILES -1) * 4];
 
-static void CalculateTiles() { 
-  WORD *tile = tiles;
-  WORD x, y;
+static void CalculateTiles(void) { 
+  short *tile = tiles;
+  short x, y;
 
   for (y = 0; y < TILES - 1; y++) {
     for (x = 0; x < TILES - 1; x++) {
-      WORD xo = x - TILESIZE / 2;
-      WORD yo = (TILES - y) - TILESIZE / 2;
-      WORD dy = y * TILESIZE;
-      WORD dx = x * TILESIZE;
-      WORD sx = dx + yo * ROTATION - xo * ZOOM;
-      WORD sy = dy + xo * ROTATION + yo * ZOOM;
+      short xo = x - TILESIZE / 2;
+      short yo = (TILES - y) - TILESIZE / 2;
+      short dy = y * TILESIZE;
+      short dx = x * TILESIZE;
+      short sx = dx + yo * ROTATION - xo * ZOOM;
+      short sy = dy + xo * ROTATION + yo * ZOOM;
 
       *tile++ = sx;
       *tile++ = dx;
@@ -41,7 +41,7 @@ static void CalculateTiles() {
   }
 }
 
-static void Init() {
+static void Init(void) {
   CalculateTiles();
 
   screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
@@ -65,17 +65,17 @@ static void Init() {
   EnableDMA(DMAF_RASTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DeleteBitmap(screen0);
   DeleteBitmap(screen1);
   DeleteCopList(cp);
 }
 
-static void DrawSeed() {
-  UBYTE *bpl0 = screen0->planes[0];
-  UBYTE *bpl1 = screen0->planes[1];
-  LONG offset = ((HEIGHT / 2 + 2 * TILESIZE - TILESIZE / 4) * WIDTH + (WIDTH / 2 - TILESIZE / 2)) / 8;
-  WORD n = 8;
+static void DrawSeed(void) {
+  u_char *bpl0 = screen0->planes[0];
+  u_char *bpl1 = screen0->planes[1];
+  int offset = ((HEIGHT / 2 + 2 * TILESIZE - TILESIZE / 4) * WIDTH + (WIDTH / 2 - TILESIZE / 2)) / 8;
+  short n = 8;
 
   while (--n >= 0) {
     bpl0[offset] = random();
@@ -87,13 +87,13 @@ static void DrawSeed() {
 #define BLTMOD (WIDTH / 8 - TILESIZE / 8 - 2)
 #define BLTSIZE ((TILESIZE << 6) | ((TILESIZE + 16) >> 4))
 
-static void MoveTiles() {
-  APTR src = screen0->planes[0];
-  APTR dst = screen1->planes[0];
-  WORD xshift = random() & (TILESIZE - 1);
-  WORD yshift = random() & (TILESIZE - 1);
-  WORD n = (TILES - 1) * (TILES - 1) - 1;
-  WORD *tile = tiles;
+static void MoveTiles(void) {
+  void *src = screen0->planes[0];
+  void *dst = screen1->planes[0];
+  short xshift = random() & (TILESIZE - 1);
+  short yshift = random() & (TILESIZE - 1);
+  short n = (TILES - 1) * (TILES - 1) - 1;
+  short *tile = tiles;
 
   custom->bltadat = 0xffff;
   custom->bltbmod = BLTMOD;
@@ -104,15 +104,15 @@ static void MoveTiles() {
   yshift *= WIDTH / 8;
 
   do {
-    WORD sx = *tile++ + xshift;
-    WORD dx = *tile++ + xshift;
-    WORD sy = *tile++ + yshift + ((sx >> 3) & ~1);
-    WORD dy = *tile++ + yshift + ((dx >> 3) & ~1);
-    APTR srcpt = src + sy;
-    APTR dstpt = dst + dy;
-    UWORD bltcon1;
-    ULONG mask;
-    WORD shift;
+    short sx = *tile++ + xshift;
+    short dx = *tile++ + xshift;
+    short sy = *tile++ + yshift + ((sx >> 3) & ~1);
+    short dy = *tile++ + yshift + ((dx >> 3) & ~1);
+    void *srcpt = src + sy;
+    void *dstpt = dst + dy;
+    u_short bltcon1;
+    u_int mask;
+    short shift;
 
     sx &= 15; dx &= 15; shift = dx - sx;
 
@@ -132,7 +132,8 @@ static void MoveTiles() {
     WaitBlitter();
 
     custom->bltcon1 = bltcon1;
-    *(ULONG *)&custom->bltafwm = mask;
+    custom->bltafwm = mask >> 16;
+    custom->bltalwm = mask;
     custom->bltcpt = dstpt;
     custom->bltbpt = srcpt;
     custom->bltdpt = dstpt;
@@ -149,11 +150,11 @@ static void MoveTiles() {
   } while (--n >= 0);
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
+static void Render(void) {
+  // int lines = ReadLineCounter();
   DrawSeed();
   MoveTiles();
-  // Log("tilezoomer: %ld\n", ReadLineCounter() - lines);
+  // Log("tilezoomer: %d\n", ReadLineCounter() - lines);
 
   CopInsSet32(bplptr[0], screen1->planes[0] + 2 + WIDTH * TILESIZE / 8);
   CopInsSet32(bplptr[1], screen1->planes[1] + 2 + WIDTH * TILESIZE / 8);
@@ -161,4 +162,4 @@ static void Render() {
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

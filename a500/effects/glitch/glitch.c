@@ -6,7 +6,7 @@
 #include "blitter.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH (160 + 32)
 #define HEIGHT (128 + 32)
@@ -15,28 +15,28 @@ STRPTR __cwdpath = "data";
 #define DEPTH 3
 
 static BitmapT *screen[2];
-static WORD active = 0;
+static short active = 0;
 static CopInsT *bplptr[DEPTH];
 static BitmapT *logo;
 static CopListT *cp;
 static CopInsT *line[HEIGHT];
 
-static void Load() {
+static void Load(void) {
   logo = LoadILBMCustom("ghostown-logo.ilbm", BM_DISPLAYABLE);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeleteBitmap(logo);
 }
 
-static void BitplaneCopyFast(BitmapT *dst, WORD d, UWORD x, UWORD y,
-                             BitmapT *src, WORD s)
+static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
+                             BitmapT *src, short s)
 {
-  APTR srcbpt = src->planes[s];
-  APTR dstbpt = dst->planes[d] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
-  UWORD dstmod = dst->bytesPerRow - src->bytesPerRow;
-  UWORD bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
-  UWORD bltshift = rorw(x & 15, 4);
+  void *srcbpt = src->planes[s];
+  void *dstbpt = dst->planes[d] + ((x & ~15) >> 3) + y * dst->bytesPerRow;
+  u_short dstmod = dst->bytesPerRow - src->bytesPerRow;
+  u_short bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
+  u_short bltshift = rorw(x & 15, 4);
 
   WaitBlitter();
 
@@ -59,8 +59,8 @@ static void BitplaneCopyFast(BitmapT *dst, WORD d, UWORD x, UWORD y,
   custom->bltsize = bltsize;
 }
 
-static void Init() {
-  WORD i;
+static void Init(void) {
+  short i;
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
@@ -88,7 +88,7 @@ static void Init() {
   EnableDMA(DMAF_RASTER | DMAF_BLITTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   DeleteCopList(cp);
@@ -96,8 +96,8 @@ static void Kill() {
   DeleteBitmap(screen[1]);
 }
 
-static inline UWORD random() {
-  static ULONG seed = 0xDEADC0DE;
+static inline u_short random(void) {
+  static u_int seed = 0xDEADC0DE;
 
   asm("rol.l  %0,%0\n"
       "addq.l #5,%0\n"
@@ -106,15 +106,15 @@ static inline UWORD random() {
   return seed;
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
-  WORD i;
+static void Render(void) {
+  // int lines = ReadLineCounter();
+  short i;
 
   if (RightMouseButton()) {
-    LONG x1 = (random() % 5) - 2;
-    LONG x2 = (random() % 5) - 2;
-    LONG y1 = (random() % 5) - 2;
-    LONG y2 = (random() % 5) - 2;
+    int x1 = (random() % 5) - 2;
+    int x2 = (random() % 5) - 2;
+    int y1 = (random() % 5) - 2;
+    int y2 = (random() % 5) - 2;
 
     BitplaneCopyFast(screen[active], 0, 16 + x1, 16 + y1, logo, 0);
     BitplaneCopyFast(screen[active], 1, 16 + x2, 16 + y2, logo, 0);
@@ -129,16 +129,16 @@ static void Render() {
     BitplaneCopyFast(screen[active], 2, 16, 16, logo, 0);
 
     for (i = 0; i < HEIGHT; i++) {
-      WORD shift = random() % 3;
+      short shift = random() % 3;
       CopInsSet16(line[i], (shift << 4) | shift);
     }
   }
 
-  // Log("glitch: %ld\n", ReadLineCounter() - lines);
+  // Log("glitch: %d\n", ReadLineCounter() - lines);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

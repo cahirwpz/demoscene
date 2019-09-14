@@ -11,16 +11,16 @@
 #define STEREO 6L
 
 typedef struct VoiceHeader {
-  ULONG oneShotHiSamples;  /* # samples in the high octave 1-shot part */
-  ULONG repeatHiSamples;   /* # samples in the high octave repeat part */
-  ULONG samplesPerHiCycle; /* # samples/cycle in high octave, else 0   */
-  UWORD samplesPerSec;     /* data sampling rate                       */
-  UBYTE ctOctave;          /* # octaves of waveforms                   */
-  UBYTE sCompression;      /* data compression technique used          */
-  ULONG volume;            /* playback volume from 0 to 65536 (fp16)   */
+  u_int oneShotHiSamples;  /* # samples in the high octave 1-shot part */
+  u_int repeatHiSamples;   /* # samples in the high octave repeat part */
+  u_int samplesPerHiCycle; /* # samples/cycle in high octave, else 0   */
+  u_short samplesPerSec;     /* data sampling rate                       */
+  u_char ctOctave;          /* # octaves of waveforms                   */
+  u_char sCompression;      /* data compression technique used          */
+  u_int volume;            /* playback volume from 0 to 65536 (fp16)   */
 } VoiceHeaderT;
 
-__regargs SoundT *Load8SVX(CONST STRPTR filename) {
+__regargs SoundT *Load8SVX(const char *filename) {
   SoundT *sound = NULL;
   IffFileT iff;
 

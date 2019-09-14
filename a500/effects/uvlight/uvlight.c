@@ -7,7 +7,7 @@
 #include "color.h"
 #include "png.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 80
 #define HEIGHT 64
@@ -15,29 +15,29 @@ STRPTR __cwdpath = "data";
 #define OPTIMIZED 1
 
 static BitmapT *screen[2];
-static UWORD active = 0;
-static UWORD *shademap;
-static UWORD *chunky[2];
+static u_short active = 0;
+static u_short *shademap;
+static u_short *chunky[2];
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 static PixmapT *uvmap;
 static PixmapT *light;
-static UWORD *texture;
+static u_short *texture;
 
 #if OPTIMIZED
 #define UVMapRenderSize (WIDTH * HEIGHT * 8 + 2)
-static void (*UVMapRender)(UWORD *chunky asm("a0"), UWORD *texture asm("a1"),
-                           UWORD *shades asm("a2"));
+static void (*UVMapRender)(u_short *chunky asm("a0"), u_short *texture asm("a1"),
+                           u_short *shades asm("a2"));
 
-static void MakeUVMapRenderCode() {
-  UWORD *code = (APTR)UVMapRender;
-  UWORD *data = uvmap->pixels;
-  UBYTE *lmap = light->pixels;
-  WORD n = WIDTH * HEIGHT;
+static void MakeUVMapRenderCode(void) {
+  u_short *code = (void *)UVMapRender;
+  u_short *data = uvmap->pixels;
+  u_char *lmap = light->pixels;
+  short n = WIDTH * HEIGHT;
 
   while (--n >= 0) {
-    UWORD x = *data++;
-    UWORD y = *lmap++;
+    u_short x = *data++;
+    u_short y = *lmap++;
     if (x & 1) {
       *code++ = 0x5488; /* 5488      | addq.l #2,%a0 */
     } else {
@@ -52,29 +52,29 @@ static void MakeUVMapRenderCode() {
 }
 #endif
 
-static UWORD bluetab[16] = {
+static u_short bluetab[16] = {
   0x0000, 0x0003, 0x0030, 0x0033, 0x0300, 0x0303, 0x0330, 0x0333,
   0x3000, 0x3003, 0x3030, 0x3033, 0x3300, 0x3303, 0x3330, 0x3333,
 };
 
-static UWORD greentab[16] = {
+static u_short greentab[16] = {
   0x0000, 0x0004, 0x0040, 0x0044, 0x0400, 0x0404, 0x0440, 0x0444,
   0x4000, 0x4004, 0x4040, 0x4044, 0x4400, 0x4404, 0x4440, 0x4444,
 };
 
-static UWORD redtab[16] = {
+static u_short redtab[16] = {
   0x0000, 0x0008, 0x0080, 0x0088, 0x0800, 0x0808, 0x0880, 0x0888,
   0x8000, 0x8008, 0x8080, 0x8088, 0x8800, 0x8808, 0x8880, 0x8888,
 };
 
-static void DataScramble(UWORD *data, WORD n) {
-  UBYTE *in = (UBYTE *)data;
-  UWORD *out = data;
+static void DataScramble(u_short *data, short n) {
+  u_char *in = (u_char *)data;
+  u_short *out = data;
 
   while (--n >= 0) {
-    WORD ri = *in++;
-    WORD gi = *in++;
-    WORD bi = gi;
+    short ri = *in++;
+    short gi = *in++;
+    short bi = gi;
 
     /* [-- -- -- -- 11 10  9  8  7  6  5  4  3  2  1  0] */
     /* [-- -- -- -- r0 r1 r2 r3 g0 g1 g2 g3 b0 b1 b2 b3] */
@@ -88,27 +88,27 @@ static void DataScramble(UWORD *data, WORD n) {
   }
 }
 
-static void Load() {
+static void Load(void) {
   PixmapT *image = LoadPNG("texture.png", PM_CMAP8, MEMF_PUBLIC);
 
   uvmap = LoadPNG("torus-map.png", PM_GRAY16, MEMF_PUBLIC);
 
   light = LoadPNG("torus-light.png", PM_GRAY8, MEMF_PUBLIC);
   {
-    UBYTE *src = light->pixels;
-    UBYTE *dst = light->pixels;
-    WORD n = WIDTH * HEIGHT;
+    u_char *src = light->pixels;
+    u_char *dst = light->pixels;
+    short n = WIDTH * HEIGHT;
 
     while (--n >= 0)
       *dst++ = (*src++ >> 2) & 0x3E;
   }
 
-  shademap = MemAlloc(32 * sizeof(UWORD) * image->palette->count, MEMF_PUBLIC);
+  shademap = MemAlloc(32 * sizeof(u_short) * image->palette->count, MEMF_PUBLIC);
   {
     ColorT *c = image->palette->colors;
-    UWORD *dst = shademap;
-    WORD n = image->palette->count;
-    WORD i;
+    u_short *dst = shademap;
+    short n = image->palette->count;
+    short i;
 
     while (--n >= 0) {
       for (i = 0; i < 16; i++)
@@ -120,41 +120,41 @@ static void Load() {
   }
   DataScramble(shademap, image->palette->count * 32);
 
-  texture = MemAlloc(128 * 128 * 2 * sizeof(UWORD), MEMF_PUBLIC);
+  texture = MemAlloc(128 * 128 * 2 * sizeof(u_short), MEMF_PUBLIC);
   {
-    UBYTE *src = image->pixels;
-    UWORD *dst = texture;
-    WORD n = 128 * 128;
+    u_char *src = image->pixels;
+    u_short *dst = texture;
+    short n = 128 * 128;
 
     while (--n >= 0)
       *dst++ = *src++ << 6;
 
     /* Extra half for cheap texture motion. */
-    memcpy((APTR)texture + 32768, texture, 32768);
+    memcpy((void *)texture + 32768, texture, 32768);
   }
 
   DeletePixmap(image);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeletePixmap(light);
   DeletePixmap(uvmap);
   MemFree(texture);
 }
 
 static struct {
-  WORD phase;
-  APTR *bpl;
-  APTR chunky;
-} c2p = { 256, NULL };
+  short phase;
+  void **bpl;
+  void *chunky;
+} c2p = { 256, NULL, NULL };
 
 #define BPLSIZE ((WIDTH * 4) * HEIGHT / 8) /* 2560 bytes */
 #define BLTSIZE ((WIDTH * 4) * HEIGHT / 2) /* 10240 bytes */
 
-static void ChunkyToPlanar() {
-  APTR src = c2p.chunky;
-  APTR dst = c2p.chunky + BLTSIZE;
-  APTR *bpl = c2p.bpl;
+static void ChunkyToPlanar(void) {
+  void *src = c2p.chunky;
+  void *dst = c2p.chunky + BLTSIZE;
+  void **bpl = c2p.bpl;
 
   switch (c2p.phase) {
     case 0:
@@ -275,7 +275,7 @@ INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar, NULL);
 static struct Interrupt *oldBlitInt;
 
 static void MakeCopperList(CopListT *cp) {
-  WORD i;
+  short i;
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_HAM, 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
@@ -294,7 +294,7 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
 
@@ -321,7 +321,7 @@ static void Init() {
   EnableINT(INTF_BLIT);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER);
 
   DisableINT(INTF_BLIT);
@@ -339,33 +339,33 @@ static void Kill() {
   DeleteBitmap(screen[1]);
 }
 
-static void Render() {
-  LONG lines = ReadLineCounter();
+static void Render(void) {
+  int lines = ReadLineCounter();
 #if OPTIMIZED
   (*UVMapRender)(chunky[active], &texture[frameCount & 16383], shademap);
 #else
   {
-    APTR shade = shademap;
-    APTR tex = &texture[frameCount & 16383];
-    UWORD *data = uvmap->pixels;
-    UBYTE *lmap = light->pixels;
-    UWORD *dst = chunky[active];
-    WORD n = WIDTH * HEIGHT;
+    void *shade = shademap;
+    void *tex = &texture[frameCount & 16383];
+    u_short *data = uvmap->pixels;
+    u_char *lmap = light->pixels;
+    u_short *dst = chunky[active];
+    short n = WIDTH * HEIGHT;
 
     while (--n >= 0) {
-      UWORD d = *data;
+      u_short d = *data;
       if (d & 1) {
         data++;
         lmap++;
         dst++;
       } else {
-        WORD c = *(WORD *)(tex + *data++) | *lmap++;
-        *dst++ = *(UWORD *)(shade + c);
+        short c = *(short *)(tex + *data++) | *lmap++;
+        *dst++ = *(u_short *)(shade + c);
       }
     }
   }
 #endif
-  Log("uvlight: %ld\n", ReadLineCounter() - lines);
+  Log("uvlight: %d\n", ReadLineCounter() - lines);
 
   c2p.phase = 0;
   c2p.chunky = chunky[active];
@@ -374,4 +374,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

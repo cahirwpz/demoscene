@@ -1,16 +1,16 @@
 #include "blitter.h"
 
-__regargs void BlitterFillArea(BitmapT *bitmap, WORD plane, Area2D *area) {
-  APTR bltpt = bitmap->planes[plane];
-  UWORD bltmod, bltsize;
+__regargs void BlitterFillArea(BitmapT *bitmap, short plane, Area2D *area) {
+  void *bltpt = bitmap->planes[plane];
+  u_short bltmod, bltsize;
 
   if (area) {
-    WORD x = area->x;
-    WORD y = area->y; 
-    WORD w = area->w;
-    WORD h = area->h;
+    short x = area->x;
+    short y = area->y; 
+    short w = area->w;
+    short h = area->h;
 
-    bltpt += (((x + w) >> 3) & ~1) + (WORD)(y + h) * (WORD)bitmap->bytesPerRow;
+    bltpt += (((x + w) >> 3) & ~1) + (short)(y + h) * (short)bitmap->bytesPerRow;
     w >>= 3;
     bltmod = bitmap->bytesPerRow - w;
     bltsize = (h << 6) | (w >> 1);

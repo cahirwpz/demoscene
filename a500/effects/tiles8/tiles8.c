@@ -8,7 +8,7 @@
 #include "fx.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH (320 - 16)
 #define HEIGHT 256
@@ -32,39 +32,39 @@ static BitmapT *screen0, *screen1;
 static CopListT *cp;
 static PixmapT *twist, *colors;
 static PixmapT *tilegfx;
-static UWORD *tilescr;
-static WORD ntiles;
+static u_short *tilescr;
+static short ntiles;
 
-static void Load() {
-  WORD x, y, i;
+static void Load(void) {
+  short x, y, i;
 
   twist = LoadPNG("twist.png", PM_GRAY8, MEMF_PUBLIC);
   colors = LoadPNG("twist-colors.png", PM_RGB12, MEMF_PUBLIC);
   tilegfx = LoadPNG("tiles-c.png", PM_CMAP1, MEMF_CHIP);
 
   ntiles = tilegfx->height / 8;
-  tilescr = MemAlloc(HTILES * VTILES * sizeof(UWORD), MEMF_PUBLIC);
+  tilescr = MemAlloc(HTILES * VTILES * sizeof(u_short), MEMF_PUBLIC);
 
   {
-    // UBYTE *pixels = (UBYTE *)twist->pixels;
+    // u_char *pixels = (u_char *)twist->pixels;
 
     for (i = 0, y = 0; y < VTILES; y++)
       for (x = 0; x < HTILES; x++, i++) {
-        UWORD v = random();
-        // UWORD v = pixels[i] >> 4;
+        u_short v = random();
+        // u_short v = pixels[i] >> 4;
         tilescr[i] = (v & (ntiles - 1)) << 4;
       }
   }
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeletePixmap(colors);
   DeletePixmap(twist);
   DeletePalette(tilegfx->palette);
   DeletePixmap(tilegfx);
 }
 
-static void Init() {
+static void Init(void) {
   screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
@@ -95,7 +95,7 @@ static void Init() {
    * UAE copper debugger facility was used to find the right spot.
    */
   {
-    WORD x, y;
+    short x, y;
     for (y = 0; y < VTILES; y++) {
       CopInsT *location = CopMove32(cp, cop2lc, 0);
       CopInsT *label = CopWaitH(cp, VP(y * 8), HP(-4));
@@ -114,7 +114,7 @@ static void Init() {
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 
   DeleteCopList(cp);
@@ -123,19 +123,19 @@ static void Kill() {
   DeletePixmap(tilegfx);
 }
 
-static void UpdateChunky() {
-  UBYTE *data = twist->pixels;
-  UWORD *cmap = colors->pixels;
-  UBYTE offset = SIN(frameCount * 8) >> 2;
-  WORD y;
+static void UpdateChunky(void) {
+  u_char *data = twist->pixels;
+  u_short *cmap = colors->pixels;
+  u_char offset = SIN(frameCount * 8) >> 2;
+  short y;
 
   for (y = 0; y < VTILES; y++) {
-    UWORD *row = &chunky[y]->move.data;
+    short *row = &chunky[y]->move.data;
 
-    WORD x = HTILES - 1;
+    short x = HTILES - 1;
     do {
 #if 0
-      UBYTE p = *data++ - offset;
+      u_char p = *data++ - offset;
       *row++ = getword(cmap, p);
 #else
       asm volatile("moveq #0,d0\n"
@@ -152,24 +152,24 @@ static void UpdateChunky() {
   }
 }
 
-static void UpdateTiles() {
-  ULONG *_tilescr = (ULONG *)tilescr;
-  register ULONG incr asm("d2") = 0x00100010;
-  register ULONG mask asm("d3") = 0x00f000f0;
-  WORD i;
+static void UpdateTiles(void) {
+  u_int *_tilescr = (u_int *)tilescr;
+  register u_int incr asm("d2") = 0x00100010;
+  register u_int mask asm("d3") = 0x00f000f0;
+  short i;
 
   for (i = 0; i < VTILES * HTILES / 4; i++) {
-    *_tilescr++ = (*_tilescr + incr) & mask;
-    *_tilescr++ = (*_tilescr + incr) & mask;
+    *_tilescr = (*_tilescr + incr) & mask; _tilescr++;
+    *_tilescr = (*_tilescr + incr) & mask; _tilescr++;
   }
 }
 
-static void RenderTiles() {
-  UWORD *_tilescr = tilescr;
-  UWORD *screen = screen0->planes[0];
-  UWORD bltsize = (8 << 6) + 1;
-  APTR _tile = tilegfx->pixels;
-  APTR _custom = (APTR)&custom->bltbpt;
+static void RenderTiles(void) {
+  u_short *_tilescr = tilescr;
+  u_short *screen = screen0->planes[0];
+  u_short bltsize = (8 << 6) + 1;
+  void *_tile = tilegfx->pixels;
+  void *_custom = (void *)&custom->bltbpt;
 
   custom->bltamod = 0;
   custom->bltbmod = 0;
@@ -182,9 +182,9 @@ static void RenderTiles() {
 
 
   {
-    WORD y = VTILES - 1;
+    short y = VTILES - 1;
     do {
-      WORD x = HTILES / 2 - 1;
+      short x = HTILES / 2 - 1;
 
       do {
 #if 0
@@ -215,21 +215,21 @@ static void RenderTiles() {
   }
 }
 
-static void Render() {
-  LONG lines;
+static void Render(void) {
+  int lines;
 
   lines = ReadLineCounter();
   UpdateChunky();
   UpdateTiles();
-  Log("update: %ld\n", ReadLineCounter() - lines);
+  Log("update: %d\n", ReadLineCounter() - lines);
   
   lines = ReadLineCounter();
   RenderTiles();
-  Log("render: %ld\n", ReadLineCounter() - lines);
+  Log("render: %d\n", ReadLineCounter() - lines);
 
   CopUpdateBitplanes(bplptr, screen0, DEPTH);
   TaskWait(VBlankEvent);
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

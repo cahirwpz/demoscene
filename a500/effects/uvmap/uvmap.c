@@ -6,7 +6,7 @@
 #include "io.h"
 #include "png.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 160
 #define HEIGHT 100
@@ -15,35 +15,35 @@ STRPTR __cwdpath = "data";
 
 static PixmapT *textureHi, *textureLo;
 static BitmapT *screen[2];
-static UWORD active = 0;
+static u_short active = 0;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 static PixmapT *texture, *gradient, *uvmap;
 
 #define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
-void (*UVMapRender)(UBYTE *chunky asm("a0"),
-                    UBYTE *textureHi asm("a1"),
-                    UBYTE *textureLo asm("a2"));
+void (*UVMapRender)(u_char *chunky asm("a0"),
+                    u_char *textureHi asm("a1"),
+                    u_char *textureLo asm("a2"));
 
 static __regargs void 
 PixmapToTexture(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo) {
-  ULONG *data = image->pixels;
-  LONG size = image->width * image->height;
+  u_int *data = image->pixels;
+  int size = image->width * image->height;
   /* Extra halves for cheap texture motion. */
-  ULONG *hi0 = imageHi->pixels;
-  ULONG *hi1 = imageHi->pixels + size;
-  ULONG *lo0 = imageLo->pixels;
-  ULONG *lo1 = imageLo->pixels + size;
-  WORD n = size / 4;
-  register ULONG m1 asm("d6") = 0x0c0c0c0c;
-  register ULONG m2 asm("d7") = 0x03030303;
+  u_int *hi0 = imageHi->pixels;
+  u_int *hi1 = imageHi->pixels + size;
+  u_int *lo0 = imageLo->pixels;
+  u_int *lo1 = imageLo->pixels + size;
+  short n = size / 4;
+  register u_int m1 asm("d6") = 0x0c0c0c0c;
+  register u_int m2 asm("d7") = 0x03030303;
 
   while (--n >= 0) {
-    ULONG c = *data++;
+    u_int c = *data++;
     /* [0 0 0 0 a0 a1 a2 a3] => [a0 a1 0 0 a2 a3 0 0] */
-    ULONG hi = ((c & m1) << 4) | ((c & m2) << 2);
+    u_int hi = ((c & m1) << 4) | ((c & m2) << 2);
     /* [0 0 0 0 b0 b1 b2 b3] => [ 0 0 b0 b1 0 0 b2 b3] */
-    ULONG lo = ((c & m1) << 2) | (c & m2);
+    u_int lo = ((c & m1) << 2) | (c & m2);
     *hi0++ = hi;
     *hi1++ = hi;
     *lo0++ = lo;
@@ -51,10 +51,10 @@ PixmapToTexture(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo) {
   }
 }
 
-static void MakeUVMapRenderCode() {
-  UWORD *code = (APTR)UVMapRender;
-  UWORD *data = uvmap->pixels;
-  WORD n = uvmap->width * uvmap->height / 2;
+static void MakeUVMapRenderCode(void) {
+  u_short *code = (void *)UVMapRender;
+  u_short *data = uvmap->pixels;
+  short n = uvmap->width * uvmap->height / 2;
 
   /* The map is pre-scrambled to avoid one c2p pass: [a B C d] => [a C B d] */
   while (n--) {
@@ -68,13 +68,13 @@ static void MakeUVMapRenderCode() {
   *code++ = 0x4e75; /* rts */
 }
 
-static void Load() {
+static void Load(void) {
   texture = LoadPNG("texture-16-1.png", PM_CMAP8, MEMF_PUBLIC);
   gradient = LoadPNG("gradient.png", PM_RGB12, MEMF_PUBLIC);
   uvmap = LoadPNG("uvmap.png", PM_GRAY16, MEMF_PUBLIC);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   MemFree(uvmap);
   DeletePalette(texture->palette);
   DeletePixmap(texture);
@@ -82,15 +82,15 @@ static void UnLoad() {
 }
 
 static struct {
-  WORD phase;
-  APTR *bpl;
+  short phase;
+  void **bpl;
 } c2p = { 256, NULL };
 
 #define BPLSIZE ((WIDTH * 2) * (HEIGHT * 2) / 8) /* 8000 bytes */
 #define BLTSIZE ((WIDTH / 2) * HEIGHT)           /* 8000 bytes */
 
-static void ChunkyToPlanar() {
-  register APTR *bpl asm("a0") = c2p.bpl;
+static void ChunkyToPlanar(void) {
+  register void **bpl asm("a0") = c2p.bpl;
 
   switch (c2p.phase) {
     case 0:
@@ -208,8 +208,8 @@ INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar, NULL);
 static struct Interrupt *oldBlitInt;
 
 static void MakeCopperList(CopListT *cp) {
-  WORD *pixels = gradient->pixels;
-  WORD i, j;
+  short *pixels = gradient->pixels;
+  short i, j;
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
@@ -231,7 +231,7 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
   screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
 
@@ -259,7 +259,7 @@ static void Init() {
   EnableINT(INTF_BLIT);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   DisableINT(INTF_BLIT);
@@ -274,17 +274,17 @@ static void Kill() {
   DeleteBitmap(screen[1]);
 }
 
-static void Render() {
-  WORD offset = (frameCount * 127) & 16383;
+static void Render(void) {
+  short offset = (frameCount * 127) & 16383;
 
   /* screen's bitplane #0 is used as a chunky buffer */
   {
-    UBYTE *txtHi = textureHi->pixels + offset;
-    UBYTE *txtLo = textureLo->pixels + offset;
+    u_char *txtHi = textureHi->pixels + offset;
+    u_char *txtLo = textureLo->pixels + offset;
 
-    // LONG lines = ReadLineCounter();
+    // int lines = ReadLineCounter();
     (*UVMapRender)(screen[active]->planes[0], txtHi, txtLo);
-    // Log("uvmap: %ld\n", ReadLineCounter() - lines);
+    // Log("uvmap: %d\n", ReadLineCounter() - lines);
   }
 
   c2p.phase = 0;
@@ -293,4 +293,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

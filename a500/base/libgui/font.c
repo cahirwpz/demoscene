@@ -1,13 +1,13 @@
 #include "font.h"
 #include "blitter.h"
 
-__regargs void DrawTextN(FontDrawCtxT *ctx, UBYTE *text, UWORD n) {
+__regargs void DrawTextN(FontDrawCtxT *ctx, const char *text, u_short n) {
   FontT *font = ctx->font;
   FontCharT *charmap = font->charmap;
   Area2D src = { 0, 0, 0, 0 };
-  WORD sx, sy, w, h;
-  WORD x = 0, y = 0; 
-  UWORD c;
+  short sx, sy, w, h;
+  short x = 0, y = 0; 
+  u_short c;
 
   if (ctx->area) {
     sx = ctx->area->x;
@@ -48,10 +48,10 @@ __regargs void DrawTextN(FontDrawCtxT *ctx, UBYTE *text, UWORD n) {
   }
 }
 
-__regargs Size2D DrawTextSizeN(FontT *font, UBYTE *text, UWORD n) {
+__regargs Size2D DrawTextSizeN(FontT *font, const char *text, u_short n) {
   FontCharT *charmap = font->charmap;
   Size2D size = {0, font->height};
-  WORD c, x = 0;
+  short c, x = 0;
 
   while ((c = *text++) && (n > 0)) {
     if (c == '\n') {

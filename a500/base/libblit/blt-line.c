@@ -31,15 +31,15 @@
  */
 
 struct {
-  UBYTE *data;
-  UBYTE *scratch;
-  WORD stride;
-  UWORD bltcon0;
-  UWORD bltcon1;
+  u_char *data;
+  u_char *scratch;
+  short stride;
+  u_short bltcon0;
+  u_short bltcon1;
 } line[1];
 
-void BlitterLineSetupFull(BitmapT *bitmap, UWORD plane,
-                          UWORD mode, UWORD pattern)
+void BlitterLineSetupFull(BitmapT *bitmap, u_short plane,
+                          u_short mode, u_short pattern)
 {
   line->data = bitmap->planes[plane];
   line->scratch = bitmap->planes[bitmap->depth];
@@ -57,10 +57,10 @@ void BlitterLineSetupFull(BitmapT *bitmap, UWORD plane,
   custom->bltdmod = line->stride;
 }
 
-void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"), WORD x2 asm("d4"), WORD y2 asm("d5")) {
-  UBYTE *data = line->data;
-  UWORD bltcon1 = line->bltcon1;
-  WORD dx, dy, derr;
+void BlitterLine(short x1 asm("d2"), short y1 asm("d3"), short x2 asm("d4"), short y2 asm("d5")) {
+  u_char *data = line->data;
+  u_short bltcon1 = line->bltcon1;
+  short dx, dy, derr;
 
   /* Always draw the line downwards. */
   if (y1 > y2) {
@@ -96,11 +96,11 @@ void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"), WORD x2 asm("d4"), WORD y
     bltcon1 |= SIGNFLAG;
 
   {
-    UWORD bltcon0 = rorw(x1 & 15, 4) | line->bltcon0;
-    UWORD bltamod = derr - dx;
-    UWORD bltbmod = dy + dy;
-    APTR bltdpt = (bltcon1 & ONEDOT) ? line->scratch : data;
-    UWORD bltsize = (dx << 6) + 66;
+    u_short bltcon0 = rorw(x1 & 15, 4) | line->bltcon0;
+    u_short bltamod = derr - dx;
+    u_short bltbmod = dy + dy;
+    void *bltdpt = (bltcon1 & ONEDOT) ? line->scratch : data;
+    u_short bltsize = (dx << 6) + 66;
 
     WaitBlitter();
 
@@ -108,7 +108,7 @@ void BlitterLine(WORD x1 asm("d2"), WORD y1 asm("d3"), WORD x2 asm("d4"), WORD y
     custom->bltcon1 = bltcon1;
     custom->bltamod = bltamod;
     custom->bltbmod = bltbmod;
-    custom->bltapt = (APTR)(LONG)derr;
+    custom->bltapt = (void *)(int)derr;
     custom->bltcpt = data;
     custom->bltdpt = bltdpt;
     custom->bltsize = bltsize;

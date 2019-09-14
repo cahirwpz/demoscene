@@ -6,53 +6,53 @@
 
 typedef struct {
   const char *name;
-  BOOL (*func)(char **, Mesh3D *);
+  bool (*func)(char **, Mesh3D *);
 } ParserT;
 
-static BOOL ParseImageCount(char **data, Mesh3D *mesh) {
-  WORD n;
+static bool ParseImageCount(char **data, Mesh3D *mesh) {
+  short n;
 
   if (!(ReadShort(data, &n) && EndOfLine(data)))
-    return FALSE;
+    return false;
 
-  Log("[3D] Mesh has %ld images\n", (LONG)n);
+  Log("[3D] Mesh has %d images\n", n);
   mesh->images = n;
   mesh->image = MemAlloc(sizeof(PixmapT *) * n, MEMF_PUBLIC|MEMF_CLEAR);
-  return TRUE;
+  return true;
 }
 
-static BOOL ParseSurfaceCount(char **data, Mesh3D *mesh) {
-  WORD n;
+static bool ParseSurfaceCount(char **data, Mesh3D *mesh) {
+  short n;
 
   if (!(ReadShort(data, &n) && EndOfLine(data)))
-    return FALSE;
+    return false;
 
-  Log("[3D] Mesh has %ld surfaces\n", (LONG)n);
+  Log("[3D] Mesh has %d surfaces\n", n);
   mesh->surfaces = n;
   mesh->surface = MemAlloc(sizeof(MeshSurfaceT) * n, MEMF_PUBLIC|MEMF_CLEAR);
-  return TRUE;
+  return true;
 }
 
-static BOOL ParseVertices(char **data, Mesh3D *mesh) {
-  FLOAT scale = SPMul(mesh->scale, SPFlt(16));
+static bool ParseVertices(char **data, Mesh3D *mesh) {
+  float scale = SPMul(mesh->scale, SPFlt(16));
   Point3D *vertex;
-  WORD n;
+  short n;
 
   if (!(ReadShort(data, &n) && EndOfLine(data)))
-    return FALSE;
+    return false;
 
-  Log("[3D] Mesh has %ld points\n", (LONG)n);
+  Log("[3D] Mesh has %d points\n", n);
   mesh->vertices = n;
   mesh->vertex = MemAlloc(sizeof(Point3D) * n, MEMF_PUBLIC);
 
   vertex = mesh->vertex;
 
   while (NextLine(data) && !MatchString(data, "@end") && n > 0) {
-    FLOAT x, y, z;
+    float x, y, z;
 
     if (!(ReadFloat(data, &x) && ReadFloat(data, &y) && ReadFloat(data, &z) &&
           EndOfLine(data)))
-      return FALSE;
+      return false;
 
     vertex->x = SPFix(SPMul(x, scale));
     vertex->y = SPFix(SPMul(y, scale));
@@ -64,25 +64,25 @@ static BOOL ParseVertices(char **data, Mesh3D *mesh) {
   return n == 0;
 }
 
-static BOOL ParseVertexUVs(char **data, Mesh3D *mesh) {
-  FLOAT scale_u = SPFlt(16);
-  FLOAT scale_v = SPFlt(16);
+static bool ParseVertexUVs(char **data, Mesh3D *mesh) {
+  float scale_u = SPFlt(16);
+  float scale_v = SPFlt(16);
   UVCoord *uv;
-  WORD n;
+  short n;
 
   if (!(ReadShort(data, &n) && EndOfLine(data)))
-    return FALSE;
+    return false;
 
-  Log("[3D] Mesh has %ld uv coordinates\n", (LONG)n);
+  Log("[3D] Mesh has %d uv coordinates\n", n);
   mesh->uv = MemAlloc(sizeof(Point2D) * n, MEMF_PUBLIC);
 
   uv = mesh->uv ;
 
   while (NextLine(data) && !MatchString(data, "@end")) {
-    FLOAT u, v;
+    float u, v;
 
     if (!(ReadFloat(data, &u) && ReadFloat(data, &v) && EndOfLine(data)))
-      return FALSE;
+      return false;
 
     uv->u = SPFix(SPMul(u, scale_u));
     uv->v = SPFix(SPMul(v, scale_v));
@@ -93,35 +93,35 @@ static BOOL ParseVertexUVs(char **data, Mesh3D *mesh) {
   return n == 0;
 }
 
-static BOOL ParseFaces(char **data, Mesh3D *mesh) {
+static bool ParseFaces(char **data, Mesh3D *mesh) {
   IndexListT **faces;
-  UBYTE *faceSurface;
-  WORD *index;
-  WORD n, m;
+  u_char *faceSurface;
+  short *index;
+  short n, m;
 
   if (!(ReadShort(data, &n) && ReadShort(data, &m) && EndOfLine(data)))
-    return FALSE;
+    return false;
 
-  Log("[3D] Mesh has %ld polygons\n", (LONG)n);
+  Log("[3D] Mesh has %d polygons\n", n);
 
   mesh->faces = n;
   mesh->face = MemAlloc(sizeof(IndexListT *) * (n + 1) +
-                        sizeof(WORD) * (m + n), MEMF_PUBLIC|MEMF_CLEAR);
+                        sizeof(short) * (m + n), MEMF_PUBLIC|MEMF_CLEAR);
   mesh->faceSurface = MemAlloc(n, MEMF_PUBLIC);
 
   faces = mesh->face;
   faceSurface = mesh->faceSurface;
-  index = (WORD *)&mesh->face[n + 1];
+  index = (short *)&mesh->face[n + 1];
 
   while (NextLine(data) && !MatchString(data, "@end") && n > 0) {
     IndexListT *face = (IndexListT *)index++;
 
-    if (!ReadByte(data, faceSurface++))
-      return FALSE;
+    if (!ReadByteU(data, faceSurface++))
+      return false;
 
     while (!EndOfLine(data)) {
       if (!ReadShort(data, index++))
-        return FALSE;
+        return false;
       face->count++, m--;
     }
 
@@ -131,26 +131,26 @@ static BOOL ParseFaces(char **data, Mesh3D *mesh) {
   return (n == 0) && (m == 0);
 }
 
-static BOOL ParseFaceUVs(char **data, Mesh3D *mesh) {
+static bool ParseFaceUVs(char **data, Mesh3D *mesh) {
   IndexListT **faceUVs;
-  WORD *index;
-  WORD n, m;
+  short *index;
+  short n, m;
 
   if (!(ReadShort(data, &n) && ReadShort(data, &m) && EndOfLine(data)))
-    return FALSE;
+    return false;
 
   mesh->faceUV = MemAlloc(sizeof(IndexListT *) * (n + 1) +
-                          sizeof(WORD) * (m + n), MEMF_PUBLIC|MEMF_CLEAR);
+                          sizeof(short) * (m + n), MEMF_PUBLIC|MEMF_CLEAR);
 
   faceUVs = mesh->faceUV;
-  index = (WORD *)&mesh->faceUV[n + 1];
+  index = (short *)&mesh->faceUV[n + 1];
 
   while (NextLine(data) && !MatchString(data, "@end")) {
     IndexListT *faceUV = (IndexListT *)index++;
 
     while (!EndOfLine(data)) {
       if (!ReadShort(data, index++))
-        return FALSE;
+        return false;
       faceUV->count++, m--;
     }
 
@@ -160,34 +160,34 @@ static BOOL ParseFaceUVs(char **data, Mesh3D *mesh) {
   return (n == 0) && (m == 0);
 }
 
-static BOOL ParseSurface(char **data, Mesh3D *mesh) {
+static bool ParseSurface(char **data, Mesh3D *mesh) {
   MeshSurfaceT *surface;
-  WORD n;
+  short n;
 
   if (!(ReadShort(data, &n) && EndOfLine(data)))
-    return FALSE;
+    return false;
 
   surface = &mesh->surface[n];
 
   while (NextLine(data) && !MatchString(data, "@end")) {
     if (MatchString(data, "color")) {
-      if (!(ReadByte(data, &surface->r) && 
-            ReadByte(data, &surface->g) &&
-            ReadByte(data, &surface->b) &&
+      if (!(ReadByteU(data, &surface->r) && 
+            ReadByteU(data, &surface->g) &&
+            ReadByteU(data, &surface->b) &&
             EndOfLine(data)))
-        return FALSE;
+        return false;
     } else if (MatchString(data, "side")) {
-      if (!(ReadByte(data, &surface->sideness) && EndOfLine(data)))
-        return FALSE;
+      if (!(ReadByteU(data, &surface->sideness) && EndOfLine(data)))
+        return false;
     } else if (MatchString(data, "texture")) {
-      if (!(ReadShort(data, &surface->texture) && EndOfLine(data)))
-        return FALSE;
+      if (!(ReadShortU(data, &surface->texture) && EndOfLine(data)))
+        return false;
     } else {
       SkipLine(data);
     }
   }
 
-  return TRUE;
+  return true;
 }
 
 static ParserT TopLevelParser[] = {
@@ -202,7 +202,7 @@ static ParserT TopLevelParser[] = {
   { NULL, NULL }
 };
 
-__regargs Mesh3D *LoadMesh3D(char *filename, FLOAT scale) {
+__regargs Mesh3D *LoadMesh3D(const char *filename, float scale) {
   char *file = LoadFile(filename, MEMF_PUBLIC);
 
   if (file) {
@@ -221,7 +221,7 @@ __regargs Mesh3D *LoadMesh3D(char *filename, FLOAT scale) {
           continue;
         if (parser->func(&data, mesh))
           break;
-        Log("[3D] Syntax error at %ld position!\n", (LONG)(data - file));
+        Log("[3D] Syntax error at %ld position!\n", (ptrdiff_t)(data - file));
         DeleteMesh3D(mesh);
         return NULL;
       }

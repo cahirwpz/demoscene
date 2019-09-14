@@ -22,100 +22,100 @@
 #define mskLasso               3
 
 typedef struct BitmapHeader {
-  UWORD w, h;                  /* raster width & height in pixels      */
-  WORD  x, y;                  /* pixel position for this image        */
-  UBYTE nPlanes;               /* # source bitplanes                   */
-  UBYTE masking;
-  UBYTE compression;
-  UBYTE pad1;                  /* unused; ignore on read, write as 0   */
-  UWORD transparentColor;      /* transparent "color number" (sort of) */
-  UBYTE xAspect, yAspect;      /* pixel aspect, a ratio width : height */
-  WORD  pageWidth, pageHeight; /* source "page" size in pixels    */
+  u_short w, h;                 /* raster width & height in pixels      */
+  short  x, y;                  /* pixel position for this image        */
+  u_char nPlanes;               /* # source bitplanes                   */
+  u_char masking;
+  u_char compression;
+  u_char pad1;                  /* unused; ignore on read, write as 0   */
+  u_short transparentColor;     /* transparent "color number" (sort of) */
+  u_char xAspect, yAspect;      /* pixel aspect, a ratio width : height */
+  short  pageWidth, pageHeight; /* source "page" size in pixels    */
 } BitmapHeaderT;
 
 #define PCHG_COMP_NONE  0
 #define PCHGF_12BIT     1
 
 typedef struct PCHGHeader {
-  UWORD Compression;
-  UWORD Flags;
-  WORD  StartLine;
-  UWORD LineCount;
-  UWORD ChangedLines;
-  UWORD MinReg;
-  UWORD MaxReg;
-  UWORD MaxChanges;
-  ULONG TotalChanges;
+  u_short Compression;
+  u_short Flags;
+  short  StartLine;
+  u_short LineCount;
+  u_short ChangedLines;
+  u_short MinReg;
+  u_short MaxReg;
+  u_short MaxChanges;
+  u_int TotalChanges;
 } PCHGHeaderT;
 
 typedef struct LineChanges {
-  UBYTE ChangeCount16;
-  UBYTE ChangeCount32;
-  UWORD PaletteChange[0];
+  u_char ChangeCount16;
+  u_char ChangeCount32;
+  u_short PaletteChange[0];
 } LineChangesT;
 
-__regargs static void UnRLE(BYTE *data, LONG size, BYTE *uncompressed) {
-  BYTE *src = data;
-  BYTE *end = data + size;
-  BYTE *dst = uncompressed;
+__regargs static void UnRLE(char *data, int size, char *uncompressed) {
+  char *src = data;
+  char *end = data + size;
+  char *dst = uncompressed;
 
   do {
-    WORD code = *src++;
+    short code = *src++;
 
     if (code < 0) {
-      BYTE b = *src++;
-      WORD n = -code;
+      char b = *src++;
+      short n = -code;
 
       do { *dst++ = b; } while (--n != -1);
     } else {
-      WORD n = code;
+      short n = code;
 
       do { *dst++ = *src++; } while (--n != -1);
     }
   } while (src < end);
 }
 
-__regargs static void Deinterleave(BYTE *data, BitmapT *bitmap) { 
-  LONG bytesPerRow = bitmap->bytesPerRow;
-  LONG modulo = (WORD)bytesPerRow * (WORD)(bitmap->depth - 1);
-  WORD bplnum = bitmap->depth;
-  WORD count = bytesPerRow / 2;
-  WORD i = count & 7;
-  WORD k = (count + 7) / 8;
-  APTR *plane = bitmap->planes;
+__regargs static void Deinterleave(void *data, BitmapT *bitmap) {
+  int bytesPerRow = bitmap->bytesPerRow;
+  int modulo = (short)bytesPerRow * (short)(bitmap->depth - 1);
+  short bplnum = bitmap->depth;
+  short count = bytesPerRow / 2;
+  short i = count & 7;
+  short k = (count + 7) / 8;
+  void **plane = bitmap->planes;
 
   do {
-    BYTE *src = data;
-    BYTE *dst = *plane++;
-    WORD rows = bitmap->height;
+    short *src = data;
+    short *dst = *plane++;
+    short rows = bitmap->height;
 
     do {
-      WORD n = k - 1;
+      short n = k - 1;
       switch (i) {
-        case 0: do { *((WORD *)dst)++ = *((WORD *)src)++;
-        case 7:      *((WORD *)dst)++ = *((WORD *)src)++;
-        case 6:      *((WORD *)dst)++ = *((WORD *)src)++;
-        case 5:      *((WORD *)dst)++ = *((WORD *)src)++;
-        case 4:      *((WORD *)dst)++ = *((WORD *)src)++;
-        case 3:      *((WORD *)dst)++ = *((WORD *)src)++;
-        case 2:      *((WORD *)dst)++ = *((WORD *)src)++;
-        case 1:      *((WORD *)dst)++ = *((WORD *)src)++;
+        case 0: do { *dst++ = *src++;
+        case 7:      *dst++ = *src++;
+        case 6:      *dst++ = *src++;
+        case 5:      *dst++ = *src++;
+        case 4:      *dst++ = *src++;
+        case 3:      *dst++ = *src++;
+        case 2:      *dst++ = *src++;
+        case 1:      *dst++ = *src++;
         } while (--n != -1);
       }
 
-      src += modulo;
+      src = (void *)src + modulo;
     } while (--rows);
 
     data += bytesPerRow;
   } while (--bplnum);
 }
 
-__regargs void BitmapUnpack(BitmapT *bitmap, UWORD flags) {
+__regargs void BitmapUnpack(BitmapT *bitmap, u_short flags) {
   if (bitmap->compression) {
-    ULONG inLen = (LONG)bitmap->planes[1];
-    APTR inBuf = bitmap->planes[0];
-    ULONG outLen = BitmapSize(bitmap);
-    APTR outBuf = MemAlloc(outLen, MEMF_PUBLIC);
+    u_int inLen = (int)bitmap->planes[1];
+    void *inBuf = bitmap->planes[0];
+    u_int outLen = BitmapSize(bitmap);
+    void *outBuf = MemAlloc(outLen, MEMF_PUBLIC);
 
     if (bitmap->compression == COMP_RLE)
       UnRLE(inBuf, inLen, outBuf);
@@ -135,9 +135,9 @@ __regargs void BitmapUnpack(BitmapT *bitmap, UWORD flags) {
   }
 
   if ((bitmap->flags & BM_INTERLEAVED) && !(flags & BM_INTERLEAVED)) {
-    ULONG size = BitmapSize(bitmap);
-    APTR inBuf = bitmap->planes[0];
-    APTR outBuf = MemAlloc(size, MEMF_PUBLIC);
+    u_int size = BitmapSize(bitmap);
+    void *inBuf = bitmap->planes[0];
+    void *outBuf = MemAlloc(size, MEMF_PUBLIC);
 
     bitmap->flags &= ~BM_INTERLEAVED;
     BitmapSetPointers(bitmap, outBuf);
@@ -151,7 +151,7 @@ __regargs void BitmapUnpack(BitmapT *bitmap, UWORD flags) {
 }
 
 static __regargs void LoadCAMG(IffFileT *iff, BitmapT *bitmap) {
-  ULONG mode;
+  u_int mode;
 
   ReadChunk(iff, &mode);
 
@@ -162,19 +162,19 @@ static __regargs void LoadCAMG(IffFileT *iff, BitmapT *bitmap) {
 }
 
 static __regargs void LoadPCHG(IffFileT *iff, BitmapT *bitmap) {
-  BYTE *data = MemAlloc(iff->chunk.length, MEMF_PUBLIC);
-  PCHGHeaderT *pchg = (APTR)data;
+  char *data = MemAlloc(iff->chunk.length, MEMF_PUBLIC);
+  PCHGHeaderT *pchg = (void *)data;
 
   ReadChunk(iff, data);
 
   if ((pchg->Compression == PCHG_COMP_NONE) &&
       (pchg->Flags == PCHGF_12BIT)) 
   {
-    LONG length = pchg->TotalChanges + bitmap->height;
-    UWORD *out = MemAlloc(length * sizeof(UWORD), MEMF_PUBLIC);
-    UBYTE *bitvec = (APTR)pchg + sizeof(PCHGHeaderT);
-    LineChangesT *line = (APTR)bitvec + ((pchg->LineCount + 31) & ~31) / 8;
-    WORD i = pchg->StartLine;
+    int length = pchg->TotalChanges + bitmap->height;
+    u_short *out = MemAlloc(length * sizeof(u_short), MEMF_PUBLIC);
+    u_char *bitvec = (void *)pchg + sizeof(PCHGHeaderT);
+    LineChangesT *line = (void *)bitvec + ((pchg->LineCount + 31) & ~31) / 8;
+    short i = pchg->StartLine;
 
     bitmap->pchgTotal = pchg->TotalChanges;
     bitmap->pchg = out;
@@ -183,17 +183,17 @@ static __regargs void LoadPCHG(IffFileT *iff, BitmapT *bitmap) {
       *out++ = 0;
 
     for (i = 0; i < pchg->LineCount; i++) {
-      LONG mask = 1 << (7 - (i & 7));
+      int mask = 1 << (7 - (i & 7));
       if (bitvec[i / 8] & mask) {
-        UWORD count = line->ChangeCount16;
-        UWORD *change = line->PaletteChange;
+        u_short count = line->ChangeCount16;
+        u_short *change = line->PaletteChange;
 
         *out++ = count;
         while (count-- > 0)
           *out++ = *change++;
 
-        line = (APTR)line + sizeof(LineChangesT) +
-          (line->ChangeCount16 + line->ChangeCount32) * sizeof(UWORD);
+        line = (void *)line + sizeof(LineChangesT) +
+          (line->ChangeCount16 + line->ChangeCount32) * sizeof(u_short);
       } else {
         *out++ = 0;
       }
@@ -203,20 +203,20 @@ static __regargs void LoadPCHG(IffFileT *iff, BitmapT *bitmap) {
   MemFree(data);
 }
 
-static __regargs void LoadBODY(IffFileT *iff, BitmapT *bitmap, UWORD flags) {
-  BYTE *data = MemAlloc(iff->chunk.length, MEMF_PUBLIC);
-  LONG size = iff->chunk.length;
+static __regargs void LoadBODY(IffFileT *iff, BitmapT *bitmap, u_short flags) {
+  char *data = MemAlloc(iff->chunk.length, MEMF_PUBLIC);
+  int size = iff->chunk.length;
 
   ReadChunk(iff, data);
 
   if (flags & BM_KEEP_PACKED) {
     bitmap->planes[0] = data;
-    bitmap->planes[1] = (APTR)size;
+    bitmap->planes[1] = (void *)size;
     bitmap->flags &= ~BM_MINIMAL;
   } else {
     if (bitmap->compression) {
-      ULONG newSize = bitmap->bplSize * bitmap->depth;
-      BYTE *uncompressed = MemAlloc(newSize, MEMF_PUBLIC);
+      u_int newSize = bitmap->bplSize * bitmap->depth;
+      char *uncompressed = MemAlloc(newSize, MEMF_PUBLIC);
 
       if (bitmap->compression == COMP_RLE)
         UnRLE(data, size, uncompressed);
@@ -245,7 +245,7 @@ static __regargs void LoadBODY(IffFileT *iff, BitmapT *bitmap, UWORD flags) {
   }
 }
 
-static __regargs BitmapT *LoadBMHD(IffFileT *iff, UWORD flags) {
+static __regargs BitmapT *LoadBMHD(IffFileT *iff, u_short flags) {
   BitmapHeaderT bmhd;
   BitmapT *bitmap;
 
@@ -266,7 +266,7 @@ static __regargs PaletteT *LoadCMAP(IffFileT *iff) {
   return palette;
 }
 
-__regargs BitmapT *LoadILBMCustom(CONST STRPTR filename, UWORD flags) {
+__regargs BitmapT *LoadILBMCustom(const char *filename, u_short flags) {
   BitmapT *bitmap = NULL;
   PaletteT *palette = NULL;
   IffFileT iff;
@@ -299,7 +299,7 @@ __regargs BitmapT *LoadILBMCustom(CONST STRPTR filename, UWORD flags) {
   return bitmap;
 }
 
-__regargs PaletteT *LoadPalette(CONST STRPTR filename) {
+__regargs PaletteT *LoadPalette(const char *filename) {
   PaletteT *palette = NULL;
   IffFileT iff;
 

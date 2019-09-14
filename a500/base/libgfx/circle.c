@@ -1,22 +1,22 @@
 #include "circle.h"
 
-__regargs void Circle(BitmapT *bitmap, LONG plane, WORD xc, WORD yc, WORD r) {
-  LONG stride = bitmap->bytesPerRow;
+__regargs void Circle(BitmapT *bitmap, int plane, short xc, short yc, short r) {
+  int stride = bitmap->bytesPerRow;
 
-  UBYTE *pixels = bitmap->planes[plane] + yc * (WORD)stride;
-  UBYTE *q0 = pixels;
-  UBYTE *q1 = pixels;
-  UBYTE *q2 = pixels - r * (WORD)stride;
-  UBYTE *q3 = pixels + r * (WORD)stride;
+  u_char *pixels = bitmap->planes[plane] + yc * (short)stride;
+  u_char *q0 = pixels;
+  u_char *q1 = pixels;
+  u_char *q2 = pixels - r * (short)stride;
+  u_char *q3 = pixels + r * (short)stride;
 
-  WORD x = -r;
-  WORD y = 0;
-  WORD err = 2 * (1 - r);
+  short x = -r;
+  short y = 0;
+  short err = 2 * (1 - r);
 
-  WORD x0 = xc - x;
-  WORD x1 = xc + x;
-  WORD x2 = xc;
-  WORD x3 = xc;
+  short x0 = xc - x;
+  short x1 = xc + x;
+  short x2 = xc;
+  short x3 = xc;
 
   do {
     /* (xc - x, yc + y) */
@@ -50,23 +50,23 @@ __regargs void Circle(BitmapT *bitmap, LONG plane, WORD xc, WORD yc, WORD r) {
   } while (x < 0);
 }
 
-__regargs void CircleEdge(BitmapT *bitmap, LONG plane, WORD xc, WORD yc, WORD r) {
-  LONG stride = bitmap->width >> 3;
+__regargs void CircleEdge(BitmapT *bitmap, int plane, short xc, short yc, short r) {
+  int stride = bitmap->width >> 3;
 
-  UBYTE *pixels = bitmap->planes[plane] + yc * (WORD)stride;
-  UBYTE *q0 = pixels;
-  UBYTE *q1 = pixels;
-  UBYTE *q2 = pixels - r * (WORD)stride;
-  UBYTE *q3 = pixels + r * (WORD)stride;
+  u_char *pixels = bitmap->planes[plane] + yc * (short)stride;
+  u_char *q0 = pixels;
+  u_char *q1 = pixels;
+  u_char *q2 = pixels - r * (short)stride;
+  u_char *q3 = pixels + r * (short)stride;
 
-  WORD x = -r;
-  WORD y = 0;
-  WORD err = 2 * (1 - r);
+  short x = -r;
+  short y = 0;
+  short err = 2 * (1 - r);
 
-  WORD x0 = xc - x;
-  WORD x1 = xc + x;
-  WORD x2 = xc;
-  WORD x3 = xc;
+  short x0 = xc - x;
+  short x1 = xc + x;
+  short x2 = xc;
+  short x3 = xc;
 
   do {
     if (err <= y) {

@@ -1,49 +1,50 @@
 #include "hardware.h"
 
-volatile struct Custom* const custom = (APTR)0xdff000;
-volatile struct CIA* const ciaa = (APTR)0xbfe001;
-volatile struct CIA* const ciab = (APTR)0xbfd000;
+volatile struct Custom* const custom = (void *)0xdff000;
+volatile struct CIA* const ciaa = (void *)0xbfe001;
+volatile struct CIA* const ciab = (void *)0xbfd000;
 
 void WaitMouse() {
   while (ciaa->ciapra & CIAF_GAMEPORT0);
 }
 
-void EnableDMA(UWORD mask) {
-  custom->dmacon = INTF_SETCLR | mask;
+void EnableDMA(u_short mask) {
+  custom->dmacon = DMAF_SETCLR | mask;
 }
 
-void DisableDMA(UWORD mask) {
+void DisableDMA(u_short mask) {
   custom->dmacon = mask;
 }
 
-LONG RasterLine() {
-  ULONG vpos = *(volatile ULONG *)&custom->vposr;
-  vpos &= 0x1ff00;
-  vpos >>= 8;
-  return vpos;
+static inline volatile u_int *vposr(void) {
+  return (volatile u_int *)&custom->vposr;
 }
 
-__regargs void WaitLine(ULONG line) {
-  ULONG mask = 0x1ff00;
-  ULONG vpos;
+int RasterLine() {
+  return (*vposr() & 0x1ff00) >> 8;
+}
+
+__regargs void WaitLine(u_int line) {
+  u_int mask = 0x1ff00;
+  u_int vpos;
 
   line <<= 8;
   line &= mask;
 
   do {
-    vpos = (*(volatile ULONG *)&custom->vposr) & mask;
+    vpos = *vposr() & mask;
   } while (vpos != line);
 }
 
-__regargs LONG ReadICR(volatile struct CIA *cia) {
-  static LONG oldicr = 0;
-  UBYTE newicr = cia->ciaicr;
+__regargs int ReadICR(volatile struct CIA *cia) {
+  static int oldicr = 0;
+  u_char newicr = cia->ciaicr;
   if (newicr)
     oldicr = newicr;
   return oldicr;
 }
 
-__regargs void WaitTimerA(volatile struct CIA *cia, UWORD delay) {
+__regargs void WaitTimerA(volatile struct CIA *cia, u_short delay) {
   cia->ciacra |= CIACRAF_RUNMODE;
   cia->ciaicr = CIAICRF_TA;
   cia->ciatalo = delay;
@@ -51,7 +52,7 @@ __regargs void WaitTimerA(volatile struct CIA *cia, UWORD delay) {
   while (!(cia->ciaicr & CIAICRF_TA));
 }
 
-__regargs void WaitTimerB(volatile struct CIA *cia, UWORD delay) {
+__regargs void WaitTimerB(volatile struct CIA *cia, u_short delay) {
   cia->ciacra |= CIACRBF_RUNMODE;
   cia->ciaicr = CIAICRF_TB;
   cia->ciatalo = delay;
@@ -62,8 +63,8 @@ __regargs void WaitTimerB(volatile struct CIA *cia, UWORD delay) {
 /* All TOD registers latch on a read of MSB event and remain latched until
  * after a read of LSB event. */
 
-LONG ReadLineCounter() {
-  LONG res = 0;
+int ReadLineCounter() {
+  int res = 0;
   res |= ciab->ciatodhi;
   res <<= 8;
   res |= ciab->ciatodmid;
@@ -72,8 +73,8 @@ LONG ReadLineCounter() {
   return res;
 }
 
-LONG ReadFrameCounter() {
-  LONG res = 0;
+int ReadFrameCounter() {
+  int res = 0;
   res |= ciaa->ciatodhi;
   res <<= 8;
   res |= ciaa->ciatodmid;
@@ -85,7 +86,7 @@ LONG ReadFrameCounter() {
 /* TOD is automatically stopped whenever a write to the register occurs. The
  * clock will not start again until after a write to the LSB event register. */
 
-void SetFrameCounter(ULONG frame) {
+void SetFrameCounter(u_int frame) {
   ciaa->ciatodhi = frame >> 16;
   ciaa->ciatodmid = frame >> 8;
   ciaa->ciatodlow = frame;

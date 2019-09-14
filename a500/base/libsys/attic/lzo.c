@@ -12,14 +12,14 @@
  * assembly then go for it! Remember to share the sources with Amiga community!
  */
 
-LONG lzo1x_decompress(CONST UBYTE *in asm("a0"), ULONG in_len asm("d0"),
-                      UBYTE *out asm("a1"), ULONG *out_len asm("a2"))
+int lzo1x_decompress(const u_char *in asm("a0"), u_int in_len asm("d0"),
+                      u_char *out asm("a1"), u_int *out_len asm("a2"))
 {
-  UBYTE *op;
-  CONST UBYTE *ip;
-  UWORD t;
-  CONST UBYTE *m_pos;
-  CONST UBYTE *CONST ip_end = in + in_len;
+  u_char *op;
+  const u_char *ip;
+  u_short t;
+  const u_char *m_pos;
+  const u_char *const ip_end = in + in_len;
 
   *out_len = 0;
 
@@ -156,7 +156,7 @@ match_next:
   }
 
 eof_found:
-  *out_len = (ULONG)(op - out);
+  *out_len = (u_int)(op - out);
 
   if (ip == ip_end)
     return 0;

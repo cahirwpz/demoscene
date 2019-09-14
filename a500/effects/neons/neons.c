@@ -10,7 +10,7 @@
 #include "random.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -19,7 +19,7 @@ STRPTR __cwdpath = "data";
 #define PNUM 19
 
 static BitmapT *screen[2];
-static UWORD active = 0;
+static u_short active = 0;
 static CopInsT *bplptr[5];
 
 static BitmapT *background;
@@ -30,38 +30,40 @@ static CopInsT *pal;
 static Area2D grt_area[2][PNUM];
 
 typedef struct {
-  WORD color;
-  char *filename;
+  short color;
+  const char *filename;
   BitmapT *bitmap;
   Point2D pos;
 } GreetingT;
 
+#define GREETING(color, filename) {(color), (filename), NULL, {0, 0}}
+
 static GreetingT greeting[PNUM] = {
-  { 0, "greet_ada.ilbm" },
-  { 0, "greet_blacksun.ilbm" },
-  { 1, "greet_dcs.ilbm" },
-  { 0, "greet_dekadence.ilbm" },
-  { 1, "greet_desire.ilbm" },
-  { 0, "greet_dinx.ilbm" },
-  { 1, "greet_elude.ilbm" },
-  { 0, "greet_fd.ilbm" },
-  { 1, "greet_floppy.ilbm" },
-  { 0, "greet_lemon.ilbm" },
-  { 1, "greet_loonies.ilbm" },
-  { 1, "greet_moods.ilbm" },
-  { 0, "greet_nah.ilbm" },
-  { 0, "greet_rno.ilbm" },
-  { 1, "greet_skarla.ilbm" },
-  { 0, "greet_speccy.ilbm" },
-  { 0, "greet_tulou.ilbm" },
-  { 1, "greet_wanted.ilbm" },
-  { 1, "greet_ycrew.ilbm" }
+  GREETING(0, "greet_ada.ilbm"),
+  GREETING(0, "greet_blacksun.ilbm"),
+  GREETING(1, "greet_dcs.ilbm"),
+  GREETING(0, "greet_dekadence.ilbm"),
+  GREETING(1, "greet_desire.ilbm"),
+  GREETING(0, "greet_dinx.ilbm"),
+  GREETING(1, "greet_elude.ilbm"),
+  GREETING(0, "greet_fd.ilbm"),
+  GREETING(1, "greet_floppy.ilbm"),
+  GREETING(0, "greet_lemon.ilbm"),
+  GREETING(1, "greet_loonies.ilbm"),
+  GREETING(1, "greet_moods.ilbm"),
+  GREETING(0, "greet_nah.ilbm"),
+  GREETING(0, "greet_rno.ilbm"),
+  GREETING(1, "greet_skarla.ilbm"),
+  GREETING(0, "greet_speccy.ilbm"),
+  GREETING(0, "greet_tulou.ilbm"),
+  GREETING(1, "greet_wanted.ilbm"),
+  GREETING(1, "greet_ycrew.ilbm")
 };
 
-static void PositionGreetings() {
+static void PositionGreetings(void) {
   GreetingT *grt = greeting;
-  WORD y = HEIGHT + 200;
-  WORD i;
+  short y = HEIGHT + 200;
+  short i;
   
   for (i = 0; i < PNUM; i++) {
     Point2D *pos = &grt->pos;
@@ -76,8 +78,8 @@ static void PositionGreetings() {
   }
 }
 
-static void Load() {
-  WORD i;
+static void Load(void) {
+  short i;
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
@@ -93,7 +95,7 @@ static void Load() {
   PositionGreetings();
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   ITER(i, 0, PNUM - 1, DeleteBitmap(greeting[i].bitmap));
   DeleteBitmap(background);
   DeletePalette(palette[0]);
@@ -103,18 +105,18 @@ static void UnLoad() {
   DeleteBitmap(screen[1]);
 }
 
-static __interrupt LONG CustomRotatePalette() {
+static __interrupt int CustomRotatePalette(void) {
   ColorT *src = palette[0]->colors;
   CopInsT *ins = pal + 1;
-  LONG i = frameCount;
-  WORD n = 15;
+  int i = frameCount;
+  short n = 15;
 
   while (--n >= 0) {
-    UBYTE *c = (UBYTE *)&src[i++ & 15];
-    UBYTE r = *c++ & 0xf0;
-    UBYTE g = *c++ & 0xf0;
-    UBYTE b = *c++ & 0xf0;
-    CopInsSet16(ins++, (r << 4) | (UBYTE)(g | (b >> 4)));
+    u_char *c = (u_char *)&src[i++ & 15];
+    u_char r = *c++ & 0xf0;
+    u_char g = *c++ & 0xf0;
+    u_char b = *c++ & 0xf0;
+    CopInsSet16(ins++, (r << 4) | (u_char)(g | (b >> 4)));
   }
 
   return 0;
@@ -122,7 +124,7 @@ static __interrupt LONG CustomRotatePalette() {
 
 INTERRUPT(RotatePaletteInterrupt, 0, CustomRotatePalette, NULL);
 
-static void Init() {
+static void Init(void) {
   EnableDMA(DMAF_BLITTER);
 
   BitmapCopy(screen[0], 0, 0, background);
@@ -147,7 +149,7 @@ static void Init() {
   AddIntServer(INTB_VERTB, RotatePaletteInterrupt);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   RemIntServer(INTB_VERTB, RotatePaletteInterrupt);
@@ -155,10 +157,10 @@ static void Kill() {
   DeleteCopList(cp);
 }
 
-static void ClearCliparts() {
+static void ClearCliparts(void) {
   Area2D *area = grt_area[active];
   BitmapT *dst = screen[active];
-  WORD n = PNUM;
+  short n = PNUM;
 
   while (--n >= 0) {
     Area2D neon = *area++;
@@ -174,18 +176,18 @@ static void ClearCliparts() {
   }
 }
 
-static void DrawCliparts() {
+static void DrawCliparts(void) {
   GreetingT *grt = greeting;
   Area2D *area = grt_area[active];
   BitmapT *dst = screen[active];
-  WORD step = (frameCount - lastFrameCount) * 3;
-  WORD n = PNUM;
+  short step = (frameCount - lastFrameCount) * 3;
+  short n = PNUM;
 
   while (--n >= 0) {
     BitmapT *src = grt->bitmap;
-    WORD dy = grt->pos.y;
-    WORD sy = 0;
-    WORD sh = src->height;
+    short dy = grt->pos.y;
+    short sy = 0;
+    short sh = src->height;
 
     if (dy < 0) { sy -= dy; sh += dy; dy = 0; }
     if (dy + sh >= HEIGHT) { sh = HEIGHT - dy; }
@@ -212,18 +214,18 @@ static void DrawCliparts() {
   }
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
+static void Render(void) {
+  // int lines = ReadLineCounter();
 
   WaitBlitter();
   ClearCliparts();
   DrawCliparts();
   
-  // Log("neons: %ld\n", ReadLineCounter() - lines);
+  // Log("neons: %d\n", ReadLineCounter() - lines);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

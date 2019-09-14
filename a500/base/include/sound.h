@@ -1,25 +1,25 @@
 #ifndef __SOUND_H__
 #define __SOUND_H__
 
-#include <exec/types.h>
+#include "types.h"
 
 typedef struct Sound {
-  ULONG length;
-  UWORD rate;
-  UBYTE channel;
-  UBYTE volume;
-  BYTE* sample;
+  u_int length;
+  u_short rate;
+  u_char channel;
+  u_char volume;
+  char* sample;
 } SoundT;
 
-__regargs SoundT *NewSound(ULONG length, UWORD rate);
+__regargs SoundT *NewSound(u_int length, u_short rate);
 __regargs void DeleteSound(SoundT *sound);
 
 typedef enum { CHAN_0, CHAN_1, CHAN_2, CHAN_3 } ChanT;
 
-void AudioSetVolume(ChanT num, UBYTE level);
-void AudioSetPeriod(ChanT num, UWORD period);
-void AudioSetSampleRate(ChanT num, UWORD rate);
-void AudioAttachSample(ChanT num, APTR data, ULONG length);
+void AudioSetVolume(ChanT num, u_char level);
+void AudioSetPeriod(ChanT num, u_short period);
+void AudioSetSampleRate(ChanT num, u_short rate);
+void AudioAttachSample(ChanT num, void *data, u_int length);
 void AudioAttachSound(ChanT num, SoundT *sound);
 void AudioPlay(ChanT num);
 void AudioStop(ChanT num);

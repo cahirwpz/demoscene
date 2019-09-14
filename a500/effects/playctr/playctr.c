@@ -1,5 +1,3 @@
-#include <proto/graphics.h>
-
 #include "startup.h"
 #include "io.h"
 #include "hardware.h"
@@ -17,26 +15,25 @@
 #define HEIGHT 256
 #define DEPTH 1
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
-static APTR module, instruments;
+static void *module, *instruments;
 static CinterPlayerT *player;
 static BitmapT *screen;
 static CopListT *cp;
-static TextFontT *topaz8;
 static ConsoleT console;
 
 /* Extra variables to enhance replayer functionality */
-static BOOL stopped = TRUE;
-static UWORD *musicStart;
+static bool stopped = true;
+static u_short *musicStart;
 
 /* Total instrument memory is determined by converter script! */
 #define INSTRUMENTS_TOTAL 153172
 
-static void Load() {
-  LONG samples_len = GetFileSize("JazzCat-Automatic.smp");
-  APTR samples = LoadFile("JazzCat-Automatic.smp", MEMF_FAST);
-  Log("Raw samples length: %ld\n", samples_len);
+static void Load(void) {
+  int samples_len = GetFileSize("JazzCat-Automatic.smp");
+  void *samples = LoadFile("JazzCat-Automatic.smp", MEMF_FAST);
+  Log("Raw samples length: %d\n", samples_len);
   module = LoadFile("JazzCat-Automatic.ctr", MEMF_FAST);
   instruments = MemAlloc(INSTRUMENTS_TOTAL, MEMF_CHIP|MEMF_CLEAR);
   player = MemAlloc(sizeof(CinterPlayerT), MEMF_FAST|MEMF_CLEAR);
@@ -44,13 +41,13 @@ static void Load() {
   MemFree(samples);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   MemFree(player);
   MemFree(instruments);
   MemFree(module);
 }
 
-static __interrupt LONG CinterMusic() {
+static __interrupt int CinterMusic(void) {
   if (stopped)
     return 0;
   CinterPlay1(player);
@@ -60,7 +57,7 @@ static __interrupt LONG CinterMusic() {
 
 INTERRUPT(CinterPlayerInterrupt, 10, CinterMusic, NULL);
 
-static void Init() {
+static void Init(void) {
   KeyboardInit();
 
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
@@ -73,12 +70,7 @@ static void Init() {
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
 
-  {
-    struct TextAttr textattr = { "topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
-    topaz8 = OpenFont(&textattr);
-  }
-
-  ConsoleInit(&console, screen, topaz8);
+  ConsoleInit(&console, screen);
 
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
@@ -95,64 +87,63 @@ static void Init() {
                 "Pause (SPACE) -10s (LEFT) +10s (RIGHT)\n"
                 "Exit (ESC)\n");
 
-  stopped = FALSE;
+  stopped = false;
 }
 
-static void Kill() {
+static void Kill(void) {
   RemIntServer(INTB_VERTB, CinterPlayerInterrupt);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_AUDIO);
 
-  CloseFont(topaz8);
+  ConsoleKill(&console);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
 
-static void Render() {
-  WORD i;
-  WORD trackSize = player->c_TrackSize / 2;
+static void Render(void) {
+  short i;
+  short trackSize = player->c_TrackSize / 2;
   CinterChannelT *channel = player->c_MusicState;
-  UWORD *music = player->c_MusicPointer;
+  u_short *music = player->c_MusicPointer;
 
   ConsoleSetCursor(&console, 0, 3);
   ConsolePrint(&console, "Cinter Player\n\n");
 
   for (i = 0; i < 4; i++, channel++) {
-    ConsolePrint(&console, "CH%ld: %8lx %8lx %4lx %4lx\n",
-                 (LONG)i, channel->state, (LONG)channel->sample,
-                 (LONG)channel->period, (LONG)channel->volume);
+    ConsolePrint(&console, "CH%d: %8x %p %4x %4x\n",
+                 i, channel->state, channel->sample,
+                 channel->period, channel->volume);
   }
 
   ConsolePrint(&console, "\n");
 
   for (i = 0; i < 16; i++, music++) {
-    UWORD m0 = music[0 * trackSize];
-    UWORD m1 = music[1 * trackSize];
-    UWORD m2 = music[2 * trackSize];
-    UWORD m3 = music[3 * trackSize];
-    LONG pos = (APTR)music - (APTR)musicStart;
+    u_short m0 = music[0 * trackSize];
+    u_short m1 = music[1 * trackSize];
+    u_short m2 = music[2 * trackSize];
+    u_short m3 = music[3 * trackSize];
+    int pos = (void *)music - (void *)musicStart;
 
-    ConsolePrint(&console, "%4lx %4lx %4lx %4lx %4lx\n",
-                 pos, (LONG)m0, (LONG)m1, (LONG)m2, (LONG)m3);
+    ConsolePrint(&console, "%4x %4x %4x %4x %4x\n", pos, m0, m1, m2, m3);
   }
 
   TaskWait(VBlankEvent);
 }
 
-static BOOL HandleEvent() {
+static bool HandleEvent(void) {
   EventT ev;
 
   if (!PopEvent(&ev))
-    return TRUE;
+    return true;
 
   if (ev.type == EV_MOUSE)
-    return TRUE;
+    return true;
 
   if (ev.key.modifier & MOD_PRESSED)
-    return TRUE;
+    return true;
 
   if (ev.key.code == KEY_ESCAPE)
-    return FALSE;
+    return false;
 
   if (ev.key.code == KEY_SPACE) {
     stopped ^= 1;
@@ -161,19 +152,19 @@ static BOOL HandleEvent() {
   }
 
   if (ev.key.code == KEY_LEFT) {
-    UWORD *current = player->c_MusicPointer - 500;
+    u_short *current = player->c_MusicPointer - 500;
     if (current < musicStart)
       current = musicStart;
     player->c_MusicPointer = current;
   }
 
   if (ev.key.code == KEY_RIGHT) {
-    UWORD *current = player->c_MusicPointer + 500;
+    u_short *current = player->c_MusicPointer + 500;
     if (current < player->c_MusicEnd)
       player->c_MusicPointer = current;
   }
 
-  return TRUE;
+  return true;
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, Render, HandleEvent };

@@ -8,7 +8,7 @@
 #include "circle.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -16,7 +16,7 @@ STRPTR __cwdpath = "data";
 #define SIZE 128
 
 static BitmapT *screen[2];
-static UWORD active = 0;
+static u_short active = 0;
 
 static BitmapT *clip;
 static BitmapT *carry;
@@ -25,7 +25,7 @@ static PaletteT *palette[2];
 static CopInsT *bplptr[2][DEPTH];
 static CopListT *cp;
 
-static void Load() {
+static void Load(void) {
   clip = LoadILBM("blurred-clip.ilbm");
 
   palette[0] = LoadPalette("blurred-pal-1.ilbm");
@@ -35,7 +35,7 @@ static void Load() {
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeletePalette(clip->palette);
   DeleteBitmap(clip);
   DeleteBitmap(screen[0]);
@@ -44,10 +44,10 @@ static void UnLoad() {
   DeletePalette(palette[1]);
 }
 
-static WORD iterCount = 0;
+static short iterCount = 0;
 
 static void MakeCopperList(CopListT *cp) {
-  WORD i;
+  short i;
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
@@ -64,8 +64,8 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static void Init() {
-  WORD i;
+static void Init(void) {
+  short i;
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
@@ -89,7 +89,7 @@ static void Init() {
   EnableDMA(DMAF_RASTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 
   DeleteCopList(cp);
@@ -97,18 +97,18 @@ static void Kill() {
   DeleteBitmap(buffer);
 }
 
-static void RotatingTriangle(WORD t, WORD phi, WORD size) {
+static void RotatingTriangle(short t, short phi, short size) {
   Point2D p[3];
-  WORD i, j;
+  short i, j;
 
   /* Calculate vertices of a rotating triangle. */
   for (i = 0; i < 3; i++) {
-    WORD k = SIN(t + phi) / 2;
-    WORD x = SIN(k + i * (SIN_PI * 2 / 3));
-    WORD y = COS(k + i * (SIN_PI * 2 / 3));
+    short k = SIN(t + phi) / 2;
+    short x = SIN(k + i * (SIN_PI * 2 / 3));
+    short y = COS(k + i * (SIN_PI * 2 / 3));
 
-    p[i].x = normfx((WORD)size * (WORD)x) / 2 + SIZE / 2;
-    p[i].y = normfx((WORD)size * (WORD)y) / 2 + SIZE / 2;
+    p[i].x = normfx((short)size * (short)x) / 2 + SIZE / 2;
+    p[i].y = normfx((short)size * (short)y) / 2 + SIZE / 2;
   }
 
   /* Create a bob with rotating triangle. */
@@ -116,7 +116,7 @@ static void RotatingTriangle(WORD t, WORD phi, WORD size) {
     BlitterLine(p[i].x, p[i].y, p[j].x, p[j].y);
 }
 
-static void DrawShape() {
+static void DrawShape(void) {
   BlitterClear(carry, 0);
   BlitterLineSetup(carry, 0, LINE_EOR|LINE_ONEDOT);
 
@@ -127,8 +127,8 @@ static void DrawShape() {
   BlitterFill(carry, 0);
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
+static void Render(void) {
+  // int lines = ReadLineCounter();
 
   if (iterCount++ & 1)
     BitmapDecSaturated(buffer, carry);
@@ -138,7 +138,7 @@ static void Render() {
 
   BitmapCopy(screen[active], 16, 0, buffer);
 
-  // Log("blurred: %ld\n", ReadLineCounter() - lines);
+  // Log("blurred: %d\n", ReadLineCounter() - lines);
 
   ITER(i, 0, DEPTH - 1, {
     CopInsSet32(bplptr[0][i], screen[active]->planes[i]);
@@ -149,4 +149,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

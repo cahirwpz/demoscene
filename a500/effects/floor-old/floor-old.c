@@ -10,7 +10,7 @@
 #include "color.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 212
@@ -32,33 +32,33 @@ STRPTR __cwdpath = "data";
 #define FAR_W (WIDTH * FAR_Z / 256)
 
 static BitmapT *screen[2];
-static UWORD active = 0;
+static u_short active = 0;
 static CopListT *cp[2];
 
 typedef struct {
-  LONG delta;
-  WORD x1, x2, y2;
-  BYTE pad[6];
+  int delta;
+  short x1, x2, y2;
+  char pad[6];
 } LineDataT;
 
 static LineDataT vert[N];
-static WORD horiz[N];
-static UBYTE *linePos[2][SIZE];
-static UWORD *lineColor[2][SIZE];
-static UWORD tileColumn[HEIGHT];
+static short horiz[N];
+static u_char *linePos[2][SIZE];
+static u_short *lineColor[2][SIZE];
+static u_short tileColumn[HEIGHT];
 static PixmapT *texture;
-static UWORD tileColor[TILES * TILES];
-static UBYTE cycleStart[TILES * TILES];
+static u_short tileColor[TILES * TILES];
+static u_char cycleStart[TILES * TILES];
 static BitmapT *city;
 
-static void FloorPrecalc() {
-  WORD i;
+static void FloorPrecalc(void) {
+  short i;
 
   for (i = 0; i < N; i++) {
-    WORD x = (i - N / 2) * FAR_W / N;
-    WORD far_x = WIDTH / 2 + (x * 256) / FAR_Z;
-    WORD near_x = WIDTH / 2 + (x * 256) / NEAR_Z;
-    WORD near_y = HEIGHT - 1;
+    short x = (i - N / 2) * FAR_W / N;
+    short far_x = WIDTH / 2 + (x * 256) / FAR_Z;
+    short near_x = WIDTH / 2 + (x * 256) / NEAR_Z;
+    short near_y = HEIGHT - 1;
     
     if (near_x < 0) {
       near_y = FAR_Y + (0 - far_x) * ((HEIGHT - 1) - FAR_Y) / (near_x - far_x);
@@ -78,13 +78,13 @@ static void FloorPrecalc() {
   }
 
   for (i = 0; i < N; i++) {
-    WORD z = FAR_Z + ((NEAR_Z - FAR_Z) * i) / N;
+    short z = FAR_Z + ((NEAR_Z - FAR_Z) * i) / N;
     
     horiz[i] = HEIGHT * NEAR_Z / z;
   }
 }
 
-static void Load() {
+static void Load(void) {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
@@ -97,16 +97,16 @@ static void Load() {
   ITER(i, 0, 255, cycleStart[i] = random() & 63);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeleteBitmap(city);
   DeletePixmap(texture);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }
 
-static void MakeCopperList(CopListT *cp, WORD num) {
+static void MakeCopperList(CopListT *cp, short num) {
   CopInsT *ins;
-  WORD i, j;
+  short i, j;
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
@@ -114,7 +114,7 @@ static void MakeCopperList(CopListT *cp, WORD num) {
   CopLoadColor(cp, 0, 3, 0);
 
   for (i = 0; i < FAR_Y; i++) {
-    WORD s = i * 15 / FAR_Y;
+    short s = i * 15 / FAR_Y;
 
     CopWait(cp, Y(i), 0);
     CopSetRGB(cp, 3, ColorTransition(0, 0xADF, s));
@@ -125,10 +125,10 @@ static void MakeCopperList(CopListT *cp, WORD num) {
     for (j = 0; j < SIZE; j++) {
       ins = CopWait(cp, Y(i), CPX);
       if (i == FAR_Y)
-        linePos[num][j] = ((UBYTE*)ins) + 1;
+        linePos[num][j] = ((u_char*)ins) + 1;
       ins = CopSetRGB(cp, (j & 1) + 1, (j & 1) ? 0xff0 : 0x0ff);
       if (i == FAR_Y)
-        lineColor[num][j] = ((UWORD*)ins);
+        lineColor[num][j] = ((u_short*)ins);
     }
   }
 
@@ -137,8 +137,8 @@ static void MakeCopperList(CopListT *cp, WORD num) {
   CopEnd(cp);
 }
 
-static void Init() {
-  WORD i;
+static void Init(void) {
+  short i;
 
   EnableDMA(DMAF_BLITTER);
 
@@ -159,17 +159,17 @@ static void Init() {
   EnableDMA(DMAF_RASTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_RASTER | DMAF_BLITTER);
 
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
 }
 
-static __regargs void ClearLine(WORD k) {
-  UBYTE *pos = linePos[active][k];
-  UBYTE x = (k < 4 ? CPX : (X(WIDTH) >> 1)) | 1;
-  WORD n = (HEIGHT - FAR_Y) / 8;
+static __regargs void ClearLine(short k) {
+  u_char *pos = linePos[active][k];
+  u_char x = (k < 4 ? CPX : (X(WIDTH) >> 1)) | 1;
+  short n = (HEIGHT - FAR_Y) / 8;
 
   while (--n >= 0) {
     pos[STRIDE * 0] = x;
@@ -184,11 +184,11 @@ static __regargs void ClearLine(WORD k) {
   }
 }
 
-static void ClearFloor() {
+static void ClearFloor(void) {
   BitmapT *buffer = screen[active];
-  UWORD bltsize = ((buffer->height - FAR_Y) << 6) + (buffer->width >> 4);
-  APTR bltpt = buffer->planes[0] + FAR_Y * WIDTH / 8;
-  WORD i = SIZE / 2;
+  u_short bltsize = ((buffer->height - FAR_Y) << 6) + (buffer->width >> 4);
+  void *bltpt = buffer->planes[0] + FAR_Y * WIDTH / 8;
+  short i = SIZE / 2;
 
   WaitBlitter();
   custom->bltadat = 0;
@@ -207,11 +207,11 @@ static void ClearFloor() {
   custom->bltsize = bltsize;
 }
 
-static inline void CopperLine(UBYTE *pos, WORD x1, WORD y2, LONG delta) {
+static inline void CopperLine(u_char *pos, short x1, short y2, int delta) {
   if (y2 > FAR_Y) {
-    WORD n = y2 - FAR_Y + 1;
-    LONG x = (X(x1) / 2) << 16;
-    register UBYTE one asm("d7") = 1;
+    short n = y2 - FAR_Y + 1;
+    int x = (X(x1) / 2) << 16;
+    register u_char one asm("d7") = 1;
 
     while (--n >= 0) {
       *pos = swap16(x) | one;
@@ -221,11 +221,11 @@ static inline void CopperLine(UBYTE *pos, WORD x1, WORD y2, LONG delta) {
   }
 }
 
-static __regargs void DrawStripesCopper(WORD xo) {
+static __regargs void DrawStripesCopper(short xo) {
   /* Color switching with copper. */
-  WORD xi = (xo & (TILESIZE - 1));
-  UBYTE **activeLinePos = linePos[active];
-  WORD n = SIZE;
+  short xi = (xo & (TILESIZE - 1));
+  u_char **activeLinePos = linePos[active];
+  short n = SIZE;
 
   while (--n >= 0) {
     LineDataT *l = &vert[xi & (N - 1)];
@@ -234,10 +234,10 @@ static __regargs void DrawStripesCopper(WORD xo) {
   }
 }
 
-static __regargs void DrawStripes(WORD xo, WORD kxo) {
-  LineDataT first = { 0, 0, WIDTH - 1, FAR_Y };
+static __regargs void DrawStripes(short xo, short kxo) {
+  LineDataT first = { 0, 0, WIDTH - 1, FAR_Y, {0} };
   LineDataT *l0, *l1;
-  WORD k;
+  short k;
 
   xo &= TILESIZE - 1;
 
@@ -248,8 +248,8 @@ static __regargs void DrawStripes(WORD xo, WORD kxo) {
   k = SIZE;
 
   while (--k >= 0) {
-    WORD xi = xo + k * TILESIZE;
-    WORD col = kxo + k;
+    short xi = xo + k * TILESIZE;
+    short col = kxo + k;
 
     if (col & 1) {
       xi += 8;
@@ -279,8 +279,8 @@ static __regargs void DrawStripes(WORD xo, WORD kxo) {
   k = SIZE;
 
   while (--k >= 0) {
-    WORD xi = xo + k * TILESIZE;
-    WORD col = kxo + k;
+    short xi = xo + k * TILESIZE;
+    short col = kxo + k;
 
     if (col & 1) {
       xi -= 8;
@@ -303,12 +303,12 @@ static __regargs void DrawStripes(WORD xo, WORD kxo) {
   }
 }
 
-__regargs static void AssignColorToTileColumn(WORD k, WORD kxo);
+__regargs static void AssignColorToTileColumn(short k, short kxo);
 
-static void FillStripes(WORD kxo) {
+static void FillStripes(short kxo) {
   BitmapT *buffer = screen[active];
-  UWORD bltsize = ((buffer->height - FAR_Y) << 6) + (buffer->width >> 4);
-  APTR bltpt = buffer->planes[0] + buffer->bplSize - 1;
+  u_short bltsize = ((buffer->height - FAR_Y) << 6) + (buffer->width >> 4);
+  void *bltpt = buffer->planes[0] + buffer->bplSize - 1;
 
   WaitBlitter();
   custom->bltamod = 0;
@@ -324,7 +324,7 @@ static void FillStripes(WORD kxo) {
   bltpt += buffer->bplSize;
 
   {
-    WORD i = 0;
+    short i = 0;
 
     while (i < SIZE)
       AssignColorToTileColumn(i++, kxo);
@@ -336,18 +336,18 @@ static void FillStripes(WORD kxo) {
   custom->bltsize = bltsize;
 }
 
-static void HorizontalStripes(WORD yo) {
+static void HorizontalStripes(short yo) {
   BitmapT *buffer = screen[active];
-  WORD yi = yo & (TILESIZE - 1);
-  WORD k, y1, y2;
+  short yi = yo & (TILESIZE - 1);
+  short k, y1, y2;
 
   for (k = 0; k <= SIZE; k++, yi += TILESIZE) {
     y1 = horiz[(yi < N) ? yi : N - 1];
     y2 = horiz[(yi + 16 < N) ? yi + 16 : N - 1];
 
     if (y1 != y2) {
-      UWORD bltsize = ((y2 - y1) << 6) | (WIDTH >> 4);
-      APTR bltpt = buffer->planes[0] + y1 * WIDTH / 8;
+      u_short bltsize = ((y2 - y1) << 6) | (WIDTH >> 4);
+      void *bltpt = buffer->planes[0] + y1 * WIDTH / 8;
 
       WaitBlitter();
       custom->bltadat = 0;
@@ -366,16 +366,16 @@ static void HorizontalStripes(WORD yo) {
   }
 }
 
-__regargs static void CalculateTileColumns(WORD yo, WORD kyo) {
-  WORD k;
-  WORD y0 = FAR_Y;
-  WORD yi = (yo & (TILESIZE - 1)) + 16;
-  UWORD *tileCol = &tileColumn[y0];
+__regargs static void CalculateTileColumns(short yo, short kyo) {
+  short k;
+  short y0 = FAR_Y;
+  short yi = (yo & (TILESIZE - 1)) + 16;
+  u_short *tileCol = &tileColumn[y0];
 
   for (k = 0; k <= SIZE && y0 < HEIGHT; k++, yi += TILESIZE) {
-    WORD column = ((k + kyo) & (TILES - 1)) * 2;
-    WORD y1 = (yi < N) ? horiz[yi] : HEIGHT;
-    WORD n = y1 - y0;
+    short column = ((k + kyo) & (TILES - 1)) * 2;
+    short y1 = (yi < N) ? horiz[yi] : HEIGHT;
+    short n = y1 - y0;
 
     while (--n >= 0) 
       *tileCol++ = column;
@@ -384,47 +384,47 @@ __regargs static void CalculateTileColumns(WORD yo, WORD kyo) {
   }
 }
 
-#define STRIDE2 (STRIDE / sizeof(WORD))
+#define STRIDE2 (STRIDE / sizeof(short))
 
-__regargs static void AssignColorToTileColumn(WORD k, WORD kxo) {
-  UWORD *color = lineColor[active][k];
-  UWORD column = (k + kxo) & (TILES - 1);
-  APTR textureRow = &tileColor[column * TILES];
-  WORD *tileCol = &tileColumn[FAR_Y];
-  WORD n = (HEIGHT - FAR_Y) >> 3;
-  UWORD reg = 2 * (column & 1) + 0x182;
-  WORD c;
+__regargs static void AssignColorToTileColumn(short k, short kxo) {
+  u_short *color = lineColor[active][k];
+  u_short column = (k + kxo) & (TILES - 1);
+  void *textureRow = &tileColor[column * TILES];
+  u_short *tileCol = &tileColumn[FAR_Y];
+  short n = (HEIGHT - FAR_Y) >> 3;
+  u_short reg = 2 * (column & 1) + 0x182;
+  short c;
 
   while (--n >= 0) {
     color[0 + STRIDE2 * 0] = reg; c = *tileCol++;
-    color[1 + STRIDE2 * 0] = *(UWORD *)(textureRow + c);
+    color[1 + STRIDE2 * 0] = *(u_short *)(textureRow + c);
     color[0 + STRIDE2 * 1] = reg; c = *tileCol++;
-    color[1 + STRIDE2 * 1] = *(UWORD *)(textureRow + c);
+    color[1 + STRIDE2 * 1] = *(u_short *)(textureRow + c);
     color[0 + STRIDE2 * 2] = reg; c = *tileCol++;
-    color[1 + STRIDE2 * 2] = *(UWORD *)(textureRow + c);
+    color[1 + STRIDE2 * 2] = *(u_short *)(textureRow + c);
     color[0 + STRIDE2 * 3] = reg; c = *tileCol++;
-    color[1 + STRIDE2 * 3] = *(UWORD *)(textureRow + c);
+    color[1 + STRIDE2 * 3] = *(u_short *)(textureRow + c);
     color[0 + STRIDE2 * 4] = reg; c = *tileCol++;
-    color[1 + STRIDE2 * 4] = *(UWORD *)(textureRow + c);
+    color[1 + STRIDE2 * 4] = *(u_short *)(textureRow + c);
     color[0 + STRIDE2 * 5] = reg; c = *tileCol++;
-    color[1 + STRIDE2 * 5] = *(UWORD *)(textureRow + c);
+    color[1 + STRIDE2 * 5] = *(u_short *)(textureRow + c);
     color[0 + STRIDE2 * 6] = reg; c = *tileCol++;
-    color[1 + STRIDE2 * 6] = *(UWORD *)(textureRow + c);
+    color[1 + STRIDE2 * 6] = *(u_short *)(textureRow + c);
     color[0 + STRIDE2 * 7] = reg; c = *tileCol++;
-    color[1 + STRIDE2 * 7] = *(UWORD *)(textureRow + c);
+    color[1 + STRIDE2 * 7] = *(u_short *)(textureRow + c);
     color += 8 * STRIDE2;
   }
 }
 
-static void ControlTileColors() {
-  UWORD *src = texture->pixels, *dst = tileColor;
-  UBYTE *cycle = cycleStart;
-  WORD n = TILES * TILES;
+static void ControlTileColors(void) {
+  u_short *src = texture->pixels, *dst = tileColor;
+  u_char *cycle = cycleStart;
+  short n = TILES * TILES;
 
   while (--n >= 0) {
-    UWORD f = (frameCount / 2 + *cycle++) & 63;
-    UWORD c = *src++;
-    WORD r, g, b;
+    u_short f = (frameCount / 2 + *cycle++) & 63;
+    u_short c = *src++;
+    short r, g, b;
 
     if (f < 16) {
       r = ((c >> 4) & 0x0f0) | f;
@@ -448,15 +448,15 @@ static void ControlTileColors() {
   }
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
+static void Render(void) {
+  // int lines = ReadLineCounter();
 
   ControlTileColors();
   {
-    WORD xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
-    WORD yo = (N / 4) + normfx(COS(frameCount * 16) * (N / 4));
-    WORD kxo = 7 - xo * SIZE / N;
-    WORD kyo = 7 - yo * SIZE / N;
+    short xo = (N / 4) + normfx(SIN(frameCount * 16) * (N / 4));
+    short yo = (N / 4) + normfx(COS(frameCount * 16) * (N / 4));
+    short kxo = 7 - xo * SIZE / N;
+    short kyo = 7 - yo * SIZE / N;
 
     ClearFloor();
     DrawStripesCopper(xo);
@@ -466,11 +466,11 @@ static void Render() {
     FillStripes(kxo);
   }
 
-  // Log("floor: %ld\n", ReadLineCounter() - lines);
+  // Log("floor: %d\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

@@ -12,12 +12,11 @@
 #include "tasks.h"
 
 extern EffectT Effect;
-extern BOOL execOnly;
 
-LONG frameCount;
-LONG lastFrameCount;
+int frameCount;
+int lastFrameCount;
 
-static WORD kickVer;
+static short kickVer;
 static struct List PortsIntChain;
 static struct List CoperIntChain;
 static struct List VertbIntChain;
@@ -27,24 +26,24 @@ static struct List OrigTaskWait;
 
 static struct {
   struct View *view;
-  UWORD dmacon, intena, adkcon;
-  ULONG cacheBits;
+  u_short dmacon, intena, adkcon;
+  u_int cacheBits;
 } old;
 
-static void DummyRender() {}
-static BOOL ExitOnLMB() { return !LeftMouseButton(); }
+static void DummyRender(void) {}
+static bool ExitOnLMB(void) { return !LeftMouseButton(); }
 
 #define IDLETASK 0
 
 #if IDLETASK
-static void IdleTask() {
+static void IdleTask(void) {
   for (;;) {
     custom->color[0] = 0x00f;
   }
 }
 #endif
 
-void KillOS() {
+void KillOS(void) {
   Log("[Startup] Save AmigaOS state.\n");
 
   /* Allocate blitter. */
@@ -53,7 +52,6 @@ void KillOS() {
 
   /* No calls to any other library than exec beyond this point or expect
    * undefined behaviour including crashes. */
-  execOnly = TRUE;
   Forbid();
 
   /* Disable CPU caches. */
@@ -72,14 +70,14 @@ void KillOS() {
   old.intena = custom->intenar;
 
   /* Prohibit dma & interrupts. */
-  custom->adkcon = (UWORD)~ADKF_SETCLR;
-  custom->dmacon = (UWORD)~DMAF_SETCLR;
-  custom->intena = (UWORD)~INTF_SETCLR;
+  custom->adkcon = (u_short)~ADKF_SETCLR;
+  custom->dmacon = (u_short)~DMAF_SETCLR;
+  custom->intena = (u_short)~INTF_SETCLR;
   WaitVBlank();
 
   /* Clear all interrupt requests. Really. */
-  custom->intreq = (UWORD)~INTF_SETCLR;
-  custom->intreq = (UWORD)~INTF_SETCLR;
+  custom->intreq = (u_short)~INTF_SETCLR;
+  custom->intreq = (u_short)~INTF_SETCLR;
 
   /* Enable master switches...
    * .. and SOFTINT which is presumably used by Exec's scheduler. */
@@ -118,20 +116,20 @@ void KillOS() {
 
 ADD2INIT(KillOS, -20);
 
-void RestoreOS() {
+void RestoreOS(void) {
   Log("[Startup] Restore AmigaOS state.\n");
 
   /* Suspend multitasking. */
   Forbid();
 
   /* firstly... disable dma and interrupts that were used in Main */
-  custom->dmacon = (UWORD)~DMAF_SETCLR;
-  custom->intena = (UWORD)~INTF_SETCLR;
+  custom->dmacon = (u_short)~DMAF_SETCLR;
+  custom->intena = (u_short)~INTF_SETCLR;
   WaitVBlank();
 
   /* Clear all interrupt requests. Really. */
-  custom->intreq = (UWORD)~INTF_SETCLR;
-  custom->intreq = (UWORD)~INTF_SETCLR;
+  custom->intreq = (u_short)~INTF_SETCLR;
+  custom->intreq = (u_short)~INTF_SETCLR;
 
   /* Restore original task lists. */
   CopyMem(&OrigTaskReady, &SysBase->TaskReady, sizeof(struct List));
@@ -153,7 +151,7 @@ void RestoreOS() {
   custom->adkcon = old.adkcon | ADKF_SETCLR;
 
   /* Restore old copper list... */
-  custom->cop1lc = (ULONG)GfxBase->copinit;
+  custom->cop1lc = (u_int)GfxBase->copinit;
   WaitVBlank();
 
   /* ... and original view. */
@@ -167,7 +165,6 @@ void RestoreOS() {
 
   /* Restore multitasking. */
   Permit();
-  execOnly = FALSE;
 
   /* Deallocate blitter. */
   DisownBlitter();
@@ -176,17 +173,17 @@ void RestoreOS() {
 ADD2EXIT(RestoreOS, -20);
 
 /* VBlank event list. */
-struct List *VBlankEvent = &(struct List){};
+struct List *VBlankEvent = &(struct List){NULL, NULL, NULL, 0, 0};
 
 /* Wake up tasks asleep in wait for VBlank interrupt. */
-static LONG VBlankEventHandler() {
+static int VBlankEventHandler(void) {
   TaskSignalIntr(VBlankEvent);
   return 0;
 }
 
 INTERRUPT(VBlankWakeUp, 10, VBlankEventHandler, NULL);
 
-int main() {
+int main(void) {
 #if IDLETASK
   struct Task *idleTask = CreateTask("IdleTask", -10, IdleTask, 1024);
 #endif
@@ -209,7 +206,7 @@ int main() {
   lastFrameCount = ReadFrameCounter();
 
   while (Effect.HandleEvent()) {
-    LONG t = ReadFrameCounter();
+    int t = ReadFrameCounter();
     frameCount = t;
     Effect.Render();
     lastFrameCount = t;
@@ -227,9 +224,9 @@ int main() {
   return 0;
 }
 
-void SystemInfo() {
-  WORD kickRev;
-  WORD cpu = 0;
+void SystemInfo(void) {
+  short kickRev;
+  short cpu = 0;
 
   if (SysBase->AttnFlags & AFF_68060)
     cpu = 6;
@@ -244,34 +241,34 @@ void SystemInfo() {
 
   /* Based on WhichAmiga method. */
   {
-    APTR kickEnd = (APTR)0x1000000;
-    ULONG kickSize = *(ULONG *)(kickEnd - 0x14);
-    UWORD *kick = kickEnd - kickSize;
+    void *kickEnd = (void *)0x1000000;
+    u_int kickSize = *(u_int *)(kickEnd - 0x14);
+    u_short *kick = kickEnd - kickSize;
 
     kickVer = kick[6];
     kickRev = kick[7];
   }
 
-  Log("[Main] ROM: %ld.%ld, CPU: 680%ld0, CHIP: %ldkB, FAST: %ldkB\n",
-      (LONG)kickVer, (LONG)kickRev, (LONG)cpu,
-      (LONG)(AvailMem(MEMF_CHIP | MEMF_LARGEST) / 1024),
-      (LONG)(AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024));
+  Log("[Main] ROM: %d.%d, CPU: 680%d0, CHIP: %ldkB, FAST: %ldkB\n",
+      kickVer, kickRev, cpu,
+      AvailMem(MEMF_CHIP | MEMF_LARGEST) / 1024,
+      AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024);
 }
 
 ADD2INIT(SystemInfo, -50);
 
 typedef struct LibDesc {
   struct Library *base;
-  char *name;
+  STRPTR name;
 } LibDescT;
 
 extern LibDescT *__LIB_LIST__[];
 
 #define OSLIBVERSION 33
 
-void InitLibraries() {
+void InitLibraries(void) {
   LibDescT **list = __LIB_LIST__;
-  ULONG numbases = (ULONG)*list++;
+  u_int numbases = (u_int)*list++;
 
   while (numbases-- > 0) {
     LibDescT *lib = *list++;
@@ -284,9 +281,9 @@ void InitLibraries() {
 
 ADD2INIT(InitLibraries, -120);
 
-void KillLibraries() {
+void KillLibraries(void) {
   LibDescT **list = __LIB_LIST__;
-  ULONG numbases = (ULONG)*list++;
+  u_int numbases = (u_int)*list++;
 
   while (numbases-- > 0) {
     LibDescT *lib = *list++;

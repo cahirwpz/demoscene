@@ -5,9 +5,9 @@
 #include "io.h"
 
 typedef struct {
-  LONG size;
+  int size;
   BPTR next;
-  BYTE data[0];
+  char data[0];
 } HunkT;
 
 __regargs BPTR LoadExecutable(FileT *file);

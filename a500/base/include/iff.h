@@ -7,14 +7,14 @@
 #define ID_BODY MAKE_ID('B', 'O', 'D', 'Y')
 
 typedef struct IffHeader {
-  LONG magic;
-  LONG length;
-  LONG type;
+  int magic;
+  int length;
+  int type;
 } IffHeaderT;
 
 typedef struct IffChunk {
-  LONG type;
-  LONG length;
+  int type;
+  int length;
 } IffChunkT;
 
 typedef struct IffFile {
@@ -23,9 +23,9 @@ typedef struct IffFile {
   IffChunkT chunk;
 } IffFileT;
 
-__regargs void OpenIff(IffFileT *iff, CONST STRPTR filename);
-__regargs BOOL ParseChunk(IffFileT *iff);
-__regargs BOOL ReadChunk(IffFileT *iff, APTR ptr);
+__regargs void OpenIff(IffFileT *iff, const char *filename);
+__regargs bool ParseChunk(IffFileT *iff);
+__regargs bool ReadChunk(IffFileT *iff, void *ptr);
 __regargs void SkipChunk(IffFileT *iff);
 __regargs void CloseIff(IffFileT *iff);
 

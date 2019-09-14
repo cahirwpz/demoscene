@@ -3,28 +3,41 @@
 typedef struct {
   BitmapT *src;
   BitmapT *dst;
-  ULONG src_start;
-  ULONG dst_start;
-  UWORD size;
-  BOOL fast;
+  u_int src_start;
+  u_int dst_start;
+  u_short size;
+  bool fast;
 } StateT;
 
 static StateT state[1];
 
-void BlitterCopyAreaSetup(BitmapT *dst, UWORD x, UWORD y,
+#define sx area->x
+#define sy area->y
+#define sw area->w
+#define sh area->h
+
+#define START(x) (((x) & ~15) >> 3)
+#define ALIGN(x) START((x) + 15)
+
+/* This routine assumes following conditions:
+ *  - there's always enough space in `dst` to copy area from `src`
+ *  - at least one of `sx` and `dx` is aligned to word boundary 
+ */
+void BlitterCopyAreaSetup(BitmapT *dst, u_short dx, u_short dy,
                           BitmapT *src, Area2D *area)
 {
-  UWORD dxo = x & 15;
-  UWORD sxo = area->x & 15;
-  UWORD wo = (dxo + area->w) & 15;
-  BOOL reverse = dxo < sxo;
-  UWORD width = (reverse ? sxo : dxo) + area->w;
-  UWORD bytesPerRow = ((width + 15) & ~15) >> 3;
-  UWORD srcmod = src->bytesPerRow - bytesPerRow;
-  UWORD dstmod = dst->bytesPerRow - bytesPerRow;
-  UWORD bltafwm = FirstWordMask[dxo];
-  UWORD bltalwm = LastWordMask[wo];
-  UWORD bltshift = rorw(reverse ? sxo - dxo : dxo - sxo, 4);
+  u_short dxo = dx & 15;
+  u_short sxo = sx & 15;
+  bool forward = dxo >= sxo;
+  u_short xo = forward ? dxo : sxo;
+  u_short width = xo + sw;
+  u_short wo = width & 15;
+  u_short bytesPerRow = ALIGN(width);
+  u_short srcmod = src->bytesPerRow - bytesPerRow;
+  u_short dstmod = dst->bytesPerRow - bytesPerRow;
+  u_short bltafwm = FirstWordMask[dxo];
+  u_short bltalwm = LastWordMask[wo];
+  u_short bltshift = rorw(xo, 4);
 
   /*
    * TODO: Two cases exist where number of word for 'src' and 'dst' differ.
@@ -36,29 +49,34 @@ void BlitterCopyAreaSetup(BitmapT *dst, UWORD x, UWORD y,
 
   state->src = src;
   state->dst = dst;
-  state->src_start = ((area->x & ~15) >> 3) + area->y * src->bytesPerRow;
-  state->dst_start = ((x & ~15) >> 3) + y * dst->bytesPerRow;
-  state->size = (area->h << 6) | (bytesPerRow >> 1);
+  state->src_start = START(sx);
+  state->dst_start = START(dx);
+  state->size = (sh << 6) | (bytesPerRow >> 1);
 
-  if (reverse) {
-    state->src_start += (area->h - 1) * src->bytesPerRow + bytesPerRow - 2;
-    state->dst_start += (area->h - 1) * dst->bytesPerRow + bytesPerRow - 2;
+  if (forward) {
+    state->src_start += (short)sy * (short)src->bytesPerRow;
+    state->dst_start += (short)dy * (short)dst->bytesPerRow;
+  } else {
+    state->src_start += (short)(sy + sh - 1) * (short)src->bytesPerRow
+                      + bytesPerRow - 2;
+    state->dst_start += (short)(dy + sh - 1) * (short)dst->bytesPerRow
+                      + bytesPerRow - 2;
   }
 
-  state->fast = (dxo || wo) == 0;
+  state->fast = (xo == 0) && (wo == 0);
 
   WaitBlitter();
 
   if (!state->fast) {
     custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | NABC | ABNC | NANBC);
-    custom->bltcon1 = bltshift | (reverse ? BLITREVERSE : 0);
+    custom->bltcon1 = bltshift | (forward ? 0 : BLITREVERSE);
     custom->bltadat = -1;
-    if (reverse) {
-      custom->bltafwm = bltalwm;
-      custom->bltalwm = bltafwm;
-    } else {
+    if (forward) {
       custom->bltafwm = bltafwm;
       custom->bltalwm = bltalwm;
+    } else {
+      custom->bltafwm = bltalwm;
+      custom->bltalwm = bltafwm;
     }
     custom->bltbmod = srcmod;
     custom->bltcmod = dstmod;
@@ -73,10 +91,10 @@ void BlitterCopyAreaSetup(BitmapT *dst, UWORD x, UWORD y,
   }
 }
 
-__regargs void BlitterCopyAreaStart(WORD dstbpl, WORD srcbpl) {
-  APTR srcbpt = state->src->planes[srcbpl] + state->src_start;
-  APTR dstbpt = state->dst->planes[dstbpl] + state->dst_start;
-  UWORD bltsize = state->size;
+__regargs void BlitterCopyAreaStart(short dstbpl, short srcbpl) {
+  void *srcbpt = state->src->planes[srcbpl] + state->src_start;
+  void *dstbpt = state->dst->planes[dstbpl] + state->dst_start;
+  u_short bltsize = state->size;
 
   if (state->fast) {
     WaitBlitter();
@@ -94,10 +112,10 @@ __regargs void BlitterCopyAreaStart(WORD dstbpl, WORD srcbpl) {
   }
 }
 
-void BitmapCopyArea(BitmapT *dst, UWORD x, UWORD y,
+void BitmapCopyArea(BitmapT *dst, u_short x, u_short y,
                     BitmapT *src, Area2D *area)
 {
-  WORD i, n = min(dst->depth, src->depth);
+  short i, n = min(dst->depth, src->depth);
 
   BlitterCopyAreaSetup(dst, x, y, src, area);
   for (i = 0; i < n; i++)

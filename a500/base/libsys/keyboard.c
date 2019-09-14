@@ -117,7 +117,7 @@ static const char KeyMapUpper[128] = {
   [KEY_Z] 'Z',
   [KEY_X] 'X',
   [KEY_C] 'C',
-  [KEY_W] 'V',
+  [KEY_V] 'V',
   [KEY_B] 'B',
   [KEY_N] 'N',
   [KEY_M] 'M',
@@ -126,12 +126,12 @@ static const char KeyMapUpper[128] = {
   [KEY_SLASH] '?'
 };
 
-static UBYTE modifier;
+static u_char modifier;
 
-static __regargs void PushKeyEvent(UBYTE raw) {
+static __regargs void PushKeyEvent(u_char raw) {
   KeyEventT event;
-  UBYTE code = raw & 0x7f;
-  UBYTE mod;
+  u_char code = raw & 0x7f;
+  u_char mod;
 
   if (code == KEY_LSHIFT)
     mod = MOD_LSHIFT;
@@ -164,17 +164,17 @@ static __regargs void PushKeyEvent(UBYTE raw) {
   PushEvent((EventT *)&event);
 }
 
-static __interrupt LONG KeyboardIntHandler() {
+static __interrupt int KeyboardIntHandler(void) {
   if (ReadICR(ciaa) & CIAICRF_SP) {
     /* Read keyboard data register. */
-    UBYTE sdr = ciaa->ciasdr;
+    u_char sdr = ciaa->ciasdr;
     /* Set serial port to output mode. */
     ciaa->ciacra |= CIACRAF_SPMODE;
     /* Send handshake. */
     ciaa->ciasdr = 0;
     /* Save raw key in the queue. Filter out exceptional conditions. */
     {
-      UBYTE raw = ((sdr >> 1) | (sdr << 7)) ^ 0xff;
+      u_char raw = ((sdr >> 1) | (sdr << 7)) ^ 0xff;
       if (raw != 0x78 && /* Reset warning. */
           raw != 0xf9 && /* Last key code bad. */
           raw != 0xfa && /* Keyboard key buffer overflow. */
@@ -186,7 +186,7 @@ static __interrupt LONG KeyboardIntHandler() {
     /* Wait for at least 85us for handshake to be registered. */
     WaitTimerB(ciab, TIMER_US(85));
     /* Set back to input mode. */
-    ciaa->ciacra &= (UBYTE)~CIACRAF_SPMODE;
+    ciaa->ciacra &= (u_char)~CIACRAF_SPMODE;
   }
 
   return 0;
@@ -196,11 +196,11 @@ INTERRUPT(KeyboardInterrupt, -5, KeyboardIntHandler, NULL);
 
 void KeyboardInit() {
   /* Disable all CIA-A interrupts. */
-  ciaa->ciaicr = (UBYTE)(~CIAICRF_SETCLR);
+  ciaa->ciaicr = (u_char)(~CIAICRF_SETCLR);
   /* Enable keyboard interrupt.
    * The keyboard is attached to CIA-A serial port. */
   ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_SP;
-  ciaa->ciacra = (UBYTE)(~CIACRAF_SPMODE);
+  ciaa->ciacra = (u_char)(~CIACRAF_SPMODE);
 
   AddIntServer(INTB_PORTS, KeyboardInterrupt);
 }

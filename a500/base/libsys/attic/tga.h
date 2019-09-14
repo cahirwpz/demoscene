@@ -4,6 +4,6 @@
 #include "pixmap.h"
 
 __regargs PixmapT *
-LoadTGA(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags);
+LoadTGA(const char *filename, PixmapTypeT type, u_int memoryFlags);
 
 #endif

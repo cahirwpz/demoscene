@@ -9,13 +9,13 @@ extern char *__commandline;
 extern int __commandlen;
 
 int __nocommandline = 1;
-ULONG __oslibversion = 33;
+u_int __oslibversion = 33;
 
 int main() {
-  UWORD len = __commandlen;
-  STRPTR filename = __builtin_alloca(len);
+  u_short len = __commandlen;
+  char *filename = alloca(len);
 
-  CopyMem(__commandline, filename, len--);
+  memcpy(filename, __commandline, len--);
   filename[len] = '\0';
 
   {

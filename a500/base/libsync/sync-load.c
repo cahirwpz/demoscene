@@ -3,17 +3,17 @@
 #include "reader.h"
 #include "sync.h"
 
-static WORD ParseTrack(char **data, TrackT *track) {
-  WORD keys = 0;
-  WORD last_pos = -1;
-  BOOL done = FALSE;
+static short ParseTrack(char **data, TrackT *track) {
+  short keys = 0;
+  short last_pos = -1;
+  bool done = false;
 
   while (NextLine(data) && !done) {
     TrackTypeT type = 0;
-    WORD pos = -1, value = 0;
+    short pos = -1, value = 0;
 
     if (MatchString(data, "@end")) {
-      done = TRUE;
+      done = true;
     } else if (MatchString(data, "!ramp")) {
       type = TRACK_RAMP;
     } else if (MatchString(data, "!linear")) {
@@ -32,8 +32,8 @@ static WORD ParseTrack(char **data, TrackT *track) {
         return 0;
       }
       if (last_pos >= pos) {
-        Log("Frame number does not grow monotonically : %lx -> %lx!\n",
-            (LONG)last_pos, (LONG)pos);
+        Log("Frame number does not grow monotonically : %x -> %x!\n",
+            last_pos, pos);
         return 0;
       }
       if (!ReadShort(data, &value)) {
@@ -85,7 +85,7 @@ static TrackT *ReadTrack(char **data) {
   char name[80];
   char *bogus;
   TrackT *track = NULL;
-  WORD name_len, keys = 0;
+  short name_len, keys = 0;
 
   if (!(NextWord(data) && MatchString(data, "@track"))) {
     Log("No '@track' directive found\n");
@@ -124,13 +124,13 @@ __regargs TrackT **LoadTrackList(char *filename) {
   if (file) {
     TrackT **tmp = alloca(sizeof(TrackT *) * MAX_TRACKS);
     char *data = file;
-    WORD count;
+    short count;
 
     for (count = 0; *data && (count < MAX_TRACKS); count++) {
       TrackT *track = ReadTrack(&data);
 
       if (!track) {
-        Log("Error at byte %ld!\n", (LONG)(data - file));
+        Log("Error at byte %ld!\n", (ptrdiff_t)(data - file));
         while (count)
           MemFree(tmp[--count]);
         break;

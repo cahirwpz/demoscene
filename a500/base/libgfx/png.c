@@ -1,5 +1,3 @@
-#include <proto/exec.h>
-
 #include "io.h"
 #include "png.h"
 #include "memory.h"
@@ -15,29 +13,29 @@
 #define PNG_tRNS MAKE_ID('t', 'R', 'N', 'S')
 
 #define PNG_GRAYSCALE       0
-#define PNG_TRUECOLOR       2
+#define PNG_trueCOLOR       2
 #define PNG_INDEXED         3
 #define PNG_GRAYSCALE_ALPHA 4
-#define PNG_TRUECOLOR_ALPHA 6
+#define PNG_trueCOLOR_ALPHA 6
 
 static PixmapTypeT pngType[] = { _PM_GRAY, PM_NONE, _PM_RGB, _PM_CMAP };
 
 typedef struct {
-  ULONG width;
-  ULONG height;
-  UBYTE bit_depth;
-  UBYTE colour_type;
-  UBYTE compression_method;
-  UBYTE filter_method;
-  UBYTE interlace_method;
+  u_int width;
+  u_int height;
+  u_char bit_depth;
+  u_char colour_type;
+  u_char compression_method;
+  u_char filter_method;
+  u_char interlace_method;
 } IHDR;
 
 typedef struct {
-  UBYTE data[0];
+  u_char data[0];
 } IDAT;
 
 typedef struct {
-  UBYTE r, g, b;
+  u_char r, g, b;
 } __attribute__((packed)) RGB;
 
 typedef struct {
@@ -46,44 +44,44 @@ typedef struct {
 
 typedef union {
   struct {
-    UWORD v;
+    u_short v;
   } type0;
   struct {
-    UWORD r, g, b;
+    u_short r, g, b;
   } type2;
   struct {
-    ULONG length;
-    UBYTE alpha[0];
+    u_int length;
+    u_char alpha[0];
   } type3;
 } tRNS;
 
 struct PngChunk {
   PngT  *next;
-  ULONG id;
-  ULONG size;
-  UBYTE data[0];
+  u_int id;
+  u_int size;
+  u_char data[0];
 };
 
-#define BYTES(x) (((x) + 7) >> 3)
+#define charS(x) (((x) + 7) >> 3)
 
-static __regargs WORD GetBitsPerPixel(IHDR *ihdr) {
-  WORD bpp = ihdr->bit_depth;
+static __regargs short GetBitsPerPixel(IHDR *ihdr) {
+  short bpp = ihdr->bit_depth;
 
   if (ihdr->colour_type == PNG_GRAYSCALE_ALPHA)
     bpp *= 2;
-  else if (ihdr->colour_type == PNG_TRUECOLOR)
+  else if (ihdr->colour_type == PNG_trueCOLOR)
     bpp *= 3;
-  else if (ihdr->colour_type == PNG_TRUECOLOR_ALPHA)
+  else if (ihdr->colour_type == PNG_trueCOLOR_ALPHA)
     bpp *= 4;
 
   return bpp;
 }
 
-static inline WORD PaethPredictor(WORD a, WORD b, WORD c) {
-  WORD p = a + b - c;
-  WORD pa = p - a;
-  WORD pb = p - b;
-  WORD pc = p - c;
+static inline short PaethPredictor(short a, short b, short c) {
+  short p = a + b - c;
+  short pa = p - a;
+  short pb = p - b;
+  short pc = p - c;
 
   if (pa < 0)
     pa = -pa;
@@ -98,14 +96,15 @@ static inline WORD PaethPredictor(WORD a, WORD b, WORD c) {
 }
 
 static __regargs void 
-ReconstructImage(UBYTE *pixels, UBYTE *encoded, IHDR *ihdr) {
-  WORD i, j;
-  WORD bpp = GetBitsPerPixel(ihdr);
-  LONG row = BYTES(bpp * (WORD)ihdr->width);
-  LONG pixel = BYTES(bpp);
+ReconstructImage(u_char *pixels, u_char *encoded, IHDR *ihdr) {
+  u_short i;
+  short j;
+  short bpp = GetBitsPerPixel(ihdr);
+  int row = charS(bpp * (short)ihdr->width);
+  int pixel = charS(bpp);
 
   for (i = 0; i < ihdr->height; i++) {
-    UBYTE method = *encoded++;
+    u_char method = *encoded++;
 
     if (method == 2 && i == 0)
       method = 0;
@@ -120,22 +119,22 @@ ReconstructImage(UBYTE *pixels, UBYTE *encoded, IHDR *ihdr) {
      */
 
     if (method == 0) {
-      CopyMem(encoded, pixels, row);
+      memcpy(pixels, encoded, row);
       encoded += row; pixels += row;
     } else if (method == 1) {
-      UBYTE *left = pixels;
+      u_char *left = pixels;
       j = pixel - 1;
       do *pixels++ = *encoded++; while (--j != -1);
       j = row - pixel - 1;
       do *pixels++ = *encoded++ + *left++; while (--j != -1);
     } else if (method == 2) {
-      UBYTE *up = pixels - row;
+      u_char *up = pixels - row;
       j = row - 1;
       do *pixels++ = *encoded++ + *up++; while (--j != -1);
     } else if (method == 3) {
-      UBYTE *left = pixels;
+      u_char *left = pixels;
       if (i > 0) {
-        UBYTE *up = pixels - row;
+        u_char *up = pixels - row;
         j = pixel - 1;
         do *pixels++ = *encoded++ + *up++ / 2; while (--j != -1);
         j = row - pixel - 1;
@@ -147,9 +146,9 @@ ReconstructImage(UBYTE *pixels, UBYTE *encoded, IHDR *ihdr) {
         do *pixels++ = *encoded++ + *left++ / 2; while (--j != -1);
       }
     } else if (method == 4) {
-      UBYTE *left = pixels;
-      UBYTE *leftup = pixels - row;
-      UBYTE *up = pixels - row;
+      u_char *left = pixels;
+      u_char *leftup = pixels - row;
+      u_char *up = pixels - row;
       j = pixel - 1;
       do *pixels++ = *encoded++ + *up++; while (--j != -1);
       j = row - pixel - 1;
@@ -166,8 +165,8 @@ static __regargs PngT *MergeIDAT(PngT *png) {
 
   if (png && (png->id == PNG_IHDR)) {
     PngT *chk = png;
-    LONG size = 0;
-    LONG count = 0;
+    int size = 0;
+    int count = 0;
 
     while (chk) {
       if (chk->id == PNG_IDAT) {
@@ -180,7 +179,7 @@ static __regargs PngT *MergeIDAT(PngT *png) {
     }
 
     if (count > 1) {
-      Log("Number of IDAT chunks: %ld, merged size: %ld.\n", count, size);
+      Log("Number of IDAT chunks: %d, merged size: %d.\n", count, size);
 
       idat = MemAlloc(sizeof(PngT) + size, MEMF_PUBLIC);
       idat->size = size;
@@ -192,14 +191,14 @@ static __regargs PngT *MergeIDAT(PngT *png) {
        */
       {
         PngT *insert = NULL, *prev = NULL;
-        UBYTE *data = idat->data;
+        u_char *data = idat->data;
 
         chk = png;
 
         while (chk) {
           PngT *next = chk->next;
           if (chk->id == PNG_IDAT) {
-            CopyMem(chk->data, data, chk->size);
+            memcpy(data, chk->data, chk->size);
             data += chk->size;
             if (insert == NULL)
               insert = prev;
@@ -220,15 +219,14 @@ static __regargs PngT *MergeIDAT(PngT *png) {
   return idat;
 }
 
-__regargs PixmapT *PixmapFromPNG(PngT *png, ULONG memFlags) {
+__regargs PixmapT *PixmapFromPNG(PngT *png, u_int memFlags) {
   PixmapT *pixmap = NULL;
 
   if (png && (png->id == PNG_IHDR)) {
     IHDR *ihdr = (IHDR *)png->data;
 
-    Log("[PNG] width: %ld, height: %ld, bpp: %ld, type: %ld\n",
-        (LONG)ihdr->width, (LONG)ihdr->height, (LONG)ihdr->bit_depth,
-        (LONG)ihdr->colour_type);
+    Log("[PNG] width: %d, height: %d, bpp: %d, type: %d\n",
+        ihdr->width, ihdr->height, ihdr->bit_depth, ihdr->colour_type);
 
     if (ihdr->interlace_method != 0) {
       Panic("[PNG] Interlaced image not supported!\n");
@@ -249,14 +247,14 @@ __regargs PixmapT *PixmapFromPNG(PngT *png, ULONG memFlags) {
         type |= PM_DEPTH_16;
 
       {
-        WORD row = BYTES(GetBitsPerPixel(ihdr) * (WORD)ihdr->width);
-        LONG length = row * (WORD)ihdr->height;
+        short row = charS(GetBitsPerPixel(ihdr) * (short)ihdr->width);
+        int length = row * (short)ihdr->height;
         PngT *idat = MergeIDAT(png);
-        UBYTE *encoded = MemAlloc(length + ihdr->height, MEMF_PUBLIC);
+        u_char *encoded = MemAlloc(length + ihdr->height, MEMF_PUBLIC);
 
         pixmap = NewPixmap(ihdr->width, ihdr->height, type, memFlags);
 
-        Log("[PNG] Inflating IDAT chunk (%ld)\n", (LONG)length);
+        Log("[PNG] Inflating IDAT chunk (%d)\n", length);
         Inflate(idat->data + 2, encoded);
 
         Log("[PNG] Decoding pixels\n");
@@ -283,7 +281,7 @@ __regargs PaletteT *PaletteFromPNG(PngT *png) {
       if (png) {
         PLTE *plte = (PLTE *)png->data;
         pal = NewPalette(png->size / 3);
-        CopyMem(plte->colors, pal->colors, png->size);
+        memcpy(pal->colors, plte->colors, png->size);
       }
     }
   }
@@ -293,11 +291,11 @@ __regargs PaletteT *PaletteFromPNG(PngT *png) {
 
 #define ONSTACK(x) (&(x)), sizeof((x))
 
-__regargs PngT *ReadPNG(CONST STRPTR filename, ULONG pngFlags) {
+__regargs PngT *ReadPNG(const char *filename, u_int pngFlags) {
   PngT *root = NULL;
   FileT *fh = OpenFile(filename, IOF_BUFFERED);
 
-  struct { LONG size, id; } chk;
+  struct { u_int size, id; } chk;
 
   Log("[PNG] Reading '%s'\n", filename);
 
@@ -305,7 +303,7 @@ __regargs PngT *ReadPNG(CONST STRPTR filename, ULONG pngFlags) {
     PngT *prev = NULL, *this;
 
     while (FileRead(fh, ONSTACK(chk))) {
-      // Log("%4s : %ld\n", (STRPTR)&chk.id, chk.size);
+      // Log("%4s : %d\n", (char *)&chk.id, chk.size);
 
       if (chk.id == PNG_IEND)
         break;
@@ -355,7 +353,7 @@ __regargs void DeletePNG(PngT *png) {
 __regargs void PrintPNG(PngT *png) {
   if (png && (png->id == PNG_IHDR)) {
     while (png) {
-      Log("%4s : %ld\n", (STRPTR)&png->id, png->size);
+      Log("%4s : %d\n", (char *)&png->id, png->size);
       MemDump(png->data, min(png->size, 128));
       png = png->next;
     }
@@ -363,7 +361,7 @@ __regargs void PrintPNG(PngT *png) {
 }
 
 __regargs PixmapT *
-LoadPNG(CONST STRPTR filename, PixmapTypeT type, ULONG memoryFlags) {
+LoadPNG(const char *filename, PixmapTypeT type, u_int memoryFlags) {
   PngT *png = ReadPNG(filename, 0);
   PixmapT *pixmap = NULL;
 

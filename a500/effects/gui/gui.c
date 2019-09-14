@@ -13,7 +13,7 @@
 #define HEIGHT 256
 #define DEPTH 3
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 static BitmapT *screen;
 static CopListT *cp;
@@ -22,46 +22,49 @@ static CopInsT *sprptr[8];
 static FontT *font;
 
 /* Test program */
-static GUI_DEF(_b0, GUI_BUTTON(GUI_LABEL("Play")));
-static GUI_DEF(_b1, GUI_BUTTON(GUI_LABEL("Pause")));
-static GUI_DEF(_b2, GUI_BUTTON(GUI_LABEL("Stop")));
-static GUI_DEF(_b3, GUI_BUTTON(GUI_LABEL("Forward")));
-static GUI_DEF(_b4, GUI_BUTTON(GUI_LABEL("Reverse")));
-static GUI_DEF(_bg0, GUI_GROUP(WG_ITEM(_b0, 0, 0, -1, -1),
+static GUI_DEF(_b0, GUI_BUTTON(&GUI_LABEL("Play")));
+static GUI_DEF(_b1, GUI_BUTTON(&GUI_LABEL("Pause")));
+static GUI_DEF(_b2, GUI_BUTTON(&GUI_LABEL("Stop")));
+static GUI_DEF(_b3, GUI_BUTTON(&GUI_LABEL("Forward")));
+static GUI_DEF(_b4, GUI_BUTTON(&GUI_LABEL("Reverse")));
+static GUI_DEF(_bg0, GUI_GROUP(5,
+                               WG_ITEM(_b0, 0, 0, -1, -1),
                                WG_ITEM(_b1, 48, 20, -1, -1),
                                WG_ITEM(_b2, 96, 40, -1, -1),
                                WG_ITEM(_b3, 144, 60, -1, -1),
                                WG_ITEM(_b4, 192, 80, -1, -1)));
 
-static GUI_DEF(_rb0, GUI_RADIOBT(GUI_LABEL("A")));
-static GUI_DEF(_rb1, GUI_RADIOBT(GUI_LABEL("B")));
-static GUI_DEF(_rb2, GUI_RADIOBT(GUI_LABEL("C")));
-static GUI_DEF(_rb3, GUI_RADIOBT(GUI_LABEL("D")));
-static GUI_DEF(_bg1, GUI_GROUP(WG_ITEM(_rb0, 250, 14, -1, -1),
+static GUI_DEF(_rb0, GUI_RADIOBT(&GUI_LABEL("A")));
+static GUI_DEF(_rb1, GUI_RADIOBT(&GUI_LABEL("B")));
+static GUI_DEF(_rb2, GUI_RADIOBT(&GUI_LABEL("C")));
+static GUI_DEF(_rb3, GUI_RADIOBT(&GUI_LABEL("D")));
+static GUI_DEF(_bg1, GUI_GROUP(4,
+                               WG_ITEM(_rb0, 250, 14, -1, -1),
                                WG_ITEM(_rb1, 251, 28, -1, -1),
                                WG_ITEM(_rb2, 252, 42, -1, -1),
                                WG_ITEM(_rb3, 253, 56, -1, -1)));
 
-static GUI_DEF(_t0, GUI_TOGGLE(GUI_IMAGE("toggle_0.ilbm"),
-                               GUI_IMAGE("toggle_1.ilbm")));
+static GUI_DEF(_t0, GUI_TOGGLE(&GUI_IMAGE("toggle_0.ilbm"),
+                               &GUI_IMAGE("toggle_1.ilbm")));
 static GUI_DEF(_l0, GUI_LABEL_N(40));
 static GUI_DEF(_f0, GUI_FRAME(FRAME_FLAT, _l0));
-static GUI_DEF(_root, GUI_GROUP(WG_ITEM(_bg0, 0, 0, -1, -1),
+static GUI_DEF(_root, GUI_GROUP(4,
+                                WG_ITEM(_bg0, 0, 0, -1, -1),
                                 WG_ITEM(_bg1, 0, 0, -1, -1),
                                 WG_ITEM(_f0, 0, 192, WIDTH, -1),
                                 WG_ITEM(_t0, 160, 20, -1, -1)));
 static GUI_MAIN(_root);
 
-static void Load() {
+static void Load(void) {
   font = LoadFont("koi8r.8x8.font");
   GuiInit(gui, font);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeleteFont(font);
 }
 
-static void Init() {
+static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
   pointer = CloneSystemPointer();
@@ -91,7 +94,7 @@ static void Init() {
   GuiRedraw(gui, screen);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
   KeyboardKill();
@@ -102,15 +105,15 @@ static void Kill() {
   DeleteBitmap(screen);
 }
 
-static BOOL HandleEvent() {
+static bool HandleEvent(void) {
   EventT ev[1];
 
   if (!PopEvent(ev))
-    return TRUE;
+    return true;
 
   if (ev->type == EV_KEY) {
    if (!(ev->key.modifier & MOD_PRESSED) && ev->key.code == KEY_ESCAPE)
-      return FALSE;
+      return false;
   } else if (ev->type == EV_MOUSE) {
     GuiHandleMouseEvent(gui, &ev->mouse);
     UpdateSprite(pointer, X(ev->mouse.x), Y(ev->mouse.y));
@@ -122,7 +125,7 @@ static BOOL HandleEvent() {
 
       if (wg->type == WT_LABEL) {
         LabelT *lb = &wg->label;
-        static char *action[] = {"Entered", "Left", "Pressed", "Released"};
+        static const char *action[] = {"Entered", "Left", "Pressed", "Released"};
 
         LabelFmtStr(_l0, "%s button '%s'!", action[ev->gui.action], lb->text);
         GuiWidgetRedraw(gui, _l0);
@@ -130,7 +133,7 @@ static BOOL HandleEvent() {
     }
   }
 
-  return TRUE;
+  return true;
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, NULL, HandleEvent };

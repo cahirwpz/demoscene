@@ -1,22 +1,22 @@
 #include "blitter.h"
 
-void BlitterSetMaskArea(BitmapT *dst, WORD dstbpl, UWORD x, UWORD y,
-                        BitmapT *msk, Area2D *area, UWORD pattern)
+void BlitterSetMaskArea(BitmapT *dst, short dstbpl, u_short x, u_short y,
+                        BitmapT *msk, Area2D *area, u_short pattern)
 {
-  APTR dstbpt = dst->planes[dstbpl];
-  APTR mskbpt = msk->planes[0];
-  UWORD dstmod, mskmod, bltsize, bltshift;
+  void *dstbpt = dst->planes[dstbpl];
+  void *mskbpt = msk->planes[0];
+  u_short dstmod, mskmod, bltsize, bltshift;
 
   if (area) {
     /* TODO: handle unaligned mx */
-    WORD mx = area->x;
-    WORD my = area->y;
-    WORD mw = area->w;
-    WORD mh = area->h;
-    WORD bytesPerRow = ((mw + 15) & ~15) >> 3;
+    short mx = area->x;
+    short my = area->y;
+    short mw = area->w;
+    short mh = area->h;
+    short bytesPerRow = ((mw + 15) & ~15) >> 3;
 
-    dstbpt += ((x >> 3) & ~1) + (WORD)y * (WORD)dst->bytesPerRow;
-    mskbpt += ((mx >> 3) & ~1) + (WORD)my * (WORD)msk->bytesPerRow;
+    dstbpt += ((x >> 3) & ~1) + (short)y * (short)dst->bytesPerRow;
+    mskbpt += ((mx >> 3) & ~1) + (short)my * (short)msk->bytesPerRow;
     dstmod = dst->bytesPerRow - bytesPerRow;
     mskmod = msk->bytesPerRow - bytesPerRow;
     bltsize = (mh << 6) | (bytesPerRow >> 1);

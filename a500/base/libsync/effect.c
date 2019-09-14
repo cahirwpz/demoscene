@@ -3,19 +3,19 @@
 
 #if SHOW_MEMORY_STATS
 # include "memory.h"
-static void ShowMemStats() {
-  Log("[Memory] CHIP: %ld/%ld FAST: %ld/%ld\n",
+static void ShowMemStats(void) {
+  Log("[Memory] CHIP: %d/%d FAST: %d/%d\n",
       MemAvail(MEMF_CHIP|MEMF_LARGEST), MemAvail(MEMF_CHIP),
       MemAvail(MEMF_FAST|MEMF_LARGEST), MemAvail(MEMF_FAST));
 }
 #else
 # define ShowMemStats()
-#endif;
+#endif
 
 #if REMOTE_CONTROL
 # include "serial.h"
 static __regargs void SendEffectStatus(EffectT *effect) {
-  SerialPrint("ES %s %ld\n", effect->name, (LONG)effect->state);
+  SerialPrint("ES %s %d\n", effect->name, effect->state);
 }
 #else
 # define SendEffectStatus(x)

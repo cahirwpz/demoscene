@@ -6,27 +6,27 @@
 #include "io.h"
 #include "png.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 80
 #define HEIGHT 64
 #define DEPTH 4
 
 static BitmapT *screen[2];
-static UWORD active = 0;
-static UWORD *texture;
-static UWORD *chunky[2];
+static u_short active = 0;
+static u_short *texture;
+static u_short *chunky[2];
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 static PixmapT *uvmap;
 
 #define UVMapRenderSize (WIDTH * HEIGHT * 8 + 2)
-static void (*UVMapRender)(UWORD *chunky asm("a0"), UWORD *texture asm("a1"));
+static void (*UVMapRender)(u_short *chunky asm("a0"), u_short *texture asm("a1"));
 
-static void MakeUVMapRenderCode() {
-  UWORD *code = (APTR)UVMapRender;
-  UWORD *data = uvmap->pixels;
-  WORD n = WIDTH * HEIGHT;
+static void MakeUVMapRenderCode(void) {
+  u_short *code = (void *)UVMapRender;
+  u_short *data = uvmap->pixels;
+  short n = WIDTH * HEIGHT;
 
   while (--n >= 0) {
     *code++ = 0x30e9; /* 30e9 xxxx | move.w xxxx(a1),(a0)+ */
@@ -36,30 +36,30 @@ static void MakeUVMapRenderCode() {
   *code++ = 0x4e75; /* rts */
 }
 
-static UWORD bluetab[16] = {
+static u_short bluetab[16] = {
   0x0000, 0x0003, 0x0030, 0x0033, 0x0300, 0x0303, 0x0330, 0x0333,
   0x3000, 0x3003, 0x3030, 0x3033, 0x3300, 0x3303, 0x3330, 0x3333,
 };
 
-static UWORD greentab[16] = {
+static u_short greentab[16] = {
   0x0000, 0x0004, 0x0040, 0x0044, 0x0400, 0x0404, 0x0440, 0x0444,
   0x4000, 0x4004, 0x4040, 0x4044, 0x4400, 0x4404, 0x4440, 0x4444,
 };
 
-static UWORD redtab[16] = {
+static u_short redtab[16] = {
   0x0000, 0x0008, 0x0080, 0x0088, 0x0800, 0x0808, 0x0880, 0x0888,
   0x8000, 0x8008, 0x8080, 0x8088, 0x8800, 0x8808, 0x8880, 0x8888,
 };
 
-static void PixmapScramble(PixmapT *image, UWORD *texture) {
-  UBYTE *in = image->pixels;
-  UWORD *out = texture;
-  WORD n = 128 * 128;
+static void PixmapScramble(PixmapT *image, u_short *texture) {
+  u_char *in = image->pixels;
+  u_short *out = texture;
+  short n = 128 * 128;
 
   while (--n >= 0) {
-    WORD ri = *in++;
-    WORD gi = *in++;
-    WORD bi = gi;
+    short ri = *in++;
+    short gi = *in++;
+    short bi = gi;
 
     /* [-- -- -- -- 11 10  9  8  7  6  5  4  3  2  1  0] */
     /* [-- -- -- -- r0 r1 r2 r3 g0 g1 g2 g3 b0 b1 b2 b3] */
@@ -73,10 +73,10 @@ static void PixmapScramble(PixmapT *image, UWORD *texture) {
   }
 
   /* Extra half for cheap texture motion. */
-  memcpy((APTR)texture + 32768, texture, 32768);
+  memcpy((void *)texture + 32768, texture, 32768);
 }
 
-static void Load() {
+static void Load(void) {
   PixmapT *image = LoadPNG("texture-rgb.png", PM_RGB12, MEMF_PUBLIC);
   texture = MemAlloc(65536, MEMF_PUBLIC);
   PixmapScramble(image, texture);
@@ -85,24 +85,24 @@ static void Load() {
   uvmap = LoadPNG("uvmap-rgb.png", PM_GRAY16, MEMF_PUBLIC);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeletePixmap(uvmap);
   MemFree(texture);
 }
 
 static struct {
-  WORD phase;
-  APTR *bpl;
-  APTR chunky;
-} c2p = { 256, NULL };
+  short phase;
+  void **bpl;
+  void *chunky;
+} c2p = { 256, NULL, NULL };
 
 #define BPLSIZE ((WIDTH * 4) * HEIGHT / 8) /* 2560 bytes */
 #define BLTSIZE ((WIDTH * 4) * HEIGHT / 2) /* 10240 bytes */
 
-static void ChunkyToPlanar() {
-  APTR src = c2p.chunky;
-  APTR dst = c2p.chunky + BLTSIZE;
-  APTR *bpl = c2p.bpl;
+static void ChunkyToPlanar(void) {
+  void *src = c2p.chunky;
+  void *dst = c2p.chunky + BLTSIZE;
+  void **bpl = c2p.bpl;
 
   switch (c2p.phase) {
     case 0:
@@ -223,7 +223,7 @@ INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar, NULL);
 static struct Interrupt *oldBlitInt;
 
 static void MakeCopperList(CopListT *cp) {
-  WORD i;
+  short i;
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_HAM, 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
@@ -242,7 +242,7 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
 
@@ -267,7 +267,7 @@ static void Init() {
   EnableINT(INTF_BLIT);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER);
 
   DisableINT(INTF_BLIT);
@@ -283,10 +283,10 @@ static void Kill() {
   DeleteBitmap(screen[1]);
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
+static void Render(void) {
+  // int lines = ReadLineCounter();
   (*UVMapRender)(chunky[active], &texture[frameCount & 16383]);
-  // Log("uvmap-rgb: %ld\n", ReadLineCounter() - lines);
+  // Log("uvmap-rgb: %d\n", ReadLineCounter() - lines);
 
   c2p.phase = 0;
   c2p.chunky = chunky[active];
@@ -295,4 +295,4 @@ static void Render() {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

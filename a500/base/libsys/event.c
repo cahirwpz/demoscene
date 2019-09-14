@@ -4,7 +4,7 @@
 #define QUEUELEN 32
 
 static EventT queue[QUEUELEN];
-static UWORD head, tail, used;
+static u_short head, tail, used;
 
 __regargs void PushEvent(EventT *event) {
   if (used < QUEUELEN) {
@@ -14,13 +14,13 @@ __regargs void PushEvent(EventT *event) {
   }
 }
 
-__regargs BOOL PopEvent(EventT *event) {
-  BOOL present = FALSE;
+__regargs bool PopEvent(EventT *event) {
+  bool present = false;
 
   Disable();
 
   if (used > 0) {
-    present = TRUE;
+    present = true;
     *event = queue[head];
     head = (head + 1) & (QUEUELEN - 1);
     used--;

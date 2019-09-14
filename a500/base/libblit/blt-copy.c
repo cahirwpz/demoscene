@@ -3,23 +3,23 @@
 typedef struct {
   BitmapT *src;
   BitmapT *dst;
-  ULONG start;
-  UWORD size;
+  u_int start;
+  u_short size;
 } StateT;
 
 static StateT state[1];
 
 /* Supports any (x, y) and any source bitmap width. */
-void BlitterCopySetup(BitmapT *dst, UWORD x, UWORD y, BitmapT *src)
+void BlitterCopySetup(BitmapT *dst, u_short x, u_short y, BitmapT *src)
 {
   /* Calculate real blit width. It can be greater than src->bytesPerRow! */
-  UWORD width = (x & 15) + src->width;
-  UWORD bytesPerRow = ((width + 15) & ~15) >> 3;
-  UWORD srcmod = src->bytesPerRow - bytesPerRow;
-  UWORD dstmod = dst->bytesPerRow - bytesPerRow;
-  UWORD bltafwm = FirstWordMask[x & 15];
-  UWORD bltalwm = LastWordMask[width & 15];
-  UWORD bltshift = rorw(x & 15, 4);
+  u_short width = (x & 15) + src->width;
+  u_short bytesPerRow = ((width + 15) & ~15) >> 3;
+  u_short srcmod = src->bytesPerRow - bytesPerRow;
+  u_short dstmod = dst->bytesPerRow - bytesPerRow;
+  u_short bltafwm = FirstWordMask[x & 15];
+  u_short bltalwm = LastWordMask[width & 15];
+  u_short bltshift = rorw(x & 15, 4);
 
   state->src = src;
   state->dst = dst;
@@ -44,10 +44,10 @@ void BlitterCopySetup(BitmapT *dst, UWORD x, UWORD y, BitmapT *src)
   custom->bltdmod = dstmod;
 }
 
-__regargs void BlitterCopyStart(WORD dstbpl, WORD srcbpl) {
-  APTR srcbpt = state->src->planes[srcbpl];
-  APTR dstbpt = state->dst->planes[dstbpl] + state->start;
-  UWORD bltsize = state->size;
+__regargs void BlitterCopyStart(short dstbpl, short srcbpl) {
+  void *srcbpt = state->src->planes[srcbpl];
+  void *dstbpt = state->dst->planes[dstbpl] + state->start;
+  u_short bltsize = state->size;
 
   WaitBlitter();
 
@@ -58,8 +58,8 @@ __regargs void BlitterCopyStart(WORD dstbpl, WORD srcbpl) {
   custom->bltsize = bltsize;
 }
 
-__regargs void BitmapCopy(BitmapT *dst, UWORD x, UWORD y, BitmapT *src) {
-  WORD i, n = min(dst->depth, src->depth);
+__regargs void BitmapCopy(BitmapT *dst, u_short x, u_short y, BitmapT *src) {
+  short i, n = min(dst->depth, src->depth);
 
   BlitterCopySetup(dst, x, y, src);
   for (i = 0; i < n; i++)

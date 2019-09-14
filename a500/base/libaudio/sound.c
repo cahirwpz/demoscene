@@ -1,14 +1,14 @@
 #include "sound.h"
 #include "memory.h"
 
-__regargs SoundT *NewSound(ULONG length, UWORD rate) {
+__regargs SoundT *NewSound(u_int length, u_short rate) {
   SoundT *sound = MemAlloc(sizeof(SoundT), MEMF_PUBLIC|MEMF_CLEAR);
 
   sound->length = length;
   sound->rate = rate;
 
   if (length)
-    sound->sample = MemAlloc(sizeof(BYTE) * length, MEMF_CHIP);
+    sound->sample = MemAlloc(sizeof(char) * length, MEMF_CHIP);
 
   return sound;
 }

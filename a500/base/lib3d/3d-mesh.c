@@ -4,11 +4,11 @@
 #include "qsort.h"
 
 typedef struct ExtEdge {
-  WORD p0, p1;
-  WORD face, edge;
+  short p0, p1;
+  short face, edge;
 } ExtEdgeT;
 
-static __regargs LONG EdgeCompare(CONST APTR a, CONST APTR b) {
+static __regargs int EdgeCompare(const void *a, const void *b) {
   const EdgeT *e0 = a;
   const EdgeT *e1 = b;
 
@@ -27,7 +27,7 @@ static __regargs LONG EdgeCompare(CONST APTR a, CONST APTR b) {
 
 __regargs void CalculateEdges(Mesh3D *mesh) {
   ExtEdgeT *edge;
-  WORD count, edges;
+  short count, edges;
 
   /* Count edges. */
   {
@@ -46,14 +46,14 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
   {
     IndexListT **faces = mesh->face;
     IndexListT *face;
-    WORD *e = (WORD *)edge;
-    WORD i = 0;
+    short *e = (short *)edge;
+    short i = 0;
 
     while ((face = *faces++)) {
-      WORD *vertex = face->indices;
-      WORD n = face->count;
-      WORD p0 = vertex[n-1] * sizeof(Point3D);
-      WORD p1;
+      short *vertex = face->indices;
+      short n = face->count;
+      short p0 = vertex[n-1] * sizeof(Point3D);
+      short p1;
 
       while (--n >= 0) {
         p1 = *vertex++ * sizeof(Point3D);
@@ -81,7 +81,7 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
   {
     ExtEdgeT *head = edge;
     ExtEdgeT *next = edge + 1;
-    WORD n = count;
+    short n = count;
 
     edges = 0;
     head->edge = 0;
@@ -95,7 +95,7 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
     edges++;
   }
 
-  Log("[3D] Mesh has %ld edges\n", (LONG)edges);
+  Log("[3D] Mesh has %d edges\n", edges);
 
   mesh->edge = MemAlloc(sizeof(EdgeT) * edges, MEMF_PUBLIC);
   mesh->edges = edges;
@@ -105,7 +105,7 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
     EdgeT *dst = mesh->edge;
     ExtEdgeT *head = edge;
     ExtEdgeT *next = edge + 1;
-    WORD n = count;
+    short n = count;
 
     *dst++ = *(EdgeT *)head;
 
@@ -121,9 +121,9 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
   /* Set up pointers. */
   {
     IndexListT **faceEdges = MemAlloc(sizeof(IndexListT *) * (mesh->faces + 1) +
-                                      sizeof(WORD) * (count + mesh->faces),
+                                      sizeof(short) * (count + mesh->faces),
                                       MEMF_PUBLIC|MEMF_CLEAR);
-    WORD *faceEdgeData = (WORD *)&faceEdges[mesh->faces + 1];
+    short *faceEdgeData = (short *)&faceEdges[mesh->faces + 1];
     IndexListT **faces = mesh->face;
     IndexListT *face;
 
@@ -139,7 +139,7 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
   {
     IndexListT **faceEdges = mesh->faceEdge;
     ExtEdgeT *e = edge;
-    WORD n = count;
+    short n = count;
 
     while (--n >= 0) {
       IndexListT *faceEdge = faceEdges[e->face];
@@ -157,7 +157,7 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
  * vertices, so this procedure calculates a reverse map.
  */
 __regargs void CalculateVertexFaceMap(Mesh3D *mesh) {
-  WORD *faceCount = MemAlloc(sizeof(WORD) * mesh->vertices,
+  short *faceCount = MemAlloc(sizeof(short) * mesh->vertices,
                              MEMF_PUBLIC|MEMF_CLEAR);
 
   /* 
@@ -167,15 +167,15 @@ __regargs void CalculateVertexFaceMap(Mesh3D *mesh) {
   {
     IndexListT **faces = mesh->face;
     IndexListT *face;
-    WORD count = 0;
+    short count = 0;
 
     while ((face = *faces++)) {
-      WORD n = face->count;
-      WORD *v = face->indices;
+      short n = face->count;
+      short *v = face->indices;
 
       count += n;
       while (--n >= 0) {
-        WORD k = *v++;
+        short k = *v++;
         faceCount[k]++;
       }
     }
@@ -183,15 +183,15 @@ __regargs void CalculateVertexFaceMap(Mesh3D *mesh) {
     count += mesh->vertices;
 
     mesh->vertexFace = MemAlloc(sizeof(IndexListT *) * (mesh->vertices + 1) +
-                                sizeof(WORD) * count, MEMF_PUBLIC|MEMF_CLEAR);
+                                sizeof(short) * count, MEMF_PUBLIC|MEMF_CLEAR);
   }
 
   /* Set up map pointers. */
   {
     IndexListT **vertexFaces = mesh->vertexFace;
-    WORD *data = (WORD *)&mesh->vertexFace[mesh->vertices + 1];
-    WORD *count = faceCount;
-    WORD n = mesh->vertices;
+    short *data = (short *)&mesh->vertexFace[mesh->vertices + 1];
+    short *count = faceCount;
+    short n = mesh->vertices;
 
     while (--n >= 0) {
       *vertexFaces++ = (IndexListT *)data;
@@ -206,11 +206,11 @@ __regargs void CalculateVertexFaceMap(Mesh3D *mesh) {
     IndexListT **vertexFaces = mesh->vertexFace;
     IndexListT **faces = mesh->face;
     IndexListT *face;
-    WORD i = 0;
+    short i = 0;
 
     while ((face = *faces++)) {
-      WORD n = face->count;
-      WORD *v = face->indices;
+      short n = face->count;
+      short *v = face->indices;
 
       while (--n >= 0) {
         IndexListT *vf = vertexFaces[*v++];
@@ -227,21 +227,21 @@ __regargs void CalculateVertexNormals(Mesh3D *mesh) {
                                 MEMF_PUBLIC|MEMF_CLEAR);
 
   {
-    WORD *normal = (WORD *)mesh->vertexNormal;
-    APTR faceNormal = mesh->faceNormal;
+    short *normal = (short *)mesh->vertexNormal;
+    void *faceNormal = mesh->faceNormal;
 
     IndexListT **vertexFaces = mesh->vertexFace;
     IndexListT *vertexFace;
 
     while ((vertexFace = *vertexFaces++)) {
-      WORD n = vertexFace->count;
-      WORD *v = vertexFace->indices;
-      LONG nx = 0;
-      LONG ny = 0;
-      LONG nz = 0;
+      short n = vertexFace->count;
+      short *v = vertexFace->indices;
+      int nx = 0;
+      int ny = 0;
+      int nz = 0;
 
       while (--n >= 0) {
-        WORD *fn = (WORD *)(faceNormal + (WORD)(*v++ << 3));
+        short *fn = (short *)(faceNormal + (short)(*v++ << 3));
         nx += *fn++; ny += *fn++; nz += *fn++;
       }
 
@@ -269,26 +269,26 @@ __regargs void CalculateFaceNormals(Mesh3D *mesh) {
   {
     Point3D *vertex = mesh->vertex;
     IndexListT **faces = mesh->face;
-    WORD *normal = (WORD *)mesh->faceNormal;
+    short *normal = (short *)mesh->faceNormal;
     IndexListT *face;
 
     while ((face = *faces++)) {
-      WORD *v = face->indices;
+      short *v = face->indices;
 
       Point3D *p1 = &vertex[*v++];
       Point3D *p2 = &vertex[*v++];
       Point3D *p3 = &vertex[*v++];
 
-      LONG x, y, z;
-      WORD l;
+      int x, y, z;
+      short l;
 
       {
-        WORD ax = p1->x - p2->x;
-        WORD ay = p1->y - p2->y;
-        WORD az = p1->z - p2->z;
-        WORD bx = p2->x - p3->x;
-        WORD by = p2->y - p3->y;
-        WORD bz = p2->z - p3->z;
+        short ax = p1->x - p2->x;
+        short ay = p1->y - p2->y;
+        short az = p1->z - p2->z;
+        short bx = p2->x - p3->x;
+        short by = p2->y - p3->y;
+        short bz = p2->z - p3->z;
 
         x = ay * bz - by * az;
         y = az * bx - bz * ax;
@@ -296,15 +296,16 @@ __regargs void CalculateFaceNormals(Mesh3D *mesh) {
       }
 
       {
-        WORD nx = normfx(x);
-        WORD ny = normfx(y);
-        WORD nz = normfx(z);
+        short nx = normfx(x);
+        short ny = normfx(y);
+        short nz = normfx(z);
 
         l = isqrt(nx * nx + ny * ny + nz * nz);
       }
 
       if (l == 0)
-        Panic("[3D] Face normal vector has zero length!\n");
+        Panic("[3D] #%ld face normal vector has zero length!\n",
+              (ptrdiff_t)(faces - mesh->face));
 
       /* Normal vector has a unit length. */
       *normal++ = div16(x, l);

@@ -19,16 +19,16 @@ static void UnLoad() {
 }
 
 static void Init() {
-  WORD w = bitmap->width;
-  WORD h = bitmap->height;
-  WORD xs = X((320 - w) / 2);
-  WORD ys = Y((256 - h) / 2);
+  short w = bitmap->width;
+  short h = bitmap->height;
+  short xs = X((320 - w) / 2);
+  short ys = Y((256 - h) / 2);
 
   {
-    LONG lines = ReadLineCounter();
+    int lines = ReadLineCounter();
     BitmapUnpack(bitmap, BM_DISPLAYABLE);
     lines = ReadLineCounter() - lines;
-    Log("Bitmap unpacking took %ld raster lines.\n", (LONG)lines);
+    Log("Bitmap unpacking took %d raster lines.\n", lines);
   }
 
   CopInit(cp);

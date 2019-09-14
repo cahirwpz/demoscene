@@ -9,7 +9,7 @@
 #include "fx.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define S_WIDTH 320
 #define S_HEIGHT 256
@@ -25,30 +25,30 @@ static SpriteT *sprite[2][4];
 static CopInsT *sprptr[8];
 
 static BitmapT *background;
-static UWORD *uvmap;
-static UWORD active = 0;
+static u_short *uvmap;
+static u_short active = 0;
 static CopListT *cp;
 static PixmapT *texture;
 
 #define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
-void (*UVMapRender)(UBYTE *chunky asm("a0"),
-                    UBYTE *textureHi asm("a1"),
-                    UBYTE *textureLo asm("a2"));
+void (*UVMapRender)(u_char *chunky asm("a0"),
+                    u_char *textureHi asm("a1"),
+                    u_char *textureLo asm("a2"));
 
 static __regargs void PixmapToTexture(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
 {
-  UBYTE *data = image->pixels;
-  LONG size = image->width * image->height;
+  u_char *data = image->pixels;
+  int size = image->width * image->height;
   /* Extra halves for cheap texture motion. */
-  UWORD *hi0 = imageHi->pixels;
-  UWORD *hi1 = imageHi->pixels + size;
-  UWORD *lo0 = imageLo->pixels;
-  UWORD *lo1 = imageLo->pixels + size;
-  WORD n = size / 2;
+  u_short *hi0 = imageHi->pixels;
+  u_short *hi1 = imageHi->pixels + size;
+  u_short *lo0 = imageLo->pixels;
+  u_short *lo1 = imageLo->pixels + size;
+  short n = size / 2;
 
   while (--n >= 0) {
-    UBYTE a = *data++;
-    UWORD b = ((a << 8) | (a << 1)) & 0xAAAA;
+    u_char a = *data++;
+    u_short b = ((a << 8) | (a << 1)) & 0xAAAA;
     /* [a0 b0 a1 b1 a2 b2 a3 b3] => [a0 -- a2 -- a1 -- a3 --] */
     *hi0++ = b;
     *hi1++ = b;
@@ -58,11 +58,11 @@ static __regargs void PixmapToTexture(PixmapT *image, PixmapT *imageHi, PixmapT 
   }
 }
 
-static void MakeUVMapRenderCode() {
-  UWORD *code = (APTR)UVMapRender;
-  UWORD *data = uvmap;
-  WORD n = WIDTH * HEIGHT / 2;
-  WORD uv;
+static void MakeUVMapRenderCode(void) {
+  u_short *code = (void *)UVMapRender;
+  u_short *data = uvmap;
+  short n = WIDTH * HEIGHT / 2;
+  short uv;
 
   while (n--) {
     if ((uv = *data++) >= 0) {
@@ -81,13 +81,13 @@ static void MakeUVMapRenderCode() {
   *code++ = 0x4e75; /* rts */
 }
 
-static void Load() {
+static void Load(void) {
   background = LoadILBM("dragon-bg.ilbm");
   texture = LoadPNG("texture-15.png", PM_CMAP4, MEMF_PUBLIC);
   uvmap = LoadFile("ball.bin", MEMF_PUBLIC);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   MemFree(uvmap);
 
   DeletePalette(background->palette);
@@ -106,7 +106,7 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 
   {
-    WORD i;
+    short i;
 
     for (i = 0; i < 4; i++) {
       SpriteT *spr = sprite[active][i];
@@ -116,7 +116,7 @@ static void MakeCopperList(CopListT *cp) {
   }
 }
 
-static void Init() {
+static void Init(void) {
   bitmap = NewBitmap(WIDTH, HEIGHT, S_DEPTH);
   chunky = NewPixmap(WIDTH, HEIGHT, PM_GRAY4, MEMF_CHIP);
 
@@ -134,11 +134,11 @@ static void Init() {
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   {
-    WORD i, j;
+    short i, j;
 
     for (i = 0; i < 2; i++)
       for (j = 0; j < 4; j++)
-        sprite[i][j] = NewSprite(64, TRUE);
+        sprite[i][j] = NewSprite(64, true);
   }
 
   cp = NewCopList(80);
@@ -148,7 +148,7 @@ static void Init() {
   EnableDMA(DMAF_RASTER | DMAF_SPRITE);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
   DeleteCopList(cp);
@@ -157,7 +157,7 @@ static void Kill() {
   MemFree(UVMapRender);
 
   {
-    WORD i, j;
+    short i, j;
 
     for (i = 0; i < 2; i++)
       for (j = 0; j < 4; j++)
@@ -175,8 +175,8 @@ static void Kill() {
 #endif
 
 static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
-  APTR planes = output->planes[0];
-  APTR chunky = input->pixels;
+  void *planes = output->planes[0];
+  void *chunky = input->pixels;
 
   /* Swap 8x4, pass 1. */
   {
@@ -290,9 +290,9 @@ static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
 }
 
 static __regargs void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
-  APTR planes = input->planes[0];
-  WORD bltsize = (input->height << 6) | 1;
-  WORD i = 0;
+  void *planes = input->planes[0];
+  short bltsize = (input->height << 6) | 1;
+  short i = 0;
 
   WaitBlitter();
 
@@ -325,11 +325,11 @@ static __regargs void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
   }
 }
 
-static __regargs void PositionSprite(SpriteT **sprite, WORD xo, WORD yo) {
-  WORD x = X((S_WIDTH - WIDTH) / 2) + xo;
-  WORD y = Y((S_HEIGHT - HEIGHT) / 2) + yo;
+static __regargs void PositionSprite(SpriteT **sprite, short xo, short yo) {
+  short x = X((S_WIDTH - WIDTH) / 2) + xo;
+  short y = Y((S_HEIGHT - HEIGHT) / 2) + yo;
   CopInsT **ptr = sprptr;
-  WORD n = 4;
+  short n = 4;
 
   while (--n >= 0) {
     SpriteT *spr = *sprite++;
@@ -343,25 +343,25 @@ static __regargs void PositionSprite(SpriteT **sprite, WORD xo, WORD yo) {
   }
 }
 
-static void Render() {
-  WORD xo = normfx(SIN(frameCount * 16) * 128);
-  WORD yo = normfx(COS(frameCount * 16) * 100);
-  WORD offset = ((64 - xo) + (64 - yo) * 128) & 16383;
+static void Render(void) {
+  short xo = normfx(SIN(frameCount * 16) * 128);
+  short yo = normfx(COS(frameCount * 16) * 100);
+  short offset = ((64 - xo) + (64 - yo) * 128) & 16383;
 
   {
-    UBYTE *txtHi = textureHi->pixels + offset;
-    UBYTE *txtLo = textureLo->pixels + offset;
+    u_char *txtHi = textureHi->pixels + offset;
+    u_char *txtLo = textureLo->pixels + offset;
 
-    // LONG lines = ReadLineCounter();
+    // int lines = ReadLineCounter();
     (*UVMapRender)(chunky->pixels, txtHi, txtLo);
     ChunkyToPlanar(chunky, bitmap);
     BitmapToSprite(bitmap, sprite[active]);
     PositionSprite(sprite[active], xo / 2, yo / 2);
-    // Log("uvmap: %ld\n", ReadLineCounter() - lines);
+    // Log("uvmap: %d\n", ReadLineCounter() - lines);
   }
 
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

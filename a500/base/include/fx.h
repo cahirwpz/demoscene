@@ -7,25 +7,25 @@
 #define SIN_HALF_PI 0x400
 #define SIN_PI 0x800
 
-extern WORD sintab[];
+extern short sintab[];
 
-static inline WORD SIN(WORD a) {
+static inline short SIN(short a) {
   return getword(sintab, a & SIN_MASK);
 }
 
-static inline WORD COS(WORD a) {
+static inline short COS(short a) {
   return getword(sintab, (a + SIN_HALF_PI) & SIN_MASK);
 }
 
-static inline WORD normfx(LONG a) {
+static inline short normfx(int a) {
   asm("lsll #4,%0\n"
       "swap %0\n"
       : "+d" (a));
   return a;
 }
 
-static inline LONG shift12(WORD a) {
-  LONG b;
+static inline int shift12(short a) {
+  int b;
   asm("swap %0\n"
       "clrw %0\n"
       "asrl #4,%0\n"
@@ -34,11 +34,11 @@ static inline LONG shift12(WORD a) {
 }
 
 #define fx4i(i) \
-  (WORD)((WORD)(i) << 4)
+  (short)((u_short)(i) << 4)
 
 #define fx12f(f) \
-  (WORD)((FLOAT)(f) * 4096.0)
+  (short)((float)(f) * 4096.0)
 
-__regargs LONG isqrt(LONG x);
+__regargs int isqrt(int x);
 
 #endif

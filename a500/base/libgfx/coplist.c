@@ -1,7 +1,7 @@
 #include "coplist.h"
 #include "memory.h"
 
-__regargs CopListT *NewCopList(UWORD length) {
+__regargs CopListT *NewCopList(u_short length) {
   CopListT *list = MemAlloc(sizeof(CopListT) + length * sizeof(CopInsT),
                             MEMF_CHIP|MEMF_CLEAR);
 
@@ -13,9 +13,9 @@ __regargs CopListT *NewCopList(UWORD length) {
 }
 
 __regargs void DeleteCopList(CopListT *list) {
-  LONG unused = list->length - (list->curr - list->entry);
+  int unused = list->length - (list->curr - list->entry);
   if (unused >= 100)
-    Log("Unused copper list entries: %ld.\n", unused);
+    Log("Unused copper list entries: %d.\n", unused);
   MemFree(list);
 }
 
@@ -23,7 +23,7 @@ __regargs void CopListActivate(CopListT *list) {
   /* Enable copper DMA */
   custom->dmacon = DMAF_MASTER | DMAF_COPPER | DMAF_SETCLR;
   /* Write copper list address. */
-  custom->cop1lc = (ULONG)list->entry;
+  custom->cop1lc = (u_int)list->entry;
   /* Wait for vertical blank to make sure the list is active. */
   WaitVBlank();
 }
@@ -33,9 +33,9 @@ __regargs void CopInit(CopListT *list) {
   list->flags = 0;
 }
 
-__regargs CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {
+__regargs CopInsT *CopMoveWord(CopListT *list, u_short reg, u_short data) {
   CopInsT *ptr = list->curr;
-  UWORD *ins = (UWORD *)ptr;
+  u_short *ins = (u_short *)ptr;
 
   *ins++ = reg & 0x01fe;
   *ins++ = data;
@@ -44,42 +44,44 @@ __regargs CopInsT *CopMoveWord(CopListT *list, UWORD reg, UWORD data) {
   return ptr;
 }
 
-__regargs CopInsT *CopMoveLong(CopListT *list, UWORD reg, APTR data) {
+__regargs CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data) {
   CopInsT *ptr = list->curr;
-  UWORD *ins = (UWORD *)ptr;
+  u_short *ins = (u_short *)ptr;
 
   reg &= 0x01fe;
 
   *ins++ = reg;
-  *ins++ = (ULONG)data >> 16;
+  *ins++ = (u_int)data >> 16;
   *ins++ = reg + 2;
-  *ins++ = (ULONG)data;
+  *ins++ = (u_int)data;
 
   list->curr = (CopInsT *)ins;
   return ptr;
 }
 
 __regargs void CopEnd(CopListT *list) {
-  ULONG *ins = (ULONG *)list->curr;
+  u_int *ins = (u_int *)list->curr;
 
   *ins++ = 0xfffffffe;
 
   list->curr = (CopInsT *)ins;
 }
 
-__regargs CopInsT *CopWait(CopListT *list, UWORD vp, UWORD hp) {
+__regargs CopInsT *CopWait(CopListT *list, u_short vp, u_short hp) {
   CopInsT *ptr = list->curr;
-  APTR ins = ptr;
+  u_char *bp = (u_char *)ptr;
+  u_short *wp;
 
-  *((UBYTE *)ins)++ = vp;
-  *((UBYTE *)ins)++ = hp | 1;
-  *((UWORD *)ins)++ = 0xfffe;
+  *bp++ = vp;
+  *bp++ = hp | 1; 
+  wp = (u_short *)bp;
+  *wp++ = 0xfffe;
 
-  list->curr = (CopInsT *)ins;
+  list->curr = (CopInsT *)wp;
   return ptr;
 }
 
-__regargs CopInsT *CopWaitSafe(CopListT *list, UWORD vp, UWORD hp) {
+__regargs CopInsT *CopWaitSafe(CopListT *list, u_short vp, u_short hp) {
   if (!(list->flags & CLF_VPOVF) && (vp >= 256)) {
     /* Wait for last waitable position to control when overflow occurs. */
     CopWaitEOL(list, 255);
@@ -89,11 +91,11 @@ __regargs CopInsT *CopWaitSafe(CopListT *list, UWORD vp, UWORD hp) {
   return CopWait(list, vp, hp);
 }
 
-__regargs CopInsT *CopWaitMask(CopListT *list, UWORD vp, UWORD hp,
-                               UWORD vpmask asm("d2"), UWORD hpmask asm("d3"))
+__regargs CopInsT *CopWaitMask(CopListT *list, u_short vp, u_short hp,
+                               u_short vpmask asm("d2"), u_short hpmask asm("d3"))
 {
   CopInsT *ptr = list->curr;
-  UBYTE *ins = (UBYTE *)ptr;
+  u_char *ins = (u_char *)ptr;
 
   *ins++ = vp;
   *ins++ = hp | 1;
@@ -104,23 +106,25 @@ __regargs CopInsT *CopWaitMask(CopListT *list, UWORD vp, UWORD hp,
   return ptr;
 }
 
-__regargs CopInsT *CopSkip(CopListT *list, UWORD vp, UWORD hp) {
+__regargs CopInsT *CopSkip(CopListT *list, u_short vp, u_short hp) {
   CopInsT *ptr = list->curr;
-  APTR ins = ptr;
+  u_char *bp = (u_char *)ptr;
+  u_short *wp;
 
-  *((UBYTE *)ins)++ = vp;
-  *((UBYTE *)ins)++ = hp | 1;
-  *((UWORD *)ins)++ = 0xffff;
+  *bp++ = vp;
+  *bp++ = hp | 1;
+  wp = (u_short *)bp;
+  *wp++ = 0xffff;
 
-  list->curr = (CopInsT *)ins;
+  list->curr = (CopInsT *)wp;
   return ptr;
 }
 
-__regargs CopInsT *CopSkipMask(CopListT *list, UWORD vp, UWORD hp,
-                               UWORD vpmask asm("d2"), UWORD hpmask asm("d3"))
+__regargs CopInsT *CopSkipMask(CopListT *list, u_short vp, u_short hp,
+                               u_short vpmask asm("d2"), u_short hpmask asm("d3"))
 {
   CopInsT *ptr = (CopInsT *)list->curr;
-  UBYTE *ins = (UBYTE *)ptr;
+  u_char *ins = (u_char *)ptr;
 
   *ins++ = vp;
   *ins++ = hp | 1;
@@ -131,28 +135,28 @@ __regargs CopInsT *CopSkipMask(CopListT *list, UWORD vp, UWORD hp,
   return ptr;
 }
 
-__regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, UWORD start) {
+__regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, u_short start) {
   CopInsT *ptr = list->curr;
-  UWORD *ins = (UWORD *)ptr;
-  UBYTE *c = (UBYTE *)palette->colors;
-  WORD n = min(palette->count, (UWORD)(32 - start)) - 1;
+  u_short *ins = (u_short *)ptr;
+  u_char *c = (u_char *)palette->colors;
+  short n = min(palette->count, (u_short)(32 - start)) - 1;
 
   do {
-    UBYTE r = *c++ & 0xf0;
-    UBYTE g = *c++ & 0xf0;
-    UBYTE b = *c++ & 0xf0;
+    u_char r = *c++ & 0xf0;
+    u_char g = *c++ & 0xf0;
+    u_char b = *c++ & 0xf0;
 
     *ins++ = CSREG(color[start++]);
-    *ins++ = (r << 4) | (UBYTE)(g | (b >> 4));
+    *ins++ = (r << 4) | (u_char)(g | (b >> 4));
   } while (--n != -1);
 
   list->curr = (CopInsT *)ins;
   return ptr;
 }
 
-__regargs CopInsT *CopLoadColor(CopListT *list, UWORD start, UWORD end, UWORD color) {
+__regargs CopInsT *CopLoadColor(CopListT *list, u_short start, u_short end, u_short color) {
   CopInsT *ptr = list->curr;
-  UWORD *ins = (UWORD *)ptr;
+  u_short *ins = (u_short *)ptr;
 
   while (start <= end) {
     *ins++ = CSREG(color[start++]);
@@ -163,30 +167,30 @@ __regargs CopInsT *CopLoadColor(CopListT *list, UWORD start, UWORD end, UWORD co
   return ptr;
 }
 
-__regargs CopInsT *CopSetColor(CopListT *list, WORD i, ColorT *color) {
-  UBYTE *c = (UBYTE *)color;
-  UBYTE r = *c++ & 0xf0;
-  UBYTE g = *c++ & 0xf0;
-  UBYTE b = *c++ & 0xf0;
+__regargs CopInsT *CopSetColor(CopListT *list, short i, ColorT *color) {
+  u_char *c = (u_char *)color;
+  u_char r = *c++ & 0xf0;
+  u_char g = *c++ & 0xf0;
+  u_char b = *c++ & 0xf0;
 
-  return CopMove16(list, color[i], (r << 4) | (UBYTE)(g | (b >> 4)));
+  return CopMove16(list, color[i], (r << 4) | (u_char)(g | (b >> 4)));
 }
 
-__regargs void CopSetupMode(CopListT *list, UWORD mode, UWORD depth) {
+__regargs void CopSetupMode(CopListT *list, u_short mode, u_short depth) {
   CopMove16(list, bplcon0, BPLCON0_BPU(depth) | BPLCON0_COLOR | mode);
   CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2 | BPLCON2_PF2PRI);
   CopMove16(list, bplcon3, 0);
 }
 
 /* Arguments must be always specified in low resolution coordinates. */
-__regargs void CopSetupDisplayWindow(CopListT *list, UWORD mode, 
-                                     UWORD xs, UWORD ys, UWORD w, UWORD h)
+__regargs void CopSetupDisplayWindow(CopListT *list, u_short mode, 
+                                     u_short xs, u_short ys, u_short w, u_short h)
 {
   /* vstart  $00 ..  $ff */
   /* hstart  $00 ..  $ff */
   /* vstop   $80 .. $17f */
   /* hstop  $100 .. $1ff */
-  UBYTE xe, ye;
+  u_char xe, ye;
 
   if (mode & MODE_HIRES)
     w >>= 1;
@@ -200,10 +204,10 @@ __regargs void CopSetupDisplayWindow(CopListT *list, UWORD mode,
   CopMove16(list, diwstop, (ye << 8) | xe);
 }
 
-__regargs void CopSetupBitplaneFetch(CopListT *list, UWORD mode,
-                                     UWORD xs, UWORD w)
+__regargs void CopSetupBitplaneFetch(CopListT *list, u_short mode,
+                                     u_short xs, u_short w)
 {
-  UBYTE ddfstrt, ddfstop;
+  u_char ddfstrt, ddfstop;
 
   /* DDFSTRT and DDFSTOP have resolution of 4 clocks.
    *
@@ -242,12 +246,12 @@ __regargs void CopSetupBitplaneFetch(CopListT *list, UWORD mode,
 }
  
 __regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
-                                 BitmapT *bitmap, UWORD depth) 
+                                 BitmapT *bitmap, u_short depth) 
 {
   {
-    APTR *planes = bitmap->planes;
-    WORD n = depth - 1;
-    WORD i = 0;
+    void **planes = bitmap->planes;
+    short n = depth - 1;
+    short i = 0;
 
     do {
       CopInsT *ins = CopMove32(list, bplpt[i++], *planes++);
@@ -258,24 +262,25 @@ __regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
   }
 
   {
-    WORD modulo = 0;
+    short modulo = 0;
 
     if (bitmap->flags & BM_INTERLEAVED)
-      modulo = (WORD)bitmap->bytesPerRow * (WORD)(depth - 1);
+      modulo = (short)bitmap->bytesPerRow * (short)(depth - 1);
 
     CopMove16(list, bpl1mod, modulo);
     CopMove16(list, bpl2mod, modulo);
   }
 }
 
-void CopSetupBitplaneArea(CopListT *list, UWORD mode, UWORD depth,
-                          BitmapT *bitmap, WORD x, WORD y, Area2D *area)
+void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
+                          BitmapT *bitmap, short x, short y __unused,
+                          Area2D *area)
 {
-  APTR *planes = bitmap->planes;
-  LONG start;
-  WORD modulo;
-  WORD w;
-  WORD i;
+  void **planes = bitmap->planes;
+  int start;
+  short modulo;
+  short w;
+  short i;
 
   if (area) {
     w = (area->w + 15) & ~15;
@@ -300,8 +305,8 @@ void CopSetupBitplaneArea(CopListT *list, UWORD mode, UWORD depth,
   CopSetupBitplaneFetch(list, mode, x, w);
 }
 
-__regargs void CopUpdateBitplanes(CopInsT **bplptr, BitmapT *bitmap, WORD n) {
-  APTR *planes = bitmap->planes;
+__regargs void CopUpdateBitplanes(CopInsT **bplptr, BitmapT *bitmap, short n) {
+  void **planes = bitmap->planes;
 
   while (--n >= 0)
     CopInsSet32(*bplptr++, *planes++);

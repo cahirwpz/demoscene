@@ -6,7 +6,7 @@
 #include "gfx.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -15,7 +15,7 @@ STRPTR __cwdpath = "data";
 static PixmapT *colors;
 static CopListT *cp[2];
 static CopInsT *copins[2][HEIGHT];
-static WORD active = 1;
+static short active = 1;
 
 #include "stripes.c"
 
@@ -28,26 +28,26 @@ static WORD active = 1;
 #define CHEIGHT (MAX_W - MIN_W + 3)
 #define CWIDTH (WIDTH + 64)
 
-static UBYTE *cache[STEP];
-static LONG offsets[HEIGHT];
+static u_char *cache[STEP];
+static int offsets[HEIGHT];
 
-static UWORD shifts[16] = {
+static u_short shifts[16] = {
   0xFF, 0xEE, 0xDD, 0xCC, 0xBB, 0xAA, 0x99, 0x88,
   0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00,
 };
 
-void CalcLines() {
-  WORD s;
+void CalcLines(void) {
+  short s;
 
   for (s = 0; s < STEP; s++) {
-    UBYTE *line = cache[s];
+    u_char *line = cache[s];
 
-    WORD i, j;
+    short i, j;
 
     for (j = 0; j <= (MAX_W - MIN_W); j++) {
-      WORD w = MIN_W + j;
-      WORD x = s;
-      WORD c = 0;
+      short w = MIN_W + j;
+      short x = s;
+      short c = 0;
 
       for (i = 0; i < CWIDTH; i++) {
         if (c)
@@ -68,26 +68,26 @@ void CalcLines() {
   }
 
   {
-    LONG *offset = offsets;
-    WORD *stripe = stripes;
-    WORD y;
+    int *offset = offsets;
+    short *stripe = stripes;
+    short y;
 
     for (y = 0; y < HEIGHT; y++) {
-      WORD w = *stripe++;
-      *offset++ = (w - MIN_W) * (WORD)(CWIDTH / 8);
+      short w = *stripe++;
+      *offset++ = (w - MIN_W) * (short)(CWIDTH / 8);
     }
   }
 }
 
-static void Load() {
-  WORD s;
+static void Load(void) {
+  short s;
   for (s = 0; s < STEP; s++)
     cache[s] = MemAlloc(CWIDTH * CHEIGHT / 8, MEMF_CHIP | MEMF_CLEAR);
   colors = LoadPNG("colors.png", PM_RGB12, MEMF_PUBLIC);
 }
 
-static void UnLoad() {
-  WORD s;
+static void UnLoad(void) {
+  short s;
 
   DeletePixmap(colors);
   for (s = 0; s < STEP; s++) 
@@ -95,8 +95,8 @@ static void UnLoad() {
 }
 
 static void MakeCopperList(CopListT *cp, CopInsT **ins) {
-  WORD i;
-  APTR data = cache[0];
+  short i;
+  void *data = cache[0];
 
   CopInit(cp);
   CopSetupMode(cp, MODE_LORES, DEPTH);
@@ -115,7 +115,7 @@ static void MakeCopperList(CopListT *cp, CopInsT **ins) {
   CopEnd(cp);
 }
 
-static void Init() {
+static void Init(void) {
   CalcLines();
 
   cp[0] = NewCopList(50 + HEIGHT * 8);
@@ -126,26 +126,26 @@ static void Init() {
   EnableDMA(DMAF_RASTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_RASTER);
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
 }
 
-static void RenderPipes() {
-  UWORD *pixels = (UWORD *)colors->pixels;
+static void RenderPipes(void) {
+  u_short *pixels = (u_short *)colors->pixels;
   CopInsT **ins_tab = copins[active];
-  LONG *offset = offsets;
-  WORD *stripe = stripes;
-  WORD i;
-  register WORD frame = frameCount;
-  register LONG center asm("d7") = - WIDTH * STEP / 2;
+  int *offset = offsets;
+  short *stripe = stripes;
+  short i;
+  register short frame = frameCount;
+  register int center asm("d7") = - WIDTH * STEP / 2;
 
   for (i = 0; i < HEIGHT; i++) {
     CopInsT *ins = *ins_tab++;
-    WORD w = *stripe++;
-    LONG x = ((WORD)w * (WORD)frame) >> 3;
-    WORD _x, _c;
+    short w = *stripe++;
+    int x = ((short)w * (short)frame) >> 3;
+    short _x, _c;
 
     x += center;
 
@@ -165,10 +165,10 @@ static void RenderPipes() {
 
     /* Set bitplane line to display */
     {
-      APTR line;
-      WORD off;
+      void *line;
+      short off;
 
-      line = (APTR)getlong(cache, _x & (STEP - 1));
+      line = (void *)getlong((void *)cache, _x & (STEP - 1));
       line += *offset++;
 
       _x = _x >> STEP_SHIFT;
@@ -189,8 +189,8 @@ static void RenderPipes() {
 
     /* Stripes colouring */
     {
-      WORD c0 = *pixels++;
-      WORD c1 = *pixels++;
+      short c0 = *pixels++;
+      short c1 = *pixels++;
 
       if (_c & 1) swapr(c0, c1);
 
@@ -200,14 +200,14 @@ static void RenderPipes() {
   }
 }
 
-static void Render() {
-  //LONG lines = ReadLineCounter();
+static void Render(void) {
+  //int lines = ReadLineCounter();
   RenderPipes();
-  //Log("multipipe: %ld\n", ReadLineCounter() - lines);
+  //Log("multipipe: %d\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

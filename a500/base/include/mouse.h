@@ -8,7 +8,7 @@
 #define LMB_RELEASED 4
 #define RMB_RELEASED 8
 
-__regargs void MouseInit(WORD minX, WORD minY, WORD maxX, WORD maxY);
-void MouseKill();
+__regargs void MouseInit(short minX, short minY, short maxX, short maxY);
+void MouseKill(void);
 
 #endif

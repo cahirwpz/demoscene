@@ -7,7 +7,7 @@
 #include "ilbm.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH  320
 #define HEIGHT 256
@@ -18,21 +18,21 @@ static PaletteT *palette;
 static BitmapT *screen;
 static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
-static WORD plane, planeC;
+static short plane, planeC;
 
-static void Load() {
+static void Load(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   shape = LoadShape("night.2d");
   palette = LoadPalette("shapes-pal.ilbm");
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   DeleteShape(shape);
   DeleteBitmap(screen);
   DeletePalette(palette);
 }
 
-static void Init() {
+static void Init(void) {
   /* Set up clipping window. */
   ClipWin.minX = fx4i(0);
   ClipWin.maxX = fx4i(319);
@@ -56,7 +56,7 @@ static void Init() {
   EnableDMA(DMAF_RASTER);
 }
 
-static void Kill() {
+static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   DeleteCopList(cp);
@@ -64,9 +64,9 @@ static void Kill() {
 
 static Point2D tmpPoint[2][16];
 
-static void DrawPolygon(Point2D *out, WORD n) {
-  WORD *pos = (WORD *)out;
-  WORD x1, y1, x2, y2;
+static void DrawPolygon(Point2D *out, short n) {
+  short *pos = (short *)out;
+  short x1, y1, x2, y2;
 
   x1 = *pos++ >> 4;
   y1 = *pos++ >> 4;
@@ -83,20 +83,20 @@ static void DrawPolygon(Point2D *out, WORD n) {
 static __regargs void DrawShape(ShapeT *shape) {
   IndexListT **polygons = shape->polygon;
   Point2D *point = shape->viewPoint;
-  UBYTE *flags = shape->viewPointFlags;
-  WORD n = shape->polygons;
+  u_char *flags = shape->viewPointFlags;
+  short n = shape->polygons;
 
   while (--n >= 0) {
-    UBYTE clipFlags = 0;
-    UBYTE outside = 0xff;
+    u_char clipFlags = 0;
+    u_char outside = 0xff;
 
     Point2D *out = tmpPoint[0];
-    WORD *vertex = (WORD *)*polygons++;
-    WORD n = (*vertex++) + 1;
-    WORD m = n;
+    short *vertex = (short *)*polygons++;
+    short n = (*vertex++) + 1;
+    short m = n;
 
     while (--m >= 0) {
-      WORD k = *vertex++;
+      short k = *vertex++;
       clipFlags |= flags[k];
       outside &= flags[k];
       *out++ = point[k];
@@ -110,9 +110,9 @@ static __regargs void DrawShape(ShapeT *shape) {
   }
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
-  WORD i, a = frameCount * 64;
+static void Render(void) {
+  // int lines = ReadLineCounter();
+  short i, a = frameCount * 64;
   Matrix2D t;
 
   BlitterClear(screen, plane);
@@ -125,10 +125,10 @@ static void Render() {
   BlitterLineSetup(screen, plane, LINE_EOR|LINE_ONEDOT);
   DrawShape(shape);
   BlitterFill(screen, plane);
-  // Log("shape: %ld\n", ReadLineCounter() - lines);
+  // Log("shape: %d\n", ReadLineCounter() - lines);
 
   for (i = 0; i < DEPTH; i++) {
-    WORD j = (plane + i) % DEPTH;
+    short j = (plane + i) % DEPTH;
     CopInsSet32(bplptr[i], screen->planes[j]);
   }
 
@@ -140,4 +140,4 @@ static void Render() {
   planeC ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

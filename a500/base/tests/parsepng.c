@@ -16,51 +16,51 @@
 #define PNG_tRNS MAKE_ID('t', 'R', 'N', 'S')
 
 #define PNG_GRAYSCALE       0
-#define PNG_TRUECOLOR       2
+#define PNG_trueCOLOR       2
 #define PNG_INDEXED         3
 #define PNG_GRAYSCALE_ALPHA 4
-#define PNG_TRUECOLOR_ALPHA 6
+#define PNG_trueCOLOR_ALPHA 6
 
 typedef struct {
-  ULONG width;
-  ULONG height;
-  UBYTE bit_depth;
-  UBYTE colour_type;
-  UBYTE compression_method; // always 0
-  UBYTE filter_method;      // always 0
-  UBYTE interlace_method;
+  u_int width;
+  u_int height;
+  u_char bit_depth;
+  u_char colour_type;
+  u_char compression_method; // always 0
+  u_char filter_method;      // always 0
+  u_char interlace_method;
 } __attribute__((packed)) PngHeaderT;
 
 typedef union {
   struct {
-    UWORD v;
+    u_short v;
   } type0;
   struct {
-    UWORD r, g, b;
+    u_short r, g, b;
   } type2;
   struct {
-    UBYTE alpha[0];
+    u_char alpha[0];
   } type3;
 } PngTransparencyT;
 
 typedef union {
   struct {
-    UWORD v;
+    u_short v;
   } type0;
   struct {
-    UWORD r, g, b;
+    u_short r, g, b;
   } type2;
   struct {
-    UBYTE v;
+    u_char v;
   } type3;
 } PngBackgroundT;
 
 typedef struct {
-  UBYTE r, g, b;
+  u_char r, g, b;
 } __attribute__((packed)) RGB;
 
 int __nocommandline = 1;
-ULONG __oslibversion = 33;
+u_int __oslibversion = 33;
 
 extern char *__commandline;
 extern int __commandlen;
@@ -81,8 +81,8 @@ static char *s_interlace[] = {
 };
 
 int main() {
-  UWORD len = __commandlen;
-  STRPTR filename = __builtin_alloca(len);
+  u_short len = __commandlen;
+  char *filename = alloca(len);
   FileT *file;
 
   memcpy(filename, __commandline, len--);
@@ -91,7 +91,7 @@ int main() {
   Log("Parsing '%s'.\n", filename);
 
   if ((file = OpenFile(filename, IOF_BUFFERED))) {
-    ULONG chk[3];
+    u_int chk[3];
 
     memset(chk, 0, sizeof(chk));
 
@@ -104,33 +104,32 @@ int main() {
         if (!FileRead(file, &chk, 8))
           break;
 
-        Log("> %4s [%ld]\n", (STRPTR)&chk[1], chk[0]);
+        Log("> %4s [%d]\n", (char *)&chk[1], chk[0]);
 
         switch (chk[1]) {
           case PNG_IHDR:
             {
               FileRead(file, &ihdr, sizeof(ihdr));
 
-              Log("size : %ld x %ld, %s, bit depth : %ld, %s\n",
+              Log("size : %d x %d, %s, bit depth : %d, %s\n",
                   ihdr.width, ihdr.height, s_type[ihdr.colour_type], 
-                  (LONG)ihdr.bit_depth, s_interlace[ihdr.interlace_method]);
+                  ihdr.bit_depth, s_interlace[ihdr.interlace_method]);
             }
             break;
 
           case PNG_PLTE:
             {
               RGB *plte = MemAlloc(chk[0], MEMF_PUBLIC|MEMF_CLEAR);
-              WORD n = chk[0] / 3;
+              short n = chk[0] / 3;
 
               FileRead(file, plte, chk[0]);
 
-              Log("%ld : ", (LONG)n);
+              Log("%d : ", n);
               {
                 RGB *ptr = plte;
-                WORD i;
+                short i;
                 for (i = 0; i < n; i++, ptr++)
-                  Log("#%02lx%02lx%02lx ",
-                      (LONG)ptr->r, (LONG)ptr->g, (LONG)ptr->b);
+                  Log("#%02x%02x%02x ", ptr->r, ptr->g, ptr->b);
               }
               Log("\n");
               MemFree(plte);
@@ -140,21 +139,21 @@ int main() {
           case PNG_tRNS:
             {
               PngTransparencyT trns;
-              UBYTE type = ihdr.colour_type & 3;
+              u_char type = ihdr.colour_type & 3;
 
               FileRead(file, &trns, chk[0]);
 
               if (type == PNG_GRAYSCALE)
-                Log("#%ld\n", (LONG)trns.type0.v);
-              else if (type == PNG_TRUECOLOR)
-                Log("#%02lx%02lx%02lx\n",
-                    (LONG)trns.type2.r, (LONG)trns.type2.g, (LONG)trns.type2.b);
+                Log("#%d\n", trns.type0.v);
+              else if (type == PNG_trueCOLOR)
+                Log("#%02x%02x%02x\n",
+                    trns.type2.r, trns.type2.g, trns.type2.b);
               else if (type == PNG_INDEXED) {
-                WORD n = chk[0];
-                WORD i;
+                short n = chk[0];
+                short i;
 
                 for (i = 0; i < n; i++)
-                  Log("#%02lx ", (LONG)trns.type3.alpha[i]);
+                  Log("#%02x ", trns.type3.alpha[i]);
                 Log("\n");
               }
             }
@@ -163,17 +162,17 @@ int main() {
           case PNG_bKGD:
             {
               PngBackgroundT bkgd;
-              UBYTE type = ihdr.colour_type & 3;
+              u_char type = ihdr.colour_type & 3;
 
               FileRead(file, &bkgd, chk[0]);
 
               if (type == PNG_GRAYSCALE)
-                Log("#%ld\n", (LONG)bkgd.type0.v);
-              else if (type == PNG_TRUECOLOR)
-                Log("#%02lx%02lx%02lx\n",
-                    (LONG)bkgd.type2.r, (LONG)bkgd.type2.g, (LONG)bkgd.type2.b);
+                Log("#%d\n", bkgd.type0.v);
+              else if (type == PNG_trueCOLOR)
+                Log("#%02x%02x%02x\n",
+                    bkgd.type2.r, bkgd.type2.g, bkgd.type2.b);
               else if (type == PNG_INDEXED)
-                Log("#%ld\n", (LONG)bkgd.type3.v);
+                Log("#%d\n", bkgd.type3.v);
             }
             break;
 

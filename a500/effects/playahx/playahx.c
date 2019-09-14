@@ -1,5 +1,3 @@
-#include <proto/graphics.h>
-
 #include "startup.h"
 #include "io.h"
 #include "hardware.h"
@@ -13,25 +11,24 @@
 #include "blitter.h"
 #include "tasks.h"
 
-LONG __chipmem = 100 * 1024;
-LONG __fastmem = 420 * 1024;
-STRPTR __cwdpath = "data";
+int __chipmem = 100 * 1024;
+int __fastmem = 430 * 1024;
+const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 1
 
-static APTR module;
+static void *module;
 static BitmapT *screen;
 static CopListT *cp;
-static TextFontT *topaz8;
 static ConsoleT console;
 
 typedef struct {
   BitmapT *bm;
-  BYTE *samples;
-  WORD volume;
-  LONG i, di;
+  u_char *samples;
+  short volume;
+  int i, di;
 } WaveScopeChanT;
 
 #define TICKS_PER_FRAME (3579546L / 50)
@@ -40,11 +37,11 @@ typedef struct {
 static struct {
   WaveScopeChanT channel[4];
   BitmapT *spans;
-  UBYTE multab[256*64];
+  u_char multab[256*64];
 } wavescope;
 
-static void InitWaveScope() {
-  WORD i, j;
+static void InitWaveScope(void) {
+  short i, j;
   BitmapT *bm;
 
   for (i = 0; i < 4; i++) {
@@ -54,14 +51,14 @@ static void InitWaveScope() {
 
   for (i = 0; i < 64; i++) {
     for (j = 0; j < 128; j++) {
-      WORD index = (i << 8) | j;
-      WORD x = (j * (i + 1)) >> 4;
+      short index = (i << 8) | j;
+      short x = (j * (i + 1)) >> 4;
       wavescope.multab[index] = x;
     }
 
     for (; j < 255; j++) {
-      WORD index = (i << 8) | j;
-      WORD x = ((255 - j) * (i + 1)) >> 4;
+      short index = (i << 8) | j;
+      short x = ((255 - j) * (i + 1)) >> 4;
       wavescope.multab[index] = x;
     }
   }
@@ -72,21 +69,21 @@ static void InitWaveScope() {
   BlitterLine(32, 0, 63, 31);
   BlitterFill(bm, 0);
   WaitBlitter();
-  ((BYTE *)bm->planes[0])[4] = 0x80;
+  ((char *)bm->planes[0])[4] = 0x80;
   wavescope.spans = bm;
 }
 
-static void KillWaveScope() {
-  WORD i;
+static void KillWaveScope(void) {
+  short i;
 
   for (i = 0; i < 4; i++)
     DeleteBitmap(wavescope.channel[i].bm);
   DeleteBitmap(wavescope.spans);
 }
 
-static void WaveScopeUpdateChannel(WORD num, AhxVoiceTempT *voice) {
+static void WaveScopeUpdateChannel(short num, AhxVoiceTempT *voice) {
   WaveScopeChanT *ch = &wavescope.channel[num];
-  LONG samplesPerFrame = 1;
+  int samplesPerFrame = 1;
 
   if (voice->AudioPeriod)
     samplesPerFrame = TICKS_PER_FRAME / voice->AudioPeriod;
@@ -103,14 +100,14 @@ static void WaveScopeUpdateChannel(WORD num, AhxVoiceTempT *voice) {
     ch->i = 0;
 }
 
-static void WaveScopeDrawChannel(WORD num) {
+static void WaveScopeDrawChannel(short num) {
   WaveScopeChanT *ch = &wavescope.channel[num];
   BitmapT *bm = ch->bm;
-  LONG *dst = bm->planes[0];
-  UBYTE *samples;
-  UBYTE *multab;
-  LONG i, di, volume;
-  WORD n;
+  int *dst = bm->planes[0];
+  u_char *samples;
+  u_char *multab;
+  int i, di, volume;
+  short n;
 
   BitmapClear(bm);
 
@@ -120,7 +117,7 @@ static void WaveScopeDrawChannel(WORD num) {
   i = ch->i, di = ch->di;
 
   for (n = 0; n < WS_SAMPLES; n++) {
-    WORD x;
+    short x;
 
     i = swap16(i);
     x = multab[samples[i] | volume];
@@ -131,7 +128,7 @@ static void WaveScopeDrawChannel(WORD num) {
       i -= (AHX_SAMPLE_LEN << 16);
 
     {
-      LONG *src = (LONG *)(wavescope.spans->planes[0] + (x & ~7));
+      int *src = (int *)(wavescope.spans->planes[0] + (x & ~7));
 
       *dst++ = *src++;
       *dst++ = *src++;
@@ -141,18 +138,20 @@ static void WaveScopeDrawChannel(WORD num) {
   ch->i = i;
 }
 
-static void Load() {
+static void Load(void) {
   module = LoadFile("jazzcat-electric_city.ahx", MEMF_PUBLIC);
+  // module = LoadFile("03-delicate.ahx", MEMF_PUBLIC);
+  // module = LoadFile("04-enigma.ahx", MEMF_PUBLIC);
   if (AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS) != 0)
     exit(10);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   AhxKillPlayer();
   MemFree(module);
 }
 
-static __interrupt LONG AhxPlayerIntHandler() {
+static __interrupt int AhxPlayerIntHandler(void) {
   /* Handle CIA Timer A interrupt. */
   if (ReadICR(ciaa) & CIAICRF_TA) {
     custom->color[0] = 0x448;
@@ -165,22 +164,22 @@ static __interrupt LONG AhxPlayerIntHandler() {
 
 INTERRUPT(AhxPlayerInterrupt, 10, AhxPlayerIntHandler, NULL);
 
-static void AhxSetTempo(UWORD tempo asm("d0")) {
+static void AhxSetTempo(u_short tempo asm("d0")) {
   ciaa->ciatalo = tempo & 0xff;
   ciaa->ciatahi = tempo >> 8;
   ciaa->ciacra |= CIACRAF_START;
 }
 
-static void DrawFrames() {
-  WORD i;
+static void DrawFrames(void) {
+  short i;
 
   BlitterLineSetup(screen, 0, LINE_OR|LINE_SOLID);
 
   for (i = 0; i < 4; i++) {
-    WORD x1 = 8 + 72 * i - 1;
-    WORD x2 = 72 + 72 * i + 1;
-    WORD y1 = 96 - 1;
-    WORD y2 = 160 + 1;
+    short x1 = 8 + 72 * i - 1;
+    short x2 = 72 + 72 * i + 1;
+    short y1 = 96 - 1;
+    short y2 = 160 + 1;
 
     BlitterLine(x1, y1, x2, y1);
     BlitterLine(x1, y2, x2, y2);
@@ -189,7 +188,7 @@ static void DrawFrames() {
   }
 }
 
-static void Init() {
+static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
   cp = NewCopList(100);
@@ -201,12 +200,7 @@ static void Init() {
   CopEnd(cp);
   CopListActivate(cp);
 
-  {
-    struct TextAttr textattr = { "topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
-    topaz8 = OpenFont(&textattr);
-  }
-
-  ConsoleInit(&console, screen, topaz8);
+  ConsoleInit(&console, screen);
 
   EnableDMA(DMAF_BLITTER | DMAF_RASTER);
 
@@ -217,14 +211,14 @@ static void Init() {
   InitWaveScope();
   KeyboardInit();
 
-  if (AhxInitHardware((APTR)AhxSetTempo, AHX_KILL_SYSTEM) == 0)
+  if (AhxInitHardware((void *)AhxSetTempo, AHX_KILL_SYSTEM) == 0)
     if (AhxInitModule(module) == 0)
       AhxInitSubSong(0, 0);
 
   AddIntServer(INTB_PORTS, AhxPlayerInterrupt);
 }
 
-static void Kill() {
+static void Kill(void) {
   RemIntServer(INTB_PORTS, AhxPlayerInterrupt);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
@@ -233,25 +227,27 @@ static void Kill() {
   AhxStopSong();
   AhxKillHardware();
 
-  CloseFont(topaz8);
+  ConsoleKill(&console);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
 
-static void Render() {
-  // LONG lines = ReadLineCounter();
-  WORD i;
+static void Render(void) {
+  int lines = ReadLineCounter();
+  short i;
 
   ConsoleSetCursor(&console, 0, 3);
-  ConsolePrint(&console, "Position : %02ld/%02ld\n\n",
-               (LONG)Ahx.Public->Pos, (LONG)Ahx.Public->Row);
+  ConsolePrint(&console, "Position : %02d/%02d\n\n",
+               Ahx.Public->Pos, Ahx.Public->Row);
+
+  Log("Playing %d!\n", Ahx.Public->Playing);
 
   if (Ahx.Public->Playing) {
     WaitLine(Y(96));
 
     for (i = 0; i < 4; i++) {
-      WORD x = 8 + 72 * i;
-      WORD y = 96;
+      short x = 8 + 72 * i;
+      short y = 96;
 
       WaveScopeUpdateChannel(i, &Ahx.Public->VoiceTemp[i]);
       WaveScopeDrawChannel(i);
@@ -259,25 +255,25 @@ static void Render() {
     }
   }
   
-  // Log("playahx: %ld\n", ReadLineCounter() - lines);
+  Log("playahx: %d\n", ReadLineCounter() - lines);
 
   TaskWait(VBlankEvent);
 }
 
-static BOOL HandleEvent() {
+static bool HandleEvent(void) {
   EventT ev;
 
   if (!PopEvent(&ev))
-    return TRUE;
+    return true;
 
   if (ev.type == EV_MOUSE)
-    return TRUE;
+    return true;
 
   if (ev.key.modifier & MOD_PRESSED)
-    return TRUE;
+    return true;
 
   if (ev.key.code == KEY_ESCAPE)
-    return FALSE;
+    return false;
 
   if (ev.key.code == KEY_SPACE) {
     Ahx.Public->Playing = ~Ahx.Public->Playing;
@@ -290,7 +286,7 @@ static BOOL HandleEvent() {
   if (ev.key.code == KEY_RIGHT)
     AhxNextPattern();
 
-  return TRUE;
+  return true;
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, Render, HandleEvent };

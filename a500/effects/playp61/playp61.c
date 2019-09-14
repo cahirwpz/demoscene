@@ -1,5 +1,3 @@
-#include <proto/graphics.h>
-
 #include "startup.h"
 #include "io.h"
 #include "hardware.h"
@@ -17,33 +15,32 @@
 #define HEIGHT 256
 #define DEPTH 1
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
-static APTR module;
+static void *module;
 static BitmapT *screen;
 static BitmapT *osc[4];
 static CopListT *cp;
-static TextFontT *topaz8;
 static ConsoleT console;
 
-static void Load() {
+static void Load(void) {
   module = LoadFile("jazzcat-sunglasses_at_night.p61", MEMF_CHIP);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   MemFree(module);
 }
 
 INTERRUPT(P61PlayerInterrupt, 10, P61_Music, NULL);
 
-static inline void putpixel(UBYTE *line, WORD x) {
+static inline void putpixel(u_char *line, short x) {
   bset(line + (x >> 3), ~x);
 }
 
 static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
-  UBYTE *line = osc->planes[0];
-  BYTE *sample, *end;
-  WORD n = 64;
+  u_char *line = osc->planes[0];
+  char *sample, *end;
+  short n = 64;
 
   sample = data->SamplePtr;
   end = sample + data->Count;
@@ -52,7 +49,7 @@ static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
     end -= data->WrapCount;
 
   for (; n > 0 && sample < end; n--, line += osc->bytesPerRow) {
-    WORD x = absw(*sample++) / 8;
+    short x = absw(*sample++) / 8;
 
     if (x > 0) {
       putpixel(line, 32 - x);
@@ -67,7 +64,7 @@ static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
       sample = data->LoopStartPtr;
 
       for (; n > 0 && sample < end; n--, line += osc->bytesPerRow) {
-        WORD x = absw(*sample++) / 8;
+        short x = absw(*sample++) / 8;
 
         if (x > 0) {
           putpixel(line, 32 - x);
@@ -80,7 +77,7 @@ static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
   BlitterFill(osc, 0);
 }
 
-static void Init() {
+static void Init(void) {
   KeyboardInit();
 
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
@@ -95,25 +92,20 @@ static void Init() {
   CopSetRGB(cp, 1, 0xfff);
   CopEnd(cp);
 
-  {
-    struct TextAttr textattr = { "topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
-    topaz8 = OpenFont(&textattr);
-  }
-
-  ConsoleInit(&console, screen, topaz8);
+  ConsoleInit(&console, screen);
 
   EnableDMA(DMAF_BLITTER);
 
   {
-    WORD i;
+    short i;
 
     BlitterLineSetup(screen, 0, LINE_OR|LINE_SOLID);
 
     for (i = 0; i < 4; i++) {
-      WORD x1 = 8 + 72 * i - 1;
-      WORD x2 = 72 + 72 * i + 1;
-      WORD y1 = 96 - 1;
-      WORD y2 = 160 + 1;
+      short x1 = 8 + 72 * i - 1;
+      short x2 = 72 + 72 * i + 1;
+      short y1 = 96 - 1;
+      short y2 = 160 + 1;
 
       BlitterLine(x1, y1, x2, y1);
       BlitterLine(x1, y2, x2, y2);
@@ -135,7 +127,7 @@ static void Init() {
                 "Exit (ESC)\n");
 }
 
-static void Kill() {
+static void Kill(void) {
   P61_ControlBlock.Play = 0;
   P61_End();
 
@@ -143,28 +135,27 @@ static void Kill() {
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
-  CloseFont(topaz8);
+  ConsoleKill(&console);
   DeleteCopList(cp);
   ITER(i, 0, 3, DeleteBitmap(osc[i]));
   DeleteBitmap(screen);
 }
 
-static void Render() {
-  WORD i;
+static void Render(void) {
+  short i;
 
   ConsoleSetCursor(&console, 0, 3);
-  ConsolePrint(&console, "Position : %02ld/%02ld\n\n",
-               (LONG)P61_ControlBlock.Pos, (LONG)P61_ControlBlock.Row);
+  ConsolePrint(&console, "Position : %02d/%02d\n\n",
+               P61_ControlBlock.Pos, P61_ControlBlock.Row);
 
   ConsolePrint(&console, "Ch | Ins Cmd Vol Visu\n");
   for (i = 0; i < 4; i++) {
     P61_ChannelBlock *ch = P61_CHANNEL(i);
     /* Command upper 4 bits store instrument number. */
-    WORD cmd = ((ch->Command & 15) << 8) | ch->Info;
-    WORD ins = (ch->Command >> 4) | ((ch->SN_Note & 1) << 4);
-    ConsolePrint(&console, " %ld |  %02lx %03lx  %02ld %04lx\n",
-                 (LONG)i, (LONG)ins, (LONG)cmd,
-                 (LONG)(ch->Volume), (LONG)P61_visuctr[i]);
+    short cmd = ((ch->Command & 15) << 8) | ch->Info;
+    short ins = (ch->Command >> 4) | ((ch->SN_Note & 1) << 4);
+    ConsolePrint(&console, " %d |  %02x %03x  %02d %04x\n",
+                 i, ins, cmd, ch->Volume, P61_visuctr[i]);
   }
 
 
@@ -184,8 +175,8 @@ static void Render() {
     }
 
     for (i = 0; i < 4; i++) {
-      WORD x = 8 + 72 * i;
-      WORD y = 96;
+      short x = 8 + 72 * i;
+      short y = 96;
       BitmapCopy(screen, x, y, osc[i]);
     }
   }
@@ -193,20 +184,20 @@ static void Render() {
   TaskWait(VBlankEvent);
 }
 
-static BOOL HandleEvent() {
+static bool HandleEvent(void) {
   EventT ev;
 
   if (!PopEvent(&ev))
-    return TRUE;
+    return true;
 
   if (ev.type == EV_MOUSE)
-    return TRUE;
+    return true;
 
   if (ev.key.modifier & MOD_PRESSED)
-    return TRUE;
+    return true;
 
   if (ev.key.code == KEY_ESCAPE)
-    return FALSE;
+    return false;
 
   if (ev.key.code == KEY_SPACE) {
     P61_ControlBlock.Play ^= 1;
@@ -217,7 +208,7 @@ static BOOL HandleEvent() {
   }
 
   if (ev.key.code == KEY_LEFT) {
-    BYTE newPos = P61_ControlBlock.Pos - 2;
+    char newPos = P61_ControlBlock.Pos - 2;
     if (newPos < 0)
       newPos = 0;
     P61_SetPosition(newPos);
@@ -226,7 +217,7 @@ static BOOL HandleEvent() {
   if (ev.key.code == KEY_RIGHT)
     P61_SetPosition(P61_ControlBlock.Pos);
 
-  return TRUE;
+  return true;
 }
 
 EffectT Effect = { Load, UnLoad, Init, Kill, Render, HandleEvent };

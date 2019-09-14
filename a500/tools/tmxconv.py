@@ -146,15 +146,8 @@ if __name__ == '__main__':
 
   with open(basename + '.h', 'w') as f:
     with redirect_stdout(f):
-      print('static TileSetT %s = {' % tileset.name)
-      print('  .width = %d,' % tileset.width)
-      print('  .height = %d,' % tileset.height)
-      print('  .count = %d,' % len(tileset.tiles))
-      print('  .path = "%s",' % (basename + '-tiles.ilbm'))
-      print('};')
-      print('')
-      print('static TileMapT %s = {' % layer.name)
-      print('  .width = %d,' % layer.width)
-      print('  .height = %d,' % layer.height)
-      print('  .path = "%s",' % (basename + '-map.bin'))
-      print('};')
+      print('static TileSetT %s = TILESET(%d, %d, %d, "%s");' %
+            (tileset.name, tileset.width, tileset.height,
+             len(tileset.tiles), basename + '-tiles.ilbm'))
+      print('static TileMapT %s = TILEMAP(%d, %d, "%s");' %
+            (layer.name, layer.width, layer.height, basename + '-map.bin'))

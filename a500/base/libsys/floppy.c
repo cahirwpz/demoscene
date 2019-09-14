@@ -1,5 +1,6 @@
 #include "interrupts.h"
 #include "memory.h"
+#include "hardware.h"
 #include "floppy.h"
 
 #define DEBUG 0
@@ -16,18 +17,18 @@
  */
 
 typedef struct {
-  ULONG magic;
-  UWORD sync[2];
+  u_int magic;
+  u_short sync[2];
   struct {
-    UBYTE format;
-    UBYTE trackNum;
-    UBYTE sectorNum;
-    UBYTE sectors;
+    u_char format;
+    u_char trackNum;
+    u_char sectorNum;
+    u_char sectors;
   } info[2];
-  UBYTE sectorLabel[2][16];
-  ULONG checksumHeader[2];
-  ULONG checksum[2];
-  UBYTE data[2][512]; 
+  u_char sectorLabel[2][16];
+  u_int checksumHeader[2];
+  u_int checksum[2];
+  u_char data[2][512]; 
 } SectorT;
 
 /*
@@ -41,18 +42,18 @@ typedef struct {
 
 #define TRACK_SIZE (sizeof(SectorT) * NUMSECS + 832)
 
-static WORD headDir;
-static WORD trackNum;
+static short headDir;
+static short trackNum;
 static SectorT *track;
 
-static inline void WaitDiskReady() {
+static inline void WaitDiskReady(void) {
   while (ciaa->ciapra & CIAF_DSKRDY);
 }
 
 #define STEP_SETTLE TIMER_MS(3)
 
-static void StepHeads() {
-  UBYTE *ciaprb = (UBYTE *)&ciab->ciaprb;
+static void StepHeads(void) {
+  u_char *ciaprb = (u_char *)&ciab->ciaprb;
 
   bclr(ciaprb, CIAB_DSKSTEP);
   bset(ciaprb, CIAB_DSKSTEP);
@@ -64,8 +65,8 @@ static void StepHeads() {
 
 #define DIRECTION_REVERSE_SETTLE TIMER_MS(18)
 
-static inline void HeadsStepDirection(WORD inwards) {
-  UBYTE *ciaprb = (UBYTE *)&ciab->ciaprb;
+static inline void HeadsStepDirection(short inwards) {
+  u_char *ciaprb = (u_char *)&ciab->ciaprb;
 
   if (inwards) {
     bclr(ciaprb, CIAB_DSKDIREC);
@@ -78,8 +79,8 @@ static inline void HeadsStepDirection(WORD inwards) {
   WaitTimerA(ciab, DIRECTION_REVERSE_SETTLE);
 }
 
-static inline void ChangeDiskSide(WORD upper) {
-  UBYTE *ciaprb = (UBYTE *)&ciab->ciaprb;
+static inline void ChangeDiskSide(short upper) {
+  u_char *ciaprb = (u_char *)&ciab->ciaprb;
 
   if (upper) {
     bclr(ciaprb, CIAB_DSKSIDE);
@@ -90,12 +91,12 @@ static inline void ChangeDiskSide(WORD upper) {
   }
 }
 
-static inline BOOL HeadsAtTrack0() {
+static inline bool HeadsAtTrack0(void) {
   return !(ciaa->ciapra & CIAF_DSKTRACK0);
 }
 
-static void FloppyMotorOn() {
-  UBYTE *ciaprb = (UBYTE *)&ciab->ciaprb;
+static void FloppyMotorOn(void) {
+  u_char *ciaprb = (u_char *)&ciab->ciaprb;
 
   bset(ciaprb, CIAB_DSKSEL0);
   bclr(ciaprb, CIAB_DSKMOTOR);
@@ -104,8 +105,8 @@ static void FloppyMotorOn() {
   WaitDiskReady();
 }
 
-static void FloppyMotorOff() {
-  UBYTE *ciaprb = (UBYTE *)&ciab->ciaprb;
+static void FloppyMotorOff(void) {
+  u_char *ciaprb = (u_char *)&ciab->ciaprb;
 
   bset(ciaprb, CIAB_DSKSEL0);
   bset(ciaprb, CIAB_DSKMOTOR);
@@ -140,7 +141,7 @@ void KillFloppy() {
 
 #define DISK_SETTLE TIMER_MS(15)
 
-__regargs void FloppyTrackRead(WORD num) {
+__regargs void FloppyTrackRead(short num) {
   if (trackNum == num)
     return;
 
@@ -163,13 +164,13 @@ __regargs void FloppyTrackRead(WORD num) {
   EnableDMA(DMAF_DISK);
 
 #if DEBUG
-  Log("[Floppy] Read track %ld.\n", (LONG)num);
+  Log("[Floppy] Read track %d.\n", num);
 #endif
 
-  custom->dskpt = (APTR)track;
+  custom->dskpt = (void *)track;
   /* Write track size twice to initiate DMA transfer. */
-  custom->dsklen = DSK_DMAEN | (TRACK_SIZE / sizeof(WORD));
-  custom->dsklen = DSK_DMAEN | (TRACK_SIZE / sizeof(WORD));
+  custom->dsklen = DSK_DMAEN | (TRACK_SIZE / sizeof(short));
+  custom->dsklen = DSK_DMAEN | (TRACK_SIZE / sizeof(short));
 
   WaitIRQ(INTF_DSKBLK);
 
@@ -177,22 +178,22 @@ __regargs void FloppyTrackRead(WORD num) {
   DisableDMA(DMAF_DISK);
 }
 
-static inline ULONG DecodeMFM(ULONG odd, ULONG even, ULONG mask) {
+static inline u_int DecodeMFM(u_int odd, u_int even, u_int mask) {
   return ((odd & mask) << 1) | (even & mask);
 }
 
-__regargs void FloppyTrackDecode(ULONG *buf) {
-  WORD secnum = NUMSECS;
+__regargs void FloppyTrackDecode(u_int *buf) {
+  short secnum = NUMSECS;
   SectorT *maybeSector = track;
 
   do {
-    register ULONG mask asm("d7") = 0x55555555;
-    WORD *data = (WORD *)maybeSector;
+    register u_int mask asm("d7") = 0x55555555;
+    short *data = (short *)maybeSector;
     struct {
-      UBYTE format;
-      UBYTE trackNum;
-      UBYTE sectorNum;
-      UBYTE sectors;
+      u_char format;
+      u_char trackNum;
+      u_char sectorNum;
+      u_char sectors;
     } info;
     SectorT *sec;
 
@@ -200,21 +201,21 @@ __regargs void FloppyTrackDecode(ULONG *buf) {
     while (*data != DSK_SYNC) data++;
     while (*data == DSK_SYNC) data++;
 
-    sec = (SectorT *)((APTR)data - offsetof(SectorT, info[0]));
+    sec = (SectorT *)((void *)data - offsetof(SectorT, info[0]));
 
-    *(ULONG *)&info = DecodeMFM(*(ULONG *)&sec->info[0], 
-                                *(ULONG *)&sec->info[1], mask);
+    *(u_int *)&info = DecodeMFM(*(u_int *)&sec->info[0], 
+                                *(u_int *)&sec->info[1], mask);
 
 #if DEBUG
-    Log("[Floppy] Decode: data=%lx, sector=%ld, track=%ld\n",
-        (LONG)sec, (LONG)info.sectorNum, (LONG)info.trackNum);
+    Log("[Floppy] Decode: data=%p, sector=%d, track=%d\n",
+        sec, info.sectorNum, info.trackNum);
 #endif
 
     {
-      ULONG *dst = (APTR)buf + info.sectorNum * TD_SECTOR;
-      ULONG *odd = (APTR)sec->data[0];
-      ULONG *even = (APTR)sec->data[1];
-      WORD n = TD_SECTOR / sizeof(ULONG) / 2 - 1;
+      u_int *dst = (void *)buf + info.sectorNum * TD_SECTOR;
+      u_int *odd = (void *)sec->data[0];
+      u_int *even = (void *)sec->data[1];
+      short n = TD_SECTOR / sizeof(u_int) / 2 - 1;
 
       do {
         *dst++ = DecodeMFM(*odd++, *even++, mask);

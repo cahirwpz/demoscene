@@ -1,4 +1,4 @@
-static WORD stripes[] = {
+static short stripes[] = {
  296,
  285,
  279,

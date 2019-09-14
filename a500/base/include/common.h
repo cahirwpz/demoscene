@@ -1,37 +1,31 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include <exec/types.h>
+#include "types.h"
 
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define abs(a) (((a) < 0) ? (-(a)) : (a))
 
-#define offsetof(st, m) \
-  ((ULONG)((char *)&((st *)0)->m - (char *)0))
-
-#define align(x, n) \
-  (((x) + (n) - 1) & (-(n)))
-
 #define VA_NARGS_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
 #define VA_NARGS(...) VA_NARGS_IMPL(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
 
 #define STRUCT(ctype, ...) \
-  (ctype[1]){(ctype){##__VA_ARGS__}}
+  (ctype[1]){(ctype){__VA_ARGS__}}
 
 #define MAKE_ID(a,b,c,d) \
-        ((ULONG) (a)<<24 | (ULONG) (b)<<16 | (ULONG) (c)<<8 | (ULONG) (d))
+        ((u_int) (a)<<24 | (u_int) (b)<<16 | (u_int) (c)<<8 | (u_int) (d))
 
 #define ITER(_VAR, _BEGIN, _END, _EXPR) { \
-  WORD _VAR; \
+  short _VAR; \
   for (_VAR = _BEGIN; _VAR <= _END; _VAR++) { \
     _EXPR; \
   } \
 }
 
 /* assumes that abs(idx) < 32768 */
-static inline WORD getword(APTR tab, WORD idx) {
-  WORD res;
+static inline short getword(void *tab, short idx) {
+  short res;
   asm("addw  %1,%1\n"
       "movew (%2,%1:w),%0\n"
       : "=r" (res)
@@ -41,8 +35,8 @@ static inline WORD getword(APTR tab, WORD idx) {
 }
 
 /* assumes that abs(idx) < 16384 */
-static inline LONG getlong(APTR tab, WORD idx) {
-  LONG res;
+static inline int getlong(void *tab, short idx) {
+  int res;
   asm("addw  %1,%1\n"
       "addw  %1,%1\n"
       "movel (%2,%1:w),%0\n"
@@ -52,29 +46,29 @@ static inline LONG getlong(APTR tab, WORD idx) {
   return res;
 }
 
-static inline WORD absw(WORD a) {
+static inline short absw(short a) {
   if (a < 0)
     return -a;
   return a;
 }
 
-static inline ULONG swap16(ULONG a) {
+static inline u_int swap16(u_int a) {
   asm("swap %0": "+d" (a));
   return a;
 }
 
-static inline UWORD swap8(UWORD a) {
+static inline u_short swap8(u_short a) {
   return (a << 8) | (a >> 8);
 }
 
-static inline WORD div16(LONG a, WORD b) {
+static inline short div16(int a, short b) {
   asm("divs %1,%0"
       : "+d" (a)
       : "dm" (b));
   return a;
 }
 
-static inline WORD mod16(LONG a, WORD b) {
+static inline short mod16(int a, short b) {
   asm("divs %1,%0\n"
       "swap %0"
       : "+d" (a)
@@ -82,15 +76,15 @@ static inline WORD mod16(LONG a, WORD b) {
   return a;
 }
 
-static inline void bclr(UBYTE *ptr, BYTE bit) {
+static inline void bclr(u_char *ptr, char bit) {
   asm("bclr %1,%0" :: "m" (*ptr), "dI" (bit));
 }
 
-static inline void bset(UBYTE *ptr, BYTE bit) {
+static inline void bset(u_char *ptr, char bit) {
   asm("bset %1,%0" :: "m" (*ptr), "dI" (bit));
 }
 
-static inline void bchg(UBYTE *ptr, BYTE bit) {
+static inline void bchg(u_char *ptr, char bit) {
   asm("bchg %1,%0" :: "m" (*ptr), "dI" (bit));
 }
 
@@ -106,22 +100,34 @@ static inline void bchg(UBYTE *ptr, BYTE bit) {
 #define popl(a) \
   asm ("movel %+,%0" : "=r" (a))
 
-static inline APTR GetSP() {
-  APTR sp;
+static inline void *GetSP(void) {
+  void *sp;
   asm("movel sp,%0" : "=r" (sp));
   return sp;
 }
 
-#define Breakpoint(n) { asm ("bkpt %0" :: "n" (n)); }
+#define Breakpoint() { asm volatile("illegal"); }
 
-void Log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
-void FmtStr(char *str, ULONG size, const char *format, ...)
+void Log(const char *format, ...)
+  __attribute__ ((format (printf, 1, 2)));
+__noreturn void Panic(const char *format, ...)
+  __attribute__ ((format (printf, 1, 2)));
+__regargs void MemDump(void *ptr, int n);
+
+typedef __regargs void (kvprintf_fn_t)(int, void *);
+
+int kvprintf(char const *fmt, kvprintf_fn_t *func, void *arg, va_list ap);
+int snprintf(char *buf, size_t size, const char *cfmt, ...)
   __attribute__ ((format (printf, 3, 4)));
-__regargs void MemDump(APTR ptr, LONG n);
 
-void bzero(APTR s, ULONG n);
+void bzero(void *s, u_int n);
+void *memset(void *b, int c, size_t len);
+void *memcpy(void *__restrict dst, const void *__restrict src, size_t n);
+char *strcpy(char *dst, const char *src);
+int strcmp(const char *s1, const char *s2);
+size_t strlen(const char *s);
 
-#define Panic(args...) do { Log(args); exit(10); } while (0)
+__noreturn void exit(int);
 
 /*
  * Macros for handling symbol table information (aka linker set elements).
@@ -154,14 +160,14 @@ void bzero(APTR s, ULONG n);
 
 #define PROFILE_BEGIN(NAME)                                             \
 {                                                                       \
-  static LONG average_ ## NAME = 0;                                     \
-  static WORD count_ ## NAME = 0;                                       \
-  LONG lines_ ## NAME = ReadLineCounter();
+  static int average_ ## NAME = 0;                                      \
+  static short count_ ## NAME = 0;                                      \
+  int lines_ ## NAME = ReadLineCounter();
 
 #define PROFILE_END(NAME)                                               \
   average_ ## NAME += ReadLineCounter() - lines_ ## NAME;               \
   count_ ## NAME ++;                                                    \
-  Log(#NAME ": %ld\n", (LONG)div16(average_ ## NAME, count_ ## NAME));  \
+  Log(#NAME ": %d\n", div16(average_ ## NAME, count_ ## NAME));         \
 }                                                                       \
 
 #endif

@@ -9,7 +9,7 @@
 #include "color.h"
 #include "tasks.h"
 
-STRPTR __cwdpath = "data";
+const char *__cwdpath = "data";
 
 #define WIDTH   320
 #define HEIGHT  256
@@ -23,64 +23,64 @@ STRPTR __cwdpath = "data";
 #define shl12   shift12
 
 typedef struct {
-  WORD angle, radius;
+  short angle, radius;
 } PolarT;
 
 typedef struct {
-  WORD x, y, z;
+  short x, y, z;
 } SpanT;
 
 typedef struct {
   PolarT pos;   /* position from (0, 0) in polar coordinates */
-  WORD rotate;  /* value of rotation of prism */
-  WORD color;   /* base color (before shading) of each face */
-  WORD nedges;
+  short rotate;  /* value of rotation of prism */
+  short color;   /* base color (before shading) of each face */
+  short nedges;
   PolarT edges[PFACES];
   SpanT spans[PFACES + 1];
 } PrismT;
 
 typedef struct {
-  WORD depth;
-  WORD width;
-  WORD color;
+  short depth;
+  short width;
+  short color;
 } SpanInfoT;
 
 static CopListT *cp[2];
 static CopInsT *clines[2][HEIGHT];
 static BitmapT *stripes;
-static APTR rowAddr[WIDTH / 2];
+static void *rowAddr[WIDTH / 2];
 static SpanInfoT spanInfo[HEIGHT];
 static PrismT prisms[PRISMS];
-static WORD active = 0;
+static short active = 0;
 
 static CopInsT *sprptr[8];
 static SpriteT *sprite[8];
 static PaletteT *spritePal;
 
-static UWORD colorSet[4] = { 0xC0F, 0xF0C, 0x80F, 0xF08 };
-static UWORD colorShades[4][32];
+static u_short colorSet[4] = { 0xC0F, 0xF0C, 0x80F, 0xF08 };
+static u_short colorShades[4][32];
 
-static void Load() {
+static void Load(void) {
   BitmapT *bm = LoadILBM("sprite.ilbm");
   ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, bm, 16 * i, 0));
   spritePal = bm->palette;
   DeleteBitmap(bm);
 }
 
-static void UnLoad() {
+static void UnLoad(void) {
   ITER(i, 0, 7, DeleteSprite(sprite[i]));
   DeletePalette(spritePal);
 }
 
-static void GeneratePrisms() {
+static void GeneratePrisms(void) {
   PrismT *prism = prisms;
-  LONG i, j;
+  int i, j;
 
   for (i = 0; i < PRISMS; i++, prism++) {
     PolarT *edge = prism->edges;
 
-    WORD rot = random();
-    WORD ne = 3 + (random() & 7); /* max(ne) = PFACES */
+    short rot = random();
+    short ne = 3 + (random() & 7); /* max(ne) = PFACES */
 
     prism->pos.angle = div16(shl12(i), PRISMS);
     prism->pos.radius = 64;
@@ -95,7 +95,7 @@ static void GeneratePrisms() {
   }
 }
 
-static void GenerateLines() {
+static void GenerateLines(void) {
   EnableDMA(DMAF_BLITTER);
 
   BlitterLineSetup(stripes, 0, LINE_OR|LINE_ONEDOT);
@@ -107,20 +107,20 @@ static void GenerateLines() {
   DisableDMA(DMAF_BLITTER);
 
   {
-    WORD i;
+    short i;
 
     for (i = 0; i < WIDTH / 2; i++)
       rowAddr[i] = stripes->planes[0] + i * stripes->bytesPerRow;
   }
 }
 
-static void GenerateColorShades() {
-  WORD i, j;
-  UWORD *s = colorSet;
-  UWORD *d = (UWORD *)colorShades;
+static void GenerateColorShades(void) {
+  short i, j;
+  u_short *s = colorSet;
+  u_short *d = (u_short *)colorShades;
 
   for (i = 0; i < 4; i++) {
-    UWORD c = *s++;
+    u_short c = *s++;
 
     for (j = 0; j < 16; j++)
       *d++ = ColorTransition(0x000, c, j);
@@ -130,7 +130,7 @@ static void GenerateColorShades() {
 }
 
 static void MakeCopperList(CopListT *cp, CopInsT **cline) {
-  WORD i;
+  short i;
 
   CopInit(cp);
   CopSetupSprites(cp, sprptr);
@@ -154,7 +154,7 @@ static void MakeCopperList(CopListT *cp, CopInsT **cline) {
   ITER(i, 0, 7, CopInsSet32(sprptr[i], sprite[i]->data));
 }
 
-static void Init() {
+static void Init(void) {
   stripes = NewBitmap(WIDTH, WIDTH / 2, 1);
 
   GeneratePrisms();
@@ -173,34 +173,34 @@ static void Init() {
   EnableDMA(DMAF_RASTER | DMAF_SPRITE);
 }
 
-static void Kill() {
+static void Kill(void) {
   DeleteBitmap(stripes);
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
 }
 
-static const WORD centerY = 128;
-static const WORD centerZ = 192;
+static const short centerY = 128;
+static const short centerZ = 192;
 
-static void RotatePrism(PrismT *prism, WORD rotate) {
-  WORD p_angle = prism->pos.angle + rotate;
-  WORD p_radius = prism->pos.radius;
+static void RotatePrism(PrismT *prism, short rotate) {
+  short p_angle = prism->pos.angle + rotate;
+  short p_radius = prism->pos.radius;
 
   /* position of prism center in fx12i format */
-  LONG p_y = COS(p_angle) * p_radius;
-  LONG p_z = SIN(p_angle) * p_radius;
+  int p_y = COS(p_angle) * p_radius;
+  int p_z = SIN(p_angle) * p_radius;
 
   PolarT *edge = prism->edges;
   SpanT *span = prism->spans;
-  WORD n = prism->nedges;
+  short n = prism->nedges;
 
   while (--n >= 0) {
-    WORD s_angle = edge->angle + prism->rotate;
-    WORD s_radius = edge->radius;
+    short s_angle = edge->angle + prism->rotate;
+    short s_radius = edge->radius;
 
-    LONG x = PWIDTH << 8;
-    LONG y = (COS(s_angle) * s_radius + p_y) >> 4;
-    WORD z = normfx(SIN(s_angle) * s_radius + p_z) + centerZ;
+    int x = PWIDTH << 8;
+    int y = (COS(s_angle) * s_radius + p_y) >> 4;
+    short z = normfx(SIN(s_angle) * s_radius + p_z) + centerZ;
 
     span->x = div16(x, z);
     span->y = div16(y, z) + centerY;
@@ -213,14 +213,18 @@ static void RotatePrism(PrismT *prism, WORD rotate) {
   *span = prism->spans[0];
 }
 
-static void ClearSpanInfo() {
+static void ClearSpanInfo(void) {
   SpanInfoT *li = spanInfo;
-  WORD n = HEIGHT;
-  register WORD z asm("d1") = 0x7fff;
+  short n = HEIGHT;
+  register short z asm("d1") = 0x7fff;
+  short *wp = (short *)li;
+  int *lp;
 
   while (--n >= 0) {
-    *((WORD *)li)++ = z; /* depth */
-    *((LONG *)li)++ = 0; /* width & color */
+    *wp++ = z; /* depth */
+    lp = (int *)wp;
+    *lp++ = 0; /* width & color */
+    wp = (short *)lp;
   }
 }
 
@@ -235,25 +239,25 @@ static void ClearSpanInfo() {
 static void DrawPrismFaces(PrismT *prism, SpanInfoT *spanInfo) {
   SpanT *span0 = &prism->spans[0];
   SpanT *span1 = &prism->spans[1];
-  WORD ns = prism->nedges;
+  short ns = prism->nedges;
 
   while (--ns >= 0) {
-    WORD y0 = span0->y;
-    WORD y1 = span1->y;
+    short y0 = span0->y;
+    short y1 = span1->y;
 
     /* skip faces that are turned backwards to the eye */
     if (y0 < y1) {
       SpanInfoT *si = &spanInfo[y0];
 
-      LONG x0 = span0->x << 16;
-      LONG x1 = span1->x << 16;
-      LONG z0 = span0->z << 16;
-      LONG z1 = span1->z << 16;
-      LONG dx = div16((x1 - x0) >> 8, y1 - y0) << 8;
-      LONG dz = div16((z1 - z0) >> 8, y1 - y0) << 8;
+      int x0 = span0->x << 16;
+      int x1 = span1->x << 16;
+      int z0 = span0->z << 16;
+      int z1 = span1->z << 16;
+      int dx = div16((x1 - x0) >> 8, y1 - y0) << 8;
+      int dz = div16((z1 - z0) >> 8, y1 - y0) << 8;
 
-      WORD color; 
-      WORD shade;
+      short color; 
+      short shade;
 
       shade = dz >> 12;
 
@@ -275,16 +279,18 @@ static void DrawPrismFaces(PrismT *prism, SpanInfoT *spanInfo) {
         if (ONSCREEN(y0)) {
           x0 = swap16(x0);
           z0 = swap16(z0);
-          if (si->depth <= (WORD)z0) {
+          if (si->depth <= (short)z0) {
             si++;
           } else {
-            *((WORD *)si)++ = z0;       /* depth */
-            *((WORD *)si)++ = x0;       /* width */
-            *((WORD *)si)++ = color;    /* color */
+            short *wp = (short *)si;
+            *wp++ = z0;       /* depth */
+            *wp++ = x0;       /* width */
+            *wp++ = color;    /* color */
+            si = (SpanInfoT *)wp;
           }
           x0 = swap16(x0);
           z0 = swap16(z0);
-          /* Log("%ld: (%ld, %ld)\n", (LONG)i, (LONG)y0, (LONG)(x0 >> 16)); */
+          // Log("%d: (%d, %d)\n", i, y0, x0 >> 16);
           x0 += dx;
           z0 += dz;
           y0++;
@@ -298,24 +304,27 @@ static void DrawPrismFaces(PrismT *prism, SpanInfoT *spanInfo) {
 
 
 static void DrawVisibleSpans(SpanInfoT *si, CopInsT **cline) {
-  WORD n = HEIGHT;
+  short n = HEIGHT;
 
   while (--n >= 0) {
-    WORD depth = *((WORD *)si)++;
-    WORD width = *((WORD *)si)++;
-    WORD color = *((WORD *)si)++;
-    WORD bplcon2 = (depth > centerZ) ? BPLCON2_PF1P2|BPLCON2_PF2P2 : 0;
+    short *wp = (short *)si;
+    short depth = *wp++;
+    short width = *wp++;
+    short color = *wp++;
+    short bplcon2 = (depth > centerZ) ? BPLCON2_PF1P2|BPLCON2_PF2P2 : 0;
     CopInsT *ins = *cline++;
 
     CopInsSet16(ins, color);
     CopInsSet16(ins + 1, bplcon2);
-    CopInsSet32(ins + 2, (APTR)getlong(rowAddr, width));
+    CopInsSet32(ins + 2, (void *)getlong(rowAddr, width));
+
+    si = (SpanInfoT *)wp;
   }
 }
 
-static void RenderPrisms(WORD rotate) {
+static void RenderPrisms(short rotate) {
   PrismT *prism = prisms;
-  WORD n = PRISMS;
+  short n = PRISMS;
 
   ClearSpanInfo();
 
@@ -332,14 +341,14 @@ static void RenderPrisms(WORD rotate) {
   DrawVisibleSpans(spanInfo, clines[active]);
 }
 
-static void Render() {
-  LONG start = ReadLineCounter();
+static void Render(void) {
+  int start = ReadLineCounter();
   RenderPrisms(frameCount << 3);
-  Log("prisms: %ld\n", ReadLineCounter() - start);
+  Log("prisms: %d\n", ReadLineCounter() - start);
 
   CopListRun(cp[active]);
   TaskWait(VBlankEvent);
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };

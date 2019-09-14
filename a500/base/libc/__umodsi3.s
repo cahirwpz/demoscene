@@ -1,8 +1,8 @@
-        XDEF    ___umodsi3
-        XREF    ___udivsi3
-        XREF    ___mulsi3
+        xdef    ___umodsi3
+        xref    ___udivsi3
+        xref    ___mulsi3
 
-        SECTION "__umodsi3",CODE
+        section '.text',code
 
 ___umodsi3:
         move.l  8(sp),d1        ; d1 = divisor

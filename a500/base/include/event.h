@@ -9,21 +9,21 @@ union Widget;
 
 typedef struct KeyEvent {
   EventTypeT type;
-  UBYTE modifier;
-  UBYTE code;
+  u_char modifier;
+  u_char code;
   char ascii;
 } KeyEventT;
 
 typedef struct MouseEvent {
   EventTypeT type;
-  UBYTE button;
-  WORD  x, y;
-  BYTE  xrel, yrel;
+  u_char button;
+  short  x, y;
+  char  xrel, yrel;
 } MouseEventT;
 
 typedef struct GuiEvent {
   EventTypeT type;
-  UBYTE action;
+  u_char action;
   union Widget *widget;
 } GuiEventT;
 
@@ -35,6 +35,6 @@ typedef union Event {
 } EventT;
 
 __regargs void PushEvent(EventT *event);
-__regargs BOOL PopEvent(EventT *event);
+__regargs bool PopEvent(EventT *event);
 
 #endif

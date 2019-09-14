@@ -1,18 +1,21 @@
 #ifndef __READER_H__
 #define __READER_H__
 
-#include "common.h"
+#include "types.h"
 
-__regargs BOOL MatchString(char **data, const char *pattern);
-__regargs BOOL NextWord(char **data);
+__regargs bool MatchString(char **data, const char *pattern);
+__regargs bool NextWord(char **data);
 __regargs void SkipWord(char **data);
-__regargs BOOL NextLine(char **data);
+__regargs bool NextLine(char **data);
 __regargs void SkipLine(char **data);
-__regargs BOOL EndOfLine(char **data);
-__regargs BOOL ReadByte(char **data, BYTE *numptr);
-__regargs BOOL ReadShort(char **data, WORD *numptr);
-__regargs BOOL ReadInt(char **data, LONG *numptr);
-__regargs BOOL ReadFloat(char **data, FLOAT *numptr);
-__regargs WORD ReadString(char **data, char *buf, WORD buflen);
+__regargs bool EndOfLine(char **data);
+__regargs bool ReadByte(char **data, char *numptr);
+__regargs bool ReadShort(char **data, short *numptr);
+__regargs bool ReadInt(char **data, int *numptr);
+__regargs bool ReadFloat(char **data, float *numptr);
+__regargs short ReadString(char **data, char *buf, short buflen);
+
+#define ReadByteU(data, numptr) ReadByte(data, (char *)numptr)
+#define ReadShortU(data, numptr) ReadShort(data, (short *)numptr)
 
 #endif

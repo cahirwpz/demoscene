@@ -1,5 +1,3 @@
-#include <stdarg.h>
-
 #include "serial.h"
 #include "interrupts.h"
 #include "hardware.h"
@@ -8,9 +6,9 @@
 #define QUEUELEN 512
 
 typedef struct {
-  UWORD head, tail;
-  volatile UWORD used;
-  UBYTE data[QUEUELEN];
+  u_short head, tail;
+  volatile u_short used;
+  u_char data[QUEUELEN];
 } CharQueueT;
 
 static struct {
@@ -18,7 +16,7 @@ static struct {
   CharQueueT recvq;
 } serial;
 
-static void PushChar(CharQueueT *queue, UBYTE data) {
+static void PushChar(CharQueueT *queue, u_char data) {
   while (queue->used == QUEUELEN);
 
   custom->intena = INTF_TBE;
@@ -30,8 +28,8 @@ static void PushChar(CharQueueT *queue, UBYTE data) {
   custom->intena = INTF_SETCLR | INTF_TBE;
 }
 
-static LONG PopChar(CharQueueT *queue) {
-  LONG result;
+static int PopChar(CharQueueT *queue) {
+  int result;
 
   if (queue->used == 0)
     return -1;
@@ -47,16 +45,16 @@ static LONG PopChar(CharQueueT *queue) {
   return result;
 }
 
-static void SendIntHandler() {
-  LONG data;
+static void SendIntHandler(void) {
+  int data;
   custom->intreq = INTF_TBE;
   data = PopChar(&serial.sendq);
   if (data >= 0)
     custom->serdat = data | 0x100;
 }
 
-static void RecvIntHandler() {
-  UWORD serdatr = custom->serdatr;
+static void RecvIntHandler(void) {
+  u_short serdatr = custom->serdatr;
   custom->intreq = INTF_RBF;
   PushChar(&serial.recvq, serdatr);
 }
@@ -67,7 +65,7 @@ INTERRUPT(SendInterrupt, 0, SendIntHandler, NULL);
 static struct Interrupt *oldTBE;
 static struct Interrupt *oldRBF;
 
-__regargs void SerialInit(LONG baud) {
+__regargs void SerialInit(int baud) {
   memset(&serial, 0, sizeof(serial));
 
   custom->serper = CLOCK / baud - 1;
@@ -87,7 +85,7 @@ void SerialKill() {
   SetIntVector(INTB_TBE, oldTBE);
 }
 
-__regargs void SerialPut(UBYTE data) {
+__regargs void SerialPut(u_char data) {
   PushChar(&serial.sendq, data);
   if (data == '\n')
     PushChar(&serial.sendq, '\r');
@@ -99,11 +97,12 @@ __regargs void SerialPut(UBYTE data) {
 
 void SerialPrint(const char *format, ...) {
   va_list args;
+
   va_start(args, format);
-  RawDoFmt(format, args, (void (*)())SerialPut, NULL);
+  kvprintf(format, (kvprintf_fn_t *)SerialPut, NULL, args);
   va_end(args);
 }
 
-LONG SerialGet() {
+int SerialGet() {
   return PopChar(&serial.recvq);
 }
