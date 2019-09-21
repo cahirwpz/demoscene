@@ -8,7 +8,20 @@
 #define __GNUC_PREREQ__(x, y) 0
 #endif
 
-#define __unused __attribute__((__unused__))
+#define ___STRING(x) __STRING(x)
+#define ___CONCAT(x, y) __CONCAT(x, y)
+
+#define __unused __attribute__((unused))
+#define __constfunc __attribute__((const))
+#define __packed __attribute__((packed))
+#define __noreturn __attribute__((noreturn))
+
+#if __GNUC_PREREQ__(3, 0) || defined(__lint__)
+#define __noinline __attribute__((noinline))
+#else
+#define __noinline
+#endif
+
 #if __GNUC_PREREQ__(2, 92)
 #define __restrict __restrict__
 #else
@@ -16,8 +29,6 @@
 #endif
 
 #define __DECONST(type, var) ((type)(unsigned long)(const void *)(var))
-
-#define __noreturn __attribute__((__noreturn__))
 
 #define offsetof(st, m) ((u_int)((char *)&((st *)0)->m - (char *)0))
 
