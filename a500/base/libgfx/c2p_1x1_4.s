@@ -5,7 +5,7 @@
 
         xdef    _c2p_1x1_4
 
-	section	code,code
+	section	'.text',code
 
 ; d0.w	chunkyx [chunky-pixels] (must be even multiple of 16)
 ; d1.w	chunkyy [chunky-pixels]

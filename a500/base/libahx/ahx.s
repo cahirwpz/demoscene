@@ -18,7 +18,7 @@
         xref _FileRead
         xref _CloseFile
 
-	section	ahx,Code
+	section	'.text',code
 
 Ahx:
         incbin 'AHX-Replayer000.BIN.patched'

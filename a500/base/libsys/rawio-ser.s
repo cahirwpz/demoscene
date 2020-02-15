@@ -11,7 +11,7 @@ CLOCK   equ     3546895
 
 custom  equ     $dff000
 
-        section "code",code
+        section '.text',code
 
 _KPutChar:
         move.w  #(CLOCK/BAUD-1),custom+serper

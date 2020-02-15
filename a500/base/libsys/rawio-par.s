@@ -6,7 +6,7 @@
         xdef    _DPutLong
         xdef    _DPutStr
 
-        section code,code
+        section '.text',code
 
 ; Reliable transfers may only happen 3 or more E-cycles basis.
 ; http://lallafa.de/blog/2015/09/amiga-parallel-port-how-fast-can-you-go/
@@ -81,7 +81,7 @@ _DPutStr:
 .putc   bsr     _DPutChar
         bra     .loop
 
-        section bss,bss_p
+        section '.bss',bss
 
 _parallel:
         ds.b    1

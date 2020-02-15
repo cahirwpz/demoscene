@@ -119,7 +119,7 @@ suppF01 = 0	;0 is incompatible with CIA mode. It moves ~100 cycles of
 	xdef _P61_Init, _P61_Music, _P61_SetPosition, _P61_Osc, _P61_End
         xdef _P61_ControlBlock, _P61_visuctr
 
-	section	"P6111",code
+	section	'.text',code
 
 _P61_Init
 	movem.l	d2-d7/a2-a6,-(sp)

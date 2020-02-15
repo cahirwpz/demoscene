@@ -16,6 +16,9 @@
 #define __packed __attribute__((packed))
 #define __noreturn __attribute__((noreturn))
 
+#define __data_chip __attribute__((section(".datachip")))
+#define __data_bss __attribute__((section(".bsschip")))
+
 #if __GNUC_PREREQ__(3, 0) || defined(__lint__)
 #define __noinline __attribute__((noinline))
 #else

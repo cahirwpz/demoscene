@@ -3,7 +3,7 @@
 
         XDEF    _bzero
 
-        SECTION "bzero",CODE
+        SECTION '.text',code_p
 
 _bzero:
 	move.l	d2,-(sp)

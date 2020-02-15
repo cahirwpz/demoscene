@@ -30,6 +30,8 @@
 
         xdef    _Inflate
 
+        section '.text',code
+
 * Optimisation Option #1:
 * Avoid long Huffman-tree walks by indexing the first 8 bits of each codeword
 * in a 256-entry lookup table. This shortens all walks by 8 steps and since

@@ -19,7 +19,7 @@ c_Instruments   rs.l    32*2
 c_Sinus         rs.w    CINTER_DEGREES
 c_SIZE          rs.w    0
 
-        section code_f, code, fast
+        section '.text',code
 
 _CinterInit:
         movem.l d2-d7/a2-a6,-(sp)

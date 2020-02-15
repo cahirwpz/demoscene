@@ -27,7 +27,7 @@ _LVOException   EQU     -66
 	BITDEF	SF,TQE,14	; Time Quantum Elapsed
 	BITDEF	SF,SAR,15	; Scheduler Attention Request
 
-        section code,code
+        section '.text',code
 
 ; TaskYield must be executed in user mode!
 _TaskYield:
