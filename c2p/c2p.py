@@ -153,5 +153,5 @@ def c2p_2_1_4_stingray():
   Array.Print("Bitplanes:", b0, b1, b2, b3, b4, b5, b6, b7)
 
 
-#c2p_2_1_4_mangled()
-#c2p_2_1_4_stingray()
+# c2p_2_1_4_mangled()
+# c2p_2_1_4_stingray()

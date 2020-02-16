@@ -10,7 +10,7 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - run: './style-python.sh'
+      - run: './style-python'
 
   build:
     <<: *defaults
@@ -30,7 +30,7 @@ jobs:
           command: 'cd ~ && tar cvzf /demoscene.tar.gz demoscene'
       - run:
           name: Amiga 500 (compile code base)
-          command: 'cd a500 && make'
+          command: 'make'
       - store_artifacts:
           path: /demoscene.tar.gz
 

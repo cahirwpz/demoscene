@@ -2,7 +2,7 @@
 .exrc
 .ropeproject
 _UAEFSDB.___
-artwork/
+
 # ide folders
 .idea
 .vscode
@@ -29,20 +29,27 @@ artwork/
 *.P
 
 # data files
+*.2d
+*.3d
 *.8svx
-*.bin
 *.ahx
+*.bin
+*.ctr
+*.dat
+*.gif
 *.iff
 *.ilbm
-*.bin
-*.png
 *.lwo
 *.mod
-*.pal
-*.gif
 *.p61
+*.pal
+*.png
+*.psf
+*.psfu
+*.smp
 *.tga
-*.dat
+*.thx
+ahxWaves*
 p61.*
 smp.*
 
