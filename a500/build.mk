@@ -83,7 +83,7 @@ endif
 
 %.o: %.s
 	@echo "[$(DIR):as] $< -> $@"
-	$(AS) -Faout $(ASFLAGS) -o $@ $<
+	$(AS) -Fhunk $(ASFLAGS) -o $@ $<
 
 %.bin: %.s
 	@echo "[$(DIR):as] $< -> $@"
