@@ -19,6 +19,3 @@ RUN apt-get install -y --no-install-recommends \
             python3-pil python3-pip python3-wheel python3-dev
 RUN tar -C / -xvzf demoscene-toolchain.tar.gz && rm demoscene-toolchain.tar.gz
 RUN pip3 install pycodestyle zopflipy
-RUN git clone https://github.com/cahirwpz/amigaos-dev-toolkit.git && \
-    cd amigaos-dev-toolkit && python3 setup.py install && \
-    cd .. && rm -rf amigaos-dev-toolkit
