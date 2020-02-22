@@ -136,7 +136,7 @@ func chunkSize(r io.Reader) int {
 	if err := binary.Read(r, binary.BigEndian, &val); err != nil {
 		panic(err)
 	}
-	return int(val)
+	return (int(val) + 1) & -2
 }
 
 func chunkName(r io.Reader) string {
