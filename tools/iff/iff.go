@@ -9,11 +9,13 @@ import (
 	"io"
 )
 
-var ParsedChunks map[string]func() Chunk
+type ChunkCtor = func() Chunk
+
+var ParsedChunks map[string]ChunkCtor
 var IgnoredChunks map[string]bool
 
 func init() {
-	ParsedChunks = make(map[string]func() Chunk)
+	ParsedChunks = make(map[string]ChunkCtor)
 	IgnoredChunks = make(map[string]bool)
 
 	ParsedChunks["ANNO"] = makeANNO
@@ -29,6 +31,7 @@ type Reader interface {
 	ReadU16() uint16
 	ReadI16() int16
 	ReadI32() int32
+	ReadU32() uint32
 }
 
 type Chunk interface {
@@ -195,4 +198,8 @@ func ReadIff(r io.Reader) (iff File, err error) {
 	}
 
 	return &iffFile{name, chunks}, nil
+}
+
+func WriteIff(w io.Writer, chunks []Chunk) error {
+	return nil
 }

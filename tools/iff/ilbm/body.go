@@ -1,15 +1,15 @@
 package ilbm
 
 import (
-  ".."
-  "bytes"
-  "fmt"
-  "io"
-  "compress/gzip"
+	".."
+	"bytes"
+	"compress/gzip"
+	"fmt"
+	"io"
 )
 
 type BODY struct {
-  data []byte
+	Data []byte
 }
 
 func (body BODY) Name() string {
@@ -17,66 +17,81 @@ func (body BODY) Name() string {
 }
 
 func (body *BODY) Read(r iff.Reader) {
-  body.data = make([]byte, r.Size())
-  r.Read(body.data)
+	body.Data = make([]byte, r.Size())
+	r.Read(body.Data)
 }
 
 func unRLE(data []byte) []byte {
-  input := bytes.NewBuffer(data)
-  output := bytes.NewBuffer(nil)
+	input := bytes.NewBuffer(data)
+	output := bytes.NewBuffer(nil)
 
-  for {
-    var n, b byte
-    var err error
-    if n, err = input.ReadByte(); err == io.EOF {
-      break
-    }
-    if n <= 127 {
-      if _, err = io.CopyN(output, input, int64(n) + 1); err != nil {
-        panic(err)
-      }
-    } else {
-      if b, err = input.ReadByte(); err != nil {
-        panic(err)
-      }
-      for i := 0; i < 257 - int(n); i++ {
-        output.WriteByte(b)
-      }
-    }
-  }
+	for {
+		var n, b byte
+		var err error
+		if n, err = input.ReadByte(); err == io.EOF {
+			break
+		}
+		if n <= 127 {
+			if _, err = io.CopyN(output, input, int64(n)+1); err != nil {
+				panic(err)
+			}
+		} else {
+			if b, err = input.ReadByte(); err != nil {
+				panic(err)
+			}
+			for i := 0; i < 257-int(n); i++ {
+				output.WriteByte(b)
+			}
+		}
+	}
 
-  return output.Bytes()
+	return output.Bytes()
+}
+
+func Deinterleave(data []byte, width, height, depth int) []byte {
+	bytesPerRow := ((width + 15) &^ 15) / 8
+	output := bytes.NewBuffer(nil)
+
+	for i := 0; i < depth; i++ {
+		s := i * bytesPerRow
+		for y := 0; y < height; y++ {
+			output.Write(data[s : s+bytesPerRow])
+			s += bytesPerRow * depth
+		}
+	}
+
+	return output.Bytes()
 }
 
 func inflate(data []byte) []byte {
-  var input io.Reader
-  var err error
+	var input io.Reader
+	var err error
 
-  if input, err = gzip.NewReader(bytes.NewBuffer(data)); err != nil {
-    panic(err)
-  }
+	if input, err = gzip.NewReader(bytes.NewBuffer(data)); err != nil {
+		panic(err)
+	}
 
-  output := bytes.NewBuffer(nil)
+	output := bytes.NewBuffer(nil)
 
-  if _, err = io.Copy(output, input); err != nil {
-    panic(err)
-  }
+	if _, err = io.Copy(output, input); err != nil {
+		panic(err)
+	}
 
-  return output.Bytes()
+	return output.Bytes()
 }
 
 func (body *BODY) Decompress(c BodyComp) {
-  switch c {
-  case CompRLE:
-    body.data = unRLE(body.data)
-  case CompDeflate:
-    body.data = inflate(body.data)
-  default:
-  }
+	switch c {
+	case CompRLE:
+		body.Data = unRLE(body.Data)
+	case CompDeflate:
+		body.Data = inflate(body.Data)
+	default:
+	}
 }
 
 func (body BODY) String() string {
-  return fmt.Sprintf("{%d bytes}", len(body.data))
+	return fmt.Sprintf("{%d bytes}", len(body.Data))
 }
 
 func makeBODY() iff.Chunk {

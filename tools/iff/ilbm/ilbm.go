@@ -8,6 +8,7 @@ func init() {
 	iff.ParsedChunks["CRNG"] = makeCRNG
 	iff.ParsedChunks["CMAP"] = makeCMAP
 	iff.ParsedChunks["BODY"] = makeBODY
+	iff.ParsedChunks["CAMG"] = makeCAMG
 
 	// Ignore JUNK chunk
 	iff.IgnoredChunks["JUNK"] = true
