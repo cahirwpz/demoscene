@@ -21,79 +21,20 @@ func init() {
 	ParsedChunks["ANNO"] = makeANNO
 }
 
-type Reader interface {
-	io.Reader
-	io.Seeker
-	Size() int64
-	Skip(int64)
-	ReadU8() uint8
-	ReadI8() int8
-	ReadU16() uint16
-	ReadI16() int16
-	ReadI32() int32
-	ReadU32() uint32
-}
-
 type Chunk interface {
 	fmt.Stringer
 	Name() string
 	Read(r Reader)
 }
 
+type WritableChunk interface {
+	Chunk
+	Write(w Writer)
+}
+
 type File interface {
 	Name() string
 	Chunks() []Chunk
-}
-
-// IFF chunk reader
-type iffReader struct {
-	*bytes.Reader
-}
-
-func (r *iffReader) ReadU8() (val uint8) {
-	if err := binary.Read(r, binary.BigEndian, &val); err != nil {
-		panic(err)
-	}
-	return val
-}
-
-func (r *iffReader) ReadI8() (val int8) {
-	if err := binary.Read(r, binary.BigEndian, &val); err != nil {
-		panic(err)
-	}
-	return val
-}
-
-func (r *iffReader) ReadU16() (val uint16) {
-	if err := binary.Read(r, binary.BigEndian, &val); err != nil {
-		panic(err)
-	}
-	return val
-}
-
-func (r *iffReader) ReadI16() (val int16) {
-	if err := binary.Read(r, binary.BigEndian, &val); err != nil {
-		panic(err)
-	}
-	return val
-}
-
-func (r *iffReader) ReadU32() (val uint32) {
-	if err := binary.Read(r, binary.BigEndian, &val); err != nil {
-		panic(err)
-	}
-	return val
-}
-
-func (r *iffReader) ReadI32() (val int32) {
-	if err := binary.Read(r, binary.BigEndian, &val); err != nil {
-		panic(err)
-	}
-	return val
-}
-
-func (r *iffReader) Skip(off int64) {
-	r.Seek(off, io.SeekCurrent)
 }
 
 // IFF chunk
@@ -200,6 +141,21 @@ func ReadIff(r io.Reader) (iff File, err error) {
 	return &iffFile{name, chunks}, nil
 }
 
-func WriteIff(w io.Writer, chunks []Chunk) error {
+func WriteIff(w io.Writer, form string, chunks []Chunk) (err error) {
+	defer func() {
+		p := recover()
+		if p != nil {
+			var ok bool
+			err, ok = p.(error)
+			if !ok {
+				panic(p)
+			}
+		}
+	}()
+
+	if len(form) != 4 {
+		panic("IFF form must be a four character string!")
+	}
+
 	return nil
 }

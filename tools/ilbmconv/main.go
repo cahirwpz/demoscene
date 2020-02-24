@@ -110,7 +110,6 @@ func main() {
 		1, 1, int16(width), int16(height)}
 	cmap := ilbm.CMAP{palette}
 	body := ilbm.BODY{c2p(pixels, width, height, depth)}
-	chunks := []iff.Chunk{&bmhd, &cmap, &body}
 
 	name := pathWithoutExt(flag.Arg(0))
 
@@ -119,7 +118,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := iff.WriteIff(f, chunks); err != nil {
+	chunks := []iff.Chunk{&bmhd, &cmap, &body}
+	if err := iff.WriteIff(f, "ILBM", chunks); err != nil {
 		log.Fatal("Could not write IFF/ILBM file!")
 	}
 }
