@@ -6,9 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"io"
+	"io/ioutil"
+	"os"
+	"strings"
 )
 
-// TiledData sructure
 type TiledData struct {
 	XMLName     xml.Name `xml:"data"`
 	Encoding    string   `xml:"encoding,attr"`
@@ -16,7 +18,6 @@ type TiledData struct {
 	Bytes       string   `xml:",chardata"`
 }
 
-// TiledLayer structure
 type TiledLayer struct {
 	XMLName xml.Name `xml:"layer"`
 	Name    string   `xml:"name,attr"`
@@ -25,7 +26,6 @@ type TiledLayer struct {
 	Data    TiledData
 }
 
-// TiledImage structure
 type TiledImage struct {
 	XMLName xml.Name `xml:"image"`
 	Source  string   `xml:"source,attr"`
@@ -61,8 +61,9 @@ type TiledMap struct {
 	Layer        TiledLayer
 }
 
-//DecompresString - decompress base64 gziped string to bytes
-func DecompresString(data string) (out []byte, err error) {
+// Decode base64 string and ungzip it to bytes.
+func (td *TiledData) Decompress() (out []byte, err error) {
+	data := strings.TrimSpace(td.Bytes)
 
 	decoded, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
@@ -83,11 +84,10 @@ func DecompresString(data string) (out []byte, err error) {
 	}
 
 	out = buf.Bytes()
-
 	return
 }
 
-// CompressBytes - compress bytes to base64 string
+// Compress bytes with gzip and convert output to base64 string.
 func CompressBytes(data []byte) (out string, err error) {
 	var buf bytes.Buffer
 
@@ -99,6 +99,22 @@ func CompressBytes(data []byte) (out string, err error) {
 	}
 
 	out = base64.StdEncoding.EncodeToString(buf.Bytes())
+	return
+}
 
+func ReadFile(path string) (parsedMap TiledMap, err error) {
+	file, err := os.Open(path)
+	defer file.Close()
+
+	if err != nil {
+		return
+	}
+
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return
+	}
+
+	xml.Unmarshal(bytes, &parsedMap)
 	return
 }

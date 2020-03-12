@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/xml"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -25,21 +24,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	xmlFile, err := os.Open(flag.Arg(0))
-	defer xmlFile.Close()
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	readBytes, err := ioutil.ReadAll(xmlFile)
-	if err != nil {
-		fmt.Println(err)
-	}
 	var parsedMap tmx.TiledMap
-	xml.Unmarshal(readBytes, &parsedMap)
+	parsedMap, err := tmx.ReadFile(flag.Arg(0))
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	b, err := tmx.DecompresString(parsedMap.Layer.Data.Bytes)
+	b, err := parsedMap.Layer.Data.Decompress()
 	if err != nil {
 		log.Fatal(err)
 	}
