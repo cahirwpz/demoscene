@@ -1,16 +1,12 @@
-SOURCES_S := ahx.s
+TOPDIR := $(realpath ../..)
 
-all: libahx.a
+SOURCES := ahx.s
+CLEAN-FILES := AHX-Replayer000.BIN.patched
 
-include ../../build.mk
-
-libahx.a: ahx.o
+include $(TOPDIR)/build.lib.mk
 
 AHX-Replayer000.BIN.patched: AHX-Replayer000.BIN AHX-Replayer000.diff
-	@echo "[$(DIR):fix] $^ -> $@"
+	@echo "[DIR] $(addprefix $(DIR),$^) -> $(DIR)$@"
 	$(BINPATCH) $^ $@
 
 ahx.o: ahx.s ../include/ahx.h AHX-Replayer000.BIN.patched
-
-clean::
-	@$(RM) AHX-Replayer000.BIN.patched

@@ -1,6 +1,6 @@
-DATA := data/floor-city.ilbm \
-	data/floor.png
+TOPDIR := $(realpath ../..)
 
-all: build-data floor-old.exe
+DATA_GEN := data/floor-city.ilbm
+DATA := data/floor.png
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

@@ -2,6 +2,7 @@
 
 from PIL import Image
 from utils import constrain, lerp, dist
+import sys
 
 
 if __name__ == "__main__":
@@ -19,4 +20,4 @@ if __name__ == "__main__":
 
   light = Image.new('L', size)
   light.putdata(data)
-  light.save("light.png", "PNG")
+  light.save(sys.argv[1], "PNG")

@@ -1,5 +1,5 @@
-DATA := data/ghostown-logo.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data glitch.exe
+DATA_GEN := data/ghostown-logo.ilbm
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

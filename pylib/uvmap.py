@@ -48,6 +48,7 @@ def HotMagma(x, y):
 
 
 class UVMap(object):
+
     def __init__(self, width, height, texsize=128):
         self.umap = array('f', [0.0 for i in range(width * height)])
         self.vmap = array('f', [0.0 for i in range(width * height)])
@@ -101,15 +102,15 @@ class UVMap(object):
             else:
                 data.append(0x8000)
         im.putdata(fn(data))
-        im.save('%s.png' % name, 'PNG')
+        im.save(name + '.png', 'PNG')
         subprocess.call(['optipng', '-o7', '%s.png' % name])
 
     def save_uv(self, name):
         im = Image.new('L', (self.width, self.height))
         im.putdata([frpart(u) * 256 for u in self.umap])
-        im.save('%s-u.png' % name, 'PNG')
+        im.save(name + '-u.png', 'PNG')
         im = Image.new('L', (self.width, self.height))
         im.putdata([frpart(v) * 256 for v in self.vmap])
-        im.save('%s-v.png' % name, 'PNG')
+        im.save(name + '-v.png', 'PNG')
         # subprocess.call(['optipng', '-o7', '%s-u.png' % name])
         # subprocess.call(['optipng', '-o7', '%s-v.png' % name])

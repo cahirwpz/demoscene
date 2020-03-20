@@ -4,6 +4,7 @@ from PIL import Image
 from subprocess import call
 from utils import lerp, dist, saw
 from math import atan2, sin, cos, pi
+import sys
 
 
 def Neon1(i, j):
@@ -78,4 +79,4 @@ if __name__ == "__main__":
     for i in range(width):
       pix[i, j] = Neon3(i, j) % 16
 
-  im.save("neons-2.png", "PNG")
+  im.save(sys.argv[1], "PNG")

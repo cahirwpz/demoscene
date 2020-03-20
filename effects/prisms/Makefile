@@ -1,5 +1,5 @@
-DATA := data/sprite.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data prisms.exe
+DATA_GEN := data/sprite.ilbm
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

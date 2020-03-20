@@ -1,5 +1,5 @@
+TOPDIR := $(realpath ../..)
+
 DATA := data/face-pchg.ilbm
 
-all: showpchg.exe
-
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

@@ -1,6 +1,6 @@
-DATA := data/floor-stripes.ilbm \
-	data/floor.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data floor.exe
+DATA_GEN := data/floor-stripes.ilbm \
+	    data/floor.ilbm
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

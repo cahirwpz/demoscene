@@ -1,6 +1,6 @@
-DATA := data/thunders-floor.png \
-	data/thunders.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data thunders.exe
+DATA := data/thunders-floor.png
+DATA_GEN := data/thunders.ilbm
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

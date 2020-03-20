@@ -1,12 +1,8 @@
-SOURCES_C := \
+TOPDIR := $(realpath ../..)
+
+SOURCES := \
 	8svx.c \
 	audio.c \
 	sound.c
 
-SOURCES_ASM :=
-
-all: libaudio.a
-
-include ../../build.mk
-
-libaudio.a: $(OBJECTS)
+include $(TOPDIR)/build.lib.mk

@@ -1,6 +1,8 @@
-DATA := data/MagicLand-map.bin \
-	data/MagicLand-tiles.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data tiles16.exe
+DATA_GEN := data/MagicLand-map.bin \
+	    data/MagicLand-tiles.png \
+	    data/MagicLand-tiles.ilbm
+SOURCES_GEN := data/MagicLand.h
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

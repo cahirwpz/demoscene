@@ -1,7 +1,10 @@
-DATA := data/texture.png \
-	data/torus-map.png \
-	data/torus-light.png
+TOPDIR := $(realpath ../..)
 
-all: build-data uvlight.exe
+DATA := data/texture.png data/torus-light.png
+DATA_GEN := data/torus-map.png
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk
+
+data/torus-map.png: data/gen-uvmap.py
+	@echo "[GEN] $@"
+	$(PYTHON3) $< $(@:%-map.png=%)

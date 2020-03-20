@@ -1,8 +1,11 @@
-DATA := data/JazzCat-Automatic.ctr \
-	data/JazzCat-Automatic.smp
+TOPDIR := $(realpath ../..)
+
+DATA_GEN := data/JazzCat-Automatic.ctr \
+	    data/JazzCat-Automatic.smp
 
 LIBS := libctr
 
-all: playctr.exe
+include $(TOPDIR)/build.effect.mk
 
-include ../build.mk
+%.ctr %.smp: %.mod
+	$(PYTHON3) data/CinterConvert.py $^ $@ $(@:.ctr=.smp)

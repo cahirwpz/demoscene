@@ -1,8 +1,8 @@
-SOURCES_C := \
+TOPDIR := $(realpath ../..)
+
+SOURCES := \
 	2d-clip.c \
 	2d-load.c \
 	2d.c
 
-all: lib2d.a
-
-include ../../build.mk
+include $(TOPDIR)/build.lib.mk

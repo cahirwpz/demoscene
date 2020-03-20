@@ -1,8 +1,14 @@
-DATA := data/tiles.png \
-	data/tiles-c.png \
-	data/twist.png \
-	data/twist-colors.png
+TOPDIR := $(realpath ../..)
 
-all: build-data tiles8.exe
+DATA := data/tiles.png data/tiles-c.png
+DATA_GEN := data/twist.png data/twist-colors.png
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk
+
+data/twist.png: data/twist.py
+	@echo "[GEN] $(DIR)$@"
+	$(PYTHON3) $^ $@
+
+data/twist-colors.png: data/twist-colors.py
+	@echo "[GEN] $(DIR)$@"
+	$(PYTHON3) $^ $@

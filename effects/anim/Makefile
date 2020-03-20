@@ -1,6 +1,10 @@
-DATA := data/running.bin \
-	data/running-pal.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data anim.exe 
+SOURCES_GEN := data/running.asm
+DATA_GEN := data/running-pal.ilbm data/running.bin
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk
+
+%.asm: %.gif
+	@echo "[ANIM] $(DIR)$< -> $(DIR)$@"
+	$(PYTHON3) data/gen-anim.py $< > $@

@@ -1,4 +1,6 @@
-SOURCES_C := \
+TOPDIR := $(realpath ../..)
+
+SOURCES := \
 	amigahunk.c \
 	common.c \
 	console.c \
@@ -9,40 +11,33 @@ SOURCES_C := \
 	fx.c \
 	hardware.c \
 	iff.c \
+	inflate.s \
 	interrupts.c \
 	io-dos.c \
 	io-extra.c \
 	io-floppy.c \
-	lib-graphics.c \
-	lib-mathffp.c \
-	lib-list.c \
 	keyboard.c \
+	lib-graphics.c \
+	lib-list.c \
+	lib-mathffp.c \
 	memory.c \
 	mouse.c \
-	qsort.c \
 	print.c \
+	qsort.c \
 	random.c \
+	rawio-par.s \
+	rawio-ser.s \
 	reader.c \
 	serial.c \
 	sintab.c \
 	sort.c \
+	tasks-ll.s \
 	tasks.c \
 	uae.c
 
-SOURCES_ASM := \
-	inflate.s \
-	rawio-par.s \
-	rawio-ser.s \
-	tasks-ll.s
+SOURCES_GEN := sintab.c
 
-all: libsys.a
-
-include ../../build.mk
-
-libsys.a: $(OBJECTS)
+include $(TOPDIR)/build.lib.mk
 
 sintab.c: sintab.py
 	$(PYTHON3) sintab.py
-
-clean::
-	$(RM) -f sintab.c

@@ -1,7 +1,6 @@
-DATA := data/dragon-bg.ilbm \
-	data/texture-15.png \
-	data/ball.bin
+TOPDIR := $(realpath ../..)
 
-all: build-data ball.exe
+DATA := data/texture-15.png data/ball.bin
+DATA_GEN := data/dragon-bg.ilbm
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

@@ -1,4 +1,7 @@
-SOURCES_C := \
+TOPDIR := $(realpath ../..)
+
+SOURCES := \
+	c2p_1x1_4.s \
 	circle.c \
 	color.c \
 	coplist.c \
@@ -9,11 +12,4 @@ SOURCES_C := \
 	png.c \
 	sprite.c
 
-SOURCES_ASM := \
-	c2p_1x1_4.s
-
-all: libgfx.a
-
-include ../../build.mk
-
-libgfx.a: $(OBJECTS)
+include $(TOPDIR)/build.lib.mk

@@ -1,6 +1,6 @@
-DATA := data/ghostown-logo.ilbm \
-	data/transparency-bg.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data transparency.exe
+DATA_GEN := data/ghostown-logo.ilbm \
+	    data/transparency-bg.ilbm
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

@@ -1,5 +1,11 @@
-DATA := data/plotter-flares.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data plotter.exe
+DATA_GEN := data/plotter-flares.png \
+	    data/plotter-flares.ilbm
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk
+
+data/plotter-flares.png:
+	@echo "[GEN] $(DIR)$@"
+	$(PYTHON3) data/plotter-flares.py $@
+	$(OPTIPNG) $@

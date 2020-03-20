@@ -1,6 +1,7 @@
 MAKEFLAGS += --no-builtin-rules
 
 TOPDIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+DIR := $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))/
 
 # Compiler tools & flags definitions
 CC	:= m68k-amigaos-gcc -noixemul -g
@@ -44,61 +45,60 @@ TMXCONV := $(TOPDIR)/tools/tmxconv.py
 OPTIPNG := optipng $(QUIET)
 STRIP := m68k-amigaos-strip -s
 
-# Rules for recursive build
-DIR := $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))
-
-build-%: FORCE
-	$(MAKE) -C $(@:build-%=%)
-
-clean-%: FORCE
-	$(MAKE) -C $(@:clean-%=%) clean
-
-# Check if library is up-to date if someone is asking explicitely
-$(TOPDIR)/base/lib%.a: FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
 # Generate dependencies automatically
-SOURCES = $(SOURCES_C) $(SOURCES_ASM)
+SOURCES_C = $(filter %.c,$(SOURCES))
+SOURCES_ASM = $(filter %.s,$(SOURCES))
 OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_ASM:.s=.o)
 DEPFILES = $(SOURCES_C:%.c=.%.P)
+
+$(DEPFILES): $(SOURCES_GEN)
 
 ifeq ($(words $(findstring $(MAKECMDGOALS), clean)), 0)
   -include $(DEPFILES)
 endif
 
+CLEAN-FILES += $(DEPFILES) $(SOURCES_GEN) $(DATA_GEN)
+
 # Disable all built-in recipes and define our own
 .SUFFIXES:
 
 .%.P: %.c
-	@echo "[$(DIR):dep] $< -> $@"
+	@echo "[DEP] $(DIR)$< -> $(DIR)$@"
 	$(CC) $(CPPFLAGS) -MM -MG -o $@ $<
 
 %.o: %.c .%.P
-	@echo "[$(DIR):cc] $< -> $@"
+	@echo "[CC] $(DIR)$< -> $(DIR)$@"
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 %: %.o
-	@echo "[$(DIR):ld] $^ -> $@"
+	@echo "[LD] $(DIR)$^ -> $(DIR)$@"
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.s
-	@echo "[$(DIR):as] $< -> $@"
+	@echo "[AS] $(DIR)$< -> $(DIR)$@"
 	$(AS) -Fhunk $(ASFLAGS) -o $@ $<
 
 %.bin: %.s
-	@echo "[$(DIR):as] $< -> $@"
+	@echo "[AS] $(DIR)$< -> $(DIR)$@"
 	$(AS) -Fbin $(ASFLAGS) -o $@ $<
-
-%.a:	$(OBJECTS)
-	@echo "[$(DIR):ar] $^ -> $@"
-	@m68k-amigaos-ar cr $@ $^
-	@m68k-amigaos-ranlib $@
 
 %.s: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -S -fverbose-asm -o $@ $<
 
-clean::
-	@$(RM) .*.P *.a *.o *~ *.exe *.exe.dbg *.exe.map *.taghl
+# Rules for recursive build
+build-%: FORCE
+	@echo "[MAKE] build $*"
+	$(MAKE) -C $(@:build-%=%)
+
+clean-%: FORCE
+	@echo "[MAKE] clean $*"
+	$(MAKE) -C $(@:clean-%=%) clean
+
+# Rules for build
+build: $(foreach dir,$(SUBDIRS),build-$(dir)) $(BUILD-FILES)
+
+clean: $(foreach dir,$(SUBDIRS),clean-$(dir)) 
+	$(RM) $(BUILD-FILES) $(CLEAN-FILES) .*.P *.a *.o *~ *.taghl
 
 .PRECIOUS: %.o
 .PHONY: all clean FORCE

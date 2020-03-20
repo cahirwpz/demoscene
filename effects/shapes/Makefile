@@ -1,8 +1,8 @@
-DATA := data/shapes-pal.ilbm \
-	data/night.2d
+TOPDIR := $(realpath ../..)
+
+DATA_GEN := data/shapes-pal.ilbm
+DATA := data/night.2d data/boxes.2d
 
 LIBS := lib2d
 
-all: build-data shapes.exe
-
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

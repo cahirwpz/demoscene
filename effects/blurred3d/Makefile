@@ -1,8 +1,8 @@
-DATA := data/szescian.3d \
-	data/blurred3d-pal.png
+TOPDIR := $(realpath ../..)
+
+DATA_GEN := data/szescian.3d
+DATA := data/blurred3d-pal.png
 
 LIBS := lib3d
 
-all: build-data blurred3d.exe
-
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

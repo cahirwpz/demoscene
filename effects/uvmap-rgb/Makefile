@@ -1,6 +1,10 @@
-DATA := data/texture-rgb.png \
-	data/uvmap-rgb.png
+TOPDIR := $(realpath ../..)
 
-all: build-data uvmap-rgb.exe
+DATA := data/texture-rgb.png
+DATA_GEN := data/uvmap-rgb.png
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk
+
+data/uvmap-rgb.png: data/gen-uvmap.py
+	@echo "[GEN] $@"
+	$(PYTHON3) $< $(@:%.png=%)

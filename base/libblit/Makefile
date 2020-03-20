@@ -1,4 +1,6 @@
-SOURCES_C := \
+TOPDIR := $(realpath ../..)
+
+SOURCES := \
 	blitter.c \
 	blt-add-sat.c \
 	blt-copy-area.c \
@@ -13,10 +15,4 @@ SOURCES_C := \
 	blt-set-area.c \
 	blt-set-mask-area.c
 
-SOURCES_ASM := 
-
-all: libblit.a
-
-include ../../build.mk
-
-libblit.a: $(OBJECTS)
+include $(TOPDIR)/build.lib.mk

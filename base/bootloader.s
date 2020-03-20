@@ -127,6 +127,8 @@ Entry:
 
 ffpName dc.b    'mathffp.library',0
 
+        even
+
 ; [d0] length in bytes (multiple of 512)
 ; [d1] offset from beginning of disk
 ; [a0] destination buffer (must be in chip memory)

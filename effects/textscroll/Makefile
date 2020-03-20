@@ -1,6 +1,6 @@
-DATA := data/text-scroll-font.ilbm \
-	data/text-scroll.txt
+TOPDIR := $(realpath ../..)
 
-all: build-data textscroll.exe
+DATA_GEN := data/text-scroll-font.ilbm
+DATA := data/text-scroll.txt
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk
