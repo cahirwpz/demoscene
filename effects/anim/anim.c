@@ -19,33 +19,23 @@ static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
 static short active = 0;
 
-#include "data/running-pal.c"
-
 typedef struct {
   short width, height;
   short current, count;
   u_char *frame[0];
 } AnimSpanT;
 
-static AnimSpanT *anim;
+#include "data/running-pal.c"
+#include "data/running.c"
 
 static void Load(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
-  anim = LoadFile("running.bin", MEMF_PUBLIC);
 
   Log("Animation has %d frames %d x %d.\n", 
-      anim->count, anim->width, anim->height);
-
-  {
-    short i;
-
-    for (i = 0; i < anim->count; i++)
-      anim->frame[i] = (void *)anim->frame[i] + (int)anim;
-  }
+      running.count, running.width, running.height);
 }
 
 static void UnLoad(void) {
-  MemFree(anim);
   DeleteBitmap(screen);
 }
 
@@ -71,9 +61,9 @@ static void Kill(void) {
 }
 
 static void DrawSpans(u_char *bpl) {
-  u_char *frame = anim->frame[anim->current];
+  u_char *frame = running.frame[running.current];
   short f = normfx(SIN(frameCount * 32) * 48);
-  short n = anim->height;
+  short n = running.height;
   short stride = screen->bytesPerRow;
 
   WaitBlitter();
@@ -90,10 +80,10 @@ static void DrawSpans(u_char *bpl) {
     bpl += stride;
   }
 
-  anim->current++;
+  running.current++;
 
-  if (anim->current >= anim->count)
-    anim->current -= anim->count;
+  if (running.current >= running.count)
+    running.current -= running.count;
 }
 
 static void Render(void) {

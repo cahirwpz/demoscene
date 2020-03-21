@@ -1,11 +1,10 @@
 TOPDIR := $(realpath ../..)
 
-SOURCES_GEN := data/running.asm data/running-pal.c
-DATA_GEN := data/running.bin
+SOURCES_GEN := data/running.c data/running-pal.c
 
 include $(TOPDIR)/build.effect.mk
 
-%.asm: %.gif
+%.c: %.gif
 	@echo "[ANIM] $(DIR)$< -> $(DIR)$@"
 	$(PYTHON3) data/gen-anim.py $< > $@
 
