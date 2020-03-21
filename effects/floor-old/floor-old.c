@@ -6,11 +6,8 @@
 #include "random.h"
 #include "color.h"
 #include "png.h"
-#include "ilbm.h"
 #include "color.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 212
@@ -35,6 +32,8 @@ static BitmapT *screen[2];
 static u_short active = 0;
 static CopListT *cp[2];
 
+#include "data/floor-city.c"
+
 typedef struct {
   int delta;
   short x1, x2, y2;
@@ -49,7 +48,6 @@ static u_short tileColumn[HEIGHT];
 static PixmapT *texture;
 static u_short tileColor[TILES * TILES];
 static u_char cycleStart[TILES * TILES];
-static BitmapT *city;
 
 static void FloorPrecalc(void) {
   short i;
@@ -90,15 +88,12 @@ static void Load(void) {
 
   texture = LoadPNG("floor.png", PM_RGB12, MEMF_PUBLIC);
 
-  city = LoadILBM("floor-city.ilbm");
-
   FloorPrecalc();
 
   ITER(i, 0, 255, cycleStart[i] = random() & 63);
 }
 
 static void UnLoad(void) {
-  DeleteBitmap(city);
   DeletePixmap(texture);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
@@ -147,7 +142,7 @@ static void Init(void) {
     Area2D bottom = { 0, 0, WIDTH, FAR_Y };
     BitmapClear(screen[i]);
     BlitterSetArea(screen[i], 0, &top, -1);
-    BitmapCopy(screen[i], 0, 36, city);
+    BitmapCopy(screen[i], 0, 36, &city);
     BlitterSetArea(screen[i], 1, &bottom, -1);
   }
 
