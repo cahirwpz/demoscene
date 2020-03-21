@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-SOURCES_GEN := data/wireframe-pal.c
+CLEAN-FILES := data/wireframe-pal.c
 DATA := data/pilka.3d
 
 LIBS := lib3d

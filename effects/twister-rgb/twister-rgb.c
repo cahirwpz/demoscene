@@ -15,7 +15,6 @@ const char *__cwdpath = "data";
 #define DEPTH   5
 #define STARTX  96
 
-static BitmapT *twister;
 static PixmapT *texture;
 static CopListT *cp[2];
 static CopInsT *bplptr[2][DEPTH];
@@ -28,9 +27,9 @@ static SpriteT *right[2];
 static CopInsT *sprptr[2][8];
 
 #include "data/twister-gradient.c"
+#include "data/twister.c"
 
 static void Load(void) {
-  twister = LoadILBMCustom("twister.ilbm", BM_DISPLAYABLE);
   texture = LoadPNG("twister-texture.png", PM_RGB12, MEMF_PUBLIC);
 
   {
@@ -52,7 +51,6 @@ static void UnLoad(void) {
   DeleteSprite(left[1]);
   DeleteSprite(right[0]);
   DeleteSprite(right[1]);
-  DeleteBitmap(twister);
   DeletePixmap(texture);
 }
 
@@ -63,7 +61,7 @@ static void MakeCopperList(CopListT **ptr, short n) {
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(STARTX), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplanes(cp, bplptr[n], twister, DEPTH);
+  CopSetupBitplanes(cp, bplptr[n], &twister, DEPTH);
   CopSetupSprites(cp, sprptr[n]);
   CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
   CopMove16(cp, diwstrt, 0x2c81);
@@ -124,8 +122,8 @@ static void SetupLines(short f) {
 
   /* first line */
   {
-    int y = (short)twister->bytesPerRow * y0;
-    void **planes = twister->planes;
+    int y = (short)twister.bytesPerRow * y0;
+    void **planes = twister.planes;
     CopInsT **bpl = bplptr[active];
     short n = DEPTH;
 

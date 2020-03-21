@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-SOURCES_GEN := data/flatshade-pal.c
+CLEAN-FILES := data/flatshade-pal.c
 DATA_GEN := data/codi.3d data/pilka.3d
 
 LIBS := lib3d

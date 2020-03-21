@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-SOURCES_GEN := data/running.c data/running-pal.c
+CLEAN-FILES := data/running.c data/running-pal.c
 
 PNG2C.running-pal := --palette running_pal,16
 

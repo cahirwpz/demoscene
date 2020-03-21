@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-SOURCES_GEN := data/flares32.c
+CLEAN-FILES := data/flares32.c
 DATA_GEN := data/pilka.3d
 
 LIBS := lib3d

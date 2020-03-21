@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-SOURCES_GEN := data/shapes-pal.c
+CLEAN-FILES := data/shapes-pal.c
 DATA := data/night.2d data/boxes.2d
 
 LIBS := lib2d

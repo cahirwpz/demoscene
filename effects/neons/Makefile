@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-SOURCES_GEN := data/greet_moods.c data/greet_rno.c
+CLEAN-FILES := data/greet_moods.c data/greet_rno.c
 DATA_GEN := data/greet_ada.ilbm \
 	    data/greet_blacksun.ilbm \
 	    data/greet_dcs.ilbm \

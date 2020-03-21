@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-SOURCES_GEN := data/ghostown-logo.c
+CLEAN-FILES := data/ghostown-logo.c
 
 PNG2C.ghostown-logo := --bitmap logo,160x128x1
 
