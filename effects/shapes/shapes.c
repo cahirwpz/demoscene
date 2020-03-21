@@ -4,7 +4,6 @@
 #include "coplist.h"
 #include "fx.h"
 #include "memory.h"
-#include "ilbm.h"
 #include "tasks.h"
 
 const char *__cwdpath = "data";

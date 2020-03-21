@@ -5,6 +5,6 @@ DATA := data/pilka.3d
 
 LIBS := lib3d
 
-include $(TOPDIR)/build.effect.mk
+PNG2C.wireframe-pal := --palette wireframe_pal,16
 
-data/wireframe-pal.c: PNG2C += --palette wireframe_pal,16
+include $(TOPDIR)/build.effect.mk

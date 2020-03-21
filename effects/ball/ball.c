@@ -5,11 +5,8 @@
 #include "io.h"
 #include "png.h"
 #include "sprite.h"
-#include "ilbm.h"
 #include "fx.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define S_WIDTH 320
 #define S_HEIGHT 256

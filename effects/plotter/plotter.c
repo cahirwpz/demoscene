@@ -2,7 +2,6 @@
 #include "hardware.h"
 #include "coplist.h"
 #include "gfx.h"
-#include "ilbm.h"
 #include "blitter.h"
 #include "circle.h"
 #include "fx.h"
@@ -29,12 +28,6 @@ static BitmapT *carry;
 static BitmapT *flare[8];
 
 #include "data/plotter-flares.c"
-
-static void Load(void) {
-}
-
-static void UnLoad(void) {
-}
 
 static void Init(void) {
   short i;
@@ -107,4 +100,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

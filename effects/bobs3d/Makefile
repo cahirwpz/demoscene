@@ -5,7 +5,6 @@ DATA_GEN := data/pilka.3d
 
 LIBS := lib3d
 
-include $(TOPDIR)/build.effect.mk
+PNG2C.flares32 := --bitmap bobs,512x32x3,+interleaved --palette bobs_pal,8
 
-data/flares32.c: PNG2C += --bitmap bobs,512x32x3,+interleaved \
-	                  --palette bobs_pal,8
+include $(TOPDIR)/build.effect.mk

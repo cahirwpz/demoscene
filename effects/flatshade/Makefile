@@ -5,6 +5,6 @@ DATA_GEN := data/codi.3d data/pilka.3d
 
 LIBS := lib3d
 
-include $(TOPDIR)/build.effect.mk
+PNG2C.flatshade-pal := --palette flatshade_pal,16
 
-data/flatshade-pal.c: PNG2C += --palette flatshade_pal,16
+include $(TOPDIR)/build.effect.mk

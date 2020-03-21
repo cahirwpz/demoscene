@@ -49,9 +49,9 @@ $(TOPDIR)/effects/%.o: FORCE
 	$(PSFTOPNG) $<
 	$(OPTIPNG) $@
 
-%.c: %.png
+data/%.c: data/%.png
 	@echo "[PNG] $(DIR)$< -> $(DIR)$@"
-	$(PNG2C) $< > $@
+	$(PNG2C) $(PNG2C.$*) $< > $@
 
 %.bin: %.asm
 	@echo "[BIN] $(DIR)$< -> $(DIR)$@"

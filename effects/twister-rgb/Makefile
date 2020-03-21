@@ -6,6 +6,6 @@ DATA_GEN := data/twister-left.ilbm \
 	    data/twister.ilbm
 DATA := data/twister-texture.png
 
-include $(TOPDIR)/build.effect.mk
+PNG2C.twister-gradient := --palette gradient,256
 
-data/twister-gradient.c: PNG2C += --palette gradient,256
+include $(TOPDIR)/build.effect.mk

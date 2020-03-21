@@ -2,7 +2,6 @@
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
-#include "ilbm.h"
 #include "2d.h"
 #include "fx.h"
 #include "circle.h"
@@ -18,7 +17,6 @@ const char *__cwdpath = "data";
 static BitmapT *screen[2];
 static u_short active = 0;
 
-static BitmapT *clip;
 static BitmapT *carry;
 static BitmapT *buffer;
 static CopInsT *bplptr[2][DEPTH];
@@ -26,17 +24,14 @@ static CopListT *cp;
 
 #include "data/blurred-pal-1.c"
 #include "data/blurred-pal-2.c"
+#include "data/blurred-clip.c"
 
 static void Load(void) {
-  clip = LoadILBM("blurred-clip.ilbm");
-
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 }
 
 static void UnLoad(void) {
-  DeletePalette(clip->palette);
-  DeleteBitmap(clip);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }
@@ -74,7 +69,7 @@ static void Init(void) {
     CircleEdge(screen[i], 4, SIZE / 2 + 16, SIZE / 2, SIZE / 4 - 1);
     BlitterFill(screen[i], 4);
 
-    BitmapCopy(screen[i], WIDTH / 2, 0, clip);
+    BitmapCopy(screen[i], WIDTH / 2, 0, &clip);
   }
 
   buffer = NewBitmap(SIZE, SIZE, 4);

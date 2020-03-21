@@ -22,11 +22,11 @@ DATA_GEN := data/greet_ada.ilbm \
 	    data/greet_ycrew.ilbm \
 	    data/neons.ilbm
 
+PNG2C.greet_moods := --palette moods_pal,8
+PNG2C.greet_rno := --palette rno_pal,8
+
 include $(TOPDIR)/build.effect.mk
 
 %.png: %.py
 	@echo "[GEN] $@"
 	$(PYTHON3) $< $@
-
-data/greet_moods.c: PNG2C += --palette moods_pal,8
-data/greet_rno.c: PNG2C += --palette rno_pal,8

@@ -4,7 +4,6 @@
 #include "coplist.h"
 #include "memory.h"
 #include "io.h"
-#include "ilbm.h"
 #include "fx.h"
 #include "tasks.h"
 
