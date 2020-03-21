@@ -1,5 +1,6 @@
 TOPDIR := $(realpath ../..)
 
+SOURCES_GEN := data/greet_moods.c data/greet_rno.c
 DATA_GEN := data/greet_ada.ilbm \
 	    data/greet_blacksun.ilbm \
 	    data/greet_dcs.ilbm \
@@ -26,3 +27,6 @@ include $(TOPDIR)/build.effect.mk
 %.png: %.py
 	@echo "[GEN] $@"
 	$(PYTHON3) $< $@
+
+data/greet_moods.c: PNG2C += --palette moods_pal,8
+data/greet_rno.c: PNG2C += --palette rno_pal,8

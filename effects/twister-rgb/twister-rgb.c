@@ -17,7 +17,6 @@ const char *__cwdpath = "data";
 
 static BitmapT *twister;
 static PixmapT *texture;
-static PaletteT *gradient;
 static CopListT *cp[2];
 static CopInsT *bplptr[2][DEPTH];
 static CopInsT *bplmod[2][HEIGHT];
@@ -28,10 +27,11 @@ static SpriteT *left[2];
 static SpriteT *right[2];
 static CopInsT *sprptr[2][8];
 
+#include "data/twister-gradient.c"
+
 static void Load(void) {
   twister = LoadILBMCustom("twister.ilbm", BM_DISPLAYABLE);
   texture = LoadPNG("twister-texture.png", PM_RGB12, MEMF_PUBLIC);
-  gradient = LoadPalette("twister-gradient.ilbm");
 
   {
     BitmapT *_left = LoadILBMCustom("twister-left.ilbm", 0);
@@ -54,7 +54,6 @@ static void UnLoad(void) {
   DeleteSprite(right[1]);
   DeleteBitmap(twister);
   DeletePixmap(texture);
-  DeletePalette(gradient);
 }
 
 static void MakeCopperList(CopListT **ptr, short n) {
@@ -69,7 +68,7 @@ static void MakeCopperList(CopListT **ptr, short n) {
   CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
   CopMove16(cp, diwstrt, 0x2c81);
   CopMove16(cp, diwstop, 0x2bc1);
-  CopSetColor(cp, 0, &gradient->colors[0]);
+  CopSetColor(cp, 0, &gradient.colors[0]);
 
   for (i = 0, k = 0; i < HEIGHT; i++) {
     CopWaitSafe(cp, Y(i), 0);
@@ -77,7 +76,7 @@ static void MakeCopperList(CopListT **ptr, short n) {
     CopMove16(cp, bpl2mod, -32);
     CopMove16(cp, bpldat[0], 0);
 
-    CopSetColor(cp, 0, &gradient->colors[i]);
+    CopSetColor(cp, 0, &gradient.colors[i]);
 
     if ((i % 3) == 0) {
       colors[n][k++] = CopSetRGB(cp, 1, *pixels++);

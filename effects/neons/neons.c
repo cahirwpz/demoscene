@@ -60,6 +60,9 @@ static GreetingT greeting[PNUM] = {
   GREETING(1, "greet_ycrew.ilbm")
 };
 
+#include "data/greet_moods.c"
+#include "data/greet_rno.c"
+
 static void PositionGreetings(void) {
   GreetingT *grt = greeting;
   short y = HEIGHT + 200;
@@ -89,8 +92,8 @@ static void Load(void) {
 
   background = LoadILBMCustom("neons.ilbm", BM_DISPLAYABLE|BM_LOAD_PALETTE);
   palette[0] = background->palette;
-  palette[1] = LoadPalette("greet_moods.ilbm");
-  palette[2] = LoadPalette("greet_rno.ilbm");
+  palette[1] = &moods_pal;
+  palette[2] = &rno_pal;
 
   PositionGreetings();
 }
@@ -99,8 +102,6 @@ static void UnLoad(void) {
   ITER(i, 0, PNUM - 1, DeleteBitmap(greeting[i].bitmap));
   DeleteBitmap(background);
   DeletePalette(palette[0]);
-  DeletePalette(palette[1]);
-  DeletePalette(palette[2]);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }

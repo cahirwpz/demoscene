@@ -14,22 +14,21 @@ const char *__cwdpath = "data";
 #define DEPTH  4
 
 static ShapeT *shape;
-static PaletteT *palette;
 static BitmapT *screen;
 static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
 static short plane, planeC;
 
+#include "data/shapes-pal.c"
+
 static void Load(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   shape = LoadShape("night.2d");
-  palette = LoadPalette("shapes-pal.ilbm");
 }
 
 static void UnLoad(void) {
   DeleteShape(shape);
   DeleteBitmap(screen);
-  DeletePalette(palette);
 }
 
 static void Init(void) {
@@ -49,7 +48,7 @@ static void Init(void) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopLoadPal(cp, palette, 0);
+  CopLoadPal(cp, &shapes_pal, 0);
   CopEnd(cp);
 
   CopListActivate(cp);

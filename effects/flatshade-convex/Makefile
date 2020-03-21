@@ -1,9 +1,10 @@
 TOPDIR := $(realpath ../..)
 
-DATA_GEN := data/flatshade-pal.ilbm \
-	    data/ball.3d \
-	    data/pilka.3d
+SOURCES_GEN := data/flatshade-pal.c
+DATA_GEN := data/ball.3d data/pilka.3d
 
 LIBS := lib3d
 
 include $(TOPDIR)/build.effect.mk
+
+data/flatshade-pal.c: PNG2C += --palette flatshade_pal,16

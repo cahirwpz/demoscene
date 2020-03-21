@@ -13,7 +13,6 @@ const char *__cwdpath = "data";
 #define HEIGHT 256
 #define DEPTH  4
 
-static PaletteT *palette;
 static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
@@ -21,17 +20,17 @@ static CopInsT *bplptr[DEPTH];
 static BitmapT *screen[2];
 static short active;
 
+#include "data/flatshade-pal.c"
+
 static void Load(void) {
   // mesh = LoadMesh3D("ball.3d", SPFlt(110));
   mesh = LoadMesh3D("pilka.3d", SPFlt(65));
   CalculateVertexFaceMap(mesh);
   CalculateFaceNormals(mesh);
   CalculateEdges(mesh);
-  palette = LoadPalette("flatshade-pal.ilbm");
 }
 
 static void UnLoad(void) {
-  DeletePalette(palette);
   DeleteMesh3D(mesh);
 }
 
@@ -39,7 +38,7 @@ static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen[0], DEPTH);
-  CopLoadPal(cp, palette, 0);
+  CopLoadPal(cp, &flatshade_pal, 0);
   CopEnd(cp);
 }
 

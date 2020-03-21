@@ -21,15 +21,14 @@ static u_short active = 0;
 static BitmapT *clip;
 static BitmapT *carry;
 static BitmapT *buffer;
-static PaletteT *palette[2];
 static CopInsT *bplptr[2][DEPTH];
 static CopListT *cp;
 
+#include "data/blurred-pal-1.c"
+#include "data/blurred-pal-2.c"
+
 static void Load(void) {
   clip = LoadILBM("blurred-clip.ilbm");
-
-  palette[0] = LoadPalette("blurred-pal-1.ilbm");
-  palette[1] = LoadPalette("blurred-pal-2.ilbm");
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
@@ -40,8 +39,6 @@ static void UnLoad(void) {
   DeleteBitmap(clip);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
-  DeletePalette(palette[0]);
-  DeletePalette(palette[1]);
 }
 
 static short iterCount = 0;
@@ -53,10 +50,10 @@ static void MakeCopperList(CopListT *cp) {
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr[active], screen[active], DEPTH);
   CopWait(cp, Y(-18), 0);
-  CopLoadPal(cp, palette[0], 0);
+  CopLoadPal(cp, &blurred_1_pal, 0);
   CopWait(cp, Y(127), 0);
   CopMove16(cp, dmacon, DMAF_RASTER);
-  CopLoadPal(cp, palette[1], 0);
+  CopLoadPal(cp, &blurred_2_pal, 0);
   CopWait(cp, Y(128), 0);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   for (i = 0; i < DEPTH; i++)

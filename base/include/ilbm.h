@@ -5,7 +5,6 @@
 
 __regargs void BitmapUnpack(BitmapT *bitmap, u_short flags);
 __regargs BitmapT *LoadILBMCustom(const char *filename, u_short flags);
-__regargs PaletteT *LoadPalette(const char *filename);
 
 static inline BitmapT *LoadILBM(const char *filename) {
   return LoadILBMCustom(filename, BM_DISPLAYABLE|BM_LOAD_PALETTE);

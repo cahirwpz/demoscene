@@ -35,14 +35,12 @@ static StripeT stripe[15];
 static short rotated[15];
 static u_char table[4096];
 
+#include "data/stripes.c"
+
 static void Load(void) {
   bitmap = LoadILBMCustom("floor.ilbm", BM_DISPLAYABLE);
 
-  {
-    PaletteT *pal = LoadPalette("floor-stripes.ilbm");
-    ConvertPaletteToRGB4(pal, stripeColor, 16);
-    DeletePalette(pal);
-  }
+  ConvertPaletteToRGB4(&stripes_pal, stripeColor, 16);
 }
 
 static void UnLoad(void) {

@@ -14,11 +14,12 @@ const char *__cwdpath = "data";
 #define HEIGHT 240
 #define DEPTH  4
 
-static PaletteT *palette;
 static BitmapT *screen;
 static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
 static short active = 0;
+
+#include "data/running-pal.c"
 
 typedef struct {
   short width, height;
@@ -30,7 +31,6 @@ static AnimSpanT *anim;
 
 static void Load(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
-  palette = LoadPalette("running-pal.ilbm");
   anim = LoadFile("running.bin", MEMF_PUBLIC);
 
   Log("Animation has %d frames %d x %d.\n", 
@@ -46,7 +46,6 @@ static void Load(void) {
 
 static void UnLoad(void) {
   MemFree(anim);
-  DeletePalette(palette);
   DeleteBitmap(screen);
 }
 
@@ -58,7 +57,7 @@ static void Init(void) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopLoadPal(cp, palette, 0);
+  CopLoadPal(cp, &running_pal, 0);
   CopEnd(cp);
 
   CopListActivate(cp);
