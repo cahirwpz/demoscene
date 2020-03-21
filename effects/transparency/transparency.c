@@ -4,7 +4,6 @@
 #include "gfx.h"
 #include "color.h"
 #include "blitter.h"
-#include "ilbm.h"
 #include "fx.h"
 #include "tasks.h"
 
@@ -15,39 +14,30 @@ const char *__cwdpath = "data";
 #define DEPTH   5
 
 static BitmapT *screen;
-static BitmapT *background;
-static BitmapT *logo;
 static CopListT *cp;
 static CopInsT *pal;
 
 static u_short pal1[8];
 static u_short pal2[4];
 
+#include "data/ghostown-logo.c"
+#include "data/transparency-bg.c"
+
 static void Load(void) {
-  background = LoadILBM("transparency-bg.ilbm");
-  logo = LoadILBM("ghostown-logo.ilbm");
+  short i;
 
-  {
-    short i;
-
-    for (i = 0; i < 8; i++) {
-      ColorT *c = &background->palette->colors[i];
-      pal1[i] = ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4);
-    }
-
-    for (i = 0; i < 4; i++) {
-      ColorT *c = &logo->palette->colors[i];
-      pal2[i] = ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4);
-    }
+  for (i = 0; i < 8; i++) {
+    ColorT *c = &background_pal.colors[i];
+    pal1[i] = ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4);
   }
 
+  for (i = 0; i < 4; i++) {
+    ColorT *c = &logo_pal.colors[i];
+    pal2[i] = ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4);
+  }
 }
 
 static void UnLoad(void) {
-  DeletePalette(logo->palette);
-  DeleteBitmap(logo);
-  DeletePalette(background->palette);
-  DeleteBitmap(background);
 }
 
 static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
@@ -84,13 +74,13 @@ static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
   EnableDMA(DMAF_BLITTER);
-  BitmapCopy(screen, 0, 0, background);
+  BitmapCopy(screen, 0, 0, &background);
 
   cp = NewCopList(100);
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopLoadPal(cp, background->palette, 0);
+  CopLoadPal(cp, &background_pal, 0);
   pal = CopLoadColor(cp, 8, 31, 0);
   CopEnd(cp);
 
@@ -109,8 +99,8 @@ static void Render(void) {
   short s = normfx(SIN(frameCount * 64) * 6) + 8;
   short i;
 
-  BitplaneCopyFast(screen, 3, 80 + xo, 64 + yo, logo, 0);
-  BitplaneCopyFast(screen, 4, 80 + xo, 64 + yo, logo, 1);
+  BitplaneCopyFast(screen, 3, 80 + xo, 64 + yo, &logo, 0);
+  BitplaneCopyFast(screen, 4, 80 + xo, 64 + yo, &logo, 1);
   
   for (i = 0; i < 24; i++)
     CopInsSet16(pal + i, ColorTransition(pal1[i & 7], pal2[i / 8 + 1], s));

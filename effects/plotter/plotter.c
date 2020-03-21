@@ -10,8 +10,6 @@
 #include "memory.h"
 #include "tasks.h"
 
-const char *__cwdpath = "data";
-
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 3
@@ -28,16 +26,14 @@ static BitmapT *screen[2];
 static u_short active = 0;
 
 static BitmapT *carry;
-static BitmapT *flares;
 static BitmapT *flare[8];
 
+#include "data/plotter-flares.c"
+
 static void Load(void) {
-  flares = LoadILBM("plotter-flares.ilbm");
 }
 
 static void UnLoad(void) {
-  DeletePalette(flares->palette);
-  DeleteBitmap(flares);
 }
 
 static void Init(void) {
@@ -51,7 +47,7 @@ static void Init(void) {
   for (i = 0; i < 8; i++) {
     Area2D flare_area = { 0, i * SIZE, SIZE, SIZE };
     flare[i] = NewBitmap(SIZE, SIZE, DEPTH);
-    BitmapCopyArea(flare[i], 0, 0, flares, &flare_area);
+    BitmapCopyArea(flare[i], 0, 0, &flares, &flare_area);
   }
 
   carry = NewBitmap(SIZE + 16, SIZE, 2);
@@ -64,7 +60,7 @@ static void Init(void) {
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopWait(cp, Y(-1), 0);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopLoadPal(cp, flares->palette, 0);
+  CopLoadPal(cp, &flares_pal, 0);
   CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);

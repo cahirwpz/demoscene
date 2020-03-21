@@ -24,7 +24,8 @@ static BitmapT *bitmap;
 static SpriteT *sprite[2][4];
 static CopInsT *sprptr[8];
 
-static BitmapT *background;
+#include "data/dragon-bg.c"
+
 static u_short *uvmap;
 static u_short active = 0;
 static CopListT *cp;
@@ -82,7 +83,6 @@ static void MakeUVMapRenderCode(void) {
 }
 
 static void Load(void) {
-  background = LoadILBM("dragon-bg.ilbm");
   texture = LoadPNG("texture-15.png", PM_CMAP4, MEMF_PUBLIC);
   uvmap = LoadFile("ball.bin", MEMF_PUBLIC);
 }
@@ -90,8 +90,6 @@ static void Load(void) {
 static void UnLoad(void) {
   MemFree(uvmap);
 
-  DeletePalette(background->palette);
-  DeleteBitmap(background);
   DeletePalette(texture->palette);
   DeletePixmap(texture);
 }
@@ -99,8 +97,8 @@ static void UnLoad(void) {
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
-  CopSetupBitplanes(cp, NULL, background, S_DEPTH);
-  CopLoadPal(cp, background->palette, 0);
+  CopSetupBitplanes(cp, NULL, &background, S_DEPTH);
+  CopLoadPal(cp, &background_pal, 0);
   CopLoadPal(cp, texture->palette, 16);
   CopSetupSprites(cp, sprptr);
   CopEnd(cp);
