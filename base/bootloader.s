@@ -150,24 +150,32 @@ SetupHunkFile:
         rts
 
 .setup  movem.l d2-d4/a2-a3,-(sp)
+
+        ; assume there's no resident library name (skip long)
         lea     4(a0),a2
 
-        ; read number of hunks, assume there's no resident library name
+        ; read number of hunks (n)
         move.l  (a2)+,d2
-        lsl.l   #2,d2           ; [d2] hunk array size
-        sub.l   d2,sp           ; [sp] hunk array
 
-        ; move to hunk information
+        ; assume first hunk is 0 and last n-1 (skip two longs)
         addq.l  #8,a2
+
+        ; prepare for reading hunk specifiers (size, memory type)
+        lsl.l   #2,d2           ; [d2] hunk pointer array size
+        sub.l   d2,sp           ; [sp] hunk pointer array
 
         ; allocate hunks
         move.l  sp,a3
         move.l  d2,d4
 .alloc  move.l  (a2)+,d3
+        move.l  d3,d1           ; [d1] bit(31) FAST, bit(30) CHIP
+        moveq.l #6,d0
+        rol.l   #3,d1           ; [d1] bit(2) FAST, bit(1) CHIP
+        and.l   d0,d1
         lsl.l   #2,d3           ; [d3] hunk size
         addq.l  #SEG_SIZE,d3
         move.l  d3,d0
-        move.l  #MEMF_PUBLIC|MEMF_CLEAR,d1
+        add.l   #MEMF_CLEAR,d1
         JSRLIB  AllocMem
         move.l  d0,(a3)+
         move.l  d0,a0
