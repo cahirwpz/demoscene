@@ -2,12 +2,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
 	"../tmx"
+	"../utils"
 )
 
 var printHelp bool
@@ -35,17 +34,21 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//TODO Do something with ungzipped bytes
+	baseName := utils.PathWithoutExt(flag.Arg(0))
 
-	fmt.Println(b)
-
-	f, err := os.Create("./out.png")
+	err = tmx.SaveLayerData(baseName, b)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile(f.Name(), []byte(b), 0644); err != nil {
-		f.Close()
+	img := parsedMap.TileSet.Image.ReadSource()
+
+	// TODO Add tiles reordering and optimize.
+
+	tmx.SavePNG(baseName+"_map.png", img)
+
+	err = parsedMap.SaveTiledMapInfo(baseName)
+	if err != nil {
 		log.Fatal(err)
 	}
 }
