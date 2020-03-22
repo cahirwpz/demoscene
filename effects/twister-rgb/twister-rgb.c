@@ -1,7 +1,6 @@
 #include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
-#include "ilbm.h"
 #include "png.h"
 #include "fx.h"
 #include "memory.h"
@@ -22,35 +21,18 @@ static CopInsT *bplmod[2][HEIGHT];
 static CopInsT *colors[2][HEIGHT];
 static short active = 0;
 
-static SpriteT *left[2];
-static SpriteT *right[2];
 static CopInsT *sprptr[2][8];
 
 #include "data/twister-gradient.c"
+#include "data/twister-left.c"
+#include "data/twister-right.c"
 #include "data/twister.c"
 
 static void Load(void) {
   texture = LoadPNG("twister-texture.png", PM_RGB12, MEMF_PUBLIC);
-
-  {
-    BitmapT *_left = LoadILBMCustom("twister-left.ilbm", 0);
-    BitmapT *_right = LoadILBMCustom("twister-right.ilbm", 0);
-
-    left[0] = NewSpriteFromBitmap(256, _left, 0, 0);
-    left[1] = NewSpriteFromBitmap(256, _left, 16, 0);
-    right[0] = NewSpriteFromBitmap(256, _right, 0, 0);
-    right[1] = NewSpriteFromBitmap(256, _right, 16, 0);
-
-    DeleteBitmap(_right);
-    DeleteBitmap(_left);
-  }
 }
 
 static void UnLoad(void) {
-  DeleteSprite(left[0]);
-  DeleteSprite(left[1]);
-  DeleteSprite(right[0]);
-  DeleteSprite(right[1]);
   DeletePixmap(texture);
 }
 
