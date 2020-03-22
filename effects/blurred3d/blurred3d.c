@@ -4,7 +4,6 @@
 #include "3d.h"
 #include "fx.h"
 #include "ffp.h"
-#include "ilbm.h"
 #include "png.h"
 #include "memory.h"
 #include "tasks.h"

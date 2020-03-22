@@ -2,7 +2,6 @@
 #include "hardware.h"
 #include "coplist.h"
 #include "gfx.h"
-#include "ilbm.h"
 #include "blitter.h"
 #include "circle.h"
 #include "fx.h"
@@ -44,30 +43,17 @@ static BitmapT *carry;
 #include "data/city-bottom-2.c"
 #include "data/city-top-2.c"
 #include "data/lane.c"
+#include "data/sprite.c"
 
 static BitmapT *lanes[2];
-static SpriteT *sprite[8];
-static PaletteT *spritePal;
-
-static void Load(void) {
-  BitmapT *title = LoadILBM("sprite.ilbm");
-  ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, title, 16 * i, 0));
-  spritePal = title->palette;
-  DeleteBitmap(title);
-}
-
-static void UnLoad(void) {
-  ITER(i, 0, 7, DeleteSprite(sprite[i]));
-  DeletePalette(spritePal);
-}
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopSetupSprites(cp, sprptr);
-  CopLoadPal(cp, spritePal, 16);
-  CopLoadPal(cp, spritePal, 20);
-  CopLoadPal(cp, spritePal, 24);
-  CopLoadPal(cp, spritePal, 28);
+  CopLoadPal(cp, &sprite_pal, 16);
+  CopLoadPal(cp, &sprite_pal, 20);
+  CopLoadPal(cp, &sprite_pal, 24);
+  CopLoadPal(cp, &sprite_pal, 28);
 
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, &city_top, DEPTH);
@@ -229,4 +215,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

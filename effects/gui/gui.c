@@ -7,7 +7,6 @@
 #include "keyboard.h"
 #include "mouse.h"
 #include "memory.h"
-#include "ilbm.h"
 
 #define WIDTH 320
 #define HEIGHT 256

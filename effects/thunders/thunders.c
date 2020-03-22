@@ -6,7 +6,6 @@
 #include "random.h"
 #include "color.h"
 #include "png.h"
-#include "ilbm.h"
 #include "color.h"
 #include "sprite.h"
 #include "tasks.h"

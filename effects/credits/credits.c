@@ -2,7 +2,6 @@
 #include "hardware.h"
 #include "coplist.h"
 #include "gfx.h"
-#include "ilbm.h"
 #include "blitter.h"
 #include "fx.h"
 #include "tasks.h"
