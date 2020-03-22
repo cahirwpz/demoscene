@@ -188,6 +188,49 @@ def do_sprite(im, desc):
         print('')
 
 
+def do_pixmap(im, desc):
+    param = parse(desc, ('name', str), ('width', int), ('height', int))
+
+    name = param['name']
+    has_width = param['width']
+    has_height = param['height']
+
+    width, height = im.size
+    # colors = im.getextrema()[1] + 1
+    # depth = int(ceil(log(colors, 2)))
+
+    if width != has_width:
+        raise SystemExit(
+            'Image width is %d, expected %d!' % (width, has_width))
+
+    if height != has_height:
+        raise SystemExit(
+            'Image height is %d, expected %d!' % (height, has_height))
+
+    pix = im.load()
+
+    print('static u_char _%s_data[] = {' % name)
+    for y in range(height):
+        for x in range(0, (width + 1) & ~1, 2):
+            x0 = pix[x, y] & 15
+            if x + 1 < width:
+                x1 = pix[x + 1, y] & 15
+            else:
+                x1 = 0
+            print('  0x%02x,' % ((x0 << 4) | x1))
+    print('};')
+    print('')
+
+    print('PixmapT %s = {' % name)
+    print('  .type = PM_CMAP4,')
+    print('  .width = %d,' % width)
+    print('  .height = %d,' % height)
+    print('  .palette = NULL,')
+    print('  .pixels = _%s_data' % name)
+    print('};')
+    print('')
+
+
 def do_palette(im, desc):
     param = parse(desc, ('name', str), ('colors', int))
 
@@ -217,11 +260,14 @@ def do_palette(im, desc):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Converts an image to bitmap.')
-    parser.add_argument('-b', '--bitmap', type=str,
+    parser.add_argument('--bitmap', type=str,
                         help='Output Amiga bitmap [name,dimensions,flags]')
-    parser.add_argument('-s', '--sprite', type=str,
+    parser.add_argument('--pixmap', type=str,
+                        help='Output pixel map '
+                             '[name,width,height,type,flags]')
+    parser.add_argument('--sprite', type=str,
                         help='Output Amiga sprite [name]')
-    parser.add_argument('-p', '--palette', type=str,
+    parser.add_argument('--palette', type=str,
                         help='Output Amiga palette [name,colors]')
     parser.add_argument('path', metavar='PATH', type=str,
                         help='Input image filename')
@@ -238,6 +284,10 @@ if __name__ == '__main__':
 
     if args.bitmap:
         do_bitmap(im, args.bitmap)
+        print('')
+
+    if args.pixmap:
+        do_pixmap(im, args.pixmap)
         print('')
 
     if args.sprite:

@@ -3,11 +3,8 @@
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
-#include "io.h"
 #include "fx.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH  320
 #define HEIGHT 240
