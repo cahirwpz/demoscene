@@ -125,6 +125,69 @@ def do_bitmap(im, desc):
     print('};')
 
 
+def do_sprite(im, desc):
+    param = parse(desc, ('name', str), ('height', int), ('count', int),
+                  attached=False, array=False)
+
+    name = param['name']
+    has_height = param['height']
+    has_count = param['count']
+    sequence = param['array']
+    attached = param['attached']
+
+    pix = array('B', im.getdata())
+
+    width, height = im.size
+    colors = im.getextrema()[1] + 1
+    depth = int(ceil(log(colors, 2)))
+
+    if height != has_height:
+        raise SystemExit(
+            'Image height is %d, expected %d!' % (height, has_height))
+
+    if width != has_count * 16:
+        raise SystemExit(
+            'Image width is %d, expected %d!' % (width, has_count * 16))
+
+    if not attached and depth != 2:
+        raise SystemExit('Image depth is %d, expected 2!' % depth)
+
+    if attached and depth != 4:
+        raise SystemExit('Image depth is %d, expected 2!' % depth)
+
+    stride = ((width + 15) & ~15) // 16
+    bpl = c2p(pix, width, height, depth)
+
+    for i in range(width // 16):
+        sprite = name
+        if width > 16:
+            sprite += str(i)
+
+        print('static __data_chip u_short _%s_data[] = {' % sprite)
+        print('  SPRPOS(0, 0), SPRCTL(0, 0, 0, %d),' % height)
+        for j in range(0, stride * depth * height, stride * depth):
+            print('  0x%04x, 0x%04x,' % (bpl[i + j], bpl[i + j + stride]))
+        print('  0, 0')
+        print('};')
+        print('')
+        if sequence:
+            print('static SpriteT _%s = {' % sprite)
+        else:
+            print('SpriteT %s = {' % sprite)
+        print('  .attached = NULL,')
+        print('  .height = %d,' % height)
+        print('  .data = _%s_data' % sprite)
+        print('};')
+        print('')
+
+    if sequence:
+        sprites = ['&_%s%d' % (name, i) for i in range(width // 16)]
+        print('SpriteT *%s[] = {' % name)
+        print('  %s' % ', '.join(sprites))
+        print('};')
+        print('')
+
+
 def do_palette(im, desc):
     param = parse(desc, ('name', str), ('colors', int))
 
@@ -155,13 +218,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Converts an image to bitmap.')
     parser.add_argument('-b', '--bitmap', type=str,
-                        help='Output Amiga bitmap '
-                             '(desc:name,dimensions).')
+                        help='Output Amiga bitmap [name,dimensions,flags]')
+    parser.add_argument('-s', '--sprite', type=str,
+                        help='Output Amiga sprite [name]')
     parser.add_argument('-p', '--palette', type=str,
-                        help='Output Amiga palette '
-                             '(desc:name,colors).')
+                        help='Output Amiga palette [name,colors]')
     parser.add_argument('path', metavar='PATH', type=str,
-                        help='Input image filename.')
+                        help='Input image filename')
     args = parser.parse_args()
 
     im = Image.open(args.path)
@@ -175,4 +238,8 @@ if __name__ == '__main__':
 
     if args.bitmap:
         do_bitmap(im, args.bitmap)
+        print('')
+
+    if args.sprite:
+        do_sprite(im, args.sprite)
         print('')

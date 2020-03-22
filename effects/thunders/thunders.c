@@ -11,8 +11,6 @@
 #include "sprite.h"
 #include "tasks.h"
 
-const char *__cwdpath = "data";
-
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 3
@@ -30,14 +28,14 @@ const char *__cwdpath = "data";
 #define FAR_Y (HEIGHT * NEAR_Z / FAR_Z)
 #define FAR_W (WIDTH * FAR_Z / 256)
 
-static SpriteT *thunder[20];
 static BitmapT *screen0, *screen1;
 static CopListT *cp0, *cp1;
 static PixmapT *texture;
-static PaletteT *palette;
 static u_short tileColor[SIZE * SIZE];
 static short tileCycle[SIZE * SIZE];
 static short tileEnergy[SIZE * SIZE];
+
+#include "data/thunders.c"
 
 typedef struct {
   short x1, x2, y2;
@@ -85,19 +83,14 @@ static void Load(void) {
   texture = LoadPNG("thunders-floor.png", PM_RGB12, MEMF_PUBLIC);
 
   {
-    BitmapT *bitmap = LoadILBM("thunders.ilbm");
     short i;
 
-    for (i = 0; i < bitmap->width / 16; i++) {
+    for (i = 0; i < 320 / 16; i++) {
       short xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
       short yo = Y((HEIGHT - 128) / 2);
 
-      thunder[i] = NewSpriteFromBitmap(128, bitmap, i * 16, 0);
       UpdateSprite(thunder[i], xo, yo);
     }
-
-    palette = bitmap->palette;
-    DeleteBitmap(bitmap);
   }
 
   FloorPrecalc();
@@ -106,13 +99,7 @@ static void Load(void) {
 }
 
 static void UnLoad(void) {
-  short i;
-
-  for (i = 0; i < 20; i++)
-    DeleteSprite(thunder[i]);
-
   DeletePixmap(texture);
-  DeletePalette(palette);
 }
 
 static void MakeCopperList(CopListT *cp, BitmapT *screen) {
@@ -437,7 +424,7 @@ static void MakeFloorCopperList(short yo, short kyo) {
 
   /* Clear out the colors. */
   CopSetRGB(cp, 0, BGCOL);
-  CopLoadPal(cp, palette, 16);
+  CopLoadPal(cp, &thunder_pal, 16);
 
   FillStripes(1);
   ColorizeUpperHalf(cp, yo, kyo);
