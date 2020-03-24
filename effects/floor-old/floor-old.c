@@ -33,6 +33,7 @@ static u_short active = 0;
 static CopListT *cp[2];
 
 #include "data/floor-city.c"
+#include "data/floor.c"
 
 typedef struct {
   int delta;
@@ -45,7 +46,6 @@ static short horiz[N];
 static u_char *linePos[2][SIZE];
 static u_short *lineColor[2][SIZE];
 static u_short tileColumn[HEIGHT];
-static PixmapT *texture;
 static u_short tileColor[TILES * TILES];
 static u_char cycleStart[TILES * TILES];
 
@@ -86,15 +86,12 @@ static void Load(void) {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  texture = LoadPNG("floor.png", PM_RGB12, MEMF_PUBLIC);
-
   FloorPrecalc();
 
   ITER(i, 0, 255, cycleStart[i] = random() & 63);
 }
 
 static void UnLoad(void) {
-  DeletePixmap(texture);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }
@@ -412,7 +409,7 @@ __regargs static void AssignColorToTileColumn(short k, short kxo) {
 }
 
 static void ControlTileColors(void) {
-  u_short *src = texture->pixels, *dst = tileColor;
+  u_short *src = texture.pixels, *dst = tileColor;
   u_char *cycle = cycleStart;
   short n = TILES * TILES;
 

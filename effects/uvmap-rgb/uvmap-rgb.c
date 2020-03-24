@@ -20,6 +20,8 @@ static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 static PixmapT *uvmap;
 
+#include "data/texture-rgb.c"
+
 #define UVMapRenderSize (WIDTH * HEIGHT * 8 + 2)
 static void (*UVMapRender)(u_short *chunky asm("a0"), u_short *texture asm("a1"));
 
@@ -77,10 +79,8 @@ static void PixmapScramble(PixmapT *image, u_short *texture) {
 }
 
 static void Load(void) {
-  PixmapT *image = LoadPNG("texture-rgb.png", PM_RGB12, MEMF_PUBLIC);
   texture = MemAlloc(65536, MEMF_PUBLIC);
-  PixmapScramble(image, texture);
-  DeletePixmap(image);
+  PixmapScramble(&image, texture);
 
   uvmap = LoadPNG("uvmap-rgb.png", PM_GRAY16, MEMF_PUBLIC);
 }
