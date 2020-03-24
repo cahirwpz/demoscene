@@ -5,8 +5,7 @@
 #include "fx.h"
 #include "random.h"
 #include "color.h"
-#include "png.h"
-#include "color.h"
+#include "pixmap.h"
 #include "sprite.h"
 #include "tasks.h"
 
@@ -29,12 +28,12 @@
 
 static BitmapT *screen0, *screen1;
 static CopListT *cp0, *cp1;
-static PixmapT *texture;
 static u_short tileColor[SIZE * SIZE];
 static short tileCycle[SIZE * SIZE];
 static short tileEnergy[SIZE * SIZE];
 
 #include "data/thunders.c"
+#include "data/thunders-floor.c"
 
 typedef struct {
   short x1, x2, y2;
@@ -79,26 +78,18 @@ static void FloorPrecalc(void) {
 }
 
 static void Load(void) {
-  texture = LoadPNG("thunders-floor.png", PM_RGB12, MEMF_PUBLIC);
+  short i;
 
-  {
-    short i;
+  for (i = 0; i < 320 / 16; i++) {
+    short xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
+    short yo = Y((HEIGHT - 128) / 2);
 
-    for (i = 0; i < 320 / 16; i++) {
-      short xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
-      short yo = Y((HEIGHT - 128) / 2);
-
-      UpdateSprite(thunder[i], xo, yo);
-    }
+    UpdateSprite(thunder[i], xo, yo);
   }
 
   FloorPrecalc();
 
   ITER(i, 0, SIZE * SIZE - 1, tileCycle[i] = random() & SIN_MASK);
-}
-
-static void UnLoad(void) {
-  DeletePixmap(texture);
 }
 
 static void MakeCopperList(CopListT *cp, BitmapT *screen) {
@@ -271,7 +262,7 @@ static __regargs void FillStripes(u_short plane) {
 }
 
 void ControlTileColors(void) {
-  u_short *src = texture->pixels, *dst = tileColor;
+  u_short *src = texture.pixels, *dst = tileColor;
   short *energy = tileEnergy;
   short *cycle = tileCycle;
   short n = SIZE * SIZE ;
@@ -468,4 +459,4 @@ static void Render(void) {
   { BitmapT *tmp = screen0; screen0 = screen1; screen1 = tmp; }
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };

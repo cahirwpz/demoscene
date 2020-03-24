@@ -14,7 +14,6 @@ const char *__cwdpath = "data";
 #define DEPTH   5
 #define STARTX  96
 
-static PixmapT *texture;
 static CopListT *cp[2];
 static CopInsT *bplptr[2][DEPTH];
 static CopInsT *bplmod[2][HEIGHT];
@@ -24,21 +23,14 @@ static short active = 0;
 static CopInsT *sprptr[2][8];
 
 #include "data/twister-gradient.c"
+#include "data/twister-texture.c"
 #include "data/twister-left.c"
 #include "data/twister-right.c"
 #include "data/twister.c"
 
-static void Load(void) {
-  texture = LoadPNG("twister-texture.png", PM_RGB12, MEMF_PUBLIC);
-}
-
-static void UnLoad(void) {
-  DeletePixmap(texture);
-}
-
 static void MakeCopperList(CopListT **ptr, short n) {
   CopListT *cp = NewCopList(100 + HEIGHT * 5 + (31 * HEIGHT / 3));
-  short *pixels = texture->pixels;
+  short *pixels = texture.pixels;
   short i, j, k;
 
   CopInit(cp);
@@ -131,9 +123,9 @@ static void SetupLines(short f) {
 }
 
 static __regargs void SetupTexture(CopInsT **colors, short y) {
-  short *pixels = texture->pixels;
-  short height = texture->height;
-  short width = texture->width;
+  short *pixels = texture.pixels;
+  short height = texture.height;
+  short width = texture.width;
   short n = height;
 
   y %= height;
@@ -178,7 +170,7 @@ static __regargs void SetupTexture(CopInsT **colors, short y) {
     y++;
 
     if (y >= height) {
-      pixels = texture->pixels;
+      pixels = texture.pixels;
       y = 0;
     }
   }
@@ -195,4 +187,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

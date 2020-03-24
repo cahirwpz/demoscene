@@ -18,7 +18,10 @@ static BitmapT *screen[2];
 static u_short active = 0;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static PixmapT *texture, *gradient, *uvmap;
+static PixmapT *uvmap;
+
+#include "data/texture-16-1.c"
+#include "data/gradient.c"
 
 #define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
 void (*UVMapRender)(u_char *chunky asm("a0"),
@@ -69,16 +72,11 @@ static void MakeUVMapRenderCode(void) {
 }
 
 static void Load(void) {
-  texture = LoadPNG("texture-16-1.png", PM_CMAP8, MEMF_PUBLIC);
-  gradient = LoadPNG("gradient.png", PM_RGB12, MEMF_PUBLIC);
   uvmap = LoadPNG("uvmap.png", PM_GRAY16, MEMF_PUBLIC);
 }
 
 static void UnLoad(void) {
-  MemFree(uvmap);
-  DeletePalette(texture->palette);
-  DeletePixmap(texture);
-  DeletePixmap(gradient);
+  DeletePixmap(uvmap);
 }
 
 static struct {
@@ -208,13 +206,13 @@ INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar, NULL);
 static struct Interrupt *oldBlitInt;
 
 static void MakeCopperList(CopListT *cp) {
-  short *pixels = gradient->pixels;
+  short *pixels = gradient.pixels;
   short i, j;
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopLoadPal(cp, texture->palette, 0);
+  CopLoadPal(cp, &texture_pal, 0);
   for (i = 0; i < HEIGHT * 2; i++) {
     CopWaitSafe(cp, Y(i + 28), 0);
     /* Line doubling. */
@@ -238,11 +236,11 @@ static void Init(void) {
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
   MakeUVMapRenderCode();
 
-  textureHi = NewPixmap(texture->width, texture->height * 2,
+  textureHi = NewPixmap(texture.width, texture.height * 2,
                         PM_CMAP8, MEMF_PUBLIC);
-  textureLo = NewPixmap(texture->width, texture->height * 2,
+  textureLo = NewPixmap(texture.width, texture.height * 2,
                         PM_CMAP8, MEMF_PUBLIC);
-  PixmapToTexture(texture, textureHi, textureLo);
+  PixmapToTexture(&texture, textureHi, textureLo);
 
   EnableDMA(DMAF_BLITTER);
 

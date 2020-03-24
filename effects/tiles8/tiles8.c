@@ -30,23 +30,23 @@ static CopInsT *bplptr[DEPTH];
 static CopInsT *chunky[VTILES];
 static BitmapT *screen0, *screen1;
 static CopListT *cp;
-static PixmapT *twist, *colors;
 static PixmapT *tilegfx;
 static u_short *tilescr;
 static short ntiles;
 
+#include "data/twist.c"
+#include "data/twist-colors.c"
+
 static void Load(void) {
   short x, y, i;
 
-  twist = LoadPNG("twist.png", PM_GRAY8, MEMF_PUBLIC);
-  colors = LoadPNG("twist-colors.png", PM_RGB12, MEMF_PUBLIC);
   tilegfx = LoadPNG("tiles-c.png", PM_CMAP1, MEMF_CHIP);
 
   ntiles = tilegfx->height / 8;
   tilescr = MemAlloc(HTILES * VTILES * sizeof(u_short), MEMF_PUBLIC);
 
   {
-    // u_char *pixels = (u_char *)twist->pixels;
+    // u_char *pixels = (u_char *)twist.pixels;
 
     for (i = 0, y = 0; y < VTILES; y++)
       for (x = 0; x < HTILES; x++, i++) {
@@ -58,8 +58,6 @@ static void Load(void) {
 }
 
 static void UnLoad(void) {
-  DeletePixmap(colors);
-  DeletePixmap(twist);
   DeletePalette(tilegfx->palette);
   DeletePixmap(tilegfx);
 }
@@ -124,8 +122,8 @@ static void Kill(void) {
 }
 
 static void UpdateChunky(void) {
-  u_char *data = twist->pixels;
-  u_short *cmap = colors->pixels;
+  u_char *data = twist.pixels;
+  u_short *cmap = colors.pixels;
   u_char offset = SIN(frameCount * 8) >> 2;
   short y;
 

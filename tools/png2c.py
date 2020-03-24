@@ -40,7 +40,7 @@ def parse(spec, *desc, **kwargs):
     return param
 
 
-def c2p(pix, width, height, depth):
+def planar(pix, width, height, depth):
     data = array('H')
     padding = array('B', [0 for _ in range(16 - (width & 15))])
 
@@ -59,7 +59,40 @@ def c2p(pix, width, height, depth):
     return data
 
 
+def chunky4(im):
+    pix = im.load()
+    width, height = im.size
+    data = array('B')
+
+    for y in range(height):
+        for x in range(0, (width + 1) & ~1, 2):
+            x0 = pix[x, y] & 15
+            if x + 1 < width:
+                x1 = pix[x + 1, y] & 15
+            else:
+                x1 = 0
+            data.append((x0 << 4) | x1)
+
+    return data
+
+
+def rgb12(im):
+    pix = im.load()
+    width, height = im.size
+    data = array('H')
+
+    for y in range(height):
+        for x in range(width):
+            r, g, b = pix[x, y]
+            data.append(((r & 0xf0) << 4) | (g & 0xf0) | (b >> 4))
+
+    return data
+
+
 def do_bitmap(im, desc):
+    if im.mode not in ['1', 'L', 'P']:
+        raise SystemExit('Only 8-bit images supported.')
+
     param = parse(desc, ('name', str), (('width', 'height', 'depth'), dim),
                   interleaved=False)
 
@@ -84,7 +117,7 @@ def do_bitmap(im, desc):
     bytesPerRow = ((width + 15) & ~15) // 8
     wordsPerRow = bytesPerRow // 2
     bplSize = bytesPerRow * height
-    bpl = c2p(pix, width, height, depth)
+    bpl = planar(pix, width, height, depth)
 
     print('static __data_chip u_short _%s_bpl[] = {' % name)
     if interleaved:
@@ -126,6 +159,9 @@ def do_bitmap(im, desc):
 
 
 def do_sprite(im, desc):
+    if im.mode not in ['1', 'L', 'P']:
+        raise SystemExit('Only 8-bit images supported.')
+
     param = parse(desc, ('name', str), ('height', int), ('count', int),
                   attached=False, array=False)
 
@@ -156,7 +192,7 @@ def do_sprite(im, desc):
         raise SystemExit('Image depth is %d, expected 2!' % depth)
 
     stride = ((width + 15) & ~15) // 16
-    bpl = c2p(pix, width, height, depth)
+    bpl = planar(pix, width, height, depth)
 
     for i in range(width // 16):
         sprite = name
@@ -189,40 +225,67 @@ def do_sprite(im, desc):
 
 
 def do_pixmap(im, desc):
-    param = parse(desc, ('name', str), ('width', int), ('height', int))
+    param = parse(desc, ('name', str), (('width', 'height', 'bpp'), dim))
 
     name = param['name']
     has_width = param['width']
     has_height = param['height']
+    has_bpp = param['bpp']
 
     width, height = im.size
-    # colors = im.getextrema()[1] + 1
-    # depth = int(ceil(log(colors, 2)))
 
-    if width != has_width:
-        raise SystemExit(
-            'Image width is %d, expected %d!' % (width, has_width))
+    if width != has_width or height != has_height:
+        raise SystemExit('Image size is %dx%d, expected %dx%d!' % (
+            (width, height), (has_width, has_height)))
 
-    if height != has_height:
-        raise SystemExit(
-            'Image height is %d, expected %d!' % (height, has_height))
+    if has_bpp not in [4, 8, 12]:
+        raise SystemExit('Wrong specification: bits per pixel %d!' % has_bpp)
 
-    pix = im.load()
+    stride = width
+    pixeltype = None
+    data = None
 
-    print('static u_char _%s_data[] = {' % name)
-    for y in range(height):
-        for x in range(0, (width + 1) & ~1, 2):
-            x0 = pix[x, y] & 15
-            if x + 1 < width:
-                x1 = pix[x + 1, y] & 15
-            else:
-                x1 = 0
-            print('  0x%02x,' % ((x0 << 4) | x1))
-    print('};')
-    print('')
+    if im.mode in ['1', 'L', 'P']:
+        if has_bpp > 8:
+            raise SystemExit('Expected grayscale / color mapped image!')
+
+        colors = im.getextrema()[1] + 1
+        bpp = int(ceil(log(colors, 2)))
+        if bpp > has_bpp:
+            raise SystemExit(
+                'Image\'s bits per pixel is %d, expected %d!' % (bpp, has_bpp))
+
+        if has_bpp == 4:
+            pixeltype = 'PM_CMAP4'
+            data = chunky4(im)
+            stride = (width + 1) // 2
+        else:
+            pixeltype = 'PM_CMAP8'
+            data = array('B', im.getdata())
+
+        print('static u_char _%s_data[%d] = {' % (name, stride * height))
+        for i in range(0, stride * height, stride):
+            row = ['0x%02x' % p for p in data[i:i + stride]]
+            print('  %s,' % ', '.join(row))
+        print('};')
+        print('')
+    elif im.mode in ['RGB']:
+        if has_bpp <= 8:
+            raise SystemExit('Expected RGB true color image!')
+        pixeltype = 'PM_RGB12'
+        data = rgb12(im)
+
+        print('static u_short _%s_data[%d] = {' % (name, stride * height))
+        for i in range(0, stride * height, stride):
+            row = ['0x%04x' % p for p in data[i:i + stride]]
+            print('  %s,' % ', '.join(row))
+        print('};')
+        print('')
+    else:
+        raise SystemExit('Image pixel format %s not handled!' % im.mode)
 
     print('PixmapT %s = {' % name)
-    print('  .type = PM_CMAP4,')
+    print('  .type = %s,' % pixeltype)
     print('  .width = %d,' % width)
     print('  .height = %d,' % height)
     print('  .palette = NULL,')
@@ -232,6 +295,9 @@ def do_pixmap(im, desc):
 
 
 def do_palette(im, desc):
+    if im.mode != 'P':
+        raise SystemExit('Only 8-bit images with palette supported.')
+
     param = parse(desc, ('name', str), ('colors', int))
 
     name = param['name']
@@ -274,9 +340,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     im = Image.open(args.path)
-
-    if im.mode not in ['1', 'L', 'P']:
-        raise SystemExit('Only 8-bit images supported.')
 
     if args.palette:
         do_palette(im, args.palette)
