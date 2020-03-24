@@ -18,10 +18,10 @@ static BitmapT *screen[2];
 static u_short active = 0;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static PixmapT *uvmap;
 
 #include "data/texture-16-1.c"
 #include "data/gradient.c"
+#include "data/uvmap.c"
 
 #define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
 void (*UVMapRender)(u_char *chunky asm("a0"),
@@ -56,8 +56,8 @@ PixmapToTexture(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo) {
 
 static void MakeUVMapRenderCode(void) {
   u_short *code = (void *)UVMapRender;
-  u_short *data = uvmap->pixels;
-  short n = uvmap->width * uvmap->height / 2;
+  u_short *data = uvmap;
+  short n = WIDTH * HEIGHT / 2;
 
   /* The map is pre-scrambled to avoid one c2p pass: [a B C d] => [a C B d] */
   while (n--) {
@@ -69,14 +69,6 @@ static void MakeUVMapRenderCode(void) {
   }
 
   *code++ = 0x4e75; /* rts */
-}
-
-static void Load(void) {
-  uvmap = LoadPNG("uvmap.png", PM_GRAY16, MEMF_PUBLIC);
-}
-
-static void UnLoad(void) {
-  DeletePixmap(uvmap);
 }
 
 static struct {
@@ -291,4 +283,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

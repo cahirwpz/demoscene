@@ -91,9 +91,8 @@ class UVMap(object):
                 self.vmap[i] = float(v) / 256.0
 
     def save(self, name, fn, scale=256):
-        im = Image.new('I', (self.width, self.height))
-        data = array('H')
         size = self.texsize
+        data = array('H')
         for i in range(self.width * self.height):
             if self.mask[i]:
                 u = int(frpart(self.umap[i]) * scale) % size
@@ -101,9 +100,12 @@ class UVMap(object):
                 data.append(u * size + v)
             else:
                 data.append(0x8000)
-        im.putdata(fn(data))
-        im.save(name + '.png', 'PNG')
-        subprocess.call(['optipng', '-o7', '%s.png' % name])
+        data = fn(data)
+        print('u_short %s[%d] = {' % (name, self.width * self.height))
+        for i in range(0, self.width * self.height, self.width):
+            row = ['0x%04x' % val for val in data[i:i + self.width]]
+            print('  %s,' % ', '.join(row))
+        print('};')
 
     def save_uv(self, name):
         im = Image.new('L', (self.width, self.height))

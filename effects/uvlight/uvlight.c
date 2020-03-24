@@ -20,9 +20,10 @@ static u_short *shademap;
 static u_short *chunky[2];
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static PixmapT *uvmap;
 static PixmapT *light;
 static u_short *texture;
+
+#include "data/torus-map.c"
 
 #if OPTIMIZED
 #define UVMapRenderSize (WIDTH * HEIGHT * 8 + 2)
@@ -31,7 +32,7 @@ static void (*UVMapRender)(u_short *chunky asm("a0"), u_short *texture asm("a1")
 
 static void MakeUVMapRenderCode(void) {
   u_short *code = (void *)UVMapRender;
-  u_short *data = uvmap->pixels;
+  u_short *data = uvmap;
   u_char *lmap = light->pixels;
   short n = WIDTH * HEIGHT;
 
@@ -91,8 +92,6 @@ static void DataScramble(u_short *data, short n) {
 static void Load(void) {
   PixmapT *image = LoadPNG("texture.png", PM_CMAP8, MEMF_PUBLIC);
 
-  uvmap = LoadPNG("torus-map.png", PM_GRAY16, MEMF_PUBLIC);
-
   light = LoadPNG("torus-light.png", PM_GRAY8, MEMF_PUBLIC);
   {
     u_char *src = light->pixels;
@@ -138,7 +137,6 @@ static void Load(void) {
 
 static void UnLoad(void) {
   DeletePixmap(light);
-  DeletePixmap(uvmap);
   MemFree(texture);
 }
 
@@ -347,7 +345,7 @@ static void Render(void) {
   {
     void *shade = shademap;
     void *tex = &texture[frameCount & 16383];
-    u_short *data = uvmap->pixels;
+    u_short *data = uvmap.pixels;
     u_char *lmap = light->pixels;
     u_short *dst = chunky[active];
     short n = WIDTH * HEIGHT;

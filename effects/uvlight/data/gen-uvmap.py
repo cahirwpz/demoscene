@@ -17,4 +17,4 @@ def scramble_rgb12(uvmap):
 if __name__ == "__main__":
     uvmap = UVMap(80, 64)
     uvmap.load_uv(sys.argv[1])
-    uvmap.save(sys.argv[1] + '-map', scramble_rgb12, scale=128)
+    uvmap.save(sys.argv[2], scramble_rgb12, scale=128)
