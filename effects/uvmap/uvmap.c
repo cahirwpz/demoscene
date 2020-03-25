@@ -3,10 +3,7 @@
 #include "coplist.h"
 #include "interrupts.h"
 #include "memory.h"
-#include "io.h"
-#include "png.h"
-
-const char *__cwdpath = "data";
+#include "pixmap.h"
 
 #define WIDTH 160
 #define HEIGHT 100

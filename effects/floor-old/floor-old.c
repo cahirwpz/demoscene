@@ -5,8 +5,7 @@
 #include "fx.h"
 #include "random.h"
 #include "color.h"
-#include "png.h"
-#include "color.h"
+#include "pixmap.h"
 #include "tasks.h"
 
 #define WIDTH 320

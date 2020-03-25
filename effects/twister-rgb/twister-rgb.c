@@ -1,13 +1,11 @@
 #include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
-#include "png.h"
+#include "pixmap.h"
 #include "fx.h"
 #include "memory.h"
 #include "sprite.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH   144
 #define HEIGHT  255
