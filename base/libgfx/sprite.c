@@ -18,16 +18,6 @@ __regargs SpriteT *NewSprite(u_short height, bool attached) {
   return sprite;
 }
 
-__regargs SpriteT *CloneSystemPointer() {
-  struct SimpleSprite *sprite = GfxBase->SimpleSprites[0];
-  u_short height = sprite->height;
-  SpriteT *pointer = NewSprite(height, false);
-
-  memcpy(pointer->data + 2, sprite->posctldata + 2, height * sizeof(int));
-
-  return pointer;
-}
-
 __regargs void DeleteSprite(SpriteT *sprite) {
   if (sprite) {
     if (sprite->attached)

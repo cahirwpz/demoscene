@@ -14,12 +14,12 @@
 
 static BitmapT *screen;
 static CopListT *cp;
-static SpriteT *pointer;
 static CopInsT *sprptr[8];
 
 #include "data/toggle_0.c"
 #include "data/toggle_1.c"
 #include "data/koi8r.8x8.c"
+#include "data/pointer.c"
 
 /* Test program */
 static GUI_DEF(_b0, GUI_BUTTON(&GUI_LABEL("Play")));
@@ -61,8 +61,7 @@ static void Load(void) {
 
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  cp = NewCopList(100);
-  pointer = CloneSystemPointer();
+  cp = NewCopList(120);
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
@@ -74,10 +73,11 @@ static void Init(void) {
   CopSetRGB(cp, UI_FRAME_OUT,   0xeee);
   CopSetRGB(cp, UI_FG_INACTIVE, 0x24a);
   CopSetRGB(cp, UI_FG_ACTIVE,   0x46e);
+  CopLoadPal(cp, &pointer_pal, 16);
   CopEnd(cp);
 
-  CopInsSet32(sprptr[0], pointer->data);
-  UpdateSprite(pointer, X(0), Y(0));
+  CopInsSet32(sprptr[0], pointer.data);
+  UpdateSprite(&pointer, X(0), Y(0));
 
   CopListActivate(cp);
 
@@ -95,7 +95,6 @@ static void Kill(void) {
   KeyboardKill();
   MouseKill();
 
-  DeleteSprite(pointer);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
@@ -111,7 +110,7 @@ static bool HandleEvent(void) {
       return false;
   } else if (ev->type == EV_MOUSE) {
     GuiHandleMouseEvent(gui, &ev->mouse);
-    UpdateSprite(pointer, X(ev->mouse.x), Y(ev->mouse.y));
+    UpdateSprite(&pointer, X(ev->mouse.x), Y(ev->mouse.y));
   } else if (ev->type == EV_GUI) {
     WidgetT *wg = ev->gui.widget;
 

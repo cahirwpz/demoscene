@@ -36,7 +36,6 @@ typedef struct Sprite {
 extern SpriteT *NullSprite;
 
 __regargs SpriteT *NewSprite(u_short height, bool attached);
-__regargs SpriteT *CloneSystemPointer(void);
 __regargs void DeleteSprite(SpriteT *sprite);
 
 /* Don't call it for null sprites. */
