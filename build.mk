@@ -38,7 +38,6 @@ FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 RUNINUAE := $(PYTHON3) $(TOPDIR)/effects/RunInUAE
 ILBMCONV := $(TOPDIR)/tools/ilbmconv.py
-ILBMPACK := $(TOPDIR)/tools/ilbmpack.py $(QUIET)
 DUMPLWO := $(TOPDIR)/tools/dumplwo.py $(QUIET)
 PSFTOPNG := $(TOPDIR)/tools/psftopng.py
 TMXCONV := $(TOPDIR)/tools/tmxconv.py

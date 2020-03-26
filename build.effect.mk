@@ -42,7 +42,6 @@ $(TOPDIR)/effects/%.o: FORCE
 %.ilbm: %.png
 	@echo "[ILBM] $(DIR)$< -> $(DIR)$@"
 	$(ILBMCONV) $< $@
-	$(ILBMPACK) -f $@
 
 %.png: %.psfu
 	@echo "[PSF] $(DIR)$< -> $(DIR)$@"
