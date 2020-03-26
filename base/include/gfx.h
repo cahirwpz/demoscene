@@ -36,10 +36,8 @@ typedef struct {
 } Area2D;
 
 __regargs PaletteT *NewPalette(u_short count);
-__regargs PaletteT *CopyPalette(PaletteT *palette);
 __regargs void DeletePalette(PaletteT *palette);
 __regargs void ConvertPaletteToRGB4(PaletteT *palette, u_short *color, short n);
-void RotatePalette(PaletteT *dstpal, PaletteT *srcpal, short start, short end, short step);
 
 /* Size of extra buffer after last word of bitplanes. */
 #define BM_EXTRA sizeof(u_short)
