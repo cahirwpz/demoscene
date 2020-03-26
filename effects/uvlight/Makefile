@@ -1,7 +1,10 @@
 TOPDIR := $(realpath ../..)
 
-DATA := data/texture.png data/torus-light.png
-CLEAN-FILES := data/torus-map.c
+DATA := data/texture.png
+CLEAN-FILES := data/torus-map.c data/torus-light.c
+
+PNG2C.torus-light := --pixmap light,80x64x8
+PNG2C.texture := --pixmap texture_raw,128x128x8 --palette texture_pal,224
 
 include $(TOPDIR)/build.effect.mk
 
