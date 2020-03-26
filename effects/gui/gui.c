@@ -20,6 +20,9 @@ static SpriteT *pointer;
 static CopInsT *sprptr[8];
 static FontT *font;
 
+#include "data/toggle_0.c"
+#include "data/toggle_1.c"
+
 /* Test program */
 static GUI_DEF(_b0, GUI_BUTTON(&GUI_LABEL("Play")));
 static GUI_DEF(_b1, GUI_BUTTON(&GUI_LABEL("Pause")));
@@ -43,8 +46,8 @@ static GUI_DEF(_bg1, GUI_GROUP(4,
                                WG_ITEM(_rb2, 252, 42, -1, -1),
                                WG_ITEM(_rb3, 253, 56, -1, -1)));
 
-static GUI_DEF(_t0, GUI_TOGGLE(&GUI_IMAGE("toggle_0.ilbm"),
-                               &GUI_IMAGE("toggle_1.ilbm")));
+static GUI_DEF(_t0, GUI_TOGGLE(&GUI_IMAGE(&toggle_0),
+                               &GUI_IMAGE(&toggle_1)));
 static GUI_DEF(_l0, GUI_LABEL_N(40));
 static GUI_DEF(_f0, GUI_FRAME(FRAME_FLAT, _l0));
 static GUI_DEF(_root, GUI_GROUP(4,
