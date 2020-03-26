@@ -18,50 +18,6 @@ __regargs SpriteT *NewSprite(u_short height, bool attached) {
   return sprite;
 }
 
-__regargs SpriteT *NewSpriteFromBitmap(u_short height, BitmapT *bitmap,
-                                       u_short xstart, u_short ystart)
-{
-  SpriteT *sprite = NewSprite(height, bitmap->depth == 4);
-  short yend = ystart + sprite->height;
-  int start = ystart * bitmap->bytesPerRow / 2 + xstart / 16;
-  int stride = bitmap->bytesPerRow / 2;
-
-  if (bitmap->depth == 2) {
-    u_short *data = &sprite->data[2];
-    u_short *bpl0 = (u_short *)bitmap->planes[0] + start;
-    u_short *bpl1 = (u_short *)bitmap->planes[1] + start;
-
-    for (; ystart < yend; ystart++) {
-      *data++ = *bpl0;
-      *data++ = *bpl1;
-
-      bpl0 += stride;
-      bpl1 += stride;
-    }
-  } else {
-    u_short *data0 = &sprite->data[2];
-    u_short *data1 = &sprite->attached->data[2];
-    u_short *bpl0 = (u_short *)bitmap->planes[0] + start;
-    u_short *bpl1 = (u_short *)bitmap->planes[1] + start;
-    u_short *bpl2 = (u_short *)bitmap->planes[2] + start;
-    u_short *bpl3 = (u_short *)bitmap->planes[3] + start;
-
-    for (; ystart < yend; ystart++) {
-      *data0++ = *bpl0;
-      *data0++ = *bpl1;
-      *data1++ = *bpl2;
-      *data1++ = *bpl3;
-
-      bpl0 += stride;
-      bpl1 += stride;
-      bpl2 += stride;
-      bpl3 += stride;
-    }
-  }
-
-  return sprite;
-}
-
 __regargs SpriteT *CloneSystemPointer() {
   struct SimpleSprite *sprite = GfxBase->SimpleSprites[0];
   u_short height = sprite->height;
