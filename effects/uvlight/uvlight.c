@@ -3,9 +3,8 @@
 #include "coplist.h"
 #include "interrupts.h"
 #include "memory.h"
-#include "io.h"
 #include "color.h"
-#include "png.h"
+#include "pixmap.h"
 
 #define WIDTH 80
 #define HEIGHT 64
