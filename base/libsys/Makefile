@@ -2,6 +2,7 @@ TOPDIR := $(realpath ../..)
 
 SOURCES := \
 	amigahunk.c \
+	audio.c \
 	common.c \
 	console.c \
 	debug-intr.c \

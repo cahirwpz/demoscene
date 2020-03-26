@@ -5,7 +5,6 @@ SOURCES := \
 	crt0.s
 
 SUBDIRS := \
-	libaudio \
 	libc \
 	lib2d \
 	lib3d \
