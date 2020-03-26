@@ -288,7 +288,6 @@ def do_pixmap(im, desc):
     print('  .type = %s,' % pixeltype)
     print('  .width = %d,' % width)
     print('  .height = %d,' % height)
-    print('  .palette = NULL,')
     print('  .pixels = _%s_data' % name)
     print('};')
     print('')
