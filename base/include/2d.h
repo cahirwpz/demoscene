@@ -34,13 +34,11 @@ extern Box2D ClipWin;
 __regargs void PointsInsideBox(Point2D *in, u_char *flags, short n);
 __regargs bool ClipLine2D(Line2D *line);
 __regargs u_short ClipPolygon2D(Point2D *in, Point2D **outp, u_short n,
-                              u_short clipFlags);
+                                u_short clipFlags);
 
 typedef struct Shape {
   short points;
   short polygons;
-
-  Point2D origin;
 
   Point2D *origPoint;
   Point2D *viewPoint;
@@ -48,8 +46,5 @@ typedef struct Shape {
   IndexListT **polygon;
   u_char *polygonFlags;
 } ShapeT;
-
-__regargs ShapeT *LoadShape(const char *filename);
-__regargs void DeleteShape(ShapeT *shape);
 
 #endif

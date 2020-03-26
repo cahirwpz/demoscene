@@ -51,6 +51,10 @@ data/%.c: data/%.png
 	@echo "[PNG] $(DIR)$< -> $(DIR)$@"
 	$(PNG2C) $(PNG2C.$*) $< > $@
 
+data/%.c: data/%.2d
+	@echo "[2D] $(DIR)$< -> $(DIR)$@"
+	$(CONV2D) $(CONV2D.$*) $< > $@
+
 %.bin: %.asm
 	@echo "[BIN] $(DIR)$< -> $(DIR)$@"
 	$(AS) -Fbin -o $@ $<
