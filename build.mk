@@ -39,9 +39,9 @@ BINPATCH := $(TOPDIR)/tools/binpatch.py
 RUNINUAE := $(PYTHON3) $(TOPDIR)/effects/RunInUAE
 ILBMCONV := $(TOPDIR)/tools/ilbmconv.py
 DUMPLWO := $(TOPDIR)/tools/dumplwo.py $(QUIET)
-PSFTOPNG := $(TOPDIR)/tools/psftopng.py
 TMXCONV := $(TOPDIR)/tools/tmxconv.py
 PNG2C := $(TOPDIR)/tools/png2c.py
+PSF2C := $(TOPDIR)/tools/psf2c.py
 OPTIPNG := optipng $(QUIET)
 STRIP := m68k-amigaos-strip -s
 

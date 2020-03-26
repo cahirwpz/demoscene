@@ -12,16 +12,14 @@
 #define HEIGHT 256
 #define DEPTH 3
 
-const char *__cwdpath = "data";
-
 static BitmapT *screen;
 static CopListT *cp;
 static SpriteT *pointer;
 static CopInsT *sprptr[8];
-static FontT *font;
 
 #include "data/toggle_0.c"
 #include "data/toggle_1.c"
+#include "data/koi8r.8x8.c"
 
 /* Test program */
 static GUI_DEF(_b0, GUI_BUTTON(&GUI_LABEL("Play")));
@@ -58,12 +56,7 @@ static GUI_DEF(_root, GUI_GROUP(4,
 static GUI_MAIN(_root);
 
 static void Load(void) {
-  font = LoadFont("koi8r.8x8.font");
-  GuiInit(gui, font);
-}
-
-static void UnLoad(void) {
-  DeleteFont(font);
+  GuiInit(gui, &font);
 }
 
 static void Init(void) {
@@ -138,4 +131,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, NULL, HandleEvent };
+EffectT Effect = { Load, NULL, Init, Kill, NULL, HandleEvent };
