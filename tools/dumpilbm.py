@@ -3,7 +3,7 @@
 import logging
 import sys
 
-from .iff.ilbm import ILBM
+from iff.ilbm import ILBM
 from pprint import pprint
 
 
