@@ -39,10 +39,6 @@ $(TOPDIR)/effects/%.o: FORCE
 	@echo "[LWO] $(DIR)$< -> $(DIR)$@"
 	$(DUMPLWO) -f $< $@
 
-%.ilbm: %.png
-	@echo "[ILBM] $(DIR)$< -> $(DIR)$@"
-	$(ILBMCONV) $< $@
-
 data/%.c: data/%.psfu
 	@echo "[PSF] $(DIR)$^ -> $(DIR)$@"
 	$(PSF2C) $(PSF2C.$*) $< > $@

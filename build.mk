@@ -37,7 +37,6 @@ PYTHON3 := PYTHONPATH="$(TOPDIR)/pylib:$$PYTHONPATH" python3
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 RUNINUAE := $(PYTHON3) $(TOPDIR)/effects/RunInUAE
-ILBMCONV := $(TOPDIR)/tools/ilbmconv.py
 DUMPLWO := $(TOPDIR)/tools/dumplwo.py $(QUIET)
 CONV2D := $(TOPDIR)/tools/conv2d.py
 TMXCONV := $(TOPDIR)/tools/tmxconv.py
