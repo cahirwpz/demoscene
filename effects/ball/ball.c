@@ -2,7 +2,6 @@
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
-#include "io.h"
 #include "pixmap.h"
 #include "sprite.h"
 #include "fx.h"
@@ -23,8 +22,8 @@ static CopInsT *sprptr[8];
 
 #include "data/dragon-bg.c"
 #include "data/texture-15.c"
+#include "data/ball.c"
 
-static u_short *uvmap;
 static u_short active = 0;
 static CopListT *cp;
 
@@ -77,14 +76,6 @@ static void MakeUVMapRenderCode(void) {
   }
 
   *code++ = 0x4e75; /* rts */
-}
-
-static void Load(void) {
-  uvmap = LoadFile("ball.bin", MEMF_PUBLIC);
-}
-
-static void UnLoad(void) {
-  MemFree(uvmap);
 }
 
 static void MakeCopperList(CopListT *cp) {
@@ -355,4 +346,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

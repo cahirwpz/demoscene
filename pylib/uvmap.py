@@ -1,8 +1,6 @@
 from __future__ import print_function
 
-import subprocess
-
-from math import atan2, cos, sin, pi
+from math import atan2, cos, sin, pi, sqrt
 from utils import dist, lerp, frpart
 from array import array
 from PIL import Image
@@ -47,6 +45,18 @@ def HotMagma(x, y):
     return (u, v)
 
 
+def Ball(x, y):
+    r = dist(x, y, 0.0, 0.0)
+    r2 = r * r
+
+    try:
+        v = x * (1.33 - sqrt(1.0 - r2)) / (r2 + 1.0)
+        u = y * (1.33 - sqrt(1.0 - r2)) / (r2 + 1.0)
+        return (u, v)
+    except ValueError:
+        pass
+
+
 class UVMap(object):
 
     def __init__(self, width, height, texsize=128):
@@ -59,9 +69,12 @@ class UVMap(object):
 
     def put(self, x, y, value):
         i = x + y * self.width
-        self.umap[i] = value[0]
-        self.vmap[i] = value[1]
-        self.mask[i] = 1
+        if value:
+            self.umap[i] = value[0]
+            self.vmap[i] = value[1]
+            self.mask[i] = 1
+        else:
+            self.mask[i] = 0
 
     def get(self, x, y):
         i = x + y * self.width
@@ -90,7 +103,7 @@ class UVMap(object):
                 self.umap[i] = float(u) / 256.0
                 self.vmap[i] = float(v) / 256.0
 
-    def save(self, name, fn, scale=256):
+    def save(self, name, fn=None, scale=256):
         size = self.texsize
         data = array('H')
         for i in range(self.width * self.height):
@@ -99,8 +112,9 @@ class UVMap(object):
                 v = int(frpart(self.vmap[i]) * scale) % size
                 data.append(u * size + v)
             else:
-                data.append(0x8000)
-        data = fn(data)
+                data.append(0xffff)
+        if fn:
+            data = fn(data)
         print('u_short %s[%d] = {' % (name, self.width * self.height))
         for i in range(0, self.width * self.height, self.width):
             row = ['0x%04x' % val for val in data[i:i + self.width]]
@@ -114,5 +128,3 @@ class UVMap(object):
         im = Image.new('L', (self.width, self.height))
         im.putdata([frpart(v) * 256 for v in self.vmap])
         im.save(name + '-v.png', 'PNG')
-        # subprocess.call(['optipng', '-o7', '%s-u.png' % name])
-        # subprocess.call(['optipng', '-o7', '%s-v.png' % name])
