@@ -7,8 +7,6 @@
 #include "fx.h"
 #include "tasks.h"
 
-const char *__cwdpath = "data";
-
 #define WIDTH   320
 #define HEIGHT  256
 #define DEPTH   5
@@ -35,9 +33,6 @@ static void Load(void) {
     ColorT *c = &logo_pal.colors[i];
     pal2[i] = ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4);
   }
-}
-
-static void UnLoad(void) {
 }
 
 static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
@@ -108,4 +103,4 @@ static void Render(void) {
   TaskWait(VBlankEvent);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };

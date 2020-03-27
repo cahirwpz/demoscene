@@ -7,8 +7,6 @@
 #include "circle.h"
 #include "tasks.h"
 
-const char *__cwdpath = "data";
-
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 5

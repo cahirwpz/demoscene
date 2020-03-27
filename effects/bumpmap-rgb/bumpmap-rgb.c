@@ -7,8 +7,6 @@
 #include "pixmap.h"
 #include "fx.h"
 
-const char *__cwdpath = "data";
-
 #define WIDTH 80
 #define HEIGHT 64
 #define DEPTH 4
