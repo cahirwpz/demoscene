@@ -55,11 +55,6 @@ data/%.c: data/%.2d
 	@echo "[2D] $(DIR)$< -> $(DIR)$@"
 	$(CONV2D) $(CONV2D.$*) $< > $@
 
-data/%.o: data/%.p61
-	@echo "[OBJCOPY] $(DIR)$< -> $(DIR)$@"
-	$(OBJCOPY) -I binary -O amiga \
-		--rename-section .data=.data_chip,alloc,load,data,contents $^ $@
-
 %.bin: %.asm
 	@echo "[BIN] $(DIR)$< -> $(DIR)$@"
 	$(AS) -Fbin -o $@ $<

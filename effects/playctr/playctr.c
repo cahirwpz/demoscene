@@ -1,5 +1,4 @@
 #include "startup.h"
-#include "io.h"
 #include "hardware.h"
 #include "interrupts.h"
 #include "memory.h"
@@ -15,9 +14,16 @@
 #define HEIGHT 256
 #define DEPTH 1
 
-const char *__cwdpath = "data";
+extern u_char binary_data_JazzCat_Automatic_ctr_start[];
+#define module binary_data_JazzCat_Automatic_ctr_start
 
-static void *module, *instruments;
+extern u_char binary_data_JazzCat_Automatic_smp_start[];
+#define samples binary_data_JazzCat_Automatic_smp_start
+
+extern u_char binary_data_JazzCat_Automatic_smp_size[];
+#define samples_len ((long)binary_data_JazzCat_Automatic_smp_size)
+
+static void *instruments;
 static CinterPlayerT *player;
 static BitmapT *screen;
 static CopListT *cp;
@@ -31,14 +37,10 @@ static u_short *musicStart;
 #define INSTRUMENTS_TOTAL 153172
 
 static void Load(void) {
-  int samples_len = GetFileSize("JazzCat-Automatic.smp");
-  void *samples = LoadFile("JazzCat-Automatic.smp", MEMF_FAST);
-  Log("Raw samples length: %d\n", samples_len);
-  module = LoadFile("JazzCat-Automatic.ctr", MEMF_FAST);
+  Log("Raw samples length: %d\n", (int)samples_len);
   instruments = MemAlloc(INSTRUMENTS_TOTAL, MEMF_CHIP|MEMF_CLEAR);
   player = MemAlloc(sizeof(CinterPlayerT), MEMF_FAST|MEMF_CLEAR);
   memcpy(instruments, samples, samples_len);
-  MemFree(samples);
 }
 
 static void UnLoad(void) {
