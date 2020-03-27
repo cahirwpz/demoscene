@@ -1,5 +1,4 @@
 #include "startup.h"
-#include "io.h"
 #include "hardware.h"
 #include "interrupts.h"
 #include "memory.h"
@@ -15,21 +14,15 @@
 #define HEIGHT 256
 #define DEPTH 1
 
-const char *__cwdpath = "data";
+long __chipmem = 128 * 1024;
 
-static void *module;
+extern u_char binary_data_jazzcat_sunglasses_at_night_p61_start[];
+#define module binary_data_jazzcat_sunglasses_at_night_p61_start
+
 static BitmapT *screen;
 static BitmapT *osc[4];
 static CopListT *cp;
 static ConsoleT console;
-
-static void Load(void) {
-  module = LoadFile("jazzcat-sunglasses_at_night.p61", MEMF_CHIP);
-}
-
-static void UnLoad(void) {
-  MemFree(module);
-}
 
 INTERRUPT(P61PlayerInterrupt, 10, P61_Music, NULL);
 
@@ -220,4 +213,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, HandleEvent };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, HandleEvent };

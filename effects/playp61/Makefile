@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-DATA := data/jazzcat-sunglasses_at_night.p61
+OBJECTS := data/jazzcat-sunglasses_at_night.o
 
 LIBS := libp61
 
