@@ -1,7 +1,9 @@
 TOPDIR := $(realpath ../..)
 
-DATA_GEN := data/MagicLand-tiles.ilbm
-CLEAN-FILES := data/MagicLand.c data/MagicLand-tiles.png
+CLEAN-FILES := data/MagicLand-tiles.c data/MagicLand.c data/MagicLand-tiles.png
+
+PNG2C.MagicLand-tiles := --bitmap tiles,16x13360x5,+interleaved \
+	                 --palette tiles_pal,20
 
 include $(TOPDIR)/build.effect.mk
 

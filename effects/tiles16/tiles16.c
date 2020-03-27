@@ -3,14 +3,11 @@
 #include "coplist.h"
 #include "memory.h"
 #include "gfx.h"
-#include "ilbm.h"
-#include "io.h"
 #include "blitter.h"
 #include "random.h"
 #include "tasks.h"
 
-const char *__cwdpath = "data";
-int __chipmem = 300 * 1024;
+int __chipmem = 128 * 1024;
 
 #define WIDTH (320 + 16)
 #define HEIGHT (256 + 16)
@@ -30,25 +27,22 @@ static short active;
 typedef struct TileSet {
   u_short width, height;
   u_short count;
-  const char *path;
-  BitmapT *tiles;
   void **ptrs;
 } TileSetT;
 
 #include "data/MagicLand.c"
-#define Tiles MagicLand_tiles
-#define MapWidth MagicLand_map_width
-#define MapHeight MagicLand_map_height
-#define Map MagicLand_map
+#include "data/MagicLand-tiles.c"
+#define tileset MagicLand_tiles
+#define tilemap_width MagicLand_map_width
+#define tilemap_height MagicLand_map_height
+#define tilemap MagicLand_map
 
 static void Load(void) {
-  Tiles.tiles = LoadILBMCustom(Tiles.path,
-                               BM_DISPLAYABLE | BM_INTERLEAVED | BM_LOAD_PALETTE);
-  Tiles.ptrs = MemAlloc(sizeof(void *) * Tiles.count, MEMF_PUBLIC);
+  tileset.ptrs = MemAlloc(sizeof(void *) * tileset.count, MEMF_PUBLIC);
   {
-    short n = Tiles.count;
-    void *base = Tiles.tiles->planes[0];
-    void **ptrs = Tiles.ptrs;
+    short n = tileset.count;
+    void *base = tiles.planes[0];
+    void **ptrs = tileset.ptrs;
     while (--n >= 0) {
       *ptrs++ = base;
       base += TILESIZE;
@@ -56,18 +50,12 @@ static void Load(void) {
   }
 
   {
-    int n = MapWidth * MapHeight;
     int i;
-    for (i = 0; i < n; i++) {
-      Map[i] <<= 2;
-      Map[i] |= 3;
+    for (i = 0; i < tilemap_width * tilemap_height; i++) {
+      tilemap[i] <<= 2;
+      tilemap[i] |= 3;
     }
   }
-}
-
-static void UnLoad(void) {
-  DeletePalette(Tiles.tiles->palette);
-  DeleteBitmap(Tiles.tiles);
 }
 
 static void MakeCopperList(CopListT *cp, int i) {
@@ -77,13 +65,13 @@ static void MakeCopperList(CopListT *cp, int i) {
   CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH);
   CopSetupBitplanes(cp, bplptr[i], screen[i], DEPTH);
   bplcon1[i] = CopMove16(cp, bplcon1, 0);
-  CopLoadPal(cp, Tiles.tiles->palette, 0);
+  CopLoadPal(cp, &tiles_pal, 0);
   CopEnd(cp);
 }
 
 static void Init(void) {
   /* extra memory for horizontal scrolling */
-  short extra = div16(MapWidth * Tiles.width, WIDTH);
+  short extra = div16(tilemap_width * tileset.width, WIDTH);
 
   Log("Allocate %d extra lines!\n", extra);
 
@@ -115,10 +103,10 @@ static void Kill(void) {
 
 __regargs void TriggerRefresh(short x, short y, short w __unused, short h __unused)
 {
-  short *tiles = Map;
-  int tilemod = MapWidth - HTILES;
+  short *map = tilemap;
+  int tilemod = tilemap_width - HTILES;
 
-  tiles += x + (short)y * (short)MapWidth;
+  map += x + (short)y * (short)tilemap_width;
 
   {
     short j = VTILES - 1;
@@ -126,10 +114,10 @@ __regargs void TriggerRefresh(short x, short y, short w __unused, short h __unus
       short i = HTILES - 1;
 
       do {
-        *tiles++ |= 3;
+        *map++ |= 3;
       } while (--i >= 0);
 
-      tiles += tilemod;
+      map += tilemod;
     } while (--j >= 0);
   }
 }
@@ -142,14 +130,14 @@ __regargs void TriggerRefresh(short x, short y, short w __unused, short h __unus
 static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
                                   volatile struct Custom* const custom asm("a6"))
 {
-  short *tiles = Map;
-  void *ptrs = Tiles.ptrs;
+  short *map = tilemap;
+  void *ptrs = tileset.ptrs;
   void *dst = screen->planes[0] + (x << 1);
   short size = ((16 * DEPTH) << 6) | 1;
-  int tilemod = MapWidth - HTILES;
+  int tilemod = tilemap_width - HTILES;
   short current = active + 1;
 
-  tiles += x + (short)y * (short)MapWidth;
+  map += x + (short)y * (short)tilemap_width;
 
   WAITBLT();
 
@@ -167,7 +155,7 @@ static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
       short i = HTILES - 1;
 
       do {
-        short tile = *tiles++;
+        short tile = *map++;
 
         if (tile & current) {
           void *src = *(void **)(ptrs + (tile & ~3));
@@ -177,13 +165,13 @@ static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
           custom->bltdpt = dst;
           custom->bltsize = size;
 
-          tiles[-1] ^= current;
+          map[-1] ^= current;
         }
 
         dst += 2;
       } while (--i >= 0);
 
-      tiles += tilemod;
+      map += tilemod;
       dst += BPLMOD + 15 * WIDTH * DEPTH / 8;
     } while (--j >= 0);
   }
@@ -195,7 +183,7 @@ static void Render(void) {
   short tile = t >> 4;
   short pixel = 15 - (t & 15);
 
-  short x = tile % (MapWidth - HTILES);
+  short x = tile % (tilemap_width - HTILES);
   short y = 35;
 
   UpdateTiles(screen[active], x, y, custom);
@@ -217,4 +205,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };

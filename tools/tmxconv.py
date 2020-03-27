@@ -129,8 +129,6 @@ if __name__ == '__main__':
         print('  .width = %d,' % tileset.width)
         print('  .height = %d,' % tileset.height)
         print('  .count = %d,' % len(tileset.tiles))
-        print('  .path = "%s",' % (os.path.basename(name) + '-tiles.ilbm'))
-        print('  .tiles = NULL,')
         print('  .ptrs = NULL')
         print('};')
         print()
