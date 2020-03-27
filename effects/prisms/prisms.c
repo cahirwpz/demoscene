@@ -16,6 +16,7 @@
 #define PFACES  10
 #define PWIDTH  64
 #define PRISMS  6
+#define NCOLORS 4
 
 #include "data/sprite.c"
 
@@ -54,8 +55,11 @@ static short active = 0;
 
 static CopInsT *sprptr[8];
 
-static u_short colorSet[4] = { 0xC0F, 0xF0C, 0x80F, 0xF08 };
-static u_short colorShades[4][32];
+static u_short colorSet[NCOLORS] = {
+  0xC0F, 0xF0C, 0x80F, 0xF08
+};
+
+static u_short colorShades[NCOLORS][32];
 
 static void GeneratePrisms(void) {
   PrismT *prism = prisms;
@@ -104,7 +108,7 @@ static void GenerateColorShades(void) {
   u_short *s = colorSet;
   u_short *d = (u_short *)colorShades;
 
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < NCOLORS; i++) {
     u_short c = *s++;
 
     for (j = 0; j < 16; j++)

@@ -400,16 +400,15 @@ static void MakeFloorCopperList(short yo, short kyo) {
     short i = mod16(frameCount, 10) * 2;
     u_short *thunder0 = thunder[i]->data;
     u_short *thunder1 = thunder[i+1]->data;
-    u_short *null = NullSprite->data;
 
     CopMove32(cp, sprpt[0], thunder0);
     CopMove32(cp, sprpt[1], thunder1);
-    CopMove32(cp, sprpt[2], null);
-    CopMove32(cp, sprpt[3], null);
-    CopMove32(cp, sprpt[4], null);
-    CopMove32(cp, sprpt[5], null);
-    CopMove32(cp, sprpt[6], null);
-    CopMove32(cp, sprpt[7], null);
+    CopMove32(cp, sprpt[2], NullSprite);
+    CopMove32(cp, sprpt[3], NullSprite);
+    CopMove32(cp, sprpt[4], NullSprite);
+    CopMove32(cp, sprpt[5], NullSprite);
+    CopMove32(cp, sprpt[6], NullSprite);
+    CopMove32(cp, sprpt[7], NullSprite);
   }
 
   /* Clear out the colors. */

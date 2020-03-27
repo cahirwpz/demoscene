@@ -75,7 +75,7 @@ __regargs void UpdateSprite(SpriteT *sprite, u_short hstart, u_short vstart) {
 }
 
 __regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr) {
-  u_short *data = NullSprite->data;
+  u_short *data = NullSprite;
   short i;
 
   for (i = 0; i < 8; i++) {
@@ -86,7 +86,7 @@ __regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr) {
 }
 
 __regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr) {
-  u_short *data = NullSprite->data;
+  u_short *data = NullSprite;
   short i;
 
   for (i = 0; i < 8; i++) {
@@ -96,18 +96,4 @@ __regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr) {
   }
 }
 
-static SpriteT NullSpriteData = { (SpriteT *)NULL, 0, (u_short *)NULL };
-SpriteT *NullSprite = &NullSpriteData;
-
-void InitNullSprite(void) {
-  Log("[Init] Null sprite.\n");
-  NullSprite->data = AllocMem(4, MEMF_CHIP|MEMF_CLEAR);
-}
-
-void KillNullSprite(void) {
-  Log("[Quit] Null sprite.\n");
-  FreeMem(NullSprite->data, 4);
-}
-
-ADD2INIT(InitNullSprite, 0);
-ADD2EXIT(KillNullSprite, 0);
+__data_chip u_short NullSprite[] = { 0, 0 }; 
