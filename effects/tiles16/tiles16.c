@@ -35,18 +35,10 @@ typedef struct TileSet {
   void **ptrs;
 } TileSetT;
 
-#define TILESET(w, h, count, path) {(w), (h), (count), (path), NULL, NULL}
-
-typedef struct TileMap {
-  u_short width, height;
-  const char *path;
-  short *map;
-} TileMapT;
-
-#define TILEMAP(w, h, path) {(w), (h), (path), NULL}
-
-#include "data/MagicLand.h"
+#include "data/MagicLand.c"
 #define Tiles MagicLand_tiles
+#define MapWidth MagicLand_map_width
+#define MapHeight MagicLand_map_height
 #define Map MagicLand_map
 
 static void Load(void) {
@@ -63,13 +55,12 @@ static void Load(void) {
     }
   }
 
-  Map.map = LoadFile(Map.path, MEMF_PUBLIC);
   {
-    int n = Map.width * Map.height;
+    int n = MapWidth * MapHeight;
     int i;
     for (i = 0; i < n; i++) {
-      Map.map[i] <<= 2;
-      Map.map[i] |= 3;
+      Map[i] <<= 2;
+      Map[i] |= 3;
     }
   }
 }
@@ -77,7 +68,6 @@ static void Load(void) {
 static void UnLoad(void) {
   DeletePalette(Tiles.tiles->palette);
   DeleteBitmap(Tiles.tiles);
-  MemFree(Map.map);
 }
 
 static void MakeCopperList(CopListT *cp, int i) {
@@ -93,7 +83,7 @@ static void MakeCopperList(CopListT *cp, int i) {
 
 static void Init(void) {
   /* extra memory for horizontal scrolling */
-  short extra = div16(Map.width * Tiles.width, WIDTH);
+  short extra = div16(MapWidth * Tiles.width, WIDTH);
 
   Log("Allocate %d extra lines!\n", extra);
 
@@ -125,10 +115,10 @@ static void Kill(void) {
 
 __regargs void TriggerRefresh(short x, short y, short w __unused, short h __unused)
 {
-  short *tiles = Map.map;
-  int tilemod = Map.width - HTILES;
+  short *tiles = Map;
+  int tilemod = MapWidth - HTILES;
 
-  tiles += x + (short)y * (short)Map.width;
+  tiles += x + (short)y * (short)MapWidth;
 
   {
     short j = VTILES - 1;
@@ -152,14 +142,14 @@ __regargs void TriggerRefresh(short x, short y, short w __unused, short h __unus
 static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
                                   volatile struct Custom* const custom asm("a6"))
 {
-  short *tiles = Map.map;
+  short *tiles = Map;
   void *ptrs = Tiles.ptrs;
   void *dst = screen->planes[0] + (x << 1);
   short size = ((16 * DEPTH) << 6) | 1;
-  int tilemod = Map.width - HTILES;
+  int tilemod = MapWidth - HTILES;
   short current = active + 1;
 
-  tiles += x + (short)y * (short)Map.width;
+  tiles += x + (short)y * (short)MapWidth;
 
   WAITBLT();
 
@@ -205,7 +195,7 @@ static void Render(void) {
   short tile = t >> 4;
   short pixel = 15 - (t & 15);
 
-  short x = tile % (Map.width - HTILES);
+  short x = tile % (MapWidth - HTILES);
   short y = 35;
 
   UpdateTiles(screen[active], x, y, custom);

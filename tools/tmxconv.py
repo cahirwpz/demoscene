@@ -10,6 +10,7 @@ from PIL import Image
 
 
 class TileSet(object):
+
     def __init__(self, name, width, height, tiles):
         self.name = name
         self.width = width
@@ -57,6 +58,7 @@ def parseTileSet(node, workdir):
 
 
 class Layer(object):
+
     def __init__(self, name, width, height, tiles):
         self.name = name
         self.width = width
@@ -71,12 +73,6 @@ class Layer(object):
     def optimize(self, unique_tiles):
         renum = {old: new for new, old in enumerate(unique_tiles)}
         self.tiles = list(map(lambda x: renum[x], self.tiles))
-
-    def save(self, name):
-        tab = array('H', self.tiles)
-        tab.byteswap()
-        with open(name, 'wb') as f:
-            f.write(tab.tobytes())
 
 
 def parseLayer(node):
@@ -103,12 +99,13 @@ def preview(name, layer, tileset):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Convert Tiled map to internal format.')
-    parser.add_argument(
-        'input', metavar='INPUT', type=str,
-        help='Tiled map containing layer and tileset.')
+    parser.add_argument('what', choices=['tiles', 'source'],
+                        help='Output either tiles or tile map.')
+    parser.add_argument('input', metavar='INPUT', type=str,
+                        help='Tiled map containing layer and tileset.')
 
     args = parser.parse_args()
-    basename = os.path.splitext(args.input)[0]
+    name = os.path.splitext(args.input)[0]
     workdir = os.path.dirname(args.input)
 
     layer = None
@@ -126,14 +123,25 @@ if __name__ == '__main__':
 
     unique_tiles = list(sorted(set(layer.tiles)))
 
-    layer.optimize(unique_tiles)
-    layer.save(basename + '-map.bin')
-    tileset.optimize(unique_tiles)
-    tileset.save(basename + '-tiles.png')
-
-    with open(basename + '.h', 'w') as f:
-        print('static TileSetT %s = TILESET(%d, %d, %d, "%s");' %
-              (tileset.name, tileset.width, tileset.height,
-               len(tileset.tiles), basename + '-tiles.ilbm'))
-        print('static TileMapT %s = TILEMAP(%d, %d, "%s");' %
-              (layer.name, layer.width, layer.height, basename + '-map.bin'))
+    if args.what == 'source':
+        layer.optimize(unique_tiles)
+        print('static TileSetT %s = {' % tileset.name)
+        print('  .width = %d,' % tileset.width)
+        print('  .height = %d,' % tileset.height)
+        print('  .count = %d,' % len(tileset.tiles))
+        print('  .path = "%s",' % (os.path.basename(name) + '-tiles.ilbm'))
+        print('  .tiles = NULL,')
+        print('  .ptrs = NULL')
+        print('};')
+        print()
+        print('const int %s_width = %d;' % (layer.name, layer.width))
+        print('const int %s_height = %d;' % (layer.name, layer.height))
+        print()
+        print('short %s[] = {' % layer.name)
+        for y in range(layer.height):
+            row = [str(layer.get(x, y)) for x in range(layer.width)]
+            print('  %s,' % ', '.join(row))
+        print('};')
+    else:
+        tileset.optimize(unique_tiles)
+        tileset.save(name + '-tiles.png')

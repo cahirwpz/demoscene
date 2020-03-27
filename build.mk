@@ -71,10 +71,6 @@ CLEAN-FILES += $(DEPFILES) $(SOURCES_GEN) $(OBJECTS) $(DATA_GEN)
 	@echo "[CC] $(DIR)$< -> $(DIR)$@"
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
-%: %.o
-	@echo "[LD] $(DIR)$^ -> $(DIR)$@"
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
 %.o: %.s
 	@echo "[AS] $(DIR)$< -> $(DIR)$@"
 	$(AS) -Fhunk $(ASFLAGS) -o $@ $<

@@ -59,10 +59,6 @@ data/%.c: data/%.2d
 	@echo "[BIN] $(DIR)$< -> $(DIR)$@"
 	$(AS) -Fbin -o $@ $<
 
-%.h %-map.bin %-tiles.png: %.tmx
-	@echo "[TMX] $(DIR)$< -> $(addprefix $(DIR),$*.h $*-map.bin $*-tiles.png)"
-	$(TMXCONV) $< > $@
-
 %.adf: %.exe $(DATA) $(DATA_GEN) $(TOPDIR)/base/bootloader.bin
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
 	$(FSUTIL) -b $(TOPDIR)/base/bootloader.bin create $@ $^
