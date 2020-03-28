@@ -10,6 +10,7 @@ from collections.abc import Mapping
 
 
 class Font(Mapping):
+
     def __init__(self, height, char, char_map):
         self.height = height
         self._char = char
