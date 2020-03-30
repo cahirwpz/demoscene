@@ -32,8 +32,9 @@ jobs:
           name: Amiga 500 (compile code base)
           command: |
             echo "export GOROOT=/usr/lib/go-1.13" >> $BASH_ENV
-            echo "export PATH=$GOPATH/bin:$PATH" >> $BASH_ENV
+            echo "export PATH=\$GOROOT/bin:\$PATH" >> $BASH_ENV
             source $BASH_ENV
+            env
             make
       - store_artifacts:
           path: /demoscene.tar.gz
