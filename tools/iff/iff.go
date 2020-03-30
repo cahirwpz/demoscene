@@ -27,11 +27,6 @@ type Chunk interface {
 	Read(r Reader)
 }
 
-type WritableChunk interface {
-	Chunk
-	Write(w Writer)
-}
-
 type File interface {
 	Name() string
 	Chunks() []Chunk
@@ -139,23 +134,4 @@ func ReadIff(r io.Reader) (iff File, err error) {
 	}
 
 	return &iffFile{name, chunks}, nil
-}
-
-func WriteIff(w io.Writer, form string, chunks []Chunk) (err error) {
-	defer func() {
-		p := recover()
-		if p != nil {
-			var ok bool
-			err, ok = p.(error)
-			if !ok {
-				panic(p)
-			}
-		}
-	}()
-
-	if len(form) != 4 {
-		panic("IFF form must be a four character string!")
-	}
-
-	return nil
 }
