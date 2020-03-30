@@ -1,9 +1,3 @@
-all:
-	go build
+TOPDIR := $(realpath ../..)
 
-windows:
-	GOOS=windows GOARCH=amd64 go build
-
-clean:
-	go clean
-	rm -f *~
+include $(TOPDIR)/build.go.mk
