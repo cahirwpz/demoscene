@@ -194,8 +194,8 @@ class LWOParserMixin(object):
 
 class LWO2(IffFile, LWOParserMixin):
     ChunkAliasMap = {
-        'Int16': ['AXIS', 'CSYS', 'ENAB', 'IMAG', 'NEGA', 'NSTA', 'PIXB', 'PROJ',
-                  'SIDE'],
+        'Int16': ['AXIS', 'CSYS', 'ENAB', 'IMAG', 'NEGA', 'NSTA', 'PIXB',
+                  'PROJ', 'SIDE'],
         'Int32': ['FLAG', 'VERS'],
         'FloatWithEnvelope': ['ALPH', 'DIFF', 'GLOS', 'LUMI', 'SPEC', 'WRPH',
                               'WRPW', 'TRAN', 'TRNL', 'BUMP', 'RIND', 'REFL',
@@ -232,17 +232,19 @@ class LWO2(IffFile, LWOParserMixin):
         return [self.readVertex(data), self.readIndex(data)]
 
     def readFALL(self, data):
-        return [self.readInt16(data), self.readVertex(data), self.readIndex(data)]
+        return [self.readInt16(data), self.readVertex(data),
+                self.readIndex(data)]
 
     def readLAYR(self, data):
-        return [self.readInt16(data), self.readInt16(data), self.readVertex(data),
-                self.readString(data)]
+        return [self.readInt16(data), self.readInt16(data),
+                self.readVertex(data), self.readString(data)]
 
     def readIMAP(self, data):
         return [self.readString(data), self.parseMiniChunks(data.read())]
 
     def readOPAC(self, data):
-        return [self.readInt16(data), self.readFloat(data), self.readIndex(data)]
+        return [self.readInt16(data), self.readFloat(data),
+                self.readIndex(data)]
 
     def readPOLS(self, data):
         polyType = data.read(4)
@@ -346,10 +348,10 @@ class LWOB(IffFile, LWOParserMixin):
     """ http://sandbox.de/osg/lightwave.htm """
 
     ChunkAliasMap = {
-        'Int16': ['FLAG', 'DIFF', 'LUMI', 'SPEC', 'GLOS', 'TFLG', 'REFL', 'TRAN',
-                  'TVAL'],
-        'Float': ['VDIF', 'SMAN', 'EDGE', 'TAAS', 'TAMP', 'TFP0', 'RIND', 'VSPC',
-                  'VLUM', 'TOPC', 'VTRN'],
+        'Int16': ['FLAG', 'DIFF', 'LUMI', 'SPEC', 'GLOS', 'TFLG', 'REFL',
+                  'TRAN', 'TVAL'],
+        'Float': ['VDIF', 'SMAN', 'EDGE', 'TAAS', 'TAMP', 'TFP0', 'RIND',
+                  'VSPC', 'VLUM', 'TOPC', 'VTRN'],
         'Color': ['COLR', 'TCLR'],
         'Vertex': ['TSIZ', 'TCTR', 'TFAL', 'TVEL'],
         'String': ['TIMG', 'BTEX', 'CTEX', 'DTEX', 'LTEX', 'TTEX']}
