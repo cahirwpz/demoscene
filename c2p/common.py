@@ -51,7 +51,7 @@ class Bit(object):
             return Bit('?', None)
 
     def __str__(self):
-        return "\033[%s%s%s" % (self._color, str(self._value).rjust(3), "\033[0m")
+        return "\033[%s%s\033[0m" % (self._color, str(self._value).rjust(3))
 
 
 class Word(object):

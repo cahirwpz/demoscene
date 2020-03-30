@@ -21,8 +21,8 @@ class Instrument:
 
     def __init__(self, f):
         self.name = f.read(22).rstrip(b'\0').decode()
-        self.length, self.finetune, self.volume, self.repoffset, self.replen = (
-            struct.unpack(">HBBHH", f.read(8)))
+        (self.length, self.finetune, self.volume, self.repoffset,
+         self.replen) = struct.unpack(">HBBHH", f.read(8))
         self.samples = None
 
 
@@ -166,7 +166,7 @@ while not stopped and not looped:
 
         # Check for unsupported commands
         for t, tr, cmd, arg1, arg2 in row:
-            if cmd in [0x4, 0x6, 0x7, 0xE0, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xEF]:
+            if cmd in [4, 6, 7, 0xE0, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xEF]:
                 error("Unsupported command %X" % cmd, p, t, r)
 
         # Pick up speed and break
@@ -291,7 +291,8 @@ while not stopped and not looped:
                 note = min(i for i, p in enumerate(
                     periodtable) if p <= period[t])
                 if periodtable[note] != period[t]:
-                    error("Arpeggio with invalid base pitch (after slide)", p, t, r)
+                    error("Arpeggio with invalid base pitch (after slide)",
+                          p, t, r)
                 arpnotes = [note, note + arg1, note + arg2]
                 for a in [1, 2]:
                     if arpnotes[a] >= len(periodtable):
@@ -306,9 +307,10 @@ while not stopped and not looped:
                     error("Portamento with no source", p, t, r)
                     period[t] = periodtable[0]
                 slide = -tr.arg if cmd == 0x1 else tr.arg
-                perioddata[t] += [max(periodtable[-1],
-                                      min(period[t] + i * slide, periodtable[0]))
-                                  for i in range(speed)]
+                perioddata[t] += \
+                    [max(periodtable[-1], min(period[t] + i * slide,
+                                              periodtable[0]))
+                     for i in range(speed)]
                 period[t] = perioddata[t][-1]
             elif cmd in [0x3, 0x5]:
                 # Toneportamento
@@ -432,8 +434,8 @@ for track in range(4):
             vol = 63
         if inst != 0:
             note = periodtable.index(per)
-            data = 0x8000 | (
-                note_ids[(inst, offset, note)] << NOTE_SHIFT) | (vol << VOLUME_SHIFT)
+            data = (0x8000 | (note_ids[(inst, offset, note)] << NOTE_SHIFT) |
+                    (vol << VOLUME_SHIFT))
             initial = False
             pdper = 0
         elif initial:
@@ -550,8 +552,8 @@ for i in range(1, last_nonempty_inst + 1):
         dist = (p[8] << 12) | (p[9] << 8) | (p[10] << 4) | p[11]
 
         inst_data[index] = struct.pack(">11H", length, replen, mpitch, mod,
-                                       bpitch, attack, dist, decay, mpitchdecay,
-                                       moddecay, bpitchdecay)
+                                       bpitch, attack, dist, decay,
+                                       mpitchdecay, moddecay, bpitchdecay)
         total_inst_time += (20 + p[8] + p[9] +
                             p[10] + p[11]) * length * 0.000017
         inst_type = "C"
