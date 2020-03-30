@@ -298,25 +298,3 @@ __regargs BitmapT *LoadILBMCustom(const char *filename, u_short flags) {
 
   return bitmap;
 }
-
-__regargs PaletteT *LoadPalette(const char *filename) {
-  PaletteT *palette = NULL;
-  IffFileT iff;
-
-  OpenIff(&iff, filename);
-
-  if (iff.header.type != ID_ILBM)
-    Panic("[ILBM] File '%s' has wrong type!\n", filename);
-
-  while (ParseChunk(&iff)) {
-    if (iff.chunk.type == ID_CMAP) {
-      palette = LoadCMAP(&iff);
-      break;
-    }
-    SkipChunk(&iff);
-  }
-
-  CloseIff(&iff);
-
-  return palette;
-}

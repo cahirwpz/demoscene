@@ -2,6 +2,7 @@
 
 from PIL import Image
 from utils import lerp
+import sys
 
 
 if __name__ == "__main__":
@@ -52,4 +53,4 @@ if __name__ == "__main__":
       pix[i, j] = v % 15 + 1
       pix[width - i - 1, j] = v % 15 + 1
 
-  im.save("neons.png", "PNG")
+  im.save(sys.argv[1], "PNG")

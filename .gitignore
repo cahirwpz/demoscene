@@ -53,6 +53,7 @@ _UAEFSDB.___
 ahxWaves*
 p61.*
 smp.*
+effects/*/data/*.[ch]
 
 # source index files
 *.taghl

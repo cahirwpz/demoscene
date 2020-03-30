@@ -1,75 +1,44 @@
 #include "startup.h"
 #include "blitter.h"
 #include "coplist.h"
-#include "ilbm.h"
-#include "png.h"
+#include "pixmap.h"
 #include "fx.h"
 #include "memory.h"
 #include "sprite.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH   144
 #define HEIGHT  255
 #define DEPTH   5
 #define STARTX  96
 
-static BitmapT *twister;
-static PixmapT *texture;
-static PaletteT *gradient;
 static CopListT *cp[2];
 static CopInsT *bplptr[2][DEPTH];
 static CopInsT *bplmod[2][HEIGHT];
 static CopInsT *colors[2][HEIGHT];
 static short active = 0;
 
-static SpriteT *left[2];
-static SpriteT *right[2];
 static CopInsT *sprptr[2][8];
 
-static void Load(void) {
-  twister = LoadILBMCustom("twister.ilbm", BM_DISPLAYABLE);
-  texture = LoadPNG("twister-texture.png", PM_RGB12, MEMF_PUBLIC);
-  gradient = LoadPalette("twister-gradient.ilbm");
-
-  {
-    BitmapT *_left = LoadILBMCustom("twister-left.ilbm", 0);
-    BitmapT *_right = LoadILBMCustom("twister-right.ilbm", 0);
-
-    left[0] = NewSpriteFromBitmap(256, _left, 0, 0);
-    left[1] = NewSpriteFromBitmap(256, _left, 16, 0);
-    right[0] = NewSpriteFromBitmap(256, _right, 0, 0);
-    right[1] = NewSpriteFromBitmap(256, _right, 16, 0);
-
-    DeleteBitmap(_right);
-    DeleteBitmap(_left);
-  }
-}
-
-static void UnLoad(void) {
-  DeleteSprite(left[0]);
-  DeleteSprite(left[1]);
-  DeleteSprite(right[0]);
-  DeleteSprite(right[1]);
-  DeleteBitmap(twister);
-  DeletePixmap(texture);
-  DeletePalette(gradient);
-}
+#include "data/twister-gradient.c"
+#include "data/twister-texture.c"
+#include "data/twister-left.c"
+#include "data/twister-right.c"
+#include "data/twister.c"
 
 static void MakeCopperList(CopListT **ptr, short n) {
   CopListT *cp = NewCopList(100 + HEIGHT * 5 + (31 * HEIGHT / 3));
-  short *pixels = texture->pixels;
+  short *pixels = texture.pixels;
   short i, j, k;
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(STARTX), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplanes(cp, bplptr[n], twister, DEPTH);
+  CopSetupBitplanes(cp, bplptr[n], &twister, DEPTH);
   CopSetupSprites(cp, sprptr[n]);
   CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
   CopMove16(cp, diwstrt, 0x2c81);
   CopMove16(cp, diwstop, 0x2bc1);
-  CopSetColor(cp, 0, &gradient->colors[0]);
+  CopSetColor(cp, 0, &gradient.colors[0]);
 
   for (i = 0, k = 0; i < HEIGHT; i++) {
     CopWaitSafe(cp, Y(i), 0);
@@ -77,7 +46,7 @@ static void MakeCopperList(CopListT **ptr, short n) {
     CopMove16(cp, bpl2mod, -32);
     CopMove16(cp, bpldat[0], 0);
 
-    CopSetColor(cp, 0, &gradient->colors[i]);
+    CopSetColor(cp, 0, &gradient.colors[i]);
 
     if ((i % 3) == 0) {
       colors[n][k++] = CopSetRGB(cp, 1, *pixels++);
@@ -125,8 +94,8 @@ static void SetupLines(short f) {
 
   /* first line */
   {
-    int y = (short)twister->bytesPerRow * y0;
-    void **planes = twister->planes;
+    int y = (short)twister.bytesPerRow * y0;
+    void **planes = twister.planes;
     CopInsT **bpl = bplptr[active];
     short n = DEPTH;
 
@@ -152,9 +121,9 @@ static void SetupLines(short f) {
 }
 
 static __regargs void SetupTexture(CopInsT **colors, short y) {
-  short *pixels = texture->pixels;
-  short height = texture->height;
-  short width = texture->width;
+  short *pixels = texture.pixels;
+  short height = texture.height;
+  short width = texture.width;
   short n = height;
 
   y %= height;
@@ -199,7 +168,7 @@ static __regargs void SetupTexture(CopInsT **colors, short y) {
     y++;
 
     if (y >= height) {
-      pixels = texture->pixels;
+      pixels = texture.pixels;
       y = 0;
     }
   }
@@ -216,4 +185,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

@@ -2,22 +2,20 @@
 #include "coplist.h"
 #include "blitter.h"
 #include "memory.h"
-#include "png.h"
+#include "pixmap.h"
 #include "gfx.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 2
 
-static PixmapT *colors;
 static CopListT *cp[2];
 static CopInsT *copins[2][HEIGHT];
 static short active = 1;
 
 #include "stripes.c"
+#include "data/colors.c"
 
 #define STEP_SHIFT 3
 #define STEP (1 << STEP_SHIFT)
@@ -81,15 +79,14 @@ void CalcLines(void) {
 
 static void Load(void) {
   short s;
+
   for (s = 0; s < STEP; s++)
     cache[s] = MemAlloc(CWIDTH * CHEIGHT / 8, MEMF_CHIP | MEMF_CLEAR);
-  colors = LoadPNG("colors.png", PM_RGB12, MEMF_PUBLIC);
 }
 
 static void UnLoad(void) {
   short s;
 
-  DeletePixmap(colors);
   for (s = 0; s < STEP; s++) 
     MemFree(cache[s]);
 }
@@ -133,7 +130,7 @@ static void Kill(void) {
 }
 
 static void RenderPipes(void) {
-  u_short *pixels = (u_short *)colors->pixels;
+  u_short *pixels = (u_short *)colors.pixels;
   CopInsT **ins_tab = copins[active];
   int *offset = offsets;
   short *stripe = stripes;

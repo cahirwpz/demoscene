@@ -1,5 +1,7 @@
-DATA := data/ghostown-logo.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data glitch.exe
+CLEAN-FILES := data/ghostown-logo.c
 
-include ../build.mk
+PNG2C.ghostown-logo := --bitmap logo,160x128x1
+
+include $(TOPDIR)/build.effect.mk

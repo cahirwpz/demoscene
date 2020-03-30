@@ -1,9 +1,10 @@
-SOURCES_ASM := \
+TOPDIR := $(realpath ..)
+
+SOURCES := \
 	bootloader.s \
 	crt0.s
 
 SUBDIRS := \
-	libaudio \
 	libc \
 	lib2d \
 	lib3d \
@@ -15,22 +16,16 @@ SUBDIRS := \
 	libsync \
 	libsys
 
-all: crt0.o bootloader.bin ctags cscope $(foreach dir,$(SUBDIRS),build-$(dir))
+BUILD-FILES := crt0.o bootloader.bin tags cscope.out
 
-include ../build.mk
+include $(TOPDIR)/build.mk
 
 bootloader.bin: ASFLAGS += -phxass
 
 FILES := $(shell find $(SUBDIRS) include -iname '*.c' -or -iname '*.h')
 
-ctags:
+tags:
 	ctags -R $(FILES)
 
-cscope:
+cscope.out:
 	cscope -b $(FILES)
-
-clean::	$(foreach dir,$(SUBDIRS),clean-$(dir))
-	$(RM) crt0.o bootloader.bin
-	$(RM) tags cscope.out
-
-.PHONY:	cscope ctags

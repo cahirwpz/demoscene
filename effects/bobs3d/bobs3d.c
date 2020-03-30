@@ -4,10 +4,7 @@
 #include "3d.h"
 #include "fx.h"
 #include "ffp.h"
-#include "ilbm.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH  256
 #define HEIGHT 256
@@ -19,18 +16,15 @@ static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
 static BitmapT *screen0, *screen1;
-static BitmapT *bobs;
 static CopInsT *bplptr[DEPTH];
 
+#include "data/flares32.c"
+
 static void Load(void) {
-  bobs = LoadILBMCustom("flares32.ilbm", 
-                        BM_DISPLAYABLE | BM_INTERLEAVED | BM_LOAD_PALETTE);
   mesh = LoadMesh3D("pilka.3d", SPFlt(50));
 }
 
 static void UnLoad(void) {
-  DeletePalette(bobs->palette);
-  DeleteBitmap(bobs);
   DeleteMesh3D(mesh);
 }
 
@@ -39,7 +33,7 @@ static void MakeCopperList(CopListT *cp) {
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   CopWait(cp, Y(-1), 0);
   CopSetupBitplanes(cp, bplptr, screen1, DEPTH);
-  CopLoadPal(cp, bobs->palette, 0);
+  CopLoadPal(cp, &bobs_pal, 0);
   CopEnd(cp);
 }
 
@@ -66,20 +60,20 @@ static void Kill(void) {
   DeleteObject3D(cube);
 }
 
-#define MULVERTEX1(D, E) {            \
-  short t0 = (*v++) + y;               \
-  short t1 = (*v++) + x;               \
-  int t2 = (*v++) * z;               \
-  v++;                                \
-  D = ((t0 * t1 + t2 - xy) >> 4) + E; \
+#define MULVERTEX1(D, E) {              \
+  short t0 = (*v++) + y;                \
+  short t1 = (*v++) + x;                \
+  int t2 = (*v++) * z;                  \
+  v++;                                  \
+  D = ((t0 * t1 + t2 - xy) >> 4) + E;   \
 }
 
-#define MULVERTEX2(D) {               \
-  short t0 = (*v++) + y;               \
-  short t1 = (*v++) + x;               \
-  int t2 = (*v++) * z;               \
-  short t3 = (*v++);                   \
-  D = normfx(t0 * t1 + t2 - xy) + t3; \
+#define MULVERTEX2(D) {                 \
+  short t0 = (*v++) + y;                \
+  short t1 = (*v++) + x;                \
+  int t2 = (*v++) * z;                  \
+  short t3 = (*v++);                    \
+  D = normfx(t0 * t1 + t2 - xy) + t3;   \
 }
 
 static __regargs void TransformVertices(Object3D *object) {
@@ -220,7 +214,7 @@ static __regargs void DrawObject(Object3D *object, BitmapT *dst) {
       maxZ = z;
 #endif
 
-    BlitterOrArea(dst, x - 16, y - 16, bobs, z);
+    BlitterOrArea(dst, x - 16, y - 16, &bobs, z);
 
     data++;
   } while (--n > 0);

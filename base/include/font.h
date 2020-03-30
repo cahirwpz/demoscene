@@ -30,7 +30,4 @@ __regargs Size2D DrawTextSizeN(FontT *font, const char *text, u_short n);
 #define DrawText(font, text) DrawTextN((font), (text), 65535);
 #define DrawTextSize(font, text) DrawTextSizeN((font), (text), 65535);
 
-__regargs FontT *LoadFont(const char *filename);
-__regargs void DeleteFont(FontT *font);
-
 #endif

@@ -1,5 +1,7 @@
-DATA := data/colors.png
+TOPDIR := $(realpath ../..)
 
-all: build-data multipipe.exe
+CLEAN-FILES := data/colors.c
 
-include ../build.mk
+PNG2C.colors := --pixmap colors,2x256x12
+
+include $(TOPDIR)/build.effect.mk

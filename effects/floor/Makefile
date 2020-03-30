@@ -1,6 +1,8 @@
-DATA := data/floor-stripes.ilbm \
-	data/floor.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data floor.exe
+CLEAN-FILES := data/stripes.c data/floor.c
 
-include ../build.mk
+PNG2C.stripes := --palette stripes_pal,16
+PNG2C.floor := --bitmap floor,336x257x4
+
+include $(TOPDIR)/build.effect.mk

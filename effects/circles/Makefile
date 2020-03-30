@@ -1,3 +1,3 @@
-all: circles.exe
+TOPDIR := $(realpath ../..)
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

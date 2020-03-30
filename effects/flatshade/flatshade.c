@@ -4,7 +4,6 @@
 #include "3d.h"
 #include "fx.h"
 #include "ffp.h"
-#include "ilbm.h"
 #include "tasks.h"
 
 const char *__cwdpath = "data";
@@ -13,7 +12,6 @@ const char *__cwdpath = "data";
 #define HEIGHT 256
 #define DEPTH  4
 
-static PaletteT *palette;
 static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
@@ -21,15 +19,15 @@ static CopInsT *bplptr[DEPTH];
 static BitmapT *screen0, *screen1;
 static BitmapT *buffer;
 
+#include "data/flatshade-pal.c"
+
 static void Load(void) {
   // mesh = LoadMesh3D("codi.3d", SPFlt(384+104));
   mesh = LoadMesh3D("pilka.3d", SPFlt(65));
   CalculateFaceNormals(mesh);
-  palette = LoadPalette("flatshade-pal.ilbm");
 }
 
 static void UnLoad(void) {
-  DeletePalette(palette);
   DeleteMesh3D(mesh);
 }
 
@@ -37,7 +35,7 @@ static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
-  CopLoadPal(cp, palette, 0);
+  CopLoadPal(cp, &flatshade_pal, 0);
   CopEnd(cp);
 }
 

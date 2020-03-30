@@ -4,9 +4,5 @@ all: $(IMAGES)
 
 include ../../build.mk
 
-%.png: %.py
-	@echo "[$(DIR):gen] $< -> $@"
-	$(PYTHON3) $<
-
 clean::
 	$(RM) $(IMAGES)

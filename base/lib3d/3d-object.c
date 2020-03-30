@@ -1,6 +1,4 @@
 #include "memory.h"
-#include "io.h"
-#include "reader.h"
 #include "3d.h"
 #include "fx.h"
 

@@ -1,9 +1,10 @@
-DATA := data/pilka.3d \
-        data/potato.3d \
-	data/flares32.ilbm
+TOPDIR := $(realpath ../..)
+
+CLEAN-FILES := data/flares32.c
+DATA_GEN := data/pilka.3d
 
 LIBS := lib3d
 
-all: build-data bobs3d.exe
+PNG2C.flares32 := --bitmap bobs,512x32x3,+interleaved --palette bobs_pal,8
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

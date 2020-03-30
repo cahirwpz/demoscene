@@ -1,6 +1,11 @@
-DATA := data/running.bin \
-	data/running-pal.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data anim.exe 
+CLEAN-FILES := data/running.c data/running-pal.c
 
-include ../build.mk
+PNG2C.running-pal := --palette running_pal,16
+
+include $(TOPDIR)/build.effect.mk
+
+%.c: %.gif
+	@echo "[ANIM] $(DIR)$< -> $(DIR)$@"
+	$(PYTHON3) data/gen-anim.py $< > $@

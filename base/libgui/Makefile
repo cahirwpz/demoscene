@@ -1,12 +1,5 @@
-SOURCES_C := \
-	font.c \
-	font-load.c \
-	gui.c
+TOPDIR := $(realpath ../..)
 
-SOURCES_ASM :=
+SOURCES := font.c gui.c
 
-all: libgui.a
-
-include ../../build.mk
-
-libgui.a: $(OBJECTS)
+include $(TOPDIR)/build.lib.mk

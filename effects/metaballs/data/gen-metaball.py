@@ -2,6 +2,7 @@
 
 from PIL import Image
 from utils import dist, lerp, sq, constrain
+import sys
 
 
 if __name__ == "__main__":
@@ -38,4 +39,4 @@ if __name__ == "__main__":
   im = Image.new('L', size)
   im.putdata(data)
   im.putpalette(pal)
-  im.save("metaball.png", "PNG")
+  im.save(sys.argv[1], "PNG")

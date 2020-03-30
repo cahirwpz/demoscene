@@ -1,9 +1,7 @@
-SOURCES_S := cinter.s
+TOPDIR := $(realpath ../..)
 
-all: libctr.a
+SOURCES := cinter.s
 
-include ../../build.mk
-
-libctr.a: cinter.o
+include $(TOPDIR)/build.lib.mk
 
 cinter.o: cinter.s ../include/cinter.h

@@ -1,6 +1,7 @@
 MAKEFLAGS += --no-builtin-rules
 
 TOPDIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+DIR := $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))/
 
 # Compiler tools & flags definitions
 CC	:= m68k-amigaos-gcc -noixemul -g
@@ -32,73 +33,68 @@ CPPFLAGS += -I$(TOPDIR)/base/include
 # Common tools definition
 CP := cp -a
 RM := rm -v -f
-PYTHON3 := PYTHONPATH="$(TOPDIR)/pylib:$$PYTHONPATH" python3
+PYTHON3 := PYTHONPATH="$(TOPDIR)/tools/pylib:$$PYTHONPATH" python3
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 RUNINUAE := $(PYTHON3) $(TOPDIR)/effects/RunInUAE
-ILBMCONV := $(TOPDIR)/tools/ilbmconv.py
-ILBMPACK := $(TOPDIR)/tools/ilbmpack.py $(QUIET)
 DUMPLWO := $(TOPDIR)/tools/dumplwo.py $(QUIET)
-PSFTOPNG := $(TOPDIR)/tools/psftopng.py
+CONV2D := $(TOPDIR)/tools/conv2d.py
 TMXCONV := $(TOPDIR)/tools/tmxconv.py
-OPTIPNG := optipng $(QUIET)
+PNG2C := $(TOPDIR)/tools/png2c.py
+PSF2C := $(TOPDIR)/tools/psf2c.py
 STRIP := m68k-amigaos-strip -s
-
-# Rules for recursive build
-DIR := $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))
-
-build-%: FORCE
-	$(MAKE) -C $(@:build-%=%)
-
-clean-%: FORCE
-	$(MAKE) -C $(@:clean-%=%) clean
-
-# Check if library is up-to date if someone is asking explicitely
-$(TOPDIR)/base/lib%.a: FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
+OBJCOPY := m68k-amigaos-objcopy
 
 # Generate dependencies automatically
-SOURCES = $(SOURCES_C) $(SOURCES_ASM)
-OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_ASM:.s=.o)
+SOURCES_C = $(filter %.c,$(SOURCES))
+SOURCES_ASM = $(filter %.s,$(SOURCES))
+OBJECTS += $(SOURCES_C:.c=.o) $(SOURCES_ASM:.s=.o)
 DEPFILES = $(SOURCES_C:%.c=.%.P)
+
+$(DEPFILES): $(SOURCES_GEN)
 
 ifeq ($(words $(findstring $(MAKECMDGOALS), clean)), 0)
   -include $(DEPFILES)
 endif
 
+CLEAN-FILES += $(DEPFILES) $(SOURCES_GEN) $(OBJECTS) $(DATA_GEN)
+
 # Disable all built-in recipes and define our own
 .SUFFIXES:
 
 .%.P: %.c
-	@echo "[$(DIR):dep] $< -> $@"
+	@echo "[DEP] $(DIR)$< -> $(DIR)$@"
 	$(CC) $(CPPFLAGS) -MM -MG -o $@ $<
 
 %.o: %.c .%.P
-	@echo "[$(DIR):cc] $< -> $@"
+	@echo "[CC] $(DIR)$< -> $(DIR)$@"
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
-%: %.o
-	@echo "[$(DIR):ld] $^ -> $@"
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
 %.o: %.s
-	@echo "[$(DIR):as] $< -> $@"
+	@echo "[AS] $(DIR)$< -> $(DIR)$@"
 	$(AS) -Fhunk $(ASFLAGS) -o $@ $<
 
 %.bin: %.s
-	@echo "[$(DIR):as] $< -> $@"
+	@echo "[AS] $(DIR)$< -> $(DIR)$@"
 	$(AS) -Fbin $(ASFLAGS) -o $@ $<
-
-%.a:	$(OBJECTS)
-	@echo "[$(DIR):ar] $^ -> $@"
-	@m68k-amigaos-ar cr $@ $^
-	@m68k-amigaos-ranlib $@
 
 %.s: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -S -fverbose-asm -o $@ $<
 
-clean::
-	@$(RM) .*.P *.a *.o *~ *.exe *.exe.dbg *.exe.map *.taghl
+# Rules for recursive build
+build-%: FORCE
+	@echo "[MAKE] build $*"
+	$(MAKE) -C $(@:build-%=%)
+
+clean-%: FORCE
+	@echo "[MAKE] clean $*"
+	$(MAKE) -C $(@:clean-%=%) clean
+
+# Rules for build
+build: $(foreach dir,$(SUBDIRS),build-$(dir)) $(BUILD-FILES)
+
+clean: $(foreach dir,$(SUBDIRS),clean-$(dir)) 
+	$(RM) $(BUILD-FILES) $(CLEAN-FILES) .*.P *.a *.o *~ *.taghl
 
 .PRECIOUS: %.o
 .PHONY: all clean FORCE

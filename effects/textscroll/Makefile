@@ -1,6 +1,8 @@
-DATA := data/text-scroll-font.ilbm \
-	data/text-scroll.txt
+TOPDIR := $(realpath ../..)
 
-all: build-data textscroll.exe
+CLEAN-FILES := data/text-scroll-font.c
+DATA := data/text-scroll.txt
 
-include ../build.mk
+PNG2C.text-scroll-font := --bitmap font,768x8x1 --palette font_pal,2
+
+include $(TOPDIR)/build.effect.mk

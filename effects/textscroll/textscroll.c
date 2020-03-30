@@ -5,11 +5,8 @@
 #include "gfx.h"
 #include "memory.h"
 #include "io.h"
-#include "ilbm.h"
 #include "reader.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH 640
 #define HEIGHT 256
@@ -27,20 +24,18 @@ static short active = 0;
 static CopListT *cp[2];
 static CopInsT *linebpl[2][HEIGHT];
 static BitmapT *scroll;
-static BitmapT *font;
 
 static short last_line = -1;
 static char *line_start;
 
+#include "data/text-scroll-font.c"
+
 static void Load(void) {
   text = LoadFile("text-scroll.txt", MEMF_PUBLIC);
-  font = LoadILBMCustom("text-scroll-font.ilbm", BM_LOAD_PALETTE);
 }
 
 static void UnLoad(void) {
   MemFree(text);
-  DeletePalette(font->palette);
-  DeleteBitmap(font);
 }
 
 static CopListT *MakeCopperList(short n) {
@@ -49,7 +44,7 @@ static CopListT *MakeCopperList(short n) {
   CopSetupGfxSimple(cp, MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, scroll, DEPTH);
 
-  CopLoadPal(cp, font->palette, 0);
+  CopLoadPal(cp, &font_pal, 0);
   {
     u_short i;
     void *ptr = scroll->planes[0];
@@ -87,8 +82,8 @@ static void Kill(void) {
 
 static void RenderLine(u_char *dst, char *line, short size) {
   short dwidth = scroll->bytesPerRow;
-  short swidth = font->bytesPerRow;
-  u_char *src = font->planes[0];
+  short swidth = font.bytesPerRow;
+  u_char *src = font.planes[0];
   short x = 0;
 
   while (--size >= 0) {

@@ -3,11 +3,8 @@
 #include "coplist.h"
 #include "interrupts.h"
 #include "memory.h"
-#include "io.h"
 #include "color.h"
-#include "png.h"
-
-const char *__cwdpath = "data";
+#include "pixmap.h"
 
 #define WIDTH 80
 #define HEIGHT 64
@@ -20,9 +17,11 @@ static u_short *shademap;
 static u_short *chunky[2];
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static PixmapT *uvmap;
-static PixmapT *light;
 static u_short *texture;
+
+#include "data/torus-map.c"
+#include "data/torus-light.c"
+#include "data/texture.c"
 
 #if OPTIMIZED
 #define UVMapRenderSize (WIDTH * HEIGHT * 8 + 2)
@@ -31,8 +30,8 @@ static void (*UVMapRender)(u_short *chunky asm("a0"), u_short *texture asm("a1")
 
 static void MakeUVMapRenderCode(void) {
   u_short *code = (void *)UVMapRender;
-  u_short *data = uvmap->pixels;
-  u_char *lmap = light->pixels;
+  u_short *data = uvmap;
+  u_char *lmap = light.pixels;
   short n = WIDTH * HEIGHT;
 
   while (--n >= 0) {
@@ -89,25 +88,20 @@ static void DataScramble(u_short *data, short n) {
 }
 
 static void Load(void) {
-  PixmapT *image = LoadPNG("texture.png", PM_CMAP8, MEMF_PUBLIC);
-
-  uvmap = LoadPNG("torus-map.png", PM_GRAY16, MEMF_PUBLIC);
-
-  light = LoadPNG("torus-light.png", PM_GRAY8, MEMF_PUBLIC);
   {
-    u_char *src = light->pixels;
-    u_char *dst = light->pixels;
+    u_char *src = light.pixels;
+    u_char *dst = light.pixels;
     short n = WIDTH * HEIGHT;
 
     while (--n >= 0)
       *dst++ = (*src++ >> 2) & 0x3E;
   }
 
-  shademap = MemAlloc(32 * sizeof(u_short) * image->palette->count, MEMF_PUBLIC);
+  shademap = MemAlloc(32 * sizeof(u_short) * texture_pal.count, MEMF_PUBLIC);
   {
-    ColorT *c = image->palette->colors;
+    ColorT *c = texture_pal.colors;
     u_short *dst = shademap;
-    short n = image->palette->count;
+    short n = texture_pal.count;
     short i;
 
     while (--n >= 0) {
@@ -118,11 +112,11 @@ static void Load(void) {
       c++;
     }
   }
-  DataScramble(shademap, image->palette->count * 32);
+  DataScramble(shademap, texture_pal.count * 32);
 
   texture = MemAlloc(128 * 128 * 2 * sizeof(u_short), MEMF_PUBLIC);
   {
-    u_char *src = image->pixels;
+    u_char *src = texture_raw.pixels;
     u_short *dst = texture;
     short n = 128 * 128;
 
@@ -132,14 +126,6 @@ static void Load(void) {
     /* Extra half for cheap texture motion. */
     memcpy((void *)texture + 32768, texture, 32768);
   }
-
-  DeletePixmap(image);
-}
-
-static void UnLoad(void) {
-  DeletePixmap(light);
-  DeletePixmap(uvmap);
-  MemFree(texture);
 }
 
 static struct {
@@ -347,7 +333,7 @@ static void Render(void) {
   {
     void *shade = shademap;
     void *tex = &texture[frameCount & 16383];
-    u_short *data = uvmap->pixels;
+    u_short *data = uvmap.pixels;
     u_char *lmap = light->pixels;
     u_short *dst = chunky[active];
     short n = WIDTH * HEIGHT;
@@ -374,4 +360,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };

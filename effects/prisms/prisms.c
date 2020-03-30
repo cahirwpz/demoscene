@@ -1,15 +1,12 @@
 #include "startup.h"
 #include "hardware.h"
 #include "coplist.h"
-#include "ilbm.h"
 #include "blitter.h"
 #include "sprite.h"
 #include "fx.h"
 #include "random.h"
 #include "color.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH   320
 #define HEIGHT  256
@@ -19,6 +16,9 @@ const char *__cwdpath = "data";
 #define PFACES  10
 #define PWIDTH  64
 #define PRISMS  6
+#define NCOLORS 4
+
+#include "data/sprite.c"
 
 #define shl12   shift12
 
@@ -54,23 +54,12 @@ static PrismT prisms[PRISMS];
 static short active = 0;
 
 static CopInsT *sprptr[8];
-static SpriteT *sprite[8];
-static PaletteT *spritePal;
 
-static u_short colorSet[4] = { 0xC0F, 0xF0C, 0x80F, 0xF08 };
-static u_short colorShades[4][32];
+static u_short colorSet[NCOLORS] = {
+  0xC0F, 0xF0C, 0x80F, 0xF08
+};
 
-static void Load(void) {
-  BitmapT *bm = LoadILBM("sprite.ilbm");
-  ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, bm, 16 * i, 0));
-  spritePal = bm->palette;
-  DeleteBitmap(bm);
-}
-
-static void UnLoad(void) {
-  ITER(i, 0, 7, DeleteSprite(sprite[i]));
-  DeletePalette(spritePal);
-}
+static u_short colorShades[NCOLORS][32];
 
 static void GeneratePrisms(void) {
   PrismT *prism = prisms;
@@ -119,7 +108,7 @@ static void GenerateColorShades(void) {
   u_short *s = colorSet;
   u_short *d = (u_short *)colorShades;
 
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < NCOLORS; i++) {
     u_short c = *s++;
 
     for (j = 0; j < 16; j++)
@@ -134,10 +123,10 @@ static void MakeCopperList(CopListT *cp, CopInsT **cline) {
 
   CopInit(cp);
   CopSetupSprites(cp, sprptr);
-  CopLoadPal(cp, spritePal, 16);
-  CopLoadPal(cp, spritePal, 20);
-  CopLoadPal(cp, spritePal, 24);
-  CopLoadPal(cp, spritePal, 28);
+  CopLoadPal(cp, &sprite_pal, 16);
+  CopLoadPal(cp, &sprite_pal, 20);
+  CopLoadPal(cp, &sprite_pal, 24);
+  CopLoadPal(cp, &sprite_pal, 28);
 
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetRGB(cp, 0, BGCOL);
@@ -351,4 +340,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
