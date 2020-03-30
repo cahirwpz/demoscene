@@ -7,19 +7,19 @@
 #include "keyboard.h"
 #include "mouse.h"
 #include "memory.h"
-#include "ilbm.h"
 
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 3
 
-const char *__cwdpath = "data";
-
 static BitmapT *screen;
 static CopListT *cp;
-static SpriteT *pointer;
 static CopInsT *sprptr[8];
-static FontT *font;
+
+#include "data/toggle_0.c"
+#include "data/toggle_1.c"
+#include "data/koi8r.8x8.c"
+#include "data/pointer.c"
 
 /* Test program */
 static GUI_DEF(_b0, GUI_BUTTON(&GUI_LABEL("Play")));
@@ -44,8 +44,8 @@ static GUI_DEF(_bg1, GUI_GROUP(4,
                                WG_ITEM(_rb2, 252, 42, -1, -1),
                                WG_ITEM(_rb3, 253, 56, -1, -1)));
 
-static GUI_DEF(_t0, GUI_TOGGLE(&GUI_IMAGE("toggle_0.ilbm"),
-                               &GUI_IMAGE("toggle_1.ilbm")));
+static GUI_DEF(_t0, GUI_TOGGLE(&GUI_IMAGE(&toggle_0),
+                               &GUI_IMAGE(&toggle_1)));
 static GUI_DEF(_l0, GUI_LABEL_N(40));
 static GUI_DEF(_f0, GUI_FRAME(FRAME_FLAT, _l0));
 static GUI_DEF(_root, GUI_GROUP(4,
@@ -56,18 +56,12 @@ static GUI_DEF(_root, GUI_GROUP(4,
 static GUI_MAIN(_root);
 
 static void Load(void) {
-  font = LoadFont("koi8r.8x8.font");
-  GuiInit(gui, font);
-}
-
-static void UnLoad(void) {
-  DeleteFont(font);
+  GuiInit(gui, &font);
 }
 
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  cp = NewCopList(100);
-  pointer = CloneSystemPointer();
+  cp = NewCopList(120);
 
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
@@ -79,10 +73,11 @@ static void Init(void) {
   CopSetRGB(cp, UI_FRAME_OUT,   0xeee);
   CopSetRGB(cp, UI_FG_INACTIVE, 0x24a);
   CopSetRGB(cp, UI_FG_ACTIVE,   0x46e);
+  CopLoadPal(cp, &pointer_pal, 16);
   CopEnd(cp);
 
-  CopInsSet32(sprptr[0], pointer->data);
-  UpdateSprite(pointer, X(0), Y(0));
+  CopInsSet32(sprptr[0], pointer.data);
+  UpdateSprite(&pointer, X(0), Y(0));
 
   CopListActivate(cp);
 
@@ -100,7 +95,6 @@ static void Kill(void) {
   KeyboardKill();
   MouseKill();
 
-  DeleteSprite(pointer);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
@@ -116,7 +110,7 @@ static bool HandleEvent(void) {
       return false;
   } else if (ev->type == EV_MOUSE) {
     GuiHandleMouseEvent(gui, &ev->mouse);
-    UpdateSprite(pointer, X(ev->mouse.x), Y(ev->mouse.y));
+    UpdateSprite(&pointer, X(ev->mouse.x), Y(ev->mouse.y));
   } else if (ev->type == EV_GUI) {
     WidgetT *wg = ev->gui.widget;
 
@@ -136,4 +130,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, NULL, HandleEvent };
+EffectT Effect = { Load, NULL, Init, Kill, NULL, HandleEvent };

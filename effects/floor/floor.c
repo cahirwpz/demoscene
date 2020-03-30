@@ -2,14 +2,11 @@
 #include "hardware.h"
 #include "coplist.h"
 #include "gfx.h"
-#include "ilbm.h"
 #include "memory.h"
 #include "fx.h"
 #include "color.h"
 #include "random.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -18,7 +15,6 @@ const char *__cwdpath = "data";
 #define FAR   4
 #define NEAR 16
 
-static BitmapT *bitmap;
 static CopListT *coplist[2];
 static short active = 0;
 
@@ -36,15 +32,10 @@ static short rotated[15];
 static u_char table[4096];
 
 #include "data/stripes.c"
+#include "data/floor.c"
 
 static void Load(void) {
-  bitmap = LoadILBMCustom("floor.ilbm", BM_DISPLAYABLE);
-
   ConvertPaletteToRGB4(&stripes_pal, stripeColor, 16);
-}
-
-static void UnLoad(void) {
-  DeleteBitmap(bitmap);
 }
 
 static void GenerateStripeLight(void) {
@@ -87,7 +78,7 @@ static void MakeCopperList(CopListT *cp, short n) {
   CopSetupMode(cp, MODE_LORES, DEPTH);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH + 16);
-  CopSetupBitplanes(cp, NULL, bitmap, DEPTH);
+  CopSetupBitplanes(cp, NULL, &floor, DEPTH);
   CopSetRGB(cp, 0, 0);
 
   for (i = 0; i < HEIGHT; i++) {
@@ -248,4 +239,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };

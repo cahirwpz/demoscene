@@ -33,23 +33,22 @@ CPPFLAGS += -I$(TOPDIR)/base/include
 # Common tools definition
 CP := cp -a
 RM := rm -v -f
-PYTHON3 := PYTHONPATH="$(TOPDIR)/pylib:$$PYTHONPATH" python3
+PYTHON3 := PYTHONPATH="$(TOPDIR)/tools/pylib:$$PYTHONPATH" python3
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 RUNINUAE := $(PYTHON3) $(TOPDIR)/effects/RunInUAE
-ILBMCONV := $(TOPDIR)/tools/ilbmconv.py
-ILBMPACK := $(TOPDIR)/tools/ilbmpack.py $(QUIET)
 DUMPLWO := $(TOPDIR)/tools/dumplwo.py $(QUIET)
-PSFTOPNG := $(TOPDIR)/tools/psftopng.py
+CONV2D := $(TOPDIR)/tools/conv2d.py
 TMXCONV := $(TOPDIR)/tools/tmxconv.py
 PNG2C := $(TOPDIR)/tools/png2c.py
-OPTIPNG := optipng $(QUIET)
+PSF2C := $(TOPDIR)/tools/psf2c.py
 STRIP := m68k-amigaos-strip -s
+OBJCOPY := m68k-amigaos-objcopy
 
 # Generate dependencies automatically
 SOURCES_C = $(filter %.c,$(SOURCES))
 SOURCES_ASM = $(filter %.s,$(SOURCES))
-OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_ASM:.s=.o)
+OBJECTS += $(SOURCES_C:.c=.o) $(SOURCES_ASM:.s=.o)
 DEPFILES = $(SOURCES_C:%.c=.%.P)
 
 $(DEPFILES): $(SOURCES_GEN)
@@ -58,7 +57,7 @@ ifeq ($(words $(findstring $(MAKECMDGOALS), clean)), 0)
   -include $(DEPFILES)
 endif
 
-CLEAN-FILES += $(DEPFILES) $(SOURCES_GEN) $(DATA_GEN)
+CLEAN-FILES += $(DEPFILES) $(SOURCES_GEN) $(OBJECTS) $(DATA_GEN)
 
 # Disable all built-in recipes and define our own
 .SUFFIXES:
@@ -70,10 +69,6 @@ CLEAN-FILES += $(DEPFILES) $(SOURCES_GEN) $(DATA_GEN)
 %.o: %.c .%.P
 	@echo "[CC] $(DIR)$< -> $(DIR)$@"
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
-
-%: %.o
-	@echo "[LD] $(DIR)$^ -> $(DIR)$@"
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.s
 	@echo "[AS] $(DIR)$< -> $(DIR)$@"

@@ -3,7 +3,7 @@
 
 static short bitdepth[] = { 0, 1, 2, 4, 8, 16 };
 
-__regargs int PixmapSize(PixmapT *pixmap) {
+static int PixmapSize(PixmapT *pixmap) {
   short bitsPerPixel = bitdepth[pixmap->type & PM_DEPTH_MASK];
   short bytesPerRow;
   if (pixmap->type & _PM_RGB) {
@@ -26,15 +26,6 @@ __regargs PixmapT *NewPixmap(short width, short height,
   pixmap->pixels = MemAlloc(PixmapSize(pixmap), memoryAttributes);
 
   return pixmap;
-}
-
-__regargs PixmapT *ClonePixmap(PixmapT *pixmap) {
-  PixmapT *clone = NewPixmap(pixmap->width, pixmap->height,
-                             pixmap->type, MemTypeOf(pixmap->pixels));
-
-  memcpy(clone->pixels, pixmap->pixels, PixmapSize(pixmap));
-
-  return clone;
 }
 
 __regargs void DeletePixmap(PixmapT *pixmap) {
@@ -71,58 +62,5 @@ __regargs void PixmapScramble_4_2(PixmapT *pixmap) {
       u_int c = *data;
       *data++ = (c & m0) | ((c >> 2) & m1) | ((c & m1) << 2);
     }
-  }
-}
-
-__regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type) {
-  if (pixmap->type == type)
-    return;
-
-  if ((pixmap->type == PM_GRAY4 && type == PM_GRAY8) ||
-      (pixmap->type == PM_CMAP4 && type == PM_CMAP8) ||
-      (pixmap->type == PM_GRAY8 && type == PM_GRAY4) ||
-      (pixmap->type == PM_CMAP8 && type == PM_CMAP4) ||
-      (pixmap->type == PM_RGB24 && type == PM_RGB12))
-  {
-    u_char *pixels = pixmap->pixels;
-
-    pixmap->type = type;
-    pixmap->pixels = MemAlloc(PixmapSize(pixmap), MemTypeOf(pixmap->pixels));
-
-    {
-      u_char *src = pixels;
-      int n = pixmap->width * pixmap->height;
-
-      if (pixmap->type == PM_RGB12) {
-        u_short *dst = pixmap->pixels;
-        do {
-          u_char r = *src++;
-          u_char g = *src++;
-          u_char b = *src++;
-          u_char lo = (g & 0xf0) | ((b & 0xf0) >> 4);
-          *dst++ = ((r & 0xf0) << 4) | lo;
-        } while (--n);
-      } else if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
-        u_char *dst = pixmap->pixels;
-        n /= 2;
-        do {
-          u_char c = *src++;
-          u_char d = *src++;
-          *dst++ = c << 4 | d;
-        } while (--n);
-      } else {
-        u_char *dst = pixmap->pixels;
-        n /= 2;
-        do {
-          u_char c = *src++;
-          *dst++ = c >> 4;
-          *dst++ = c & 15;
-        } while (--n);
-      }
-    }
-
-    MemFree(pixels);
-  } else {
-    Panic("Pixmap conversion not supported!\n");
   }
 }

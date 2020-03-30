@@ -3,14 +3,11 @@
 #include "interrupts.h"
 #include "coplist.h"
 #include "gfx.h"
-#include "ilbm.h"
 #include "blitter.h"
 #include "2d.h"
 #include "fx.h"
 #include "random.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -22,46 +19,62 @@ static BitmapT *screen[2];
 static u_short active = 0;
 static CopInsT *bplptr[5];
 
-static BitmapT *background;
 static PaletteT *palette[3];
 static CopListT *cp;
 static CopInsT *pal;
+
+#include "data/greet_ada.c"
+#include "data/greet_blacksun.c"
+#include "data/greet_dcs.c"
+#include "data/greet_dekadence.c"
+#include "data/greet_desire.c"
+#include "data/greet_dinx.c"
+#include "data/greet_elude.c"
+#include "data/greet_fd.c"
+#include "data/greet_floppy.c"
+#include "data/greet_lemon.c"
+#include "data/greet_loonies.c"
+#include "data/greet_moods.c"
+#include "data/greet_nah.c"
+#include "data/greet_rno.c"
+#include "data/greet_skarla.c"
+#include "data/greet_speccy.c"
+#include "data/greet_tulou.c"
+#include "data/greet_wanted.c"
+#include "data/greet_ycrew.c"
+#include "data/neons.c"
 
 static Area2D grt_area[2][PNUM];
 
 typedef struct {
   short color;
-  const char *filename;
   BitmapT *bitmap;
   Point2D pos;
 } GreetingT;
 
-#define GREETING(color, filename) {(color), (filename), NULL, {0, 0}}
+#define GREETING(color, group) {(color), &(greet_ ## group), {0, 0}}
 
 static GreetingT greeting[PNUM] = {
-  GREETING(0, "greet_ada.ilbm"),
-  GREETING(0, "greet_blacksun.ilbm"),
-  GREETING(1, "greet_dcs.ilbm"),
-  GREETING(0, "greet_dekadence.ilbm"),
-  GREETING(1, "greet_desire.ilbm"),
-  GREETING(0, "greet_dinx.ilbm"),
-  GREETING(1, "greet_elude.ilbm"),
-  GREETING(0, "greet_fd.ilbm"),
-  GREETING(1, "greet_floppy.ilbm"),
-  GREETING(0, "greet_lemon.ilbm"),
-  GREETING(1, "greet_loonies.ilbm"),
-  GREETING(1, "greet_moods.ilbm"),
-  GREETING(0, "greet_nah.ilbm"),
-  GREETING(0, "greet_rno.ilbm"),
-  GREETING(1, "greet_skarla.ilbm"),
-  GREETING(0, "greet_speccy.ilbm"),
-  GREETING(0, "greet_tulou.ilbm"),
-  GREETING(1, "greet_wanted.ilbm"),
-  GREETING(1, "greet_ycrew.ilbm")
+  GREETING(0, ada),
+  GREETING(0, blacksun),
+  GREETING(1, dcs),
+  GREETING(0, dekadence),
+  GREETING(1, desire),
+  GREETING(0, dinx),
+  GREETING(1, elude),
+  GREETING(0, fd),
+  GREETING(1, floppy),
+  GREETING(0, lemon),
+  GREETING(1, loonies),
+  GREETING(1, moods),
+  GREETING(0, nah),
+  GREETING(0, rno),
+  GREETING(1, skarla),
+  GREETING(0, speccy),
+  GREETING(0, tulou),
+  GREETING(1, wanted),
+  GREETING(1, ycrew)
 };
-
-#include "data/greet_moods.c"
-#include "data/greet_rno.c"
 
 static void PositionGreetings(void) {
   GreetingT *grt = greeting;
@@ -82,16 +95,10 @@ static void PositionGreetings(void) {
 }
 
 static void Load(void) {
-  short i;
-
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  for (i = 0; i < PNUM; i++)
-    greeting[i].bitmap = LoadILBMCustom(greeting[i].filename, BM_DISPLAYABLE);
-
-  background = LoadILBMCustom("neons.ilbm", BM_DISPLAYABLE|BM_LOAD_PALETTE);
-  palette[0] = background->palette;
+  palette[0] = &background_pal;
   palette[1] = &moods_pal;
   palette[2] = &rno_pal;
 
@@ -100,7 +107,6 @@ static void Load(void) {
 
 static void UnLoad(void) {
   ITER(i, 0, PNUM - 1, DeleteBitmap(greeting[i].bitmap));
-  DeleteBitmap(background);
   DeletePalette(palette[0]);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
@@ -128,8 +134,8 @@ INTERRUPT(RotatePaletteInterrupt, 0, CustomRotatePalette, NULL);
 static void Init(void) {
   EnableDMA(DMAF_BLITTER);
 
-  BitmapCopy(screen[0], 0, 0, background);
-  BitmapCopy(screen[1], 0, 0, background);
+  BitmapCopy(screen[0], 0, 0, &background);
+  BitmapCopy(screen[1], 0, 0, &background);
 
   BlitterClear(screen[0], 4);
   BlitterClear(screen[1], 4);
@@ -172,7 +178,7 @@ static void ClearCliparts(void) {
         neon.h = 8; 
       }
       BlitterClearArea(dst, 4, &neon);
-      BitmapCopyArea(dst, neon.x, neon.y, background, &neon);
+      BitmapCopyArea(dst, neon.x, neon.y, &background, &neon);
     }
   }
 }

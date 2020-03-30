@@ -3,7 +3,6 @@
 #include "common.h"
 #include "config.h"
 #include "memory.h"
-#include "io.h"
 
 #define KB(x) (((x) + 1023) >> 10)
 

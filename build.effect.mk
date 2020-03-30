@@ -39,27 +39,21 @@ $(TOPDIR)/effects/%.o: FORCE
 	@echo "[LWO] $(DIR)$< -> $(DIR)$@"
 	$(DUMPLWO) -f $< $@
 
-%.ilbm: %.png
-	@echo "[ILBM] $(DIR)$< -> $(DIR)$@"
-	$(ILBMCONV) $< $@
-	$(ILBMPACK) -f $@
+data/%.c: data/%.psfu
+	@echo "[PSF] $(DIR)$^ -> $(DIR)$@"
+	$(PSF2C) $(PSF2C.$*) $< > $@
 
-%.png: %.psfu
-	@echo "[PSF] $(DIR)$< -> $(DIR)$@"
-	$(PSFTOPNG) $<
-	$(OPTIPNG) $@
-
-%.c: %.png
+data/%.c: data/%.png
 	@echo "[PNG] $(DIR)$< -> $(DIR)$@"
-	$(PNG2C) $< > $@
+	$(PNG2C) $(PNG2C.$*) $< > $@
+
+data/%.c: data/%.2d
+	@echo "[2D] $(DIR)$< -> $(DIR)$@"
+	$(CONV2D) $(CONV2D.$*) $< > $@
 
 %.bin: %.asm
 	@echo "[BIN] $(DIR)$< -> $(DIR)$@"
 	$(AS) -Fbin -o $@ $<
-
-%.h %-map.bin %-tiles.png: %.tmx
-	@echo "[TMX] $(DIR)$< -> $(addprefix $(DIR),$*.h $*-map.bin $*-tiles.png)"
-	$(TMXCONV) $< > $@
 
 %.adf: %.exe $(DATA) $(DATA_GEN) $(TOPDIR)/base/bootloader.bin
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"

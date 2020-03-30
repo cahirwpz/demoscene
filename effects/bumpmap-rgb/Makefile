@@ -1,14 +1,15 @@
 TOPDIR := $(realpath ../..)
 
-DATA_GEN := data/light.png data/bumpmap.bin
-DATA := data/dragon.png
+CLEAN-FILES := data/bumpmap.c data/light.c data/dragon.c
+
+PNG2C.dragon := --pixmap dragon,80x64x8 --palette dragon_pal,97
 
 include $(TOPDIR)/build.effect.mk
 
-data/bumpmap.bin: data/bumpmap.py data/bumpmap.png
+data/bumpmap.c: data/bumpmap.py data/bumpmap.png
 	@echo "[GEN] $@"
-	$(PYTHON3) data/bumpmap.py data/bumpmap.png
+	$(PYTHON3) $^ bumpmap > $@
 
-data/light.png: data/light.py
+data/light.c: data/light.py
 	@echo "[GEN] $@"
-	$(PYTHON3) data/light.py $@
+	$(PYTHON3) $^ light > $@

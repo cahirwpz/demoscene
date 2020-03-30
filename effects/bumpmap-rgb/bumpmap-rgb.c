@@ -4,11 +4,8 @@
 #include "color.h"
 #include "interrupts.h"
 #include "memory.h"
-#include "io.h"
-#include "png.h"
+#include "pixmap.h"
 #include "fx.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH 80
 #define HEIGHT 64
@@ -19,10 +16,13 @@ static u_short active = 0;
 static u_short *lightmap;
 static u_short *shademap;
 static u_short *colormap;
-static u_short *bumpmap;
 static u_short *chunky[2];
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
+
+#include "data/dragon.c"
+#include "data/light.c"
+#include "data/bumpmap.c"
 
 static u_short bluetab[16] = {
   0x0000, 0x0003, 0x0030, 0x0033, 0x0300, 0x0303, 0x0330, 0x0333,
@@ -61,58 +61,50 @@ static void DataScramble(u_short *data, short n) {
 }
 
 static void Load(void) {
+  int lightSize = light_w * light_h;
+
+  lightmap = MemAlloc(lightSize * sizeof(u_short) * 2, MEMF_PUBLIC);
   {
-    PixmapT *image = LoadPNG("light.png", PM_GRAY8, MEMF_PUBLIC);
+    u_char *src = light;
+    u_short *dst0 = lightmap;
+    u_short *dst1 = lightmap + lightSize;
+    short n = lightSize;
 
-    lightmap = MemAlloc(65536, MEMF_PUBLIC);
-    {
-      u_char *src = image->pixels;
-      u_short *dst = lightmap;
-      short n = 16384;
-
-      while (--n >= 0)
-        *dst++ = ((*src++) >> 2) & 0x3e;
+    while (--n >= 0) {
+      short v = ((*src++) >> 2) & 0x3e;
+      *dst0++ = v;
+      *dst1++ = v;
     }
-
-    memcpy(lightmap + 16384, lightmap, 32768);
-
-    DeletePixmap(image);
   }
 
+  colormap = MemAlloc(WIDTH * HEIGHT * sizeof(u_short), MEMF_PUBLIC);
   {
-    PixmapT *image = LoadPNG("dragon.png", PM_CMAP8, MEMF_PUBLIC);
+    u_char *src = dragon.pixels;
+    u_short *dst = colormap;
+    short n = WIDTH * HEIGHT;
 
-    colormap = MemAlloc(WIDTH * HEIGHT * sizeof(u_short), MEMF_PUBLIC);
-    {
-      u_short *dst = colormap;
-      u_char *src = image->pixels;
-      short n = WIDTH * HEIGHT;
-
-      while (--n >= 0)
-        *dst++ = *src++ << 6;
-    }
-
-    shademap = MemAlloc(32 * sizeof(u_short) * image->palette->count, MEMF_PUBLIC);
-    {
-      ColorT *c = image->palette->colors;
-      u_short *dst = shademap;
-      short n = image->palette->count;
-      short i;
-
-      while (--n >= 0) {
-        for (i = 0; i < 16; i++)
-          *dst++ = ColorTransitionRGB(0, 0, 0, c->r, c->g, c->b, i);
-        for (i = 0; i < 16; i++)
-          *dst++ = ColorTransitionRGB(c->r, c->g, c->b, 255, 255, 255, i);
-        c++;
-      }
-    }
-    DataScramble(shademap, image->palette->count * 32);
-
-    DeletePixmap(image);
+    while (--n >= 0)
+      *dst++ = *src++ << 6;
   }
 
-  bumpmap = LoadFile("bumpmap.bin", MEMF_PUBLIC);
+  shademap = MemAlloc(32 * sizeof(u_short) * dragon_pal.count, MEMF_PUBLIC);
+  {
+    ColorT *c = dragon_pal.colors;
+    u_short *dst = shademap;
+    short n = dragon_pal.count;
+    short i;
+
+    while (--n >= 0) {
+      for (i = 0; i < 16; i++)
+        *dst++ = ColorTransitionRGB(0, 0, 0, c->r, c->g, c->b, i);
+      for (i = 0; i < 16; i++)
+        *dst++ = ColorTransitionRGB(c->r, c->g, c->b, 255, 255, 255, i);
+      c++;
+    }
+  }
+
+  DataScramble(shademap, dragon_pal.count * 32);
+
   {
     short n = WIDTH * HEIGHT;
     u_short *src = bumpmap;
@@ -124,7 +116,6 @@ static void Load(void) {
 }
 
 static void UnLoad(void) {
-  MemFree(bumpmap);
   MemFree(colormap);
   MemFree(shademap);
   MemFree(lightmap);
@@ -166,6 +157,7 @@ static void ChunkyToPlanar(void) {
       break;
 
     case 1:
+      custom->color[0] = 0xf00;
       custom->bltsize = 2 | ((BLTSIZE / 16) << 6);
       break;
 
@@ -243,6 +235,7 @@ static void ChunkyToPlanar(void) {
       break;
 
     case 12:
+      custom->color[0] = 0x0f0;
       CopInsSet32(bplptr[0], bpl[3]);
       CopInsSet32(bplptr[1], bpl[2]);
       CopInsSet32(bplptr[2], bpl[1]);
@@ -304,6 +297,7 @@ static void Init(void) {
   EnableDMA(DMAF_RASTER);
 
   oldBlitInt = SetIntVector(INTB_BLIT, ChunkyToPlanarInterrupt);
+  ClearIRQ(INTF_BLIT);
   EnableINT(INTF_BLIT);
 }
 

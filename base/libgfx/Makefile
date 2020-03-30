@@ -9,7 +9,6 @@ SOURCES := \
 	ilbm.c \
 	line.c \
 	pixmap.c \
-	png.c \
 	sprite.c
 
 include $(TOPDIR)/build.lib.mk

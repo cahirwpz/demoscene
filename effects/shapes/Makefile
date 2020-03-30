@@ -1,10 +1,10 @@
 TOPDIR := $(realpath ../..)
 
-SOURCES_GEN := data/shapes-pal.c
-DATA := data/night.2d data/boxes.2d
+CLEAN-FILES := data/shapes-pal.c data/night.c data/boxes.c
 
 LIBS := lib2d
 
-include $(TOPDIR)/build.effect.mk
+PNG2C.shapes-pal := --palette shapes_pal,16
+CONV2D.night := --name shape
 
-data/shapes-pal.c: PNG2C += --palette shapes_pal,16
+include $(TOPDIR)/build.effect.mk

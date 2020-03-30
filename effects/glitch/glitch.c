@@ -2,11 +2,8 @@
 #include "hardware.h"
 #include "coplist.h"
 #include "gfx.h"
-#include "ilbm.h"
 #include "blitter.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH (160 + 32)
 #define HEIGHT (128 + 32)
@@ -17,16 +14,15 @@ const char *__cwdpath = "data";
 static BitmapT *screen[2];
 static short active = 0;
 static CopInsT *bplptr[DEPTH];
-static BitmapT *logo;
 static CopListT *cp;
 static CopInsT *line[HEIGHT];
 
+#include "data/ghostown-logo.c"
+
 static void Load(void) {
-  logo = LoadILBMCustom("ghostown-logo.ilbm", BM_DISPLAYABLE);
 }
 
 static void UnLoad(void) {
-  DeleteBitmap(logo);
 }
 
 static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
@@ -116,17 +112,17 @@ static void Render(void) {
     int y1 = (random() % 5) - 2;
     int y2 = (random() % 5) - 2;
 
-    BitplaneCopyFast(screen[active], 0, 16 + x1, 16 + y1, logo, 0);
-    BitplaneCopyFast(screen[active], 1, 16 + x2, 16 + y2, logo, 0);
-    BitplaneCopyFast(screen[active], 2, 16, 16, logo, 0);
+    BitplaneCopyFast(screen[active], 0, 16 + x1, 16 + y1, &logo, 0);
+    BitplaneCopyFast(screen[active], 1, 16 + x2, 16 + y2, &logo, 0);
+    BitplaneCopyFast(screen[active], 2, 16, 16, &logo, 0);
 
     for (i = 0; i < HEIGHT; i++)
       CopInsSet16(line[i], 0);
   } else {
 
-    BitplaneCopyFast(screen[active], 0, 16, 16, logo, 0);
-    BitplaneCopyFast(screen[active], 1, 16, 16, logo, 0);
-    BitplaneCopyFast(screen[active], 2, 16, 16, logo, 0);
+    BitplaneCopyFast(screen[active], 0, 16, 16, &logo, 0);
+    BitplaneCopyFast(screen[active], 1, 16, 16, &logo, 0);
+    BitplaneCopyFast(screen[active], 2, 16, 16, &logo, 0);
 
     for (i = 0; i < HEIGHT; i++) {
       short shift = random() % 3;

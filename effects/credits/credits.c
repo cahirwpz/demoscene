@@ -2,7 +2,6 @@
 #include "hardware.h"
 #include "coplist.h"
 #include "gfx.h"
-#include "ilbm.h"
 #include "blitter.h"
 #include "fx.h"
 #include "tasks.h"
@@ -11,69 +10,59 @@
 #define HEIGHT 144
 #define DEPTH 4
 
-static BitmapT *member[5], *logo, *disco, *floor, *dance[8], *foreground;
+static BitmapT *foreground;
 static CopListT *cp0, *cp1;
-
 static BitmapT *lower;
 static Point2D lower_pos;
 static Area2D lower_area;
 
-const char *__cwdpath = "data";
+/* 'credits_logo' and 'txt_*' must have empty 16 pixels on the left and on the
+ * right. Otherwise Display Data Fetcher will show some artifact when image
+ * crosses edge of the screen. */
+
+#include "data/01_cahir.c"
+#include "data/02_slayer.c"
+#include "data/03_jazzcat.c"
+#include "data/04_dkl.c"
+#include "data/05_dance1.c"
+#include "data/06_dance2.c"
+#include "data/07_dance3.c"
+#include "data/08_dance4.c"
+#include "data/credits_logo.c"
+#include "data/discoball.c"
+#include "data/floor.c"
+#include "data/txt_cahir.c"
+#include "data/txt_codi.c"
+#include "data/txt_dkl.c"
+#include "data/txt_jazz.c"
+#include "data/txt_slay.c"
+
+static BitmapT *dance[8] = {
+  &cahir, &slayer, &jazzcat, &dkl, &dance1, &dance2, &dance3, &dance4
+};
+
+static BitmapT *member[5] = {
+  &txt_cahir, &txt_slay, &txt_jazz, &txt_dkl, &txt_codi
+};
 
 static void Load(void) {
   short i;
 
-  /* 'credits_logo.ilbm' and 'txt_*.ilbm' must have empty 16 pixels on the left
-   * and on the right. Otherwise Display Data Fetcher will show some artifact
-   * when image crosses edge of the screen. */
-  logo = LoadILBM("credits_logo.ilbm");
-  floor = LoadILBM("floor.ilbm");
-  disco = LoadILBM("discoball.ilbm");
+  logo.palette = &logo_pal;
 
-  dance[0] = LoadILBM("01_cahir.ilbm");
-  dance[1] = LoadILBMCustom("02_slayer.ilbm", BM_DISPLAYABLE);
-  dance[2] = LoadILBMCustom("03_jazzcat.ilbm", BM_DISPLAYABLE);
-  dance[3] = LoadILBMCustom("04_dkl.ilbm", BM_DISPLAYABLE);
-  dance[4] = LoadILBMCustom("05_dance1.ilbm", BM_DISPLAYABLE);
-  dance[5] = LoadILBMCustom("06_dance2.ilbm", BM_DISPLAYABLE);
-  dance[6] = LoadILBMCustom("07_dance3.ilbm", BM_DISPLAYABLE);
-  dance[7] = LoadILBMCustom("08_dance4.ilbm", BM_DISPLAYABLE);
-
-  member[0] = LoadILBM("txt_cahir.ilbm");
-  member[1] = LoadILBMCustom("txt_slay.ilbm", BM_DISPLAYABLE);
-  member[2] = LoadILBMCustom("txt_jazz.ilbm", BM_DISPLAYABLE);
-  member[3] = LoadILBMCustom("txt_dkl.ilbm", BM_DISPLAYABLE);
-  member[4] = LoadILBMCustom("txt_codi.ilbm", BM_DISPLAYABLE);
-
-  for (i = 1; i < 5; i++)
-    member[i]->palette = member[0]->palette;
-}
-
-static void UnLoad(void) {
-  short i;
-
-  DeletePalette(logo->palette);
-  DeleteBitmap(logo);
-  DeletePalette(disco->palette);
-  DeleteBitmap(disco);
-  DeletePalette(floor->palette);
-  DeleteBitmap(floor);
-  
-  DeletePalette(member[0]->palette);
-  for (i = 0; i < 5; i++)
-    DeleteBitmap(member[i]);
-
-  DeletePalette(dance[0]->palette);
   for (i = 0; i < 8; i++)
-    DeleteBitmap(dance[i]);
+    dance[i]->palette = &dance_pal;
+
+  for (i = 0; i < 5; i++)
+    member[i]->palette = &member_pal;
 }
 
-#define DISCO_X X((320 - disco->width) / 2)
+#define DISCO_X X((320 - disco.width) / 2)
 #define DISCO_Y Y(0)
 
 #define LOGO_Y Y(256 - 64)
 
-#define FLOOR_X X((320 - floor->width) / 2)
+#define FLOOR_X X((320 - floor.width) / 2)
 #define FLOOR_Y Y(64)
 
 static void MakeCopperList(CopListT *cp) {
@@ -83,23 +72,23 @@ static void MakeCopperList(CopListT *cp) {
 
   /* Display disco ball. */
   CopWaitSafe(cp, DISCO_Y - 1, 0);
-  CopLoadPal(cp, disco->palette, 0);
-  CopSetupMode(cp, MODE_LORES, disco->depth);
-  CopSetupBitplanes(cp, NULL, disco, disco->depth);
-  CopSetupBitplaneFetch(cp, MODE_LORES, DISCO_X, disco->width);
+  CopLoadPal(cp, &disco_pal, 0);
+  CopSetupMode(cp, MODE_LORES, disco.depth);
+  CopSetupBitplanes(cp, NULL, &disco, disco.depth);
+  CopSetupBitplaneFetch(cp, MODE_LORES, DISCO_X, disco.width);
 
   CopWaitSafe(cp, DISCO_Y, 0);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  CopWaitSafe(cp, DISCO_Y + disco->height - 1, LASTHP);
+  CopWaitSafe(cp, DISCO_Y + disco.height - 1, LASTHP);
   CopMove16(cp, dmacon, DMAF_RASTER);
 
   /* Display logo & credits. */
   CopWaitSafe(cp, FLOOR_Y - 1, 0);
-  CopLoadPal(cp, floor->palette, 0);
-  CopLoadPal(cp, dance[0]->palette, 8);
+  CopLoadPal(cp, &floor_pal, 0);
+  CopLoadPal(cp, &dance_pal, 8);
   CopSetupMode(cp, MODE_DUALPF, 6);
   {
-    void **planes0 = floor->planes;
+    void **planes0 = floor.planes;
     void **planes1 = foreground->planes;
     short i;
 
@@ -111,11 +100,11 @@ static void MakeCopperList(CopListT *cp) {
     CopMove16(cp, bpl1mod, 0);
     CopMove16(cp, bpl2mod, 0);
   }
-  CopSetupBitplaneFetch(cp, MODE_LORES, FLOOR_X, floor->width);
+  CopSetupBitplaneFetch(cp, MODE_LORES, FLOOR_X, floor.width);
 
   CopWaitSafe(cp, FLOOR_Y, 0);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  CopWaitSafe(cp, FLOOR_Y + floor->height, LASTHP);
+  CopWaitSafe(cp, FLOOR_Y + floor.height, LASTHP);
   CopMove16(cp, dmacon, DMAF_RASTER);
 
   /* Display logo and textual credits. */
@@ -142,9 +131,9 @@ static void MakeCopperList(CopListT *cp) {
 static void Init(void) {
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
-  foreground = NewBitmap(max(floor->width, dance[0]->width),
-                         max(floor->height, dance[0]->height),
-                         floor->depth);
+  foreground = NewBitmap(max(floor.width, dance[0]->width),
+                         max(floor.height, dance[0]->height),
+                         floor.depth);
   BitmapClear(foreground);
 
   lower = NULL;
@@ -168,7 +157,7 @@ static void Kill(void) {
 static void Render(void) {
   if (frameCount > 600) {
     short i = div16(frameCount - 250, 8) & 3;
-    lower = logo;
+    lower = &logo;
     BitmapCopy(foreground, 80, 0, dance[i + 4]);
   } else if (frameCount > 500) {
     lower = member[4];
@@ -209,4 +198,4 @@ static void Render(void) {
   swapr(cp0, cp1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };

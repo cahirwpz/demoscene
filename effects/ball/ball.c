@@ -2,14 +2,10 @@
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
-#include "io.h"
-#include "png.h"
+#include "pixmap.h"
 #include "sprite.h"
-#include "ilbm.h"
 #include "fx.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define S_WIDTH 320
 #define S_HEIGHT 256
@@ -24,11 +20,12 @@ static BitmapT *bitmap;
 static SpriteT *sprite[2][4];
 static CopInsT *sprptr[8];
 
-static BitmapT *background;
-static u_short *uvmap;
+#include "data/dragon-bg.c"
+#include "data/texture-15.c"
+#include "data/ball.c"
+
 static u_short active = 0;
 static CopListT *cp;
-static PixmapT *texture;
 
 #define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
 void (*UVMapRender)(u_char *chunky asm("a0"),
@@ -81,27 +78,12 @@ static void MakeUVMapRenderCode(void) {
   *code++ = 0x4e75; /* rts */
 }
 
-static void Load(void) {
-  background = LoadILBM("dragon-bg.ilbm");
-  texture = LoadPNG("texture-15.png", PM_CMAP4, MEMF_PUBLIC);
-  uvmap = LoadFile("ball.bin", MEMF_PUBLIC);
-}
-
-static void UnLoad(void) {
-  MemFree(uvmap);
-
-  DeletePalette(background->palette);
-  DeleteBitmap(background);
-  DeletePalette(texture->palette);
-  DeletePixmap(texture);
-}
-
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
-  CopSetupBitplanes(cp, NULL, background, S_DEPTH);
-  CopLoadPal(cp, background->palette, 0);
-  CopLoadPal(cp, texture->palette, 16);
+  CopSetupBitplanes(cp, NULL, &background, S_DEPTH);
+  CopLoadPal(cp, &background_pal, 0);
+  CopLoadPal(cp, &texture_pal, 16);
   CopSetupSprites(cp, sprptr);
   CopEnd(cp);
 
@@ -123,13 +105,13 @@ static void Init(void) {
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
   MakeUVMapRenderCode();
 
-  textureHi = NewPixmap(texture->width, texture->height * 2,
+  textureHi = NewPixmap(texture.width, texture.height * 2,
                         PM_CMAP8, MEMF_PUBLIC);
-  textureLo = NewPixmap(texture->width, texture->height * 2,
+  textureLo = NewPixmap(texture.width, texture.height * 2,
                         PM_CMAP8, MEMF_PUBLIC);
 
-  PixmapScramble_4_1(texture);
-  PixmapToTexture(texture, textureHi, textureLo);
+  PixmapScramble_4_1(&texture);
+  PixmapToTexture(&texture, textureHi, textureLo);
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
@@ -364,4 +346,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

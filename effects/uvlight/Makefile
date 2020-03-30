@@ -1,10 +1,12 @@
 TOPDIR := $(realpath ../..)
 
-DATA := data/texture.png data/torus-light.png
-DATA_GEN := data/torus-map.png
+CLEAN-FILES := data/torus-map.c data/torus-light.c data/texture.c
+
+PNG2C.torus-light := --pixmap light,80x64x8
+PNG2C.texture := --pixmap texture_raw,128x128x8 --palette texture_pal,224
 
 include $(TOPDIR)/build.effect.mk
 
-data/torus-map.png: data/gen-uvmap.py
+data/torus-map.c: data/gen-uvmap.py
 	@echo "[GEN] $@"
-	$(PYTHON3) $< $(@:%-map.png=%)
+	$(PYTHON3) $< data/torus uvmap > $@

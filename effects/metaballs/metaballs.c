@@ -2,12 +2,9 @@
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
-#include "ilbm.h"
 #include "2d.h"
 #include "fx.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -18,31 +15,22 @@ static BitmapT *screen[2];
 static short active = 0;
 
 static Point2D pos[2][3];
-static BitmapT *bgLeft, *bgRight;
-static BitmapT *metaball;
 static BitmapT *carry;
-static PaletteT *palette;
 static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
+
+#include "data/metaball.c"
+#include "data/metaball-bg-left-1.c"
+#include "data/metaball-bg-right-1.c"
 
 static void Load(void) {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-
-  bgLeft = LoadILBMCustom("metaball-bg-left-1.ilbm",
-                          BM_DISPLAYABLE | BM_LOAD_PALETTE);
-  bgRight = LoadILBMCustom("metaball-bg-right-1.ilbm", BM_DISPLAYABLE);
-  metaball = LoadILBMCustom("metaball.ilbm", BM_DISPLAYABLE);
-  palette = bgLeft->palette;
 }
 
 static void UnLoad(void) {
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
-  DeleteBitmap(bgLeft);
-  DeleteBitmap(bgRight);
-  DeleteBitmap(metaball);
-  DeletePalette(palette);
 }
 
 static void SetInitialPositions(void) {
@@ -60,7 +48,7 @@ static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopLoadPal(cp, palette, 0);
+  CopLoadPal(cp, &metaball_pal, 0);
   CopEnd(cp);
 }
 
@@ -71,8 +59,8 @@ static void Init(void) {
 
   for (j = 0; j < 2; j++) {
     BitmapClearArea(screen[j], STRUCT(Area2D, 32, 0, WIDTH - 64, HEIGHT));
-    BitmapCopy(screen[j], 0, 0, bgLeft);
-    BitmapCopy(screen[j], WIDTH - 32, 0, bgRight);
+    BitmapCopy(screen[j], 0, 0, &bgLeft);
+    BitmapCopy(screen[j], WIDTH - 32, 0, &bgRight);
   }
 
   cp = NewCopList(100);
@@ -121,9 +109,9 @@ static void DrawMetaballs(void) {
   short *val = (short *)pos[active];
   int x, y;
 
-  x = *val++; y = *val++; BitmapCopyFast(screen[active], x, y, metaball);
-  x = *val++; y = *val++; BitmapAddSaturated(screen[active], x, y, metaball, carry);
-  x = *val++; y = *val++; BitmapAddSaturated(screen[active], x, y, metaball, carry);
+  x = *val++; y = *val++; BitmapCopyFast(screen[active], x, y, &metaball);
+  x = *val++; y = *val++; BitmapAddSaturated(screen[active], x, y, &metaball, carry);
+  x = *val++; y = *val++; BitmapAddSaturated(screen[active], x, y, &metaball, carry);
 }
 
 static void Render(void) {
