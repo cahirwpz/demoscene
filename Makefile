@@ -1,5 +1,5 @@
 TOPDIR = $(realpath .)
 
-SUBDIRS = base effects
+SUBDIRS = tools base effects
 
 include $(TOPDIR)/build.mk
