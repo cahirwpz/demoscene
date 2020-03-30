@@ -3,7 +3,7 @@
 PYFILES=$(find . -name '*.py')
 PYEXTRA="effects/RunInUAE"
 
-pycodestyle --ignore=E111,E114 ${PYEXTRA} ${PYFILES}
+pycodestyle ${PYEXTRA} ${PYFILES}
 RES=$?
 
 if ! [ $RES -eq 0 ]
