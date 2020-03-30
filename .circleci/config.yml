@@ -17,6 +17,11 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Setup Environment Variables
+          command: |
+            echo "export GOROOT=/usr/lib/go-1.13" >> $BASH_ENV
+            echo "export PATH=$GOPATH/bin:$PATH" >> $BASH_ENV
+      - run:
           name: Git LFS (install Git Large File Storage)
           command: |
             apt-get -q update && apt-get upgrade -y
