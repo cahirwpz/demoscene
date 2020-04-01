@@ -5,14 +5,16 @@ import (
 	"log"
 	"os"
 
+	"../misc"
 	"../tmx"
-	"../utils"
 )
 
 var printHelp bool
+var outName string
 
 func init() {
-	flag.BoolVar(&printHelp, "help", false, "print help message and exit")
+	flag.BoolVar(&printHelp, "help", false, "print help message and exit\n")
+	flag.StringVar(&outName, "name", "", "set optional output name")
 }
 
 func main() {
@@ -34,9 +36,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	baseName := utils.PathWithoutExt(flag.Arg(0))
+	if len(outName) == 0 {
+		outName = misc.PathWithoutExt(flag.Arg(0))
+	}
 
-	err = tmx.SaveLayerData(baseName, b)
+	template := parsedMap.GetTiledMapTemplate(outName)
+
+	err = tmx.SaveLayerData(outName, b, template)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -45,10 +51,5 @@ func main() {
 
 	// TODO Add tiles reordering and optimize.
 
-	tmx.SavePNG(baseName+"_map.png", img)
-
-	err = parsedMap.SaveTiledMapInfo(baseName)
-	if err != nil {
-		log.Fatal(err)
-	}
+	misc.SavePNG(outName+"_map.png", img)
 }
