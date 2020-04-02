@@ -25,24 +25,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	if len(outName) == 0 {
+		outName = misc.PathWithoutExt(flag.Arg(0))
+	}
+
 	var parsedMap tmx.TiledMap
 	parsedMap, err := tmx.ReadFile(flag.Arg(0))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	b, err := parsedMap.Layer.Data.Decompress()
+	exportData, err := parsedMap.GetTiledMapExportData(outName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if len(outName) == 0 {
-		outName = misc.PathWithoutExt(flag.Arg(0))
-	}
-
-	template := parsedMap.GetTiledMapTemplate(outName)
-
-	err = tmx.SaveLayerData(outName, b, template)
+	err = exportData.SaveLayerData()
 	if err != nil {
 		log.Fatal(err)
 	}

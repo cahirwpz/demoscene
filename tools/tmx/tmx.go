@@ -5,9 +5,8 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"encoding/xml"
-	"fmt"
+	"html/template"
 	"image"
-	"strconv"
 
 	"../misc"
 
@@ -67,16 +66,46 @@ type TiledMap struct {
 	Layer        TiledLayer
 }
 
+type TiledMapExport struct {
+	Name           string
+	TileWidth      int
+	TileHeight     int
+	TilesCount     int
+	LayerWidth     int
+	LayerHeight    int
+	LayerData      []int
+	TemplateString string
+}
+
+var tiledMapExportTemplate = `
+static TileSetT {{.Name}}_tiles = {
+	.width = {{ .TileWidth}},
+	.height = {{ .TileHeight}},
+	.count = {{ .TilesCount}},
+	.ptrs = NULL
+};
+const int {{ .Name}}_map_width = {{ .LayerWidth}};
+const int {{ .Name}}_map_height = {{ .LayerHeight}};
+short {{ .Name}}_map[] = { {{ with .LayerData }}{{ range . }}{{.}},{{ end }}{{ end }} };`
+
 func (ti *TiledImage) ReadSource() (img *image.Paletted) {
 	return misc.LoadPNG(ti.Source)
 }
 
-func (tm *TiledMap) GetTiledMapTemplate(baseName string) (out string) {
-	out = fmt.Sprintf("static TileSetT %s_tiles = {\n", baseName)
-	out += fmt.Sprintf(".width = %d,\n.height = %d\n.count = %d,\n.ptrs = NULL\n};\n", tm.TileSet.TileWidth, tm.TileSet.TileHeight, tm.TileSet.TileCount)
-	out += fmt.Sprintf("const int %s_map_width = %d;\nconst int %s_map_height = %d;\n", baseName, tm.Layer.Width, baseName, tm.Layer.Height)
-	out += fmt.Sprintf("short %s_map[] = ", baseName)
-	return
+func (tm *TiledMap) GetTiledMapExportData(name string) (tmExport TiledMapExport, err error) {
+	b, err := tm.Layer.Data.Decompress()
+	if err != nil {
+		return
+	}
+
+	var layerData = make([]int, len(b)/4)
+
+	for i, byte := range b {
+		if i%4 == 0 {
+			layerData[i/4] = int(byte) - 1
+		}
+	}
+	return TiledMapExport{name, tm.TileSet.TileWidth, tm.TileSet.TileHeight, tm.TileSet.TileCount, tm.Layer.Width, tm.Layer.Height, layerData, tiledMapExportTemplate}, nil
 }
 
 // Decode base64 string and ungzip it to bytes.
@@ -140,34 +169,20 @@ func ReadFile(path string) (parsedMap TiledMap, err error) {
 /*
 SaveLayerData saves tiles data decompressed using TiledData Decompress() method as a c file.
 */
-func SaveLayerData(name string, data []byte, template string) (err error) {
+func (tme *TiledMapExport) SaveLayerData() (err error) {
 
-	var tilesCount = make([]int, len(data)/4)
-
-	for i, byte := range data {
-		if i%4 == 0 {
-			tilesCount[i/4] = int(byte) - 1
-		}
+	t, err := template.New("export").Parse(tme.TemplateString)
+	if err != nil {
+		return
 	}
 
-	template += "{"
-
-	for i, el := range tilesCount {
-		template += fmt.Sprintf("%s", strconv.Itoa(el))
-		if i != len(tilesCount)-1 {
-			template += ","
-		}
-	}
-
-	template += "};"
-
-	file, err := os.Create(name + "_map.c")
+	file, err := os.Create(tme.Name + "_map.c")
 	if err != nil {
 		return
 	}
 	defer file.Close()
 
-	err = ioutil.WriteFile(file.Name(), []byte(template), 0644)
+	err = t.Execute(file, tme)
 	if err != nil {
 		return
 	}
