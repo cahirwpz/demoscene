@@ -92,7 +92,9 @@ func (ti *TiledImage) ReadSource() (img *image.Paletted) {
 	return misc.LoadPNG(ti.Source)
 }
 
-func (tm *TiledMap) GetTiledMapExportData(name string) (tmExport TiledMapExport, err error) {
+func (tm *TiledMap) GetTiledMapExportData(name string) (
+	tmExport TiledMapExport, err error) {
+
 	b, err := tm.Layer.Data.Decompress()
 	if err != nil {
 		return
@@ -105,7 +107,9 @@ func (tm *TiledMap) GetTiledMapExportData(name string) (tmExport TiledMapExport,
 			layerData[i/4] = int(byte) - 1
 		}
 	}
-	return TiledMapExport{name, tm.TileSet.TileWidth, tm.TileSet.TileHeight, tm.TileSet.TileCount, tm.Layer.Width, tm.Layer.Height, layerData, tiledMapExportTemplate}, nil
+	return TiledMapExport{name, tm.TileSet.TileWidth, tm.TileSet.TileHeight,
+		tm.TileSet.TileCount, tm.Layer.Width, tm.Layer.Height, layerData,
+		tiledMapExportTemplate}, nil
 }
 
 // Decode base64 string and ungzip it to bytes.
@@ -167,7 +171,8 @@ func ReadFile(path string) (parsedMap TiledMap, err error) {
 }
 
 /*
-SaveLayerData saves tiles data decompressed using TiledData Decompress() method as a c file.
+SaveLayerData saves tiles data decompressed using
+TiledData Decompress() method as a c file.
 */
 func (tme *TiledMapExport) SaveLayerData() (err error) {
 
