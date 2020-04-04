@@ -1,6 +1,24 @@
 #include "memory.h"
 #include "gfx.h"
 
+static inline u_int BitmapSize(BitmapT *bitmap) {
+  /* Allocate extra two bytes for scratchpad area.
+   * Used by blitter line drawing. */
+  return ((u_short)bitmap->bplSize * (u_short)bitmap->depth) + BM_EXTRA;
+}
+
+static __regargs void BitmapSetPointers(BitmapT *bitmap, void *planes) {
+  int modulo =
+    (bitmap->flags & BM_INTERLEAVED) ? bitmap->bytesPerRow : bitmap->bplSize;
+  short depth = bitmap->depth;
+  void **planePtr = bitmap->planes;
+
+  do {
+    *planePtr++ = planes;
+    planes += modulo;
+  } while (depth--);
+}
+
 __regargs void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
                                 u_short depth, BitmapT *donor)
 {
@@ -15,18 +33,6 @@ __regargs void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
   bitmap->palette = donor->palette;
 
   BitmapSetPointers(bitmap, donor->planes[0]);
-}
-
-__regargs void BitmapSetPointers(BitmapT *bitmap, void *planes) {
-  int modulo =
-    (bitmap->flags & BM_INTERLEAVED) ? bitmap->bytesPerRow : bitmap->bplSize;
-  short depth = bitmap->depth;
-  void **planePtr = bitmap->planes;
-
-  do {
-    *planePtr++ = planes;
-    planes += modulo;
-  } while (depth--);
 }
 
 __regargs BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
@@ -70,7 +76,7 @@ __regargs void DeleteBitmap(BitmapT *bitmap) {
 }
 
 __regargs void BitmapMakeDisplayable(BitmapT *bitmap) {
-  if (!(bitmap->flags & BM_DISPLAYABLE) && (bitmap->compression == COMP_NONE)) {
+  if (!(bitmap->flags & BM_DISPLAYABLE)) {
     u_int size = BitmapSize(bitmap);
     void *planes = MemAlloc(size, MEMF_CHIP);
 

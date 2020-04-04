@@ -126,7 +126,6 @@ def convert(path, name):
     print('  .bytesPerRow = 2,')
     print('  .bplSize = %d,' % (2 * font.height // 8))
     print('  .flags = BM_DISPLAYABLE,')
-    print('  .compression = 0,')
     print('  .palette = NULL,')
     print('  .planes = {')
     print('    _%s_glyphs' % name)

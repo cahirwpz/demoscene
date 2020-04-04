@@ -51,16 +51,6 @@ __regargs void ConvertPaletteToRGB4(PaletteT *palette, u_short *color, short n);
 #define BM_EHB          0x20
 #define BM_FLAGMASK     0x3F
 
-/* Flags than can be passed to functions that load Bitmap. */
-#define BM_LOAD_PALETTE 0x40
-#define BM_KEEP_PACKED  0x80
-
-/* Bitplane compression method. */
-#define COMP_NONE      0
-#define COMP_RLE       1
-#define COMP_DEFLATE 254
-#define COMP_LZO     255
-
 typedef struct Bitmap {
   u_short width;
   u_short height;
@@ -68,14 +58,12 @@ typedef struct Bitmap {
   u_short bytesPerRow;
   u_short bplSize;
   u_char flags;
-  u_char compression;
   PaletteT *palette;
   void *planes[7];
 } BitmapT;
 
 __regargs void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
                                 u_short depth, BitmapT *donor);
-__regargs void BitmapSetPointers(BitmapT *bitmap, void *planes);
 
 __regargs BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
                                    u_char flags);
@@ -86,12 +74,6 @@ __regargs bool InsideArea(short x, short y, Area2D *area);
 
 static inline BitmapT *NewBitmap(u_short width, u_short height, u_short depth) {
   return NewBitmapCustom(width, height, depth, BM_CLEAR|BM_DISPLAYABLE);
-}
-
-static inline u_int BitmapSize(BitmapT *bitmap) {
-  /* Allocate extra two bytes for scratchpad area.
-   * Used by blitter line drawing. */
-  return ((u_short)bitmap->bplSize * (u_short)bitmap->depth) + BM_EXTRA;
 }
 
 #endif
