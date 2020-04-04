@@ -49,7 +49,11 @@ __regargs void ConvertPaletteToRGB4(PaletteT *palette, u_short *color, short n);
 #define BM_MINIMAL      0x08
 #define BM_HAM          0x10
 #define BM_EHB          0x20
-#define BM_FLAGMASK     0x3F
+#define BM_STATIC       0x40 /* bitplanes were allocated statically */
+#define BM_FLAGMASK     0x7F
+
+/* Maximum number of bitplanes kept in bitmap structure. */
+#define BM_NPLANES 7
 
 typedef struct Bitmap {
   u_short width;
@@ -58,8 +62,7 @@ typedef struct Bitmap {
   u_short bytesPerRow;
   u_short bplSize;
   u_char flags;
-  PaletteT *palette;
-  void *planes[7];
+  void *planes[BM_NPLANES];
 } BitmapT;
 
 __regargs void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,

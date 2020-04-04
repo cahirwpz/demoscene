@@ -139,11 +139,10 @@ def do_bitmap(im, desc):
     print('  .depth = %s,' % depth)
     print('  .bytesPerRow = %d,' % bytesPerRow)
     print('  .bplSize = %d,' % bplSize)
-    flags = ['BM_DISPLAYABLE']
+    flags = ['BM_DISPLAYABLE', 'BM_STATIC']
     if interleaved:
         flags.append('BM_INTERLEAVED')
     print('  .flags = %s,' % '|'.join(flags))
-    print('  .palette = NULL,')
     print('  .planes = {')
     for i in range(depth):
         if interleaved:

@@ -30,7 +30,6 @@ __regargs void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
   bitmap->bytesPerRow = bytesPerRow;
   bitmap->bplSize = bytesPerRow * height;
   bitmap->flags = donor->flags;
-  bitmap->palette = donor->palette;
 
   BitmapSetPointers(bitmap, donor->planes[0]);
 }
