@@ -106,8 +106,6 @@ static void Load(void) {
 }
 
 static void UnLoad(void) {
-  ITER(i, 0, PNUM - 1, DeleteBitmap(greeting[i].bitmap));
-  DeletePalette(palette[0]);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }

@@ -31,9 +31,6 @@ typedef struct {
   short w, h;
 } Area2D;
 
-__regargs PaletteT *NewPalette(u_short count);
-__regargs void DeletePalette(PaletteT *palette);
-
 /* Size of extra buffer after last word of bitplanes. */
 #define BM_EXTRA sizeof(u_short)
 

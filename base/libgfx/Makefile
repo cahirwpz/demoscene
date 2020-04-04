@@ -8,7 +8,6 @@ SOURCES := \
 	color.c \
 	coplist.c \
 	line.c \
-	palette.c \
 	pixmap.c \
 	sprite.c
 
