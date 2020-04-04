@@ -22,7 +22,9 @@ const (
   .planes = { {{ range bitplanes }}
     (void *)_{{ name }}_bpl + {{.}},{{ end }}
   }
-};`
+};
+
+`
 )
 
 type Bitmap struct {

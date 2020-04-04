@@ -3,7 +3,6 @@ package main
 import (
 	"../misc"
 	"flag"
-	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -17,32 +16,25 @@ func init() {
 	flag.BoolVar(&printHelp, "help", false, "print help message and exit")
 }
 
-func dumpPalette(name string, img *image.RGBA) {
-	var pal misc.Palette
-	pal = make([]color.RGBA, 16)
-	for i := 0; i < 16; i++ {
-		pal[i] = img.RGBAAt(i, 0)
-	}
-	err := pal.Export(name + "_pal")
-	if err != nil {
-		log.Fatal(err)
-	}
-}
+func extractPaletteChanges(img *image.RGBA) (pchg misc.PaletteChanges) {
+	pchg = make([][]color.RGBA, img.Bounds().Dy())
 
-func dumpPaletteChanges(name string, img *image.RGBA) {
-	fmt.Printf("u_short %s_pchg[] = {\n", name)
+	for x := 0; x < 16; x++ {
+		c := img.RGBAAt(x, 0)
+		pchg[0] = append(pchg[0], color.RGBA{c.R, c.G, c.B, uint8(x)})
+	}
+
 	for y := 1; y < img.Bounds().Dy(); y++ {
-		fmt.Print(" ")
 		bg := img.RGBAAt(0, y)
 		for x := 1; x < 16; x++ {
 			c := img.RGBAAt(x, y)
 			if bg != c {
-				fmt.Printf(" 0x%x%x%x%x,", x, c.R>>4, c.G>>4, c.B>>4)
+				pchg[y] = append(pchg[y], color.RGBA{c.R, c.G, c.B, uint8(x)})
 			}
 		}
-		fmt.Println()
 	}
-	fmt.Println("};\n")
+
+	return
 }
 
 func complementPalette(pal *image.RGBA) {
@@ -61,7 +53,9 @@ func complementPalette(pal *image.RGBA) {
 	}
 }
 
-func encodeHAM6(img *image.RGBA, pal *image.RGBA) *image.Paletted {
+func encodeHAM6(img *image.RGBA, pal *image.RGBA) *misc.Bitmap {
+	complementPalette(pal)
+
 	width, height := img.Bounds().Dx(), img.Bounds().Dy()
 
 	ham := image.NewPaletted(img.Bounds(), nil)
@@ -98,7 +92,7 @@ func encodeHAM6(img *image.RGBA, pal *image.RGBA) *image.Paletted {
 		}
 	}
 
-	return ham
+	return misc.NewBitmap(ham)
 }
 
 func main() {
@@ -131,13 +125,14 @@ func main() {
 	pal := img.SubImage(image.Rect(0, 0, 16, height)).(*image.RGBA)
 	pix := img.SubImage(image.Rect(16, 0, width+16, height)).(*image.RGBA)
 
-	dumpPalette(name, pal)
-	dumpPaletteChanges(name, pal)
+	pchg := extractPaletteChanges(pal)
+	err = pchg.Export(name + "_pal")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	complementPalette(pal)
 	ham := encodeHAM6(pix, pal)
-	bm := misc.NewBitmap(ham)
-	err = bm.Export("ham")
+	err = ham.Export(name)
 	if err != nil {
 		log.Fatal(err)
 	}
