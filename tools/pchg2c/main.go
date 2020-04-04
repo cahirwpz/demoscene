@@ -10,18 +10,6 @@ import (
 	"os"
 )
 
-const (
-	paletteTemplate = `
-PaletteT {{.Name}} = {
-  .count = {{.Count}},
-  .colors = {
-		{{with .Colors}}{{ range . }}
-		{{.}},
-		{{ end }}{{ end }}
-	}
-};`
-)
-
 // static __data_chip u_short _background_bpl[] = {
 
 var printHelp bool

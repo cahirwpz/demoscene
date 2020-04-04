@@ -10,7 +10,7 @@ import (
 
 const (
 	bitmapTemplate = `
-BitmapT {{ .Name }} = {
+BitmapT {{ name }} = {
   .width = {{ .Width }},
   .height = {{ .Height }},
   .depth = {{ .Depth }},
@@ -22,13 +22,12 @@ BitmapT {{ .Name }} = {
   .pchgTotal = 0,
   .pchg = NULL,
   .planes = { {{ with .Bitplanes }}{{ range . }}
-    {{.}},{{ end }} {{ end }}
+    (void *)_{{ name }}_bpl + {{.}},{{ end }} {{ end }}
   }
 };`
 )
 
 type Bitmap struct {
-	Name   string
 	Width  int
 	Height int
 	Depth  int
@@ -46,7 +45,7 @@ func (bm Bitmap) BplSize() int {
 func (bm Bitmap) Bitplanes() (bpl []string) {
 	bpl = make([]string, bm.Depth)
 	for i := 0; i < bm.Depth; i++ {
-		bpl[i] = fmt.Sprintf("(void *)_%s_bpl + %d", bm.Name, i*bm.BplSize())
+		bpl[i] = fmt.Sprintf("%d", i*bm.BplSize())
 	}
 	return
 }
@@ -110,9 +109,10 @@ func (bm *Bitmap) Deinterleave() {
 }
 
 func (bm *Bitmap) Export(name string) (err error) {
-	bm.Name = name
+	funcMap := template.FuncMap{
+		"name": func() string { return name }}
 
-	t, err := template.New(name).Parse(bitmapTemplate)
+	t, err := template.New(name).Funcs(funcMap).Parse(bitmapTemplate)
 	if err != nil {
 		return
 	}
