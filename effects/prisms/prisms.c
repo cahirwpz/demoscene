@@ -129,11 +129,11 @@ static void MakeCopperList(CopListT *cp, CopInsT **cline) {
   CopLoadPal(cp, &sprite_pal, 28);
 
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetRGB(cp, 0, BGCOL);
+  CopSetColor(cp, 0, BGCOL);
 
   for (i = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(i - 1), 0xDE);
-    cline[i] = CopSetRGB(cp, 1, 0);
+    cline[i] = CopSetColor(cp, 1, 0);
     CopMove16(cp, bplcon2, 0);
     CopMove32(cp, bplpt[0], rowAddr[0]);
   }

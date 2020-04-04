@@ -108,7 +108,6 @@ static inline void CopInsSet16(CopInsT *ins, u_short data) {
 /* High-level functions */
 __regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, u_short start);
 __regargs CopInsT *CopLoadColor(CopListT *list, u_short start, u_short end, u_short color);
-__regargs CopInsT *CopSetColor(CopListT *list, short i, ColorT *color);
 
 __regargs void CopSetupMode(CopListT *list, u_short mode, u_short depth);
 __regargs void CopSetupDisplayWindow(CopListT *list, u_short mode, 
@@ -129,7 +128,7 @@ static inline void CopSetupGfxSimple(CopListT *list, u_short mode, u_short depth
   CopSetupBitplaneFetch(list, mode, xs, w);
 }
 
-static inline CopInsT *CopSetRGB(CopListT *list, short i, u_short value) {
+static inline CopInsT *CopSetColor(CopListT *list, short i, u_short value) {
   return CopMove16(list, color[i], value);
 }
 

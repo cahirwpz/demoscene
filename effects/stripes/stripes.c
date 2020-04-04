@@ -55,15 +55,15 @@ static void MakeCopperList(CopListT *cp, CopInsT **line) {
   short i;
 
   CopInit(cp);
-  CopSetRGB(cp, 0, BGCOL);
+  CopSetColor(cp, 0, BGCOL);
 
   for (i = 0; i < HEIGHT; i++) {
     CopWaitSafe(cp, Y(i), 8);
-    *line++ = CopSetRGB(cp, 0, 0);
+    *line++ = CopSetColor(cp, 0, 0);
   }
 
   CopWait(cp, Y(256), 8);
-  CopSetRGB(cp, 0, BGCOL);
+  CopSetColor(cp, 0, BGCOL);
   CopEnd(cp);
 }
 

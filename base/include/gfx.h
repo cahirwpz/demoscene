@@ -3,13 +3,9 @@
 
 #include "common.h"
 
-typedef struct Color {
-  u_char r, g, b;
-} ColorT;
-
 typedef struct Palette {
   u_short count;
-  ColorT colors[0];
+  u_short colors[0];
 } PaletteT;
 
 typedef struct {
@@ -37,7 +33,6 @@ typedef struct {
 
 __regargs PaletteT *NewPalette(u_short count);
 __regargs void DeletePalette(PaletteT *palette);
-__regargs void ConvertPaletteToRGB4(PaletteT *palette, u_short *color, short n);
 
 /* Size of extra buffer after last word of bitplanes. */
 #define BM_EXTRA sizeof(u_short)

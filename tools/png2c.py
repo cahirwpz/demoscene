@@ -313,7 +313,7 @@ def do_palette(im, desc):
     print('  .count = %d,' % len(cmap))
     print('  .colors = {')
     for r, g, b in cmap:
-        print('    {%d, %d, %d},' % (r, g, b))
+        print('    0x%x%x%x,' % (r >> 4, g >> 4, b >> 4))
     print('  }')
     print('};')
 

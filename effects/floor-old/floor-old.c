@@ -108,7 +108,7 @@ static void MakeCopperList(CopListT *cp, short num) {
     short s = i * 15 / FAR_Y;
 
     CopWait(cp, Y(i), 0);
-    CopSetRGB(cp, 3, ColorTransition(0, 0xADF, s));
+    CopSetColor(cp, 3, ColorTransition(0, 0xADF, s));
   }
 
   for (i = FAR_Y; i < HEIGHT; i++) {
@@ -117,7 +117,7 @@ static void MakeCopperList(CopListT *cp, short num) {
       ins = CopWait(cp, Y(i), CPX);
       if (i == FAR_Y)
         linePos[num][j] = ((u_char*)ins) + 1;
-      ins = CopSetRGB(cp, (j & 1) + 1, (j & 1) ? 0xff0 : 0x0ff);
+      ins = CopSetColor(cp, (j & 1) + 1, (j & 1) ? 0xff0 : 0x0ff);
       if (i == FAR_Y)
         lineColor[num][j] = ((u_short*)ins);
     }

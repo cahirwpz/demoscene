@@ -88,7 +88,7 @@ __regargs void BitmapMakeDisplayable(BitmapT *bitmap) {
 }
 
 __regargs PaletteT *NewPalette(u_short count) {
-  PaletteT *palette = MemAlloc(sizeof(PaletteT) + count * sizeof(ColorT),
+  PaletteT *palette = MemAlloc(sizeof(PaletteT) + count * sizeof(u_short),
                                MEMF_PUBLIC|MEMF_CLEAR);
   palette->count = count;
   return palette;
@@ -97,20 +97,6 @@ __regargs PaletteT *NewPalette(u_short count) {
 __regargs void DeletePalette(PaletteT *palette) {
   if (palette)
     MemFree(palette);
-}
-
-__regargs void ConvertPaletteToRGB4(PaletteT *palette, u_short *color, short n) {
-  u_char *src = (u_char *)palette->colors;
-
-  if (palette->count < n)
-    n = palette->count;
-
-  while (--n >= 0) {
-    u_char r = *src++ & 0xf0;
-    u_char g = *src++ & 0xf0;
-    u_char b = *src++ & 0xf0;
-    *color++ = (r << 4) | (u_char)(g | (b >> 4));
-  }
 }
 
 __regargs bool ClipBitmap(const Box2D *space, Point2D *pos, Area2D *area) {

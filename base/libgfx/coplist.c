@@ -138,16 +138,12 @@ __regargs CopInsT *CopSkipMask(CopListT *list, u_short vp, u_short hp,
 __regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, u_short start) {
   CopInsT *ptr = list->curr;
   u_short *ins = (u_short *)ptr;
-  u_char *c = (u_char *)palette->colors;
+  u_short *c = palette->colors;
   short n = min(palette->count, (u_short)(32 - start)) - 1;
 
   do {
-    u_char r = *c++ & 0xf0;
-    u_char g = *c++ & 0xf0;
-    u_char b = *c++ & 0xf0;
-
     *ins++ = CSREG(color[start++]);
-    *ins++ = (r << 4) | (u_char)(g | (b >> 4));
+    *ins++ = *c++;
   } while (--n != -1);
 
   list->curr = (CopInsT *)ins;
@@ -165,15 +161,6 @@ __regargs CopInsT *CopLoadColor(CopListT *list, u_short start, u_short end, u_sh
 
   list->curr = (CopInsT *)ins;
   return ptr;
-}
-
-__regargs CopInsT *CopSetColor(CopListT *list, short i, ColorT *color) {
-  u_char *c = (u_char *)color;
-  u_char r = *c++ & 0xf0;
-  u_char g = *c++ & 0xf0;
-  u_char b = *c++ & 0xf0;
-
-  return CopMove16(list, color[i], (r << 4) | (u_char)(g | (b >> 4)));
 }
 
 __regargs void CopSetupMode(CopListT *list, u_short mode, u_short depth) {

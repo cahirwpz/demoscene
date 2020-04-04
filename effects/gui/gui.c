@@ -67,12 +67,12 @@ static void Init(void) {
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopSetupSprites(cp, sprptr);
-  CopSetRGB(cp, UI_BG_INACTIVE, 0x888);
-  CopSetRGB(cp, UI_BG_ACTIVE,   0xaaa);
-  CopSetRGB(cp, UI_FRAME_IN,    0x444);
-  CopSetRGB(cp, UI_FRAME_OUT,   0xeee);
-  CopSetRGB(cp, UI_FG_INACTIVE, 0x24a);
-  CopSetRGB(cp, UI_FG_ACTIVE,   0x46e);
+  CopSetColor(cp, UI_BG_INACTIVE, 0x888);
+  CopSetColor(cp, UI_BG_ACTIVE,   0xaaa);
+  CopSetColor(cp, UI_FRAME_IN,    0x444);
+  CopSetColor(cp, UI_FRAME_OUT,   0xeee);
+  CopSetColor(cp, UI_FG_INACTIVE, 0x24a);
+  CopSetColor(cp, UI_FG_ACTIVE,   0x46e);
   CopLoadPal(cp, &pointer_pal, 16);
   CopEnd(cp);
 

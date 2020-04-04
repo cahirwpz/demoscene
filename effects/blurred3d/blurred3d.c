@@ -49,7 +49,7 @@ static void MakeCopperList(CopListT *cp) {
     for (i = 0; i < HEIGHT / 8; i++) {
       CopWait(cp, Y(STARTY + i * 8 - 1), 0xde);
       for (j = 0; j < 16; j++) {
-        CopSetRGB(cp, j, *pixels++);
+        CopSetColor(cp, j, *pixels++);
       }
     }
 
@@ -60,7 +60,7 @@ static void MakeCopperList(CopListT *cp) {
     for (i = 0; i < HEIGHT / 16; i++) {
       CopWait(cp, Y(STARTY + HEIGHT + i * 4 - 1), 0xde);
       for (j = 0; j < 16; j++) {
-        CopSetRGB(cp, j, *pixels++);
+        CopSetColor(cp, j, *pixels++);
       }
     }
   }

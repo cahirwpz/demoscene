@@ -88,9 +88,9 @@ static void Init(void) {
       CopInsT *location = CopMove32(cp, cop2lc, 0);
       CopInsT *label = CopWaitH(cp, VP(y * 8), HP(-4));
       CopInsSet32(location, label);
-      chunky[y] = CopSetRGB(cp, 1, 0);
+      chunky[y] = CopSetColor(cp, 1, 0);
       for (x = 0; x < HTILES - 1; x++)
-        CopSetRGB(cp, 1, 0); /* Last CopIns finishes at HP=0xD6 */
+        CopSetColor(cp, 1, 0); /* Last CopIns finishes at HP=0xD6 */
       CopSkip(cp, VP(y * 8 + 7), 0xDE); /* finishes at HP=0xDE */
       CopMove16(cp, copjmp2, 0);
     }
