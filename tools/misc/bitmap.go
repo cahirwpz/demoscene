@@ -1,7 +1,6 @@
 package misc
 
 import (
-	"fmt"
 	"image"
 	"math"
 	"os"
@@ -21,8 +20,8 @@ BitmapT {{ name }} = {
   .palette = NULL,
   .pchgTotal = 0,
   .pchg = NULL,
-  .planes = { {{ with .Bitplanes }}{{ range . }}
-    (void *)_{{ name }}_bpl + {{.}},{{ end }} {{ end }}
+  .planes = { {{ range bitplanes }}
+    (void *)_{{ name }}_bpl + {{.}},{{ end }}
   }
 };`
 )
@@ -40,14 +39,6 @@ func (bm Bitmap) BytesPerRow() int {
 
 func (bm Bitmap) BplSize() int {
 	return bm.BytesPerRow() * bm.Height
-}
-
-func (bm Bitmap) Bitplanes() (bpl []string) {
-	bpl = make([]string, bm.Depth)
-	for i := 0; i < bm.Depth; i++ {
-		bpl[i] = fmt.Sprintf("%d", i*bm.BplSize())
-	}
-	return
 }
 
 func imageDepth(img *image.Paletted) int {
@@ -110,7 +101,17 @@ func (bm *Bitmap) Deinterleave() {
 
 func (bm *Bitmap) Export(name string) (err error) {
 	funcMap := template.FuncMap{
-		"name": func() string { return name }}
+		"name": func() string { return name },
+		"bitplanes": func() <-chan int {
+			ch := make(chan int)
+			go func() {
+				defer close(ch)
+				for i := 0; i < bm.Depth; i++ {
+					ch <- i * bm.BplSize()
+				}
+			}()
+			return ch
+		}}
 
 	t, err := template.New(name).Funcs(funcMap).Parse(bitmapTemplate)
 	if err != nil {
