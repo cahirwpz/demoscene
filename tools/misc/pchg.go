@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	pchgTemplate = `uint16_t {{ name }}[] = {
+	pchgTemplate = `const int {{ name }}_count = {{ .Count }};
+
+uint16_t {{ name }}[] = {
 {{ range . }}  {{ len . }}, {{ range . }}{{ color . }}, {{ end}}
 {{ end -}}
 };
@@ -17,6 +19,13 @@ const (
 )
 
 type PaletteChanges [][]color.RGBA
+
+func (pchg PaletteChanges) Count() (count int) {
+	for _, row := range pchg {
+		count += len(row)
+	}
+	return
+}
 
 func (pchg *PaletteChanges) Export(name string) (err error) {
 	funcMap := template.FuncMap{

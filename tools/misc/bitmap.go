@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	bitmapTemplate = `static __data_chip u_short _{{ name }}_bpl[] = {
+	bitmapTemplate = `static __data_chip uint16_t _{{ name }}_bpl[] = {
 	{{ range .Data }}{{ . }}, {{ end }}
 };
 
-uint16_t BitmapT {{ name }} = {
+BitmapT {{ name }} = {
   .width = {{ .Width }},
   .height = {{ .Height }},
   .depth = {{ .Depth }},

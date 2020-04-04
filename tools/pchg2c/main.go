@@ -132,6 +132,7 @@ func main() {
 	}
 
 	ham := encodeHAM6(pix, pal)
+	ham.Deinterleave()
 	err = ham.Export(name)
 	if err != nil {
 		log.Fatal(err)
