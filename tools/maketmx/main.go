@@ -1,6 +1,7 @@
 package main
 
 import (
+	"../tmx"
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
@@ -22,50 +23,6 @@ const (
 	// N - Single tile size
 	N = 16
 )
-
-type tiledData struct {
-	XMLName     xml.Name `xml:"data"`
-	Encoding    string   `xml:"encoding,attr"`
-	Compression string   `xml:"compression,attr"`
-	Bytes       string   `xml:",chardata"`
-}
-type tiledLayer struct {
-	XMLName xml.Name `xml:"layer"`
-	Name    string   `xml:"name,attr"`
-	Width   int      `xml:"width,attr"`
-	Height  int      `xml:"height,attr"`
-	Data    tiledData
-}
-type tiledImage struct {
-	XMLName xml.Name `xml:"image"`
-	Source  string   `xml:"source,attr"`
-	Width   int      `xml:"width,attr"`
-	Height  int      `xml:"height,attr"`
-}
-type tiledTileSet struct {
-	XMLName    xml.Name `xml:"tileset"`
-	FirstGid   int      `xml:"firstgid,attr"`
-	Name       string   `xml:"name,attr"`
-	TileWidth  int      `xml:"tilewidth,attr"`
-	TileHeight int      `xml:"tileheight,attr"`
-	Spacing    int      `xml:"spacing,attr"`
-	TileCount  int      `xml:"tilecount,attr"`
-	Columns    int      `xml:"columns,attr"`
-	Image      tiledImage
-}
-type tiledMap struct {
-	XMLName      xml.Name `xml:"map"`
-	Version      string   `xml:"version,attr"`
-	Orientation  string   `xml:"orientation,attr"`
-	RenderOrder  string   `xml:"renderorder,attr"`
-	Width        int      `xml:"width,attr"`
-	Height       int      `xml:"height,attr"`
-	TileWidth    int      `xml:"tilewidth,attr"`
-	TileHeight   int      `xml:"tileheight,attr"`
-	NextObjectID int      `xml:"nextobjectid,attr,omitempty"`
-	TileSet      tiledTileSet
-	Layer        tiledLayer
-}
 
 func loadPNG(name string) *image.Paletted {
 	file, err := os.Open(name)
@@ -287,7 +244,7 @@ func main() {
 	reportImage := drawReportOnImage(img, tileMap, tileCount, width/N, height/N)
 	savePNG(name+"_report.png", reportImage)
 
-	outputMap := &tiledMap{
+	outputMap := &tmx.TiledMap{
 		Version:     "1.0",
 		Orientation: "orthogonal",
 		RenderOrder: "left-down",
@@ -295,7 +252,7 @@ func main() {
 		Height:      height / N,
 		TileWidth:   N,
 		TileHeight:  N}
-	outputMap.TileSet = tiledTileSet{
+	outputMap.TileSet = tmx.TiledTileSet{
 		FirstGid:   1,
 		Name:       name + "_tiles",
 		TileWidth:  N,
@@ -303,15 +260,15 @@ func main() {
 		Spacing:    0,
 		TileCount:  len(tilePos),
 		Columns:    1}
-	outputMap.TileSet.Image = tiledImage{
+	outputMap.TileSet.Image = tmx.TiledImage{
 		Source: name + "_tiles.png",
 		Width:  tiles.Bounds().Max.X,
 		Height: tiles.Bounds().Max.Y}
-	outputMap.Layer = tiledLayer{
+	outputMap.Layer = tmx.TiledLayer{
 		Name:   name + "_map",
 		Width:  width / N,
 		Height: height / N}
-	outputMap.Layer.Data = tiledData{
+	outputMap.Layer.Data = tmx.TiledData{
 		Encoding:    "base64",
 		Compression: "gzip",
 		Bytes:       dumpTileMap(tileMap, width/N, height/N)}
