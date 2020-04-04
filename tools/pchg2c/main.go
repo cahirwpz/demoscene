@@ -126,7 +126,7 @@ func main() {
 	pix := img.SubImage(image.Rect(16, 0, width+16, height)).(*image.RGBA)
 
 	pchg := extractPaletteChanges(pal)
-	err = pchg.Export(name + "_pal")
+	err = pchg.Export(name + "_pchg")
 	if err != nil {
 		log.Fatal(err)
 	}

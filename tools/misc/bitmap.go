@@ -8,7 +8,11 @@ import (
 )
 
 const (
-	bitmapTemplate = `BitmapT {{ name }} = {
+	bitmapTemplate = `static __data_chip u_short _{{ name }}_bpl[] = {
+	{{ range .Data }}{{ . }}, {{ end }}
+};
+
+uint16_t BitmapT {{ name }} = {
   .width = {{ .Width }},
   .height = {{ .Height }},
   .depth = {{ .Depth }},
@@ -19,7 +23,7 @@ const (
   .palette = NULL,
   .pchgTotal = 0,
   .pchg = NULL,
-  .planes = { {{ range bitplanes }}
+  .planes = { {{ range bplptr }}
     (void *)_{{ name }}_bpl + {{.}},{{ end }}
   }
 };
@@ -103,7 +107,7 @@ func (bm *Bitmap) Deinterleave() {
 func (bm *Bitmap) Export(name string) (err error) {
 	funcMap := template.FuncMap{
 		"name": func() string { return name },
-		"bitplanes": func() <-chan int {
+		"bplptr": func() <-chan int {
 			ch := make(chan int)
 			go func() {
 				defer close(ch)
@@ -118,14 +122,6 @@ func (bm *Bitmap) Export(name string) (err error) {
 	if err != nil {
 		return
 	}
-
-	/*
-		file, err := os.Create(name + ".c")
-		if err != nil {
-			return
-		}
-		defer file.Close()
-	*/
 
 	return t.Execute(os.Stdout, bm)
 }
