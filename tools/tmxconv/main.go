@@ -31,7 +31,13 @@ static TileSetT {{.Name}}_tiles = {
 };
 const int {{ .Name}}_map_width = {{ .LayerWidth}};
 const int {{ .Name}}_map_height = {{ .LayerHeight}};
-short {{ .Name}}_map[] = { {{ with .LayerData }}{{ range . }}{{.}},{{ end }}{{ end }} };`
+short {{ .Name }}_map[] = { 
+	{{ with .LayerData -}}
+		{{- range . -}}
+			{{.}},
+		{{- end -}}
+	{{- end }}
+};`
 )
 
 func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
