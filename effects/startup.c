@@ -301,11 +301,7 @@ void LoadEffect(void) {
   }
 }
 
-#if USE_IO_DOS
-ADD2INIT(LoadEffect, -40);
-#else
 ADD2INIT(LoadEffect, 0);
-#endif
 
 void UnLoadEffect(void) {
   if (Effect.UnLoad)
