@@ -3,7 +3,6 @@ package main
 import (
 	"../misc"
 	"../tmx"
-	"encoding/binary"
 	"encoding/xml"
 	"flag"
 	"fmt"
@@ -95,8 +94,8 @@ func reportTileCount(tileCount []int, tilePos []image.Point) {
 	}
 }
 
-func dumpTileMap(tileMap [][]int, width, height int) string {
-	bin := make([]byte, width*height*4)
+func dumpTileMap(tileMap [][]int, width, height int) []uint32 {
+	bin := make([]uint32, width*height)
 
 	fmt.Print("\nTile map:\n")
 
@@ -104,21 +103,15 @@ func dumpTileMap(tileMap [][]int, width, height int) string {
 	for y := 0; y < height; y++ {
 		fmt.Print("|")
 		for x := 0; x < width; x++ {
-			ti := tileMap[y][x]
+			ti := tileMap[y][x] + 1
 			fmt.Printf("%3x", ti)
-			binary.LittleEndian.PutUint32(bin[i:], uint32(ti)+1)
-			i += 4
+			bin[i] = ti
+			i += 1
 		}
 		fmt.Printf(" |\n")
 	}
 
-	data, err := tmx.CompressBytes(bin)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return data
+	return bin
 }
 
 func width(img image.Image) int {
@@ -153,7 +146,12 @@ func main() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-	img := misc.LoadPNG(flag.Arg(0))
+
+	img, ok := misc.LoadPNG(flag.Arg(0)).(*image.Paletted)
+	if !ok {
+		log.Fatal("Image is not 8-bit CLUT type!")
+	}
+
 	width := width(img)
 	height := height(img)
 	tileHash := make(map[uint64]int)
@@ -217,10 +215,7 @@ func main() {
 		Name:   name + "_map",
 		Width:  width / N,
 		Height: height / N}
-	outputMap.Layer.Data = tmx.TiledData{
-		Encoding:    "base64",
-		Compression: "gzip",
-		Bytes:       dumpTileMap(tileMap, width/N, height/N)}
+	outputMap.Layer.Data = tmx.NewTiledData(dumpTileMap(tileMap, width/N, height/N))
 
 	file, err := os.Create(name + ".tmx")
 	if err != nil {

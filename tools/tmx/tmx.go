@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/xml"
-	"image"
-
-	"../misc"
-
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 )
@@ -63,10 +61,6 @@ type TiledMap struct {
 	Layer        TiledLayer
 }
 
-func (ti *TiledImage) ReadSource() (img *image.Paletted) {
-	return misc.LoadPNG(ti.Source)
-}
-
 func (td *TiledData) Decompress() (out []byte, err error) {
 	data := strings.TrimSpace(td.Bytes)
 
@@ -92,19 +86,25 @@ func (td *TiledData) Decompress() (out []byte, err error) {
 	return
 }
 
-// Compress bytes with gzip and convert output to base64 string.
-func CompressBytes(data []byte) (out string, err error) {
-	var buf bytes.Buffer
+func NewTiledData(data []uint32) TiledData {
+	var output bytes.Buffer
 
-	zw := gzip.NewWriter(&buf)
+	zw := gzip.NewWriter(&output)
 	defer zw.Close()
-	_, err = zw.Write(data)
-	if err != nil {
-		return
+
+	for word := range data {
+		err := binary.Write(zw, binary.LittleEndian, word)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
-	out = base64.StdEncoding.EncodeToString(buf.Bytes())
-	return
+	encoded := base64.StdEncoding.EncodeToString(output.Bytes())
+
+	return TiledData{
+		Encoding:    "base64",
+		Compression: "gzip",
+		Bytes:       encoded}
 }
 
 func ReadFile(path string) (tm TiledMap, err error) {

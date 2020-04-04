@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"image"
 	"log"
 	"os"
 
@@ -45,7 +46,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	img := parsedMap.TileSet.Image.ReadSource()
+	img := misc.LoadPNG(parsedMap.TileSet.Image.Source).(*image.Paletted)
 
 	// TODO Add tiles reordering and optimize.
 
