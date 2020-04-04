@@ -1,9 +1,10 @@
-DATA := data/flatshade-pal.ilbm \
-	data/ball.3d \
-	data/pilka.3d
+TOPDIR := $(realpath ../..)
+
+DATA_GEN := data/ball.3d data/pilka.3d
+CLEAN-FILES := data/flatshade-pal.c
 
 LIBS := lib3d
 
-all: build-data flatshade-convex.exe
+PNG2C.flatshade-pal := --palette flatshade_pal,16
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

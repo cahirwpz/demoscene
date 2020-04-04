@@ -2,13 +2,10 @@
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
-#include "ilbm.h"
 #include "2d.h"
 #include "fx.h"
 #include "circle.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -18,30 +15,23 @@ const char *__cwdpath = "data";
 static BitmapT *screen[2];
 static u_short active = 0;
 
-static BitmapT *clip;
 static BitmapT *carry;
 static BitmapT *buffer;
-static PaletteT *palette[2];
 static CopInsT *bplptr[2][DEPTH];
 static CopListT *cp;
 
+#include "data/blurred-pal-1.c"
+#include "data/blurred-pal-2.c"
+#include "data/blurred-clip.c"
+
 static void Load(void) {
-  clip = LoadILBM("blurred-clip.ilbm");
-
-  palette[0] = LoadPalette("blurred-pal-1.ilbm");
-  palette[1] = LoadPalette("blurred-pal-2.ilbm");
-
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 }
 
 static void UnLoad(void) {
-  DeletePalette(clip->palette);
-  DeleteBitmap(clip);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
-  DeletePalette(palette[0]);
-  DeletePalette(palette[1]);
 }
 
 static short iterCount = 0;
@@ -53,10 +43,10 @@ static void MakeCopperList(CopListT *cp) {
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr[active], screen[active], DEPTH);
   CopWait(cp, Y(-18), 0);
-  CopLoadPal(cp, palette[0], 0);
+  CopLoadPal(cp, &blurred_1_pal, 0);
   CopWait(cp, Y(127), 0);
   CopMove16(cp, dmacon, DMAF_RASTER);
-  CopLoadPal(cp, palette[1], 0);
+  CopLoadPal(cp, &blurred_2_pal, 0);
   CopWait(cp, Y(128), 0);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   for (i = 0; i < DEPTH; i++)
@@ -77,7 +67,7 @@ static void Init(void) {
     CircleEdge(screen[i], 4, SIZE / 2 + 16, SIZE / 2, SIZE / 4 - 1);
     BlitterFill(screen[i], 4);
 
-    BitmapCopy(screen[i], WIDTH / 2, 0, clip);
+    BitmapCopy(screen[i], WIDTH / 2, 0, &clip);
   }
 
   buffer = NewBitmap(SIZE, SIZE, 4);

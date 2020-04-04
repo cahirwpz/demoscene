@@ -1,8 +1,8 @@
-SOURCES_C := \
+TOPDIR := $(realpath ../..)
+
+SOURCES := \
 	effect.c \
 	sync-load.c \
 	sync.c
 
-all: libsync.a
-
-include ../../build.mk
+include $(TOPDIR)/build.lib.mk

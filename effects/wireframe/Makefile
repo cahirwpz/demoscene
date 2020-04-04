@@ -1,8 +1,10 @@
-DATA := data/pilka.3d \
-	data/wireframe-pal.ilbm
+TOPDIR := $(realpath ../..)
+
+CLEAN-FILES := data/wireframe-pal.c
+DATA := data/pilka.3d
 
 LIBS := lib3d
 
-all: build-data wireframe.exe
+PNG2C.wireframe-pal := --palette wireframe_pal,16
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

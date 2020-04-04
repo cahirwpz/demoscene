@@ -4,32 +4,26 @@
 #include "coplist.h"
 #include "fx.h"
 #include "memory.h"
-#include "ilbm.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH  320
 #define HEIGHT 256
 #define DEPTH  4
 
-static ShapeT *shape;
-static PaletteT *palette;
 static BitmapT *screen;
 static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
 static short plane, planeC;
 
+#include "data/shapes-pal.c"
+#include "data/night.c"
+
 static void Load(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  shape = LoadShape("night.2d");
-  palette = LoadPalette("shapes-pal.ilbm");
 }
 
 static void UnLoad(void) {
-  DeleteShape(shape);
   DeleteBitmap(screen);
-  DeletePalette(palette);
 }
 
 static void Init(void) {
@@ -49,7 +43,7 @@ static void Init(void) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopLoadPal(cp, palette, 0);
+  CopLoadPal(cp, &shapes_pal, 0);
   CopEnd(cp);
 
   CopListActivate(cp);
@@ -120,10 +114,10 @@ static void Render(void) {
   Rotate2D(&t, frameCount * 8);
   Scale2D(&t, fx12f(1.0) + SIN(a) / 2, fx12f(1.0) + COS(a) / 2);
   Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
-  Transform2D(&t, shape->viewPoint, shape->origPoint, shape->points);
-  PointsInsideBox(shape->viewPoint, shape->viewPointFlags, shape->points);
+  Transform2D(&t, shape.viewPoint, shape.origPoint, shape.points);
+  PointsInsideBox(shape.viewPoint, shape.viewPointFlags, shape.points);
   BlitterLineSetup(screen, plane, LINE_EOR|LINE_ONEDOT);
-  DrawShape(shape);
+  DrawShape(&shape);
   BlitterFill(screen, plane);
   // Log("shape: %d\n", ReadLineCounter() - lines);
 

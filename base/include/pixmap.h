@@ -27,7 +27,6 @@ typedef enum {
 typedef struct Pixmap {
   PixmapTypeT type;
   short width, height;
-  PaletteT *palette;
   void *pixels;
 } PixmapT;
 
@@ -37,21 +36,16 @@ static inline void InitSharedPixmap(PixmapT *pixmap, short width, short height,
   pixmap->type = type;
   pixmap->width = width;
   pixmap->height = height;
-  pixmap->palette = NULL;
   pixmap->pixels = pixels;
 }
 
-__regargs int PixmapSize(PixmapT *pixmap);
 __regargs PixmapT *NewPixmap(short width, short height, 
                              PixmapTypeT type, u_int memFlags);
-__regargs PixmapT *ClonePixmap(PixmapT *pixmap);
 __regargs void DeletePixmap(PixmapT *pixmap);
 
 /* [a0 a1 a2 a3 b0 b1 b2 b3] => [a0 b0 a2 b1 a1 b2 a3 b3] */
 __regargs void PixmapScramble_4_1(PixmapT *pixmap);
 /* [a0 a1 a2 a3 b0 b1 b2 b3] => [a0 a1 b0 b1 a2 a3 b2 b3] */
 __regargs void PixmapScramble_4_2(PixmapT *pixmap);
-
-__regargs void PixmapConvert(PixmapT *pixmap, PixmapTypeT type);
 
 #endif

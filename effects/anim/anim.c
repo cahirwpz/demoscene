@@ -3,18 +3,13 @@
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
-#include "io.h"
-#include "ilbm.h"
 #include "fx.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH  320
 #define HEIGHT 240
 #define DEPTH  4
 
-static PaletteT *palette;
 static BitmapT *screen;
 static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
@@ -26,27 +21,17 @@ typedef struct {
   u_char *frame[0];
 } AnimSpanT;
 
-static AnimSpanT *anim;
+#include "data/running-pal.c"
+#include "data/running.c"
 
 static void Load(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
-  palette = LoadPalette("running-pal.ilbm");
-  anim = LoadFile("running.bin", MEMF_PUBLIC);
 
   Log("Animation has %d frames %d x %d.\n", 
-      anim->count, anim->width, anim->height);
-
-  {
-    short i;
-
-    for (i = 0; i < anim->count; i++)
-      anim->frame[i] = (void *)anim->frame[i] + (int)anim;
-  }
+      running.count, running.width, running.height);
 }
 
 static void UnLoad(void) {
-  MemFree(anim);
-  DeletePalette(palette);
   DeleteBitmap(screen);
 }
 
@@ -58,7 +43,7 @@ static void Init(void) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopLoadPal(cp, palette, 0);
+  CopLoadPal(cp, &running_pal, 0);
   CopEnd(cp);
 
   CopListActivate(cp);
@@ -72,9 +57,9 @@ static void Kill(void) {
 }
 
 static void DrawSpans(u_char *bpl) {
-  u_char *frame = anim->frame[anim->current];
+  u_char *frame = running.frame[running.current];
   short f = normfx(SIN(frameCount * 32) * 48);
-  short n = anim->height;
+  short n = running.height;
   short stride = screen->bytesPerRow;
 
   WaitBlitter();
@@ -91,10 +76,10 @@ static void DrawSpans(u_char *bpl) {
     bpl += stride;
   }
 
-  anim->current++;
+  running.current++;
 
-  if (anim->current >= anim->count)
-    anim->current -= anim->count;
+  if (running.current >= running.count)
+    running.current -= running.count;
 }
 
 static void Render(void) {

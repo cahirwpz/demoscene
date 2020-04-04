@@ -1,8 +1,10 @@
-DATA := data/szescian.3d \
-	data/blurred3d-pal.png
+TOPDIR := $(realpath ../..)
+
+DATA_GEN := data/szescian.3d
+CLEAN-FILES := data/blurred3d-pal.c
 
 LIBS := lib3d
 
-all: build-data blurred3d.exe
+PNG2C.blurred3d-pal := --pixmap gradient,16x33x12
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

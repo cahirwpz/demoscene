@@ -3,10 +3,7 @@
 #include "coplist.h"
 #include "interrupts.h"
 #include "memory.h"
-#include "io.h"
-#include "png.h"
-
-const char *__cwdpath = "data";
+#include "pixmap.h"
 
 #define WIDTH 80
 #define HEIGHT 64
@@ -18,14 +15,16 @@ static u_short *texture;
 static u_short *chunky[2];
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static PixmapT *uvmap;
+
+#include "data/texture-rgb.c"
+#include "data/uvmap-rgb.c"
 
 #define UVMapRenderSize (WIDTH * HEIGHT * 8 + 2)
 static void (*UVMapRender)(u_short *chunky asm("a0"), u_short *texture asm("a1"));
 
 static void MakeUVMapRenderCode(void) {
   u_short *code = (void *)UVMapRender;
-  u_short *data = uvmap->pixels;
+  u_short *data = uvmap;
   short n = WIDTH * HEIGHT;
 
   while (--n >= 0) {
@@ -77,16 +76,11 @@ static void PixmapScramble(PixmapT *image, u_short *texture) {
 }
 
 static void Load(void) {
-  PixmapT *image = LoadPNG("texture-rgb.png", PM_RGB12, MEMF_PUBLIC);
   texture = MemAlloc(65536, MEMF_PUBLIC);
-  PixmapScramble(image, texture);
-  DeletePixmap(image);
-
-  uvmap = LoadPNG("uvmap-rgb.png", PM_GRAY16, MEMF_PUBLIC);
+  PixmapScramble(&image, texture);
 }
 
 static void UnLoad(void) {
-  DeletePixmap(uvmap);
   MemFree(texture);
 }
 

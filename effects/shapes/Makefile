@@ -1,8 +1,10 @@
-DATA := data/shapes-pal.ilbm \
-	data/night.2d
+TOPDIR := $(realpath ../..)
+
+CLEAN-FILES := data/shapes-pal.c data/night.c data/boxes.c
 
 LIBS := lib2d
 
-all: build-data shapes.exe
+PNG2C.shapes-pal := --palette shapes_pal,16
+CONV2D.night := --name shape
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

@@ -5,13 +5,9 @@
 #include "fx.h"
 #include "random.h"
 #include "color.h"
-#include "png.h"
-#include "ilbm.h"
-#include "color.h"
+#include "pixmap.h"
 #include "sprite.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -30,14 +26,14 @@ const char *__cwdpath = "data";
 #define FAR_Y (HEIGHT * NEAR_Z / FAR_Z)
 #define FAR_W (WIDTH * FAR_Z / 256)
 
-static SpriteT *thunder[20];
 static BitmapT *screen0, *screen1;
 static CopListT *cp0, *cp1;
-static PixmapT *texture;
-static PaletteT *palette;
 static u_short tileColor[SIZE * SIZE];
 static short tileCycle[SIZE * SIZE];
 static short tileEnergy[SIZE * SIZE];
+
+#include "data/thunders.c"
+#include "data/thunders-floor.c"
 
 typedef struct {
   short x1, x2, y2;
@@ -82,37 +78,18 @@ static void FloorPrecalc(void) {
 }
 
 static void Load(void) {
-  texture = LoadPNG("thunders-floor.png", PM_RGB12, MEMF_PUBLIC);
+  short i;
 
-  {
-    BitmapT *bitmap = LoadILBM("thunders.ilbm");
-    short i;
+  for (i = 0; i < 320 / 16; i++) {
+    short xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
+    short yo = Y((HEIGHT - 128) / 2);
 
-    for (i = 0; i < bitmap->width / 16; i++) {
-      short xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
-      short yo = Y((HEIGHT - 128) / 2);
-
-      thunder[i] = NewSpriteFromBitmap(128, bitmap, i * 16, 0);
-      UpdateSprite(thunder[i], xo, yo);
-    }
-
-    palette = bitmap->palette;
-    DeleteBitmap(bitmap);
+    UpdateSprite(thunder[i], xo, yo);
   }
 
   FloorPrecalc();
 
   ITER(i, 0, SIZE * SIZE - 1, tileCycle[i] = random() & SIN_MASK);
-}
-
-static void UnLoad(void) {
-  short i;
-
-  for (i = 0; i < 20; i++)
-    DeleteSprite(thunder[i]);
-
-  DeletePixmap(texture);
-  DeletePalette(palette);
 }
 
 static void MakeCopperList(CopListT *cp, BitmapT *screen) {
@@ -285,7 +262,7 @@ static __regargs void FillStripes(u_short plane) {
 }
 
 void ControlTileColors(void) {
-  u_short *src = texture->pixels, *dst = tileColor;
+  u_short *src = texture.pixels, *dst = tileColor;
   short *energy = tileEnergy;
   short *cycle = tileCycle;
   short n = SIZE * SIZE ;
@@ -423,21 +400,20 @@ static void MakeFloorCopperList(short yo, short kyo) {
     short i = mod16(frameCount, 10) * 2;
     u_short *thunder0 = thunder[i]->data;
     u_short *thunder1 = thunder[i+1]->data;
-    u_short *null = NullSprite->data;
 
     CopMove32(cp, sprpt[0], thunder0);
     CopMove32(cp, sprpt[1], thunder1);
-    CopMove32(cp, sprpt[2], null);
-    CopMove32(cp, sprpt[3], null);
-    CopMove32(cp, sprpt[4], null);
-    CopMove32(cp, sprpt[5], null);
-    CopMove32(cp, sprpt[6], null);
-    CopMove32(cp, sprpt[7], null);
+    CopMove32(cp, sprpt[2], NullSprite);
+    CopMove32(cp, sprpt[3], NullSprite);
+    CopMove32(cp, sprpt[4], NullSprite);
+    CopMove32(cp, sprpt[5], NullSprite);
+    CopMove32(cp, sprpt[6], NullSprite);
+    CopMove32(cp, sprpt[7], NullSprite);
   }
 
   /* Clear out the colors. */
   CopSetRGB(cp, 0, BGCOL);
-  CopLoadPal(cp, palette, 16);
+  CopLoadPal(cp, &thunder_pal, 16);
 
   FillStripes(1);
   ColorizeUpperHalf(cp, yo, kyo);
@@ -482,4 +458,4 @@ static void Render(void) {
   { BitmapT *tmp = screen0; screen0 = screen1; screen1 = tmp; }
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };

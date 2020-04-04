@@ -1,5 +1,7 @@
-DATA := data/plasma-colors.png
+TOPDIR := $(realpath ../..)
 
-all: build-data plasma.exe
+CLEAN-FILES := data/plasma-colors.c
 
-include ../build.mk
+PNG2C.plasma-colors := --pixmap colors,256x1x12
+
+include $(TOPDIR)/build.effect.mk

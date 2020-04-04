@@ -1,92 +1,23 @@
 package main
 
 import (
-	"bytes"
-	"compress/gzip"
-	"encoding/base64"
-	"encoding/binary"
+	"../misc"
+	"../tmx"
 	"encoding/xml"
 	"flag"
 	"fmt"
 	"hash/fnv"
 	"image"
-	"image/png"
+	"image/color"
+	"image/draw"
 	"log"
 	"os"
-	"path"
 )
 
 const (
+	// N - Single tile size
 	N = 16
 )
-
-type TiledData struct {
-	XMLName     xml.Name `xml:"data"`
-	Encoding    string   `xml:"encoding,attr"`
-	Compression string   `xml:"compression,attr"`
-	Bytes       string   `xml:",chardata"`
-}
-
-type TiledLayer struct {
-	XMLName xml.Name `xml:"layer"`
-	Name    string   `xml:"name,attr"`
-	Width   int      `xml:"width,attr"`
-	Height  int      `xml:"height,attr"`
-	Data    TiledData
-}
-
-type TiledImage struct {
-	XMLName xml.Name `xml:"image"`
-	Source  string   `xml:"source,attr"`
-	Width   int      `xml:"width,attr"`
-	Height  int      `xml:"height,attr"`
-}
-
-type TiledTileSet struct {
-	XMLName    xml.Name `xml:"tileset"`
-	FirstGid   int      `xml:"firstgid,attr"`
-	Name       string   `xml:"name,attr"`
-	TileWidth  int      `xml:"tilewidth,attr"`
-	TileHeight int      `xml:"tileheight,attr"`
-	Spacing    int      `xml:"spacing,attr"`
-	TileCount  int      `xml:"tilecount,attr"`
-	Columns    int      `xml:"columns,attr"`
-	Image      TiledImage
-}
-
-type TiledMap struct {
-	XMLName      xml.Name `xml:"map"`
-	Version      string   `xml:"version,attr"`
-	Orientation  string   `xml:"orientation,attr"`
-	RenderOrder  string   `xml:"renderorder,attr"`
-	Width        int      `xml:"width,attr"`
-	Height       int      `xml:"height,attr"`
-	TileWidth    int      `xml:"tilewidth,attr"`
-	TileHeight   int      `xml:"tileheight,attr"`
-	NextObjectId int      `xml:"nextobjectid,attr,omitempty"`
-	TileSet      TiledTileSet
-	Layer        TiledLayer
-}
-
-func loadPNG(name string) *image.Paletted {
-	file, err := os.Open(name)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	someImg, err := png.Decode(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	file.Close()
-
-	img, ok := someImg.(*image.Paletted)
-	if !ok {
-		log.Fatal("Image is not 8-bit CLUT type!")
-	}
-
-	return img
-}
 
 func hashTile(img *image.Paletted, x, y int) uint64 {
 	pixels := make([]uint8, N*N)
@@ -101,6 +32,34 @@ func hashTile(img *image.Paletted, x, y int) uint64 {
 	return h.Sum64()
 }
 
+func drawReportOnImage(baseImg *image.Paletted, tileMap [][]int, tileCount []int, width, height int) image.Image {
+	bounds := baseImg.Bounds()
+	rgbaImage := image.NewRGBA(bounds)
+	redOverlay := image.NewRGBA(bounds)
+	red := color.RGBA{255, 0, 0, 255}
+	draw.Draw(redOverlay, redOverlay.Bounds(), &image.Uniform{red}, image.ZP, draw.Src)
+	rectMask := image.NewRGBA(bounds)
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			ti := tileMap[y][x]
+			if tileCount[ti] <= minTileCount {
+				drawRect(rectMask, x*N, y*N, tileCount[ti])
+			}
+		}
+	}
+	draw.Draw(rgbaImage, bounds, baseImg, image.ZP, draw.Src)
+	draw.DrawMask(rgbaImage, bounds, redOverlay, image.ZP, rectMask, image.ZP, draw.Over)
+	return rgbaImage
+}
+
+func drawRect(img *image.RGBA, x, y, intensity int) {
+	alphaValue := uint8(200 - ((intensity - 1) * 200 / minTileCount))
+	square := image.NewRGBA(image.Rect(0, 0, N, N))
+	color := color.Alpha{alphaValue}
+	draw.Draw(square, square.Bounds(), &image.Uniform{color}, image.ZP, draw.Src)
+	draw.Draw(img, image.Rect(x, y, x+N, y+N), square, image.ZP, draw.Over)
+}
+
 func makeTiles(tilePos []image.Point, img *image.Paletted) *image.Paletted {
 	dim := image.Rect(0, 0, N, len(tilePos)*N)
 	tiles := image.NewPaletted(dim, img.Palette)
@@ -113,24 +72,6 @@ func makeTiles(tilePos []image.Point, img *image.Paletted) *image.Paletted {
 		}
 	}
 	return tiles
-}
-
-func pathWithoutExt(p string) string {
-	n := len(p) - len(path.Ext(p))
-	return p[:n]
-}
-
-func compressBytes(data []byte) string {
-	var buf bytes.Buffer
-
-	zw := gzip.NewWriter(&buf)
-	_, err := zw.Write(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	zw.Close()
-
-	return base64.StdEncoding.EncodeToString(buf.Bytes())
 }
 
 func reportTileCount(tileCount []int, tilePos []image.Point) {
@@ -153,8 +94,8 @@ func reportTileCount(tileCount []int, tilePos []image.Point) {
 	}
 }
 
-func dumpTileMap(tileMap [][]int, width, height int) string {
-	bin := make([]byte, width*height*4)
+func dumpTileMap(tileMap [][]int, width, height int) []uint32 {
+	bin := make([]uint32, width*height)
 
 	fmt.Print("\nTile map:\n")
 
@@ -162,43 +103,27 @@ func dumpTileMap(tileMap [][]int, width, height int) string {
 	for y := 0; y < height; y++ {
 		fmt.Print("|")
 		for x := 0; x < width; x++ {
-			ti := tileMap[y][x]
+			ti := uint32(tileMap[y][x] + 1)
 			fmt.Printf("%3x", ti)
-			binary.LittleEndian.PutUint32(bin[i:], uint32(ti)+1)
-			i += 4
+			bin[i] = ti
+			i += 1
 		}
 		fmt.Printf(" |\n")
 	}
 
-	return compressBytes(bin)
+	return bin
 }
 
-func savePNG(name string, img image.Image) {
-	f, err := os.Create(name)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := png.Encode(f, img); err != nil {
-		f.Close()
-		log.Fatal(err)
-	}
-
-	if err := f.Close(); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func Width(img image.Image) int {
-	width := img.Bounds().Max.X - img.Bounds().Min.X
+func width(img image.Image) int {
+	width := img.Bounds().Dx()
 	if width%N != 0 {
 		log.Fatalf("Image width must be divisible by %d!", N)
 	}
 	return width
 }
 
-func Height(img image.Image) int {
-	height := img.Bounds().Max.Y - img.Bounds().Min.Y
+func height(img image.Image) int {
+	height := img.Bounds().Dy()
 	if height%N != 0 {
 		log.Fatalf("Image height must be divisible by %d!", N)
 	}
@@ -222,20 +147,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	img := loadPNG(flag.Arg(0))
-	width := Width(img)
-	height := Height(img)
+	img, ok := misc.LoadPNG(flag.Arg(0)).(*image.Paletted)
+	if !ok {
+		log.Fatal("Image is not 8-bit CLUT type!")
+	}
 
+	width := width(img)
+	height := height(img)
 	tileHash := make(map[uint64]int)
 	tileCount := make([]int, 0)
 	tileMap := make([][]int, height)
 	tilePos := make([]image.Point, 0)
-
-	for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y += N {
+	for y := 0; y < img.Bounds().Dy(); y += N {
 		ty := (y - img.Bounds().Min.Y) / N
 		tileMap[ty] = make([]int, width)
-
-		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x += N {
+		for x := 0; x < img.Bounds().Dx(); x += N {
 			tx := (x - img.Bounds().Min.X) / N
 
 			th := hashTile(img, x, y)
@@ -258,11 +184,14 @@ func main() {
 
 	reportTileCount(tileCount, tilePos)
 
-	name := pathWithoutExt(flag.Arg(0))
+	name := misc.PathWithoutExt(flag.Arg(0))
 
-	savePNG(name+"_tiles.png", tiles)
+	misc.SavePNG(name+"_tiles.png", tiles)
 
-	tiledMap := &TiledMap{
+	reportImage := drawReportOnImage(img, tileMap, tileCount, width/N, height/N)
+	misc.SavePNG(name+"_report.png", reportImage)
+
+	outputMap := &tmx.TiledMap{
 		Version:     "1.0",
 		Orientation: "orthogonal",
 		RenderOrder: "left-down",
@@ -270,8 +199,7 @@ func main() {
 		Height:      height / N,
 		TileWidth:   N,
 		TileHeight:  N}
-
-	tiledMap.TileSet = TiledTileSet{
+	outputMap.TileSet = tmx.TiledTileSet{
 		FirstGid:   1,
 		Name:       name + "_tiles",
 		TileWidth:  N,
@@ -279,21 +207,15 @@ func main() {
 		Spacing:    0,
 		TileCount:  len(tilePos),
 		Columns:    1}
-
-	tiledMap.TileSet.Image = TiledImage{
+	outputMap.TileSet.Image = tmx.TiledImage{
 		Source: name + "_tiles.png",
 		Width:  tiles.Bounds().Max.X,
 		Height: tiles.Bounds().Max.Y}
-
-	tiledMap.Layer = TiledLayer{
+	outputMap.Layer = tmx.TiledLayer{
 		Name:   name + "_map",
 		Width:  width / N,
 		Height: height / N}
-
-	tiledMap.Layer.Data = TiledData{
-		Encoding:    "base64",
-		Compression: "gzip",
-		Bytes:       dumpTileMap(tileMap, width/N, height/N)}
+	outputMap.Layer.Data = tmx.NewTiledData(dumpTileMap(tileMap, width/N, height/N))
 
 	file, err := os.Create(name + ".tmx")
 	if err != nil {
@@ -301,7 +223,7 @@ func main() {
 	}
 	enc := xml.NewEncoder(file)
 	enc.Indent("", "  ")
-	if err := enc.Encode(tiledMap); err != nil {
+	if err := enc.Encode(outputMap); err != nil {
 		fmt.Printf("error: %v\n", err)
 	}
 	file.Close()

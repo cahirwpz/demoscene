@@ -1,3 +1,3 @@
-all: kbtest.exe
+TOPDIR := $(realpath ../..)
 
-include ../build.mk
+include $(TOPDIR)/build.effect.mk

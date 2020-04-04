@@ -2,13 +2,10 @@
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
-#include "io.h"
-#include "png.h"
+#include "pixmap.h"
 #include "random.h"
 #include "fx.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH (320 - 32)
 #define HEIGHT 256
@@ -28,8 +25,9 @@ const char *__cwdpath = "data";
 
 static CopInsT *chunky[2][VTILES];
 static CopListT *cp[2];
-static PixmapT *colors;
 static int active = 0;
+
+#include "data/plasma-colors.c"
 
 static char tab1[256], tab2[256], tab3[256];
 static u_char a0, a1, a2, a3, a4;
@@ -49,13 +47,7 @@ static void GeneratePlasmaTables(void) {
 }
 
 static void Load(void) {
-  colors = LoadPNG("plasma-colors.png", PM_RGB12, MEMF_PUBLIC);
-
   GeneratePlasmaTables();
-}
-
-static void UnLoad(void) {
-  DeletePixmap(colors);
 }
 
 /* Double-buffered copper chunky with 8x4 pixels.
@@ -141,7 +133,7 @@ static void UpdateYBUF(void) {
 #define OPTIMIZED 1
 
 static void UpdateChunky(void) {
-  u_short *cmap = colors->pixels;
+  u_short *cmap = colors.pixels;
   short y;
 
   UpdateXBUF();
@@ -185,4 +177,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };

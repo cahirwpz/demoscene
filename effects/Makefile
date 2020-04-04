@@ -46,11 +46,9 @@ FAILURES := \
 	tests \
 	vscaler
 		
-all: startup.o $(foreach dir,$(SUBDIRS),build-$(dir))
+BUILD-FILES := startup.o
 
 include $(TOPDIR)/build.mk
-
-clean:: $(foreach dir,$(SUBDIRS),clean-$(dir))
 
 run:
 	for dir in $(SUBDIRS); do 	\

@@ -90,12 +90,6 @@ __regargs PaletteT *NewPalette(u_short count) {
   return palette;
 }
 
-__regargs PaletteT *CopyPalette(PaletteT *palette) {
-  PaletteT *copy = NewPalette(palette->count);
-  memcpy(copy->colors, palette->colors, palette->count * sizeof(ColorT));
-  return copy;
-}
-
 __regargs void DeletePalette(PaletteT *palette) {
   if (palette)
     MemFree(palette);
@@ -112,23 +106,6 @@ __regargs void ConvertPaletteToRGB4(PaletteT *palette, u_short *color, short n) 
     u_char g = *src++ & 0xf0;
     u_char b = *src++ & 0xf0;
     *color++ = (r << 4) | (u_char)(g | (b >> 4));
-  }
-}
-
-void RotatePalette(PaletteT *dstpal, PaletteT *srcpal, short start, short end, short step) {
-  ColorT *src = srcpal->colors;
-  ColorT *dst = dstpal->colors + start;
-  short n = end - start + 1;
-  short s = mod16(step, n);
-  short i = start + s;
-
-  if (s < 0)
-    i += n;
-
-  while (--n >= 0) {
-    *dst++ = src[i++];
-    if (i > end)
-      i = start;
   }
 }
 

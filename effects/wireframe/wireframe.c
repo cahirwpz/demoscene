@@ -4,7 +4,6 @@
 #include "3d.h"
 #include "fx.h"
 #include "ffp.h"
-#include "ilbm.h"
 #include "tasks.h"
 
 const char *__cwdpath = "data";
@@ -16,13 +15,13 @@ const char *__cwdpath = "data";
 static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
-static PaletteT *palette;
 static BitmapT *screen;
 static u_short active = 0;
 static CopInsT *bplptr[DEPTH];
 
+#include "data/wireframe-pal.c"
+
 static void Load(void) {
-  palette = LoadPalette("wireframe-pal.ilbm");
   mesh = LoadMesh3D("pilka.3d", SPFlt(65));
   CalculateVertexFaceMap(mesh);
   CalculateFaceNormals(mesh);
@@ -30,7 +29,6 @@ static void Load(void) {
 }
 
 static void UnLoad(void) {
-  DeletePalette(palette);
   DeleteMesh3D(mesh);
 }
 
@@ -38,7 +36,7 @@ static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopLoadPal(cp, palette, 0);
+  CopLoadPal(cp, &wireframe_pal, 0);
   CopEnd(cp);
 }
 

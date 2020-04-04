@@ -1,10 +1,14 @@
-DATA := data/highway-car-left-2.ilbm \
-	data/highway-car-right-2.ilbm \
-	data/highway-city-bottom-2.ilbm \
-	data/highway-city-top-2.ilbm \
-	data/highway-lane.ilbm \
-	data/highway-sprite.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data highway.exe
+CLEAN-FILES := data/car-left-2.c data/car-right-2.c \
+	       data/city-bottom-2.c data/city-top-2.c \
+	       data/lane.c data/sprite.c
 
-include ../build.mk
+PNG2C.lane := --bitmap lane_bg,320x40x4
+PNG2C.city-top-2 := --bitmap city_top,320x70x4 --palette city_top_pal,16
+PNG2C.city-bottom-2 := --bitmap city_bottom,320x70x4 --palette city_bottom_pal,16
+PNG2C.car-left-2 := --bitmap car_left,32x10x4 --palette car_left_pal,16
+PNG2C.car-right-2 := --bitmap car_right,32x10x4 --palette car_right_pal,16
+PNG2C.sprite := --sprite sprite,24,8,+array --palette sprite_pal,4
+
+include $(TOPDIR)/build.effect.mk

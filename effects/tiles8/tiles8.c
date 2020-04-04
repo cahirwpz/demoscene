@@ -2,13 +2,10 @@
 #include "blitter.h"
 #include "coplist.h"
 #include "memory.h"
-#include "io.h"
-#include "png.h"
+#include "pixmap.h"
 #include "random.h"
 #include "fx.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH (320 - 16)
 #define HEIGHT 256
@@ -30,23 +27,21 @@ static CopInsT *bplptr[DEPTH];
 static CopInsT *chunky[VTILES];
 static BitmapT *screen0, *screen1;
 static CopListT *cp;
-static PixmapT *twist, *colors;
-static PixmapT *tilegfx;
 static u_short *tilescr;
 static short ntiles;
+
+#include "data/twist.c"
+#include "data/twist-colors.c"
+#include "data/tiles-c.c"
 
 static void Load(void) {
   short x, y, i;
 
-  twist = LoadPNG("twist.png", PM_GRAY8, MEMF_PUBLIC);
-  colors = LoadPNG("twist-colors.png", PM_RGB12, MEMF_PUBLIC);
-  tilegfx = LoadPNG("tiles-c.png", PM_CMAP1, MEMF_CHIP);
-
-  ntiles = tilegfx->height / 8;
+  ntiles = tilegfx.height / 8;
   tilescr = MemAlloc(HTILES * VTILES * sizeof(u_short), MEMF_PUBLIC);
 
   {
-    // u_char *pixels = (u_char *)twist->pixels;
+    // u_char *pixels = (u_char *)twist.pixels;
 
     for (i = 0, y = 0; y < VTILES; y++)
       for (x = 0; x < HTILES; x++, i++) {
@@ -55,13 +50,6 @@ static void Load(void) {
         tilescr[i] = (v & (ntiles - 1)) << 4;
       }
   }
-}
-
-static void UnLoad(void) {
-  DeletePixmap(colors);
-  DeletePixmap(twist);
-  DeletePalette(tilegfx->palette);
-  DeletePixmap(tilegfx);
 }
 
 static void Init(void) {
@@ -74,7 +62,7 @@ static void Init(void) {
   /* X(-1) to align with copper induced color changes */
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen1, DEPTH);
-  CopLoadPal(cp, tilegfx->palette, 0);
+  CopLoadPal(cp, &tilegfx_pal, 0);
   CopWaitV(cp, VP(0));
 
   /* Copper Chunky.
@@ -118,14 +106,11 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 
   DeleteCopList(cp);
-
-  DeletePalette(tilegfx->palette);
-  DeletePixmap(tilegfx);
 }
 
 static void UpdateChunky(void) {
-  u_char *data = twist->pixels;
-  u_short *cmap = colors->pixels;
+  u_char *data = twist.pixels;
+  u_short *cmap = colors.pixels;
   u_char offset = SIN(frameCount * 8) >> 2;
   short y;
 
@@ -168,7 +153,7 @@ static void RenderTiles(void) {
   u_short *_tilescr = tilescr;
   u_short *screen = screen0->planes[0];
   u_short bltsize = (8 << 6) + 1;
-  void *_tile = tilegfx->pixels;
+  void *_tile = tilegfx.planes[0];
   void *_custom = (void *)&custom->bltbpt;
 
   custom->bltamod = 0;
@@ -232,4 +217,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };

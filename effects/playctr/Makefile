@@ -1,8 +1,18 @@
-DATA := data/JazzCat-Automatic.ctr \
-	data/JazzCat-Automatic.smp
+TOPDIR := $(realpath ../..)
+
+OBJECTS := data/JazzCat-Automatic-ctr.o data/JazzCat-Automatic-smp.o
 
 LIBS := libctr
 
-all: playctr.exe
+include $(TOPDIR)/build.effect.mk
 
-include ../build.mk
+data/%.ctr data/%.smp: data/%.mod
+	$(PYTHON3) data/CinterConvert.py $^ $@ $(@:.ctr=.smp)
+
+data/%-ctr.o: data/%.ctr
+	@echo "[OBJCOPY] $(DIR)$< -> $(DIR)$@"
+	$(OBJCOPY) -I binary -O amiga $^ $@
+
+data/%-smp.o: data/%.smp
+	@echo "[OBJCOPY] $(DIR)$< -> $(DIR)$@"
+	$(OBJCOPY) -I binary -O amiga $^ $@

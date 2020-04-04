@@ -1,7 +1,5 @@
 TOPDIR = $(realpath .)
 
-all: build-base build-effects
+SUBDIRS = tools base effects
 
 include $(TOPDIR)/build.mk
-
-clean:: clean-effects clean-base

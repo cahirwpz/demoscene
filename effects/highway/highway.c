@@ -2,7 +2,6 @@
 #include "hardware.h"
 #include "coplist.h"
 #include "gfx.h"
-#include "ilbm.h"
 #include "blitter.h"
 #include "circle.h"
 #include "fx.h"
@@ -10,8 +9,6 @@
 #include "random.h"
 #include "sprite.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -41,65 +38,34 @@ static CopInsT *sprptr[8];
 static CopInsT *bplptr[2][DEPTH];
 static BitmapT *carry;
 
+#include "data/car-left-2.c"
+#include "data/car-right-2.c"
+#include "data/city-bottom-2.c"
+#include "data/city-top-2.c"
+#include "data/lane.c"
+#include "data/sprite.c"
+
 static BitmapT *lanes[2];
-static BitmapT *carLeft;
-static BitmapT *carRight;
-static BitmapT *laneBg;
-static BitmapT *cityTop;
-static BitmapT *cityBottom;
-static SpriteT *sprite[8];
-static PaletteT *spritePal;
-
-static void Load(void) {
-  laneBg = LoadILBM("highway-lane.ilbm");
-  cityTop = LoadILBM("highway-city-top-2.ilbm");
-  cityBottom = LoadILBM("highway-city-bottom-2.ilbm");
-  carLeft = LoadILBM("highway-car-left-2.ilbm");
-  carRight = LoadILBM("highway-car-right-2.ilbm");
-
-  {
-    BitmapT *title = LoadILBM("highway-sprite.ilbm");
-    ITER(i, 0, 7, sprite[i] = NewSpriteFromBitmap(24, title, 16 * i, 0));
-    spritePal = title->palette;
-    DeleteBitmap(title);
-  }
-}
-
-static void UnLoad(void) {
-  ITER(i, 0, 7, DeleteSprite(sprite[i]));
-
-  DeletePalette(carLeft->palette);
-  DeleteBitmap(carLeft);
-  DeletePalette(carRight->palette);
-  DeleteBitmap(carRight);
-  DeletePalette(cityTop->palette);
-  DeleteBitmap(cityTop);
-  DeletePalette(cityBottom->palette);
-  DeleteBitmap(cityBottom);
-  DeletePalette(laneBg->palette);
-  DeleteBitmap(laneBg);
-  DeletePalette(spritePal);
-}
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopSetupSprites(cp, sprptr);
-  CopLoadPal(cp, spritePal, 16);
-  CopLoadPal(cp, spritePal, 20);
-  CopLoadPal(cp, spritePal, 24);
-  CopLoadPal(cp, spritePal, 28);
+  CopLoadPal(cp, &sprite_pal, 16);
+  CopLoadPal(cp, &sprite_pal, 20);
+  CopLoadPal(cp, &sprite_pal, 24);
+  CopLoadPal(cp, &sprite_pal, 28);
 
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplanes(cp, NULL, cityTop, DEPTH);
+  CopSetupBitplanes(cp, NULL, &city_top, DEPTH);
   CopWait(cp, Y(-18), 0);
-  CopLoadPal(cp, cityTop->palette, 0);
+  CopLoadPal(cp, &city_top_pal, 0);
 
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
 
   {
     CopWait(cp, Y(LANEL_Y - 2), 8);
     CopMove16(cp, dmacon, DMAF_RASTER);
-    CopLoadPal(cp, carLeft->palette, 0);
+    CopLoadPal(cp, &car_left_pal, 0);
     CopSetupBitplanes(cp, bplptr[0], lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
@@ -125,7 +91,7 @@ static void MakeCopperList(CopListT *cp) {
 
   {
     CopWait(cp, Y(LANER_Y - 1), 8);
-    CopLoadPal(cp, carRight->palette, 0);
+    CopLoadPal(cp, &car_right_pal, 0);
     CopSetupBitplanes(cp, bplptr[1], lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
@@ -138,8 +104,8 @@ static void MakeCopperList(CopListT *cp) {
 
   {
     CopWait(cp, Y(LANER_Y + LANE_H + 1), 8);
-    CopLoadPal(cp, cityBottom->palette, 0);
-    CopSetupBitplanes(cp, NULL, cityBottom, DEPTH);
+    CopLoadPal(cp, &city_bottom_pal, 0);
+    CopSetupBitplanes(cp, NULL, &city_bottom, DEPTH);
     CopWait(cp, Y(LANER_Y + LANE_H + 2), 8);
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   }
@@ -208,9 +174,9 @@ static void DrawCars(short step) {
       short x = (car->x + 7) / 16;
 
       if (car->side)
-        BitmapAddSaturated(lanes[active], x, car->y + LANE_H, carRight, carry);
+        BitmapAddSaturated(lanes[active], x, car->y + LANE_H, &car_right, carry);
       else
-        BitmapAddSaturated(lanes[active], LANE_W - x, car->y, carLeft, carry);
+        BitmapAddSaturated(lanes[active], LANE_W - x, car->y, &car_left, carry);
 
       CarMove(car, step);
     }
@@ -228,8 +194,8 @@ static void AddCars(void) {
 }
 
 static void Render(void) {
-  BitmapCopy(lanes[active], HSIZE, 0, laneBg);
-  BitmapCopy(lanes[active], HSIZE, LANE_H, laneBg);
+  BitmapCopy(lanes[active], HSIZE, 0, &lane_bg);
+  BitmapCopy(lanes[active], HSIZE, LANE_H, &lane_bg);
 
   AddCars();
   DrawCars(frameCount - lastFrameCount);
@@ -249,4 +215,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

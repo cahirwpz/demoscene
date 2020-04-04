@@ -1,6 +1,5 @@
 #include "gui.h"
 #include "gfx.h"
-#include "ilbm.h"
 #include "mouse.h"
 #include "blitter.h"
 
@@ -272,7 +271,7 @@ static void WidgetInit(GuiStateT *gui, WidgetT *wg, WidgetT *parent) {
     WidgetInit(gui, wg->frame.widget, wg);
   } else if (wg->type == WT_IMAGE) {
     if (!wg->image.bm)
-      wg->image.bm = LoadILBMCustom(wg->image.path, BM_DISPLAYABLE);
+      Panic("No image attached to widget at %p!\n", wg);
   }
 }
 
@@ -344,7 +343,7 @@ static void WidgetCalcSize(GuiStateT *gui, WidgetT *wg, short w, short h) {
     HEIGHT(wg) = max(h, size.h);
   } else if (wg->type == WT_IMAGE) {
     if (!wg->image.bm)
-      wg->image.bm = LoadILBMCustom(wg->image.path, BM_DISPLAYABLE);
+      Panic("No image attached to widget at %p!\n", wg);
     WIDTH(wg) = max(w, wg->image.bm->width);
     HEIGHT(wg) = max(h, wg->image.bm->height);
   }

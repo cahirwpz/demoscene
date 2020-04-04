@@ -1,5 +1,7 @@
-DATA := data/sprite.ilbm
+TOPDIR := $(realpath ../..)
 
-all: build-data prisms.exe
+CLEAN-FILES := data/sprite.c
 
-include ../build.mk
+PNG2C.sprite := --sprite sprite,24,8,+array --palette sprite_pal,4
+
+include $(TOPDIR)/build.effect.mk

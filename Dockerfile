@@ -3,7 +3,7 @@
 # > docker login
 # > docker push cahirwpz/demoscene:latest
 
-FROM debian:buster
+FROM debian:buster-backports
 
 WORKDIR /root
 
@@ -14,7 +14,7 @@ ADD https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh \
 RUN apt-get -q update && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends gnupg && bash script.deb.sh
 RUN apt-get install -y --no-install-recommends \
-            ctags cscope git-lfs optipng gcc g++ make libc6-i386 \
+            ctags cscope git-lfs optipng gcc g++ make libc6-i386 golang-1.13 \
             python3 python3-setuptools python3-prompt-toolkit \
             python3-pil python3-pip python3-wheel python3-dev
 RUN tar -C / -xvzf demoscene-toolchain.tar.gz && rm demoscene-toolchain.tar.gz

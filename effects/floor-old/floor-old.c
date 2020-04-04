@@ -5,12 +5,8 @@
 #include "fx.h"
 #include "random.h"
 #include "color.h"
-#include "png.h"
-#include "ilbm.h"
-#include "color.h"
+#include "pixmap.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 212
@@ -35,6 +31,9 @@ static BitmapT *screen[2];
 static u_short active = 0;
 static CopListT *cp[2];
 
+#include "data/floor-city.c"
+#include "data/floor.c"
+
 typedef struct {
   int delta;
   short x1, x2, y2;
@@ -46,10 +45,8 @@ static short horiz[N];
 static u_char *linePos[2][SIZE];
 static u_short *lineColor[2][SIZE];
 static u_short tileColumn[HEIGHT];
-static PixmapT *texture;
 static u_short tileColor[TILES * TILES];
 static u_char cycleStart[TILES * TILES];
-static BitmapT *city;
 
 static void FloorPrecalc(void) {
   short i;
@@ -88,18 +85,12 @@ static void Load(void) {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  texture = LoadPNG("floor.png", PM_RGB12, MEMF_PUBLIC);
-
-  city = LoadILBM("floor-city.ilbm");
-
   FloorPrecalc();
 
   ITER(i, 0, 255, cycleStart[i] = random() & 63);
 }
 
 static void UnLoad(void) {
-  DeleteBitmap(city);
-  DeletePixmap(texture);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }
@@ -147,7 +138,7 @@ static void Init(void) {
     Area2D bottom = { 0, 0, WIDTH, FAR_Y };
     BitmapClear(screen[i]);
     BlitterSetArea(screen[i], 0, &top, -1);
-    BitmapCopy(screen[i], 0, 36, city);
+    BitmapCopy(screen[i], 0, 36, &city);
     BlitterSetArea(screen[i], 1, &bottom, -1);
   }
 
@@ -417,7 +408,7 @@ __regargs static void AssignColorToTileColumn(short k, short kxo) {
 }
 
 static void ControlTileColors(void) {
-  u_short *src = texture->pixels, *dst = tileColor;
+  u_short *src = texture.pixels, *dst = tileColor;
   u_char *cycle = cycleStart;
   short n = TILES * TILES;
 

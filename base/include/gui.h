@@ -74,7 +74,6 @@ typedef struct {
 
 typedef struct {
   WIDGET_BASE
-  const char *path;
   BitmapT *bm;
 } ImageT;
 
@@ -125,7 +124,7 @@ typedef void (*WidgetFuncT)(GuiStateT *, WidgetT *);
 #define GUI_FRAME(frm, wdg) GUI_WIDGET(frame, WT_FRAME, (frm), (wdg))
 #define GUI_LABEL(text) GUI_WIDGET(label, WT_LABEL, text, sizeof(text) + 1)
 #define GUI_LABEL_N(size) GUI_WIDGET(label, WT_LABEL, (char[(size)]){0}, (size))
-#define GUI_IMAGE(path) GUI_WIDGET(image, WT_IMAGE, (path), NULL)
+#define GUI_IMAGE(bm) GUI_WIDGET(image, WT_IMAGE, (bm))
 #define GUI_BUTTON(inner) GUI_WIDGET(button, WT_BUTTON, (inner))
 #define GUI_RADIOBT(inner) GUI_WIDGET(button, WT_RADIOBT, (inner))
 #define GUI_TOGGLE(off, on) GUI_WIDGET(toggle, WT_TOGGLE, {(off), (on)})

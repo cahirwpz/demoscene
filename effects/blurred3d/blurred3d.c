@@ -4,8 +4,7 @@
 #include "3d.h"
 #include "fx.h"
 #include "ffp.h"
-#include "ilbm.h"
-#include "png.h"
+#include "pixmap.h"
 #include "memory.h"
 #include "tasks.h"
 
@@ -25,17 +24,16 @@ static CopInsT *bplptr[DEPTH];
 static BitmapT *screen0, *screen1;
 static BitmapT *scratchpad;
 static BitmapT *carry;
-static PixmapT *gradient;
+
+#include "data/blurred3d-pal.c"
 
 static void Load(void) {
   mesh = LoadMesh3D("szescian.3d", SPFlt(93));
-  gradient = LoadPNG("blurred3d-pal.png", PM_RGB12, MEMF_PUBLIC);
   CalculateEdges(mesh);
   CalculateFaceNormals(mesh);
 }
 
 static void UnLoad(void) {
-  DeletePixmap(gradient);
   DeleteMesh3D(mesh);
 }
 
@@ -45,7 +43,7 @@ static void MakeCopperList(CopListT *cp) {
   CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
 
   {
-    short *pixels = gradient->pixels;
+    short *pixels = gradient.pixels;
     short i, j;
 
     for (i = 0; i < HEIGHT / 8; i++) {
@@ -81,7 +79,7 @@ static void Init(void) {
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
-  cp = NewCopList(80 + gradient->height * (gradient->width + 1));
+  cp = NewCopList(80 + gradient.height * (gradient.width + 1));
   MakeCopperList(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
@@ -96,12 +94,12 @@ static void Kill(void) {
   DeleteObject3D(cube);
 }
 
-#define MULVERTEX(D) {                   \
-  short t0 = (*v++) + y;                  \
-  short t1 = (*v++) + x;                  \
-  int t2 = (*v++) * z;                  \
-  short t3 = (*v++);                      \
-  D = normfx(t0 * t1 + t2 - x * y) + t3; \
+#define MULVERTEX(D) {                          \
+  short t0 = (*v++) + y;                        \
+  short t1 = (*v++) + x;                        \
+  int t2 = (*v++) * z;                          \
+  short t3 = (*v++);                            \
+  D = normfx(t0 * t1 + t2 - x * y) + t3;        \
 }
 
 static __regargs void TransformVertices(Object3D *object) {
