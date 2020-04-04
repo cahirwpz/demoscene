@@ -1,10 +1,8 @@
 package main
 
 import (
+	"../misc"
 	"../tmx"
-	"bytes"
-	"compress/gzip"
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/xml"
 	"flag"
@@ -13,37 +11,14 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"image/png"
 	"log"
 	"os"
-	"path"
 )
 
 const (
 	// N - Single tile size
 	N = 16
 )
-
-func loadPNG(name string) *image.Paletted {
-	file, err := os.Open(name)
-	defer file.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	someImg, err := png.Decode(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	file.Close()
-
-	img, ok := someImg.(*image.Paletted)
-	if !ok {
-		log.Fatal("Image is not 8-bit CLUT type!")
-	}
-
-	return img
-}
 
 func hashTile(img *image.Paletted, x, y int) uint64 {
 	pixels := make([]uint8, N*N)
@@ -100,24 +75,6 @@ func makeTiles(tilePos []image.Point, img *image.Paletted) *image.Paletted {
 	return tiles
 }
 
-func pathWithoutExt(p string) string {
-	n := len(p) - len(path.Ext(p))
-	return p[:n]
-}
-
-func compressBytes(data []byte) string {
-	var buf bytes.Buffer
-
-	zw := gzip.NewWriter(&buf)
-	_, err := zw.Write(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	zw.Close()
-
-	return base64.StdEncoding.EncodeToString(buf.Bytes())
-}
-
 func reportTileCount(tileCount []int, tilePos []image.Point) {
 	fmt.Printf("\nTiles used less that %d times:\n", minTileCount)
 
@@ -155,24 +112,15 @@ func dumpTileMap(tileMap [][]int, width, height int) string {
 		fmt.Printf(" |\n")
 	}
 
-	return compressBytes(bin)
-}
+	data, err := tmx.CompressBytes(bin)
 
-func savePNG(name string, img image.Image) {
-	f, err := os.Create(name)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := png.Encode(f, img); err != nil {
-		f.Close()
-		log.Fatal(err)
-	}
-
-	if err := f.Close(); err != nil {
-		log.Fatal(err)
-	}
+	return data
 }
+
 func width(img image.Image) int {
 	width := img.Bounds().Dx()
 	if width%N != 0 {
@@ -180,6 +128,7 @@ func width(img image.Image) int {
 	}
 	return width
 }
+
 func height(img image.Image) int {
 	height := img.Bounds().Dy()
 	if height%N != 0 {
@@ -204,7 +153,7 @@ func main() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-	img := loadPNG(flag.Arg(0))
+	img := misc.LoadPNG(flag.Arg(0))
 	width := width(img)
 	height := height(img)
 	tileHash := make(map[uint64]int)
@@ -237,12 +186,12 @@ func main() {
 
 	reportTileCount(tileCount, tilePos)
 
-	name := pathWithoutExt(flag.Arg(0))
+	name := misc.PathWithoutExt(flag.Arg(0))
 
-	savePNG(name+"_tiles.png", tiles)
+	misc.SavePNG(name+"_tiles.png", tiles)
 
 	reportImage := drawReportOnImage(img, tileMap, tileCount, width/N, height/N)
-	savePNG(name+"_report.png", reportImage)
+	misc.SavePNG(name+"_report.png", reportImage)
 
 	outputMap := &tmx.TiledMap{
 		Version:     "1.0",
