@@ -36,7 +36,7 @@ __regargs void DeletePixmap(PixmapT *pixmap) {
 }
 
 __regargs void PixmapScramble_4_1(PixmapT *pixmap) {
-  if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
+  if (pixmap->type == PM_CMAP4) {
     u_int *data = pixmap->pixels;
     short n = pixmap->width * pixmap->height / 8;
     register u_int m0 asm("d6") = 0xa5a5a5a5;
@@ -51,7 +51,7 @@ __regargs void PixmapScramble_4_1(PixmapT *pixmap) {
 }
 
 __regargs void PixmapScramble_4_2(PixmapT *pixmap) {
-  if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
+  if (pixmap->type == PM_CMAP4) {
     u_int *data = pixmap->pixels;
     short n = pixmap->width * pixmap->height / 8;
     register u_int m0 asm("d6") = 0xc3c3c3c3;
