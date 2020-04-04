@@ -20,6 +20,7 @@ SOURCES := \
 	lib-graphics.c \
 	lib-list.c \
 	lib-mathffp.c \
+	lzo.c \
 	memory.c \
 	mouse.c \
 	qsort.c \
