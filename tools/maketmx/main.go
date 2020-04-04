@@ -275,7 +275,8 @@ func main() {
 
 	tiles := makeTiles(tilePos, img)
 
-	fmt.Printf("Distinct / total tiles: %d/%d\n", len(tilePos), height/N*width/N)
+	fmt.Printf("Distinct / total tiles: %d/%d\n",
+		len(tilePos), height/N*width/N)
 
 	reportTileCount(tileCount, tilePos)
 
