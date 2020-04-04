@@ -6,7 +6,6 @@ SOURCES := \
 	color.c \
 	coplist.c \
 	gfx.c \
-	ilbm.c \
 	line.c \
 	pixmap.c \
 	sprite.c
