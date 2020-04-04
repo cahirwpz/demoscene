@@ -13,7 +13,7 @@ typedef enum {
 #define PM_CMAP8  (_PM_CMAP|PM_DEPTH_8)
 #define PM_RGB12  (_PM_RGB|PM_DEPTH_4)
 
-#define PM_DEPTH_MASK 7
+#define PM_DEPTH_MASK 3
 
 typedef struct Pixmap {
   PixmapTypeT type;

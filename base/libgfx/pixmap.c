@@ -1,7 +1,7 @@
 #include "memory.h"
 #include "pixmap.h"
 
-static short bitdepth[] = { 0, 1, 2, 4, 8, 16 };
+static short bitdepth[] = { 0, 4, 8 };
 
 static int PixmapSize(PixmapT *pixmap) {
   short bitsPerPixel = bitdepth[pixmap->type & PM_DEPTH_MASK];
