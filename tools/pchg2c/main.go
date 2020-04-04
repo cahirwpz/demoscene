@@ -10,6 +10,20 @@ import (
 	"os"
 )
 
+const (
+	paletteTemplate = `
+PaletteT {{.Name}} = {
+  .count = {{.Count}},
+  .colors = {
+		{{with .Colors}}{{ range . }}
+		{{.}},
+		{{ end }}{{ end }}
+	}
+};`
+)
+
+// static __data_chip u_short _background_bpl[] = {
+
 var printHelp bool
 
 func init() {
@@ -57,10 +71,10 @@ func complementPalette(pal *image.RGBA) {
 	}
 }
 
-func encodeHAM6(img *image.RGBA, pal *image.RGBA) []uint8 {
+func encodeHAM6(img *image.RGBA, pal *image.RGBA) *image.Paletted {
 	width, height := img.Bounds().Dx(), img.Bounds().Dy()
 
-	ham := make([]uint8, width*height)
+	ham := image.NewPaletted(img.Bounds(), nil)
 
 	for y := 0; y < height; y++ {
 		/* Take background color as previous pixel. */
@@ -89,7 +103,7 @@ func encodeHAM6(img *image.RGBA, pal *image.RGBA) []uint8 {
 						x, y, c.R>>4, c.G>>4, c.B>>4)
 				}
 			}
-			ham[y*width+x] = v
+			ham.SetColorIndex(x, y, v)
 			p = c
 		}
 	}
@@ -132,6 +146,9 @@ func main() {
 
 	complementPalette(pal)
 	ham := encodeHAM6(pix, pal)
-	bpl := misc.ChunkyToPlanar(ham, width, height, 6)
-	fmt.Println(bpl, width, height, 6)
+	bm := misc.NewBitmap(ham)
+	err = bm.Export("ham")
+	if err != nil {
+		log.Fatal(err)
+	}
 }

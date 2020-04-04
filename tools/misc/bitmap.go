@@ -1,0 +1,129 @@
+package misc
+
+import (
+	"fmt"
+	"image"
+	"math"
+	"os"
+	"text/template"
+)
+
+const (
+	bitmapTemplate = `
+BitmapT {{ .Name }} = {
+  .width = {{ .Width }},
+  .height = {{ .Height }},
+  .depth = {{ .Depth }},
+  .bytesPerRow = {{ .BytesPerRow }},
+  .bplSize = {{ .BplSize }},
+  .flags = 0,
+  .compression = 0,
+  .palette = NULL,
+  .pchgTotal = 0,
+  .pchg = NULL,
+  .planes = { {{ with .Bitplanes }}{{ range . }}
+    {{.}},{{ end }} {{ end }}
+  }
+};`
+)
+
+type Bitmap struct {
+	Name   string
+	Width  int
+	Height int
+	Depth  int
+	Data   []uint16
+}
+
+func (bm Bitmap) BytesPerRow() int {
+	return ((bm.Width + 15) &^ 15) / 8
+}
+
+func (bm Bitmap) BplSize() int {
+	return bm.BytesPerRow() * bm.Height
+}
+
+func (bm Bitmap) Bitplanes() (bpl []string) {
+	bpl = make([]string, bm.Depth)
+	for i := 0; i < bm.Depth; i++ {
+		bpl[i] = fmt.Sprintf("(void *)_%s_bpl + %d", bm.Name, i*bm.BplSize())
+	}
+	return
+}
+
+func imageDepth(img *image.Paletted) int {
+	maxValue := 0
+
+	for _, d := range img.Pix {
+		if maxValue < int(d) {
+			maxValue = int(d)
+		}
+	}
+
+	return int(math.Ceil(math.Log2(float64(maxValue + 1))))
+}
+
+func NewBitmap(img *image.Paletted) *Bitmap {
+	width := (img.Bounds().Dx() + 15) &^ 15
+	height := img.Bounds().Dy()
+	depth := imageDepth(img)
+
+	bm := &Bitmap{
+		Width:  width,
+		Height: height,
+		Depth:  depth,
+		Data:   make([]uint16, width*height*depth/16)}
+
+	/* Output is interleaved */
+	wordsPerRow := width / 16
+	for y := 0; y < height; y++ {
+		src := img.Pix[y*width : (y+1)*width]
+		dst := bm.Data[y*wordsPerRow*depth : (y+1)*wordsPerRow*depth]
+		for d := 0; d < depth; d++ {
+			row := dst[d*wordsPerRow : (d+1)*wordsPerRow]
+			for x := 0; x < width; x++ {
+				bit := uint16(src[x]>>d) & 1
+				pos := 15 - (x & 15)
+				row[x/16] |= bit << pos
+			}
+		}
+	}
+
+	return bm
+}
+
+func (bm *Bitmap) Deinterleave() {
+	wordsPerRow := bm.BytesPerRow() / 2
+	output := make([]uint16, wordsPerRow*bm.Height*bm.Depth)
+
+	dst := 0
+	for d := 0; d < bm.Depth; d++ {
+		src := d * wordsPerRow
+		for y := 0; y < bm.Height; y++ {
+			copy(output[dst:dst+wordsPerRow], bm.Data[src:src+wordsPerRow])
+			src += wordsPerRow * bm.Depth
+			dst += wordsPerRow
+		}
+	}
+
+	bm.Data = output
+}
+
+func (bm *Bitmap) Export(name string) (err error) {
+	bm.Name = name
+
+	t, err := template.New(name).Parse(bitmapTemplate)
+	if err != nil {
+		return
+	}
+
+	/*
+		file, err := os.Create(name + ".c")
+		if err != nil {
+			return
+		}
+		defer file.Close()
+	*/
+
+	return t.Execute(os.Stdout, bm)
+}
