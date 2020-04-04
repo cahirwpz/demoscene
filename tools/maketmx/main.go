@@ -103,7 +103,7 @@ func dumpTileMap(tileMap [][]int, width, height int) []uint32 {
 	for y := 0; y < height; y++ {
 		fmt.Print("|")
 		for x := 0; x < width; x++ {
-			ti := tileMap[y][x] + 1
+			ti := uint32(tileMap[y][x] + 1)
 			fmt.Printf("%3x", ti)
 			bin[i] = ti
 			i += 1
