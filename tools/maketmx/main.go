@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"compress/gzip"
-	"encoding/base64"
-	"encoding/binary"
+	"../misc"
+	"../tmx"
 	"encoding/xml"
 	"flag"
 	"fmt"
@@ -12,81 +10,14 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"image/png"
 	"log"
 	"os"
-	"path"
 )
 
 const (
 	// N - Single tile size
 	N = 16
 )
-
-type tiledData struct {
-	XMLName     xml.Name `xml:"data"`
-	Encoding    string   `xml:"encoding,attr"`
-	Compression string   `xml:"compression,attr"`
-	Bytes       string   `xml:",chardata"`
-}
-type tiledLayer struct {
-	XMLName xml.Name `xml:"layer"`
-	Name    string   `xml:"name,attr"`
-	Width   int      `xml:"width,attr"`
-	Height  int      `xml:"height,attr"`
-	Data    tiledData
-}
-type tiledImage struct {
-	XMLName xml.Name `xml:"image"`
-	Source  string   `xml:"source,attr"`
-	Width   int      `xml:"width,attr"`
-	Height  int      `xml:"height,attr"`
-}
-type tiledTileSet struct {
-	XMLName    xml.Name `xml:"tileset"`
-	FirstGid   int      `xml:"firstgid,attr"`
-	Name       string   `xml:"name,attr"`
-	TileWidth  int      `xml:"tilewidth,attr"`
-	TileHeight int      `xml:"tileheight,attr"`
-	Spacing    int      `xml:"spacing,attr"`
-	TileCount  int      `xml:"tilecount,attr"`
-	Columns    int      `xml:"columns,attr"`
-	Image      tiledImage
-}
-type tiledMap struct {
-	XMLName      xml.Name `xml:"map"`
-	Version      string   `xml:"version,attr"`
-	Orientation  string   `xml:"orientation,attr"`
-	RenderOrder  string   `xml:"renderorder,attr"`
-	Width        int      `xml:"width,attr"`
-	Height       int      `xml:"height,attr"`
-	TileWidth    int      `xml:"tilewidth,attr"`
-	TileHeight   int      `xml:"tileheight,attr"`
-	NextObjectID int      `xml:"nextobjectid,attr,omitempty"`
-	TileSet      tiledTileSet
-	Layer        tiledLayer
-}
-
-func loadPNG(name string) *image.Paletted {
-	file, err := os.Open(name)
-	defer file.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	someImg, err := png.Decode(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	file.Close()
-
-	img, ok := someImg.(*image.Paletted)
-	if !ok {
-		log.Fatal("Image is not 8-bit CLUT type!")
-	}
-
-	return img
-}
 
 func hashTile(img *image.Paletted, x, y int) uint64 {
 	pixels := make([]uint8, N*N)
@@ -143,24 +74,6 @@ func makeTiles(tilePos []image.Point, img *image.Paletted) *image.Paletted {
 	return tiles
 }
 
-func pathWithoutExt(p string) string {
-	n := len(p) - len(path.Ext(p))
-	return p[:n]
-}
-
-func compressBytes(data []byte) string {
-	var buf bytes.Buffer
-
-	zw := gzip.NewWriter(&buf)
-	_, err := zw.Write(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	zw.Close()
-
-	return base64.StdEncoding.EncodeToString(buf.Bytes())
-}
-
 func reportTileCount(tileCount []int, tilePos []image.Point) {
 	fmt.Printf("\nTiles used less that %d times:\n", minTileCount)
 
@@ -181,8 +94,8 @@ func reportTileCount(tileCount []int, tilePos []image.Point) {
 	}
 }
 
-func dumpTileMap(tileMap [][]int, width, height int) string {
-	bin := make([]byte, width*height*4)
+func dumpTileMap(tileMap [][]int, width, height int) []uint32 {
+	bin := make([]uint32, width*height)
 
 	fmt.Print("\nTile map:\n")
 
@@ -190,32 +103,17 @@ func dumpTileMap(tileMap [][]int, width, height int) string {
 	for y := 0; y < height; y++ {
 		fmt.Print("|")
 		for x := 0; x < width; x++ {
-			ti := tileMap[y][x]
+			ti := uint32(tileMap[y][x] + 1)
 			fmt.Printf("%3x", ti)
-			binary.LittleEndian.PutUint32(bin[i:], uint32(ti)+1)
-			i += 4
+			bin[i] = ti
+			i += 1
 		}
 		fmt.Printf(" |\n")
 	}
 
-	return compressBytes(bin)
+	return bin
 }
 
-func savePNG(name string, img image.Image) {
-	f, err := os.Create(name)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := png.Encode(f, img); err != nil {
-		f.Close()
-		log.Fatal(err)
-	}
-
-	if err := f.Close(); err != nil {
-		log.Fatal(err)
-	}
-}
 func width(img image.Image) int {
 	width := img.Bounds().Dx()
 	if width%N != 0 {
@@ -223,6 +121,7 @@ func width(img image.Image) int {
 	}
 	return width
 }
+
 func height(img image.Image) int {
 	height := img.Bounds().Dy()
 	if height%N != 0 {
@@ -247,7 +146,12 @@ func main() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-	img := loadPNG(flag.Arg(0))
+
+	img, ok := misc.LoadPNG(flag.Arg(0)).(*image.Paletted)
+	if !ok {
+		log.Fatal("Image is not 8-bit CLUT type!")
+	}
+
 	width := width(img)
 	height := height(img)
 	tileHash := make(map[uint64]int)
@@ -280,14 +184,14 @@ func main() {
 
 	reportTileCount(tileCount, tilePos)
 
-	name := pathWithoutExt(flag.Arg(0))
+	name := misc.PathWithoutExt(flag.Arg(0))
 
-	savePNG(name+"_tiles.png", tiles)
+	misc.SavePNG(name+"_tiles.png", tiles)
 
 	reportImage := drawReportOnImage(img, tileMap, tileCount, width/N, height/N)
-	savePNG(name+"_report.png", reportImage)
+	misc.SavePNG(name+"_report.png", reportImage)
 
-	outputMap := &tiledMap{
+	outputMap := &tmx.TiledMap{
 		Version:     "1.0",
 		Orientation: "orthogonal",
 		RenderOrder: "left-down",
@@ -295,7 +199,7 @@ func main() {
 		Height:      height / N,
 		TileWidth:   N,
 		TileHeight:  N}
-	outputMap.TileSet = tiledTileSet{
+	outputMap.TileSet = tmx.TiledTileSet{
 		FirstGid:   1,
 		Name:       name + "_tiles",
 		TileWidth:  N,
@@ -303,18 +207,15 @@ func main() {
 		Spacing:    0,
 		TileCount:  len(tilePos),
 		Columns:    1}
-	outputMap.TileSet.Image = tiledImage{
+	outputMap.TileSet.Image = tmx.TiledImage{
 		Source: name + "_tiles.png",
 		Width:  tiles.Bounds().Max.X,
 		Height: tiles.Bounds().Max.Y}
-	outputMap.Layer = tiledLayer{
+	outputMap.Layer = tmx.TiledLayer{
 		Name:   name + "_map",
 		Width:  width / N,
 		Height: height / N}
-	outputMap.Layer.Data = tiledData{
-		Encoding:    "base64",
-		Compression: "gzip",
-		Bytes:       dumpTileMap(tileMap, width/N, height/N)}
+	outputMap.Layer.Data = tmx.NewTiledData(dumpTileMap(tileMap, width/N, height/N))
 
 	file, err := os.Create(name + ".tmx")
 	if err != nil {
