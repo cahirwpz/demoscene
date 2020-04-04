@@ -5,12 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"image"
+	"image/color"
 	"image/png"
 	"log"
 	"os"
 )
-
-// static __data_chip u_short _background_bpl[] = {
 
 var printHelp bool
 
@@ -19,12 +18,15 @@ func init() {
 }
 
 func dumpPalette(name string, img *image.RGBA) {
-	fmt.Printf("u_short %s_pal[] = {\n ", name)
-	for x := 0; x < 16; x++ {
-		c := img.RGBAAt(x, 0)
-		fmt.Printf(" 0x%x%x%x,", c.R>>4, c.G>>4, c.B>>4)
+	var pal misc.Palette
+	pal = make([]color.RGBA, 16)
+	for i := 0; i < 16; i++ {
+		pal[i] = img.RGBAAt(i, 0)
 	}
-	fmt.Println("\n};\n")
+	err := pal.Export(name + "_pal")
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func dumpPaletteChanges(name string, img *image.RGBA) {

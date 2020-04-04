@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	bitmapTemplate = `
-BitmapT {{ name }} = {
+	bitmapTemplate = `BitmapT {{ name }} = {
   .width = {{ .Width }},
   .height = {{ .Height }},
   .depth = {{ .Depth }},

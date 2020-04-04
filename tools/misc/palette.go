@@ -7,27 +7,22 @@ import (
 )
 
 const (
-	paletteTemplate = `
-PaletteT {{.Name}} = {
-  .count = {{.Count}},
-  .colors = {
-		{{with .Colors}}{{ range . }}
-		{{.}},
-		{{ end }}{{ end }}
-	}
-};`
+	paletteTemplate = `PaletteT {{ name }} = {
+  .count = {{ len . }},
+  .colors = { {{ range . }}
+    { {{.R}}, {{ .G }}, {{ .B }} },{{ end }}
+  }
+};
+`
 )
 
-type Palette struct {
-	Colors []color.RGBA
-}
-
-func (pal Palette) Count() int {
-	return len(pal.Colors)
-}
+type Palette []color.RGBA
 
 func (pal *Palette) Export(name string) (err error) {
-	t, err := template.New(name).Parse(paletteTemplate)
+	funcMap := template.FuncMap{
+		"name": func() string { return name }}
+
+	t, err := template.New(name).Funcs(funcMap).Parse(paletteTemplate)
 	if err != nil {
 		return
 	}
