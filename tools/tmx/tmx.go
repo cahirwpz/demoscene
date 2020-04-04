@@ -61,39 +61,40 @@ type TiledMap struct {
 	Layer        TiledLayer
 }
 
-func (td *TiledData) Decompress() (out []byte, err error) {
+func (td *TiledData) Decode() (output []uint32, err error) {
 	data := strings.TrimSpace(td.Bytes)
 
 	decoded, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
 		return
 	}
-	b := bytes.NewBuffer(decoded)
 
-	var r io.Reader
-	r, err = gzip.NewReader(b)
+	var gzrd io.Reader
+	gzrd, err = gzip.NewReader(bytes.NewBuffer(decoded))
 	if err != nil {
 		return
 	}
 
-	var buf bytes.Buffer
-	_, err = buf.ReadFrom(r)
-	if err != nil {
-		return
+	for {
+		var word uint32
+		err = binary.Read(gzrd, binary.LittleEndian, &word)
+		if err != nil {
+			return
+		}
+		output = append(output, word)
 	}
 
-	out = buf.Bytes()
 	return
 }
 
 func NewTiledData(data []uint32) TiledData {
 	var output bytes.Buffer
 
-	zw := gzip.NewWriter(&output)
-	defer zw.Close()
+	gzwr := gzip.NewWriter(&output)
+	defer gzwr.Close()
 
 	for word := range data {
-		err := binary.Write(zw, binary.LittleEndian, word)
+		err := binary.Write(gzwr, binary.LittleEndian, word)
 		if err != nil {
 			log.Fatal(err)
 		}

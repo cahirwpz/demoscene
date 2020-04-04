@@ -11,17 +11,18 @@ import (
 	"../tmx"
 )
 
-type TiledMapExport struct {
+type cTileMap struct {
 	Name        string
 	TileWidth   int
 	TileHeight  int
 	TilesCount  int
 	LayerWidth  int
 	LayerHeight int
-	LayerData   []int
+	LayerData   []uint32
 }
 
-var tiledMapExportTemplate = `
+const (
+	cTileMapTemplate = `
 static TileSetT {{.Name}}_tiles = {
 	.width = {{ .TileWidth}},
 	.height = {{ .TileHeight}},
@@ -31,24 +32,20 @@ static TileSetT {{.Name}}_tiles = {
 const int {{ .Name}}_map_width = {{ .LayerWidth}};
 const int {{ .Name}}_map_height = {{ .LayerHeight}};
 short {{ .Name}}_map[] = { {{ with .LayerData }}{{ range . }}{{.}},{{ end }}{{ end }} };`
+)
 
-func GetTiledMapExportData(tm tmx.TiledMap, name string) (
-	tme TiledMapExport, err error) {
-
-	b, err := tm.Layer.Data.Decompress()
+func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
+	t, err := template.New("export").Parse(cTileMapTemplate)
 	if err != nil {
 		return
 	}
 
-	var data = make([]int, len(b)/4)
-
-	for i, byte := range b {
-		if i%4 == 0 {
-			data[i/4] = int(byte) - 1
-		}
+	data, err := tm.Layer.Data.Decode()
+	if err != nil {
+		return
 	}
 
-	tme = TiledMapExport{
+	ctm := cTileMap{
 		name,
 		tm.TileSet.TileWidth,
 		tm.TileSet.TileHeight,
@@ -56,27 +53,14 @@ func GetTiledMapExportData(tm tmx.TiledMap, name string) (
 		tm.Layer.Width,
 		tm.Layer.Height,
 		data}
-	return
-}
 
-func (tme *TiledMapExport) SaveLayerData() (err error) {
-
-	t, err := template.New("export").Parse(tiledMapExportTemplate)
-	if err != nil {
-		return
-	}
-
-	file, err := os.Create(tme.Name + "_map.c")
+	file, err := os.Create(ctm.Name + "_map.c")
 	if err != nil {
 		return
 	}
 	defer file.Close()
 
-	err = t.Execute(file, tme)
-	if err != nil {
-		return
-	}
-	return nil
+	return t.Execute(file, ctm)
 }
 
 var printHelp bool
@@ -99,23 +83,17 @@ func main() {
 		outName = misc.PathWithoutExt(flag.Arg(0))
 	}
 
-	var parsedMap tmx.TiledMap
-	parsedMap, err := tmx.ReadFile(flag.Arg(0))
+	tm, err := tmx.ReadFile(flag.Arg(0))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	exportData, err := GetTiledMapExportData(parsedMap, outName)
+	err = exportTiledMap(tm, outName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = exportData.SaveLayerData()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	img := misc.LoadPNG(parsedMap.TileSet.Image.Source).(*image.Paletted)
+	img := misc.LoadPNG(tm.TileSet.Image.Source).(*image.Paletted)
 
 	// TODO Add tiles reordering and optimize.
 
