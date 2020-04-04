@@ -70,8 +70,6 @@ typedef struct Bitmap {
   u_char flags;
   u_char compression;
   PaletteT *palette;
-  u_int pchgTotal;
-  u_short *pchg;
   void *planes[7];
 } BitmapT;
 

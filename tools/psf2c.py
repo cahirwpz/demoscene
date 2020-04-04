@@ -128,8 +128,6 @@ def convert(path, name):
     print('  .flags = BM_DISPLAYABLE,')
     print('  .compression = 0,')
     print('  .palette = NULL,')
-    print('  .pchgTotal = 0,')
-    print('  .pchg = NULL,')
     print('  .planes = {')
     print('    _%s_glyphs' % name)
     print('  }')

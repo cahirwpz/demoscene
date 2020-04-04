@@ -145,8 +145,6 @@ def do_bitmap(im, desc):
     print('  .flags = %s,' % '|'.join(flags))
     print('  .compression = 0,')
     print('  .palette = NULL,')
-    print('  .pchgTotal = 0,')
-    print('  .pchg = NULL,')
     print('  .planes = {')
     for i in range(depth):
         if interleaved:
