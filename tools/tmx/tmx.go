@@ -78,6 +78,10 @@ func (td *TiledData) Decode() (output []uint32, err error) {
 	for {
 		var word uint32
 		err = binary.Read(gzrd, binary.LittleEndian, &word)
+		if err == io.EOF {
+			err = nil
+			break
+		}
 		if err != nil {
 			return
 		}
@@ -91,14 +95,13 @@ func NewTiledData(data []uint32) TiledData {
 	var output bytes.Buffer
 
 	gzwr := gzip.NewWriter(&output)
-	defer gzwr.Close()
-
-	for word := range data {
+	for _, word := range data {
 		err := binary.Write(gzwr, binary.LittleEndian, word)
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		}
 	}
+	gzwr.Close()
 
 	encoded := base64.StdEncoding.EncodeToString(output.Bytes())
 
