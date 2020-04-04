@@ -35,7 +35,8 @@ static void Init(void) {
         CopMove16(cp, color[change & 15], change >> 4);
       }
 
-      CopWait(cp, Y(i+1), 0);
+      /* Start exchanging palette colors at the end of line. */
+      CopWait(cp, Y(i), X(face.width + 16));
     }
   }
 
