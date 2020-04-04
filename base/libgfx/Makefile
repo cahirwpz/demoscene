@@ -1,12 +1,14 @@
 TOPDIR := $(realpath ../..)
 
 SOURCES := \
+	area.c \
+	bitmap.c \
 	c2p_1x1_4.s \
 	circle.c \
 	color.c \
 	coplist.c \
-	gfx.c \
 	line.c \
+	palette.c \
 	pixmap.c \
 	sprite.c
 

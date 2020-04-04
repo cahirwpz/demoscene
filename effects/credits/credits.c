@@ -183,7 +183,7 @@ static void Render(void) {
     lower_area.w = lower->width;
     lower_area.h = lower->height;
 
-    if (!ClipBitmap(&window, &lower_pos, &lower_area))
+    if (!ClipArea(&window, &lower_pos, &lower_area))
       lower = NULL;
   }
 
