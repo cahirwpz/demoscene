@@ -29,19 +29,28 @@ static TileSetT {{.Name}}_tiles = {
 	.count = {{ .TilesCount}},
 	.ptrs = NULL
 };
-const int {{ .Name}}_map_width = {{ .LayerWidth}};
-const int {{ .Name}}_map_height = {{ .LayerHeight}};
-short {{ .Name }}_map[] = { 
-	{{ with .LayerData -}}
-		{{- range . -}}
-			{{.}},
-		{{- end -}}
-	{{- end }}
+const int {{.Name}}_map_width = {{.LayerWidth}};
+const int {{.Name}}_map_height = {{.LayerHeight}};
+short {{.Name}}_map[] = { 
+{{- with .LayerData}}
+	{{- range $i, $el := .}}
+		{{- if endLine $i }}
+			{{ $el}},
+		{{- else}}
+			{{- $el}},
+		{{- end}}
+	{{- end}}
+{{- end}}
 };`
 )
 
 func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
-	t, err := template.New("export").Parse(cTileMapTemplate)
+
+	funcMap := template.FuncMap{
+		"endLine": func(i int) bool { return i%tm.Layer.Width == 0 },
+	}
+
+	t, err := template.New("export").Funcs(funcMap).Parse(cTileMapTemplate)
 	if err != nil {
 		return
 	}
