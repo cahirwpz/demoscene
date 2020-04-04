@@ -40,6 +40,7 @@ RUNINUAE := $(PYTHON3) $(TOPDIR)/effects/RunInUAE
 DUMPLWO := $(TOPDIR)/tools/dumplwo.py $(QUIET)
 CONV2D := $(TOPDIR)/tools/conv2d.py
 TMXCONV := $(TOPDIR)/tools/tmxconv.py
+PCHG2C := $(TOPDIR)/tools/pchg2c/pchg2c
 PNG2C := $(TOPDIR)/tools/png2c.py
 PSF2C := $(TOPDIR)/tools/psf2c.py
 STRIP := m68k-amigaos-strip -s
