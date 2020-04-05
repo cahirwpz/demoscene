@@ -10,7 +10,6 @@ SOURCES := \
 	floppy.c \
 	fx.c \
 	hardware.c \
-	iff.c \
 	inflate.s \
 	interrupts.c \
 	io.c \
