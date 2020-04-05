@@ -3,7 +3,6 @@
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
-#include "ffp.h"
 #include "tasks.h"
 
 #define WIDTH  256
@@ -19,14 +18,7 @@ static BitmapT *screen0, *screen1;
 static CopInsT *bplptr[DEPTH];
 
 #include "data/flares32.c"
-
-static void Load(void) {
-  mesh = LoadMesh3D("pilka.3d", SPFlt(50));
-}
-
-static void UnLoad(void) {
-  DeleteMesh3D(mesh);
-}
+#include "data/pilka.c"
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
@@ -257,4 +249,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

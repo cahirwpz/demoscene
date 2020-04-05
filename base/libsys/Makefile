@@ -7,7 +7,6 @@ SOURCES := \
 	console.c \
 	debug-intr.c \
 	event.c \
-	ffp.c \
 	floppy.c \
 	fx.c \
 	hardware.c \
@@ -19,7 +18,6 @@ SOURCES := \
 	keyboard.c \
 	lib-graphics.c \
 	lib-list.c \
-	lib-mathffp.c \
 	lzo.c \
 	memory.c \
 	mouse.c \
