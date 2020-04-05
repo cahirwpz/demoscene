@@ -506,9 +506,9 @@ def convertLWO2(lwo, name, scale):
         print('static IndexListT *_%s_face_uv[%d] = {' % (name, len(pols) + 1))
         for i, vertices in enumerate(pols):
             surface = pols_surf[i]
-            vertices = [pols_txuv[surface][v] for v in vertices]
-            print('  (IndexListT *)(short[%d]){%d, %s},' % (len(vertices) + 1,
-                                                            len(vertices), ', '.join(map(str, vertices))))
+            vertices = [str(pols_txuv[surface][v]) for v in vertices]
+            print('  (IndexListT *)(short[%d]){%d, %s},' % (
+                len(vertices) + 1, len(vertices), ', '.join(vertices)))
         print('  NULL')
         print('};\n')
 
