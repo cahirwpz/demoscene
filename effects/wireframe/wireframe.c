@@ -29,7 +29,7 @@ static void Load(void) {
 }
 
 static void UnLoad(void) {
-  // DeleteMesh3D(mesh);
+  ResetMesh3D(mesh);
 }
 
 static void MakeCopperList(CopListT *cp) {

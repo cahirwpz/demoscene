@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-CLEAN-FILES := data/flares32.c data/pilka.c
+CLEAN-FILES := data/flares32.c data/pilka.c data/potato.c
 
 LIBS := lib3d
 

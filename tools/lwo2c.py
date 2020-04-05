@@ -399,11 +399,14 @@ def convertLWO2(lwo, name, scale):
     tags = list(lwo['TAGS'].data)
     clips = lwo.get('CLIP', always_list=True)
 
-    for clip in clips:
-        index, imag = clip.data
-        print('static MeshImageT _%s_img%d = {' % (name, index))
-        print('  .pixmap = NULL,')
-        print('  .filename = "%s",' % imag['STIL'])
+    if clips:
+        print('static MeshImageT _%s_img[%d] = {' % (name, len(clips)))
+        for clip in clips:
+            index, imag = clip.data
+            print('  [%d] = {' % index)
+            print('    .pixmap = NULL,')
+            print('    .filename = "%s",' % imag['STIL'])
+            print('  },')
         print('};\n')
 
     txuv = {}
@@ -465,10 +468,12 @@ def convertLWO2(lwo, name, scale):
             vmap_txuv.append((surface, vertex, tuple(uv)))
 
     if vmap_txuv:
-        print('@pnts.uv %d' % len(vmap_txuv))
+        print('static UVCoord _%s_pnts_uv[%d] = {' % (name, len(vmap_txuv)))
         for _, _, uv in vmap_txuv:
-            print('%f %f' % uv)
-        print('@end\n')
+            u = int(uv[0] * 16)
+            v = int(uv[1] * 16)
+            print('  {.u = %5d, .v = %5d},' % (u, v))
+        print('};\n')
 
     pols_surf = {}
     for ptag in lwo.get('PTAG', always_list=True):
@@ -498,33 +503,42 @@ def convertLWO2(lwo, name, scale):
             surf_dict[vertex] = i
             pols_txuv[surface] = surf_dict
 
-        print('@pols.uv %d %d' %
-              (len(pols), sum(map(len, lwo['POLS'].data[1]))))
+        print('static IndexListT *_%s_face_uv[%d] = {' % (name, len(pols) + 1))
         for i, vertices in enumerate(pols):
             surface = pols_surf[i]
             vertices = [pols_txuv[surface][v] for v in vertices]
-            print(' '.join(map(str, vertices)))
-        print('@end\n')
+            print('  (IndexListT *)(short[%d]){%d, %s},' % (len(vertices) + 1,
+                                                            len(vertices), ', '.join(map(str, vertices))))
+        print('  NULL')
+        print('};\n')
 
-    # TODO: uv, face, faceUV, image
+    # TODO: image
     print('Mesh3D %s = {' % name)
     print('  .vertices = %d,' % len(pnts.data))
     print('  .faces = %d,' % len(pols))
     print('  .edges = 0,')
     print('  .surfaces = %d,' % len(tags))
     print('  .images = %d,' % len(clips))
-    print('  .origVertex = NULL,')
     print('  .vertex = _%s_pnts,' % name)
-    print('  .uv = NULL,')
+    if vmap_txuv:
+        print('  .uv = _%s_pnts_uv,' % name)
+    else:
+        print('  .uv = NULL,')
     print('  .faceNormal = NULL,')
     print('  .faceSurface = _%s_face_surf,' % name)
     print('  .vertexNormal = NULL,')
     print('  .edge = NULL,')
     print('  .face = _%s_face,' % name)
     print('  .faceEdge = NULL,')
-    print('  .faceUV = NULL,')
+    if vmap_txuv:
+        print('  .faceUV = _%s_face_uv,' % name)
+    else:
+        print('  .faceUV = NULL,')
     print('  .vertexFace = NULL,')
-    print('  .image = NULL,')
+    if len(clips):
+        print('  .image = _%s_img,' % name)
+    else:
+        print('  .image = NULL,')
     print('  .surface = _%s_surf,' % name)
     print('};')
 

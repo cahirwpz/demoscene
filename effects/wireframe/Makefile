@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-CLEAN-FILES := data/wireframe-pal.c data/pilka.c
+CLEAN-FILES := data/wireframe-pal.c data/pilka.c data/codi.c
 
 LIBS := lib3d
 

@@ -66,7 +66,6 @@ typedef struct {
   short surfaces;
   short images;
 
-  Point3D *origVertex;
   Point3D *vertex;
   UVCoord *uv;
   Point3D *faceNormal;
@@ -86,6 +85,7 @@ __regargs void CalculateEdges(Mesh3D *mesh);
 __regargs void CalculateVertexFaceMap(Mesh3D *mesh);
 __regargs void CalculateVertexNormals(Mesh3D *mesh);
 __regargs void CalculateFaceNormals(Mesh3D *mesh);
+__regargs void ResetMesh3D(Mesh3D *mesh);
 
 /* 3D object representation */
 
