@@ -498,7 +498,8 @@ def convertLWO2(lwo, name, scale):
             surf_dict[vertex] = i
             pols_txuv[surface] = surf_dict
 
-        print('@pols.uv %d %d' % (len(pols), sum(map(len, lwo['POLS'].data[1]))))
+        print('@pols.uv %d %d' %
+              (len(pols), sum(map(len, lwo['POLS'].data[1]))))
         for i, vertices in enumerate(pols):
             surface = pols_surf[i]
             vertices = [pols_txuv[surface][v] for v in vertices]
