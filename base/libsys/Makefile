@@ -15,8 +15,6 @@ SOURCES := \
 	io.c \
 	io-extra.c \
 	keyboard.c \
-	lib-graphics.c \
-	lib-list.c \
 	lzo.c \
 	memory.c \
 	mouse.c \

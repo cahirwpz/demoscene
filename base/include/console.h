@@ -4,19 +4,21 @@
 #include "types.h"
 #include "gfx.h"
 
-typedef struct TextFont TextFontT;
+typedef struct ConsoleFont {
+  u_short stride;
+  u_char *data;
+} ConsoleFontT;
 
 typedef struct Console {
   BitmapT *bitmap;
-  TextFontT *font;
+  ConsoleFontT *font;
   u_short width, height;
   struct {
     u_short x, y;
   } cursor;
 } ConsoleT;
 
-void ConsoleInit(ConsoleT *console, BitmapT *bitmap);
-void ConsoleKill(ConsoleT *console);
+void ConsoleInit(ConsoleT *console, ConsoleFontT *font, BitmapT *bitmap);
 
 __regargs void ConsoleSetCursor(ConsoleT *console, u_short x, u_short y);
 __regargs void ConsolePutChar(ConsoleT *console, char c);
