@@ -19,7 +19,7 @@ static BitmapT *screen[2];
 static u_short active = 0;
 static CopInsT *bplptr[5];
 
-static PaletteT *palette[3];
+static const PaletteT *palette[3];
 static CopListT *cp;
 static CopInsT *pal;
 
@@ -48,7 +48,7 @@ static Area2D grt_area[2][PNUM];
 
 typedef struct {
   short color;
-  BitmapT *bitmap;
+  const BitmapT *bitmap;
   Point2D pos;
 } GreetingT;
 
@@ -83,7 +83,7 @@ static void PositionGreetings(void) {
   
   for (i = 0; i < PNUM; i++) {
     Point2D *pos = &grt->pos;
-    BitmapT *src = grt->bitmap;
+    const BitmapT *src = grt->bitmap;
 
     pos->x = (i & 1) ? (WIDTH / 2 - 64) : (WIDTH / 2 + 64 - src->width);
     pos->y = y;
@@ -184,7 +184,7 @@ static void DrawCliparts(void) {
   short n = PNUM;
 
   while (--n >= 0) {
-    BitmapT *src = grt->bitmap;
+    const BitmapT *src = grt->bitmap;
     short dy = grt->pos.y;
     short sy = 0;
     short sh = src->height;

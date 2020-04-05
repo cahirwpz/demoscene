@@ -35,8 +35,8 @@ __regargs PixmapT *NewPixmap(short width, short height,
 __regargs void DeletePixmap(PixmapT *pixmap);
 
 /* [a0 a1 a2 a3 b0 b1 b2 b3] => [a0 b0 a2 b1 a1 b2 a3 b3] */
-__regargs void PixmapScramble_4_1(PixmapT *pixmap);
+__regargs void PixmapScramble_4_1(const PixmapT *pixmap);
 /* [a0 a1 a2 a3 b0 b1 b2 b3] => [a0 a1 b0 b1 a2 a3 b2 b3] */
-__regargs void PixmapScramble_4_2(PixmapT *pixmap);
+__regargs void PixmapScramble_4_2(const PixmapT *pixmap);
 
 #endif

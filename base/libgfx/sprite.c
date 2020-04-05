@@ -23,7 +23,9 @@ __regargs void DeleteSprite(SpriteT *sprite) {
   }
 }
 
-static inline void UpdateSpriteInternal(SpriteT *sprite, u_short hstart, u_short vstart) {
+static inline void UpdateSpriteInternal(const SpriteT *sprite,
+                                        u_short hstart, u_short vstart)
+{
   u_short vstop = vstart + sprite->height + 1;
   u_char lowctl = hstart & 1;
 
@@ -56,7 +58,9 @@ static inline void UpdateSpriteInternal(SpriteT *sprite, u_short hstart, u_short
   }
 }
 
-__regargs void UpdateSprite(SpriteT *sprite, u_short hstart, u_short vstart) {
+__regargs void UpdateSprite(const SpriteT *sprite,
+                            u_short hstart, u_short vstart)
+{
   SpriteT *attached = sprite->attached;
 
   UpdateSpriteInternal(sprite, hstart, vstart);

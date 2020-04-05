@@ -38,7 +38,7 @@ struct {
   u_short bltcon1;
 } line[1];
 
-void BlitterLineSetupFull(BitmapT *bitmap, u_short plane,
+void BlitterLineSetupFull(const BitmapT *bitmap, u_short plane,
                           u_short mode, u_short pattern)
 {
   line->data = bitmap->planes[plane];

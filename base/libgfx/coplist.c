@@ -135,7 +135,7 @@ __regargs CopInsT *CopSkipMask(CopListT *list, u_short vp, u_short hp,
   return ptr;
 }
 
-__regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, u_short start) {
+__regargs CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, u_short start) {
   CopInsT *ptr = list->curr;
   u_short *ins = (u_short *)ptr;
   u_short *c = palette->colors;
@@ -233,7 +233,7 @@ __regargs void CopSetupBitplaneFetch(CopListT *list, u_short mode,
 }
  
 __regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
-                                 BitmapT *bitmap, u_short depth) 
+                                 const BitmapT *bitmap, u_short depth) 
 {
   {
     void **planes = bitmap->planes;
@@ -260,8 +260,8 @@ __regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
 }
 
 void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
-                          BitmapT *bitmap, short x, short y __unused,
-                          Area2D *area)
+                          const BitmapT *bitmap, short x, short y __unused,
+                          const Area2D *area)
 {
   void **planes = bitmap->planes;
   int start;
@@ -292,7 +292,9 @@ void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
   CopSetupBitplaneFetch(list, mode, x, w);
 }
 
-__regargs void CopUpdateBitplanes(CopInsT **bplptr, BitmapT *bitmap, short n) {
+__regargs void CopUpdateBitplanes(CopInsT **bplptr, const BitmapT *bitmap,
+                                  short n)
+{
   void **planes = bitmap->planes;
 
   while (--n >= 0)

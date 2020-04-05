@@ -26,6 +26,9 @@ typedef struct {
   short w, h;
 } Area2D;
 
+__regargs bool ClipArea(const Box2D *space, Point2D *pos, Area2D *area);
+__regargs bool InsideArea(short x, short y, const Area2D *area);
+
 #include "bitmap.h"
 #include "palette.h"
 

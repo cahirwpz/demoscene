@@ -1,10 +1,12 @@
 #include "blitter.h"
 
 /* Bitplane incrementer with saturation. */
-__regargs void BitmapIncSaturated(BitmapT *dst_bm, BitmapT *carry_bm) {
+__regargs void BitmapIncSaturated(const BitmapT *dst_bm,
+                                  const BitmapT *carry_bm)
+{
   void *carry0 = carry_bm->planes[0];
   void *carry1 = carry_bm->planes[1];
-  void **dst = dst_bm->planes;
+  void *const *dst = dst_bm->planes;
   void *ptr;
   u_short bltsize = (dst_bm->height << 6) | (dst_bm->bytesPerRow >> 1);
   short n = dst_bm->depth;

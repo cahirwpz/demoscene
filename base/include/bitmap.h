@@ -36,8 +36,6 @@ __regargs BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
                                    u_char flags);
 __regargs void DeleteBitmap(BitmapT *bitmap);
 __regargs void BitmapMakeDisplayable(BitmapT *bitmap);
-__regargs bool ClipArea(const Box2D *space, Point2D *pos, Area2D *area);
-__regargs bool InsideArea(short x, short y, Area2D *area);
 
 static inline BitmapT *NewBitmap(u_short width, u_short height, u_short depth) {
   return NewBitmapCustom(width, height, depth, BM_CLEAR|BM_DISPLAYABLE);

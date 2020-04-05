@@ -34,7 +34,7 @@ __regargs bool ClipArea(const Box2D *space, Point2D *pos, Area2D *area) {
   return true;
 }
 
-__regargs bool InsideArea(short x, short y, Area2D *area) {
+__regargs bool InsideArea(short x, short y, const Area2D *area) {
   short x1 = area->x;
   short y1 = area->y;
   short x2 = area->x + area->w - 1;

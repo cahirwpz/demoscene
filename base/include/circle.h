@@ -3,7 +3,9 @@
 
 #include "gfx.h"
 
-__regargs void Circle(BitmapT *bitmap, int plane, short x0, short y0, short r);
-__regargs void CircleEdge(BitmapT *bitmap, int plane, short x0, short y0, short r);
+__regargs void Circle(const BitmapT *bitmap, int plane,
+                      short x0, short y0, short r);
+__regargs void CircleEdge(const BitmapT *bitmap, int plane,
+                          short x0, short y0, short r);
 
 #endif

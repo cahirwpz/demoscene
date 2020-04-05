@@ -1,15 +1,17 @@
 #include "blitter.h"
 
 /* Bitplane adder with saturation. */
-void BitmapAddSaturated(BitmapT *dst_bm, short dx, short dy, BitmapT *src_bm, BitmapT *carry_bm) {
+void BitmapAddSaturated(const BitmapT *dst_bm, short dx, short dy,
+                        const BitmapT *src_bm, const BitmapT *carry_bm)
+{
   u_int dst_begin = ((dx & ~15) >> 3) + dy * (short)dst_bm->bytesPerRow;
   u_short dst_modulo = (dst_bm->bytesPerRow - src_bm->bytesPerRow) - 2;
   u_short src_shift = rorw(dx & 15, 4);
   u_short bltsize = ((src_bm->height << 6) | (src_bm->bytesPerRow >> 1)) + 1;
   void *carry0 = carry_bm->planes[0];
   void *carry1 = carry_bm->planes[1];
-  void **src = src_bm->planes;
-  void **dst = dst_bm->planes;
+  void *const *src = src_bm->planes;
+  void *const *dst = dst_bm->planes;
 
   {
     void *aptr = (*src++);

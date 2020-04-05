@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	paletteTemplate = `PaletteT {{ name }} = {
+	paletteTemplate = `const PaletteT {{ name }} = {
   .count = {{ len . }},
   .colors = { {{ range . }}
     {{ color . }},{{ end }}

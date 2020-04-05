@@ -1,17 +1,17 @@
 #include "blitter.h"
 
 typedef struct {
-  BitmapT *src;
-  BitmapT *dst;
-  BitmapT *msk;
+  const BitmapT *src;
+  const BitmapT *msk;
+  const BitmapT *dst;
   u_int start;
   u_short size;
 } StateT;
 
 static StateT state[1];
 
-__regargs void BlitterCopyMaskedSetup(BitmapT *dst, u_short x, u_short y,
-                                      BitmapT *src, BitmapT *msk)
+__regargs void BlitterCopyMaskedSetup(const BitmapT *dst, u_short x, u_short y,
+                                      const BitmapT *src, const BitmapT *msk)
 {
   u_short dstmod = dst->bytesPerRow - src->bytesPerRow;
   u_short bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
@@ -63,8 +63,8 @@ __regargs void BlitterCopyMaskedStart(short dstbpl, short srcbpl) {
   custom->bltsize = bltsize;
 }
 
-void BitmapCopyMasked(BitmapT *dst, u_short x, u_short y,
-                      BitmapT *src, BitmapT *msk) 
+void BitmapCopyMasked(const BitmapT *dst, u_short x, u_short y,
+                      const BitmapT *src, const BitmapT *msk) 
 {
   short i, n = min(dst->depth, src->depth);
 

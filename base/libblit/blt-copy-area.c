@@ -1,8 +1,8 @@
 #include "blitter.h"
 
 typedef struct {
-  BitmapT *src;
-  BitmapT *dst;
+  const BitmapT *src;
+  const BitmapT *dst;
   u_int src_start;
   u_int dst_start;
   u_short size;
@@ -23,8 +23,8 @@ static StateT state[1];
  *  - there's always enough space in `dst` to copy area from `src`
  *  - at least one of `sx` and `dx` is aligned to word boundary 
  */
-void BlitterCopyAreaSetup(BitmapT *dst, u_short dx, u_short dy,
-                          BitmapT *src, Area2D *area)
+void BlitterCopyAreaSetup(const BitmapT *dst, u_short dx, u_short dy,
+                          const BitmapT *src, const Area2D *area)
 {
   u_short dxo = dx & 15;
   u_short sxo = sx & 15;
@@ -112,8 +112,8 @@ __regargs void BlitterCopyAreaStart(short dstbpl, short srcbpl) {
   }
 }
 
-void BitmapCopyArea(BitmapT *dst, u_short x, u_short y,
-                    BitmapT *src, Area2D *area)
+void BitmapCopyArea(const BitmapT *dst, u_short x, u_short y,
+                    const BitmapT *src, const Area2D *area)
 {
   short i, n = min(dst->depth, src->depth);
 

@@ -126,7 +126,7 @@ static __regargs void TransformVertices(Object3D *object) {
 #endif
 
 void BlitterOrArea(BitmapT *dst asm("a0"), u_short x asm("d0"), u_short y asm("d1"),
-                   BitmapT *src asm("a1"), u_short sx asm("d2"))
+                   const BitmapT *src asm("a1"), u_short sx asm("d2"))
 {
   u_short dxo = x & 15;
   u_short width = dxo + BOBW;

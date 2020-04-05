@@ -35,7 +35,7 @@ __regargs void DeletePixmap(PixmapT *pixmap) {
   }
 }
 
-__regargs void PixmapScramble_4_1(PixmapT *pixmap) {
+__regargs void PixmapScramble_4_1(const PixmapT *pixmap) {
   if (pixmap->type == PM_CMAP4) {
     u_int *data = pixmap->pixels;
     short n = pixmap->width * pixmap->height / 8;
@@ -50,7 +50,7 @@ __regargs void PixmapScramble_4_1(PixmapT *pixmap) {
   }
 }
 
-__regargs void PixmapScramble_4_2(PixmapT *pixmap) {
+__regargs void PixmapScramble_4_2(const PixmapT *pixmap) {
   if (pixmap->type == PM_CMAP4) {
     u_int *data = pixmap->pixels;
     short n = pixmap->width * pixmap->height / 8;

@@ -50,7 +50,7 @@ static u_short redtab[16] = {
   0x8000, 0x8008, 0x8080, 0x8088, 0x8800, 0x8808, 0x8880, 0x8888,
 };
 
-static void PixmapScramble(PixmapT *image, u_short *texture) {
+static void PixmapScramble(const PixmapT *image, u_short *texture) {
   u_char *in = image->pixels;
   u_short *out = texture;
   short n = 128 * 128;

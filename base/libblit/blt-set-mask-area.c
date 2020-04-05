@@ -1,7 +1,7 @@
 #include "blitter.h"
 
-void BlitterSetMaskArea(BitmapT *dst, short dstbpl, u_short x, u_short y,
-                        BitmapT *msk, Area2D *area, u_short pattern)
+void BlitterSetMaskArea(const BitmapT *dst, short dstbpl, u_short x, u_short y,
+                        const BitmapT *msk, const Area2D *area, u_short pattern)
 {
   void *dstbpt = dst->planes[dstbpl];
   void *mskbpt = msk->planes[0];

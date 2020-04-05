@@ -1,16 +1,16 @@
 #include "blitter.h"
 
 typedef struct {
-  BitmapT *src;
-  BitmapT *dst;
+  const BitmapT *src;
+  const BitmapT *dst;
   u_int start;
   u_short size;
 } StateT;
 
 static StateT state[1];
 
-__regargs void BlitterFastCopySetup(BitmapT *dst, u_short x, u_short y,
-                                    BitmapT *src) 
+__regargs void BlitterFastCopySetup(const BitmapT *dst, u_short x, u_short y,
+                                    const BitmapT *src) 
 {
   u_short dstmod = dst->bytesPerRow - src->bytesPerRow;
   u_short bltshift = rorw(x & 15, 4);
@@ -52,7 +52,9 @@ __regargs void BlitterFastCopyStart(short dstbpl, short srcbpl) {
   custom->bltsize = bltsize;
 }
 
-__regargs void BitmapCopyFast(BitmapT *dst, u_short x, u_short y, BitmapT *src) {
+__regargs void BitmapCopyFast(const BitmapT *dst, u_short x, u_short y,
+                              const BitmapT *src) 
+{
   short i, n = min(dst->depth, src->depth);
 
   BlitterFastCopySetup(dst, x, y, src);

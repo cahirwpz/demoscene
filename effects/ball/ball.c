@@ -32,7 +32,8 @@ void (*UVMapRender)(u_char *chunky asm("a0"),
                     u_char *textureHi asm("a1"),
                     u_char *textureLo asm("a2"));
 
-static __regargs void PixmapToTexture(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo)
+static __regargs void PixmapToTexture(const PixmapT *image,
+                                      PixmapT *imageHi, PixmapT *imageLo)
 {
   u_char *data = image->pixels;
   int size = image->width * image->height;

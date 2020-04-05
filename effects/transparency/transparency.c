@@ -22,7 +22,7 @@ static CopInsT *pal;
 #define pal2 logo_pal.colors
 
 static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
-                             BitmapT *src, short s)
+                             const BitmapT *src, short s)
 {
   void *srcbpt = src->planes[s];
   void *dstbpt = dst->planes[d] + ((x & ~15) >> 3) + y * dst->bytesPerRow;

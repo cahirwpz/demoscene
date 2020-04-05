@@ -12,8 +12,8 @@
 
 static BitmapT *foreground;
 static CopListT *cp0, *cp1;
-static BitmapT *lower;
-static PaletteT *lower_pal;
+static const BitmapT *lower;
+static const PaletteT *lower_pal;
 static Point2D lower_pos;
 static Area2D lower_area;
 
@@ -38,11 +38,11 @@ static Area2D lower_area;
 #include "data/txt_jazz.c"
 #include "data/txt_slay.c"
 
-static BitmapT *dance[8] = {
+static const BitmapT *dance[8] = {
   &cahir, &slayer, &jazzcat, &dkl, &dance1, &dance2, &dance3, &dance4
 };
 
-static BitmapT *member[5] = {
+static const BitmapT *member[5] = {
   &txt_cahir, &txt_slay, &txt_jazz, &txt_dkl, &txt_codi
 };
 
