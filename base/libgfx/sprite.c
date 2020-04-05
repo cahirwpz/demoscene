@@ -1,10 +1,5 @@
-#include <graphics/gfxbase.h>
-#include <proto/graphics.h>
-#include <proto/exec.h>
-
 #include "sprite.h"
 #include "memory.h"
-#include "common.h"
 
 __regargs SpriteT *NewSprite(u_short height, bool attached) {
   SpriteT *sprite = MemAlloc(sizeof(SpriteT), MEMF_PUBLIC|MEMF_CLEAR);

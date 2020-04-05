@@ -21,7 +21,6 @@ static short active = 0;
 static CopInsT *copLine[2][HEIGHT];
 static short stripeWidth[HEIGHT];
 static short stripeLight[HEIGHT];
-static u_short stripeColor[16];
 
 typedef struct {
   short step, orig, color;
@@ -33,10 +32,6 @@ static u_char table[4096];
 
 #include "data/stripes.c"
 #include "data/floor.c"
-
-static void Load(void) {
-  ConvertPaletteToRGB4(&stripes_pal, stripeColor, 16);
-}
 
 static void GenerateStripeLight(void) {
   short *light = stripeLight;
@@ -79,7 +74,7 @@ static void MakeCopperList(CopListT *cp, short n) {
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH + 16);
   CopSetupBitplanes(cp, NULL, &floor, DEPTH);
-  CopSetRGB(cp, 0, 0);
+  CopSetColor(cp, 0, 0);
 
   for (i = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(i), 0);
@@ -89,7 +84,7 @@ static void MakeCopperList(CopListT *cp, short n) {
       short j;
 
       for (j = 1; j < 16; j++)
-        CopSetRGB(cp, j, 0);
+        CopSetColor(cp, j, 0);
     }
   }
 
@@ -102,7 +97,7 @@ static void InitStripes(void) {
 
   while (--n >= 0) {
     s->step = -16 * (random() & 7);
-    s->orig = stripeColor[random() & 3];
+    s->orig = stripes_pal.colors[random() & 3];
     s->color = 0;
     s++;
   }
@@ -239,4 +234,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

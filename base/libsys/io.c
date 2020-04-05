@@ -1,9 +1,6 @@
-#include "config.h"
 #include "memory.h"
 #include "io.h"
 #include "floppy.h"
-
-#if USE_IO_FLOPPY
 
 #define TD_TRACK (TD_SECTOR * NUMSECS)
 #define TD_DISK (TD_TRACK * 160)
@@ -252,5 +249,3 @@ void KillIoFloppy(void) {
 
 ADD2INIT(InitIoFloppy, -10);
 ADD2EXIT(KillIoFloppy, -10);
-
-#endif

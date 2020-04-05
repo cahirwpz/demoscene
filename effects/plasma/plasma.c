@@ -77,10 +77,10 @@ static void MakeCopperList(CopListT *cp, CopInsT **row) {
     CopInsT *location = CopMove32(cp, cop2lc, 0);
     CopInsT *label = CopWaitH(cp, VP(y * 4), HP(-4));
     CopInsSet32(location, label);
-    row[y] = CopSetRGB(cp, 0, 0);
+    row[y] = CopSetColor(cp, 0, 0);
     for (x = 0; x < HTILES - 1; x++)
-      CopSetRGB(cp, 0, 0); /* Last CopIns finishes at HP=0xD2 */
-    CopSetRGB(cp, 0, 0); /* set background to black, finishes at HP=0xD6 */
+      CopSetColor(cp, 0, 0); /* Last CopIns finishes at HP=0xD2 */
+    CopSetColor(cp, 0, 0); /* set background to black, finishes at HP=0xD6 */
     CopSkip(cp, VP(y * 4 + 3), 0xDE); /* finishes at HP=0xDE */
     CopMove16(cp, copjmp2, 0);
   }

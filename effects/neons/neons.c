@@ -106,25 +106,18 @@ static void Load(void) {
 }
 
 static void UnLoad(void) {
-  ITER(i, 0, PNUM - 1, DeleteBitmap(greeting[i].bitmap));
-  DeletePalette(palette[0]);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }
 
 static __interrupt int CustomRotatePalette(void) {
-  ColorT *src = palette[0]->colors;
+  u_short *src = palette[0]->colors;
   CopInsT *ins = pal + 1;
   int i = frameCount;
   short n = 15;
 
-  while (--n >= 0) {
-    u_char *c = (u_char *)&src[i++ & 15];
-    u_char r = *c++ & 0xf0;
-    u_char g = *c++ & 0xf0;
-    u_char b = *c++ & 0xf0;
-    CopInsSet16(ins++, (r << 4) | (u_char)(g | (b >> 4)));
-  }
+  while (--n >= 0)
+    CopInsSet16(ins++, src[i++ & 15]);
 
   return 0;
 }

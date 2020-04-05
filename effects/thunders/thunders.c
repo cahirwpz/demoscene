@@ -100,7 +100,7 @@ static void MakeCopperList(CopListT *cp, BitmapT *screen) {
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopSetupSprites(cp, NULL);
   for (j = 0; j < 8; j++)
-    CopSetRGB(cp, j, BGCOL);
+    CopSetColor(cp, j, BGCOL);
   CopEnd(cp);
 }
 
@@ -310,13 +310,13 @@ static __regargs void ColorizeUpperHalf(CopListT *cp, short yi, short kyo) {
     u_short *colors = pixels + (column * SIZE + 1) * sizeof(u_short);
 
     CopWait(cp, Y(HEIGHT - y0), 0);
-    CopSetRGB(cp, 1, *colors++);
-    CopSetRGB(cp, 2, *colors++);
-    CopSetRGB(cp, 3, *colors++);
-    CopSetRGB(cp, 4, *colors++);
-    CopSetRGB(cp, 5, *colors++);
-    CopSetRGB(cp, 6, *colors++);
-    CopSetRGB(cp, 7, *colors++);
+    CopSetColor(cp, 1, *colors++);
+    CopSetColor(cp, 2, *colors++);
+    CopSetColor(cp, 3, *colors++);
+    CopSetColor(cp, 4, *colors++);
+    CopSetColor(cp, 5, *colors++);
+    CopSetColor(cp, 6, *colors++);
+    CopSetColor(cp, 7, *colors++);
 
     y0 = (yi > 0) ? horiz[yi] : FAR_Y;
 
@@ -329,13 +329,13 @@ static __regargs void ColorizeUpperHalf(CopListT *cp, short yi, short kyo) {
       y1 = horiz[yj];
 
       CopWait(cp, Y(HEIGHT - y1), 0);
-      CopSetRGB(cp, 1, BGCOL);
-      CopSetRGB(cp, 2, BGCOL);
-      CopSetRGB(cp, 3, BGCOL);
-      CopSetRGB(cp, 4, BGCOL);
-      CopSetRGB(cp, 5, BGCOL);
-      CopSetRGB(cp, 6, BGCOL);
-      CopSetRGB(cp, 7, BGCOL);
+      CopSetColor(cp, 1, BGCOL);
+      CopSetColor(cp, 2, BGCOL);
+      CopSetColor(cp, 3, BGCOL);
+      CopSetColor(cp, 4, BGCOL);
+      CopSetColor(cp, 5, BGCOL);
+      CopSetColor(cp, 6, BGCOL);
+      CopSetColor(cp, 7, BGCOL);
     }
   }
 }
@@ -350,13 +350,13 @@ static __regargs void ColorizeLowerHalf(CopListT *cp, short yi, short kyo) {
     u_short *colors = pixels + (column * SIZE + 1) * sizeof(u_short);
 
     CopWaitSafe(cp, Y(y0), 0);
-    CopSetRGB(cp, 1, *colors++);
-    CopSetRGB(cp, 2, *colors++);
-    CopSetRGB(cp, 3, *colors++);
-    CopSetRGB(cp, 4, *colors++);
-    CopSetRGB(cp, 5, *colors++);
-    CopSetRGB(cp, 6, *colors++);
-    CopSetRGB(cp, 7, *colors++);
+    CopSetColor(cp, 1, *colors++);
+    CopSetColor(cp, 2, *colors++);
+    CopSetColor(cp, 3, *colors++);
+    CopSetColor(cp, 4, *colors++);
+    CopSetColor(cp, 5, *colors++);
+    CopSetColor(cp, 6, *colors++);
+    CopSetColor(cp, 7, *colors++);
 
     {
       short yj = yi - GAP;
@@ -367,13 +367,13 @@ static __regargs void ColorizeLowerHalf(CopListT *cp, short yi, short kyo) {
       y1 = horiz[yj];
 
       CopWaitSafe(cp, Y(y1), 0);
-      CopSetRGB(cp, 1, BGCOL);
-      CopSetRGB(cp, 2, BGCOL);
-      CopSetRGB(cp, 3, BGCOL);
-      CopSetRGB(cp, 4, BGCOL);
-      CopSetRGB(cp, 5, BGCOL);
-      CopSetRGB(cp, 6, BGCOL);
-      CopSetRGB(cp, 7, BGCOL);
+      CopSetColor(cp, 1, BGCOL);
+      CopSetColor(cp, 2, BGCOL);
+      CopSetColor(cp, 3, BGCOL);
+      CopSetColor(cp, 4, BGCOL);
+      CopSetColor(cp, 5, BGCOL);
+      CopSetColor(cp, 6, BGCOL);
+      CopSetColor(cp, 7, BGCOL);
     }
 
     y0 = (yi < N) ? horiz[yi] : HEIGHT;
@@ -412,7 +412,7 @@ static void MakeFloorCopperList(short yo, short kyo) {
   }
 
   /* Clear out the colors. */
-  CopSetRGB(cp, 0, BGCOL);
+  CopSetColor(cp, 0, BGCOL);
   CopLoadPal(cp, &thunder_pal, 16);
 
   FillStripes(1);

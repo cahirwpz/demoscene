@@ -21,8 +21,8 @@ static void Init(void) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xfff);
+  CopSetColor(cp, 0, 0x000);
+  CopSetColor(cp, 1, 0xfff);
   CopEnd(cp);
 
   CopListActivate(cp);

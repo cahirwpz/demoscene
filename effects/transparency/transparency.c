@@ -15,25 +15,11 @@ static BitmapT *screen;
 static CopListT *cp;
 static CopInsT *pal;
 
-static u_short pal1[8];
-static u_short pal2[4];
-
 #include "data/ghostown-logo.c"
 #include "data/transparency-bg.c"
 
-static void Load(void) {
-  short i;
-
-  for (i = 0; i < 8; i++) {
-    ColorT *c = &background_pal.colors[i];
-    pal1[i] = ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4);
-  }
-
-  for (i = 0; i < 4; i++) {
-    ColorT *c = &logo_pal.colors[i];
-    pal2[i] = ((c->r & 0xf0) << 4) | (c->g & 0xf0) | ((c->b & 0xf0) >> 4);
-  }
-}
+#define pal1 background_pal.colors
+#define pal2 logo_pal.colors
 
 static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
                              BitmapT *src, short s)
@@ -103,4 +89,4 @@ static void Render(void) {
   TaskWait(VBlankEvent);
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

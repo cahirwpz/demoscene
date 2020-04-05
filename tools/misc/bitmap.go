@@ -19,10 +19,6 @@ BitmapT {{ name }} = {
   .bytesPerRow = {{ .BytesPerRow }},
   .bplSize = {{ .BplSize }},
   .flags = 0,
-  .compression = 0,
-  .palette = NULL,
-  .pchgTotal = 0,
-  .pchg = NULL,
   .planes = { {{ range bplptr }}
     (void *)_{{ name }}_bpl + {{.}},{{ end }}
   }

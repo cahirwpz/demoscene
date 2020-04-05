@@ -17,11 +17,6 @@ bool FileRead(FileT *fh asm("a0"), void *buf asm("d2"), u_int size asm("d3"));
 bool FileSeek(FileT *fh asm("a0"), int pos asm("d2"), int mode asm("d3"));
 int GetCursorPos(FileT *fh asm("a0"));
 
-#if USE_IO_DOS
-void Print(const char *format, ...)
-  __attribute__ ((format (printf, 1, 2)));
-#endif
-
 __regargs void *LoadFile(const char *path, u_int memoryFlags);
 
 #endif

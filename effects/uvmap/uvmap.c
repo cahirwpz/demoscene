@@ -213,7 +213,7 @@ static void MakeCopperList(CopListT *cp) {
 #endif
     if (i % 12 == 11)
       for (j = 0; j < 16; j++)
-        CopSetRGB(cp, j, *pixels++);
+        CopSetColor(cp, j, *pixels++);
   }
   CopEnd(cp);
 }

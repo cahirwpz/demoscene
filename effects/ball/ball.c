@@ -100,7 +100,7 @@ static void MakeCopperList(CopListT *cp) {
 
 static void Init(void) {
   bitmap = NewBitmap(WIDTH, HEIGHT, S_DEPTH);
-  chunky = NewPixmap(WIDTH, HEIGHT, PM_GRAY4, MEMF_CHIP);
+  chunky = NewPixmap(WIDTH, HEIGHT, PM_CMAP4, MEMF_CHIP);
 
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
   MakeUVMapRenderCode();

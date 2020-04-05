@@ -19,12 +19,6 @@ static CopInsT *line[HEIGHT];
 
 #include "data/ghostown-logo.c"
 
-static void Load(void) {
-}
-
-static void UnLoad(void) {
-}
-
 static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
                              BitmapT *src, short s)
 {
@@ -65,14 +59,14 @@ static void Init(void) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(XSTART), Y(YSTART), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0x00F);
-  CopSetRGB(cp, 2, 0x0F0);
-  CopSetRGB(cp, 3, 0xF00);
-  CopSetRGB(cp, 4, 0x0FF);
-  CopSetRGB(cp, 5, 0xF0F);
-  CopSetRGB(cp, 6, 0xFF0);
-  CopSetRGB(cp, 7, 0xFFF);
+  CopSetColor(cp, 0, 0x000);
+  CopSetColor(cp, 1, 0x00F);
+  CopSetColor(cp, 2, 0x0F0);
+  CopSetColor(cp, 3, 0xF00);
+  CopSetColor(cp, 4, 0x0FF);
+  CopSetColor(cp, 5, 0xF0F);
+  CopSetColor(cp, 6, 0xFF0);
+  CopSetColor(cp, 7, 0xFFF);
   for (i = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(YSTART + i), 0);
     /* Alternating shift by one for bitplane data. */
@@ -137,4 +131,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
