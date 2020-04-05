@@ -2,13 +2,18 @@
 #include "memory.h"
 
 __regargs SpriteT *NewSprite(u_short height, bool attached) {
-  SpriteT *sprite = MemAlloc(sizeof(SpriteT), MEMF_PUBLIC|MEMF_CLEAR);
+  SpriteT *sprite = MemAlloc(attached ? 2 * sizeof(SpriteT) : sizeof(SpriteT),
+                             MEMF_PUBLIC|MEMF_CLEAR);
+  int size = (height + 2) * 4;
 
-  sprite->height = height;
-  sprite->data = MemAlloc((height ? (height + 2) : 1) * 4, MEMF_CHIP|MEMF_CLEAR);
+  sprite[0].attached = attached;
+  sprite[0].height = height;
+  sprite[0].data = MemAlloc(size, MEMF_CHIP|MEMF_CLEAR);
 
-  if (attached)
-    sprite->attached = NewSprite(height, false);
+  if (attached) {
+    sprite[1].height = height;
+    sprite[1].data = MemAlloc(size, MEMF_CHIP|MEMF_CLEAR);
+  }
 
   return sprite;
 }
@@ -16,7 +21,7 @@ __regargs SpriteT *NewSprite(u_short height, bool attached) {
 __regargs void DeleteSprite(SpriteT *sprite) {
   if (sprite) {
     if (sprite->attached)
-      DeleteSprite(sprite->attached);
+      MemFree(sprite[1].data);
 
     MemFree(sprite->data);
     MemFree(sprite);
@@ -61,13 +66,11 @@ static inline void UpdateSpriteInternal(const SpriteT *sprite,
 __regargs void UpdateSprite(const SpriteT *sprite,
                             u_short hstart, u_short vstart)
 {
-  SpriteT *attached = sprite->attached;
-
   UpdateSpriteInternal(sprite, hstart, vstart);
 
-  if (attached) {
-    int *dst = (int *)attached->data;
-    int *src = (int *)sprite->data;
+  if (sprite->attached) {
+    int *dst = (int *)sprite[1].data;
+    int *src = (int *)sprite[0].data;
 
     *dst = *src | 0x80;
   }

@@ -5,7 +5,7 @@
 #include "gfx.h"
 
 typedef struct Sprite {
-  struct Sprite *attached;
+  bool attached;  /* an attached sprite is in memory just after this one */
   u_short height;
   u_short *data;
 } SpriteT;

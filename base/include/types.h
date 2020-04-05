@@ -28,7 +28,7 @@ typedef long int intptr_t;
 typedef	long long int	intmax_t;
 typedef	unsigned long long int uintmax_t;
 
-typedef enum {
+typedef enum __packed {
   false = 0,
   true = 1
 } bool;

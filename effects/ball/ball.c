@@ -93,8 +93,8 @@ static void MakeCopperList(CopListT *cp) {
 
     for (i = 0; i < 4; i++) {
       SpriteT *spr = sprite[active][i];
-      CopInsSet32(sprptr[i * 2], spr->data);
-      CopInsSet32(sprptr[i * 2 + 1], spr->attached->data);
+      CopInsSet32(sprptr[i * 2], spr[0].data);
+      CopInsSet32(sprptr[i * 2 + 1], spr[1].data);
     }
   }
 }
@@ -291,19 +291,19 @@ static __regargs void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
 
     WaitBlitter();
     custom->bltapt = planes + i * 2;
-    custom->bltdpt = &spr->data[2];
+    custom->bltdpt = &spr[0].data[2];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr->data[3];
+    custom->bltdpt = &spr[0].data[3];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr->attached->data[2];
+    custom->bltdpt = &spr[1].data[2];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr->attached->data[3];
+    custom->bltdpt = &spr[1].data[3];
     custom->bltsize = bltsize;
   }
 }
@@ -319,8 +319,8 @@ static __regargs void PositionSprite(SpriteT **sprite, short xo, short yo) {
 
     UpdateSprite(spr, x, y);
 
-    CopInsSet32(*ptr++, spr->data);
-    CopInsSet32(*ptr++, spr->attached->data);
+    CopInsSet32(*ptr++, spr[0].data);
+    CopInsSet32(*ptr++, spr[1].data);
 
     x += 16;
   }
