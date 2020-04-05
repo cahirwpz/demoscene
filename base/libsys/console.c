@@ -1,5 +1,4 @@
 #include <graphics/text.h>
-#include <proto/graphics.h>
 
 #include "console.h"
 
@@ -10,15 +9,13 @@ void ConsoleInit(ConsoleT *console, BitmapT *bitmap) {
   console->cursor.x = 0;
   console->cursor.y = 0;
 
+#if 0
   {
     struct TextAttr textattr = {
       __DECONST(STRPTR, "topaz.font"), 8, FS_NORMAL, FPF_ROMFONT };
     console->font = OpenFont(&textattr);
   }
-}
-
-void ConsoleKill(ConsoleT *console) {
-  CloseFont(console->font);
+#endif
 }
 
 __regargs void ConsoleSetCursor(ConsoleT *console, u_short x, u_short y) {

@@ -97,7 +97,6 @@ static void Kill(void) {
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_AUDIO);
 
-  ConsoleKill(&console);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }

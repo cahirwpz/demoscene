@@ -223,7 +223,6 @@ static void Kill(void) {
   AhxStopSong();
   AhxKillHardware();
 
-  ConsoleKill(&console);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }

@@ -42,7 +42,6 @@ static void Kill(void) {
   KeyboardKill();
   SerialKill();
 
-  ConsoleKill(&console);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }

@@ -128,7 +128,6 @@ static void Kill(void) {
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
-  ConsoleKill(&console);
   DeleteCopList(cp);
   ITER(i, 0, 3, DeleteBitmap(osc[i]));
   DeleteBitmap(screen);

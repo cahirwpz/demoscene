@@ -16,7 +16,6 @@ typedef struct Console {
 } ConsoleT;
 
 void ConsoleInit(ConsoleT *console, BitmapT *bitmap);
-void ConsoleKill(ConsoleT *console);
 
 __regargs void ConsoleSetCursor(ConsoleT *console, u_short x, u_short y);
 __regargs void ConsolePutChar(ConsoleT *console, char c);
