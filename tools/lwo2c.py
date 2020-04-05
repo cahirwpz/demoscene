@@ -480,8 +480,8 @@ def convertLWO2(lwo, name, scale):
     pols = lwo['POLS'].data[1]
     print('static IndexListT *_%s_face[%d] = {' % (name, len(pols) + 1))
     for i, polygon in enumerate(pols):
-        print('  &(IndexListT){.count = %d, .indices = {%s}},' % (
-            len(polygon), ', '.join(map(str, polygon))))
+        print('  (IndexListT *)(short[%d]){%d, %s},' % (
+            len(polygon) + 1, len(polygon), ', '.join(map(str, polygon))))
     print('  NULL')
     print('};\n')
 
