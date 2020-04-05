@@ -9,6 +9,7 @@ import struct
 from chunk import Chunk
 from collections import namedtuple
 from collections.abc import Sequence
+from contextlib import redirect_stdout
 from pprint import pprint
 
 
@@ -394,22 +395,16 @@ class LWOB(IffFile, LWOParserMixin):
         return self.get('POLS')
 
 
-def convertLWO2(lwo, output):
-    def out(s):
-        string_as_bytes = "{0}\n".format(s).encode()
-        output.write(string_as_bytes)
-
+def convertLWO2(lwo, name, scale):
     tags = list(lwo['TAGS'].data)
     clips = lwo.get('CLIP', always_list=True)
 
-    if clips:
-        out('@image.cnt %d\n' % len(clips))
-
     for clip in clips:
         index, imag = clip.data
-        out('@image %d' % index)
-        out('file "%s"' % imag['STIL'])
-        out('@end\n')
+        print('static MeshImageT _%s_img%d = {' % (name, index))
+        print('  .pixmap = NULL,')
+        print('  .filename = "%s",' % imag['STIL'])
+        print('};\n')
 
     txuv = {}
     for vmap in lwo.get('VMAP', always_list=True):
@@ -421,32 +416,45 @@ def convertLWO2(lwo, output):
         i = tags.index(surf.data[0])
         srfs[i] = (surf.data[0], surf.data[2])
 
-    out('@surf.cnt %d\n' % len(tags))
+    print('static MeshSurfaceT _%s_surf[%d] = {' % (name, len(tags)))
 
     surf_vmap = {}
     for surf in srfs:
         if type(surf) is str:
             continue
-        name, surf = surf
-        out('@surf %d' % tags.index(name))
+        surf_name, surf = surf
+
+        surf_index = tags.index(surf_name)
+        r, g, b = 0, 0, 0
+        sideness = 0
+        texture = -1
         for key, value in surf.items():
             if key == 'COLR':
-                out('color %d %d %d' % value)
+                r, g, b = value
             if key == 'SIDE':
-                out('side %d' % value)
+                sideness = value
             if key == 'BLOK':
                 for key, value in value.items():
                     if key == 'IMAG':
-                        out('texture %d' % value)
+                        texture = value
                     if key == 'VMAP':
-                        surf_vmap[value] = tags.index(name)
-        out('@end\n')
+                        surf_vmap[value] = tags.index(surf_name)
+
+        print('  [%d] = { /* name = "%s" */' % (surf_index, surf_name))
+        print('    .r = %d, .g = %d, .b = %d,' % (r, g, b))
+        print('    .sideness = %d,' % sideness)
+        print('    .texture = %d,' % texture)
+        print('  },')
+    print('};\n')
 
     pnts = lwo['PNTS']
-    out('@pnts %d' % len(pnts.data))
+    print('static Point3D _%s_pnts[%d] = {' % (name, len(pnts.data)))
     for point in pnts.data:
-        out('%f %f %f' % point)
-    out('@end\n')
+        x = int(point[0] * scale * 16)
+        y = int(point[1] * scale * 16)
+        z = int(point[2] * scale * 16)
+        print('  {.x = %5d, .y = %5d, .z = %5d, .pad = 0},' % (x, y, z))
+    print('};\n')
 
     vmap_txuv = []
     for name, values in txuv.items():
@@ -457,10 +465,10 @@ def convertLWO2(lwo, output):
             vmap_txuv.append((surface, vertex, tuple(uv)))
 
     if vmap_txuv:
-        out('@pnts.uv %d' % len(vmap_txuv))
+        print('@pnts.uv %d' % len(vmap_txuv))
         for _, _, uv in vmap_txuv:
-            out('%f %f' % uv)
-        out('@end\n')
+            print('%f %f' % uv)
+        print('@end\n')
 
     pols_surf = {}
     for ptag in lwo.get('PTAG', always_list=True):
@@ -470,10 +478,17 @@ def convertLWO2(lwo, output):
                 pols_surf[polygon] = surface
 
     pols = lwo['POLS'].data[1]
-    out('@pols %d %d' % (len(pols), sum(map(len, lwo['POLS'].data[1]))))
+    print('static IndexListT *_%s_face[%d] = {' % (name, len(pols) + 1))
     for i, polygon in enumerate(pols):
-        out('%d %s' % (pols_surf[i], ' '.join(map(str, polygon))))
-    out('@end\n')
+        print('  &(IndexListT){.count = %d, .indices = {%s}},' % (
+            len(polygon), ', '.join(map(str, polygon))))
+    print('  NULL')
+    print('};\n')
+
+    print('static u_char _%s_face_surf[%d] = {' % (name, len(pols)))
+    for i, _ in enumerate(pols):
+        print('  %d,' % pols_surf[i])
+    print('};\n')
 
     if vmap_txuv:
         pols_txuv = {}
@@ -483,21 +498,46 @@ def convertLWO2(lwo, output):
             surf_dict[vertex] = i
             pols_txuv[surface] = surf_dict
 
-        out('@pols.uv %d %d' % (len(pols), sum(map(len, lwo['POLS'].data[1]))))
+        print('@pols.uv %d %d' % (len(pols), sum(map(len, lwo['POLS'].data[1]))))
         for i, vertices in enumerate(pols):
             surface = pols_surf[i]
             vertices = [pols_txuv[surface][v] for v in vertices]
-            out(' '.join(map(str, vertices)))
-        out('@end\n')
+            print(' '.join(map(str, vertices)))
+        print('@end\n')
+
+    # TODO: uv, face, faceUV, image
+    print('Mesh3D %s = {' % name)
+    print('  .vertices = %d,' % len(pnts.data))
+    print('  .faces = %d,' % len(pols))
+    print('  .edges = 0,')
+    print('  .surfaces = %d,' % len(tags))
+    print('  .images = %d,' % len(clips))
+    print('  .origVertex = NULL,')
+    print('  .vertex = _%s_pnts,' % name)
+    print('  .uv = NULL,')
+    print('  .faceNormal = NULL,')
+    print('  .faceSurface = _%s_face_surf,' % name)
+    print('  .vertexNormal = NULL,')
+    print('  .edge = NULL,')
+    print('  .face = _%s_face,' % name)
+    print('  .faceEdge = NULL,')
+    print('  .faceUV = NULL,')
+    print('  .vertexFace = NULL,')
+    print('  .image = NULL,')
+    print('  .surface = _%s_surf,' % name)
+    print('};')
 
 
-def main():
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=("Converts Lightwave Object(LWOB/LWO2) "
-                     "file to textual representation."))
+                     "file to C representation."))
     parser.add_argument(
         '-q', '--quiet', action='store_true',
         help='Silence out diagnostic messages.')
+    parser.add_argument(
+        '-s', '--scale', type=float, default=1.0,
+        help='Scale factor for vertices.')
     parser.add_argument(
         '-f', '--force', action='store_true',
         help='If the output object exists, the tool will' 'overwrite it.')
@@ -518,13 +558,13 @@ def main():
         raise SystemExit('Input file "%s" does not exists!' % args.input)
 
     if args.output:
-        name, _ = os.path.splitext(args.output)
-        args.output = os.path.join(name + '.3d')
-
         if os.path.exists(args.output) and not args.force:
             raise SystemExit(
                 'Object file "%s" already exists '
                 '(use "-f" to override).' % args.output)
+        name = os.path.basename(os.path.splitext(args.output)[0])
+    else:
+        name = os.path.basename(os.path.splitext(args.input)[0])
 
     lwo = LWO2.fromFile(args.input)
     if not lwo:
@@ -538,9 +578,6 @@ def main():
 
     if args.output and lwo.form == 'LWO2':
         logging.info('Writing object structure to %s file.' % args.output)
-        with open(str(args.output), 'wb') as f:
-            convertLWO2(lwo, f)
-
-
-if __name__ == '__main__':
-    main()
+        with open(str(args.output), 'w') as f:
+            with redirect_stdout(f):
+                convertLWO2(lwo, name, args.scale)

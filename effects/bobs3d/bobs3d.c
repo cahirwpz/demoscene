@@ -249,4 +249,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

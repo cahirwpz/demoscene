@@ -11,7 +11,6 @@ const char *__cwdpath = "data";
 #define HEIGHT 256
 #define DEPTH 4
 
-static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
 static BitmapT *screen;
@@ -19,16 +18,18 @@ static u_short active = 0;
 static CopInsT *bplptr[DEPTH];
 
 #include "data/wireframe-pal.c"
+#include "data/pilka.c"
+
+static Mesh3D *mesh = &pilka;
 
 static void Load(void) {
-  mesh = LoadMesh3D("pilka.3d", SPFlt(65));
   CalculateVertexFaceMap(mesh);
   CalculateFaceNormals(mesh);
   CalculateEdges(mesh);
 }
 
 static void UnLoad(void) {
-  DeleteMesh3D(mesh);
+  // DeleteMesh3D(mesh);
 }
 
 static void MakeCopperList(CopListT *cp) {

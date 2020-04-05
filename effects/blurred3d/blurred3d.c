@@ -7,8 +7,6 @@
 #include "memory.h"
 #include "tasks.h"
 
-const char *__cwdpath = "data";
-
 #define WIDTH  176
 #define HEIGHT 176
 #define DEPTH  4
@@ -16,7 +14,6 @@ const char *__cwdpath = "data";
 #define STARTX ((320 - WIDTH) / 2)
 #define STARTY ((256 - HEIGHT * 5 / 4) / 2)
 
-static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
@@ -25,15 +22,17 @@ static BitmapT *scratchpad;
 static BitmapT *carry;
 
 #include "data/blurred3d-pal.c"
+#include "data/szescian.c"
+
+static Mesh3D *mesh = &szescian;
 
 static void Load(void) {
-  mesh = LoadMesh3D("szescian.3d", SPFlt(93));
   CalculateEdges(mesh);
   CalculateFaceNormals(mesh);
 }
 
 static void UnLoad(void) {
-  DeleteMesh3D(mesh);
+  // DeleteMesh3D(mesh);
 }
 
 static void MakeCopperList(CopListT *cp) {
