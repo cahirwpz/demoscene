@@ -3,7 +3,6 @@
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
-#include "ffp.h"
 #include "tasks.h"
 
 const char *__cwdpath = "data";

@@ -66,8 +66,6 @@ typedef struct {
   short surfaces;
   short images;
 
-  float scale;
-
   Point3D *origVertex;
   Point3D *vertex;
   UVCoord *uv;
@@ -83,9 +81,6 @@ typedef struct {
   MeshImageT **image;
   MeshSurfaceT *surface;
 } Mesh3D;
-
-__regargs Mesh3D *LoadMesh3D(const char *filename, float scale);
-__regargs void DeleteMesh3D(Mesh3D *mesh);
 
 __regargs void CalculateEdges(Mesh3D *mesh);
 __regargs void CalculateVertexFaceMap(Mesh3D *mesh);

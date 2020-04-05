@@ -3,7 +3,6 @@
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
-#include "ffp.h"
 #include "pixmap.h"
 #include "memory.h"
 #include "tasks.h"
