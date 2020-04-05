@@ -11,7 +11,6 @@
 
 #define TZ (-256)
 
-static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
 static BitmapT *screen0, *screen1;
@@ -19,6 +18,8 @@ static CopInsT *bplptr[DEPTH];
 
 #include "data/flares32.c"
 #include "data/pilka.c"
+
+static Mesh3D *mesh = &pilka;
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);

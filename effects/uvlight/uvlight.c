@@ -284,8 +284,8 @@ static void Init(void) {
   screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
 
-  chunky[0] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);
-  chunky[1] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);
+  chunky[0] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP|MEMF_CLEAR);
+  chunky[1] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP|MEMF_CLEAR);
 
 #if OPTIMIZED
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);

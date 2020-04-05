@@ -238,11 +238,12 @@ void LoadEffect(void) {
   }
 }
 
-ADD2INIT(LoadEffect, 0);
-
 void UnLoadEffect(void) {
   if (Effect.UnLoad)
     Effect.UnLoad();
 }
 
-ADD2EXIT(UnLoadEffect, 0);
+/* Priority of LoadEffect / UnLoadEffect must be lower (higher numerically)
+ * than each other auto-initialization procedure in the framework. */
+ADD2INIT(LoadEffect, 10);
+ADD2EXIT(UnLoadEffect, 10);
