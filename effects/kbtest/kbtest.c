@@ -10,6 +10,8 @@
 #define HEIGHT 256
 #define DEPTH 1
 
+#include "data/drdos8x8.c"
+
 static BitmapT *screen;
 static CopListT *cp;
 static ConsoleT console;
@@ -28,7 +30,7 @@ static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
-  ConsoleInit(&console, screen);
+  ConsoleInit(&console, &drdos8x8, screen);
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
 

@@ -21,6 +21,8 @@ static BitmapT *screen;
 static CopListT *cp;
 static ConsoleT console;
 
+#include "data/lat2-08.c"
+
 extern uint8_t binary_data_jazzcat_electric_city_ahx_start[];
 #define module binary_data_jazzcat_electric_city_ahx_start
 
@@ -196,7 +198,7 @@ static void Init(void) {
   CopEnd(cp);
   CopListActivate(cp);
 
-  ConsoleInit(&console, screen);
+  ConsoleInit(&console, &latin2, screen);
 
   EnableDMA(DMAF_BLITTER | DMAF_RASTER);
 

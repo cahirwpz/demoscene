@@ -105,9 +105,7 @@ def readPSF(path):
     raise SystemExit('"%s" is not PC Screen Font file!' % path)
 
 
-def convert(path, name):
-    font = readPSF(path)
-
+def dumpFont(path, name):
     print('static __data_chip u_short _%s_glyphs[] = {' % name)
     for i in range(33, 127):
         uchar = struct.pack('B', i).decode('latin2')
@@ -148,12 +146,37 @@ def convert(path, name):
     print('};')
 
 
+def dumpConsoleFont(font, name):
+    glyphs = []
+    for i in range(32, 127):
+        uchar = struct.pack('B', i).decode('latin2')
+        data = font.get(uchar, None)
+        glyphs.append(data)
+
+    print('static u_char _%s_glyphs[%d] = {' % (
+        name, len(glyphs) * font.height))
+    for y in range(font.height):
+        print(' ', end='')
+        for glyph in glyphs:
+            byte = glyph[y] if glyph else 0
+            print(' 0x%02x,' % byte, end='')
+        print()
+    print('};')
+    print('')
+    print('static ConsoleFontT %s = {' % name)
+    print('  .stride = %d,' % len(glyphs))
+    print('  .data = _%s_glyphs' % name)
+    print('};')
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG,
                         format='%(levelname)s: %(message)s')
 
     parser = argparse.ArgumentParser(
         description='Convert PSF font file to C representation.')
+    parser.add_argument('--type', metavar='TYPE', choices=['gui', 'console'],
+                        help='Font format for use with specific system.')
     parser.add_argument('--name', metavar='NAME', type=str,
                         help='Base name of C objects.')
     parser.add_argument('path', metavar='PATH', type=str,
@@ -163,4 +186,9 @@ if __name__ == '__main__':
     if not os.path.isfile(args.path):
         raise SystemExit('Input file does not exists!')
 
-    convert(args.path, args.name)
+    font = readPSF(args.path)
+
+    if args.type == 'gui':
+        dumpFont(font, args.name)
+    else:
+        dumpConsoleFont(font, args.name)

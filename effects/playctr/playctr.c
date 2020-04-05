@@ -14,6 +14,8 @@
 #define HEIGHT 256
 #define DEPTH 1
 
+#include "data/lat2-08.c"
+
 extern u_char binary_data_JazzCat_Automatic_ctr_start[];
 #define module binary_data_JazzCat_Automatic_ctr_start
 
@@ -72,7 +74,7 @@ static void Init(void) {
   CopSetColor(cp, 1, 0xfff);
   CopEnd(cp);
 
-  ConsoleInit(&console, screen);
+  ConsoleInit(&console, &latin2, screen);
 
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
