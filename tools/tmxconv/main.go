@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"image"
+	"image/draw"
 	"log"
 	"os"
+	"sort"
 	"text/template"
 
 	"../misc"
@@ -46,16 +48,70 @@ short {{.Name}}_map[] = {
 
 func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
 
-	funcMap := template.FuncMap{
-		"endLine": func(i int) bool { return i%tm.Layer.Width == 0 },
-	}
-
-	t, err := template.New("export").Funcs(funcMap).Parse(cTileMapTemplate)
+	layer, err := tm.Layer.Data.Decode()
 	if err != nil {
 		return
 	}
+	img := misc.LoadPNG(tm.TileSet.Image.Source).(*image.Paletted)
 
-	data, err := tm.Layer.Data.Decode()
+	unique := misc.UniqueUint32(layer)
+	sort.Slice(unique, func(i, j int) bool {
+		return unique[i] < unique[j]
+	})
+
+	oldNew := make(map[uint32]int)
+
+	var tiles []image.Image
+	tc := tm.TileSet.TileCount
+	tcol := tm.TileSet.Columns
+	th := tm.TileSet.TileHeight
+	tw := tm.TileSet.TileWidth
+
+	for r := 0; r < (tc / tcol); r++ {
+		for c := 0; c < tcol; c++ {
+			tiles = append(tiles,
+				misc.GetSubImage(img, image.Point{c * tw, r * th}, image.Rectangle{
+					Min: image.Point{},
+					Max: image.Point{th, tw},
+				}),
+			)
+		}
+	}
+
+	for index := range tiles {
+		oldNew[uint32(index+1)] = misc.IndexOfUint32(uint32(index+1), unique)
+	}
+	remap := make([]uint32, len(layer))
+
+	for i, id := range layer {
+		remap[i] = uint32(oldNew[id])
+	}
+
+	var uniqueTiles []image.Image
+	for i, tile := range tiles {
+		if oldNew[uint32(i+1)] != -1 {
+			uniqueTiles = append(uniqueTiles, tile)
+		}
+	}
+
+	oimg := image.NewPaletted(
+		image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: tw, Y: th * len(uniqueTiles)}},
+		img.Palette,
+	)
+
+	for i, tile := range uniqueTiles {
+		draw.Draw(oimg, image.Rectangle{
+			Min: image.Point{0, i * th},
+			Max: image.Point{tw, (i + 1) * th},
+		}, tile, image.Point{}, draw.Src)
+	}
+
+	misc.SavePNG(outName+"_map.png", oimg)
+
+	funcMap := template.FuncMap{
+		"endLine": func(i int) bool { return i%tm.Layer.Width == 0 },
+	}
+	t, err := template.New("export").Funcs(funcMap).Parse(cTileMapTemplate)
 	if err != nil {
 		return
 	}
@@ -67,7 +123,7 @@ func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
 		tm.TileSet.TileCount,
 		tm.Layer.Width,
 		tm.Layer.Height,
-		data}
+		remap}
 
 	file, err := os.Create(ctm.Name + "_map.c")
 	if err != nil {
@@ -107,10 +163,4 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	img := misc.LoadPNG(tm.TileSet.Image.Source).(*image.Paletted)
-
-	// TODO Add tiles reordering and optimize.
-
-	misc.SavePNG(outName+"_map.png", img)
 }
