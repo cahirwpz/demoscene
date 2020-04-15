@@ -1,16 +1,11 @@
-#ifndef __AMIGA_HUNK_H__
-#define __AMIGA_HUNK_H__
+#ifndef __AMIGAHUNK_H__
+#define __AMIGAHUNK_H__
 
-#include "common.h"
 #include "io.h"
 
-typedef struct {
-  int size;
-  BPTR next;
-  char data[0];
-} HunkT;
+typedef struct Hunk HunkT;
 
-__regargs BPTR LoadExecutable(FileT *file);
-__regargs void FreeSegList(BPTR seglist);
+__regargs HunkT *LoadHunkList(FileT *file);
+__regargs void FreeHunkList(HunkT *hunklist);
 
-#endif
+#endif /* !__AMIGAHUNK__ */
