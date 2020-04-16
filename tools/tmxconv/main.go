@@ -59,7 +59,7 @@ func uniqueTileNumbers(layer []uint32, unique []uint32) int {
 		}
 	}
 
-	return int(uniqueCount)
+	return int(uniqueCount - 1)
 }
 
 func copyTile(ts tmx.TiledTileSet, srcImg *image.Paletted, srcIdx int,
@@ -104,7 +104,7 @@ func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
 		image.Rect(0, 0, tw, th*uniqueCount), img.Palette)
 	for i, id := range unique {
 		if id > 0 {
-			copyTile(tm.TileSet, img, i, uniqueTileMap, int(id-1))
+			copyTile(tm.TileSet, img, i-1, uniqueTileMap, int(id)-1)
 		}
 	}
 
