@@ -46,6 +46,27 @@ short {{.Name}}_map[] = {
 };`
 )
 
+func uniqueUint32(ints []uint32) []uint32 {
+	keys := make(map[uint32]bool)
+	var list []uint32
+	for _, entry := range ints {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
+func indexOfUint32(element uint32, data []uint32) int {
+	for k, v := range data {
+		if element == v {
+			return k
+		}
+	}
+	return -1 //not found.
+}
+
 func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
 
 	layer, err := tm.Layer.Data.Decode()
@@ -54,7 +75,7 @@ func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
 	}
 	img := misc.LoadPNG(tm.TileSet.Image.Source).(*image.Paletted)
 
-	unique := misc.UniqueUint32(layer)
+	unique := uniqueUint32(layer)
 	sort.Slice(unique, func(i, j int) bool {
 		return unique[i] < unique[j]
 	})
@@ -79,7 +100,7 @@ func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
 	}
 
 	for index := range tiles {
-		oldNew[uint32(index+1)] = misc.IndexOfUint32(uint32(index+1), unique)
+		oldNew[uint32(index+1)] = indexOfUint32(uint32(index+1), unique)
 	}
 	remap := make([]uint32, len(layer))
 
