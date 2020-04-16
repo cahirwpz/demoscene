@@ -6,7 +6,6 @@ import (
 	"image/draw"
 	"log"
 	"os"
-	"sort"
 	"text/template"
 
 	"../misc"
@@ -46,88 +45,79 @@ short {{.Name}}_map[] = {
 };`
 )
 
-func uniqueUint32(ints []uint32) []uint32 {
-	keys := make(map[uint32]bool)
-	var list []uint32
-	for _, entry := range ints {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
+func uniqueTileNumbers(layer []uint32, ntiles int) (unique []uint32) {
+	/* mark used tile numbers with one */
+	unique = make([]uint32, ntiles)
+	for _, num := range layer {
+		unique[num] = 1
+	}
+
+	/* all used tiles are enumerated starting from 1 */
+	var num uint32 = 1
+	for i, used := range unique {
+		if used > 0 {
+			unique[i] = num
+			num++
 		}
 	}
-	return list
+
+	return
 }
 
-func indexOfUint32(element uint32, data []uint32) int {
-	for k, v := range data {
-		if element == v {
-			return k
+func cutTile(ts tmx.TiledTileSet, img *image.Paletted, num int) *image.Paletted {
+	row := num / ts.Columns
+	col := num % ts.Columns
+	tw := ts.TileWidth
+	th := ts.TileHeight
+
+	tile := image.NewPaletted(image.Rect(0, 0, tw, th), img.Palette)
+	sx := col * (tw + ts.Spacing)
+	sy := row * (th + ts.Spacing)
+	for y := 0; y < th; y++ {
+		for x := 0; x < tw; x++ {
+			px := img.ColorIndexAt(sx+x, sy+y)
+			tile.SetColorIndex(x, y, px)
 		}
 	}
-	return -1 //not found.
+
+	return tile
 }
 
 func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
-
 	layer, err := tm.Layer.Data.Decode()
 	if err != nil {
 		return
 	}
+
 	img := misc.LoadPNG(tm.TileSet.Image.Source).(*image.Paletted)
 
-	unique := uniqueUint32(layer)
-	sort.Slice(unique, func(i, j int) bool {
-		return unique[i] < unique[j]
-	})
-
-	oldNew := make(map[uint32]int)
-
-	var tiles []image.Image
-	tc := tm.TileSet.TileCount
-	tcol := tm.TileSet.Columns
 	th := tm.TileSet.TileHeight
 	tw := tm.TileSet.TileWidth
 
-	for r := 0; r < (tc / tcol); r++ {
-		for c := 0; c < tcol; c++ {
-			tiles = append(tiles,
-				misc.GetSubImage(img, image.Point{c * tw, r * th}, image.Rectangle{
-					Min: image.Point{},
-					Max: image.Point{th, tw},
-				}),
-			)
-		}
-	}
+	unique := uniqueTileNumbers(layer, tm.TileSet.TileCount)
 
-	for index := range tiles {
-		oldNew[uint32(index+1)] = indexOfUint32(uint32(index+1), unique)
-	}
-	remap := make([]uint32, len(layer))
-
+	/* optimized layer tile numbers are enumerated starting from 0 */
+	optimized := make([]uint32, len(layer))
 	for i, id := range layer {
-		remap[i] = uint32(oldNew[id])
+		optimized[i] = unique[id] - 1
 	}
 
 	var uniqueTiles []image.Image
-	for i, tile := range tiles {
-		if oldNew[uint32(i+1)] != -1 {
-			uniqueTiles = append(uniqueTiles, tile)
+	for i, id := range unique {
+		if id > 0 {
+			uniqueTiles = append(uniqueTiles, cutTile(tm.TileSet, img, i))
 		}
 	}
 
-	oimg := image.NewPaletted(
-		image.Rectangle{Min: image.Point{X: 0, Y: 0}, Max: image.Point{X: tw, Y: th * len(uniqueTiles)}},
-		img.Palette,
-	)
+	tileImg := image.NewPaletted(
+		image.Rect(0, 0, tw, th*len(uniqueTiles)), img.Palette)
 
 	for i, tile := range uniqueTiles {
-		draw.Draw(oimg, image.Rectangle{
-			Min: image.Point{0, i * th},
-			Max: image.Point{tw, (i + 1) * th},
-		}, tile, image.Point{}, draw.Src)
+		draw.Draw(tileImg, image.Rect(0, i*th, tw, (i+1)*th), tile,
+			image.Point{}, draw.Src)
 	}
 
-	misc.SavePNG(outName+"_map.png", oimg)
+	misc.SavePNG(outName+"_map.png", tileImg)
 
 	funcMap := template.FuncMap{
 		"endLine": func(i int) bool { return i%tm.Layer.Width == 0 },
@@ -144,7 +134,7 @@ func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
 		tm.TileSet.TileCount,
 		tm.Layer.Width,
 		tm.Layer.Height,
-		remap}
+		optimized}
 
 	file, err := os.Create(ctm.Name + "_map.c")
 	if err != nil {
