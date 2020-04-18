@@ -125,20 +125,13 @@ if __name__ == '__main__':
 
     if args.what == 'source':
         layer.optimize(unique_tiles)
-        print('static TileSetT %s = {' % tileset.name)
-        print('  .width = %d,' % tileset.width)
-        print('  .height = %d,' % tileset.height)
-        print('  .count = %d,' % len(tileset.tiles))
-        print('  .ptrs = NULL')
-        print('};')
-        print()
         print('const int %s_width = %d;' % (layer.name, layer.width))
         print('const int %s_height = %d;' % (layer.name, layer.height))
         print()
-        print('short %s[] = {' % layer.name)
+        print('short %s[%d][%d] = {' % (layer.name, layer.height, layer.width))
         for y in range(layer.height):
             row = [str(layer.get(x, y)) for x in range(layer.width)]
-            print('  %s,' % ', '.join(row))
+            print('  {%s},' % ', '.join(row))
         print('};')
     else:
         tileset.optimize(unique_tiles)
