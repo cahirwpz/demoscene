@@ -14,33 +14,22 @@ import (
 
 type cTileMap struct {
 	Name        string
-	TileWidth   int
-	TileHeight  int
 	TilesCount  int
 	LayerWidth  int
 	LayerHeight int
-	LayerData   []uint32
+	LayerData   [][]uint32
 }
 
 const (
 	cTileMapTemplate = `
-static TileSetT {{.Name}}_tiles = {
-	.width = {{ .TileWidth}},
-	.height = {{ .TileHeight}},
-	.count = {{ .TilesCount}},
-	.ptrs = NULL
-};
-const int {{.Name}}_map_width = {{.LayerWidth}};
-const int {{.Name}}_map_height = {{.LayerHeight}};
-short {{.Name}}_map[] = { 
-{{- with .LayerData}}
-	{{- range $i, $el := .}}
-		{{- if endLine $i }}
-			{{ $el}},
-		{{- else}}
-			{{- $el}},
-		{{- end}}
-	{{- end}}
+static const int {{.Name}}_ntiles = {{.TilesCount}};
+static const int {{.Name}}_map_width = {{.LayerWidth}};
+static const int {{.Name}}_map_height = {{.LayerHeight}};
+
+static short {{.Name}}_map[{{.LayerHeight}}][{{.LayerWidth}}] = { 
+{{- with .LayerData}}{{- range .}}
+  { {{range .}}{{.}}, {{end -}}
+  },{{- end}}
 {{- end}}
 };`
 )
@@ -103,9 +92,13 @@ func exportTiledMap(tl tmx.TiledLayer, ts tmx.TiledTileSet,
 	uniqueCount := uniqueTileNumbers(layer, unique)
 
 	/* optimized layer tile numbers are enumerated starting from 0 */
-	optimized := make([]uint32, len(layer))
-	for i, id := range layer {
-		optimized[i] = unique[id] - 1
+	optimized := make([][]uint32, tl.Height)
+	for y := 0; y < tl.Height; y++ {
+		optimized[y] = make([]uint32, tl.Width)
+		for x := 0; x < tl.Width; x++ {
+			id := layer[y*tl.Width+x]
+			optimized[y][x] = unique[id] - 1
+		}
 	}
 
 	if len(tilesName) > 0 {
@@ -120,16 +113,12 @@ func exportTiledMap(tl tmx.TiledLayer, ts tmx.TiledTileSet,
 	}
 
 	if len(sourceName) > 0 {
-		funcMap := template.FuncMap{
-			"endLine": func(i int) bool { return i%tl.Width == 0 },
-		}
-		t, err := template.New("export").Funcs(funcMap).Parse(cTileMapTemplate)
+		t, err := template.New("export").Parse(cTileMapTemplate)
 		if err != nil {
 			return err
 		}
 
-		ctm := cTileMap{name, ts.TileWidth, ts.TileHeight, ts.TileCount,
-			tl.Width, tl.Height, optimized}
+		ctm := cTileMap{name, ts.TileCount, tl.Width, tl.Height, optimized}
 
 		file, err := os.Create(sourceName)
 		if err != nil {

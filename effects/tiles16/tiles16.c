@@ -9,40 +9,38 @@
 
 int __chipmem = 128 * 1024;
 
-#define WIDTH (320 + 16)
-#define HEIGHT (256 + 16)
+#define TILEW 16
+#define TILEH 16
+
+#define WIDTH (320 + TILEW)
+#define HEIGHT (256 + TILEH)
 #define DEPTH 5
 #define BPLMOD (WIDTH * (DEPTH - 1) / 8)
 
-#define VTILES (HEIGHT / 16)
-#define HTILES (WIDTH / 16)
-#define TILESIZE (16 * 16 * DEPTH / 8)
+#define VTILES (HEIGHT / TILEH)
+#define HTILES (WIDTH / TILEW)
+#define TILESIZE (TILEW * TILEH * DEPTH / 8)
 
 static CopInsT *bplptr[2][DEPTH];
 static BitmapT *screen[2];
 static CopInsT *bplcon1[2];
 static CopListT *cp[2];
+static void **tileptrs;
 static short active;
 
-typedef struct TileSet {
-  u_short width, height;
-  u_short count;
-  void **ptrs;
-} TileSetT;
-
-#include "data/MagicLand.c"
+#include "data/MagicLand-map.c"
 #include "data/MagicLand-tiles.c"
-#define tileset MagicLand_tiles
+#define tilecount MagicLand_ntiles
 #define tilemap_width MagicLand_map_width
 #define tilemap_height MagicLand_map_height
-#define tilemap MagicLand_map
+#define tilemap ((short *)MagicLand_map)
 
 static void Load(void) {
-  tileset.ptrs = MemAlloc(sizeof(void *) * tileset.count, MEMF_PUBLIC);
+  tileptrs = MemAlloc(sizeof(void *) * tilecount, MEMF_PUBLIC);
   {
-    short n = tileset.count;
+    short n = tilecount;
     void *base = tiles.planes[0];
-    void **ptrs = tileset.ptrs;
+    void **ptrs = tileptrs;
     while (--n >= 0) {
       *ptrs++ = base;
       base += TILESIZE;
@@ -71,7 +69,7 @@ static void MakeCopperList(CopListT *cp, int i) {
 
 static void Init(void) {
   /* extra memory for horizontal scrolling */
-  short extra = div16(tilemap_width * tileset.width, WIDTH);
+  short extra = div16(tilemap_width * TILEW, WIDTH);
 
   Log("Allocate %d extra lines!\n", extra);
 
@@ -131,9 +129,9 @@ static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
                                   volatile struct Custom* const custom asm("a6"))
 {
   short *map = tilemap;
-  void *ptrs = tileset.ptrs;
+  void *ptrs = tileptrs;
   void *dst = screen->planes[0] + (x << 1);
-  short size = ((16 * DEPTH) << 6) | 1;
+  short size = ((TILEH * DEPTH) << 6) | 1;
   int tilemod = tilemap_width - HTILES;
   short current = active + 1;
 
@@ -144,7 +142,7 @@ static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
   custom->bltafwm = -1;
   custom->bltalwm = -1;
   custom->bltamod = 0;
-  custom->bltdmod = (WIDTH - 16) / 8;
+  custom->bltdmod = (WIDTH - TILEW) / 8;
   custom->bltcon0 = (SRCA | DEST | A_TO_D);
   custom->bltcon1 = 0;
 
