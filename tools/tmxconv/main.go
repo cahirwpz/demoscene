@@ -14,8 +14,6 @@ import (
 
 type cTileMap struct {
 	Name        string
-	TileWidth   int
-	TileHeight  int
 	TilesCount  int
 	LayerWidth  int
 	LayerHeight int
@@ -24,10 +22,11 @@ type cTileMap struct {
 
 const (
 	cTileMapTemplate = `
-const int {{.Name}}_map_width = {{.LayerWidth}};
-const int {{.Name}}_map_height = {{.LayerHeight}};
+static const int {{.Name}}_ntiles = {{.TilesCount}};
+static const int {{.Name}}_map_width = {{.LayerWidth}};
+static const int {{.Name}}_map_height = {{.LayerHeight}};
 
-short {{.Name}}_map[{{.LayerHeight}}][{{.LayerWidth}}] = { 
+static short {{.Name}}_map[{{.LayerHeight}}][{{.LayerWidth}}] = { 
 {{- with .LayerData}}{{- range .}}
   { {{range .}}{{.}}, {{end -}}
   },{{- end}}
@@ -119,8 +118,7 @@ func exportTiledMap(tl tmx.TiledLayer, ts tmx.TiledTileSet,
 			return err
 		}
 
-		ctm := cTileMap{name, ts.TileWidth, ts.TileHeight, ts.TileCount,
-			tl.Width, tl.Height, optimized}
+		ctm := cTileMap{name, ts.TileCount, tl.Width, tl.Height, optimized}
 
 		file, err := os.Create(sourceName)
 		if err != nil {
