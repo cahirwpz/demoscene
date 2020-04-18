@@ -7,8 +7,16 @@
 #define X(x) ((x) + 0x81)
 #endif
 
+#ifndef HP
+#define HP(x) (X(x) / 2)
+#endif
+
 #ifndef Y
 #define Y(y) ((y) + 0x2c)
+#endif
+
+#ifndef VP
+#define VP(y) (Y(y) & 255)
 #endif
 
 extern int frameCount;
