@@ -46,9 +46,8 @@ short {{.Name}}_map[] = {
 )
 
 var printHelp bool
-var exportSource bool
-var exportTiles bool
-var outName string
+var sourceName string
+var tilesName string
 
 func uniqueTileNumbers(layer []uint32, unique []uint32) int {
 	/* mark used tile numbers with one */
@@ -109,7 +108,7 @@ func exportTiledMap(tl tmx.TiledLayer, ts tmx.TiledTileSet,
 		optimized[i] = unique[id] - 1
 	}
 
-	if exportTiles {
+	if len(tilesName) > 0 {
 		uniqueTileMap := image.NewPaletted(
 			image.Rect(0, 0, tw, th*uniqueCount), img.Palette)
 		for i, id := range unique {
@@ -117,10 +116,10 @@ func exportTiledMap(tl tmx.TiledLayer, ts tmx.TiledTileSet,
 				copyTile(ts, img, i-1, uniqueTileMap, int(id)-1)
 			}
 		}
-		misc.SavePNG(filepath.Join(path, outName+"_map.png"), uniqueTileMap)
+		misc.SavePNG(tilesName, uniqueTileMap)
 	}
 
-	if exportSource {
+	if len(sourceName) > 0 {
 		funcMap := template.FuncMap{
 			"endLine": func(i int) bool { return i%tl.Width == 0 },
 		}
@@ -132,7 +131,7 @@ func exportTiledMap(tl tmx.TiledLayer, ts tmx.TiledTileSet,
 		ctm := cTileMap{name, ts.TileWidth, ts.TileHeight, ts.TileCount,
 			tl.Width, tl.Height, optimized}
 
-		file, err := os.Create(filepath.Join(path, ctm.Name+"_map.c"))
+		file, err := os.Create(sourceName)
 		if err != nil {
 			return err
 		}
@@ -149,33 +148,30 @@ func exportTiledMap(tl tmx.TiledLayer, ts tmx.TiledTileSet,
 func init() {
 	flag.BoolVar(&printHelp, "help", false,
 		"print help message and exit")
-	flag.BoolVar(&exportSource, "source", false,
-		"Exports layer data to C source file")
-	flag.BoolVar(&exportTiles, "tiles", false,
-		"Export tiles to PNG file")
-	flag.StringVar(&outName, "name", "",
-		"set optional output name")
+	flag.StringVar(&sourceName, "source", "",
+		"Export layer data to given C source file")
+	flag.StringVar(&tilesName, "tiles", "",
+		"Export tiles to given PNG file")
 }
 
 func main() {
 	flag.Parse()
 
-	if len(flag.Args()) < 1 || !(exportSource || exportTiles) || printHelp {
+	export := len(sourceName) > 0 || len(tilesName) > 0
+	if len(flag.Args()) < 1 || !export || printHelp {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-	path := filepath.Dir(flag.Arg(0))
 
-	if len(outName) == 0 {
-		outName = misc.PathWithoutExt(filepath.Base(flag.Arg(0)))
-	}
+	path := filepath.Dir(flag.Arg(0))
+	name := misc.PathWithoutExt(filepath.Base(flag.Arg(0)))
 
 	tm, err := tmx.ReadFile(flag.Arg(0))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = exportTiledMap(tm.Layer, tm.TileSet, path, outName)
+	err = exportTiledMap(tm.Layer, tm.TileSet, path, name)
 	if err != nil {
 		log.Fatal(err)
 	}
