@@ -10,6 +10,8 @@
 #define HEIGHT 256
 #define DEPTH 1
 
+#include "data/drdos8x8.c"
+
 static BitmapT *screen;
 static CopListT *cp;
 static ConsoleT console;
@@ -21,14 +23,14 @@ static void Init(void) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xfff);
+  CopSetColor(cp, 0, 0x000);
+  CopSetColor(cp, 1, 0xfff);
   CopEnd(cp);
 
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
-  ConsoleInit(&console, screen);
+  ConsoleInit(&console, &drdos8x8, screen);
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
 
@@ -42,7 +44,6 @@ static void Kill(void) {
   KeyboardKill();
   SerialKill();
 
-  ConsoleKill(&console);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }

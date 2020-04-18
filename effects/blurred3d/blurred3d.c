@@ -3,12 +3,9 @@
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
-#include "ffp.h"
 #include "pixmap.h"
 #include "memory.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH  176
 #define HEIGHT 176
@@ -17,7 +14,6 @@ const char *__cwdpath = "data";
 #define STARTX ((320 - WIDTH) / 2)
 #define STARTY ((256 - HEIGHT * 5 / 4) / 2)
 
-static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
@@ -26,15 +22,17 @@ static BitmapT *scratchpad;
 static BitmapT *carry;
 
 #include "data/blurred3d-pal.c"
+#include "data/szescian.c"
+
+static Mesh3D *mesh = &szescian;
 
 static void Load(void) {
-  mesh = LoadMesh3D("szescian.3d", SPFlt(93));
   CalculateEdges(mesh);
   CalculateFaceNormals(mesh);
 }
 
 static void UnLoad(void) {
-  DeleteMesh3D(mesh);
+  ResetMesh3D(mesh);
 }
 
 static void MakeCopperList(CopListT *cp) {
@@ -49,7 +47,7 @@ static void MakeCopperList(CopListT *cp) {
     for (i = 0; i < HEIGHT / 8; i++) {
       CopWait(cp, Y(STARTY + i * 8 - 1), 0xde);
       for (j = 0; j < 16; j++) {
-        CopSetRGB(cp, j, *pixels++);
+        CopSetColor(cp, j, *pixels++);
       }
     }
 
@@ -60,7 +58,7 @@ static void MakeCopperList(CopListT *cp) {
     for (i = 0; i < HEIGHT / 16; i++) {
       CopWait(cp, Y(STARTY + HEIGHT + i * 4 - 1), 0xde);
       for (j = 0; j < 16; j++) {
-        CopSetRGB(cp, j, *pixels++);
+        CopSetColor(cp, j, *pixels++);
       }
     }
   }

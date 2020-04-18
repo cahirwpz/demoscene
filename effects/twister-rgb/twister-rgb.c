@@ -38,7 +38,7 @@ static void MakeCopperList(CopListT **ptr, short n) {
   CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
   CopMove16(cp, diwstrt, 0x2c81);
   CopMove16(cp, diwstop, 0x2bc1);
-  CopSetColor(cp, 0, &gradient.colors[0]);
+  CopSetColor(cp, 0, gradient.colors[0]);
 
   for (i = 0, k = 0; i < HEIGHT; i++) {
     CopWaitSafe(cp, Y(i), 0);
@@ -46,12 +46,12 @@ static void MakeCopperList(CopListT **ptr, short n) {
     CopMove16(cp, bpl2mod, -32);
     CopMove16(cp, bpldat[0], 0);
 
-    CopSetColor(cp, 0, &gradient.colors[i]);
+    CopSetColor(cp, 0, gradient.colors[i]);
 
     if ((i % 3) == 0) {
-      colors[n][k++] = CopSetRGB(cp, 1, *pixels++);
+      colors[n][k++] = CopSetColor(cp, 1, *pixels++);
       for (j = 2; j < 32; j++)
-        CopSetRGB(cp, j, *pixels++);
+        CopSetColor(cp, j, *pixels++);
     }
   }
 

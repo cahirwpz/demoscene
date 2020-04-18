@@ -3,16 +3,12 @@
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
-#include "ffp.h"
 #include "tasks.h"
-
-const char *__cwdpath = "data";
 
 #define WIDTH  256
 #define HEIGHT 256
 #define DEPTH  4
 
-static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
@@ -20,17 +16,18 @@ static BitmapT *screen[2];
 static short active;
 
 #include "data/flatshade-pal.c"
+#include "data/pilka.c"
+
+static Mesh3D *mesh = &pilka;
 
 static void Load(void) {
-  // mesh = LoadMesh3D("ball.3d", SPFlt(110));
-  mesh = LoadMesh3D("pilka.3d", SPFlt(65));
   CalculateVertexFaceMap(mesh);
   CalculateFaceNormals(mesh);
   CalculateEdges(mesh);
 }
 
 static void UnLoad(void) {
-  DeleteMesh3D(mesh);
+  ResetMesh3D(mesh);
 }
 
 static void MakeCopperList(CopListT *cp) {

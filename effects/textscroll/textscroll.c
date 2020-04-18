@@ -4,7 +4,6 @@
 #include "coplist.h"
 #include "gfx.h"
 #include "memory.h"
-#include "io.h"
 #include "reader.h"
 #include "tasks.h"
 
@@ -17,8 +16,6 @@
 #define COLUMNS (WIDTH / SIZE)
 #define LINES   (HEIGHT / SIZE)
 
-static char *text;
-
 static short active = 0;
 
 static CopListT *cp[2];
@@ -28,15 +25,10 @@ static BitmapT *scroll;
 static short last_line = -1;
 static char *line_start;
 
+extern uint8_t binary_data_text_scroll_txt_start[];
+#define text binary_data_text_scroll_txt_start
+
 #include "data/text-scroll-font.c"
-
-static void Load(void) {
-  text = LoadFile("text-scroll.txt", MEMF_PUBLIC);
-}
-
-static void UnLoad(void) {
-  MemFree(text);
-}
 
 static CopListT *MakeCopperList(short n) {
   CopListT *cp = NewCopList(100 + 3 * HEIGHT);
@@ -155,4 +147,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

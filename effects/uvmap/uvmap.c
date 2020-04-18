@@ -25,8 +25,9 @@ void (*UVMapRender)(u_char *chunky asm("a0"),
                     u_char *textureHi asm("a1"),
                     u_char *textureLo asm("a2"));
 
-static __regargs void 
-PixmapToTexture(PixmapT *image, PixmapT *imageHi, PixmapT *imageLo) {
+static __regargs void PixmapToTexture(const PixmapT *image,
+                                      PixmapT *imageHi, PixmapT *imageLo) 
+{
   u_int *data = image->pixels;
   int size = image->width * image->height;
   /* Extra halves for cheap texture motion. */
@@ -213,7 +214,7 @@ static void MakeCopperList(CopListT *cp) {
 #endif
     if (i % 12 == 11)
       for (j = 0; j < 16; j++)
-        CopSetRGB(cp, j, *pixels++);
+        CopSetColor(cp, j, *pixels++);
   }
   CopEnd(cp);
 }

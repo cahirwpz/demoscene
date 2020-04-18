@@ -25,7 +25,7 @@ QUIET := --quiet
 endif
 
 # Don't reload library base for each call.
-DFLAGS := -D__CONSTLIBBASEDECL__=const -DUSE_IO_DOS=0
+DFLAGS := -D__CONSTLIBBASEDECL__=const
 
 LDLIBS	=
 CPPFLAGS += -I$(TOPDIR)/base/include
@@ -37,9 +37,10 @@ PYTHON3 := PYTHONPATH="$(TOPDIR)/tools/pylib:$$PYTHONPATH" python3
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 RUNINUAE := $(PYTHON3) $(TOPDIR)/effects/RunInUAE
-DUMPLWO := $(TOPDIR)/tools/dumplwo.py $(QUIET)
+LWO2C := $(TOPDIR)/tools/lwo2c.py $(QUIET)
 CONV2D := $(TOPDIR)/tools/conv2d.py
 TMXCONV := $(TOPDIR)/tools/tmxconv/tmxconv
+PCHG2C := $(TOPDIR)/tools/pchg2c/pchg2c
 PNG2C := $(TOPDIR)/tools/png2c.py
 PSF2C := $(TOPDIR)/tools/psf2c.py
 STRIP := m68k-amigaos-strip -s

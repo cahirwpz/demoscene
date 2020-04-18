@@ -1,8 +1,8 @@
 #include "blitter.h"
 
 typedef struct {
-  BitmapT *src;
-  BitmapT *dst;
+  const BitmapT *src;
+  const BitmapT *dst;
   u_int start;
   u_short size;
 } StateT;
@@ -10,7 +10,8 @@ typedef struct {
 static StateT state[1];
 
 /* Supports any (x, y) and any source bitmap width. */
-void BlitterCopySetup(BitmapT *dst, u_short x, u_short y, BitmapT *src)
+void BlitterCopySetup(const BitmapT *dst, u_short x, u_short y,
+                      const BitmapT *src)
 {
   /* Calculate real blit width. It can be greater than src->bytesPerRow! */
   u_short width = (x & 15) + src->width;
@@ -58,7 +59,9 @@ __regargs void BlitterCopyStart(short dstbpl, short srcbpl) {
   custom->bltsize = bltsize;
 }
 
-__regargs void BitmapCopy(BitmapT *dst, u_short x, u_short y, BitmapT *src) {
+__regargs void BitmapCopy(const BitmapT *dst, u_short x, u_short y,
+                          const BitmapT *src)
+{
   short i, n = min(dst->depth, src->depth);
 
   BlitterCopySetup(dst, x, y, src);

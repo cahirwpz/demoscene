@@ -1,9 +1,6 @@
 #include <exec/execbase.h>
-#include <graphics/gfxbase.h>
-
 #include <proto/alib.h>
 #include <proto/exec.h>
-#include <proto/graphics.h>
 
 #include "hardware.h"
 #include "interrupts.h"
@@ -25,7 +22,6 @@ static struct List OrigTaskReady;
 static struct List OrigTaskWait;
 
 static struct {
-  struct View *view;
   u_short dmacon, intena, adkcon;
   u_int cacheBits;
 } old;
@@ -46,10 +42,6 @@ static void IdleTask(void) {
 void KillOS(void) {
   Log("[Startup] Save AmigaOS state.\n");
 
-  /* Allocate blitter. */
-  WaitBlit();
-  OwnBlitter();
-
   /* No calls to any other library than exec beyond this point or expect
    * undefined behaviour including crashes. */
   Forbid();
@@ -57,12 +49,6 @@ void KillOS(void) {
   /* Disable CPU caches. */
   if (kickVer >= 36)
     old.cacheBits = CacheControl(0, -1);
-
-  /* Intercept the view of AmigaOS. */
-  old.view = GfxBase->ActiView;
-  LoadView(NULL);
-  WaitTOF();
-  WaitTOF();
 
   /* DMA & interrupts take-over. */
   old.adkcon = custom->adkconr;
@@ -150,24 +136,12 @@ void RestoreOS(void) {
   custom->intena = old.intena | INTF_SETCLR;
   custom->adkcon = old.adkcon | ADKF_SETCLR;
 
-  /* Restore old copper list... */
-  custom->cop1lc = (u_int)GfxBase->copinit;
-  WaitVBlank();
-
-  /* ... and original view. */
-  LoadView(old.view);
-  WaitTOF();
-  WaitTOF();
-
   /* Enable CPU caches. */
   if (kickVer >= 36)
     CacheControl(old.cacheBits, -1);
 
   /* Restore multitasking. */
   Permit();
-
-  /* Deallocate blitter. */
-  DisownBlitter();
 }
 
 ADD2EXIT(RestoreOS, -20);
@@ -257,43 +231,6 @@ void SystemInfo(void) {
 
 ADD2INIT(SystemInfo, -50);
 
-typedef struct LibDesc {
-  struct Library *base;
-  STRPTR name;
-} LibDescT;
-
-extern LibDescT *__LIB_LIST__[];
-
-#define OSLIBVERSION 33
-
-void InitLibraries(void) {
-  LibDescT **list = __LIB_LIST__;
-  u_int numbases = (u_int)*list++;
-
-  while (numbases-- > 0) {
-    LibDescT *lib = *list++;
-    if (!(lib->base = OpenLibrary(lib->name, OSLIBVERSION))) {
-      Log("Cannot open '%s'!\n", lib->name);
-      exit(20);
-    }
-  }
-}
-
-ADD2INIT(InitLibraries, -120);
-
-void KillLibraries(void) {
-  LibDescT **list = __LIB_LIST__;
-  u_int numbases = (u_int)*list++;
-
-  while (numbases-- > 0) {
-    LibDescT *lib = *list++;
-    if (lib->base)
-      CloseLibrary(lib->base);
-  }
-}
-
-ADD2EXIT(KillLibraries, -120);
-
 void LoadEffect(void) {
   if (Effect.Load) {
     Effect.Load();
@@ -301,15 +238,12 @@ void LoadEffect(void) {
   }
 }
 
-#if USE_IO_DOS
-ADD2INIT(LoadEffect, -40);
-#else
-ADD2INIT(LoadEffect, 0);
-#endif
-
 void UnLoadEffect(void) {
   if (Effect.UnLoad)
     Effect.UnLoad();
 }
 
-ADD2EXIT(UnLoadEffect, 0);
+/* Priority of LoadEffect / UnLoadEffect must be lower (higher numerically)
+ * than each other auto-initialization procedure in the framework. */
+ADD2INIT(LoadEffect, 10);
+ADD2EXIT(UnLoadEffect, 10);

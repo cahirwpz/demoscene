@@ -48,7 +48,8 @@ static inline void _WaitBlitter(CustomPtrT custom) {
 #define WaitBlitter() _WaitBlitter(custom)
 
 /* Blitter copy. */
-void BlitterCopySetup(BitmapT *dst, u_short x, u_short y, BitmapT *src);
+void BlitterCopySetup(const BitmapT *dst, u_short x, u_short y,
+                      const BitmapT *src);
 __regargs void BlitterCopyStart(short dstbpl, short srcbpl);
 
 #define BlitterCopy(dst, dstbpl, x, y, src, srcbpl) ({  \
@@ -57,8 +58,8 @@ __regargs void BlitterCopyStart(short dstbpl, short srcbpl);
 })
 
 /* Blitter copy area. */
-void BlitterCopyAreaSetup(BitmapT *dst, u_short x, u_short y,
-                          BitmapT *src, Area2D *area);
+void BlitterCopyAreaSetup(const BitmapT *dst, u_short x, u_short y,
+                          const BitmapT *src, const Area2D *area);
 __regargs void BlitterCopyAreaStart(short dstbpl, short srcbpl);
 
 #define BlitterCopyArea(dst, dstbpl, x, y, src, srcbpl, area) ({        \
@@ -67,15 +68,18 @@ __regargs void BlitterCopyAreaStart(short dstbpl, short srcbpl);
 })
 
 /* Bitmap copy. */
-__regargs void BitmapCopy(BitmapT *dst, u_short x, u_short y, BitmapT *src);
-__regargs void BitmapCopyFast(BitmapT *dst, u_short x, u_short y, BitmapT *src);
-void BitmapCopyMasked(BitmapT *dst, u_short x, u_short y, BitmapT *src,
-                      BitmapT *mask);
-void BitmapCopyArea(BitmapT *dst, u_short dx, u_short dy, 
-                    BitmapT *src, Area2D *area);
+__regargs void BitmapCopy(const BitmapT *dst, u_short x, u_short y,
+                          const BitmapT *src);
+__regargs void BitmapCopyFast(const BitmapT *dst, u_short x, u_short y,
+                              const BitmapT *src);
+void BitmapCopyMasked(const BitmapT *dst, u_short x, u_short y,
+                      const BitmapT *src, const BitmapT *mask);
+void BitmapCopyArea(const BitmapT *dst, u_short dx, u_short dy, 
+                    const BitmapT *src, const Area2D *area);
 
 /* Blitter fill. */
-__regargs void BlitterFillArea(BitmapT *bitmap, short plane, Area2D *area);
+__regargs void BlitterFillArea(const BitmapT *bitmap, short plane,
+                               const Area2D *area);
 
 #define BlitterFill(bitmap, plane) \
   BlitterFillArea((bitmap), (plane), NULL)
@@ -92,11 +96,11 @@ __regargs void BlitterFillArea(BitmapT *bitmap, short plane, Area2D *area);
   BitmapSetArea((dst), (area), 0)
 
 /* Blitter set. */
-void BlitterSetAreaSetup(BitmapT *bitmap, Area2D *area);
+void BlitterSetAreaSetup(const BitmapT *bitmap, const Area2D *area);
 __regargs void BlitterSetAreaStart(short bplnum, u_short pattern);
 
-void BlitterSetMaskArea(BitmapT *bitmap, short plane, u_short x, u_short y,
-                        BitmapT *mask, Area2D *area, u_short pattern);
+void BlitterSetMaskArea(const BitmapT *bitmap, short plane, u_short x, u_short y,
+                        const BitmapT *mask, const Area2D *area, u_short pattern);
 
 #define BlitterSet(bitmap, plane, pattern) \
   BlitterSetArea((bitmap), (plane), NULL, (pattern))
@@ -111,24 +115,27 @@ void BlitterSetMaskArea(BitmapT *bitmap, short plane, u_short x, u_short y,
 
 /* Bitmap set. */
 
-__regargs void BitmapSetArea(BitmapT *bitmap, Area2D *area, u_short color);
+__regargs void BitmapSetArea(const BitmapT *bitmap,
+                             const Area2D *area, u_short color);
 
 /* Blitter line. */
 #define BlitterLineSetup(bitmap, plane, mode) \
   BlitterLineSetupFull((bitmap), (plane), (mode), -1)
 
-void BlitterLineSetupFull(BitmapT *bitmap, u_short plane,
+void BlitterLineSetupFull(const BitmapT *bitmap, u_short plane,
                           u_short mode, u_short pattern);
 void BlitterLine(short x1 asm("d2"), short y1 asm("d3"),
                  short x2 asm("d4"), short y2 asm("d5"));
 
 /* Other operations. */
-void BitmapAddSaturated(BitmapT *dst, short dx, short dy,
-                        BitmapT *src, BitmapT *carry);
+void BitmapAddSaturated(const BitmapT *dst, short dx, short dy,
+                        const BitmapT *src, const BitmapT *carry);
 
-__regargs void BitmapDecSaturated(BitmapT *dst_bm, BitmapT *borrow_bm);
-__regargs void BitmapIncSaturated(BitmapT *dst_bm, BitmapT *carry_bm);
+__regargs void BitmapDecSaturated(const BitmapT *dst_bm,
+                                  const BitmapT *borrow_bm);
+__regargs void BitmapIncSaturated(const BitmapT *dst_bm,
+                                  const BitmapT *carry_bm);
 
-__regargs BitmapT *BitmapMakeMask(BitmapT *bitmap);
+__regargs BitmapT *BitmapMakeMask(const BitmapT *bitmap);
 
 #endif

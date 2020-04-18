@@ -35,9 +35,9 @@ $(TOPDIR)/base/%.bin: FORCE
 $(TOPDIR)/effects/%.o: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-%.3d: %.lwo
+data/%.c: data/%.lwo
 	@echo "[LWO] $(DIR)$< -> $(DIR)$@"
-	$(DUMPLWO) -f $< $@
+	$(LWO2C) $(LWO2C.$*) -f $< $@
 
 data/%.c: data/%.psfu
 	@echo "[PSF] $(DIR)$^ -> $(DIR)$@"
@@ -50,10 +50,6 @@ data/%.c: data/%.png
 data/%.c: data/%.2d
 	@echo "[2D] $(DIR)$< -> $(DIR)$@"
 	$(CONV2D) $(CONV2D.$*) $< > $@
-
-%.bin: %.asm
-	@echo "[BIN] $(DIR)$< -> $(DIR)$@"
-	$(AS) -Fbin -o $@ $<
 
 %.adf: %.exe $(DATA) $(DATA_GEN) $(TOPDIR)/base/bootloader.bin
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"

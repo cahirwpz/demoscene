@@ -1,7 +1,7 @@
 #include "blitter.h"
 
 typedef struct {
-  BitmapT *bitmap;
+  const BitmapT *bitmap;
   u_int start;
   u_short size;
 } StateT;
@@ -10,7 +10,7 @@ static StateT state[1];
 
 /* Supports any area dimensions,
  * but is optimized for 'x' and 'w' divisible by 16. */
-void BlitterSetAreaSetup(BitmapT *bitmap, Area2D *area) {
+void BlitterSetAreaSetup(const BitmapT *bitmap, const Area2D *area) {
   u_short bltafwm, bltalwm, bltmod, bytesPerRow;
   u_short x = 0, y = 0, width = bitmap->width, height = bitmap->height;
 
@@ -56,7 +56,9 @@ __regargs void BlitterSetAreaStart(short bplnum, u_short pattern) {
   custom->bltsize = bltsize;
 }
 
-__regargs void BitmapSetArea(BitmapT *bitmap, Area2D *area, u_short color) {
+__regargs void BitmapSetArea(const BitmapT *bitmap,
+                             const Area2D *area, u_short color)
+{
   short i;
 
   BlitterSetAreaSetup(bitmap, area);

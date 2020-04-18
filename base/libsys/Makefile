@@ -7,23 +7,17 @@ SOURCES := \
 	console.c \
 	debug-intr.c \
 	event.c \
-	ffp.c \
 	floppy.c \
 	fx.c \
 	hardware.c \
-	iff.c \
 	inflate.s \
 	interrupts.c \
-	io-dos.c \
+	io.c \
 	io-extra.c \
-	io-floppy.c \
 	keyboard.c \
-	lib-graphics.c \
-	lib-list.c \
-	lib-mathffp.c \
+	lzo.c \
 	memory.c \
 	mouse.c \
-	print.c \
 	qsort.c \
 	random.c \
 	rawio-par.s \

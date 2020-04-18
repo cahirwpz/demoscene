@@ -1,7 +1,7 @@
 #include "memory.h"
 #include "pixmap.h"
 
-static short bitdepth[] = { 0, 1, 2, 4, 8, 16 };
+static short bitdepth[] = { 0, 4, 8 };
 
 static int PixmapSize(PixmapT *pixmap) {
   short bitsPerPixel = bitdepth[pixmap->type & PM_DEPTH_MASK];
@@ -35,8 +35,8 @@ __regargs void DeletePixmap(PixmapT *pixmap) {
   }
 }
 
-__regargs void PixmapScramble_4_1(PixmapT *pixmap) {
-  if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
+__regargs void PixmapScramble_4_1(const PixmapT *pixmap) {
+  if (pixmap->type == PM_CMAP4) {
     u_int *data = pixmap->pixels;
     short n = pixmap->width * pixmap->height / 8;
     register u_int m0 asm("d6") = 0xa5a5a5a5;
@@ -50,8 +50,8 @@ __regargs void PixmapScramble_4_1(PixmapT *pixmap) {
   }
 }
 
-__regargs void PixmapScramble_4_2(PixmapT *pixmap) {
-  if (pixmap->type == PM_GRAY4 || pixmap->type == PM_CMAP4) {
+__regargs void PixmapScramble_4_2(const PixmapT *pixmap) {
+  if (pixmap->type == PM_CMAP4) {
     u_int *data = pixmap->pixels;
     short n = pixmap->width * pixmap->height / 8;
     register u_int m0 asm("d6") = 0xc3c3c3c3;

@@ -1,5 +1,4 @@
 #include "startup.h"
-#include "io.h"
 #include "hardware.h"
 #include "interrupts.h"
 #include "memory.h"
@@ -13,16 +12,19 @@
 
 int __chipmem = 100 * 1024;
 int __fastmem = 430 * 1024;
-const char *__cwdpath = "data";
 
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 1
 
-static void *module;
 static BitmapT *screen;
 static CopListT *cp;
 static ConsoleT console;
+
+#include "data/lat2-08.c"
+
+extern uint8_t binary_data_jazzcat_electric_city_ahx_start[];
+#define module binary_data_jazzcat_electric_city_ahx_start
 
 typedef struct {
   BitmapT *bm;
@@ -139,16 +141,12 @@ static void WaveScopeDrawChannel(short num) {
 }
 
 static void Load(void) {
-  module = LoadFile("jazzcat-electric_city.ahx", MEMF_PUBLIC);
-  // module = LoadFile("03-delicate.ahx", MEMF_PUBLIC);
-  // module = LoadFile("04-enigma.ahx", MEMF_PUBLIC);
   if (AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS) != 0)
     exit(10);
 }
 
 static void UnLoad(void) {
   AhxKillPlayer();
-  MemFree(module);
 }
 
 static __interrupt int AhxPlayerIntHandler(void) {
@@ -195,12 +193,12 @@ static void Init(void) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xfff);
+  CopSetColor(cp, 0, 0x000);
+  CopSetColor(cp, 1, 0xfff);
   CopEnd(cp);
   CopListActivate(cp);
 
-  ConsoleInit(&console, screen);
+  ConsoleInit(&console, &latin2, screen);
 
   EnableDMA(DMAF_BLITTER | DMAF_RASTER);
 
@@ -227,7 +225,6 @@ static void Kill(void) {
   AhxStopSong();
   AhxKillHardware();
 
-  ConsoleKill(&console);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }

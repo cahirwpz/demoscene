@@ -5,7 +5,7 @@ static struct {
   int stride;
 } line;
 
-__regargs void CpuLineSetup(BitmapT *bitmap, u_short plane) {
+__regargs void CpuLineSetup(const BitmapT *bitmap, u_short plane) {
   line.pixels = bitmap->planes[plane];
   line.stride = bitmap->bytesPerRow;
 }

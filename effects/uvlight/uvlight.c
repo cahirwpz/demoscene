@@ -99,17 +99,17 @@ static void Load(void) {
 
   shademap = MemAlloc(32 * sizeof(u_short) * texture_pal.count, MEMF_PUBLIC);
   {
-    ColorT *c = texture_pal.colors;
+    u_short *cp = texture_pal.colors;
     u_short *dst = shademap;
     short n = texture_pal.count;
     short i;
 
     while (--n >= 0) {
+      u_short c = *cp++;
       for (i = 0; i < 16; i++)
-        *dst++ = ColorTransitionRGB(0, 0, 0, c->r, c->g, c->b, i);
+        *dst++ = ColorTransition(0, c, i);
       for (i = 0; i < 16; i++)
-        *dst++ = ColorTransitionRGB(c->r, c->g, c->b, 255, 255, 255, i);
-      c++;
+        *dst++ = ColorTransition(c, 0xfff, i);
     }
   }
   DataScramble(shademap, texture_pal.count * 32);
@@ -284,8 +284,8 @@ static void Init(void) {
   screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
 
-  chunky[0] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);
-  chunky[1] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);
+  chunky[0] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP|MEMF_CLEAR);
+  chunky[1] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP|MEMF_CLEAR);
 
 #if OPTIMIZED
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);

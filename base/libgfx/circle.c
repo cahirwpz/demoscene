@@ -1,6 +1,8 @@
 #include "circle.h"
 
-__regargs void Circle(BitmapT *bitmap, int plane, short xc, short yc, short r) {
+__regargs void Circle(const BitmapT *bitmap, int plane,
+                      short xc, short yc, short r)
+{
   int stride = bitmap->bytesPerRow;
 
   u_char *pixels = bitmap->planes[plane] + yc * (short)stride;
@@ -50,7 +52,9 @@ __regargs void Circle(BitmapT *bitmap, int plane, short xc, short yc, short r) {
   } while (x < 0);
 }
 
-__regargs void CircleEdge(BitmapT *bitmap, int plane, short xc, short yc, short r) {
+__regargs void CircleEdge(const BitmapT *bitmap, int plane,
+                          short xc, short yc, short r)
+{
   int stride = bitmap->width >> 3;
 
   u_char *pixels = bitmap->planes[plane] + yc * (short)stride;

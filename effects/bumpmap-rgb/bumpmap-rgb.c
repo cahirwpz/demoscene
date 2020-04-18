@@ -39,6 +39,7 @@ static u_short redtab[16] = {
   0x8000, 0x8008, 0x8080, 0x8088, 0x8800, 0x8808, 0x8880, 0x8888,
 };
 
+/* RGB12 pixels preprocessing for faster chunky-to-planar */
 static void DataScramble(u_short *data, short n) {
   u_char *in = (u_char *)data;
   u_short *out = data;
@@ -65,11 +66,16 @@ static void Load(void) {
 
   lightmap = MemAlloc(lightSize * sizeof(u_short) * 2, MEMF_PUBLIC);
   {
+    /* The light is 128x128 and full 8-bit grayscale */
     u_char *src = light;
     u_short *dst0 = lightmap;
     u_short *dst1 = lightmap + lightSize;
     short n = lightSize;
 
+    /*
+     * lightmap: 16-bit values of light intensity from 0 to 31
+     *           in following format {000000000, l4...l0, 0}
+     */
     while (--n >= 0) {
       short v = ((*src++) >> 2) & 0x3e;
       *dst0++ = v;
@@ -79,27 +85,38 @@ static void Load(void) {
 
   colormap = MemAlloc(WIDTH * HEIGHT * sizeof(u_short), MEMF_PUBLIC);
   {
+    /* The image is 80x64 and 8-bit color map with separate palette */
     u_char *src = dragon.pixels;
     u_short *dst = colormap;
     short n = WIDTH * HEIGHT;
 
+    /* 
+     * colormap: 16-bit values of color indices of shaded pixels
+     *           in following format {00, c7...c0, 000000}
+     */
     while (--n >= 0)
       *dst++ = *src++ << 6;
   }
 
   shademap = MemAlloc(32 * sizeof(u_short) * dragon_pal.count, MEMF_PUBLIC);
   {
-    ColorT *c = dragon_pal.colors;
+    u_short *cp = dragon_pal.colors;
     u_short *dst = shademap;
     short n = dragon_pal.count;
     short i;
 
+    /*
+     * shademap: each row is transition from black to color to white
+     *           and consists of 32 pixels in RGB12 format,
+     *           it must be indexed by pair (c: color, l: light)
+     *           in following format {00, c7...c0, l4...l0, 0}
+     */
     while (--n >= 0) {
+      u_short c = *cp++;
       for (i = 0; i < 16; i++)
-        *dst++ = ColorTransitionRGB(0, 0, 0, c->r, c->g, c->b, i);
+        *dst++ = ColorTransition(0, c, i);
       for (i = 0; i < 16; i++)
-        *dst++ = ColorTransitionRGB(c->r, c->g, c->b, 255, 255, 255, i);
-      c++;
+        *dst++ = ColorTransition(c, 0xfff, i);
     }
   }
 
@@ -107,11 +124,10 @@ static void Load(void) {
 
   {
     short n = WIDTH * HEIGHT;
-    u_short *src = bumpmap;
-    u_short *dst = bumpmap;
+    u_short *bmap = bumpmap;
 
     while (--n >= 0)
-      *dst++ = *src++ << 1;
+      *bmap++ *= 2; /* We're going to index 16-bit values */
   }
 }
 
@@ -157,7 +173,6 @@ static void ChunkyToPlanar(void) {
       break;
 
     case 1:
-      custom->color[0] = 0xf00;
       custom->bltsize = 2 | ((BLTSIZE / 16) << 6);
       break;
 
@@ -235,7 +250,6 @@ static void ChunkyToPlanar(void) {
       break;
 
     case 12:
-      custom->color[0] = 0x0f0;
       CopInsSet32(bplptr[0], bpl[3]);
       CopInsSet32(bplptr[1], bpl[2]);
       CopInsSet32(bplptr[2], bpl[1]);

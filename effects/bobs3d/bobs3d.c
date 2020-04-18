@@ -3,7 +3,6 @@
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
-#include "ffp.h"
 #include "tasks.h"
 
 #define WIDTH  256
@@ -12,21 +11,15 @@
 
 #define TZ (-256)
 
-static Mesh3D *mesh;
 static Object3D *cube;
 static CopListT *cp;
 static BitmapT *screen0, *screen1;
 static CopInsT *bplptr[DEPTH];
 
 #include "data/flares32.c"
+#include "data/pilka.c"
 
-static void Load(void) {
-  mesh = LoadMesh3D("pilka.3d", SPFlt(50));
-}
-
-static void UnLoad(void) {
-  DeleteMesh3D(mesh);
-}
+static Mesh3D *mesh = &pilka;
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
@@ -134,7 +127,7 @@ static __regargs void TransformVertices(Object3D *object) {
 #endif
 
 void BlitterOrArea(BitmapT *dst asm("a0"), u_short x asm("d0"), u_short y asm("d1"),
-                   BitmapT *src asm("a1"), u_short sx asm("d2"))
+                   const BitmapT *src asm("a1"), u_short sx asm("d2"))
 {
   u_short dxo = x & 15;
   u_short width = dxo + BOBW;
@@ -257,4 +250,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

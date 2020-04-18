@@ -55,10 +55,10 @@ static void Init(void) {
   CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
   CopMove16(cp, bpl1mod, 4);
   CopMove16(cp, bpl2mod, 4);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0x44f);
-  CopSetRGB(cp, 2, 0x88f);
-  CopSetRGB(cp, 3, 0xccf);
+  CopSetColor(cp, 0, 0x000);
+  CopSetColor(cp, 1, 0x44f);
+  CopSetColor(cp, 2, 0x88f);
+  CopSetColor(cp, 3, 0xccf);
   CopEnd(cp);
 
   CopListActivate(cp);

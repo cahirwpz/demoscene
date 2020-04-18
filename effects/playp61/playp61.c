@@ -16,6 +16,8 @@
 
 long __chipmem = 128 * 1024;
 
+#include "data/drdos8x8.c"
+
 extern u_char binary_data_jazzcat_sunglasses_at_night_p61_start[];
 #define module binary_data_jazzcat_sunglasses_at_night_p61_start
 
@@ -81,11 +83,11 @@ static void Init(void) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xfff);
+  CopSetColor(cp, 0, 0x000);
+  CopSetColor(cp, 1, 0xfff);
   CopEnd(cp);
 
-  ConsoleInit(&console, screen);
+  ConsoleInit(&console, &drdos8x8, screen);
 
   EnableDMA(DMAF_BLITTER);
 
@@ -128,7 +130,6 @@ static void Kill(void) {
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
-  ConsoleKill(&console);
   DeleteCopList(cp);
   ITER(i, 0, 3, DeleteBitmap(osc[i]));
   DeleteBitmap(screen);

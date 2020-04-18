@@ -74,7 +74,7 @@ typedef struct {
 
 typedef struct {
   WIDGET_BASE
-  BitmapT *bm;
+  const BitmapT *bm;
 } ImageT;
 
 typedef struct {

@@ -1,8 +1,11 @@
 TOPDIR := $(realpath ../..)
 
 OBJECTS := data/JazzCat-Automatic-ctr.o data/JazzCat-Automatic-smp.o
+CLEAN-FILES := data/lat2-08.c
 
 LIBS := libctr
+
+PSF2C.lat2-08 := --name latin2 --type console
 
 include $(TOPDIR)/build.effect.mk
 

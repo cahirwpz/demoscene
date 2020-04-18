@@ -14,6 +14,8 @@
 #define HEIGHT 256
 #define DEPTH 1
 
+#include "data/lat2-08.c"
+
 extern u_char binary_data_JazzCat_Automatic_ctr_start[];
 #define module binary_data_JazzCat_Automatic_ctr_start
 
@@ -68,11 +70,11 @@ static void Init(void) {
   CopInit(cp);
   CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0xfff);
+  CopSetColor(cp, 0, 0x000);
+  CopSetColor(cp, 1, 0xfff);
   CopEnd(cp);
 
-  ConsoleInit(&console, screen);
+  ConsoleInit(&console, &latin2, screen);
 
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
@@ -97,7 +99,6 @@ static void Kill(void) {
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_AUDIO);
 
-  ConsoleKill(&console);
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }

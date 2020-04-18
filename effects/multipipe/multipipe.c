@@ -99,15 +99,15 @@ static void MakeCopperList(CopListT *cp, CopInsT **ins) {
   CopSetupMode(cp, MODE_LORES, DEPTH);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH + 16);
-  CopSetRGB(cp, 0, 0x000);
-  CopSetRGB(cp, 1, 0x000);
+  CopSetColor(cp, 0, 0x000);
+  CopSetColor(cp, 1, 0x000);
   for (i = 0; i < HEIGHT; i++) {
     CopWaitSafe(cp, Y(i), 0);
     ins[i] = CopMove16(cp, bplcon1, 0x00);
     CopMove32(cp, bplpt[0], data + EMPTY * CWIDTH / 8);
     CopMove32(cp, bplpt[1], data + FULL * CWIDTH / 8);
-    CopSetRGB(cp, 2, 0x000);
-    CopSetRGB(cp, 3, 0x000);
+    CopSetColor(cp, 2, 0x000);
+    CopSetColor(cp, 3, 0x000);
   }
   CopEnd(cp);
 }

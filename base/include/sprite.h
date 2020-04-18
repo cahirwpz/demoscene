@@ -5,7 +5,7 @@
 #include "gfx.h"
 
 typedef struct Sprite {
-  struct Sprite *attached;
+  bool attached;  /* an attached sprite is in memory just after this one */
   u_short height;
   u_short *data;
 } SpriteT;
@@ -39,7 +39,8 @@ __regargs SpriteT *NewSprite(u_short height, bool attached);
 __regargs void DeleteSprite(SpriteT *sprite);
 
 /* Don't call it for null sprites. */
-__regargs void UpdateSprite(SpriteT *sprite, u_short hstart, u_short vstart);
+__regargs void UpdateSprite(const SpriteT *sprite,
+                            u_short hstart, u_short vstart);
 
 __regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr);
 __regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr);

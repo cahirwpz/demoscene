@@ -133,20 +133,16 @@ def do_bitmap(im, desc):
     print('};')
     print('')
 
-    print('BitmapT %s = {' % name)
+    print('static const BitmapT %s = {' % name)
     print('  .width = %d,' % width)
     print('  .height = %d,' % height)
     print('  .depth = %s,' % depth)
     print('  .bytesPerRow = %d,' % bytesPerRow)
     print('  .bplSize = %d,' % bplSize)
-    flags = ['BM_DISPLAYABLE']
+    flags = ['BM_DISPLAYABLE', 'BM_STATIC']
     if interleaved:
         flags.append('BM_INTERLEAVED')
     print('  .flags = %s,' % '|'.join(flags))
-    print('  .compression = 0,')
-    print('  .palette = NULL,')
-    print('  .pchgTotal = 0,')
-    print('  .pchg = NULL,')
     print('  .planes = {')
     for i in range(depth):
         if interleaved:
@@ -207,9 +203,9 @@ def do_sprite(im, desc):
         print('};')
         print('')
         if sequence:
-            print('static SpriteT _%s = {' % sprite)
+            print('static const SpriteT _%s = {' % sprite)
         else:
-            print('SpriteT %s = {' % sprite)
+            print('static const SpriteT %s = {' % sprite)
         print('  .attached = NULL,')
         print('  .height = %d,' % height)
         print('  .data = _%s_data' % sprite)
@@ -218,7 +214,7 @@ def do_sprite(im, desc):
 
     if sequence:
         sprites = ['&_%s%d' % (name, i) for i in range(width // 16)]
-        print('SpriteT *%s[] = {' % name)
+        print('static const SpriteT *%s[] = {' % name)
         print('  %s' % ', '.join(sprites))
         print('};')
         print('')
@@ -284,7 +280,7 @@ def do_pixmap(im, desc):
     else:
         raise SystemExit('Image pixel format %s not handled!' % im.mode)
 
-    print('PixmapT %s = {' % name)
+    print('static const PixmapT %s = {' % name)
     print('  .type = %s,' % pixeltype)
     print('  .width = %d,' % width)
     print('  .height = %d,' % height)
@@ -313,11 +309,11 @@ def do_palette(im, desc):
 
     cmap = [pal[i * 3:(i + 1) * 3] for i in range(colors)]
 
-    print('PaletteT %s = {' % name)
+    print('static const PaletteT %s = {' % name)
     print('  .count = %d,' % len(cmap))
     print('  .colors = {')
     for r, g, b in cmap:
-        print('    {%d, %d, %d},' % (r, g, b))
+        print('    0x%x%x%x,' % (r >> 4, g >> 4, b >> 4))
     print('  }')
     print('};')
 

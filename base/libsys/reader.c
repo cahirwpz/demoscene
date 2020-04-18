@@ -1,5 +1,4 @@
 #include "reader.h"
-#include "ffp.h"
 
 #define SPACE   1
 #define DIGIT   2
@@ -225,48 +224,6 @@ __regargs bool ReadInt(char **data, int *numptr) {
 
   if (numptr)
     *numptr = minus ? -num : num;
-
-  return true;
-}
-
-__regargs bool ReadFloat(char **data, float *numptr) {
-  char *str = *data;
-  char c;
-
-  int p = 0, q = 1;
-  bool minus = false, dot = false;
-
-  /* Skip white spaces. */
-  if (!NextWord(&str))
-    return false;
-
-  /* Read optional sign character. */
-  if (*str == '-')
-    str++, minus = true;
-
-  /* Read at least one digit. */
-  c = *str;
-
-  if (!isdigit(c))
-    return false;
-
-  while (1) {
-    if (!dot && c == '.') {
-      dot = true;
-    } else if (!isdigit(c)) {
-      break;
-    } else {
-      p = p * 10 + digit(c);
-      if (dot)
-        q *= 10;
-    }
-    c = *(++str);
-  }
-
-  *data = str;
-
-  if (numptr)
-    *numptr = SPDiv(SPFlt(q), SPFlt(minus ? -p : p));
 
   return true;
 }

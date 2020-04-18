@@ -12,7 +12,6 @@ __regargs bool EndOfLine(char **data);
 __regargs bool ReadByte(char **data, char *numptr);
 __regargs bool ReadShort(char **data, short *numptr);
 __regargs bool ReadInt(char **data, int *numptr);
-__regargs bool ReadFloat(char **data, float *numptr);
 __regargs short ReadString(char **data, char *buf, short buflen);
 
 #define ReadByteU(data, numptr) ReadByte(data, (char *)numptr)

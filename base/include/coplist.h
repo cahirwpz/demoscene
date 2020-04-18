@@ -106,9 +106,8 @@ static inline void CopInsSet16(CopInsT *ins, u_short data) {
 }
 
 /* High-level functions */
-__regargs CopInsT *CopLoadPal(CopListT *list, PaletteT *palette, u_short start);
+__regargs CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, u_short start);
 __regargs CopInsT *CopLoadColor(CopListT *list, u_short start, u_short end, u_short color);
-__regargs CopInsT *CopSetColor(CopListT *list, short i, ColorT *color);
 
 __regargs void CopSetupMode(CopListT *list, u_short mode, u_short depth);
 __regargs void CopSetupDisplayWindow(CopListT *list, u_short mode, 
@@ -116,10 +115,12 @@ __regargs void CopSetupDisplayWindow(CopListT *list, u_short mode,
 __regargs void CopSetupBitplaneFetch(CopListT *list, u_short mode,
                                      u_short xs, u_short w);
 __regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
-                                 BitmapT *bitmap, u_short depth);
+                                 const BitmapT *bitmap, u_short depth);
 void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
-                          BitmapT *bitmap, short x, short y, Area2D *area);
-__regargs void CopUpdateBitplanes(CopInsT **bplptr, BitmapT *bitmap, short n);
+                          const BitmapT *bitmap, short x, short y,
+                          const Area2D *area);
+__regargs void CopUpdateBitplanes(CopInsT **bplptr,
+                                  const BitmapT *bitmap, short n);
 
 static inline void CopSetupGfxSimple(CopListT *list, u_short mode, u_short depth,
                                      u_short xs, u_short ys, u_short w, u_short h) 
@@ -129,7 +130,7 @@ static inline void CopSetupGfxSimple(CopListT *list, u_short mode, u_short depth
   CopSetupBitplaneFetch(list, mode, xs, w);
 }
 
-static inline CopInsT *CopSetRGB(CopListT *list, short i, u_short value) {
+static inline CopInsT *CopSetColor(CopListT *list, short i, u_short value) {
   return CopMove16(list, color[i], value);
 }
 

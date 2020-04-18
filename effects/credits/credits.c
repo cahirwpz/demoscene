@@ -12,7 +12,8 @@
 
 static BitmapT *foreground;
 static CopListT *cp0, *cp1;
-static BitmapT *lower;
+static const BitmapT *lower;
+static const PaletteT *lower_pal;
 static Point2D lower_pos;
 static Area2D lower_area;
 
@@ -37,25 +38,13 @@ static Area2D lower_area;
 #include "data/txt_jazz.c"
 #include "data/txt_slay.c"
 
-static BitmapT *dance[8] = {
+static const BitmapT *dance[8] = {
   &cahir, &slayer, &jazzcat, &dkl, &dance1, &dance2, &dance3, &dance4
 };
 
-static BitmapT *member[5] = {
+static const BitmapT *member[5] = {
   &txt_cahir, &txt_slay, &txt_jazz, &txt_dkl, &txt_codi
 };
-
-static void Load(void) {
-  short i;
-
-  logo.palette = &logo_pal;
-
-  for (i = 0; i < 8; i++)
-    dance[i]->palette = &dance_pal;
-
-  for (i = 0; i < 5; i++)
-    member[i]->palette = &member_pal;
-}
 
 #define DISCO_X X((320 - disco.width) / 2)
 #define DISCO_Y Y(0)
@@ -114,7 +103,7 @@ static void MakeCopperList(CopListT *cp) {
      * I found 'X(56) / 2' to be the least working horizontal position,
      * but I cannot provide any sound explanation why is it so? */
     CopWaitSafe(cp, LOGO_Y - 1, X(56) / 2);
-    CopLoadPal(cp, lower->palette, 0);
+    CopLoadPal(cp, lower_pal, 0);
     CopSetupMode(cp, MODE_LORES, lower->depth);
     CopSetupBitplaneArea(cp, MODE_LORES, lower->depth,
                          lower, X(lower_pos.x), Y(lower_pos.y), &lower_area);
@@ -158,21 +147,27 @@ static void Render(void) {
   if (frameCount > 600) {
     short i = div16(frameCount - 250, 8) & 3;
     lower = &logo;
+    lower_pal = &logo_pal;
     BitmapCopy(foreground, 80, 0, dance[i + 4]);
   } else if (frameCount > 500) {
     lower = member[4];
+    lower_pal = &member_pal;
     BitmapCopy(foreground, 80, 0, dance[4]);
   } else if (frameCount > 400) {
     lower = member[3];
+    lower_pal = &member_pal;
     BitmapCopy(foreground, 80, 0, dance[3]);
   } else if (frameCount > 300) {
     lower = member[2];
+    lower_pal = &member_pal;
     BitmapCopy(foreground, 80, 0, dance[2]);
   } else if (frameCount > 200) {
     lower = member[1];
+    lower_pal = &member_pal;
     BitmapCopy(foreground, 80, 0, dance[1]);
   } else if (frameCount > 100) {
     lower = member[0];
+    lower_pal = &member_pal;
     BitmapCopy(foreground, 80, 0, dance[0]);
   } else {
     lower = NULL;
@@ -188,7 +183,7 @@ static void Render(void) {
     lower_area.w = lower->width;
     lower_area.h = lower->height;
 
-    if (!ClipBitmap(&window, &lower_pos, &lower_area))
+    if (!ClipArea(&window, &lower_pos, &lower_area))
       lower = NULL;
   }
 
@@ -198,4 +193,4 @@ static void Render(void) {
   swapr(cp0, cp1);
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };

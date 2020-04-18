@@ -1,24 +1,12 @@
-#include <graphics/text.h>
-#include <proto/graphics.h>
-
 #include "console.h"
 
-void ConsoleInit(ConsoleT *console, BitmapT *bitmap) {
+void ConsoleInit(ConsoleT *console, ConsoleFontT *font, BitmapT *bitmap) {
   console->bitmap = bitmap;
+  console->font = font;
   console->width = bitmap->width / 8;
   console->height = bitmap->height / 8;
   console->cursor.x = 0;
   console->cursor.y = 0;
-
-  {
-    struct TextAttr textattr = {
-      __DECONST(STRPTR, "topaz.font"), 8, FS_NORMAL, FPF_ROMFONT };
-    console->font = OpenFont(&textattr);
-  }
-}
-
-void ConsoleKill(ConsoleT *console) {
-  CloseFont(console->font);
 }
 
 __regargs void ConsoleSetCursor(ConsoleT *console, u_short x, u_short y) {
@@ -40,9 +28,9 @@ static __regargs void ConsoleNextChar(ConsoleT *console) {
 }
 
 __regargs void ConsoleDrawChar(ConsoleT *console, u_short x, u_short y, char c) {
-  u_char *src = console->font->tf_CharData;
+  u_char *src = console->font->data;
   u_char *dst = console->bitmap->planes[0];
-  short swidth = console->font->tf_Modulo;
+  short swidth = console->font->stride;
   short dwidth = console->bitmap->bytesPerRow;
   short h = 7;
 
