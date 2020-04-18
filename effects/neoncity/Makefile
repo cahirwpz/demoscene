@@ -14,6 +14,6 @@ include $(TOPDIR)/build.effect.mk
 	@echo "[TMX] $(DIR)$< -> $(DIR)$@"
 	$(TMXCONV) -tiles $@ $<
 
-%.c: %.tmx
+%-map.c: %.tmx
 	@echo "[TMX] $(DIR)$< -> $(DIR)$@"
 	$(TMXCONV) -source $@ $<
