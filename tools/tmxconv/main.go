@@ -80,7 +80,8 @@ func copyTile(ts tmx.TiledTileSet, srcImg *image.Paletted, srcIdx int,
 	}
 }
 
-func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
+func exportTiledMap(tm tmx.TiledMap, name string, exportSource bool,
+	exportTiles bool) (err error) {
 	layer, err := tm.Layer.Data.Decode()
 	if err != nil {
 		return
@@ -101,54 +102,72 @@ func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
 		optimized[i] = unique[id] - 1
 	}
 
-	uniqueTileMap := image.NewPaletted(
-		image.Rect(0, 0, tw, th*uniqueCount), img.Palette)
-	for i, id := range unique {
-		if id > 0 {
-			copyTile(tm.TileSet, img, i-1, uniqueTileMap, int(id)-1)
+	if exportTiles == true {
+		uniqueTileMap := image.NewPaletted(
+			image.Rect(0, 0, tw, th*uniqueCount), img.Palette)
+		for i, id := range unique {
+			if id > 0 {
+				copyTile(tm.TileSet, img, i-1, uniqueTileMap, int(id)-1)
+			}
+		}
+		misc.SavePNG(outName+"_map.png", uniqueTileMap)
+	}
+
+	if exportSource == true {
+		funcMap := template.FuncMap{
+			"endLine": func(i int) bool { return i%tm.Layer.Width == 0 },
+		}
+		t, err := template.New("export").
+			Funcs(funcMap).Parse(cTileMapTemplate)
+		if err != nil {
+			return err
+		}
+
+		ctm := cTileMap{
+			name,
+			tm.TileSet.TileWidth,
+			tm.TileSet.TileHeight,
+			tm.TileSet.TileCount,
+			tm.Layer.Width,
+			tm.Layer.Height,
+			optimized}
+
+		file, err := os.Create(ctm.Name + "_map.c")
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		err = t.Execute(file, ctm)
+		if err != nil {
+			return err
 		}
 	}
-
-	misc.SavePNG(outName+"_map.png", uniqueTileMap)
-
-	funcMap := template.FuncMap{
-		"endLine": func(i int) bool { return i%tm.Layer.Width == 0 },
-	}
-	t, err := template.New("export").Funcs(funcMap).Parse(cTileMapTemplate)
-	if err != nil {
-		return
-	}
-
-	ctm := cTileMap{
-		name,
-		tm.TileSet.TileWidth,
-		tm.TileSet.TileHeight,
-		tm.TileSet.TileCount,
-		tm.Layer.Width,
-		tm.Layer.Height,
-		optimized}
-
-	file, err := os.Create(ctm.Name + "_map.c")
-	if err != nil {
-		return
-	}
-	defer file.Close()
-
-	return t.Execute(file, ctm)
+	return
 }
 
 var printHelp bool
+var exportSource bool
+var exportTiles bool
 var outName string
 
 func init() {
-	flag.BoolVar(&printHelp, "help", false, "print help message and exit\n")
-	flag.StringVar(&outName, "name", "", "set optional output name")
+	flag.BoolVar(&printHelp, "help", false,
+		"print help message and exit\n")
+	flag.BoolVar(&exportSource, "source", false,
+		"Exports layer data to C source file\n")
+	flag.BoolVar(&exportTiles, "tiles", false,
+		"Export tiles to PNG file\n")
+	flag.StringVar(&outName, "name", "",
+		"set optional output name")
 }
 
 func main() {
 	flag.Parse()
 
-	if len(flag.Args()) < 1 || printHelp {
+	if len(flag.Args()) < 1 ||
+		(exportSource == false && exportTiles == false) ||
+		printHelp {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -162,7 +181,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = exportTiledMap(tm, outName)
+	err = exportTiledMap(tm, outName, exportSource, exportTiles)
 	if err != nil {
 		log.Fatal(err)
 	}
