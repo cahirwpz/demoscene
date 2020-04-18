@@ -6,9 +6,9 @@ import "fmt"
 type BodyComp uint8
 
 const (
-  CompNone BodyComp = 0
-  CompRLE = 1
-  CompDeflate = 254
+	CompNone    BodyComp = 0
+	CompRLE              = 1
+	CompDeflate          = 254
 )
 
 type BMHD struct {
@@ -47,24 +47,24 @@ func (bmhd *BMHD) Read(r iff.Reader) {
 }
 
 func (c BodyComp) String() string {
-  switch c {
-  case CompNone:
-    return "None"
-  case CompRLE:
-    return "RLE"
-  case CompDeflate:
-    return "Deflate"
-  }
-  panic("Unknown compression!")
+	switch c {
+	case CompNone:
+		return "None"
+	case CompRLE:
+		return "RLE"
+	case CompDeflate:
+		return "Deflate"
+	}
+	panic("Unknown compression!")
 }
 
 func (bmhd BMHD) String() string {
-  return fmt.Sprintf(
-    "{Size: %dx%d, Origin: (%d,%d), NumPlanes: %d, " +
-    "Compression: %s, Transparency: %d, Aspect: %d:%d, PageSize: %dx%d}",
-    bmhd.Width, bmhd.Height, bmhd.XOrigin, bmhd.YOrigin, bmhd.NumPlanes,
-    bmhd.Compression, bmhd.TransClr, bmhd.XAspect, bmhd.YAspect, bmhd.PageWidth,
-    bmhd.PageHeight)
+	return fmt.Sprintf(
+		"{Size: %dx%d, Origin: (%d,%d), NumPlanes: %d, "+
+			"Compression: %s, Transparency: %d, Aspect: %d:%d, PageSize: %dx%d}",
+		bmhd.Width, bmhd.Height, bmhd.XOrigin, bmhd.YOrigin, bmhd.NumPlanes,
+		bmhd.Compression, bmhd.TransClr, bmhd.XAspect, bmhd.YAspect, bmhd.PageWidth,
+		bmhd.PageHeight)
 }
 
 func makeBMHD() iff.Chunk {

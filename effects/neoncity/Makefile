@@ -12,8 +12,8 @@ include $(TOPDIR)/build.effect.mk
 
 %-tiles.png: %.tmx
 	@echo "[TMX] $(DIR)$< -> $(DIR)$@"
-	$(TMXCONV) tiles $< > $@
+	$(TMXCONV) -tiles $@ $<
 
-%-map.c: %.tmx
+%.c: %.tmx
 	@echo "[TMX] $(DIR)$< -> $(DIR)$@"
-	$(TMXCONV) source $< > $@
+	$(TMXCONV) -source $@ $<
