@@ -5,6 +5,7 @@ import (
 	"image"
 	"log"
 	"os"
+	"path/filepath"
 	"text/template"
 
 	"../misc"
@@ -80,14 +81,16 @@ func copyTile(ts tmx.TiledTileSet, srcImg *image.Paletted, srcIdx int,
 	}
 }
 
-func exportTiledMap(tm tmx.TiledMap, name string, exportSource bool,
+func exportTiledMap(tm tmx.TiledMap, path string, name string,
+	exportSource bool,
 	exportTiles bool) (err error) {
 	layer, err := tm.Layer.Data.Decode()
 	if err != nil {
 		return
 	}
 
-	img := misc.LoadPNG(tm.TileSet.Image.Source).(*image.Paletted)
+	img := misc.LoadPNG(filepath.Join(path, tm.TileSet.Image.Source)).(*image.
+		Paletted)
 
 	th := tm.TileSet.TileHeight
 	tw := tm.TileSet.TileWidth
@@ -110,7 +113,7 @@ func exportTiledMap(tm tmx.TiledMap, name string, exportSource bool,
 				copyTile(tm.TileSet, img, i-1, uniqueTileMap, int(id)-1)
 			}
 		}
-		misc.SavePNG(outName+"_map.png", uniqueTileMap)
+		misc.SavePNG(filepath.Join(path, outName+"_map.png"), uniqueTileMap)
 	}
 
 	if exportSource == true {
@@ -132,7 +135,7 @@ func exportTiledMap(tm tmx.TiledMap, name string, exportSource bool,
 			tm.Layer.Height,
 			optimized}
 
-		file, err := os.Create(ctm.Name + "_map.c")
+		file, err := os.Create(filepath.Join(path, ctm.Name+"_map.c"))
 		if err != nil {
 			return err
 		}
@@ -171,9 +174,10 @@ func main() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
+	path := filepath.Dir(flag.Arg(0))
 
 	if len(outName) == 0 {
-		outName = misc.PathWithoutExt(flag.Arg(0))
+		outName = misc.PathWithoutExt(filepath.Base(flag.Arg(0)))
 	}
 
 	tm, err := tmx.ReadFile(flag.Arg(0))
@@ -181,7 +185,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = exportTiledMap(tm, outName, exportSource, exportTiles)
+	err = exportTiledMap(tm, path, outName, exportSource, exportTiles)
 	if err != nil {
 		log.Fatal(err)
 	}
