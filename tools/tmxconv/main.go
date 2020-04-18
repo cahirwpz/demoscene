@@ -91,7 +91,8 @@ func exportTiledMap(tm tmx.TiledMap, name string) (err error) {
 	th := tm.TileSet.TileHeight
 	tw := tm.TileSet.TileWidth
 
-	unique := make([]uint32, tm.TileSet.TileCount)
+	/* orignally tiles are enumarated starting from 1 */
+	unique := make([]uint32, tm.TileSet.TileCount+1)
 	uniqueCount := uniqueTileNumbers(layer, unique)
 
 	/* optimized layer tile numbers are enumerated starting from 0 */
