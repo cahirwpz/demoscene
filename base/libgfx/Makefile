@@ -7,6 +7,7 @@ SOURCES := \
 	circle.c \
 	color.c \
 	coplist.c \
+	dualpf.c \
 	line.c \
 	pixmap.c \
 	sprite.c

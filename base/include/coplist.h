@@ -121,6 +121,8 @@ void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
                           const Area2D *area);
 __regargs void CopUpdateBitplanes(CopInsT **bplptr,
                                   const BitmapT *bitmap, short n);
+__regargs void CopSetupDualPlayfield(CopListT *list, CopInsT **bplptr,
+                                     const BitmapT *pf1, const BitmapT *pf2);
 
 static inline void CopSetupGfxSimple(CopListT *list, u_short mode, u_short depth,
                                      u_short xs, u_short ys, u_short w, u_short h) 
