@@ -25,7 +25,7 @@ func parseHexColor(s string) (c color.RGBA, err error) {
 }
 
 func exportImage(baseName string, img *image.Paletted,
-	pxMap map[int][]uint8) (err error) {
+	pxMap [][]int) (err error) {
 	var rowMax int
 	for _, row := range pxMap {
 		if len(row) > rowMax {
@@ -99,20 +99,22 @@ func main() {
 	width := img.Bounds().Dx()
 	height := img.Bounds().Dy()
 
-	pxMap := make(map[int][]uint8)
+	pxMap := make([][]int, 0)
 
 	for y := 0; y < height; y++ {
-		row := make(map[uint8]int)
+		rowMap := make(map[uint8]int)
 		for x := 0; x < width; x++ {
 			px := img.ColorIndexAt(x, y)
-			row[px] += 1
+			rowMap[px] += 1
 		}
-		for k := range row {
-			pxMap[y] = append(pxMap[y], k)
+		var row []int
+		for k := range rowMap {
+			row = append(row, int(k))
 		}
-		sort.Slice(pxMap[y], func(i, j int) bool {
-			return pxMap[y][i] < pxMap[y][j]
+		sort.Slice(row, func(i, j int) bool {
+			return row[i] < row[j]
 		})
+		pxMap = append(pxMap, row)
 	}
 
 	err := exportImage(baseName, img, pxMap)
