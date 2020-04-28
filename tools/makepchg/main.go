@@ -85,22 +85,30 @@ func exportImage(baseName string, img *image.Paletted,
 			return err
 		}
 	}
-	draw.Draw(fill, image.Rect(0, 0, fill.Bounds().Dx(),
+	fillMaxCol := color.RGBA{255, 0, 0, 255}
+	if len(maxCol) != 0 {
+		fillMaxCol, err = parseHexColor(maxCol)
+		if err != nil {
+			return err
+		}
+	}
+	draw.Draw(fill, image.Rect(0, 0, maxN,
 		fill.Bounds().Dy()),
 		&image.Uniform{C: fillCol},
 		image.Point{},
 		draw.Over)
-
 	for y := 0; y < palImg.Bounds().Dy(); y++ {
 		rowLen := len(pxMap[y])
 		for x := 0; x < palImg.Bounds().Dx(); x++ {
 			var px color.Color
 			if x < rowLen {
 				px = img.Palette[pxMap[y][x]]
-			} else {
-				px = fillCol
+			} else if x >= maxN-1 {
+				px = fillMaxCol
 			}
-			fill.Set(x+1, y, px)
+			if px != nil {
+				fill.Set(x+1, y, px)
+			}
 		}
 	}
 
@@ -122,12 +130,19 @@ func exportImage(baseName string, img *image.Paletted,
 
 var col string
 var txt bool
+var maxCol string
+var maxN int
 
 func init() {
 	flag.StringVar(&col, "color", "",
 		"Sets palette background, color format 'fad'")
 	flag.BoolVar(&txt, "txt", false,
 		"Saves report as txt file")
+	flag.StringVar(&maxCol, "max-color", "",
+		"Sets palette background, for color count higher than 'n' ("+
+			"default: 16), color format 'fad'")
+	flag.IntVar(&maxN, "n", 16,
+		"Sets max pixel count for normal background. (default: 16)")
 }
 
 func main() {
