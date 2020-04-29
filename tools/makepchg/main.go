@@ -39,21 +39,7 @@ func exportReport(baseName string, pixels [][]int) (err error) {
 	return
 }
 
-func parseHexColor(s string) (c color.RGBA, err error) {
-	c.A = 0xff
-	if len(s) == 3 {
-		_, err = fmt.Sscanf(s, "%1x%1x%1x", &c.R, &c.G, &c.B)
-		c.R *= 17
-		c.G *= 17
-		c.B *= 17
-	} else {
-		err = fmt.Errorf("invalid color length, must be 3")
-	}
-	return
-}
-
-func exportImage(baseName string, img *image.Paletted,
-	pxMap [][]int) (err error) {
+func exportImage(baseName string, img *image.Paletted, pxMap [][]int) {
 	var rowMax int
 	for _, row := range pxMap {
 		if len(row) > rowMax {
@@ -63,27 +49,14 @@ func exportImage(baseName string, img *image.Paletted,
 
 	dim := image.Rect(0, 0, rowMax, img.Bounds().Dy())
 	palImg := image.NewRGBA(dim)
-	fill := image.NewRGBA(image.Rect(0, 0, palImg.Bounds().Dx()+1,
-		img.Bounds().Dy()))
-	fillCol := color.RGBA{0, 255, 0, 255}
-	if len(col) != 0 {
-		fillCol, err = parseHexColor(col)
-		if err != nil {
-			return err
-		}
-	}
-	fillMaxCol := color.RGBA{255, 0, 0, 255}
-	if len(maxCol) != 0 {
-		fillMaxCol, err = parseHexColor(maxCol)
-		if err != nil {
-			return err
-		}
-	}
+	fillDim := image.Rect(0, 0, palImg.Bounds().Dx()+1, img.Bounds().Dy())
+	fill := image.NewRGBA(fillDim)
 	draw.Draw(fill, image.Rect(0, 0, maxN,
 		fill.Bounds().Dy()),
-		&image.Uniform{C: fillCol},
+		&image.Uniform{C: bgCol.rgb},
 		image.Point{},
 		draw.Over)
+
 	for y := 0; y < palImg.Bounds().Dy(); y++ {
 		rowLen := len(pxMap[y])
 		for x := 0; x < palImg.Bounds().Dx(); x++ {
@@ -91,7 +64,7 @@ func exportImage(baseName string, img *image.Paletted,
 			if x < rowLen {
 				px = img.Palette[pxMap[y][x]]
 			} else if x >= maxN-1 {
-				px = fillMaxCol
+				px = maxCol.rgb
 			}
 			if px != nil {
 				fill.Set(x+1, y, px)
@@ -115,17 +88,41 @@ func exportImage(baseName string, img *image.Paletted,
 	return
 }
 
-var col string
+type Color struct {
+	rgb color.RGBA
+}
+
+func (col *Color) String() string {
+	c := col.rgb
+	return fmt.Sprintf("%x%x%x", c.R/17, c.G/17, c.B/17)
+}
+
+func (col *Color) Set(s string) (err error) {
+	var c color.RGBA
+	c.A = 0xff
+	if len(s) == 3 {
+		_, err = fmt.Sscanf(s, "%1x%1x%1x", &c.R, &c.G, &c.B)
+		c.R *= 17
+		c.G *= 17
+		c.B *= 17
+	} else {
+		err = fmt.Errorf("invalid color format must be 3 hex digits")
+	}
+	col.rgb = c
+	return
+}
+
+var bgCol = Color{color.RGBA{0, 255, 0, 255}}
+var maxCol = Color{color.RGBA{255, 0, 0, 255}}
 var report bool
-var maxCol string
 var maxN int
 
 func init() {
-	flag.StringVar(&col, "color", "",
-		"Sets palette background, color format 'fad'")
 	flag.BoolVar(&report, "report", false,
 		"Saves report as txt file")
-	flag.StringVar(&maxCol, "max-color", "",
+	flag.Var(&bgCol, "bg-color",
+		"Sets palette background, 12-bit hex color format 'fad'")
+	flag.Var(&maxCol, "max-color",
 		"Sets palette background, for color count higher than 'n' ("+
 			"default: 16), color format 'fad'")
 	flag.IntVar(&maxN, "n", 16,
@@ -164,13 +161,10 @@ func main() {
 		usedPerRow[y] = used
 	}
 
-	err := exportImage(baseName, img, usedPerRow)
-	if err != nil {
-		log.Fatal(err)
-	}
+	exportImage(baseName, img, usedPerRow)
 
 	if report {
-		err = exportReport(baseName, usedPerRow)
+		err := exportReport(baseName, usedPerRow)
 		if err != nil {
 			log.Fatal(err)
 		}
