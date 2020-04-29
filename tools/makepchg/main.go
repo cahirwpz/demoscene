@@ -39,30 +39,26 @@ func exportReport(baseName string, pixels [][]int) (err error) {
 	return
 }
 
-func exportImage(baseName string, img *image.Paletted, pxMap [][]int) {
-	var rowMax int
-	for _, row := range pxMap {
-		if len(row) > rowMax {
-			rowMax = len(row)
-		}
-	}
+func exportImage(img *image.Paletted, usedPerRow [][]int,
+	maxUsed int) *image.RGBA {
 
-	dim := image.Rect(0, 0, rowMax, img.Bounds().Dy())
-	palImg := image.NewRGBA(dim)
-	fillDim := image.Rect(0, 0, palImg.Bounds().Dx()+1, img.Bounds().Dy())
-	fill := image.NewRGBA(fillDim)
-	draw.Draw(fill, image.Rect(0, 0, maxN,
-		fill.Bounds().Dy()),
-		&image.Uniform{C: bgCol.rgb},
-		image.Point{},
-		draw.Over)
+	width := img.Bounds().Dx()
+	height := img.Bounds().Dy()
+	outWidth := width + 1 + maxUsed
 
-	for y := 0; y < palImg.Bounds().Dy(); y++ {
-		rowLen := len(pxMap[y])
-		for x := 0; x < palImg.Bounds().Dx(); x++ {
+	out := image.NewRGBA(image.Rect(0, 0, outWidth, height))
+	draw.Draw(out, image.Rect(0, 0, width, height), img, image.Point{}, draw.Over)
+
+	fill := image.NewRGBA(image.Rect(0, 0, 1+maxUsed, height))
+	draw.Draw(fill, image.Rect(0, 0, maxN, height), &image.Uniform{C: bgCol.rgb},
+		image.Point{}, draw.Over)
+
+	for y := 0; y < height; y++ {
+		rowLen := len(usedPerRow[y])
+		for x := 0; x < maxUsed; x++ {
 			var px color.Color
 			if x < rowLen {
-				px = img.Palette[pxMap[y][x]]
+				px = img.Palette[usedPerRow[y][x]]
 			} else if x >= maxN-1 {
 				px = maxCol.rgb
 			}
@@ -72,20 +68,10 @@ func exportImage(baseName string, img *image.Paletted, pxMap [][]int) {
 		}
 	}
 
-	outDim := image.Rect(0, 0,
-		img.Bounds().Dx()+fill.Bounds().Dx(), img.Bounds().Dy())
-	out := image.NewRGBA(outDim)
+	draw.Draw(out, image.Rect(width, 0, outWidth, height),
+		fill, image.Point{}, draw.Over)
 
-	draw.Draw(out,
-		image.Rect(img.Bounds().Dx(), 0, img.Bounds().Dx()+fill.Bounds().
-			Dx(), img.Bounds().Dy()), fill, image.Point{}, draw.Over)
-	draw.Draw(out, image.Rect(0, 0,
-		img.Bounds().Dx(), img.Bounds().Dy()),
-		img, image.Point{}, draw.Over)
-
-	misc.SavePNG(baseName+"_pal.png", out)
-
-	return
+	return out
 }
 
 type Color struct {
@@ -143,6 +129,7 @@ func main() {
 	height := img.Bounds().Dy()
 
 	usedPerRow := make([][]int, height)
+	maxUsed := 0
 
 	for y := 0; y < height; y++ {
 		histogram := make([]int, 256)
@@ -158,10 +145,15 @@ func main() {
 			}
 		}
 
+		if len(used) > maxUsed {
+			maxUsed = len(used)
+		}
+
 		usedPerRow[y] = used
 	}
 
-	exportImage(baseName, img, usedPerRow)
+	out := exportImage(img, usedPerRow, maxUsed)
+	misc.SavePNG(baseName+"_pal.png", out)
 
 	if report {
 		err := exportReport(baseName, usedPerRow)
