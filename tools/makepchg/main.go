@@ -44,32 +44,25 @@ func exportImage(img *image.Paletted, usedPerRow [][]int,
 
 	width := img.Bounds().Dx()
 	height := img.Bounds().Dy()
-	outWidth := width + 1 + maxUsed
 
-	out := image.NewRGBA(image.Rect(0, 0, outWidth, height))
+	out := image.NewRGBA(image.Rect(0, 0, width+1+maxUsed, height))
 	draw.Draw(out, image.Rect(0, 0, width, height), img, image.Point{}, draw.Over)
 
-	fill := image.NewRGBA(image.Rect(0, 0, 1+maxUsed, height))
-	draw.Draw(fill, image.Rect(0, 0, maxN, height), &image.Uniform{C: bgCol.rgb},
-		image.Point{}, draw.Over)
-
 	for y := 0; y < height; y++ {
-		rowLen := len(usedPerRow[y])
+		out.Set(width, y, bgCol.rgb)
+		used := usedPerRow[y]
 		for x := 0; x < maxUsed; x++ {
 			var px color.Color
-			if x < rowLen {
-				px = img.Palette[usedPerRow[y][x]]
+			if x < len(used) {
+				px = img.Palette[used[x]]
 			} else if x >= maxN-1 {
 				px = maxCol.rgb
+			} else {
+				px = bgCol.rgb
 			}
-			if px != nil {
-				fill.Set(x+1, y, px)
-			}
+			out.Set(width+x+1, y, px)
 		}
 	}
-
-	draw.Draw(out, image.Rect(width, 0, outWidth, height),
-		fill, image.Point{}, draw.Over)
 
 	return out
 }
