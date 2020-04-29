@@ -55,7 +55,7 @@ func exportImage(img *image.Paletted, usedPerRow [][]int,
 			var px color.Color
 			if x < len(used) {
 				px = img.Palette[used[x]]
-			} else if x >= maxN-1 {
+			} else if x >= maxN {
 				px = maxCol.rgb
 			} else {
 				px = bgCol.rgb
@@ -100,12 +100,12 @@ func init() {
 	flag.BoolVar(&report, "report", false,
 		"Saves report as txt file")
 	flag.Var(&bgCol, "bg-color",
-		"Sets palette background, 12-bit hex color format 'fad'")
+		"Sets palette background (OCS 12-bit hex color)")
 	flag.Var(&maxCol, "max-color",
-		"Sets palette background, for color count higher than 'n' ("+
-			"default: 16), color format 'fad'")
+		"Sets palette background, for color count higher than 'n' "+
+			"(OCS 12-bit hex color)")
 	flag.IntVar(&maxN, "n", 16,
-		"Sets max pixel count for normal background. (default: 16)")
+		"Sets max pixel count for normal background")
 }
 
 func main() {
