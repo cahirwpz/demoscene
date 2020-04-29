@@ -9,7 +9,6 @@ import (
 	"image/draw"
 	"log"
 	"os"
-	"sort"
 	"text/template"
 )
 
@@ -117,14 +116,14 @@ func exportImage(baseName string, img *image.Paletted,
 }
 
 var col string
-var txt bool
+var report bool
 var maxCol string
 var maxN int
 
 func init() {
 	flag.StringVar(&col, "color", "",
 		"Sets palette background, color format 'fad'")
-	flag.BoolVar(&txt, "txt", false,
+	flag.BoolVar(&report, "report", false,
 		"Saves report as txt file")
 	flag.StringVar(&maxCol, "max-color", "",
 		"Sets palette background, for color count higher than 'n' ("+
@@ -146,31 +145,32 @@ func main() {
 	width := img.Bounds().Dx()
 	height := img.Bounds().Dy()
 
-	pxMap := make([][]int, 0)
+	usedPerRow := make([][]int, height)
 
 	for y := 0; y < height; y++ {
-		rowMap := make(map[uint8]int)
+		histogram := make([]int, 256)
 		for x := 0; x < width; x++ {
 			px := img.ColorIndexAt(x, y)
-			rowMap[px] += 1
+			histogram[px] += 1
 		}
-		var row []int
-		for k := range rowMap {
-			row = append(row, int(k))
+
+		used := make([]int, 0)
+		for i, n := range histogram {
+			if n > 0 {
+				used = append(used, i)
+			}
 		}
-		sort.Slice(row, func(i, j int) bool {
-			return row[i] < row[j]
-		})
-		pxMap = append(pxMap, row)
+
+		usedPerRow[y] = used
 	}
 
-	err := exportImage(baseName, img, pxMap)
+	err := exportImage(baseName, img, usedPerRow)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if txt == true {
-		err = exportReport(baseName, pxMap)
+	if report {
+		err = exportReport(baseName, usedPerRow)
 		if err != nil {
 			log.Fatal(err)
 		}
