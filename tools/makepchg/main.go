@@ -13,42 +13,30 @@ import (
 	"text/template"
 )
 
-type paletteReport struct {
-	Pixels [][]int
-}
-
-func exportReport(baseName string, pixels [][]int) (err error) {
-	paletteReportTemplate :=
-		` Line | Unique | Used Index
+var paletteReportTemplate = ` Line | Unique | Used Index
 -------------------------------------------------------------------------------
-{{- with .Pixels -}}
+{{- with . -}}
 {{- range $i, $el := .}}
  {{inc $i}} |   {{len $el}}   | {{range $j, $px := $el}}{{$px}}, {{- end}}
 {{- end}}
 {{- end}}
 `
+
+func exportReport(baseName string, pixels [][]int) (err error) {
 	funcMap := template.FuncMap{
-		"inc": func(i int) string {
-			return fmt.Sprintf("%4d", i+1)
-		},
-		"len": func(l []int) string {
-			return fmt.Sprintf("%2d", len(l))
-		},
+		"inc": func(i int) string { return fmt.Sprintf("%4d", i+1) },
+		"len": func(l []int) string { return fmt.Sprintf("%2d", len(l)) },
 	}
 	t, err := template.New("export").Funcs(funcMap).Parse(paletteReportTemplate)
 	if err != nil {
 		return
 	}
-	pr := paletteReport{pixels}
 	file, err := os.Create(baseName + "_report.txt")
 	if err != nil {
 		return
 	}
-	defer file.Close()
-	err = t.Execute(file, pr)
-	if err != nil {
-		return
-	}
+	err = t.Execute(file, pixels)
+	file.Close()
 	return
 }
 
