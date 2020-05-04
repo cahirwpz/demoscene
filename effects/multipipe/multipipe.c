@@ -1,5 +1,5 @@
 #include "startup.h"
-#include "coplist.h"
+#include "copper.h"
 #include "blitter.h"
 #include "memory.h"
 #include "pixmap.h"

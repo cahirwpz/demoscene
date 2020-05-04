@@ -1,7 +1,7 @@
 #include "startup.h"
 #include "hardware.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "gfx.h"
 #include "memory.h"
 #include "reader.h"

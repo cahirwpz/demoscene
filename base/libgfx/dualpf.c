@@ -1,4 +1,4 @@
-#include "coplist.h"
+#include "copper.h"
 
 __regargs void CopSetupDualPlayfield(CopListT *list, CopInsT **bplptr,
                                      const BitmapT *pf1, const BitmapT *pf2)

@@ -1,6 +1,6 @@
 #include "startup.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "gfx.h"
 
 #define WIDTH 320

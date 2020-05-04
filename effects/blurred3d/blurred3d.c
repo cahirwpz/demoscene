@@ -1,6 +1,6 @@
 #include "startup.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "3d.h"
 #include "fx.h"
 #include "pixmap.h"

@@ -1,5 +1,5 @@
-#ifndef __COPLIST_H__
-#define __COPLIST_H__
+#ifndef __COPPER_H__
+#define __COPPER_H__
 
 #include "gfx.h"
 #include "hardware.h"

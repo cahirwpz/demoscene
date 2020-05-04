@@ -1,7 +1,7 @@
 #ifndef __SPRITE_H__
 #define __SPRITE_H__
 
-#include "coplist.h"
+#include "copper.h"
 #include "gfx.h"
 
 typedef struct Sprite {

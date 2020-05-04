@@ -1,7 +1,7 @@
 #include "startup.h"
 #include "console.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "event.h"
 #include "keyboard.h"
 #include "serial.h"

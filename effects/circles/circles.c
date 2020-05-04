@@ -1,5 +1,5 @@
 #include "startup.h"
-#include "coplist.h"
+#include "copper.h"
 #include "circle.h"
 
 #define WIDTH 320

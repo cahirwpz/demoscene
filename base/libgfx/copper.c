@@ -1,4 +1,4 @@
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 
 __regargs CopListT *NewCopList(u_short length) {

@@ -1,6 +1,6 @@
 #include "startup.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "gfx.h"
 #include "blitter.h"

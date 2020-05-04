@@ -6,7 +6,7 @@ SOURCES := \
 	c2p_1x1_4.s \
 	circle.c \
 	color.c \
-	coplist.c \
+	copper.c \
 	dualpf.c \
 	line.c \
 	pixmap.c \

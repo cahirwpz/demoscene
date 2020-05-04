@@ -9,6 +9,7 @@ SUBDIRS := \
 	bumpmap-rgb \
 	circles \
 	credits \
+	empty \
 	flatshade \
 	flatshade-convex \
 	floor \

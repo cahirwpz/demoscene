@@ -4,7 +4,7 @@
 #include "memory.h"
 #include "ahx.h"
 #include "console.h"
-#include "coplist.h"
+#include "copper.h"
 #include "keyboard.h"
 #include "event.h"
 #include "blitter.h"
