@@ -8,7 +8,6 @@
 #include "keyboard.h"
 #include "event.h"
 #include "blitter.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -135,6 +134,8 @@ static void Kill(void) {
   DeleteBitmap(screen);
 }
 
+static bool HandleEvent(void);
+
 static void Render(void) {
   short i;
 
@@ -175,7 +176,9 @@ static void Render(void) {
     }
   }
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
+
+  exitLoop = HandleEvent();
 }
 
 static bool HandleEvent(void) {
@@ -214,4 +217,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, HandleEvent };
+EffectT Effect = { NULL, NULL, Init, Kill, Render };

@@ -5,7 +5,6 @@
 #include "fx.h"
 #include "memory.h"
 #include "sprite.h"
-#include "tasks.h"
 
 #define WIDTH   144
 #define HEIGHT  255
@@ -181,8 +180,8 @@ static void Render(void) {
   // Log("twister: %d\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render };

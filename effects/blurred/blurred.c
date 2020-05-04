@@ -5,7 +5,6 @@
 #include "2d.h"
 #include "fx.h"
 #include "circle.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -135,8 +134,8 @@ static void Render(void) {
     CopInsSet32(bplptr[1][i], screen[active]->planes[i] - WIDTH / 16);
     });
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };

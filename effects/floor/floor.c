@@ -6,7 +6,6 @@
 #include "fx.h"
 #include "color.h"
 #include "random.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -230,8 +229,8 @@ static void Render(void) {
   // Log("floor2: %d\n", ReadLineCounter() - lines);
 
   CopListRun(coplist[active]);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render };

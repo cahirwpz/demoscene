@@ -6,7 +6,6 @@
 #include "random.h"
 #include "color.h"
 #include "pixmap.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 212
@@ -460,8 +459,8 @@ static void Render(void) {
   // Log("floor: %d\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };

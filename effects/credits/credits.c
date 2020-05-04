@@ -4,7 +4,6 @@
 #include "gfx.h"
 #include "blitter.h"
 #include "fx.h"
-#include "tasks.h"
 
 #define WIDTH 256
 #define HEIGHT 144
@@ -189,8 +188,8 @@ static void Render(void) {
 
   MakeCopperList(cp1);
   CopListRun(cp1);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   swapr(cp0, cp1);
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render };

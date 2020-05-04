@@ -7,7 +7,6 @@
 #include "fx.h"
 #include "sync.h"
 #include "memory.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -96,8 +95,8 @@ static void Render(void) {
   DrawPlotter();
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render };

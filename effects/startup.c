@@ -12,6 +12,7 @@ extern EffectT Effect;
 
 int frameCount;
 int lastFrameCount;
+bool exitLoop;
 
 static short kickVer;
 static struct List PortsIntChain;
@@ -27,7 +28,6 @@ static struct {
 } old;
 
 static void DummyRender(void) {}
-static bool ExitOnLMB(void) { return !LeftMouseButton(); }
 
 #define IDLETASK 0
 
@@ -147,12 +147,17 @@ void RestoreOS(void) {
 ADD2EXIT(RestoreOS, -20);
 
 /* VBlank event list. */
-struct List *VBlankEvent = &(struct List){NULL, NULL, NULL, 0, 0};
+static struct List *VBlankEvent = &(struct List){NULL, NULL, NULL, 0, 0};
 
 /* Wake up tasks asleep in wait for VBlank interrupt. */
 static int VBlankEventHandler(void) {
   TaskSignalIntr(VBlankEvent);
   return 0;
+}
+
+/* Puts a task into sleep waiting for VBlank interrupt. */
+void TaskWaitVBlank(void) {
+  TaskWait(VBlankEvent);
 }
 
 INTERRUPT(VBlankWakeUp, 10, VBlankEventHandler, NULL);
@@ -167,8 +172,6 @@ int main(void) {
 
   if (!Effect.Render)
     Effect.Render = DummyRender;
-  if (!Effect.HandleEvent)
-    Effect.HandleEvent = ExitOnLMB;
 
   if (Effect.Init) {
     Effect.Init();
@@ -179,12 +182,13 @@ int main(void) {
 
   lastFrameCount = ReadFrameCounter();
 
-  while (Effect.HandleEvent()) {
+  do {
     int t = ReadFrameCounter();
+    exitLoop = LeftMouseButton();
     frameCount = t;
     Effect.Render();
     lastFrameCount = t;
-  }
+  } while (!exitLoop);
 
   if (Effect.Kill)
     Effect.Kill();

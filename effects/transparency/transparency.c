@@ -5,7 +5,6 @@
 #include "color.h"
 #include "blitter.h"
 #include "fx.h"
-#include "tasks.h"
 
 #define WIDTH   320
 #define HEIGHT  256
@@ -86,7 +85,7 @@ static void Render(void) {
   for (i = 0; i < 24; i++)
     CopInsSet16(pal + i, ColorTransition(pal1[i & 7], pal2[i / 8 + 1], s));
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render };

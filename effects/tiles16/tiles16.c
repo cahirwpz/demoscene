@@ -5,7 +5,6 @@
 #include "gfx.h"
 #include "blitter.h"
 #include "random.h"
-#include "tasks.h"
 
 int __chipmem = 128 * 1024;
 
@@ -199,8 +198,8 @@ static void Render(void) {
   CopListRun(cp[active]);
   Log("all: %d\n", ReadLineCounter() - lines);
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { Load, NULL, Init, Kill, Render };

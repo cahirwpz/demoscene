@@ -62,4 +62,4 @@ static void Init(void) {
   }
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, NULL, NULL };
+EffectT Effect = { Load, UnLoad, Init, NULL, NULL };

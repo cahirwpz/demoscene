@@ -4,7 +4,6 @@
 #include "memory.h"
 #include "2d.h"
 #include "fx.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -125,8 +124,8 @@ static void Render(void) {
   // Log("metaballs : %d\n", ReadLineCounter() - lines);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };

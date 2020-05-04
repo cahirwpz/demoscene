@@ -5,7 +5,6 @@
 #include "fx.h"
 #include "pixmap.h"
 #include "memory.h"
-#include "tasks.h"
 
 #define WIDTH  176
 #define HEIGHT 176
@@ -490,8 +489,8 @@ static void Render(void) {
       CopInsSet32(bplptr[n], screen0->planes[n]);
   }
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };

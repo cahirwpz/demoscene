@@ -130,4 +130,8 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, NULL, HandleEvent };
+static void Render(void) {
+  exitLoop = !HandleEvent();
+}
+
+EffectT Effect = { Load, NULL, Init, Kill, Render };

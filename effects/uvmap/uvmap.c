@@ -80,6 +80,18 @@ static struct {
 static void ChunkyToPlanar(void) {
   register void **bpl asm("a0") = c2p.bpl;
 
+  /*
+   * Our chunky buffer of size (WIDTH/2, HEIGHT/2) is in bpl[0]. Each 16-bit
+   * word of chunky buffer stores four 4-bit pixels [a B c D] in scrambled
+   * format described below:
+   * 
+   * [a3 a2 C3 C2 a1 a0 C1 C0 b3 b2 D3 D2 b1 b0 D1 D0]
+   *
+   * Using blitter we stretch pixels to 2x1. Line doubling is performed using
+   * copper. Rendered bitmap will have size (WIDTH, HEIGHT/2, DEPTH) and will
+   * be placed in bpl[2] and bpl[3].
+   */
+
   switch (c2p.phase) {
     case 0:
       /* Initialize chunky to planar. */
@@ -98,11 +110,10 @@ static void ChunkyToPlanar(void) {
       /* (a & 0xF0F0) | ((b >> 4) & ~0xF0F0) */
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
       custom->bltcon1 = 4 << BSHIFTSHIFT;
-      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
-      break;
 
     case 1:
-      custom->bltsize = 1 | ((BLTSIZE / 8) << 6); /* overall size: BLTSIZE / 2 bytes */
+      /* overall size: BLTSIZE / 2 bytes */
+      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
       break;
 
     case 2:
@@ -114,11 +125,10 @@ static void ChunkyToPlanar(void) {
       /* ((a << 4) & 0xF0F0) | (b & ~0xF0F0) */
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
       custom->bltcon1 = BLITREVERSE;
-      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
-      break;
 
     case 3:
-      custom->bltsize = 1 | ((BLTSIZE / 8) << 6); /* overall size: BLTSIZE / 2 bytes */
+      /* overall size: BLTSIZE / 2 bytes */
+      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
       break;
 
     case 4:
@@ -147,6 +157,8 @@ static void ChunkyToPlanar(void) {
       custom->bltapt = bpl[1] + BLTSIZE / 2;
       custom->bltbpt = bpl[1] + BLTSIZE / 2;
       custom->bltdpt = bpl[3] + BLTSIZE / 2;
+
+      /* overall size: BLTSIZE bytes */
       custom->bltsize = 2 | ((BLTSIZE / 8) << 6);
       break;
 
@@ -281,4 +293,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render };

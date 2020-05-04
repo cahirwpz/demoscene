@@ -4,7 +4,6 @@
 #include "coplist.h"
 #include "memory.h"
 #include "fx.h"
-#include "tasks.h"
 
 #define WIDTH  320
 #define HEIGHT 240
@@ -102,9 +101,9 @@ static void Render(void) {
     }
   }
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
 
   active = (active + 1) % (DEPTH + 1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EffectT Effect = { Load, UnLoad, Init, Kill, Render };

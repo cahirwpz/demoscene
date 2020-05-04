@@ -360,4 +360,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { Load, NULL, Init, Kill, Render };

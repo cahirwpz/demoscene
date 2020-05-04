@@ -52,4 +52,4 @@ static void Kill(void) {
   DeleteCopList(cp);
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, NULL, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, NULL };

@@ -5,7 +5,6 @@
 #include "gfx.h"
 #include "memory.h"
 #include "reader.h"
-#include "tasks.h"
 
 #define WIDTH 640
 #define HEIGHT 256
@@ -143,8 +142,8 @@ static void Render(void) {
   RenderNextLineIfNeeded();
 
   CopListRun(cp[active]);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render };

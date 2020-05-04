@@ -3,7 +3,6 @@
 #include "coplist.h"
 #include "3d.h"
 #include "fx.h"
-#include "tasks.h"
 
 #define WIDTH  256
 #define HEIGHT 256
@@ -244,10 +243,10 @@ static void Render(void) {
     Log("draw: %d\n", ReadLineCounter() - lines);
   }
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
 
   CopUpdateBitplanes(bplptr, screen0, DEPTH);
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EffectT Effect = { NULL, NULL, Init, Kill, Render };
