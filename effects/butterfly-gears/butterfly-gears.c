@@ -72,7 +72,7 @@ static void InitCopperListBall(CopListT *cp, int y) {
     SETCOLOR(23);
     SETCOLOR(26);
     SETCOLOR(28);
-    CopMoveWord(cp, 0x1fe, 0);
+    CopNoOp(cp);
     y += 2;
     CopWait(cp, y, COPWAIT_X);
     SETCOLOR(2);
@@ -87,7 +87,7 @@ static void InitCopperListBall(CopListT *cp, int y) {
     SETCOLOR(22);
     SETCOLOR(24);
     SETCOLOR(27);
-    CopMoveWord(cp, 0x1fe, 0);
+    CopNoOp(cp);
     y += 2;
   }
 }
