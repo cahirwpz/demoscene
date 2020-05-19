@@ -27,13 +27,18 @@
 #define SETCOLOR(x) CopMove16(cp, color[x], 0xf00)
 #endif
 
+// Internally, u/v coordinates use 9 fractional bits
+#define f2short(f) \
+  (short)((float)(f) * 512.0)
 
 typedef struct {
   PixmapT texture;
   short angle;
   short angleDelta;
-  int uvPos; // TODO handle u,v separately
-  int uvDelta;
+  short u;
+  short v;
+  short uDelta;
+  short vDelta;
 } BallT;
 
 typedef struct {
@@ -116,11 +121,13 @@ static void Init(void) {
   MakeBallCopperList(&ballCopList1);
   CopListActivate(ballCopList1.cp);
   ball1.texture = texture_butterfly;
-  ball1.angleDelta = 27;
-  ball1.uvDelta = 1 << 25;
+  ball1.angleDelta = 25;
+  ball1.uDelta = 0;
+  ball2.vDelta = 0;
   ball2.texture = texture_butterfly2;
-  ball2.angleDelta = -11;
-  ball2.uvDelta = -3 << (6+16);
+  ball2.angleDelta = 0;
+  ball2.uDelta = f2short(0.5f);
+  ball2.vDelta = f2short(-0.3f);
 }
 
 static void Kill(void) {
@@ -133,30 +140,35 @@ extern void PlotTextureAsm(char *copperDst asm("a0"),
                            int  uvDeltaRow asm("d6"),
                            int  uvDeltaCol asm("d1"));
 
-// Pack texture coordinates into a longword. Format:
-// Bits = UUUUUUUu uuuuuuuu VVVVVVVv vvvvvvvv
-// i.e. 7 integer bits and 9 fractional bits each
-static uint32_t uv(short u, short v) {
+// Pack u/v values into a longword to be used by the inner loop.
+//
+// TODO Use explicit asm template to be sure? (gcc already generates a "swap")
+static inline long uv(short u, short v) {
   int combined;
-  combined = (v & 0xffff) | ((u & 0xffff) << 16);
+  combined = (u & 0xffff) | ((v & 0xffff) << 16);
   return combined;
 }
 
 static void DrawCopperBall(CopInsT *copper, BallT *ball) {
   short sin;
   short cos;
-  int pos;
+  short u;
+  short v;
   int deltaCol;
   int deltaRow;
+  int uvPos;
 
   sin = SIN(ball->angle) >> 3;
   cos = COS(ball->angle) >> 3;
   deltaCol = uv(sin, cos);
   deltaRow = uv(cos, -sin);
-  pos = -deltaCol * (ROTZOOM_W / 2) - deltaRow * (ROTZOOM_H / 2) + ball->uvPos;
-  PlotTextureAsm((char*) copper, (char*) ball->texture.pixels, pos, deltaCol, deltaRow);
+  u = ball->u - sin * (ROTZOOM_W / 2) - cos * (ROTZOOM_W / 2);
+  v = ball->v - cos * (ROTZOOM_W / 2) + sin * (ROTZOOM_W / 2);
+  uvPos = uv(u, v);
+  PlotTextureAsm((char*) copper, (char*) ball->texture.pixels, uvPos, deltaCol, deltaRow);
   ball->angle += ball->angleDelta;
-  ball->uvPos += ball->uvDelta;
+  ball->u += ball->uDelta;
+  ball->v += ball->vDelta;
 }
 
 static void Render(void) {
