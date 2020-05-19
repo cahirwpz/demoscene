@@ -293,15 +293,22 @@ def do_palette(im, desc):
     if im.mode != 'P':
         raise SystemExit('Only 8-bit images with palette supported.')
 
-    param = parse(desc, ('name', str), ('colors', int))
+    param = parse(desc, ('name', str), ('colors', int), store_unused=False)
 
     name = param['name']
-    colors = param['colors']
+    has_colors = param['colors']
+    store_unused = param['store_unused']
 
     pal = im.getpalette()
 
     if pal is None:
         raise SystemExit('Image has no palette!')
+    if colors > has_colors:
+        raise SystemExit('Image has {} colors, expected at most {}!'
+                         .format(colors, has_colors))
+
+    if store_unused:
+        colors = max(colors, has_colors)
 
     cmap = [pal[i * 3:(i + 1) * 3] for i in range(colors)]
 
