@@ -300,6 +300,7 @@ def do_palette(im, desc):
     store_unused = param['store_unused']
 
     pal = im.getpalette()
+    colors = im.getextrema()[1] + 1
 
     if pal is None:
         raise SystemExit('Image has no palette!')
