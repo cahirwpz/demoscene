@@ -296,16 +296,12 @@ def do_palette(im, desc):
     param = parse(desc, ('name', str), ('colors', int))
 
     name = param['name']
-    has_colors = param['colors']
+    colors = param['colors']
 
     pal = im.getpalette()
-    colors = im.getextrema()[1] + 1
 
     if pal is None:
         raise SystemExit('Image has no palette!')
-    if colors != has_colors:
-        raise SystemExit(
-            'Image has {} colors, expected {}!'.format(colors, has_colors))
 
     cmap = [pal[i * 3:(i + 1) * 3] for i in range(colors)]
 
@@ -345,6 +341,7 @@ if __name__ == '__main__':
         print('')
 
     if args.pixmap:
+        SystemExit('pixmap mann')
         do_pixmap(im, args.pixmap)
         print('')
 
