@@ -341,7 +341,6 @@ if __name__ == '__main__':
         print('')
 
     if args.pixmap:
-        SystemExit('pixmap mann')
         do_pixmap(im, args.pixmap)
         print('')
 
