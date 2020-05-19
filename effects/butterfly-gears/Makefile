@@ -6,6 +6,7 @@ CLEAN-FILES := \
 	data/gears_testscreen.c \
 	data/gears_testscreen_debug.c \
 	data/texture_butterfly.c \
+	data/texture_butterfly2.c \
 	data/textureloop-generated.s
 
 PNG2C.gears_testscreen := --bitmap testscreen,320x280x5 --palette testscreen_pal,32
@@ -20,6 +21,3 @@ textureloop.s: data/textureloop-generated.s
 %.s: %.txt
 	@echo "[GEN] $(DIR)$< -> $(DIR)$@"
 	$(PYTHON3) data/gen-unrolled-loop.py $< > $@
-
-
-
