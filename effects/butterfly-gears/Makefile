@@ -9,8 +9,8 @@ CLEAN-FILES := \
 	data/texture_butterfly2.c \
 	data/textureloop-generated.s
 
-PNG2C.gears_testscreen := --bitmap testscreen,320x280x5 --palette testscreen_pal,32
-PNG2C.gears_testscreen_debug := --bitmap testscreen,320x280x5 --palette testscreen_pal,32
+PNG2C.gears_testscreen := --bitmap testscreen,320x280x5 --palette testscreen_pal,32,+store_unused
+PNG2C.gears_testscreen_debug := --bitmap testscreen,320x280x5 --palette testscreen_pal,32,+store_unused
 PNG2C.texture_butterfly := --pixmap texture_butterfly,128x128x12
 PNG2C.texture_butterfly2 := --pixmap texture_butterfly2,128x128x12
 
