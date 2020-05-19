@@ -16,16 +16,17 @@
 #define ROTZOOM_H 24
 #define COPWAIT_X 1
 #define Y0 Y((256-280)/2)
-#define COPPER_HALFROW_INSTRUCTIONS ROTZOOM_W/2+2
-#define INSTRUCTIONS_PER_BALL COPPER_HALFROW_INSTRUCTIONS*2*ROTZOOM_H
+#define COPPER_HALFROW_INSTRUCTIONS (ROTZOOM_W/2+2)
+#define INSTRUCTIONS_PER_BALL (COPPER_HALFROW_INSTRUCTIONS*2*ROTZOOM_H)
 #define DEBUG_COLOR_WRITES 0
 #define USE_DEBUG_BITMAP 0
 
 #if DEBUG_COLOR_WRITES // only set background color for debugging
-#define COLREG_MASK 0
+#define SETCOLOR(x) CopMove16(cp, color[0], 0xf00)
 #else
-#define COLREG_MASK 0xff
+#define SETCOLOR(x) CopMove16(cp, color[x], 0xf00)
 #endif
+
 
 typedef struct {
   PixmapT texture;
@@ -59,33 +60,33 @@ static void InitCopperListBall(CopListT *cp, int y) {
 
   for (i=0; i<ROTZOOM_H; i++) {
     CopWait(cp, y, COPWAIT_X);
-    CopMove16(cp, color[ 3 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[ 5 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[ 7 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[ 9 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[11 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[13 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[15 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[18 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[20 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[23 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[26 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[28 & COLREG_MASK], 0xf00);
+    SETCOLOR(3);
+    SETCOLOR(5);
+    SETCOLOR(7);
+    SETCOLOR(9);
+    SETCOLOR(11);
+    SETCOLOR(13);
+    SETCOLOR(15);
+    SETCOLOR(18);
+    SETCOLOR(20);
+    SETCOLOR(23);
+    SETCOLOR(26);
+    SETCOLOR(28);
     CopMoveWord(cp, 0x1fe, 0);
     y += 2;
     CopWait(cp, y, COPWAIT_X);
-    CopMove16(cp, color[ 2 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[ 4 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[ 6 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[ 8 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[10 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[12 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[14 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[16 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[19 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[22 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[24 & COLREG_MASK], 0xf00);
-    CopMove16(cp, color[27 & COLREG_MASK], 0xf00);
+    SETCOLOR(2);
+    SETCOLOR(4);
+    SETCOLOR(6);
+    SETCOLOR(8);
+    SETCOLOR(10);
+    SETCOLOR(12);
+    SETCOLOR(14);
+    SETCOLOR(16);
+    SETCOLOR(19);
+    SETCOLOR(22);
+    SETCOLOR(24);
+    SETCOLOR(27);
     CopMoveWord(cp, 0x1fe, 0);
     y += 2;
   }
