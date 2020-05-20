@@ -17,11 +17,11 @@
 #define COPWAIT_X 1
 #define Y0 Y((256-280)/2)
 #define COPPER_HALFROW_INSTRUCTIONS (ROTZOOM_W/2+2)
-#define INSTRUCTIONS_PER_BALL (COPPER_HALFROW_INSTRUCTIONS*2*ROTZOOM_H)
+#define INSTRUCTIONS_PER_BALL (COPPER_HALFROW_INSTRUCTIONS * ROTZOOM_H * 3)
 #define DEBUG_COLOR_WRITES 0
 #define USE_DEBUG_BITMAP 0
 #define MIN_ZOOM 2
-#define MAX_ZOOM 96
+#define MAX_ZOOM 80
 
 #if DEBUG_COLOR_WRITES // only set background color for debugging
 #define SETCOLOR(x) CopMove16(cp, color[0], 0xf00)
@@ -49,11 +49,13 @@ typedef struct {
   CopListT *cp;
   CopInsT *upperBallCopper;
   CopInsT *lowerBallCopper;
+  CopInsT *lowestBallCopper;
 } BallCopListT;
 
 static BallCopListT ballCopList1; // TODO use second copper list and double-buffer
 static BallT ball1;
 static BallT ball2;
+static BallT ball3;
 
 #if USE_DEBUG_BITMAP
 #include "data/gears_testscreen_debug.c"
@@ -64,7 +66,7 @@ static BallT ball2;
 #include "data/texture_butterfly2.c"
 
 // Create copper writes to color registers, leave out colors needed for sprites
-static void InitCopperListBall(CopListT *cp, int y) {
+static void InitCopperListBall(CopListT *cp, int y, int yInc) {
   short i;
 
   for (i=0; i<ROTZOOM_H; i++) {
@@ -82,7 +84,7 @@ static void InitCopperListBall(CopListT *cp, int y) {
     SETCOLOR(26);
     SETCOLOR(28);
     CopNoOp(cp);
-    y += 2;
+    y += yInc;
     CopWait(cp, y, COPWAIT_X);
     SETCOLOR(2);
     SETCOLOR(4);
@@ -97,7 +99,7 @@ static void InitCopperListBall(CopListT *cp, int y) {
     SETCOLOR(24);
     SETCOLOR(27);
     CopNoOp(cp);
-    y += 2;
+    y += yInc;
   }
 }
 
@@ -113,10 +115,13 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
   CopSetupBitplaneFetch(cp, MODE_LORES, X(0), testscreen.width);
 
   ballCp->upperBallCopper = cp->curr;
-  InitCopperListBall(cp, Y0 + 7);
+  InitCopperListBall(cp, Y0 + 2, 2);
 
   ballCp->lowerBallCopper = cp->curr;
-  InitCopperListBall(cp, Y0 + 127);
+  InitCopperListBall(cp, Y0 + 109, 1);
+
+  ballCp->lowestBallCopper = cp->curr;
+  InitCopperListBall(cp, Y0 + 166, 1);
 
   CopEnd(cp);
 }
@@ -133,13 +138,18 @@ static void Init(void) {
   ball1.zoom = MIN_ZOOM;
   ball1.zoomDelta = 1;
 
-  ball2.vDelta = 0;
   ball2.texture = texture_butterfly2;
   ball2.angleDelta = 0;
   ball2.uDelta = f2short(0.5f);
   ball2.vDelta = f2short(-0.3f);
   ball2.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) / 2;
   ball2.zoomDelta = -1;
+
+  ball3.angleDelta = -27;
+  ball3.texture = texture_butterfly2;
+  ball3.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) * 3 / 2;
+  ball3.u = f2short(64.f);
+  ball3.vDelta = f2short(-0.2f);
 }
 
 static void Kill(void) {
@@ -190,6 +200,7 @@ static void DrawCopperBall(CopInsT *copper, BallT *ball) {
 static void Render(void) {
   DrawCopperBall(ballCopList1.upperBallCopper, &ball1);
   DrawCopperBall(ballCopList1.lowerBallCopper, &ball2);
+  DrawCopperBall(ballCopList1.lowestBallCopper, &ball3);
   TaskWaitVBlank();
 }
 

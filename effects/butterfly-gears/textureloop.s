@@ -20,9 +20,9 @@ _PlotTextureAsm:
 	add.w	#4+2,a0		; first color write data word
 	lea	dummylong(pc),a2
 
-	move #$699,$dff180
+	move.w	#$aab,$dff180
 	include	data/textureloop-generated.s
-	move #$666,$dff180
+	move.w	#$aaa,$dff180
 	rts
 
 restore:
