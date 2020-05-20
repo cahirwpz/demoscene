@@ -18,10 +18,16 @@ _PlotTextureAsm:
 	movem.l	d2-d7/a2-a6,-(a7)
 	pea	restore
 	add.w	#4+2,a0		; first color write data word
-	moveq	#9,d2		; shift amount
+	lea	dummylong(pc),a2
+
+	move #$699,$dff180
 	include	data/textureloop-generated.s
+	move #$666,$dff180
 	rts
 
 restore:
 	movem.l	(a7)+,d2-d7/a2-a6
 	rts
+
+dummylong:
+	dc.l	0
