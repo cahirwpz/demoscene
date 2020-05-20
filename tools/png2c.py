@@ -232,7 +232,7 @@ def do_pixmap(im, desc):
 
     if width != has_width or height != has_height:
         raise SystemExit('Image size is %dx%d, expected %dx%d!' % (
-            (width, height), (has_width, has_height)))
+            width, height, has_width, has_height))
 
     if has_bpp not in [4, 8, 12]:
         raise SystemExit('Wrong specification: bits per pixel %d!' % has_bpp)
