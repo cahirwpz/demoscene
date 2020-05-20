@@ -1,18 +1,22 @@
 ;>>> startrow
 	move.l	d5,d0		; start new row
-;>>> plot-even
-	move.l  d0,d3           ; VVVVVVVvvvvvvvvv UUUUUUUuuuuuuuuu
-	lsr.w   d2,d3           ; VVVVVVVvvvvvvvvv ---------UUUUUUU
-	rol.l   #7,d3           ; vvvvvvvvv------- --UUUUUUUVVVVVVV
-	add.w	d3,d3
-	move.w  (a1,d3.w),SINGLEROW_SIZE(a0)  ; plot
-	add.l   d1,d0           ; uv += duv/dx
 ;>>> plot-odd
-	move.l  d0,d3           ; VVVVVVVvvvvvvvvv UUUUUUUuuuuuuuuu
-	lsr.w   d2,d3           ; VVVVVVVvvvvvvvvv ---------UUUUUUU
-	rol.l   #7,d3           ; vvvvvvvvv------- --UUUUUUUVVVVVVV
-	add.w	d3,d3
+	move.w  d0,d3           ;                  -UUUUUUUuuuuuuuu  4
+	move.l	d0,d4		; -VVVVVVVuuuuuuuu                   4
+	swap	d4		;                  -VVVVVVVvvvvvvvv  4
+	lsr.w	#7,d4		;                          VVVVVVVv 20 - 6+7*2
+	move.b	d4,d3		;                  -UUUUUUUVVVVVVVv  4
+	and.w	#%0111111111111110,d3	;          -UUUUUUUVVVVVVV-  8
 	move.w  (a1,d3.w),(a0)  ; plot
+	add.l   d1,d0           ; uv += duv/dx
+;>>> plot-even
+	move.w  d0,d3           ;                  -UUUUUUUuuuuuuuu  4
+	move.l	d0,d4		; -VVVVVVVuuuuuuuu                   4
+	swap	d4		;                  -VVVVVVVvvvvvvvv  4
+	lsr.w	#7,d4		;                          VVVVVVVv 20 - 6+7*2
+	move.b	d4,d3		;                  -UUUUUUUVVVVVVVv  4
+	and.w	#%0111111111111110,d3	;          -UUUUUUUVVVVVVV-  8
+	move.w  (a1,d3.w),SINGLEROW_SIZE(a0)  ; plot
 	add.l   d1,d0           ; uv += duv/dx
 ;>>> plot-skip
 	add.l	d1,d0

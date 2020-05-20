@@ -29,9 +29,9 @@
 #define SETCOLOR(x) CopMove16(cp, color[x], 0xf00)
 #endif
 
-// Internally, u/v coordinates use 9 fractional bits
+// Internally, u/v coordinates use 8 fractional bits
 #define f2short(f) \
-  (short)((float)(f) * 512.0)
+  (short)((float)(f) * 256.0)
 
 typedef struct {
   PixmapT texture;
