@@ -20,6 +20,8 @@
 #define INSTRUCTIONS_PER_BALL (COPPER_HALFROW_INSTRUCTIONS*2*ROTZOOM_H)
 #define DEBUG_COLOR_WRITES 0
 #define USE_DEBUG_BITMAP 0
+#define MIN_ZOOM 2
+#define MAX_ZOOM 96
 
 #if DEBUG_COLOR_WRITES // only set background color for debugging
 #define SETCOLOR(x) CopMove16(cp, color[0], 0xf00)
@@ -35,6 +37,8 @@ typedef struct {
   PixmapT texture;
   short angle;
   short angleDelta;
+  short zoom;
+  short zoomDelta;
   short u;
   short v;
   short uDelta;
@@ -120,14 +124,22 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
 static void Init(void) {
   MakeBallCopperList(&ballCopList1);
   CopListActivate(ballCopList1.cp);
+
   ball1.texture = texture_butterfly;
   ball1.angleDelta = 25;
-  ball1.uDelta = 0;
+  ball1.u = f2short(64.0f);
+  ball1.v = 0;
+  ball1.vDelta = f2short(0.7f);
+  ball1.zoom = MIN_ZOOM;
+  ball1.zoomDelta = 1;
+
   ball2.vDelta = 0;
   ball2.texture = texture_butterfly2;
   ball2.angleDelta = 0;
   ball2.uDelta = f2short(0.5f);
   ball2.vDelta = f2short(-0.3f);
+  ball2.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) / 2;
+  ball2.zoomDelta = -1;
 }
 
 static void Kill(void) {
@@ -152,23 +164,27 @@ static inline long uv(short u, short v) {
 static void DrawCopperBall(CopInsT *copper, BallT *ball) {
   short sin;
   short cos;
-  short u;
-  short v;
+  int u;
+  int v;
   int deltaCol;
   int deltaRow;
   int uvPos;
 
-  sin = SIN(ball->angle) >> 3;
-  cos = COS(ball->angle) >> 3;
+  sin = (ball->zoom*SIN(ball->angle)) >> 9;
+  cos = (ball->zoom*COS(ball->angle)) >> 9;
   deltaCol = uv(sin, cos);
   deltaRow = uv(cos, -sin);
-  u = ball->u - sin * (ROTZOOM_W / 2) - cos * (ROTZOOM_W / 2);
-  v = ball->v - cos * (ROTZOOM_W / 2) + sin * (ROTZOOM_W / 2);
+  u = ball->u - sin * (ROTZOOM_W / 2) - cos * (ROTZOOM_H / 2);
+  v = ball->v - cos * (ROTZOOM_W / 2) + sin * (ROTZOOM_H / 2);
   uvPos = uv(u, v);
   PlotTextureAsm((char*) copper, (char*) ball->texture.pixels, uvPos, deltaCol, deltaRow);
   ball->angle += ball->angleDelta;
   ball->u += ball->uDelta;
   ball->v += ball->vDelta;
+  ball->zoom += ball->zoomDelta;
+  if (ball->zoom < MIN_ZOOM || ball->zoom > MAX_ZOOM) {
+    ball->zoomDelta = -ball->zoomDelta;
+  }
 }
 
 static void Render(void) {
