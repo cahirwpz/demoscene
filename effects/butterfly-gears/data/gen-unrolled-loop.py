@@ -2,23 +2,21 @@
 
 import os.path
 import sys
+from collections import defaultdict
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         raise SystemExit(f'Usage: {sys.argv[0]} source.txt')
     txtFile = sys.argv[1]
-    chunks = {}
-    chunk = None
+    chunks = defaultdict()
+    chunkName = None
 
     with open(txtFile) as f:
         for line in f:
             if line.startswith(';>>> '):
-                chunk = line.rstrip()[5:]
-            elif chunk is not None:
-                if chunk in chunks:
-                    chunks[chunk] += line
-                else:
-                    chunks[chunk] = line
+                chunkName = line.rstrip()[5:]
+            else:
+                chunks[chunkName] = chunks.get(chunkName, '') + line
     for key in ['startrow', 'endrow', 'plot-even', 'plot-odd', 'add-dst',
                 'addq-dst', 'map']:
         if key not in chunks:
@@ -33,10 +31,14 @@ if __name__ == '__main__':
         for ch in line:
             if ch == '#':
                 if dst_inc > 0:
-                    dst_inc_chunk = 'addq-dst' \
-                        if dst_inc <= 8 and not crossedrow else 'add-dst'
-                    dst_value = f'{dst_inc}+SINGLEROW_SIZE' \
-                        if crossedrow else str(dst_inc)
+                    if dst_inc <= 8 and not crossedrow:
+                        dst_inc_chunk = 'addq-dst'
+                    else:
+                        dst_inc_chunk = 'add-dst'
+                    if crossedrow:
+                        dst_value = f'{dst_inc}+SINGLEROW_SIZE'
+                    else:
+                        dst_value = str(dst_inc)
                     print(chunks[dst_inc_chunk].replace('$BYTES', dst_value))
                     crossedrow = False
                     dst_inc = 0
