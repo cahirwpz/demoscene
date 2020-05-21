@@ -70,6 +70,9 @@ __regargs CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data);
 #define CopMove16(cp, reg, data) CopMoveWord(cp, CSREG(reg), data)
 #define CopMove32(cp, reg, data) CopMoveLong(cp, CSREG(reg), data)
 
+/* Official way to represent no-op copper instruction. */
+#define CopNoOp(cp) CopMoveWord(cp, 0x1FE, 0)
+
 __regargs CopInsT *CopWait(CopListT *list, u_short vp, u_short hp);
 __regargs CopInsT *CopWaitMask(CopListT *list, u_short vp, u_short hp, 
                                u_short vpmask asm("d2"), u_short hpmask asm("d3"));
