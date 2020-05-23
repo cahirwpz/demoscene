@@ -14,7 +14,7 @@ CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe.dbg $(EFFECT).exe.map
 
 all: build
 
-include $(TOPDIR)/build.mk
+include $(TOPDIR)/build/common.mk
 
 $(EFFECT).exe: $(CRT0) $(OBJECTS) $(STARTUP) $(LDEXTRA)
 	@echo "[LD] $(addprefix $(DIR),$(OBJECTS)) -> $(DIR)$@"

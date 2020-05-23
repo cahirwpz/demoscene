@@ -32,7 +32,7 @@ SOURCES := \
 
 SOURCES_GEN := sintab.c
 
-include $(TOPDIR)/build.lib.mk
+include $(TOPDIR)/build/lib.mk
 
 sintab.c: sintab.py
 	$(PYTHON3) sintab.py

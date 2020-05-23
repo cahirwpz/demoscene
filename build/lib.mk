@@ -5,7 +5,7 @@ CLEAN-FILES +=
 
 all: build
 
-include $(TOPDIR)/build.mk
+include $(TOPDIR)/build/common.mk
 
 %.a:	$(OBJECTS)
 	@echo "[AR] $(addprefix $(DIR),$^) -> $(DIR)$@"

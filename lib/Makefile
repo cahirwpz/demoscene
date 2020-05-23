@@ -19,7 +19,7 @@ SUBDIRS := \
 
 BUILD-FILES := crt0.o bootloader.bin tags cscope.out
 
-include $(TOPDIR)/build.mk
+include $(TOPDIR)/build/common.mk
 
 bootloader.bin: ASFLAGS += -phxass
 

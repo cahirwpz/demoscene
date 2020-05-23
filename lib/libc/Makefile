@@ -15,4 +15,4 @@ SOURCES := \
 	strcpy.s \
 	strlen.s
 
-include $(TOPDIR)/build.lib.mk
+include $(TOPDIR)/build/lib.mk

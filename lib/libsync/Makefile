@@ -5,4 +5,4 @@ SOURCES := \
 	sync-load.c \
 	sync.c
 
-include $(TOPDIR)/build.lib.mk
+include $(TOPDIR)/build/lib.mk

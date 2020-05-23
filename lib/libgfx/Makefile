@@ -12,4 +12,4 @@ SOURCES := \
 	pixmap.c \
 	sprite.c
 
-include $(TOPDIR)/build.lib.mk
+include $(TOPDIR)/build/lib.mk

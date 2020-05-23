@@ -15,4 +15,4 @@ SOURCES := \
 	blt-set-area.c \
 	blt-set-mask-area.c
 
-include $(TOPDIR)/build.lib.mk
+include $(TOPDIR)/build/lib.mk

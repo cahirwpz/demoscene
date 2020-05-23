@@ -7,4 +7,4 @@ LIBS := lib2d
 PNG2C.shapes-pal := --palette shapes_pal,16
 CONV2D.night := --name shape
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk

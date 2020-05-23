@@ -49,7 +49,7 @@ FAILURES := \
 		
 BUILD-FILES := startup.o
 
-include $(TOPDIR)/build.mk
+include $(TOPDIR)/build/common.mk
 
 run:
 	for dir in $(SUBDIRS); do 	\

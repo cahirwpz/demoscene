@@ -14,7 +14,7 @@ PNG2C.gears_testscreen_debug := --bitmap testscreen,320x280x5 --palette testscre
 PNG2C.texture_butterfly := --pixmap texture_butterfly,128x128x12
 PNG2C.texture_butterfly2 := --pixmap texture_butterfly2,128x128x12
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk
 
 textureloop.s: data/textureloop-generated.s
 

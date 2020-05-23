@@ -6,4 +6,4 @@ SOURCES := \
 	3d-object.c \
 	3d-transform.c
 
-include $(TOPDIR)/build.lib.mk
+include $(TOPDIR)/build/lib.mk

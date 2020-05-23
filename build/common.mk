@@ -1,9 +1,8 @@
+export TOPDIR
+
 MAKEFLAGS += --no-builtin-rules
 
-TOPDIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 DIR := $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))/
-
-export TOPDIR
 
 # Compiler tools & flags definitions
 CC	:= m68k-amigaos-gcc -noixemul -g

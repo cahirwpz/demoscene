@@ -6,6 +6,6 @@ ASFLAGS	:= -m68000 -nosym
 
 SOURCES := p61.s
 
-include $(TOPDIR)/build.lib.mk
+include $(TOPDIR)/build/lib.mk
 
 p61.o: p61.s $(TOPDIR)/include/p61.h P6112-Play.i
