@@ -19,7 +19,6 @@
 #define COPPER_HALFROW_INSTRUCTIONS (ROTZOOM_W/2+2)
 #define INSTRUCTIONS_PER_BALL (COPPER_HALFROW_INSTRUCTIONS * ROTZOOM_H * 3)
 #define DEBUG_COLOR_WRITES 0
-#define USE_DEBUG_BITMAP 0
 #define MIN_ZOOM 2
 #define MAX_ZOOM 80
 
@@ -57,11 +56,7 @@ static BallT ball1;
 static BallT ball2;
 static BallT ball3;
 
-#if USE_DEBUG_BITMAP
-#include "data/gears_testscreen_debug.c"
-#else
 #include "data/gears_testscreen.c"
-#endif
 #include "data/texture_butterfly.c"
 #include "data/texture_butterfly2.c"
 
@@ -81,8 +76,8 @@ static void InitCopperListBall(CopListT *cp, int y, int yInc) {
     SETCOLOR(18);
     SETCOLOR(20);
     SETCOLOR(23);
-    SETCOLOR(26);
-    SETCOLOR(28);
+    SETCOLOR(27);
+    SETCOLOR(31);
     CopNoOp(cp);
     y += yInc;
     CopWait(cp, y, COPWAIT_X);
@@ -97,7 +92,7 @@ static void InitCopperListBall(CopListT *cp, int y, int yInc) {
     SETCOLOR(19);
     SETCOLOR(22);
     SETCOLOR(24);
-    SETCOLOR(27);
+    SETCOLOR(28);
     CopNoOp(cp);
     y += yInc;
   }
@@ -115,13 +110,13 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
   CopSetupBitplaneFetch(cp, MODE_LORES, X(0), testscreen.width);
 
   ballCp->upperBallCopper = cp->curr;
-  InitCopperListBall(cp, Y0 + 2, 2);
+  InitCopperListBall(cp, Y0 + 6, 2);
 
   ballCp->lowerBallCopper = cp->curr;
-  InitCopperListBall(cp, Y0 + 109, 1);
+  InitCopperListBall(cp, Y0 + 119, 1);
 
   ballCp->lowestBallCopper = cp->curr;
-  InitCopperListBall(cp, Y0 + 166, 1);
+  InitCopperListBall(cp, Y0 + 182, 1);
 
   CopEnd(cp);
 }
