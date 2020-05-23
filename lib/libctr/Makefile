@@ -4,4 +4,4 @@ SOURCES := cinter.s
 
 include $(TOPDIR)/build.lib.mk
 
-cinter.o: cinter.s ../include/cinter.h
+cinter.o: cinter.s $(TOPDIR)/include/cinter.h

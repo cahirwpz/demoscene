@@ -6,7 +6,7 @@ endif
 
 LIBS += libblit libgfx libsys libc
 CPPFLAGS += -I$(TOPDIR)/effects
-LDEXTRA = $(foreach lib,$(LIBS),$(TOPDIR)/base/$(lib)/$(lib).a)
+LDEXTRA = $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 STARTUP = $(TOPDIR)/effects/startup.o 
 
 BUILD-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).adf
@@ -23,13 +23,13 @@ $(EFFECT).exe: $(CRT0) $(OBJECTS) $(STARTUP) $(LDEXTRA)
 	$(STRIP) $@
 
 # Check if library is up-to date if someone is asking explicitely
-$(TOPDIR)/base/lib%.a: FORCE
+$(TOPDIR)/lib/lib%.a: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-$(TOPDIR)/base/%.o: FORCE
+$(TOPDIR)/lib/%.o: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-$(TOPDIR)/base/%.bin: FORCE
+$(TOPDIR)/lib/%.bin: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
 $(TOPDIR)/effects/%.o: FORCE
@@ -51,9 +51,9 @@ data/%.c: data/%.2d
 	@echo "[2D] $(DIR)$< -> $(DIR)$@"
 	$(CONV2D) $(CONV2D.$*) $< > $@
 
-%.adf: %.exe $(DATA) $(DATA_GEN) $(TOPDIR)/base/bootloader.bin
+%.adf: %.exe $(DATA) $(DATA_GEN) $(TOPDIR)/lib/bootloader.bin
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
-	$(FSUTIL) -b $(TOPDIR)/base/bootloader.bin create $@ $^
+	$(FSUTIL) -b $(TOPDIR)/lib/bootloader.bin create $@ $^
 
 run: all $(notdir $(PWD)).adf
 	$(LAUNCH) -e $(notdir $(PWD)).exe.dbg -f $(lastword $^)

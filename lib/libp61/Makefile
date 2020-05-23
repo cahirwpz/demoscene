@@ -8,4 +8,4 @@ SOURCES := p61.s
 
 include $(TOPDIR)/build.lib.mk
 
-p61.o: p61.s ../include/p61.h P6112-Play.i
+p61.o: p61.s $(TOPDIR)/include/p61.h P6112-Play.i

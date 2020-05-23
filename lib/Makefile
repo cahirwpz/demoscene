@@ -10,6 +10,7 @@ SUBDIRS := \
 	lib3d \
 	libahx \
 	libblit \
+	libctr \
 	libgui \
 	libgfx \
 	libp61 \

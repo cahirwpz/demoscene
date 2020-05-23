@@ -18,7 +18,7 @@ OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	:= -Wall -W -Werror -Wundef -Wsign-compare -Wredundant-decls
 WFLAGS  += -Wnested-externs -Wwrite-strings -Wstrict-prototypes
  
-CRT0	:= $(TOPDIR)/base/crt0.o
+CRT0	:= $(TOPDIR)/lib/crt0.o
 
 # Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
 ifneq ($(VERBOSE), 1)
@@ -30,7 +30,7 @@ endif
 DFLAGS := -D__CONSTLIBBASEDECL__=const
 
 LDLIBS	=
-CPPFLAGS += -I$(TOPDIR)/base/include
+CPPFLAGS += -I$(TOPDIR)/include
 
 # Common tools definition
 CP := cp -a
