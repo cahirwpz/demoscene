@@ -3,6 +3,8 @@ MAKEFLAGS += --no-builtin-rules
 TOPDIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 DIR := $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))/
 
+export TOPDIR
+
 # Compiler tools & flags definitions
 CC	:= m68k-amigaos-gcc -noixemul -g
 AS	:= vasm -quiet
@@ -36,7 +38,7 @@ RM := rm -v -f
 PYTHON3 := PYTHONPATH="$(TOPDIR)/tools/pylib:$$PYTHONPATH" python3
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
-RUNINUAE := $(PYTHON3) $(TOPDIR)/effects/RunInUAE
+LAUNCH := $(PYTHON3) $(TOPDIR)/tools/launch.py
 LWO2C := $(TOPDIR)/tools/lwo2c.py $(QUIET)
 CONV2D := $(TOPDIR)/tools/conv2d.py
 TMXCONV := $(TOPDIR)/tools/tmxconv/tmxconv

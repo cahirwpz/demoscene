@@ -56,6 +56,6 @@ data/%.c: data/%.2d
 	$(FSUTIL) -b $(TOPDIR)/base/bootloader.bin create $@ $^
 
 run: all $(notdir $(PWD)).adf
-	$(RUNINUAE) -e $(notdir $(PWD)).exe.dbg $(lastword $^)
+	$(LAUNCH) -e $(notdir $(PWD)).exe.dbg -f $(lastword $^)
 
 .PHONY: run

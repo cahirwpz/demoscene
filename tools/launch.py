@@ -6,19 +6,23 @@ import os.path
 import shutil
 import shlex
 import subprocess
-import sys
 from libtmux import Server, Session
 
 
-TMUX_CONF = os.path.join(os.path.dirname(sys.argv[0]), '.tmux.conf')
+def HerePath(*components):
+    return os.path.join(os.environ['TOPDIR'], *components)
+
+
 SOCKET = 'fsuae'
 SESSION = 'fsuae'
+TMUX_CONF = HerePath('.tmux.conf')
 
 
 class Launchable():
     def __init__(self, name, cmd):
         self.name = name
         self.cmd = cmd
+        self.window = None
         self.options = []
 
     def configure(self, *args, **kwargs):
@@ -26,20 +30,20 @@ class Launchable():
 
     def start(self, session):
         cmd = ' '.join([self.cmd] + list(map(shlex.quote, self.options)))
-        session.new_window(
+        self.window = session.new_window(
             attach=False, window_name=self.name, window_shell=cmd)
 
 
 class FSUAE(Launchable):
     def __init__(self):
-        super().__init__('fs-uae', 'uaedbg')
+        super().__init__('fs-uae', HerePath('tools', 'uaedbg.py'))
 
-    def configure(self, adf=None):
-        topdir = os.path.realpath(os.path.dirname(sys.argv[0]))
+    def configure(self, floppy=None):
+        # Now options for FS-UAE.
         self.options.append('--')
-        if adf:
-            self.options.append('--floppy_drive_0=' + os.path.realpath(adf))
-        self.options.append(os.path.join(topdir, 'Config.fs-uae'))
+        if floppy:
+            self.options.append('--floppy_drive_0=' + os.path.realpath(floppy))
+        self.options.append(HerePath('effects', 'Config.fs-uae'))
 
 
 class SOCAT(Launchable):
@@ -50,7 +54,7 @@ class SOCAT(Launchable):
         # The simulator will only open the server after some time has
         # passed.  To minimize the delay, keep reconnecting until success.
         self.options = [
-            'STDIO', 'tcp:localhost:{},retry,forever'.format(tcp_port)]
+            'STDIO', 'tcp:localhost:%d,retry,forever,interval=0.01' % tcp_port]
 
 
 if __name__ == '__main__':
@@ -58,20 +62,22 @@ if __name__ == '__main__':
         description='Launch effect in FS-UAE emulator.')
     parser.add_argument('-e', '--executable', metavar='EXE', type=str,
                         help='Provide executable file for debugging.')
-    parser.add_argument('adf', metavar='ADF', type=str,
+    parser.add_argument('-f', '--floppy', metavar='ADF', type=str,
                         help='Floppy disk image in ADF format.')
+    parser.add_argument('-w', '--window', metavar='WIN', type=str,
+                        help='Select tmux window name to switch to.')
     args = parser.parse_args()
 
     # Check if floppy disk image file exists
-    if not os.path.isfile(args.adf):
-        raise SystemExit('%s: file does not exist!' % args.adf)
+    if args.floppy and not os.path.isfile(args.floppy):
+        raise SystemExit('%s: file does not exist!' % args.floppy)
 
     # Check if ELF executable exists.
     if not os.path.isfile(args.executable):
         raise SystemExit('%s: file does not exist!' % args.elf)
 
     uae = FSUAE()
-    uae.configure(adf=args.adf)
+    uae.configure(floppy=args.floppy)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)
@@ -95,7 +101,7 @@ if __name__ == '__main__':
         par_port.start(session)
 
         session.kill_window(':0')
-        session.select_window(par_port.name)
+        session.select_window(args.window or par_port.name)
         session.attach_session()
     finally:
         try:
