@@ -21,15 +21,17 @@
 #define SMALL_BALL_PADDING_BOTTOM 8
 #define SMALL_BALL_Y_INC 1
 #define SMALL_BALL_WIDTH 58
+#define SMALL_BALL_HEIGHT 60
 #define SMALL_BALL_CENTER ((WIDTH-SMALL_BALL_WIDTH)/2+16)
 #define LARGE_BALL_PADDING_TOP 6
 #define LARGE_BALL_PADDING_BOTTOM 10
 #define LARGE_BALL_Y_INC 2
 #define LARGE_BALL_WIDTH 110
+#define LARGE_BALL_HEIGHT 112
 #define LARGE_BALL_CENTER ((WIDTH-LARGE_BALL_WIDTH)/2+16)
 #define ROTZOOM_W 24
 #define ROTZOOM_H 24
-#define COPWAIT_X 1
+#define COPWAIT_X 0
 #define COPWAIT_X_BALLSTART 160
 #define Y0 Y((256-280)/2)
 #define BOOK_Y 256
@@ -139,7 +141,7 @@ static void InsertTextureCopperWrites(CopListT *cp) {
     SETCOLOR(22);
     SETCOLOR(24);
     SETCOLOR(28);
-    CopNoOp(cp);
+    CopNoOpData(cp, i); // store row for copperlist debugging
   }
 }
 
@@ -157,8 +159,9 @@ static void InitCopperList(BallCopListT *ballCp) {
   CopSetupBitplaneFetch(cp, MODE_LORES, X(0), ball_large.width);
   CopMove32(cp, cop2lc, bottomCpStart);
 
-  for (i = 0; i < 1; i++) {
+  for (i = 0; i < BALLS; i++) {
     ballCp->inserts[i].waitBefore = CopWait(cp, Y0, COPWAIT_X_BALLSTART);
+    CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(0));
     CopSetupBitplanes(cp, ballCp->inserts[i].bplptr, &ball_large, ball_large.depth);
     ballCp->inserts[i].bplcon1ins = CopMove16(cp, bplcon1, 0);
     CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(DEPTH));
@@ -314,16 +317,16 @@ static void HandleEvent(void) {
   if (ev->type == EV_MOUSE) {
     ball1.screenX = ev->mouse.x;
     ball1.screenY = ev->mouse.y;
+    ball2.screenY = ball1.screenY + LARGE_BALL_HEIGHT + 1;
+    ball3.screenY = ball2.screenY + SMALL_BALL_HEIGHT + 1;
   }
 }
 
 static void Render(void) {
   HandleEvent();
   DrawCopperBall(&ball1, ballCopList1.inserts[0]);
-  if (0) {
-    DrawCopperBall(&ball2, ballCopList1.inserts[1]);
-    DrawCopperBall(&ball3, ballCopList1.inserts[2]);
-  }
+  DrawCopperBall(&ball2, ballCopList1.inserts[1]);
+  DrawCopperBall(&ball3, ballCopList1.inserts[2]);
   TaskWaitVBlank();
 }
 
