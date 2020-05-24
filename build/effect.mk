@@ -7,12 +7,25 @@ endif
 LIBS += libblit libgfx libsys libc
 CPPFLAGS += -I$(TOPDIR)/effects
 LDEXTRA = $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
+
 STARTUP = $(TOPDIR)/effects/startup.o 
+CRT0 = $(TOPDIR)/effects/crt0.o
+BOOTLOADER = $(TOPDIR)/bootloader.bin
 
 BUILD-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).adf
 CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe.dbg $(EFFECT).exe.map 
 
 all: build
+
+# Check if library is up-to date if someone is asking explicitely
+$(TOPDIR)/lib/lib%.a: FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
+$(TOPDIR)/effects/%.o: FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
+$(TOPDIR)/%.bin: FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
 
 include $(TOPDIR)/build/common.mk
 
@@ -21,19 +34,6 @@ $(EFFECT).exe: $(CRT0) $(OBJECTS) $(STARTUP) $(LDEXTRA)
 	$(CC) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $^ $(LDLIBS)
 	$(CP) $@ $@.dbg
 	$(STRIP) $@
-
-# Check if library is up-to date if someone is asking explicitely
-$(TOPDIR)/lib/lib%.a: FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
-$(TOPDIR)/lib/%.o: FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
-$(TOPDIR)/lib/%.bin: FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
-$(TOPDIR)/effects/%.o: FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
 
 data/%.c: data/%.lwo
 	@echo "[LWO] $(DIR)$< -> $(DIR)$@"
@@ -51,11 +51,12 @@ data/%.c: data/%.2d
 	@echo "[2D] $(DIR)$< -> $(DIR)$@"
 	$(CONV2D) $(CONV2D.$*) $< > $@
 
-%.adf: %.exe $(DATA) $(DATA_GEN) $(TOPDIR)/lib/bootloader.bin
+%.adf: %.exe $(DATA) $(DATA_GEN) $(BOOTLOADER)
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
-	$(FSUTIL) -b $(TOPDIR)/lib/bootloader.bin create $@ $^
+	$(FSUTIL) -b $(BOOTLOADER) create $@ $^
 
 run: all $(notdir $(PWD)).adf
 	$(LAUNCH) -e $(notdir $(PWD)).exe.dbg -f $(lastword $^)
 
 .PHONY: run
+.PRECIOUS: $(BOOTLOADER)

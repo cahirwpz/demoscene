@@ -46,8 +46,10 @@ SUBDIRS := \
 FAILURES := \
 	tests \
 	vscaler
+
+SOURCES := startup.c crt0.s 
 		
-BUILD-FILES := startup.o
+all: build
 
 include $(TOPDIR)/build/common.mk
 
@@ -61,4 +63,4 @@ run:
 archive:
 	7z a "a500-$$(date +%F-%H%M).7z" $(SUBDIRS)
 
-.PHONY: archive
+.PHONY: all run archive

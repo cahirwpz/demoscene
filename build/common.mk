@@ -2,7 +2,8 @@ export TOPDIR
 
 MAKEFLAGS += --no-builtin-rules
 
-DIR := $(notdir $(patsubst $(TOPDIR)/%,%,$(CURDIR)))/
+DIR := $(patsubst $(TOPDIR)%,%,$(realpath $(CURDIR)))
+DIR := $(patsubst /%,%/,$(DIR))
 
 # Compiler tools & flags definitions
 CC	:= m68k-amigaos-gcc -noixemul -g
@@ -16,8 +17,6 @@ LDFLAGS	:= -g -m68000 -msmall-code -nostartfiles -nostdlib
 OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	:= -Wall -W -Werror -Wundef -Wsign-compare -Wredundant-decls
 WFLAGS  += -Wnested-externs -Wwrite-strings -Wstrict-prototypes
- 
-CRT0	:= $(TOPDIR)/lib/crt0.o
 
 # Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
 ifneq ($(VERBOSE), 1)
@@ -28,7 +27,7 @@ endif
 # Don't reload library base for each call.
 DFLAGS := -D__CONSTLIBBASEDECL__=const
 
-LDLIBS	=
+LDLIBS +=
 CPPFLAGS += -I$(TOPDIR)/include
 
 # Common tools definition
@@ -85,18 +84,17 @@ CLEAN-FILES += $(DEPFILES) $(SOURCES_GEN) $(OBJECTS) $(DATA_GEN)
 
 # Rules for recursive build
 build-%: FORCE
-	@echo "[MAKE] build $*"
-	$(MAKE) -C $(@:build-%=%)
+	@echo "[MAKE] build $(DIR)$*"
+	$(MAKE) -C $*
 
 clean-%: FORCE
-	@echo "[MAKE] clean $*"
-	$(MAKE) -C $(@:clean-%=%) clean
+	@echo "[MAKE] clean $(DIR)$*"
+	$(MAKE) -C $* clean
 
 # Rules for build
-build: $(foreach dir,$(SUBDIRS),build-$(dir)) $(BUILD-FILES)
+build: $(OBJECTS) $(foreach dir,$(SUBDIRS),build-$(dir)) $(BUILD-FILES)
 
 clean: $(foreach dir,$(SUBDIRS),clean-$(dir)) 
-	$(RM) $(BUILD-FILES) $(CLEAN-FILES) .*.P *.a *.o *~ *.taghl
+	$(RM) $(BUILD-FILES) $(CLEAN-FILES) *~ *.taghl
 
-.PRECIOUS: %.o
 .PHONY: all clean FORCE
