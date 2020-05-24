@@ -21,18 +21,21 @@
 #define COPWAIT_X 1
 #define COPWAIT_X_BALLSTART 160
 #define Y0 Y((256-280)/2)
+#define BOOK_Y 256
 #define COPPER_HALFROW_INSTRUCTIONS (ROTZOOM_W/2+2)
 #define INSTRUCTIONS_PER_BALL (COPPER_HALFROW_INSTRUCTIONS * ROTZOOM_H * 3)
 #define DEBUG_COLOR_WRITES 0
 #define MIN_ZOOM 2
 #define MAX_ZOOM 80
 
-#define SET_COLOR(x,rgb) CopMove16(cp, color[x], rgb)
 #if DEBUG_COLOR_WRITES // only set background color for debugging
-#define SET_TX_COLOR(x) CopMove16(cp, color[0], 0xf00)
+#define SETCOLOR(x) CopMove16(cp, color[0], 0xf00)
 #else
-#define SET_TX_COLOR(x) CopMove16(cp, color[x], 0xf00)
+#define SETCOLOR(x) CopMove16(cp, color[x], 0xf00)
 #endif
+#define SETBG(vp, rgb) CopWait(cp, vp, 7); \
+                       CopSetColor(cp, 0, rgb)
+
 
 // Internally, u/v coordinates use 8 fractional bits
 #define f2short(f) \
@@ -67,6 +70,8 @@ typedef struct {
 } BallCopListT;
 
 static BallCopListT ballCopList1; // TODO use second copper list and double-buffer
+static CopListT *bottomCp;
+static CopInsT *bottomCpStart;
 static BallT ball1;
 static BallT ball2;
 static BallT ball3;
@@ -74,6 +79,7 @@ static BallT ball3;
 #include "data/texture_butterfly.c"
 #include "data/ball_small.c"
 #include "data/ball_large.c"
+#include "data/book_bottom.c"
 
 // Pack u/v values into a longword to be used by the inner loop.
 static inline long uv(short u, short v) {
@@ -89,44 +95,44 @@ extern void PlotTextureAsm(char *copperDst asm("a0"),
                            int  uvDeltaCol asm("d1"));
 
 // Create copper writes to color registers, leave out colors needed for sprites
-static void InitCopperListBall(CopListT *cp, int y, int yInc) {
+static void InsertTextureCopperWrites(CopListT *cp, int y, int yInc) {
   short i;
 
   for (i=0; i<ROTZOOM_H; i++) {
     CopWait(cp, y, COPWAIT_X);
-    SET_TX_COLOR(3);
-    SET_TX_COLOR(5);
-    SET_TX_COLOR(7);
-    SET_TX_COLOR(9);
-    SET_TX_COLOR(11);
-    SET_TX_COLOR(13);
-    SET_TX_COLOR(15);
-    SET_TX_COLOR(18);
-    SET_TX_COLOR(20);
-    SET_TX_COLOR(23);
-    SET_TX_COLOR(27);
-    SET_TX_COLOR(31);
+    SETCOLOR(3);
+    SETCOLOR(5);
+    SETCOLOR(7);
+    SETCOLOR(9);
+    SETCOLOR(11);
+    SETCOLOR(13);
+    SETCOLOR(15);
+    SETCOLOR(18);
+    SETCOLOR(20);
+    SETCOLOR(23);
+    SETCOLOR(27);
+    SETCOLOR(31);
     CopNoOpData(cp, 0xfffe);
     y += yInc;
     CopWait(cp, y, COPWAIT_X);
-    SET_TX_COLOR(2);
-    SET_TX_COLOR(4);
-    SET_TX_COLOR(6);
-    SET_TX_COLOR(8);
-    SET_TX_COLOR(10);
-    SET_TX_COLOR(12);
-    SET_TX_COLOR(14);
-    SET_TX_COLOR(16);
-    SET_TX_COLOR(19);
-    SET_TX_COLOR(22);
-    SET_TX_COLOR(24);
-    SET_TX_COLOR(28);
+    SETCOLOR(2);
+    SETCOLOR(4);
+    SETCOLOR(6);
+    SETCOLOR(8);
+    SETCOLOR(10);
+    SETCOLOR(12);
+    SETCOLOR(14);
+    SETCOLOR(16);
+    SETCOLOR(19);
+    SETCOLOR(22);
+    SETCOLOR(24);
+    SETCOLOR(28);
     CopNoOpData(cp, 0xfffe);
     y += yInc;
   }
 }
 
-static void MakeBallCopperList(BallCopListT *ballCp) {
+static void InitCopperList(BallCopListT *ballCp) {
   short i;
 
   CopListT *cp = NewCopList(INSTRUCTIONS_PER_BALL * 3 + 100);
@@ -135,22 +141,44 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y0, 320, 280);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   CopSetupMode(cp, MODE_LORES, 0);
-  SET_COLOR(0, 0x134);
-  SET_COLOR(1, 0x000);
+  CopSetColor(cp, 0, 0x134);
+  CopSetColor(cp, 1, 0x000);
   CopSetupBitplaneFetch(cp, MODE_LORES, X(0), ball_large.width);
+  CopMove32(cp, cop2lc, bottomCpStart);
 
   for (i = 0; i < 1; i++) {
     ballCp->inserts[i].waitBefore = CopWait(cp, Y0, COPWAIT_X_BALLSTART);
-    //ballCp->inserts[i].bplptr[0] = CopMove32(cp, bplpt[0], ball_large->planes[0]);
     CopSetupBitplanes(cp, ballCp->inserts[i].bplptr, &ball_large, ball_large.depth);
     ballCp->inserts[i].bplcon1ins = CopMove16(cp, bplcon1, 0);
     CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(DEPTH));
     ballCp->inserts[i].ballCopper = cp->curr;
-    InitCopperListBall(cp, Y0 + 6, 2);
+    InsertTextureCopperWrites(cp, Y0 + 6, 2);
     ballCp->inserts[i].waitAfter = CopWait(cp, Y0 + 112, COPWAIT_X);
     CopMove16(cp, bplcon0, BPLCON0_COLOR);
   }
 
+  CopMove16(cp, copjmp2, 0);
+}
+
+static void InitBottomCopperList(CopListT *cp) {
+  cp = NewCopList(80);
+  CopInit(cp);
+  bottomCpStart = CopNoOp(cp); // CopWaitSafe does not return the $FFDF wait instruction (if needed)
+  CopWaitSafe(cp, BOOK_Y, COPWAIT_X_BALLSTART);
+  CopSetupBitplanes(cp, NULL, &book_bottom, book_bottom.depth);
+  CopLoadPal(cp, &book_pal, 0);
+  CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(book_bottom.depth));
+  CopMove16(cp, bplcon1, 0);
+  SETBG(BOOK_Y + 5,  0x133);
+  SETBG(BOOK_Y + 10, 0x124);
+  SETBG(BOOK_Y + 15, 0x123);
+  SETBG(BOOK_Y + 20, 0x122);
+  SETBG(BOOK_Y + 25, 0x112);
+  SETBG(BOOK_Y + 30, 0x012);
+  SETBG(BOOK_Y + 35, 0x001);
+  SETBG(BOOK_Y + 40, 0x002);
+  CopWait(cp, BOOK_Y + book_bottom.height + 1, COPWAIT_X);
+  CopMove16(cp, bplcon0, BPLCON0_COLOR);
   CopEnd(cp);
 }
 
@@ -220,7 +248,8 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
 static void Init(void) {
   MouseInit(0, 0, 262, 256);
 
-  MakeBallCopperList(&ballCopList1);
+  InitBottomCopperList(bottomCp);
+  InitCopperList(&ballCopList1);
   CopListActivate(ballCopList1.cp);
 
   ball1.texture = texture_butterfly;
@@ -251,6 +280,7 @@ static void Init(void) {
 static void Kill(void) {
   MouseKill();
   DeleteCopList(ballCopList1.cp);
+  DeleteCopList(bottomCp);
 }
 
 static void HandleEvent(void) {
