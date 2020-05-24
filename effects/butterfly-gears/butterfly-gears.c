@@ -16,6 +16,7 @@
 
 #define DEPTH 5
 #define BALLS 3
+#define WIDTH 320
 #define ROTZOOM_W 24
 #define ROTZOOM_H 24
 #define COPWAIT_X 1
@@ -154,7 +155,9 @@ static void InitCopperList(BallCopListT *ballCp) {
     ballCp->inserts[i].ballCopper = cp->curr;
     InsertTextureCopperWrites(cp, Y0 + 6, 2);
     ballCp->inserts[i].waitAfter = CopWait(cp, Y0 + 112, COPWAIT_X);
-    CopMove16(cp, bplcon0, BPLCON0_COLOR);
+    CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(1));
+    CopMove16(cp, bpl1mod, -WIDTH/8);
+    CopMove16(cp, bpl2mod, -WIDTH/8);
   }
 
   CopMove16(cp, copjmp2, 0);
@@ -164,11 +167,23 @@ static void InitBottomCopperList(CopListT *cp) {
   cp = NewCopList(80);
   CopInit(cp);
   bottomCpStart = CopNoOp(cp); // CopWaitSafe does not return the $FFDF wait instruction (if needed)
-  CopWaitSafe(cp, BOOK_Y, COPWAIT_X_BALLSTART);
+  CopWaitSafe(cp, BOOK_Y, 0);
+  CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(1));
+
   CopSetupBitplanes(cp, NULL, &book_bottom, book_bottom.depth);
-  CopLoadPal(cp, &book_pal, 0);
   CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(book_bottom.depth));
   CopMove16(cp, bplcon1, 0);
+  if (0) {
+    CopInsSet32(cp->curr++, book_bottom.planes[1]);
+    CopInsSet32(cp->curr++, book_bottom.planes[2]);
+    CopInsSet32(cp->curr++, book_bottom.planes[3]);
+    CopInsSet32(cp->curr++, book_bottom.planes[4]);
+    CopInsSet32(cp->curr++, book_bottom.planes[0]);
+    CopMove16(cp, bpl1mod, 0);
+    CopMove16(cp, bpl2mod, 0);
+  }
+
+  CopLoadPal(cp, &book_pal, 0);
   SETBG(BOOK_Y + 5,  0x133);
   SETBG(BOOK_Y + 10, 0x124);
   SETBG(BOOK_Y + 15, 0x123);
@@ -177,7 +192,7 @@ static void InitBottomCopperList(CopListT *cp) {
   SETBG(BOOK_Y + 30, 0x012);
   SETBG(BOOK_Y + 35, 0x001);
   SETBG(BOOK_Y + 40, 0x002);
-  CopWait(cp, BOOK_Y + book_bottom.height + 1, COPWAIT_X);
+  CopWait(cp, BOOK_Y + book_bottom.height, COPWAIT_X);
   CopMove16(cp, bplcon0, BPLCON0_COLOR);
   CopEnd(cp);
 }
@@ -199,7 +214,6 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
 
   // Update copper waits according to Y
   {
-    bool crossedLineFF = false;
     short i;
     short y = ball->screenY;
     short yInc = ball->screenLineHeight;
@@ -211,15 +225,20 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
       textureCopper += ROTZOOM_W / 2 + 1;
       y += yInc;
 
-      // After texture line: NOP or $FFDF-wait
-      if (y >= 256 && !crossedLineFF) {
-        crossedLineFF = true;
-        textureCopper->wait.vp = 0xff;
-        textureCopper->wait.hp = 0xdf;
+      // Abort ball when the bottom book area starts
+      if (y >= BOOK_Y) {
+        textureCopper->move.reg = CSREG(copjmp2);
+        break;
       } else {
         textureCopper->move.reg = 0x1fe; // NOP
       }
       textureCopper++;
+    }
+    y += 10;
+    if (y >= BOOK_Y) {
+      inserts.waitAfter->wait.vp = 255;
+    } else {
+      inserts.waitAfter->wait.vp = y;
     }
   }
 
