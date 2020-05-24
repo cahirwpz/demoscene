@@ -32,15 +32,6 @@ Entry:
         lea     TDIOReq(pc),a0
         move.l  a1,(a0)
 
-        ; some resident modules have not been initialized yet,
-        ; one that is used by my code is mathffp.library
-        lea     ffpName(pc),a1
-        JSRLIB  FindResident
-
-        move.l  d0,a1
-        clr.l   d1
-        JSRLIB  InitResident
-
         ; allocate memory for directory entries
         move.l  DirLen(pc),d0
         move.l  #MEMF_CHIP,d1
@@ -124,8 +115,6 @@ Entry:
 .exit   bra     .exit
 
 .cmd    dc.b    '\n',0
-
-ffpName dc.b    'mathffp.library',0
 
         even
 
