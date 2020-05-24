@@ -72,6 +72,7 @@ __regargs CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data);
 
 /* Official way to represent no-op copper instruction. */
 #define CopNoOp(cp) CopMoveWord(cp, 0x1FE, 0)
+#define CopNoOpData(cp, data) CopMoveWord(cp, 0x1FE, data)
 
 __regargs CopInsT *CopWait(CopListT *list, u_short vp, u_short hp);
 __regargs CopInsT *CopWaitMask(CopListT *list, u_short vp, u_short hp, 

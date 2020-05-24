@@ -19,6 +19,7 @@
 #define ROTZOOM_W 24
 #define ROTZOOM_H 24
 #define COPWAIT_X 1
+#define COPWAIT_X_BALLSTART 160
 #define Y0 Y((256-280)/2)
 #define COPPER_HALFROW_INSTRUCTIONS (ROTZOOM_W/2+2)
 #define INSTRUCTIONS_PER_BALL (COPPER_HALFROW_INSTRUCTIONS * ROTZOOM_H * 3)
@@ -105,7 +106,7 @@ static void InitCopperListBall(CopListT *cp, int y, int yInc) {
     SET_TX_COLOR(23);
     SET_TX_COLOR(27);
     SET_TX_COLOR(31);
-    CopNoOp(cp);
+    CopNoOpData(cp, 0xfffe);
     y += yInc;
     CopWait(cp, y, COPWAIT_X);
     SET_TX_COLOR(2);
@@ -120,7 +121,7 @@ static void InitCopperListBall(CopListT *cp, int y, int yInc) {
     SET_TX_COLOR(22);
     SET_TX_COLOR(24);
     SET_TX_COLOR(28);
-    CopNoOp(cp);
+    CopNoOpData(cp, 0xfffe);
     y += yInc;
   }
 }
@@ -133,15 +134,17 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
   CopInit(cp);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y0, 320, 280);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
+  CopSetupMode(cp, MODE_LORES, 0);
   SET_COLOR(0, 0x134);
   SET_COLOR(1, 0x000);
   CopSetupBitplaneFetch(cp, MODE_LORES, X(0), ball_large.width);
 
   for (i = 0; i < 1; i++) {
-    ballCp->inserts[i].waitBefore = CopWait(cp, Y0, COPWAIT_X);
+    ballCp->inserts[i].waitBefore = CopWait(cp, Y0, COPWAIT_X_BALLSTART);
+    //ballCp->inserts[i].bplptr[0] = CopMove32(cp, bplpt[0], ball_large->planes[0]);
     CopSetupBitplanes(cp, ballCp->inserts[i].bplptr, &ball_large, ball_large.depth);
     ballCp->inserts[i].bplcon1ins = CopMove16(cp, bplcon1, 0);
-    CopSetupMode(cp, MODE_LORES, ball_large.depth);
+    CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(DEPTH));
     ballCp->inserts[i].ballCopper = cp->curr;
     InitCopperListBall(cp, Y0 + 6, 2);
     ballCp->inserts[i].waitAfter = CopWait(cp, Y0 + 112, COPWAIT_X);
@@ -153,6 +156,7 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
 
 static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
 
+  // Set X
   {
     short x = 263 - ball->screenX;
     short bplSkip = (x / 8) & 0xfe;
@@ -165,23 +169,33 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
     CopInsSet16(inserts.bplcon1ins, (shift << 4) | shift);
   }
 
+  // Update copper waits according to Y
   {
+    bool crossedLineFF = false;
     short i;
     short y = ball->screenY;
     short yInc = ball->screenLineHeight;
     CopInsT *textureCopper = inserts.ballCopper;
     inserts.waitBefore->wait.vp = y;
     y += 6;
-    for (i = 0; i < ROTZOOM_H; i++) {
+    for (i = 0; i < ROTZOOM_H * 2; i++) {
       textureCopper->wait.vp = y;
-      textureCopper += ROTZOOM_W / 2 + 2;
+      textureCopper += ROTZOOM_W / 2 + 1;
       y += yInc;
-      textureCopper->wait.vp = y;
-      textureCopper += ROTZOOM_W / 2 + 2;
-      y += yInc;
+
+      // After texture line: NOP or $FFDF-wait
+      if (y >= 256 && !crossedLineFF) {
+        crossedLineFF = true;
+        textureCopper->wait.vp = 0xff;
+        textureCopper->wait.hp = 0xdf;
+      } else {
+        textureCopper->move.reg = 0x1fe; // NOP
+      }
+      textureCopper++;
     }
   }
 
+  // Paint texture
   {
     short sin, cos;
     int u, v, deltaCol, deltaRow, uvPos;
