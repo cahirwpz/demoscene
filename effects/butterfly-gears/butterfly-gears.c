@@ -17,6 +17,16 @@
 #define DEPTH 5
 #define BALLS 3
 #define WIDTH 320
+#define SMALL_BALL_PADDING_TOP 5
+#define SMALL_BALL_PADDING_BOTTOM 8
+#define SMALL_BALL_Y_INC 1
+#define SMALL_BALL_WIDTH 58
+#define SMALL_BALL_CENTER ((WIDTH-SMALL_BALL_WIDTH)/2+16)
+#define LARGE_BALL_PADDING_TOP 6
+#define LARGE_BALL_PADDING_BOTTOM 10
+#define LARGE_BALL_Y_INC 2
+#define LARGE_BALL_WIDTH 110
+#define LARGE_BALL_CENTER ((WIDTH-LARGE_BALL_WIDTH)/2+16)
 #define ROTZOOM_W 24
 #define ROTZOOM_H 24
 #define COPWAIT_X 1
@@ -42,8 +52,11 @@
 #define f2short(f) \
   (short)((float)(f) * 256.0)
 
+typedef enum { SMALL_BALL, LARGE_BALL } BallTypeT;
+
 typedef struct {
   PixmapT texture;
+  BallTypeT type;
   short angle;
   short angleDelta;
   short zoom;
@@ -96,11 +109,10 @@ extern void PlotTextureAsm(char *copperDst asm("a0"),
                            int  uvDeltaCol asm("d1"));
 
 // Create copper writes to color registers, leave out colors needed for sprites
-static void InsertTextureCopperWrites(CopListT *cp, int y, int yInc) {
+static void InsertTextureCopperWrites(CopListT *cp) {
   short i;
-
   for (i=0; i<ROTZOOM_H; i++) {
-    CopWait(cp, y, COPWAIT_X);
+    CopWait(cp, 0, COPWAIT_X);
     SETCOLOR(3);
     SETCOLOR(5);
     SETCOLOR(7);
@@ -113,9 +125,8 @@ static void InsertTextureCopperWrites(CopListT *cp, int y, int yInc) {
     SETCOLOR(23);
     SETCOLOR(27);
     SETCOLOR(31);
-    CopNoOpData(cp, 0xfffe);
-    y += yInc;
-    CopWait(cp, y, COPWAIT_X);
+    CopNoOp(cp);
+    CopWait(cp, 0, COPWAIT_X);
     SETCOLOR(2);
     SETCOLOR(4);
     SETCOLOR(6);
@@ -128,8 +139,7 @@ static void InsertTextureCopperWrites(CopListT *cp, int y, int yInc) {
     SETCOLOR(22);
     SETCOLOR(24);
     SETCOLOR(28);
-    CopNoOpData(cp, 0xfffe);
-    y += yInc;
+    CopNoOp(cp);
   }
 }
 
@@ -153,7 +163,7 @@ static void InitCopperList(BallCopListT *ballCp) {
     ballCp->inserts[i].bplcon1ins = CopMove16(cp, bplcon1, 0);
     CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(DEPTH));
     ballCp->inserts[i].ballCopper = cp->curr;
-    InsertTextureCopperWrites(cp, Y0 + 6, 2);
+    InsertTextureCopperWrites(cp);
     ballCp->inserts[i].waitAfter = CopWait(cp, Y0 + 112, COPWAIT_X);
     CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(1));
     CopMove16(cp, bpl1mod, -WIDTH/8);
@@ -173,15 +183,6 @@ static void InitBottomCopperList(CopListT *cp) {
   CopSetupBitplanes(cp, NULL, &book_bottom, book_bottom.depth);
   CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(book_bottom.depth));
   CopMove16(cp, bplcon1, 0);
-  if (0) {
-    CopInsSet32(cp->curr++, book_bottom.planes[1]);
-    CopInsSet32(cp->curr++, book_bottom.planes[2]);
-    CopInsSet32(cp->curr++, book_bottom.planes[3]);
-    CopInsSet32(cp->curr++, book_bottom.planes[4]);
-    CopInsSet32(cp->curr++, book_bottom.planes[0]);
-    CopMove16(cp, bpl1mod, 0);
-    CopMove16(cp, bpl2mod, 0);
-  }
 
   CopLoadPal(cp, &book_pal, 0);
   SETBG(BOOK_Y + 5,  0x133);
@@ -198,17 +199,19 @@ static void InitBottomCopperList(CopListT *cp) {
 }
 
 static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
+  bool small = ball->type == SMALL_BALL;
 
   // Set X
   {
-    short x = 263 - ball->screenX;
+    short x = (small ? SMALL_BALL_CENTER : LARGE_BALL_CENTER) - ball->screenX;
     short bplSkip = (x / 8) & 0xfe;
     short shift = 15 - (x & 0xf);
-    CopInsSet32(inserts.bplptr[0], ball_large.planes[0]+bplSkip);
-    CopInsSet32(inserts.bplptr[1], ball_large.planes[1]+bplSkip);
-    CopInsSet32(inserts.bplptr[2], ball_large.planes[2]+bplSkip);
-    CopInsSet32(inserts.bplptr[3], ball_large.planes[3]+bplSkip);
-    CopInsSet32(inserts.bplptr[4], ball_large.planes[4]+bplSkip);
+    BitmapT bitmap = small ? ball_small : ball_large;
+    CopInsSet32(inserts.bplptr[0], bitmap.planes[0]+bplSkip);
+    CopInsSet32(inserts.bplptr[1], bitmap.planes[1]+bplSkip);
+    CopInsSet32(inserts.bplptr[2], bitmap.planes[2]+bplSkip);
+    CopInsSet32(inserts.bplptr[3], bitmap.planes[3]+bplSkip);
+    CopInsSet32(inserts.bplptr[4], bitmap.planes[4]+bplSkip);
     CopInsSet16(inserts.bplcon1ins, (shift << 4) | shift);
   }
 
@@ -216,10 +219,10 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
   {
     short i;
     short y = ball->screenY;
-    short yInc = ball->screenLineHeight;
+    short yInc = small ? SMALL_BALL_Y_INC : LARGE_BALL_Y_INC;
     CopInsT *textureCopper = inserts.ballCopper;
     inserts.waitBefore->wait.vp = y;
-    y += 6;
+    y += small ? SMALL_BALL_PADDING_TOP : LARGE_BALL_PADDING_TOP;
     for (i = 0; i < ROTZOOM_H * 2; i++) {
       textureCopper->wait.vp = y;
       textureCopper += ROTZOOM_W / 2 + 1;
@@ -234,7 +237,7 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
       }
       textureCopper++;
     }
-    y += 10;
+    y += small ? SMALL_BALL_PADDING_BOTTOM : LARGE_BALL_PADDING_BOTTOM;
     if (y >= BOOK_Y) {
       inserts.waitAfter->wait.vp = 255;
     } else {
@@ -265,14 +268,14 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
 }
 
 static void Init(void) {
-  MouseInit(0, 0, 262, 256);
+  MouseInit(-100, 0, 100, 256);
 
   InitBottomCopperList(bottomCp);
   InitCopperList(&ballCopList1);
   CopListActivate(ballCopList1.cp);
 
+  ball1.type = LARGE_BALL;
   ball1.texture = texture_butterfly;
-  ball1.screenLineHeight = 2;
   ball1.angleDelta = 25;
   ball1.u = f2short(64.0f);
   ball1.v = 0;
@@ -280,16 +283,16 @@ static void Init(void) {
   ball1.zoom = MIN_ZOOM;
   ball1.zoomDelta = 1;
 
+  ball2.type = SMALL_BALL;
   ball2.texture = texture_butterfly;
-  ball1.screenLineHeight = 2;
   ball2.angleDelta = 0;
   ball2.uDelta = f2short(0.5f);
   ball2.vDelta = f2short(-0.3f);
   ball2.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) / 2;
   ball2.zoomDelta = -1;
 
+  ball3.type = SMALL_BALL;
   ball3.texture = texture_butterfly;
-  ball1.screenLineHeight = 2;
   ball3.angleDelta = -27;
   ball3.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) * 3 / 2;
   ball3.u = f2short(64.f);
