@@ -63,8 +63,8 @@ typedef struct {
   short angleDelta;
   short zoom;
   short zoomDelta;
-  short u;
-  short v;
+  int u;
+  int v;
   short uDelta;
   short vDelta;
   short screenX;
@@ -272,20 +272,20 @@ static void Init(void) {
 
   ball1.type = LARGE_BALL;
   ball1.texture = texture_butterfly;
-  ball1.angleDelta = 25;
+  ball1.angleDelta = 0;
   ball1.u = f2short(64.0f);
   ball1.v = 0;
-  ball1.vDelta = f2short(0.7f);
-  ball1.zoom = MIN_ZOOM;
-  ball1.zoomDelta = 1;
+  ball1.vDelta = f2short(1.2f);
+  ball1.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) * 3 / 2;
+  ball1.zoomDelta = 0;
 
   ball2.type = SMALL_BALL;
   ball2.texture = texture_butterfly;
   ball2.angleDelta = 0;
-  ball2.uDelta = f2short(0.5f);
+  ball2.uDelta = f2short(1.5f);
   ball2.vDelta = f2short(-0.3f);
   ball2.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) / 2;
-  ball2.zoomDelta = -1;
+  ball2.zoomDelta = 0;
 
   ball3.type = SMALL_BALL;
   ball3.texture = texture_butterfly;
@@ -309,9 +309,13 @@ static void HandleEvent(void) {
 
   if (ev->type == EV_MOUSE) {
     ball1.screenX = ev->mouse.x;
-    ball1.screenY = ev->mouse.y;
+    // ball1.screenY = ev->mouse.y;
     ball2.screenY = ball1.screenY + LARGE_BALL_HEIGHT + 1;
     ball3.screenY = ball2.screenY + SMALL_BALL_HEIGHT + 1;
+    ball2.u = ((ev->mouse.y)) << 8;
+    ball2.v = ((ev->mouse.x)) << 8;
+    ball2.uDelta = 0;
+    ball2.vDelta = 0;
   }
 }
 

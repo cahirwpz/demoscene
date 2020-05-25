@@ -35,8 +35,8 @@ SINGLEROW_SIZE			= COPPER_HALFROW_INSTRUCTIONS*4
 
 _PlotTextureAsm:
 	movem.l	d4/d7/a2,-(a7)
-	add.w	#4+2,a0		; first color write data word
-	lea	dummylong(pc),a2
+	addq.w	#4+2,a0		; first color write data word
+	add.l	#128*128*2,a1	; point to middle of texture
 
 	PREPARE_UV d2,d0 ; [d0] [d2] = position
 	PREPARE_UV d3,d1 ; [d1] [d3] = delta col
@@ -62,6 +62,3 @@ _PlotTextureAsm:
 
 	movem.l	(a7)+,d4/d7/a2
 	rts
-
-dummylong:
-	dc.l	0
