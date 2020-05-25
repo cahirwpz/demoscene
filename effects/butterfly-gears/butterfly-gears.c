@@ -97,18 +97,14 @@ static BallT ball3;
 #include "data/ball_large.c"
 #include "data/book_bottom.c"
 
-// Pack u/v values into a longword to be used by the inner loop.
-static inline long uv(short u, short v) {
-  int combined;
-  combined = (u & 0xffff) | ((v & 0xffff) << 16);
-  return combined;
-}
-
 extern void PlotTextureAsm(char *copperDst asm("a0"),
                            char *texture   asm("a1"),
-                           int  uvPosition asm("d5"),
-                           int  uvDeltaRow asm("d6"),
-                           int  uvDeltaCol asm("d1"));
+                           int  u          asm("d0"),
+                           int  v          asm("d2"),
+                           int  uDeltaCol  asm("d1"),
+                           int  vDeltaCol  asm("d3"),
+                           int  uDeltaRow  asm("d5"),
+                           int  vDeltaRow  asm("d6"));
 
 // Create copper writes to color registers, leave out colors needed for sprites
 static void InsertTextureCopperWrites(CopListT *cp) {
@@ -251,15 +247,12 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
   // Paint texture
   {
     short sin, cos;
-    int u, v, deltaCol, deltaRow, uvPos;
+    int u, v;
     sin = (ball->zoom*SIN(ball->angle)) >> 9;
     cos = (ball->zoom*COS(ball->angle)) >> 9;
-    deltaCol = uv(sin, cos);
-    deltaRow = uv(cos, -sin);
     u = ball->u - sin * (ROTZOOM_W / 2) - cos * (ROTZOOM_H / 2);
     v = ball->v - cos * (ROTZOOM_W / 2) + sin * (ROTZOOM_H / 2);
-    uvPos = uv(u, v);
-    PlotTextureAsm((char *) inserts.ballCopper, (char *) ball->texture.pixels, uvPos, deltaCol, deltaRow);
+    PlotTextureAsm((char *) inserts.ballCopper, (char *) ball->texture.pixels, u, v, sin, cos, cos, -sin);
     ball->angle += ball->angleDelta;
     ball->u += ball->uDelta;
     ball->v += ball->vDelta;

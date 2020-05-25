@@ -15,6 +15,8 @@ if __name__ == '__main__':
         for line in f:
             if line.startswith(';>>> '):
                 chunkName = line.rstrip()[5:]
+            elif line.startswith(';'):
+                continue
             else:
                 chunks[chunkName] = chunks.get(chunkName, '') + line
     for key in ['startrow', 'endrow', 'plot-even', 'plot-odd', 'add-dst',
