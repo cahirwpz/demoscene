@@ -86,7 +86,8 @@ typedef struct {
   BallCopInsertsT inserts[BALLS];
 } BallCopListT;
 
-static BallCopListT ballCopList1; // TODO use second copper list and double-buffer
+static int active = 0;
+static BallCopListT ballCopList[2];
 static CopListT *bottomCp;
 static CopInsT *bottomCpStart;
 static BallT ball1;
@@ -218,8 +219,8 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
     short bplSkip = (x / 8) & 0xfe;
     short shift = 15 - (x & 0xf);
     BitmapT bitmap = small ? ball_small : ball_large;
-    if (ball->screenY < Y0) {
-      bplSkip += (Y0 - ball->screenY) * WIDTH / 8;
+    if (ball->screenY <= Y0) {
+      bplSkip += (Y0 - 1 - ball->screenY) * WIDTH / 8;
     }
     CopInsSet32(inserts.bplptr[0], bitmap.planes[0]+bplSkip);
     CopInsSet32(inserts.bplptr[1], bitmap.planes[1]+bplSkip);
@@ -292,8 +293,8 @@ static void Init(void) {
   MouseInit(-100, -200, 100, 256);
 
   InitBottomCopperList(bottomCp);
-  InitCopperList(&ballCopList1);
-  CopListActivate(ballCopList1.cp);
+  InitCopperList(&ballCopList[0]);
+  InitCopperList(&ballCopList[1]);
 
   ball1.type = LARGE_BALL;
   ball1.texture = texture_butterfly;
@@ -318,11 +319,14 @@ static void Init(void) {
   ball3.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) * 3 / 2;
   ball3.u = f2short(64.f);
   ball3.vDelta = f2short(-0.2f);
+
+  custom->dmacon = DMAF_MASTER | DMAF_COPPER | DMAF_SETCLR;
 }
 
 static void Kill(void) {
   MouseKill();
-  DeleteCopList(ballCopList1.cp);
+  DeleteCopList(ballCopList[0].cp);
+  DeleteCopList(ballCopList[1].cp);
   DeleteCopList(bottomCp);
 }
 
@@ -342,10 +346,12 @@ static void HandleEvent(void) {
 
 static void Render(void) {
   HandleEvent();
-  DrawCopperBall(&ball1, ballCopList1.inserts[0]);
-  DrawCopperBall(&ball2, ballCopList1.inserts[1]);
-  DrawCopperBall(&ball3, ballCopList1.inserts[2]);
+  DrawCopperBall(&ball1, ballCopList[active].inserts[0]);
+  DrawCopperBall(&ball2, ballCopList[active].inserts[1]);
+  DrawCopperBall(&ball3, ballCopList[active].inserts[2]);
   TaskWaitVBlank();
+  active ^= 1;
+  CopListRun(ballCopList[active].cp);
 }
 
 EffectT Effect = { NULL, NULL, Init, Kill, Render };
