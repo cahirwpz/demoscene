@@ -13,6 +13,7 @@
 #include "fx.h"
 #include "mouse.h"
 #include "event.h"
+#include "random.h"
 
 #define DEPTH 5
 #define BALLS 3
@@ -38,8 +39,10 @@
 #define COPPER_HALFROW_INSTRUCTIONS (ROTZOOM_W/2+2)
 #define INSTRUCTIONS_PER_BALL (COPPER_HALFROW_INSTRUCTIONS * ROTZOOM_H * 3)
 #define DEBUG_COLOR_WRITES 0
-#define MIN_ZOOM 2
-#define MAX_ZOOM 80
+#define ZOOM_SHIFT 4
+#define NORM_ZOOM (1 << ZOOM_SHIFT)
+#define MIN_ZOOM (NORM_ZOOM / 5)
+#define MAX_ZOOM (NORM_ZOOM * 8)
 #define NO_OP 0x1fe
 
 #if DEBUG_COLOR_WRITES // only set background color for debugging
@@ -63,7 +66,9 @@ typedef struct {
   short angle;
   short angleDelta;
   short zoom;
-  short zoomDelta;
+  short zoomSinPos;
+  short zoomSinStep;
+  short zoomSinAmp;
   int u;
   int v;
   short uDelta;
@@ -274,19 +279,34 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
   {
     short sin, cos;
     int u, v;
-    sin = (ball->zoom*SIN(ball->angle)) >> 9;
-    cos = (ball->zoom*COS(ball->angle)) >> 9;
+    short zoom = ball->zoom + ((ball->zoomSinAmp * SIN(ball->zoomSinPos)) >> 12);
+
+    sin = (zoom*SIN(ball->angle)) >> (4 + ZOOM_SHIFT);
+    cos = (zoom*COS(ball->angle)) >> (4 + ZOOM_SHIFT);
     u = ball->u - sin * (ROTZOOM_W / 2) - cos * (ROTZOOM_H / 2);
     v = ball->v - cos * (ROTZOOM_W / 2) + sin * (ROTZOOM_H / 2);
+
     PlotTextureAsm((char *) inserts.ballCopper, (char *) ball->texture.pixels, u, v, sin, cos, cos, -sin);
+
     ball->angle += ball->angleDelta;
     ball->u += ball->uDelta;
     ball->v += ball->vDelta;
-    ball->zoom += ball->zoomDelta;
-    if (ball->zoom < MIN_ZOOM || ball->zoom > MAX_ZOOM) {
-      ball->zoomDelta = -ball->zoomDelta;
-    }
+    ball->zoomSinPos += ball->zoomSinStep;
   }
+}
+
+static void Randomize(BallT *ball) {
+  ball->type = (random() & 1) ? SMALL_BALL : LARGE_BALL;
+  ball->zoom = NORM_ZOOM;
+  ball->zoomSinPos = random();
+  ball->zoomSinAmp = NORM_ZOOM * 6;
+  ball->zoomSinStep = random() & 0xf;
+  ball->uDelta = random() & 0x1ff;
+  ball->vDelta = random() & 0x1ff;
+  ball->angle = random();
+  ball->angleDelta = random() & 0x3f;
+  if (ball->angle & 1) ball->angleDelta = -ball->angleDelta;
+  ball->screenX = -64 + (random() & 0x7f);
 }
 
 static void Init(void) {
@@ -296,31 +316,28 @@ static void Init(void) {
   InitCopperList(&ballCopList[0]);
   InitCopperList(&ballCopList[1]);
 
+  Randomize(&ball1);
   ball1.type = LARGE_BALL;
+  ball1.screenY = BOOK_Y;
   ball1.texture = texture_butterfly;
-  ball1.angleDelta = 14;
-  ball1.u = f2short(64.0f);
-  ball1.v = 0;
-  ball1.vDelta = f2short(1.2f);
-  ball1.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) * 3 / 2;
-  ball1.zoomDelta = 1;
 
+  Randomize(&ball2);
   ball2.type = SMALL_BALL;
+  ball2.screenY = ball1.screenY + LARGE_BALL_HEIGHT + 1;
   ball2.texture = texture_butterfly;
-  ball2.angleDelta = 5;
-  ball2.uDelta = f2short(0.5f);
-  ball2.vDelta = f2short(-0.3f);
-  ball2.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) / 2;
-  ball2.zoomDelta = -1;
 
+  Randomize(&ball3);
   ball3.type = SMALL_BALL;
+  ball3.screenY = ball2.screenY + SMALL_BALL_HEIGHT + 1;
   ball3.texture = texture_butterfly;
-  ball3.angleDelta = -27;
-  ball3.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) * 3 / 2;
-  ball3.u = f2short(64.f);
-  ball3.vDelta = f2short(-0.2f);
 
   custom->dmacon = DMAF_MASTER | DMAF_COPPER | DMAF_SETCLR;
+}
+
+static bool MoveBallAndIsStillVisible(BallT *ball) {
+  short y = ball->screenY--;
+  short lastVisibleY = (ball->type == LARGE_BALL) ? Y0-LARGE_BALL_HEIGHT : Y0-SMALL_BALL_HEIGHT;
+  return y > lastVisibleY;
 }
 
 static void Kill(void) {
@@ -346,6 +363,16 @@ static void HandleEvent(void) {
 
 static void Render(void) {
   HandleEvent();
+  MoveBallAndIsStillVisible(&ball2);
+  MoveBallAndIsStillVisible(&ball3);
+  if (!MoveBallAndIsStillVisible(&ball1)) {
+    short lastY = ball3.screenY + (ball3.type == SMALL_BALL ? SMALL_BALL_HEIGHT : LARGE_BALL_HEIGHT);
+    ball1 = ball2;
+    ball2 = ball3;
+    ball3.screenY = lastY + 1 + (random() &0x3f);
+    if (ball3.screenY < BOOK_Y) ball3.screenY = BOOK_Y + (random() & 0x3f);
+    Randomize(&ball3);
+  }
   DrawCopperBall(&ball1, ballCopList[active].inserts[0]);
   DrawCopperBall(&ball2, ballCopList[active].inserts[1]);
   DrawCopperBall(&ball3, ballCopList[active].inserts[2]);
