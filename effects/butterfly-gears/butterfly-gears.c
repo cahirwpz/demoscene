@@ -40,6 +40,7 @@
 #define DEBUG_COLOR_WRITES 0
 #define MIN_ZOOM 2
 #define MAX_ZOOM 80
+#define NO_OP 0x1fe
 
 #if DEBUG_COLOR_WRITES // only set background color for debugging
 #define SETCOLOR(x) CopMove16(cp, color[0], 0xf00)
@@ -154,6 +155,10 @@ static void InitCopperList(BallCopListT *ballCp) {
   CopSetColor(cp, 1, 0x000);
   CopSetupBitplaneFetch(cp, MODE_LORES, X(0), ball_large.width);
   CopMove32(cp, cop2lc, bottomCpStart);
+  CopMove32(cp, bplpt[0], ball_large.planes[0]);
+  CopMove16(cp, bpl1mod, -WIDTH/8);
+  CopMove16(cp, bpl2mod, -WIDTH/8);
+  CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(1));
 
   for (i = 0; i < BALLS; i++) {
     ballCp->inserts[i].waitBefore = CopWait(cp, Y0, COPWAIT_X_BALLSTART);
@@ -200,12 +205,22 @@ static void InitBottomCopperList(CopListT *cp) {
 static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
   bool small = ball->type == SMALL_BALL;
 
+  // Ball out of sight (at bottom)?
+  if (ball->screenY >= BOOK_Y - 1) {
+    inserts.waitBefore->move.reg = CSREG(copjmp2);
+    return;
+  }
+  inserts.waitBefore->move.reg = NO_OP;
+
   // Set X
   {
     short x = (small ? SMALL_BALL_CENTER : LARGE_BALL_CENTER) - ball->screenX;
     short bplSkip = (x / 8) & 0xfe;
     short shift = 15 - (x & 0xf);
     BitmapT bitmap = small ? ball_small : ball_large;
+    if (ball->screenY < Y0) {
+      bplSkip += (Y0 - ball->screenY) * WIDTH / 8;
+    }
     CopInsSet32(inserts.bplptr[0], bitmap.planes[0]+bplSkip);
     CopInsSet32(inserts.bplptr[1], bitmap.planes[1]+bplSkip);
     CopInsSet32(inserts.bplptr[2], bitmap.planes[2]+bplSkip);
@@ -220,27 +235,37 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
     short y = ball->screenY;
     short yInc = small ? SMALL_BALL_Y_INC : LARGE_BALL_Y_INC;
     CopInsT *textureCopper = inserts.ballCopper;
-    inserts.waitBefore->wait.vp = y;
+    if (y > Y0) {
+      inserts.waitBefore->wait.vp = y;
+    } else {
+      inserts.waitBefore->wait.vp = 0;
+    }
+    inserts.waitBefore->wait.hp = COPWAIT_X_BALLSTART | 1;
     y += small ? SMALL_BALL_PADDING_TOP : LARGE_BALL_PADDING_TOP;
     for (i = 0; i < ROTZOOM_H * 2; i++) {
-      textureCopper->wait.vp = y;
+      if (y > Y0) {
+        textureCopper->wait.vp = y;
+      } else {
+        textureCopper->wait.vp = 0;
+      }
       textureCopper += ROTZOOM_W / 2 + 1;
       y += yInc;
 
       // Abort ball when the bottom book area starts
-      if (y >= BOOK_Y) {
-        textureCopper->move.reg = CSREG(copjmp2);
-        break;
+      if (y < BOOK_Y - 1) {
+        textureCopper->move.reg = NO_OP;
       } else {
-        textureCopper->move.reg = 0x1fe; // NOP
+        textureCopper->move.reg = CSREG(copjmp2);
       }
       textureCopper++;
     }
     y += small ? SMALL_BALL_PADDING_BOTTOM : LARGE_BALL_PADDING_BOTTOM;
-    if (y >= BOOK_Y) {
-      inserts.waitAfter->wait.vp = 255;
-    } else {
+    if (y < BOOK_Y) {
       inserts.waitAfter->wait.vp = y;
+      inserts.waitAfter->wait.hp = COPWAIT_X | 1;
+    } else {
+      inserts.waitAfter->wait.vp = 255;
+      inserts.waitAfter->wait.hp = COPWAIT_X | 1;
     }
   }
 
@@ -264,7 +289,7 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
 }
 
 static void Init(void) {
-  MouseInit(-100, 0, 100, 256);
+  MouseInit(-100, -200, 100, 256);
 
   InitBottomCopperList(bottomCp);
   InitCopperList(&ballCopList1);
@@ -272,20 +297,20 @@ static void Init(void) {
 
   ball1.type = LARGE_BALL;
   ball1.texture = texture_butterfly;
-  ball1.angleDelta = 0;
+  ball1.angleDelta = 14;
   ball1.u = f2short(64.0f);
   ball1.v = 0;
   ball1.vDelta = f2short(1.2f);
   ball1.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) * 3 / 2;
-  ball1.zoomDelta = 0;
+  ball1.zoomDelta = 1;
 
   ball2.type = SMALL_BALL;
   ball2.texture = texture_butterfly;
-  ball2.angleDelta = 0;
-  ball2.uDelta = f2short(1.5f);
+  ball2.angleDelta = 5;
+  ball2.uDelta = f2short(0.5f);
   ball2.vDelta = f2short(-0.3f);
   ball2.zoom = MIN_ZOOM + (MAX_ZOOM - MIN_ZOOM) / 2;
-  ball2.zoomDelta = 0;
+  ball2.zoomDelta = -1;
 
   ball3.type = SMALL_BALL;
   ball3.texture = texture_butterfly;
@@ -309,13 +334,9 @@ static void HandleEvent(void) {
 
   if (ev->type == EV_MOUSE) {
     ball1.screenX = ev->mouse.x;
-    // ball1.screenY = ev->mouse.y;
+    ball1.screenY = ev->mouse.y;
     ball2.screenY = ball1.screenY + LARGE_BALL_HEIGHT + 1;
     ball3.screenY = ball2.screenY + SMALL_BALL_HEIGHT + 1;
-    ball2.u = ((ev->mouse.y)) << 8;
-    ball2.v = ((ev->mouse.x)) << 8;
-    ball2.uDelta = 0;
-    ball2.vDelta = 0;
   }
 }
 
