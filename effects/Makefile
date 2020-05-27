@@ -48,11 +48,9 @@ FAILURES := \
 	tests \
 	vscaler
 
-LIBNAME := libeffect
-SOURCES := autoinit.c effect.c os.c vblank.c main.c
-BUILD-FILES = crt0.o
-		
-include $(TOPDIR)/build/lib.mk
+all: build
+
+include $(TOPDIR)/build/common.mk
 
 run:
 	for dir in $(SUBDIRS); do 	\

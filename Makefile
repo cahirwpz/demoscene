@@ -1,6 +1,7 @@
 TOPDIR = $(realpath .)
 
 SUBDIRS = tools lib effects
+SUBDIRS = tools lib loader effects
 EXTRA-FILES = tags cscope.out
 CLEAN-FILES = bootloader.bin 
 
