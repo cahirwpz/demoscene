@@ -1,0 +1,557 @@
+@track ninja.eyes
+!ramp
+$0100 2
+$0102 1
+$0104 0
+$0106 1
+$0108 2
+$010a 3
+$010c 4
+$010e 3
+$0110 2
+$0112 1
+$0114 0
+$0116 1
+$0118 2
+$011a 3
+$011c 4
+$011e 3
+$0120 2
+@end
+
+@track ninja.phase
+!ramp
+$0000 1
+$0020 2
+$0100 3
+$0120 4
+@end
+
+@track floor.ball.x
+!smooth
+$0300 400
+$0310 144
+$0430 144
+$0500 -100
+@end
+
+@track floor.ball.y
+$0300 160
+@end
+
+@track floor.x
+!smooth
+$0300 -1024
+$0320 1024
+$0400 -1024
+$0420 1024
+$0500 -1024
+@end
+
+@track flat3d.object
+!ramp
+$0500 0
+$0510 1
+$0520 0
+$0530 1
+$0600 0
+$0610 1
+$0620 0
+$0630 1
+@end
+
+@track flat3d.x
+!smooth
+$0500 100
+$0520 -100
+$0600 100
+$0620 -100
+$0700 100
+@end
+
+@track flat3d.y
+$0500 0
+@end
+
+@track flat3d.scale
+!smooth
+$0500 1024
+$0510 512
+$0520 1024
+$0530 512
+$0600 1024
+$0610 512
+$0620 1024
+$0630 512
+$0700 1024
+@end
+
+@track flat3d.rotate.x
+!smooth
+$0500 0
+$0600 800
+$0700 0
+@end
+
+@track flat3d.rotate.y
+!smooth
+$0500 800
+$0600 0
+$0700 800
+@end
+
+@track flat3d.rotate.z
+!smooth
+$0500 -400
+$0700 400
+@end
+
+@track flat3d.flash
+!trigger
+$0510 32
+$0520 32
+$0530 32
+$0600 32
+$0610 32
+$0620 32
+$0630 32
+@end
+
+@track flat3d.palette
+!event
+$0510 2
+$0520 1
+$0530 2
+$0600 1
+$0610 2
+$0620 1
+$0630 2
+@end
+
+@track running.man.x
+!smooth
+$0700 -50
+$0710 100
+$0720 -50
+$0730 100
+$0800 -50
+$0810 100
+$0820 -50
+@end
+
+@track running.man.active
+!ramp
+$0700 1
+$081b 0
+$081c 1
+$081e 0
+$081f 1
+$0820 0
+@end
+
+@track running.obj.x
+!smooth
+$0700 600
+$0720 -600
+$0800 600
+$0820 -600
+$0900 600
+@end
+
+@track running.obj.y
+$0700 0
+@end
+
+@track running.obj.rotate.x
+!smooth
+$0700 0
+$0900 1024
+@end
+
+@track running.obj.rotate.y
+!smooth
+$0700 0
+$0900 1024
+@end
+
+@track running.obj.rotate.z
+!smooth
+$0700 0
+$0900 1024
+@end
+
+@track running.obj.scale
+!smooth
+$0700 1024
+$0710 512
+$0720 1024
+$0730 512
+$0800 1024
+$0810 512
+$0820 1024
+$0830 512
+$0900 32
+@end
+
+# sprite won't show on left border on OCS, so place it on the right
+@track blurred3d.sprite.x
+!smooth
+$0900 320
+!ramp
+$0904 240
+!smooth
+$0a3c 240
+$0b00 320
+@end
+
+@track blurred3d.sprite.y
+$0904 46
+$0905 42
+$0906 46
+
+$0924 46
+$0925 42
+$0926 46
+
+$0a04 46
+$0a05 42
+$0a06 46
+
+$0a24 46
+$0a25 42
+$0a26 46
+@end
+
+@track blurred3d.sprite.flash
+!trigger
+$0904 16
+$0909 8
+$090c 16
+$0911 8
+$0914 16
+$0919 8
+$091c 16
+$0921 8
+$0924 16
+$0929 8
+$092c 16
+$0931 8
+$0934 16
+$0939 8
+$093c 16
+$0a01 8
+$0a04 16
+$0a09 8
+$0a0c 16
+$0a11 8
+$0a14 16
+$0a19 8
+$0a1c 16
+$0a21 8
+$0a24 16
+$0a29 8
+$0a2c 16
+$0a31 8
+$0a34 16
+$0a39 8
+$0a3c 16
+@end
+
+@track blurred3d.rotate.x
+!smooth
+$0900 0
+$0910 80
+$0920 0
+$0930 80
+$0940 0
+$0a00 80
+$0b00 0
+@end
+
+@track blurred3d.rotate.y
+!smooth
+#$0900 -20
+#$0920 20
+#$0928 -20
+#$0930 20
+#$0938 -20
+#$0a00 20
+#$0a20 -20
+#$0b00 20
+@end
+
+@track blurred3d.rotate.z
+!smooth
+#$0900 0
+#$0a00 800
+#$0b00 0
+@end
+
+@track blurred3d.scale
+!smooth
+$0900 1024
+$0910 768
+$0920 1024
+$0930 768
+$0a00 1024
+$0a10 768
+$0a20 1024
+$0a28 896
+$0b00 16
+@end
+
+@track ghostown.flash
+!trigger
+$0b26 32
+$0b2e 32
+$0b36 32
+
+@end
+
+@track bumpmap.light.x
+!smooth
+$0c00 -48
+$0c09 16
+$0c12 -24
+$0c1b 32
+$0c24 -32
+$0c2d 24
+$0c36 -16
+$0d00 48
+@end
+
+@track bumpmap.light.y
+!smooth
+$0c00 -40
+$0c0d 40
+$0c1a -40
+$0c26 40
+$0c33 -40
+$0d00 40
+@end
+
+@track credits.sprite
+!ramp
+$0d00 0
+$0d02 0
+$0d04 1
+$0d06 0
+$0d08 1
+$0d0a 0
+$0d0c 1
+$0d0e 0
+$0d10 1
+$0d12 0
+$0d14 1
+$0d16 0
+$0d18 1
+$0d1a 0
+$0d1c 1
+$0d1e 0
+$0d20 1
+$0d22 0
+$0d24 1
+$0d26 0
+$0d28 1
+$0d2a 0
+$0d2c 1
+$0d2e 0
+
+$0d3e 0
+
+@end
+
+@track credits.phase
+!event
+$0d00 1
+$0d33 2
+$0e03 3
+$0e13 4
+$0e23 5
+$0e33 6
+$0f00 7
+@end
+
+@track credits.pos.x
+$0d00 288
+
+!smooth
+$0d33 288
+!linear
+$0d39 32
+!smooth
+$0d3d 0
+!ramp
+$0e02 -240
+
+!smooth
+$0e03 288
+!linear
+$0e09 32
+!smooth
+$0e0d 0
+!ramp
+$0e12 -240
+
+!smooth
+$0e13 288
+!linear
+$0e19 32
+!smooth
+$0e1d 0
+!ramp
+$0e22 -240
+
+!smooth
+$0e23 288
+!linear
+$0e29 32
+!smooth
+$0e2d 0
+!ramp
+$0e32 -240
+
+!smooth
+$0e33 288
+!linear
+$0e38 32
+!smooth
+$0e3c 0
+!ramp
+$0e3f -320
+
+!smooth
+$0f00 240
+$0f10 -32
+$0f18 32
+$0f20 -32
+$0f28 32
+$0f30 -32
+$0f38 32
+$1000 -32
+$1008 32
+$1010 -32
+$1018 32
+$1020 -32
+$1028 32
+$1030 -32
+$1100 240
+@end
+
+@track credits.dancing
+!ramp
+$0d00 0
+$0f00 1
+@end
+
+@track thunders.active
+!event
+$1000 2
+$1103 1
+$1107 2
+$110f 1
+$1117 2
+$111b 1
+$111f 2
+$1124 1
+$1128 2
+$112c 1
+$1130 2
+# tu brakuje jeszcze jednego pierdolnięcia
+$1134 1
+$1138 2
+@end
+
+@track twister.scroll
+!linear
+$1200 0
+$1300 256
+@end
+
+@track twister.rotate
+!linear
+$1200 0
+$1210 512
+$1220 1536
+$1230 2048
+$1300 3072
+@end
+
+@track twister.stripes.rotate
+!smooth
+$1200 0
+$1220 1024
+$1300 0
+@end
+
+@track uvmap.pos.u
+$1400 0
+$1500 512
+@end
+
+@track uvmap.pos.v
+$1400 0
+$1500 512
+@end
+
+@track uvmap.sprite.x
+!smooth
+$1400 360
+$1408 280
+$1438 280
+$1500 360
+@end
+
+@track uvmap.sprite.y
+!smooth
+$1408 48
+$1410 112
+$1418 48
+$1420 112
+$1428 48
+$1430 112
+$1438 48
+@end
+
+@track pistons.palette
+!event
+$1500 1
+$1510 2
+$1520 3
+$1530 4
+$1600 1
+$1610 2
+$1620 3
+$1630 4
+@end
+
+@track pistons.view
+!event
+$1500 1
+$1510 2
+$1520 3
+$1530 4
+$1600 5
+$1610 4
+$1620 3
+$1630 2
+@end
+
+@track pistons.greetz
+$1500 1
+$1508 2
+$1510 3
+$1518 4
+$1520 5
+$1528 6
+$1530 7
+$1538 8
+$1600 9
+$1608 10
+$1610 11
+$1618 12
+$1620 13
+$1628 14
+$1630 15
+$1638 16
+@end
