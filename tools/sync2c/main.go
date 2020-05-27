@@ -2,12 +2,15 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"flag"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+	"text/template"
 )
+
+var printHelp bool
 
 const (
 	TrkCtrl    = -2 // control key
@@ -63,7 +66,7 @@ func (e *parseError) Error() string {
 	return e.cause
 }
 
-func ParseTrack(tokens []string, track *Track) error {
+func parseTrack(tokens []string, track *Track) error {
 	if track == nil {
 		return &parseError{"key frame outside of track"}
 	}
@@ -113,7 +116,7 @@ func ParseTrack(tokens []string, track *Track) error {
 	return nil
 }
 
-func ParseSyncFile(path string) []Track {
+func parseSyncFile(path string) []Track {
 	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
@@ -162,7 +165,7 @@ func ParseSyncFile(path string) []Track {
 			continue
 		}
 
-		if err = ParseTrack(tokens, track); err != nil {
+		if err = parseTrack(tokens, track); err != nil {
 			log.Println(origLine)
 			log.Fatalf("Parse error at line %d: %s", num, err)
 		}
@@ -175,24 +178,55 @@ func ParseSyncFile(path string) []Track {
 	return tracks
 }
 
-func main() {
-	tracks := ParseSyncFile("sushiboyz.sync")
-	for _, t := range tracks {
-		fmt.Printf("static TrackT %s_trk = {\n", t.Name())
-		fmt.Println("  .type = TRACK_LINEAR,")
-		fmt.Printf("  .name = \"%s\",\n", t.RawName)
-		fmt.Println("  .data = {")
-		for _, i := range t.Items {
-			fmt.Printf("    {%d, %d},\n", i.Key, i.Value)
-		}
-		fmt.Println("  }")
-		fmt.Println("};\n")
+var tracksTemplate = `
+{{- range . }}
+TrackT {{ .Name }}_trk = {
+  .type = TRACK_LINEAR,
+  .key = {},
+  .interval = 0,
+  .delta = 0,
+  .pending = false,
+  .name = "{{ .RawName }}",
+  .data = {
+{{- range .Items }}
+    { {{ .Key }}, {{ .Value }} },
+{{- end }}
+  }
+};
+{{ end }}
+TrackT *__TRACK_LIST__[] = {
+{{- range . }}
+  &{{ .Name }}_trk,
+{{- end }}
+  NULL
+};
+`
+
+func exportTracks(tracks []Track) {
+	t, err := template.New("export").Parse(tracksTemplate)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	fmt.Printf("TrackT tracks[] = {\n")
-	for _, t := range tracks {
-		fmt.Printf("  &%s,\n", t.Name())
+	err = t.Execute(os.Stdout, tracks)
+	if err != nil {
+		log.Fatal(err)
 	}
-	fmt.Println("  NULL")
-	fmt.Println("};\n")
+
+	return
+}
+
+func init() {
+	flag.BoolVar(&printHelp, "help", false, "print help message and exit")
+}
+
+func main() {
+	flag.Parse()
+
+	if len(flag.Args()) < 1 || printHelp {
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
+	exportTracks(parseSyncFile(flag.Arg(0)))
 }
