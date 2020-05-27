@@ -1,4 +1,8 @@
 #include "types.h"
+ 
+/* Introduce weak symbols in case no constructors or descrutors were defined. */
+u_int __INIT_LIST__;
+u_int __EXIT_LIST__;
 
 typedef struct FuncItem {
   void (*func)(void);

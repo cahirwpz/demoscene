@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
 #include "copper.h"
 #include "3d.h"
@@ -344,4 +344,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EFFECT(flatshade_convex, Load, UnLoad, Init, Kill, Render);

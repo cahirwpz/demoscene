@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
 #include "copper.h"
 #include "3d.h"
@@ -493,4 +493,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EFFECT(blurred3d, Load, UnLoad, Init, Kill, Render);

@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "copper.h"
 #include "circle.h"
 
@@ -41,4 +41,4 @@ static void Init(void) {
   }
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, NULL };
+EFFECT(circles, Load, UnLoad, Init, NULL, NULL);

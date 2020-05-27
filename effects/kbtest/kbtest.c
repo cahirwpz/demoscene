@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "console.h"
 #include "hardware.h"
 #include "copper.h"
@@ -107,4 +107,4 @@ static void Render(void) {
   exitLoop = !HandleEvent();
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(kbtest, NULL, NULL, Init, Kill, Render);

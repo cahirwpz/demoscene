@@ -1,5 +1,9 @@
-#include "config.h"
+#include "common.h"
 #include "effect.h"
+#include "hardware.h"
+
+#define SHOW_MEMORY_STATS 0
+#define REMOTE_CONTROL 0
 
 #if SHOW_MEMORY_STATS
 # include "memory.h"
@@ -26,8 +30,8 @@ __regargs void EffectLoad(EffectT *effect) {
     return;
 
   if (effect->Load) {
+    Log("[Effect] Loading '%s'\n", effect->name);
     effect->Load();
-    Log("[Effect] %s loaded.\n", effect->name);
     ShowMemStats();
   }
 
@@ -35,13 +39,13 @@ __regargs void EffectLoad(EffectT *effect) {
   SendEffectStatus(effect);
 }
 
-__regargs void EffectPrepare(EffectT *effect) {
+__regargs void EffectInit(EffectT *effect) {
   if (effect->state & EFFECT_READY)
     return;
 
-  if (effect->Prepare) {
-    Log("[Effect] Preparing %s.\n", effect->name);
-    effect->Prepare();
+  if (effect->Init) {
+    Log("[Effect] Initializing '%s'\n", effect->name);
+    effect->Init();
     ShowMemStats();
   }
 
@@ -49,21 +53,16 @@ __regargs void EffectPrepare(EffectT *effect) {
   SendEffectStatus(effect);
 }
 
-__regargs void EffectInit(EffectT *effect) {
-  if (effect->Init)
-    effect->Init();
-
-  Log("[Effect] %s started.\n", effect->name);
-  effect->state |= EFFECT_RUNNING;
-  SendEffectStatus(effect);
-}
-
 __regargs void EffectKill(EffectT *effect) {
-  if (effect->Kill)
-    effect->Kill();
+  if (!(effect->state & EFFECT_READY))
+    return;
 
-  Log("[Effect] %s finished.\n", effect->name);
-  effect->state &= ~EFFECT_RUNNING;
+  if (effect->Kill) {
+    Log("[Effect] Killing '%s'\n", effect->name);
+    effect->Kill();
+    ShowMemStats();
+  }
+
   effect->state &= ~EFFECT_READY;
   SendEffectStatus(effect);
 }
@@ -73,11 +72,30 @@ __regargs void EffectUnLoad(EffectT *effect) {
     return;
 
   if (effect->UnLoad) {
+    Log("[Effect] Unloading '%s'\n", effect->name);
     effect->UnLoad();
-    Log("[Effect] %s unloaded.\n", effect->name);
     ShowMemStats();
   }
 
   effect->state &= ~EFFECT_LOADED;
   SendEffectStatus(effect);
+}
+
+int frameCount;
+int lastFrameCount;
+bool exitLoop;
+
+__regargs void EffectRun(EffectT *effect) {
+  SetFrameCounter(0);
+
+  lastFrameCount = ReadFrameCounter();
+
+  do {
+    int t = ReadFrameCounter();
+    exitLoop = LeftMouseButton();
+    frameCount = t;
+    if (effect->Render)
+      effect->Render();
+    lastFrameCount = t;
+  } while (!exitLoop);
 }

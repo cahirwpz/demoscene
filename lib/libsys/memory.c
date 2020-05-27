@@ -93,7 +93,7 @@ tryagain:
   return area;
 }
 
-void MemInit(void) {
+void InitMemory(void) {
   if (__chipmem == 0)
     __chipmem = DEFAULT_CHIP_CHUNK;
   chip = MemPoolAlloc(__chipmem, MEMF_CHIP);
@@ -105,7 +105,7 @@ void MemInit(void) {
   fast->succ = chip;
 }
 
-void MemKill(void) {
+void KillMemory(void) {
   if (chip && fast)
     Log("[Mem] Max usage - CHIP: %dkB FAST: %dkB\n",
         KB(chip->maxUsage), KB(fast->maxUsage));
@@ -115,9 +115,6 @@ void MemKill(void) {
   if (fast)
     FreeMem(fast, __fastmem + sizeof(AreaT));
 }
-
-ADD2INIT(MemInit, -20);
-ADD2EXIT(MemKill, -20);
 
 static inline BlockT *BlockAfter(BlockT *blk) {
   return (void *)blk + abs(blk->size);

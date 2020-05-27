@@ -24,6 +24,9 @@ $(TOPDIR)/lib/lib%.a: FORCE
 $(TOPDIR)/effects/%.o: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
+$(TOPDIR)/effects/%.a: FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
 $(TOPDIR)/%.bin: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 

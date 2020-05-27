@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "2d.h"
 #include "blitter.h"
 #include "copper.h"
@@ -133,4 +133,4 @@ static void Render(void) {
   planeC ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EFFECT(shapes, Load, UnLoad, Init, Kill, Render);
