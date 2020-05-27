@@ -8,6 +8,47 @@
 #include "startup.h"
 #include "tasks.h"
 
+/*
+ * Linker set is a structure composed of long words:
+ *
+ * +00 length (in long words)
+ * +04 function0
+ * +08 priority0
+ * +12 function1
+ * +16 priority2
+ * ...
+ */
+
+typedef struct FuncItem {
+  void (*func)(void);
+  u_int pri;
+} FuncItemT;
+
+/* Call functions in ascending order of priority. Destructor priorities are
+ * reversed by ADD2EXIT so there's no need to handle extra case. */
+__regargs void CallFuncList(u_int *lset) {
+  short n = *lset++ / 2;
+  FuncItemT *start = (FuncItemT *)lset;
+  u_char cur_pri = 0;
+
+  while (n > 0) {
+    FuncItemT *item;
+    u_char next_pri = 255;
+    for (item = start; item->func; item++) {
+      u_char pri = item->pri;
+      if (pri < cur_pri)
+        continue;
+      if (pri == cur_pri) {
+        item->func();
+        n--;
+      } else if (pri < next_pri) {
+        next_pri = pri;
+      }
+    }
+    cur_pri = next_pri;
+  }
+}
+
 extern EffectT Effect;
 
 int frameCount;
