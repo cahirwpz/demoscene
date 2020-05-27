@@ -7,6 +7,7 @@ SUBDIRS := \
 	blurred \
 	blurred3d \
 	bumpmap-rgb \
+	butterfly-gears \
 	circles \
 	credits \
 	empty \
