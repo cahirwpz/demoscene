@@ -7,6 +7,7 @@ SOURCES := \
 	__udivsi3.s \
 	__umodsi3.s \
 	bzero.s \
+	ctype.c \
 	kvprintf.c \
 	memcpy.s \
 	memset.s \

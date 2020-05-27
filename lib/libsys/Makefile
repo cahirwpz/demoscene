@@ -23,7 +23,6 @@ SOURCES := \
 	random.c \
 	rawio-par.s \
 	rawio-ser.s \
-	reader.c \
 	serial.c \
 	sintab.c \
 	sort.c \

@@ -4,7 +4,6 @@
 #include "copper.h"
 #include "gfx.h"
 #include "memory.h"
-#include "reader.h"
 
 #define WIDTH 640
 #define HEIGHT 256
@@ -111,6 +110,13 @@ static void SetupLinePointers(void) {
   }
 }
 
+static __regargs char *NextLine(char *str) {
+  for (; *str; str++)
+    if (*str == '\n')
+      return ++str;
+  return str;
+}
+
 static void RenderNextLineIfNeeded(void) {
   Area2D rect = {0, 0, WIDTH, SIZE};
   short s = frameCount / 16;
@@ -121,8 +127,7 @@ static void RenderNextLineIfNeeded(void) {
     char *line_end;
     short size;
 
-    line_end = line_start;
-    SkipLine(&line_end);
+    line_end = NextLine(line_start);
     size = (line_end - line_start) - 1;
 
     ptr += line_num * scroll->bytesPerRow;
@@ -133,7 +138,7 @@ static void RenderNextLineIfNeeded(void) {
     RenderLine(ptr, line_start, min(size, COLUMNS));
 
     last_line = s;
-    SkipLine(&line_start);
+    line_start = line_end;
   }
 }
 
