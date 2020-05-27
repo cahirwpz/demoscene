@@ -36,11 +36,13 @@ static __regargs void TrackInit(TrackT *track) {
 }
 
 void InitTracks(void) {
-  TrackT *track;
   TrackT **tracks = __TRACK_LIST__;
-  Log("[Sync] Initializing sync tracks\n");
-  for (track = *tracks; track; tracks++)
+  TrackT *track;
+
+  while ((track = *tracks++)) {
+    Log("[Sync] Initializing track '%s'\n", track->name);
     TrackInit(track);
+  }
 }
 
 /*
