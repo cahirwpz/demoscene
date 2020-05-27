@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
 #include "copper.h"
 #include "gfx.h"
@@ -233,4 +233,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(floor, NULL, NULL, Init, Kill, Render);

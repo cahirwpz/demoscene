@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
 #include "copper.h"
 #include "gfx.h"
@@ -52,4 +52,4 @@ static void Kill(void) {
   DeleteCopList(cp);
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, NULL };
+EFFECT(showpchg, NULL, NULL, Init, Kill, NULL);

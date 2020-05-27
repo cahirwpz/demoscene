@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
 #include "copper.h"
 #include "gfx.h"
@@ -88,4 +88,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(transparency, NULL, NULL, Init, Kill, Render);

@@ -233,12 +233,12 @@ static void ReadDir(void) {
   }
 }
 
-void InitIoFloppy(void) {
+void InitFloppyIO(void) {
   InitFloppy();
   ReadDir();
 }
 
-void KillIoFloppy(void) {
+void KillFloppyIO(void) {
   if (rootDir) {
     MemFree(rootDir->names);
     MemFree(rootDir);
@@ -246,6 +246,3 @@ void KillIoFloppy(void) {
   }
   KillFloppy();
 }
-
-ADD2INIT(InitIoFloppy, -10);
-ADD2EXIT(KillIoFloppy, -10);

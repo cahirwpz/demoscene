@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
 #include "copper.h"
 #include "memory.h"
@@ -176,4 +176,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render };
+EFFECT(plasma, Load, NULL, Init, Kill, Render);

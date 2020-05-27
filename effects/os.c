@@ -2,17 +2,9 @@
 #include <proto/alib.h>
 #include <proto/exec.h>
 
+#include "common.h"
 #include "hardware.h"
 #include "interrupts.h"
-#include "io.h"
-#include "startup.h"
-#include "tasks.h"
-
-extern EffectT Effect;
-
-int frameCount;
-int lastFrameCount;
-bool exitLoop;
 
 static short kickVer;
 static struct List PortsIntChain;
@@ -26,18 +18,6 @@ static struct {
   u_short dmacon, intena, adkcon;
   u_int cacheBits;
 } old;
-
-static void DummyRender(void) {}
-
-#define IDLETASK 0
-
-#if IDLETASK
-static void IdleTask(void) {
-  for (;;) {
-    custom->color[0] = 0x00f;
-  }
-}
-#endif
 
 void KillOS(void) {
   Log("[Startup] Save AmigaOS state.\n");
@@ -100,8 +80,6 @@ void KillOS(void) {
   SetTaskPri(SysBase->ThisTask, 0);
 }
 
-ADD2INIT(KillOS, -20);
-
 void RestoreOS(void) {
   Log("[Startup] Restore AmigaOS state.\n");
 
@@ -144,64 +122,6 @@ void RestoreOS(void) {
   Permit();
 }
 
-ADD2EXIT(RestoreOS, -20);
-
-/* VBlank event list. */
-static struct List *VBlankEvent = &(struct List){NULL, NULL, NULL, 0, 0};
-
-/* Wake up tasks asleep in wait for VBlank interrupt. */
-static int VBlankEventHandler(void) {
-  TaskSignalIntr(VBlankEvent);
-  return 0;
-}
-
-/* Puts a task into sleep waiting for VBlank interrupt. */
-void TaskWaitVBlank(void) {
-  TaskWait(VBlankEvent);
-}
-
-INTERRUPT(VBlankWakeUp, 10, VBlankEventHandler, NULL);
-
-int main(void) {
-#if IDLETASK
-  struct Task *idleTask = CreateTask("IdleTask", -10, IdleTask, 1024);
-#endif
-
-  NewList(VBlankEvent);
-  AddIntServer(INTB_VERTB, VBlankWakeUp);
-
-  if (!Effect.Render)
-    Effect.Render = DummyRender;
-
-  if (Effect.Init) {
-    Effect.Init();
-    Log("[Main] Effect initialization done\n");
-  }
-
-  SetFrameCounter(0);
-
-  lastFrameCount = ReadFrameCounter();
-
-  do {
-    int t = ReadFrameCounter();
-    exitLoop = LeftMouseButton();
-    frameCount = t;
-    Effect.Render();
-    lastFrameCount = t;
-  } while (!exitLoop);
-
-  if (Effect.Kill)
-    Effect.Kill();
-
-  RemIntServer(INTB_VERTB, VBlankWakeUp);
-
-#if IDLETASK
-  RemTask(idleTask);
-#endif
-
-  return 0;
-}
-
 void SystemInfo(void) {
   short kickRev;
   short cpu = 0;
@@ -233,21 +153,3 @@ void SystemInfo(void) {
       AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024);
 }
 
-ADD2INIT(SystemInfo, -50);
-
-void LoadEffect(void) {
-  if (Effect.Load) {
-    Effect.Load();
-    Log("[Main] Effect loading finished\n");
-  }
-}
-
-void UnLoadEffect(void) {
-  if (Effect.UnLoad)
-    Effect.UnLoad();
-}
-
-/* Priority of LoadEffect / UnLoadEffect must be lower (higher numerically)
- * than each other auto-initialization procedure in the framework. */
-ADD2INIT(LoadEffect, 10);
-ADD2EXIT(UnLoadEffect, 10);

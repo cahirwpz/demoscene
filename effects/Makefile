@@ -7,6 +7,7 @@ SUBDIRS := \
 	blurred \
 	blurred3d \
 	bumpmap-rgb \
+	butterfly-gears \
 	circles \
 	credits \
 	empty \
@@ -47,11 +48,11 @@ FAILURES := \
 	tests \
 	vscaler
 
-SOURCES := startup.c crt0.s 
+LIBNAME := libeffect
+SOURCES := autoinit.c effect.c os.c vblank.c main.c
+BUILD-FILES = crt0.o
 		
-all: build
-
-include $(TOPDIR)/build/common.mk
+include $(TOPDIR)/build/lib.mk
 
 run:
 	for dir in $(SUBDIRS); do 	\

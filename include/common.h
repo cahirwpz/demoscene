@@ -141,18 +141,16 @@ __noreturn void exit(int);
 
 /*
  * Install private constructors and destructors pri MUST be in [-127, 127]
- *
- * Note that library auto-opening happens at -60.
+ * Constructors are called in ascending order of priority,
+ * while destructors in descending.
  */
 #define ADD2INIT(ctor, pri) \
   ADD2LIST(ctor, __INIT_LIST__, 22); \
   asm(".stabs \"___INIT_LIST__\",20,0,0," #pri "+128")
+
 #define ADD2EXIT(dtor, pri) \
   ADD2LIST(dtor, __EXIT_LIST__, 22); \
-  asm(".stabs \"___EXIT_LIST__\",20,0,0," #pri "+128")
-
-/* Add to library auto-open list. */
-#define ADD2LIB(a) ADD2LIST(a, __LIB_LIST__, 24)
+  asm(".stabs \"___EXIT_LIST__\",20,0,0,128-" #pri)
 
 /* Make symbol alias from a to b. */
 #define ALIAS(a,b) \

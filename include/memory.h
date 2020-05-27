@@ -36,4 +36,7 @@ __regargs void MemResize(void *memoryBlock, u_int byteSize);
 __regargs void MemFree(void *memoryBlock);
 __regargs int MemTypeOf(void *address);
 
+void InitMemory(void);
+void KillMemory(void);
+
 #endif

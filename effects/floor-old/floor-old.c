@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
 #include "copper.h"
 #include "memory.h"
@@ -463,4 +463,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EFFECT(floor_old, Load, UnLoad, Init, Kill, Render);

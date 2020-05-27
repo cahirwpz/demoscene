@@ -1,9 +1,8 @@
-LIBNAME = $(notdir $(PWD))
-
-BUILD-FILES += $(LIBNAME).a
-CLEAN-FILES +=
+LIBNAME ?= $(notdir $(PWD))
 
 all: build
+
+BUILD-FILES += $(LIBNAME).a
 
 include $(TOPDIR)/build/common.mk
 

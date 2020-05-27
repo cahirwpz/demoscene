@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
 #include "blitter.h"
 #include "copper.h"
@@ -146,4 +146,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(textscroll, NULL, NULL, Init, Kill, Render);

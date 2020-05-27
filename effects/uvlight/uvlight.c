@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
 #include "copper.h"
 #include "interrupts.h"
@@ -360,4 +360,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render };
+EFFECT(uvlight, Load, NULL, Init, Kill, Render);

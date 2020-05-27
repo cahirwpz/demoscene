@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
 #include "interrupts.h"
 #include "memory.h"
@@ -289,4 +289,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EFFECT(playahx, Load, UnLoad, Init, Kill, Render);

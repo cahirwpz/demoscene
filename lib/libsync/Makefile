@@ -1,7 +1,6 @@
 TOPDIR := $(realpath ../..)
 
 SOURCES := \
-	effect.c \
 	sync-load.c \
 	sync.c
 

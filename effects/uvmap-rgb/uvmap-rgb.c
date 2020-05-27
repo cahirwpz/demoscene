@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
 #include "copper.h"
 #include "interrupts.h"
@@ -289,4 +289,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EFFECT(uvmap_rgb, Load, UnLoad, Init, Kill, Render);

@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "copper.h"
 #include "blitter.h"
 #include "memory.h"
@@ -206,4 +206,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EFFECT(multipipe, Load, UnLoad, Init, Kill, Render);
