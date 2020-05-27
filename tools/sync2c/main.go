@@ -13,14 +13,14 @@ import (
 var printHelp bool
 
 const (
-	TrkCtrl    = -2 // control key
-	TrkEnd     = -1 // last frame (sentinel element)
-	TrkRamp    = 1  // set constant value
-	TrkLinear  = 2  // lerp to the next value
-	TrkSmooth  = 3  // smooth curve to the next value
-	TrkSpline  = 4  // hermite spline
-	TrkTrigger = 5  // count down (with every frame) from given number
-	TrkEvent   = 6  // like ramp but value is delivered only once
+	TrkCtrl = -2 // control key
+	TrkEnd  = -1 // last frame (sentinel element)
+
+	TrkRamp    = 1 // set constant value
+	TrkLinear  = 2 // lerp to the next value
+	TrkSmooth  = 3 // smooth curve to the next value
+	TrkTrigger = 4 // count down (with every frame) from given number
+	TrkEvent   = 5 // like ramp but value is delivered only once
 )
 
 const (
@@ -66,52 +66,66 @@ func (e *parseError) Error() string {
 	return e.cause
 }
 
-func parseTrack(tokens []string, track *Track) error {
+func parseFrame(token string) (frame int64, err error) {
+	if token[0] == '$' {
+		if len(token) != 5 {
+			err = &parseError{"key must be 4 hex digit protracker song position"}
+		}
+		frame, err = strconv.ParseInt(token[1:], 16, 16)
+		frame *= FramesPerRow
+	} else {
+		var f float64
+		f, err = strconv.ParseFloat(token, 64)
+		if err == nil {
+			frame = int64(f * 50.0)
+		}
+	}
+
+	return frame, err
+}
+
+func parseValue(token string) (value int64, err error) {
+	return strconv.ParseInt(token, 10, 16)
+}
+
+func parseTrack(tokens []string, track *Track) (err error) {
+	var frame, value int64
+
 	if track == nil {
 		return &parseError{"key frame outside of track"}
 	}
 
-	key := tokens[0]
+	if frame, err = parseFrame(tokens[0]); err != nil {
+		return err
+	}
+	if len(tokens) < 2 {
+		return &parseError{"missing value"}
+	}
+	if value, err = parseValue(tokens[1]); err != nil {
+		return err
+	}
+	if track.First != nil && track.First.Key > int(frame) {
+		return &parseError{"frame numbers must be specified in ascending order"}
+	}
 
-	if key[0] == '!' {
-		if key == "!ramp" {
+	if len(tokens) == 3 && tokens[2][0] == '!' {
+		typ := tokens[2][1:]
+		if typ == "ramp" {
 			track.AddItem(TrkCtrl, TrkRamp)
-		} else if key == "!linear" {
+		} else if typ == "linear" {
 			track.AddItem(TrkCtrl, TrkLinear)
-		} else if key == "!smooth" {
+		} else if typ == "smooth" {
 			track.AddItem(TrkCtrl, TrkSmooth)
-		} else if key == "!spline" {
-			track.AddItem(TrkCtrl, TrkSpline)
-		} else if key == "!trigger" {
+		} else if typ == "trigger" {
 			track.AddItem(TrkCtrl, TrkTrigger)
-		} else if key == "!event" {
+		} else if typ == "event" {
 			track.AddItem(TrkCtrl, TrkEvent)
 		} else {
 			return &parseError{"unknown track type"}
 		}
-	} else if key[0] == '$' {
-		if len(tokens) != 2 {
-			return &parseError{"missing value"}
-		}
-		if len(key) != 5 {
-			return &parseError{"key must be 4 hex digit protracker song position"}
-		}
-		var frame, value int64
-		var err error
-		if frame, err = strconv.ParseInt(key[1:], 16, 16); err != nil {
-			return err
-		}
-		if value, err = strconv.ParseInt(tokens[1], 10, 16); err != nil {
-			return err
-		}
-		frame *= FramesPerRow
-		if track.First != nil && track.First.Key > int(frame) {
-			return &parseError{"frame numbers must be specified in ascending order"}
-		}
-		track.AddItem(int(frame), int(value))
-	} else {
-		return &parseError{"unknown key or command"}
 	}
+
+	track.AddItem(int(frame), int(value))
 
 	return nil
 }
@@ -180,9 +194,10 @@ func parseSyncFile(path string) []Track {
 
 var tracksTemplate = `
 {{- range . }}
-TrackT {{ .Name }}_trk = {
-  .type = TRACK_LINEAR,
-  .key = {},
+TrackT {{ .Name }} = {
+  .curr = NULL,
+  .next = NULL,
+  .type = 0,
   .interval = 0,
   .delta = 0,
   .pending = false,
@@ -196,7 +211,7 @@ TrackT {{ .Name }}_trk = {
 {{ end }}
 TrackT *__TRACK_LIST__[] = {
 {{- range . }}
-  &{{ .Name }}_trk,
+  &{{ .Name }},
 {{- end }}
   NULL
 };

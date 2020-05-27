@@ -7,9 +7,8 @@ typedef enum {
   TRACK_RAMP    = 1, /* set constant value */
   TRACK_LINEAR  = 2, /* lerp to the next value */
   TRACK_SMOOTH  = 3, /* smooth curve to the next value */
-  TRACK_SPLINE  = 4,
-  TRACK_TRIGGER = 5, /* count down (with every frame) from given number */
-  TRACK_EVENT   = 6  /* like ramp but value is delivered only once */
+  TRACK_TRIGGER = 4, /* count down (with every frame) from given number */
+  TRACK_EVENT   = 5  /* like ramp but value is delivered only once */
 } __attribute__((packed)) TrackTypeT;
 
 #define END_KEY  -1
@@ -25,18 +24,14 @@ typedef struct {
  * (1) There's at least one data key in the track.
  * (2) Default track's type is TYPE_LINEAR.
  * (3) There's always a data key before the end key.
+ * (4) There's at most single control key before data key.
  */
 
 typedef struct Track {
   /* private */
+  TrackKeyT *curr;
+  TrackKeyT *next;
   TrackTypeT type;
-  /*
-   * 0 => previous,
-   * 1 => current (always points to data)
-   * 2 => next (always points to data or end key)
-   * 3 => next + 1
-   */
-  TrackKeyT *key[4]; 
   short interval;
   short delta;
   bool pending;
@@ -49,6 +44,7 @@ extern TrackT *__TRACK_LIST__[];
 
 void InitTracks(void);
 
+__regargs void TrackReset(TrackT *track);
 __regargs TrackT *TrackLookup(const char *name);
 __regargs short TrackValueGet(TrackT *track, short frame);
 
