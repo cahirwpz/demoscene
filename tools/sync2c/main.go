@@ -179,6 +179,7 @@ func main() {
 	tracks := ParseSyncFile("sushiboyz.sync")
 	for _, t := range tracks {
 		fmt.Printf("static TrackT %s_trk = {\n", t.Name())
+		fmt.Println("  .type = TRACK_LINEAR,")
 		fmt.Printf("  .name = \"%s\",\n", t.RawName)
 		fmt.Println("  .data = {")
 		for _, i := range t.Items {

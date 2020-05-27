@@ -2,6 +2,7 @@
 #include "memory.h"
 #include "io.h"
 #include "hardware.h"
+#include "sync.h"
 #include "effect.h"
 
 extern EffectT Effect;
@@ -12,6 +13,7 @@ int main(void) {
 
   InitMemory();
   InitFloppyIO();
+  InitTracks();
   InitVBlank();
 
   EffectLoad(&Effect);
