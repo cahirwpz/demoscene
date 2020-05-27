@@ -92,9 +92,11 @@ clean-%: FORCE
 	$(MAKE) -C $* clean
 
 # Rules for build
-build: $(OBJECTS) $(foreach dir,$(SUBDIRS),build-$(dir)) $(BUILD-FILES)
+subdirs: $(foreach dir,$(SUBDIRS),build-$(dir))
+
+build: $(OBJECTS) $(BUILD-FILES) subdirs $(EXTRA-FILES) 
 
 clean: $(foreach dir,$(SUBDIRS),clean-$(dir)) 
-	$(RM) $(BUILD-FILES) $(CLEAN-FILES) *~ *.taghl
+	$(RM) $(BUILD-FILES) $(EXTRA-FILES) $(CLEAN-FILES) *~ *.taghl
 
-.PHONY: all clean FORCE
+.PHONY: all build subdirs clean FORCE

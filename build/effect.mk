@@ -6,13 +6,13 @@ endif
 
 LIBS += libblit libgfx libsys libc
 CPPFLAGS += -I$(TOPDIR)/effects
-LDEXTRA = $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
+LDEXTRA = $(TOPDIR)/effects/libeffect.a
+LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 
-STARTUP = $(TOPDIR)/effects/startup.o 
 CRT0 = $(TOPDIR)/effects/crt0.o
 BOOTLOADER = $(TOPDIR)/bootloader.bin
 
-BUILD-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).adf
+EXTRA-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).adf
 CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe.dbg $(EFFECT).exe.map 
 
 all: build
@@ -29,7 +29,7 @@ $(TOPDIR)/%.bin: FORCE
 
 include $(TOPDIR)/build/common.mk
 
-$(EFFECT).exe: $(CRT0) $(OBJECTS) $(STARTUP) $(LDEXTRA)
+$(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA)
 	@echo "[LD] $(addprefix $(DIR),$(OBJECTS)) -> $(DIR)$@"
 	$(CC) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $^ $(LDLIBS)
 	$(CP) $@ $@.dbg
