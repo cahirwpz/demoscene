@@ -16,6 +16,7 @@ SOURCES := \
 	io-extra.c \
 	keyboard.c \
 	lzo.c \
+	memdump.c \
 	memory.c \
 	mouse.c \
 	qsort.c \
