@@ -1,21 +1,7 @@
 #ifndef __SYNC_H__
 #define __SYNC_H__
 
-#include "config.h"
 #include "common.h"
-
-#ifndef FRAMES_PER_ROW
-#error "FRAMES_PER_ROW: not defined!"
-#endif
-
-#define MOD_POS_FRAME(pos) \
-  (((((pos) >> 8) & 0xff) * 64 + ((pos) & 0x3f)) * FRAMES_PER_ROW)
-
-#define TRK_INIT(...) { TRACK_LINEAR, NULL, NULL, 0, 0, NULL, {__VA_ARGS__} }
-#define TRK_TYPE(type) { -2, TRACK_ ## type }
-#define TRK_KEY(pos, value) { MOD_POS_FRAME(pos), value }
-#define TRK_KEY_BIAS(pos, bias, value) { MOD_POS_FRAME(pos) + (bias), value }
-#define TRK_END { -1, 0 }
 
 typedef enum {
   TRACK_RAMP    = 1, /* set constant value */
@@ -41,7 +27,7 @@ typedef struct {
  * (3) There's always a data key before the end key.
  */
 
-typedef struct {
+typedef struct Track {
   /* private */
   TrackTypeT type;
   /*
@@ -55,15 +41,15 @@ typedef struct {
   short delta;
   bool pending;
   /* public: provided by user */
-  char *name;
+  const char *name;
   TrackKeyT data[0];
 } TrackT;
 
-__regargs void TrackInit(TrackT *track);
-__regargs short TrackValueGet(TrackT *track, short frame);
-__regargs TrackT *TrackLookup(TrackT **tracks, const char *name);
+extern TrackT *__TRACK_LIST__[];
 
-__regargs TrackT **LoadTrackList(char *filename);
-__regargs void DeleteTrackList(TrackT **tracks);
+void InitTracks(void);
+
+__regargs TrackT *TrackLookup(const char *name);
+__regargs short TrackValueGet(TrackT *track, short frame);
 
 #endif

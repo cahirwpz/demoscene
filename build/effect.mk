@@ -57,6 +57,10 @@ data/%.c: data/%.2d
 	@echo "[2D] $(DIR)$< -> $(DIR)$@"
 	$(CONV2D) $(CONV2D.$*) $< > $@
 
+data/%.c: data/%.sync
+	@echo "[SYNC] $(DIR)$< -> $(DIR)$@"
+	$(SYNC2C) $(SYNC2C.$*) $< > $@
+
 %.adf: %.exe $(DATA) $(DATA_GEN) $(BOOTLOADER)
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
 	$(FSUTIL) -b $(BOOTLOADER) create $@ $^

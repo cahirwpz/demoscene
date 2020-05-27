@@ -43,6 +43,7 @@ TMXCONV := $(TOPDIR)/tools/tmxconv/tmxconv
 PCHG2C := $(TOPDIR)/tools/pchg2c/pchg2c
 PNG2C := $(TOPDIR)/tools/png2c.py
 PSF2C := $(TOPDIR)/tools/psf2c.py
+SYNC2C := $(TOPDIR)/tools/sync2c/sync2c
 STRIP := m68k-amigaos-strip -s
 OBJCOPY := m68k-amigaos-objcopy
 

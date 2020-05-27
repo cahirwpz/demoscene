@@ -1,7 +1,10 @@
 #include "sync.h"
 #include "fx.h"
 
-__regargs void TrackInit(TrackT *track) {
+/* Introduce weak symbol in case no tracks were defined by user. */
+TrackT *__TRACK_LIST__[1];
+
+static __regargs void TrackInit(TrackT *track) {
   TrackKeyT *key = track->data;
   TrackKeyT *next;
 
@@ -29,6 +32,16 @@ __regargs void TrackInit(TrackT *track) {
       next = track->key[2];
 
     track->key[3] = next;
+  }
+}
+
+void InitTracks(void) {
+  TrackT **tracks = __TRACK_LIST__;
+  TrackT *track;
+
+  while ((track = *tracks++)) {
+    Log("[Sync] Initializing track '%s'\n", track->name);
+    TrackInit(track);
   }
 }
 
@@ -155,7 +168,8 @@ __regargs short TrackValueGet(TrackT *track, short frame) {
   }
 }
 
-__regargs TrackT *TrackLookup(TrackT **tracks, const char *name) {
+__regargs TrackT *TrackLookup(const char *name) {
+  TrackT **tracks = __TRACK_LIST__;
   do {
     TrackT *track = *tracks++;
 
