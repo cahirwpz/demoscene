@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	TrkCtrl    = -1 // control key
+	TrkCtrl    = -2 // control key
+	TrkEnd     = -1 // last frame (sentinel element)
 	TrkRamp    = 1  // set constant value
 	TrkLinear  = 2  // lerp to the next value
 	TrkSmooth  = 3  // smooth curve to the next value
@@ -24,17 +25,34 @@ const (
 )
 
 type TrackItem struct {
-	Key   int16
-	Value int16
+	Key   int
+	Value int
 }
 
 type Track struct {
-	Name  string
-	Items []TrackItem
+	RawName string
+	Items   []TrackItem
+	First   *TrackItem
+	Last    *TrackItem
+}
+
+func (t Track) Name() string {
+	return strings.ReplaceAll(t.RawName, ".", "_")
 }
 
 func (t *Track) AddItem(frame, value int) {
-	t.Items = append(t.Items, TrackItem{int16(frame), int16(value)})
+	item := TrackItem{frame, value}
+	t.Items = append(t.Items, item)
+	if frame >= 0 {
+		if t.First == nil {
+			t.First = &item
+		}
+		t.Last = &item
+	}
+}
+
+func (t Track) Length() int {
+	return t.Last.Key - t.First.Key
 }
 
 type parseError struct {
@@ -83,7 +101,11 @@ func ParseTrack(tokens []string, track *Track) error {
 		if value, err = strconv.ParseInt(tokens[1], 10, 16); err != nil {
 			return err
 		}
-		track.AddItem(int(frame)*FramesPerRow, int(value))
+		frame *= FramesPerRow
+		if track.First != nil && track.First.Key > int(frame) {
+			return &parseError{"frame numbers must be specified in ascending order"}
+		}
+		track.AddItem(int(frame), int(value))
 	} else {
 		return &parseError{"unknown key or command"}
 	}
@@ -107,6 +129,7 @@ func ParseSyncFile(path string) []Track {
 	for scanner.Scan() {
 		num++
 		line := scanner.Text()
+		origLine := string(line)
 
 		// Strip comment
 		if idx := strings.IndexByte(line, '#'); idx >= 0 {
@@ -124,32 +147,51 @@ func ParseSyncFile(path string) []Track {
 
 		// Create new track
 		if tokens[0] == "@track" {
-			name := strings.ReplaceAll(tokens[1], ".", "_")
-			track = &Track{Name: name}
+			track = &Track{RawName: tokens[1]}
 			continue
 		}
 
 		// Close a track
 		if tokens[0] == "@end" {
+			if track.First == nil {
+				log.Fatalf("Track '%s' has no frames!", track.RawName)
+			}
+			track.AddItem(TrkEnd, 0)
 			tracks = append(tracks, *track)
 			track = nil
 			continue
 		}
 
 		if err = ParseTrack(tokens, track); err != nil {
+			log.Println(origLine)
 			log.Fatalf("Parse error at line %d: %s", num, err)
 		}
 	}
 
 	if track != nil {
-		log.Fatalf("Last track '%s' has not been closed!", track.Name)
+		log.Fatalf("Last track '%s' has not been closed!", track.RawName)
 	}
 
 	return tracks
 }
 
 func main() {
-	for _, t := range ParseSyncFile("sushiboyz.sync") {
-		fmt.Println(t)
+	tracks := ParseSyncFile("sushiboyz.sync")
+	for _, t := range tracks {
+		fmt.Printf("static TrackT %s_trk = {\n", t.Name())
+		fmt.Printf("  .name = \"%s\",\n", t.RawName)
+		fmt.Println("  .data = {")
+		for _, i := range t.Items {
+			fmt.Printf("    {%d, %d},\n", i.Key, i.Value)
+		}
+		fmt.Println("  }")
+		fmt.Println("};\n")
 	}
+
+	fmt.Printf("TrackT tracks[] = {\n")
+	for _, t := range tracks {
+		fmt.Printf("  &%s,\n", t.Name())
+	}
+	fmt.Println("  NULL")
+	fmt.Println("};\n")
 }
