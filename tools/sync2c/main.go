@@ -16,11 +16,12 @@ const (
 	TrkCtrl = -2 // control key
 	TrkEnd  = -1 // last frame (sentinel element)
 
-	TrkRamp    = 1 // set constant value
+	TrkStep    = 1 // set constant value
 	TrkLinear  = 2 // lerp to the next value
 	TrkSmooth  = 3 // smooth curve to the next value
-	TrkTrigger = 4 // count down (with every frame) from given number
-	TrkEvent   = 5 // like ramp but value is delivered only once
+	TrkRamp    = 4 // lerp with quadratic factor
+	TrkTrigger = 5 // count down (with every frame) from given number
+	TrkEvent   = 6 // like step but value is delivered only once
 )
 
 const (
@@ -110,12 +111,14 @@ func parseTrack(tokens []string, track *Track) (err error) {
 
 	if len(tokens) == 3 && tokens[2][0] == '!' {
 		typ := tokens[2][1:]
-		if typ == "ramp" {
-			track.AddItem(TrkCtrl, TrkRamp)
+		if typ == "step" {
+			track.AddItem(TrkCtrl, TrkStep)
 		} else if typ == "linear" {
 			track.AddItem(TrkCtrl, TrkLinear)
 		} else if typ == "smooth" {
 			track.AddItem(TrkCtrl, TrkSmooth)
+		} else if typ == "ramp" {
+			track.AddItem(TrkCtrl, TrkRamp)
 		} else if typ == "trigger" {
 			track.AddItem(TrkCtrl, TrkTrigger)
 		} else if typ == "event" {

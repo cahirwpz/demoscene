@@ -74,16 +74,24 @@ __regargs short TrackValueGet(TrackT *track, short frame) {
   step = frame - curr->frame;
 
   switch (track->type) {
-    case TRACK_RAMP:
+    case TRACK_STEP:
       return curr->value;
 
     case TRACK_LINEAR:
       return curr->value + div16(step * track->delta, track->interval);
 
     case TRACK_SMOOTH:
+      /* Less than 1% error compared to real smoothstep function. */
       {
         short t = div16(shift12(step) / 2, track->interval);
         short k = (fx12f(1.0) - sintab[t + SIN_HALF_PI]) / 2;
+        return curr->value + normfx(track->delta * k);
+      }
+
+    case TRACK_RAMP:
+      {
+        short t = div16(shift12(step), track->interval);
+        short k = normfx(t * t);
         return curr->value + normfx(track->delta * k);
       }
 

@@ -3,12 +3,14 @@
 
 #include "common.h"
 
+/* First four types are based upon their counterparts in GNU rocket! */
 typedef enum {
-  TRACK_RAMP    = 1, /* set constant value */
+  TRACK_STEP    = 1, /* set constant value */
   TRACK_LINEAR  = 2, /* lerp to the next value */
   TRACK_SMOOTH  = 3, /* smooth curve to the next value */
-  TRACK_TRIGGER = 4, /* count down (with every frame) from given number */
-  TRACK_EVENT   = 5  /* like ramp but value is delivered only once */
+  TRACK_RAMP    = 4, /* lerp with quadratic factor */
+  TRACK_TRIGGER = 5, /* count down (with every frame) from given number */
+  TRACK_EVENT   = 6  /* like ramp but value is delivered only once */
 } __attribute__((packed)) TrackTypeT;
 
 #define END_KEY  -1
