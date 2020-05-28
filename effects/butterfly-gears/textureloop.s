@@ -2,7 +2,7 @@
 
 ROTZOOM_W			= 24
 ROTZOOM_H			= 24
-COPPER_HALFROW_INSTRUCTIONS	= ROTZOOM_W/2+2
+COPPER_HALFROW_INSTRUCTIONS	= ROTZOOM_W/2+4
 SINGLEROW_SIZE			= COPPER_HALFROW_INSTRUCTIONS*4
 
 	xdef _PlotTextureAsm
@@ -34,7 +34,7 @@ SINGLEROW_SIZE			= COPPER_HALFROW_INSTRUCTIONS*4
 ; ---------------------------------------------------------------------------------------
 
 _PlotTextureAsm:
-	movem.l	d4/d7/a2,-(a7)
+	movem.l	d0-a6,-(a7)
 	addq.w	#4+2,a0		; first color write data word
 	add.l	#128*128*2,a1	; point to middle of texture
 
@@ -60,5 +60,5 @@ _PlotTextureAsm:
 	include	data/textureloop-generated.s
 	move #$134,$dff180
 
-	movem.l	(a7)+,d4/d7/a2
+	movem.l	(a7)+,d0-a6
 	rts

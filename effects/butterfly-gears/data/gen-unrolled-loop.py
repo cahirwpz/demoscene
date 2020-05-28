@@ -61,6 +61,6 @@ if __name__ == '__main__':
             else:
                 raise SystemExit(f'Unexpected char "{ch}" in "{line}"')
             even = not even
-        dst_inc += 8
+        dst_inc += 16
         crossedrow = True
         print(chunks['endrow'])

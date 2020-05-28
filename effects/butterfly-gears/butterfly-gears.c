@@ -36,7 +36,24 @@
 #define COPWAIT_X_BALLSTART 160
 #define Y0 Y((256-280)/2)
 #define BOOK_Y 256
-#define COPPER_HALFROW_INSTRUCTIONS (ROTZOOM_W/2+2)
+
+// Copper texture layout. Goal: Have 1 spare copper move per screen row for
+// sprite fades, bplcon2 at stable Y positions.
+//
+// Small ball (tx line every Y)     |  Large ball (tx line every 2 Y)
+//
+// W C C C C C C C C C C C C X N N  |  W C C C C C C C C C C C C X w X
+// W C C C C C C C C C C C C X N N  |  W C C C C C C C C C C C C X w X
+// W C C C C C C C C C C C C X N N  |  W C C C C C C C C C C C C X w X
+// ...                                 ...
+//
+// W - wait
+// w - extra wait between W and next W (Y and Y+2)
+// C - set color
+// X - spare copper move
+// N - copper NO-OP
+
+#define COPPER_HALFROW_INSTRUCTIONS (ROTZOOM_W/2+4)
 #define INSTRUCTIONS_PER_BALL (COPPER_HALFROW_INSTRUCTIONS * ROTZOOM_H * 3)
 #define DEBUG_COLOR_WRITES 0
 #define ZOOM_SHIFT 4
@@ -98,6 +115,7 @@ static CopInsT *bottomCpStart;
 static BallT ball1;
 static BallT ball2;
 static BallT ball3;
+static BallT *balls[BALLS] = { &ball1, &ball2, &ball3 };
 
 #include "data/texture_butterfly.c"
 #include "data/ball_small.c"
@@ -130,7 +148,9 @@ static void InsertTextureCopperWrites(CopListT *cp) {
     SETCOLOR(23);
     SETCOLOR(27);
     SETCOLOR(31);
-    CopNoOp(cp);
+    CopNoOpData(cp, i); // store row for copperlist debugging
+    CopNoOpData(cp, i);
+    CopNoOpData(cp, i);
     CopWait(cp, 0, COPWAIT_X);
     SETCOLOR(2);
     SETCOLOR(4);
@@ -144,7 +164,9 @@ static void InsertTextureCopperWrites(CopListT *cp) {
     SETCOLOR(22);
     SETCOLOR(24);
     SETCOLOR(28);
-    CopNoOpData(cp, i); // store row for copperlist debugging
+    CopNoOpData(cp, i);
+    CopNoOpData(cp, i);
+    CopNoOpData(cp, i);
   }
 }
 
@@ -210,9 +232,10 @@ static void InitBottomCopperList(CopListT *cp) {
 
 static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
   bool small = ball->type == SMALL_BALL;
+  short y = ball->screenY;
 
   // Ball out of sight (at bottom)?
-  if (ball->screenY >= BOOK_Y - 1) {
+  if (y >= BOOK_Y - 1) {
     inserts.waitBefore->move.reg = CSREG(copjmp2);
     return;
   }
@@ -238,7 +261,6 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
   // Update copper waits according to Y
   {
     short i;
-    short y = ball->screenY;
     short yInc = small ? SMALL_BALL_Y_INC : LARGE_BALL_Y_INC;
     CopInsT *textureCopper = inserts.ballCopper;
     if (y > Y0) {
@@ -248,7 +270,7 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
     }
     inserts.waitBefore->wait.hp = COPWAIT_X_BALLSTART | 1;
     y += small ? SMALL_BALL_PADDING_TOP : LARGE_BALL_PADDING_TOP;
-    for (i = 0; i < ROTZOOM_H * 2; i++) {
+    for (i = 0; i < ROTZOOM_H * 2 && i < BOOK_Y - 1; i++) {
       if (y > Y0) {
         textureCopper->wait.vp = y;
       } else {
@@ -263,6 +285,11 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
       } else {
         textureCopper->move.reg = CSREG(copjmp2);
       }
+      textureCopper++;
+
+      textureCopper->move.reg = NO_OP;
+      textureCopper++;
+      textureCopper->move.reg = NO_OP;
       textureCopper++;
     }
     y += small ? SMALL_BALL_PADDING_BOTTOM : LARGE_BALL_PADDING_BOTTOM;
@@ -316,20 +343,20 @@ static void Init(void) {
   InitCopperList(&ballCopList[0]);
   InitCopperList(&ballCopList[1]);
 
-  Randomize(&ball1);
-  ball1.type = LARGE_BALL;
-  ball1.screenY = BOOK_Y;
-  ball1.texture = texture_butterfly;
+  Randomize(balls[0]);
+  balls[0]->type = LARGE_BALL;
+  balls[0]->screenY = BOOK_Y;
+  balls[0]->texture = texture_butterfly;
 
-  Randomize(&ball2);
-  ball2.type = SMALL_BALL;
-  ball2.screenY = ball1.screenY + LARGE_BALL_HEIGHT + 1;
-  ball2.texture = texture_butterfly;
+  Randomize(balls[1]);
+  balls[1]->type = SMALL_BALL;
+  balls[1]->screenY = balls[0]->screenY + LARGE_BALL_HEIGHT + 1;
+  balls[1]->texture = texture_butterfly;
 
-  Randomize(&ball3);
-  ball3.type = SMALL_BALL;
-  ball3.screenY = ball2.screenY + SMALL_BALL_HEIGHT + 1;
-  ball3.texture = texture_butterfly;
+  Randomize(balls[2]);
+  balls[2]->type = SMALL_BALL;
+  balls[2]->screenY = balls[1]->screenY + SMALL_BALL_HEIGHT + 1;
+  balls[2]->texture = texture_butterfly;
 
   custom->dmacon = DMAF_MASTER | DMAF_COPPER | DMAF_SETCLR;
 }
@@ -354,28 +381,33 @@ static void HandleEvent(void) {
     return;
 
   if (ev->type == EV_MOUSE) {
-    ball1.screenX = ev->mouse.x;
-    ball1.screenY = ev->mouse.y;
-    ball2.screenY = ball1.screenY + LARGE_BALL_HEIGHT + 1;
-    ball3.screenY = ball2.screenY + SMALL_BALL_HEIGHT + 1;
+    balls[0]->screenX = ev->mouse.x;
+    balls[0]->screenY = ev->mouse.y;
+    balls[1]->screenY = balls[0]->screenY + LARGE_BALL_HEIGHT + 1;
+    balls[2]->screenY = balls[1]->screenY + SMALL_BALL_HEIGHT + 1;
   }
 }
 
 static void Render(void) {
   HandleEvent();
-  MoveBallAndIsStillVisible(&ball2);
-  MoveBallAndIsStillVisible(&ball3);
-  if (!MoveBallAndIsStillVisible(&ball1)) {
-    short lastY = ball3.screenY + (ball3.type == SMALL_BALL ? SMALL_BALL_HEIGHT : LARGE_BALL_HEIGHT);
-    ball1 = ball2;
-    ball2 = ball3;
-    ball3.screenY = lastY + 1 + (random() &0x3f);
-    if (ball3.screenY < BOOK_Y) ball3.screenY = BOOK_Y + (random() & 0x3f);
-    Randomize(&ball3);
+  MoveBallAndIsStillVisible(balls[1]);
+  MoveBallAndIsStillVisible(balls[2]);
+    custom->color[0] = 4711;
+
+  if (!MoveBallAndIsStillVisible(balls[0])) {
+    short lastY = balls[2]->screenY + (balls[2]->type == SMALL_BALL ? SMALL_BALL_HEIGHT : LARGE_BALL_HEIGHT);
+    BallT *tmp = balls[0];
+    balls[0] = balls[1];
+    balls[1] = balls[2];
+    balls[2] = tmp;
+    balls[2]->screenY = lastY + 1 + (random() &0x3f);
+    custom->color[0] = 4712;
+    if (balls[2]->screenY < BOOK_Y) balls[2]->screenY = BOOK_Y + (random() & 0x3f);
+    Randomize(balls[2]);
   }
-  DrawCopperBall(&ball1, ballCopList[active].inserts[0]);
-  DrawCopperBall(&ball2, ballCopList[active].inserts[1]);
-  DrawCopperBall(&ball3, ballCopList[active].inserts[2]);
+  DrawCopperBall(balls[0], ballCopList[active].inserts[0]);
+  DrawCopperBall(balls[1], ballCopList[active].inserts[1]);
+  DrawCopperBall(balls[2], ballCopList[active].inserts[2]);
   TaskWaitVBlank();
   active ^= 1;
   CopListRun(ballCopList[active].cp);
