@@ -1,13 +1,12 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "fx.h"
 #include "random.h"
 #include "color.h"
 #include "pixmap.h"
 #include "sprite.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -453,9 +452,9 @@ static void Render(void) {
   // PROFILE_END(floor);
 
   CopListRun(cp0);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   { CopListT *tmp = cp0; cp0 = cp1; cp1 = tmp; }
   { BitmapT *tmp = screen0; screen0 = screen1; screen1 = tmp; }
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };
+EFFECT(thunders, Load, NULL, Init, Kill, Render);

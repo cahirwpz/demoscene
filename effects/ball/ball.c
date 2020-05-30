@@ -1,11 +1,10 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "pixmap.h"
 #include "sprite.h"
 #include "fx.h"
-#include "tasks.h"
 
 #define S_WIDTH 320
 #define S_HEIGHT 256
@@ -343,8 +342,8 @@ static void Render(void) {
     // Log("uvmap: %d\n", ReadLineCounter() - lines);
   }
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EFFECT(ball, NULL, NULL, Init, Kill, Render);

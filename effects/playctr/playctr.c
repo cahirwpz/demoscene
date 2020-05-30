@@ -1,14 +1,13 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
 #include "interrupts.h"
 #include "memory.h"
 #include "cinter.h"
 #include "console.h"
-#include "coplist.h"
+#include "copper.h"
 #include "keyboard.h"
 #include "event.h"
 #include "blitter.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -103,6 +102,8 @@ static void Kill(void) {
   DeleteBitmap(screen);
 }
 
+static bool HandleEvent(void);
+
 static void Render(void) {
   short i;
   short trackSize = player->c_TrackSize / 2;
@@ -130,7 +131,9 @@ static void Render(void) {
     ConsolePrint(&console, "%4x %4x %4x %4x %4x\n", pos, m0, m1, m2, m3);
   }
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
+
+  exitLoop = !HandleEvent();
 }
 
 static bool HandleEvent(void) {
@@ -170,4 +173,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, HandleEvent };
+EFFECT(playctr, Load, UnLoad, Init, Kill, Render);

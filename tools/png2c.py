@@ -232,7 +232,7 @@ def do_pixmap(im, desc):
 
     if width != has_width or height != has_height:
         raise SystemExit('Image size is %dx%d, expected %dx%d!' % (
-            (width, height), (has_width, has_height)))
+            width, height, has_width, has_height))
 
     if has_bpp not in [4, 8, 12]:
         raise SystemExit('Wrong specification: bits per pixel %d!' % has_bpp)
@@ -293,19 +293,23 @@ def do_palette(im, desc):
     if im.mode != 'P':
         raise SystemExit('Only 8-bit images with palette supported.')
 
-    param = parse(desc, ('name', str), ('colors', int))
+    param = parse(desc, ('name', str), ('colors', int), store_unused=False)
 
     name = param['name']
     has_colors = param['colors']
+    store_unused = param['store_unused']
 
     pal = im.getpalette()
     colors = im.getextrema()[1] + 1
 
     if pal is None:
         raise SystemExit('Image has no palette!')
-    if colors != has_colors:
-        raise SystemExit(
-            'Image has {} colors, expected {}!'.format(colors, has_colors))
+    if colors > has_colors:
+        raise SystemExit('Image has {} colors, expected at most {}!'
+                         .format(colors, has_colors))
+
+    if store_unused:
+        colors = max(colors, has_colors)
 
     cmap = [pal[i * 3:(i + 1) * 3] for i in range(colors)]
 

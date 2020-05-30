@@ -1,14 +1,13 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
 #include "interrupts.h"
 #include "memory.h"
 #include "ahx.h"
 #include "console.h"
-#include "coplist.h"
+#include "copper.h"
 #include "keyboard.h"
 #include "event.h"
 #include "blitter.h"
-#include "tasks.h"
 
 int __chipmem = 100 * 1024;
 int __fastmem = 430 * 1024;
@@ -229,6 +228,8 @@ static void Kill(void) {
   DeleteBitmap(screen);
 }
 
+static bool HandleEvent(void);
+
 static void Render(void) {
   int lines = ReadLineCounter();
   short i;
@@ -254,7 +255,9 @@ static void Render(void) {
   
   Log("playahx: %d\n", ReadLineCounter() - lines);
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
+
+  exitLoop = !HandleEvent();
 }
 
 static bool HandleEvent(void) {
@@ -286,4 +289,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, HandleEvent };
+EFFECT(playahx, Load, UnLoad, Init, Kill, Render);

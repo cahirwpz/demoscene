@@ -1,10 +1,9 @@
-#include "startup.h"
-#include "coplist.h"
+#include "effect.h"
+#include "copper.h"
 #include "blitter.h"
 #include "memory.h"
 #include "pixmap.h"
 #include "gfx.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -203,8 +202,8 @@ static void Render(void) {
   //Log("multipipe: %d\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EFFECT(multipipe, Load, UnLoad, Init, Kill, Render);

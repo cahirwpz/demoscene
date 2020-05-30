@@ -1,11 +1,10 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "3d.h"
 #include "fx.h"
 #include "pixmap.h"
 #include "memory.h"
-#include "tasks.h"
 
 #define WIDTH  176
 #define HEIGHT 176
@@ -490,8 +489,8 @@ static void Render(void) {
       CopInsSet32(bplptr[n], screen0->planes[n]);
   }
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EFFECT(blurred3d, Load, UnLoad, Init, Kill, Render);

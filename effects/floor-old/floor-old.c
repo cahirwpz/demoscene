@@ -1,12 +1,11 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "fx.h"
 #include "random.h"
 #include "color.h"
 #include "pixmap.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 212
@@ -460,8 +459,8 @@ static void Render(void) {
   // Log("floor: %d\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EFFECT(floor_old, Load, UnLoad, Init, Kill, Render);

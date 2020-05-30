@@ -1,10 +1,9 @@
-#include "startup.h"
+#include "effect.h"
 #include "2d.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "fx.h"
-#include "tasks.h"
 
 #define WIDTH  320
 #define HEIGHT 240
@@ -102,9 +101,9 @@ static void Render(void) {
     }
   }
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
 
   active = (active + 1) % (DEPTH + 1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EFFECT(anim, Load, UnLoad, Init, Kill, Render);

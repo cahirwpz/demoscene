@@ -7,7 +7,7 @@ LIBS := libp61
 
 PSF2C.drdos8x8 := --name drdos8x8 --type console
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk
 
 OBJCOPY-CHIPMEM := --rename-section .data=.data_chip,alloc,load,data,contents
 

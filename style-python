@@ -1,7 +1,7 @@
 #!/bin/sh
 
 PYFILES=$(find . -name '*.py')
-PYEXTRA="effects/RunInUAE"
+PYEXTRA=
 
 pycodestyle ${PYEXTRA} ${PYFILES}
 RES=$?

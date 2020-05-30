@@ -7,4 +7,4 @@ LIBS := lib3d
 PNG2C.flares32 := --bitmap bobs,512x32x3,+interleaved --palette bobs_pal,8
 LWO2C.pilka := --scale 50.0
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk

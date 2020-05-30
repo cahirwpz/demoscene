@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "gfx.h"
 
 #define WIDTH 320
@@ -52,4 +52,4 @@ static void Kill(void) {
   DeleteCopList(cp);
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, NULL, NULL };
+EFFECT(showpchg, NULL, NULL, Init, Kill, NULL);

@@ -1,9 +1,8 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "gfx.h"
 #include "blitter.h"
-#include "tasks.h"
 
 #define WIDTH (160 + 32)
 #define HEIGHT (128 + 32)
@@ -127,8 +126,8 @@ static void Render(void) {
   // Log("glitch: %d\n", ReadLineCounter() - lines);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EFFECT(glitch, NULL, NULL, Init, Kill, Render);

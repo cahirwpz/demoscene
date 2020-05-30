@@ -1,5 +1,5 @@
-#include "startup.h"
-#include "coplist.h"
+#include "effect.h"
+#include "copper.h"
 #include "circle.h"
 
 #define WIDTH 320
@@ -41,4 +41,4 @@ static void Init(void) {
   }
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, NULL, NULL };
+EFFECT(circles, Load, UnLoad, Init, NULL, NULL);

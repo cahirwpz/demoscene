@@ -1,7 +1,7 @@
-#include "startup.h"
+#include "effect.h"
 #include "console.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "event.h"
 #include "keyboard.h"
 #include "serial.h"
@@ -103,4 +103,8 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, NULL, HandleEvent };
+static void Render(void) {
+  exitLoop = !HandleEvent();
+}
+
+EFFECT(kbtest, NULL, NULL, Init, Kill, Render);

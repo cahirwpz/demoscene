@@ -1,9 +1,8 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "3d.h"
 #include "fx.h"
-#include "tasks.h"
 
 #define WIDTH  256
 #define HEIGHT 256
@@ -332,11 +331,11 @@ static void Render(void) {
 
   Log("all: %d\n", ReadLineCounter() - lines);
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
 
   active++;
   if (active > DEPTH)
     active = 0;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EFFECT(wireframe, Load, UnLoad, Init, Kill, Render);

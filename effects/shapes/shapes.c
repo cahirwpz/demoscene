@@ -1,10 +1,9 @@
-#include "startup.h"
+#include "effect.h"
 #include "2d.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "fx.h"
 #include "memory.h"
-#include "tasks.h"
 
 #define WIDTH  320
 #define HEIGHT 256
@@ -126,7 +125,7 @@ static void Render(void) {
     CopInsSet32(bplptr[i], screen->planes[j]);
   }
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
 
   if (planeC & 1)
     plane = (plane + 1) % DEPTH;
@@ -134,4 +133,4 @@ static void Render(void) {
   planeC ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EFFECT(shapes, Load, UnLoad, Init, Kill, Render);

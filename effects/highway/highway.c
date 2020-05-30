@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "gfx.h"
 #include "blitter.h"
 #include "circle.h"
@@ -8,7 +8,6 @@
 #include "2d.h"
 #include "random.h"
 #include "sprite.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -211,8 +210,8 @@ static void Render(void) {
     }
   }
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EFFECT(highway, NULL, NULL, Init, Kill, Render);

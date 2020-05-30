@@ -1,11 +1,10 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "gfx.h"
 #include "blitter.h"
 #include "random.h"
-#include "tasks.h"
 
 int __chipmem = 128 * 1024;
 
@@ -199,8 +198,8 @@ static void Render(void) {
   CopListRun(cp[active]);
   Log("all: %d\n", ReadLineCounter() - lines);
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };
+EFFECT(tiles16, Load, NULL, Init, Kill, Render);

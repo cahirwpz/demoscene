@@ -1,12 +1,11 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "blitter.h"
 #include "sprite.h"
 #include "fx.h"
 #include "random.h"
 #include "color.h"
-#include "tasks.h"
 
 #define WIDTH   320
 #define HEIGHT  256
@@ -336,8 +335,8 @@ static void Render(void) {
   Log("prisms: %d\n", ReadLineCounter() - start);
 
   CopListRun(cp[active]);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EFFECT(prisms, NULL, NULL, Init, Kill, Render);

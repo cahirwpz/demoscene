@@ -1,10 +1,9 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "fx.h"
 #include "random.h"
 #include "color.h"
-#include "tasks.h"
 
 #define WIDTH   320
 #define HEIGHT  256
@@ -180,8 +179,8 @@ static void Render(void) {
   // Log("hstripes: %d\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EFFECT(stripes, NULL, NULL, Init, Kill, Render);

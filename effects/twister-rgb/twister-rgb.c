@@ -1,11 +1,10 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "pixmap.h"
 #include "fx.h"
 #include "memory.h"
 #include "sprite.h"
-#include "tasks.h"
 
 #define WIDTH   144
 #define HEIGHT  255
@@ -181,8 +180,8 @@ static void Render(void) {
   // Log("twister: %d\n", ReadLineCounter() - lines);
 
   CopListRun(cp[active]);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EFFECT(twister_rgb, NULL, NULL, Init, Kill, Render);

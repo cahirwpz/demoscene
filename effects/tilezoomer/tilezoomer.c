@@ -1,9 +1,8 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "random.h"
-#include "tasks.h"
 
 /* Add tile sized margins on every side to hide visual artifacts. */
 #define WIDTH   (256 + 32)
@@ -158,8 +157,8 @@ static void Render(void) {
 
   CopInsSet32(bplptr[0], screen1->planes[0] + 2 + WIDTH * TILESIZE / 8);
   CopInsSet32(bplptr[1], screen1->planes[1] + 2 + WIDTH * TILESIZE / 8);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EFFECT(tilezoomer, NULL, NULL, Init, Kill, Render);

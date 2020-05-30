@@ -1,11 +1,10 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "pixmap.h"
 #include "random.h"
 #include "fx.h"
-#include "tasks.h"
 
 #define WIDTH (320 - 16)
 #define HEIGHT 256
@@ -213,8 +212,8 @@ static void Render(void) {
   Log("render: %d\n", ReadLineCounter() - lines);
 
   CopUpdateBitplanes(bplptr, screen0, DEPTH);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render, NULL };
+EFFECT(tiles8, Load, NULL, Init, Kill, Render);

@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "line.h"
 
 #define WIDTH 320
@@ -62,4 +62,4 @@ static void Init(void) {
   }
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, NULL, NULL };
+EFFECT(lines, Load, UnLoad, Init, NULL, NULL);

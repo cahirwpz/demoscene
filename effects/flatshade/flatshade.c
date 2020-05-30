@@ -1,9 +1,8 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "3d.h"
 #include "fx.h"
-#include "tasks.h"
 
 #define WIDTH  256
 #define HEIGHT 256
@@ -364,8 +363,8 @@ static void Render(void) {
   Log("all: %d\n", ReadLineCounter() - lines);
 
   CopUpdateBitplanes(bplptr, screen0, DEPTH);
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render, NULL };
+EFFECT(flatshade, Load, UnLoad, Init, Kill, Render);

@@ -1,14 +1,13 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
 #include "interrupts.h"
 #include "memory.h"
 #include "p61.h"
 #include "console.h"
-#include "coplist.h"
+#include "copper.h"
 #include "keyboard.h"
 #include "event.h"
 #include "blitter.h"
-#include "tasks.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -135,6 +134,8 @@ static void Kill(void) {
   DeleteBitmap(screen);
 }
 
+static bool HandleEvent(void);
+
 static void Render(void) {
   short i;
 
@@ -175,7 +176,9 @@ static void Render(void) {
     }
   }
 
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
+
+  exitLoop = HandleEvent();
 }
 
 static bool HandleEvent(void) {
@@ -214,4 +217,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, HandleEvent };
+EFFECT(playp61, NULL, NULL, Init, Kill, Render);

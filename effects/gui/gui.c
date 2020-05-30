@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "sprite.h"
 #include "gui.h"
 #include "event.h"
@@ -130,4 +130,8 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, NULL, HandleEvent };
+static void Render(void) {
+  exitLoop = !HandleEvent();
+}
+
+EFFECT(gui, Load, NULL, Init, Kill, Render);
