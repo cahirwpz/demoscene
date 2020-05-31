@@ -23,15 +23,16 @@ static CopListT *cp;
 static CopInsT *bplcon1;
 static CopInsT *bplptr[DEPTH + DEPTH];
 
-__regargs void UpdateLayer1(void) {
+__regargs void UpdateLayer1(short dstX, short srcX, short width) {
   Area2D area = {.x = 0, .y = 0, .w = 16, .h = 16};
   short x, y;
 
   for (y = 0; y < HEIGHT / 16; y++) {
-    for (x = 0; x < WIDTH / 16; x++) {
-      u_short tile = layer1_map[y][x];
+    for (x = 0; x < width; x++) {
+      u_short tile = layer1_map[y][srcX + x];
       area.y = tile * 16;
-      BlitterCopyAreaSetup(background, (x + 1) * 16, y * 16, &layer1_tiles, &area);
+      BlitterCopyAreaSetup(background, (dstX + x) * 16, y * 16,
+                           &layer1_tiles, &area);
       BlitterCopyAreaStart(1, 0);
       BlitterCopyAreaStart(2, 1);
     }
@@ -106,12 +107,7 @@ static void Init(void) {
 
   CopListActivate(cp);
 
-  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
-
-  BitmapCopyFast(background_bm, 16, 0, &layer0);
-  UpdateLayer1();
-
-  EnableDMA(DMAF_RASTER);
+  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
 static void Kill(void) {
@@ -122,13 +118,33 @@ static void Kill(void) {
   DeleteBitmap(background_bm);
 }
 
-static void Render(void) {
-  short odd_shift = 15 - (frameCount % 16);
+static short ScrollLayer1(short t) {
+  short shift = 15 - (t % 16);
 
-  CopInsSet16(bplcon1, odd_shift << 4);
+  if (shift == 15) {
+    short k = (t >> 4) % (layer1_map_width - WIDTH / 16);
+    short i;
 
-  if (frameCount % 16 == 0) {
-    short k = (frameCount >> 4) % (layer2_map_width - WIDTH / 16);
+    for (i = 1; i < DEPTH; i++)
+      background->planes[i] = background_bm->planes[i] + k * 2;
+
+    if (k == 0)
+      UpdateLayer1(0, 0, WIDTH/16 + 1);
+    else
+      UpdateLayer1(WIDTH/16, WIDTH/16 + k, 1);
+
+    CopInsSet32(bplptr[2], background->planes[1]);
+    CopInsSet32(bplptr[4], background->planes[2]);
+  }
+
+  return shift;
+}
+
+static short ScrollLayer2(short t) {
+  short shift = 15 - (t % 16);
+
+  if (shift == 15) {
+    short k = (t >> 4) % (layer2_map_width - WIDTH / 16);
     short i;
 
     for (i = 0; i < DEPTH; i++)
@@ -143,6 +159,23 @@ static void Render(void) {
     CopInsSet32(bplptr[3], foreground->planes[1]);
     CopInsSet32(bplptr[5], foreground->planes[2]);
   }
+
+  return shift;
+}
+
+static void Render(void) {
+  int lines = ReadLineCounter();
+  {
+    short l1_shift = ScrollLayer1(frameCount / 2);
+    short l2_shift = ScrollLayer2(frameCount);
+
+
+    if (0)
+      BitmapCopyFast(background_bm, 15 - l1_shift, 0, &layer0);
+
+    CopInsSet16(bplcon1, (l2_shift << 4) | l1_shift);
+  }
+  Log("neoncity: %d\n", ReadLineCounter() - lines);
 
   TaskWaitVBlank();
 }
