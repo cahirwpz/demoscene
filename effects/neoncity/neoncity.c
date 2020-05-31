@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "pixmap.h"
 #include "blitter.h"
 #include "gfx.h"
@@ -115,7 +115,7 @@ static void Kill(void) {
 
 static void Render(void) {
   CopInsSet16(bplcon1, 16 * (15 - (frameCount % 16)));
-  TaskWait(VBlankEvent);
+  TaskWaitVBlank();
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render, NULL };
+EFFECT(neoncity, NULL, NULL, Init, Kill, Render);

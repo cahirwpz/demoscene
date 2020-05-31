@@ -8,7 +8,7 @@ PNG2C.layer1-tiles := --bitmap layer1_tiles,16x2960x2 --palette layer1_pal,4
 PNG2C.layer2-tiles := --bitmap layer2_tiles,16x4128x3 --palette layer2_pal,8
 PNG2C.gradient := --pixmap gradient,1x176x12
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk
 
 %-tiles.png: %.tmx
 	@echo "[TMX] $(DIR)$< -> $(DIR)$@"
