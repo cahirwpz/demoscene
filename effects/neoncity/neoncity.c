@@ -21,8 +21,8 @@
 #include "data/layer2-map.c"
 #include "data/layer2-tiles.c"
 
-static BitmapT *background_bm, *foreground_bm;
-static BitmapT background[1], foreground[1];
+static BitmapT *background_bm, *foreground_bm, *unscroll_1;
+static BitmapT background[1], foreground[1], unscroll_0[1];
 static CopListT *cp;
 static CopInsT *bplcon1;
 static CopInsT *bplptr[DEPTH + DEPTH];
@@ -99,19 +99,18 @@ static void Init(void) {
 
   background_bm = NewBitmapCustom(LINE_W, HEIGHT, DEPTH, BM_DISPLAYABLE);
   foreground_bm = NewBitmapCustom(LINE_W, HEIGHT + 6, DEPTH, BM_DISPLAYABLE);
+  unscroll_1 = NewBitmapCustom(LINE_W, HEIGHT, 1, BM_DISPLAYABLE);
 
   InitSharedBitmap(background, LINE_W, HEIGHT, DEPTH, background_bm);
   InitSharedBitmap(foreground, LINE_W, HEIGHT, DEPTH, foreground_bm);
+  InitSharedBitmap(unscroll_0, LINE_W, HEIGHT, 1, background_bm);
 
   cp = NewCopList(100 + HEIGHT * 5);
 
   CopInit(cp);
   CopSetupMode(cp, MODE_LORES|MODE_DUALPF, 2 * DEPTH);
-  CopSetupDisplayWindow(cp, MODE_LORES, X(0) + 1, Y(ys), WIDTH, HEIGHT);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(0) + 1 - 16, LINE_W);
-  CopSetupDualPlayfield(cp, bplptr, foreground, background);
-
-  bplcon1 = CopMove16(cp, bplcon1, 0);
+  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(ys), WIDTH, HEIGHT);
+  CopSetupBitplaneFetch(cp, MODE_LORES, X(0) - 16, LINE_W);
 
   /* Palette */
   CopSetColor(cp, 0, 0x000);
@@ -122,16 +121,19 @@ static void Init(void) {
   }
   CopLoadPal(cp, &layer2_pal, 8);
 
+  CopSetupDualPlayfield(cp, bplptr, foreground, background);
+  bplcon1 = CopMove16(cp, bplcon1, 0);
+
   {
     u_short *color = gradient.pixels;
 
     for (i = 0; i < HEIGHT; i++) {
       u_short c0 = color[HEIGHT - i - 1];
       u_short c1 = ~color[i];
-      CopWait(cp, VP(ys + i), HP(0) - 12);
+      CopWait(cp, VP(ys + i), HP(0) - 14);
       CopSetColor(cp, 1, c1);
       CopSetColor(cp, 0, c0);
-      CopWait(cp, VP(ys + i), HP(WIDTH) - 8);
+      CopWait(cp, VP(ys + i), HP(WIDTH) - 1);
       CopSetColor(cp, 0, 0);
     }
   }
@@ -155,6 +157,7 @@ static void Kill(void) {
   DeleteCopList(cp);
   DeleteBitmap(foreground_bm);
   DeleteBitmap(background_bm);
+  DeleteBitmap(unscroll_1);
 }
 
 static short ScrollLayer1(short t) {
@@ -203,17 +206,21 @@ static short ScrollLayer2(short t) {
 }
 
 static void Render(void) {
-  int lines = ReadLineCounter();
+  // int lines = ReadLineCounter();
   {
     short l1_shift = ScrollLayer1(frameCount / 2);
     short l2_shift = ScrollLayer2(frameCount);
+    short shift = (l2_shift << 4) | l1_shift;
 
-    if (0)
-      BitmapCopyFast(background_bm, 15 - l1_shift, 0, &layer0);
+    {
+      BitmapT *unscroll = (l1_shift % 2) ? unscroll_0 : unscroll_1;
+      BitmapCopyFast(unscroll, 15 - l1_shift, 0, &layer0);
+      CopInsSet32(bplptr[0], unscroll->planes[0]);
+    }
 
-    CopInsSet16(bplcon1, (l2_shift << 4) | l1_shift);
+    CopInsSet16(bplcon1, shift);
   }
-  Log("neoncity: %d\n", ReadLineCounter() - lines);
+  // Log("neoncity: %d\n", ReadLineCounter() - lines);
 
   TaskWaitVBlank();
 }
