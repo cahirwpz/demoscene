@@ -10,6 +10,10 @@
 #define HEIGHT 176
 #define DEPTH 3
 
+#define LINE_W (WIDTH + 16)
+#define W 16
+#define H 16
+
 #include "data/gradient.c"
 #include "data/layer0.c"
 #include "data/layer1-map.c"
@@ -23,58 +27,88 @@ static CopListT *cp;
 static CopInsT *bplcon1;
 static CopInsT *bplptr[DEPTH + DEPTH];
 
-__regargs void UpdateLayer1(short dstX, short srcX, short width) {
-  Area2D area = {.x = 0, .y = 0, .w = 16, .h = 16};
-  short x, y;
+static inline void CopyTileSetup(void) {
+  WaitBlitter();
 
-  for (y = 0; y < HEIGHT / 16; y++) {
-    for (x = 0; x < width; x++) {
-      u_short tile = layer1_map[y][srcX + x];
-      area.y = tile * 16;
-      BlitterCopyAreaSetup(background, (dstX + x) * 16, y * 16,
-                           &layer1_tiles, &area);
-      BlitterCopyAreaStart(1, 0);
-      BlitterCopyAreaStart(2, 1);
-    }
-  }
+  custom->bltcon0 = (SRCA | DEST) | A_TO_D;
+  custom->bltcon1 = 0;
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+  custom->bltamod = 0;
+  custom->bltdmod = (LINE_W - W) >> 3;
 }
 
-__regargs void UpdateLayer2(short dstX, short srcX, short width) {
-  Area2D area = {.x = 0, .y = 0, .w = 16, .h = 16};
-  short x, y;
+static inline void CopyTileStart(void *dstbpt, void *srcbpt) {
+  WaitBlitter();
 
-  for (y = 0; y < HEIGHT / 16; y++) {
-    for (x = 0; x < width; x++) {
-      u_short tile = layer2_map[y][srcX + x];
-      area.y = tile * 16;
-      BlitterCopyAreaSetup(foreground, (dstX + x) * 16, y * 16,
-                           &layer2_tiles, &area);
-      BlitterCopyAreaStart(0, 0);
-      BlitterCopyAreaStart(1, 1);
-      BlitterCopyAreaStart(2, 2);
-    }
-  }
+  custom->bltapt = srcbpt;
+  custom->bltdpt = dstbpt;
+  custom->bltsize = (H << 6) | (W >> 4);
 }
 
+static __regargs void UpdateLayer1(int dstX, int srcX, short width) {
+  void *const *src = layer1_tiles.planes;
+  void *const *dst = background->planes + 1;
+  short *tiles = &layer1_map[0][srcX];
+  int dst_start = dstX * 2;
+  short h = HEIGHT / 16;
+
+  CopyTileSetup();
+
+  do {
+    short w = width;
+    do {
+      short tile = *tiles++;
+      int src_start = tile * H * (W >> 3);
+      CopyTileStart(dst[0] + dst_start, src[0] + src_start);
+      CopyTileStart(dst[1] + dst_start, src[1] + src_start);
+      dst_start += 2;
+    } while (--w);
+    tiles += layer1_map_width - width;
+    dst_start += H * LINE_W / 8 - width * 2;
+  } while (--h);
+}
+
+static __regargs void UpdateLayer2(int dstX, int srcX, short width) {
+  void *const *src = layer2_tiles.planes;
+  void *const *dst = foreground->planes;
+  short *tiles = &layer2_map[0][srcX]; 
+  int dst_start = dstX * 2;
+  short h = HEIGHT / 16;
+
+  CopyTileSetup();
+
+  do {
+    short w = width;
+    do {
+      short tile = *tiles++;
+      int src_start = tile * H * (W >> 3);
+      CopyTileStart(dst[0] + dst_start, src[0] + src_start);
+      CopyTileStart(dst[1] + dst_start, src[1] + src_start);
+      CopyTileStart(dst[2] + dst_start, src[2] + src_start);
+      dst_start += 2;
+    } while (--w);
+    tiles += layer2_map_width - width;
+    dst_start += H * LINE_W / 8 - width * 2;
+  } while (--h);
+}
 
 static void Init(void) {
   const short ys = (256 - layer0.height) / 2;
   short i;
 
-  background_bm = NewBitmapCustom(WIDTH + 16, HEIGHT,
-                                  DEPTH, BM_DISPLAYABLE);
-  foreground_bm = NewBitmapCustom(WIDTH + 16, HEIGHT + 6, DEPTH,
-                                  BM_DISPLAYABLE);
+  background_bm = NewBitmapCustom(LINE_W, HEIGHT, DEPTH, BM_DISPLAYABLE);
+  foreground_bm = NewBitmapCustom(LINE_W, HEIGHT + 6, DEPTH, BM_DISPLAYABLE);
 
-  InitSharedBitmap(background, WIDTH + 16, HEIGHT, DEPTH, background_bm);
-  InitSharedBitmap(foreground, WIDTH + 16, HEIGHT, DEPTH, foreground_bm);
+  InitSharedBitmap(background, LINE_W, HEIGHT, DEPTH, background_bm);
+  InitSharedBitmap(foreground, LINE_W, HEIGHT, DEPTH, foreground_bm);
 
   cp = NewCopList(100 + HEIGHT * 5);
 
   CopInit(cp);
   CopSetupMode(cp, MODE_LORES|MODE_DUALPF, 2 * DEPTH);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0) + 1, Y(ys), WIDTH, HEIGHT);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(0) + 1 - 16, WIDTH + 16);
+  CopSetupBitplaneFetch(cp, MODE_LORES, X(0) + 1 - 16, LINE_W);
   CopSetupDualPlayfield(cp, bplptr, foreground, background);
 
   bplcon1 = CopMove16(cp, bplcon1, 0);
@@ -107,7 +141,12 @@ static void Init(void) {
 
   CopListActivate(cp);
 
-  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
+
+  UpdateLayer1(0, 0, LINE_W / 16);
+  UpdateLayer2(0, 0, LINE_W / 16);
+
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill(void) {
@@ -129,9 +168,9 @@ static short ScrollLayer1(short t) {
       background->planes[i] = background_bm->planes[i] + k * 2;
 
     if (k == 0)
-      UpdateLayer1(0, 0, WIDTH/16 + 1);
+      UpdateLayer1(0, 0, LINE_W / 16);
     else
-      UpdateLayer1(WIDTH/16, WIDTH/16 + k, 1);
+      UpdateLayer1(WIDTH / 16, WIDTH / 16 + k, 1);
 
     CopInsSet32(bplptr[2], background->planes[1]);
     CopInsSet32(bplptr[4], background->planes[2]);
@@ -151,9 +190,9 @@ static short ScrollLayer2(short t) {
       foreground->planes[i] = foreground_bm->planes[i] + k * 2;
 
     if (k == 0)
-      UpdateLayer2(0, 0, WIDTH/16 + 1);
+      UpdateLayer2(0, 0, LINE_W / 16);
     else
-      UpdateLayer2(WIDTH/16, WIDTH/16 + k, 1);
+      UpdateLayer2(WIDTH / 16, WIDTH / 16 + k, 1);
 
     CopInsSet32(bplptr[1], foreground->planes[0]);
     CopInsSet32(bplptr[3], foreground->planes[1]);
@@ -168,7 +207,6 @@ static void Render(void) {
   {
     short l1_shift = ScrollLayer1(frameCount / 2);
     short l2_shift = ScrollLayer2(frameCount);
-
 
     if (0)
       BitmapCopyFast(background_bm, 15 - l1_shift, 0, &layer0);
