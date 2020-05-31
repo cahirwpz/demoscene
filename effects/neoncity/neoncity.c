@@ -17,11 +17,13 @@
 #include "data/layer2-map.c"
 #include "data/layer2-tiles.c"
 
-static BitmapT *background, *foreground;
+static BitmapT *background_bm, *foreground_bm;
+static BitmapT background[1], foreground[1];
 static CopListT *cp;
 static CopInsT *bplcon1;
+static CopInsT *bplptr[DEPTH + DEPTH];
 
-void DrawLayer1(void) {
+__regargs void UpdateLayer1(void) {
   Area2D area = {.x = 0, .y = 0, .w = 16, .h = 16};
   short x, y;
 
@@ -29,22 +31,23 @@ void DrawLayer1(void) {
     for (x = 0; x < WIDTH / 16; x++) {
       u_short tile = layer1_map[y][x];
       area.y = tile * 16;
-      BlitterCopyAreaSetup(background, x * 16, y * 16, &layer1_tiles, &area);
+      BlitterCopyAreaSetup(background, (x + 1) * 16, y * 16, &layer1_tiles, &area);
       BlitterCopyAreaStart(1, 0);
       BlitterCopyAreaStart(2, 1);
     }
   }
 }
 
-void DrawLayer2(void) {
+__regargs void UpdateLayer2(short dstX, short srcX, short width) {
   Area2D area = {.x = 0, .y = 0, .w = 16, .h = 16};
   short x, y;
 
   for (y = 0; y < HEIGHT / 16; y++) {
-    for (x = 0; x < WIDTH / 16; x++) {
-      u_short tile = layer2_map[y][x+10];
+    for (x = 0; x < width; x++) {
+      u_short tile = layer2_map[y][srcX + x];
       area.y = tile * 16;
-      BlitterCopyAreaSetup(foreground, x * 16, y * 16, &layer2_tiles, &area);
+      BlitterCopyAreaSetup(foreground, (dstX + x) * 16, y * 16,
+                           &layer2_tiles, &area);
       BlitterCopyAreaStart(0, 0);
       BlitterCopyAreaStart(1, 1);
       BlitterCopyAreaStart(2, 2);
@@ -57,22 +60,28 @@ static void Init(void) {
   const short ys = (256 - layer0.height) / 2;
   short i;
 
-  background = NewBitmapCustom(WIDTH, HEIGHT, DEPTH, BM_CLEAR | BM_DISPLAYABLE);
-  foreground = NewBitmapCustom(WIDTH, HEIGHT, DEPTH, BM_CLEAR | BM_DISPLAYABLE);
+  background_bm = NewBitmapCustom(WIDTH + 16, HEIGHT,
+                                  DEPTH, BM_DISPLAYABLE);
+  foreground_bm = NewBitmapCustom(WIDTH + 16, HEIGHT + 6, DEPTH,
+                                  BM_DISPLAYABLE);
 
-  cp = NewCopList(100 + layer0.height * 4);
+  InitSharedBitmap(background, WIDTH + 16, HEIGHT, DEPTH, background_bm);
+  InitSharedBitmap(foreground, WIDTH + 16, HEIGHT, DEPTH, foreground_bm);
+
+  cp = NewCopList(100 + HEIGHT * 5);
 
   CopInit(cp);
-  CopSetupMode(cp, MODE_LORES|MODE_DUALPF, 2*DEPTH);
+  CopSetupMode(cp, MODE_LORES|MODE_DUALPF, 2 * DEPTH);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0) + 1, Y(ys), WIDTH, HEIGHT);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(0) + 1, WIDTH);
-  CopSetupDualPlayfield(cp, NULL, foreground, background);
+  CopSetupBitplaneFetch(cp, MODE_LORES, X(0) + 1 - 16, WIDTH + 16);
+  CopSetupDualPlayfield(cp, bplptr, foreground, background);
+
   bplcon1 = CopMove16(cp, bplcon1, 0);
 
   /* Palette */
   CopSetColor(cp, 0, 0x000);
   CopSetColor(cp, 1, 0x000);
-  for (i = 1; i < 4; i++) {
+  for (i = 1; i < layer1_pal.count; i++) {
     CopSetColor(cp, 2*i, layer1_pal.colors[i]);
     CopSetColor(cp, 2*i+1, layer1_pal.colors[i]);
   }
@@ -81,13 +90,13 @@ static void Init(void) {
   {
     u_short *color = gradient.pixels;
 
-    for (i = 0; i < layer0.height; i++) {
-      u_short c0 = color[layer0.height - i - 1];
+    for (i = 0; i < HEIGHT; i++) {
+      u_short c0 = color[HEIGHT - i - 1];
       u_short c1 = ~color[i];
-      CopWait(cp, VP(ys + i), HP(0) - 8);
+      CopWait(cp, VP(ys + i), HP(0) - 12);
       CopSetColor(cp, 1, c1);
       CopSetColor(cp, 0, c0);
-      CopWait(cp, VP(ys + i), HP(layer0.width) - 1);
+      CopWait(cp, VP(ys + i), HP(WIDTH) - 8);
       CopSetColor(cp, 0, 0);
     }
   }
@@ -97,24 +106,44 @@ static void Init(void) {
 
   CopListActivate(cp);
 
-  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
-  BitmapCopyFast(background, 0, 0, &layer0);
+  BitmapCopyFast(background_bm, 16, 0, &layer0);
+  UpdateLayer1();
 
-  DrawLayer1();
-  DrawLayer2();
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 
   DeleteCopList(cp);
-  DeleteBitmap(foreground);
-  DeleteBitmap(background);
+  DeleteBitmap(foreground_bm);
+  DeleteBitmap(background_bm);
 }
 
 static void Render(void) {
-  CopInsSet16(bplcon1, 16 * (15 - (frameCount % 16)));
+  short odd_shift = 15 - (frameCount % 16);
+
+  CopInsSet16(bplcon1, odd_shift << 4);
+
+  if (frameCount % 16 == 0) {
+    short k = (frameCount >> 4) % (layer2_map_width - WIDTH / 16);
+    short i;
+
+    for (i = 0; i < DEPTH; i++)
+      foreground->planes[i] = foreground_bm->planes[i] + k * 2;
+
+    if (k == 0)
+      UpdateLayer2(0, 0, WIDTH/16 + 1);
+    else
+      UpdateLayer2(WIDTH/16, WIDTH/16 + k, 1);
+
+    CopInsSet32(bplptr[1], foreground->planes[0]);
+    CopInsSet32(bplptr[3], foreground->planes[1]);
+    CopInsSet32(bplptr[5], foreground->planes[2]);
+  }
+
   TaskWaitVBlank();
 }
 
