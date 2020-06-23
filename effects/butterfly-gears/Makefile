@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-SOURCES := butterfly-gears.c textureloop.s
+SOURCES := butterfly-gears.c copper-routines.s
 
 CLEAN-FILES := \
 	data/ball_small.c \
@@ -16,7 +16,7 @@ PNG2C.texture_butterfly := --pixmap texture_butterfly,128x256x12
 
 include $(TOPDIR)/build.effect.mk
 
-textureloop.s: data/textureloop-generated.s
+copper-routines.s: data/textureloop-generated.s
 
 %.s: %.txt
 	@echo "[GEN] $(DIR)$< -> $(DIR)$@"

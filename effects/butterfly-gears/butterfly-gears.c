@@ -137,6 +137,20 @@ extern void PlotTextureAsm(char *copperDst asm("a0"),
                            int  uDeltaRow  asm("d5"),
                            int  vDeltaRow  asm("d6"));
 
+extern void WriteStaticYArea(CopInsT *copperDst        asm("a0"),
+                             CopInsT *copperSrc        asm("a1"),
+                             int     bottomBallY       asm("d0"),
+                             CopInsT *bottomBallCopper asm("a2"),
+                             CopInsT *bookCopper       asm("a3"));
+
+extern void UpdateBallCopper(int     y              asm("d0"),
+                             int     yInc           asm("d1"),
+                             CopInsT *staticYSource asm("a0"),
+                             CopInsT *textureCopper asm("a1"),
+                             CopInsT *paddingTop    asm("a2"),
+                             CopInsT *paddingBottom asm("a3"));
+
+
 static void InitStaticYCommands(void) {
   short i, idx;
   idx = 0;
@@ -332,11 +346,20 @@ static inline void DrawCopperBallTexture(BallT *ball, BallCopInsertsT inserts) {
   ball->zoomSinPos += ball->zoomSinStep;
 }
 
+// TODO UpdateBallCopper leads to a crash unless wrapped in another function like this, even it's just an rts -- why?
+
+static void CallUpdateCopper(short y, short yInc, CopInsT *staticYSource, CopInsT *textureCopper, CopInsT *paddingTop, CopInsT *paddingBottom) {
+  UpdateBallCopper(y, yInc, staticYSource, textureCopper, paddingTop, paddingBottom);
+}
+
 static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
   bool small = ball->height == SMALL_BALL_HEIGHT;
   short y = ball->screenY;
   short staticYPos = y - STATIC_Y_START + STATIC_Y_AREA_PADDING + 1;
-  CopInsT *staticYSource;
+  short x = (small ? SMALL_BALL_CENTER : LARGE_BALL_CENTER) - ball->screenX;
+  short bplSkip = (x / 8) & 0xfe;
+  short shift = 15 - (x & 0xf);
+  BitmapT bitmap = small ? ball_small : ball_large;
 
   if (staticYPos < 0) {
     staticYPos = 0;
@@ -344,111 +367,35 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
     staticYPos = STATIC_Y_AREA_PADDING + STATIC_Y_AREA - 1;
   }
 
-  staticYSource = staticYCommands + staticYPos;
-
   // Set X
-  {
-    short x = (small ? SMALL_BALL_CENTER : LARGE_BALL_CENTER) - ball->screenX;
-    short bplSkip = (x / 8) & 0xfe;
-    short shift = 15 - (x & 0xf);
-    BitmapT bitmap = small ? ball_small : ball_large;
-    if (ball->screenY <= Y0) {
-      bplSkip += (Y0 - 1 - ball->screenY) * WIDTH / 8;
-    }
-    CopInsSet32(inserts.bplptr[0], bitmap.planes[0]+bplSkip);
-    CopInsSet32(inserts.bplptr[1], bitmap.planes[1]+bplSkip);
-    CopInsSet32(inserts.bplptr[2], bitmap.planes[2]+bplSkip);
-    CopInsSet32(inserts.bplptr[3], bitmap.planes[3]+bplSkip);
-    CopInsSet32(inserts.bplptr[4], bitmap.planes[4]+bplSkip);
-    CopInsSet16(inserts.bplcon1ins, (shift << 4) | shift);
+  if (ball->screenY <= Y0) {
+    bplSkip += (Y0 - 1 - ball->screenY) * WIDTH / 8;
   }
+  CopInsSet32(inserts.bplptr[0], bitmap.planes[0]+bplSkip);
+  CopInsSet32(inserts.bplptr[1], bitmap.planes[1]+bplSkip);
+  CopInsSet32(inserts.bplptr[2], bitmap.planes[2]+bplSkip);
+  CopInsSet32(inserts.bplptr[3], bitmap.planes[3]+bplSkip);
+  CopInsSet32(inserts.bplptr[4], bitmap.planes[4]+bplSkip);
+  CopInsSet16(inserts.bplcon1ins, (shift << 4) | shift);
 
   // Update copper waits according to Y
-  {
-    short i;
-    short yInc = small ? SMALL_BALL_Y_INC : LARGE_BALL_Y_INC;
-    CopInsT *textureCopper = inserts.ballCopper;
-    CopInsT *paddingTop    = inserts.paddingTop;
-    CopInsT *paddingBottom = inserts.paddingBottom;
 
-    if (y > Y0) {
-      inserts.waitBefore->wait.vp = y;
-    } else {
-      inserts.waitBefore->wait.vp = 0;
-    }
-    inserts.waitBefore->wait.hp = COPWAIT_X_BALLSTART | 1;
-
-    for (i = 0; i < BALL_PADDING_TOP; i++) {
-      y++;
-      if (y > Y0 && y < BOOK_Y - 1) {
-        paddingTop->wait.vp = y;
-      } else {
-        paddingTop->wait.vp = 0;
-      }
-      paddingTop++;
-      if (y > BOOK_Y - 1) {
-        paddingTop->move.reg = CSREG(copjmp2);
-      } else {
-        paddingTop->move.reg  = staticYSource->move.reg;
-        paddingTop->move.data = staticYSource->move.data;
-        staticYSource++;
-      }
-      paddingTop++;
-    }
-    for (i = 0; i < ROTZOOM_H * 2 && i < BOOK_Y - 1; i++) {
-      if (y > Y0) {
-        textureCopper->wait.vp = y;
-      } else {
-        textureCopper->wait.vp = 0;
-      }
-      textureCopper += ROTZOOM_W / 2 + 1;
-      y += yInc;
-
-      // Abort ball when the bottom book area starts
-      if (y < BOOK_Y - 1) {
-        textureCopper->move.reg  = staticYSource->move.reg;
-        textureCopper->move.data = staticYSource->move.data;
-        staticYSource++;
-      } else {
-        textureCopper->move.reg = CSREG(copjmp2);
-      }
-      textureCopper++;
-
-      if (yInc == SMALL_BALL_Y_INC) {
-        textureCopper->move.reg = NO_OP;
-        textureCopper++;
-        textureCopper->move.reg = NO_OP;
-        textureCopper++;
-      } else {
-        textureCopper->wait.vp = (y > Y0) ? y - 1 : 0;
-        textureCopper->wait.hp = COPWAIT_X | 1;
-        textureCopper->wait.vpmask = 0xff;
-        textureCopper->wait.hpmask = 0x00;
-        textureCopper++;
-        textureCopper->move.reg  = staticYSource->move.reg;
-        textureCopper->move.data = staticYSource->move.data;
-        staticYSource++;
-        textureCopper++;
-      }
-    }
-    for (i = 0; i < BALL_PADDING_BOTTOM; i++) {
-      if (y > Y0 && y < BOOK_Y - 1) {
-        paddingBottom->wait.vp = y;
-      } else {
-        paddingBottom->wait.vp = 0;
-      }
-      paddingBottom++;
-      if (y > BOOK_Y - 1) {
-        paddingBottom->move.reg = CSREG(copjmp2);
-      } else {
-        paddingBottom->move.reg  = staticYSource->move.reg;
-        paddingBottom->move.data = staticYSource->move.data;
-        staticYSource++;
-      }
-      paddingBottom++;
-      y++;
-    }
+  inserts.waitBefore->move.reg = 4711;
+  if (y > Y0) {
+    inserts.waitBefore->wait.vp = y;
+  } else {
+    inserts.waitBefore->wait.vp = 0;
   }
+  inserts.waitBefore->wait.hp = COPWAIT_X_BALLSTART | 1;
+
+  // Update non-texture copper commands (waits, static Y area)
+
+  CallUpdateCopper(y,
+                   small ? SMALL_BALL_Y_INC : LARGE_BALL_Y_INC,
+                   staticYCommands + staticYPos,
+                   inserts.ballCopper,
+                   inserts.paddingTop,
+                   inserts.paddingBottom);
 
   DrawCopperBallTexture(ball, inserts);
 }
@@ -607,40 +554,12 @@ static void DrawBalls(void) {
 
   // Static Y area, possibly containing a COP2JMP before the end
 
-  {
-    short y;
-    short bottomBallY = bottom == NULL ? -1 : bottom->screenY;
-    CopInsT *rewriteStaticCp = ballCopList[active].staticAreaCopperStart;
-    short sourcePos = STATIC_Y_AREA_PADDING;
-    for (y = STATIC_Y_START; y < BOOK_Y; y++) {
-      if (y == bottomBallY) {
-        void *data = ballCopList[active].inserts[2].copperJumpTarget;
-        u_short *ins = (u_short *) rewriteStaticCp;
-        *ins++ = CSREG(cop2lc);
-        *ins++ = (u_int) data >> 16;
-        *ins++ = CSREG(cop2lc) + 2;
-        *ins++ = (u_int) data;
-        *ins++ = CSREG(copjmp2);
-        goto staticRewriteDone;
-      }
-      rewriteStaticCp->wait.vp = y;
-      rewriteStaticCp->wait.hp = COPWAIT_X | 1;
-      rewriteStaticCp->wait.vpmask = 0xff;
-      rewriteStaticCp->wait.hpmask = 0xfe;
-      rewriteStaticCp++;
-      *rewriteStaticCp++ = staticYCommands[sourcePos++];
-    }
-    {
-      void *data = bottomCpStart;
-      u_short *ins = (u_short *) rewriteStaticCp;
-      *ins++ = CSREG(cop2lc);
-      *ins++ = (u_int) data >> 16;
-      *ins++ = CSREG(cop2lc) + 2;
-      *ins++ = (u_int)data;
-      *ins++ = CSREG(copjmp2);
-    }
-    staticRewriteDone:
-  }
+  WriteStaticYArea(ballCopList[active].staticAreaCopperStart,
+                   staticYCommands + STATIC_Y_AREA_PADDING,
+                   bottom == NULL ? -1 : bottom->screenY,
+                   ballCopList[active].inserts[2].copperJumpTarget,
+                   bottomCpStart);
+
 }
 
 static void Render(void) {
