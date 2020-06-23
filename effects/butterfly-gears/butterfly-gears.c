@@ -323,12 +323,12 @@ static void InitCopperList(BallCopListT *ballCp) {
   }
 }
 
-static inline void SkipBall(BallCopInsertsT inserts, CopInsT *jumpTo) {
-  CopInsSet32(inserts.copperJumpTarget, jumpTo);
-  inserts.waitBefore->move.reg = CSREG(copjmp2);
+static inline void SkipBall(BallCopInsertsT *inserts, CopInsT *jumpTo) {
+  CopInsSet32(inserts->copperJumpTarget, jumpTo);
+  inserts->waitBefore->move.reg = CSREG(copjmp2);
 }
 
-static inline void DrawCopperBallTexture(BallT *ball, BallCopInsertsT inserts) {
+static inline void DrawCopperBallTexture(BallT *ball, BallCopInsertsT *inserts) {
   short sin, cos;
   int u, v;
   short zoom = ball->zoom + ((ball->zoomSinAmp * SIN(ball->zoomSinPos)) >> 12);
@@ -338,7 +338,7 @@ static inline void DrawCopperBallTexture(BallT *ball, BallCopInsertsT inserts) {
   u = ball->u - sin * (ROTZOOM_W / 2) - cos * (ROTZOOM_H / 2);
   v = ball->v - cos * (ROTZOOM_W / 2) + sin * (ROTZOOM_H / 2);
 
-  PlotTextureAsm((char *) inserts.ballCopper, (char *) ball->texture.pixels, u, v, sin, cos, cos, -sin);
+  PlotTextureAsm((char *) inserts->ballCopper, (char *) ball->texture.pixels, u, v, sin, cos, cos, -sin);
 
   ball->angle += ball->angleDelta;
   ball->u += ball->uDelta;
@@ -352,7 +352,7 @@ static void CallUpdateCopper(short y, short yInc, CopInsT *staticYSource, CopIns
   UpdateBallCopper(y, yInc, staticYSource, textureCopper, paddingTop, paddingBottom);
 }
 
-static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
+static void DrawCopperBall(BallT *ball, BallCopInsertsT *inserts) {
   bool small = ball->height == SMALL_BALL_HEIGHT;
   short y = ball->screenY;
   short staticYPos = y - STATIC_Y_START + STATIC_Y_AREA_PADDING + 1;
@@ -371,31 +371,31 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT inserts) {
   if (ball->screenY <= Y0) {
     bplSkip += (Y0 - 1 - ball->screenY) * WIDTH / 8;
   }
-  CopInsSet32(inserts.bplptr[0], bitmap.planes[0]+bplSkip);
-  CopInsSet32(inserts.bplptr[1], bitmap.planes[1]+bplSkip);
-  CopInsSet32(inserts.bplptr[2], bitmap.planes[2]+bplSkip);
-  CopInsSet32(inserts.bplptr[3], bitmap.planes[3]+bplSkip);
-  CopInsSet32(inserts.bplptr[4], bitmap.planes[4]+bplSkip);
-  CopInsSet16(inserts.bplcon1ins, (shift << 4) | shift);
+  CopInsSet32(inserts->bplptr[0], bitmap.planes[0]+bplSkip);
+  CopInsSet32(inserts->bplptr[1], bitmap.planes[1]+bplSkip);
+  CopInsSet32(inserts->bplptr[2], bitmap.planes[2]+bplSkip);
+  CopInsSet32(inserts->bplptr[3], bitmap.planes[3]+bplSkip);
+  CopInsSet32(inserts->bplptr[4], bitmap.planes[4]+bplSkip);
+  CopInsSet16(inserts->bplcon1ins, (shift << 4) | shift);
 
   // Update copper waits according to Y
 
-  inserts.waitBefore->move.reg = 4711;
+  inserts->waitBefore->move.reg = 4711;
   if (y > Y0) {
-    inserts.waitBefore->wait.vp = y;
+    inserts->waitBefore->wait.vp = y;
   } else {
-    inserts.waitBefore->wait.vp = 0;
+    inserts->waitBefore->wait.vp = 0;
   }
-  inserts.waitBefore->wait.hp = COPWAIT_X_BALLSTART | 1;
+  inserts->waitBefore->wait.hp = COPWAIT_X_BALLSTART | 1;
 
   // Update non-texture copper commands (waits, static Y area)
 
   CallUpdateCopper(y,
                    small ? SMALL_BALL_Y_INC : LARGE_BALL_Y_INC,
                    staticYCommands + staticYPos,
-                   inserts.ballCopper,
-                   inserts.paddingTop,
-                   inserts.paddingBottom);
+                   inserts->ballCopper,
+                   inserts->paddingTop,
+                   inserts->paddingBottom);
 
   DrawCopperBallTexture(ball, inserts);
 }
@@ -484,20 +484,20 @@ static void DrawBalls(void) {
     middle = NULL;
     bottom = NULL;
   } else if (!IsVisible(balls[1])) {
-    DrawCopperBall(balls[0], ballCopList[active].inserts[2]);
+    DrawCopperBall(balls[0], &ballCopList[active].inserts[2]);
     top    = NULL;
     middle = NULL;
     bottom = balls[0];
   } else if (!IsVisible(balls[2])) {
-    DrawCopperBall(balls[0], ballCopList[active].inserts[1]);
-    DrawCopperBall(balls[1], ballCopList[active].inserts[2]);
+    DrawCopperBall(balls[0], &ballCopList[active].inserts[1]);
+    DrawCopperBall(balls[1], &ballCopList[active].inserts[2]);
     top    = NULL;
     middle = balls[0];
     bottom = balls[1];
   } else {
-    DrawCopperBall(balls[0], ballCopList[active].inserts[0]);
-    DrawCopperBall(balls[1], ballCopList[active].inserts[1]);
-    DrawCopperBall(balls[2], ballCopList[active].inserts[2]);
+    DrawCopperBall(balls[0], &ballCopList[active].inserts[0]);
+    DrawCopperBall(balls[1], &ballCopList[active].inserts[1]);
+    DrawCopperBall(balls[2], &ballCopList[active].inserts[2]);
     top    = balls[0];
     middle = balls[1];
     bottom = balls[2];
@@ -506,7 +506,7 @@ static void DrawBalls(void) {
   // Bottom ball
 
   if (bottom == NULL) {
-    SkipBall(ballCopList[active].inserts[0], ballCopList[active].staticAreaCopperStart);
+    SkipBall(&ballCopList[active].inserts[0], ballCopList[active].staticAreaCopperStart);
   } else {
     CopInsT *bottomBallCopperStart;
     short bottomBallYEnd;
@@ -530,7 +530,7 @@ static void DrawBalls(void) {
 
     if (middle == NULL) {
       // No middle ball: jump to bottom ball directly
-      SkipBall(ballCopList[active].inserts[0], bottomBallCopperStart);
+      SkipBall(&ballCopList[active].inserts[0], bottomBallCopperStart);
     } else {
       // Middle ball start, exit
       short middleBallYEnd = middle->screenY + middle->height;
@@ -545,7 +545,7 @@ static void DrawBalls(void) {
       // Top ball
 
       if (top == NULL) {
-        SkipBall(ballCopList[active].inserts[0], ballCopList[active].inserts[1].copperJumpTarget);
+        SkipBall(&ballCopList[active].inserts[0], ballCopList[active].inserts[1].copperJumpTarget);
       } else {
         CopInsSet32(ballCopList[active].inserts[0].copperJumpTarget, ballCopList[active].inserts[1].copperJumpTarget);
       }
