@@ -122,6 +122,8 @@ static BallT *balls[BALLS] = { &ball1, &ball2, &ball3 };
 static bool mouseControlled = false;
 static bool mouseMoved = false;
 static CopInsT staticYCommands[STATIC_Y_COMMANDS];
+static BallCopInsertsT *lastInsertsTop;
+static BallCopInsertsT *lastInsertsBottom;
 
 #include "data/texture_butterfly.c"
 #include "data/ball_small.c"
@@ -136,6 +138,8 @@ extern void PlotTextureAsm(char *copperDst asm("a0"),
                            int  vDeltaCol  asm("d3"),
                            int  uDeltaRow  asm("d5"),
                            int  vDeltaRow  asm("d6"));
+
+extern void CopyTextureAsm(char *copperSrc asm("a0"), char *copperDst asm("a1"));
 
 extern void WriteStaticYArea(CopInsT *copperDst        asm("a0"),
                              CopInsT *copperSrc        asm("a1"),
@@ -328,7 +332,7 @@ static inline void SkipBall(BallCopInsertsT *inserts, CopInsT *jumpTo) {
   inserts->waitBefore->move.reg = CSREG(copjmp2);
 }
 
-static inline void DrawCopperBallTexture(BallT *ball, BallCopInsertsT *inserts) {
+static inline void DrawCopperBallTexture(BallT *ball, BallCopInsertsT *inserts, BallCopInsertsT *lastInserts, bool drawTexture) {
   short sin, cos;
   int u, v;
   short zoom = ball->zoom + ((ball->zoomSinAmp * SIN(ball->zoomSinPos)) >> 12);
@@ -338,7 +342,11 @@ static inline void DrawCopperBallTexture(BallT *ball, BallCopInsertsT *inserts) 
   u = ball->u - sin * (ROTZOOM_W / 2) - cos * (ROTZOOM_H / 2);
   v = ball->v - cos * (ROTZOOM_W / 2) + sin * (ROTZOOM_H / 2);
 
-  PlotTextureAsm((char *) inserts->ballCopper, (char *) ball->texture.pixels, u, v, sin, cos, cos, -sin);
+  if (drawTexture || !lastInserts) {
+    PlotTextureAsm((char *) inserts->ballCopper, (char *) ball->texture.pixels, u, v, sin, cos, cos, -sin);
+  } else {
+    CopyTextureAsm((char *) lastInserts->ballCopper, (char *) inserts->ballCopper);
+  }
 
   ball->angle += ball->angleDelta;
   ball->u += ball->uDelta;
@@ -352,7 +360,7 @@ static void CallUpdateCopper(short y, short yInc, CopInsT *staticYSource, CopIns
   UpdateBallCopper(y, yInc, staticYSource, textureCopper, paddingTop, paddingBottom);
 }
 
-static void DrawCopperBall(BallT *ball, BallCopInsertsT *inserts) {
+static void DrawCopperBall(BallT *ball, BallCopInsertsT *inserts, BallCopInsertsT *lastInserts, bool drawTexture) {
   bool small = ball->height == SMALL_BALL_HEIGHT;
   short y = ball->screenY;
   short staticYPos = y - STATIC_Y_START + STATIC_Y_AREA_PADDING + 1;
@@ -380,7 +388,6 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT *inserts) {
 
   // Update copper waits according to Y
 
-  inserts->waitBefore->move.reg = 4711;
   if (y > Y0) {
     inserts->waitBefore->wait.vp = y;
   } else {
@@ -397,7 +404,7 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT *inserts) {
                    inserts->paddingTop,
                    inserts->paddingBottom);
 
-  DrawCopperBallTexture(ball, inserts);
+  DrawCopperBallTexture(ball, inserts, lastInserts, drawTexture);
 }
 
 static void Randomize(BallT *ball) {
@@ -484,23 +491,28 @@ static void DrawBalls(void) {
     middle = NULL;
     bottom = NULL;
   } else if (!IsVisible(balls[1])) {
-    DrawCopperBall(balls[0], &ballCopList[active].inserts[2]);
+    DrawCopperBall(balls[0], &ballCopList[active].inserts[2], NULL, true);
     top    = NULL;
     middle = NULL;
     bottom = balls[0];
   } else if (!IsVisible(balls[2])) {
-    DrawCopperBall(balls[0], &ballCopList[active].inserts[1]);
-    DrawCopperBall(balls[1], &ballCopList[active].inserts[2]);
+    DrawCopperBall(balls[0], &ballCopList[active].inserts[1], NULL, true);
+    DrawCopperBall(balls[1], &ballCopList[active].inserts[2], NULL, true);
     top    = NULL;
     middle = balls[0];
     bottom = balls[1];
+    lastInsertsTop    = NULL;
+    lastInsertsBottom = NULL;
   } else {
-    DrawCopperBall(balls[0], &ballCopList[active].inserts[0]);
-    DrawCopperBall(balls[1], &ballCopList[active].inserts[1]);
-    DrawCopperBall(balls[2], &ballCopList[active].inserts[2]);
+    // Skip tx mapping every other frame when 3 balls are visible, alternating
+    DrawCopperBall(balls[0], &ballCopList[active].inserts[0], lastInsertsTop, active);
+    DrawCopperBall(balls[1], &ballCopList[active].inserts[1], NULL, true);
+    DrawCopperBall(balls[2], &ballCopList[active].inserts[2], lastInsertsBottom, !active);
     top    = balls[0];
     middle = balls[1];
     bottom = balls[2];
+    lastInsertsTop    = &ballCopList[active].inserts[0];
+    lastInsertsBottom = &ballCopList[active].inserts[2];
   }
 
   // Bottom ball
@@ -576,6 +588,8 @@ static void Render(void) {
     balls[2]->screenY = lastY + 1 + (random() &0x3f);
     if (balls[2]->screenY < BOOK_Y) balls[2]->screenY = BOOK_Y + (random() & 0x3f);
     Randomize(balls[2]);
+    lastInsertsTop    = NULL;
+    lastInsertsBottom = NULL;
   }
   // Make sure inserts[2] is always used for the bottom-most ball
   DrawBalls();

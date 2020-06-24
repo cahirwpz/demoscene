@@ -34,6 +34,7 @@ COPJUMP	macro
 	endm
 
 	xdef	_PlotTextureAsm
+	xdef	_CopyTextureAsm
 	xdef	_UpdateBallCopper
 	xdef	_WriteStaticYArea
 
@@ -94,10 +95,23 @@ _PlotTextureAsm:
 	; [d7] scratch (save d2)
 
 	DEBUG_COL $245
-	include	data/textureloop-generated.s
+	bsr.b	tx_rotzoom
 	DEBUG_COL $134
 
 	movem.l	(a7)+,d0-a6
+	rts
+
+; ---------------------------------------------------------------------------------------
+
+	include	data/textureloop-generated.s
+
+; ---------------------------------------------------------------------------------------
+; extern void CopyTextureAsm(char *copperSrc asm("a0"), char *copperDst asm("a1"));
+; ---------------------------------------------------------------------------------------
+_CopyTextureAsm:
+	DEBUG_COL $023
+	bsr	tx_copy
+	DEBUG_COL $134
 	rts
 
 ; ---------------------------------------------------------------------------------------
@@ -115,7 +129,7 @@ _PlotTextureAsm:
 ; - Weave in commands from the static Y area (so we get "stable" Y positions even though the ball is moving)
 
 _UpdateBallCopper:
-
+	DEBUG_COL $136
 	cmp.w	#STATIC_Y_START-LARGE_BALL_HEIGHT-3,d0
 	blt.w	_UpdateBallCopper_fasttrack
 
@@ -138,6 +152,7 @@ _UpdateBallCopper:
 	cmp.w	#BOOK_Y-1,d0
 	ble.b	.no_top_abort
 	move.w	#copjmp2,(a2)
+	DEBUG_COL $134
 	rts
 .no_top_abort
 	move.l	(a0)+,(a2)+
@@ -161,6 +176,7 @@ _UpdateBallCopper:
 	cmp.w	#BOOK_Y-1,d0		; abort at BOOK_Y
 	blt.b	.no_ball_abort
 	move.w	#copjmp2,(a1)
+	DEBUG_COL $134
 	rts
 
 .no_ball_abort
@@ -205,11 +221,13 @@ _UpdateBallCopper:
 	cmp.w	#BOOK_Y-1,d0
 	ble.b	.no_bottom_abort
 	move.w	#copjmp2,(a3)
+	DEBUG_COL $134
 	rts
 .no_bottom_abort
 	move.l	(a0)+,(a3)+
 	addq	#1,d0
 	dbf	d2,.bottom
+	DEBUG_COL $134
 	rts
 
 ; ---------------------------------------------------------------------------------------
