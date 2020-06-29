@@ -35,9 +35,14 @@
 #define COPWAIT_X_BALLSTART 160
 #define Y0 Y((256-280)/2)
 #define STATIC_Y_AREA 40
+#define BOOK_X(i) (X(94)+16*i)
 #define BOOK_Y 256
 #define STATIC_Y_START (BOOK_Y-STATIC_Y_AREA)
 #define STATIC_Y_COMMANDS (STATIC_Y_AREA + STATIC_Y_AREA_PADDING * 2)
+#define SPRITE_COORD_SHIFT 2
+#define MIN_SPRITE_Y       (27 << SPRITE_COORD_SHIFT)
+#define MAX_SPRITE_Y       ((BOOK_Y - 16 - 12) << SPRITE_COORD_SHIFT)
+#define NEW_SPRITE_PADDING (32 << SPRITE_COORD_SHIFT)
 
 // Copper texture layout. Goal: Have 1 spare copper move per screen row for
 // sprite fades, bplcon2 at stable Y positions.
@@ -65,9 +70,9 @@
 #define NO_OP 0x1fe
 
 #if DEBUG_COLOR_WRITES // only set background color for debugging
-#define SETCOLOR(x) CopMove16(cp, color[0], 0xf00)
+#define SETCOLOR(x) CopMove16(cp, color[0], 0x000)
 #else
-#define SETCOLOR(x) CopMove16(cp, color[x], 0xf00)
+#define SETCOLOR(x) CopMove16(cp, color[x], 0x000)
 #endif
 #define SETBG(vp, rgb) CopWait(cp, vp, 7); \
                        CopSetColor(cp, 0, rgb)
@@ -109,6 +114,7 @@ typedef struct {
   CopListT *cp;
   BallCopInsertsT inserts[BALLS];
   CopInsT *staticAreaCopperStart;
+  CopInsT *spritePointers;
 } BallCopListT;
 
 static int active = 0;
@@ -129,6 +135,15 @@ static BallCopInsertsT *lastInsertsBottom;
 #include "data/ball_small.c"
 #include "data/ball_large.c"
 #include "data/book_bottom.c"
+#include "data/sprites_book.c"
+#include "data/spr0.c"
+#include "data/spr1.c"
+#include "data/spr2.c"
+#include "data/spr3.c"
+#include "data/spr4.c"
+#include "data/spr5.c"
+#include "data/spr6.c"
+#include "data/spr7.c"
 
 extern void PlotTextureAsm(char *copperDst asm("a0"),
                            char *texture   asm("a1"),
@@ -154,33 +169,43 @@ extern void UpdateBallCopper(int     y              asm("d0"),
                              CopInsT *paddingTop    asm("a2"),
                              CopInsT *paddingBottom asm("a3"));
 
+extern void SetSprites(char    *sprite asm("a0"),
+                       short   reg     asm("d0"),
+                       short   xy[][]  asm("a2"));
+
 
 static void InitStaticYCommands(void) {
   short i, idx;
   idx = 0;
-  for (i = 0; i < STATIC_Y_AREA_PADDING; i++) {
+  for (i = 0; i < STATIC_Y_AREA + STATIC_Y_AREA_PADDING * 2; i++) {
     staticYCommands[idx++] = (CopInsT) { .move = { .reg = NO_OP, .data = 0 } };
   }
-  for (i = 0; i < STATIC_Y_AREA; i++) {
-    staticYCommands[idx++] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = i * 0x100 } };
-  }
-  for (i = 0; i < STATIC_Y_AREA_PADDING; i++) {
-    staticYCommands[idx++] = (CopInsT) { .move = { .reg = NO_OP, .data = 0 } };
-  }
-  idx = STATIC_Y_AREA_PADDING;
-  staticYCommands[idx++] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0x0ff } };
-  staticYCommands[idx++] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0xe70 } };
-  staticYCommands[idx++] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0xd60 } };
-  staticYCommands[idx++] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0xc50 } };
-  staticYCommands[idx++] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0xb40 } };
-  staticYCommands[idx++] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0xa30 } };
-  idx = STATIC_Y_AREA_PADDING + STATIC_Y_AREA - 1;
-  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0xff0 } };
-  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0xe70 } };
-  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0xd60 } };
-  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0xc50 } };
-  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0xb40 } };
-  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[1]), .data = 0xa30 } };
+  idx = STATIC_Y_AREA_PADDING + STATIC_Y_AREA - 6;
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(bplcon2), .data = 0x24 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[17]), .data = 0x6cf } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[21]), .data = 0x6cf } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[18]), .data = 0x48a } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[22]), .data = 0x48a } };
+
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[17]), .data = 0x134 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[21]), .data = 0x134 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[18]), .data = 0x134 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[22]), .data = 0x134 } };
+
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[17]), .data = 0x235 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[21]), .data = 0x234 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[18]), .data = 0x235 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[22]), .data = 0x236 } };
+
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[17]), .data = 0x246 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[21]), .data = 0x245 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[18]), .data = 0x246 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[22]), .data = 0x245 } };
+
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[17]), .data = 0x366 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[21]), .data = 0x256 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[18]), .data = 0x366 } };
+  staticYCommands[--idx] = (CopInsT) { .move = { .reg = CSREG(color[22]), .data = 0x256 } };
 }
 
 // Create copper writes to color registers, leave out colors needed for sprites
@@ -195,10 +220,10 @@ static void InsertTextureCopperWrites(CopListT *cp) {
     SETCOLOR(11);
     SETCOLOR(13);
     SETCOLOR(15);
-    SETCOLOR(18);
-    SETCOLOR(20);
+    SETCOLOR(19);
     SETCOLOR(23);
-    SETCOLOR(27);
+    SETCOLOR(26);
+    SETCOLOR(28);
     SETCOLOR(31);
     CopNoOpData(cp, i); // store row for copperlist debugging
     CopNoOpData(cp, i);
@@ -212,10 +237,10 @@ static void InsertTextureCopperWrites(CopListT *cp) {
     SETCOLOR(12);
     SETCOLOR(14);
     SETCOLOR(16);
-    SETCOLOR(19);
-    SETCOLOR(22);
+    SETCOLOR(20);
     SETCOLOR(24);
-    SETCOLOR(28);
+    SETCOLOR(27);
+    SETCOLOR(30);
     CopNoOpData(cp, i);
     CopNoOpData(cp, i);
     CopNoOpData(cp, i);
@@ -265,21 +290,38 @@ static void InitCopperList(BallCopListT *ballCp) {
   CopListT *cp           = NewCopList(INSTRUCTIONS_PER_BALL * 3 + 100);
   CopListT *staticAreaCp = NewCopList(10 + STATIC_Y_AREA * 2);
 
+  // Static area: list of (Y-wait, command) pairs, shown when no ball is overlapping
+
+  InitStaticCommandsCopperList(staticAreaCp);
+  ballCp->staticAreaCopperStart = staticAreaCp->entry;
+
+  // Main copper list
+  //
+  // - Display setup
+  // - Sprite setup
+  // - Jump back and forth to display balls and static Y area
+  // - Jump to book at bottom
+
   ballCp->cp = cp;
   CopInit(cp);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y0, 320, 280);
-  CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  CopSetupMode(cp, MODE_LORES, 0);
+  CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER | DMAF_SPRITE);
   CopSetColor(cp, 0, 0x134);
   CopSetColor(cp, 1, 0x000);
+  CopSetColor(cp, 17, 0x49c); // background sprites
+  CopSetColor(cp, 18, 0x368);
+  CopSetColor(cp, 21, 0x38b);
+  CopSetColor(cp, 22, 0x357);
+  CopSetColor(cp, 25, 0x6cf); // top-of-book sprites
+  CopSetColor(cp, 29, 0x6cf);
   CopSetupBitplaneFetch(cp, MODE_LORES, X(0), ball_large.width);
   CopMove32(cp, bplpt[0], ball_large.planes[0]);
   CopMove16(cp, bpl1mod, -WIDTH/8);
   CopMove16(cp, bpl2mod, -WIDTH/8);
   CopMove16(cp, bplcon0, BPLCON0_COLOR | BPLCON0_BPU(1));
-
-  InitStaticCommandsCopperList(staticAreaCp);
-  ballCp->staticAreaCopperStart = staticAreaCp->entry;
+  CopMove16(cp, bplcon2, 0);
+  CopMove16(cp, bplcon3, 0);
+  CopSetupSprites(cp, NULL);
 
   // Copper structure per ball.
   //
@@ -397,6 +439,9 @@ static void DrawCopperBall(BallT *ball, BallCopInsertsT *inserts, BallCopInserts
 
   // Update non-texture copper commands (waits, static Y area)
 
+  if (staticYPos > 0)
+    staticYPos--;
+
   CallUpdateCopper(y,
                    small ? SMALL_BALL_Y_INC : LARGE_BALL_Y_INC,
                    staticYCommands + staticYPos,
@@ -419,6 +464,77 @@ static void Randomize(BallT *ball) {
   ball->angleDelta = random() & 0x3f;
   if (ball->angle & 1) ball->angleDelta = -ball->angleDelta;
   ball->screenX = -64 + (random() & 0x7f);
+}
+
+// position: 0 1 2 3 4 5 6 7
+// sprite:   4 2 5 0 1 6 3 7 --> 3 4 1 6 0 2 5 7
+
+static short sprite_xy[8][10][2] = {
+  { {BOOK_X(3)<<SPRITE_COORD_SHIFT,250<<SPRITE_COORD_SHIFT}, {400,200},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0} },
+  { {BOOK_X(4)<<SPRITE_COORD_SHIFT,250<<SPRITE_COORD_SHIFT}, {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0} },
+  { {BOOK_X(1)<<SPRITE_COORD_SHIFT,250<<SPRITE_COORD_SHIFT}, {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0} },
+  { {BOOK_X(6)<<SPRITE_COORD_SHIFT,250<<SPRITE_COORD_SHIFT}, {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0} },
+  { {BOOK_X(0)<<SPRITE_COORD_SHIFT,250<<SPRITE_COORD_SHIFT}, {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0} },
+  { {BOOK_X(2)<<SPRITE_COORD_SHIFT,250<<SPRITE_COORD_SHIFT}, {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0} },
+  { {BOOK_X(5)<<SPRITE_COORD_SHIFT,250<<SPRITE_COORD_SHIFT}, {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0} },
+  { {BOOK_X(7)<<SPRITE_COORD_SHIFT,250<<SPRITE_COORD_SHIFT}, {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0} }
+};
+
+static void SetSpritePointers(void) {
+  SetSprites((void *) spr0.planes[0]+4*136, CSREG(sprpt[0]), sprite_xy[0]);
+  SetSprites((void *) spr1.planes[0]+4*136, CSREG(sprpt[1]), sprite_xy[1]);
+  SetSprites((void *) spr2.planes[0]+4*136, CSREG(sprpt[2]), sprite_xy[2]);
+  SetSprites((void *) spr3.planes[0]+4*136, CSREG(sprpt[3]), sprite_xy[3]);
+  SetSprites((void *) spr4.planes[0], CSREG(sprpt[4]), sprite_xy[4]);
+  SetSprites((void *) spr5.planes[0], CSREG(sprpt[5]), sprite_xy[5]);
+  SetSprites((void *) spr6.planes[0], CSREG(sprpt[6]), sprite_xy[6]);
+  SetSprites((void *) spr7.planes[0], CSREG(sprpt[7]), sprite_xy[7]);
+}
+
+static void MoveSprites(void) {
+  short i, step;
+
+  for (i = 0; i < 4; i++) {
+    step = 4-i;
+    sprite_xy[i][1][1] -= step;
+    sprite_xy[i][2][1] -= step;
+    sprite_xy[i][3][1] -= step;
+    sprite_xy[i][4][1] -= step;
+    sprite_xy[i][5][1] -= step;
+    sprite_xy[i][6][1] -= step;
+    sprite_xy[i][7][1] -= step;
+    sprite_xy[i][8][1] -= step;
+
+    if (sprite_xy[i][1][1] < MIN_SPRITE_Y) sprite_xy[i][1][1] = 0;
+    if (sprite_xy[i][2][1] < MIN_SPRITE_Y) sprite_xy[i][2][1] = 0;
+    if (sprite_xy[i][3][1] < MIN_SPRITE_Y) sprite_xy[i][3][1] = 0;
+    if (sprite_xy[i][4][1] < MIN_SPRITE_Y) sprite_xy[i][4][1] = 0;
+    if (sprite_xy[i][5][1] < MIN_SPRITE_Y) sprite_xy[i][5][1] = 0;
+    if (sprite_xy[i][6][1] < MIN_SPRITE_Y) sprite_xy[i][6][1] = 0;
+    if (sprite_xy[i][7][1] < MIN_SPRITE_Y) sprite_xy[i][7][1] = 0;
+    if (sprite_xy[i][8][1] < MIN_SPRITE_Y) {
+      sprite_xy[i][8][1] = 0;
+      if (sprite_xy[i][1][1] < MAX_SPRITE_Y - NEW_SPRITE_PADDING - (sprite_xy[i][1][0] & 0x3f)) {
+        sprite_xy[i][8][0] = sprite_xy[i][7][0];
+        sprite_xy[i][8][1] = sprite_xy[i][7][1];
+        sprite_xy[i][7][0] = sprite_xy[i][6][0];
+        sprite_xy[i][7][1] = sprite_xy[i][6][1];
+        sprite_xy[i][6][0] = sprite_xy[i][5][0];
+        sprite_xy[i][6][1] = sprite_xy[i][5][1];
+        sprite_xy[i][5][0] = sprite_xy[i][4][0];
+        sprite_xy[i][5][1] = sprite_xy[i][4][1];
+        sprite_xy[i][4][0] = sprite_xy[i][3][0];
+        sprite_xy[i][4][1] = sprite_xy[i][3][1];
+        sprite_xy[i][3][0] = sprite_xy[i][2][0];
+        sprite_xy[i][3][1] = sprite_xy[i][2][1];
+        sprite_xy[i][2][0] = sprite_xy[i][1][0];
+        sprite_xy[i][2][1] = sprite_xy[i][1][1];
+        sprite_xy[i][1][0] = (X(160-128) + (random() & 0xff)) << SPRITE_COORD_SHIFT;
+        sprite_xy[i][1][1] = MAX_SPRITE_Y;
+      }
+    }
+  }
+
 }
 
 static void Init(void) {
@@ -575,10 +691,10 @@ static void DrawBalls(void) {
 }
 
 static void Render(void) {
+  SetSpritePointers();
   HandleEvent();
   MoveBallAndIsStillVisible(balls[1]);
   MoveBallAndIsStillVisible(balls[2]);
-
   if (!MoveBallAndIsStillVisible(balls[0]) && !mouseControlled) {
     short lastY = balls[2]->screenY + balls[2]->height;
     BallT *tmp = balls[0];
@@ -586,13 +702,14 @@ static void Render(void) {
     balls[1] = balls[2];
     balls[2] = tmp;
     balls[2]->screenY = lastY + 1 + (random() &0x3f);
-    if (balls[2]->screenY < BOOK_Y) balls[2]->screenY = BOOK_Y + (random() & 0x3f);
+    if (balls[2]->screenY < BOOK_Y)
+      balls[2]->screenY = BOOK_Y + (random() & 0x3f);
     Randomize(balls[2]);
     lastInsertsTop    = NULL;
     lastInsertsBottom = NULL;
   }
-  // Make sure inserts[2] is always used for the bottom-most ball
   DrawBalls();
+  MoveSprites();
   TaskWaitVBlank();
   active ^= 1;
   CopListRun(ballCopList[active].cp);

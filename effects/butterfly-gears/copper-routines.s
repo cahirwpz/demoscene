@@ -17,6 +17,8 @@ BALL_PADDING_TOP		= 6
 BALL_PADDING_BOTTOM		= 11
 NO_OP				= $1fe
 LARGE_BALL_HEIGHT		= 112
+SPR_BALL_SIZE			= (16+1)*4
+SPRITE_COORD_SHIFT		= 2
 
 DEBUG_COL macro
 	if DEBUG_TIMING=1
@@ -37,6 +39,7 @@ COPJUMP	macro
 	xdef	_CopyTextureAsm
 	xdef	_UpdateBallCopper
 	xdef	_WriteStaticYArea
+	xdef	_SetSprites
 
 	section	'.text',code
 
@@ -249,7 +252,6 @@ _UpdateBallCopper_fasttrack
 	move.w	#copjmp2,(a2)
 	rts
 .no_top_abort
-	;;;;move.l	(a0)+,(a2)+
 	addq	#4,a2
 	dbf	d2,.top
 	move.w	#ROTZOOM_H*2-1,d2
@@ -266,14 +268,9 @@ _UpdateBallCopper_fasttrack
 	move.w	#copjmp2,(a1)
 	rts
 .no_ball_abort
-	;;;;move.l	(a0)+,(a1)+		; after texture writes: command for static Y area
 	addq	#4,a1
 	cmp.w	#1,d1			; then, either two NOPs (small ball)
 	bne.b	.big_ball
-	;;;;move.w	#NO_OP,(a1)+
-	;;;;addq	#2,a1
-	;;;;move.w	#NO_OP,(a1)+
-	;;;;addq	#2,a1
 	addq	#8,a1
 	bra.b	.extra_done
 .big_ball
@@ -283,9 +280,6 @@ _UpdateBallCopper_fasttrack
 	bgt.b	.keepy
 	moveq	#0,d3
 .keepy	move.b	d3,(a1)+
-	;;;;move.b	#COPWAIT_X|1,(a1)+
-	;;;;move.w	#$ff00,(a1)+
-	;;;;move.l	(a0)+,(a1)+
 	addq	#7,a1
 .extra_done
 	dbf	d2,.ball
@@ -304,7 +298,6 @@ _UpdateBallCopper_fasttrack
 	move.w	#copjmp2,(a3)
 	rts
 .no_bottom_abort
-	;;;;move.l	(a0)+,(a3)+
 	addq	#4,a3
 	addq	#1,d0
 	dbf	d2,.bottom
@@ -352,4 +345,58 @@ _WriteStaticYArea:
 	move.l	a2,d0
 	COPJUMP	d0,a0
 	movem.l	(a7)+,d0-a6
+	rts
+
+; ---------------------------------------------------------------------------------------
+; extern void SetSprites(char    *sprite asm("a0"),
+;                        short   reg     asm("d0"),
+;                        short   xy[][]  asm("a2"));
+; ---------------------------------------------------------------------------------------
+
+_SetSprites:
+	moveq	#7,d7			; initial sprite height (book top)
+	lea	$dff000,a1
+	add.w	d0,a1
+
+.loop
+	move.w	(a2)+,d0		; x
+	move.w	(a2)+,d1		; y
+	lsr.w	#SPRITE_COORD_SHIFT,d0
+	lsr.w	#SPRITE_COORD_SHIFT,d1
+	move.w	d7,d2			; h
+	;
+	; compute POS, CTL
+	;
+	add.w	d1,d2			; d2 = yend
+	moveq	#0,d4			; SPRxCTL
+	btst	#0,d0			; SH0?
+	beq.b	.no_sh0
+	addq	#1,d4
+.no_sh0	btst	#8,d1			; SV8?
+	beq.b	.no_sv8
+	or.b	#%100,d4
+.no_sv8	btst	#8,d2			; EV8
+	beq.b	.no_ev8
+	or.b	#%010,d4
+.no_ev8	lsr.w	#1,d0			; prepare SPRxPOS
+	lsl.w	#8,d1
+	or.w	d1,d0
+	lsl.w	#8,d2			; add EV to SPRxCTL
+	or.w	d2,d4
+	;
+	; d0 = POS, d4 = CTL
+	;
+	move.w	d0,(a0)			; write POS, CTL control words
+	move.w	d4,2(a0)
+
+	tst.w	2(a2)			; y=0 -> no more sprites above us
+	beq.b	.was_last
+
+	move.w	#16,d7			; set size to 16 for all next sprites
+	sub.w	#SPR_BALL_SIZE,a0
+	bra.b	.loop
+
+.was_last
+ 	move.l	a0,(a1)			; set sprite
+
 	rts
