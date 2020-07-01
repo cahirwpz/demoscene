@@ -135,7 +135,6 @@ static BallCopInsertsT *lastInsertsBottom;
 #include "data/ball_small.c"
 #include "data/ball_large.c"
 #include "data/book_bottom.c"
-#include "data/sprites_book.c"
 #include "data/spr0.c"
 #include "data/spr1.c"
 #include "data/spr2.c"
