@@ -68,7 +68,7 @@ if __name__ == '__main__':
     print('\trts')
     print('tx_copy:')
     row_num = 0
-    copper_pos = 6 # skip: yy01 fffe 0186
+    copper_pos = 6
     for line in chunks['map'].splitlines():
         row_pos = copper_pos
         print('; %02d [%s]' % (row_num, line))
@@ -76,7 +76,8 @@ if __name__ == '__main__':
         for ch in line:
             if ch == '#':
                 row_add = '+SINGLEROW_SIZE' if even else ''
-                print('\tmove.w\t%d%s(a0),%d%s(a1)' % (row_pos, row_add, row_pos, row_add))
+                print('\tmove.w\t%d%s(a0),%d%s(a1)' %
+                      (row_pos, row_add, row_pos, row_add))
             elif ch == ' ':
                 break
             elif ch != '.' and ch != ':':
