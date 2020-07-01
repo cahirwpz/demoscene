@@ -35,4 +35,4 @@ PNG2C.txt_dkl := --bitmap txt_dkl,192x64x4
 PNG2C.txt_jazz := --bitmap txt_jazz,176x64x4
 PNG2C.txt_slay := --bitmap txt_slay,144x64x4
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk

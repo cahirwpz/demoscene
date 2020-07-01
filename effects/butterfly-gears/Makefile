@@ -30,7 +30,7 @@ PNG2C.spr5 := --bitmap spr5,16x8x2,+interleaved
 PNG2C.spr6 := --bitmap spr6,16x8x2,+interleaved
 PNG2C.spr7 := --bitmap spr7,16x8x2,+interleaved
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk
 
 copper-routines.s: data/textureloop-generated.s
 

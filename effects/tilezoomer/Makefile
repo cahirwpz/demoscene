@@ -1,3 +1,3 @@
 TOPDIR := $(realpath ../..)
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk

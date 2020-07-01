@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
 #include "copper.h"
 #include "line.h"
@@ -62,4 +62,4 @@ static void Init(void) {
   }
 }
 
-EffectT Effect = { Load, UnLoad, Init, NULL, NULL };
+EFFECT(lines, Load, UnLoad, Init, NULL, NULL);

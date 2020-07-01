@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 
 /* Search following header files for useful procedures. */
 #include "hardware.h"   /* custom registers definition and misc functions */
@@ -27,4 +27,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(empty, NULL, NULL, Init, Kill, Render);

@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
 #include "copper.h"
 #include "sprite.h"
@@ -134,4 +134,4 @@ static void Render(void) {
   exitLoop = !HandleEvent();
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render };
+EFFECT(gui, Load, NULL, Init, Kill, Render);

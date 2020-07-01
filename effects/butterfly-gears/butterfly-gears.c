@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 
 #include "hardware.h"
 #include "interrupts.h"
@@ -714,4 +714,4 @@ static void Render(void) {
   CopListRun(ballCopList[active].cp);
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(butterfly_gears, NULL, NULL, Init, Kill, Render);

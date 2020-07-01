@@ -1,4 +1,4 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
 #include "copper.h"
 #include "memory.h"
@@ -161,4 +161,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(tilezoomer, NULL, NULL, Init, Kill, Render);
