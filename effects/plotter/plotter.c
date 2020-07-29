@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "gfx.h"
 #include "blitter.h"
 #include "circle.h"
@@ -99,4 +99,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(plotter, NULL, NULL, Init, Kill, Render);

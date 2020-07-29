@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "2d.h"
 #include "fx.h"
@@ -128,4 +128,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EFFECT(metaballs, Load, UnLoad, Init, Kill, Render);

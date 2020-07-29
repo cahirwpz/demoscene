@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "pixmap.h"
 #include "fx.h"
 #include "memory.h"
@@ -184,4 +184,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(twister_rgb, NULL, NULL, Init, Kill, Render);

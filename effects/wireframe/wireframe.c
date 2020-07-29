@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "3d.h"
 #include "fx.h"
 
@@ -338,4 +338,4 @@ static void Render(void) {
     active = 0;
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EFFECT(wireframe, Load, UnLoad, Init, Kill, Render);

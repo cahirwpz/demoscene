@@ -43,7 +43,7 @@ PNG2C.greet_wanted := --bitmap greet_wanted,48x120x3
 PNG2C.greet_ycrew := --bitmap greet_ycrew,32x120x3
 PNG2C.neons := --bitmap background,320x256x4 --palette background_pal,16
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk
 
 %.png: %.py
 	@echo "[GEN] $@"

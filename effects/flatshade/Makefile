@@ -8,4 +8,4 @@ PNG2C.flatshade-pal := --palette flatshade_pal,16
 LWO2C.codi := --scale 488.0
 LWO2C.pilka := --scale 65.0
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk

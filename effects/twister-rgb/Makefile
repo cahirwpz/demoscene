@@ -10,4 +10,4 @@ PNG2C.twister-left := --sprite left,256,2,+array
 PNG2C.twister-right := --sprite right,256,2,+array
 PNG2C.twister-texture := --pixmap texture,31x85x12
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk

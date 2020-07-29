@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "random.h"
 
@@ -161,4 +161,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(tilezoomer, NULL, NULL, Init, Kill, Render);

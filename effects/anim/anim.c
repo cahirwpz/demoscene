@@ -1,7 +1,7 @@
-#include "startup.h"
+#include "effect.h"
 #include "2d.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "fx.h"
 
@@ -106,4 +106,4 @@ static void Render(void) {
   active = (active + 1) % (DEPTH + 1);
 }
 
-EffectT Effect = { Load, UnLoad, Init, Kill, Render };
+EFFECT(anim, Load, UnLoad, Init, Kill, Render);

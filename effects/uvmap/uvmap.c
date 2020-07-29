@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "interrupts.h"
 #include "memory.h"
 #include "pixmap.h"
@@ -293,4 +293,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(uvmap, NULL, NULL, Init, Kill, Render);

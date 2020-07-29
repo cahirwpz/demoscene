@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "gfx.h"
 #include "blitter.h"
 #include "fx.h"
@@ -192,4 +192,4 @@ static void Render(void) {
   swapr(cp0, cp1);
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(credits, NULL, NULL, Init, Kill, Render);

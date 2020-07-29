@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "gfx.h"
 #include "blitter.h"
@@ -202,4 +202,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render };
+EFFECT(tiles16, Load, NULL, Init, Kill, Render);

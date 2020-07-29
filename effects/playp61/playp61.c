@@ -1,10 +1,10 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
 #include "interrupts.h"
 #include "memory.h"
 #include "p61.h"
 #include "console.h"
-#include "coplist.h"
+#include "copper.h"
 #include "keyboard.h"
 #include "event.h"
 #include "blitter.h"
@@ -217,4 +217,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(playp61, NULL, NULL, Init, Kill, Render);

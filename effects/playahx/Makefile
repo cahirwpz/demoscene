@@ -8,7 +8,7 @@ LIBS := libahx
 
 PSF2C.lat2-08 := --name latin2 --type console
 
-include $(TOPDIR)/build.effect.mk
+include $(TOPDIR)/build/effect.mk
 
 data/%.o: data/%.ahx
 	@echo "[OBJCOPY] $(DIR)$< -> $(DIR)$@"

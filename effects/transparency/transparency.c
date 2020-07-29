@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "hardware.h"
-#include "coplist.h"
+#include "copper.h"
 #include "gfx.h"
 #include "color.h"
 #include "blitter.h"
@@ -88,4 +88,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EffectT Effect = { NULL, NULL, Init, Kill, Render };
+EFFECT(transparency, NULL, NULL, Init, Kill, Render);

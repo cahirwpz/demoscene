@@ -1,6 +1,6 @@
-#include "startup.h"
+#include "effect.h"
 #include "blitter.h"
-#include "coplist.h"
+#include "copper.h"
 #include "memory.h"
 #include "fx.h"
 #include "random.h"
@@ -457,4 +457,4 @@ static void Render(void) {
   { BitmapT *tmp = screen0; screen0 = screen1; screen1 = tmp; }
 }
 
-EffectT Effect = { Load, NULL, Init, Kill, Render };
+EFFECT(thunders, Load, NULL, Init, Kill, Render);
