@@ -1,4 +1,4 @@
-LIBNAME ?= $(notdir $(PWD))
+LIBNAME ?= $(notdir $(CURDIR))
 
 all: build
 
