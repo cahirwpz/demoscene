@@ -1,7 +1,8 @@
-#include "rawio.h"
-#include "common.h"
+#include "debug.h"
 
 #ifndef UAE
+#include "rawio.h"
+
 void Log(const char *format, ...) {
   va_list args;
 
@@ -9,7 +10,6 @@ void Log(const char *format, ...) {
   kvprintf(format, (kvprintf_fn_t *)DPutChar, NULL, args);
   va_end(args);
 }
-#endif
 
 __noreturn void Panic(const char *format, ...) {
   va_list args;
@@ -18,5 +18,6 @@ __noreturn void Panic(const char *format, ...) {
   kvprintf(format, (kvprintf_fn_t *)DPutChar, NULL, args);
   va_end(args);
 
-  exit(10);
+  PANIC();
 }
+#endif
