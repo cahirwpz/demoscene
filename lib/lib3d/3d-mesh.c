@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "3d.h"
 #include "fx.h"
 #include "memory.h"

@@ -9,6 +9,7 @@ if __name__ == '__main__':
             prec = 4096
 
             print('#include "common.h"\n')
+            print('#include "debug.h"\n')
             print('short sintab[%d] = {' % prec)
 
             sintab = [int(sin(i * 2 * pi / prec) * prec) for i in range(prec)]

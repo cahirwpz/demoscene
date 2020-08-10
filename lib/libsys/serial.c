@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "serial.h"
 #include "interrupts.h"
 #include "hardware.h"

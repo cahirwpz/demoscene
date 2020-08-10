@@ -1,7 +1,7 @@
 #include <exec/nodes.h>
 #include <exec/execbase.h>
 
-#include "common.h"
+#include "debug.h"
 #include "interrupts.h"
 
 static const char *IntName[] = {

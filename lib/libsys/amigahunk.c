@@ -1,4 +1,5 @@
 #include "amigahunk.h"
+#include "debug.h"
 #include "io.h"
 #include "memory.h"
 

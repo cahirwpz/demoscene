@@ -57,7 +57,7 @@ static void Init(void) {
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   for (j = 0; j < 2; j++) {
-    BitmapClearArea(screen[j], STRUCT(Area2D, 32, 0, WIDTH - 64, HEIGHT));
+    BitmapClearArea(screen[j], &((Area2D){32, 0, WIDTH - 64, HEIGHT}));
     BitmapCopy(screen[j], 0, 0, &bgLeft);
     BitmapCopy(screen[j], WIDTH - 32, 0, &bgRight);
   }

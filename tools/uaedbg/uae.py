@@ -108,13 +108,23 @@ class UaeProcess():
         while True:
             try:
                 raw_text = await self.reader.readuntil(b'>')
-            except asyncio.streams.IncompleteReadError as ex:
+            except asyncio.IncompleteReadError as ex:
                 raise EOFError
             text += raw_text.decode()
             # finished by debugger prompt ?
             if text.endswith('\n>'):
                 text = text[:-2]
                 return [line.rstrip() for line in text.splitlines()]
+
+    async def logger(self):
+        try:
+            while not self.proc.stdout.at_eof():
+                raw_text = await self.proc.stdout.readline()
+                print(raw_text.decode(), end='')
+        except asyncio.CancelledError:
+            pass
+        except asyncio.IncompleteReadError:
+            pass
 
     def resume(self):
         self.send('g')

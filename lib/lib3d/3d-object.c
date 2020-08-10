@@ -1,3 +1,4 @@
+#include <strings.h>
 #include "memory.h"
 #include "3d.h"
 #include "fx.h"

@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "interrupts.h"
 #include "memory.h"
 #include "hardware.h"

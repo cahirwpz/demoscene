@@ -1,7 +1,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include "types.h"
+#include <types.h>
 
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -9,12 +9,6 @@
 
 #define VA_NARGS_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
 #define VA_NARGS(...) VA_NARGS_IMPL(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
-
-#define STRUCT(ctype, ...) \
-  (ctype[1]){(ctype){__VA_ARGS__}}
-
-#define MAKE_ID(a,b,c,d) \
-        ((u_int) (a)<<24 | (u_int) (b)<<16 | (u_int) (c)<<8 | (u_int) (d))
 
 #define ITER(_VAR, _BEGIN, _END, _EXPR) { \
   short _VAR; \
@@ -105,29 +99,6 @@ static inline void *GetSP(void) {
   asm("movel sp,%0" : "=r" (sp));
   return sp;
 }
-
-#define Breakpoint() { asm volatile("illegal"); }
-
-void Log(const char *format, ...)
-  __attribute__ ((format (printf, 1, 2)));
-__noreturn void Panic(const char *format, ...)
-  __attribute__ ((format (printf, 1, 2)));
-__regargs void MemDump(void *ptr, int n);
-
-typedef __regargs void (kvprintf_fn_t)(int, void *);
-
-int kvprintf(char const *fmt, kvprintf_fn_t *func, void *arg, va_list ap);
-int snprintf(char *buf, size_t size, const char *cfmt, ...)
-  __attribute__ ((format (printf, 3, 4)));
-
-void bzero(void *s, u_int n);
-void *memset(void *b, int c, size_t len);
-void *memcpy(void *__restrict dst, const void *__restrict src, size_t n);
-char *strcpy(char *dst, const char *src);
-int strcmp(const char *s1, const char *s2);
-size_t strlen(const char *s);
-
-__noreturn void exit(int);
 
 /*
  * Macros for handling symbol table information (aka linker set elements).

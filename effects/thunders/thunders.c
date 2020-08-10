@@ -430,7 +430,7 @@ static void MakeFloorCopperList(short yo, short kyo) {
 static void Render(void) {
   // PROFILE_BEGIN(floor);
 
-  BitmapClearArea(screen0, STRUCT(Area2D, 0, FAR_Y, WIDTH, HEIGHT - FAR_Y));
+  BitmapClearArea(screen0, &((Area2D){0, FAR_Y, WIDTH, HEIGHT - FAR_Y}));
 
   {
     short xo = (N / 4) + normfx(SIN(frameCount * 16) * N * 15 / 64);

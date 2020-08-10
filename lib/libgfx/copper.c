@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "copper.h"
 #include "memory.h"
 
