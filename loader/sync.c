@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "sync.h"
 #include "fx.h"
 

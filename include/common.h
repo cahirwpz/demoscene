@@ -1,7 +1,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include "types.h"
+#include <types.h>
 
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -99,23 +99,6 @@ static inline void *GetSP(void) {
   asm("movel sp,%0" : "=r" (sp));
   return sp;
 }
-
-#include "debug.h"
-
-typedef __regargs void (kvprintf_fn_t)(int, void *);
-
-int kvprintf(char const *fmt, kvprintf_fn_t *func, void *arg, va_list ap);
-int snprintf(char *buf, size_t size, const char *cfmt, ...)
-  __attribute__ ((format (printf, 3, 4)));
-
-void bzero(void *s, u_int n);
-void *memset(void *b, int c, size_t len);
-void *memcpy(void *__restrict dst, const void *__restrict src, size_t n);
-char *strcpy(char *dst, const char *src);
-int strcmp(const char *s1, const char *s2);
-size_t strlen(const char *s);
-
-__noreturn void exit(int);
 
 /*
  * Macros for handling symbol table information (aka linker set elements).

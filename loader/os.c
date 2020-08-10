@@ -2,7 +2,7 @@
 #include <proto/alib.h>
 #include <proto/exec.h>
 
-#include "common.h"
+#include "debug.h"
 #include "hardware.h"
 #include "interrupts.h"
 

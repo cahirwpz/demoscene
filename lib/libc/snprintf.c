@@ -1,4 +1,4 @@
-#include "common.h"
+#include <stdio.h>
 
 struct print_buf {
 	char *buf;

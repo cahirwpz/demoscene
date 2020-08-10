@@ -2,7 +2,7 @@
 #include <exec/tasks.h>
 #include <proto/exec.h>
 
-#include "common.h"
+#include "debug.h"
 #include "tasks.h"
 
 static void DumpTaskList(struct List *list) {

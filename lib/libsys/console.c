@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "console.h"
 
 void ConsoleInit(ConsoleT *console, ConsoleFontT *font, BitmapT *bitmap) {

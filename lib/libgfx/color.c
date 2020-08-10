@@ -1,5 +1,6 @@
 #include "color.h"
 #include "common.h"
+#include "debug.h"
 
 u_char colortab[4096];
 

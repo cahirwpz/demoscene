@@ -2,6 +2,7 @@
 #define __EFFECT_H__
 
 #include "types.h"
+#include "debug.h"
 
 /* Definitions below are useful for copper list construction. */
 #ifndef X

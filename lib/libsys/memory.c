@@ -1,6 +1,7 @@
 #include <proto/exec.h>
 
 #include "common.h"
+#include "debug.h"
 #include "memory.h"
 
 #define KB(x) (((x) + 1023) >> 10)

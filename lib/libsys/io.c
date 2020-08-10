@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "memory.h"
 #include "io.h"
 #include "floppy.h"

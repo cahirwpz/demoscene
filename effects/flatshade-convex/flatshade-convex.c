@@ -1,3 +1,4 @@
+#include <strings.h>
 #include "effect.h"
 #include "blitter.h"
 #include "copper.h"

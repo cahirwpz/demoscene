@@ -11,6 +11,7 @@ SOURCES := \
 	kvprintf.c \
 	memcpy.s \
 	memset.s \
+	random.c \
 	snprintf.c \
 	strcmp.s \
 	strcpy.s \

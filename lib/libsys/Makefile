@@ -3,8 +3,8 @@ TOPDIR := $(realpath ../..)
 SOURCES := \
 	amigahunk.c \
 	audio.c \
-	common.c \
 	console.c \
+	debug.c \
 	debug-intr.c \
 	event.c \
 	floppy.c \
@@ -20,7 +20,6 @@ SOURCES := \
 	memory.c \
 	mouse.c \
 	qsort.c \
-	random.c \
 	rawio-par.s \
 	rawio-ser.s \
 	serial.c \

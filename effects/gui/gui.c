@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "effect.h"
 #include "hardware.h"
 #include "copper.h"
