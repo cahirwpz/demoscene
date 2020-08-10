@@ -16,7 +16,7 @@ async def UaeLaunch(loop, args):
             await asyncio.create_subprocess_exec(
                 'fs-uae', *args,
                 stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE))
 
     uaedbg = UaeDebugger(uaeproc)
@@ -27,11 +27,12 @@ async def UaeLaunch(loop, args):
     # Call FS-UAE debugger on CTRL+C
     loop.add_signal_handler(signal.SIGINT, uaeproc.interrupt)
     prompt_task = asyncio.ensure_future(uaedbg.run())
+    logger_task = asyncio.ensure_future(uaeproc.logger())
 
     await uaeproc.wait()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)s: %(message)s')
     # logging.getLogger('asyncio').setLevel(logging.DEBUG)
@@ -44,7 +45,7 @@ if __name__ == "__main__":
     # loop.set_debug(True)
 
     parser = argparse.ArgumentParser(
-            description='Run FS-UAE with enabled console debugger.')
+        description='Run FS-UAE with enabled console debugger.')
     parser.add_argument('params', nargs='*', type=str,
                         help='Parameters passed to FS-UAE emulator.')
     args = parser.parse_args()

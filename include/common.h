@@ -108,8 +108,13 @@ static inline void *GetSP(void) {
 
 #define Breakpoint() { asm volatile("illegal"); }
 
+#ifdef UAE
+#include "uae.h"
+#define Log(...) UaeLog(__VA_ARGS__)
+#else
 void Log(const char *format, ...)
   __attribute__ ((format (printf, 1, 2)));
+#endif
 __noreturn void Panic(const char *format, ...)
   __attribute__ ((format (printf, 1, 2)));
 __regargs void MemDump(void *ptr, int n);

@@ -28,7 +28,7 @@ SOURCES := \
 	sort.c \
 	tasks-ll.s \
 	tasks.c \
-	uae.c
+	uae.s
 
 SOURCES_GEN := sintab.c
 
