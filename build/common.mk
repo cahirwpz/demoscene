@@ -19,6 +19,15 @@ WFLAGS	:= -Wall -W -Werror -Wundef -Wsign-compare -Wredundant-decls
 WFLAGS	+= -Wnested-externs -Wwrite-strings -Wstrict-prototypes
 DFLAGS	+= -DUAE
 
+# Default configuration
+DEFAULT_CHIP_CHUNK ?= 262144
+DEFAULT_FAST_CHUNK ?= 262144
+FRAMES_PER_ROW ?= 6
+
+DFLAGS	+= -DDEFAULT_CHIP_CHUNK=$(DEFAULT_CHIP_CHUNK)
+DFLAGS	+= -DDEFAULT_FAST_CHUNK=$(DEFAULT_FAST_CHUNK)
+DFLAGS	+= -DFRAMES_PER_ROW=$(FRAMES_PER_ROW)
+
 # Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
 ifneq ($(VERBOSE), 1)
 .SILENT:
