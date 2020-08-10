@@ -1,20 +1,20 @@
 TOPDIR := $(realpath ../..)
 
 SOURCES := \
-	__divsi3.s \
-	__modsi3.s \
-	__mulsi3.s \
-	__udivsi3.s \
-	__umodsi3.s \
-	bzero.s \
-	ctype.c \
-	kvprintf.c \
-	memcpy.s \
-	memset.s \
-	random.c \
-	snprintf.c \
-	strcmp.s \
-	strcpy.s \
-	strlen.s
+	gen/ctype.c \
+	gen/divsi3.s \
+	gen/modsi3.s \
+	gen/mulsi3.s \
+	gen/udivsi3.s \
+	gen/umodsi3.s \
+	stdlib/random.c \
+	stdio/kvprintf.c \
+	stdio/snprintf.c \
+	string/bzero.s \
+	string/memcpy.s \
+	string/memset.s \
+	string/strcmp.s \
+	string/strcpy.s \
+	string/strlen.s
 
 include $(TOPDIR)/build/lib.mk
