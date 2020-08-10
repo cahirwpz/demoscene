@@ -91,7 +91,7 @@ static void DrawPlotter(void) {
 
 static void Render(void) {
   BitmapClearArea(screen[active], 
-                  STRUCT(Area2D, 0, 0, MAX_W * 2 + SIZE, MAX_H * 2 + SIZE));
+                  &((Area2D){0, 0, MAX_W * 2 + SIZE, MAX_H * 2 + SIZE}));
   DrawPlotter();
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
