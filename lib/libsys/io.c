@@ -4,8 +4,8 @@
 #include "io.h"
 #include "floppy.h"
 
-#define TD_TRACK (TD_SECTOR * NUMSECS)
-#define TD_DISK (TD_TRACK * 160)
+#define TD_TRACK (TD_SECTOR * NSECTORS)
+#define TD_DISK (TD_TRACK * NTRACKS)
 
 #define IOF_EOF 0x0002
 #define IOF_ERR 0x8000

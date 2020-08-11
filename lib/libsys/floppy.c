@@ -18,18 +18,20 @@
  */
 
 typedef struct {
+  u_char format;
+  u_char trackNum;
+  u_char sectorNum;
+  u_char gapDist;
+} SectorInfoT;
+
+typedef struct {
   u_int magic;
   u_short sync[2];
-  struct {
-    u_char format;
-    u_char trackNum;
-    u_char sectorNum;
-    u_char sectors;
-  } info[2];
-  u_char sectorLabel[2][16];
+  u_int info[2];
+  u_int sectorLabel[2][4];
   u_int checksumHeader[2];
   u_int checksum[2];
-  u_char data[2][512]; 
+  u_int data[2][TD_SECTOR / sizeof(u_int)];
 } SectorT;
 
 /*
@@ -40,8 +42,6 @@ typedef struct {
  * exactly 12800 bytes per track. With Amiga track encoding that gives a gap of
  * 832 bytes between the end of sector #10 and beginning of sector #0.
  */
-
-#define TRACK_SIZE (sizeof(SectorT) * NUMSECS + 832)
 
 static short headDir;
 static short trackNum;
@@ -66,7 +66,7 @@ static void StepHeads(void) {
 
 #define DIRECTION_REVERSE_SETTLE TIMER_MS(18)
 
-static inline void HeadsStepDirection(short inwards) {
+static void HeadsStepDirection(short inwards) {
   u_char *ciaprb = (u_char *)&ciab->ciaprb;
 
   if (inwards) {
@@ -179,51 +179,65 @@ void FloppyTrackRead(short num) {
   DisableDMA(DMAF_DISK);
 }
 
-static inline u_int DecodeMFM(u_int odd, u_int even, u_int mask) {
+static inline SectorT *HeaderToSector(uint16_t *header) {
+  return (SectorT *)((uintptr_t)header - offsetof(SectorT, info[0]));
+}
+
+static inline u_int DecodeLong(u_int odd, u_int even, u_int mask) {
   return ((odd & mask) << 1) | (even & mask);
 }
 
+static SectorT *FindSectorHeader(void *ptr) {
+  uint16_t *data = ptr;
+  /* Find synchronization marker and move to first location after it. */
+  while (*data != DSK_SYNC)
+    data++;
+  while (*data == DSK_SYNC)
+    data++;
+  return HeaderToSector(data);
+}
+
 void FloppyTrackDecode(u_int *buf) {
-  short secnum = NUMSECS;
-  SectorT *maybeSector = track;
+  register u_int mask asm("d7") = 0x55555555;
+  u_short *data = (u_short *)track;
+  SectorT *sector;
+  short secnum = NSECTORS;
+
+  /* Skip first word if it is not corrupted. */
+  if (*data == DSK_SYNC)
+    data++;
+
+  sector = HeaderToSector(data);
 
   do {
-    register u_int mask asm("d7") = 0x55555555;
-    short *data = (short *)maybeSector;
-    struct {
-      u_char format;
-      u_char trackNum;
-      u_char sectorNum;
-      u_char sectors;
-    } info;
-    SectorT *sec;
+    SectorInfoT info;
 
-    /* Find synchronization marker and move to first location after it. */
-    while (*data != DSK_SYNC) data++;
-    while (*data == DSK_SYNC) data++;
-
-    sec = (SectorT *)((void *)data - offsetof(SectorT, info[0]));
-
-    *(u_int *)&info = DecodeMFM(*(u_int *)&sec->info[0], 
-                                *(u_int *)&sec->info[1], mask);
+    *(u_int *)&info = DecodeLong(sector->info[0], sector->info[1], mask);
 
 #if DEBUG
-    Log("[Floppy] Decode: data=%p, sector=%d, track=%d\n",
-        sec, info.sectorNum, info.trackNum);
+    Log("[Floppy] Decode: sector=%p, #sector=%d, #track=%d\n",
+        sector, info.sectorNum, info.trackNum);
+    Assert(info.sectorNum < NSECTORS && info.trackNum < NTRACKS);
 #endif
 
+    /* Decode sector! */
     {
       u_int *dst = (void *)buf + info.sectorNum * TD_SECTOR;
-      u_int *odd = (void *)sec->data[0];
-      u_int *even = (void *)sec->data[1];
+      u_int *odd = sector->data[0];
+      u_int *even = sector->data[1];
       short n = TD_SECTOR / sizeof(u_int) / 2 - 1;
 
       do {
-        *dst++ = DecodeMFM(*odd++, *even++, mask);
-        *dst++ = DecodeMFM(*odd++, *even++, mask);
+        *dst++ = DecodeLong(*odd++, *even++, mask);
+        *dst++ = DecodeLong(*odd++, *even++, mask);
       } while (--n >= 0);
     }
 
-    maybeSector = sec + 1;
+    /* Move to the next sector. */
+    sector++;
+
+    /* Is there a gap to skip after the sector? */
+    if (info.gapDist == 1 && secnum > 1)
+      sector = FindSectorHeader(sector);
   } while (--secnum);
 }
