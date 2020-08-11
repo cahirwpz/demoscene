@@ -140,7 +140,7 @@ static void ShiftColors(short offset) {
   }
 }
 
-static __regargs void ColorizeStripes(CopInsT **stripeLine) {
+static void ColorizeStripes(CopInsT **stripeLine) {
   short i;
 
   for (i = 1; i < 16; i++) {
@@ -170,7 +170,7 @@ static __regargs void ColorizeStripes(CopInsT **stripeLine) {
   }
 }
 
-static __regargs void ShiftStripes(CopInsT **line, short offset) {
+static void ShiftStripes(CopInsT **line, short offset) {
   short *width = stripeWidth;
   u_char *data = table;
   u_char *ptr;

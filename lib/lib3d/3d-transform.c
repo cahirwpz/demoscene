@@ -1,20 +1,21 @@
+#include <string.h>
 #include "3d.h"
 #include "fx.h"
 
-__regargs void LoadIdentity3D(Matrix3D *M) {
+void LoadIdentity3D(Matrix3D *M) {
   memset(M, 0, sizeof(Matrix3D));
   M->m00 = fx12f(1.0);
   M->m11 = fx12f(1.0);
   M->m22 = fx12f(1.0);
 }
 
-__regargs void Translate3D(Matrix3D *M, short x, short y, short z) {
+void Translate3D(Matrix3D *M, short x, short y, short z) {
   M->x += x;
   M->y += y;
   M->z += z;
 }
 
-__regargs void Scale3D(Matrix3D *M, short sx, short sy, short sz) {
+void Scale3D(Matrix3D *M, short sx, short sy, short sz) {
   short *m = &M->m00;
   short r;
 
@@ -44,7 +45,7 @@ __regargs void Scale3D(Matrix3D *M, short sx, short sy, short sz) {
  * [ cos(x)*sin(z) + sin(x)*(sin(y)*cos(z)) | cos(x)*cos(z) - sin(x)*(sin(y)*sin(z)) | -sin(x)*cos(y) ]
  * [ sin(x)*sin(z) - cos(x)*(sin(y)*cos(z)) | sin(x)*cos(z) + cos(x)*(sin(y)*sin(z)) |  cos(x)*cos(y) ]
  */
-__regargs void LoadRotate3D(Matrix3D *M, short ax, short ay, short az) {
+void LoadRotate3D(Matrix3D *M, short ax, short ay, short az) {
   short sinX = SIN(ax);
   short cosX = COS(ax);
   short sinY = SIN(ay);
@@ -80,7 +81,7 @@ __regargs void LoadRotate3D(Matrix3D *M, short ax, short ay, short az) {
  * [ cos(y)*sin(z) | (sin(x)*sin(y))*sin(z) + cos(x)*cos(z) | (cos(x)*sin(y))*sin(z) - sin(x)*cos(z) ]
  * [       -sin(y) |                          sin(x)*cos(y) |                          cos(x)*cos(y) ]
  */
-__regargs void LoadReverseRotate3D(Matrix3D *M, short ax, short ay, short az) {
+void LoadReverseRotate3D(Matrix3D *M, short ax, short ay, short az) {
   short sinX = SIN(ax);
   short cosX = COS(ax);
   short sinY = SIN(ay);
@@ -116,7 +117,7 @@ __regargs void LoadReverseRotate3D(Matrix3D *M, short ax, short ay, short az) {
   *d++ = normfx(t0 + t1 + t2); \
 }
 
-__regargs void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb) {
+void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb) {
   short *a = &ma->m00;
   short *d = &md->m00;
 
@@ -168,7 +169,7 @@ __regargs void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb) {
   *dst++ = normfx(t0 + t1 + t2) + t3; \
 }
 
-__regargs void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, short n) {
+void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, short n) {
   short *src = (short *)in;
   short *dst = (short *)out;
 

@@ -1,9 +1,7 @@
 #include "blitter.h"
 
 /* Bitplane incrementer with saturation. */
-__regargs void BitmapIncSaturated(const BitmapT *dst_bm,
-                                  const BitmapT *carry_bm)
-{
+void BitmapIncSaturated(const BitmapT *dst_bm, const BitmapT *carry_bm) {
   void *carry0 = carry_bm->planes[0];
   void *carry1 = carry_bm->planes[1];
   void *const *dst = dst_bm->planes;

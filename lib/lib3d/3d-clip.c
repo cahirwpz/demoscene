@@ -2,7 +2,7 @@
 
 Frustum3D ClipFrustum;
 
-__regargs void PointsInsideFrustum(Point3D *in, u_char *flags, u_short n) {
+void PointsInsideFrustum(Point3D *in, u_char *flags, u_short n) {
   short *src = (short *)in;
 
   while (n--) {
@@ -28,7 +28,7 @@ __regargs void PointsInsideFrustum(Point3D *in, u_char *flags, u_short n) {
   }
 }
 
-static __regargs bool CheckInside(Point3D *p, u_short plane) {
+static bool CheckInside(Point3D *p, u_short plane) {
   if (plane & PF_LEFT)
     return (p->x > p->z);
   if (plane & PF_RIGHT)
@@ -44,8 +44,7 @@ static __regargs bool CheckInside(Point3D *p, u_short plane) {
   return false;
 }
 
-static __regargs void ClipEdge(Point3D *o, Point3D *s, Point3D *e, u_short plane)
-{
+static void ClipEdge(Point3D *o, Point3D *s, Point3D *e, u_short plane) {
   short dx = e->x - s->x;
   short dy = e->y - s->y;
   short dz = e->z - s->z;
@@ -78,9 +77,7 @@ static __regargs void ClipEdge(Point3D *o, Point3D *s, Point3D *e, u_short plane
   }
 }
 
-static __regargs u_short ClipPolygon(Point3D *S, Point3D *O,
-                                   u_short n, u_short plane)
-{
+static u_short ClipPolygon(Point3D *S, Point3D *O, u_short n, u_short plane) {
   Point3D *E = S + 1;
 
   bool S_inside = CheckInside(S, plane);
@@ -113,8 +110,8 @@ static __regargs u_short ClipPolygon(Point3D *S, Point3D *O,
 
   return m;
 }
-__regargs u_short ClipPolygon3D(Point3D *in, Point3D **outp, u_short n,
-                              u_short clipFlags)
+
+u_short ClipPolygon3D(Point3D *in, Point3D **outp, u_short n, u_short clipFlags)
 {
   Point3D *out = *outp;
 

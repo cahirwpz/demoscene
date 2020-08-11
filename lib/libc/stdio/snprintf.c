@@ -5,7 +5,7 @@ struct print_buf {
 	size_t size;
 };
 
-static __regargs void snprint_func(int ch, void *arg) {
+static void snprint_func(int ch, void *arg) {
 	struct print_buf *pbuf = arg;
 
 	if (pbuf->size < 2) {

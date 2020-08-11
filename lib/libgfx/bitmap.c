@@ -1,3 +1,4 @@
+#include <string.h>
 #include "memory.h"
 #include "gfx.h"
 
@@ -7,7 +8,7 @@ static inline u_int BitmapSize(BitmapT *bitmap) {
   return ((u_short)bitmap->bplSize * (u_short)bitmap->depth) + BM_EXTRA;
 }
 
-static __regargs void BitmapSetPointers(BitmapT *bitmap, void *planes) {
+static void BitmapSetPointers(BitmapT *bitmap, void *planes) {
   int modulo =
     (bitmap->flags & BM_INTERLEAVED) ? bitmap->bytesPerRow : bitmap->bplSize;
   short depth = bitmap->depth;
@@ -19,8 +20,8 @@ static __regargs void BitmapSetPointers(BitmapT *bitmap, void *planes) {
   } while (depth--);
 }
 
-__regargs void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
-                                u_short depth, BitmapT *donor)
+void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
+                      u_short depth, BitmapT *donor)
 {
   u_short bytesPerRow = ((width + 15) & ~15) / 8;
 
@@ -34,8 +35,8 @@ __regargs void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
   BitmapSetPointers(bitmap, donor->planes[0]);
 }
 
-__regargs BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
-                                   u_char flags)
+BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
+                         u_char flags)
 {
   BitmapT *bitmap = MemAlloc(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
   u_short bytesPerRow = ((width + 15) & ~15) / 8;
@@ -66,7 +67,7 @@ __regargs BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
   return bitmap;
 }
 
-__regargs void DeleteBitmap(BitmapT *bitmap) {
+void DeleteBitmap(BitmapT *bitmap) {
   if (bitmap) {
     if (!(bitmap->flags & BM_MINIMAL))
       MemFree(bitmap->planes[0]);
@@ -74,7 +75,7 @@ __regargs void DeleteBitmap(BitmapT *bitmap) {
   }
 }
 
-__regargs void BitmapMakeDisplayable(BitmapT *bitmap) {
+void BitmapMakeDisplayable(BitmapT *bitmap) {
   if (!(bitmap->flags & BM_DISPLAYABLE)) {
     u_int size = BitmapSize(bitmap);
     void *planes = MemAlloc(size, MEMF_CHIP);

@@ -98,7 +98,7 @@ static void Kill(void) {
   DeleteBitmap(screen[1]);
 }
 
-__regargs void TriggerRefresh(short x, short y, short w __unused, short h __unused)
+void TriggerRefresh(short x, short y, short w __unused, short h __unused)
 {
   short *map = tilemap;
   int tilemod = tilemap_width - HTILES;
@@ -124,8 +124,8 @@ __regargs void TriggerRefresh(short x, short y, short w __unused, short h __unus
       "   bnes 1b"                              \
       :: "a" (custom));
 
-static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
-                                  volatile struct Custom* const custom asm("a6"))
+static void UpdateTiles(BitmapT *screen, short x, short y,
+                        volatile struct Custom* const custom asm("a6"))
 {
   short *map = tilemap;
   void *ptrs = tileptrs;

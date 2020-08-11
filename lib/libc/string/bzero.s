@@ -5,11 +5,10 @@
 
         SECTION '.text',code_p
 
+; [a0] destination
+; [d1] count
 _bzero:
 	move.l	d2,-(sp)
-	move.l	8(sp),a0		; destination
-	move.l	12(sp),d1		; count
-
 	clr.l	d2
 
 	; It isn't worth the overhead of aligning to {long}word boundries

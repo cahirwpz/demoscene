@@ -1,7 +1,7 @@
 #include "sprite.h"
 #include "memory.h"
 
-__regargs SpriteT *NewSprite(u_short height, bool attached) {
+SpriteT *NewSprite(u_short height, bool attached) {
   SpriteT *sprite = MemAlloc(attached ? 2 * sizeof(SpriteT) : sizeof(SpriteT),
                              MEMF_PUBLIC|MEMF_CLEAR);
   int size = (height + 2) * 4;
@@ -18,7 +18,7 @@ __regargs SpriteT *NewSprite(u_short height, bool attached) {
   return sprite;
 }
 
-__regargs void DeleteSprite(SpriteT *sprite) {
+void DeleteSprite(SpriteT *sprite) {
   if (sprite) {
     if (sprite->attached)
       MemFree(sprite[1].data);
@@ -63,9 +63,7 @@ static inline void UpdateSpriteInternal(const SpriteT *sprite,
   }
 }
 
-__regargs void UpdateSprite(const SpriteT *sprite,
-                            u_short hstart, u_short vstart)
-{
+void UpdateSprite(const SpriteT *sprite, u_short hstart, u_short vstart) {
   UpdateSpriteInternal(sprite, hstart, vstart);
 
   if (sprite->attached) {
@@ -76,7 +74,7 @@ __regargs void UpdateSprite(const SpriteT *sprite,
   }
 }
 
-__regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr) {
+void CopSetupSprites(CopListT *list, CopInsT **sprptr) {
   u_short *data = NullSprite;
   short i;
 
@@ -87,7 +85,7 @@ __regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr) {
   }
 }
 
-__regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr) {
+void CopSetupManualSprites(CopListT *list, CopInsT **sprptr) {
   u_short *data = NullSprite;
   short i;
 

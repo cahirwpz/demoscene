@@ -91,7 +91,7 @@ void BlitterCopyAreaSetup(const BitmapT *dst, u_short dx, u_short dy,
   }
 }
 
-__regargs void BlitterCopyAreaStart(short dstbpl, short srcbpl) {
+void BlitterCopyAreaStart(short dstbpl, short srcbpl) {
   void *srcbpt = state->src->planes[srcbpl] + state->src_start;
   void *dstbpt = state->dst->planes[dstbpl] + state->dst_start;
   u_short bltsize = state->size;

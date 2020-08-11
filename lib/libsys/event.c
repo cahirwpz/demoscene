@@ -6,7 +6,7 @@
 static EventT queue[QUEUELEN];
 static u_short head, tail, used;
 
-__regargs void PushEvent(EventT *event) {
+void PushEvent(EventT *event) {
   if (used < QUEUELEN) {
     queue[tail] = *event;
     tail = (tail + 1) & (QUEUELEN - 1);
@@ -14,7 +14,7 @@ __regargs void PushEvent(EventT *event) {
   }
 }
 
-__regargs bool PopEvent(EventT *event) {
+bool PopEvent(EventT *event) {
   bool present = false;
 
   Disable();

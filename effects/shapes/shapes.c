@@ -73,7 +73,7 @@ static void DrawPolygon(Point2D *out, short n) {
   }
 }
 
-static __regargs void DrawShape(ShapeT *shape) {
+static void DrawShape(ShapeT *shape) {
   IndexListT **polygons = shape->polygon;
   Point2D *point = shape->viewPoint;
   u_char *flags = shape->viewPointFlags;

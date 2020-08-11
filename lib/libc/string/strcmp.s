@@ -5,9 +5,9 @@
 
         section '.text',code
 
+; [a0] s1
+; [a1] s2
 _strcmp:
-	move.l	4(sp),a0
-	move.l	8(sp),a1
 .L1:				; unrolled by 4 for 680[23]0's
 	move.b  (a0)+,d1
 	beq	.L2

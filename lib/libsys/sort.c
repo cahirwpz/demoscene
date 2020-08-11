@@ -1,6 +1,6 @@
 #include "sort.h"
 
-static __regargs void InsertSort(SortItemT *first, SortItemT *last) {
+static void InsertSort(SortItemT *first, SortItemT *last) {
   SortItemT *ptr = first + 1;
 
   while (ptr <= last) {
@@ -15,7 +15,7 @@ static __regargs void InsertSort(SortItemT *first, SortItemT *last) {
 
 #define THRESHOLD (int)(12 * sizeof(SortItemT))
 
-static __regargs void QuickSort(SortItemT *first, SortItemT *last) {
+static void QuickSort(SortItemT *first, SortItemT *last) {
   if (last > first) {
     SortItemT *pivot = first;
     SortItemT *left = first + 1;
@@ -45,6 +45,6 @@ static __regargs void QuickSort(SortItemT *first, SortItemT *last) {
   }
 }
 
-__regargs void SortItemArray(SortItemT *table, short size) {
+void SortItemArray(SortItemT *table, short size) {
   QuickSort(table, &table[size - 1]);
 }

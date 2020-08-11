@@ -56,7 +56,7 @@ static void Kill(void) {
   DeleteObject3D(cube);
 }
 
-static __regargs void UpdateFaceVisibilityFast(Object3D *object) {
+static void UpdateFaceVisibilityFast(Object3D *object) {
   short *src = (short *)object->mesh->faceNormal;
   IndexListT **faces = object->mesh->face;
   char *faceFlags = object->faceFlags;
@@ -93,7 +93,7 @@ static __regargs void UpdateFaceVisibilityFast(Object3D *object) {
   } while (--n != -1);
 }
 
-static __regargs void UpdateEdgeVisibility(Object3D *object) {
+static void UpdateEdgeVisibility(Object3D *object) {
   char *vertexFlags = object->vertexFlags;
   char *edgeFlags = object->edgeFlags;
   char *faceFlags = object->faceFlags;
@@ -144,7 +144,7 @@ static __regargs void UpdateEdgeVisibility(Object3D *object) {
   D = normfx(t0 * t1 + t2 - xy) + t3; \
 }
 
-static __regargs void TransformVertices(Object3D *object) {
+static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   short *v = (short *)M;
   short *src = (short *)object->mesh->vertex;
@@ -196,8 +196,8 @@ static __regargs void TransformVertices(Object3D *object) {
   } while (--n != -1);
 }
 
-static __regargs void DrawObject(Object3D *object, void *bplpt,
-                                 CustomPtrT custom asm("a6"))
+static void DrawObject(Object3D *object, void *bplpt,
+                       CustomPtrT custom asm("a6"))
 {
   short *edge = (short *)object->mesh->edge;
   char *edgeFlags = object->edgeFlags;

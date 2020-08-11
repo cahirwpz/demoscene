@@ -119,7 +119,7 @@ static void SetupLines(short f) {
   }
 }
 
-static __regargs void SetupTexture(CopInsT **colors, short y) {
+static void SetupTexture(CopInsT **colors, short y) {
   short *pixels = texture.pixels;
   short height = texture.height;
   short width = texture.width;

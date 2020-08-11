@@ -99,7 +99,7 @@ static void Kill(void) {
   D = normfx(t0 * t1 + t2 - x * y) + t3;        \
 }
 
-static __regargs void TransformVertices(Object3D *object) {
+static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   short *src = (short *)object->mesh->vertex;
   short *dst = (short *)object->vertex;
@@ -140,7 +140,7 @@ static __regargs void TransformVertices(Object3D *object) {
   } while (--n != -1);
 }
 
-static __regargs void DrawLine(short x0, short y0, short x1, short y1) {
+static void DrawLine(short x0, short y0, short x1, short y1) {
   short dmax = x1 - x0;
   short dmin = y1 - y0;
   short derr;
@@ -326,7 +326,7 @@ static void DrawObject(Object3D *object) {
   }
 }
 
-static __regargs void BitmapDecSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
+static void BitmapDecSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
   void *borrow0 = carry->planes[0];
   void *borrow1 = carry->planes[1];
   void **srcbpl = srcbm->planes;
@@ -391,7 +391,7 @@ static __regargs void BitmapDecSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
   }
 }
 
-static __regargs void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
+static void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
   void *carry0 = carry->planes[0];
   void *carry1 = carry->planes[1];
   void **srcbpl = srcbm->planes;

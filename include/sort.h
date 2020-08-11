@@ -7,6 +7,6 @@ typedef struct {
   short key, index;
 } SortItemT;
 
-__regargs void SortItemArray(SortItemT *table, short size);
+void SortItemArray(SortItemT *table, short size);
 
 #endif

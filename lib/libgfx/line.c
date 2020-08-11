@@ -5,12 +5,14 @@ static struct {
   int stride;
 } line;
 
-__regargs void CpuLineSetup(const BitmapT *bitmap, u_short plane) {
+void CpuLineSetup(const BitmapT *bitmap, u_short plane) {
   line.pixels = bitmap->planes[plane];
   line.stride = bitmap->bytesPerRow;
 }
 
-void CpuLine(short xs asm("d0"), short ys asm("d1"), short xe asm("d2"), short ye asm("d3")) {
+void CpuLine(short xs asm("d0"), short ys asm("d1"),
+             short xe asm("d2"), short ye asm("d3"))
+{
   register u_char *pixels asm("a0") = line.pixels;
   register int stride asm("a1") = line.stride;
   u_char color;

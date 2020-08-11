@@ -156,7 +156,7 @@ static void Kill(void) {
   DeleteCopList(cp[1]);
 }
 
-static __regargs void ClearLine(short k) {
+static void ClearLine(short k) {
   u_char *pos = linePos[active][k];
   u_char x = (k < 4 ? CPX : (X(WIDTH) >> 1)) | 1;
   short n = (HEIGHT - FAR_Y) / 8;
@@ -211,7 +211,7 @@ static inline void CopperLine(u_char *pos, short x1, short y2, int delta) {
   }
 }
 
-static __regargs void DrawStripesCopper(short xo) {
+static void DrawStripesCopper(short xo) {
   /* Color switching with copper. */
   short xi = (xo & (TILESIZE - 1));
   u_char **activeLinePos = linePos[active];
@@ -224,7 +224,7 @@ static __regargs void DrawStripesCopper(short xo) {
   }
 }
 
-static __regargs void DrawStripes(short xo, short kxo) {
+static void DrawStripes(short xo, short kxo) {
   LineDataT first = { 0, 0, WIDTH - 1, FAR_Y, {0} };
   LineDataT *l0, *l1;
   short k;
@@ -293,7 +293,7 @@ static __regargs void DrawStripes(short xo, short kxo) {
   }
 }
 
-__regargs static void AssignColorToTileColumn(short k, short kxo);
+static void AssignColorToTileColumn(short k, short kxo);
 
 static void FillStripes(short kxo) {
   BitmapT *buffer = screen[active];
@@ -356,7 +356,7 @@ static void HorizontalStripes(short yo) {
   }
 }
 
-__regargs static void CalculateTileColumns(short yo, short kyo) {
+static void CalculateTileColumns(short yo, short kyo) {
   short k;
   short y0 = FAR_Y;
   short yi = (yo & (TILESIZE - 1)) + 16;
@@ -376,7 +376,7 @@ __regargs static void CalculateTileColumns(short yo, short kyo) {
 
 #define STRIDE2 (STRIDE / sizeof(short))
 
-__regargs static void AssignColorToTileColumn(short k, short kxo) {
+static void AssignColorToTileColumn(short k, short kxo) {
   u_short *color = lineColor[active][k];
   u_short column = (k + kxo) & (TILES - 1);
   void *textureRow = &tileColor[column * TILES];

@@ -141,7 +141,7 @@ static void WaveScopeDrawChannel(short num) {
 
 static void Load(void) {
   if (AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS) != 0)
-    exit(10);
+    HALT();
 }
 
 static void UnLoad(void) {

@@ -1,3 +1,4 @@
+#include <string.h>
 #include "interrupts.h"
 #include "hardware.h"
 #include "mouse.h"
@@ -128,7 +129,7 @@ static __interrupt int MouseIntHandler(void) {
 
 INTERRUPT(MouseInterrupt, -5, MouseIntHandler, NULL);
 
-__regargs void MouseInit(short minX, short minY, short maxX, short maxY) {
+void MouseInit(short minX, short minY, short maxX, short maxY) {
   MouseDataT *mouse = &mouseData;
 
   mouse->left = minX;

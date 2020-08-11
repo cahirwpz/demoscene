@@ -1,7 +1,7 @@
 #include "font.h"
 #include "blitter.h"
 
-__regargs void DrawTextN(FontDrawCtxT *ctx, const char *text, u_short n) {
+void DrawTextN(FontDrawCtxT *ctx, const char *text, u_short n) {
   FontT *font = ctx->font;
   FontCharT *charmap = font->charmap;
   Area2D src = { 0, 0, 0, 0 };
@@ -48,7 +48,7 @@ __regargs void DrawTextN(FontDrawCtxT *ctx, const char *text, u_short n) {
   }
 }
 
-__regargs Size2D DrawTextSizeN(FontT *font, const char *text, u_short n) {
+Size2D DrawTextSizeN(FontT *font, const char *text, u_short n) {
   FontCharT *charmap = font->charmap;
   Size2D size = {0, font->height};
   short c, x = 0;

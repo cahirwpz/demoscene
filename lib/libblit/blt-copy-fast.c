@@ -9,8 +9,8 @@ typedef struct {
 
 static StateT state[1];
 
-__regargs void BlitterFastCopySetup(const BitmapT *dst, u_short x, u_short y,
-                                    const BitmapT *src) 
+void BlitterFastCopySetup(const BitmapT *dst, u_short x, u_short y,
+                          const BitmapT *src) 
 {
   u_short dstmod = dst->bytesPerRow - src->bytesPerRow;
   u_short bltshift = rorw(x & 15, 4);
@@ -40,7 +40,7 @@ __regargs void BlitterFastCopySetup(const BitmapT *dst, u_short x, u_short y,
   custom->bltafwm = -1;
 }
 
-__regargs void BlitterFastCopyStart(short dstbpl, short srcbpl) {
+void BlitterFastCopyStart(short dstbpl, short srcbpl) {
   void *srcbpt = state->src->planes[srcbpl];
   void *dstbpt = state->dst->planes[dstbpl] + state->start;
   u_short bltsize = state->size;
@@ -52,8 +52,8 @@ __regargs void BlitterFastCopyStart(short dstbpl, short srcbpl) {
   custom->bltsize = bltsize;
 }
 
-__regargs void BitmapCopyFast(const BitmapT *dst, u_short x, u_short y,
-                              const BitmapT *src) 
+void BitmapCopyFast(const BitmapT *dst, u_short x, u_short y,
+                    const BitmapT *src) 
 {
   short i, n = min(dst->depth, src->depth);
 

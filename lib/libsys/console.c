@@ -10,25 +10,25 @@ void ConsoleInit(ConsoleT *console, ConsoleFontT *font, BitmapT *bitmap) {
   console->cursor.y = 0;
 }
 
-__regargs void ConsoleSetCursor(ConsoleT *console, u_short x, u_short y) {
+void ConsoleSetCursor(ConsoleT *console, u_short x, u_short y) {
   console->cursor.x = x;
   console->cursor.y = y;
 }
 
-static __regargs void ConsoleNextLine(ConsoleT *console) {
+static void ConsoleNextLine(ConsoleT *console) {
   console->cursor.x = 0;
 
   if (++console->cursor.y >= console->height)
     console->cursor.y = 0;
 }
 
-static __regargs void ConsoleNextChar(ConsoleT *console) {
+static void ConsoleNextChar(ConsoleT *console) {
   if (++console->cursor.x >= console->width) {
     ConsoleNextLine(console);
   }
 }
 
-__regargs void ConsoleDrawChar(ConsoleT *console, u_short x, u_short y, char c) {
+void ConsoleDrawChar(ConsoleT *console, u_short x, u_short y, char c) {
   u_char *src = console->font->data;
   u_char *dst = console->bitmap->planes[0];
   short swidth = console->font->stride;
@@ -45,7 +45,7 @@ __regargs void ConsoleDrawChar(ConsoleT *console, u_short x, u_short y, char c) 
   } while (--h >= 0);
 }
 
-__regargs void ConsoleDrawCursor(ConsoleT *console) {
+void ConsoleDrawCursor(ConsoleT *console) {
   u_char *dst = console->bitmap->planes[0];
   short dwidth = console->bitmap->bytesPerRow;
   short i = console->bitmap->width * console->cursor.y + console->cursor.x;
@@ -56,8 +56,8 @@ __regargs void ConsoleDrawCursor(ConsoleT *console) {
   } while (--h >= 0);
 }
 
-__regargs void ConsoleDrawBox(ConsoleT *console, u_short x, u_short y,
-                              u_short w, u_short h)
+void ConsoleDrawBox(ConsoleT *console, u_short x, u_short y,
+                    u_short w, u_short h)
 {
   int i;
 
@@ -80,7 +80,7 @@ __regargs void ConsoleDrawBox(ConsoleT *console, u_short x, u_short y,
   }
 }
 
-__regargs void ConsolePutChar(ConsoleT *console, char c) {
+void ConsolePutChar(ConsoleT *console, char c) {
   switch (c) {
     case '\r':
       break;
@@ -96,7 +96,7 @@ __regargs void ConsolePutChar(ConsoleT *console, char c) {
   }
 }
 
-__regargs void ConsolePutStr(ConsoleT *console, const char *str)
+void ConsolePutStr(ConsoleT *console, const char *str)
 {
   char c;
 
@@ -104,7 +104,7 @@ __regargs void ConsolePutStr(ConsoleT *console, const char *str)
     ConsolePutChar(console, c);
 }
 
-static __regargs void OutputToConsole(char c, ConsoleT *console) {
+static void OutputToConsole(char c, ConsoleT *console) {
   ConsolePutChar(console, c);
 }
 

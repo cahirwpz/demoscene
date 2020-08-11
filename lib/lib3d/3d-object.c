@@ -3,7 +3,7 @@
 #include "3d.h"
 #include "fx.h"
 
-__regargs Object3D *NewObject3D(Mesh3D *mesh) {
+Object3D *NewObject3D(Mesh3D *mesh) {
   Object3D *object = MemAlloc(sizeof(Object3D), MEMF_PUBLIC|MEMF_CLEAR);
   short vertices = mesh->vertices;
   short faces = mesh->faces;
@@ -24,7 +24,7 @@ __regargs Object3D *NewObject3D(Mesh3D *mesh) {
   return object;
 }
 
-__regargs void DeleteObject3D(Object3D *object) {
+void DeleteObject3D(Object3D *object) {
   if (object) {
     MemFree(object->visibleFace);
     MemFree(object->edgeFlags);
@@ -35,7 +35,7 @@ __regargs void DeleteObject3D(Object3D *object) {
   }
 }
 
-__regargs void UpdateObjectTransformation(Object3D *object) {
+void UpdateObjectTransformation(Object3D *object) {
   Point3D *rotate = &object->rotate;
   Point3D *scale = &object->scale;
   Point3D *translate = &object->translate;
@@ -104,7 +104,7 @@ void InitSqrtTab8(void){
 
 ADD2INIT(InitSqrtTab8, 0);
 
-__regargs void UpdateFaceVisibility(Object3D *object) {
+void UpdateFaceVisibility(Object3D *object) {
   short *src = (short *)object->mesh->faceNormal;
   IndexListT **faces = object->mesh->face;
   char *faceFlags = object->faceFlags;
@@ -165,7 +165,7 @@ __regargs void UpdateFaceVisibility(Object3D *object) {
   }
 }
 
-__regargs void UpdateVertexVisibility(Object3D *object) {
+void UpdateVertexVisibility(Object3D *object) {
   char *vertexFlags = object->vertexFlags;
   char *faceFlags = object->faceFlags;
   IndexListT **faces = object->mesh->face;
@@ -194,7 +194,7 @@ __regargs void UpdateVertexVisibility(Object3D *object) {
   }
 }
 
-__regargs void SortFaces(Object3D *object) {
+void SortFaces(Object3D *object) {
   IndexListT **faces = object->mesh->face;
   short n = object->mesh->faces;
   void *point = object->vertex;

@@ -11,8 +11,8 @@ typedef struct Sound {
   char* sample;
 } SoundT;
 
-__regargs SoundT *NewSound(u_int length, u_short rate);
-__regargs void DeleteSound(SoundT *sound);
+SoundT *NewSound(u_int length, u_short rate);
+void DeleteSound(SoundT *sound);
 
 typedef enum { CHAN_0, CHAN_1, CHAN_2, CHAN_3 } ChanT;
 

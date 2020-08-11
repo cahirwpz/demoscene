@@ -1,7 +1,7 @@
 #include "memory.h"
 #include "io.h"
 
-__regargs void *LoadFile(const char *path, u_int memoryFlags) {
+void *LoadFile(const char *path, u_int memoryFlags) {
   char *data = NULL;
   int size = GetFileSize(path);
 

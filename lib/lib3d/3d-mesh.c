@@ -9,7 +9,7 @@ typedef struct ExtEdge {
   short face, edge;
 } ExtEdgeT;
 
-static __regargs int EdgeCompare(const void *a, const void *b) {
+static int EdgeCompare(const void *a, const void *b) {
   const EdgeT *e0 = a;
   const EdgeT *e1 = b;
 
@@ -26,7 +26,7 @@ static __regargs int EdgeCompare(const void *a, const void *b) {
   return 0;
 }
 
-__regargs void CalculateEdges(Mesh3D *mesh) {
+void CalculateEdges(Mesh3D *mesh) {
   ExtEdgeT *edge;
   short count, edges;
 
@@ -157,7 +157,7 @@ __regargs void CalculateEdges(Mesh3D *mesh) {
  * to.  mesh->face can be considered as a map from face number to face
  * vertices, so this procedure calculates a reverse map.
  */
-__regargs void CalculateVertexFaceMap(Mesh3D *mesh) {
+void CalculateVertexFaceMap(Mesh3D *mesh) {
   short *faceCount = MemAlloc(sizeof(short) * mesh->vertices,
                              MEMF_PUBLIC|MEMF_CLEAR);
 
@@ -223,7 +223,7 @@ __regargs void CalculateVertexFaceMap(Mesh3D *mesh) {
   }
 } 
 
-__regargs void CalculateVertexNormals(Mesh3D *mesh) {
+void CalculateVertexNormals(Mesh3D *mesh) {
   mesh->vertexNormal = MemAlloc(sizeof(Point3D) * mesh->vertices,
                                 MEMF_PUBLIC|MEMF_CLEAR);
 
@@ -264,7 +264,7 @@ __regargs void CalculateVertexNormals(Mesh3D *mesh) {
  * Clockwise convention is used.
  */
 
-__regargs void CalculateFaceNormals(Mesh3D *mesh) {
+void CalculateFaceNormals(Mesh3D *mesh) {
   mesh->faceNormal = MemAlloc(sizeof(Point3D) * mesh->faces, MEMF_PUBLIC);
 
   {
@@ -317,7 +317,7 @@ __regargs void CalculateFaceNormals(Mesh3D *mesh) {
   }
 }
 
-__regargs void ResetMesh3D(Mesh3D *mesh) {
+void ResetMesh3D(Mesh3D *mesh) {
   MemFree(mesh->faceNormal);
   MemFree(mesh->vertexNormal);
   MemFree(mesh->edge);

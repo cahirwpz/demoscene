@@ -16,7 +16,7 @@ typedef struct FuncItemSet {
 
 /* Call functions in ascending order of priority. Destructor priorities are
  * reversed by ADD2EXIT so there's no need to handle extra case. */
-__regargs void CallFuncList(FuncItemSetT *set) {
+void CallFuncList(FuncItemSetT *set) {
   short n = set->count / 2;
   FuncItemT *start = (FuncItemT *)set->item;
   u_char cur_pri = 0;

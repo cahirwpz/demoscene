@@ -34,7 +34,7 @@ typedef union Event {
   GuiEventT gui;
 } EventT;
 
-__regargs void PushEvent(EventT *event);
-__regargs bool PopEvent(EventT *event);
+void PushEvent(EventT *event);
+bool PopEvent(EventT *event);
 
 #endif

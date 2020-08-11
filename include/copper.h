@@ -49,13 +49,13 @@ typedef struct {
   CopInsT entry[0]; 
 } CopListT;
 
-__regargs CopListT *NewCopList(u_short length);
-__regargs void DeleteCopList(CopListT *list);
-__regargs void CopInit(CopListT *list);
+CopListT *NewCopList(u_short length);
+void DeleteCopList(CopListT *list);
+void CopInit(CopListT *list);
 
 /* @brief Enable copper and activate copper list.
  * @warning This function busy-waits for vertical blank. */
-__regargs void CopListActivate(CopListT *list);
+void CopListActivate(CopListT *list);
 
 /* @brief Set up copper list to start after vertical blank. */
 static inline void CopListRun(CopListT *list) {
@@ -63,8 +63,8 @@ static inline void CopListRun(CopListT *list) {
 }
 
 /* Low-level functions */
-__regargs CopInsT *CopMoveWord(CopListT *list, u_short reg, u_short data);
-__regargs CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data);
+CopInsT *CopMoveWord(CopListT *list, u_short reg, u_short data);
+CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data);
 
 #define CSREG(reg) (u_short)offsetof(struct Custom, reg)
 #define CopMove16(cp, reg, data) CopMoveWord(cp, CSREG(reg), data)
@@ -73,13 +73,13 @@ __regargs CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data);
 /* Official way to represent no-op copper instruction. */
 #define CopNoOp(cp) CopMoveWord(cp, 0x1FE, 0)
 
-__regargs CopInsT *CopWait(CopListT *list, u_short vp, u_short hp);
-__regargs CopInsT *CopWaitMask(CopListT *list, u_short vp, u_short hp, 
-                               u_short vpmask asm("d2"), u_short hpmask asm("d3"));
+CopInsT *CopWait(CopListT *list, u_short vp, u_short hp);
+CopInsT *CopWaitMask(CopListT *list, u_short vp, u_short hp, 
+                     u_short vpmask asm("d2"), u_short hpmask asm("d3"));
 
 /* Handles Copper Vertical Position counter overflow, by inserting CopWaitEOL
  * at first WAIT instruction with VP >= 256. */
-__regargs CopInsT *CopWaitSafe(CopListT *list, u_short vp, u_short hp);
+CopInsT *CopWaitSafe(CopListT *list, u_short vp, u_short hp);
 
 /* The most significant bit of vertical position cannot be masked out (overlaps
  * with blitter-finished-disable bit), so we have to pass upper bit as well. */
@@ -87,14 +87,14 @@ __regargs CopInsT *CopWaitSafe(CopListT *list, u_short vp, u_short hp);
 #define CopWaitV(cp, vp) CopWaitMask(cp, vp, 0, 255, 0)
 #define CopWaitEOL(cp, vp) CopWait(cp, vp, LASTHP)
 
-__regargs CopInsT *CopSkip(CopListT *list, u_short vp, u_short hp);
-__regargs CopInsT *CopSkipMask(CopListT *list, u_short vp, u_short hp, 
-                               u_short vpmask asm("d2"), u_short hpmask asm("d3"));
+CopInsT *CopSkip(CopListT *list, u_short vp, u_short hp);
+CopInsT *CopSkipMask(CopListT *list, u_short vp, u_short hp, 
+                     u_short vpmask asm("d2"), u_short hpmask asm("d3"));
 
 #define CopSkipH(cp, vp, hp) CopSkipMask(cp, vp & 128, hp, 0, 255)
 #define CopSkipV(cp, vp) CopSkipMask(cp, vp, 0, 255, 0)
 
-__regargs void CopEnd(CopListT *list);
+void CopEnd(CopListT *list);
 
 static inline void CopInsSet32(CopInsT *ins, void *data) {
   asm volatile("movew %0,%2\n"
@@ -109,23 +109,22 @@ static inline void CopInsSet16(CopInsT *ins, u_short data) {
 }
 
 /* High-level functions */
-__regargs CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, u_short start);
-__regargs CopInsT *CopLoadColor(CopListT *list, u_short start, u_short end, u_short color);
+CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, u_short start);
+CopInsT *CopLoadColor(CopListT *list, u_short start, u_short end, u_short color);
 
-__regargs void CopSetupMode(CopListT *list, u_short mode, u_short depth);
-__regargs void CopSetupDisplayWindow(CopListT *list, u_short mode, 
-                                     u_short xs, u_short ys, u_short w, u_short h);
-__regargs void CopSetupBitplaneFetch(CopListT *list, u_short mode,
-                                     u_short xs, u_short w);
-__regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
-                                 const BitmapT *bitmap, u_short depth);
+void CopSetupMode(CopListT *list, u_short mode, u_short depth);
+void CopSetupDisplayWindow(CopListT *list, u_short mode, 
+                           u_short xs, u_short ys, u_short w, u_short h);
+void CopSetupBitplaneFetch(CopListT *list, u_short mode,
+                           u_short xs, u_short w);
+void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
+                       const BitmapT *bitmap, u_short depth);
 void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
                           const BitmapT *bitmap, short x, short y,
                           const Area2D *area);
-__regargs void CopUpdateBitplanes(CopInsT **bplptr,
-                                  const BitmapT *bitmap, short n);
-__regargs void CopSetupDualPlayfield(CopListT *list, CopInsT **bplptr,
-                                     const BitmapT *pf1, const BitmapT *pf2);
+void CopUpdateBitplanes(CopInsT **bplptr, const BitmapT *bitmap, short n);
+void CopSetupDualPlayfield(CopListT *list, CopInsT **bplptr,
+                           const BitmapT *pf1, const BitmapT *pf2);
 
 static inline void CopSetupGfxSimple(CopListT *list, u_short mode, u_short depth,
                                      u_short xs, u_short ys, u_short w, u_short h) 

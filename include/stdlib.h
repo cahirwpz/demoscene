@@ -5,6 +5,5 @@
 #include <types.h>
 
 u_int random(void);
-__noreturn void exit(int);
 
 #endif

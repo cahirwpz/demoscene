@@ -2,7 +2,7 @@
 #include "copper.h"
 #include "memory.h"
 
-__regargs CopListT *NewCopList(u_short length) {
+CopListT *NewCopList(u_short length) {
   CopListT *list = MemAlloc(sizeof(CopListT) + length * sizeof(CopInsT),
                             MEMF_CHIP|MEMF_CLEAR);
 
@@ -13,14 +13,14 @@ __regargs CopListT *NewCopList(u_short length) {
   return list;
 }
 
-__regargs void DeleteCopList(CopListT *list) {
+void DeleteCopList(CopListT *list) {
   int unused = list->length - (list->curr - list->entry);
   if (unused >= 100)
     Log("Unused copper list entries: %d.\n", unused);
   MemFree(list);
 }
 
-__regargs void CopListActivate(CopListT *list) {
+void CopListActivate(CopListT *list) {
   /* Enable copper DMA */
   custom->dmacon = DMAF_MASTER | DMAF_COPPER | DMAF_SETCLR;
   /* Write copper list address. */
@@ -29,12 +29,12 @@ __regargs void CopListActivate(CopListT *list) {
   WaitVBlank();
 }
 
-__regargs void CopInit(CopListT *list) {
+void CopInit(CopListT *list) {
   list->curr = list->entry;
   list->flags = 0;
 }
 
-__regargs CopInsT *CopMoveWord(CopListT *list, u_short reg, u_short data) {
+CopInsT *CopMoveWord(CopListT *list, u_short reg, u_short data) {
   CopInsT *ptr = list->curr;
   u_short *ins = (u_short *)ptr;
 
@@ -45,7 +45,7 @@ __regargs CopInsT *CopMoveWord(CopListT *list, u_short reg, u_short data) {
   return ptr;
 }
 
-__regargs CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data) {
+CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data) {
   CopInsT *ptr = list->curr;
   u_short *ins = (u_short *)ptr;
 
@@ -60,7 +60,7 @@ __regargs CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data) {
   return ptr;
 }
 
-__regargs void CopEnd(CopListT *list) {
+void CopEnd(CopListT *list) {
   u_int *ins = (u_int *)list->curr;
 
   *ins++ = 0xfffffffe;
@@ -68,7 +68,7 @@ __regargs void CopEnd(CopListT *list) {
   list->curr = (CopInsT *)ins;
 }
 
-__regargs CopInsT *CopWait(CopListT *list, u_short vp, u_short hp) {
+CopInsT *CopWait(CopListT *list, u_short vp, u_short hp) {
   CopInsT *ptr = list->curr;
   u_char *bp = (u_char *)ptr;
   u_short *wp;
@@ -82,7 +82,7 @@ __regargs CopInsT *CopWait(CopListT *list, u_short vp, u_short hp) {
   return ptr;
 }
 
-__regargs CopInsT *CopWaitSafe(CopListT *list, u_short vp, u_short hp) {
+CopInsT *CopWaitSafe(CopListT *list, u_short vp, u_short hp) {
   if (!(list->flags & CLF_VPOVF) && (vp >= 256)) {
     /* Wait for last waitable position to control when overflow occurs. */
     CopWaitEOL(list, 255);
@@ -92,8 +92,8 @@ __regargs CopInsT *CopWaitSafe(CopListT *list, u_short vp, u_short hp) {
   return CopWait(list, vp, hp);
 }
 
-__regargs CopInsT *CopWaitMask(CopListT *list, u_short vp, u_short hp,
-                               u_short vpmask asm("d2"), u_short hpmask asm("d3"))
+CopInsT *CopWaitMask(CopListT *list, u_short vp, u_short hp,
+                     u_short vpmask asm("d2"), u_short hpmask asm("d3"))
 {
   CopInsT *ptr = list->curr;
   u_char *ins = (u_char *)ptr;
@@ -107,7 +107,7 @@ __regargs CopInsT *CopWaitMask(CopListT *list, u_short vp, u_short hp,
   return ptr;
 }
 
-__regargs CopInsT *CopSkip(CopListT *list, u_short vp, u_short hp) {
+CopInsT *CopSkip(CopListT *list, u_short vp, u_short hp) {
   CopInsT *ptr = list->curr;
   u_char *bp = (u_char *)ptr;
   u_short *wp;
@@ -121,8 +121,8 @@ __regargs CopInsT *CopSkip(CopListT *list, u_short vp, u_short hp) {
   return ptr;
 }
 
-__regargs CopInsT *CopSkipMask(CopListT *list, u_short vp, u_short hp,
-                               u_short vpmask asm("d2"), u_short hpmask asm("d3"))
+CopInsT *CopSkipMask(CopListT *list, u_short vp, u_short hp,
+                     u_short vpmask asm("d2"), u_short hpmask asm("d3"))
 {
   CopInsT *ptr = (CopInsT *)list->curr;
   u_char *ins = (u_char *)ptr;
@@ -136,7 +136,7 @@ __regargs CopInsT *CopSkipMask(CopListT *list, u_short vp, u_short hp,
   return ptr;
 }
 
-__regargs CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, u_short start) {
+CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, u_short start) {
   CopInsT *ptr = list->curr;
   u_short *ins = (u_short *)ptr;
   u_short *c = palette->colors;
@@ -151,7 +151,8 @@ __regargs CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, u_short s
   return ptr;
 }
 
-__regargs CopInsT *CopLoadColor(CopListT *list, u_short start, u_short end, u_short color) {
+CopInsT *CopLoadColor(CopListT *list, u_short start, u_short end, u_short color)
+{
   CopInsT *ptr = list->curr;
   u_short *ins = (u_short *)ptr;
 
@@ -164,15 +165,15 @@ __regargs CopInsT *CopLoadColor(CopListT *list, u_short start, u_short end, u_sh
   return ptr;
 }
 
-__regargs void CopSetupMode(CopListT *list, u_short mode, u_short depth) {
+void CopSetupMode(CopListT *list, u_short mode, u_short depth) {
   CopMove16(list, bplcon0, BPLCON0_BPU(depth) | BPLCON0_COLOR | mode);
   CopMove16(list, bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2 | BPLCON2_PF2PRI);
   CopMove16(list, bplcon3, 0);
 }
 
 /* Arguments must be always specified in low resolution coordinates. */
-__regargs void CopSetupDisplayWindow(CopListT *list, u_short mode, 
-                                     u_short xs, u_short ys, u_short w, u_short h)
+void CopSetupDisplayWindow(CopListT *list, u_short mode, 
+                           u_short xs, u_short ys, u_short w, u_short h)
 {
   /* vstart  $00 ..  $ff */
   /* hstart  $00 ..  $ff */
@@ -192,8 +193,7 @@ __regargs void CopSetupDisplayWindow(CopListT *list, u_short mode,
   CopMove16(list, diwstop, (ye << 8) | xe);
 }
 
-__regargs void CopSetupBitplaneFetch(CopListT *list, u_short mode,
-                                     u_short xs, u_short w)
+void CopSetupBitplaneFetch(CopListT *list, u_short mode, u_short xs, u_short w)
 {
   u_char ddfstrt, ddfstop;
 
@@ -233,8 +233,8 @@ __regargs void CopSetupBitplaneFetch(CopListT *list, u_short mode,
   CopMove16(list, fmode, 0);
 }
  
-__regargs void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
-                                 const BitmapT *bitmap, u_short depth) 
+void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
+                       const BitmapT *bitmap, u_short depth) 
 {
   {
     void **planes = bitmap->planes;
@@ -293,9 +293,7 @@ void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
   CopSetupBitplaneFetch(list, mode, x, w);
 }
 
-__regargs void CopUpdateBitplanes(CopInsT **bplptr, const BitmapT *bitmap,
-                                  short n)
-{
+void CopUpdateBitplanes(CopInsT **bplptr, const BitmapT *bitmap, short n) {
   void **planes = bitmap->planes;
 
   while (--n >= 0)

@@ -45,7 +45,7 @@ void BlitterCopySetup(const BitmapT *dst, u_short x, u_short y,
   custom->bltdmod = dstmod;
 }
 
-__regargs void BlitterCopyStart(short dstbpl, short srcbpl) {
+void BlitterCopyStart(short dstbpl, short srcbpl) {
   void *srcbpt = state->src->planes[srcbpl];
   void *dstbpt = state->dst->planes[dstbpl] + state->start;
   u_short bltsize = state->size;
@@ -59,9 +59,7 @@ __regargs void BlitterCopyStart(short dstbpl, short srcbpl) {
   custom->bltsize = bltsize;
 }
 
-__regargs void BitmapCopy(const BitmapT *dst, u_short x, u_short y,
-                          const BitmapT *src)
-{
+void BitmapCopy(const BitmapT *dst, u_short x, u_short y, const BitmapT *src) {
   short i, n = min(dst->depth, src->depth);
 
   BlitterCopySetup(dst, x, y, src);

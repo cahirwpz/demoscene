@@ -6,15 +6,15 @@ DIR := $(patsubst $(TOPDIR)%,%,$(realpath $(CURDIR)))
 DIR := $(patsubst /%,%/,$(DIR))
 
 # Compiler tools & flags definitions
-CC	:= m68k-amigaos-gcc -noixemul -g
+CC	:= m68k-amigaos-gcc -g -ffreestanding -noixemul 
 AS	:= vasm -quiet
 CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 
 ASFLAGS	:= -x -m68010
-LDFLAGS	:= -g -m68000 -msmall-code -nostartfiles -nostdlib
+LDFLAGS	:= -g -m68000 -msmall-code -nostartfiles -nostdlib -nodefaultlibs
 # The '-O2' option does not turn on optimizations '-funroll-loops',
 # '-funroll-all-loops' and `-fstrict-aliasing'.
-OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce
+OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce -mregparm=2
 WFLAGS	:= -Wall -W -Werror -Wundef -Wsign-compare -Wredundant-decls
 WFLAGS	+= -Wnested-externs -Wwrite-strings -Wstrict-prototypes
 DFLAGS	+= -DUAE

@@ -1,3 +1,4 @@
+#include <string.h>
 #include "debug.h"
 #include "memory.h"
 #include "io.h"
@@ -36,15 +37,15 @@ struct File {
   } buf;
 };
 
-ALIAS(Print, Log);
-
 static inline bool ReadTrack(void *data, int offset) {
-  FloppyTrackRead(div16(offset, TD_TRACK));
+  int trknum = div16(offset, TD_TRACK);
+  Log("[Floppy] Read track %d.\n", trknum);
+  FloppyTrackRead(trknum);
   FloppyTrackDecode(data);
   return true;
 }
 
-static __regargs bool FillBuffer(FileT *file) {
+static bool FillBuffer(FileT *file) {
   u_int abspos = file->offset + file->pos;
   u_int waste = mod16(abspos, TD_TRACK);
 
@@ -64,7 +65,7 @@ static __regargs bool FillBuffer(FileT *file) {
   return true;
 }
 
-static __regargs FileT *NewFile(int length, int offset) {
+static FileT *NewFile(int length, int offset) {
   FileT *file = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
 
   file->length = length;
@@ -75,7 +76,7 @@ static __regargs FileT *NewFile(int length, int offset) {
   return file;
 }
 
-static FileEntryT *LookupFile(const char *path asm("d1")) {
+static FileEntryT *LookupFile(const char *path) {
   FileEntryT *entry = rootDir->file;
 
   for (entry = rootDir->file; entry->name; entry++)
@@ -85,7 +86,7 @@ static FileEntryT *LookupFile(const char *path asm("d1")) {
   return NULL;
 }
 
-FileT *OpenFile(const char *path asm("d1"), u_short flags asm("d0") __unused) {
+FileT *OpenFile(const char *path, __unused u_short flags) {
   FileEntryT *entry;
   if ((entry = LookupFile(path))) {
     Log("Found '%s', length: %d, offset: %d\n",
@@ -95,14 +96,14 @@ FileT *OpenFile(const char *path asm("d1"), u_short flags asm("d0") __unused) {
   return NULL;
 }
 
-void CloseFile(FileT *file asm("a0")) {
+void CloseFile(FileT *file) {
   if (file) {
     MemFree(file->buf.track);
     MemFree(file);
   }
 }
 
-bool FileRead(FileT *file asm("a0"), void *buf asm("d2"), u_int size asm("d3")) {
+bool FileRead(FileT *file, void *buf, u_int size) {
   if (!file || size == 0 || (file->flags & IOF_ERR))
     return false;
 
@@ -127,7 +128,7 @@ bool FileRead(FileT *file asm("a0"), void *buf asm("d2"), u_int size asm("d3")) 
   return size == 0; /* have we read everything? */
 }
 
-bool FileSeek(FileT *file asm("a0"), int pos asm("d2"), int mode asm("d3")) {
+bool FileSeek(FileT *file, int pos, int mode) {
   if (!file || (file->flags & IOF_ERR))
     return false;
   
@@ -163,14 +164,14 @@ bool FileSeek(FileT *file asm("a0"), int pos asm("d2"), int mode asm("d3")) {
   return false;
 }
 
-int GetFileSize(const char *path asm("d1")) {
+int GetFileSize(const char *path) {
   FileEntryT *entry;
   if ((entry = LookupFile(path)))
     return entry->length;
   return -1;
 }
 
-int GetCursorPos(FileT *file asm("a0")) {
+int GetCursorPos(FileT *file) {
   if (file && !(file->flags & IOF_ERR))
     return file->pos - file->buf.left;
   return -1;
@@ -199,6 +200,8 @@ static void ReadDir(void) {
 
   /* read directory header */
   FileRead(fh, ONSTACK(dir));
+
+  Log("[ReadDir] Reading directory with %u files.\n", dir.files);
 
   dirLen = sizeof(DirEntT) * dir.files + sizeof(DirT);
   rootDirLen = sizeof(FileEntryT) * (dir.files + 1) + sizeof(RootDirT);

@@ -15,8 +15,8 @@ static int PixmapSize(PixmapT *pixmap) {
   return bytesPerRow * pixmap->height;
 }
 
-__regargs PixmapT *NewPixmap(short width, short height, 
-                             PixmapTypeT type, u_int memoryAttributes)
+PixmapT *NewPixmap(short width, short height, PixmapTypeT type,
+                   u_int memoryAttributes)
 {
   PixmapT *pixmap = MemAlloc(sizeof(PixmapT), MEMF_PUBLIC|MEMF_CLEAR);
 
@@ -28,14 +28,14 @@ __regargs PixmapT *NewPixmap(short width, short height,
   return pixmap;
 }
 
-__regargs void DeletePixmap(PixmapT *pixmap) {
+void DeletePixmap(PixmapT *pixmap) {
   if (pixmap) {
     MemFree(pixmap->pixels);
     MemFree(pixmap);
   }
 }
 
-__regargs void PixmapScramble_4_1(const PixmapT *pixmap) {
+void PixmapScramble_4_1(const PixmapT *pixmap) {
   if (pixmap->type == PM_CMAP4) {
     u_int *data = pixmap->pixels;
     short n = pixmap->width * pixmap->height / 8;
@@ -50,7 +50,7 @@ __regargs void PixmapScramble_4_1(const PixmapT *pixmap) {
   }
 }
 
-__regargs void PixmapScramble_4_2(const PixmapT *pixmap) {
+void PixmapScramble_4_2(const PixmapT *pixmap) {
   if (pixmap->type == PM_CMAP4) {
     u_int *data = pixmap->pixels;
     short n = pixmap->width * pixmap->height / 8;

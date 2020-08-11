@@ -1,8 +1,6 @@
 #include "blitter.h"
 
-__regargs void BlitterFillArea(const BitmapT *bitmap, short plane,
-                               const Area2D *area)
-{
+void BlitterFillArea(const BitmapT *bitmap, short plane, const Area2D *area) {
   void *bltpt = bitmap->planes[plane];
   u_short bltmod, bltsize;
 

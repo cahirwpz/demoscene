@@ -1,3 +1,4 @@
+#include <string.h>
 #include "debug.h"
 #include "sync.h"
 #include "fx.h"
@@ -5,7 +6,7 @@
 /* Introduce weak symbol in case no tracks were defined by user. */
 TrackT *__TRACK_LIST__[1];
 
-static __regargs void TrackAdvance(TrackT *track, TrackKeyT *curr) {
+static void TrackAdvance(TrackT *track, TrackKeyT *curr) {
   TrackKeyT *next;
 
   if (curr->frame == CTRL_KEY) {
@@ -26,7 +27,7 @@ static __regargs void TrackAdvance(TrackT *track, TrackKeyT *curr) {
   }
 }
 
-__regargs void TrackReset(TrackT *track) {
+void TrackReset(TrackT *track) {
   track->type = TRACK_LINEAR;
   track->pending = true;
 
@@ -43,7 +44,7 @@ void InitTracks(void) {
   }
 }
 
-__regargs short TrackValueGet(TrackT *track, short frame) {
+short TrackValueGet(TrackT *track, short frame) {
   TrackKeyT *curr = track->curr;
   TrackKeyT *next = track->next;
   short step;
@@ -113,7 +114,7 @@ __regargs short TrackValueGet(TrackT *track, short frame) {
   }
 }
 
-__regargs TrackT *TrackLookup(const char *name) {
+TrackT *TrackLookup(const char *name) {
   TrackT **tracks = __TRACK_LIST__;
   do {
     TrackT *track = *tracks++;

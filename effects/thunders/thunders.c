@@ -186,7 +186,7 @@ static void DrawLine(void *data asm("a2"), short x1 asm("d2"), short y1 asm("d3"
   }
 }
 
-static __regargs void DrawStripes(short xo, short kxo) {
+static void DrawStripes(short xo, short kxo) {
   short k;
 
   /* Setup fast line drawing. */
@@ -243,7 +243,7 @@ static __regargs void DrawStripes(short xo, short kxo) {
   }
 }
 
-static __regargs void FillStripes(u_short plane) {
+static void FillStripes(u_short plane) {
   void *bltpt = screen0->planes[plane] + (HEIGHT * WIDTH) / 8 - 2;
   u_short bltsize = ((HEIGHT - FAR_Y - 1) << 6) | (WIDTH >> 4);
 
@@ -297,7 +297,7 @@ void ControlTileColors(void) {
   }
 }
 
-static __regargs void ColorizeUpperHalf(CopListT *cp, short yi, short kyo) {
+static void ColorizeUpperHalf(CopListT *cp, short yi, short kyo) {
   short k;
   short y0 = HEIGHT;
   void *pixels = tileColor;
@@ -339,7 +339,7 @@ static __regargs void ColorizeUpperHalf(CopListT *cp, short yi, short kyo) {
   }
 }
 
-static __regargs void ColorizeLowerHalf(CopListT *cp, short yi, short kyo) {
+static void ColorizeLowerHalf(CopListT *cp, short yi, short kyo) {
   short k;
   short y0 = FAR_Y;
   void *pixels = tileColor;

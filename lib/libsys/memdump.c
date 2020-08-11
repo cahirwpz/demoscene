@@ -1,7 +1,7 @@
 #include "rawio.h"
 #include "common.h"
 
-__regargs void MemDump(void *ptr, int n) {
+void MemDump(void *ptr, int n) {
   char *data = ptr;
 
   while (n > 0) {

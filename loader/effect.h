@@ -1,7 +1,8 @@
 #ifndef __EFFECT_H__
 #define __EFFECT_H__
 
-#include "types.h"
+#include <types.h>
+#include <string.h>
 #include "debug.h"
 
 /* Definitions below are useful for copper list construction. */
@@ -78,11 +79,11 @@ typedef struct Effect {
   void (*Render)(void);
 } EffectT;
 
-__regargs void EffectLoad(EffectT *effect);
-__regargs void EffectInit(EffectT *effect);
-__regargs void EffectKill(EffectT *effect);
-__regargs void EffectUnLoad(EffectT *effect);
-__regargs void EffectRun(EffectT *effect);
+void EffectLoad(EffectT *effect);
+void EffectInit(EffectT *effect);
+void EffectKill(EffectT *effect);
+void EffectUnLoad(EffectT *effect);
+void EffectRun(EffectT *effect);
 
 #define EFFECT(NAME, L, U, I, K, R) \
   EffectT Effect = {                \

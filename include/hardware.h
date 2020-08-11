@@ -46,7 +46,7 @@ void DisableDMA(u_short mask);
 int RasterLine(void);
 
 void WaitMouse(void);
-__regargs void WaitLine(u_int line);
+void WaitLine(u_int line);
 static inline void WaitVBlank(void) { WaitLine(303); }
 
 #define MoveLong(reg, hi, lo) \
@@ -65,9 +65,9 @@ static inline bool RightMouseButton(void) {
 #define TIMER_US(us) ((us) * E_CLOCK / (1000 * 1000))
 
 /* Maximum delay is around 92.38ms */
-__regargs void WaitTimerA(volatile struct CIA *cia, u_short delay);
-__regargs void WaitTimerB(volatile struct CIA *cia, u_short delay);
-__regargs int ReadICR(volatile struct CIA *cia);
+void WaitTimerA(volatile struct CIA *cia, u_short delay);
+void WaitTimerB(volatile struct CIA *cia, u_short delay);
+int ReadICR(volatile struct CIA *cia);
 
 int ReadLineCounter(void);
 int ReadFrameCounter(void);

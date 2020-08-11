@@ -4,7 +4,7 @@
 #include <stdarg.h>
 #include <types.h>
 
-typedef __regargs void (kvprintf_fn_t)(int, void *);
+typedef void (kvprintf_fn_t)(int, void *);
 
 int kvprintf(char const *fmt, kvprintf_fn_t *func, void *arg, va_list ap);
 int snprintf(char *buf, size_t size, const char *cfmt, ...)

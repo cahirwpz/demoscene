@@ -1,9 +1,7 @@
 #include "blitter.h"
 
 /* Bitplane decrementer with saturation. */
-__regargs void BitmapDecSaturated(const BitmapT *dst_bm,
-                                  const BitmapT *borrow_bm)
-{
+void BitmapDecSaturated(const BitmapT *dst_bm, const BitmapT *borrow_bm) {
   void *borrow0 = borrow_bm->planes[0];
   void *borrow1 = borrow_bm->planes[1];
   void *const *dst = dst_bm->planes;

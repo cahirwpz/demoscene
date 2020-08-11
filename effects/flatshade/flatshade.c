@@ -73,7 +73,7 @@ static void Kill(void) {
   D = normfx(t0 * t1 + t2 - x * y) + t3; \
 }
 
-static __regargs void TransformVertices(Object3D *object) {
+static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   short *v = (short *)M;
   short *src = (short *)object->mesh->vertex;
@@ -316,7 +316,7 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
   }
 }
 
-static __regargs void BitmapClearFast(BitmapT *dst) {
+static void BitmapClearFast(BitmapT *dst) {
   u_short height = (short)dst->height * (short)dst->depth;
   u_short bltsize = (height << 6) | (dst->bytesPerRow >> 1);
   void *bltpt = dst->planes[0];

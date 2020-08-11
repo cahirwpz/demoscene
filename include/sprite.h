@@ -35,14 +35,13 @@ typedef struct Sprite {
 
 extern u_short NullSprite[];
 
-__regargs SpriteT *NewSprite(u_short height, bool attached);
-__regargs void DeleteSprite(SpriteT *sprite);
+SpriteT *NewSprite(u_short height, bool attached);
+void DeleteSprite(SpriteT *sprite);
 
 /* Don't call it for null sprites. */
-__regargs void UpdateSprite(const SpriteT *sprite,
-                            u_short hstart, u_short vstart);
+void UpdateSprite(const SpriteT *sprite, u_short hstart, u_short vstart);
 
-__regargs void CopSetupSprites(CopListT *list, CopInsT **sprptr);
-__regargs void CopSetupManualSprites(CopListT *list, CopInsT **sprptr);
+void CopSetupSprites(CopListT *list, CopInsT **sprptr);
+void CopSetupManualSprites(CopListT *list, CopInsT **sprptr);
 
 #endif

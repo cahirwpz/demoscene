@@ -1,4 +1,5 @@
 #include <proto/exec.h>
+#include <string.h>
 
 #include "common.h"
 #include "debug.h"
@@ -58,7 +59,7 @@ static const char *MemoryName(u_int attributes) {
   return "public";
 }
 
-__regargs static AreaT *MemPoolAlloc(u_int byteSize, u_int attributes) {
+static AreaT *MemPoolAlloc(u_int byteSize, u_int attributes) {
   AreaT *area; 
 
   byteSize = align(byteSize, BLK_UNIT);
@@ -120,7 +121,7 @@ static inline BlockT *BlockAfter(BlockT *blk) {
   return (void *)blk + abs(blk->size);
 }
 
-static __regargs AreaT *FindAreaOf(void *memoryBlock) {
+static AreaT *FindAreaOf(void *memoryBlock) {
   AreaT *area = fast;
 
   while (area && OUTSIDE(memoryBlock, area))
@@ -129,7 +130,7 @@ static __regargs AreaT *FindAreaOf(void *memoryBlock) {
   return area;
 }
 
-static __regargs bool CheckBlockInternal(BlockT *blk, AreaT *area) {
+static bool CheckBlockInternal(BlockT *blk, AreaT *area) {
   if (!blk)
     return true;
   /* block marker damaged ? */
@@ -149,7 +150,7 @@ static __regargs bool CheckBlockInternal(BlockT *blk, AreaT *area) {
   return true;
 }
 
-static __regargs void MemDebugInternal(AreaT *area, const char *msg) {
+static void MemDebugInternal(AreaT *area, const char *msg) {
   BlockT *blk = (BlockT *)area->lower;
 
   Log("%s Area $%p - $%p of %s memory (%dkB free)\n", msg, area->lower,
@@ -169,7 +170,7 @@ static __regargs void MemDebugInternal(AreaT *area, const char *msg) {
   } while ((void *)blk < area->upper);
 }
 
-__regargs void MemDebug(u_int attributes) {
+void MemDebug(u_int attributes) {
   AreaT *area = fast;
   
   while (area) {
@@ -179,12 +180,12 @@ __regargs void MemDebug(u_int attributes) {
   }
 }
 
-static __regargs void CheckBlock(BlockT *blk, AreaT *area, const char *msg) {
+static void CheckBlock(BlockT *blk, AreaT *area, const char *msg) {
   if (!CheckBlockInternal(blk, area))
     MemDebugInternal(area, msg);
 }
 
-static __regargs int MemLargest(AreaT *area) {
+static int MemLargest(AreaT *area) {
   BlockT *curr = area->first;
   int size = 0;
 
@@ -198,7 +199,7 @@ static __regargs int MemLargest(AreaT *area) {
   return size;
 }
 
-__regargs int MemAvail(u_int attributes) {
+int MemAvail(u_int attributes) {
   if (attributes & MEMF_LARGEST) {
     if (attributes & MEMF_CHIP)
       return MemLargest(chip);
@@ -218,7 +219,7 @@ __regargs int MemAvail(u_int attributes) {
   }
 }
 
-__regargs int MemUsed(u_int attributes) {
+int MemUsed(u_int attributes) {
   int chipUsed = __chipmem - chip->freeMem;
   int fastUsed = __fastmem - fast->freeMem;
 
@@ -308,7 +309,7 @@ static void AllocBlock(BlockT *blk, AreaT *area) {
   }
 }
 
-__regargs void *MemAlloc(u_int byteSize, u_int attributes) {
+void *MemAlloc(u_int byteSize, u_int attributes) {
   u_int size = align(offsetof(BlockT, data) + byteSize, BLK_UNIT);
   AreaT *area = fast;
   BlockT *blk = NULL;
@@ -329,7 +330,7 @@ __regargs void *MemAlloc(u_int byteSize, u_int attributes) {
     Log("[MemAlloc] Failed to allocate %dB of %s memory.\n",
         byteSize, MemoryName(attributes));
     MemDebug(attributes);
-    exit(10);
+    HALT();
   }
 
   /* Split the block if can. */
@@ -401,7 +402,7 @@ static void MergeBlock(BlockT *blk, AreaT *area) {
   }
 }
 
-__regargs void MemFree(void *memoryBlock) {
+void MemFree(void *memoryBlock) {
   if (memoryBlock) {
     AreaT *area = FindAreaOf(memoryBlock);
 
@@ -420,7 +421,7 @@ __regargs void MemFree(void *memoryBlock) {
   }
 }
 
-__regargs void MemResize(void *memoryBlock, u_int byteSize) {
+void MemResize(void *memoryBlock, u_int byteSize) {
   AreaT *area = FindAreaOf(memoryBlock);
 
   if (area) {
@@ -461,7 +462,7 @@ __regargs void MemResize(void *memoryBlock, u_int byteSize) {
         /* the block would've had to be moved to satisfy the request */
         Log("[MemResize] Failed to resize $%p to %dB.\n", blk, byteSize);
         MemDebugInternal(area, "[MemResize]");
-        exit(10);
+        HALT();
       }
     }
   } else {
@@ -469,7 +470,7 @@ __regargs void MemResize(void *memoryBlock, u_int byteSize) {
   }
 }
 
-__regargs int MemTypeOf(void *address) {
+int MemTypeOf(void *address) {
   if (INSIDE(address, chip))
     return MEMF_CHIP;
   if (INSIDE(address, fast))

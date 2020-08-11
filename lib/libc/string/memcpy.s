@@ -7,18 +7,12 @@
 
         section '.text',code
 
-_bcopy: move.l  4(sp),a0
-        move.l  8(sp),a1
-        move.l  12(sp),d1
-        bra     doit
-
+; [a0] src address
+; [a1] dest address
+; [d1] count
+_bcopy:
 _memcpy:
 _memmove:
-	move.l	4(sp),a1		; dest address
-	move.l	8(sp),a0		; src address
-	move.l	12(sp),d1		; count
-
-doit:
 	cmp.l	a1,a0			; src after dest?
 	blt	.Lbcback		; yes, must copy backwards
 

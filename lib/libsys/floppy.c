@@ -142,7 +142,7 @@ void KillFloppy() {
 
 #define DISK_SETTLE TIMER_MS(15)
 
-__regargs void FloppyTrackRead(short num) {
+void FloppyTrackRead(short num) {
   if (trackNum == num)
     return;
 
@@ -183,7 +183,7 @@ static inline u_int DecodeMFM(u_int odd, u_int even, u_int mask) {
   return ((odd & mask) << 1) | (even & mask);
 }
 
-__regargs void FloppyTrackDecode(u_int *buf) {
+void FloppyTrackDecode(u_int *buf) {
   short secnum = NUMSECS;
   SectorT *maybeSector = track;
 

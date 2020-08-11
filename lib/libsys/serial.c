@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "serial.h"
 #include "interrupts.h"
 #include "hardware.h"
@@ -66,7 +67,7 @@ INTERRUPT(SendInterrupt, 0, SendIntHandler, NULL);
 static struct Interrupt *oldTBE;
 static struct Interrupt *oldRBF;
 
-__regargs void SerialInit(int baud) {
+void SerialInit(int baud) {
   memset(&serial, 0, sizeof(serial));
 
   custom->serper = CLOCK / baud - 1;
@@ -86,7 +87,7 @@ void SerialKill() {
   SetIntVector(INTB_TBE, oldTBE);
 }
 
-__regargs void SerialPut(u_char data) {
+void SerialPut(u_char data) {
   PushChar(&serial.sendq, data);
   if (data == '\n')
     PushChar(&serial.sendq, '\r');

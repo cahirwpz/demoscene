@@ -24,7 +24,7 @@ int RasterLine() {
   return (*vposr() & 0x1ff00) >> 8;
 }
 
-__regargs void WaitLine(u_int line) {
+void WaitLine(u_int line) {
   u_int mask = 0x1ff00;
   u_int vpos;
 
@@ -36,7 +36,7 @@ __regargs void WaitLine(u_int line) {
   } while (vpos != line);
 }
 
-__regargs int ReadICR(volatile struct CIA *cia) {
+int ReadICR(volatile struct CIA *cia) {
   static int oldicr = 0;
   u_char newicr = cia->ciaicr;
   if (newicr)
@@ -44,7 +44,7 @@ __regargs int ReadICR(volatile struct CIA *cia) {
   return oldicr;
 }
 
-__regargs void WaitTimerA(volatile struct CIA *cia, u_short delay) {
+void WaitTimerA(volatile struct CIA *cia, u_short delay) {
   cia->ciacra |= CIACRAF_RUNMODE;
   cia->ciaicr = CIAICRF_TA;
   cia->ciatalo = delay;
@@ -52,7 +52,7 @@ __regargs void WaitTimerA(volatile struct CIA *cia, u_short delay) {
   while (!(cia->ciaicr & CIAICRF_TA));
 }
 
-__regargs void WaitTimerB(volatile struct CIA *cia, u_short delay) {
+void WaitTimerB(volatile struct CIA *cia, u_short delay) {
   cia->ciacra |= CIACRBF_RUNMODE;
   cia->ciaicr = CIAICRF_TB;
   cia->ciatalo = delay;

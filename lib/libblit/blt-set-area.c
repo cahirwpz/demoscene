@@ -44,7 +44,7 @@ void BlitterSetAreaSetup(const BitmapT *bitmap, const Area2D *area) {
   custom->bltalwm = bltalwm;
 }
 
-__regargs void BlitterSetAreaStart(short bplnum, u_short pattern) {
+void BlitterSetAreaStart(short bplnum, u_short pattern) {
   void *bltpt = state->bitmap->planes[bplnum] + state->start;
   u_short bltsize = state->size;
 
@@ -56,9 +56,7 @@ __regargs void BlitterSetAreaStart(short bplnum, u_short pattern) {
   custom->bltsize = bltsize;
 }
 
-__regargs void BitmapSetArea(const BitmapT *bitmap,
-                             const Area2D *area, u_short color)
-{
+void BitmapSetArea(const BitmapT *bitmap, const Area2D *area, u_short color) {
   short i;
 
   BlitterSetAreaSetup(bitmap, area);

@@ -31,8 +31,8 @@ void (*UVMapRender)(u_char *chunky asm("a0"),
                     u_char *textureHi asm("a1"),
                     u_char *textureLo asm("a2"));
 
-static __regargs void PixmapToTexture(const PixmapT *image,
-                                      PixmapT *imageHi, PixmapT *imageLo)
+static void PixmapToTexture(const PixmapT *image,
+                            PixmapT *imageHi, PixmapT *imageLo)
 {
   u_char *data = image->pixels;
   int size = image->width * image->height;
@@ -156,7 +156,7 @@ static void Kill(void) {
 #error "blit size too big!"
 #endif
 
-static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
+static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
   void *planes = output->planes[0];
   void *chunky = input->pixels;
 
@@ -271,7 +271,7 @@ static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
   }
 }
 
-static __regargs void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
+static void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
   void *planes = input->planes[0];
   short bltsize = (input->height << 6) | 1;
   short i = 0;
@@ -307,7 +307,7 @@ static __regargs void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
   }
 }
 
-static __regargs void PositionSprite(SpriteT **sprite, short xo, short yo) {
+static void PositionSprite(SpriteT **sprite, short xo, short yo) {
   short x = X((S_WIDTH - WIDTH) / 2) + xo;
   short y = Y((S_HEIGHT - HEIGHT) / 2) + yo;
   CopInsT **ptr = sprptr;

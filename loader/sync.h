@@ -46,8 +46,8 @@ extern TrackT *__TRACK_LIST__[];
 
 void InitTracks(void);
 
-__regargs void TrackReset(TrackT *track);
-__regargs TrackT *TrackLookup(const char *name);
-__regargs short TrackValueGet(TrackT *track, short frame);
+void TrackReset(TrackT *track);
+TrackT *TrackLookup(const char *name);
+short TrackValueGet(TrackT *track, short frame);
 
 #endif

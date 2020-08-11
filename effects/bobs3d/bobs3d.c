@@ -68,7 +68,7 @@ static void Kill(void) {
   D = normfx(t0 * t1 + t2 - xy) + t3;   \
 }
 
-static __regargs void TransformVertices(Object3D *object) {
+static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   short *src = (short *)object->mesh->vertex;
   short *dst = (short *)object->vertex;
@@ -180,7 +180,7 @@ void BlitterOrArea(BitmapT *dst asm("a0"), u_short x asm("d0"), u_short y asm("d
   }
 }
 
-static __regargs void DrawObject(Object3D *object, BitmapT *dst) {
+static void DrawObject(Object3D *object, BitmapT *dst) {
   short *data = (short *)object->vertex;
   register short n asm("d7") = object->mesh->vertices;
 

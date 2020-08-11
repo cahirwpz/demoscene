@@ -1,7 +1,7 @@
 #include "copper.h"
 
-__regargs void CopSetupDualPlayfield(CopListT *list, CopInsT **bplptr,
-                                     const BitmapT *pf1, const BitmapT *pf2)
+void CopSetupDualPlayfield(CopListT *list, CopInsT **bplptr,
+                           const BitmapT *pf1, const BitmapT *pf2)
 {
   void **planes1 = pf1->planes;
   void **planes2 = pf2->planes;

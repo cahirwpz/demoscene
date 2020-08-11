@@ -10,8 +10,8 @@ typedef struct {
 
 static StateT state[1];
 
-__regargs void BlitterCopyMaskedSetup(const BitmapT *dst, u_short x, u_short y,
-                                      const BitmapT *src, const BitmapT *msk)
+void BlitterCopyMaskedSetup(const BitmapT *dst, u_short x, u_short y,
+                            const BitmapT *src, const BitmapT *msk)
 {
   u_short dstmod = dst->bytesPerRow - src->bytesPerRow;
   u_short bltsize = (src->height << 6) | (src->bytesPerRow >> 1);
@@ -48,7 +48,7 @@ __regargs void BlitterCopyMaskedSetup(const BitmapT *dst, u_short x, u_short y,
   }
 }
 
-__regargs void BlitterCopyMaskedStart(short dstbpl, short srcbpl) {
+void BlitterCopyMaskedStart(short dstbpl, short srcbpl) {
   void *srcbpt = state->src->planes[srcbpl];
   void *dstbpt = state->dst->planes[dstbpl] + state->start;
   void *mskbpt = state->msk->planes[0];

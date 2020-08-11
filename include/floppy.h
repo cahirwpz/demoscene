@@ -9,7 +9,7 @@
 void InitFloppy(void);
 void KillFloppy(void);
 
-__regargs void FloppyTrackRead(short num);
-__regargs void FloppyTrackDecode(u_int *buf);
+void FloppyTrackRead(short num);
+void FloppyTrackDecode(u_int *buf);
 
 #endif

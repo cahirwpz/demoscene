@@ -110,7 +110,7 @@ static void SetupLinePointers(void) {
   }
 }
 
-static __regargs char *NextLine(char *str) {
+static char *NextLine(char *str) {
   for (; *str; str++)
     if (*str == '\n')
       return ++str;

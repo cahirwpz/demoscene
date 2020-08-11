@@ -1,6 +1,6 @@
 #include "blitter.h"
 
-__regargs BitmapT *BitmapMakeMask(const BitmapT *bitmap) {
+BitmapT *BitmapMakeMask(const BitmapT *bitmap) {
   BitmapT *mask = NewBitmap(bitmap->width, bitmap->height, 1);
   u_short bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
   void **planes = bitmap->planes;

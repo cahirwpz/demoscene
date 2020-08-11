@@ -10,14 +10,14 @@ typedef struct File FileT;
 
 #define IOF_BUFFERED 1
 
-FileT *OpenFile(const char *path asm("d1"), u_short flags asm("d0"));
-void CloseFile(FileT *fh asm("a0"));
-int GetFileSize(const char *path asm("d1"));
-bool FileRead(FileT *fh asm("a0"), void *buf asm("d2"), u_int size asm("d3"));
-bool FileSeek(FileT *fh asm("a0"), int pos asm("d2"), int mode asm("d3"));
-int GetCursorPos(FileT *fh asm("a0"));
+FileT *OpenFile(const char *path, u_short flags);
+void CloseFile(FileT *fh);
+int GetFileSize(const char *path);
+bool FileRead(FileT *fh, void *buf, u_int size);
+bool FileSeek(FileT *fh, int pos, int mode);
+int GetCursorPos(FileT *fh);
 
-__regargs void *LoadFile(const char *path, u_int memoryFlags);
+void *LoadFile(const char *path, u_int memoryFlags);
 
 void InitFloppyIO(void);
 void KillFloppyIO(void);

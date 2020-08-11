@@ -5,11 +5,12 @@
 
         section '.text',code
 
+; [a0] destination
+; [d1] count
+; [d0] get fill character
 _memset:
 	move.l	d2,-(sp)
-	move.l	8(sp),a0		; destination
-	move.l	16(sp),d1		; count
-	move.b	15(sp),d2		; get fill character
+        move.b  d0,d2
 
 	; It isn't worth the overhead of aligning to {long}word boundries
 	; if the string is too short.

@@ -128,7 +128,7 @@ static const char KeyMapUpper[128] = {
 
 static u_char modifier;
 
-static __regargs void PushKeyEvent(u_char raw) {
+static void PushKeyEvent(u_char raw) {
   KeyEventT event;
   u_char code = raw & 0x7f;
   u_char mod;

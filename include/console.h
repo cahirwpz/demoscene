@@ -20,12 +20,12 @@ typedef struct Console {
 
 void ConsoleInit(ConsoleT *console, ConsoleFontT *font, BitmapT *bitmap);
 
-__regargs void ConsoleSetCursor(ConsoleT *console, u_short x, u_short y);
-__regargs void ConsolePutChar(ConsoleT *console, char c);
-__regargs void ConsolePutStr(ConsoleT *console, const char *str);
-__regargs void ConsoleDrawChar(ConsoleT *console, u_short x, u_short y, char c);
-__regargs void ConsoleDrawCursor(ConsoleT *console);
-__regargs void ConsoleDrawBox(ConsoleT *console, u_short x, u_short y, u_short w, u_short h);
+void ConsoleSetCursor(ConsoleT *console, u_short x, u_short y);
+void ConsolePutChar(ConsoleT *console, char c);
+void ConsolePutStr(ConsoleT *console, const char *str);
+void ConsoleDrawChar(ConsoleT *console, u_short x, u_short y, char c);
+void ConsoleDrawCursor(ConsoleT *console);
+void ConsoleDrawBox(ConsoleT *console, u_short x, u_short y, u_short w, u_short h);
 
 void ConsolePrint(ConsoleT *console, const char *format, ...)
   __attribute__ ((format (printf, 2, 3)));

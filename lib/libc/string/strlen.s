@@ -5,8 +5,8 @@
 
         section '.text',code
 
+; [a0] string
 _strlen:
-	move.l	4(sp),a0	; string
 	move.l	a0,d0
 	not.l	d0
 .loop:  tst.b	(a0)+		; null?

@@ -25,7 +25,7 @@ static inline short nlz(u_int x) {
   return n + _nlz[x];
 }
 
-__regargs int isqrt(int val) {
+int isqrt(int val) {
   short cnt = nlz(val);
   u_int t;
 

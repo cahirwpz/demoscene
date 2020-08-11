@@ -31,7 +31,7 @@ static inline void putpixel(u_char *line, short x) {
   bset(line + (x >> 3), ~x);
 }
 
-static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
+static void DrawOsc(BitmapT *osc, P61_OscData *data) {
   u_char *line = osc->planes[0];
   char *sample, *end;
   short n = 64;

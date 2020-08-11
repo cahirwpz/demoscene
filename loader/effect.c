@@ -17,14 +17,14 @@ static void ShowMemStats(void) {
 
 #if REMOTE_CONTROL
 # include "serial.h"
-static __regargs void SendEffectStatus(EffectT *effect) {
+static void SendEffectStatus(EffectT *effect) {
   SerialPrint("ES %s %d\n", effect->name, effect->state);
 }
 #else
 # define SendEffectStatus(x)
 #endif
 
-__regargs void EffectLoad(EffectT *effect) {
+void EffectLoad(EffectT *effect) {
   if (effect->state & EFFECT_LOADED)
     return;
 
@@ -38,7 +38,7 @@ __regargs void EffectLoad(EffectT *effect) {
   SendEffectStatus(effect);
 }
 
-__regargs void EffectInit(EffectT *effect) {
+void EffectInit(EffectT *effect) {
   if (effect->state & EFFECT_READY)
     return;
 
@@ -52,7 +52,7 @@ __regargs void EffectInit(EffectT *effect) {
   SendEffectStatus(effect);
 }
 
-__regargs void EffectKill(EffectT *effect) {
+void EffectKill(EffectT *effect) {
   if (!(effect->state & EFFECT_READY))
     return;
 
@@ -66,7 +66,7 @@ __regargs void EffectKill(EffectT *effect) {
   SendEffectStatus(effect);
 }
 
-__regargs void EffectUnLoad(EffectT *effect) {
+void EffectUnLoad(EffectT *effect) {
   if (!(effect->state & EFFECT_LOADED))
     return;
 
@@ -84,7 +84,7 @@ int frameCount;
 int lastFrameCount;
 bool exitLoop;
 
-__regargs void EffectRun(EffectT *effect) {
+void EffectRun(EffectT *effect) {
   SetFrameCounter(0);
 
   lastFrameCount = ReadFrameCounter();

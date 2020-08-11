@@ -10,8 +10,8 @@ static inline void swap(void *x, void *y, short l) {
   } while (--l != -1);
 }
 
-static __regargs void sort(void *first, void *last, int size, 
-                           __regargs int (*cmp)(const void *, const void *))
+static void sort(void *first, void *last, int size, 
+                 int (*cmp)(const void *, const void *))
 {
   if (last - first > size) {
     void *pivot = first;
@@ -34,7 +34,7 @@ static __regargs void sort(void *first, void *last, int size,
 }
 
 void qsort(void *array, int nitems, int size,
-           __regargs int (*cmp)(const void *, const void *))
+           int (*cmp)(const void *, const void *))
 {
   sort(array, array + (nitems - 1) * size, size, cmp);
 }

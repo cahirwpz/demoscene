@@ -3,7 +3,7 @@
 
 Box2D ClipWin = { 0, 0, fx4i(319), fx4i(255) };
 
-__regargs void PointsInsideBox(Point2D *in, u_char *flags, short n) {
+void PointsInsideBox(Point2D *in, u_char *flags, short n) {
   short *src = (short *)in;
 
   short minX = ClipWin.minX;
@@ -40,7 +40,7 @@ typedef struct {
 static LBEdgeT edge[2];
 
 /* Liang-Barsky algorithm. */
-__regargs bool ClipLine2D(Line2D *line) {
+bool ClipLine2D(Line2D *line) {
   short t0 = 0;
   short t1 = ONE;
   short xdelta = line->x2 - line->x1;
@@ -110,7 +110,7 @@ __regargs bool ClipLine2D(Line2D *line) {
   return true;
 }
 
-static __regargs bool CheckInside(Point2D *p, u_short plane) {
+static bool CheckInside(Point2D *p, u_short plane) {
   if (plane & PF_LEFT)
     return (p->x >= ClipWin.minX);
   if (plane & PF_RIGHT)
@@ -122,8 +122,7 @@ static __regargs bool CheckInside(Point2D *p, u_short plane) {
   return false;
 }
 
-static __regargs void ClipEdge(Point2D *o, Point2D *s, Point2D *e, u_short plane)
-{
+static void ClipEdge(Point2D *o, Point2D *s, Point2D *e, u_short plane) {
   short dx = s->x - e->x;
   short dy = s->y - e->y;
 
@@ -146,9 +145,7 @@ static __regargs void ClipEdge(Point2D *o, Point2D *s, Point2D *e, u_short plane
   }
 }
 
-static __regargs u_short ClipPolygon(Point2D *S, Point2D *O,
-                                   u_short n, u_short plane)
-{
+static u_short ClipPolygon(Point2D *S, Point2D *O, u_short n, u_short plane) {
   Point2D *E = S + 1;
 
   bool S_inside = CheckInside(S, plane);
@@ -182,8 +179,7 @@ static __regargs u_short ClipPolygon(Point2D *S, Point2D *O,
   return m;
 }
 
-__regargs u_short ClipPolygon2D(Point2D *in, Point2D **outp, u_short n,
-                              u_short clipFlags)
+u_short ClipPolygon2D(Point2D *in, Point2D **outp, u_short n, u_short clipFlags)
 {
   Point2D *out = *outp;
 

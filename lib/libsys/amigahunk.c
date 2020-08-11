@@ -1,3 +1,4 @@
+#include <string.h>
 #include "amigahunk.h"
 #include "debug.h"
 #include "io.h"
@@ -23,7 +24,7 @@ struct Hunk {
   char data[0];
 };
 
-static __regargs bool AllocHunks(FileT *fh, HunkT **hunkArray, int hunkCount) {
+static bool AllocHunks(FileT *fh, HunkT **hunkArray, int hunkCount) {
   HunkT *hunk, *prev;
 
   for (prev = NULL; hunkCount--; prev = hunk) {
@@ -57,7 +58,7 @@ static __regargs bool AllocHunks(FileT *fh, HunkT **hunkArray, int hunkCount) {
   return true;
 }
 
-static __regargs bool LoadHunks(FileT *fh, HunkT **hunkArray) {
+static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
   HunkT *hunk = *hunkArray;
   int n, hunkCode;
   bool hunkRoot = true;
@@ -122,7 +123,7 @@ static __regargs bool LoadHunks(FileT *fh, HunkT **hunkArray) {
   return true;
 }
 
-__regargs HunkT *LoadHunkList(FileT *fh) {
+HunkT *LoadHunkList(FileT *fh) {
   HunkT **hunkArray;
   int hunkId, hunkCount;
 
@@ -163,7 +164,7 @@ __regargs HunkT *LoadHunkList(FileT *fh) {
   return NULL;
 }
 
-__regargs void FreeHunkList(HunkT *hunk) {
+void FreeHunkList(HunkT *hunk) {
   do {
     HunkT *next = hunk->next;
     MemFree(hunk);

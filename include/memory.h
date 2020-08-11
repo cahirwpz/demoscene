@@ -27,14 +27,14 @@
 #define MEMF_REVERSE (1L << 18)
 #endif
 
-__regargs void MemDebug(u_int attributes);
-__regargs int MemAvail(u_int attributes);
-__regargs int MemUsed(u_int attributes);
+void MemDebug(u_int attributes);
+int MemAvail(u_int attributes);
+int MemUsed(u_int attributes);
 
-__regargs void *MemAlloc(u_int byteSize, u_int attributes);
-__regargs void MemResize(void *memoryBlock, u_int byteSize);
-__regargs void MemFree(void *memoryBlock);
-__regargs int MemTypeOf(void *address);
+void *MemAlloc(u_int byteSize, u_int attributes);
+void MemResize(void *memoryBlock, u_int byteSize);
+void MemFree(void *memoryBlock);
+int MemTypeOf(void *address);
 
 void InitMemory(void);
 void KillMemory(void);

@@ -58,7 +58,7 @@ static void Kill(void) {
   DeleteObject3D(cube);
 }
 
-static __regargs void UpdateEdgeVisibilityConvex(Object3D *object) {
+static void UpdateEdgeVisibilityConvex(Object3D *object) {
   char *vertexFlags = object->vertexFlags;
   char *edgeFlags = object->edgeFlags;
   char *faceFlags = object->faceFlags;
@@ -111,7 +111,7 @@ static __regargs void UpdateEdgeVisibilityConvex(Object3D *object) {
   D = normfx(t0 * t1 + t2 - x * y) + t3; \
 }
 
-static __regargs void TransformVertices(Object3D *object) {
+static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   short *v = (short *)M;
   short *src = (short *)object->mesh->vertex;
@@ -166,8 +166,8 @@ static __regargs void TransformVertices(Object3D *object) {
   } while (--n != -1);
 }
 
-static __regargs void DrawObject(BitmapT *screen, Object3D *object,
-                                 CustomPtrT custom asm("a6"))
+static void DrawObject(BitmapT *screen, Object3D *object,
+                       CustomPtrT custom asm("a6"))
 {
   short *edge = (short *)object->mesh->edge;
   char *edgeFlags = object->edgeFlags;
@@ -273,7 +273,7 @@ static __regargs void DrawObject(BitmapT *screen, Object3D *object,
   } while (--n != -1);
 }
 
-static __regargs void BitmapClearFast(BitmapT *dst) {
+static void BitmapClearFast(BitmapT *dst) {
   u_short height = (short)dst->height * (short)dst->depth;
   u_short bltsize = (height << 6) | (dst->bytesPerRow >> 1);
   void *bltpt = dst->planes[0];
@@ -290,7 +290,7 @@ static __regargs void BitmapClearFast(BitmapT *dst) {
   custom->bltsize = bltsize;
 }
 
-static __regargs void BitmapFillFast(BitmapT *dst) {
+static void BitmapFillFast(BitmapT *dst) {
   void *bltpt = dst->planes[0] + (dst->bplSize * DEPTH) - 2;
   u_short bltsize = (0 << 6) | (WIDTH >> 4);
 

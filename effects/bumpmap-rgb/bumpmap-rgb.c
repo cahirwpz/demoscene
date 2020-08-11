@@ -332,7 +332,7 @@ static void Kill(void) {
 
 #define OPTIMIZED 1
 
-static __regargs void BumpMapRender(void *lmap) {
+static void BumpMapRender(void *lmap) {
   void *smap = shademap;
   u_short *cmap = colormap;
   u_short *bmap = bumpmap;
