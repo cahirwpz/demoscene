@@ -15,8 +15,8 @@ void TaskWaitVBlank(void) {
 int main(void) {
   SystemInfo();
   KillOS();
+  BootMemory();
 
-  InitMemory();
   InitFloppyIO();
   InitTracks();
 
@@ -27,7 +27,6 @@ int main(void) {
   EffectUnLoad(&Effect);
 
   KillFloppyIO();
-  KillMemory();
 
   RestoreOS();
 

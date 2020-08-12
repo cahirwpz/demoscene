@@ -16,7 +16,6 @@ SOURCES := \
 	keyboard.c \
 	lzo.c \
 	memdump.c \
-	memory.c \
 	mouse.c \
 	qsort.c \
 	rawio-par.s \

@@ -9,9 +9,6 @@
 #include "event.h"
 #include "blitter.h"
 
-int __chipmem = 100 * 1024;
-int __fastmem = 430 * 1024;
-
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 1
@@ -140,8 +137,8 @@ static void WaveScopeDrawChannel(short num) {
 }
 
 static void Load(void) {
-  if (AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS) != 0)
-    HALT();
+  int err = AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS);
+  Assert(err == 0);
 }
 
 static void UnLoad(void) {

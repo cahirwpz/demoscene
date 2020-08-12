@@ -29,7 +29,7 @@ __noreturn void Panic(const char *format, ...)
 #define Assert(e) {}
 #else
 #define Assert(e) { if (!(e))                                                  \
-   Panic("Assertion \"%s\" failed: file \"%s\", line %d, function\"%s\"!\n",   \
+   Panic("Assertion \"%s\" failed: file \"%s\", line %d, function \"%s\"!\n",  \
          #e, __FILE__, __LINE__, __func__); }
 #endif
 

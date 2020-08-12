@@ -6,8 +6,6 @@
 #include "blitter.h"
 #include "random.h"
 
-int __chipmem = 128 * 1024;
-
 #define TILEW 16
 #define TILEH 16
 

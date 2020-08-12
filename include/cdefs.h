@@ -21,8 +21,10 @@
 
 #if __GNUC_PREREQ__(3, 0)
 #define __noinline __attribute__((noinline))
+#define __always_inline __attribute__((__always_inline__))
 #else
 #define __noinline
+#define __always_inline
 #endif
 
 #if __GNUC_PREREQ__(2, 92)

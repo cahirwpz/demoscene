@@ -152,4 +152,3 @@ void SystemInfo(void) {
       AvailMem(MEMF_CHIP | MEMF_LARGEST) / 1024,
       AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024);
 }
-

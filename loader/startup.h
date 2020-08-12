@@ -3,6 +3,7 @@
 
 #include "types.h"
 
+void BootMemory(void);
 void SystemInfo(void);
 void KillOS(void);
 void RestoreOS(void);

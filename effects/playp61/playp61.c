@@ -13,8 +13,6 @@
 #define HEIGHT 256
 #define DEPTH 1
 
-long __chipmem = 128 * 1024;
-
 #include "data/drdos8x8.c"
 
 extern u_char binary_data_jazzcat_sunglasses_at_night_p61_start[];
@@ -178,7 +176,7 @@ static void Render(void) {
 
   TaskWaitVBlank();
 
-  exitLoop = HandleEvent();
+  exitLoop = !HandleEvent();
 }
 
 static bool HandleEvent(void) {
