@@ -1,6 +1,8 @@
 #include "debug.h"
 
 #ifndef UAE
+#include <stdarg.h>
+#include <stdio.h>
 #include "rawio.h"
 
 void Log(const char *format, ...) {
@@ -19,5 +21,6 @@ __noreturn void Panic(const char *format, ...) {
   va_end(args);
 
   PANIC();
+  for (;;);
 }
 #endif

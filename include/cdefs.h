@@ -19,7 +19,7 @@
 #define __data_chip __attribute__((section(".datachip")))
 #define __data_bss __attribute__((section(".bsschip")))
 
-#if __GNUC_PREREQ__(3, 0) || defined(__lint__)
+#if __GNUC_PREREQ__(3, 0)
 #define __noinline __attribute__((noinline))
 #else
 #define __noinline

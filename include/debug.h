@@ -1,6 +1,8 @@
 #ifndef __DEBUG_H__
 #define __DEBUG_H__
 
+#include <cdefs.h>
+
 /* When simulator is configured to enter debugger on illegal instructions,
  * this macro can be used to set breakpoints in your code. */
 #define BREAK() { asm volatile("\tillegal\n"); }
