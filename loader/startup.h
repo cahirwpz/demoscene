@@ -6,8 +6,6 @@
 void SystemInfo(void);
 void KillOS(void);
 void RestoreOS(void);
-void InitVBlank(void);
-void KillVBlank(void);
 void RunEffect(void);
 
 #endif

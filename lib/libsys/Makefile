@@ -5,7 +5,6 @@ SOURCES := \
 	audio.c \
 	console.c \
 	debug.c \
-	debug-intr.c \
 	event.c \
 	floppy.c \
 	fx.c \
@@ -25,8 +24,6 @@ SOURCES := \
 	serial.c \
 	sintab.c \
 	sort.c \
-	tasks-ll.s \
-	tasks.c \
 	uae.s
 
 SOURCES_GEN := sintab.c

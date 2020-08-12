@@ -7,6 +7,11 @@
 
 extern EffectT Effect;
 
+/* TODO Puts a task into sleep waiting for VBlank interrupt. */
+void TaskWaitVBlank(void) {
+  WaitVBlank();
+}
+
 int main(void) {
   SystemInfo();
   KillOS();
@@ -14,7 +19,6 @@ int main(void) {
   InitMemory();
   InitFloppyIO();
   InitTracks();
-  InitVBlank();
 
   EffectLoad(&Effect);
   EffectInit(&Effect);
@@ -22,7 +26,6 @@ int main(void) {
   EffectKill(&Effect);
   EffectUnLoad(&Effect);
 
-  KillVBlank();
   KillFloppyIO();
   KillMemory();
 
