@@ -65,6 +65,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--floppy', metavar='ADF', type=str,
                         help='Floppy disk image in ADF format.')
     parser.add_argument('-w', '--window', metavar='WIN', type=str,
+                        default='fs-uae',
                         help='Select tmux window name to switch to.')
     args = parser.parse_args()
 
