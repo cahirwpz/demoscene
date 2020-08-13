@@ -21,7 +21,6 @@ extern struct CIA volatile _ciab;
 /* Maximum delay is around 92.38ms */
 void WaitTimerA(CIAPtrT cia, u_short delay);
 void WaitTimerB(CIAPtrT cia, u_short delay);
-int ReadICR(CIAPtrT cia);
 
 u_int ReadLineCounter(void);
 

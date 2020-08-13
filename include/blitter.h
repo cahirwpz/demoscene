@@ -80,10 +80,10 @@ static inline bool BlitterBusy(void) {
   return custom->dmaconr & DMAF_BLTDONE;
 }
 
-static inline void _WaitBlitter(CustomPtrT c) {
+static inline void _WaitBlitter(CustomPtrT custom_) {
   asm("1: btst #6,%0@(2)\n" /* dmaconr */
       "   bnes 1b"
-      :: "a" (c));
+      :: "a" (custom_));
 }
 
 #define WaitBlitter() _WaitBlitter(custom)
@@ -112,8 +112,6 @@ void BlitterCopyAreaStart(short dstbpl, short srcbpl);
 void BitmapCopy(const BitmapT *dst, u_short x, u_short y, const BitmapT *src);
 void BitmapCopyFast(const BitmapT *dst, u_short x, u_short y,
                     const BitmapT *src);
-void BitmapCopyFastI(const BitmapT *dst, u_short x, u_short y,
-                     const BitmapT *src);
 void BitmapCopyMasked(const BitmapT *dst, u_short x, u_short y,
                       const BitmapT *src, const BitmapT *mask);
 void BitmapCopyArea(const BitmapT *dst, u_short dx, u_short dy, 
@@ -135,8 +133,6 @@ void BlitterFillArea(const BitmapT *bitmap, short plane, const Area2D *area);
   BitmapSetArea((dst), NULL, 0)
 #define BitmapClearArea(dst, area) \
   BitmapSetArea((dst), (area), 0)
-
-void BitmapClearAreaI(const BitmapT *dst, const Area2D *area);
 
 /* Blitter set. */
 void BlitterSetAreaSetup(const BitmapT *bitmap, const Area2D *area);

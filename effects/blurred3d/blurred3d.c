@@ -452,8 +452,7 @@ static void RenderObject3D(void) {
 
   ProfilerStart(UpdateGeometry);
   {
-    cube->rotate.x = cube->rotate.y = cube->rotate.z =
-      frameCount * 6;
+    cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 6;
 
     UpdateObjectTransformation(cube);
     UpdateFaceVisibility(cube);
@@ -471,7 +470,6 @@ static void RenderObject3D(void) {
 static short iterCount = 0;
 
 static void Render(void) {
-  // int lines = ReadLineCounter();
   BitmapT *source = screen1;
 
   if (iterCount++ & 1) {
@@ -482,8 +480,6 @@ static void Render(void) {
   RenderObject3D();
 
   BitmapIncSaturatedFast(screen0, source);
-
-  // Log("blurred3d: %d\n", ReadLineCounter() - lines);
 
   {
     short n = DEPTH;
