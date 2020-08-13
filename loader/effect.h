@@ -3,7 +3,9 @@
 
 #include <types.h>
 #include <string.h>
-#include "debug.h"
+#include <debug.h>
+
+#include "profiler.h"
 
 /* Definitions below are useful for copper list construction. */
 #ifndef X

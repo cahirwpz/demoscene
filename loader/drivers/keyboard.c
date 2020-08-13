@@ -1,5 +1,5 @@
-#include "hardware.h"
-#include "interrupts.h"
+#include "interrupt.h"
+#include "cia.h"
 #include "keyboard.h"
 #include "event.h"
 
@@ -165,7 +165,7 @@ static void PushKeyEvent(u_char raw) {
 }
 
 static __interrupt int KeyboardIntHandler(void) {
-  if (ReadICR(ciaa) & CIAICRF_SP) {
+  if (SampleICR(ciaa, CIAICRF_SP)) {
     /* Read keyboard data register. */
     u_char sdr = ciaa->ciasdr;
     /* Set serial port to output mode. */
@@ -195,11 +195,9 @@ static __interrupt int KeyboardIntHandler(void) {
 INTERRUPT(KeyboardInterrupt, -5, KeyboardIntHandler, NULL);
 
 void KeyboardInit() {
-  /* Disable all CIA-A interrupts. */
-  ciaa->ciaicr = (u_char)(~CIAICRF_SETCLR);
   /* Enable keyboard interrupt.
    * The keyboard is attached to CIA-A serial port. */
-  ciaa->ciaicr = CIAICRF_SETCLR | CIAICRF_SP;
+  WriteICR(ciaa, CIAICRF_SETCLR | CIAICRF_SP);
   ciaa->ciacra = (u_char)(~CIACRAF_SPMODE);
 
   AddIntServer(INTB_PORTS, KeyboardInterrupt);

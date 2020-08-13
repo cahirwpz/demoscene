@@ -1,11 +1,8 @@
 #include <string.h>
-#include "interrupts.h"
-#include "hardware.h"
-#include "mouse.h"
-#include "event.h"
-
-/* data for port 1, pin 9 (right mouse button) */
-#define DATLY (1 << 10)
+#include <interrupt.h>
+#include <cia.h>
+#include <mouse.h>
+#include <event.h>
 
 typedef struct {
   char xctr, yctr;

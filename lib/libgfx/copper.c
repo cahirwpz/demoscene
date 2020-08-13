@@ -1,6 +1,6 @@
-#include "debug.h"
-#include "copper.h"
-#include "memory.h"
+#include <debug.h>
+#include <copper.h>
+#include <memory.h>
 
 CopListT *NewCopList(u_short length) {
   CopListT *list = MemAlloc(sizeof(CopListT) + length * sizeof(CopInsT),
@@ -22,7 +22,7 @@ void DeleteCopList(CopListT *list) {
 
 void CopListActivate(CopListT *list) {
   /* Enable copper DMA */
-  custom->dmacon = DMAF_MASTER | DMAF_COPPER | DMAF_SETCLR;
+  EnableDMA(DMAF_MASTER | DMAF_COPPER);
   /* Write copper list address. */
   custom->cop1lc = (u_int)list->entry;
   /* Wait for vertical blank to make sure the list is active. */

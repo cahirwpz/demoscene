@@ -1,7 +1,8 @@
 #include "debug.h"
-#include "interrupts.h"
+#include "interrupt.h"
 #include "memory.h"
-#include "hardware.h"
+#include "custom.h"
+#include "cia.h"
 #include "floppy.h"
 
 #define DEBUG 0

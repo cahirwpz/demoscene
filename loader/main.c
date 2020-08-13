@@ -1,7 +1,8 @@
+#include <memory.h>
+#include <io.h>
+#include <custom.h>
+
 #include "startup.h"
-#include "memory.h"
-#include "io.h"
-#include "hardware.h"
 #include "sync.h"
 #include "effect.h"
 

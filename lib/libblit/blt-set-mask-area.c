@@ -1,4 +1,4 @@
-#include "blitter.h"
+#include <blitter.h>
 
 void BlitterSetMaskArea(const BitmapT *dst, short dstbpl, u_short x, u_short y,
                         const BitmapT *msk, const Area2D *area, u_short pattern)

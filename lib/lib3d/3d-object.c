@@ -1,7 +1,8 @@
 #include <strings.h>
-#include "memory.h"
-#include "3d.h"
-#include "fx.h"
+#include <memory.h>
+#include <3d.h>
+#include <fx.h>
+#include <linkerset.h>
 
 Object3D *NewObject3D(Mesh3D *mesh) {
   Object3D *object = MemAlloc(sizeof(Object3D), MEMF_PUBLIC|MEMF_CLEAR);

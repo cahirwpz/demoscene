@@ -1,5 +1,4 @@
-#include "blitter.h"
-#include "hardware.h"
+#include <blitter.h>
 
 /*
  * Minterm is either:

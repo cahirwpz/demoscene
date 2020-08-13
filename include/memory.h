@@ -19,17 +19,6 @@
 #define MEMF_CLEAR (1L << 16)
 #endif
 
-#ifndef MEMF_LARGEST
-#define MEMF_LARGEST (1L << 17)
-#endif
-
-#ifndef MEMF_REVERSE
-#define MEMF_REVERSE (1L << 18)
-#endif
-
-#define BLK_UNIT  8
-#define BLK_ALIGN __attribute__((aligned(BLK_UNIT)))
-
 void MemCheck(int verbose);
 u_int MemAvail(u_int attributes);
 

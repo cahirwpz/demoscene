@@ -1,4 +1,4 @@
-#include "blitter.h"
+#include <blitter.h>
 
 /* Bitplane decrementer with saturation. */
 void BitmapDecSaturated(const BitmapT *dst_bm, const BitmapT *borrow_bm) {
