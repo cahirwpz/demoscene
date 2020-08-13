@@ -4,7 +4,7 @@ ifndef SOURCES
 SOURCES = $(EFFECT).c
 endif
 
-LIBS += libblit libgfx libsys libc
+LIBS += libblit libgfx libmisc libc
 CPPFLAGS += -I$(TOPDIR)/loader
 LDEXTRA = $(TOPDIR)/loader/loader.a
 LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
