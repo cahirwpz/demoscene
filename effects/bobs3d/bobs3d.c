@@ -223,25 +223,28 @@ static void BitmapClearI(BitmapT *bm) {
   custom->bltsize = ((bm->height * bm->depth) << 6) | (bm->bytesPerRow >> 1);
 }
 
+PROFILE(TransformObject);
+PROFILE(DrawObject);
+
 static void Render(void) {
   BitmapClearI(screen0);
 
+  ProfilerStart(TransformObject);
   {
-    int lines = ReadLineCounter();
     cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 12;
 
     UpdateObjectTransformation(cube);
     TransformVertices(cube);
-    Log("transform: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(TransformObject);
 
   WaitBlitter();
 
+  ProfilerStart(DrawObject);
   {
-    int lines = ReadLineCounter();
     DrawObject(cube, screen0);
-    Log("draw: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(DrawObject);
 
   TaskWaitVBlank();
 

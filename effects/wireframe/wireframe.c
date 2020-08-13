@@ -197,7 +197,7 @@ static void TransformVertices(Object3D *object) {
 }
 
 static void DrawObject(Object3D *object, void *bplpt,
-                       CustomPtrT custom asm("a6"))
+                       CustomPtrT custom_ asm("a6"))
 {
   short *edge = (short *)object->mesh->edge;
   char *edgeFlags = object->edgeFlags;
@@ -205,12 +205,12 @@ static void DrawObject(Object3D *object, void *bplpt,
   short n = object->mesh->edges - 1;
 
   WaitBlitter();
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
-  custom->bltadat = 0x8000;
-  custom->bltbdat = 0xffff; /* Line texture pattern. */
-  custom->bltcmod = WIDTH / 8;
-  custom->bltdmod = WIDTH / 8;
+  custom_->bltafwm = -1;
+  custom_->bltalwm = -1;
+  custom_->bltadat = 0x8000;
+  custom_->bltbdat = 0xffff; /* Line texture pattern. */
+  custom_->bltcmod = WIDTH / 8;
+  custom_->bltdmod = WIDTH / 8;
 
   do {
     if (*edgeFlags++) {
@@ -276,14 +276,14 @@ static void DrawObject(Object3D *object, void *bplpt,
 
           WaitBlitter();
 
-          custom->bltcon0 = bltcon0;
-          custom->bltcon1 = bltcon1;
-          custom->bltamod = bltamod;
-          custom->bltbmod = bltbmod;
-          custom->bltapt = bltapt;
-          custom->bltcpt = data;
-          custom->bltdpt = data;
-          custom->bltsize = bltsize;
+          custom_->bltcon0 = bltcon0;
+          custom_->bltcon1 = bltcon1;
+          custom_->bltamod = bltamod;
+          custom_->bltbmod = bltbmod;
+          custom_->bltapt = bltapt;
+          custom_->bltcpt = data;
+          custom_->bltdpt = data;
+          custom_->bltsize = bltsize;
         }
       }
     } else {
@@ -292,13 +292,14 @@ static void DrawObject(Object3D *object, void *bplpt,
   } while (--n != -1);
 }
 
-static void Render(void) {
-  int lines = ReadLineCounter();
+PROFILE(Transform);
+PROFILE(Draw);
 
+static void Render(void) {
   BlitterClear(screen, active);
 
+  ProfilerStart(Transform);
   {
-    // int lines = ReadLineCounter();
     cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 8;
 
     UpdateObjectTransformation(cube);
@@ -308,14 +309,14 @@ static void Render(void) {
       UpdateFaceVisibilityFast(cube);
     UpdateEdgeVisibility(cube);
     TransformVertices(cube);
-    // Log("transform: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(Transform);
 
+  ProfilerStart(Draw);
   {
-    // int lines = ReadLineCounter();
     DrawObject(cube, screen->planes[active], custom);
-    // Log("draw: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(Draw);
 
   {
     void **planes = screen->planes;
@@ -329,8 +330,6 @@ static void Render(void) {
       i--;
     }
   }
-
-  Log("all: %d\n", ReadLineCounter() - lines);
 
   TaskWaitVBlank();
 

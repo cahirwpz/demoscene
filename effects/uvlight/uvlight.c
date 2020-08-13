@@ -1,7 +1,7 @@
 #include "effect.h"
 #include "blitter.h"
 #include "copper.h"
-#include "interrupts.h"
+#include "interrupt.h"
 #include "memory.h"
 #include "color.h"
 #include "pixmap.h"
@@ -158,7 +158,7 @@ static void ChunkyToPlanar(void) {
       custom->bltdpt = dst;
 
       /* ((a >> 8) & 0x00FF) | (b & ~0x00FF) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | (8 << ASHIFTSHIFT);
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | ASHIFT(8);
       custom->bltcon1 = 0;
       custom->bltsize = 2 | ((BLTSIZE / 16) << 6);
       break;
@@ -174,7 +174,7 @@ static void ChunkyToPlanar(void) {
       custom->bltdpt = dst + BLTSIZE - 2;
 
       /* ((a << 8) & ~0x00FF) | (b & 0x00FF) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | (8 << ASHIFTSHIFT);
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | ASHIFT(8);
       custom->bltcon1 = BLITREVERSE;
       custom->bltsize = 2 | ((BLTSIZE / 16) << 6);
       break;
@@ -194,7 +194,7 @@ static void ChunkyToPlanar(void) {
       custom->bltdpt = bpl[0];
 
       /* ((a >> 4) & 0x0F0F) | (b & ~0x0F0F) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | (4 << ASHIFTSHIFT);
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | ASHIFT(4);
       custom->bltcon1 = 0;
       custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
@@ -220,7 +220,7 @@ static void ChunkyToPlanar(void) {
       custom->bltdpt = bpl[1] + BPLSIZE - 2;
 
       /* ((a << 8) & ~0x0F0F) | (b & 0x0F0F) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | (4 << ASHIFTSHIFT);
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | ASHIFT(4);
       custom->bltcon1 = BLITREVERSE;
       custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
@@ -253,7 +253,7 @@ static void ChunkyToPlanar(void) {
 
   c2p.phase++;
 
-  custom->intreq = INTF_BLIT;
+  ClearIRQ(INTF_BLIT);
 }
 
 INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar, NULL);
@@ -325,8 +325,10 @@ static void Kill(void) {
   DeleteBitmap(screen[1]);
 }
 
+PROFILE(UVLight);
+
 static void Render(void) {
-  int lines = ReadLineCounter();
+  ProfilerStart(UVLight);
 #if OPTIMIZED
   (*UVMapRender)(chunky[active], &texture[frameCount & 16383], shademap);
 #else
@@ -351,7 +353,7 @@ static void Render(void) {
     }
   }
 #endif
-  Log("uvlight: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(UVLight);
 
   c2p.phase = 0;
   c2p.chunky = chunky[active];

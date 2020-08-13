@@ -1,6 +1,6 @@
 #include "effect.h"
-#include "hardware.h"
-#include "interrupts.h"
+#include "interrupt.h"
+#include "cia.h"
 #include "memory.h"
 #include "ahx.h"
 #include "console.h"
@@ -147,7 +147,7 @@ static void UnLoad(void) {
 
 static __interrupt int AhxPlayerIntHandler(void) {
   /* Handle CIA Timer A interrupt. */
-  if (ReadICR(ciaa) & CIAICRF_TA) {
+  if (SampleICR(ciaa, CIAICRF_TA)) {
     custom->color[0] = 0x448;
     AhxInterrupt();
     custom->color[0] = 0;
@@ -274,7 +274,10 @@ static bool HandleEvent(void) {
 
   if (ev.key.code == KEY_SPACE) {
     Ahx.Public->Playing = ~Ahx.Public->Playing;
-    custom->dmacon = (Ahx.Public->Playing ? DMAF_SETCLR : 0) | DMAF_AUDIO;
+    if (Ahx.Public->Playing)
+      EnableDMA(DMAF_AUDIO);
+    else
+      DisableDMA(DMAF_AUDIO);
   }
 
   if (ev.key.code == KEY_LEFT)

@@ -153,7 +153,7 @@ static void RenderTiles(void) {
   u_short *screen = screen0->planes[0];
   u_short bltsize = (8 << 6) + 1;
   void *_tile = tilegfx.planes[0];
-  void *_custom = (void *)&custom->bltbpt;
+  void *custom_ = (void *)&custom->bltbpt;
 
   custom->bltamod = 0;
   custom->bltbmod = 0;
@@ -188,7 +188,7 @@ static void RenderTiles(void) {
                      "movel %1,a0@+\n"
                      "movew %2,a0@\n"
                      : 
-                     : "a" (_custom), "a" (screen), "d" (bltsize), "d" (_tile), "a" (_tilescr)
+                     : "a" (custom_), "a" (screen), "d" (bltsize), "d" (_tile), "a" (_tilescr)
                      : "a0", "a1", "a2");
 #endif
         screen++;
@@ -199,17 +199,22 @@ static void RenderTiles(void) {
   }
 }
 
-static void Render(void) {
-  int lines;
+PROFILE(UpdateTiles);
+PROFILE(RenderTiles);
 
-  lines = ReadLineCounter();
-  UpdateChunky();
-  UpdateTiles();
-  Log("update: %d\n", ReadLineCounter() - lines);
+static void Render(void) {
+  ProfilerStart(UpdateTiles);
+  {
+    UpdateChunky();
+    UpdateTiles();
+  }
+  ProfilerStop(UpdateTiles);
   
-  lines = ReadLineCounter();
-  RenderTiles();
-  Log("render: %d\n", ReadLineCounter() - lines);
+  ProfilerStart(RenderTiles);
+  {
+    RenderTiles();
+  }
+  ProfilerStop(RenderTiles);
 
   CopUpdateBitplanes(bplptr, screen0, DEPTH);
   TaskWaitVBlank();

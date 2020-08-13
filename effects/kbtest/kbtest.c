@@ -1,6 +1,5 @@
 #include "effect.h"
 #include "console.h"
-#include "hardware.h"
 #include "copper.h"
 #include "event.h"
 #include "keyboard.h"

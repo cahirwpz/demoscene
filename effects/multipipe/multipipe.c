@@ -196,10 +196,14 @@ static void RenderPipes(void) {
   }
 }
 
+PROFILE(RenderPipes);
+
 static void Render(void) {
-  //int lines = ReadLineCounter();
-  RenderPipes();
-  //Log("multipipe: %d\n", ReadLineCounter() - lines);
+  ProfilerStart(RenderPipes);
+  {
+    RenderPipes();
+  }
+  ProfilerStop(RenderPipes); 
 
   CopListRun(cp[active]);
   TaskWaitVBlank();

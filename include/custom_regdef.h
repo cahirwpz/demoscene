@@ -74,7 +74,7 @@ struct Custom {
   uint16_t diwstop;
   uint16_t ddfstrt;
   uint16_t ddfstop;
-  uint16_t dmacon_; /* please use EnableDMA / DisableDMA macros */
+  uint16_t dmacon;  /* please use EnableDMA / DisableDMA macros */
   uint16_t clxcon;
   uint16_t intena_; /* please use EnableINT / DisableINT macros */
   uint16_t intreq_; /* please use ClearIRQ / CauseIRQ macros */

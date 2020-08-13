@@ -1,7 +1,7 @@
 #include "effect.h"
 #include "blitter.h"
 #include "copper.h"
-#include "interrupts.h"
+#include "interrupt.h"
 #include "memory.h"
 #include "pixmap.h"
 
@@ -109,7 +109,7 @@ static void ChunkyToPlanar(void) {
 
       /* (a & 0xF0F0) | ((b >> 4) & ~0xF0F0) */
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-      custom->bltcon1 = 4 << BSHIFTSHIFT;
+      custom->bltcon1 = BSHIFT(4);
 
     case 1:
       /* overall size: BLTSIZE / 2 bytes */
@@ -123,7 +123,7 @@ static void ChunkyToPlanar(void) {
       custom->bltdpt = bpl[1] + BLTSIZE / 2 - 2;
 
       /* ((a << 4) & 0xF0F0) | (b & ~0xF0F0) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(4);
       custom->bltcon1 = BLITREVERSE;
 
     case 3:
@@ -144,7 +144,7 @@ static void ChunkyToPlanar(void) {
 #if FULLPIXEL
       /* (a & 0xAAAA) | ((b >> 1) & ~0xAAAA) */
       custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-      custom->bltcon1 = 1 << BSHIFTSHIFT;
+      custom->bltcon1 = BSHIFT(1);
 #else
       /* (a & 0xAAAA) */
       custom->bltcon0 = (SRCA | DEST) | (ABC | ANBC);
@@ -170,7 +170,7 @@ static void ChunkyToPlanar(void) {
 
 #if FULLPIXEL
       /* ((a << 1) & 0xAAAA) | (b & ~0xAAAA) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (1 << ASHIFTSHIFT);
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(1);
       custom->bltcon1 = BLITREVERSE;
 #else
       /* (a & ~0xAAAA) */
@@ -200,7 +200,7 @@ static void ChunkyToPlanar(void) {
 
   c2p.phase++;
 
-  custom->intreq = INTF_BLIT;
+  ClearIRQ(INTF_BLIT);
 }
 
 INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar, NULL);
@@ -274,18 +274,20 @@ static void Kill(void) {
   DeleteBitmap(screen[1]);
 }
 
+PROFILE(UVMap);
+
 static void Render(void) {
   short offset = (frameCount * 127) & 16383;
 
   /* screen's bitplane #0 is used as a chunky buffer */
+  ProfilerStart(UVMap);
   {
     u_char *txtHi = textureHi->pixels + offset;
     u_char *txtLo = textureLo->pixels + offset;
 
-    // int lines = ReadLineCounter();
     (*UVMapRender)(screen[active]->planes[0], txtHi, txtLo);
-    // Log("uvmap: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(UVMap);
 
   c2p.phase = 0;
   c2p.bpl = screen[active]->planes;
