@@ -116,18 +116,19 @@ static void DrawShape(void) {
   BlitterFill(carry, 0);
 }
 
+PROFILE(BlurredRender);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
-
-  if (iterCount++ & 1)
-    BitmapDecSaturated(buffer, carry);
-
-  DrawShape();
-  BitmapIncSaturated(buffer, carry);
-
-  BitmapCopy(screen[active], 16, 0, buffer);
-
-  // Log("blurred: %d\n", ReadLineCounter() - lines);
+  ProfilerStart(BlurredRender);
+  {
+    if (iterCount++ & 1)
+      BitmapDecSaturated(buffer, carry);
+    DrawShape();
+    BitmapIncSaturated(buffer, carry);
+    BitmapCopy(screen[active], 16, 0, buffer);
+  }
+  ProfilerStop(BlurredRender);
+  
 
   ITER(i, 0, DEPTH - 1, {
     CopInsSet32(bplptr[0][i], screen[active]->planes[i]);

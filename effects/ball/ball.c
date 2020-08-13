@@ -166,7 +166,7 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
 
     /* (a & 0xFF00) | ((b >> 8) & ~0xFF00) */
     custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-    custom->bltcon1 = 8 << BSHIFTSHIFT;
+    custom->bltcon1 = BSHIFT(8);
     custom->bltafwm = -1;
     custom->bltalwm = -1;
     custom->bltamod = 4;
@@ -185,7 +185,7 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
     WaitBlitter();
 
     /* ((a << 8) & 0xFF00) | (b & ~0xFF00) */
-    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (8 << ASHIFTSHIFT);
+    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(8);
     custom->bltcon1 = BLITREVERSE;
 
     custom->bltapt = chunky + BLTSIZE - 6;
@@ -200,7 +200,7 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
 
     /* (a & 0xF0F0) | ((b >> 4) & ~0xF0F0) */
     custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-    custom->bltcon1 = 4 << BSHIFTSHIFT;
+    custom->bltcon1 = BSHIFT(4);
     custom->bltamod = 2;
     custom->bltbmod = 2;
     custom->bltdmod = 2;
@@ -217,7 +217,7 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
     WaitBlitter();
 
     /* ((a << 4) & 0xF0F0) | (b & ~0xF0F0) */
-    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
+    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(4);
     custom->bltcon1 = BLITREVERSE;
 
     custom->bltapt = planes + BLTSIZE - 4;
@@ -236,7 +236,7 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
     custom->bltdmod = 0;
     custom->bltcdat = 0xCCCC;
     custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-    custom->bltcon1 = 2 << BSHIFTSHIFT;
+    custom->bltcon1 = BSHIFT(2);
 
     custom->bltapt = chunky;
     custom->bltbpt = chunky + 4;
@@ -255,7 +255,7 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
     WaitBlitter();
 
     /* ((a << 2) & 0xCCCC) | (b & ~0xCCCC) */
-    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (2 << ASHIFTSHIFT);
+    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(2);
     custom->bltcon1 = BLITREVERSE;
 
     custom->bltapt = chunky + BLTSIZE - 8;
@@ -325,22 +325,23 @@ static void PositionSprite(SpriteT **sprite, short xo, short yo) {
   }
 }
 
+PROFILE(UVMapRender);
+
 static void Render(void) {
   short xo = normfx(SIN(frameCount * 16) * 128);
   short yo = normfx(COS(frameCount * 16) * 100);
   short offset = ((64 - xo) + (64 - yo) * 128) & 16383;
+  u_char *txtHi = textureHi->pixels + offset;
+  u_char *txtLo = textureLo->pixels + offset;
 
+  ProfilerStart(UVMapRender);
   {
-    u_char *txtHi = textureHi->pixels + offset;
-    u_char *txtLo = textureLo->pixels + offset;
-
-    // int lines = ReadLineCounter();
     (*UVMapRender)(chunky->pixels, txtHi, txtLo);
     ChunkyToPlanar(chunky, bitmap);
     BitmapToSprite(bitmap, sprite[active]);
     PositionSprite(sprite[active], xo / 2, yo / 2);
-    // Log("uvmap: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(UVMapRender);
 
   TaskWaitVBlank();
   active ^= 1;
