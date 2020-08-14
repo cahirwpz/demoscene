@@ -1,6 +1,7 @@
-#include "color.h"
-#include "common.h"
-#include "debug.h"
+#include <color.h>
+#include <common.h>
+#include <debug.h>
+#include <linkerset.h>
 
 u_char colortab[4096];
 

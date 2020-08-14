@@ -1,8 +1,8 @@
 #include "effect.h"
 
 /* Search following header files for useful procedures. */
-#include "hardware.h"   /* custom registers definition and misc functions */
-#include "interrupts.h" /* register & unregister an interrupt handler */
+#include "custom.h"     /* custom registers definition and misc functions */   
+#include "interrupt.h"  /* register & unregister an interrupt handler */
 #include "blitter.h"    /* blitter handling routines */
 #include "color.h"      /* operations on RGB colors */
 #include "copper.h"     /* copper list construction */

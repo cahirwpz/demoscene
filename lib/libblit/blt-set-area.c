@@ -1,4 +1,4 @@
-#include "blitter.h"
+#include <blitter.h>
 
 typedef struct {
   const BitmapT *bitmap;

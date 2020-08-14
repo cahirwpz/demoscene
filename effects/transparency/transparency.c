@@ -1,5 +1,4 @@
 #include "effect.h"
-#include "hardware.h"
 #include "copper.h"
 #include "gfx.h"
 #include "color.h"

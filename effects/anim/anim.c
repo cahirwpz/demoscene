@@ -81,14 +81,16 @@ static void DrawSpans(u_char *bpl) {
     running.current -= running.count;
 }
 
+PROFILE(AnimRender);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
+  ProfilerStart(AnimRender);
   {
     BlitterClear(screen, active);
     DrawSpans(screen->planes[active]);
     BlitterFill(screen, active);
   }
-  // Log("anim: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(AnimRender);
 
   {
     short n = DEPTH;

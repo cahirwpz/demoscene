@@ -26,19 +26,20 @@ static void UnLoad(void) {
   DeleteBitmap(screen);
 }
 
+PROFILE(DrawCircle);
+
 static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
+  ProfilerStart(DrawCircle);
   {
-    int lines = ReadLineCounter();
     short r;
 
     for (r = 2; r < screen->height / 2 - 2; r += 2)
       Circle(screen, 0, screen->width / 2, screen->height / 2, r);
-
-    Log("circles: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(DrawCircle);
 }
 
 EFFECT(circles, Load, UnLoad, Init, NULL, NULL);

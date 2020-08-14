@@ -1,4 +1,4 @@
-#include "copper.h"
+#include <copper.h>
 
 void CopSetupDualPlayfield(CopListT *list, CopInsT **bplptr,
                            const BitmapT *pf1, const BitmapT *pf2)

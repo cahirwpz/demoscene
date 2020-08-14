@@ -164,12 +164,14 @@ static void UpdateChunky(void) {
   }
 }
 
-static void Render(void) {
-  int lines;
+PROFILE(RenderPlasma);
 
-  lines = ReadLineCounter();
-  UpdateChunky();
-  Log("update: %d\n", ReadLineCounter() - lines);
+static void Render(void) {
+  ProfilerStart(RenderPlasma);
+  {
+    UpdateChunky();
+  }
+  ProfilerStop(RenderPlasma);
 
   CopListRun(cp[active]);
   TaskWaitVBlank();

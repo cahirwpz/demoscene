@@ -28,13 +28,15 @@ static void UnLoad(void) {
   DeleteBitmap(screen);
 }
 
+PROFILE(Lines);
+
 static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 
+  ProfilerStart(Lines);
   {
     short i;
-    int lines = ReadLineCounter();
 
 #if CPULINE == 1
     CpuLineSetup(screen, 0);
@@ -57,9 +59,8 @@ static void Init(void) {
       BlitterLine(0, i, screen->width - 1, screen->height - 1 - i);
 #endif
     }
-
-    Log("lines: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(Lines);
 }
 
 EFFECT(lines, Load, UnLoad, Init, NULL, NULL);

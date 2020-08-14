@@ -1,5 +1,4 @@
 #include "effect.h"
-#include "hardware.h"
 #include "copper.h"
 #include "gfx.h"
 #include "memory.h"
@@ -116,8 +115,6 @@ static void Init(void) {
 
   CopListActivate(coplist[active ^ 1]);
   EnableDMA(DMAF_RASTER);
-
-  SetFrameCounter(0);
 }
 
 static void Kill(void) {

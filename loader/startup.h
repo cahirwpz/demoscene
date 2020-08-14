@@ -1,7 +1,7 @@
 #ifndef __STARTUP_H__
 #define __STARTUP_H__
 
-#include "types.h"
+#include <types.h>
 
 void BootMemory(void);
 void SystemInfo(void);

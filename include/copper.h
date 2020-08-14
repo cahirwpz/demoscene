@@ -1,8 +1,8 @@
 #ifndef __COPPER_H__
 #define __COPPER_H__
 
-#include "gfx.h"
-#include "hardware.h"
+#include <gfx.h>
+#include <custom.h>
 
 #define MODE_LORES  0
 #define MODE_HIRES  BPLCON0_HIRES

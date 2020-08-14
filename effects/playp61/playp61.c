@@ -1,6 +1,5 @@
 #include "effect.h"
-#include "hardware.h"
-#include "interrupts.h"
+#include "interrupt.h"
 #include "memory.h"
 #include "p61.h"
 #include "console.h"

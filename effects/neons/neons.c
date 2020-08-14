@@ -1,6 +1,5 @@
 #include "effect.h"
-#include "hardware.h"
-#include "interrupts.h"
+#include "interrupt.h"
 #include "copper.h"
 #include "gfx.h"
 #include "blitter.h"
@@ -213,14 +212,16 @@ static void DrawCliparts(void) {
   }
 }
 
-static void Render(void) {
-  // int lines = ReadLineCounter();
+PROFILE(RenderNeons);
 
-  WaitBlitter();
-  ClearCliparts();
-  DrawCliparts();
-  
-  // Log("neons: %d\n", ReadLineCounter() - lines);
+static void Render(void) {
+  ProfilerStart(RenderNeons);
+  {
+    WaitBlitter();
+    ClearCliparts();
+    DrawCliparts();
+  }
+  ProfilerStop(RenderNeons);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();

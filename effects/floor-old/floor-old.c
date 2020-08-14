@@ -438,8 +438,10 @@ static void ControlTileColors(void) {
   }
 }
 
+PROFILE(RenderFloor);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
+  ProfilerStart(RenderFloor);
 
   ControlTileColors();
   {
@@ -456,7 +458,7 @@ static void Render(void) {
     FillStripes(kxo);
   }
 
-  // Log("floor: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(RenderFloor);
 
   CopListRun(cp[active]);
   TaskWaitVBlank();

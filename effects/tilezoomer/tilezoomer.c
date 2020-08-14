@@ -116,10 +116,10 @@ static void MoveTiles(void) {
     sx &= 15; dx &= 15; shift = dx - sx;
 
     if (shift >= 0) {
-      bltcon1 = shift << BSHIFTSHIFT;
+      bltcon1 = BSHIFT(shift);
       mask = 0xffff0000;
     } else {
-      bltcon1 = (-shift << BSHIFTSHIFT) | BLITREVERSE;
+      bltcon1 = BSHIFT(-shift) | BLITREVERSE;
       mask = 0x0000ffff;
 
       srcpt += WIDTH * (TILESIZE - 1) / 8 + 2;
@@ -149,11 +149,15 @@ static void MoveTiles(void) {
   } while (--n >= 0);
 }
 
+PROFILE(TileZoomer);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
-  DrawSeed();
-  MoveTiles();
-  // Log("tilezoomer: %d\n", ReadLineCounter() - lines);
+  ProfilerStart(TileZoomer);
+  {
+    DrawSeed();
+    MoveTiles();
+  }
+  ProfilerStop(TileZoomer);
 
   CopInsSet32(bplptr[0], screen1->planes[0] + 2 + WIDTH * TILESIZE / 8);
   CopInsSet32(bplptr[1], screen1->planes[1] + 2 + WIDTH * TILESIZE / 8);

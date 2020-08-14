@@ -1,5 +1,5 @@
-#include "interrupts.h"
-#include "event.h"
+#include <interrupt.h>
+#include <event.h>
 
 #define QUEUELEN 32
 

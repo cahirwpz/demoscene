@@ -1,5 +1,4 @@
 #include "effect.h"
-#include "hardware.h"
 #include "copper.h"
 #include "memory.h"
 #include "gfx.h"
@@ -123,7 +122,7 @@ void TriggerRefresh(short x, short y, short w __unused, short h __unused)
       :: "a" (custom));
 
 static void UpdateTiles(BitmapT *screen, short x, short y,
-                        volatile struct Custom* const custom asm("a6"))
+                        CustomPtrT custom_ asm("a6"))
 {
   short *map = tilemap;
   void *ptrs = tileptrs;
@@ -136,12 +135,12 @@ static void UpdateTiles(BitmapT *screen, short x, short y,
 
   WAITBLT();
 
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
-  custom->bltamod = 0;
-  custom->bltdmod = (WIDTH - TILEW) / 8;
-  custom->bltcon0 = (SRCA | DEST | A_TO_D);
-  custom->bltcon1 = 0;
+  custom_->bltafwm = -1;
+  custom_->bltalwm = -1;
+  custom_->bltamod = 0;
+  custom_->bltdmod = (WIDTH - TILEW) / 8;
+  custom_->bltcon0 = (SRCA | DEST | A_TO_D);
+  custom_->bltcon1 = 0;
 
   {
     short j = VTILES - 1;
@@ -156,9 +155,9 @@ static void UpdateTiles(BitmapT *screen, short x, short y,
           void *src = *(void **)(ptrs + (tile & ~3));
 
           WAITBLT();
-          custom->bltapt = src;
-          custom->bltdpt = dst;
-          custom->bltsize = size;
+          custom_->bltapt = src;
+          custom_->bltdpt = dst;
+          custom_->bltsize = size;
 
           map[-1] ^= current;
         }
@@ -172,29 +171,33 @@ static void UpdateTiles(BitmapT *screen, short x, short y,
   }
 }
 
+PROFILE(Tiles16);
+
 static void Render(void) {
-  int lines = ReadLineCounter();
-  short t = frameCount;
-  short tile = t >> 4;
-  short pixel = 15 - (t & 15);
-
-  short x = tile % (tilemap_width - HTILES);
-  short y = 35;
-
-  UpdateTiles(screen[active], x, y, custom);
-
+  ProfilerStart(Tiles16);
   {
-    short i;
-    CopInsT **_bplptr = bplptr[active];
-    void **_planes = screen[active]->planes;
-    int offset = x << 1;
+    short t = frameCount;
+    short tile = t >> 4;
+    short pixel = 15 - (t & 15);
 
-    for (i = 0; i < DEPTH; i++)
-      CopInsSet32(_bplptr[i], _planes[i] + offset);
+    short x = tile % (tilemap_width - HTILES);
+    short y = 35;
+
+    UpdateTiles(screen[active], x, y, custom);
+
+    {
+      short i;
+      CopInsT **_bplptr = bplptr[active];
+      void **_planes = screen[active]->planes;
+      int offset = x << 1;
+
+      for (i = 0; i < DEPTH; i++)
+        CopInsSet32(_bplptr[i], _planes[i] + offset);
+    }
+    CopInsSet16(bplcon1[active], pixel | (pixel << 4));
+    CopListRun(cp[active]);
   }
-  CopInsSet16(bplcon1[active], pixel | (pixel << 4));
-  CopListRun(cp[active]);
-  Log("all: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(Tiles16);
 
   TaskWaitVBlank();
   active ^= 1;

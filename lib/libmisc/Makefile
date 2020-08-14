@@ -1,26 +1,16 @@
 TOPDIR := $(realpath ../..)
 
 SOURCES := \
-	amigahunk.c \
 	audio.c \
 	console.c \
 	debug.c \
-	event.c \
-	floppy.c \
 	fx.c \
-	hardware.c \
 	inflate.s \
-	interrupts.c \
-	io.c \
-	io-extra.c \
-	keyboard.c \
 	lzo.c \
 	memdump.c \
-	mouse.c \
 	qsort.c \
 	rawio-par.s \
 	rawio-ser.s \
-	serial.c \
 	sintab.c \
 	sort.c \
 	uae.s

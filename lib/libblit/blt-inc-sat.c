@@ -1,4 +1,4 @@
-#include "blitter.h"
+#include <blitter.h>
 
 /* Bitplane incrementer with saturation. */
 void BitmapIncSaturated(const BitmapT *dst_bm, const BitmapT *carry_bm) {

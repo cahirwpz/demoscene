@@ -1,5 +1,4 @@
 #include "effect.h"
-#include "hardware.h"
 #include "copper.h"
 #include "blitter.h"
 #include "sprite.h"
@@ -329,10 +328,14 @@ static void RenderPrisms(short rotate) {
   DrawVisibleSpans(spanInfo, clines[active]);
 }
 
+PROFILE(RenderPrisms);
+
 static void Render(void) {
-  int start = ReadLineCounter();
-  RenderPrisms(frameCount << 3);
-  Log("prisms: %d\n", ReadLineCounter() - start);
+  ProfilerStop(RenderPrisms); 
+  {
+    RenderPrisms(frameCount << 3);
+  }
+  ProfilerStop(RenderPrisms);
 
   CopListRun(cp[active]);
   TaskWaitVBlank();

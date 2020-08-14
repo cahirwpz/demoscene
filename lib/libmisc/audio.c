@@ -1,5 +1,5 @@
-#include "hardware.h"
-#include "sound.h"
+#include <custom.h>
+#include <sound.h>
 
 void AudioSetVolume(ChanT num, u_char level) {
   custom->aud[num].ac_vol = (u_short)level;
@@ -24,9 +24,9 @@ void AudioAttachSound(ChanT num, SoundT *sound) {
 }
 
 void AudioPlay(ChanT num) {
-  custom->dmacon = DMAF_SETCLR | (1 << (DMAB_AUD0 + num));
+  EnableDMA(1 << (DMAB_AUD0 + num));
 }
 
 void AudioStop(ChanT num) {
-  custom->dmacon = (1 << (DMAB_AUD0 + num));
+  DisableDMA(1 << (DMAB_AUD0 + num));
 }

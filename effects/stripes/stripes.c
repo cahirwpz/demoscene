@@ -1,5 +1,4 @@
 #include "effect.h"
-#include "hardware.h"
 #include "copper.h"
 #include "fx.h"
 #include "random.h"
@@ -173,10 +172,14 @@ static void RenderStripes(short rotate) {
   SetLineColor((short *)temp);
 }
 
+PROFILE(RenderStripes);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
-  RenderStripes(SIN(frameCount * 4) * 2);
-  // Log("hstripes: %d\n", ReadLineCounter() - lines);
+  ProfilerStart(RenderStripes);
+  {
+    RenderStripes(SIN(frameCount * 4) * 2);
+  }
+  ProfilerStop(RenderStripes);
 
   CopListRun(cp[active]);
   TaskWaitVBlank();

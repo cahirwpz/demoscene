@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
-#include "serial.h"
-#include "interrupts.h"
-#include "hardware.h"
+#include <serial.h>
+#include <interrupt.h>
+#include <custom.h>
 
 #define CLOCK 3546895
 #define QUEUELEN 512
@@ -21,13 +21,13 @@ static struct {
 static void PushChar(CharQueueT *queue, u_char data) {
   while (queue->used == QUEUELEN);
 
-  custom->intena = INTF_TBE;
+  DisableINT(INTF_TBE);
   {
     queue->data[queue->tail] = data;
     queue->tail = (queue->tail + 1) & (QUEUELEN - 1);
     queue->used++;
   }
-  custom->intena = INTF_SETCLR | INTF_TBE;
+  EnableINT(INTF_TBE);
 }
 
 static int PopChar(CharQueueT *queue) {
@@ -36,20 +36,20 @@ static int PopChar(CharQueueT *queue) {
   if (queue->used == 0)
     return -1;
 
-  custom->intena = INTF_RBF;
+  DisableINT(INTF_RBF);
   {
     result = queue->data[queue->head];
     queue->head = (queue->head + 1) & (QUEUELEN - 1);
     queue->used--;
   }
-  custom->intena = INTF_SETCLR | INTF_RBF;
+  EnableINT(INTF_RBF);
 
   return result;
 }
 
 static void SendIntHandler(void) {
   int data;
-  custom->intreq = INTF_TBE;
+  ClearIRQ(INTF_TBE);
   data = PopChar(&serial.sendq);
   if (data >= 0)
     custom->serdat = data | 0x100;
@@ -57,7 +57,7 @@ static void SendIntHandler(void) {
 
 static void RecvIntHandler(void) {
   u_short serdatr = custom->serdatr;
-  custom->intreq = INTF_RBF;
+  ClearIRQ(INTF_RBF);
   PushChar(&serial.recvq, serdatr);
 }
 
@@ -75,13 +75,13 @@ void SerialInit(int baud) {
   oldTBE = SetIntVector(INTB_TBE, SendInterrupt);
   oldRBF = SetIntVector(INTB_RBF, RecvInterrupt);
 
-  custom->intreq = INTF_TBE | INTF_RBF;
-  custom->intena = INTF_SETCLR | INTF_TBE | INTF_RBF;
+  ClearIRQ(INTF_TBE | INTF_RBF);
+  EnableINT(INTF_TBE | INTF_RBF);
 }
 
 void SerialKill() {
-  custom->intena = INTF_TBE | INTF_RBF;
-  custom->intreq = INTF_TBE | INTF_RBF;
+  DisableINT(INTF_TBE | INTF_RBF);
+  ClearIRQ(INTF_TBE | INTF_RBF);
 
   SetIntVector(INTB_RBF, oldRBF);
   SetIntVector(INTB_TBE, oldTBE);
@@ -91,10 +91,10 @@ void SerialPut(u_char data) {
   PushChar(&serial.sendq, data);
   if (data == '\n')
     PushChar(&serial.sendq, '\r');
-  custom->intena = INTF_TBE;
-  if (custom->serdatr & SERDATR_TBE)
+  DisableINT(INTF_TBE);
+  if (custom->serdatr & SERDATF_TBE)
     SendIntHandler();
-  custom->intena = INTF_SETCLR | INTF_TBE;
+  EnableINT(INTF_TBE);
 }
 
 void SerialPrint(const char *format, ...) {

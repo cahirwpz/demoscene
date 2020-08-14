@@ -70,6 +70,7 @@ ifeq ($(words $(findstring $(MAKECMDGOALS), clean)), 0)
 endif
 
 CLEAN-FILES += $(DEPFILES) $(SOURCES_GEN) $(OBJECTS) $(DATA_GEN)
+CLEAN-FILES += $(SOURCES_C:%=%~) $(SOURCES_ASM:%=%~)
 
 # Disable all built-in recipes and define our own
 .SUFFIXES:

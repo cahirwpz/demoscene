@@ -427,8 +427,10 @@ static void MakeFloorCopperList(short yo, short kyo) {
   CopEnd(cp);
 }
 
+PROFILE(Thunders);
+
 static void Render(void) {
-  // PROFILE_BEGIN(floor);
+  ProfilerStart(Thunders);
 
   BitmapClearArea(screen0, &((Area2D){0, FAR_Y, WIDTH, HEIGHT - FAR_Y}));
 
@@ -449,7 +451,7 @@ static void Render(void) {
     MakeFloorCopperList(yo & (TILESIZE - 1), kyo);
   }
 
-  // PROFILE_END(floor);
+  ProfilerStop(Thunders);
 
   CopListRun(cp0);
   TaskWaitVBlank();

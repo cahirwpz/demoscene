@@ -1,4 +1,4 @@
-#include "blitter.h"
+#include <blitter.h>
 
 u_short FirstWordMask[16] = {
   0xFFFF, 0x7FFF, 0x3FFF, 0x1FFF, 0x0FFF, 0x07FF, 0x03FF, 0x01FF,

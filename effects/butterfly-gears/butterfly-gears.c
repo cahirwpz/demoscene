@@ -1,7 +1,6 @@
 #include "effect.h"
 
-#include "hardware.h"
-#include "interrupts.h"
+#include "interrupt.h"
 #include "blitter.h"
 #include "color.h"
 #include "copper.h"

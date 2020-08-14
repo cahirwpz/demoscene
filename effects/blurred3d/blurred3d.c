@@ -444,31 +444,32 @@ static void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
   }
 }
 
+PROFILE(UpdateGeometry);
+PROFILE(DrawObject);
+
 static void RenderObject3D(void) {
   BlitterClear(carry, 0);
 
+  ProfilerStart(UpdateGeometry);
   {
-    // int lines = ReadLineCounter();
-    cube->rotate.x = cube->rotate.y = cube->rotate.z =
-      ReadFrameCounter() * 6;
+    cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 6;
 
     UpdateObjectTransformation(cube);
     UpdateFaceVisibility(cube);
     TransformVertices(cube);
-    // Log("transform: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(UpdateGeometry);
 
+  ProfilerStart(DrawObject);
   {
-    // int lines = ReadLineCounter();
     DrawObject(cube);
-    // Log("draw: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(DrawObject);
 }
 
 static short iterCount = 0;
 
 static void Render(void) {
-  // int lines = ReadLineCounter();
   BitmapT *source = screen1;
 
   if (iterCount++ & 1) {
@@ -479,8 +480,6 @@ static void Render(void) {
   RenderObject3D();
 
   BitmapIncSaturatedFast(screen0, source);
-
-  // Log("blurred3d: %d\n", ReadLineCounter() - lines);
 
   {
     short n = DEPTH;

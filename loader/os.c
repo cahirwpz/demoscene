@@ -3,8 +3,8 @@
 #include <proto/exec.h>
 
 #include "debug.h"
-#include "hardware.h"
-#include "interrupts.h"
+#include "custom.h"
+#include "interrupt.h"
 
 static short kickVer;
 static struct List PortsIntChain;
@@ -37,18 +37,18 @@ void KillOS(void) {
 
   /* Prohibit dma & interrupts. */
   custom->adkcon = (u_short)~ADKF_SETCLR;
-  custom->dmacon = (u_short)~DMAF_SETCLR;
-  custom->intena = (u_short)~INTF_SETCLR;
+  DisableDMA(DMAF_ALL);
+  DisableINT(INTF_ALL);
   WaitVBlank();
 
   /* Clear all interrupt requests. Really. */
-  custom->intreq = (u_short)~INTF_SETCLR;
-  custom->intreq = (u_short)~INTF_SETCLR;
+  ClearIRQ(INTF_ALL);
+  ClearIRQ(INTF_ALL);
 
   /* Enable master switches...
    * .. and SOFTINT which is presumably used by Exec's scheduler. */
-  custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
-  custom->intena = INTF_SETCLR | INTF_INTEN | INTF_SOFTINT;
+  EnableDMA(DMAF_MASTER);
+  EnableINT(INTF_INTEN | INTF_SOFTINT);
 
   /* Save original interrupt server chains. */
   CopyMem(SysBase->IntVects[INTB_PORTS].iv_Data,
@@ -87,13 +87,13 @@ void RestoreOS(void) {
   Forbid();
 
   /* firstly... disable dma and interrupts that were used in Main */
-  custom->dmacon = (u_short)~DMAF_SETCLR;
-  custom->intena = (u_short)~INTF_SETCLR;
+  DisableDMA(DMAF_ALL);
+  DisableINT(INTF_ALL);
   WaitVBlank();
 
   /* Clear all interrupt requests. Really. */
-  custom->intreq = (u_short)~INTF_SETCLR;
-  custom->intreq = (u_short)~INTF_SETCLR;
+  ClearIRQ(INTF_ALL);
+  ClearIRQ(INTF_ALL);
 
   /* Restore original task lists. */
   CopyMem(&OrigTaskReady, &SysBase->TaskReady, sizeof(struct List));
@@ -110,8 +110,8 @@ void RestoreOS(void) {
           sizeof(struct List));
 
   /* Restore AmigaOS state of dma & interrupts. */
-  custom->dmacon = old.dmacon | DMAF_SETCLR;
-  custom->intena = old.intena | INTF_SETCLR;
+  EnableDMA(old.dmacon);
+  EnableINT(old.intena);
   custom->adkcon = old.adkcon | ADKF_SETCLR;
 
   /* Enable CPU caches. */

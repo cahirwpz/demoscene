@@ -173,11 +173,15 @@ static void SetupTexture(CopInsT **colors, short y) {
   }
 }
 
+PROFILE(TwisterRGB);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
-  SetupLines(frameCount * 16);
-  SetupTexture(colors[active], frameCount);
-  // Log("twister: %d\n", ReadLineCounter() - lines);
+  ProfilerStart(TwisterRGB);
+  {
+    SetupLines(frameCount * 16);
+    SetupTexture(colors[active], frameCount);
+  }
+  ProfilerStop(TwisterRGB);
 
   CopListRun(cp[active]);
   TaskWaitVBlank();

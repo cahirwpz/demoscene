@@ -1,4 +1,4 @@
-#include "blitter.h"
+#include <blitter.h>
 
 BitmapT *BitmapMakeMask(const BitmapT *bitmap) {
   BitmapT *mask = NewBitmap(bitmap->width, bitmap->height, 1);

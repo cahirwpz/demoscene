@@ -1,5 +1,4 @@
 #include "effect.h"
-#include "hardware.h"
 #include "copper.h"
 #include "gfx.h"
 #include "blitter.h"
@@ -95,9 +94,12 @@ static inline u_short random(void) {
   return seed;
 }
 
+PROFILE(RenderGlitch);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
   short i;
+
+  ProfilerStart(RenderGlitch);
 
   if (RightMouseButton()) {
     int x1 = (random() % 5) - 2;
@@ -123,7 +125,7 @@ static void Render(void) {
     }
   }
 
-  // Log("glitch: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(RenderGlitch);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();
