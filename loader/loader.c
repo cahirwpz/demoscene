@@ -68,6 +68,9 @@ static void SetupProcessor(void) {
   /* Disable CPU caches. */
   if (kickstart.version >= 36)
     (void)CacheControl(0, -1);
+
+  /* Enter supervisor state. */
+  (void)SuperState();
 }
 
 static void SetupCustomChips(void) {
