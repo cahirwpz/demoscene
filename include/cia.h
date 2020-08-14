@@ -22,11 +22,13 @@ extern struct CIA volatile _ciab;
 void WaitTimerA(CIAPtrT cia, u_short delay);
 void WaitTimerB(CIAPtrT cia, u_short delay);
 
-u_int ReadLineCounter(void);
-
 /* 24-bit frame counter offered by CIA A */
 u_int ReadFrameCounter(void);
 void SetFrameCounter(u_int frame);
+
+/* 24-bit line counter offered by CIA B */
+u_int ReadLineCounter(void);
+void WriteLineCounter(u_int line);
 
 /* You MUST use following procedures to access CIA Interrupt Control Register!
  * On read ICR provides pending interrupts bitmask clearing them as well.
