@@ -37,7 +37,6 @@ endif
 # Don't reload library base for each call.
 DFLAGS += -D__CONSTLIBBASEDECL__=const
 
-LDLIBS +=
 CPPFLAGS += -I$(TOPDIR)/include
 
 # Common tools definition

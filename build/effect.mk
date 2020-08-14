@@ -37,7 +37,7 @@ include $(TOPDIR)/build/common.mk
 
 $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA)
 	@echo "[LD] $(addprefix $(DIR),$(OBJECTS)) -> $(DIR)$@"
-	$(CC) $(LDFLAGS) -T$(TOPDIR)/amiga.ld -Wl,-Map=$@.map -o $@ $^ $(LDLIBS)
+	$(CC) $(LDFLAGS) -T$(TOPDIR)/amiga.ld -Wl,-Map=$@.map -o $@ $^
 	$(CP) $@ $@.dbg
 	$(STRIP) $@
 

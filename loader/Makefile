@@ -4,11 +4,10 @@ LIBNAME := loader
 SOURCES := \
 	autoinit.c \
 	effect.c \
-	boot.c \
-	os.c \
-	sync.c \
-	profiler.c \
+	loader.c \
 	main.c \
+	profiler.c \
+	sync.c \
 	drivers/cia-frame.c \
 	drivers/cia-icr.c \
 	drivers/cia-line.c \
