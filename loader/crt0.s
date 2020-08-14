@@ -1,29 +1,20 @@
-                xdef    _start
-                xdef    _exit
-                xdef    _geta4
-                xdef    _SysBase
+        xdef    _start
 
-                xref    ___INIT_LIST__
-                xref    ___EXIT_LIST__
-                xref    _CallFuncList
-                xref    _main
+        xref    ___INIT_LIST__
+        xref    ___EXIT_LIST__
+        xref    _CallFuncList
+        xref    _main
 
-                section '.text', code
+        section '.text', code
 
-_start:         lea     ___INIT_LIST__,a0
-                jsr     _CallFuncList
+_start: lea     ___INIT_LIST__,a0
+        jsr     _CallFuncList
 
-                jsr     _main
+        jsr     _main
 
-_exit:          lea     ___EXIT_LIST__,a0
-                jsr     _CallFuncList
+_exit:  lea     ___EXIT_LIST__,a0
+        jsr     _CallFuncList
 
-                moveq.l #0,d0
-                rts
-
-; geta4() doesn´t do anything, but enables you to use
-; one source for both code models
-
-_geta4:         rts
+        bra     *
 
 ; vim: ft=asm68k:ts=8:sw=8
