@@ -2,6 +2,7 @@
  * https://sourceware.org/binutils/docs/ld/Scripts.html */
 OUTPUT_FORMAT("amiga")
 OUTPUT_ARCH(m68k)
+PROVIDE(_SysBase = 0x4);
 PROVIDE(__ciaa = 0xbfe001);
 PROVIDE(__ciab = 0xbfd000);
 PROVIDE(__custom = 0xdff000);

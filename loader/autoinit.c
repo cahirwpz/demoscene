@@ -1,21 +1,9 @@
-#include "types.h"
+#include "autoinit.h"
  
 /* Introduce weak symbols in case no constructors or descrutors were defined. */
-u_int __INIT_LIST__;
-u_int __EXIT_LIST__;
+FuncItemSetT __INIT_LIST__;
+FuncItemSetT __EXIT_LIST__;
 
-typedef struct FuncItem {
-  void (*func)(void);
-  u_int pri;
-} FuncItemT;
-
-typedef struct FuncItemSet {
-  u_int count; /* actually number of consecutive long words. */
-  FuncItemT item[0];
-} FuncItemSetT;
-
-/* Call functions in ascending order of priority. Destructor priorities are
- * reversed by ADD2EXIT so there's no need to handle extra case. */
 void CallFuncList(FuncItemSetT *set) {
   short n = set->count / 2;
   FuncItemT *start = (FuncItemT *)set->item;
