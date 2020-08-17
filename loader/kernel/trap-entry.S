@@ -34,4 +34,5 @@ HANDLER(PrivInstTrap,T_PRIVINST)
 HANDLER(TraceTrap,T_TRACE)
 HANDLER(FmtErrTrap,T_FMTERR)
 HANDLER(TrapInstTrap,T_TRAPINST)
+
 # vim: ft=gas:ts=8:sw=8:noet:

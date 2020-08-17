@@ -23,7 +23,8 @@ SOURCES := \
 	kernel/interrupt.c \
 	kernel/intr-entry.S \
 	kernel/memory.c \
-	kernel/trap-entry.S
+	kernel/trap-entry.S \
+	kernel/trap.c 
 
 BUILD-FILES = crt0.o
 		

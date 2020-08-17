@@ -64,6 +64,31 @@ static struct Interrupt *NAME = &(struct Interrupt) {   \
   { NULL, NULL, NT_INTERRUPT, PRI, (char *)#NAME },     \
   (void *)DATA, (void *)&HANDLER                        \
 };
+
+/* Interrupt Service Routine */
+typedef void (*IntSrvT)(void *);
+
+/* Interrupt Vector Entry */
+typedef struct IntVecEntry {
+  IntSrvT code;
+  void *data;
+} IntVecEntryT;
+
+typedef IntVecEntryT IntVecT[INTB_INTEN];
+
+extern IntVecT IntVec;
+
+/* Only returns from interrupt, without clearing pending flags. */
+extern void DummyInterruptHandler(void *);
+
+/* Amiga Interrupt Autovector handlers */
+extern void AmigaLvl1Handler(void);
+extern void AmigaLvl2Handler(void);
+extern void AmigaLvl3Handler(void);
+extern void AmigaLvl4Handler(void);
+extern void AmigaLvl5Handler(void);
+extern void AmigaLvl6Handler(void);
+
 #endif
 
 #endif /* !_INTERRUPT_H_ */

@@ -4,7 +4,7 @@
 
 .macro  BEGIN   intb
         movem.l d0-d1/a0-a1,-(sp)
-        lea     IntVec+8*\intb,a0
+        lea     _L(IntVec)+8*\intb,a0
         moveq   #\intb,d1
         move.w  custom+intreqr,d0
 .endm
