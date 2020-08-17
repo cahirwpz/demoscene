@@ -31,3 +31,7 @@ void RemIntServer(IntChainT *ic, IntServerT *is) {
   (void)ic;
   (void)is;
 }
+
+void RunIntChain(IntChainT *ic) {
+  (void)ic;
+}

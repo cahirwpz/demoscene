@@ -122,15 +122,26 @@ typedef struct IntChain {
 #define INTCHAIN(NAME)                                                         \
   IntChainT *NAME = &(IntChainT) { .list = {}, .flag = 0 }
 
+/* Initialize Interrupt Chain structure. */
+#define InitIntChain(CHAIN, NUM)                                               \
+  {                                                                            \
+    /* INIT */                                                                 \
+    (CHAIN)->flag = INTF(NUM);                                                 \
+  }
+
 /* Register Interrupt Server for given Interrupt Chain. */
 #ifndef AddIntServer
-void AddIntServer(IntChainT *, IntServerT *);
+void AddIntServer(IntChainT *ic, IntServerT *is);
 #endif
 
 /* Unregister Interrupt Server for given Interrupt Chain. */
 #ifndef RemIntServer
-void RemIntServer(IntChainT *, IntServerT *);
+void RemIntServer(IntChainT *ic, IntServerT *is);
 #endif
+
+/* Run Interrupt Servers for given Interrupt Chain.
+ * Use only inside IntVec handler rountine. */
+void RunIntChain(IntChainT *ic);
 
 /* Predefined interrupt chains defined by Amiga port. */
 extern IntChainT *PortsChain;
