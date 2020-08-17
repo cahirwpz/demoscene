@@ -6,7 +6,6 @@
 #include <debug.h>
 #include <cpu.h>
 #include <custom.h>
-#include <interrupt.h>
 #include <exception.h>
 #include <memory.h>
 #include <io.h>

@@ -1,6 +1,5 @@
 #include "effect.h"
 
-#include "interrupt.h"
 #include "blitter.h"
 #include "color.h"
 #include "copper.h"

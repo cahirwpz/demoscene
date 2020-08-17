@@ -1,6 +1,5 @@
 #include <asm.h>
 #include <custom_regdef.h>
-#include <interrupt.h>
 
 .macro  BEGIN   intb
         movem.l d0-d1/a0-a1,-(sp)
