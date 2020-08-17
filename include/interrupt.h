@@ -30,10 +30,8 @@ extern IntVecT IntVec;
 extern void DummyInterruptHandler(void *);
 
 /* Macros for setting up ISR for given interrupt number. */
-#ifndef SetIntVector
 #define SetIntVector(INTR, CODE, DATA)                                         \
   IntVec[INTB_##INTR] = (IntVecEntryT){.code = (CODE), .data = (DATA)}
-#endif
 #define ResetIntVector(INTR) SetIntVector(INTR, DummyInterruptHandler, NULL)
 
 /* Amiga Interrupt Autovector handlers */
@@ -75,14 +73,10 @@ typedef struct IntChain {
   IntChainT *NAME = &(IntChainT) { .head = NULL, .flag = INTF(NUM) }
 
 /* Register Interrupt Server for given Interrupt Chain. */
-#ifndef AddIntServer
 void AddIntServer(IntChainT *ic, IntServerT *is);
-#endif
 
 /* Unregister Interrupt Server for given Interrupt Chain. */
-#ifndef RemIntServer
 void RemIntServer(IntChainT *ic, IntServerT *is);
-#endif
 
 /* Run Interrupt Servers for given Interrupt Chain.
  * Use only inside IntVec handler rountine. */
