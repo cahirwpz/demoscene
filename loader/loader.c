@@ -103,8 +103,8 @@ void Loader(void) {
       AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024);
 
   SetupProcessor();
-  SetupExceptionVector();
   SetupCustomChips();
+  SetupExceptionVector();
   InitMemory();
   InitFloppyIO();
   InitTracks();

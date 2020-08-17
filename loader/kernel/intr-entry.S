@@ -6,6 +6,7 @@
         lea     _L(IntVec)+8*\intb,a0
         moveq   #\intb,d1
         move.w  custom+intreqr,d0
+        and.w   custom+intenar,d0
 .endm
 
 .macro  HANDLE  irq
