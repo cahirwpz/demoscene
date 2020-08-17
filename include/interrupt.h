@@ -3,8 +3,10 @@
 
 #include <cdefs.h>
 
+#ifndef __ASSEMBLER__
 #include <exec/interrupts.h>
 #include <proto/exec.h>
+#endif
 
 #define INTB_SETCLR 15  /* Set/Clear control bit. Determines if bits */
                         /* written with a one get set or cleared. Bits */
@@ -46,6 +48,7 @@
 
 #define INTF_ALL 0x3FFF
 
+#ifndef __ASSEMBLER__
 #include <custom.h>
 
 /* All macros below take or'ed INTF_* flags. */
@@ -61,5 +64,6 @@ static struct Interrupt *NAME = &(struct Interrupt) {   \
   { NULL, NULL, NT_INTERRUPT, PRI, (char *)#NAME },     \
   (void *)DATA, (void *)&HANDLER                        \
 };
+#endif
 
 #endif /* !_INTERRUPT_H_ */

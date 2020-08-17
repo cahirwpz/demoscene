@@ -2,6 +2,9 @@
 #define _CUSTOM_REGDEF_H_
 
 #include <cdefs.h>
+
+#ifndef __ASSEMBLER__
+
 #include <types.h>
 
 struct Custom {
@@ -131,6 +134,21 @@ struct Custom {
 #define vposr u_vposr.s_vposr.vposr
 #define vhposr u_vposr.s_vposr.vhposr
 #define vposr_ u_vposr.vposr_
+
+#else
+
+#include <asm.h>
+
+#define custom _L(_custom)
+
+#define dmaconr 0x002
+#define dmacon 0x096
+#define intenar 0x01c
+#define intena 0x09a
+#define intreqr 0x01e
+#define intreq 0x09c
+
+#endif
 
 /* defines for beamcon register */
 #define VARVBLANK __BIT(12)  /* Variable vertical blank enable */
