@@ -5,15 +5,15 @@ SOURCES := \
 	console.c \
 	debug.c \
 	fx.c \
-	inflate.s \
+	inflate.asm \
 	lzo.c \
 	memdump.c \
 	qsort.c \
-	rawio-par.s \
-	rawio-ser.s \
+	rawio-par.asm \
+	rawio-ser.asm \
 	sintab.c \
 	sort.c \
-	uae.s
+	uae.asm
 
 SOURCES_GEN := sintab.c
 

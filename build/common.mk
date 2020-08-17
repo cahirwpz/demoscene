@@ -7,11 +7,12 @@ DIR := $(patsubst /%,%/,$(DIR))
 
 # Compiler tools & flags definitions
 CC	:= m68k-amigaos-gcc -g -ffreestanding -noixemul 
-AS	:= vasm -quiet
-CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
+VASM	:= vasm -quiet
 
-ASFLAGS	:= -x -m68010
+ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or
+VASMFLAGS	+= -m68010 -quiet
 LDFLAGS	:= -g -m68000 -msmall-code -nostartfiles -nostdlib -nodefaultlibs
+CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
 # The '-O2' option does not turn on optimizations '-funroll-loops',
 # '-funroll-all-loops' and `-fstrict-aliasing'.
 OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce -mregparm=2
@@ -20,12 +21,8 @@ WFLAGS	+= -Wnested-externs -Wwrite-strings -Wstrict-prototypes
 DFLAGS	+= -DUAE
 
 # Default configuration
-DEFAULT_CHIP_CHUNK ?= 262144
-DEFAULT_FAST_CHUNK ?= 262144
 FRAMES_PER_ROW ?= 6
 
-DFLAGS	+= -DDEFAULT_CHIP_CHUNK=$(DEFAULT_CHIP_CHUNK)
-DFLAGS	+= -DDEFAULT_FAST_CHUNK=$(DEFAULT_FAST_CHUNK)
 DFLAGS	+= -DFRAMES_PER_ROW=$(FRAMES_PER_ROW)
 
 # Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
@@ -58,40 +55,56 @@ OBJCOPY := m68k-amigaos-objcopy
 
 # Generate dependencies automatically
 SOURCES_C = $(filter %.c,$(SOURCES))
-SOURCES_ASM = $(filter %.s,$(SOURCES))
-OBJECTS += $(SOURCES_C:.c=.o) $(SOURCES_ASM:.s=.o)
-DEPFILES = $(SOURCES_C:%.c=.%.P)
+SOURCES_S = $(filter %.S,$(SOURCES))
+SOURCES_ASM = $(filter %.asm,$(SOURCES))
+OBJECTS += $(SOURCES_C:%.c=%.o) $(SOURCES_S:%.S=%.o) $(SOURCES_ASM:%.asm=%.o)
 
-$(DEPFILES): $(SOURCES_GEN)
+DEPENDENCY-FILES += $(foreach f, $(SOURCES_C),\
+		      $(dir $(f))$(patsubst %.c,.%.D,$(notdir $(f))))
+DEPENDENCY-FILES += $(foreach f, $(SOURCES_S),\
+		      $(dir $(f))$(patsubst %.S,.%.D,$(notdir $(f))))
 
-ifeq ($(words $(findstring $(MAKECMDGOALS), clean)), 0)
-  -include $(DEPFILES)
-endif
+$(DEPENDENCY-FILES): $(SOURCES_GEN)
 
-CLEAN-FILES += $(DEPFILES) $(SOURCES_GEN) $(OBJECTS) $(DATA_GEN)
-CLEAN-FILES += $(SOURCES_C:%=%~) $(SOURCES_ASM:%=%~)
+CLEAN-FILES += $(DEPENDENCY-FILES) $(SOURCES_GEN) $(OBJECTS) $(DATA_GEN)
+CLEAN-FILES += $(SOURCES:%=%~)
 
 # Disable all built-in recipes and define our own
 .SUFFIXES:
 
-.%.P: %.c
-	@echo "[DEP] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(CPPFLAGS) -MM -MG -o $@ $<
+.%.D: %.c
+	@echo "[DEP] $(DIR)$@"
+	$(CC) $(CFLAGS) $(CPPFLAGS) -M -MG $< | \
+                sed -e 's,$(notdir $*).o,$*.o,g' > $@
 
-%.o: %.c .%.P
+.%.D: %.S
+	@echo "[DEP] $(DIR)$@"
+	$(CC) $(CFLAGS) $(CPPFLAGS) -M -MG $< | \
+                sed -e 's,$(notdir $*).o,$*.o,g' > $@
+
+%.o: %.c
 	@echo "[CC] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) -c -o $@ $<
 
-%.o: %.s
+%.o: %.S
 	@echo "[AS] $(DIR)$< -> $(DIR)$@"
-	$(AS) -Fhunk $(ASFLAGS) -o $@ $<
+	$(CC) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
 
-%.bin: %.s
-	@echo "[AS] $(DIR)$< -> $(DIR)$@"
-	$(AS) -Fbin $(ASFLAGS) -o $@ $<
+%.o: %.asm
+	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
+	$(VASM) -Fhunk $(CPPFLAGS) $(VASMFLAGS) -o $@ $<
 
-%.s: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -S -fverbose-asm -o $@ $<
+%.bin: %.asm
+	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
+	$(VASM) -Fbin $(VASMFLAGS) -o $@ $<
+
+%.S: %.c
+	@echo "[CC] $(DIR)$< -> $(DIR)$@"
+	$(CC) $(CFLAGS) $(CPPFLAGS) -fverbose-asm -S -o $@ $<
+
+ifeq ($(words $(findstring $(MAKECMDGOALS), clean)), 0)
+  -include $(DEPENDENCY-FILES)
+endif
 
 # Rules for recursive build
 build-%: FORCE
@@ -111,3 +124,5 @@ clean: $(foreach dir,$(SUBDIRS),clean-$(dir))
 	$(RM) $(BUILD-FILES) $(EXTRA-FILES) $(CLEAN-FILES) *~ *.taghl
 
 .PHONY: all build subdirs clean FORCE
+
+# vim: ts=8 et

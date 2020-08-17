@@ -26,7 +26,7 @@ _UAEFSDB.___
 *.pyc
 *.o
 *.a
-*.P
+*.D
 
 # data files
 *.2d
