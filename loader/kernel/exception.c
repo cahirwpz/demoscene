@@ -44,13 +44,8 @@ void SetupExceptionVector(void) {
     IntVec[i].code = DummyInterruptHandler;
 
   /* Initialize PORTS & VERTB & EXTER as interrupt server chain. */
-  InitIntChain(PortsChain, PORTS);
   SetIntVector(PORTS, (IntHandlerT)RunIntChain, PortsChain);
-
-  InitIntChain(VertBlankChain, VERTB);
   SetIntVector(VERTB, (IntHandlerT)RunIntChain, VertBlankChain);
-
-  InitIntChain(ExterChain, EXTER);
   SetIntVector(EXTER, (IntHandlerT)RunIntChain, ExterChain);
 
   /* Intialize TRAP instruction handlers. */

@@ -44,21 +44,19 @@ extern void AmigaLvl4Handler(void);
 extern void AmigaLvl5Handler(void);
 extern void AmigaLvl6Handler(void);
 
-typedef struct _Node { short prio;} NodeT;
-typedef struct _List {} ListT;
-
 /* Interrupt Server Handler Routine. */
 typedef int (*IntFuncT)(void *);
 
 typedef struct IntServer {
-  NodeT node;
+  struct IntServer *next;
   IntFuncT code;
   void *data;
+  short prio;
 } IntServerT;
 
 /* List of interrupt servers. */
 typedef struct IntChain {
-  ListT list;
+  IntServerT *head;
   u_short flag; /* interrupt enable/disable flag (INTF_*) */
 } IntChainT;
 
@@ -68,20 +66,13 @@ typedef struct IntChain {
  * IntServer definition recalculates priority number accordingly.
  */
 #define _INTSERVER(PRI, CODE, DATA)                                            \
-  {.node = { .prio = (PRI)}, .code = CODE, .data = (DATA)} 
+  {.next = NULL, .code = CODE, .data = (DATA), .prio = (PRI)} 
 #define INTSERVER(NAME, PRI, CODE, DATA)                                       \
   static IntServerT *NAME = &(IntServerT)_INTSERVER(PRI, CODE, DATA)
 
 /* Defines Interrupt Chain of given name. */
-#define INTCHAIN(NAME)                                                         \
-  IntChainT *NAME = &(IntChainT) { .list = {}, .flag = 0 }
-
-/* Initialize Interrupt Chain structure. */
-#define InitIntChain(CHAIN, NUM)                                               \
-  {                                                                            \
-    /* INIT */                                                                 \
-    (CHAIN)->flag = INTF(NUM);                                                 \
-  }
+#define INTCHAIN(NAME, NUM)                                                    \
+  IntChainT *NAME = &(IntChainT) { .head = NULL, .flag = INTF(NUM) }
 
 /* Register Interrupt Server for given Interrupt Chain. */
 #ifndef AddIntServer
