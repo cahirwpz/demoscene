@@ -22,7 +22,7 @@ static BitmapT *osc[4];
 static CopListT *cp;
 static ConsoleT console;
 
-INTERRUPT(P61PlayerInterrupt, 10, P61_Music, NULL);
+INTSERVER(P61PlayerServer, 10, (IntFuncT)P61_Music, NULL);
 
 static inline void putpixel(u_char *line, short x) {
   bset(line + (x >> 3), ~x);
@@ -111,7 +111,7 @@ static void Init(void) {
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
-  AddIntServer(INTB_VERTB, P61PlayerInterrupt);
+  AddIntServer(VertBlankChain, P61PlayerServer);
 
   ConsolePutStr(&console, 
                 "Pause (SPACE) Prev (LEFT) Next (RIGHT)\n"
@@ -122,7 +122,7 @@ static void Kill(void) {
   P61_ControlBlock.Play = 0;
   P61_End();
 
-  RemIntServer(INTB_VERTB, P61PlayerInterrupt);
+  RemIntServer(VertBlankChain, P61PlayerServer);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 

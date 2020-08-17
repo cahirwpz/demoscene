@@ -17,7 +17,7 @@ void PushEvent(EventT *event) {
 bool PopEvent(EventT *event) {
   bool present = false;
 
-  Disable();
+  IntrDisable();
 
   if (used > 0) {
     present = true;
@@ -26,7 +26,7 @@ bool PopEvent(EventT *event) {
     used--;
   }
 
-  Enable();
+  IntrEnable();
 
   return present;
 }

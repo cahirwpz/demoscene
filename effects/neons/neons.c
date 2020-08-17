@@ -108,7 +108,7 @@ static void UnLoad(void) {
   DeleteBitmap(screen[1]);
 }
 
-static __interrupt int CustomRotatePalette(void) {
+static int CustomRotatePalette(void) {
   u_short *src = palette[0]->colors;
   CopInsT *ins = pal + 1;
   int i = frameCount;
@@ -120,7 +120,7 @@ static __interrupt int CustomRotatePalette(void) {
   return 0;
 }
 
-INTERRUPT(RotatePaletteInterrupt, 0, CustomRotatePalette, NULL);
+INTSERVER(RotatePaletteInterrupt, 0, (IntFuncT)CustomRotatePalette, NULL);
 
 static void Init(void) {
   EnableDMA(DMAF_BLITTER);
@@ -144,13 +144,13 @@ static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
-  AddIntServer(INTB_VERTB, RotatePaletteInterrupt);
+  AddIntServer(VertBlankChain, RotatePaletteInterrupt);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
-  RemIntServer(INTB_VERTB, RotatePaletteInterrupt);
+  RemIntServer(VertBlankChain, RotatePaletteInterrupt);
 
   DeleteCopList(cp);
 }

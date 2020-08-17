@@ -145,7 +145,7 @@ static void UnLoad(void) {
   AhxKillPlayer();
 }
 
-static __interrupt int AhxPlayerIntHandler(void) {
+static int AhxPlayerIntHandler(void) {
   /* Handle CIA Timer A interrupt. */
   if (SampleICR(ciaa, CIAICRF_TA)) {
     custom->color[0] = 0x448;
@@ -156,7 +156,7 @@ static __interrupt int AhxPlayerIntHandler(void) {
   return 0;
 }
 
-INTERRUPT(AhxPlayerInterrupt, 10, AhxPlayerIntHandler, NULL);
+INTSERVER(AhxPlayerInterrupt, 10, (IntFuncT)AhxPlayerIntHandler, NULL);
 
 static void AhxSetTempo(u_short tempo asm("d0")) {
   ciaa->ciatalo = tempo & 0xff;
@@ -209,11 +209,11 @@ static void Init(void) {
     if (AhxInitModule(module) == 0)
       AhxInitSubSong(0, 0);
 
-  AddIntServer(INTB_PORTS, AhxPlayerInterrupt);
+  AddIntServer(PortsChain, AhxPlayerInterrupt);
 }
 
 static void Kill(void) {
-  RemIntServer(INTB_PORTS, AhxPlayerInterrupt);
+  RemIntServer(PortsChain, AhxPlayerInterrupt);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 

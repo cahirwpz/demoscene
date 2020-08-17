@@ -61,19 +61,13 @@ static void RecvIntHandler(void) {
   PushChar(&serial.recvq, serdatr);
 }
 
-INTERRUPT(RecvInterrupt, 0, RecvIntHandler, NULL);
-INTERRUPT(SendInterrupt, 0, SendIntHandler, NULL);
-
-static struct Interrupt *oldTBE;
-static struct Interrupt *oldRBF;
-
 void SerialInit(int baud) {
   memset(&serial, 0, sizeof(serial));
 
   custom->serper = CLOCK / baud - 1;
 
-  oldTBE = SetIntVector(INTB_TBE, SendInterrupt);
-  oldRBF = SetIntVector(INTB_RBF, RecvInterrupt);
+  SetIntVector(TBE, (IntHandlerT)SendIntHandler, NULL);
+  SetIntVector(RBF, (IntHandlerT)RecvIntHandler, NULL);
 
   ClearIRQ(INTF_TBE | INTF_RBF);
   EnableINT(INTF_TBE | INTF_RBF);
@@ -83,8 +77,8 @@ void SerialKill() {
   DisableINT(INTF_TBE | INTF_RBF);
   ClearIRQ(INTF_TBE | INTF_RBF);
 
-  SetIntVector(INTB_RBF, oldRBF);
-  SetIntVector(INTB_TBE, oldTBE);
+  ResetIntVector(RBF);
+  ResetIntVector(TBE);
 }
 
 void SerialPut(u_char data) {

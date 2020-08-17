@@ -265,10 +265,6 @@ static void ChunkyToPlanar(void) {
   ClearIRQ(INTF_BLIT);
 }
 
-INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar, NULL);
-
-static struct Interrupt *oldBlitInt;
-
 static void MakeCopperList(CopListT *cp) {
   short i;
 
@@ -310,7 +306,7 @@ static void Init(void) {
 
   EnableDMA(DMAF_RASTER);
 
-  oldBlitInt = SetIntVector(INTB_BLIT, ChunkyToPlanarInterrupt);
+  SetIntVector(BLIT, (IntHandlerT)ChunkyToPlanar, NULL);
   ClearIRQ(INTF_BLIT);
   EnableINT(INTF_BLIT);
 }
@@ -319,7 +315,7 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER);
 
   DisableINT(INTF_BLIT);
-  SetIntVector(INTB_BLIT, oldBlitInt);
+  ResetIntVector(BLIT);
 
   DeleteCopList(cp);
 

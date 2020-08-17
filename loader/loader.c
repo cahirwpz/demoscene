@@ -49,7 +49,7 @@ ExcVecT *ExcVecBase = (ExcVecT *)NULL;
 /* Amiga autovector interrupts table. */
 IntVecT IntVec;
 
-static void SetupExceptionVector(void) {
+static void SetupInterruptVector(void) {
   short i;
 
   if (CpuModel >= CPU_68010)
@@ -150,7 +150,7 @@ void Loader(void) {
       AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024);
 
   SetupProcessor();
-  SetupExceptionVector();
+  SetupInterruptVector();
   SetupCustomChips();
   InitMemory();
   InitFloppyIO();
