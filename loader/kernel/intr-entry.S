@@ -11,13 +11,13 @@
 
 .macro  HANDLE  irq
         btst    d1,d0
-        jne     _L(handle)
+        jne     _L(EnterIntr)
         addq.l  #8,a0
         addq.w  #1,d1
 .endm
 
 .macro  FINISH  irq
-        jra     _L(handle)
+        jra     _L(EnterIntr)
 .endm
 
 # Level 1 Interrupt Autovector
@@ -57,7 +57,7 @@ END(AmigaLvl4Handler)
 
 # Main part of interrupt handler
 
-_L(handle):
+ENTRY(EnterIntr)
         /* Make INTF_* mask, and clear pending interrupt. */
         clr.w   d0
         bset    d1,d0
@@ -69,6 +69,7 @@ _L(handle):
         jsr     (a1)
         movem.l (sp)+,d0-d1/a0-a1
         rte
+END(EnterIntr)
 
 # Level 5 Interrupt Autovector
 

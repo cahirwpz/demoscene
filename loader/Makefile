@@ -21,8 +21,9 @@ SOURCES := \
 	drivers/serial.c \
 	kernel/amigahunk.c \
 	kernel/interrupt.c \
-	kernel/intr.S \
+	kernel/intr-entry.S \
 	kernel/memory.c \
+	kernel/trap-entry.S
 
 BUILD-FILES = crt0.o
 		
