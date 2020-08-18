@@ -15,12 +15,13 @@ SOURCES := \
 	drivers/event.c \
 	drivers/floppy.c \
 	drivers/filesys.c \
-	drivers/io-extra.c \
 	drivers/keyboard.c \
+	drivers/memory-file.c \
 	drivers/mouse.c \
 	drivers/serial.c \
 	kernel/amigahunk.c \
 	kernel/exception.c \
+	kernel/file.c \
 	kernel/interrupt.c \
 	kernel/intr-entry.S \
 	kernel/memory.c \

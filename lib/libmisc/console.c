@@ -104,14 +104,10 @@ void ConsolePutStr(ConsoleT *console, const char *str)
     ConsolePutChar(console, c);
 }
 
-static void OutputToConsole(char c, ConsoleT *console) {
-  ConsolePutChar(console, c);
-}
-
 void ConsolePrint(ConsoleT *console, const char *format, ...) {
   va_list args;
 
   va_start(args, format);
-  kvprintf(format, (kvprintf_fn_t *)OutputToConsole, console, args);
+  kvprintf((kvprintf_fn_t *)ConsolePutChar, console, format, args);
   va_end(args);
 }

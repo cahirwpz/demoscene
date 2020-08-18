@@ -69,5 +69,5 @@ void Loader(BootDataT *bd) {
   KillFileSys();
   KillFloppy();
   
-  Log("[Loader] Shutdown complete!\n")
+  Log("[Loader] Shutdown complete!\n");
 }

@@ -33,6 +33,4 @@ __noreturn void Panic(const char *format, ...)
          #e, __FILE__, __LINE__, __func__); }
 #endif
 
-void MemDump(void *ptr, int n);
-
 #endif 
