@@ -63,7 +63,7 @@ data/%.c: data/%.sync
 
 %.adf: %.exe $(DATA) $(DATA_GEN) $(BOOTLOADER)
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
-	$(FSUTIL) -b $(BOOTLOADER) create $@ $^
+	$(FSUTIL) -b $(BOOTLOADER) create $@ $(filter-out %bootloader.bin,$^)
 
 run: all $(notdir $(PWD)).adf
 	$(LAUNCH) -e $(notdir $(PWD)).exe.dbg -f $(lastword $^)
