@@ -5,7 +5,7 @@
 #include "blitter.h"
 #include "2d.h"
 #include "fx.h"
-#include "random.h"
+#include <stdlib.h>
 
 #define WIDTH 320
 #define HEIGHT 256

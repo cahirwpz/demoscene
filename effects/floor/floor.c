@@ -4,7 +4,7 @@
 #include "memory.h"
 #include "fx.h"
 #include "color.h"
-#include "random.h"
+#include <stdlib.h>
 
 #define WIDTH 320
 #define HEIGHT 256

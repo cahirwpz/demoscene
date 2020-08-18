@@ -3,8 +3,8 @@
 #include "copper.h"
 #include "memory.h"
 #include "pixmap.h"
-#include "random.h"
 #include "fx.h"
+#include <stdlib.h>
 
 #define WIDTH (320 - 16)
 #define HEIGHT 256

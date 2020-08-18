@@ -3,7 +3,6 @@
 #include "memory.h"
 #include "gfx.h"
 #include "blitter.h"
-#include "random.h"
 
 #define TILEW 16
 #define TILEH 16

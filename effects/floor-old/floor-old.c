@@ -3,9 +3,9 @@
 #include "copper.h"
 #include "memory.h"
 #include "fx.h"
-#include "random.h"
 #include "color.h"
 #include "pixmap.h"
+#include <stdlib.h>
 
 #define WIDTH 320
 #define HEIGHT 212

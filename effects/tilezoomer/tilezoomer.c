@@ -2,7 +2,7 @@
 #include "blitter.h"
 #include "copper.h"
 #include "memory.h"
-#include "random.h"
+#include <stdlib.h>
 
 /* Add tile sized margins on every side to hide visual artifacts. */
 #define WIDTH   (256 + 32)

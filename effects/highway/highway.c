@@ -5,8 +5,8 @@
 #include "circle.h"
 #include "fx.h"
 #include "2d.h"
-#include "random.h"
 #include "sprite.h"
+#include <stdlib.h>
 
 #define WIDTH 320
 #define HEIGHT 256
