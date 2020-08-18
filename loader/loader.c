@@ -2,6 +2,7 @@
 #include <boot.h>
 #include <cpu.h>
 #include <custom.h>
+#include <cia.h>
 #include <exception.h>
 #include <memory.h>
 #include <io.h>
@@ -31,6 +32,27 @@ void Loader(BootDataT *bd) {
   }
 
   SetupExceptionVector();
+
+  /* CIA-A & CIA-B: Stop timers and return to default settings. */
+  ciaa->ciacra = 0;
+  ciaa->ciacrb = 0;
+  ciab->ciacra = 0;
+  ciab->ciacrb = 0;
+
+  /* CIA-A & CIA-B: Clear pending interrupts. */
+  SampleICR(ciaa, CIAICRF_ALL);
+  SampleICR(ciab, CIAICRF_ALL);
+
+  /* CIA-A & CIA-B: Disable all interrupts. */
+  WriteICR(ciaa, CIAICRF_ALL);
+  WriteICR(ciab, CIAICRF_ALL);
+
+  /* Enable master bit in DMACON and INTENA */
+  EnableDMA(DMAF_MASTER);
+  EnableINT(INTF_INTEN);
+
+  /* Lower interrupt priority level to nominal. */
+  SetSR(SR_S);
 
   InitFloppyIO();
   InitTracks();

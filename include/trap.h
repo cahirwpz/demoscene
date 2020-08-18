@@ -17,18 +17,6 @@
 #ifndef __ASSEMBLER__
 #include <types.h>
 
-/* Condition Code Register (lower bits of SR) */
-#define CCR_X __BIT(4) /* eXtend */
-#define CCR_N __BIT(3) /* Negative */
-#define CCR_Z __BIT(2) /* Zero */
-#define CCR_V __BIT(1) /* oVerflow */
-#define CCR_C __BIT(0) /* Carry */
-
-/* Status Register for 68000 */
-#define SR_IM 0x0700 /* Interrupt Mask */
-#define SR_S __BIT(13) /* Supervisor Mode */
-#define SR_T __BIT(15) /* Trace Mode */
-
 /* Special Status Word: M68010 memory fault information */
 #define SSW_RR 0x8000
 #define SSW_IF 0x2000
