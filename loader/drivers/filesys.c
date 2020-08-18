@@ -12,26 +12,20 @@
 #define IOF_ERR 0x8000
 
 /* On disk directory entries are always aligned to 2-byte boundary. */
-typedef struct DirEntry {
+typedef struct FileEntry {
   u_char   reclen;   /* total size of this record in bytes */
   u_char   type;     /* type of file (1: executable, 0: regular) */
   u_short  start;    /* sector where the file begins (0..1759) */
   u_int    size;     /* file size in bytes (up to 1MiB) */
   char     name[0];  /* name of the file (NUL terminated) */
-} DirEntryT;
-
-typedef struct {
-  u_int offset;
-  u_int length;
-  char *name;
 } FileEntryT;
 
-typedef struct {
-  char *names;
-  FileEntryT file[0];
-} RootDirT;
+static FileEntryT *NextFileEntry(FileEntryT *fe) {
+  return (void *)fe + fe->reclen;
+}
 
-static RootDirT *rootDir = NULL;
+/* Finished by NUL character (reclen = 0). */
+static FileEntryT *rootDir = NULL;
 
 struct File {
   u_int offset;
@@ -87,22 +81,21 @@ static FileT *NewFile(int length, int offset) {
 }
 
 static FileEntryT *LookupFile(const char *path) {
-  FileEntryT *entry = rootDir->file;
+  FileEntryT *fe = rootDir;
 
-  for (entry = rootDir->file; entry->name; entry++)
-    if (strcmp(path, entry->name) == 0)
-      return entry;
+  do {
+    if (strcmp(path, fe->name) == 0)
+      return fe;
+    fe = NextFileEntry(fe);
+  } while (fe->reclen);
 
   return NULL;
 }
 
 FileT *OpenFile(const char *path, __unused u_short flags) {
   FileEntryT *entry;
-  if ((entry = LookupFile(path))) {
-    Log("Found '%s', length: %d, offset: %d\n",
-        path, entry->length, entry->offset);
-    return NewFile(entry->length, entry->offset);
-  }
+  if ((entry = LookupFile(path)))
+    return NewFile(entry->size, entry->start * TD_SECTOR);
   return NULL;
 }
 
@@ -177,7 +170,7 @@ bool FileSeek(FileT *file, int pos, int mode) {
 int GetFileSize(const char *path) {
   FileEntryT *entry;
   if ((entry = LookupFile(path)))
-    return entry->length;
+    return entry->size;
   return -1;
 }
 
@@ -189,74 +182,37 @@ int GetCursorPos(FileT *file) {
 
 #define ONSTACK(x) (&(x)), sizeof((x))
 
-typedef struct {
-  u_int offset;
-  u_int length;
-} DirEntT;
-
-typedef struct {
-  u_short files;
-  u_short names;
-  DirEntT dirent[0];
-} DirT;
-
-static void ReadDir(void) {
-  DirT dir;
+void InitFileSys(void) {
   FileT *fh;
-  u_int dirLen, rootDirLen;
+  u_short rootDirLen;
 
   /* Create a file that represent whole floppy disk without boot sector. */
   fh = NewFile(TD_DISK - TD_SECTOR * 2, TD_SECTOR * 2);
 
-  /* read directory header */
-  FileRead(fh, ONSTACK(dir));
+  /* read directory size */
+  FileRead(fh, ONSTACK(rootDirLen));
 
-  Log("[ReadDir] Reading directory with %u files.\n", dir.files);
-
-  dirLen = sizeof(DirEntT) * dir.files + sizeof(DirT);
-  rootDirLen = sizeof(FileEntryT) * (dir.files + 1) + sizeof(RootDirT);
-
-  rootDir = MemAlloc(rootDirLen, MEMF_PUBLIC|MEMF_CLEAR);
-  rootDir->names = MemAlloc(dir.names, MEMF_PUBLIC);
+  Log("[FileSys] Reading directory of %d bytes.\n", rootDirLen);
 
   /* read directory entries */
-  {
-    short n = dir.files;
-    FileEntryT *entry = rootDir->file;
-
-    do {
-      FileRead(fh, entry++, sizeof(DirEntT));
-    } while (--n);
-  }
-
-  /* read filenames */
-  FileSeek(fh, align(dirLen, TD_SECTOR), SEEK_SET);
-  FileRead(fh, rootDir->names, dir.names);
+  rootDir = MemAlloc(rootDirLen + 1, MEMF_PUBLIC|MEMF_CLEAR);
+  FileRead(fh, rootDir, rootDirLen);
   CloseFile(fh);
 
   /* associate names with file entries */
   {
-    char *name = rootDir->names;
-    FileEntryT *entry = rootDir->file;
-
-    while (entry->length) {
-      entry->name = name;
-      while (*name++); /* move to next string */
-      entry++;
-    }
+    FileEntryT *fe = rootDir;
+    do {
+      Log("[FileSys] Sector %d: %s file '%s' of %d bytes.\n",
+          fe->start, fe->type ? "executable" : "regular", fe->name, fe->size);
+      fe = NextFileEntry(fe);
+    } while (fe->reclen);
   }
 }
 
-void InitFloppyIO(void) {
-  InitFloppy();
-  ReadDir();
-}
-
-void KillFloppyIO(void) {
+void KillFileSys(void) {
   if (rootDir) {
-    MemFree(rootDir->names);
     MemFree(rootDir);
     rootDir = NULL;
   }
-  KillFloppy();
 }

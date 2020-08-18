@@ -5,6 +5,7 @@
 #include <cia.h>
 #include <exception.h>
 #include <memory.h>
+#include <floppy.h>
 #include <filesys.h>
 
 #include "autoinit.h"
@@ -54,7 +55,8 @@ void Loader(BootDataT *bd) {
   /* Lower interrupt priority level to nominal. */
   SetSR(SR_S);
 
-  InitFloppyIO();
+  InitFloppy();
+  InitFileSys();
   InitTracks();
   CallFuncList(&__INIT_LIST__);
 
@@ -64,7 +66,8 @@ void Loader(BootDataT *bd) {
   }
 
   CallFuncList(&__EXIT_LIST__);
-  KillFloppyIO();
+  KillFileSys();
+  KillFloppy();
   
   Log("[Loader] Shutdown complete!\n")
 }

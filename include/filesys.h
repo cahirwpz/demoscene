@@ -19,7 +19,7 @@ int GetCursorPos(FileT *fh);
 
 void *LoadFile(const char *path, u_int memoryFlags);
 
-void InitFloppyIO(void);
-void KillFloppyIO(void);
+void InitFileSys(void);
+void KillFileSys(void);
 
 #endif
