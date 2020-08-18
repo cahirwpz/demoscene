@@ -9,6 +9,7 @@ SOURCES := \
 	gen/umodsi3.S \
 	gen/longjmp.S \
 	gen/setjmp.S \
+	stdlib/qsort.c \
 	stdlib/random.c \
 	stdio/kvprintf.c \
 	stdio/snprintf.c \

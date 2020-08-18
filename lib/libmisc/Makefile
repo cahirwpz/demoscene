@@ -7,7 +7,6 @@ SOURCES := \
 	fx.c \
 	inflate.asm \
 	lzo.c \
-	qsort.c \
 	sintab.c \
 	sort.c \
 	uae.asm

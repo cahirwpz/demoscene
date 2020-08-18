@@ -1,4 +1,4 @@
-#include "qsort.h"
+#include <stdlib.h>
 
 static inline void swap(void *x, void *y, short l) {
   u_char *a = x, *b = y, c;
@@ -10,10 +10,10 @@ static inline void swap(void *x, void *y, short l) {
   } while (--l != -1);
 }
 
-static void sort(void *first, void *last, int size, 
+static void sort(void *first, void *last, u_int size, 
                  int (*cmp)(const void *, const void *))
 {
-  if (last - first > size) {
+  if ((u_int)(last - first) > size) {
     void *pivot = first;
     void *left = first + size;
     void *right = last;
@@ -33,7 +33,7 @@ static void sort(void *first, void *last, int size,
   }
 }
 
-void qsort(void *array, int nitems, int size,
+void qsort(void *array, u_int nitems, u_int size,
            int (*cmp)(const void *, const void *))
 {
   sort(array, array + (nitems - 1) * size, size, cmp);

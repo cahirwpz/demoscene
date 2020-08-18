@@ -2,7 +2,7 @@
 #include "3d.h"
 #include "fx.h"
 #include "memory.h"
-#include "qsort.h"
+#include <stdlib.h>
 
 typedef struct ExtEdge {
   short p0, p1;
