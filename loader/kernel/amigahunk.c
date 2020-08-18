@@ -1,7 +1,7 @@
 #include <string.h>
 #include "amigahunk.h"
 #include "debug.h"
-#include "io.h"
+#include "filesys.h"
 #include "memory.h"
 
 #define FileReadVar(fh, x) FileRead((fh), &(x), sizeof(x))

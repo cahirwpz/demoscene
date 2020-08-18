@@ -115,8 +115,8 @@ static void FloppyMotorOff(void) {
   bclr(ciaprb, CIAB_DSKSEL0);
 }
 
-void InitFloppy() {
-  Log("[Init] Floppy drive driver!\n");
+void InitFloppy(void) {
+  Log("[Floppy] Initialing driver!\n");
 
   custom->dsksync = DSK_SYNC;
   custom->adkcon = ADKF_SETCLR | ADKF_MFMPREC | ADKF_WORDSYNC | ADKF_FAST;
@@ -136,7 +136,7 @@ void InitFloppy() {
   trackNum = -1;
 }
 
-void KillFloppy() {
+void KillFloppy(void) {
   FloppyMotorOff();
   MemFree(track);
 }

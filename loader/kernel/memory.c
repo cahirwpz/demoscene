@@ -227,7 +227,7 @@ void AddMemory(void *ptr, u_int size, u_int attributes) {
     *ar_p = ar;
   }
 
-  Log("[Mem] Added %s memory at $%08lx (%d KiB).\n",
+  Log("[Memory] Added %s memory at $%08lx (%d KiB).\n",
       MemoryName(attributes), (intptr_t)ar->start, ar->totalFree / 1024);
 }
 
@@ -439,7 +439,7 @@ void *MemAlloc(u_int size, u_int attributes) {
   }
 
   if (bt == NULL) {
-    Log("[Mem] Failed to allocate %dB of %s memory.\n",
+    Log("[Memory] Failed to allocate %dB of %s memory.\n",
         size, MemoryName(attributes));
     MemCheck(1);
     HALT();

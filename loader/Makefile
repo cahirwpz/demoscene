@@ -14,7 +14,7 @@ SOURCES := \
 	drivers/cia-timer.c \
 	drivers/event.c \
 	drivers/floppy.c \
-	drivers/io.c \
+	drivers/filesys.c \
 	drivers/io-extra.c \
 	drivers/keyboard.c \
 	drivers/mouse.c \

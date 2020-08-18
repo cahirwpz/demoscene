@@ -12,9 +12,6 @@ IntVecT IntVec;
 void SetupExceptionVector(void) {
   short i;
 
-  if (CpuModel >= CPU_68010)
-    ExcVecBase = GetVBR();
-
   /* Initialize M68k interrupt vector. */
   for (i = EXC_BUSERR; i <= EXC_LAST; i++)
     ExcVec[i] = BadTrap;

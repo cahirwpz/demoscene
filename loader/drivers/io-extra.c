@@ -1,5 +1,5 @@
 #include "memory.h"
-#include "io.h"
+#include "filesys.h"
 
 void *LoadFile(const char *path, u_int memoryFlags) {
   char *data = NULL;
