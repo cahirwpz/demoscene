@@ -116,7 +116,7 @@ static void FloppyMotorOff(void) {
 }
 
 void InitFloppy(void) {
-  Log("[Init] Floppy drive driver!\n");
+  Log("[Floppy] Initialing driver!\n");
 
   custom->dsksync = DSK_SYNC;
   custom->adkcon = ADKF_SETCLR | ADKF_MFMPREC | ADKF_WORDSYNC | ADKF_FAST;
