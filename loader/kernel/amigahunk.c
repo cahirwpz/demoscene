@@ -1,10 +1,10 @@
-#include <string.h>
-#include "amigahunk.h"
-#include "debug.h"
-#include "filesys.h"
-#include "memory.h"
+#include <amigahunk.h>
+#include <strings.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <memory.h>
 
-#define FileReadVar(fh, x) FileRead((fh), &(x), sizeof(x))
+#define DEBUG 0
 
 #define HUNK_CODE 1001
 #define HUNK_DATA 1002
@@ -18,61 +18,58 @@
 #define HUNKF_CHIP __BIT(30)
 #define HUNKF_FAST __BIT(31)
 
-struct Hunk {
-  u_int size;
-  struct Hunk *next;
-  char data[0];
-};
+static long ReadLong(FileT *fh) {
+  long v = 0;
+  FileRead(fh, &v, sizeof(v));
+  return v;
+}
 
-static bool AllocHunks(FileT *fh, HunkT **hunkArray, int hunkCount) {
-  HunkT *hunk, *prev;
+static void SkipLongs(FileT *fh, int n) {
+  FileSeek(fh, n * sizeof(int), SEEK_CUR);
+}
 
-  for (prev = NULL; hunkCount--; prev = hunk) {
-    u_int memFlags = MEMF_CLEAR;
-    u_int n;
+static bool AllocHunks(FileT *fh, HunkT **hunkArray, short hunkCount) {
+  HunkT *prev = NULL;
 
+  do {
     /* size specifiers including memory attribute flags */
-    FileReadVar(fh, n);
+    uint32_t n = ReadLong(fh);
 
-    if (n & HUNKF_CHIP)
-      memFlags |= MEMF_CHIP;
-    else if (n & HUNKF_FAST)
-      memFlags |= MEMF_FAST;
-    else
-      memFlags |= MEMF_PUBLIC;
+    HunkT *hunk = MemAlloc(sizeof(HunkT) + n * sizeof(int),
+                           (n & HUNKF_CHIP) ? MEMF_CHIP : MEMF_PUBLIC);
+    *hunkArray++ = hunk;
 
-    n *= sizeof(int);
-
-    if (!(hunk = MemAlloc(sizeof(HunkT) + n, memFlags)))
+    if (!hunk)
       return false;
 
-    hunk->size = n;
+    hunk->size = n * sizeof(int);
     hunk->next = NULL;
+    bzero(hunk->data, n * sizeof(int));
 
     if (prev)
       prev->next = hunk;
 
-    *hunkArray++ = hunk;
-  }
+    prev = hunk;
+  } while (--hunkCount);
 
   return true;
 }
 
 static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
-  HunkT *hunk = *hunkArray;
-  int n, hunkCode;
+  int hunkIndex = 0;
+  HunkT *hunk = hunkArray[hunkIndex++];
+  short hunkId;
   bool hunkRoot = true;
 
-  while (FileReadVar(fh, hunkCode)) {
-    short hunkId = hunkCode; /* hunkId = 10xx, so we can ignore upper bits */
+  while ((hunkId = ReadLong(fh))) {
+    int n;
 
     if (hunkId == HUNK_CODE || hunkId == HUNK_DATA || hunkId == HUNK_BSS) {
       hunkRoot = true;
-      FileReadVar(fh, n);
+      n = ReadLong(fh);
       if (hunkId != HUNK_BSS)
         FileRead(fh, hunk->data, n * sizeof(int));
-      else
-        memset(hunk->data, 0, n * sizeof(int));
+#if DEBUG
       {
         const char *hunkType;
 
@@ -83,39 +80,34 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
         else
           hunkType = " BSS";
 
-        Log("%s: %p - %p\n", hunkType, hunk->data, hunk->data + hunk->size);
+        printf("%s: %p - %p\n", hunkType, hunk->data, hunk->data + hunk->size);
       }
+#endif
     } else if (hunkId == HUNK_DEBUG) {
-      FileReadVar(fh, n);
-      FileSeek(fh, n * sizeof(int), SEEK_CUR);
+      n = ReadLong(fh);
+      SkipLongs(fh, n);
     } else if (hunkId == HUNK_RELOC32) {
-      for (;;) {
-        int hunkRef, hunkNum;
-        FileReadVar(fh, n);
-        if (n == 0)
-          break;
-        FileReadVar(fh, hunkNum);
-        hunkRef = (int)hunkArray[hunkNum]->data;
-        while (n--) {
-          int reloc;
-          FileReadVar(fh, reloc);
-          ((int *)hunk->data)[reloc] += hunkRef;
-        }
+      while ((n = ReadLong(fh))) {
+        int hunkNum = ReadLong(fh);
+        int32_t hunkRef = (int32_t)hunkArray[hunkNum]->data;
+        do {
+          int hunkOff = ReadLong(fh);
+          int32_t *ptr = (void *)hunk->data + hunkOff;
+          *ptr += hunkRef;
+        } while (--n);
       }
     } else if (hunkId == HUNK_SYMBOL) {
-      for (;;) {
-        FileReadVar(fh, n);
-        if (n == 0)
-          break;
-        FileSeek(fh, (n + 1) * sizeof(int), SEEK_CUR);
-      }
+      while ((n = ReadLong(fh)))
+        SkipLongs(fh, n + 1);
     } else if (hunkId == HUNK_END) {
       if (hunkRoot) {
         hunkRoot = false;
-        hunk++;
+        hunk = hunkArray[hunkIndex++];
       }
     } else {
-      Log("Unknown hunk $%08lx!\n", (long)hunkCode);
+#if DEBUG
+      printf("Unknown hunk $%04x!\n", hunkCode);
+#endif
       return false;
     }
   }
@@ -124,38 +116,29 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
 }
 
 HunkT *LoadHunkList(FileT *fh) {
+  short hunkId = ReadLong(fh);
+  int n, first, last, hunkCount;
   HunkT **hunkArray;
-  int hunkId, hunkCount;
-
-  FileReadVar(fh, hunkId);
-  hunkId &= 0x3FFFFFFF;
 
   if (hunkId != HUNK_HEADER)
     return NULL;
 
   /* Skip resident library names. */
-  for (;;) {
-    int n;
-    FileReadVar(fh, n);
-    if (n == 0)
-      break;
-    FileSeek(fh, n * sizeof(int), SEEK_CUR);
-  }
+  while ((n = ReadLong(fh)))
+    SkipLongs(fh, n);
 
   /*
    * number of hunks (including resident libraries and overlay hunks)
    * number of the first (root) hunk
    * number of the last (root) hunk
    */
-  {
-    struct {
-      int hunks, first, last;
-    } s;
-    FileReadVar(fh, s);
-    hunkCount = s.last - s.first + 1;
-  }
+  SkipLongs(fh, 1);
+  first = ReadLong(fh);
+  last = ReadLong(fh);
 
-  hunkArray = __builtin_alloca(sizeof(HunkT *) * hunkCount);
+  hunkCount = last - first + 1;
+  hunkArray = alloca(sizeof(HunkT *) * hunkCount);
+
   if (AllocHunks(fh, hunkArray, hunkCount))
     if (LoadHunks(fh, hunkArray))
       return hunkArray[0];
