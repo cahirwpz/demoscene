@@ -10,7 +10,6 @@ SOURCES := \
 	memdump.c \
 	qsort.c \
 	rawio-par.asm \
-	rawio-ser.asm \
 	sintab.c \
 	sort.c \
 	uae.asm
