@@ -1,7 +1,6 @@
 TOPDIR := $(realpath ../..)
 
 SOURCES := \
-	audio.c \
 	console.c \
 	debug.c \
 	debug-putchar.S \
