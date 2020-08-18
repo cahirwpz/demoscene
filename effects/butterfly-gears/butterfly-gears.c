@@ -1,6 +1,5 @@
 #include "effect.h"
 
-#include "interrupt.h"
 #include "blitter.h"
 #include "color.h"
 #include "copper.h"
@@ -152,6 +151,7 @@ static void Init(void) {
 }
 
 static void Kill(void) {
+  DisableDMA(DMAF_RASTER|DMAF_COPPER);
   DeleteCopList(ballCopList1.cp);
 }
 

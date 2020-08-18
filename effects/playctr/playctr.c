@@ -49,7 +49,7 @@ static void UnLoad(void) {
   MemFree(module);
 }
 
-static __interrupt int CinterMusic(void) {
+static int CinterMusic(void) {
   if (stopped)
     return 0;
   CinterPlay1(player);
@@ -57,7 +57,7 @@ static __interrupt int CinterMusic(void) {
   return 0;
 }
 
-INTERRUPT(CinterPlayerInterrupt, 10, CinterMusic, NULL);
+INTSERVER(CinterMusicServer, 10, (IntFuncT)CinterMusic, NULL);
 
 static void Init(void) {
   KeyboardInit();
@@ -82,7 +82,7 @@ static void Init(void) {
   CinterInit(module, instruments, player);
   musicStart = player->c_MusicPointer;
 
-  AddIntServer(INTB_VERTB, CinterPlayerInterrupt);
+  AddIntServer(VertBlankChain, CinterMusicServer);
 
   ConsoleSetCursor(&console, 0, 0);
   ConsolePutStr(&console, 
@@ -93,7 +93,7 @@ static void Init(void) {
 }
 
 static void Kill(void) {
-  RemIntServer(INTB_VERTB, CinterPlayerInterrupt);
+  RemIntServer(VertBlankChain, CinterMusicServer);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_AUDIO);
 

@@ -118,6 +118,7 @@ static void Init(void) {
 }
 
 static void Kill(void) {
+  DisableDMA(DMAF_RASTER);
   DeleteCopList(coplist[0]);
   DeleteCopList(coplist[1]);
 }

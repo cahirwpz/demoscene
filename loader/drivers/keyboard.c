@@ -169,7 +169,7 @@ static void PushKeyEvent(u_char raw) {
   PushEvent((EventT *)&ev);
 }
 
-static __interrupt int KeyboardIntHandler(void) {
+static int KeyboardIntHandler(void) {
   if (SampleICR(ciaa, CIAICRF_SP)) {
     /* Read keyboard data register. Yeah, it's negated. */
     uint8_t sdr = ~ciaa->ciasdr;
@@ -191,7 +191,7 @@ static __interrupt int KeyboardIntHandler(void) {
   return 0;
 }
 
-INTERRUPT(KeyboardInterrupt, -5, KeyboardIntHandler, NULL);
+INTSERVER(KeyboardServer, -5, (IntFuncT)KeyboardIntHandler, NULL);
 
 void KeyboardInit(void) {
   Log("[Init] Keyboard driver!\n");
@@ -201,9 +201,9 @@ void KeyboardInit(void) {
    * The keyboard is attached to CIA-A serial port. */
   WriteICR(ciaa, CIAICRF_SETCLR | CIAICRF_SP);
 
-  AddIntServer(INTB_PORTS, KeyboardInterrupt);
+  AddIntServer(PortsChain, KeyboardServer);
 }
 
 void KeyboardKill(void) {
-  RemIntServer(INTB_PORTS, KeyboardInterrupt);
+  RemIntServer(PortsChain, KeyboardServer);
 }

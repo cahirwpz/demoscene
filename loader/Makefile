@@ -20,8 +20,12 @@ SOURCES := \
 	drivers/mouse.c \
 	drivers/serial.c \
 	kernel/amigahunk.c \
+	kernel/exception.c \
 	kernel/interrupt.c \
-	kernel/memory.c
+	kernel/intr-entry.S \
+	kernel/memory.c \
+	kernel/trap-entry.S \
+	kernel/trap.c 
 
 BUILD-FILES = crt0.o
 		

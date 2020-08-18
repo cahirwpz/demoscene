@@ -2,6 +2,9 @@
 #define _CUSTOM_REGDEF_H_
 
 #include <cdefs.h>
+
+#ifndef __ASSEMBLER__
+
 #include <types.h>
 
 struct Custom {
@@ -131,6 +134,61 @@ struct Custom {
 #define vposr u_vposr.s_vposr.vposr
 #define vhposr u_vposr.s_vposr.vhposr
 #define vposr_ u_vposr.vposr_
+
+#else
+
+#include <asm.h>
+
+#define custom _L(_custom)
+
+#define dmaconr 0x002
+#define dmacon 0x096
+#define intenar 0x01c
+#define intena 0x09a
+#define intreqr 0x01e
+#define intreq 0x09c
+
+#endif
+
+#define INTB_SETCLR 15  /* Set/Clear control bit. Determines if bits */
+                        /* written with a one get set or cleared. Bits */
+                        /* written with a zero are always unchanged */
+#define INTB_INTEN 14   /* Master interrupt (enable only) */
+#define INTB_EXTER 13   /* External interrupt */
+#define INTB_DSKSYNC 12 /* Disk re-SYNChronized */
+#define INTB_RBF 11     /* Serial port Receive Buffer Full */
+#define INTB_AUD3 10    /* Audio channel 3 block finished */
+#define INTB_AUD2 9     /* Audio channel 2 block finished */
+#define INTB_AUD1 8     /* Audio channel 1 block finished */
+#define INTB_AUD0 7     /* Audio channel 0 block finished */
+#define INTB_BLIT 6     /* Blitter finished */
+#define INTB_VERTB 5    /* Start of Vertical Blank */
+#define INTB_COPER 4    /* Coprocessor */
+#define INTB_PORTS 3    /* I/O Ports and timers */
+#define INTB_SOFTINT 2  /* Software interrupt request */
+#define INTB_DSKBLK 1   /* Disk Block done */
+#define INTB_TBE 0      /* Serial port Transmit Buffer Empty */
+
+#define INTF(x) __BIT(INTB_##x)
+
+#define INTF_SETCLR INTF(SETCLR)
+#define INTF_INTEN INTF(INTEN)
+#define INTF_EXTER INTF(EXTER)
+#define INTF_DSKSYNC INTF(DSKSYNC)
+#define INTF_RBF INTF(RBF)
+#define INTF_AUD3 INTF(AUD3)
+#define INTF_AUD2 INTF(AUD2)
+#define INTF_AUD1 INTF(AUD1)
+#define INTF_AUD0 INTF(AUD0)
+#define INTF_BLIT INTF(BLIT)
+#define INTF_VERTB INTF(VERTB)
+#define INTF_COPER INTF(COPER)
+#define INTF_PORTS INTF(PORTS)
+#define INTF_SOFTINT INTF(SOFTINT)
+#define INTF_DSKBLK INTF(DSKBLK)
+#define INTF_TBE INTF(TBE)
+
+#define INTF_ALL 0x3FFF
 
 /* defines for beamcon register */
 #define VARVBLANK __BIT(12)  /* Variable vertical blank enable */

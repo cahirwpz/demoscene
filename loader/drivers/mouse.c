@@ -99,7 +99,7 @@ static inline bool GetMouseButton(MouseDataT *mouse, MouseEventT *event) {
   return true;
 }
 
-static __interrupt int MouseIntHandler(void) {
+static int MouseIntHandler(void) {
   MouseEventT event;
   MouseDataT *mouse = &mouseData;
   bool moveX, moveY;
@@ -124,7 +124,7 @@ static __interrupt int MouseIntHandler(void) {
   return 0;
 }
 
-INTERRUPT(MouseInterrupt, -5, MouseIntHandler, NULL);
+INTSERVER(MouseServer, -5, (IntFuncT)MouseIntHandler, NULL);
 
 void MouseInit(short minX, short minY, short maxX, short maxY) {
   MouseDataT *mouse = &mouseData;
@@ -140,9 +140,9 @@ void MouseInit(short minX, short minY, short maxX, short maxY) {
   mouse->yctr = custom->joy0dat >> 8;
   mouse->button = ReadButtonState();
 
-  AddIntServer(INTB_VERTB, MouseInterrupt);
+  AddIntServer(VertBlankChain, MouseServer);
 }
 
-void MouseKill() {
-  RemIntServer(INTB_VERTB, MouseInterrupt);
+void MouseKill(void) {
+  RemIntServer(VertBlankChain, MouseServer);
 }

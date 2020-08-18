@@ -6,7 +6,7 @@
 #include <debug.h>
 #include <cpu.h>
 #include <custom.h>
-#include <interrupt.h>
+#include <exception.h>
 #include <memory.h>
 #include <io.h>
 
@@ -16,7 +16,6 @@
 static struct { short version; short revision; } kickstart;
 
 u_char CpuModel = CPU_68000;
-u_char FpuModel = FPU_NONE;
 
 extern int main(void);
 
@@ -104,6 +103,7 @@ void Loader(void) {
 
   SetupProcessor();
   SetupCustomChips();
+  SetupExceptionVector();
   InitMemory();
   InitFloppyIO();
   InitTracks();
