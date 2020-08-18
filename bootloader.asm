@@ -75,7 +75,7 @@ _LVOCacheControl        EQU     -648
  STRUCTURE MR,0                 ; Memory Region
         APTR    MR_LOWER
         APTR    MR_UPPER
-				WORD		MR_ATTR
+        WORD	MR_ATTR
         LABEL   MR_SIZE
 
         ifnd    ROM
@@ -193,6 +193,7 @@ KillOS:
         and.l   #-65536,d0
         move.l  d0,(a3)+                ; upper address rounded up to 2^16
         addq.l  #1,d1
+        move.w  MH_ATTRIBUTES(a1),(a3)+
 .skipmh cmp.l   LH_TAILPRED(a0),a1
         bne     .memory
 
@@ -299,9 +300,9 @@ Start:
         bsr     CopyMem
 
         ; enter the kernel with pointer to boot data as first argument
-        move.l  sp,-(sp)
-        move.l  BD_ENTRY(a6),a0         ; [a0] first hunk of executable file
-        jsr     (a0)
+        move.l  sp,a0
+        move.l  BD_ENTRY(a6),a1         ; [a0] first hunk of executable file
+        jsr     (a1)
 
 ; Something failed or kernel returned back to boot loader.
 ; Set background color to red and halt the processor.

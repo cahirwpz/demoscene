@@ -1,9 +1,5 @@
-#include <proto/alib.h>
-#include <proto/exec.h>
-#include <exec/execbase.h>
-#include <exec/memory.h>
-
 #include <debug.h>
+#include <boot.h>
 #include <cpu.h>
 #include <custom.h>
 #include <exception.h>
@@ -13,98 +9,29 @@
 #include "autoinit.h"
 #include "sync.h"
 
-static struct { short version; short revision; } kickstart;
-
 u_char CpuModel = CPU_68000;
 
 extern int main(void);
 
-#define THRESHOLD 4096
+void Loader(BootDataT *bd) {
+  Log("[Loader] VBR at $%08x\n", (u_int)bd->bd_vbr);
+  Log("[Loader] CPU model $%02x\n", bd->bd_cpumodel);
+  Log("[Loader] Entry point at $%08x\n", (u_int)bd->bd_entry);
 
-static void InitMemory(void) {
-  struct List *list = &SysBase->MemList;
-  struct Node *node;
+  CpuModel = bd->bd_cpumodel;
+  ExcVecBase = bd->bd_vbr;
 
-  for (node = list->lh_Head; node->ln_Succ; node = node->ln_Succ) {
-    struct MemHeader *mh = (struct MemHeader *)node;
+  {
+    short i;
 
-    if (mh->mh_Attributes & MEMF_PUBLIC) {
-      struct MemChunk *mc;
-     
-      for (mc = mh->mh_First; mc; mc = mc->mc_Next) {
-        if (mc->mc_Bytes >= THRESHOLD)
-          AddMemory((void *)mc + sizeof(struct MemChunk), mc->mc_Bytes,
-                    mh->mh_Attributes);
-      }
+    for (i = 0; i < bd->bd_nregions; i++) {
+      MemRegionT *mr = &bd->bd_region[i];
+      AddMemory((void *)mr->mr_lower, mr->mr_upper - mr->mr_lower, mr->mr_attr);
     }
   }
-}
 
-static void ReadCpuModel(void) {
-  if (SysBase->AttnFlags & AFF_68060)
-    CpuModel = CPU_68060;
-  else if (SysBase->AttnFlags & AFF_68040)
-    CpuModel = CPU_68040;
-  else if (SysBase->AttnFlags & AFF_68030)
-    CpuModel = CPU_68030;
-  else if (SysBase->AttnFlags & AFF_68020)
-    CpuModel = CPU_68020;
-  else if (SysBase->AttnFlags & AFF_68010)
-    CpuModel = CPU_68010;
-}
-
-static void ReadKickVersion(void) {
-  /* Based on WhichAmiga method. */
-  void *kickEnd = (void *)0x1000000;
-  u_int kickSize = *(u_int *)(kickEnd - 0x14);
-  u_short *kick = kickEnd - kickSize;
-
-  kickstart.version = kick[6];
-  kickstart.revision = kick[7];
-}
-
-static void SetupProcessor(void) {
-  /* Disable CPU caches. */
-  if (kickstart.version >= 36)
-    (void)CacheControl(0, -1);
-
-  /* Enter supervisor state. */
-  (void)SuperState();
-}
-
-static void SetupCustomChips(void) {
-  /* Prohibit DMA & interrupts. */
-  custom->adkcon = (u_short)~ADKF_SETCLR;
-  DisableDMA(DMAF_ALL);
-  DisableINT(INTF_ALL);
-  WaitVBlank();
-
-  /* Clear all interrupt requests. Really! */
-  ClearIRQ(INTF_ALL);
-  ClearIRQ(INTF_ALL);
-
-  /* Enable master switches. */
-  EnableDMA(DMAF_MASTER);
-  EnableINT(INTF_INTEN);
-}
-
-void Loader(void) {
-  /* No calls to any other library than exec beyond this point or expect
-   * undefined behaviour including crashes. */
-  Forbid();
-
-  ReadCpuModel();
-  ReadKickVersion();
-
-  Log("[Loader] ROM: %d.%d, CPU: 680%d0, CHIP: %ldkB, FAST: %ldkB\n",
-      kickstart.version, kickstart.revision, CpuModel,
-      AvailMem(MEMF_CHIP | MEMF_LARGEST) / 1024,
-      AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024);
-
-  SetupProcessor();
-  SetupCustomChips();
   SetupExceptionVector();
-  InitMemory();
+
   InitFloppyIO();
   InitTracks();
   CallFuncList(&__INIT_LIST__);

@@ -10,11 +10,11 @@ typedef struct __packed MemRegion {
 } MemRegionT;  
 
 typedef struct BootData {
-  uintptr_t bd_entry;
-  uintptr_t bd_vbr;
+  void *bd_entry;
+  void *bd_vbr;
   u_short bd_cpumodel;
   u_short bd_nregions;
-  MemRegionT bd_region[];
+  MemRegionT bd_region[0];
 } BootDataT;
 
 #endif
