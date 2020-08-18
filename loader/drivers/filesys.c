@@ -1,7 +1,8 @@
 #include <string.h>
+#include <types.h>
 #include "debug.h"
 #include "memory.h"
-#include "io.h"
+#include "filesys.h"
 #include "floppy.h"
 
 #define TD_TRACK (TD_SECTOR * NSECTORS)
@@ -9,6 +10,15 @@
 
 #define IOF_EOF 0x0002
 #define IOF_ERR 0x8000
+
+/* On disk directory entries are always aligned to 2-byte boundary. */
+typedef struct DirEntry {
+  u_char   reclen;   /* total size of this record in bytes */
+  u_char   type;     /* type of file (1: executable, 0: regular) */
+  u_short  start;    /* sector where the file begins (0..1759) */
+  u_int    size;     /* file size in bytes (up to 1MiB) */
+  char     name[0];  /* name of the file (NUL terminated) */
+} DirEntryT;
 
 typedef struct {
   u_int offset;

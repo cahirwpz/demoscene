@@ -5,7 +5,7 @@
 #include <cia.h>
 #include <exception.h>
 #include <memory.h>
-#include <io.h>
+#include <filesys.h>
 
 #include "autoinit.h"
 #include "sync.h"
