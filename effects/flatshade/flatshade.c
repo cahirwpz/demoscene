@@ -50,6 +50,7 @@ static void Init(void) {
 }
 
 static void Kill(void) {
+  DisableDMA(DMAF_RASTER);
   DeleteBitmap(screen0);
   DeleteBitmap(screen1);
   DeleteBitmap(buffer);

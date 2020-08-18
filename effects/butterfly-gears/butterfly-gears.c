@@ -151,6 +151,7 @@ static void Init(void) {
 }
 
 static void Kill(void) {
+  DisableDMA(DMAF_RASTER|DMAF_COPPER);
   DeleteCopList(ballCopList1.cp);
 }
 
