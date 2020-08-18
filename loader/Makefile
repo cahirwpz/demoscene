@@ -15,7 +15,6 @@ SOURCES := \
 	drivers/event.c \
 	drivers/floppy.c \
 	drivers/filesys.c \
-	drivers/io-extra.c \
 	drivers/keyboard.c \
 	drivers/mouse.c \
 	drivers/serial.c \

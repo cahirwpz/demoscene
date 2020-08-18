@@ -22,18 +22,14 @@ typedef struct {
   FileCloseT close;
 } FileOpsT;
 
-struct File {
-  FileOpsT *ops;
-  int offset;
-};
-
 /* These behave like read/write/lseek known from UNIX */
-int FileRead(FileT *f, void *buf, size_t nbyte);
-int FileWrite(FileT *f, const void *buf, size_t nbyte);
-int FileSeek(FileT *f, long offset, int whence);
+int FileRead(FileT *f, void *buf, u_int nbyte);
+int FileWrite(FileT *f, const void *buf, u_int nbyte);
+int FileSeek(FileT *f, int offset, int whence);
 void FileClose(FileT *f);
 
 void FilePutChar(FileT *f, char c);
+int FileGetChar(FileT *f);
 void FilePrintf(FileT *f, const char *fmt, ...);
 void FileHexDump(FileT *f, void *ptr, u_int length);
 

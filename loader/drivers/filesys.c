@@ -28,6 +28,8 @@ static FileEntryT *NextFileEntry(FileEntryT *fe) {
 static FileEntryT *rootDir = NULL;
 
 struct File {
+  FileOpsT *ops;
+
   u_int offset;
   u_int length;
 
@@ -69,15 +71,27 @@ static bool FillBuffer(FileT *file) {
   return true;
 }
 
+static int FsRead(FileT *f, void *buf, u_int nbyte);
+static int FsSeek(FileT *f, int offset, int whence);
+static void FsClose(FileT *f);
+
+static FileOpsT FsOps = {
+  .read = FsRead,
+  .write = NULL,
+  .seek = FsSeek,
+  .close = FsClose
+};
+
 static FileT *NewFile(int length, int offset) {
-  FileT *file = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
+  FileT *f = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
 
-  file->length = length;
-  file->offset = offset;
-  file->buf.track = MemAlloc(TD_TRACK, MEMF_PUBLIC);
-  file->buf.pos = file->buf.track;
+  f->ops = &FsOps;
+  f->length = length;
+  f->offset = offset;
+  f->buf.track = MemAlloc(TD_TRACK, MEMF_PUBLIC);
+  f->buf.pos = f->buf.track;
 
-  return file;
+  return f;
 }
 
 static FileEntryT *LookupFile(const char *path) {
@@ -92,21 +106,19 @@ static FileEntryT *LookupFile(const char *path) {
   return NULL;
 }
 
-FileT *OpenFile(const char *path, __unused u_short flags) {
+FileT *OpenFile(const char *path) {
   FileEntryT *entry;
   if ((entry = LookupFile(path)))
     return NewFile(entry->size, entry->start * TD_SECTOR);
   return NULL;
 }
 
-void CloseFile(FileT *file) {
-  if (file) {
-    MemFree(file->buf.track);
-    MemFree(file);
-  }
+static void FsClose(FileT *file) {
+  MemFree(file->buf.track);
+  MemFree(file);
 }
 
-bool FileRead(FileT *file, void *buf, u_int size) {
+static int FsRead(FileT *file, void *buf, u_int size) {
   if (!file || size == 0 || (file->flags & IOF_ERR))
     return false;
 
@@ -131,36 +143,36 @@ bool FileRead(FileT *file, void *buf, u_int size) {
   return size == 0; /* have we read everything? */
 }
 
-bool FileSeek(FileT *file, int pos, int mode) {
-  if (!file || (file->flags & IOF_ERR))
-    return false;
+static int FsSeek(FileT *file, int offset, int whence) {
+  if (file->flags & IOF_ERR)
+    return -1;
   
   // Log("[FileSeek] $%p %d %d\n", file, pos, mode);
 
   file->flags &= ~IOF_EOF;
 
-  if (mode == SEEK_CUR) {
-    pos += file->pos - file->buf.left;
-    mode = SEEK_SET;
+  if (whence == SEEK_CUR) {
+    offset += file->pos - file->buf.left;
+    whence = SEEK_SET;
   }
 
-  if (mode == SEEK_SET) {
+  if (whence == SEEK_SET) {
     int bufsize = file->buf.pos - file->buf.track + (int)file->buf.left;
     int bufstart = file->pos - bufsize;
     int bufend = file->pos;
 
     /* New position is within buffer boundaries. */
-    if ((pos >= bufstart) && (pos < bufend)) {
-      file->buf.pos = file->buf.track + pos - bufstart;
-      file->buf.left = file->pos - pos;
+    if ((offset >= bufstart) && (offset < bufend)) {
+      file->buf.pos = file->buf.track + offset - bufstart;
+      file->buf.left = file->pos - offset;
       return true;
     }
 
     /* New position is not within file. */
-    if ((pos < 0) || (pos > (int)file->length))
-      return false;
+    if ((offset < 0) || (offset > (int)file->length))
+      return -1;
 
-    file->pos = pos;
+    file->pos = offset;
     return FillBuffer(file);
   }
 
@@ -197,7 +209,7 @@ void InitFileSys(void) {
   /* read directory entries */
   rootDir = MemAlloc(rootDirLen + 1, MEMF_PUBLIC|MEMF_CLEAR);
   FileRead(fh, rootDir, rootDirLen);
-  CloseFile(fh);
+  FileClose(fh);
 
   /* associate names with file entries */
   {
@@ -215,4 +227,25 @@ void KillFileSys(void) {
     MemFree(rootDir);
     rootDir = NULL;
   }
+}
+
+void *LoadFile(const char *path, u_int memoryFlags) {
+  char *data = NULL;
+  int size = GetFileSize(path);
+
+  if (size > 0 && (data = MemAlloc(size + 1, memoryFlags))) {
+    FileT *f = OpenFile(path);
+
+    if (!FileRead(f, data, size)) {
+      MemFree(data);
+      data = NULL;
+    } else {
+      /* Add extra byte and mark the end of file by zero. */
+      data[size] = 0;
+    }
+
+    FileClose(f);
+  }
+
+  return data;
 }

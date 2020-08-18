@@ -14,6 +14,7 @@
 static BitmapT *screen;
 static CopListT *cp;
 static ConsoleT console;
+static FileT *ser;
 
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
@@ -33,7 +34,7 @@ static void Init(void) {
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
 
-  SerialInit(9600);
+  ser = SerialOpen(9600);
   KeyboardInit();
 }
 
@@ -41,7 +42,7 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER);
 
   KeyboardKill();
-  SerialKill();
+  FileClose(ser);
 
   DeleteCopList(cp);
   DeleteBitmap(screen);
@@ -49,7 +50,7 @@ static void Kill(void) {
 
 static bool HandleEvent(void) {
   EventT ev;
-  int c = SerialGet();
+  int c = FileGetChar(ser);
 
   if (c >= 0) {
     ConsolePutChar(&console, c);
@@ -94,7 +95,7 @@ static bool HandleEvent(void) {
 
   if (ev.key.ascii) {
     ConsolePutChar(&console, ev.key.ascii);
-    SerialPut(ev.key.ascii);
+    FilePutChar(ser, ev.key.ascii);
   }
 
   ConsoleDrawCursor(&console);

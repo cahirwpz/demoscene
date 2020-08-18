@@ -16,7 +16,7 @@
         xref _MemFree
         xref _OpenFile
         xref _FileRead
-        xref _CloseFile
+        xref _FileClose
 
 	section	'.text',code
 
@@ -67,7 +67,7 @@ _Read:
 
 _Close:
         move.l  d1,a0
-        jmp     _CloseFile
+        jmp     _FileClose
 
 _AhxInitHW:
 	movem.l	d1-a6,-(sp)
