@@ -31,8 +31,8 @@ void FileClose(FileT *f);
 void FilePutChar(FileT *f, char c);
 int FileGetChar(FileT *f);
 void FilePrintf(FileT *f, const char *fmt, ...);
-void FileHexDump(FileT *f, void *ptr, u_int length);
 
 FileT *MemoryOpen(const void *buf, u_int nbyte);
+FileT *SerialOpen(u_int baud);
 
 #endif

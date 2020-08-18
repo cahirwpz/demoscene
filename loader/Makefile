@@ -16,6 +16,7 @@ SOURCES := \
 	drivers/floppy.c \
 	drivers/filesys.c \
 	drivers/keyboard.c \
+	drivers/memory-file.c \
 	drivers/mouse.c \
 	drivers/serial.c \
 	kernel/amigahunk.c \

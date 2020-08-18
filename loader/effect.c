@@ -18,9 +18,9 @@ static void ShowMemStats(void) {
 #endif
 
 #if REMOTE_CONTROL
-# include "serial.h"
+# include "file.h"
 static void SendEffectStatus(EffectT *effect) {
-  SerialPrint("ES %s %d\n", effect->name, effect->state);
+  FilePrintf("ES %s %d\n", effect->name, effect->state);
 }
 #else
 # define SendEffectStatus(x)

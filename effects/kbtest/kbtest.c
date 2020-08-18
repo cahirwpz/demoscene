@@ -3,7 +3,7 @@
 #include "copper.h"
 #include "event.h"
 #include "keyboard.h"
-#include "serial.h"
+#include "file.h"
 
 #define WIDTH 640
 #define HEIGHT 256
