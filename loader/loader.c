@@ -16,7 +16,6 @@
 static struct { short version; short revision; } kickstart;
 
 u_char CpuModel = CPU_68000;
-u_char FpuModel = FPU_NONE;
 
 extern int main(void);
 

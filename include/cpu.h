@@ -12,15 +12,7 @@ typedef enum {
   CPU_68060 = 6
 } CpuModelT;
 
-typedef enum {
-  FPU_NONE = 0,
-  FPU_68881 = 1,
-  FPU_68882 = 2,
-  FPU_68040 = 3
-} FpuModelT;
-
 extern u_char CpuModel;
-extern u_char FpuModel;
 
 /* Read Vector Base Register (68010 and above only) */
 static inline void *GetVBR(void) {
