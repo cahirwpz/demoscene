@@ -7,7 +7,6 @@ SOURCES := \
 	fx.c \
 	inflate.asm \
 	lzo.c \
-	memdump.c \
 	qsort.c \
 	rawio-par.asm \
 	sintab.c \
