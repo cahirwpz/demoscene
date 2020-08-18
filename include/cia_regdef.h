@@ -1,6 +1,8 @@
 #ifndef _CIA_REGDEF_H_
 #define _CIA_REGDEF_H_
 
+#ifndef __ASSEMBLER__
+
 #include <cdefs.h>
 #include <types.h>
 
@@ -38,6 +40,15 @@ struct CIA {
   uint8_t ciacrb;
   uint8_t pad_f[255];
 };
+
+#else
+
+#define ciapra 0x0000
+#define ciaprb 0x0100
+#define ciaddra 0x0200
+#define ciaddrb 0x0300
+
+#endif
 
 /* interrupt control register bit numbers */
 #define CIAICRB_TA 0

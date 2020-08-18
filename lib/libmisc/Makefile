@@ -4,11 +4,11 @@ SOURCES := \
 	audio.c \
 	console.c \
 	debug.c \
+	debug-putchar.S \
 	fx.c \
 	inflate.asm \
 	lzo.c \
 	qsort.c \
-	rawio-par.asm \
 	sintab.c \
 	sort.c \
 	uae.asm
