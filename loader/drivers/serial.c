@@ -91,11 +91,15 @@ void SerialPut(u_char data) {
   EnableINT(INTF_TBE);
 }
 
+static void _SerialPut(__unused void *ptr, char data) {
+  SerialPut(data);
+}
+
 void SerialPrint(const char *format, ...) {
   va_list args;
 
   va_start(args, format);
-  kvprintf(format, (kvprintf_fn_t *)SerialPut, NULL, args);
+  kvprintf(_SerialPut, NULL, format, args);
   va_end(args);
 }
 

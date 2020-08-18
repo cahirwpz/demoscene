@@ -21,6 +21,7 @@ SOURCES := \
 	drivers/serial.c \
 	kernel/amigahunk.c \
 	kernel/exception.c \
+	kernel/file.c \
 	kernel/interrupt.c \
 	kernel/intr-entry.S \
 	kernel/memory.c \

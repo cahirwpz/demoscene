@@ -103,8 +103,8 @@ ksprintn(char *nbuf, u_long num, int base, int *lenp, int upper)
  *		("%6D", ptr, ":")   -> XX:XX:XX:XX:XX:XX
  *		("%*D", len, ptr, " " -> XX XX XX XX ...
  */
-int kvprintf(char const *fmt, kvprintf_fn_t *func, void *arg, va_list ap) {
-#define PCHAR(c) {int cc=(c); if (func) (*func)(cc, arg); else *d++ = cc; retval++; }
+int kvprintf(kvprintf_fn_t *func, void *arg, char const *fmt, va_list ap) {
+#define PCHAR(c) {char _c=(c); if (func) (*func)(arg, _c); else *d++ = _c; retval++; }
 	char nbuf[MAXNBUF];
 	char *d;
 	const char *p, *percent, *q;

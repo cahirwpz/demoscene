@@ -5,7 +5,7 @@ struct print_buf {
 	size_t size;
 };
 
-static void snprint_func(int ch, void *arg) {
+static void snprint_func(void *arg, char ch) {
 	struct print_buf *pbuf = arg;
 
 	if (pbuf->size < 2) {
@@ -25,7 +25,7 @@ int snprintf(char *buf, size_t size, const char *cfmt, ...) {
 	arg.size = size;
 
 	va_start(ap, cfmt);
-	retval = kvprintf(cfmt, &snprint_func, &arg, ap);
+	retval = kvprintf(&snprint_func, &arg, cfmt, ap);
 	va_end(ap);
 
 	if (arg.size >= 1)
