@@ -35,7 +35,7 @@ $(TOPDIR)/%.bin: FORCE
 
 include $(TOPDIR)/build/common.mk
 
-$(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA)
+$(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA)
 	@echo "[LD] $(addprefix $(DIR),$(OBJECTS)) -> $(DIR)$@"
 	$(CC) $(LDFLAGS) -T$(TOPDIR)/amiga.ld -Wl,-Map=$@.map -o $@ $^
 	$(CP) $@ $@.dbg
@@ -75,13 +75,21 @@ data/%.c: data/%.sync
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
 	$(FSUTIL) -b $(BOOTLOADER) create $@ $(filter-out %bootloader.bin,$^)
 
-run-floppy: $(EFFECT).exe $(EFFECT).adf
+run-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) $(LAUNCHOPTS) \
 	  -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
-run: $(EFFECT).rom $(EFFECT).adf
+debug-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
+	$(LAUNCH) $(LAUNCHOPTS) \
+	  -d -f $(EFFECT).adf -e $(EFFECT).elf
+
+run: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) $(LAUNCHOPTS) \
 	  -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
-.PHONY: run
+debug: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
+	$(LAUNCH) $(LAUNCHOPTS) \
+	  -d -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
+
+.PHONY: run debug run-floppy debug-floppy
 .PRECIOUS: $(BOOTLOADER)
