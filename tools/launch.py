@@ -38,7 +38,8 @@ class FSUAE(Launchable):
     def __init__(self):
         super().__init__('fs-uae', HerePath('tools', 'uaedbg.py'))
 
-    def configure(self, floppy=None, rom=None):
+    def configure(self, floppy=None, rom=None, executable=None):
+        self.options.extend(['-e', executable])
         # Now options for FS-UAE.
         self.options.append('--')
         if floppy:
@@ -86,7 +87,7 @@ if __name__ == '__main__':
         raise SystemExit('%s: file does not exist!' % args.elf)
 
     uae = FSUAE()
-    uae.configure(floppy=args.floppy, rom=args.rom)
+    uae.configure(floppy=args.floppy, rom=args.rom, executable=args.executable)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)
