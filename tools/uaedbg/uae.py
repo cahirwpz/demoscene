@@ -133,11 +133,11 @@ class UaeProcess():
         self.send('t')
 
     async def insert_hwbreak(self, addr):
-        lines = self.communicate('f %X' % addr)
+        lines = await self.communicate('f %X' % addr)
         return lines and lines[0] == 'Breakpoint added'
 
     async def remove_hwbreak(self, addr):
-        lines = self.communicate('f %X' % addr)
+        lines = await self.communicate('f %X' % addr)
         return lines and lines[0] == 'Breakpoint removed'
 
     async def read_registers(self):

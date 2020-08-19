@@ -25,21 +25,18 @@ class UaeDebugger():
 
     async def address_of(self, where):
         try:
-            addr = int(where, 16)
+            return int(where, 16)
         except ValueError:
-            addr = None
+            pass
 
         debuginfo = await self.debuginfo()
         if debuginfo:
-            try:
-                _, addr = debuginfo.find_line_addr(where)
-                if addr:
-                    return addr
-                _, addr = debuginfo.find_symbol_addr(where)
-                if addr:
-                    return addr
-            except TypeError:
-                pass
+            res = debuginfo.find_line_addr(where)
+            if res:
+                return res[1]
+            res = debuginfo.find_symbol_addr(where)
+            if res:
+                return res[1]
         return None
 
     async def break_info(self, pc):
