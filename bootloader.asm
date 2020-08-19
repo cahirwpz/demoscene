@@ -199,10 +199,6 @@ KillOS:
 
         move.w  d1,BD_NREGIONS(a2)      ; save #regions
 
-        ; write regions trailing element
-        clr.l   (a3)+
-        clr.l   (a3)+
-
         ; copy boot loader data into safe register
         move.l  a2,a6
         suba.l  a2,a3                   ; [a3] size of boot loader data
@@ -301,7 +297,7 @@ Start:
 
         ; enter the kernel with pointer to boot data as first argument
         move.l  sp,a0
-        move.l  BD_ENTRY(a6),a1         ; [a0] first hunk of executable file
+        move.l  BD_ENTRY(a6),a1         ; [a1] first hunk of executable file
         jsr     (a1)
 
 ; Something failed or kernel returned back to boot loader.

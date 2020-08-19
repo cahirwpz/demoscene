@@ -12,7 +12,7 @@ LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 CRT0 = $(TOPDIR)/loader/crt0.o
 BOOTLOADER = $(TOPDIR)/bootloader.bin
 
-EXTRA-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).adf
+EXTRA-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).adf $(EFFECT).rom
 CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe.dbg $(EFFECT).exe.map 
 
 all: build
@@ -41,6 +41,16 @@ $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA)
 	$(CP) $@ $@.dbg
 	$(STRIP) $@
 
+%.rom.asm: $(TOPDIR)/a500rom.asm $(TOPDIR)/bootloader.asm
+	@echo "[SED] $(notdir $^) -> $(DIR)$@"
+	sed -e 's,$$(TOPDIR),$(TOPDIR),g' \
+	    -e 's,$$(EFFECT),$(EFFECT),g' \
+	    $(TOPDIR)/a500rom.asm > $@
+
+%.rom: %.rom.asm %.exe
+	@echo "[VASM] $(addprefix $(DIR),$^) -> $(DIR)$@"
+	$(VASM) -Fbin $(VASMFLAGS) -o $@ $<
+
 data/%.c: data/%.lwo
 	@echo "[LWO] $(DIR)$< -> $(DIR)$@"
 	$(LWO2C) $(LWO2C.$*) -f $< $@
@@ -65,8 +75,13 @@ data/%.c: data/%.sync
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
 	$(FSUTIL) -b $(BOOTLOADER) create $@ $(filter-out %bootloader.bin,$^)
 
-run: all $(notdir $(PWD)).adf
-	$(LAUNCH) -e $(notdir $(PWD)).exe.dbg -f $(lastword $^)
+run-floppy: $(EFFECT).exe $(EFFECT).adf
+	$(LAUNCH) $(LAUNCHOPTS) \
+	  -e $(EFFECT).exe.dbg -f $(EFFECT).adf
+
+run: $(EFFECT).rom $(EFFECT).adf
+	$(LAUNCH) $(LAUNCHOPTS) \
+	  -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 .PHONY: run
 .PRECIOUS: $(BOOTLOADER)

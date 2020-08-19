@@ -7,11 +7,12 @@ _UAEFSDB.___
 .idea
 .vscode
 
-# executable files, floppy images and archives
+# executable files, floppy & rom images and archives
 *.adf
 *.exe
 *.exe.dbg
 *.exe.map
+*.rom
 *.7z
 
 # AmigaOS files

@@ -38,11 +38,13 @@ class FSUAE(Launchable):
     def __init__(self):
         super().__init__('fs-uae', HerePath('tools', 'uaedbg.py'))
 
-    def configure(self, floppy=None):
+    def configure(self, floppy=None, rom=None):
         # Now options for FS-UAE.
         self.options.append('--')
         if floppy:
             self.options.append('--floppy_drive_0=' + os.path.realpath(floppy))
+        if rom:
+            self.options.append('--kickstart_file=' + os.path.realpath(rom))
         self.options.append(HerePath('effects', 'Config.fs-uae'))
 
 
@@ -60,6 +62,8 @@ class SOCAT(Launchable):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Launch effect in FS-UAE emulator.')
+    parser.add_argument('-r', '--rom', metavar='ROM', type=str,
+                        help='Replace Amiga Kickstart with provided ROM.')
     parser.add_argument('-e', '--executable', metavar='EXE', type=str,
                         help='Provide executable file for debugging.')
     parser.add_argument('-f', '--floppy', metavar='ADF', type=str,
@@ -73,12 +77,16 @@ if __name__ == '__main__':
     if args.floppy and not os.path.isfile(args.floppy):
         raise SystemExit('%s: file does not exist!' % args.floppy)
 
+    # Check if rom file exists
+    if args.rom and not os.path.isfile(args.rom):
+        raise SystemExit('%s: file does not exist!' % args.rom)
+
     # Check if ELF executable exists.
     if not os.path.isfile(args.executable):
         raise SystemExit('%s: file does not exist!' % args.elf)
 
     uae = FSUAE()
-    uae.configure(floppy=args.floppy)
+    uae.configure(floppy=args.floppy, rom=args.rom)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)
