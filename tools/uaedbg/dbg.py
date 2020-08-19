@@ -146,7 +146,7 @@ class UaeDebugger():
         debuginfo = await self.debuginfo()
         if not debuginfo:
             return
-        addr = debuginfo.find_symbol_addr(symbol)
+        sec, addr = debuginfo.find_symbol_addr(symbol)
         if addr:
             print('Symbol "%s" at %08X.' % (symbol, addr))
         else:
@@ -156,7 +156,7 @@ class UaeDebugger():
         debuginfo = await self.debuginfo()
         if not debuginfo:
             return
-        addr = debuginfo.find_line_addr("%s:%d" % (source, line))
+        sec, addr = debuginfo.find_line_addr("%s:%d" % (source, line))
         if addr:
             print('Line "%s:%d" at %08X.' % (source, line, addr))
         else:
@@ -190,7 +190,7 @@ class UaeDebugger():
             self.do_where_am_I()
     }
 
-    commands_ignored = ['Z', 'Ze', 'Zs']
+    commands_ignored = ['Z', 'Ze', 'Zs', 'Zl']
 
     async def do_command(self, cmd):
         fs = cmd.split()
