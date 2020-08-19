@@ -3,11 +3,6 @@
 
 #include <cdefs.h>
 
-/* Instruction that effectively is a no-op, but its opcode is different from
- * real nop instruction. Useful for introducing transparent breakpoints that
- * are only understood by simulator. */
-#define NOP() { asm volatile("exg d7,d7"); }
-
 /* When simulator is configured to enter debugger on illegal instructions,
  * this macro can be used to set breakpoints in your code. */
 #define BREAK() { asm volatile("\tillegal\n"); }
