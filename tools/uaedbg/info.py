@@ -1,3 +1,4 @@
+import os
 import os.path
 
 from collections import namedtuple
@@ -276,7 +277,7 @@ class Section():
         for addr, sl in self.line_table:
             if addr >= where:
                 return sl
-        return None
+        raise KeyError(where)
 
     def find_function(self, name):
         return self.functions.get(name, None)
@@ -446,19 +447,25 @@ def DebugInfoReader(executable):
 
                 # N_SO: path and name of source file (selects object file)
                 if st.type == 'SO':
-                    if st.str and st.str[-1] == '/':
-                        dirname = st.str
+                    if st.str:
+                        if st.str[-1] == '/':
+                            dirname = st.str
+                        else:
+                            source = di.get_source(dirname + st.str)
+                            unit = di.get_unit(dirname + st.str)
+                            stabinfo = StabInfoParser(unit)
                     else:
-                        source = di.get_source(dirname + st.str)
-                        unit = di.get_unit(dirname + st.str)
-                        stabinfo = StabInfoParser(unit)
+                        dirname = os.getcwd() + '/'
 
                     fn = None
                     scope = None
 
                 # N_SOL: used to switch source file (but not object file)
                 elif st.type == 'SOL':
-                    source = di.get_source(st.str)
+                    if st.str[0] == '/':
+                        source = di.get_source(st.str)
+                    else:
+                        source = di.get_source(dirname + st.str)
 
                 # N_DATA: data symbol
                 # N_BSS: BSS symbol

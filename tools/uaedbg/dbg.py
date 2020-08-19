@@ -45,7 +45,10 @@ class UaeDebugger():
     async def break_info(self, pc):
         debuginfo = await self.debuginfo()
         if debuginfo:
-            return str(debuginfo.find_line(pc))
+            try:
+                return str(debuginfo.find_line(pc)[1])
+            except KeyError:
+                pass
         return '%08X' % pc
 
     def break_lookup(self, addr):
@@ -55,17 +58,18 @@ class UaeDebugger():
         return None
 
     async def break_show(self, pc):
-        print('Stopped at %s:' % await self.break_info(pc))
-        sl = None
+        print_lines(await self.uae.disassemble(pc, 5))
+        print()
         debuginfo = await self.debuginfo()
         if debuginfo:
-            sl = debuginfo.find_line(pc)
-        if sl:
-            for n in range(sl.line - 2, sl.line + 3):
-                indicator = ' >'[n == sl.line]
-                print('{} {:4d} {}'.format(indicator, n, sl.src_file[n]))
-        else:
-            print_lines(await self.uae.disassemble(pc, 5))
+            print('Stopped at %s:' % await self.break_info(pc))
+            try:
+                _, sl = debuginfo.find_line(pc)
+                for n in range(sl.line - 2, sl.line + 3):
+                    indicator = ' >'[n == sl.line]
+                    print('{} {:4d} {}'.format(indicator, n, sl.source[n]))
+            except KeyError:
+                pass
 
     async def prologue(self):
         data = await self.uae.prologue()
@@ -78,20 +82,17 @@ class UaeDebugger():
         await self.break_show(self.regs['PC'])
 
     async def debuginfo(self):
-        if self._debuginfo:
-            return self._debuginfo
-        segments = await self.uae.fetch_segments()
-        if not segments:
-            return
-        debuginfo = DebugInfoReader(self.executable)
-        if debuginfo.relocate(segments):
-            self._debuginfo = debuginfo
-            for section in debuginfo.sections:
-                print(section)
-        else:
-            print('Failed to associate debug info from "%s" '
-                  'file with task sections!' % filename)
-
+        if not self._debuginfo:
+            segments = await self.uae.fetch_segments()
+            if not segments:
+                return
+            debuginfo = DebugInfoReader(self.executable)
+            if debuginfo.relocate(segments):
+                self._debuginfo = debuginfo
+            else:
+                print('Failed to associate debug info from "%s" '
+                      'file with task sections!' % filename)
+        return self._debuginfo
 
     async def do_step(self):
         self.uae.step()
