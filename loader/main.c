@@ -11,10 +11,13 @@ void TaskWaitVBlank(void) {
 }
 
 int main(void) {
+  NOP();
+
   EffectLoad(&Effect);
   EffectInit(&Effect);
   EffectRun(&Effect);
   EffectKill(&Effect);
   EffectUnLoad(&Effect);
+
   return 0;
 }
