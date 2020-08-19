@@ -1,6 +1,8 @@
 #ifndef __EXCEPTION_H__
 #define __EXCEPTION_H__
 
+#include <boot.h>
+
 /* Exception Service Routine */
 typedef void (*ExcSrvT)(void);
 
@@ -25,6 +27,6 @@ typedef ExcSrvT ExcVecT[EXC_LAST + 1];
 extern ExcVecT *ExcVecBase;
 #define ExcVec (*ExcVecBase)
 
-void SetupExceptionVector(void);
+void SetupExceptionVector(BootDataT *bd);
 
 #endif

@@ -65,7 +65,7 @@ _LVOCacheControl        EQU     -648
 ; Boot loader data definition
 
  STRUCTURE BD,0                 ; Boot Data
-        APTR    BD_ENTRY
+        APTR    BD_HUNK
         APTR    BD_VBR
         WORD    BD_CPUMODEL
         WORD    BD_NREGIONS
@@ -78,6 +78,12 @@ _LVOCacheControl        EQU     -648
         WORD	MR_ATTR
         LABEL   MR_SIZE
 
+ STRUCTURE SEG,0                ; Amiga Hunk
+        LONG	SEG_LEN 
+        APTR	SEG_NEXT
+        LABEL	SEG_START
+        LABEL	SEG_SIZE
+
         ifnd    ROM
 
         XDEF    Entry
@@ -87,7 +93,7 @@ _LVOCacheControl        EQU     -648
 ; memory, or at any specific address, so all code must be completely PC
 ; relative, and all chip data must be explicitly copied to chip memory.
 
-        section	BB,code
+        section	'.text',code
 
         dc.b    'DOS',0
         dc.l	0
@@ -115,7 +121,7 @@ Entry:
 
         ; allocate memory for executable file
         move.l  d2,d0
-        move.l  #MEMF_CHIP,d1
+        moveq.l #MEMF_CHIP,d1
         JSRLIB  AllocMem
         move.l  d0,d3                   ; [d3] block pointer (executable file)
 
@@ -179,25 +185,21 @@ KillOS:
         clr.w   (a3)+                   ; leave space for #regions
         lea     MemList(a6),a0          ; list of MemHeader structures
         move.l  a0,a1
-        clr.l   d1
 .memory move.l  LN_SUCC(a1),a1
         ; check if memory region is MEMF_PUBLIC
         btst.b  #0,MH_ATTRIBUTES+1(a1)
         beq.b   .skipmh
         ; extract lower and upper memory region address
-        move.l  MH_LOWER(a1),d0
-        clr.w   d0
-        move.l  d0,(a3)+                ; lower address rounded down to 2^16
+        move.w  MH_LOWER(a1),(a3)+
+        clr.w   (a3)+                   ; lower address rounded down to 2^16
         move.l  MH_UPPER(a1),d0
         add.l   #65535,d0
-        and.l   #-65536,d0
+        clr.w   d0
         move.l  d0,(a3)+                ; upper address rounded up to 2^16
-        addq.l  #1,d1
+        add.w   #1,BD_NREGIONS(a2)      ; increase number of regions
         move.w  MH_ATTRIBUTES(a1),(a3)+
 .skipmh cmp.l   LH_TAILPRED(a0),a1
         bne     .memory
-
-        move.w  d1,BD_NREGIONS(a2)      ; save #regions
 
         ; copy boot loader data into safe register
         move.l  a2,a6
@@ -224,7 +226,7 @@ KillOS:
 Start:
         ; reserve space for the boot loader
         move.l  #$400,d0
-        moveq   #MF_CHIP,d1
+        moveq.l #MF_CHIP,d1
         bsr     AllocMem
 
         ; by default exception vector address is at $0
@@ -265,7 +267,7 @@ Start:
         ; move hunks around and relocate them
         move.l  d3,a0
         bsr     SetupHunkFile
-        move.l  d0,BD_ENTRY(a6)         ; first hunk of executable file
+        move.l  d0,BD_HUNK(a6)          ; first hunk of executable file
 
         ; free up space taken by executable file image
         ifnd    ROM
@@ -297,8 +299,8 @@ Start:
 
         ; enter the kernel with pointer to boot data as first argument
         move.l  sp,a0
-        move.l  BD_ENTRY(a6),a1         ; [a1] first hunk of executable file
-        jsr     (a1)
+        move.l  BD_HUNK(a6),a1          ; [a1] first hunk of executable file
+        jsr     SEG_START(a1)
 
 ; Something failed or kernel returned back to boot loader.
 ; Set background color to red and halt the processor.
@@ -462,16 +464,22 @@ SetupHunkFile:
 
         ; allocate hunks in reverse order to make their addresses grow
         move.l  d2,d4
-.alloc  move.l  -4(a2,d4.l),d3
-        rol.l   #2,d3           ; [d3] hunk size, bit(1) FAST, bit(0) CHIP
-        moveq.l #-4,d0
-        and.l   d3,d0
+.alloc  move.l  -4(a2,d4.l),d0
+        rol.l   #2,d0           ; [d0] hunk size, bit(1) FAST, bit(0) CHIP
         moveq.l #1,d1
-        and.l   d3,d1
+        and.l   d0,d1
+        and.w   #-4,d0
+        addq.l  #SEG_SIZE,d0
+        move.l  d0,d3
         addq.l  #MF_REVERSE|MF_CLEAR,d1
         bsr     AllocMem
         move.l  d0,-4(sp,d4.l)
-        subq.l  #4,d4
+        move.l  d0,a0
+        move.l  d3,SEG_LEN(a0)
+        cmp.l   d2,d4
+        beq     .first
+        move.l  (sp,d4.l),SEG_NEXT(a0)
+.first  subq.l  #4,d4
         bgt     .alloc
 
         add.l   d2,a2           ; [a2] first hunk header
@@ -497,6 +505,7 @@ SetupHunkFile:
         bra     .error
 
 .hdata  move.l  (a3),a1
+        add.w   #SEG_START,a1
         move.l  (a2)+,d0
         lsl.l   #2,d0           ; [d0] hunk size
         move.l  a2,a0
@@ -518,10 +527,11 @@ SetupHunkFile:
         beq     .parse
         move.l  (a2)+,d0        ; referenced hunk number
         lsl.l   #2,d0
-        move.l  (sp,d0.l),d0    ; [d0] referenced hunk data address
+        move.l  (sp,d0.l),d0
+        addq.l  #SEG_START,d0   ; [d0] referenced hunk data address
         move.l  (a3),a1
 .reloc  move.l  (a2)+,d1
-        add.l   d0,(a1,d1.l)
+        add.l   d0,SEG_START(a1,d1.l)
         subq.l  #1,d3
         bgt     .reloc
         bra     .hreloc

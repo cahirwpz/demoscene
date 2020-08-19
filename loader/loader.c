@@ -5,6 +5,7 @@
 #include <cia.h>
 #include <exception.h>
 #include <memory.h>
+#include <amigahunk.h>
 #include <floppy.h>
 #include <filesys.h>
 
@@ -18,7 +19,16 @@ extern int main(void);
 void Loader(BootDataT *bd) {
   Log("[Loader] VBR at $%08x\n", (u_int)bd->bd_vbr);
   Log("[Loader] CPU model $%02x\n", bd->bd_cpumodel);
-  Log("[Loader] Entry point at $%08x\n", (u_int)bd->bd_entry);
+  Log("[Loader] Executable file segments:\n");
+
+  {
+    HunkT *hunk = bd->bd_hunk;
+    do {
+      Log("[Loader] * $%08x - $%08lx\n",
+          (u_int)hunk->data, (u_int)hunk->data + hunk->size - sizeof(HunkT));
+      hunk = hunk->next;
+    } while (hunk);
+  }
 
   CpuModel = bd->bd_cpumodel;
   ExcVecBase = bd->bd_vbr;
@@ -32,7 +42,7 @@ void Loader(BootDataT *bd) {
     }
   }
 
-  SetupExceptionVector();
+  SetupExceptionVector(bd);
 
   /* CIA-A & CIA-B: Stop timers and return to default settings. */
   ciaa->ciacra = 0;

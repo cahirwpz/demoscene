@@ -3,6 +3,8 @@
 
 #include <types.h>
 
+struct Hunk;
+
 typedef struct __packed MemRegion {
   uintptr_t mr_lower;
   uintptr_t mr_upper;
@@ -10,7 +12,7 @@ typedef struct __packed MemRegion {
 } MemRegionT;  
 
 typedef struct BootData {
-  void *bd_entry;
+  struct Hunk *bd_hunk;
   void *bd_vbr;
   u_short bd_cpumodel;
   u_short bd_nregions;
