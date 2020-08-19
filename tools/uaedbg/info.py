@@ -272,6 +272,12 @@ class Section():
             if sl.path.endswith(path) and sl.line >= line:
                 return addr
 
+    def find_line(self, where):
+        for addr, sl in self.line_table:
+            if addr >= where:
+                return sl
+        return None
+
     def find_function(self, name):
         return self.functions.get(name, None)
 
