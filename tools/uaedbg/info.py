@@ -24,7 +24,7 @@ Segment = namedtuple('Segment', 'start size')
 class SourceLine():
     def __init__(self, source, line):
         self.source = source
-        self.line = line
+        self.line = line - 1
 
     @property
     def path(self):
@@ -274,9 +274,15 @@ class Section():
                 return addr
 
     def find_line(self, where):
+        prev = None
         for addr, sl in self.line_table:
-            if addr >= where:
+            if addr == where:
                 return sl
+            if addr > where:
+                if prev.source != sl.source:
+                    break
+                return prev
+            prev = sl
         raise KeyError(where)
 
     def find_function(self, name):
