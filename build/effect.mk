@@ -75,21 +75,11 @@ data/%.c: data/%.sync
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
 	$(FSUTIL) -b $(BOOTLOADER) create $@ $(filter-out %bootloader.bin,$^)
 
-run-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
-	$(LAUNCH) $(LAUNCHOPTS) \
-	  -e $(EFFECT).exe.dbg -f $(EFFECT).adf
-
-debug-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
-	$(LAUNCH) $(LAUNCHOPTS) \
-	  -d -f $(EFFECT).adf -e $(EFFECT).elf
+floppy: $(EFFECT).exe.dbg $(EFFECT).adf
+	$(LAUNCH) -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 run: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
-	$(LAUNCH) $(LAUNCHOPTS) \
-	  -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
+	$(LAUNCH) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
-debug: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
-	$(LAUNCH) $(LAUNCHOPTS) \
-	  -d -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
-
-.PHONY: run debug run-floppy debug-floppy
+.PHONY: run floppy
 .PRECIOUS: $(BOOTLOADER)

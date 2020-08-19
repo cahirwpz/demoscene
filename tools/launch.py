@@ -38,15 +38,13 @@ class FSUAE(Launchable):
     def __init__(self):
         super().__init__('fs-uae', HerePath('tools', 'uaedbg.py'))
 
-    def configure(self, floppy=None, rom=None, debug=False):
+    def configure(self, floppy=None, rom=None):
         # Now options for FS-UAE.
         self.options.append('--')
         if floppy:
             self.options.append('--floppy_drive_0=' + os.path.realpath(floppy))
         if rom:
             self.options.append('--kickstart_file=' + os.path.realpath(rom))
-        if debug:
-            self.options.append('--use_debugger=1')
         self.options.append(HerePath('effects', 'Config.fs-uae'))
 
 
@@ -70,8 +68,6 @@ if __name__ == '__main__':
                         help='Floppy disk image in ADF format.')
     parser.add_argument('-e', '--executable', metavar='EXE', type=str,
                         help='Provide executable file for debugging.')
-    parser.add_argument('-d', '--debug', action='store_true',
-                        help='Run the program under GDB debugger control.')
     parser.add_argument('-w', '--window', metavar='WIN', type=str,
                         default='fs-uae',
                         help='Select tmux window name to switch to.')
@@ -90,7 +86,7 @@ if __name__ == '__main__':
         raise SystemExit('%s: file does not exist!' % args.elf)
 
     uae = FSUAE()
-    uae.configure(floppy=args.floppy, rom=args.rom, debug=args.debug)
+    uae.configure(floppy=args.floppy, rom=args.rom)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)
