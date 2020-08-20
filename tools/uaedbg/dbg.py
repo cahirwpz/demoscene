@@ -83,12 +83,10 @@ class UaeDebugger():
             segments = await self.uae.fetch_segments()
             if not segments:
                 return
-            debuginfo = DebugInfoReader(self.executable)
-            if debuginfo.relocate(segments):
-                self._debuginfo = debuginfo
-            else:
-                print('Failed to associate debug info from "%s" '
-                      'file with task sections!' % filename)
+            try:
+                self._debuginfo = DebugInfoReader(self.executable, segments)
+            except ValueError:
+                pass
         return self._debuginfo
 
     async def do_step(self):

@@ -13,7 +13,6 @@ SECTIONS
   {
     __stext = .;
     *(.text)
-    ___datadata_relocs = .;
     __etext = .;
   }
   ___text_size = SIZEOF(.text);
@@ -23,7 +22,6 @@ SECTIONS
     __sdata = .;
     CONSTRUCTORS
     *(.data)
-    ___a4_init = 0x7ffe;
     __edata = .;
   }
   ___data_size = SIZEOF(.data);
