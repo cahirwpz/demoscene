@@ -12,4 +12,6 @@ char *strcpy(char *dst, const char *src);
 int strcmp(const char *s1 asm("a0"), const char *s2 asm("a1"));
 size_t strlen(const char *s asm("a0"));
 
+size_t strlcpy(char *__restrict dst, const char *__restrict src, size_t siz);
+
 #endif
