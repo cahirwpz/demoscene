@@ -133,11 +133,11 @@ class UaeProcess():
         self.send('t')
 
     async def insert_hwbreak(self, addr):
-        lines = self.communicate('f %X' % addr)
+        lines = await self.communicate('f %X' % addr)
         return lines and lines[0] == 'Breakpoint added'
 
     async def remove_hwbreak(self, addr):
-        lines = self.communicate('f %X' % addr)
+        lines = await self.communicate('f %X' % addr)
         return lines and lines[0] == 'Breakpoint removed'
 
     async def read_registers(self):
@@ -188,17 +188,16 @@ class UaeProcess():
         return data
 
     async def fetch_segments(self):
-        # fetch ExecBase
-        execbase = await self.read_long(4)
-        # fetch ThisTask
-        thistask = await self.read_long(execbase + 276)
-        # fetch tc_UserData
-        userdata = await self.read_long(thistask + 88)
-        # browse linked list of segments
+        # assume for now that VBR is at 0
+        vbr = 0
+        magic = await self.read_long(0)
+        if magic != 0x1ee7c0de:
+            return None
         segments = []
-        while userdata:
-            start = userdata + 8
-            size = await self.read_long(userdata) - 8
-            userdata = await self.read_long(userdata + 4)
+        seg = await self.read_long(4)
+        while seg != 0:
+            start = seg + 8
+            size = await self.read_long(seg) - 8
+            seg = await self.read_long(seg + 4)
             segments.append(Segment(start, size))
         return segments

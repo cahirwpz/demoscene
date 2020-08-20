@@ -50,7 +50,7 @@ Setup:
         sub.l   a3,sp
         move.l  sp,a6
 
-        clr.l   BD_ENTRY(a6)
+        clr.l   BD_HUNK(a6)
         clr.l   BD_VBR(a6)
         clr.w   BD_CPUMODEL(a6)
         move.w  #2,BD_NREGIONS(a6)

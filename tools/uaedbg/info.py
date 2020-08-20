@@ -1,7 +1,9 @@
+import os
 import os.path
 
 from collections import namedtuple
 from collections.abc import Sequence
+from contextlib import redirect_stdout
 
 from pygments import highlight
 from pygments.lexers.c_cpp import CLexer
@@ -23,7 +25,7 @@ Segment = namedtuple('Segment', 'start size')
 class SourceLine():
     def __init__(self, source, line):
         self.source = source
-        self.line = line
+        self.line = line - 1
 
     @property
     def path(self):
@@ -103,8 +105,9 @@ class TranslationUnit():
         return str(typ)
 
     def dump(self):
+        print('Types in <{}> (file: "{}"):'.format(self, self.path))
         for n, typ in sorted(self.types.items()):
-            print(n, typ)
+            print('', n, typ)
 
     def __str__(self):
         return os.path.basename(self.path)
@@ -139,7 +142,8 @@ class Scope():
 
 
 class ScopeStabParser():
-    def __init__(self, begin):
+    def __init__(self, start, begin):
+        self._start = start
         self._begin = begin
         self._nested = []
 
@@ -147,20 +151,20 @@ class ScopeStabParser():
         self._nested[-1].add(v)
 
     def new(self, addr):
-        self._nested.append(Scope(begin=addr))
+        self._nested.append(Scope(begin=self._start + addr))
 
     def enter(self, addr):
-        self._nested.append(Scope(begin=self._begin + addr))
+        self._nested.append(Scope(begin=self._start + self._begin + addr))
 
     def leave(self, addr):
         s = self._nested.pop()
-        s.end = self._begin + addr
+        s.end = self._start + self._begin + addr
         return s
 
     def finish(self, addr):
         s = self._nested.pop()
         assert len(self._nested) == 0
-        s.end = addr
+        s.end = self._start + addr
         return s
 
 
@@ -193,15 +197,18 @@ class Section():
         self.units.append(unit)
 
     def add_line(self, addr, line):
-        self.lines[addr] = line
+        self.lines[addr + self.start] = line
 
     def add_symbol(self, name, addr):
+        addr += self.start
         # if you have two symbols '_a' and 'a'
         # with the same address, then choose latter one
         if name[0] == '_' and self.symbols.get(name[1:], None) == addr:
             return
         if self.symbols.get('_' + name, None) == addr:
             del self.symbols['_' + name]
+        if name in self.symbols:
+            assert(self.symbols[name] == addr)
         self.symbols[name] = addr
 
     def add_variable(self, name, var):
@@ -209,16 +216,6 @@ class Section():
 
     def add_function(self, name, fn):
         self.functions[name] = fn
-
-    def relocate(self, start, size):
-        if self.size != size:
-            print(self.size, 'vs.', size)
-            return False
-        diff = start - self.start
-        self.symbols = {sym: addr + diff for sym, addr in self.symbols.items()}
-        self.lines = {addr + diff: line for addr, line in self.lines.items()}
-        self.start = start
-        return True
 
     def cleanup(self, extra_lines):
         # common symbols have their source + line information,
@@ -272,6 +269,18 @@ class Section():
             if sl.path.endswith(path) and sl.line >= line:
                 return addr
 
+    def find_line(self, where):
+        prev = None
+        for addr, sl in self.line_table:
+            if addr == where:
+                return sl
+            if addr > where:
+                if prev.source != sl.source:
+                    break
+                return prev
+            prev = sl
+        raise KeyError(where)
+
     def find_function(self, name):
         return self.functions.get(name, None)
 
@@ -280,7 +289,8 @@ class Section():
 
     def dump_functions(self):
         print(' FUNCTIONS:')
-        for name, fn in sorted(self.functions.items()):
+        for name, fn in sorted(self.functions.items(),
+                               key=lambda x: self.find_symbol_addr(x[0])):
             print('  {} <{}> in {} at {:08X}'.format(
                 fn.attr[0], name, fn.line, self.find_symbol_addr(name)))
             print('   return type: {}'.format(
@@ -307,13 +317,12 @@ class Section():
 
     def dump(self):
         print('{}:'.format(self))
-        if False:
-            print(' SYMBOLS:')
-            for sym in self.symbol_table:
-                print('  {:08X}: {}'.format(sym.addr, sym.name))
-            print(' LINES:')
-            for addr, line in sorted(self.lines.items()):
-                print('  {:08X}: {}'.format(addr, line))
+        print(' SYMBOLS:')
+        for sym in self.symbol_table:
+            print('  {:08X}: {}'.format(sym.addr, sym.name))
+        print(' LINES:')
+        for addr, line in sorted(self.lines.items()):
+            print('  {:08X}: {}'.format(addr, line))
         if self.variables:
             self.dump_variables()
         if self.functions:
@@ -357,16 +366,9 @@ class DebugInfo():
         for sec in self.sections:
             sec.cleanup(common_lines)
 
-    def relocate(self, segments):
-        if len(self.sections) != len(segments):
-            return False
-        return all(sec.relocate(seg.start, seg.size)
-                   for sec, seg in zip(self.sections, segments))
-
     def dump(self):
         for sec in self.sections:
             sec.dump()
-        print('units', self.units)
         for path, unit in self.units.items():
             unit.dump()
 
@@ -396,33 +398,31 @@ class DebugInfo():
         return self._find(lambda sec: sec.find_variable(name))
 
 
-def DebugInfoReader(executable):
+def DebugInfoReader(executable, segments):
     stab_to_section = {'GSYM': 'COMMON', 'STSYM': 'DATA', 'LCSYM': 'BSS'}
 
     common = Section(None)
     last = {'CODE': None, 'DATA': None, 'BSS': None, 'COMMON': common}
-    start = 0
-    size = 0
 
     di = DebugInfo()
 
     for h in ReadHunkFile(executable):
 
         if h.type in ['HUNK_CODE', 'HUNK_DATA', 'HUNK_BSS']:
-            start += size
-            size = h.size
-            sec = Section(h, start, size)
+            segment = segments.pop(0)
+            assert h.size == segment.size
+            sec = Section(h, segment.start, segment.size)
             last[h.type[5:]] = sec
             di.add_section(sec)
 
-        elif h.type is 'HUNK_SYMBOL':
+        elif h.type == 'HUNK_SYMBOL':
             for s in h.symbols:
-                addr, name = s.refs + start, s.name
+                addr, name = s.refs, s.name
                 if name[0] == '_':
                     name = name[1:]
                 di.last_section.add_symbol(name, addr)
 
-        elif h.type is 'HUNK_DEBUG':
+        elif h.type == 'HUNK_DEBUG':
             stabs = h.data
 
             # h.dump()
@@ -440,19 +440,25 @@ def DebugInfoReader(executable):
 
                 # N_SO: path and name of source file (selects object file)
                 if st.type == 'SO':
-                    if st.str and st.str[-1] == '/':
-                        dirname = st.str
+                    if st.str:
+                        if st.str[-1] == '/':
+                            dirname = st.str
+                        else:
+                            source = di.get_source(dirname + st.str)
+                            unit = di.get_unit(dirname + st.str)
+                            stabinfo = StabInfoParser(unit)
                     else:
-                        source = di.get_source(dirname + st.str)
-                        unit = di.get_unit(dirname + st.str)
-                        stabinfo = StabInfoParser(unit)
+                        dirname = os.getcwd() + '/'
 
                     fn = None
                     scope = None
 
                 # N_SOL: used to switch source file (but not object file)
                 elif st.type == 'SOL':
-                    source = di.get_source(st.str)
+                    if st.str[0] == '/':
+                        source = di.get_source(st.str)
+                    else:
+                        source = di.get_source(dirname + st.str)
 
                 # N_DATA: data symbol
                 # N_BSS: BSS symbol
@@ -498,7 +504,7 @@ def DebugInfoReader(executable):
                     sec.add_symbol(si.name, st.value)
                     sec.add_function(si.name, fn)
                     if not scope:
-                        scope = ScopeStabParser(st.value)
+                        scope = ScopeStabParser(sec.start, st.value)
                     scope.new(st.value)
 
                 elif st.type in ['LBRAC']:
@@ -533,5 +539,9 @@ def DebugInfoReader(executable):
                     raise ValueError('%s: not handled!', st.type)
 
     di.cleanup(common.lines)
+
+    with open(executable + '.info', 'w') as out:
+        with redirect_stdout(out):
+            di.dump()
 
     return di

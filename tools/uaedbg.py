@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import logging
+import os
 import signal
 import sys
 
@@ -10,7 +11,7 @@ from uaedbg.uae import UaeProcess
 from uaedbg.dbg import UaeDebugger
 
 
-async def UaeLaunch(loop, args):
+async def UaeLaunch(loop, execpath, args):
     # Create the subprocess, redirect the standard I/O to respective pipes
     uaeproc = UaeProcess(
             await asyncio.create_subprocess_exec(
@@ -19,7 +20,7 @@ async def UaeLaunch(loop, args):
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE))
 
-    uaedbg = UaeDebugger(uaeproc)
+    uaedbg = UaeDebugger(uaeproc, execpath)
 
     # Terminate FS-UAE when connection with terminal is broken
     loop.add_signal_handler(signal.SIGHUP, uaeproc.terminate)
@@ -46,10 +47,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         description='Run FS-UAE with enabled console debugger.')
+    parser.add_argument('-e', '--executable', metavar='EXE', type=str,
+                        help='Provide executable file for debugging.')
     parser.add_argument('params', nargs='*', type=str,
                         help='Parameters passed to FS-UAE emulator.')
     args = parser.parse_args()
 
-    uae = UaeLaunch(loop, args.params)
+    # Check if executable file exists.
+    if not os.path.isfile(args.executable):
+        raise SystemExit('%s: file does not exist!' % args.elf)
+
+    uae = UaeLaunch(loop, args.executable, args.params)
     loop.run_until_complete(uae)
     loop.close()

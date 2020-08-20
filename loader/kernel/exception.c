@@ -9,8 +9,12 @@ ExcVecT *ExcVecBase = (ExcVecT *)NULL;
 /* Amiga autovector interrupts table. */
 IntVecT IntVec;
 
-void SetupExceptionVector(void) {
+void SetupExceptionVector(BootDataT *bd) {
   short i;
+
+  /* Set up magic number and pointer to boot data for debugger. */
+  ExcVec[0] = (ExcSrvT)0x1EE7C0DE;
+  ExcVec[1] = (ExcSrvT)bd->bd_hunk;
 
   /* Initialize M68k interrupt vector. */
   for (i = EXC_BUSERR; i <= EXC_LAST; i++)

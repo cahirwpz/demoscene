@@ -38,7 +38,8 @@ class FSUAE(Launchable):
     def __init__(self):
         super().__init__('fs-uae', HerePath('tools', 'uaedbg.py'))
 
-    def configure(self, floppy=None, rom=None):
+    def configure(self, floppy=None, rom=None, executable=None):
+        self.options.extend(['-e', executable])
         # Now options for FS-UAE.
         self.options.append('--')
         if floppy:
@@ -64,10 +65,10 @@ if __name__ == '__main__':
         description='Launch effect in FS-UAE emulator.')
     parser.add_argument('-r', '--rom', metavar='ROM', type=str,
                         help='Replace Amiga Kickstart with provided ROM.')
-    parser.add_argument('-e', '--executable', metavar='EXE', type=str,
-                        help='Provide executable file for debugging.')
     parser.add_argument('-f', '--floppy', metavar='ADF', type=str,
                         help='Floppy disk image in ADF format.')
+    parser.add_argument('-e', '--executable', metavar='EXE', type=str,
+                        help='Provide executable file for debugging.')
     parser.add_argument('-w', '--window', metavar='WIN', type=str,
                         default='fs-uae',
                         help='Select tmux window name to switch to.')
@@ -81,12 +82,12 @@ if __name__ == '__main__':
     if args.rom and not os.path.isfile(args.rom):
         raise SystemExit('%s: file does not exist!' % args.rom)
 
-    # Check if ELF executable exists.
+    # Check if executable file exists.
     if not os.path.isfile(args.executable):
         raise SystemExit('%s: file does not exist!' % args.elf)
 
     uae = FSUAE()
-    uae.configure(floppy=args.floppy, rom=args.rom)
+    uae.configure(floppy=args.floppy, rom=args.rom, executable=args.executable)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)

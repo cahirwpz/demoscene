@@ -16,33 +16,36 @@ def print_lines(lines):
 
 
 class UaeDebugger():
-    def __init__(self, uae):
+    def __init__(self, uae, executable):
         self.uae = uae
-        self.debuginfo = None
+        self.executable = executable
+        self._debuginfo = None
         self.breakpoints = []
         self.registers = Registers()
 
-    def address_of(self, where):
+    async def address_of(self, where):
         try:
-            addr = int(where, 16)
+            return int(where, 16)
         except ValueError:
-            addr = None
+            pass
 
-        if self.debuginfo:
-            try:
-                _, addr = self.debuginfo.find_line_addr(where)
-                if addr:
-                    return addr
-                _, addr = self.debuginfo.find_symbol_addr(where)
-                if addr:
-                    return addr
-            except TypeError:
-                pass
+        debuginfo = await self.debuginfo()
+        if debuginfo:
+            res = debuginfo.find_line_addr(where)
+            if res:
+                return res[1]
+            res = debuginfo.find_symbol_addr(where)
+            if res:
+                return res[1]
         return None
 
-    def break_info(self, pc):
-        if self.debuginfo:
-            return str(self.debuginfo.find_line(pc))
+    async def break_info(self, pc):
+        debuginfo = await self.debuginfo()
+        if debuginfo:
+            try:
+                return str(debuginfo.find_line(pc)[1])
+            except KeyError:
+                pass
         return '%08X' % pc
 
     def break_lookup(self, addr):
@@ -52,16 +55,18 @@ class UaeDebugger():
         return None
 
     async def break_show(self, pc):
-        print('Stopped at %s:' % self.break_info(pc))
-        sl = None
-        if self.debuginfo:
-            sl = self.debuginfo.find_line(pc)
-        if sl:
-            for n in range(sl.line - 2, sl.line + 3):
-                indicator = ' >'[n == sl.line]
-                print('{} {:4d} {}'.format(indicator, n, sl.src_file[n]))
-        else:
-            print_lines(await self.uae.disassemble(pc, 5))
+        print_lines(await self.uae.disassemble(pc, 5))
+        print()
+        debuginfo = await self.debuginfo()
+        if debuginfo:
+            print('Stopped at %s:' % await self.break_info(pc))
+            try:
+                _, sl = debuginfo.find_line(pc)
+                for n in range(sl.line - 2, sl.line + 3):
+                    indicator = ' >'[n == sl.line]
+                    print('{} {:4d} {}'.format(indicator, n, sl.source[n]))
+            except KeyError:
+                pass
 
     async def prologue(self):
         data = await self.uae.prologue()
@@ -73,6 +78,17 @@ class UaeDebugger():
             print('Stopped by exception %d' % data['exception'])
         await self.break_show(self.regs['PC'])
 
+    async def debuginfo(self):
+        if not self._debuginfo:
+            segments = await self.uae.fetch_segments()
+            if not segments:
+                return
+            try:
+                self._debuginfo = DebugInfoReader(self.executable, segments)
+            except ValueError:
+                pass
+        return self._debuginfo
+
     async def do_step(self):
         self.uae.step()
         await self.prologue()
@@ -83,9 +99,11 @@ class UaeDebugger():
         await self.prologue()
 
     async def do_memory_read(self, addr, length):
+        addr = await self.address_of(addr)
         print(await self.uae.read_memory(addr, length))
 
     async def do_break_insert(self, addr):
+        addr = await self.address_of(addr)
         if self.break_lookup(addr):
             return
         if not await self.uae.insert_hwbreak(addr):
@@ -93,9 +111,10 @@ class UaeDebugger():
         bp = BreakPoint(addr)
         self.breakpoints.append(bp)
         print('Added breakpoint #%d, %s' %
-              (bp.number, self.break_info(bp.address)))
+              (bp.number, await self.break_info(bp.address)))
 
     async def do_break_remove(self, addr):
+        addr = await self.address_of(addr)
         bp = self.break_lookup(addr)
         if not bp:
             return
@@ -105,9 +124,11 @@ class UaeDebugger():
 
     async def do_break_show(self):
         for bp in sorted(self.breakpoints):
-            print('#%d: %s' % (bp.number, self.break_info(bp.address)))
+            print('#%d: %s' % (bp.number, await self.break_info(bp.address)))
 
     async def do_disassemble_range(self, addr, end):
+        addr = await self.address_of(addr)
+        end = await self.address_of(end)
         while addr < end:
             line, = await self.uae.disassemble(addr, 1)
             addr += line.next_address
@@ -116,67 +137,46 @@ class UaeDebugger():
     async def do_info_registers(self):
         print(await self.uae.read_registers())
 
-    async def do_debuginfo_read(self, filename):
-        segments = await self.uae.fetch_segments()
-        debuginfo = DebugInfoReader(filename)
-        if debuginfo.relocate(segments):
-            self.debuginfo = debuginfo
-        else:
-            print('Failed to associate debug info from "%s" '
-                  'file with task sections!' % filename)
-
-    async def do_debuginfo_sections(self):
-        try:
-            for section in self.debuginfo.sections:
-                print(section)
-        except AttributeError:
-            print('No segments found - please use "Zf" command!')
-
     async def do_debuginfo_symbol(self, symbol):
-        try:
-            addr = self.debuginfo.find_symbol_addr(symbol)
-            if addr:
-                print('Symbol "%s" at %08X.' % (symbol, addr))
-            else:
-                print('No symbol "%s" found!' % symbol)
-        except AttributeError:
-            print('No segments found - please use "Zf" command!')
+        debuginfo = await self.debuginfo()
+        if not debuginfo:
+            return
+        sec, addr = debuginfo.find_symbol_addr(symbol)
+        if addr:
+            print('Symbol "%s" at %08X.' % (symbol, addr))
+        else:
+            print('No symbol "%s" found!' % symbol)
 
     async def do_debuginfo_source_line(self, source, line):
-        try:
-            addr = self.debuginfo.find_line_addr("%s:%d" % (source, line))
-            if addr:
-                print('Line "%s:%d" at %08X.' % (source, line, addr))
-            else:
-                print('Line "%s:%d" found!' % (source, line))
-        except AttributeError:
-            print('No segments found - please use "Zf" command!')
+        debuginfo = await self.debuginfo()
+        if not debuginfo:
+            return
+        sec, addr = debuginfo.find_line_addr("%s:%d" % (source, line))
+        if addr:
+            print('Line "%s:%d" at %08X.' % (source, line, addr))
+        else:
+            print('Line "%s:%d" found!' % (source, line))
 
     async def do_where_am_I(self):
         await self.break_show(self.regs['PC'])
 
     commands = {
         'mr': lambda self, arg:
-            self.do_memory_read(self.address_of(arg[0]), int(arg[1])),
+            self.do_memory_read(arg[0], int(arg[1])),
         'b': lambda self, arg:
-            self.do_break_insert(self.address_of(arg[0])),
+            self.do_break_insert(arg[0]),
         'bd': lambda self, arg:
-            self.do_break_remove(self.address_of(arg[0])),
+            self.do_break_remove(arg[0]),
         'bl': lambda self, arg:
             self.do_break_show(),
         'dr': lambda self, arg:
-            self.do_disassemble_range(self.address_of(arg[0]),
-                                      self.address_of(arg[1])),
+            self.do_disassemble_range(arg[0], arg[1]),
         't': lambda self, arg:
             self.do_step(),
         'g': lambda self, arg:
             self.do_cont(),
         'r': lambda self, arg:
             self.do_info_registers(),
-        'Zf': lambda self, arg:
-            self.do_debuginfo_read(arg[0]),
-        'Zl': lambda self, arg:
-            self.do_debuginfo_sections(),
         'Zy': lambda self, arg:
             self.do_debuginfo_symbol(arg[0]),
         'Zc': lambda self, arg:
@@ -185,7 +185,7 @@ class UaeDebugger():
             self.do_where_am_I()
     }
 
-    commands_ignored = ['Z', 'Ze', 'Zs']
+    commands_ignored = ['Z', 'Ze', 'Zs', 'Zl']
 
     async def do_command(self, cmd):
         fs = cmd.split()
