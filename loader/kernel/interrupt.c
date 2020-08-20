@@ -1,3 +1,4 @@
+#include <cpu.h>
 #include <interrupt.h>
 #include <debug.h>
 
@@ -6,11 +7,11 @@ static short IntrNesting = 0;
 void IntrEnable(void) {
   Assert(IntrNesting > 0);
   if (--IntrNesting == 0)
-    EnableINT(INTF_INTEN);
+    CpuIntrEnable();
 }
 
 void IntrDisable(void) {
-  DisableINT(INTF_INTEN);
+  CpuIntrDisable();
   IntrNesting++;
 }
 
