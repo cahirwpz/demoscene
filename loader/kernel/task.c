@@ -106,7 +106,7 @@ void TaskSuspend(TaskT *tsk) {
 
 void TaskSwitch(TaskT *curtsk) {
   Assert(IntrDisabled());
-  Assert(curtsk->intrNest == 1);
+  Assert(CurrentTask->intrNest == 1);
 
   if (curtsk)
     ReadyAdd(curtsk);
