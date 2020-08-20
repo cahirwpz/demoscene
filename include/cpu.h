@@ -20,7 +20,7 @@ typedef enum {
 #define CCR_C __BIT(0) /* Carry */
 
 /* Status Register for 68000 */
-#define SR_IM 0x0700 /* Interrupt Mask */
+#define SR_IM 0x0700   /* Interrupt Mask */
 #define SR_S __BIT(13) /* Supervisor Mode */
 #define SR_T __BIT(15) /* Trace Mode */
 
@@ -60,8 +60,17 @@ static inline void CpuIntrEnable(void) {
 }
 
 /* Code running in interrupt context may be interrupted on M68000 by higher
- * priority level interrupt. To construct critical section we need to use IPL 
+ * priority level interrupt. To construct critical section we need to use IPL
  * bits in SR register. Returns previous value of IPL. */
 u_short SetIPL(u_short);
+
+/* Enable / disable all interrupts. Handle nested calls. */
+void IntrEnable(void);
+void IntrDisable(void);
+
+/* Returns if caller is running with all interrupts disabled. */
+static inline int IntrDisabled(void) {
+  return (GetSR() & 0x0700) == 0x0700;
+}
 
 #endif

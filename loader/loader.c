@@ -8,6 +8,7 @@
 #include <amigahunk.h>
 #include <floppy.h>
 #include <filesys.h>
+#include <task.h>
 
 #include "autoinit.h"
 #include "sync.h"
@@ -67,6 +68,7 @@ void Loader(BootDataT *bd) {
   /* Lower interrupt priority level to nominal. */
   SetSR(SR_S);
 
+  TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
   InitFloppy();
   InitFileSys();
   InitTracks();

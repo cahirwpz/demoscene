@@ -1,5 +1,5 @@
 #include <cia.h>
-#include <interrupt.h>
+#include <cpu.h>
 
 /* All TOD registers latch on a read of MSB event and remain latched
  * until after a read of LSB event. */
