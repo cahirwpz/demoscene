@@ -19,6 +19,8 @@ extern int main(void);
 void Loader(BootDataT *bd) {
   Log("[Loader] VBR at $%08x\n", (u_int)bd->bd_vbr);
   Log("[Loader] CPU model $%02x\n", bd->bd_cpumodel);
+  Log("[Loader] Stack at $%08x (%d bytes)\n",
+      (u_int)bd->bd_stkbot, bd->bd_stksz);
   Log("[Loader] Executable file segments:\n");
 
   {

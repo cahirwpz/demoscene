@@ -227,7 +227,7 @@ void AddMemory(void *ptr, u_int size, u_int attributes) {
     *ar_p = ar;
   }
 
-  Log("[Memory] Added %s memory at $%08lx (%d KiB).\n",
+  Log("[Memory] Added %s memory at $%08lx (%d KiB)\n",
       MemoryName(attributes), (intptr_t)ar->start, ar->totalFree / 1024);
 }
 
