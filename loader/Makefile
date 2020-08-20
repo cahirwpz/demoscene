@@ -26,6 +26,7 @@ SOURCES := \
 	kernel/interrupt.c \
 	kernel/intr-entry.S \
 	kernel/memory.c \
+	kernel/task.c \
 	kernel/trap-entry.S \
 	kernel/trap.c 
 
