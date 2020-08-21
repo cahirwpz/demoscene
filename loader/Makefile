@@ -20,6 +20,7 @@ SOURCES := \
 	drivers/mouse.c \
 	drivers/serial.c \
 	kernel/amigahunk.c \
+	kernel/cpu.S \
 	kernel/exception.c \
 	kernel/file.c \
 	kernel/interrupt.c \

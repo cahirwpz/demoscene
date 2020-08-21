@@ -45,6 +45,13 @@ ENTRY(AmigaLvl3Handler)
         FINISH
 END(AmigaLvl3Handler)
 
+# Level 6 Interrupt Autovector
+
+ENTRY(AmigaLvl6Handler)
+        FIRST   INTB_EXTER
+        FINISH
+END(AmigaLvl6Handler)
+
 # Main part of interrupt handler
 
 ENTRY(EnterIntr)
@@ -58,8 +65,8 @@ ENTRY(EnterIntr)
         add.w   d1,a0
 
         /* Enter interrupt service routine. */
-        move.l  (a0)+,a1                /* IntVecEntry_t.code */
-        move.l  (a0)+,a0                /* IntVecEntry_t.data */
+        move.l  (a0)+,a1                /* IntVecEntryT.code */
+        move.l  (a0)+,a0                /* IntVecEntryT.data */
         jsr     (a1)
 END(EnterIntr)
 
@@ -85,13 +92,6 @@ ENTRY(AmigaLvl5Handler)
         NEXT    INTB_DSKSYNC
         FINISH
 END(AmigaLvl5Handler)
-
-# Level 6 Interrupt Autovector
-
-ENTRY(AmigaLvl6Handler)
-        FIRST   INTB_EXTER
-        FINISH
-END(AmigaLvl6Handler)
 
 # Dummy handler
 

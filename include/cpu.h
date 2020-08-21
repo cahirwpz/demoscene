@@ -20,7 +20,7 @@ typedef enum {
 #define CCR_C __BIT(0) /* Carry */
 
 /* Status Register for 68000 */
-#define SR_IM 0x0700 /* Interrupt Mask */
+#define SR_IM 0x0700   /* Interrupt Mask */
 #define SR_S __BIT(13) /* Supervisor Mode */
 #define SR_T __BIT(15) /* Trace Mode */
 
@@ -43,6 +43,30 @@ static inline u_short GetSR(void) {
 /* Read whole Status Register (privileged instruction on 68010 and above) */
 static inline void SetSR(u_short sr) {
   asm volatile("\tmove.w\t%0,%%sr\n" :: "di"(sr));
+}
+
+/* Make the processor wait for interrupt. */
+static inline void CpuWait(void) {
+  asm volatile("\tstop\t#0x2000\n");
+}
+
+/* Code running in task context executes with IPL set to 0. */
+static inline void CpuIntrDisable(void) {
+  asm volatile("\tor.w\t#0x0700,%sr\n");
+}
+
+static inline void CpuIntrEnable(void) {
+  asm volatile("\tand.w\t#0xf8ff,%sr\n");
+}
+
+/* Code running in interrupt context may be interrupted on M68000 by higher
+ * priority level interrupt. To construct critical section we need to use IPL
+ * bits in SR register. Returns previous value of IPL. */
+u_short SetIPL(u_short);
+
+/* Returns if caller is running with all interrupts disabled. */
+static inline int IntrDisabled(void) {
+  return (GetSR() & 0x0700) == 0x0700;
 }
 
 #endif

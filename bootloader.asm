@@ -67,6 +67,8 @@ _LVOCacheControl        EQU     -648
  STRUCTURE BD,0                 ; Boot Data
         APTR    BD_HUNK
         APTR    BD_VBR
+        APTR    BD_STKBOT
+        LONG    BD_STKSZ
         WORD    BD_CPUMODEL
         WORD    BD_NREGIONS
         LABEL   BD_REGION
@@ -284,11 +286,13 @@ Start:
         bsr     FreeMem
 .vbr0
         ; allocate initial stack for loaded program
-        move.l  #STACKSIZE,d0
+        move.l  #STACKSIZE,BD_STKSZ(a6)
+        move.l  BD_STKSZ(a6),d0
         moveq   #MF_CLEAR|MF_REVERSE,d1
         bsr     AllocMem
         move.l  d0,sp
-        add.w   #STACKSIZE,sp
+        move.l  sp,BD_STKBOT(a6)
+        add.l   BD_STKSZ(a6),sp
 
         ; copy boot data onto stack
         suba.l  a3,sp
