@@ -18,6 +18,7 @@ SOURCES := \
 	string/memset.S \
 	string/strcmp.S \
 	string/strcpy.S \
+	string/strlcpy.c \
 	string/strlen.S
 
 include $(TOPDIR)/build/lib.mk
