@@ -122,7 +122,7 @@ static void MaybePreempt(void) {
 
 void TaskResume(TaskT *tsk) {
   IntrDisable();
-  Assert(tsk->state != TS_READY);
+  Assert(tsk->state == TS_SUSPENDED);
   ReadyAdd(tsk);
   MaybePreempt();
   IntrEnable();
