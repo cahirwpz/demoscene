@@ -2,7 +2,6 @@
 #include <debug.h>
 #include <string.h>
 #include <strings.h>
-#include <interrupt.h>
 #include <task.h>
 
 static TaskT MainTask;
@@ -10,6 +9,8 @@ TaskT *CurrentTask = &MainTask;
 
 static TaskListT ReadyList = TAILQ_HEAD_INITIALIZER(ReadyList);
 u_char NeedReschedule = 0;
+
+static void TaskSwitch(TaskT *curtsk);
 
 void IntrEnable(void) {
   Assert(CurrentTask->intrNest > 0);
@@ -25,6 +26,7 @@ void IntrDisable(void) {
 void TaskInit(TaskT *tsk, const char *name, void *stkptr, u_int stksz) {
   bzero(tsk, sizeof(TaskT));
   strlcpy(tsk->name, name, MAX_TASK_NAME_SIZE);
+  tsk->state = (tsk == CurrentTask) ? TS_READY : TS_SUSPENDED;
   tsk->stack.lower = stkptr;
   tsk->stack.upper = stkptr + stksz;
 }
@@ -50,7 +52,7 @@ void TaskInit(TaskT *tsk, const char *name, void *stkptr, u_int stksz) {
 #define PushWord(v)                                                            \
   { *--(u_short *)sp = (u_short)(v); }
 
-void TaskInitStack(TaskT *tsk, void (*fn)(void *), void *arg) {
+void TaskRun(TaskT *tsk, u_char prio, void (*fn)(void *), void *arg) {
   void *sp = tsk->stack.upper;
 
   PushLong(0); /* last return address at the bottom of stack */
@@ -67,54 +69,98 @@ void TaskInitStack(TaskT *tsk, void (*fn)(void *), void *arg) {
   sp -= 9 * sizeof(u_int); /* D7 to D0 and USP */
 
   tsk->currSP = sp;
+  tsk->prio = prio;
+  TaskResume(tsk);
 }
 
 static void ReadyAdd(TaskT *tsk) {
-  TAILQ_INSERT_TAIL(&ReadyList, tsk, node);
+  TaskT *before = TAILQ_FIRST(&ReadyList);
+  /* Insert before first task with lower priority.
+   * Please note that 0 is the highest priority! */
+  while (before != NULL && before->prio <= tsk->prio)
+    before = TAILQ_NEXT(before, node);
+  if (before == NULL)
+    TAILQ_INSERT_TAIL(&ReadyList, tsk, node);
+  else
+    TAILQ_INSERT_BEFORE(before, tsk, node);
+  tsk->state = TS_READY;
 }
 
-static void ReadyRemove(TaskT *tsk) {
-  TAILQ_REMOVE(&ReadyList, tsk, node);
-}
-
+/* Take a task with highest priority. */
 static TaskT *ReadyChoose(void) {
-  TaskT *tsk = NULL;
-  if (!TAILQ_EMPTY(&ReadyList)) {
-    tsk = TAILQ_FIRST(&ReadyList);
+  TaskT *tsk;
+  Assert(CpuIntrDisabled());
+  tsk = TAILQ_FIRST(&ReadyList);
+  if (tsk != NULL)
     TAILQ_REMOVE(&ReadyList, tsk, node);
-  }
   return tsk;
+}
+
+/* Preemption from interrupt context is performed in LeaveIntr
+ * when NeedReschedule is set. */
+static void MaybePreemptISR(void) {
+  TaskT *first = TAILQ_FIRST(&ReadyList);
+  if (first != NULL && CurrentTask->prio < first->prio)
+    NeedReschedule = -1;
+}
+
+void TaskResumeISR(TaskT *tsk) {
+  Assert(CpuIntrDisabled());
+  Assert(tsk->state != TS_READY);
+  ReadyAdd(tsk);
+  MaybePreemptISR();
+}
+
+/* Preemption from task context is performed by trap handler that executes
+ * YieldHandler procedure. */
+static void MaybePreempt(void) {
+  TaskT *first = TAILQ_FIRST(&ReadyList);
+  if (first != NULL && CurrentTask->prio < first->prio)
+    TaskYield();
 }
 
 void TaskResume(TaskT *tsk) {
   IntrDisable();
-  {
-    ReadyAdd(tsk);
-  }
+  Assert(tsk->state != TS_READY);
+  ReadyAdd(tsk);
+  MaybePreempt();
   IntrEnable();
 }
 
 void TaskSuspend(TaskT *tsk) {
   IntrDisable();
-  {
-    if (tsk != NULL)
-      ReadyRemove(tsk);
-    TaskSwitch(NULL);
+  Assert(tsk->state == TS_READY);
+  if (tsk != NULL) {
+    TAILQ_REMOVE(&ReadyList, tsk, node);
+    tsk->state = TS_SUSPENDED;
+  } else {
+    tsk = CurrentTask;
   }
+  tsk->state = TS_SUSPENDED;
+  TaskSwitch(NULL);
+  IntrEnable();
+}
+
+void TaskPrioritySet(TaskT *tsk, u_char prio) {
+  IntrDisable();
+  if (tsk != NULL) {
+    Assert(tsk->state == TS_READY);
+    TAILQ_REMOVE(&ReadyList, tsk, node);
+  } else {
+    tsk = CurrentTask;
+  }
+  tsk->prio = prio;
+  ReadyAdd(tsk);
+  MaybePreempt();
   IntrEnable();
 }
 
 void TaskSwitch(TaskT *curtsk) {
-  Assert(IntrDisabled());
-  Assert(CurrentTask->intrNest == 1);
-
+  Assert(CpuIntrDisabled());
   if (curtsk)
     ReadyAdd(curtsk);
-
   CurrentTask = NULL;
-
   while (!(curtsk = ReadyChoose()))
     CpuWait();
-
   CurrentTask = curtsk;
 }
