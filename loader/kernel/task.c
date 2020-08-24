@@ -27,8 +27,8 @@ void TaskInit(TaskT *tsk, const char *name, void *stkptr, u_int stksz) {
   bzero(tsk, sizeof(TaskT));
   strlcpy(tsk->name, name, MAX_TASK_NAME_SIZE);
   tsk->state = (tsk == CurrentTask) ? TS_READY : TS_SUSPENDED;
-  tsk->stack.lower = stkptr;
-  tsk->stack.upper = stkptr + stksz;
+  tsk->stkLower = stkptr;
+  tsk->stkUpper = stkptr + stksz;
 }
 
 /* When calling RTE the stack must look as follows:
@@ -53,7 +53,7 @@ void TaskInit(TaskT *tsk, const char *name, void *stkptr, u_int stksz) {
   { *--(u_short *)sp = (u_short)(v); }
 
 void TaskRun(TaskT *tsk, u_char prio, void (*fn)(void *), void *arg) {
-  void *sp = tsk->stack.upper;
+  void *sp = tsk->stkUpper;
 
   PushLong(0); /* last return address at the bottom of stack */
 
