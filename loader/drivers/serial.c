@@ -2,14 +2,13 @@
 #include <strings.h>
 #include <file.h>
 #include <debug.h>
-#include <cpu.h>
 #include <interrupt.h>
 #include <task.h>
 #include <custom.h>
 #include <memory.h>
 
 #define CLOCK 3546895
-#define QUEUELEN 512
+#define QUEUELEN 80
 
 typedef struct {
   u_short head, tail;
@@ -24,7 +23,7 @@ struct File {
 };
 
 static void _PushChar(CharQueueT *queue, u_char data) {
-  if (queue->used == QUEUELEN) {
+  if (queue->used < QUEUELEN) {
     queue->data[queue->tail] = data;
     queue->tail = (queue->tail + 1) & (QUEUELEN - 1);
     queue->used++;
@@ -43,25 +42,18 @@ static int _PopChar(CharQueueT *queue) {
   return result;
 }
 
-static void PushCharISR(CharQueueT *queue, u_char data) {
-  u_short ipl = SetIPL(SR_IM);
-  _PushChar(queue, data);
-  (void)SetIPL(ipl);
-}
-
 static void PushChar(CharQueueT *queue, u_char data) {
+  /* If send queue and serdat register are empty,
+   * then push out first character directly. */
   IntrDisable();
-  while (queue->used == QUEUELEN)
-    TaskWait(INTF_TBE);
-  _PushChar(queue, data);
+  if (queue->used == 0 && custom->serdatr & SERDATF_TBE) {
+    custom->serdat = data | 0x100;
+  } else {
+    while (queue->used == QUEUELEN)
+      TaskWait(INTF_TBE);
+    _PushChar(queue, data);
+  }
   IntrEnable();
-}
-
-static int PopCharISR(CharQueueT *queue) {
-  u_short ipl = SetIPL(SR_IM);
-  int result = _PopChar(queue);
-  (void)SetIPL(ipl);
-  return result;
 }
 
 static int PopChar(CharQueueT *queue) {
@@ -76,17 +68,20 @@ static int PopChar(CharQueueT *queue) {
 static void SendIntHandler(CharQueueT *sendq) {
   int data;
   ClearIRQ(INTF_TBE);
-  data = PopCharISR(sendq);
-  if (data >= 0)
+  data = _PopChar(sendq);
+  if (data >= 0) {
     custom->serdat = data | 0x100;
+    TaskNotifyISR(INTF_TBE);
+  }
 }
 
 static void RecvIntHandler(CharQueueT *recvq) {
-  u_short ipl = SetIPL(SR_IM);
-  u_short serdatr = custom->serdatr;
+  u_short code = custom->serdatr;
   ClearIRQ(INTF_RBF);
-  PushCharISR(recvq, serdatr);
-  (void)SetIPL(ipl);
+  if (code & SERDATF_RBF) {
+    _PushChar(recvq, code);
+    TaskNotifyISR(INTF_RBF);
+  }
 }
 
 static int SerialRead(FileT *f, void *buf, u_int nbyte);
@@ -142,10 +137,6 @@ static int SerialWrite(FileT *f, const void *_buf, u_int nbyte) {
     PushChar(f->sendq, data);
     if (data == '\n')
       PushChar(f->sendq, '\r');
-    IntrDisable();
-    if (custom->serdatr & SERDATF_TBE)
-      CauseIRQ(SERDATF_TBE);
-    IntrEnable();
   }
 
   return nbyte;

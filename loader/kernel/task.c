@@ -203,7 +203,7 @@ static int _TaskNotify(u_int eventSet) {
     }
   }
   if (ntasks == 0)
-    Log("Nobody was waiting for %08x events!", eventSet);
+    Log("[TaskNotify] Nobody was waiting for %08x events!\n", eventSet);
   return ntasks;
 }
 
