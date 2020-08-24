@@ -10,7 +10,7 @@ TaskT *CurrentTask = &MainTask;
 static TaskListT ReadyList = TAILQ_HEAD_INITIALIZER(ReadyList);
 u_char NeedReschedule = 0;
 
-static void TaskSwitch(TaskT *curtsk);
+void TaskSwitch(TaskT *curtsk);
 
 void IntrEnable(void) {
   Assert(CurrentTask->intrNest > 0);
