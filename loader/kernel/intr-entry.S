@@ -71,6 +71,28 @@ ENTRY(EnterIntr)
 END(EnterIntr)
 
 ENTRY(LeaveIntr)
+        /*
+         * Check if we need to reschedule a task - usually as a result waking
+         * up a higher priorty task while running interrupt service routine.
+         * Do it only when returning from interrupt context to task context.
+         * Let's not do the switch while returning from nested interrupt.
+         */
+        move.w  16(sp),d0               /* SR from interrupted context */
+        and.w   #0x0700,d0              /* was IPL set to 0 (task context) ? */
+        jne     .Lnoswitch
+
+        /* Turn off interrupts to prevent data races on NeedReschedule. */
+        or.w    #0x0700,sr
+
+        lea     _L(NeedReschedule),a0
+        tst.b   (a0)                    /* check reschedule flag */
+        jeq     .Lnoswitch
+
+        clr.b   (a0)                    /* clear reschedule flag */
+        movem.l (sp)+,d0-d1/a0-a1       /* restore registers */
+        jra     _L(YieldHandler)+4      /* force a task switch (skip or.w to sr) */
+
+.Lnoswitch:
         movem.l (sp)+,d0-d1/a0-a1
         rte
 END(LeaveIntr)
@@ -98,5 +120,30 @@ END(AmigaLvl5Handler)
 ENTRY(DummyInterruptHandler)
         rts
 END(DummyInterruptHandler)
+
+.macro  SAVECTX
+        /* assumes SR and PC are already pushed on stack */
+        or.w    #0x0700,sr              /* mask all interrupts */
+        movem.l d0-a6,-(sp)             /* save D0-A6 registers */
+        move.l  usp,a0;                 /* save USP register */
+        move.l  a0,-(sp)
+        move.l  _L(CurrentTask),a0      /* load current task pointer */
+        move.l  sp,(a0)                 /* save stack pointer */
+.endm
+
+.macro  LOADCTX
+        move.l  _L(CurrentTask),a0      /* load current task pointer */
+        move.l  (a0),sp                 /* restore stack pointer */
+        move.l  (sp)+,a0                /* restore USP register */
+        move.l  a0,usp
+        movem.l (sp)+,d0-a6             /* restore D0-A6 registers */
+        rte                             /* restore SR and PC */
+.endm
+
+ENTRY(YieldHandler)
+        SAVECTX
+        jsr     _L(TaskSwitch)
+        LOADCTX
+END(YieldHandler)
 
 # vim: ft=gas:ts=8:sw=8:noet:

@@ -59,14 +59,14 @@ static inline void CpuIntrEnable(void) {
   asm volatile("\tand.w\t#0xf8ff,%sr\n");
 }
 
+/* Returns if caller is running with all interrupts disabled. */
+static inline int CpuIntrDisabled(void) {
+  return (GetSR() & 0x0700) == 0x0700;
+}
+
 /* Code running in interrupt context may be interrupted on M68000 by higher
  * priority level interrupt. To construct critical section we need to use IPL
  * bits in SR register. Returns previous value of IPL. */
 u_short SetIPL(u_short);
-
-/* Returns if caller is running with all interrupts disabled. */
-static inline int IntrDisabled(void) {
-  return (GetSR() & 0x0700) == 0x0700;
-}
 
 #endif

@@ -50,6 +50,8 @@ void SetupExceptionVector(BootDataT *bd) {
   SetIntVector(EXTER, (IntHandlerT)RunIntChain, ExterChain);
 
   /* Intialize TRAP instruction handlers. */
-  for (i = EXC_TRAP(0); i <= EXC_TRAP(15); i++)
+  ExcVec[EXC_TRAP(0)] = YieldHandler;
+
+  for (i = EXC_TRAP(1); i <= EXC_TRAP(15); i++)
     ExcVec[i] = TrapInstTrap;
 }

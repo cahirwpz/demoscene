@@ -84,6 +84,8 @@ void PrivInstTrap(void);
 void TraceTrap(void);
 void FmtErrTrap(void);
 void TrapInstTrap(void);
+
+void YieldHandler(void);
 #endif
 
 #endif

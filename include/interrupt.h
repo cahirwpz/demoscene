@@ -9,10 +9,6 @@
 
 void WaitIRQ(u_short x);
 
-/* Enable / disable all interrupts. Handle nested calls. */
-void IntrEnable(void);
-void IntrDisable(void);
-
 /* Interrupt Handler Routine */
 typedef void (*IntHandlerT)(void *);
 

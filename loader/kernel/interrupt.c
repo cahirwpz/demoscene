@@ -1,18 +1,6 @@
 #include <interrupt.h>
+#include <task.h>
 #include <debug.h>
-
-static short IntrNesting = 0;
-
-void IntrEnable(void) {
-  Assert(IntrNesting > 0);
-  if (--IntrNesting == 0)
-    EnableINT(INTF_INTEN);
-}
-
-void IntrDisable(void) {
-  DisableINT(INTF_INTEN);
-  IntrNesting++;
-}
 
 void WaitIRQ(u_short mask) {
   while (!(custom->intreqr & mask));
