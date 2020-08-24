@@ -4,6 +4,7 @@
 #include "custom.h"
 #include "cia.h"
 #include "floppy.h"
+#include <task.h>
 
 #define DEBUG 0
 
@@ -115,15 +116,20 @@ static void FloppyMotorOff(void) {
   bclr(ciaprb, CIAB_DSKSEL0);
 }
 
+static void DiskBlockInterrupt(__unused void *ptr) {
+  TaskNotifyISR(INTF_DSKBLK);
+}
+
 void InitFloppy(void) {
   Log("[Floppy] Initialing driver!\n");
 
   custom->dsksync = DSK_SYNC;
   custom->adkcon = ADKF_SETCLR | ADKF_MFMPREC | ADKF_WORDSYNC | ADKF_FAST;
 
-  DisableINT(INTF_DSKBLK);
-  ClearIRQ(INTF_DSKBLK);
   DisableDMA(DMAF_DISK);
+  SetIntVector(DSKBLK, DiskBlockInterrupt, NULL);                                         \
+  ClearIRQ(INTF_DSKBLK);
+  EnableINT(INTF_DSKBLK);
 
   track = MemAlloc(TRACK_SIZE, MEMF_CHIP);
 
@@ -138,6 +144,9 @@ void InitFloppy(void) {
 
 void KillFloppy(void) {
   FloppyMotorOff();
+  DisableINT(INTF_DSKBLK);
+  ClearIRQ(INTF_DSKBLK);
+  ResetIntVector(DSKBLK);
   MemFree(track);
 }
 
@@ -174,7 +183,7 @@ void FloppyTrackRead(short num) {
   custom->dsklen = DSK_DMAEN | (TRACK_SIZE / sizeof(short));
   custom->dsklen = DSK_DMAEN | (TRACK_SIZE / sizeof(short));
 
-  WaitIRQ(INTF_DSKBLK);
+  TaskWait(INTF_DSKBLK);
 
   custom->dsklen = 0;
   DisableDMA(DMAF_DISK);
