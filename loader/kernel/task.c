@@ -8,6 +8,7 @@ static TaskT MainTask;
 TaskT *CurrentTask = &MainTask;
 
 static TaskListT ReadyList = TAILQ_HEAD_INITIALIZER(ReadyList);
+static TaskListT WaitList = TAILQ_HEAD_INITIALIZER(WaitList);
 u_char NeedReschedule = 0;
 
 void TaskSwitch(TaskT *curtsk);
@@ -106,7 +107,7 @@ static void MaybePreemptISR(void) {
 
 void TaskResumeISR(TaskT *tsk) {
   Assert(CpuIntrDisabled());
-  Assert(tsk->state != TS_READY);
+  Assert(tsk->state == TS_SUSPENDED);
   ReadyAdd(tsk);
   MaybePreemptISR();
 }
@@ -152,6 +153,49 @@ void TaskPrioritySet(TaskT *tsk, u_char prio) {
   tsk->prio = prio;
   ReadyAdd(tsk);
   MaybePreempt();
+  IntrEnable();
+}
+
+u_int TaskWait(u_int eventMask) {
+  TaskT *tsk = CurrentTask;
+  Assert(eventMask != 0);
+  IntrDisable();
+  tsk->eventMask = eventMask;
+  tsk->state = TS_BLOCKED;
+  TAILQ_INSERT_HEAD(&WaitList, tsk, node);
+  TaskSwitch(NULL);
+  eventMask = tsk->eventMask;
+  tsk->eventMask = 0;
+  IntrEnable();
+  return eventMask;
+}
+
+static int _TaskNotify(u_int eventMask) {
+  TaskT *tsk;
+  int ntasks = 0;
+  Assert(eventMask != 0);
+  TAILQ_FOREACH(tsk, &WaitList, node) {
+    if (tsk->eventMask & eventMask) {
+      tsk->eventMask &= eventMask;
+      ReadyAdd(tsk);
+      ntasks++;
+    }
+  }
+  if (ntasks == 0)
+    Log("[TaskNotify] Nobody was waiting for %08x events!\n", eventMask);
+  return ntasks;
+}
+
+void TaskNotifyISR(u_int eventMask) {
+  Assert(CpuIntrDisabled());
+  if (_TaskNotify(eventMask))
+    MaybePreemptISR();
+}
+
+void TaskNotify(u_int eventMask) {
+  IntrDisable();
+  if (_TaskNotify(eventMask))
+    MaybePreempt();
   IntrEnable();
 }
 

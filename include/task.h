@@ -31,7 +31,7 @@ struct Task {
   u_char state;           /* Task state - one of TS_* constants. */
   u_char prio;     /* Task priority - 0 is the highest, 255 is the lowest. */
   short intrNest;  /* Interrupt disable nesting count. */
-  u_int eventMask; /* Events we're waiting for. */
+  u_int eventMask; /* Events we're waiting for - combination of EVF_* flags. */
   void *stkLower;  /* Lowest stack address. */
   void *stkUpper;  /* Highest stack address. */
   char name[MAX_TASK_NAME_SIZE]; /* Task name (limited in size) */
@@ -47,7 +47,7 @@ void TaskResumeISR(TaskT *tsk);
 void TaskSuspend(TaskT *tsk);
 void TaskPrioritySet(TaskT *tsk, u_char prio);
 
-u_int TaskWait(TaskT *tsk, u_int eventMask);
+u_int TaskWait(u_int eventMask);
 void TaskNotifyISR(u_int eventMask);
 void TaskNotify(u_int eventMask);
 
