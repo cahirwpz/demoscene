@@ -166,7 +166,7 @@ static void PushKeyEvent(u_char raw) {
   else
     ev.ascii = 0;
 
-  PushEvent((EventT *)&ev);
+  PushEventISR((EventT *)&ev);
 }
 
 static int KeyboardIntHandler(void) {

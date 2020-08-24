@@ -34,6 +34,7 @@ typedef union Event {
   GuiEventT gui;
 } EventT;
 
+void PushEventISR(EventT *event);
 void PushEvent(EventT *event);
 bool PopEvent(EventT *event);
 

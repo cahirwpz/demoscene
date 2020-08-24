@@ -112,13 +112,13 @@ static int MouseIntHandler(void) {
   moveY = GetMouseY(mouse, &event);
 
   if (moveX || moveY)
-    PushEvent((EventT *)&event);
+    PushEventISR((EventT *)&event);
 
   /* After that a change in mouse button state. */
   if (GetMouseButton(mouse, &event)) {
     event.x = mouse->x;
     event.y = mouse->y;
-    PushEvent((EventT *)&event);
+    PushEventISR((EventT *)&event);
   }
 
   return 0;
