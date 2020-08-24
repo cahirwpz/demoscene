@@ -7,7 +7,7 @@
 #define DEBUG 0
 
 #if DEBUG
-#define Debug(fmt, ...) Log("%s: " fmt "\n", __func__, __VA_ARGS__)
+#define Debug(fmt, ...) Log("[%s] " fmt "\n", __func__, __VA_ARGS__)
 #else
 #define Debug(fmt, ...) ((void)0)
 #endif
@@ -174,48 +174,49 @@ void TaskPrioritySet(TaskT *tsk, u_char prio) {
   IntrEnable();
 }
 
-u_int TaskWait(u_int eventMask) {
+u_int TaskWait(u_int eventSet) {
   TaskT *tsk = CurrentTask;
-  Assert(eventMask != 0);
+  Assert(eventSet != 0);
   IntrDisable();
-  tsk->eventMask = eventMask;
+  tsk->eventSet = eventSet;
   tsk->state = TS_BLOCKED;
   TAILQ_INSERT_HEAD(&WaitList, tsk, node);
-  Debug("[TaskWait] Task '%s' waits for %08x events.\n", tsk->name, eventMask);
+  Debug("Task '%s' waits for %08x events.", tsk->name, eventSet);
   TaskSwitch(NULL);
-  eventMask = tsk->eventMask;
-  tsk->eventMask = 0;
+  eventSet = tsk->eventSet;
+  tsk->eventSet = 0;
   IntrEnable();
-  return eventMask;
+  return eventSet;
 }
 
-static int _TaskNotify(u_int eventMask) {
+static int _TaskNotify(u_int eventSet) {
   TaskT *tsk;
   int ntasks = 0;
-  Assert(eventMask != 0);
+  Assert(eventSet != 0);
   TAILQ_FOREACH(tsk, &WaitList, node) {
-    if (tsk->eventMask & eventMask) {
-      tsk->eventMask &= eventMask;
-      Debug("[TaskNotify] Waking up '%s' task.\n", tsk->name);
+    if (tsk->eventSet & eventSet) {
+      Debug("Waking up '%s' task waiting on $%08x (got $%08x).",
+            tsk->name, tsk->eventSet, eventSet);
+      tsk->eventSet &= eventSet;
       ReadyAdd(tsk);
       ntasks++;
     }
   }
   if (ntasks == 0)
-    Log("[TaskNotify] Nobody was waiting for %08x events!\n", eventMask);
+    Log("Nobody was waiting for %08x events!", eventSet);
   return ntasks;
 }
 
-void TaskNotifyISR(u_int eventMask) {
+void TaskNotifyISR(u_int eventSet) {
   u_short ipl = SetIPL(SR_IM);
-  if (_TaskNotify(eventMask))
+  if (_TaskNotify(eventSet))
     MaybePreemptISR();
   (void)SetIPL(ipl);
 }
 
-void TaskNotify(u_int eventMask) {
+void TaskNotify(u_int eventSet) {
   IntrDisable();
-  if (_TaskNotify(eventMask))
+  if (_TaskNotify(eventSet))
     MaybePreempt();
   IntrEnable();
 }
@@ -226,6 +227,7 @@ void TaskSwitch(TaskT *curtsk) {
     ReadyAdd(curtsk);
   CurrentTask = NULL;
   while (!(curtsk = ReadyChoose())) {
+    Debug("Processor goes asleep with SR=%04x!", 0x2000);
     CpuWait();
     CpuIntrDisable();
   }

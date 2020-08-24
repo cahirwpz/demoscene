@@ -29,11 +29,11 @@ struct Task {
   void *currSP; /* Points to task context pushed on top of the stack. */
   TAILQ_ENTRY(Task) node; /* Ready tasks are stored on ReadyList. */
   u_char state;           /* Task state - one of TS_* constants. */
-  u_char prio;     /* Task priority - 0 is the highest, 255 is the lowest. */
-  short intrNest;  /* Interrupt disable nesting count. */
-  u_int eventMask; /* Events we're waiting for - combination of EVF_* flags. */
-  void *stkLower;  /* Lowest stack address. */
-  void *stkUpper;  /* Highest stack address. */
+  u_char prio;    /* Task priority - 0 is the highest, 255 is the lowest. */
+  short intrNest; /* Interrupt disable nesting count. */
+  u_int eventSet; /* Events we're waiting for - combination of EVF_* flags. */
+  void *stkLower; /* Lowest stack address. */
+  void *stkUpper; /* Highest stack address. */
   char name[MAX_TASK_NAME_SIZE]; /* Task name (limited in size) */
 };
 
@@ -47,9 +47,9 @@ void TaskResumeISR(TaskT *tsk);
 void TaskSuspend(TaskT *tsk);
 void TaskPrioritySet(TaskT *tsk, u_char prio);
 
-u_int TaskWait(u_int eventMask);
-void TaskNotifyISR(u_int eventMask);
-void TaskNotify(u_int eventMask);
+u_int TaskWait(u_int eventSet);
+void TaskNotifyISR(u_int eventSet);
+void TaskNotify(u_int eventSet);
 
 static inline void TaskYield(void) { asm volatile("\ttrap\t#0\n"); }
 
