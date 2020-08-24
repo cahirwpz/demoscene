@@ -1,5 +1,5 @@
 #include <interrupt.h>
-#include <cpu.h>
+#include <task.h>
 #include <debug.h>
 
 void WaitIRQ(u_short mask) {

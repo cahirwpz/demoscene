@@ -31,4 +31,8 @@ void TaskResume(TaskT *tsk);
 void TaskSuspend(TaskT *tsk);
 void TaskSwitch(TaskT *curtsk);
 
+/* Enable / disable all interrupts. Handle nested calls. */
+void IntrDisable(void);
+void IntrEnable(void);
+
 #endif

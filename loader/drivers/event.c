@@ -1,4 +1,4 @@
-#include <cpu.h>
+#include <task.h>
 #include <event.h>
 
 #define QUEUELEN 32

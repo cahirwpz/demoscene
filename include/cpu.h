@@ -64,10 +64,6 @@ static inline void CpuIntrEnable(void) {
  * bits in SR register. Returns previous value of IPL. */
 u_short SetIPL(u_short);
 
-/* Enable / disable all interrupts. Handle nested calls. */
-void IntrEnable(void);
-void IntrDisable(void);
-
 /* Returns if caller is running with all interrupts disabled. */
 static inline int IntrDisabled(void) {
   return (GetSR() & 0x0700) == 0x0700;
