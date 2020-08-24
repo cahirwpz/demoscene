@@ -4,6 +4,14 @@
 #include <strings.h>
 #include <task.h>
 
+#define DEBUG 0
+
+#if DEBUG
+#define Debug(fmt, ...) Log("%s: " fmt "\n", __func__, __VA_ARGS__)
+#else
+#define Debug(fmt, ...) ((void)0)
+#endif
+
 static TaskT MainTask;
 TaskT *CurrentTask = &MainTask;
 
@@ -101,23 +109,33 @@ static TaskT *ReadyChoose(void) {
  * when NeedReschedule is set. */
 static void MaybePreemptISR(void) {
   TaskT *first = TAILQ_FIRST(&ReadyList);
-  if (first != NULL && CurrentTask->prio < first->prio)
-    NeedReschedule = -1;
+  if (first == NULL)
+    return;
+  /* If there's no current task we just need to return to TaskSwitch loop. */
+  if (CurrentTask == NULL)
+    return;
+  if (CurrentTask->prio >= first->prio)
+    return;
+  NeedReschedule = -1;
 }
 
 void TaskResumeISR(TaskT *tsk) {
-  Assert(CpuIntrDisabled());
+  u_short ipl = SetIPL(SR_IM);
   Assert(tsk->state == TS_SUSPENDED);
   ReadyAdd(tsk);
   MaybePreemptISR();
+  (void)SetIPL(ipl);
 }
 
 /* Preemption from task context is performed by trap handler that executes
  * YieldHandler procedure. */
 static void MaybePreempt(void) {
   TaskT *first = TAILQ_FIRST(&ReadyList);
-  if (first != NULL && CurrentTask->prio < first->prio)
-    TaskYield();
+  if (first == NULL)
+    return;
+  if (CurrentTask->prio >= first->prio)
+    return;
+  TaskYield();
 }
 
 void TaskResume(TaskT *tsk) {
@@ -163,6 +181,7 @@ u_int TaskWait(u_int eventMask) {
   tsk->eventMask = eventMask;
   tsk->state = TS_BLOCKED;
   TAILQ_INSERT_HEAD(&WaitList, tsk, node);
+  Debug("[TaskWait] Task '%s' waits for %08x events.\n", tsk->name, eventMask);
   TaskSwitch(NULL);
   eventMask = tsk->eventMask;
   tsk->eventMask = 0;
@@ -177,6 +196,7 @@ static int _TaskNotify(u_int eventMask) {
   TAILQ_FOREACH(tsk, &WaitList, node) {
     if (tsk->eventMask & eventMask) {
       tsk->eventMask &= eventMask;
+      Debug("[TaskNotify] Waking up '%s' task.\n", tsk->name);
       ReadyAdd(tsk);
       ntasks++;
     }
@@ -187,9 +207,10 @@ static int _TaskNotify(u_int eventMask) {
 }
 
 void TaskNotifyISR(u_int eventMask) {
-  Assert(CpuIntrDisabled());
+  u_short ipl = SetIPL(SR_IM);
   if (_TaskNotify(eventMask))
     MaybePreemptISR();
+  (void)SetIPL(ipl);
 }
 
 void TaskNotify(u_int eventMask) {
@@ -204,7 +225,9 @@ void TaskSwitch(TaskT *curtsk) {
   if (curtsk)
     ReadyAdd(curtsk);
   CurrentTask = NULL;
-  while (!(curtsk = ReadyChoose()))
+  while (!(curtsk = ReadyChoose())) {
     CpuWait();
+    CpuIntrDisable();
+  }
   CurrentTask = curtsk;
 }
