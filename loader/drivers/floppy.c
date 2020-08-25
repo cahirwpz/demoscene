@@ -48,6 +48,7 @@ typedef struct {
 static short headDir;
 static short trackNum;
 static SectorT *track;
+static CIATimerT *timer;
 
 static inline void WaitDiskReady(void) {
   while (ciaa->ciapra & CIAF_DSKRDY);
@@ -61,7 +62,7 @@ static void StepHeads(void) {
   bclr(ciaprb, CIAB_DSKSTEP);
   bset(ciaprb, CIAB_DSKSTEP);
 
-  WaitTimerA(ciab, STEP_SETTLE);
+  WaitTimerSleep(timer, STEP_SETTLE);
 
   trackNum += headDir;
 }
@@ -79,7 +80,7 @@ static void HeadsStepDirection(short inwards) {
     headDir = -2;
   }
 
-  WaitTimerA(ciab, DIRECTION_REVERSE_SETTLE);
+  WaitTimerSleep(timer, DIRECTION_REVERSE_SETTLE);
 }
 
 static inline void ChangeDiskSide(short upper) {
@@ -121,13 +122,15 @@ static void DiskBlockInterrupt(__unused void *ptr) {
 }
 
 void InitFloppy(void) {
-  Log("[Floppy] Initialing driver!\n");
+  Log("[Floppy] Initialising driver!\n");
 
   custom->dsksync = DSK_SYNC;
   custom->adkcon = ADKF_SETCLR | ADKF_MFMPREC | ADKF_WORDSYNC | ADKF_FAST;
 
+  timer = AcquireTimer(TIMER_CIAB_A);
+
   DisableDMA(DMAF_DISK);
-  SetIntVector(DSKBLK, DiskBlockInterrupt, NULL);                                         \
+  SetIntVector(DSKBLK, DiskBlockInterrupt, NULL);
   ClearIRQ(INTF_DSKBLK);
   EnableINT(INTF_DSKBLK);
 
@@ -147,6 +150,7 @@ void KillFloppy(void) {
   DisableINT(INTF_DSKBLK);
   ClearIRQ(INTF_DSKBLK);
   ResetIntVector(DSKBLK);
+  ReleaseTimer(timer);
   MemFree(track);
 }
 
@@ -168,7 +172,7 @@ void FloppyTrackRead(short num) {
       StepHeads();
   }
 
-  WaitTimerA(ciab, DISK_SETTLE);
+  WaitTimerSleep(timer, DISK_SETTLE);
 
   custom->dsklen = 0; /* Make sure the DMA for the disk is turned off. */
   ClearIRQ(INTF_DSKBLK);

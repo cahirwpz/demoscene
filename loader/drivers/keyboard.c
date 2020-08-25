@@ -146,6 +146,7 @@ static const u_char KeyMap[256] = {
 /* clang-format on */
 
 static u_char modifier;
+static CIATimerT *timer;
 
 static void PushKeyEvent(u_char raw) {
   KeyEventT ev;
@@ -178,7 +179,7 @@ static int KeyboardIntHandler(void) {
      * 2) Wait for at least 85us for handshake to be registered.
      * 3) Set back to input mode. */
     ciaa->ciacra |= CIACRAF_SPMODE;
-    WaitTimerB(ciab, TIMER_US(85));
+    WaitTimerSpin(timer, TIMER_US(85));
     ciaa->ciacra &= ~CIACRAF_SPMODE;
     /* Save raw key in the queue. Filter out exceptional conditions. */
     {
@@ -195,6 +196,8 @@ INTSERVER(KeyboardServer, -5, (IntFuncT)KeyboardIntHandler, NULL);
 
 void KeyboardInit(void) {
   Log("[Keyboard] Initialize driver!\n");
+
+  timer = AcquireTimer(TIMER_CIAB_B);
   /* Set to input mode. */
   ciaa->ciacra &= ~CIACRAF_SPMODE;
   /* Enable keyboard interrupt.
@@ -206,4 +209,5 @@ void KeyboardInit(void) {
 
 void KeyboardKill(void) {
   RemIntServer(PortsChain, KeyboardServer);
+  ReleaseTimer(timer);
 }
