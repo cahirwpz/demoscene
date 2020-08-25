@@ -19,8 +19,6 @@ static TaskListT ReadyList = TAILQ_HEAD_INITIALIZER(ReadyList);
 static TaskListT WaitList = TAILQ_HEAD_INITIALIZER(WaitList);
 u_char NeedReschedule = 0;
 
-void TaskSwitch(TaskT *curtsk);
-
 void IntrEnable(void) {
   Assert(CurrentTask->intrNest > 0);
   if (--CurrentTask->intrNest == 0)
@@ -111,10 +109,7 @@ static void MaybePreemptISR(void) {
   TaskT *first = TAILQ_FIRST(&ReadyList);
   if (first == NULL)
     return;
-  /* If there's no current task we just need to return to TaskSwitch loop. */
-  if (CurrentTask == NULL)
-    return;
-  if (CurrentTask->prio >= first->prio)
+  if (first->prio >= CurrentTask->prio)
     return;
   NeedReschedule = -1;
 }
@@ -134,7 +129,7 @@ static void MaybePreempt(void) {
   TaskT *first = TAILQ_FIRST(&ReadyList);
   if (first == NULL)
     return;
-  if (CurrentTask->prio >= first->prio)
+  if (first->prio >= CurrentTask->prio)
     return;
   TaskYield();
 }
@@ -157,7 +152,7 @@ void TaskSuspend(TaskT *tsk) {
     tsk = CurrentTask;
   }
   tsk->state = TS_SUSPENDED;
-  TaskSwitch(NULL);
+  TaskYield();
   IntrEnable();
 }
 
@@ -183,7 +178,7 @@ u_int TaskWait(u_int eventSet) {
   tsk->state = TS_BLOCKED;
   TAILQ_INSERT_HEAD(&WaitList, tsk, node);
   Debug("Task '%s' waits for %08x events.", tsk->name, eventSet);
-  TaskSwitch(NULL);
+  TaskYield();
   eventSet = tsk->eventSet;
   tsk->eventSet = 0;
   IntrEnable();
@@ -226,13 +221,14 @@ void TaskNotify(u_int eventSet) {
 
 void TaskSwitch(TaskT *curtsk) {
   Assert(GetIPL() == IPL_MAX);
-  if (curtsk)
+  Assert(curtsk != NULL);
+  if (curtsk->state == TS_READY)
     ReadyAdd(curtsk);
-  CurrentTask = NULL;
   while (!(curtsk = ReadyChoose())) {
     Debug("Processor goes asleep with SR=%04x!", 0x2000);
     CpuWait();
     CpuIntrDisable();
   }
+  Debug("Switching to '%s', prio: %d.", curtsk->name, curtsk->prio);
   CurrentTask = curtsk;
 }
