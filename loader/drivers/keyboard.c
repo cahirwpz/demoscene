@@ -194,7 +194,7 @@ static int KeyboardIntHandler(void) {
 INTSERVER(KeyboardServer, -5, (IntFuncT)KeyboardIntHandler, NULL);
 
 void KeyboardInit(void) {
-  Log("[Init] Keyboard driver!\n");
+  Log("[Keyboard] Initialize driver!\n");
   /* Set to input mode. */
   ciaa->ciacra &= ~CIACRAF_SPMODE;
   /* Enable keyboard interrupt.

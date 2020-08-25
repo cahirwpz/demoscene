@@ -1,13 +1,16 @@
-#include <string.h>
+#include <types.h>
+#include <debug.h>
 #include <interrupt.h>
 #include <cia.h>
+#include <custom.h>
 #include <mouse.h>
 #include <event.h>
 
 typedef struct {
+  MouseEventT event;
+
   char xctr, yctr;
-  short x, y;
-  short button;
+  u_char button;
 
   short left;
   short right;
@@ -15,58 +18,45 @@ typedef struct {
   short bottom;
 } MouseDataT;
 
-static MouseDataT mouseData;
+static MouseDataT MouseData;
 
-static inline bool GetMouseX(MouseDataT *mouse, MouseEventT *event) {
-  char xctr = custom->joy0dat & 0xff;
-  char xrel = xctr - mouse->xctr;
-  short x = mouse->x;
+static bool GetMouseMove(MouseDataT *mouse) {
+  u_short joy0dat = custom->joy0dat;
+  char xctr, xrel, yctr, yrel;
 
-  if (!xrel) {
-    event->x = x;
-    return false;
+  xctr = joy0dat;
+  xrel = xctr - mouse->xctr;
+
+  if (xrel) {
+    short x = mouse->event.x + xrel;
+
+    if (x < mouse->left)
+      x = mouse->left;
+    if (x > mouse->right)
+      x = mouse->right;
+
+    mouse->event.x = x;
+    mouse->event.xrel = xrel;
+    mouse->xctr = xctr;
   }
 
-  x += xrel;
+  yctr = joy0dat >> 8;
+  yrel = yctr - mouse->yctr;
 
-  if (x < mouse->left)
-    x = mouse->left;
-  if (x > mouse->right)
-    x = mouse->right;
+  if (yrel) {
+    short y = mouse->event.y + yrel;
 
-  event->x = x;
-  event->xrel = xrel;
+    if (y < mouse->top)
+      y = mouse->top;
+    if (y > mouse->bottom)
+      y = mouse->bottom;
 
-  mouse->x = x;
-  mouse->xctr = xctr;
-
-  return true;
-}
-
-static inline bool GetMouseY(MouseDataT *mouse, MouseEventT *event) {
-  char yctr = custom->joy0dat >> 8;
-  char yrel = yctr - mouse->yctr;
-  short y = mouse->y;
-
-  if (!yrel) {
-    event->y = y;
-    return false;
+    mouse->event.y = y;
+    mouse->event.yrel = yrel;
+    mouse->yctr = yctr;
   }
 
-  y += yrel;
-
-  if (y < mouse->top)
-    y = mouse->top;
-  if (y > mouse->bottom)
-    y = mouse->bottom;
-
-  event->y = y;
-  event->yrel = yrel;
-
-  mouse->y = y;
-  mouse->yctr = yctr;
-
-  return true;
+  return xrel || yrel;
 }
 
 static inline u_char ReadButtonState(void) {
@@ -80,7 +70,7 @@ static inline u_char ReadButtonState(void) {
   return state;
 }
 
-static inline bool GetMouseButton(MouseDataT *mouse, MouseEventT *event) {
+static bool GetMouseButton(MouseDataT *mouse) {
   u_char button = ReadButtonState();
   u_char change = (mouse->button ^ button) & (LMB_PRESSED | RMB_PRESSED);
 
@@ -88,57 +78,46 @@ static inline bool GetMouseButton(MouseDataT *mouse, MouseEventT *event) {
     return false;
 
   mouse->button = button;
-  event->button = 0;
 
   if (change & LMB_PRESSED)
-    event->button |= (button & LMB_PRESSED) ? LMB_PRESSED : LMB_RELEASED;
+    mouse->event.button |= (button & LMB_PRESSED) ? LMB_PRESSED : LMB_RELEASED;
 
   if (change & RMB_PRESSED)
-    event->button |= (button & RMB_PRESSED) ? RMB_PRESSED : RMB_RELEASED;
-  
+    mouse->event.button |= (button & RMB_PRESSED) ? RMB_PRESSED : RMB_RELEASED;
+
   return true;
 }
 
-static int MouseIntHandler(void) {
-  MouseEventT event;
-  MouseDataT *mouse = &mouseData;
-  bool moveX, moveY;
+static void MouseIntHandler(void *data) {
+  MouseDataT *mouse = (MouseDataT *)data;
 
-  memset(&event, 0, sizeof(event));
-  event.type = EV_MOUSE;
+  mouse->event.button = 0;
 
   /* Register mouse position change first. */
-  moveX = GetMouseX(mouse, &event);
-  moveY = GetMouseY(mouse, &event);
-
-  if (moveX || moveY)
-    PushEventISR((EventT *)&event);
+  if (GetMouseMove(mouse))
+    PushEventISR((EventT *)&mouse->event);
 
   /* After that a change in mouse button state. */
-  if (GetMouseButton(mouse, &event)) {
-    event.x = mouse->x;
-    event.y = mouse->y;
-    PushEventISR((EventT *)&event);
-  }
-
-  return 0;
+  if (GetMouseButton(mouse))
+    PushEventISR((EventT *)&mouse->event);
 }
 
-INTSERVER(MouseServer, -5, (IntFuncT)MouseIntHandler, NULL);
+INTSERVER(MouseServer, -5, (IntFuncT)MouseIntHandler, (void *)&MouseData);
 
 void MouseInit(short minX, short minY, short maxX, short maxY) {
-  MouseDataT *mouse = &mouseData;
+  Log("[Mouse] Initialize driver!\n");
 
-  mouse->left = minX;
-  mouse->right = maxX;
-  mouse->top = minY;
-  mouse->bottom = maxY;
-
-  mouse->x = minX;
-  mouse->y = minY;
-  mouse->xctr = custom->joy0dat & 0xff;
-  mouse->yctr = custom->joy0dat >> 8;
-  mouse->button = ReadButtonState();
+  /* Settings from MouseData structure. */
+  MouseData.left = minX;
+  MouseData.right = maxX;
+  MouseData.top = minY;
+  MouseData.bottom = maxY;
+  MouseData.xctr = custom->joy0dat & 0xff;
+  MouseData.yctr = custom->joy0dat >> 8;
+  MouseData.button = ReadButtonState();
+  MouseData.event.x = minX;
+  MouseData.event.y = minY;
+  MouseData.event.type = EV_MOUSE;
 
   AddIntServer(VertBlankChain, MouseServer);
 }
