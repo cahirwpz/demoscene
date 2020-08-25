@@ -98,7 +98,7 @@ static void ReadyAdd(TaskT *tsk) {
 /* Take a task with highest priority. */
 static TaskT *ReadyChoose(void) {
   TaskT *tsk;
-  Assert(CpuIntrDisabled());
+  Assert(GetIPL() == IPL_MAX);
   tsk = TAILQ_FIRST(&ReadyList);
   if (tsk != NULL)
     TAILQ_REMOVE(&ReadyList, tsk, node);
@@ -121,6 +121,7 @@ static void MaybePreemptISR(void) {
 
 void TaskResumeISR(TaskT *tsk) {
   u_short ipl = SetIPL(SR_IM);
+  Assert(ipl > IPL_NONE);
   Assert(tsk->state == TS_SUSPENDED);
   ReadyAdd(tsk);
   MaybePreemptISR();
@@ -203,18 +204,20 @@ static int _TaskNotify(u_int eventSet) {
     }
   }
   if (ntasks == 0)
-    Log("Nobody was waiting for %08x events!", eventSet);
+    Log("[TaskNotify] Nobody was waiting for %08x events!\n", eventSet);
   return ntasks;
 }
 
 void TaskNotifyISR(u_int eventSet) {
   u_short ipl = SetIPL(SR_IM);
+  Assert(ipl > IPL_NONE);
   if (_TaskNotify(eventSet))
     MaybePreemptISR();
   (void)SetIPL(ipl);
 }
 
 void TaskNotify(u_int eventSet) {
+  Assert(GetIPL() == IPL_NONE);
   IntrDisable();
   if (_TaskNotify(eventSet))
     MaybePreempt();
@@ -222,7 +225,7 @@ void TaskNotify(u_int eventSet) {
 }
 
 void TaskSwitch(TaskT *curtsk) {
-  Assert(CpuIntrDisabled());
+  Assert(GetIPL() == IPL_MAX);
   if (curtsk)
     ReadyAdd(curtsk);
   CurrentTask = NULL;

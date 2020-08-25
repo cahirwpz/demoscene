@@ -1,5 +1,6 @@
-#include "memory.h"
-#include "debug.h"
+#include <memory.h>
+#include <debug.h>
+#include <task.h>
 
 #include <cdefs.h>
 #include <limits.h>
@@ -19,10 +20,6 @@ typedef uintptr_t WordT;
 
 #define ALIGNMENT 16
 #define CANARY 0xDEADC0DE
-
-/* TODO These should turn off and turn on preemption. */
-#define CriticalEnter()
-#define CriticalLeave()
 
 /* Free block consists of header BT, pointer to previous and next free block,
  * payload and footer BT. */
@@ -235,7 +232,7 @@ static WordT *ArenaMemAlloc(ArenaT *ar, u_int size) {
   u_int reqsz = BlockSize(size);
   WordT *bt;
 
-  CriticalEnter();
+  IntrDisable();
 
   bt = ArenaFindFit(ar, reqsz);
   if (bt != NULL) {
@@ -261,7 +258,7 @@ static WordT *ArenaMemAlloc(ArenaT *ar, u_int size) {
     ArenaDecFree(ar, memsz);
   }
 
-  CriticalLeave();
+  IntrEnable();
 
   return bt;
 }
@@ -272,7 +269,7 @@ static void ArenaMemFree(ArenaT *ar, void *ptr) {
 
   Debug("%s(%p, %p)", __func__, ar, ptr);
 
-  CriticalEnter();
+  IntrDisable();
 
   bt = BtFromPtr(ptr);
 
@@ -312,7 +309,7 @@ static void ArenaMemFree(ArenaT *ar, void *ptr) {
   ar->totalFree += memsz;
   ArenaFreeInsert(ar, bt);
 
-  CriticalLeave();
+  IntrEnable();
 }
 
 static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
@@ -329,7 +326,7 @@ static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
     return old_ptr;
   }
 
-  CriticalEnter();
+  IntrDisable();
 
   if (reqsz < sz) {
     BtFlagsT is_last = BtGetIsLast(bt);
@@ -365,7 +362,7 @@ static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
     }
   }
 
-  CriticalLeave();
+  IntrEnable();
 
   Debug("%s(%p, %ld) = %p", __func__, old_ptr, size, new_ptr);
   return new_ptr;
@@ -380,7 +377,7 @@ static void ArenaCheck(ArenaT *ar, int verbose) {
   int prevfree = 0;
   unsigned freeMem = 0, dangling = 0;
 
-  CriticalEnter();
+  IntrDisable();
 
   Msg("Arena: $%08lx - $%08lx [$%x]\n",
       (uintptr_t)ar->start, (uintptr_t)ar->end, ar->attributes);
@@ -415,7 +412,7 @@ static void ArenaCheck(ArenaT *ar, int verbose) {
 
   Assert(dangling == 0 && "Dangling free blocks!");
 
-  CriticalLeave();
+  IntrEnable();
 }
 
 static ArenaT *ArenaOf(void *ptr) {

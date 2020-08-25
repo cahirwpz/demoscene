@@ -13,7 +13,9 @@ typedef TAILQ_HEAD(, Task) TaskListT;
 #define TS_BLOCKED 1   /* on blocked list */
 #define TS_SUSPENDED 2 /* doesn't belong to any list */
 
-/* Lower event bits map to hardware interrupts:
+/* Task event flags.
+ *
+ * Lower event bits map to hardware interrupts:
  * - 13...0 coming from custom chipset,
  * - 18...14 coming from CIA A,
  * - 23...19 coming from CIA B.

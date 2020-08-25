@@ -24,6 +24,12 @@ typedef enum {
 #define SR_S __BIT(13) /* Supervisor Mode */
 #define SR_T __BIT(15) /* Trace Mode */
 
+/* Interrupt priority level. If current IPL is greater than 0 then processor is
+ * running in interrupt context. Otherwise is running in task context. */
+#define IPL(x) (((x) & 7) << 8)
+#define IPL_MAX IPL(7)
+#define IPL_NONE IPL(0)
+
 extern u_char CpuModel;
 
 /* Read Vector Base Register (68010 and above only) */
@@ -59,9 +65,9 @@ static inline void CpuIntrEnable(void) {
   asm volatile("\tand.w\t#0xf8ff,%sr\n");
 }
 
-/* Returns if caller is running with all interrupts disabled. */
-static inline int CpuIntrDisabled(void) {
-  return (GetSR() & 0x0700) == 0x0700;
+/* Returns current interrupt priority level. */
+static inline u_short GetIPL(void) {
+  return GetSR() & SR_IM;
 }
 
 /* Code running in interrupt context may be interrupted on M68000 by higher
