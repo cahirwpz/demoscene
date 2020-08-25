@@ -8,6 +8,8 @@
 #define SEEK_CUR 1
 #define SEEK_END 2
 
+#define O_NONBLOCK 1
+
 typedef struct File FileT;
 
 typedef int (*FileReadT)(FileT *f, void *buf, u_int nbyte);
@@ -33,6 +35,6 @@ int FileGetChar(FileT *f);
 void FilePrintf(FileT *f, const char *fmt, ...);
 
 FileT *MemoryOpen(const void *buf, u_int nbyte);
-FileT *SerialOpen(u_int baud);
+FileT *SerialOpen(u_int baud, u_int flags);
 
 #endif

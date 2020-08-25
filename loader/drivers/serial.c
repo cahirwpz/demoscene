@@ -18,6 +18,7 @@ typedef struct {
 
 struct File {
   FileOpsT *ops;
+  u_int flags;
   CharQueueT sendq[1];
   CharQueueT recvq[1];
 };
@@ -42,45 +43,53 @@ static int _PopChar(CharQueueT *queue) {
   return result;
 }
 
-static void PushChar(CharQueueT *queue, u_char data) {
+static void PushChar(CharQueueT *queue, u_char data, u_int flags) {
   /* If send queue and serdat register are empty,
    * then push out first character directly. */
   IntrDisable();
   if (queue->used == 0 && custom->serdatr & SERDATF_TBE) {
     custom->serdat = data | 0x100;
   } else {
-    while (queue->used == QUEUELEN)
+    while (queue->used == QUEUELEN && !(flags & O_NONBLOCK))
       TaskWait(INTF_TBE);
     _PushChar(queue, data);
   }
   IntrEnable();
 }
 
-static int PopChar(CharQueueT *queue) {
+static int PopChar(CharQueueT *queue, u_int flags) {
   int result;
   IntrDisable();
-  while ((result = _PopChar(queue)) < 0)
+  for (;;) {
+    result = _PopChar(queue);
+    if (result >= 0 || flags & O_NONBLOCK)
+      break;
     TaskWait(INTF_RBF);
+  }
   IntrEnable();
   return result;
 }
 
-static void SendIntHandler(CharQueueT *sendq) {
+static void SendIntHandler(FileT *f) {
+  CharQueueT *sendq = f->sendq;
   int data;
   ClearIRQ(INTF_TBE);
   data = _PopChar(sendq);
   if (data >= 0) {
     custom->serdat = data | 0x100;
-    TaskNotifyISR(INTF_TBE);
+    if (!(f->flags & O_NONBLOCK))
+      TaskNotifyISR(INTF_TBE);
   }
 }
 
-static void RecvIntHandler(CharQueueT *recvq) {
+static void RecvIntHandler(FileT *f) {
+  CharQueueT *recvq = f->recvq;
   u_short code = custom->serdatr;
   ClearIRQ(INTF_RBF);
   if (code & SERDATF_RBF) {
     _PushChar(recvq, code);
-    TaskNotifyISR(INTF_RBF);
+    if (!(f->flags & O_NONBLOCK))
+      TaskNotifyISR(INTF_RBF);
   }
 }
 
@@ -95,7 +104,7 @@ static FileOpsT SerialOps = {
   .close = SerialClose
 };
 
-FileT *SerialOpen(u_int baud) {
+FileT *SerialOpen(u_int baud, u_int flags) {
   static FileT *f = NULL;
 
   IntrDisable();
@@ -103,11 +112,12 @@ FileT *SerialOpen(u_int baud) {
   if (f == NULL) {
     f = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
     f->ops = &SerialOps;
+    f->flags = flags;
 
     custom->serper = CLOCK / baud - 1;
 
-    SetIntVector(TBE, (IntHandlerT)SendIntHandler, f->sendq);
-    SetIntVector(RBF, (IntHandlerT)RecvIntHandler, f->recvq);
+    SetIntVector(TBE, (IntHandlerT)SendIntHandler, f);
+    SetIntVector(RBF, (IntHandlerT)RecvIntHandler, f);
 
     ClearIRQ(INTF_TBE | INTF_RBF);
     EnableINT(INTF_TBE | INTF_RBF);
@@ -134,9 +144,9 @@ static int SerialWrite(FileT *f, const void *_buf, u_int nbyte) {
 
   for (i = 0; i < nbyte; i++) {
     u_char data = *buf++;
-    PushChar(f->sendq, data);
+    PushChar(f->sendq, data, f->flags);
     if (data == '\n')
-      PushChar(f->sendq, '\r');
+      PushChar(f->sendq, '\r', f->flags);
   }
 
   return nbyte;
@@ -147,7 +157,7 @@ static int SerialRead(FileT *f, void *_buf, u_int nbyte) {
   u_int i = 0;
 
   while (i < nbyte) {
-    buf[i] = PopChar(f->recvq);
+    buf[i] = PopChar(f->recvq, f->flags);
     if (buf[i++] == '\n')
       break;
   }
