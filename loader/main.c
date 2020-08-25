@@ -26,7 +26,30 @@ void TaskWaitVBlank(void) {
   IntrEnable();
 }
 
+#define BGTASK 0
+
+#if BGTASK
+static void BgLoop(__unused void *ptr) {
+  Log("Inside background task!\n");
+  for (;;) {
+    custom->color[0] = 0xff0;
+  }
+}
+#endif
+
+static void StartBgTask(void) {
+#if BGTASK
+  static __aligned(8) char stack[256];
+  static TaskT BgTask;
+
+  TaskInit(&BgTask, "background", stack, sizeof(stack));
+  TaskRun(&BgTask, 1, BgLoop, NULL);
+#endif
+}
+
 int main(void) {
+  StartBgTask();
+
   AddIntServer(VertBlankChain, VertBlankWakeup);
 
   EffectLoad(&Effect);

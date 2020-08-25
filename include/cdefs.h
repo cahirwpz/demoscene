@@ -12,6 +12,8 @@
 #define __constfunc __attribute__((const))
 #define __packed __attribute__((packed))
 #define __noreturn __attribute__((noreturn))
+#undef __aligned
+#define __aligned(x) __attribute__((aligned(x)))
 
 #define __data_chip __attribute__((section(".datachip")))
 #define __data_bss __attribute__((section(".bsschip")))
