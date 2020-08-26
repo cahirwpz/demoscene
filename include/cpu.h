@@ -32,25 +32,6 @@ typedef enum {
 
 extern u_char CpuModel;
 
-/* Read Vector Base Register (68010 and above only) */
-static inline void *GetVBR(void) {
-  void *vbr;
-  asm volatile("\tmovec\t%%vbr,%0\n" : "=d"(vbr));
-  return vbr;
-}
-
-/* Read whole Status Register (privileged instruction on 68010 and above) */
-static inline u_short GetSR(void) {
-  u_short sr;
-  asm volatile("\tmove.w\t%%sr,%0\n" : "=d"(sr));
-  return sr;
-}
-
-/* Read whole Status Register (privileged instruction on 68010 and above) */
-static inline void SetSR(u_short sr) {
-  asm volatile("\tmove.w\t%0,%%sr\n" :: "di"(sr));
-}
-
 /* Make the processor wait for interrupt. */
 static inline void CpuWait(void) {
   asm volatile("\tstop\t#0x2000\n");
@@ -65,9 +46,12 @@ static inline void CpuIntrEnable(void) {
   asm volatile("\tand.w\t#0xf8ff,%sr\n");
 }
 
-/* Returns current interrupt priority level. */
+/* Returns current interrupt priority level. Reads whole Status Register
+ * (it's privileged instruction on 68010 and above). */
 static inline u_short GetIPL(void) {
-  return GetSR() & SR_IM;
+  u_short sr;
+  asm volatile("\tmove.w\t%%sr,%0\n" : "=d"(sr));
+  return sr & SR_IM;
 }
 
 /* Code running in interrupt context may be interrupted on M68000 by higher
