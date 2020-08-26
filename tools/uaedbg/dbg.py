@@ -64,7 +64,10 @@ class UaeDebugger():
                 _, sl = debuginfo.find_line(pc)
                 for n in range(sl.line - 2, sl.line + 3):
                     indicator = ' >'[n == sl.line]
-                    print('{} {:4d} {}'.format(indicator, n, sl.source[n]))
+                    try:
+                        print('{} {:4d} {}'.format(indicator, n, sl.source[n]))
+                    except IndexError:
+                        pass
             except KeyError:
                 pass
 
