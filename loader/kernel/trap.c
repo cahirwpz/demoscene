@@ -17,7 +17,7 @@ static const char *const trapname[T_NTRAPS] = {
 
 void TrapHandler(TrapFrameT *frame) {
   short memflt = frame->trapnum == T_BUSERR || frame->trapnum == T_ADDRERR;
-  uint32_t pc, sp;
+  u_int pc, sp;
   u_short sr;
   short supervisor, trap;
 
@@ -66,7 +66,7 @@ void TrapHandler(TrapFrameT *frame) {
   /* clang-format on */
 
   if (memflt) {
-    uint32_t addr;
+    u_int addr;
     short data, read;
 
     if (CpuModel > CPU_68000) {
