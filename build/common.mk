@@ -6,7 +6,7 @@ DIR := $(patsubst $(TOPDIR)%,%,$(realpath $(CURDIR)))
 DIR := $(patsubst /%,%/,$(DIR))
 
 # Compiler tools & flags definitions
-CC	:= m68k-amigaos-gcc -ggdb3 -ffreestanding -noixemul 
+CC	:= m68k-amigaos-gcc -ggdb3 -ffreestanding -fno-common -noixemul
 VASM	:= vasm -quiet
 
 ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or
