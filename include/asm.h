@@ -7,8 +7,6 @@
 #define _L(name) _##name
 #endif
 
-#define __IMMEDIATE #
-
 #define ENTRY(name)                                                            \
   .text;                                                                       \
   .even;                                                                       \
@@ -20,9 +18,6 @@
 
 #define STRONG_ALIAS(alias, sym)                                               \
   .globl _L(alias);                                                            \
-  _L(alias) = _L(sym)
-#define WEAK_ALIAS(alias, sym)                                                 \
-  .weak _L(alias);                                                             \
   _L(alias) = _L(sym)
 
 #endif
