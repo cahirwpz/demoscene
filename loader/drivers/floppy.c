@@ -1,9 +1,9 @@
-#include "debug.h"
-#include "interrupt.h"
-#include "memory.h"
-#include "custom.h"
-#include "cia.h"
-#include "floppy.h"
+#include <debug.h>
+#include <interrupt.h>
+#include <memory.h>
+#include <custom.h>
+#include <timer.h>
+#include <floppy.h>
 #include <task.h>
 
 #define DEBUG 0
