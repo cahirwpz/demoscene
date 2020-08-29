@@ -9,7 +9,7 @@ DIR := $(patsubst /%,%/,$(DIR))
 CC	:= m68k-amigaos-gcc -ggdb3 -ffreestanding -fno-common -noixemul
 VASM	:= vasm -quiet
 
-ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or
+ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-ggdb3
 VASMFLAGS	+= -m68010 -quiet
 LDFLAGS	:= -g -m68000 -msmall-code -nostartfiles -nostdlib -nodefaultlibs
 CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
