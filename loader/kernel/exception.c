@@ -1,4 +1,3 @@
-#include <cpu.h>
 #include <interrupt.h>
 #include <exception.h>
 #include <trap.h>

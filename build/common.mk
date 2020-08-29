@@ -6,10 +6,10 @@ DIR := $(patsubst $(TOPDIR)%,%,$(realpath $(CURDIR)))
 DIR := $(patsubst /%,%/,$(DIR))
 
 # Compiler tools & flags definitions
-CC	:= m68k-amigaos-gcc -ggdb3 -ffreestanding -noixemul 
+CC	:= m68k-amigaos-gcc -ggdb3 -ffreestanding -fno-common -noixemul
 VASM	:= vasm -quiet
 
-ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or
+ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-ggdb3
 VASMFLAGS	+= -m68010 -quiet
 LDFLAGS	:= -g -m68000 -msmall-code -nostartfiles -nostdlib -nodefaultlibs
 CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
@@ -74,21 +74,21 @@ CLEAN-FILES += $(SOURCES:%=%~)
 
 .%.D: %.c
 	@echo "[DEP] $(DIR)$@"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -M -MG $< | \
+	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -M -MG $< | \
                 sed -e 's,$(notdir $*).o,$*.o,g' > $@
 
 .%.D: %.S
 	@echo "[DEP] $(DIR)$@"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -M -MG $< | \
+	$(CC) $(ASFLAGS) $(ASFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -M -MG $< | \
                 sed -e 's,$(notdir $*).o,$*.o,g' > $@
 
 %.o: %.c
 	@echo "[CC] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $<
 
 %.o: %.S
 	@echo "[AS] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
+	$(CC) $(ASFLAGS) $(ASFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $<
 
 %.o: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"

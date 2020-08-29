@@ -66,7 +66,7 @@ void Loader(BootDataT *bd) {
   EnableINT(INTF_INTEN);
 
   /* Lower interrupt priority level to nominal. */
-  SetSR(SR_S);
+  SetIPL(IPL_NONE);
 
   TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
   InitFloppy();
