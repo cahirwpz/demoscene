@@ -8,7 +8,7 @@ SOURCES := \
 	inflate.S \
 	sintab.c \
 	sort.c \
-	uae.asm
+	uae.S
 
 SOURCES_GEN := sintab.c
 
