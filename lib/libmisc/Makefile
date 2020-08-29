@@ -6,7 +6,6 @@ SOURCES := \
 	debug-putchar.S \
 	fx.c \
 	inflate.asm \
-	lzo.c \
 	sintab.c \
 	sort.c \
 	uae.asm
