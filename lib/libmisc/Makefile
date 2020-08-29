@@ -5,12 +5,14 @@ SOURCES := \
 	debug.c \
 	debug-putchar.S \
 	fx.c \
-	inflate.asm \
+	inflate.S \
 	sintab.c \
 	sort.c \
 	uae.asm
 
 SOURCES_GEN := sintab.c
+
+CPPFLAGS.inflate := -DM68020=0
 
 include $(TOPDIR)/build/lib.mk
 
