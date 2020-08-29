@@ -74,21 +74,21 @@ CLEAN-FILES += $(SOURCES:%=%~)
 
 .%.D: %.c
 	@echo "[DEP] $(DIR)$@"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -M -MG $< | \
+	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -M -MG $< | \
                 sed -e 's,$(notdir $*).o,$*.o,g' > $@
 
 .%.D: %.S
 	@echo "[DEP] $(DIR)$@"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -M -MG $< | \
+	$(CC) $(ASFLAGS) $(ASFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -M -MG $< | \
                 sed -e 's,$(notdir $*).o,$*.o,g' > $@
 
 %.o: %.c
 	@echo "[CC] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $<
 
 %.o: %.S
 	@echo "[AS] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
+	$(CC) $(ASFLAGS) $(ASFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $<
 
 %.o: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
