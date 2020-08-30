@@ -6,35 +6,38 @@ DIR := $(patsubst $(TOPDIR)%,%,$(realpath $(CURDIR)))
 DIR := $(patsubst /%,%/,$(DIR))
 
 # Compiler tools & flags definitions
-CC	:= m68k-amigaos-gcc -ggdb3 -ffreestanding -fno-common -noixemul
+CC	:= m68k-amigaos-gcc
+CPP	:= m68k-amigaos-cpp
+LD	:= m68k-amigaos-ld
+AR	:= m68k-amigaos-ar
+RANLIB	:= m68k-amigaos-ranlib
 VASM	:= vasm -quiet
 
 ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-ggdb3
-VASMFLAGS	+= -m68010 -quiet
-LDFLAGS	:= -g -m68000 -msmall-code -nostartfiles -nostdlib -nodefaultlibs
-CFLAGS	= $(LDFLAGS) $(OFLAGS) $(WFLAGS) $(DFLAGS)
+VASMFLAGS	+= -m68010 -quiet -I$(TOPDIR)/include
+LDFLAGS	:= -amiga-debug-hunk
+CFLAGS	= -ggdb3 -ffreestanding -fno-common $(OFLAGS) $(WFLAGS)
+OFLAGS	:= -m68000 -msmall-code -mregparm=2
 # The '-O2' option does not turn on optimizations '-funroll-loops',
 # '-funroll-all-loops' and `-fstrict-aliasing'.
-OFLAGS	:= -O2 -fomit-frame-pointer -fstrength-reduce -mregparm=2
+OFLAGS	+= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	:= -Wall -W -Werror -Wundef -Wsign-compare -Wredundant-decls
 WFLAGS	+= -Wnested-externs -Wwrite-strings -Wstrict-prototypes
-DFLAGS	+= -DUAE
+CPPFLAGS += -I$(TOPDIR)/include
+
+# Don't reload library base for each call
+CPPFLAGS += -D__CONSTLIBBASEDECL__=const
 
 # Default configuration
 FRAMES_PER_ROW ?= 6
 
-DFLAGS	+= -DFRAMES_PER_ROW=$(FRAMES_PER_ROW)
+CPPFLAGS += -DUAE -DFRAMES_PER_ROW=$(FRAMES_PER_ROW)
 
 # Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
 ifneq ($(VERBOSE), 1)
 .SILENT:
 QUIET := --quiet
 endif
-
-# Don't reload library base for each call.
-DFLAGS += -D__CONSTLIBBASEDECL__=const
-
-CPPFLAGS += -I$(TOPDIR)/include
 
 # Common tools definition
 CP := cp -a
@@ -74,12 +77,12 @@ CLEAN-FILES += $(SOURCES:%=%~)
 
 .%.D: %.c
 	@echo "[DEP] $(DIR)$@"
-	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -M -MG $< | \
+	$(CPP) $(CPPFLAGS) $(CPPFLAGS.$*) -M -MG $< | \
                 sed -e 's,$(notdir $*).o,$*.o,g' > $@
 
 .%.D: %.S
 	@echo "[DEP] $(DIR)$@"
-	$(CC) $(ASFLAGS) $(ASFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -M -MG $< | \
+	$(CPP) $(CPPFLAGS) $(CPPFLAGS.$*) -M -MG $< | \
                 sed -e 's,$(notdir $*).o,$*.o,g' > $@
 
 %.o: %.c
@@ -92,7 +95,7 @@ CLEAN-FILES += $(SOURCES:%=%~)
 
 %.o: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
-	$(VASM) -Fhunk $(CPPFLAGS) $(VASMFLAGS) -o $@ $<
+	$(VASM) -Fhunk $(VASMFLAGS) -o $@ $<
 
 %.bin: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
