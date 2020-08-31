@@ -28,6 +28,10 @@ func ReadFile(path string) (hunks []Hunk, err error) {
 		switch hunkId {
 		case HUNK_HEADER:
 			hunk = readHunkHeader(file)
+		case HUNK_UNIT:
+			hunk = readHunkUnit(file)
+		case HUNK_NAME:
+			hunk = readHunkUnit(file)
 		case HUNK_CODE:
 			hunk = readHunkCode(file)
 		case HUNK_DATA:
@@ -43,7 +47,7 @@ func ReadFile(path string) (hunks []Hunk, err error) {
 		case HUNK_END:
 			hunk = HunkEnd{}
 		default:
-			panic(HunkName[hunkId])
+			panic(HunkNameMap[hunkId])
 		}
 		hunks = append(hunks, hunk)
 	}

@@ -65,11 +65,11 @@ const (
 	HUNKF_MASK     = HUNKF_ADVISORY | HUNKF_CHIP | HUNKF_FAST
 )
 
-var HunkName map[uint32]string
-var HunkExtName map[uint32]string
+var HunkNameMap map[uint32]string
+var HunkExtNameMap map[uint32]string
 
 func init() {
-	HunkName = map[uint32]string{
+	HunkNameMap = map[uint32]string{
 		HUNK_UNIT:         "HUNK_UNIT",
 		HUNK_NAME:         "HUNK_NAME",
 		HUNK_CODE:         "HUNK_CODE",
@@ -95,7 +95,7 @@ func init() {
 		HUNK_ABSRELOC16:   "HUNK_ABSRELOC16",
 	}
 
-	HunkExtName = map[uint32]string{
+	HunkExtNameMap = map[uint32]string{
 		EXT_SYMB:      "EXT_SYMB",
 		EXT_DEF:       "EXT_DEF",
 		EXT_ABS:       "EXT_ABS",
@@ -135,6 +135,10 @@ func readData(r io.Reader, size uint32) (x []byte) {
 		panic("no data")
 	}
 	return
+}
+
+func skipBytes(r io.Reader, howmany int) {
+	readData(r, uint32(howmany))
 }
 
 func readString(r io.Reader) (x string) {
