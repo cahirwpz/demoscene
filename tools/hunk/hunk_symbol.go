@@ -1,14 +1,18 @@
 package hunk
 
-import "io"
+import (
+	"io"
+	"sort"
+	"text/template"
+)
 
 type Symbol struct {
-	name   string
-	offset uint32
+	Offset uint32
+	Name   string
 }
 
 type HunkSymbol struct {
-	symbol []Symbol
+	Symbol []Symbol
 }
 
 func readHunkSymbol(r io.Reader) (h HunkSymbol) {
@@ -18,11 +22,29 @@ func readHunkSymbol(r io.Reader) (h HunkSymbol) {
 			break
 		}
 		offset := readLong(r)
-		h.symbol = append(h.symbol, (Symbol{name, offset}))
+		h.Symbol = append(h.Symbol, (Symbol{offset, name}))
 	}
+	sort.Slice(h.Symbol, func(i, j int) bool {
+		return h.Symbol[i].Offset < h.Symbol[j].Offset
+	})
 	return
 }
 
+const (
+	sHunkSymbol = `
+HUNK_SYMBOL
+{{- range .Symbol }}
+  {{printf "0x%08x" .Offset }} {{ .Name }}
+{{- end }}
+`
+)
+
+var tHunkSymbol *template.Template
+
+func init() {
+	tHunkSymbol = parseTemplate(sHunkSymbol)
+}
+
 func (h HunkSymbol) String() string {
-	return "HUNK_SYMBOL\n"
+	return executeTemplate(h, tHunkSymbol)
 }
