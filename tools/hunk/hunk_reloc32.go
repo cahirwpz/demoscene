@@ -1,16 +1,21 @@
 package hunk
 
 import (
+	"fmt"
 	"io"
-	"text/template"
+	"strings"
 )
 
+type Reloc32 struct {
+	HunkRef uint32
+	Offsets []uint32
+}
+
 type HunkReloc32 struct {
-	Reloc map[uint32][]uint32 /* #hunk -> array of offsets */
+	Reloc []Reloc32
 }
 
 func readHunkReloc32(r io.Reader) (h HunkReloc32) {
-	h.Reloc = make(map[uint32][]uint32)
 	for {
 		count := readLong(r)
 		if count == 0 {
@@ -21,26 +26,20 @@ func readHunkReloc32(r io.Reader) (h HunkReloc32) {
 		for i := 0; i < int(count); i++ {
 			offsets[i] = readLong(r)
 		}
-		h.Reloc[hunkRef] = offsets
+		h.Reloc = append(h.Reloc, Reloc32{hunkRef, offsets})
 	}
 	return
 }
 
-const (
-	sHunkReloc32 = `
-HUNK_RELOC32
-{{- range $k, $v := .Reloc }}
-  {{ $k }} : {{ $v }}
-{{- end }}
-`
-)
-
-var tHunkReloc32 *template.Template
-
-func init() {
-	tHunkReloc32 = parseTemplate(sHunkReloc32)
-}
-
 func (h HunkReloc32) String() string {
-	return executeTemplate(h, tHunkReloc32)
+	var sb strings.Builder
+	sb.WriteString("HUNK_RELOC32\n")
+	for _, r := range h.Reloc {
+		fmt.Fprintf(&sb, "  %d: [%d", r.HunkRef, r.Offsets[0])
+		for _, o := range r.Offsets[1:] {
+			fmt.Fprintf(&sb, ", %d", o)
+		}
+		sb.WriteString("]\n")
+	}
+	return sb.String()
 }

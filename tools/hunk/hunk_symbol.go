@@ -1,9 +1,10 @@
 package hunk
 
 import (
+	"fmt"
 	"io"
 	"sort"
-	"text/template"
+	"strings"
 )
 
 type Symbol struct {
@@ -30,21 +31,11 @@ func readHunkSymbol(r io.Reader) (h HunkSymbol) {
 	return
 }
 
-const (
-	sHunkSymbol = `
-HUNK_SYMBOL
-{{- range .Symbol }}
-  {{printf "0x%08x" .Offset }} {{ .Name }}
-{{- end }}
-`
-)
-
-var tHunkSymbol *template.Template
-
-func init() {
-	tHunkSymbol = parseTemplate(sHunkSymbol)
-}
-
 func (h HunkSymbol) String() string {
-	return executeTemplate(h, tHunkSymbol)
+	var sb strings.Builder
+	sb.WriteString("HUNK_SYMBOL\n")
+	for _, s := range h.Symbol {
+		fmt.Fprintf(&sb, "  0x%08x %s\n", s.Offset, s.Name)
+	}
+	return sb.String()
 }
