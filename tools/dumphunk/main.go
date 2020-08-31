@@ -28,6 +28,6 @@ func main() {
 	}
 
 	for _, hunk := range hunks {
-		fmt.Printf("%s\n", hunk.Name())
+		fmt.Print(hunk)
 	}
 }

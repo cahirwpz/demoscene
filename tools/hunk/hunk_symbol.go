@@ -11,10 +11,6 @@ type HunkSymbol struct {
 	symbol []Symbol
 }
 
-func (h HunkSymbol) Name() string {
-	return "HUNK_SYMBOL"
-}
-
 func readHunkSymbol(r io.Reader) (h HunkSymbol) {
 	for {
 		name := readString(r)
@@ -25,4 +21,8 @@ func readHunkSymbol(r io.Reader) (h HunkSymbol) {
 		h.symbol = append(h.symbol, (Symbol{name, offset}))
 	}
 	return
+}
+
+func (h HunkSymbol) String() string {
+	return "HUNK_SYMBOL\n"
 }

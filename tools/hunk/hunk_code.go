@@ -1,17 +1,20 @@
 package hunk
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 type HunkCode struct {
-	code []byte
-}
-
-func (h HunkCode) Name() string {
-	return "HUNK_CODE"
+	Code []byte
 }
 
 func readHunkCode(r io.Reader) (h HunkCode) {
 	nlongs := readLong(r)
-	h.code = readData(r, nlongs*4)
+	h.Code = readData(r, nlongs*4)
 	return
+}
+
+func (h HunkCode) String() string {
+	return fmt.Sprintf("HUNK_CODE [%d bytes]\n", len(h.Code))
 }

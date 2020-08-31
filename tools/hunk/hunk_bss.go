@@ -1,16 +1,19 @@
 package hunk
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 type HunkBss struct {
-	size uint32
-}
-
-func (h HunkBss) Name() string {
-	return "HUNK_BSS"
+	Size uint32
 }
 
 func readHunkBss(r io.Reader) (h HunkBss) {
-	h.size = readLong(r)
+	h.Size = readLong(r)
 	return
+}
+
+func (h HunkBss) String() string {
+	return fmt.Sprintf("HUNK_BSS [%d bytes]\n", h.Size)
 }

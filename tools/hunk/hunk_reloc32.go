@@ -6,10 +6,6 @@ type HunkReloc32 struct {
 	reloc map[uint32][]uint32 /* #hunk -> array of offsets */
 }
 
-func (h HunkReloc32) Name() string {
-	return "HUNK_RELOC32"
-}
-
 func readHunkReloc32(r io.Reader) (h HunkReloc32) {
 	h.reloc = make(map[uint32][]uint32)
 	for {
@@ -25,4 +21,8 @@ func readHunkReloc32(r io.Reader) (h HunkReloc32) {
 		h.reloc[hunkRef] = offsets
 	}
 	return
+}
+
+func (h HunkReloc32) String() string {
+	return "HUNK_RELOC32\n"
 }

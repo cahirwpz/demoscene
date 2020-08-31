@@ -10,10 +10,6 @@ type HunkHeader struct {
 	specifiers []uint32
 }
 
-func (h HunkHeader) Name() string {
-	return "HUNK_HEADER"
-}
-
 func readHunkHeader(r io.Reader) (h HunkHeader) {
 	h.residents = readStringArray(r)
 	h.hunks = readLong(r)
@@ -25,4 +21,8 @@ func readHunkHeader(r io.Reader) (h HunkHeader) {
 		h.specifiers[i] = readLong(r)
 	}
 	return
+}
+
+func (h HunkHeader) String() string {
+	return "HUNK_HEADER\n"
 }

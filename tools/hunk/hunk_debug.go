@@ -3,15 +3,15 @@ package hunk
 import "io"
 
 type HunkDebug struct {
-	data []byte
-}
-
-func (h HunkDebug) Name() string {
-	return "HUNK_DEBUG"
+	Data []byte
 }
 
 func readHunkDebug(r io.Reader) (h HunkDebug) {
 	nlongs := readLong(r)
-	h.data = readData(r, nlongs*4)
+	h.Data = readData(r, nlongs*4)
 	return
+}
+
+func (h HunkDebug) String() string {
+	return "HUNK_DEBUG\n"
 }

@@ -155,5 +155,5 @@ func readStringArray(r io.Reader) (x []string) {
 }
 
 type Hunk interface {
-	Name() string
+	String() string
 }
