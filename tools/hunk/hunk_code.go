@@ -1,6 +1,7 @@
 package hunk
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io"
 )
@@ -16,5 +17,5 @@ func readHunkCode(r io.Reader) (h HunkCode) {
 }
 
 func (h HunkCode) String() string {
-	return fmt.Sprintf("HUNK_CODE [%d bytes]\n", len(h.Code))
+	return fmt.Sprintf("HUNK_CODE [%d bytes]\n%s", len(h.Code), hex.Dump(h.Code))
 }
