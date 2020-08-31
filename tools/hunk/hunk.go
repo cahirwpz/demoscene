@@ -139,6 +139,11 @@ func readString(r io.Reader) (x string) {
 	}
 
 	buf := readData(r, nlongs*4)
+	for i := 0; i < int(nlongs*4); i++ {
+		if buf[i] == 0 {
+			return string(buf[:i])
+		}
+	}
 	return string(buf)
 }
 
