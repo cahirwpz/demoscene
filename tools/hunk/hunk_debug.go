@@ -51,6 +51,10 @@ func readHunkDebug(r io.Reader) (h HunkDebug) {
 	return
 }
 
+func (h HunkDebug) Type() uint32 {
+	return HUNK_DEBUG
+}
+
 func (h HunkDebug) String() string {
 	var sb strings.Builder
 	sb.WriteString("HUNK_DEBUG\n")

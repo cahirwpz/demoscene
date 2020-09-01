@@ -31,6 +31,10 @@ func readHunkReloc32(r io.Reader) (h HunkReloc32) {
 	return
 }
 
+func (h HunkReloc32) Type() uint32 {
+	return HUNK_RELOC32
+}
+
 func (h HunkReloc32) String() string {
 	var sb strings.Builder
 	sb.WriteString("HUNK_RELOC32\n")

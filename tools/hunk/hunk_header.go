@@ -27,6 +27,10 @@ func readHunkHeader(r io.Reader) (h HunkHeader) {
 	return
 }
 
+func (h HunkHeader) Type() uint32 {
+	return HUNK_HEADER
+}
+
 func (h HunkHeader) String() string {
 	var sb strings.Builder
 	sb.WriteString("HUNK_HEADER\n")

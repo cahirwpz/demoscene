@@ -5,6 +5,8 @@ import (
 	"io"
 )
 
+/* Refer to The AmigaDOS Manual (3rd Edition), chapter 10. */
+
 const (
 	HUNK_UNIT         = 999
 	HUNK_NAME         = 1000
@@ -170,4 +172,5 @@ func readStringArray(r io.Reader) (x []string) {
 
 type Hunk interface {
 	String() string
+	Type() uint32
 }

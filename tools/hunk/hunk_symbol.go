@@ -31,6 +31,10 @@ func readHunkSymbol(r io.Reader) (h HunkSymbol) {
 	return
 }
 
+func (h HunkSymbol) Type() uint32 {
+	return HUNK_SYMBOL
+}
+
 func (h HunkSymbol) String() string {
 	var sb strings.Builder
 	sb.WriteString("HUNK_SYMBOL\n")
