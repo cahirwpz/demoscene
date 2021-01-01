@@ -19,6 +19,10 @@ func readHunkData(r io.Reader) HunkBin {
 	return HunkBin{HUNK_DATA, readData(r, readLong(r)*4)}
 }
 
+func readHunkDebug(r io.Reader) HunkBin {
+	return HunkBin{HUNK_DEBUG, readData(r, readLong(r)*4)}
+}
+
 func (h HunkBin) Type() uint32 {
 	return h.htype
 }

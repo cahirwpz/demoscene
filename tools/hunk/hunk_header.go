@@ -15,7 +15,7 @@ type HunkHeader struct {
 }
 
 func readHunkHeader(r io.Reader) (h HunkHeader) {
-	h.Residents = readStringArray(r)
+	h.Residents = readArrayOfString(r)
 	h.Hunks = readLong(r)
 	h.First = readLong(r)
 	h.Last = readLong(r)

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type HunkDebug struct {
+type HunkDebug2 struct {
 	SymTab []Stab
 	StrTab []byte
 }
@@ -24,7 +24,7 @@ func parseStringTable(data []byte) []string {
 	return strtab
 }
 
-func readHunkDebug(r io.Reader) (h HunkDebug) {
+func readHunkDebug2(r io.Reader, name string) (h HunkDebug2) {
 	/* nlongs := readLong(r) */
 	skipBytes(r, 4)
 	debugger := readLong(r)
@@ -36,6 +36,7 @@ func readHunkDebug(r io.Reader) (h HunkDebug) {
 	 * [pad bytes]
 	 */
 	if debugger != 0x10b {
+		fmt.Printf("%08x [%s]\n", debugger, name)
 		panic("unknown debugger")
 	}
 	symtabSize := readLong(r)
@@ -51,11 +52,11 @@ func readHunkDebug(r io.Reader) (h HunkDebug) {
 	return
 }
 
-func (h HunkDebug) Type() uint32 {
+func (h HunkDebug2) Type() uint32 {
 	return HUNK_DEBUG
 }
 
-func (h HunkDebug) String() string {
+func (h HunkDebug2) String() string {
 	var sb strings.Builder
 	sb.WriteString("HUNK_DEBUG\n")
 	for i, s := range h.SymTab {
