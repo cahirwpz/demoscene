@@ -25,6 +25,10 @@ Patterns Order: [{{- range .PatternsOrder}}{{.}} {{end}}]
 {{- end}}
 {{- end}}
 {{end}}
+ ---------=[ Samples ]=---------
+{{range $idx, $sam := .Samples}}
+{{- printf "%3d %-22s %5d" $idx $sam.Name (len $sam.Data)}}
+{{end}}
 `
 
 var PeriodMap = map[uint16]NoteInfo{
@@ -147,6 +151,10 @@ type rawSample struct {
 	RepeatLength uint16 // Words. Multiply by two to get replen in bytes.
 }
 
+func (s rawSample) getName() string {
+	return string(bytes.TrimRight(s.Name[:], "\x00"))
+}
+
 type Module struct {
 	Name          string
 	Type          string
@@ -233,7 +241,7 @@ func (n NoteName) ToString() string {
 	case B:
 		return "B-"
 	default:
-		return "er"
+		panic("Unknown note!")
 	}
 }
 
@@ -266,14 +274,14 @@ func (m Module) exportReport(baseName string) (err error) {
 	return
 }
 
-func readPatterns(highestPattern uint8, r io.ReadSeeker) (patterns []Pattern, err error) {
+func readPatterns(highestPattern int, r io.ReadSeeker) (patterns []Pattern, err error) {
 	_, err = r.Seek(1084, 0)
 	if err != nil {
 		return nil, err
 	}
-	for i := uint8(0); i < highestPattern; i++ {
+	for i := 0; i < highestPattern; i++ {
 		var notes []NoteData
-		for patRow := uint8(0); patRow < 64; patRow++ {
+		for patRow := 0; patRow < 64; patRow++ {
 			notesData := make([]noteRaw, 4)
 			err = binary.Read(r, binary.BigEndian, &notesData)
 			if err != nil {
@@ -282,16 +290,16 @@ func readPatterns(highestPattern uint8, r io.ReadSeeker) (patterns []Pattern, er
 			for idx, nd := range notesData {
 				note := nd.ToNote()
 				note.Channel = uint8(idx)
-				note.Row = patRow
+				note.Row = uint8(patRow)
 				notes = append(notes, note)
 			}
 		}
-		patterns = append(patterns, Pattern{Notes: notes, Index: int(i)})
+		patterns = append(patterns, Pattern{Notes: notes, Index: i})
 	}
 	return patterns, err
 }
 
-func modFromReader(r io.ReadSeeker) (mod Module, err error) {
+func modFromReader(r io.ReadSeeker) (mod *Module, err error) {
 	var rawMod rawModule
 
 	err = binary.Read(r, binary.BigEndian, &rawMod)
@@ -299,15 +307,10 @@ func modFromReader(r io.ReadSeeker) (mod Module, err error) {
 		return mod, err
 	}
 
-	mod.Name = rawMod.getName()
-	mod.Type = string(rawMod.Magic[:])
-	mod.PatternsOrder = rawMod.PatternsOrder[:rawMod.Length]
-
-	highestPattern := uint8(0)
-
+	highestPattern := 0
 	for _, i := range rawMod.PatternsOrder {
-		if i > highestPattern {
-			highestPattern = i
+		if int(i) > highestPattern {
+			highestPattern = int(i)
 		}
 	}
 
@@ -315,7 +318,34 @@ func modFromReader(r io.ReadSeeker) (mod Module, err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	mod.PatternsData = patterns
+
+	var samples []Sample
+	for i := 0; i < 31; i++ {
+		var n int
+		rawSample := rawMod.Samples[i]
+		data := make([]uint8, rawSample.Length*2)
+		n, err = r.Read(data)
+		if err != nil || n != int(rawSample.Length*2) {
+			return nil, err
+		}
+		sample := Sample{
+			Name:         rawSample.getName(),
+			Data:         data,
+			Finetune:     rawSample.Finetune,
+			Volume:       rawSample.Volume,
+			RepeatOffset: rawSample.RepeatOffset * 2,
+			RepeatLength: rawSample.RepeatLength * 2,
+		}
+		samples = append(samples, sample)
+	}
+
+	mod = &Module{
+		Name:          rawMod.getName(),
+		Type:          string(rawMod.Magic[:]),
+		PatternsOrder: rawMod.PatternsOrder[:rawMod.Length],
+		PatternsData:  patterns,
+		Samples:       samples,
+	}
 
 	return mod, nil
 }
