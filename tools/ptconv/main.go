@@ -98,6 +98,10 @@ var PeriodMap = map[uint16]NoteInfo{
 	57:  {B, 4},
 }
 
+/*
+ * Raw binary (on disk) representation of Protracker module.
+ */
+
 type rawModule struct {
 	Name          [20]byte
 	Samples       [31]rawSample
@@ -111,9 +115,9 @@ func (s rawModule) getName() string {
 	return string(bytes.TrimRight(s.Name[:], "\x00"))
 }
 
-type noteRaw uint32
+type rawNote uint32
 
-func (n noteRaw) ToNote() (note NoteData) {
+func (n rawNote) ToNote() (note NoteData) {
 	sup := uint32(0xF0000000) & uint32(n) >> 28
 	per := uint32(0x0FFF0000) & uint32(n) >> 16
 	slo := uint32(0x0000F000) & uint32(n) >> 12
@@ -155,6 +159,10 @@ func (s rawSample) getName() string {
 	return string(bytes.TrimRight(s.Name[:], "\x00"))
 }
 
+/*
+ * Internal representation of Protracker module.
+ */
+
 type Module struct {
 	Name          string
 	Type          string
@@ -180,11 +188,13 @@ type NoteData struct {
 }
 
 func (nd NoteData) ToString() string {
-	if nd.Note == nil {
-		return fmt.Sprintf("  _  %02X %01X%02X ", nd.SampleNumber,
-			nd.Effect, nd.EffectParams)
+	var note string
+	if nd.Note != nil {
+		note = nd.Note.ToString()
+	} else {
+		note = " _ "
 	}
-	return fmt.Sprintf(" %s %02X %01X%02X ", nd.Note.ToString(),
+	return fmt.Sprintf(" %s %02X %01X%02X ", note,
 		nd.SampleNumber, nd.Effect, nd.EffectParams)
 }
 
@@ -282,7 +292,7 @@ func readPatterns(highestPattern int, r io.ReadSeeker) (patterns []Pattern, err 
 	for i := 0; i < highestPattern; i++ {
 		var notes []NoteData
 		for patRow := 0; patRow < 64; patRow++ {
-			notesData := make([]noteRaw, 4)
+			notesData := make([]rawNote, 4)
 			err = binary.Read(r, binary.BigEndian, &notesData)
 			if err != nil {
 				return nil, err
