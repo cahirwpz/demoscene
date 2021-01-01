@@ -14,10 +14,9 @@ import (
 
 var moduleReportTemplate = `Module Name: {{.Name}}
 Module Type: {{.Type}}
-Patterns Order:
-{{- range .PatternsOrder}}{{.}}, {{end }}
-Patterns Data: {{range $idx, $pat := .PatternsData}}
-Pattern: {{$idx}}
+Patterns Order: [{{- range .PatternsOrder}}{{.}} {{end}}]
+{{range $idx, $pat := .PatternsData}}
+ ---------------=[ Pattern {{printf "%2d" $idx}} ]=---------------
 {{- range $index, $note := $pat.Notes}}
 {{- if noteNewLine $note}}
 {{noteToString $note}}
@@ -302,7 +301,7 @@ func modFromReader(r io.ReadSeeker) (mod Module, err error) {
 
 	mod.Name = rawMod.getName()
 	mod.Type = string(rawMod.Magic[:])
-	mod.PatternsOrder = rawMod.PatternsOrder[:]
+	mod.PatternsOrder = rawMod.PatternsOrder[:rawMod.Length]
 
 	highestPattern := uint8(0)
 
