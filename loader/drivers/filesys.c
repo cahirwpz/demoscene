@@ -97,6 +97,9 @@ static FileT *NewFile(int length, int offset) {
 static FileEntryT *LookupFile(const char *path) {
   FileEntryT *fe = rootDir;
 
+  if (fe == NULL)
+    return NULL;
+
   do {
     if (strcmp(path, fe->name) == 0)
       return fe;
