@@ -10,6 +10,7 @@
 #include <proto/graphics.h>
 
 #include <boot.h>
+#include <cpu.h>
 #include <debug.h>
 
 #define CHIPMEM (512 * 1024)
@@ -29,28 +30,46 @@ static u_int oldCacheBits;
 
 /* Normally BootDataT is provided by the boot loader. Since we were launched
  * from AmigaOS we have to fill this structure and pass it to Loader. */
-#define BootDataSize(mr) (sizeof(BootDataT) + sizeof(MemRegionT) * (mr))
-static short _bootdata[BootDataSize(2) / sizeof(short)];
+static BootDataT BootData = {
+  .bd_hunk = NULL,
+  .bd_vbr = NULL,
+  .bd_cpumodel = CPU_68000,
+  .bd_stkbot = NULL,
+  .bd_stksz = 0,
+  .bd_nregions = 2,
+  .bd_region = {
+    {
+      .mr_lower = 0,
+      .mr_upper = 0,
+      .mr_attr = MEMF_PUBLIC,
+    },
+    {
+      .mr_lower = 0,
+      .mr_upper = 0,
+      .mr_attr = MEMF_CHIP,
+    }
+  }
+};
 
 /* Some shortcut macros. */
 #define ExecVer (SysBase->LibNode.lib_Version)
 
 BootDataT *SaveOS(void) {
   short kickVer, kickRev;
-  short cpu = 0;
+  CpuModelT cpu = CPU_68000;
 
   Log("[Startup] Save AmigaOS state.\n");
 
   if (SysBase->AttnFlags & AFF_68060)
-    cpu = 6;
+    cpu = CPU_68060;
   else if (SysBase->AttnFlags & AFF_68040)
-    cpu = 4;
+    cpu = CPU_68040;
   else if (SysBase->AttnFlags & AFF_68030)
-    cpu = 3;
+    cpu = CPU_68030;
   else if (SysBase->AttnFlags & AFF_68020)
-    cpu = 2;
+    cpu = CPU_68020;
   else if (SysBase->AttnFlags & AFF_68010)
-    cpu = 1;
+    cpu = CPU_68010;
 
   /* Based on WhichAmiga method. */
   {
@@ -104,7 +123,24 @@ BootDataT *SaveOS(void) {
   custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
   custom->intena = INTF_SETCLR | INTF_INTEN | INTF_SOFTINT;
 
-  return (BootDataT *)&_bootdata;
+  BootData.bd_vbr = NULL;
+  BootData.bd_cpumodel = cpu;
+
+  {
+    MemRegionT *mr = &BootData.bd_region[1];
+    uintptr_t ptr = (uintptr_t)AllocMem(CHIPMEM, mr->mr_attr);
+    mr->mr_lower = ptr;
+    mr->mr_upper = ptr + CHIPMEM;
+  }
+
+  {
+    MemRegionT *mr = &BootData.bd_region[0];
+    uintptr_t ptr = (uintptr_t)AllocMem(FASTMEM, MEMF_PUBLIC);
+    mr->mr_lower = ptr;
+    mr->mr_upper = ptr + FASTMEM;
+  }
+
+  return &BootData;
 }
 
 void RestoreOS(void) {
