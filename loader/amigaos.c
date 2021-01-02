@@ -20,6 +20,12 @@ extern struct Custom volatile _custom;
 /* We need graphics.library base in order to call some functions. */
 static struct GfxBase *__CONSTLIBBASEDECL__ GfxBase;
 
+static void WaitVBlank(void) {
+  const uint32_t line = 303;
+  uint32_t *vposr = (u_int *)&custom->vposr;
+  while ((*vposr & 0x1ff00) != ((line << 8) & 0x1ff00));
+}
+
 /* AmigaOS state that we want to preserve. */
 static struct View *oldView;
 static u_short oldDmacon, oldIntena, oldAdkcon;
@@ -120,7 +126,7 @@ BootDataT *SaveOS(void) {
   custom->adkcon = (UWORD)~ADKF_SETCLR;
   custom->dmacon = (UWORD)~DMAF_SETCLR;
   custom->intena = (UWORD)~INTF_SETCLR;
-  WaitTOF();
+  WaitVBlank();
 
   /* Clear all interrupt requests. Really. */
   custom->intreq = (UWORD)~INTF_SETCLR;
@@ -153,7 +159,7 @@ void RestoreOS(void) {
   /* firstly... disable dma and interrupts that were used in Main */
   custom->dmacon = (UWORD)~DMAF_SETCLR;
   custom->intena = (UWORD)~INTF_SETCLR;
-  WaitTOF();
+  WaitVBlank();
 
   /* Clear all interrupt requests. Really. */
   custom->intreq = (UWORD)~INTF_SETCLR;
