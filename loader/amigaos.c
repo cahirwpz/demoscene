@@ -21,7 +21,7 @@ extern struct Custom volatile _custom;
 #define custom (&_custom)
 
 /* We need graphics.library base in order to call some functions. */
-struct GfxBase *__CONSTLIBBASEDECL__ GfxBase;
+static struct GfxBase *__CONSTLIBBASEDECL__ GfxBase;
 
 /* AmigaOS state that we want to preserve. */
 static struct View *oldView;
@@ -53,6 +53,8 @@ static BootDataT BootData = {
 
 /* Some shortcut macros. */
 #define ExecVer (SysBase->LibNode.lib_Version)
+
+extern u_int GetVBR(void);
 
 BootDataT *SaveOS(void) {
   short kickVer, kickRev;
@@ -123,8 +125,9 @@ BootDataT *SaveOS(void) {
   custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
   custom->intena = INTF_SETCLR | INTF_INTEN | INTF_SOFTINT;
 
-  BootData.bd_vbr = NULL;
   BootData.bd_cpumodel = cpu;
+  if (cpu > CPU_68000)
+    BootData.bd_vbr = (void *)Supervisor((void *)GetVBR);
 
   {
     MemRegionT *mr = &BootData.bd_region[1];
