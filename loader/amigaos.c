@@ -12,6 +12,8 @@
 #include <boot.h>
 #include <cpu.h>
 #include <debug.h>
+#include <exception.h>
+#include <string.h>
 
 /* Use _custom definition provided by the linker. */
 extern struct Custom volatile _custom;
@@ -30,6 +32,7 @@ static void WaitVBlank(void) {
 static struct View *oldView;
 static u_short oldDmacon, oldIntena, oldAdkcon;
 static u_int oldCacheBits;
+static ExcVecT oldExcVec;
 
 /* Normally BootDataT is provided by the boot loader. Since we were launched
  * from AmigaOS we have to fill this structure and pass it to Loader. */
@@ -126,10 +129,13 @@ BootDataT *SaveOS(void) {
     bd->bd_stksz = self->tc_SPUpper - self->tc_SPLower;
   }
 
+  memcpy(oldExcVec, bd->bd_vbr, sizeof(oldExcVec));
+
   return &BootData;
 }
 
 void RestoreOS(void) {
+  BootDataT *bd = &BootData;
 
   Log("[Startup] Restore AmigaOS state.\n");
 
@@ -141,6 +147,8 @@ void RestoreOS(void) {
   /* Clear all interrupt requests. Really. */
   custom->intreq = (UWORD)~INTF_SETCLR;
   custom->intreq = (UWORD)~INTF_SETCLR;
+
+  memcpy(bd->bd_vbr, oldExcVec, sizeof(oldExcVec));
 
   /* Restore AmigaOS state of dma & interrupts. */
   custom->dmacon = oldDmacon | DMAF_SETCLR;
