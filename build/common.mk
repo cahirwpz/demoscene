@@ -103,7 +103,7 @@ CLEAN-FILES += $(SOURCES:%=%~)
 
 %.S: %.c
 	@echo "[CC] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -fverbose-asm -S -o $@ $<
+	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -fverbose-asm -S -o $@ $<
 
 ifeq ($(words $(findstring $(MAKECMDGOALS), clean)), 0)
   -include $(DEPENDENCY-FILES)

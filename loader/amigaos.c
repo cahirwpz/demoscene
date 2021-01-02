@@ -24,8 +24,9 @@ static struct GfxBase *__CONSTLIBBASEDECL__ GfxBase;
 
 static void WaitVBlank(void) {
   const uint32_t line = 303;
-  uint32_t *vposr = (u_int *)&custom->vposr;
-  while ((*vposr & 0x1ff00) != ((line << 8) & 0x1ff00));
+  volatile uint32_t *vposr = (u_int *)&custom->vposr;
+  while ((*vposr & 0x1ff00) < ((line << 8) & 0x1ff00))
+    continue;
 }
 
 /* AmigaOS state that we want to preserve. */
@@ -33,6 +34,7 @@ static struct View *oldView;
 static u_short oldDmacon, oldIntena, oldAdkcon;
 static u_int oldCacheBits;
 static ExcVecT oldExcVec;
+static void *oldSysStack;
 
 /* Normally BootDataT is provided by the boot loader. Since we were launched
  * from AmigaOS we have to fill this structure and pass it to Loader. */
@@ -68,24 +70,12 @@ extern u_int GetVBR(void);
 
 BootDataT *SaveOS(void) {
   BootDataT *bd = &BootData;
-  CpuModelT cpu = CPU_68000;
 
   Log("[Startup] Save AmigaOS state.\n");
 
   /* Workaround for const-ness of GfxBase declaration. */
   *(struct GfxBase **)&GfxBase =
     (struct GfxBase *)OpenLibrary("graphics.library", 33);
-
-  if (SysBase->AttnFlags & AFF_68060)
-    cpu = CPU_68060;
-  else if (SysBase->AttnFlags & AFF_68040)
-    cpu = CPU_68040;
-  else if (SysBase->AttnFlags & AFF_68030)
-    cpu = CPU_68030;
-  else if (SysBase->AttnFlags & AFF_68020)
-    cpu = CPU_68020;
-  else if (SysBase->AttnFlags & AFF_68010)
-    cpu = CPU_68010;
 
   /* Allocate blitter. */
   WaitBlit();
@@ -119,15 +109,35 @@ BootDataT *SaveOS(void) {
   custom->intreq = (UWORD)~INTF_SETCLR;
   custom->intreq = (UWORD)~INTF_SETCLR;
 
-  bd->bd_cpumodel = cpu;
-  if (cpu > CPU_68000)
-    bd->bd_vbr = (void *)Supervisor((void *)GetVBR);
+  /* Detect CPU model and fetch VBR on 68010 and later. */
+  {
+    CpuModelT cpu = CPU_68000;
+
+    if (SysBase->AttnFlags & AFF_68060)
+      cpu = CPU_68060;
+    else if (SysBase->AttnFlags & AFF_68040)
+      cpu = CPU_68040;
+    else if (SysBase->AttnFlags & AFF_68030)
+      cpu = CPU_68030;
+    else if (SysBase->AttnFlags & AFF_68020)
+      cpu = CPU_68020;
+    else if (SysBase->AttnFlags & AFF_68010)
+      cpu = CPU_68010;
+
+    bd->bd_cpumodel = cpu;
+    if (cpu > CPU_68000)
+      bd->bd_vbr = (void *)Supervisor((void *)GetVBR);
+  }
 
   {
     struct Task *self = FindTask(NULL);
     bd->bd_stkbot = self->tc_SPLower;
     bd->bd_stksz = self->tc_SPUpper - self->tc_SPLower;
   }
+
+  /* Enter supervisor mode and save exception vector
+   * since the framework takes full control over it. */
+  oldSysStack = SuperState();
 
   memcpy(oldExcVec, bd->bd_vbr, sizeof(oldExcVec));
 
@@ -148,7 +158,9 @@ void RestoreOS(void) {
   custom->intreq = (UWORD)~INTF_SETCLR;
   custom->intreq = (UWORD)~INTF_SETCLR;
 
+  /* Restore exception vector and leave supervisor mode. */
   memcpy(bd->bd_vbr, oldExcVec, sizeof(oldExcVec));
+  UserState(oldSysStack);
 
   /* Restore AmigaOS state of dma & interrupts. */
   custom->dmacon = oldDmacon | DMAF_SETCLR;
