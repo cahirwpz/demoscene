@@ -64,6 +64,10 @@ BootDataT *SaveOS(void) {
 
   Log("[Startup] Save AmigaOS state.\n");
 
+  /* Workaround for const-ness of GfxBase declaration. */
+  *(struct GfxBase **)&GfxBase =
+    (struct GfxBase *)OpenLibrary("graphics.library", 33);
+
   if (SysBase->AttnFlags & AFF_68060)
     cpu = CPU_68060;
   else if (SysBase->AttnFlags & AFF_68040)
@@ -178,4 +182,6 @@ void RestoreOS(void) {
 
   /* Deallocate blitter. */
   DisownBlitter();
+
+  CloseLibrary((struct Library *)GfxBase);
 }
