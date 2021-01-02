@@ -65,7 +65,6 @@ extern u_int GetVBR(void);
 
 BootDataT *SaveOS(void) {
   BootDataT *bd = &BootData;
-  short kickVer, kickRev;
   CpuModelT cpu = CPU_68000;
 
   Log("[Startup] Save AmigaOS state.\n");
@@ -84,21 +83,6 @@ BootDataT *SaveOS(void) {
     cpu = CPU_68020;
   else if (SysBase->AttnFlags & AFF_68010)
     cpu = CPU_68010;
-
-  /* Based on WhichAmiga method. */
-  {
-    APTR kickEnd = (APTR)0x1000000;
-    ULONG kickSize = *(ULONG *)(kickEnd - 0x14);
-    UWORD *kick = kickEnd - kickSize;
-
-    kickVer = kick[6];
-    kickRev = kick[7];
-  }
-
-  Log("[Main] ROM: %ld.%ld, CPU: 680%ld0, CHIP: %ldkB, FAST: %ldkB\n",
-      (LONG)kickVer, (LONG)kickRev, (LONG)cpu,
-      (LONG)(AvailMem(MEMF_CHIP | MEMF_LARGEST) / 1024),
-      (LONG)(AvailMem(MEMF_FAST | MEMF_LARGEST) / 1024));
 
   /* Allocate blitter. */
   WaitBlit();
@@ -132,11 +116,6 @@ BootDataT *SaveOS(void) {
   custom->intreq = (UWORD)~INTF_SETCLR;
   custom->intreq = (UWORD)~INTF_SETCLR;
 
-  /* Enable master switches...
-   * .. and SOFTINT which is presumably used by Exec's scheduler. */
-  custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
-  custom->intena = INTF_SETCLR | INTF_INTEN | INTF_SOFTINT;
-
   bd->bd_cpumodel = cpu;
   if (cpu > CPU_68000)
     bd->bd_vbr = (void *)Supervisor((void *)GetVBR);
@@ -151,10 +130,8 @@ BootDataT *SaveOS(void) {
 }
 
 void RestoreOS(void) {
-  Log("[Startup] Restore AmigaOS state.\n");
 
-  /* Suspend multitasking. */
-  Forbid();
+  Log("[Startup] Restore AmigaOS state.\n");
 
   /* firstly... disable dma and interrupts that were used in Main */
   custom->dmacon = (UWORD)~DMAF_SETCLR;
