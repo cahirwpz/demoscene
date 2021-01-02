@@ -1,5 +1,10 @@
 TOPDIR := $(realpath ..)
 
+# AMIGAOS => save & restore AmigaOS context
+#            (for intros or trackmos that can be launched from AmigaOS)
+# TRACKMO => initialize file system and floppy device driver
+CPPFLAGS += -DTRACKMO
+
 LIBNAME := loader
 SOURCES := \
 	autoinit.c \

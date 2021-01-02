@@ -22,8 +22,9 @@ void Loader(BootDataT *bd) {
   Log("[Loader] CPU model $%02x\n", bd->bd_cpumodel);
   Log("[Loader] Stack at $%08x (%d bytes)\n",
       (u_int)bd->bd_stkbot, bd->bd_stksz);
-  Log("[Loader] Executable file segments:\n");
 
+#ifndef AMIGAOS
+  Log("[Loader] Executable file segments:\n");
   {
     HunkT *hunk = bd->bd_hunk;
     do {
@@ -32,6 +33,7 @@ void Loader(BootDataT *bd) {
       hunk = hunk->next;
     } while (hunk);
   }
+#endif
 
   CpuModel = bd->bd_cpumodel;
   ExcVecBase = bd->bd_vbr;
@@ -69,8 +71,10 @@ void Loader(BootDataT *bd) {
   SetIPL(IPL_NONE);
 
   TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
+#ifdef TRACKMO
   InitFloppy();
   InitFileSys();
+#endif
   InitTracks();
   CallFuncList(&__INIT_LIST__);
 
@@ -80,8 +84,10 @@ void Loader(BootDataT *bd) {
   }
 
   CallFuncList(&__EXIT_LIST__);
+#ifdef TRACKMO
   KillFileSys();
   KillFloppy();
+#endif
   
   Log("[Loader] Shutdown complete!\n");
 }

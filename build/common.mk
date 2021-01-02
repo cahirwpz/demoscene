@@ -31,7 +31,7 @@ CPPFLAGS += -D__CONSTLIBBASEDECL__=const
 # Default configuration
 FRAMES_PER_ROW ?= 6
 
-CPPFLAGS += -DUAE -DFRAMES_PER_ROW=$(FRAMES_PER_ROW)
+CPPFLAGS += -DUAE
 
 # Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
 ifneq ($(VERBOSE), 1)
