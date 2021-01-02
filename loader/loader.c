@@ -73,8 +73,8 @@ void Loader(BootDataT *bd) {
   TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
 #ifdef TRACKMO
   InitFloppy();
-  InitFileSys();
 #endif
+  InitFileSys();
   InitTracks();
   CallFuncList(&__INIT_LIST__);
 
@@ -84,8 +84,8 @@ void Loader(BootDataT *bd) {
   }
 
   CallFuncList(&__EXIT_LIST__);
-#ifdef TRACKMO
   KillFileSys();
+#ifdef TRACKMO
   KillFloppy();
 #endif
   

@@ -14,6 +14,7 @@ SOURCES := \
 	main.c \
 	profiler.c \
 	sync.c \
+	vbr.S \
 	drivers/cia-frame.c \
 	drivers/cia-icr.c \
 	drivers/cia-line.c \
@@ -35,6 +36,8 @@ SOURCES := \
 	kernel/task.c \
 	kernel/trap-entry.S \
 	kernel/trap.c 
+
+CFLAGS.amigaos = -Wno-strict-prototypes
 
 BUILD-FILES = crt0.o
 		

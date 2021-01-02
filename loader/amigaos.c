@@ -13,9 +13,6 @@
 #include <cpu.h>
 #include <debug.h>
 
-#define CHIPMEM (512 * 1024)
-#define FASTMEM (512 * 1024)
-
 /* Use _custom definition provided by the linker. */
 extern struct Custom volatile _custom;
 #define custom (&_custom)
@@ -30,6 +27,10 @@ static u_int oldCacheBits;
 
 /* Normally BootDataT is provided by the boot loader. Since we were launched
  * from AmigaOS we have to fill this structure and pass it to Loader. */
+
+static __aligned(4) __bss_chip char ChipMem[512 * 1024];
+static __aligned(4) char FastMem[512 * 1024];
+
 static BootDataT BootData = {
   .bd_hunk = NULL,
   .bd_vbr = NULL,
@@ -39,13 +40,13 @@ static BootDataT BootData = {
   .bd_nregions = 2,
   .bd_region = {
     {
-      .mr_lower = 0,
-      .mr_upper = 0,
+      .mr_lower = (uintptr_t)FastMem,
+      .mr_upper = (uintptr_t)FastMem + sizeof(FastMem), 
       .mr_attr = MEMF_PUBLIC,
     },
     {
-      .mr_lower = 0,
-      .mr_upper = 0,
+      .mr_lower = (uintptr_t)ChipMem,
+      .mr_upper = (uintptr_t)ChipMem + sizeof(ChipMem),
       .mr_attr = MEMF_CHIP,
     }
   }
@@ -57,6 +58,7 @@ static BootDataT BootData = {
 extern u_int GetVBR(void);
 
 BootDataT *SaveOS(void) {
+  BootDataT *bd = &BootData;
   short kickVer, kickRev;
   CpuModelT cpu = CPU_68000;
 
@@ -125,22 +127,14 @@ BootDataT *SaveOS(void) {
   custom->dmacon = DMAF_SETCLR | DMAF_MASTER;
   custom->intena = INTF_SETCLR | INTF_INTEN | INTF_SOFTINT;
 
-  BootData.bd_cpumodel = cpu;
+  bd->bd_cpumodel = cpu;
   if (cpu > CPU_68000)
-    BootData.bd_vbr = (void *)Supervisor((void *)GetVBR);
+    bd->bd_vbr = (void *)Supervisor((void *)GetVBR);
 
   {
-    MemRegionT *mr = &BootData.bd_region[1];
-    uintptr_t ptr = (uintptr_t)AllocMem(CHIPMEM, mr->mr_attr);
-    mr->mr_lower = ptr;
-    mr->mr_upper = ptr + CHIPMEM;
-  }
-
-  {
-    MemRegionT *mr = &BootData.bd_region[0];
-    uintptr_t ptr = (uintptr_t)AllocMem(FASTMEM, MEMF_PUBLIC);
-    mr->mr_lower = ptr;
-    mr->mr_upper = ptr + FASTMEM;
+    struct Task *self = FindTask(NULL);
+    bd->bd_stkbot = self->tc_SPLower;
+    bd->bd_stksz = self->tc_SPUpper - self->tc_SPLower;
   }
 
   return &BootData;
