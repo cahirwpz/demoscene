@@ -14,7 +14,6 @@ SOURCES := \
 	main.c \
 	profiler.c \
 	sync.c \
-	vbr.S \
 	drivers/cia-frame.c \
 	drivers/cia-icr.c \
 	drivers/cia-line.c \

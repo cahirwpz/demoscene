@@ -36,12 +36,12 @@ static u_int oldCacheBits;
 static ExcVecT oldExcVec;
 static void *oldSysStack;
 
-/* Normally BootDataT is provided by the boot loader. Since we were launched
- * from AmigaOS we have to fill this structure and pass it to Loader. */
-
+/* Memory for framework allocator. */
 static __aligned(4) __bss_chip char ChipMem[512 * 1024];
 static __aligned(4) char FastMem[512 * 1024];
 
+/* Normally BootDataT is provided by the boot loader. Since we were started
+ * from AmigaOS we have to fill this structure and pass it to Loader. */
 static BootDataT BootData = {
   .bd_hunk = NULL,
   .bd_vbr = NULL,
@@ -65,8 +65,6 @@ static BootDataT BootData = {
 
 /* Some shortcut macros. */
 #define ExecVer (SysBase->LibNode.lib_Version)
-
-extern u_int GetVBR(void);
 
 BootDataT *SaveOS(void) {
   BootDataT *bd = &BootData;
@@ -109,6 +107,16 @@ BootDataT *SaveOS(void) {
   custom->intreq = (UWORD)~INTF_SETCLR;
   custom->intreq = (UWORD)~INTF_SETCLR;
 
+  {
+    struct Task *self = FindTask(NULL);
+    bd->bd_stkbot = self->tc_SPLower;
+    bd->bd_stksz = self->tc_SPUpper - self->tc_SPLower;
+  }
+
+  /* Enter supervisor mode and save exception vector
+   * since the framework takes full control over it. */
+  oldSysStack = SuperState();
+
   /* Detect CPU model and fetch VBR on 68010 and later. */
   {
     CpuModelT cpu = CPU_68000;
@@ -124,20 +132,14 @@ BootDataT *SaveOS(void) {
     else if (SysBase->AttnFlags & AFF_68010)
       cpu = CPU_68010;
 
+    if (cpu > CPU_68000) {
+      void *ptr;
+      asm("movec vbr, %0" : "=d" (ptr));
+      bd->bd_vbr = ptr;
+    }
+
     bd->bd_cpumodel = cpu;
-    if (cpu > CPU_68000)
-      bd->bd_vbr = (void *)Supervisor((void *)GetVBR);
   }
-
-  {
-    struct Task *self = FindTask(NULL);
-    bd->bd_stkbot = self->tc_SPLower;
-    bd->bd_stksz = self->tc_SPUpper - self->tc_SPLower;
-  }
-
-  /* Enter supervisor mode and save exception vector
-   * since the framework takes full control over it. */
-  oldSysStack = SuperState();
 
   memcpy(oldExcVec, bd->bd_vbr, sizeof(oldExcVec));
 
