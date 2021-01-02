@@ -7,6 +7,7 @@ CPPFLAGS += -DTRACKMO
 
 LIBNAME := loader
 SOURCES := \
+	amigaos.c \
 	autoinit.c \
 	effect.c \
 	loader.c \
