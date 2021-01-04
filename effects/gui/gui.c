@@ -61,19 +61,21 @@ static void Load(void) {
 
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  cp = NewCopList(120);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+
+  SetColor(UI_BG_INACTIVE, 0x888);
+  SetColor(UI_BG_ACTIVE, 0xaaa);
+  SetColor(UI_FRAME_IN, 0x444);
+  SetColor(UI_FRAME_OUT, 0xeee);
+  SetColor(UI_FG_INACTIVE, 0x24a);
+  SetColor(UI_FG_ACTIVE, 0x46e);
+  LoadPalette(&pointer_pal, 16);
+
+  cp = NewCopList(120);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopSetupSprites(cp, sprptr);
-  CopSetColor(cp, UI_BG_INACTIVE, 0x888);
-  CopSetColor(cp, UI_BG_ACTIVE,   0xaaa);
-  CopSetColor(cp, UI_FRAME_IN,    0x444);
-  CopSetColor(cp, UI_FRAME_OUT,   0xeee);
-  CopSetColor(cp, UI_FG_INACTIVE, 0x24a);
-  CopSetColor(cp, UI_FG_ACTIVE,   0x46e);
-  CopLoadPal(cp, &pointer_pal, 16);
   CopEnd(cp);
 
   CopInsSet32(sprptr[0], pointer.data);

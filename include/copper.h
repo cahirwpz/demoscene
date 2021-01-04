@@ -2,13 +2,7 @@
 #define __COPPER_H__
 
 #include <gfx.h>
-#include <custom.h>
-
-#define MODE_LORES  0
-#define MODE_HIRES  BPLCON0_HIRES
-#define MODE_DUALPF BPLCON0_DBLPF
-#define MODE_LACE   BPLCON0_LACE
-#define MODE_HAM    BPLCON0_HOMOD
+#include <playfield.h>
 
 /* Copper instructions assumptions for PAL systems:
  *
@@ -125,14 +119,6 @@ void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
 void CopUpdateBitplanes(CopInsT **bplptr, const BitmapT *bitmap, short n);
 void CopSetupDualPlayfield(CopListT *list, CopInsT **bplptr,
                            const BitmapT *pf1, const BitmapT *pf2);
-
-static inline void CopSetupGfxSimple(CopListT *list, u_short mode, u_short depth,
-                                     u_short xs, u_short ys, u_short w, u_short h) 
-{
-  CopSetupMode(list, mode, depth);
-  CopSetupDisplayWindow(list, mode, xs, ys, w, h);
-  CopSetupBitplaneFetch(list, mode, xs, w);
-}
 
 static inline CopInsT *CopSetColor(CopListT *list, short i, u_short value) {
   return CopMove16(list, color[i], value);

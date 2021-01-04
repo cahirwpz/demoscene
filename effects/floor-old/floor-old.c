@@ -99,7 +99,6 @@ static void MakeCopperList(CopListT *cp, short num) {
   short i, j;
 
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen[num], DEPTH);
   CopLoadColor(cp, 0, 3, 0);
 
@@ -141,10 +140,13 @@ static void Init(void) {
     BlitterSetArea(screen[i], 1, &bottom, -1);
   }
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+
   cp[0] = NewCopList((HEIGHT - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
   cp[1] = NewCopList((HEIGHT - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
 
-  ITER(j, 0, 1, MakeCopperList(cp[j], j));
+  MakeCopperList(cp[0], 0);
+  MakeCopperList(cp[1], 1);
   CopListActivate(cp[active]);
   EnableDMA(DMAF_RASTER);
 }

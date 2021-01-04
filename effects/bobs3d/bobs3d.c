@@ -22,10 +22,8 @@ static Mesh3D *mesh = &pilka;
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   CopWait(cp, Y(-1), 0);
   CopSetupBitplanes(cp, bplptr, screen1, DEPTH);
-  CopLoadPal(cp, &bobs_pal, 0);
   CopEnd(cp);
 }
 
@@ -37,6 +35,9 @@ static void Init(void) {
                             BM_DISPLAYABLE | BM_INTERLEAVED);
   screen1 = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
                             BM_DISPLAYABLE | BM_INTERLEAVED);
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&bobs_pal, 0);
 
   cp = NewCopList(80);
   MakeCopperList(cp);

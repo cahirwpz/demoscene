@@ -208,7 +208,6 @@ static void MakeCopperList(CopListT *cp) {
   short i, j;
 
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
   CopLoadPal(cp, &texture_pal, 0);
   for (i = 0; i < HEIGHT * 2; i++) {
@@ -244,6 +243,8 @@ static void Init(void) {
 
   BitmapClear(screen[0]);
   BitmapClear(screen[1]);
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
 
   cp = NewCopList(900 + 256);
   MakeCopperList(cp);

@@ -55,11 +55,12 @@ static void Init(void) {
   EnableDMA(DMAF_BLITTER);
   BitmapCopy(screen, 0, 0, &background);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&background_pal, 0);
+
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopLoadPal(cp, &background_pal, 0);
   pal = CopLoadColor(cp, 8, 31, 0);
   CopEnd(cp);
 

@@ -30,10 +30,7 @@ extern uint8_t binary_data_text_scroll_txt_start[];
 static CopListT *MakeCopperList(short n) {
   CopListT *cp = NewCopList(100 + 3 * HEIGHT);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, scroll, DEPTH);
-
-  CopLoadPal(cp, &font_pal, 0);
   {
     u_short i;
     void *ptr = scroll->planes[0];
@@ -54,6 +51,9 @@ static void Init(void) {
   BitmapClear(scroll);
 
   line_start = text;
+
+  SetupPlayfield(MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&font_pal, 0);
 
   cp[0] = MakeCopperList(0);
   cp[1] = MakeCopperList(1);

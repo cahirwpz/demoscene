@@ -48,12 +48,7 @@ static BitmapT *lanes[2];
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopSetupSprites(cp, sprptr);
-  CopLoadPal(cp, &sprite_pal, 16);
-  CopLoadPal(cp, &sprite_pal, 20);
-  CopLoadPal(cp, &sprite_pal, 24);
-  CopLoadPal(cp, &sprite_pal, 28);
 
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, &city_top, DEPTH);
   CopWait(cp, Y(-18), 0);
   CopLoadPal(cp, &city_top_pal, 0);
@@ -117,6 +112,13 @@ static void Init(void) {
   lanes[0] = NewBitmap(LANE_W, LANE_H * 2, DEPTH);
   lanes[1] = NewBitmap(LANE_W, LANE_H * 2, DEPTH);
   carry = NewBitmap(HSIZE + 16, VSIZE, 2);
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+
+  LoadPalette(&sprite_pal, 16);
+  LoadPalette(&sprite_pal, 20);
+  LoadPalette(&sprite_pal, 24);
+  LoadPalette(&sprite_pal, 28);
 
   cp = NewCopList(300);
   MakeCopperList(cp);

@@ -43,14 +43,6 @@ static void SetInitialPositions(void) {
   }
 }
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopLoadPal(cp, &metaball_pal, 0);
-  CopEnd(cp);
-}
-
 static void Init(void) {
   short j;
 
@@ -67,7 +59,12 @@ static void Init(void) {
 
   SetInitialPositions();
 
-  MakeCopperList(cp);
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&metaball_pal, 0);
+
+  CopInit(cp);
+  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
+  CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }

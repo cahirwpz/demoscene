@@ -269,10 +269,7 @@ static void MakeCopperList(CopListT *cp) {
   short i;
 
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_HAM, 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopMove16(cp, bpldat[4], 0x7777); // rgbb: 0111
-  CopMove16(cp, bpldat[5], 0xcccc); // rgbb: 1100
   CopLoadColor(cp, 0, 15, 0);
   for (i = 0; i < HEIGHT * 4; i++) {
     CopWaitSafe(cp, Y(i), 0);
@@ -299,6 +296,11 @@ static void Init(void) {
 
   BitmapClear(screen[0]);
   BitmapClear(screen[1]);
+
+  SetupPlayfield(MODE_HAM, 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
+
+  custom->bpldat[4] = 0x7777; // rgbb: 0111
+  custom->bpldat[5] = 0xcccc; // rgbb: 1100
 
   cp = NewCopList(1200);
   MakeCopperList(cp);

@@ -31,12 +31,9 @@ static void MakeCopperList(CopListT **ptr, short n) {
   short i, j, k;
 
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(STARTX), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr[n], &twister, DEPTH);
   CopSetupSprites(cp, sprptr[n]);
   CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
-  CopMove16(cp, diwstrt, 0x2c81);
-  CopMove16(cp, diwstop, 0x2bc1);
   CopSetColor(cp, 0, gradient.colors[0]);
 
   for (i = 0, k = 0; i < HEIGHT; i++) {
@@ -66,6 +63,10 @@ static void MakeCopperList(CopListT **ptr, short n) {
 
 static void Init(void) {
   EnableDMA(DMAF_BLITTER);
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(STARTX), Y(0), WIDTH, HEIGHT);
+  custom->diwstrt = 0x2c81;
+  custom->diwstop = 0x2bc1;
 
   MakeCopperList(&cp[0], 0);
   MakeCopperList(&cp[1], 1);

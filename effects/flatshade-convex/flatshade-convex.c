@@ -30,14 +30,6 @@ static void UnLoad(void) {
   ResetMesh3D(mesh);
 }
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplanes(cp, bplptr, screen[0], DEPTH);
-  CopLoadPal(cp, &flatshade_pal, 0);
-  CopEnd(cp);
-}
-
 static void Init(void) {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(-250);
@@ -45,8 +37,13 @@ static void Init(void) {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&flatshade_pal, 0);
+
   cp = NewCopList(80);
-  MakeCopperList(cp);
+  CopInit(cp);
+  CopSetupBitplanes(cp, bplptr, screen[0], DEPTH);
+  CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 }

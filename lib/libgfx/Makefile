@@ -9,7 +9,9 @@ SOURCES := \
 	copper.c \
 	dualpf.c \
 	line.c \
+	palette.c \
 	pixmap.c \
+	playfield.c \
 	sprite.c
 
 include $(TOPDIR)/build/lib.mk

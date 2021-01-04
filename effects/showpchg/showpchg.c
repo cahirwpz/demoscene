@@ -18,8 +18,9 @@ static void Init(void) {
 
   cp = NewCopList(100 + face_pchg_count + face.height * 2);
 
+  SetupPlayfield(MODE_HAM, DEPTH, xs, ys, w, h);
+
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_HAM, DEPTH, xs, ys, w, h);
   CopSetupBitplanes(cp, NULL, &face, DEPTH);
 
   {

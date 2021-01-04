@@ -39,7 +39,6 @@ static void MakeCopperList(CopListT *cp) {
   short i;
 
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr[active], screen[active], DEPTH);
   CopWait(cp, Y(-18), 0);
   CopLoadPal(cp, &blurred_1_pal, 0);
@@ -71,6 +70,8 @@ static void Init(void) {
 
   buffer = NewBitmap(SIZE, SIZE, 4);
   carry = NewBitmap(SIZE, SIZE, 2);
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
   cp = NewCopList(200);
   MakeCopperList(cp);

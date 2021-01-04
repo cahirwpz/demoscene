@@ -131,10 +131,10 @@ static void Init(void) {
   BlitterClear(screen[0], 4);
   BlitterClear(screen[1], 4);
 
-  cp = NewCopList(100);
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
+  cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
   pal = CopLoadPal(cp, palette[0], 0);
   CopLoadPal(cp, palette[1], 16);
