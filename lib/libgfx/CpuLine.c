@@ -1,4 +1,4 @@
-#include "line.h"
+#include <line.h>
 
 static struct {
   u_char *pixels;

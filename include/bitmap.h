@@ -29,6 +29,9 @@ typedef struct Bitmap {
   void *planes[BM_NPLANES];
 } BitmapT;
 
+u_int BitmapSize(BitmapT *bitmap);
+void BitmapSetPointers(BitmapT *bitmap, void *planes);
+
 void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
                       u_short depth, BitmapT *donor);
 

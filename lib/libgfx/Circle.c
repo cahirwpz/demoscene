@@ -1,4 +1,4 @@
-#include "circle.h"
+#include <circle.h>
 
 void Circle(const BitmapT *bitmap, int plane, short xc, short yc, short r) {
   int stride = bitmap->bytesPerRow;

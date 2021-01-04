@@ -1,5 +1,5 @@
-#include "custom.h"
-#include "palette.h"
+#include <custom.h>
+#include <palette.h>
 
 void LoadPalette(const PaletteT *palette, u_int start) {
   u_short *col = palette->colors;

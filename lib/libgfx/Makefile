@@ -1,17 +1,53 @@
 TOPDIR := $(realpath ../..)
 
 SOURCES := \
-	area.c \
-	bitmap.c \
-	c2p_1x1_4.asm \
-	circle.c \
-	color.c \
-	copper.c \
-	dualpf.c \
-	line.c \
-	palette.c \
-	pixmap.c \
-	playfield.c \
-	sprite.c
+	BitmapMakeDisplayable.c \
+	BitmapSetPointers.c \
+	BitmapSize.c \
+	Circle.c \
+	CircleEdge.c \
+	ClipArea.c \
+	ColorTab.c \
+	ColorTransition.c \
+	CopEnd.c \
+	CopInit.c \
+	CopListActivate.c \
+	CopLoadColor.c \
+	CopLoadPal.c \
+	CopMoveLong.c \
+	CopMoveWord.c \
+	CopSetupBitplaneArea.c \
+	CopSetupBitplaneFetch.c \
+	CopSetupBitplanes.c \
+	CopSetupDisplayWindow.c \
+	CopSetupDualPlayfield.c \
+	CopSetupManualSprites.c \
+	CopSetupMode.c \
+	CopSetupSprites.c \
+	CopSkipMask.c \
+	CopUpdateBitplanes.c \
+	CopWait.c \
+	CopWaitMask.c \
+	CopWaitSafe.c \
+	CopWaitSkip.c \
+	CpuEdge.c \
+	CpuLine.c \
+	DeleteBitmap.c \
+	DeleteCopList.c \
+	DeletePixmap.c \
+	DeleteSprite.c \
+	InitSharedBitmap.c \
+	InsideArea.c \
+	LoadPalette.c \
+	NewBitmapCustom.c \
+	NewCopList.c \
+	NewPixmap.c \
+	NewSprite.c \
+	NullSprite.c \
+	PixmapScramble_4_1.c \
+	PixmapScramble_4_2.c \
+	SetupPlayfield.c \
+	UpdateSprite.c \
+	c2p_1x1_4.asm
 
 include $(TOPDIR)/build/lib.mk
