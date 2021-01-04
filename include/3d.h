@@ -1,9 +1,11 @@
 #ifndef __3D_H__
 #define __3D_H__
 
-#include "sort.h"
-#include "2d.h"
-#include "pixmap.h"
+#include <sort.h>
+#include <2d.h>
+#include <pixmap.h>
+
+extern char SqrtTab8[256];
 
 /* 3D transformations */
 

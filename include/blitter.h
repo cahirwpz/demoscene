@@ -71,9 +71,9 @@
 #define LINE_ONEDOT 2
 
 /* Precalculated masks for bltafwm and bltalwm registers. */
-extern u_short FirstWordMask[16];
-extern u_short LastWordMask[16];
-extern u_short LineMode[4][2];
+extern const u_short FirstWordMask[16];
+extern const u_short LastWordMask[16];
+extern const u_short LineMode[4][2];
 
 /* Common blitter macros. */
 static inline bool BlitterBusy(void) {
@@ -107,6 +107,16 @@ void BlitterCopyAreaStart(short dstbpl, short srcbpl);
   BlitterCopyAreaSetup((dst), (x), (y), (src), (area));                 \
   BlitterCopyAreaStart((dstbpl), (srcbpl));                             \
 })
+
+/* Blitter copy fast. */
+void BlitterCopyFastSetup(const BitmapT *dst, u_short x, u_short y,
+                          const BitmapT *src);
+void BlitterCopyFastStart(short dstbpl, short srcbpl);
+
+/* Blitter copy masked. */
+void BlitterCopyMaskedSetup(const BitmapT *dst, u_short x, u_short y,
+                            const BitmapT *src, const BitmapT *msk);
+void BlitterCopyMaskedStart(short dstbpl, short srcbpl);
 
 /* Bitmap copy. */
 void BitmapCopy(const BitmapT *dst, u_short x, u_short y, const BitmapT *src);

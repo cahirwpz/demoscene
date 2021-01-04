@@ -62,13 +62,3 @@ void BlitterCopyMaskedStart(short dstbpl, short srcbpl) {
   custom->bltdpt = dstbpt;
   custom->bltsize = bltsize;
 }
-
-void BitmapCopyMasked(const BitmapT *dst, u_short x, u_short y,
-                      const BitmapT *src, const BitmapT *msk) 
-{
-  short i, n = min(dst->depth, src->depth);
-
-  BlitterCopyMaskedSetup(dst, x, y, src, msk);
-  for (i = 0; i < n; i++)
-    BlitterCopyMaskedStart(i, i);
-}

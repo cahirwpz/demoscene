@@ -1,5 +1,12 @@
 #include <blitter.h>
 
+const u_short LineMode[4][2] = {
+  {  BC0F_LINE_OR, LINEMODE },
+  { BC0F_LINE_EOR, LINEMODE }, 
+  {  BC0F_LINE_OR, LINEMODE | ONEDOT },
+  { BC0F_LINE_EOR, LINEMODE | ONEDOT }
+};
+
 /*
  * Minterm is either:
  * - OR: (ABC | ABNC | NABC | NANBC)
