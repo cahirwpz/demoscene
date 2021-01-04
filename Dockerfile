@@ -19,3 +19,8 @@ RUN apt-get install -y --no-install-recommends \
             python3-pil python3-pip python3-wheel python3-dev
 RUN tar -C / -xvzf demoscene-toolchain.tar.gz && rm demoscene-toolchain.tar.gz
 RUN pip3 install pycodestyle zopflipy
+
+# If you're trying to install the environment manually on your computer,
+# then you need some extra things:
+# > pip3 install libtmux pygments prompt_toolkit
+# > apt-get install socat tmux
