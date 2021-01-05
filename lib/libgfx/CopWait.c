@@ -1,15 +1,12 @@
 #include <copper.h>
 
 CopInsT *CopWait(CopListT *list, u_short vp, u_short hp) {
-  CopInsT *ptr = list->curr;
-  u_char *bp = (u_char *)ptr;
-  u_short *wp;
+  CopInsT *ins = list->curr;
 
-  *bp++ = vp;
-  *bp++ = hp | 1; 
-  wp = (u_short *)bp;
-  *wp++ = 0xfffe;
+  *((u_char *)ins)++ = vp;
+  *((u_char *)ins)++ = hp | 1; 
+  *((u_short *)ins)++ = 0xfffe;
 
-  list->curr = (CopInsT *)wp;
-  return ptr;
+  list->curr = ins;
+  return ins - 1;
 }

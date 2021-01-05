@@ -1,16 +1,17 @@
 #include <copper.h>
 
-CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data) {
-  CopInsT *ptr = list->curr;
-  u_short *ins = (u_short *)ptr;
+CopInsT *CopMoveLong(CopListT *list, u_short reg, void *ptr) {
+  CopInsT *ins = list->curr;
+  u_int data = (u_int)ptr;
 
   reg &= 0x01fe;
+  reg += 2;
 
-  *ins++ = reg;
-  *ins++ = (u_int)data >> 16;
-  *ins++ = reg + 2;
-  *ins++ = (u_int)data;
+  *((u_short *)ins)++ = reg;
+  *((u_short *)ins)++ = data;
+  *((u_short *)ins)++ = reg - 2;
+  *((u_short *)ins)++ = swap16(data);
 
-  list->curr = (CopInsT *)ins;
-  return ptr;
+  list->curr = ins;
+  return ins - 2;
 }
