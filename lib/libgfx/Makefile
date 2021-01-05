@@ -24,12 +24,12 @@ SOURCES := \
 	CopSetupManualSprites.c \
 	CopSetupMode.c \
 	CopSetupSprites.c \
+	CopSkip.c \
 	CopSkipMask.c \
 	CopUpdateBitplanes.c \
 	CopWait.c \
 	CopWaitMask.c \
 	CopWaitSafe.c \
-	CopWaitSkip.c \
 	CpuEdge.c \
 	CpuLine.c \
 	DeleteBitmap.c \

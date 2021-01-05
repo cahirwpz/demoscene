@@ -34,12 +34,10 @@ typedef union {
   } move;
 } CopInsT;
 
-#define CLF_VPOVF 1 /* Vertical Position counter overflowed */
-
 typedef struct {
   CopInsT *curr;
   u_short length;
-  u_short flags;
+  u_char  overflow; /* -1 if Vertical Position counter overflowed */
   CopInsT entry[0]; 
 } CopListT;
 
@@ -57,29 +55,28 @@ static inline void CopListRun(CopListT *list) {
 }
 
 /* Low-level functions */
-CopInsT *CopMoveWord(CopListT *list, u_short reg, u_short data);
+CopInsT *CopMoveWord(CopListT *list, u_short reg, short data);
 CopInsT *CopMoveLong(CopListT *list, u_short reg, void *data);
 
-#define CSREG(reg) (u_short)offsetof(struct Custom, reg)
+#define CSREG(reg) offsetof(struct Custom, reg)
 #define CopMove16(cp, reg, data) CopMoveWord(cp, CSREG(reg), data)
 #define CopMove32(cp, reg, data) CopMoveLong(cp, CSREG(reg), data)
 
 /* Official way to represent no-op copper instruction. */
 #define CopNoOp(cp) CopMoveWord(cp, 0x1FE, 0)
 
-CopInsT *CopWait(CopListT *list, u_short vp, u_short hp);
+CopInsT *CopWait(CopListT *list, short vp, short hp);
 CopInsT *CopWaitMask(CopListT *list, u_short vp, u_short hp, 
                      u_short vpmask asm("d2"), u_short hpmask asm("d3"));
 
 /* Handles Copper Vertical Position counter overflow, by inserting CopWaitEOL
  * at first WAIT instruction with VP >= 256. */
-CopInsT *CopWaitSafe(CopListT *list, u_short vp, u_short hp);
+CopInsT *CopWaitSafe(CopListT *list, short vp, short hp);
 
 /* The most significant bit of vertical position cannot be masked out (overlaps
  * with blitter-finished-disable bit), so we have to pass upper bit as well. */
 #define CopWaitH(cp, vp, hp) CopWaitMask(cp, vp & 128, hp, 0, 255)
 #define CopWaitV(cp, vp) CopWaitMask(cp, vp, 0, 255, 0)
-#define CopWaitEOL(cp, vp) CopWait(cp, vp, LASTHP)
 
 CopInsT *CopSkip(CopListT *list, u_short vp, u_short hp);
 CopInsT *CopSkipMask(CopListT *list, u_short vp, u_short hp, 
@@ -103,8 +100,8 @@ static inline void CopInsSet16(CopInsT *ins, u_short data) {
 }
 
 /* High-level functions */
-CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, u_short start);
-CopInsT *CopLoadColor(CopListT *list, u_short start, u_short end, u_short color);
+CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, short start);
+CopInsT *CopLoadColor(CopListT *list, short start, short end, short color);
 
 void CopSetupMode(CopListT *list, u_short mode, u_short depth);
 void CopSetupDisplayWindow(CopListT *list, u_short mode, 

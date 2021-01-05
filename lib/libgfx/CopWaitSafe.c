@@ -1,11 +1,10 @@
 #include <copper.h>
 
-CopInsT *CopWaitSafe(CopListT *list, u_short vp, u_short hp) {
-  if (!(list->flags & CLF_VPOVF) && (vp >= 256)) {
+CopInsT *CopWaitSafe(CopListT *list, short vp, short hp) {
+  if (vp >= 256 && !list->overflow) {
+    list->overflow = -1;
     /* Wait for last waitable position to control when overflow occurs. */
-    CopWaitEOL(list, 255);
-    list->flags |= CLF_VPOVF;
+    *((u_int *)list->curr)++ = 0xffdffffe;
   }
-
   return CopWait(list, vp, hp);
 }

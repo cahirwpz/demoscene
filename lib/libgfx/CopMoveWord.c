@@ -1,6 +1,6 @@
 #include <copper.h>
 
-CopInsT *CopMoveWord(CopListT *list, u_short reg, u_short data) {
+CopInsT *CopMoveWord(CopListT *list, u_short reg, short data) {
   CopInsT *ins = list->curr;
 
   *((u_short *)ins)++ = reg & 0x01fe;

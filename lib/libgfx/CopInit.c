@@ -2,5 +2,5 @@
 
 void CopInit(CopListT *list) {
   list->curr = list->entry;
-  list->flags = 0;
+  list->overflow = 0;
 }
