@@ -9,13 +9,9 @@ SOURCES := \
 	ClipArea.c \
 	ColorTab.c \
 	ColorTransition.c \
-	CopEnd.c \
-	CopInit.c \
 	CopListActivate.c \
 	CopLoadColor.c \
 	CopLoadPal.c \
-	CopMoveLong.c \
-	CopMoveWord.c \
 	CopSetupBitplaneArea.c \
 	CopSetupBitplaneFetch.c \
 	CopSetupBitplanes.c \
@@ -24,12 +20,7 @@ SOURCES := \
 	CopSetupManualSprites.c \
 	CopSetupMode.c \
 	CopSetupSprites.c \
-	CopSkipMask.c \
 	CopUpdateBitplanes.c \
-	CopWait.c \
-	CopWaitMask.c \
-	CopWaitSafe.c \
-	CopWaitSkip.c \
 	CpuEdge.c \
 	CpuLine.c \
 	DeleteBitmap.c \
