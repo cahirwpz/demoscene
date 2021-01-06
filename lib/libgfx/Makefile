@@ -15,6 +15,7 @@ SOURCES := \
 	CopSetupBitplaneArea.c \
 	CopSetupBitplaneFetch.c \
 	CopSetupBitplanes.c \
+	CopSetupBitplanesUpsideDown.c \
 	CopSetupDisplayWindow.c \
 	CopSetupDualPlayfield.c \
 	CopSetupManualSprites.c \

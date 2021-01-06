@@ -189,6 +189,8 @@ void CopSetupBitplaneFetch(CopListT *list, u_short mode,
                            u_short xs, u_short w);
 void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
                        const BitmapT *bitmap, u_short depth);
+void CopSetupBitplanesUpsideDown(CopListT *list, CopInsT **bplptr,
+                                 const BitmapT *bitmap, u_short depth);
 void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
                           const BitmapT *bitmap, short x, short y,
                           const Area2D *area);
