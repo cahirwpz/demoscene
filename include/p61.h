@@ -66,12 +66,11 @@ extern struct {
 	u_short	Pos;		  /* Current song position (read only) */
 	u_short	Pattern;	/* Current pattern (read only) */
 	u_short	Row;		  /* Current pattern row (read only) */
-	int  ChannelOffset[4];
+	int ChannelOffset[4];
 } __attribute__((packed)) P61_ControlBlock;
 
-#define P61_CHANNEL(I) \
-  ((P61_ChannelBlock *)(((void *)&P61_ControlBlock) + \
-                        P61_ControlBlock.ChannelOffset[(I)]))
+extern P61_ChannelBlock P61_temp[4];
+#define P61_CHANNEL(I) &P61_temp[(I)]
 
 /**
  * @brief Initialize the playroutine.
