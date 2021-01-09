@@ -32,7 +32,7 @@ asmonereport = 0	;ONLY for printing a settings report on assembly. Use
 
 p61system = 0	;1=system-friendly. Use for DOS/Workbench programs.
 
-p61exec = 1	;0 if execbase is destroyed, such as in a trackmo.
+p61exec = 0	;0 if execbase is destroyed, such as in a trackmo.
 
 p61fade = 0	;enable channel volume fading from your demo
 
