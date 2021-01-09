@@ -198,7 +198,7 @@ INTSERVER(KeyboardServer, -5, (IntFuncT)KeyboardIntHandler, NULL);
 void KeyboardInit(void) {
   Log("[Keyboard] Initialize driver!\n");
 
-  kbdtmr = AcquireTimer(TIMER_CIAB_B);
+  kbdtmr = AcquireTimer(TIMER_CIAA_B);
   /* Set to input mode. */
   ciaa->ciacra &= ~CIACRAF_SPMODE;
   /* Enable keyboard interrupt.
