@@ -48,23 +48,33 @@ jumptable:
         bra.w   _Read
         bra.w   _Close
 
+; void *AllocMem(ULONG byteSize asm("d0"), ULONG attributes asm("d1"))
+; -> void *MemAlloc(u_int byteSize asm("d0"), u_int attributes asm("d1"))
 _AllocMem:
         jmp     _MemAlloc
 
+; void FreeMem(void *memoryBlock asm("a1"), ULONG byteSize asm("d0"))
+; -> void MemFree(void *memoryBlock asm("a0")
 _FreeMem:
+        move.l  a1,a0
         jmp     _MemFree
 
+; BPTR Open(STRPTR name asm("d1"), LONG accessMode asm("d2"))
+; -> FileT *OpenFile(const char *path asm("a0"));
 _Open:
-        clr.l   d0
+        move.l  d1,a0
         jmp     _OpenFile
 
+; LONG Read(BPTR file asm("d1"), void *buffer asm("d2"), LONG length asm("d3"))
+; -> int FileRead(FileT *f asm("a0"), void *buf asm("a1"), u_int nbyte asm("d0")
 _Read:
         move.l  d1,a0
-        jsr     _FileRead
-        neg.l   d0
-        and.l   d3,d0
-        rts
+        move.l  d2,a1
+        move.l  d3,d0
+        jmp     _FileRead
 
+; BOOL Close(BPTR file asm("d1"))
+; -> void FileClose(FileT *f asm("a0"))
 _Close:
         move.l  d1,a0
         jmp     _FileClose
