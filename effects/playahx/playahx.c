@@ -1,6 +1,7 @@
 #include "effect.h"
 #include "interrupt.h"
 #include "cia.h"
+#include "timer.h"
 #include "memory.h"
 #include "ahx.h"
 #include "console.h"
@@ -16,6 +17,7 @@
 static BitmapT *screen;
 static CopListT *cp;
 static ConsoleT console;
+static CIATimerT *ahxtmr;
 
 #include "data/lat2-08.c"
 
@@ -137,8 +139,8 @@ static void WaveScopeDrawChannel(short num) {
 }
 
 static int AhxPlayerIntHandler(void) {
-  /* Handle CIA Timer A interrupt. */
-  if (SampleICR(ciaa, CIAICRF_TA)) {
+  /* Handle CIA B Timer A interrupt. */
+  if (SampleICR(ciab, CIAICRF_TA)) {
     custom->color[0] = 0x448;
     AhxInterrupt();
     custom->color[0] = 0;
@@ -150,9 +152,9 @@ static int AhxPlayerIntHandler(void) {
 INTSERVER(AhxPlayerInterrupt, 10, (IntFuncT)AhxPlayerIntHandler, NULL);
 
 static void AhxSetTempo(u_short tempo asm("d0")) {
-  ciaa->ciatalo = tempo & 0xff;
-  ciaa->ciatahi = tempo >> 8;
-  ciaa->ciacra |= CIACRAF_START;
+  ciab->ciatalo = tempo & 0xff;
+  ciab->ciatahi = tempo >> 8;
+  ciab->ciacra |= CIACRAF_START;
 }
 
 static void DrawFrames(void) {
@@ -197,6 +199,7 @@ static void Init(void) {
   InitWaveScope();
   KeyboardInit();
 
+  ahxtmr = AcquireTimer(TIMER_CIAB_A);
 
   if (AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS))
     Panic("AhxInitPlayer() failed!");
@@ -211,6 +214,7 @@ static void Init(void) {
 
 static void Kill(void) {
   RemIntServer(PortsChain, AhxPlayerInterrupt);
+  ReleaseTimer(ahxtmr);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
