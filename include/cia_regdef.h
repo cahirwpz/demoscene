@@ -59,22 +59,19 @@ struct CIA {
 #define CIAICRB_IR 7
 #define CIAICRB_SETCLR 7
 
+/* common control register bit numbers */
+#define CIACRB_START 0
+#define CIACRB_PBON 1
+#define CIACRB_OUTMODE 2
+#define CIACRB_RUNMODE 3
+#define CIACRB_LOAD 4
+
 /* control register A bit numbers */
-#define CIACRAB_START 0
-#define CIACRAB_PBON 1
-#define CIACRAB_OUTMODE 2
-#define CIACRAB_RUNMODE 3
-#define CIACRAB_LOAD 4
 #define CIACRAB_INMODE 5
 #define CIACRAB_SPMODE 6
 #define CIACRAB_TODIN 7
 
 /* control register B bit numbers */
-#define CIACRBB_START 0
-#define CIACRBB_PBON 1
-#define CIACRBB_OUTMODE 2
-#define CIACRBB_RUNMODE 3
-#define CIACRBB_LOAD 4
 #define CIACRBB_INMODE0 5
 #define CIACRBB_INMODE1 6
 #define CIACRBB_ALARM 7
@@ -90,22 +87,19 @@ struct CIA {
 #define CIAICRF_ALL (CIAICRF_TA | CIAICRF_TB | CIAICRF_ALRM | CIAICRF_SP |     \
                      CIAICRF_FLG)
 
+/* common control register masks */
+#define CIACRF_START __BIT(CIACRB_START)
+#define CIACRF_PBON __BIT(CIACRB_PBON)
+#define CIACRF_OUTMODE __BIT(CIACRB_OUTMODE)
+#define CIACRF_RUNMODE __BIT(CIACRB_RUNMODE)
+#define CIACRF_LOAD __BIT(CIACRB_LOAD)
+
 /* control register A register masks */
-#define CIACRAF_START __BIT(CIACRAB_START)
-#define CIACRAF_PBON __BIT(CIACRAB_PBON)
-#define CIACRAF_OUTMODE __BIT(CIACRAB_OUTMODE)
-#define CIACRAF_RUNMODE __BIT(CIACRAB_RUNMODE)
-#define CIACRAF_LOAD __BIT(CIACRAB_LOAD)
 #define CIACRAF_INMODE __BIT(CIACRAB_INMODE)
 #define CIACRAF_SPMODE __BIT(CIACRAB_SPMODE)
 #define CIACRAF_TODIN __BIT(CIACRAB_TODIN)
 
 /* control register B register masks */
-#define CIACRBF_START __BIT(CIACRBB_START)
-#define CIACRBF_PBON __BIT(CIACRBB_PBON)
-#define CIACRBF_OUTMODE __BIT(CIACRBB_OUTMODE)
-#define CIACRBF_RUNMODE __BIT(CIACRBB_RUNMODE)
-#define CIACRBF_LOAD __BIT(CIACRBB_LOAD)
 #define CIACRBF_INMODE0 __BIT(CIACRBB_INMODE0)
 #define CIACRBF_INMODE1 __BIT(CIACRBB_INMODE1)
 #define CIACRBF_ALARM __BIT(CIACRBB_ALARM)
