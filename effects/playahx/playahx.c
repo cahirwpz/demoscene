@@ -136,15 +136,6 @@ static void WaveScopeDrawChannel(short num) {
   ch->i = i;
 }
 
-static void Load(void) {
-  int err = AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS);
-  Assert(err == 0);
-}
-
-static void UnLoad(void) {
-  AhxKillPlayer();
-}
-
 static int AhxPlayerIntHandler(void) {
   /* Handle CIA Timer A interrupt. */
   if (SampleICR(ciaa, CIAICRF_TA)) {
@@ -206,11 +197,16 @@ static void Init(void) {
   InitWaveScope();
   KeyboardInit();
 
-  if (AhxInitHardware((void *)AhxSetTempo, AHX_KILL_SYSTEM) == 0)
-    if (AhxInitModule(module) == 0)
-      AhxInitSubSong(0, 0);
+  {
+    int err = AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS);
+    Assert(err == 0);
 
-  AddIntServer(PortsChain, AhxPlayerInterrupt);
+    if (AhxInitHardware((void *)AhxSetTempo, AHX_KILL_SYSTEM) == 0)
+      if (AhxInitModule(module) == 0)
+        AhxInitSubSong(0, 0);
+
+    AddIntServer(PortsChain, AhxPlayerInterrupt);
+  }
 }
 
 static void Kill(void) {
@@ -221,6 +217,7 @@ static void Kill(void) {
   KillWaveScope();
   AhxStopSong();
   AhxKillHardware();
+  AhxKillPlayer();
 
   DeleteCopList(cp);
   DeleteBitmap(screen);
@@ -290,4 +287,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(playahx, Load, UnLoad, Init, Kill, Render);
+EFFECT(playahx, NULL, NULL, Init, Kill, Render);

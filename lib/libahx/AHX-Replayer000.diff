@@ -1,39 +1,63 @@
-@ 0396          _LVOAllocMem
-- 4eaeff3a
-+ 610029a4
-@ 03be          _LVOAllocMem
-- 4eaeff3a
-+ 6100297c
+@ 00be          _LVOOpenResource
+- 4eaefe0e
++ 61002c98
+@ 00d4          _LVOOpenResource
+- 4eaefe0e
++ 61002c82
+@ 00fa          _LVOAddICRVector
+- 4eaefffa
++ 61002c60
+@ 0108          _LVOAddICRVector
+- 4eaefffa
++ 61002c52
+@ 0128          _LVOAddICRVector
+- 4eaefffa
++ 61002c32
+@ 013e          _LVOAddICRVector
+- 4eaefffa
++ 61002c1c
+@ 01d0          _LVORemICRVector
+- 4eaefff4
++ 61002b8e
+@ 0232          _LVOCause
+- 4eaeff4c
++ 61002b30
 @ 02a6          _LVOFreeMem
 - 4eaeff2e
 + 61002a98
 @ 02bc          _LVOFreeMem
 - 4eaeff2e
 + 61002a82
+@ 0396          _LVOAllocMem
+- 4eaeff3a
++ 610029a4
+@ 03be          _LVOAllocMem
+- 4eaeff3a
++ 6100297c
 @ 03e4          _LVOOldOpenLibrary dos.library
 - 4eaefe68
-+ 4e714e71
++ 6100296a
 @ 03f6          _LVOOpen
 - 4eaeffe2
 + 6100294c
-@ 044c          _LVOOpen
-- 4eaeffe2
-+ 610028f6
 @ 0416          _LVORead
 - 4eaeffd6
 + 61002930
-@ 046c          _LVORead
-- 4eaeffd6
-+ 610028da
 @ 041e          _LVOClose
 - 4eaeffdc
 + 6100292c
+@ 044c          _LVOOpen
+- 4eaeffe2
++ 610028f6
+@ 046c          _LVORead
+- 4eaeffd6
++ 610028da
 @ 047e          _LVOClose
 - 4eaeffdc
 + 610028cc
 @ 0488          _LVOCloseLibrary DOSBase
 - 4eaefe62
-+ 4e714e71
++ 610028ca
 @ 03ec          "S:ahxWaves.Location" -> "ahxWaves.Location"
 - 0426
 + 0428

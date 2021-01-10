@@ -42,11 +42,17 @@ Ahx:
         cargs #Ahx+$1650, _AhxSetupVoice
 
 jumptable:
-        bra.w   _AllocMem
-        bra.w   _FreeMem
-        bra.w   _Open
-        bra.w   _Read
-        bra.w   _Close
+        bra.w   _AllocMem               ; 2d3c
+        bra.w   _FreeMem                ; 2d40
+        bra.w   _Open                   ; 2d44
+        bra.w   _Read                   ; 2d48
+        bra.w   _Close                  ; 2d4c
+        bra.w   _OldOpenLibrary         ; 2d50
+        bra.w   _CloseLibrary           ; 2d54
+        bra.w   _OpenResource           ; 2d58
+        bra.w   _AddICRVector           ; 2d5c
+        bra.w   _RemICRVector           ; 2d60
+        bra.w   _Cause                  ; 2d64
 
 ; void *AllocMem(ULONG byteSize asm("d0"), ULONG attributes asm("d1"))
 ; -> void *MemAlloc(u_int byteSize asm("d0"), u_int attributes asm("d1"))
@@ -79,6 +85,34 @@ _Close:
         move.l  d1,a0
         jmp     _FileClose
 
+; OldOpenLibrary
+_OldOpenLibrary:
+        moveq.l #1,d0
+        rts
+
+; CloseLibrary
+_CloseLibrary:
+        moveq.l #1,d0
+        rts
+
+; OpenResource
+_OpenResource:
+        moveq.l #0,d0
+        rts
+
+; AddICRVector
+_AddICRVector:
+        rts
+
+; RemICRVector
+_RemICRVector:
+        rts
+
+; Cause
+_Cause:
+        rts
+
+; Routines exported to C
 _AhxInitHW:
 	movem.l	d1-a6,-(sp)
         move.l  _Ahx+4(pc),a5
@@ -95,7 +129,7 @@ _AhxInitHardware:
 _AhxInitPlayer:
         suba.l  a0,a0
         suba.l  a1,a1
-        jmp     __AhxInitPlayer
+        bra     __AhxInitPlayer
 
 _AhxKillHardware:
         movem.l a3/a4/a6,-(sp)
