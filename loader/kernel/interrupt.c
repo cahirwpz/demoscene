@@ -22,7 +22,7 @@ void AddIntServer(IntChainT *ic, IntServerT *is) {
   }
   is_p = &ic->head;
   while (*is_p && (*is_p)->prio < is->prio)
-    continue;
+    is_p = &(*is_p)->next;
   is->next = *is_p;
   *is_p = is;
   IntrEnable();

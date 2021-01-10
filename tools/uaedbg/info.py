@@ -208,6 +208,8 @@ class Section():
         if self.symbols.get('_' + name, None) == addr:
             del self.symbols['_' + name]
         if name in self.symbols:
+            # TODO A case where there is more than one definition of statically
+            # allocated variable with the same name is not handled :(
             assert(self.symbols[name] == addr)
         self.symbols[name] = addr
 
