@@ -61,6 +61,3 @@
 @ 03ec          "S:ahxWaves.Location" -> "ahxWaves.Location"
 - 0426
 + 0428
-@ 0736          ???
-- 2a7af8f4      move.l  _Ahx+4(pc),a5
-+ 600000b8      bra.w   LAB_005C
