@@ -1,6 +1,7 @@
 #include <string.h>
 #include <memory.h>
 #include <file.h>
+#include <errno.h>
 
 struct File {
   FileOpsT *ops;
@@ -51,7 +52,7 @@ static int MemSeek(FileT *f, int offset, int whence) {
   } else if (whence == SEEK_END) {
     offset += f->length;
   } else if (whence != SEEK_SET) {
-    return -1;
+    return EINVAL;
   }
 
   if (offset < 0) {
