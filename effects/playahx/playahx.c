@@ -197,16 +197,16 @@ static void Init(void) {
   InitWaveScope();
   KeyboardInit();
 
-  {
-    int err = AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS);
-    Assert(err == 0);
 
-    if (AhxInitHardware((void *)AhxSetTempo, AHX_KILL_SYSTEM) == 0)
-      if (AhxInitModule(module) == 0)
-        AhxInitSubSong(0, 0);
+  if (AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS))
+    Panic("AhxInitPlayer() failed!");
+  if (AhxInitCIA((void *)AhxSetTempo))
+    Panic("AhxInitHardware() failed!");
+  if (AhxInitModule(module))
+    Panic("AhxInitModule() failed!");
+  AhxInitSubSong(0, 0);
 
-    AddIntServer(PortsChain, AhxPlayerInterrupt);
-  }
+  AddIntServer(PortsChain, AhxPlayerInterrupt);
 }
 
 static void Kill(void) {
@@ -216,7 +216,7 @@ static void Kill(void) {
 
   KillWaveScope();
   AhxStopSong();
-  AhxKillHardware();
+  AhxKillCIA();
   AhxKillPlayer();
 
   DeleteCopList(cp);

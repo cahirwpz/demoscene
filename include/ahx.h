@@ -43,10 +43,8 @@ struct AhxPlayer {
   u_int Tempo;        // word to cia tempo (normally NOT needed to xs)
 };
 
-#define AHX_SYSTEM_FRIENDLY 0
-#define AHX_KILL_SYSTEM 1
-
-int AhxInitHardware(void (*ciaInt)(void) asm("a0"), int system asm("d0"));
+int AhxInitCIA(void (*ciaInt)(void));
+void AhxKillCIA(void);
 
 #define AHX_LOAD_WAVES_FILE 0
 #define AHX_EXPLICIT_WAVES_PRECALCING 1
@@ -60,7 +58,6 @@ int AhxInitSubSong(int subsong asm("d0"), int waitPlay asm("d1"));
 void AhxInterrupt(void);
 void AhxStopSong(void);
 void AhxKillPlayer(void);
-void AhxKillHardware(void);
 void AhxNextPattern(void);
 void AhxPrevPattern(void);
 
