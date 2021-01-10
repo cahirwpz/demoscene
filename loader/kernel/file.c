@@ -1,21 +1,22 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <file.h>
+#include <errno.h>
 
 struct File {
   FileOpsT *ops;
 };
 
 int FileRead(FileT *f, void *buf, u_int nbyte) {
-  return f->ops->read ? f->ops->read(f, buf, nbyte) : -1;
+  return f->ops->read ? f->ops->read(f, buf, nbyte) : ENOTSUP;
 }
 
 int FileWrite(FileT *f, const void *buf, u_int nbyte) {
-  return f->ops->write ? f->ops->write(f, buf, nbyte) : -1;
+  return f->ops->write ? f->ops->write(f, buf, nbyte) : ENOTSUP;
 }
 
 int FileSeek(FileT *f, int offset, int whence) {
-  return f->ops->seek ? f->ops->seek(f, offset, whence) : -1;
+  return f->ops->seek ? f->ops->seek(f, offset, whence) : ENOTSUP;
 }
 
 void FileClose(FileT *f) {

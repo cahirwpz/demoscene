@@ -1,9 +1,10 @@
 #include <string.h>
 #include <types.h>
-#include "debug.h"
-#include "memory.h"
-#include "filesys.h"
-#include "floppy.h"
+#include <debug.h>
+#include <memory.h>
+#include <filesys.h>
+#include <floppy.h>
+#include <errno.h>
 
 #define TD_TRACK (TD_SECTOR * NSECTORS)
 #define TD_DISK (TD_TRACK * NTRACKS)
@@ -122,33 +123,41 @@ static void FsClose(FileT *file) {
 }
 
 static int FsRead(FileT *file, void *buf, u_int size) {
-  if (!file || size == 0 || (file->flags & IOF_ERR))
-    return false;
+  u_int left = size;
+
+  if (!file)
+    return EBADF;
+
+  if (file->flags & IOF_ERR)
+    return EIO;
+
+  if (size == 0)
+    return 0;
 
   // Log("[FileRead] $%p $%p %d\n", file, buf, size);
 
-  while (size > 0) {
+  while (left > 0) {
     if (!file->buf.left && !FillBuffer(file))
       break;
 
     {
       /* Read to the end of buffer or less. */
-      int length = min(size, file->buf.left);
+      int length = min(left, file->buf.left);
 
       memcpy(buf, file->buf.pos, length);
 
       file->buf.pos += length;
       file->buf.left -= length;
-      buf += length; size -= length;
+      buf += length; left -= length;
     }
   }
 
-  return size == 0; /* have we read everything? */
+  return size - left; /* how much did we read? */
 }
 
 static int FsSeek(FileT *file, int offset, int whence) {
   if (file->flags & IOF_ERR)
-    return -1;
+    return EIO;
   
   // Log("[FileSeek] $%p %d %d\n", file, pos, mode);
 
@@ -168,31 +177,34 @@ static int FsSeek(FileT *file, int offset, int whence) {
     if ((offset >= bufstart) && (offset < bufend)) {
       file->buf.pos = file->buf.track + offset - bufstart;
       file->buf.left = file->pos - offset;
-      return true;
+      return offset;
     }
 
     /* New position is not within file. */
     if ((offset < 0) || (offset > (int)file->length))
-      return -1;
+      return EINVAL;
 
     file->pos = offset;
-    return FillBuffer(file);
+    (void)FillBuffer(file);
+    return offset;
   }
 
-  return false;
+  return EINVAL;
 }
 
 int GetFileSize(const char *path) {
   FileEntryT *entry;
   if ((entry = LookupFile(path)))
     return entry->size;
-  return -1;
+  return ENOENT;
 }
 
 int GetCursorPos(FileT *file) {
-  if (file && !(file->flags & IOF_ERR))
-    return file->pos - file->buf.left;
-  return -1;
+  if (!file)
+    return EBADF;
+  if (file->flags & IOF_ERR)
+    return EIO;
+  return file->pos - file->buf.left;
 }
 
 #define ONSTACK(x) (&(x)), sizeof((x))
