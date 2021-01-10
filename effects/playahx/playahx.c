@@ -138,23 +138,14 @@ static void WaveScopeDrawChannel(short num) {
   ch->i = i;
 }
 
-static int AhxPlayerIntHandler(void) {
-  /* Handle CIA B Timer A interrupt. */
-  if (SampleICR(ciab, CIAICRF_TA)) {
-    custom->color[0] = 0x448;
-    AhxInterrupt();
-    custom->color[0] = 0;
-  }
-
-  return 0;
+static void AhxPlayerTimeout(__unused CIATimerT *timer) {
+  custom->color[0] = 0x448;
+  AhxInterrupt();
+  custom->color[0] = 0;
 }
 
-INTSERVER(AhxPlayerInterrupt, 10, (IntFuncT)AhxPlayerIntHandler, NULL);
-
 static void AhxSetTempo(u_short tempo asm("d0")) {
-  ciab->ciatalo = tempo & 0xff;
-  ciab->ciatahi = tempo >> 8;
-  ciab->ciacra |= CIACRAF_START;
+  SetupTimer(ahxtmr, AhxPlayerTimeout, tempo, 0);
 }
 
 static void DrawFrames(void) {
@@ -199,7 +190,8 @@ static void Init(void) {
   InitWaveScope();
   KeyboardInit();
 
-  ahxtmr = AcquireTimer(TIMER_CIAB_A);
+  ahxtmr = AcquireTimer(TIMER_ANY);
+  Assert(ahxtmr != NULL);
 
   if (AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS))
     Panic("AhxInitPlayer() failed!");
@@ -208,12 +200,9 @@ static void Init(void) {
   if (AhxInitModule(module))
     Panic("AhxInitModule() failed!");
   AhxInitSubSong(0, 0);
-
-  AddIntServer(PortsChain, AhxPlayerInterrupt);
 }
 
 static void Kill(void) {
-  RemIntServer(PortsChain, AhxPlayerInterrupt);
   ReleaseTimer(ahxtmr);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
