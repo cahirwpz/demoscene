@@ -6,6 +6,7 @@ ENTRY(start)
         move.l  d0, a0
         jsr     _L(Loader)
         jsr     _L(RestoreOS)
+        moveq.l #0, d0
         rts
 #else
         jsr     _L(Loader)
