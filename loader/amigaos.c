@@ -78,15 +78,15 @@ BootDataT *SaveOS(void) {
 
   Log("[Startup] Save AmigaOS state.\n");
 
-  /* Workaround for const-ness of GfxBase declaration. */
-  *(struct GfxBase **)&GfxBase =
-    (struct GfxBase *)OpenLibrary("graphics.library", 33);
-
   /* KS 1.3 and earlier are brain-dead since they don't clear BSS sections :( */
   if (ExecVer <= 34) {
     bzero(_bss, (size_t)_bss_size);
     bzero(_bss_chip, (size_t)_bss_chip_size);
   }
+
+  /* Workaround for const-ness of GfxBase declaration. */
+  *(struct GfxBase **)&GfxBase =
+    (struct GfxBase *)OpenLibrary("graphics.library", 33);
 
   /* Allocate blitter. */
   WaitBlit();
