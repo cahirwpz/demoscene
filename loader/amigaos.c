@@ -14,6 +14,7 @@
 #include <debug.h>
 #include <exception.h>
 #include <string.h>
+#include <strings.h>
 
 /* Use _custom definition provided by the linker. */
 extern struct Custom volatile _custom;
@@ -66,6 +67,12 @@ static BootDataT BootData = {
 /* Some shortcut macros. */
 #define ExecVer (SysBase->LibNode.lib_Version)
 
+/* Linker exported symbols (see amiga.ld linker script). */
+extern char _bss[];
+extern char _bss_size[];
+extern char _bss_chip[];
+extern char _bss_chip_size[];
+
 BootDataT *SaveOS(void) {
   BootDataT *bd = &BootData;
 
@@ -74,6 +81,12 @@ BootDataT *SaveOS(void) {
   /* Workaround for const-ness of GfxBase declaration. */
   *(struct GfxBase **)&GfxBase =
     (struct GfxBase *)OpenLibrary("graphics.library", 33);
+
+  /* KS 1.3 and earlier are brain-dead since they don't clear BSS sections :( */
+  if (ExecVer <= 34) {
+    bzero(_bss, (size_t)_bss_size);
+    bzero(_bss_chip, (size_t)_bss_chip_size);
+  }
 
   /* Allocate blitter. */
   WaitBlit();
