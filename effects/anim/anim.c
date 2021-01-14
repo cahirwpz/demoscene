@@ -38,11 +38,12 @@ static void Init(void) {
   EnableDMA(DMAF_BLITTER);
   BitmapClear(screen);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&running_pal, 0);
+
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopLoadPal(cp, &running_pal, 0);
   CopEnd(cp);
 
   CopListActivate(cp);

@@ -31,7 +31,7 @@ class StringTable(Sequence):
         s = 0
         while True:
             e = data.find(b'\0', s)
-            strings.addString(s + 4, data[s:e].decode('ascii'))
+            strings.addString(s, data[s:e].decode('ascii'))
             if e == -1:
                 break
             s = e + 1

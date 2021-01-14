@@ -121,13 +121,6 @@ static void MakeCopperList(CopListT *cp, CopInsT **cline) {
 
   CopInit(cp);
   CopSetupSprites(cp, sprptr);
-  CopLoadPal(cp, &sprite_pal, 16);
-  CopLoadPal(cp, &sprite_pal, 20);
-  CopLoadPal(cp, &sprite_pal, 24);
-  CopLoadPal(cp, &sprite_pal, 28);
-
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetColor(cp, 0, BGCOL);
 
   for (i = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(i - 1), 0xDE);
@@ -147,6 +140,13 @@ static void Init(void) {
   GeneratePrisms();
   GenerateColorShades();
   GenerateLines();
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetColor(0, BGCOL);
+  LoadPalette(&sprite_pal, 16);
+  LoadPalette(&sprite_pal, 20);
+  LoadPalette(&sprite_pal, 24);
+  LoadPalette(&sprite_pal, 28);
 
   cp[0] = NewCopList(HEIGHT * 5 + 200);
   cp[1] = NewCopList(HEIGHT * 5 + 200);

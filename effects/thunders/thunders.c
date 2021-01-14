@@ -92,20 +92,18 @@ static void Load(void) {
 }
 
 static void MakeCopperList(CopListT *cp, BitmapT *screen) {
-  short j;
-
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopSetupSprites(cp, NULL);
-  for (j = 0; j < 8; j++)
-    CopSetColor(cp, j, BGCOL);
   CopEnd(cp);
 }
 
 static void Init(void) {
   screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  ITER(k, 0, 7, SetColor(k, BGCOL));
 
   cp0 = NewCopList((HEIGHT - FAR_Y) * 16 + 200);
   cp1 = NewCopList((HEIGHT - FAR_Y) * 16 + 200);
@@ -383,7 +381,6 @@ static void MakeFloorCopperList(short yo, short kyo) {
   CopListT *cp = cp0;
 
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   {
     void **planes = screen0->planes;
     CopMove32(cp, bplpt[0], (*planes++) + WIDTH * (HEIGHT - 1) / 8);

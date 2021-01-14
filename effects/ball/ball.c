@@ -80,10 +80,7 @@ static void MakeUVMapRenderCode(void) {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
   CopSetupBitplanes(cp, NULL, &background, S_DEPTH);
-  CopLoadPal(cp, &background_pal, 0);
-  CopLoadPal(cp, &texture_pal, 16);
   CopSetupSprites(cp, sprptr);
   CopEnd(cp);
 
@@ -122,6 +119,10 @@ static void Init(void) {
       for (j = 0; j < 4; j++)
         sprite[i][j] = NewSprite(64, true);
   }
+
+  SetupPlayfield(MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
+  LoadPalette(&background_pal, 0);
+  LoadPalette(&texture_pal, 16);
 
   cp = NewCopList(80);
   MakeCopperList(cp);

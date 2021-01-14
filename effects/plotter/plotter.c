@@ -47,11 +47,12 @@ static void Init(void) {
   for (i = 0; i < 2; i++)
     BitmapClear(screen[i]);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&flares_pal, 0);
+
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopWait(cp, Y(-1), 0);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopLoadPal(cp, &flares_pal, 0);
   CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);

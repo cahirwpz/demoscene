@@ -1,13 +1,13 @@
 ; vim: ft=asm68k:ts=8:sw=8:
 
-        xdef _AhxInitHardware
+        xdef _AhxInitCIA
         xdef _AhxInitPlayer
         xdef _AhxInitModule
         xdef _AhxInitSubSong
         xdef _AhxInterrupt
         xdef _AhxStopSong
         xdef _AhxKillPlayer
-        xdef _AhxKillHardware
+        xdef _AhxKillCIA
         xdef _AhxNextPattern
         xdef _AhxPrevPattern
         xdef _Ahx
@@ -42,53 +42,58 @@ Ahx:
         cargs #Ahx+$1650, _AhxSetupVoice
 
 jumptable:
-        bra.w   _AllocMem
-        bra.w   _FreeMem
-        bra.w   _Open
-        bra.w   _Read
-        bra.w   _Close
+        bra.w   _AllocMem               ; 2d3c
+        bra.w   _FreeMem                ; 2d40
+        bra.w   _Open                   ; 2d44
+        bra.w   _Read                   ; 2d48
+        bra.w   _Close                  ; 2d4c
 
+; void *AllocMem(ULONG byteSize asm("d0"), ULONG attributes asm("d1"))
+; -> void *MemAlloc(u_int byteSize asm("d0"), u_int attributes asm("d1"))
 _AllocMem:
         jmp     _MemAlloc
 
+; void FreeMem(void *memoryBlock asm("a1"), ULONG byteSize asm("d0"))
+; -> void MemFree(void *memoryBlock asm("a0")
 _FreeMem:
+        move.l  a1,a0
         jmp     _MemFree
 
+; BPTR Open(STRPTR name asm("d1"), LONG accessMode asm("d2"))
+; -> FileT *OpenFile(const char *path asm("a0"));
 _Open:
-        clr.l   d0
+        move.l  d1,a0
         jmp     _OpenFile
 
+; LONG Read(BPTR file asm("d1"), void *buffer asm("d2"), LONG length asm("d3"))
+; -> int FileRead(FileT *f asm("a0"), void *buf asm("a1"), u_int nbyte asm("d0")
 _Read:
         move.l  d1,a0
-        jsr     _FileRead
-        neg.l   d0
-        and.l   d3,d0
-        rts
+        move.l  d2,a1
+        move.l  d3,d0
+        jmp     _FileRead
 
+; BOOL Close(BPTR file asm("d1"))
+; -> void FileClose(FileT *f asm("a0"))
 _Close:
         move.l  d1,a0
         jmp     _FileClose
 
-_AhxInitHW:
-	movem.l	d1-a6,-(sp)
-        move.l  _Ahx+4(pc),a5
-        bra     __AhxInitHW
-
-_AhxInitHardware:
-        bsr     _AhxInitHW
-
-        movem.l d6/a2-a4/a6,-(sp)
+; Routines exported to C
+_AhxInitCIA:
+        move.l  a4,-(sp)
+        moveq   #1,d0
         bsr     __AhxInitCIA
-        movem.l (sp)+,d6/a2-a4/a6
+        move.l  (sp)+,a4
         rts
 
 _AhxInitPlayer:
         suba.l  a0,a0
         suba.l  a1,a1
-        jmp     __AhxInitPlayer
+        bra     __AhxInitPlayer
 
-_AhxKillHardware:
-        movem.l a3/a4/a6,-(sp)
+_AhxKillCIA:
+        move.l  a4,-(sp)
         bsr     __AhxKillCIA
-        movem.l (sp)+,a3/a4/a6
+        move.l  (sp)+,a4
         rts

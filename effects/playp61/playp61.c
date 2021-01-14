@@ -7,6 +7,7 @@
 #include "keyboard.h"
 #include "event.h"
 #include "blitter.h"
+#include "timer.h"
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -21,6 +22,7 @@ static BitmapT *screen;
 static BitmapT *osc[4];
 static CopListT *cp;
 static ConsoleT console;
+static CIATimerT *p61tmr;
 
 INTSERVER(P61PlayerServer, 10, (IntFuncT)P61_Music, NULL);
 
@@ -75,12 +77,13 @@ static void Init(void) {
 
   ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1));
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetColor(0, 0x000);
+  SetColor(1, 0xfff);
+
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetColor(cp, 0, 0x000);
-  CopSetColor(cp, 1, 0xfff);
   CopEnd(cp);
 
   ConsoleInit(&console, &drdos8x8, screen);
@@ -108,6 +111,10 @@ static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
+  /* This timer launches P61 sound DMA reprogramming. */
+  p61tmr = AcquireTimer(TIMER_CIAB_B);
+  Assert(p61tmr != NULL);
+
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
@@ -123,6 +130,7 @@ static void Kill(void) {
   P61_End();
 
   RemIntServer(VertBlankChain, P61PlayerServer);
+  ReleaseTimer(p61tmr);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 

@@ -55,13 +55,14 @@ static void Init(void) {
   screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&tilegfx_pal, 0);
+
   cp = NewCopList(80 + (HTILES + 4) * VTILES);
 
   CopInit(cp);
   /* X(-1) to align with copper induced color changes */
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen1, DEPTH);
-  CopLoadPal(cp, &tilegfx_pal, 0);
   CopWaitV(cp, VP(0));
 
   /* Copper Chunky.

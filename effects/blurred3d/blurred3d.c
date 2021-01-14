@@ -36,7 +36,6 @@ static void UnLoad(void) {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(STARTX), Y(STARTY), WIDTH, HEIGHT * 5 / 4);
   CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
 
   {
@@ -75,6 +74,8 @@ static void Init(void) {
   scratchpad = NewBitmap(WIDTH, HEIGHT, 2);
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(STARTX), Y(STARTY), WIDTH, HEIGHT * 5 / 4);
 
   cp = NewCopList(80 + gradient.height * (gradient.width + 1));
   MakeCopperList(cp);

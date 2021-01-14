@@ -46,22 +46,21 @@ static void Init(void) {
   screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
+  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), 256, 256);
+  SetColor(0, 0x000);
+  SetColor(1, 0x44f);
+  SetColor(2, 0x88f);
+  SetColor(3, 0xccf);
 
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(32), Y(0), 256, 256);
   CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
   CopMove16(cp, bpl1mod, 4);
   CopMove16(cp, bpl2mod, 4);
-  CopSetColor(cp, 0, 0x000);
-  CopSetColor(cp, 1, 0x44f);
-  CopSetColor(cp, 2, 0x88f);
-  CopSetColor(cp, 3, 0xccf);
   CopEnd(cp);
 
   CopListActivate(cp);
-  EnableDMA(DMAF_RASTER);
+  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
 static void Kill(void) {

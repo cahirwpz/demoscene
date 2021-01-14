@@ -3803,6 +3803,7 @@ P61_setrepeat:
 	endc
 	endc				;ifeq nowaveforms
 
+_P61_temp:
 P61_temp0:
 	dcb.b Channel_Block_Size-2,0
 	dc 1

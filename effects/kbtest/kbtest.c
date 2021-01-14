@@ -20,13 +20,13 @@ static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
 
-  CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetColor(cp, 0, 0x000);
-  CopSetColor(cp, 1, 0xfff);
-  CopEnd(cp);
+  SetupPlayfield(MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetColor(0, 0x000);
+  SetColor(1, 0xfff);
 
+  CopInit(cp);
+  CopSetupBitplanes(cp, NULL, screen, DEPTH);
+  CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 

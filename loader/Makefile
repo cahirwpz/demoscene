@@ -1,7 +1,13 @@
 TOPDIR := $(realpath ..)
 
+# AMIGAOS => save & restore AmigaOS context
+#            (for intros or trackmos that can be launched from AmigaOS)
+# TRACKMO => initialize file system and floppy device driver
+CPPFLAGS += -DTRACKMO
+
 LIBNAME := loader
 SOURCES := \
+	amigaos.c \
 	autoinit.c \
 	effect.c \
 	loader.c \
@@ -29,6 +35,8 @@ SOURCES := \
 	kernel/task.c \
 	kernel/trap-entry.S \
 	kernel/trap.c 
+
+CFLAGS.amigaos = -Wno-strict-prototypes
 
 BUILD-FILES = crt0.o
 		

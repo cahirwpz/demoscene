@@ -48,7 +48,7 @@ typedef struct {
 static short headDir;
 static short trackNum;
 static SectorT *track;
-static CIATimerT *timer;
+static CIATimerT *fdtmr;
 
 static inline void WaitDiskReady(void) {
   while (ciaa->ciapra & CIAF_DSKRDY);
@@ -62,7 +62,7 @@ static void StepHeads(void) {
   bclr(ciaprb, CIAB_DSKSTEP);
   bset(ciaprb, CIAB_DSKSTEP);
 
-  WaitTimerSleep(timer, STEP_SETTLE);
+  WaitTimerSleep(fdtmr, STEP_SETTLE);
 
   trackNum += headDir;
 }
@@ -80,7 +80,7 @@ static void HeadsStepDirection(short inwards) {
     headDir = -2;
   }
 
-  WaitTimerSleep(timer, DIRECTION_REVERSE_SETTLE);
+  WaitTimerSleep(fdtmr, DIRECTION_REVERSE_SETTLE);
 }
 
 static inline void ChangeDiskSide(short upper) {
@@ -127,7 +127,7 @@ void InitFloppy(void) {
   custom->dsksync = DSK_SYNC;
   custom->adkcon = ADKF_SETCLR | ADKF_MFMPREC | ADKF_WORDSYNC | ADKF_FAST;
 
-  timer = AcquireTimer(TIMER_CIAB_A);
+  fdtmr = AcquireTimer(TIMER_CIAB_A);
 
   DisableDMA(DMAF_DISK);
   SetIntVector(DSKBLK, DiskBlockInterrupt, NULL);
@@ -150,7 +150,7 @@ void KillFloppy(void) {
   DisableINT(INTF_DSKBLK);
   ClearIRQ(INTF_DSKBLK);
   ResetIntVector(DSKBLK);
-  ReleaseTimer(timer);
+  ReleaseTimer(fdtmr);
   MemFree(track);
 }
 
@@ -172,7 +172,7 @@ void FloppyTrackRead(short num) {
       StepHeads();
   }
 
-  WaitTimerSleep(timer, DISK_SETTLE);
+  WaitTimerSleep(fdtmr, DISK_SETTLE);
 
   custom->dsklen = 0; /* Make sure the DMA for the disk is turned off. */
   ClearIRQ(INTF_DSKBLK);

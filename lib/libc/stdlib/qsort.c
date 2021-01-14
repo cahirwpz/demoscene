@@ -13,7 +13,7 @@ static inline void swap(void *x, void *y, short l) {
 static void sort(void *first, void *last, u_int size, 
                  int (*cmp)(const void *, const void *))
 {
-  if ((u_int)(last - first) > size) {
+  if (last - first > (int)size) {
     void *pivot = first;
     void *left = first + size;
     void *right = last;

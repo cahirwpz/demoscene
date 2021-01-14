@@ -6,9 +6,15 @@ import logging
 import os
 import signal
 import sys
+import traceback
 
-from uaedbg.uae import UaeProcess
-from uaedbg.dbg import UaeDebugger
+try:
+    from uaedbg.uae import UaeProcess
+    from uaedbg.dbg import UaeDebugger
+except:
+    traceback.print_exc()
+    input('Press any key...')
+    sys.exit(1)
 
 
 async def UaeLaunch(loop, execpath, args):
