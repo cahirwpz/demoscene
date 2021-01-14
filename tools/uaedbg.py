@@ -11,7 +11,7 @@ import traceback
 try:
     from uaedbg.uae import UaeProcess
     from uaedbg.dbg import UaeDebugger
-except:
+except Exception:
     traceback.print_exc()
     input('Press any key...')
     sys.exit(1)
