@@ -168,7 +168,6 @@ class HunkDebug(Hunk):
             symtabsize = hf.readLong()
             strtabsize = hf.readLong()
             symtab = hf.read(symtabsize)
-            hf.skip(4)
             strtab = hf.read(strtabsize)
 
             chunks = [symtab[i:i + 12] for i in range(0, symtabsize, 12)]
@@ -246,7 +245,7 @@ class HunkReloc(Hunk):
         type_, _ = hf.readHunk('HUNK_RELOC32', 'HUNK_RELOC16', 'HUNK_RELOC8',
                                'HUNK_DREL32', 'HUNK_DREL16', 'HUNK_DREL8')
 
-        if hf.type is 'executable' and type_ in ['HUNK_DREL32', 'HUNK_DREL16',
+        if hf.type == 'executable' and type_ in ['HUNK_DREL32', 'HUNK_DREL16',
                                                  'HUNK_DREL8']:
             relocs = hf.readShortRelocs()
         else:
@@ -608,10 +607,10 @@ def ReadHunkFile(path):
 
             type_ = Hunk.getType(hunkId)
 
-            if type_ is 'HUNK_HEADER':
+            if type_ == 'HUNK_HEADER':
                 hf.type = 'executable'
 
-            if type_ is 'HUNK_UNIT':
+            if type_ == 'HUNK_UNIT':
                 units += 1
                 if units > 1:
                     hf.type = 'library'
