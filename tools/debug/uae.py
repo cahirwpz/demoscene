@@ -208,7 +208,7 @@ class UaeCommandsMixin():
         lines = await self.communicate('w %d' % index)
         assert lines and lines[-1] == 'Memwatch %d removed' % index
 
-    async def entry_point(self):
+    async def get_segments(self):
         # assume for now that VBR is at 0
         vbr = 0
         magic = await self.read_long(0)
@@ -217,7 +217,8 @@ class UaeCommandsMixin():
         segments = []
         hunk = await self.read_long(4)
         while True:
-            segments.append(hunk + 8)
+            size = await self.read_long(hunk)
+            segments.append((hunk + 8, size - 8))
             hunk = await self.read_long(hunk + 4)
             if hunk == 0:
                 break

@@ -99,10 +99,15 @@ class GdbStub():
         elif packet == 'Offsets':
             # Get section offsets that the target used when relocating
             # the downloaded image.
-            entry = await self.uae.entry_point()
-            if entry:
+            segments = await self.uae.get_segments()
+            if segments:
+                size = 0
+                offset = []
+                for s_addr, s_len in segments:
+                    offset.append(s_addr - size)
+                    size += s_len
                 self.gdb.send_ack('Text={:08x};Data={:08x};Bss={:08x}'
-                                  .format(entry[0], entry[1], entry[2]))
+                                  .format(offset[0], offset[1], offset[2]))
             else:
                 self.gdb.send_ack('')
         elif packet.startswith('Supported'):
