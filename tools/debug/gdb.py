@@ -3,47 +3,6 @@
 import asyncio
 
 
-feature_xml = """<?xml version="1.0"?>
-<!DOCTYPE target SYSTEM "gdb-target.dtd">
-<target>
-<feature name="org.gnu.gdb.m68k.core">
-  <reg name="d0" bitsize="32"/>
-  <reg name="d1" bitsize="32"/>
-  <reg name="d2" bitsize="32"/>
-  <reg name="d3" bitsize="32"/>
-  <reg name="d4" bitsize="32"/>
-  <reg name="d5" bitsize="32"/>
-  <reg name="d6" bitsize="32"/>
-  <reg name="d7" bitsize="32"/>
-  <reg name="a0" bitsize="32" type="data_ptr"/>
-  <reg name="a1" bitsize="32" type="data_ptr"/>
-  <reg name="a2" bitsize="32" type="data_ptr"/>
-  <reg name="a3" bitsize="32" type="data_ptr"/>
-  <reg name="a4" bitsize="32" type="data_ptr"/>
-  <reg name="a5" bitsize="32" type="data_ptr"/>
-  <reg name="fp" bitsize="32" type="data_ptr"/>
-  <reg name="sp" bitsize="32" type="data_ptr"/>
-
-  <flags id="ps_flags" size="2">
-    <field name="T1" start="15" end="15"/>
-    <field name="T0" start="14" end="14"/>
-    <field name="S" start="13" end="13"/>
-    <field name="M" start="12" end="12"/>
-    <field name="IM2" start="10" end="10"/>
-    <field name="IM1" start="9" end="9"/>
-    <field name="IM0" start="8" end="8"/>
-    <field name="X" start="4" end="4"/>
-    <field name="N" start="3" end="3"/>
-    <field name="Z" start="2" end="2"/>
-    <field name="V" start="1" end="1"/>
-    <field name="C" start="0" end="0"/>
-  </flags>
-  <reg name="ps" bitsize="16" type="ps_flags"/>
-
-  <reg name="pc" bitsize="32" type="code_ptr"/>
-</feature>
-</target>"""
-
 memory_map_xml = """<?xml version="1.0"?>
 <!DOCTYPE memory-map PUBLIC "+//IDN gnu.org//DTD GDB Memory Map V1.0//EN"
  "http://sourceware.org/gdb/gdb-memory-map.dtd">
@@ -146,8 +105,8 @@ class GdbStub():
             else:
                 self.gdb.send_ack('')
         elif packet.startswith('Supported'):
-            supported = ['PacketSize=4096', 'qXfer:features:read+',
-                         'qXfer:memory-map:read+', 'hwbreak+']
+            supported = ['PacketSize=4096', 'qXfer:memory-map:read+',
+                         'hwbreak+']
             self.gdb.send_ack(';'.join(supported))
         elif packet.startswith('Xfer:memory-map:read:'):
             memmap = await self.uae.memory_map()
@@ -157,8 +116,6 @@ class GdbStub():
                                .format(desc, hex(start), hex(length)))
             layout = '\n'.join(entries)
             self.gdb.send_ack('l' + memory_map_xml.format(layout))
-        elif packet.startswith('Xfer:features:read:'):
-            self.gdb.send_ack('l' + feature_xml)
         elif packet == 'TStatus':
             # Is there a trace experiment running right now?
             self.gdb.send_ack('T0')

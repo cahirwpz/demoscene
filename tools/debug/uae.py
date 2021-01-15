@@ -28,13 +28,11 @@ class Registers():
         val = self._regs.get(name, None)
         if val is None:
             return 'XXXXXXXX'
-        if name == 'SR':
-            return '{:04X}'.format(val)
         return '{:08X}'.format(val)
 
     def __repr__(self):
         regs = ['{}={:08X}'.format(n, self[n]) for n in self.names[:19]]
-        regs.append('SR={:04X}'.format(self['SR']))
+        regs.append('SR={:08X}'.format(self['SR']))
         return '{' + ' '.join(regs) + '}'
 
 
