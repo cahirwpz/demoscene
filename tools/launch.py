@@ -38,14 +38,18 @@ class FSUAE(Launchable):
     def __init__(self):
         super().__init__('fs-uae', HerePath('tools', 'uaedbg.py'))
 
-    def configure(self, floppy=None, rom=None, executable=None):
-        self.options.extend(['-e', executable])
+    def configure(self, floppy=None, rom=None, debug=False):
+        self.options.extend(['-e', 'fs-uae'])
+        if debug:
+            self.options.append('-g')
         # Now options for FS-UAE.
         self.options.append('--')
         if floppy:
             self.options.append('--floppy_drive_0=' + os.path.realpath(floppy))
         if rom:
             self.options.append('--kickstart_file=' + os.path.realpath(rom))
+        if debug:
+            self.options.append('--use_debugger=1')
         self.options.append(HerePath('effects', 'Config.fs-uae'))
 
 
@@ -60,6 +64,24 @@ class SOCAT(Launchable):
             'STDIO', 'tcp:localhost:%d,retry,forever,interval=0.01' % tcp_port]
 
 
+class GDB(Launchable):
+    def __init__(self):
+        super().__init__('gdb', 'm68k-amigaos-gdb')
+        # gdbtui & cgdb output is garbled if there is no delay
+        self.cmd = 'sleep 0.5 && ' + self.cmd
+
+    def configure(self, program=''):
+        self.options += ['-ex=set prompt \033[35;1m(gdb) \033[0m']
+        self.options += [
+            '-iex=directory {}/'.format(HerePath()),
+            '-ix={}'.format(HerePath('.gdbinit')),
+            '-ex=set tcp connect-timeout 30',
+            '-ex=target remote localhost:8888',
+            '--nh',
+            '--silent',
+            program]
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Launch effect in FS-UAE emulator.')
@@ -68,7 +90,9 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--floppy', metavar='ADF', type=str,
                         help='Floppy disk image in ADF format.')
     parser.add_argument('-e', '--executable', metavar='EXE', type=str,
-                        help='Provide executable file for debugging.')
+                        help='Provide executable file for GDB debugger.')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='Run the program under GDB debugger control.')
     parser.add_argument('-w', '--window', metavar='WIN', type=str,
                         default='fs-uae',
                         help='Select tmux window name to switch to.')
@@ -83,17 +107,20 @@ if __name__ == '__main__':
         raise SystemExit('%s: file does not exist!' % args.rom)
 
     # Check if executable file exists.
-    if not os.path.isfile(args.executable):
-        raise SystemExit('%s: file does not exist!' % args.elf)
+    if args.debug and not os.path.isfile(args.executable):
+        raise SystemExit('%s: file does not exist!' % args.executable)
 
     uae = FSUAE()
-    uae.configure(floppy=args.floppy, rom=args.rom, executable=args.executable)
+    uae.configure(floppy=args.floppy, rom=args.rom, debug=args.debug)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)
 
     par_port = SOCAT('parallel')
     par_port.configure(tcp_port=8001)
+
+    debugger = GDB()
+    debugger.configure(args.executable)
 
     subprocess.run(['tmux', '-f', TMUX_CONF, '-L', SOCKET, 'start-server'])
 
@@ -109,9 +136,14 @@ if __name__ == '__main__':
         uae.start(session)
         ser_port.start(session)
         par_port.start(session)
+        if args.debug:
+            debugger.start(session)
 
         session.kill_window(':0')
-        session.select_window(args.window or par_port.name)
+        if args.debug:
+            session.select_window(debugger.name)
+        else:
+            session.select_window(args.window or par_port.name)
         session.attach_session()
     finally:
         try:
