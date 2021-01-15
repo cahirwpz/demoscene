@@ -214,8 +214,14 @@ class UaeCommandsMixin():
         magic = await self.read_long(0)
         if magic != 0x1ee7c0de:
             return None
-        bootdata = await self.read_long(4)
-        return await self.read_long(bootdata)
+        segments = []
+        hunk = await self.read_long(4)
+        while True:
+            segments.append(hunk + 8)
+            hunk = await self.read_long(hunk + 4)
+            if hunk == 0:
+                break
+        return segments
 
     async def prologue(self):
         lines = await self.recv()

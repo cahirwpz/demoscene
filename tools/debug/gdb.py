@@ -101,7 +101,8 @@ class GdbStub():
             # the downloaded image.
             entry = await self.uae.entry_point()
             if entry:
-                self.gdb.send_ack('TextSeg={:08x}'.format(entry))
+                self.gdb.send_ack('Text={:08x};Data={:08x};Bss={:08x}'
+                                  .format(entry[0], entry[1], entry[2]))
             else:
                 self.gdb.send_ack('')
         elif packet.startswith('Supported'):
