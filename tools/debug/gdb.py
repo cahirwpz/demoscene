@@ -117,7 +117,7 @@ class GdbStub():
         elif packet.startswith('Xfer:memory-map:read:'):
             memmap = await self.uae.memory_map()
             entries = []
-            for start, length, desc in memmap:
+            for start, length, desc in sorted(memmap):
                 entries.append('<memory type="{}" start="{}" length="{}"/>'
                                .format(desc, hex(start), hex(length)))
             layout = '\n'.join(entries)

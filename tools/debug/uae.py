@@ -8,6 +8,10 @@ from prompt_toolkit.shortcuts import PromptSession
 from prompt_toolkit.history import InMemoryHistory
 
 
+CUSTOM = 0xdff000
+CUSTOM_SIZE = 0x200
+
+
 class Registers():
     names = ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7',
              'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7',
@@ -113,7 +117,7 @@ class UaeCommandsMixin():
 
     async def memory_map(self):
         lines = await self.communicate('dm')
-        regions = []
+        regions = [(CUSTOM, CUSTOM_SIZE, 'custom')]
         for line in lines:
             line = line.strip()
             if line.startswith('='):
@@ -138,6 +142,8 @@ class UaeCommandsMixin():
 
     async def read_memory(self, addr, length):
         # {m <address> [<lines>]} Memory dump starting at <address>.
+        if addr >= CUSTOM and addr < CUSTOM + CUSTOM_SIZE:
+            return await self.read_custom(addr - CUSTOM, length)
         lines = await self.communicate('m %x %d' % (addr, (length + 15) / 16))
         # 00000004 00C0 0276 00FC 0818 00FC 081A 00FC 081C  ...v............'
         # 00000014 00FC 081E 00FC 0820 00FC 0822 00FC 090E  ....... ..."....'
@@ -147,6 +153,19 @@ class UaeCommandsMixin():
                 print(line)
         hexlines = [''.join(line.strip().split()[1:9]) for line in lines]
         return ''.join(hexlines)[:length * 2]
+
+    async def read_custom(self, addr, length):
+        assert addr + length <= CUSTOM_SIZE
+        lines = await self.communicate('e')
+        custom = ['0000' for i in range(256)]
+        for line in lines:
+            fs = line.strip().split()
+            i = int(fs[0], 16)
+            j = int(fs[3], 16)
+            custom[i // 2] = fs[2]
+            custom[j // 2] = fs[5]
+        custom = ''.join(custom)
+        return custom[addr*2:addr*2+length*2]
 
     async def read_long(self, addr):
         longword = await self.read_memory(addr, 4)
