@@ -117,7 +117,7 @@ class UaeCommandsMixin():
 
     async def memory_map(self):
         lines = await self.communicate('dm')
-        regions = [(CUSTOM, CUSTOM_SIZE, 'custom')]
+        regions = [(CUSTOM, CUSTOM_SIZE, 'ram')]
         for line in lines:
             line = line.strip()
             if line.startswith('='):
@@ -237,7 +237,7 @@ class UaeCommandsMixin():
         hunk = await self.read_long(4)
         while True:
             size = await self.read_long(hunk)
-            segments.append((hunk + 8, size - 8))
+            segments.append(hunk + 8)
             hunk = await self.read_long(hunk + 4)
             if hunk == 0:
                 break
