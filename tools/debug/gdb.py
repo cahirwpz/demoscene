@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import asyncio
+import logging
 
 
 memory_map_xml = """<?xml version="1.0"?>
@@ -23,7 +24,7 @@ class GdbConnection():
     async def recv_ack(self):
         # read a character
         data = await self.reader.read(1)
-        print("(gdb) <- {}".format(data))
+        logging.debug("(gdb) <- {}".format(data))
 
         # fail if not acknowledge and not retransmission marker
         if data not in [b'+', b'-']:
@@ -33,7 +34,7 @@ class GdbConnection():
 
     async def recv_break(self):
         data = await self.reader.read(1)
-        print("(gdb) <- {}".format(data))
+        logging.debug("(gdb) <- {}".format(data))
         assert data == b'\x03'
 
     async def recv_packet(self):
@@ -56,7 +57,7 @@ class GdbConnection():
             packet = raw_packet.decode()[:-1]
             raw_chksum = await self.reader.read(2)
             chksum = int(raw_chksum.decode(), 16)
-            print("(gdb) <- '{}'".format(packet))
+            logging.debug("(gdb) <- '{}'".format(packet))
 
             # check if check sum matches
             if chksum != self.chksum(packet):
@@ -65,20 +66,20 @@ class GdbConnection():
         return packet
 
     def send_nack(self, packet=None):
-        print("(gdb) -> '-'")
+        logging.debug("(gdb) -> '-'")
         self.writer.write(b'-')
         if packet is not None:
             self.send(packet)
 
     def send_ack(self, packet=None):
-        print("(gdb) -> '+'")
+        logging.debug("(gdb) -> '+'")
         self.writer.write(b'+')
         if packet is not None:
             self.send(packet)
 
     def send(self, packet):
         data = '${}#{:02x}'.format(packet, self.chksum(packet))
-        print("(gdb) -> '{}'".format(packet))
+        logging.debug("(gdb) -> '{}'".format(packet))
         self.writer.write(data.encode())
 
 
@@ -99,10 +100,10 @@ class GdbStub():
         elif packet == 'Offsets':
             # Get section offsets that the target used when relocating
             # the downloaded image.
-            entry = await self.uae.entry_point()
-            if entry:
+            segs = await self.uae.get_segments()
+            if segs:
                 self.gdb.send_ack('Text={:08x};Data={:08x};Bss={:08x}'
-                                  .format(entry[0], entry[1], entry[2]))
+                                  .format(segs[0], segs[1], segs[2]))
             else:
                 self.gdb.send_ack('')
         elif packet.startswith('Supported'):
@@ -112,7 +113,7 @@ class GdbStub():
         elif packet.startswith('Xfer:memory-map:read:'):
             memmap = await self.uae.memory_map()
             entries = []
-            for start, length, desc in memmap:
+            for start, length, desc in sorted(memmap):
                 entries.append('<memory type="{}" start="{}" length="{}"/>'
                                .format(desc, hex(start), hex(length)))
             layout = '\n'.join(entries)
@@ -309,7 +310,7 @@ class GdbStub():
                     {uae_stop, gdb_wait}, return_when=asyncio.FIRST_COMPLETED)
 
             if uae_stop in done:
-                print('FS-UAE stopped!')
+                logging.debug('FS-UAE stopped!')
                 gdb_wait.cancel()
                 try:
                     await gdb_wait
@@ -317,7 +318,7 @@ class GdbStub():
                     pass
                 stopdata = uae_stop.result()
             else:
-                print('GDB sent break message!')
+                logging.debug('GDB sent break message!')
                 self.uae.interrupt()
                 stopdata = await uae_stop
                 if False:
@@ -334,5 +335,5 @@ class GdbStub():
                             for num, name in enumerate(self.__regs__))
             if 'watch' in stopdata:
                 dump += ';watch:%x' % stopdata['watch']
-            self.gdb.send('T05;{};'.format(dump))
+            self.gdb.send('T05{};'.format(dump))
             await self.gdb.recv_ack()
