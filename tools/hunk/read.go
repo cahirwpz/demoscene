@@ -109,7 +109,7 @@ func ReadFile(path string) (hunks []Hunk, err error) {
 		case HUNK_SYMBOL:
 			hunk = readHunkSymbol(file)
 		case HUNK_DEBUG:
-			hunk = readHunkDebug(file)
+			hunk = readHunkDebugGnu(file)
 		case HUNK_EXT:
 			hunk = readHunkExt(file)
 		case HUNK_END:

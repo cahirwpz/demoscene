@@ -173,7 +173,7 @@ func readStab(r io.Reader) (s Stab) {
 	return
 }
 
-func (s Stab) String() string {
+func (s Stab) String(strtab map[int]string) string {
 	var visibility rune
 
 	if s.External() {
@@ -182,6 +182,11 @@ func (s Stab) String() string {
 		visibility = 'l'
 	}
 
-	return fmt.Sprintf("%08x %c %s %04x %02x %d",
-		s.Value, visibility, StabTypeMap[s.Type()], s.Other, s.Desc, s.StrOff)
+	if strtab != nil {
+		return fmt.Sprintf("%08x %c %6s %04x %02x %s", s.Value, visibility,
+			StabTypeMap[s.Type()], s.Other, s.Desc, strtab[int(s.StrOff)])
+	} else {
+		return fmt.Sprintf("%08x %c %6s %04x %02x %d", s.Value, visibility,
+			StabTypeMap[s.Type()], s.Other, s.Desc, s.StrOff)
+	}
 }

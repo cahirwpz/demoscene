@@ -56,25 +56,25 @@ func (h HunkExt) Type() HunkType {
 
 func (h HunkExt) String() string {
 	var sb strings.Builder
+
 	sb.WriteString("HUNK_EXT\n")
 
 	prevExtType := EXT_NONE
 	for _, ext := range h.Ext {
 		if prevExtType != ext.Type {
-			sb.WriteString(fmt.Sprintf(" %s:\n", HunkExtNameMap[ext.Type]))
+			fmt.Fprintf(&sb, " %s:\n", HunkExtNameMap[ext.Type])
 			prevExtType = ext.Type
 		}
-		sb.WriteString(
-			fmt.Sprintf("  name: %s", ext.Name))
+		fmt.Fprintf(&sb, "  name: %s", ext.Name)
 		if ext.Refs == nil {
-			sb.WriteString(fmt.Sprintf(", value: 0x%x", ext.Value))
+			fmt.Fprintf(&sb, ", value: 0x%x", ext.Value)
 		} else {
 			if ext.Type == EXT_COMMON {
-				sb.WriteString(fmt.Sprintf(", size: 0x%x", ext.Value))
+				fmt.Fprintf(&sb, ", size: 0x%x", ext.Value)
 			} else {
 				sb.WriteString("\n   offsets: ")
 				for _, ref := range ext.Refs {
-					sb.WriteString(fmt.Sprintf("0x%x ", ref))
+					fmt.Fprintf(&sb, "0x%x ", ref)
 				}
 			}
 		}

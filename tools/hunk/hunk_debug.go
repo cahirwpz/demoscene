@@ -6,26 +6,28 @@ import (
 	"strings"
 )
 
-type HunkDebug2 struct {
+type HunkDebugGnu struct {
 	SymTab []Stab
 	StrTab []byte
 }
 
-func parseStringTable(data []byte) []string {
-	var strtab []string
+func parseStringTable(data []byte) map[int]string {
+	strtab := make(map[int]string)
 	var s int = 0
 	length := len(data)
 	for i := 0; i < length; i++ {
 		if data[i] == 0 {
-			strtab = append(strtab, string(data[s:i]))
+			str := string(data[s:i])
+			if str != "" {
+				strtab[s] = str
+			}
 			s = i + 1
 		}
 	}
 	return strtab
 }
 
-func readHunkDebug2(r io.Reader, name string) (h HunkDebug2) {
-	/* nlongs := readLong(r) */
+func readHunkDebugGnu(r io.Reader) (h HunkDebugGnu) {
 	skipBytes(r, 4)
 	debugger := readLong(r)
 	/*
@@ -36,15 +38,13 @@ func readHunkDebug2(r io.Reader, name string) (h HunkDebug2) {
 	 * [pad bytes]
 	 */
 	if debugger != 0x10b {
-		fmt.Printf("%08x [%s]\n", debugger, name)
-		panic("unknown debugger")
+		panic(fmt.Sprintf("unknown debugger: %08x", debugger))
 	}
 	symtabSize := readLong(r)
 	strtabSize := readLong(r)
 	for i := 0; i < int(symtabSize); i += 12 {
 		h.SymTab = append(h.SymTab, readStab(r))
 	}
-	skipBytes(r, 4)
 	h.StrTab = readData(r, strtabSize)
 	if strtabSize&3 != 0 {
 		skipBytes(r, int(4-strtabSize&3))
@@ -52,20 +52,18 @@ func readHunkDebug2(r io.Reader, name string) (h HunkDebug2) {
 	return
 }
 
-func (h HunkDebug2) Type() uint32 {
+func (h HunkDebugGnu) Type() HunkType {
 	return HUNK_DEBUG
 }
 
-func (h HunkDebug2) String() string {
+func (h HunkDebugGnu) String() string {
 	var sb strings.Builder
+
 	sb.WriteString("HUNK_DEBUG\n")
-	for i, s := range h.SymTab {
-		fmt.Fprintf(&sb, "%4d: %s\n", i, s)
-	}
-	sb.WriteString("\n")
+
 	strtab := parseStringTable(h.StrTab)
-	for i, s := range strtab {
-		fmt.Fprintf(&sb, "%4d: %s\n", i, s)
+	for _, s := range h.SymTab {
+		fmt.Fprintf(&sb, " %s\n", s.String(strtab))
 	}
 	return sb.String()
 }
