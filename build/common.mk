@@ -87,11 +87,11 @@ CLEAN-FILES += $(SOURCES:%=%~)
 
 %.o: %.c
 	@echo "[CC] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $<
+	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $(CURDIR)/$<
 
 %.o: %.S
 	@echo "[AS] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(ASFLAGS) $(ASFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $<
+	$(CC) $(ASFLAGS) $(ASFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $(CURDIR)/$<
 
 %.o: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
