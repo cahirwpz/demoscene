@@ -29,5 +29,6 @@ func main() {
 
 	for _, hunk := range hunks {
 		fmt.Print(hunk)
+		fmt.Println("")
 	}
 }

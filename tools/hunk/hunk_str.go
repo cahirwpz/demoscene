@@ -6,7 +6,7 @@ import (
 )
 
 type HunkStr struct {
-	htype uint32
+	htype HunkType
 	Name  string
 }
 
@@ -18,7 +18,7 @@ func readHunkUnit(r io.Reader) HunkStr {
 	return HunkStr{HUNK_UNIT, readString(r)}
 }
 
-func (h HunkStr) Type() uint32 {
+func (h HunkStr) Type() HunkType {
 	return h.htype
 }
 

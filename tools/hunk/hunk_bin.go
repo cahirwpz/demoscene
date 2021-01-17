@@ -7,7 +7,7 @@ import (
 )
 
 type HunkBin struct {
-	htype uint32
+	htype HunkType
 	Bytes []byte
 }
 
@@ -23,7 +23,7 @@ func readHunkDebug(r io.Reader) HunkBin {
 	return HunkBin{HUNK_DEBUG, readData(r, readLong(r)*4)}
 }
 
-func (h HunkBin) Type() uint32 {
+func (h HunkBin) Type() HunkType {
 	return h.htype
 }
 

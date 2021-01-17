@@ -27,7 +27,7 @@ func readHunkHeader(r io.Reader) (h HunkHeader) {
 	return
 }
 
-func (h HunkHeader) Type() uint32 {
+func (h HunkHeader) Type() HunkType {
 	return HUNK_HEADER
 }
 

@@ -1,51 +1,85 @@
 package hunk
 
 import (
+	"fmt"
 	"io"
+	"sort"
+	"strings"
 )
 
-type HunkExt struct {
-	SymDef []SymbolDef
-	SymRef []SymbolRef
+type Extern struct {
+	Type  ExtType
+	Name  string
+	Value uint32
+	Refs  []uint32
 }
 
-type SymbolRef struct {
-	Name string
-	Size uint32
-	Refs []uint32
+type HunkExt struct {
+	Ext []Extern
 }
 
 func readHunkExt(r io.Reader) HunkExt {
-	var symdef []SymbolDef
-	var symref []SymbolRef
+	var ext []Extern
 	for {
 		nlongs := readLong(r)
 		if nlongs == 0 {
 			break
 		}
 		length := nlongs & 0xffffff
-		extType := nlongs >> 24
+		extType := ExtType(nlongs >> 24)
 		name := readStringOfSize(r, length)
 		switch extType {
 		case EXT_DEF, EXT_ABS, EXT_RES:
 			value := readLong(r)
-			symdef = append(symdef, SymbolDef{name, value})
+			ext = append(ext, Extern{extType, name, value, nil})
 		case EXT_REF32, EXT_REF16, EXT_REF8, EXT_DEXT32, EXT_DEXT16, EXT_DEXT8:
-			symref = append(symref, SymbolRef{name, 0, readArrayOfLong(r)})
+			ext = append(ext, Extern{extType, name, 0, readArrayOfLong(r)})
 		case EXT_COMMON:
 			size := readLong(r)
-			symref = append(symref, SymbolRef{name, size, readArrayOfLong(r)})
+			ext = append(ext, Extern{extType, name, size, readArrayOfLong(r)})
 		default:
 			panic("unknown external type")
 		}
 	}
-	return HunkExt{}
+	sort.Slice(ext, func(i, j int) bool {
+		if ext[i].Type == ext[j].Type {
+			return ext[i].Name < ext[j].Name
+		}
+		return ext[i].Type < ext[j].Type
+	})
+	return HunkExt{ext}
 }
 
-func (h HunkExt) Type() uint32 {
+func (h HunkExt) Type() HunkType {
 	return HUNK_EXT
 }
 
 func (h HunkExt) String() string {
-	return "HUNK_EXT\n"
+	var sb strings.Builder
+	sb.WriteString("HUNK_EXT\n")
+
+	prevExtType := EXT_NONE
+	for _, ext := range h.Ext {
+		if prevExtType != ext.Type {
+			sb.WriteString(fmt.Sprintf(" %s:\n", HunkExtNameMap[ext.Type]))
+			prevExtType = ext.Type
+		}
+		sb.WriteString(
+			fmt.Sprintf("  name: %s", ext.Name))
+		if ext.Refs == nil {
+			sb.WriteString(fmt.Sprintf(", value: 0x%x", ext.Value))
+		} else {
+			if ext.Type == EXT_COMMON {
+				sb.WriteString(fmt.Sprintf(", size: 0x%x", ext.Value))
+			} else {
+				sb.WriteString("\n   offsets: ")
+				for _, ref := range ext.Refs {
+					sb.WriteString(fmt.Sprintf("0x%x ", ref))
+				}
+			}
+		}
+		sb.WriteString("\n")
+	}
+
+	return sb.String()
 }

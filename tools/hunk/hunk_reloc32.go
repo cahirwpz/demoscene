@@ -31,7 +31,7 @@ func readHunkReloc32(r io.Reader) (h HunkReloc32) {
 	return
 }
 
-func (h HunkReloc32) Type() uint32 {
+func (h HunkReloc32) Type() HunkType {
 	return HUNK_RELOC32
 }
 

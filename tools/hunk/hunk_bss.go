@@ -13,7 +13,7 @@ func readHunkBss(r io.Reader) HunkBss {
 	return HunkBss{readLong(r) * 4}
 }
 
-func (h HunkBss) Type() uint32 {
+func (h HunkBss) Type() HunkType {
 	return HUNK_BSS
 }
 

@@ -2,48 +2,54 @@ package hunk
 
 /* Refer to The AmigaDOS Manual (3rd Edition), chapter 10. */
 
-const (
-	HUNK_UNIT         = 999
-	HUNK_NAME         = 1000
-	HUNK_CODE         = 1001
-	HUNK_DATA         = 1002
-	HUNK_BSS          = 1003
-	HUNK_RELOC32      = 1004
-	HUNK_RELOC16      = 1005
-	HUNK_RELOC8       = 1006
-	HUNK_EXT          = 1007
-	HUNK_SYMBOL       = 1008
-	HUNK_DEBUG        = 1009
-	HUNK_END          = 1010
-	HUNK_HEADER       = 1011
-	HUNK_OVERLAY      = 1013
-	HUNK_BREAK        = 1014
-	HUNK_DREL32       = 1015
-	HUNK_DREL16       = 1016
-	HUNK_DREL8        = 1017
-	HUNK_LIB          = 1018
-	HUNK_INDEX        = 1019
-	HUNK_RELOC32SHORT = 1020
-	HUNK_RELRELOC32   = 1021
-	HUNK_ABSRELOC16   = 1022
-)
+type HunkType uint32
 
 const (
-	EXT_SYMB      = 0   // symbol table
-	EXT_DEF       = 1   // relocatable definition
-	EXT_ABS       = 2   // Absolute definition
-	EXT_RES       = 3   // no longer supported
-	EXT_REF32     = 129 // 32 bit absolute reference to symbol
-	EXT_COMMON    = 130 // 32 bit absolute reference to COMMON block
-	EXT_REF16     = 131 // 16 bit PC-relative reference to symbol
-	EXT_REF8      = 132 // 8  bit PC-relative reference to symbol
-	EXT_DEXT32    = 133 // 32 bit data relative reference
-	EXT_DEXT16    = 134 // 16 bit data relative reference
-	EXT_DEXT8     = 135 // 8  bit data relative reference
-	EXT_RELREF32  = 136 // 32 bit PC-relative reference to symbol
-	EXT_RELCOMMON = 137 // 32 bit PC-relative reference to COMMON block
-	EXT_ABSREF16  = 138 // 16 bit absolute reference to symbol
-	EXT_ABSREF8   = 139 // 8 bit absolute reference to symbol
+	HUNK_NONE         HunkType = 0
+	HUNK_UNIT                  = 999
+	HUNK_NAME                  = 1000
+	HUNK_CODE                  = 1001
+	HUNK_DATA                  = 1002
+	HUNK_BSS                   = 1003
+	HUNK_RELOC32               = 1004
+	HUNK_RELOC16               = 1005
+	HUNK_RELOC8                = 1006
+	HUNK_EXT                   = 1007
+	HUNK_SYMBOL                = 1008
+	HUNK_DEBUG                 = 1009
+	HUNK_END                   = 1010
+	HUNK_HEADER                = 1011
+	HUNK_OVERLAY               = 1013
+	HUNK_BREAK                 = 1014
+	HUNK_DREL32                = 1015
+	HUNK_DREL16                = 1016
+	HUNK_DREL8                 = 1017
+	HUNK_LIB                   = 1018
+	HUNK_INDEX                 = 1019
+	HUNK_RELOC32SHORT          = 1020
+	HUNK_RELRELOC32            = 1021
+	HUNK_ABSRELOC16            = 1022
+)
+
+type ExtType uint8
+
+const (
+	EXT_NONE      ExtType = 255
+	EXT_SYMB              = 0   // symbol table
+	EXT_DEF               = 1   // relocatable definition
+	EXT_ABS               = 2   // Absolute definition
+	EXT_RES               = 3   // no longer supported
+	EXT_REF32             = 129 // 32 bit absolute reference to symbol
+	EXT_COMMON            = 130 // 32 bit absolute reference to COMMON block
+	EXT_REF16             = 131 // 16 bit PC-relative reference to symbol
+	EXT_REF8              = 132 // 8  bit PC-relative reference to symbol
+	EXT_DEXT32            = 133 // 32 bit data relative reference
+	EXT_DEXT16            = 134 // 16 bit data relative reference
+	EXT_DEXT8             = 135 // 8  bit data relative reference
+	EXT_RELREF32          = 136 // 32 bit PC-relative reference to symbol
+	EXT_RELCOMMON         = 137 // 32 bit PC-relative reference to COMMON block
+	EXT_ABSREF16          = 138 // 16 bit absolute reference to symbol
+	EXT_ABSREF8           = 139 // 8 bit absolute reference to symbol
 )
 
 const (
@@ -62,11 +68,11 @@ const (
 	HUNKF_MASK     = HUNKF_ADVISORY | HUNKF_CHIP | HUNKF_FAST
 )
 
-var HunkNameMap map[uint32]string
-var HunkExtNameMap map[uint32]string
+var HunkNameMap map[HunkType]string
+var HunkExtNameMap map[ExtType]string
 
 func init() {
-	HunkNameMap = map[uint32]string{
+	HunkNameMap = map[HunkType]string{
 		HUNK_UNIT:         "HUNK_UNIT",
 		HUNK_NAME:         "HUNK_NAME",
 		HUNK_CODE:         "HUNK_CODE",
@@ -92,7 +98,7 @@ func init() {
 		HUNK_ABSRELOC16:   "HUNK_ABSRELOC16",
 	}
 
-	HunkExtNameMap = map[uint32]string{
+	HunkExtNameMap = map[ExtType]string{
 		EXT_SYMB:      "EXT_SYMB",
 		EXT_DEF:       "EXT_DEF",
 		EXT_ABS:       "EXT_ABS",
@@ -113,5 +119,5 @@ func init() {
 
 type Hunk interface {
 	String() string
-	Type() uint32
+	Type() HunkType
 }

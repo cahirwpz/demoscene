@@ -80,7 +80,7 @@ func ReadFile(path string) (hunks []Hunk, err error) {
 		return
 	}
 
-	var hunkId uint32
+	var hunkId HunkType
 
 	for {
 		err = binary.Read(file, binary.BigEndian, &hunkId)

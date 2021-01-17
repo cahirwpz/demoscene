@@ -2,7 +2,7 @@ package hunk
 
 type HunkEnd struct{}
 
-func (h HunkEnd) Type() uint32 {
+func (h HunkEnd) Type() HunkType {
 	return HUNK_END
 }
 

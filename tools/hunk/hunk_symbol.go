@@ -32,7 +32,7 @@ func readHunkSymbol(r io.Reader) HunkSymbol {
 	return HunkSymbol{symbols}
 }
 
-func (h HunkSymbol) Type() uint32 {
+func (h HunkSymbol) Type() HunkType {
 	return HUNK_SYMBOL
 }
 
