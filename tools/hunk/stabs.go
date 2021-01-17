@@ -7,72 +7,75 @@ import (
 )
 
 /* http://sourceware.org/gdb/current/onlinedocs/stabs/Stab-Types.html */
+
+type StabType uint8
+
 const (
-	UNDF       = 0x00
-	EXT        = 0x01
-	ABS        = 0x02
-	TEXT       = 0x04
-	DATA       = 0x06
-	BSS        = 0x08
-	INDR       = 0x0a
-	SIZE       = 0x0c
-	COMM       = 0x12
-	SETA       = 0x14
-	SETT       = 0x16
-	SETD       = 0x18
-	SETB       = 0x1a
-	SETV       = 0x1c
-	WARNING    = 0x1e
-	FN         = 0x1f
-	GSYM       = 0x20
-	FNAME      = 0x22
-	FUN        = 0x24
-	STSYM      = 0x26
-	LCSYM      = 0x28
-	MAIN       = 0x2a
-	ROSYM      = 0x2c
-	PC         = 0x30
-	NSYMS      = 0x32
-	NOMAP      = 0x34
-	MAC_DEFINE = 0x36
-	OBJ        = 0x38
-	MAC_UNDEF  = 0x3a
-	OPT        = 0x3c
-	RSYM       = 0x40
-	SLINE      = 0x44
-	DSLINE     = 0x46
-	BSLINE     = 0x48
-	FLINE      = 0x4c
-	EHDECL     = 0x50
-	CATCH      = 0x54
-	SSYM       = 0x60
-	ENDM       = 0x62
-	SO         = 0x64
-	LSYM       = 0x80
-	BINCL      = 0x82
-	SOL        = 0x84
-	PSYM       = 0xa0
-	EINCL      = 0xa2
-	ENTRY      = 0xa4
-	LBRAC      = 0xc0
-	EXCL       = 0xc2
-	SCOPE      = 0xc4
-	RBRAC      = 0xe0
-	BCOMM      = 0xe2
-	ECOMM      = 0xe4
-	ECOML      = 0xe8
-	WITH       = 0xea
-	NBTEXT     = 0xf0
-	NBDATA     = 0xf2
-	NBBSS      = 0xf4
-	NBSTS      = 0xf6
-	NBLCS      = 0xf8
+	UNDF       StabType = 0x00
+	EXT                 = 0x01
+	ABS                 = 0x02
+	TEXT                = 0x04
+	DATA                = 0x06
+	BSS                 = 0x08
+	INDR                = 0x0a
+	SIZE                = 0x0c
+	COMM                = 0x12
+	SETA                = 0x14
+	SETT                = 0x16
+	SETD                = 0x18
+	SETB                = 0x1a
+	SETV                = 0x1c
+	WARNING             = 0x1e
+	FN                  = 0x1f
+	GSYM                = 0x20
+	FNAME               = 0x22
+	FUN                 = 0x24
+	STSYM               = 0x26
+	LCSYM               = 0x28
+	MAIN                = 0x2a
+	ROSYM               = 0x2c
+	PC                  = 0x30
+	NSYMS               = 0x32
+	NOMAP               = 0x34
+	MAC_DEFINE          = 0x36
+	OBJ                 = 0x38
+	MAC_UNDEF           = 0x3a
+	OPT                 = 0x3c
+	RSYM                = 0x40
+	SLINE               = 0x44
+	DSLINE              = 0x46
+	BSLINE              = 0x48
+	FLINE               = 0x4c
+	EHDECL              = 0x50
+	CATCH               = 0x54
+	SSYM                = 0x60
+	ENDM                = 0x62
+	SO                  = 0x64
+	LSYM                = 0x80
+	BINCL               = 0x82
+	SOL                 = 0x84
+	PSYM                = 0xa0
+	EINCL               = 0xa2
+	ENTRY               = 0xa4
+	LBRAC               = 0xc0
+	EXCL                = 0xc2
+	SCOPE               = 0xc4
+	RBRAC               = 0xe0
+	BCOMM               = 0xe2
+	ECOMM               = 0xe4
+	ECOML               = 0xe8
+	WITH                = 0xea
+	NBTEXT              = 0xf0
+	NBDATA              = 0xf2
+	NBBSS               = 0xf4
+	NBSTS               = 0xf6
+	NBLCS               = 0xf8
 )
 
-var StabTypeMap map[uint8]string
+var StabTypeMap map[StabType]string
 
 func init() {
-	StabTypeMap = map[uint8]string{
+	StabTypeMap = map[StabType]string{
 		UNDF:       "UNDF",
 		EXT:        "EXT",
 		ABS:        "ABS",
@@ -136,31 +139,35 @@ func init() {
 }
 
 type Stab struct {
-	stroff  int32
-	bintype uint8
-	other   int8
-	desc    int16
-	value   uint32
+	StrOff  int32
+	BinType uint8
+	Other   int8
+	Desc    int16
+	Value   uint32
 }
 
-func (s Stab) external() bool {
-	return bool(s.bintype&1 == 1)
+func (s Stab) External() bool {
+	return bool(s.BinType&1 == 1)
+}
+
+func (s Stab) Type() StabType {
+	return StabType(s.BinType & 254)
 }
 
 func readStab(r io.Reader) (s Stab) {
-	if binary.Read(r, binary.BigEndian, &s.stroff) != nil {
+	if binary.Read(r, binary.BigEndian, &s.StrOff) != nil {
 		panic("no data")
 	}
-	if binary.Read(r, binary.BigEndian, &s.bintype) != nil {
+	if binary.Read(r, binary.BigEndian, &s.BinType) != nil {
 		panic("no data")
 	}
-	if binary.Read(r, binary.BigEndian, &s.other) != nil {
+	if binary.Read(r, binary.BigEndian, &s.Other) != nil {
 		panic("no data")
 	}
-	if binary.Read(r, binary.BigEndian, &s.desc) != nil {
+	if binary.Read(r, binary.BigEndian, &s.Desc) != nil {
 		panic("no data")
 	}
-	if binary.Read(r, binary.BigEndian, &s.value) != nil {
+	if binary.Read(r, binary.BigEndian, &s.Value) != nil {
 		panic("no data")
 	}
 	return
@@ -169,12 +176,12 @@ func readStab(r io.Reader) (s Stab) {
 func (s Stab) String() string {
 	var visibility rune
 
-	if s.external() {
+	if s.External() {
 		visibility = 'g'
 	} else {
 		visibility = 'l'
 	}
 
 	return fmt.Sprintf("%08x %c %s %04x %02x %d",
-		s.value, visibility, StabTypeMap[s.bintype], s.other, s.desc, s.stroff)
+		s.Value, visibility, StabTypeMap[s.Type()], s.Other, s.Desc, s.StrOff)
 }
