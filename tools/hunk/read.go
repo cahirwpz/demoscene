@@ -81,6 +81,7 @@ func ReadFile(path string) (hunks []Hunk, err error) {
 	}
 
 	var hunkId HunkType
+	var name string
 
 	for {
 		err = binary.Read(file, binary.BigEndian, &hunkId)
@@ -98,6 +99,8 @@ func ReadFile(path string) (hunks []Hunk, err error) {
 			hunk = readHunkUnit(file)
 		case HUNK_NAME:
 			hunk = readHunkName(file)
+			hs := hunk.(HunkStr)
+			name = hs.Name
 		case HUNK_CODE:
 			hunk = readHunkCode(file)
 		case HUNK_DATA:
@@ -109,7 +112,7 @@ func ReadFile(path string) (hunks []Hunk, err error) {
 		case HUNK_SYMBOL:
 			hunk = readHunkSymbol(file)
 		case HUNK_DEBUG:
-			hunk = readHunkDebugGnu(file)
+			hunk = readHunkDebugGnu(file, name)
 		case HUNK_EXT:
 			hunk = readHunkExt(file)
 		case HUNK_END:

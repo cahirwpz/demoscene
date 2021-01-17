@@ -3,12 +3,13 @@ package hunk
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 )
 
 type HunkDebugGnu struct {
-	SymTab []Stab
-	StrTab []byte
+	StabTab    []Stab
+	StabStrTab []byte
 }
 
 func parseStringTable(data []byte) map[int]string {
@@ -27,29 +28,46 @@ func parseStringTable(data []byte) map[int]string {
 	return strtab
 }
 
-func readHunkDebugGnu(r io.Reader) (h HunkDebugGnu) {
-	skipBytes(r, 4)
-	debugger := readLong(r)
-	/*
-	 * magic-number: 0x10b
-	 * symtabsize strtabsize
-	 * symtabdata [length=symtabsize]
-	 * strtabdata [length=strtabsize]
-	 * [pad bytes]
-	 */
-	if debugger != 0x10b {
-		panic(fmt.Sprintf("unknown debugger: %08x", debugger))
+func readStabs(r io.Reader, size uint32) []Stab {
+	symtab := make([]Stab, size/12)
+	for i := 0; i < int(size)/12; i++ {
+		symtab[i] = readStab(r)
 	}
-	symtabSize := readLong(r)
-	strtabSize := readLong(r)
-	for i := 0; i < int(symtabSize); i += 12 {
-		h.SymTab = append(h.SymTab, readStab(r))
+	return symtab
+}
+
+func readStrTab(r io.Reader, size uint32) []byte {
+	strtab := readData(r, size)
+	if size&3 != 0 {
+		skipBytes(r, int(4-size&3))
 	}
-	h.StrTab = readData(r, strtabSize)
-	if strtabSize&3 != 0 {
-		skipBytes(r, int(4-strtabSize&3))
+	return strtab
+}
+
+func readHunkDebugGnu(r io.Reader, name string) HunkDebugGnu {
+	fmt.Printf("HunkDebugGnu: %s\n", name)
+	var stabTab []Stab
+	var stabstrTab []byte
+	if name == "" {
+		skipBytes(r, 4)
+		debugger := readLong(r)
+		if debugger != 0x10b {
+			panic(fmt.Sprintf("unknown debugger: %08x", debugger))
+		}
+		stabSize := readLong(r)
+		strtabSize := readLong(r)
+		stabTab = readStabs(r, stabSize)
+		stabstrTab = readStrTab(r, strtabSize)
 	}
-	return
+	if name == ".stab" {
+		stabSize := readLong(r) * 4
+		stabTab = readStabs(r, stabSize)
+	}
+	if name == ".stabstr" {
+		stabstrSize := readLong(r) * 4
+		stabstrTab = readStrTab(r, stabstrSize)
+	}
+	return HunkDebugGnu{stabTab, stabstrTab}
 }
 
 func (h HunkDebugGnu) Type() HunkType {
@@ -61,9 +79,20 @@ func (h HunkDebugGnu) String() string {
 
 	sb.WriteString("HUNK_DEBUG\n")
 
-	strtab := parseStringTable(h.StrTab)
-	for _, s := range h.SymTab {
-		fmt.Fprintf(&sb, " %s\n", s.String(strtab))
+	stabstr := parseStringTable(h.StabStrTab)
+	if h.StabTab != nil {
+		for _, s := range h.StabTab {
+			fmt.Fprintf(&sb, " %s\n", s.String(stabstr))
+		}
+	} else {
+		var index []int
+		for k, _ := range stabstr {
+			index = append(index, k)
+		}
+		sort.Ints(index)
+		for _, i := range index {
+			fmt.Fprintf(&sb, " %5d -> %s\n", i, stabstr[i])
+		}
 	}
 	return sb.String()
 }
