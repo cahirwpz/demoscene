@@ -11,10 +11,9 @@
 #define DEPTH 5
 
 static CopListT *cp[2];
-static CopInsT *bplptr[2][DEPTH];
 static short active = 0;
 
-/* static */ void VerticalScalerForward(CopListT *cp, short ys, short height) {
+static void VerticalScalerForward(CopListT *cp, short ys, short height) {
   short rowmod = image.bytesPerRow * image.depth;
   int dy = (LINES << 16) / height;
   short n = (short)(dy >> 16) * (short)image.depth;
@@ -34,14 +33,56 @@ static short active = 0;
   }
 }
 
-/* static */ void MakeCopperList(CopListT *cp, short height) {
-/* static */ void MakeCopperList(CopListT *cp, CopInsT **bplptr, short height) {
-  short ys = (LINES - height) / 2;
+static void CopSetupBitplanesReverse(CopListT *list, CopInsT **bplptr,
+                                     const BitmapT *bitmap, u_short depth)
+{
+  short bytesPerLine = bitmap->bytesPerRow;
+  int start;
+
+  if (bitmap->flags & BM_INTERLEAVED)
+    bytesPerLine *= (short)bitmap->depth;
+
+  start = bytesPerLine * (short)(bitmap->height - 1);
+
+  {
+    void **planes = bitmap->planes;
+    short n = depth - 1;
+    short reg = CSREG(bplpt);
+
+    do {
+      CopInsT *ins = CopMoveLong(list, reg, (int)(*planes++) + start);
+
+      if (bplptr)
+        *bplptr++ = ins;
+
+      reg += 4;
+    } while (--n != -1);
+  }
+
+  {
+    short modulo;
+
+    if (bitmap->flags & BM_INTERLEAVED)
+      modulo = (short)bitmap->bytesPerRow * (short)(depth + 1);
+    else
+      modulo = 2 * bitmap->bytesPerRow;
+
+    CopMove16(list, bpl1mod, -modulo);
+    CopMove16(list, bpl2mod, -modulo);
+  }
+}
+
+static void MakeCopperList(CopListT *cp, short height) {
+  short ys = (LINES - abs(height)) / 2;
 
   CopInit(cp);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(ys), image.width, height);
-  CopSetupBitplanes(cp, bplptr, &image, image.depth);
-  VerticalScalerForward(cp, ys, height);
+  if (height > 0) {
+    CopSetupBitplanes(cp, NULL, &image, image.depth);
+    VerticalScalerForward(cp, ys, height);
+  } else if (height < 0) {
+    CopSetupBitplanesReverse(cp, NULL, &image, image.depth);
+  }
   CopEnd(cp);
 }
 
@@ -52,7 +93,7 @@ static short active = 0;
 
   cp[0] = NewCopList(40 + LINES * 3);
   cp[1] = NewCopList(40 + LINES * 3);
-  MakeCopperList(cp[active], bplptr[active], LINES);
+  MakeCopperList(cp[active], LINES);
   CopListActivate(cp[active]);
 
   EnableDMA(DMAF_RASTER);
@@ -67,17 +108,17 @@ static void Kill(void) {
 PROFILE(Scaler);
 
 static void Render(void) {
-  static short val = 0, dir = 1;
+  static short val = LINES, dir = -1;
 
   ProfilerStart(Scaler);
-  MakeCopperList(cp[active], bplptr[active], LINES - val);
+  MakeCopperList(cp[active], val);
   ProfilerStop(Scaler);
 
   CopListRun(cp[active]);
   TaskWaitVBlank();
 
   val += dir;
-  if ((val == 0) || (val == LINES - 2))
+  if (val == -LINES)
     dir = -dir;
 
   active ^= 1;
