@@ -72,21 +72,42 @@ static void CopSetupBitplanesReverse(CopListT *list, CopInsT **bplptr,
   }
 }
 
+static void VerticalScalerReverse(CopListT *cp, short ys, short height) {
+  short rowmod = image.bytesPerRow * image.depth;
+  int dy = (LINES << 16) / height;
+  short n = (short)(dy >> 16) * (short)image.depth;
+  short mod = (short)image.bytesPerRow * (short)(n + 1);
+  int y = 0;
+  short i;
+
+  for (i = 1; i < height; i++) {
+    short _mod = mod;
+    int ny = y + dy;
+    if ((u_short)ny < (u_short)y)
+      _mod += rowmod;
+    CopWaitSafe(cp, Y(ys + i), X(0));
+    CopMove16(cp, bpl1mod, -_mod);
+    CopMove16(cp, bpl2mod, -_mod);
+    y = ny;
+  }
+}
+
 static void MakeCopperList(CopListT *cp, short height) {
   short ys = (LINES - abs(height)) / 2;
 
   CopInit(cp);
-  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(ys), image.width, height);
+  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(ys), image.width, abs(height));
   if (height > 0) {
     CopSetupBitplanes(cp, NULL, &image, image.depth);
     VerticalScalerForward(cp, ys, height);
   } else if (height < 0) {
     CopSetupBitplanesReverse(cp, NULL, &image, image.depth);
+    VerticalScalerReverse(cp, ys, -height);
   }
   CopEnd(cp);
 }
 
-/* static */ void Init(void) {
+static void Init(void) {
   LoadPalette(&image_pal, 0);
   SetupPlayfield(MODE_LORES, image.depth,
                  X(0), Y(0), image.width, image.height);
