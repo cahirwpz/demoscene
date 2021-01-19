@@ -139,7 +139,7 @@ static void Render(void) {
   TaskWaitVBlank();
 
   val += dir;
-  if (val == -LINES)
+  if (abs(val) == LINES)
     dir = -dir;
 
   active ^= 1;
