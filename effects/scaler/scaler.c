@@ -8,10 +8,13 @@
 #include "data/stars-die.c"
 
 #define LINES 256
+#define DEPTH 5
 
-static CopListT *cp0, *cp1;
+static CopListT *cp[2];
+static CopInsT *bplptr[2][DEPTH];
+static short active = 0;
 
-/* static */ void VerticalScaler(CopListT *cp, short ys, short height) {
+/* static */ void VerticalScalerForward(CopListT *cp, short ys, short height) {
   short rowmod = image.bytesPerRow * image.depth;
   int dy = (LINES << 16) / height;
   short n = (short)(dy >> 16) * (short)image.depth;
@@ -32,12 +35,13 @@ static CopListT *cp0, *cp1;
 }
 
 /* static */ void MakeCopperList(CopListT *cp, short height) {
+/* static */ void MakeCopperList(CopListT *cp, CopInsT **bplptr, short height) {
   short ys = (LINES - height) / 2;
 
   CopInit(cp);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(ys), image.width, height);
-  CopSetupBitplanes(cp, NULL, &image, image.depth);
-  VerticalScaler(cp, ys, height);
+  CopSetupBitplanes(cp, bplptr, &image, image.depth);
+  VerticalScalerForward(cp, ys, height);
   CopEnd(cp);
 }
 
@@ -46,18 +50,18 @@ static CopListT *cp0, *cp1;
   SetupPlayfield(MODE_LORES, image.depth,
                  X(0), Y(0), image.width, image.height);
 
-  cp0 = NewCopList(40 + LINES * 3);
-  cp1 = NewCopList(40 + LINES * 3);
-  MakeCopperList(cp0, LINES);
-  CopListActivate(cp0);
+  cp[0] = NewCopList(40 + LINES * 3);
+  cp[1] = NewCopList(40 + LINES * 3);
+  MakeCopperList(cp[active], bplptr[active], LINES);
+  CopListActivate(cp[active]);
 
   EnableDMA(DMAF_RASTER);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER);
-  DeleteCopList(cp0);
-  DeleteCopList(cp1);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
 }
 
 PROFILE(Scaler);
@@ -66,16 +70,17 @@ static void Render(void) {
   static short val = 0, dir = 1;
 
   ProfilerStart(Scaler);
-  MakeCopperList(cp0, LINES - val);
+  MakeCopperList(cp[active], bplptr[active], LINES - val);
   ProfilerStop(Scaler);
 
-  CopListRun(cp0);
+  CopListRun(cp[active]);
   TaskWaitVBlank();
-  { CopListT *tmp = cp0; cp0 = cp1; cp1 = tmp; }
 
   val += dir;
   if ((val == 0) || (val == LINES - 2))
     dir = -dir;
+
+  active ^= 1;
 }
 
 EFFECT(scaler, NULL, NULL, Init, Kill, Render);
