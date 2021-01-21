@@ -93,6 +93,8 @@ if __name__ == '__main__':
                         help='Provide executable file for GDB debugger.')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='Run the program under GDB debugger control.')
+    parser.add_argument('-g', '--gdbserver', action='store_true',
+                        help='Run the program under gdbserver control on localhost:8888')
     parser.add_argument('-w', '--window', metavar='WIN', type=str,
                         default='fs-uae',
                         help='Select tmux window name to switch to.')
@@ -107,11 +109,11 @@ if __name__ == '__main__':
         raise SystemExit('%s: file does not exist!' % args.rom)
 
     # Check if executable file exists.
-    if args.debug and not os.path.isfile(args.executable):
+    if (args.debug or args.gdbserver) and not os.path.isfile(args.executable):
         raise SystemExit('%s: file does not exist!' % args.executable)
 
     uae = FSUAE()
-    uae.configure(floppy=args.floppy, rom=args.rom, debug=args.debug)
+    uae.configure(floppy=args.floppy, rom=args.rom, debug=args.debug or args.gdbserver)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)
@@ -119,8 +121,9 @@ if __name__ == '__main__':
     par_port = SOCAT('parallel')
     par_port.configure(tcp_port=8001)
 
-    debugger = GDB()
-    debugger.configure(args.executable)
+    if args.debug:
+        debugger = GDB()
+        debugger.configure(args.executable)
 
     subprocess.run(['tmux', '-f', TMUX_CONF, '-L', SOCKET, 'start-server'])
 
@@ -146,8 +149,4 @@ if __name__ == '__main__':
             session.select_window(args.window or par_port.name)
         session.attach_session()
     finally:
-        try:
-            session.kill_session()
-        except Exception:
-            pass
         server.kill_server()

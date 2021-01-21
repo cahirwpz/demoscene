@@ -1,0 +1,73 @@
+// Copy these key bindings to your ~/Library/Application Support/Code/User/keybindings.json file to override the defaults
+[
+    {
+        "key": "shift+cmd+c",
+        "command": "workbench.action.tasks.runTask",
+        "args": "CLEAN"
+    },
+    {
+        "key": "shift+cmd+a shift+cmd+c",
+        "command": "workbench.action.tasks.runTask",
+        "args": "CLEAN ALL"
+    },
+    {
+        "key": "shift+cmd+a shift+cmd+b",
+        "command": "workbench.action.tasks.runTask",
+        "args": "BUILD ALL"
+    },
+    {
+        "key": "shift+cmd+r",
+        "command": "workbench.action.tasks.runTask",
+        "args": "RUN"
+    },
+    {
+        "key": "shift+cmd+d",
+        "command": "workbench.action.tasks.runTask",
+        "args": "DEBUG"
+    },
+    {
+        "key": "shift+cmd+t",
+        "command": "workbench.action.tasks.runTask"
+    },
+    {
+        "key": "alt+z",
+        "command": "-editor.action.toggleWordWrap"
+    },
+    {
+        "key": "alt+cmd+z",
+        "command": "editor.action.toggleWordWrap"
+    },
+    {
+        "key": "ctrl+`",
+        "command": "-workbench.action.terminal.toggleTerminal"
+    },
+    { 
+        "key": "ctrl+`", 
+        "command": "workbench.action.terminal.focus"
+    },
+    {
+        "key": "ctrl+`",
+        "command": "workbench.action.focusActiveEditorGroup",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "alt+cmd+right",
+        "command": "-workbench.action.terminal.focusNextPane",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "alt+cmd+left",
+        "command": "-workbench.action.terminal.focusPreviousPane",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "alt+cmd+right",
+        "command": "workbench.action.terminal.focusNext",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "alt+cmd+left",
+        "command": "workbench.action.terminal.focusPrevious",
+        "when": "terminalFocus"
+    }
+]
