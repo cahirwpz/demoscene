@@ -10,7 +10,7 @@ from libtmux import Server, Session
 
 
 def HerePath(*components):
-    return os.path.join(os.environ['TOPDIR'], *components)
+    return os.path.join(os.getenv('TOPDIR', ''), *components)
 
 
 SOCKET = 'fsuae'
@@ -94,7 +94,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--debug', action='store_true',
                         help='Run the program under GDB debugger control.')
     parser.add_argument('-g', '--gdbserver', action='store_true',
-                        help='Run the program under gdbserver control on localhost:8888')
+                        help='Run the program under gdbserver control \
+                        on localhost:8888')
     parser.add_argument('-w', '--window', metavar='WIN', type=str,
                         default='fs-uae',
                         help='Select tmux window name to switch to.')
@@ -113,7 +114,8 @@ if __name__ == '__main__':
         raise SystemExit('%s: file does not exist!' % args.executable)
 
     uae = FSUAE()
-    uae.configure(floppy=args.floppy, rom=args.rom, debug=args.debug or args.gdbserver)
+    uae.configure(floppy=args.floppy, rom=args.rom,
+                  debug=args.debug or args.gdbserver)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)
