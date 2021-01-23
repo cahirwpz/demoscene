@@ -3,34 +3,57 @@
 import argparse
 import asyncio
 import logging
-import os
 import signal
 import sys
+import traceback
 
-from uaedbg.uae import UaeProcess
-from uaedbg.dbg import UaeDebugger
+from debug.uae import UaeDebugger, UaeProcess
+from debug.gdb import GdbConnection, GdbStub
 
 
-async def UaeLaunch(loop, execpath, args):
+BREAK = 0xCF47  # no-op: 'exg.l d7,d7'
+
+
+async def UaeLaunch(loop, args):
     # Create the subprocess, redirect the standard I/O to respective pipes
     uaeproc = UaeProcess(
-            await asyncio.create_subprocess_exec(
-                'fs-uae', *args,
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE))
+        await asyncio.create_subprocess_exec(
+            args.emulator, *args.params,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE))
 
-    uaedbg = UaeDebugger(uaeproc, execpath)
+    gdbserver = None
+
+    async def GdbClient(reader, writer):
+        try:
+            await GdbStub(GdbConnection(reader, writer), uaeproc).run()
+        except Exception:
+            traceback.print_exc()
+
+    async def GdbListen():
+        await uaeproc.prologue()
+        uaeproc.break_opcode('{:04x}'.format(BREAK))
+        print('Listening for gdb connection at localhost:8888')
+        gdbserver = await asyncio.start_server(
+            GdbClient, host='127.0.0.1', port=8888)
 
     # Terminate FS-UAE when connection with terminal is broken
     loop.add_signal_handler(signal.SIGHUP, uaeproc.terminate)
 
-    # Call FS-UAE debugger on CTRL+C
-    loop.add_signal_handler(signal.SIGINT, uaeproc.interrupt)
-    prompt_task = asyncio.ensure_future(uaedbg.run())
     logger_task = asyncio.ensure_future(uaeproc.logger())
 
+    if args.gdbserver:
+        await GdbListen()
+    else:
+        # Call FS-UAE debugger on CTRL+C
+        loop.add_signal_handler(signal.SIGINT, uaeproc.interrupt)
+        prompt_task = asyncio.ensure_future(UaeDebugger(uaeproc))
+
     await uaeproc.wait()
+
+    if gdbserver:
+        gdbserver.close()
 
 
 if __name__ == '__main__':
@@ -47,16 +70,14 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         description='Run FS-UAE with enabled console debugger.')
-    parser.add_argument('-e', '--executable', metavar='EXE', type=str,
-                        help='Provide executable file for debugging.')
+    parser.add_argument('-e', '--emulator', type=str, default='fs-uae',
+                        help='Path to FS-UAE emulator binary.')
+    parser.add_argument('-g', '--gdbserver', action='store_true',
+                        help='Configure and run gdbserver on localhost:8888')
     parser.add_argument('params', nargs='*', type=str,
                         help='Parameters passed to FS-UAE emulator.')
     args = parser.parse_args()
 
-    # Check if executable file exists.
-    if not os.path.isfile(args.executable):
-        raise SystemExit('%s: file does not exist!' % args.elf)
-
-    uae = UaeLaunch(loop, args.executable, args.params)
+    uae = UaeLaunch(loop, args)
     loop.run_until_complete(uae)
     loop.close()

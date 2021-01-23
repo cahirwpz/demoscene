@@ -200,7 +200,8 @@ static ArenaT *FirstArena;
 
 void AddMemory(void *ptr, u_int size, u_int attributes) {
   ArenaT *ar = (ArenaT *)roundup((uintptr_t)ptr, ALIGNMENT);
-  void *end = (void *)ar + rounddown(size, ALIGNMENT) - sizeof(WordT);
+  void *end =
+      (void *)rounddown((uintptr_t)ptr + size, ALIGNMENT) - sizeof(WordT);
   u_int sz = (uintptr_t)end - (uintptr_t)ar->start;
   WordT *bt = ar->start;
 
@@ -224,8 +225,9 @@ void AddMemory(void *ptr, u_int size, u_int attributes) {
     *ar_p = ar;
   }
 
-  Log("[Memory] Added %s memory at $%08lx (%d KiB)\n",
-      MemoryName(attributes), (intptr_t)ar->start, ar->totalFree / 1024);
+  Log("[Memory] Added %s memory at $%08lx - $%08lx (%d KiB)\n",
+      MemoryName(attributes), (intptr_t)ar->start, (intptr_t)ar->end,
+      ar->totalFree / 1024);
 }
 
 static WordT *ArenaMemAlloc(ArenaT *ar, u_int size) {
@@ -316,7 +318,7 @@ static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
   void *new_ptr = NULL;
   u_int reqsz, sz;
   WordT *bt, *next;
- 
+
   bt = BtFromPtr(old_ptr);
   sz = BtSize(bt);
   reqsz = BlockSize(size);

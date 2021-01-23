@@ -11,34 +11,35 @@ SECTIONS
   . = 0x0;
   .text :
   {
-    __stext = .;
+    __text = .;
     *(.text)
-    __etext = .;
   }
-  ___text_size = SIZEOF(.text);
+  __text_size = SIZEOF(.text);
   . = ALIGN(0x0);
   .data :
   {
-    __sdata = .;
+    __data = .;
     CONSTRUCTORS
     *(.data)
-    __edata = .;
   }
-  ___data_size = SIZEOF(.data);
+  __data_size = SIZEOF(.data);
   .bss :
   {
-    __bss_start = .;
+    __bss = .;
     *(.bss)
     *(COMMON)
-    __end = .;
   }
-  ___bss_size = SIZEOF(.bss);
+  __bss_size = SIZEOF(.bss);
   .data_chip :
   {
+    __data_chip = .;
     *(.data_chip)
   }
+  __data_chip_size = SIZEOF(.data_chip);
   .bss_chip :
   {
+    __bss_chip = .;
     *(.bss_chip)
   }
+  __bss_chip_size = SIZEOF(.bss_chip);
 }

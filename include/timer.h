@@ -18,10 +18,14 @@
 #define TIMER_CIAB_B 3
 
 typedef struct CIATimer CIATimerT;
+typedef void (*CIATimeoutT)(CIATimerT *timer);
 
 /* Procedures for handling one-shot delays with high resolution timers. */
 CIATimerT *AcquireTimer(u_int num);
 void ReleaseTimer(CIATimerT *timer);
+
+void SetupTimer(CIATimerT *timer, CIATimeoutT timeout,
+                u_short delay, u_short flags);
 
 /* Consider using wrapper macros below instead of this procedure. */
 void WaitTimerGeneric(CIATimerT *timer, u_short ticks, bool spin);

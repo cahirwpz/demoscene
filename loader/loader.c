@@ -49,6 +49,10 @@ void Loader(BootDataT *bd) {
 
   SetupExceptionVector(bd);
 
+  /* NOP that triggers fs-uae debugger to stop and inform GDB that it should
+   * fetch segments locations to relocate symbol information read from file. */
+  asm volatile("exg %d7,%d7");
+
   /* CIA-A & CIA-B: Stop timers and return to default settings. */
   ciaa->ciacra = 0;
   ciaa->ciacrb = 0;

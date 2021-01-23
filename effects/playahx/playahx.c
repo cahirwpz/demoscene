@@ -1,6 +1,7 @@
 #include "effect.h"
 #include "interrupt.h"
 #include "cia.h"
+#include "timer.h"
 #include "memory.h"
 #include "ahx.h"
 #include "console.h"
@@ -16,6 +17,7 @@
 static BitmapT *screen;
 static CopListT *cp;
 static ConsoleT console;
+static CIATimerT *ahxtmr;
 
 #include "data/lat2-08.c"
 
@@ -136,32 +138,14 @@ static void WaveScopeDrawChannel(short num) {
   ch->i = i;
 }
 
-static void Load(void) {
-  int err = AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS);
-  Assert(err == 0);
+static void AhxPlayerTimeout(__unused CIATimerT *timer) {
+  custom->color[0] = 0x448;
+  AhxInterrupt();
+  custom->color[0] = 0;
 }
-
-static void UnLoad(void) {
-  AhxKillPlayer();
-}
-
-static int AhxPlayerIntHandler(void) {
-  /* Handle CIA Timer A interrupt. */
-  if (SampleICR(ciaa, CIAICRF_TA)) {
-    custom->color[0] = 0x448;
-    AhxInterrupt();
-    custom->color[0] = 0;
-  }
-
-  return 0;
-}
-
-INTSERVER(AhxPlayerInterrupt, 10, (IntFuncT)AhxPlayerIntHandler, NULL);
 
 static void AhxSetTempo(u_short tempo asm("d0")) {
-  ciaa->ciatalo = tempo & 0xff;
-  ciaa->ciatahi = tempo >> 8;
-  ciaa->ciacra |= CIACRAF_START;
+  SetupTimer(ahxtmr, AhxPlayerTimeout, tempo, 0);
 }
 
 static void DrawFrames(void) {
@@ -206,21 +190,27 @@ static void Init(void) {
   InitWaveScope();
   KeyboardInit();
 
-  if (AhxInitHardware((void *)AhxSetTempo, AHX_KILL_SYSTEM) == 0)
-    if (AhxInitModule(module) == 0)
-      AhxInitSubSong(0, 0);
+  ahxtmr = AcquireTimer(TIMER_ANY);
+  Assert(ahxtmr != NULL);
 
-  AddIntServer(PortsChain, AhxPlayerInterrupt);
+  if (AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS))
+    Panic("AhxInitPlayer() failed!");
+  if (AhxInitCIA((void *)AhxSetTempo))
+    Panic("AhxInitHardware() failed!");
+  if (AhxInitModule(module))
+    Panic("AhxInitModule() failed!");
+  AhxInitSubSong(0, 0);
 }
 
 static void Kill(void) {
-  RemIntServer(PortsChain, AhxPlayerInterrupt);
+  ReleaseTimer(ahxtmr);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   KillWaveScope();
   AhxStopSong();
-  AhxKillHardware();
+  AhxKillCIA();
+  AhxKillPlayer();
 
   DeleteCopList(cp);
   DeleteBitmap(screen);
@@ -290,4 +280,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(playahx, Load, UnLoad, Init, Kill, Render);
+EFFECT(playahx, NULL, NULL, Init, Kill, Render);

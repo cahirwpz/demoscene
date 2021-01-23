@@ -10,6 +10,7 @@ static uint8_t InUse;
 /* Defines timer state after it has been acquired. */
 struct CIATimer {
   IntServerT server;
+  CIATimeoutT timeout;
   CIAPtrT cia;
   u_int event;
   u_char icr;
@@ -19,7 +20,11 @@ struct CIATimer {
 /* Interrupt handler for CIA timers. */
 static void CIATimerHandler(CIATimerT *timer) {
   if (SampleICR(timer->cia, timer->icr))
-    TaskNotifyISR(timer->event);
+    timer->timeout(timer);
+}
+
+static void NotifyTimeout(CIATimerT *timer) {
+  TaskNotifyISR(timer->event);
 }
 
 #define CIAA ciaa
@@ -29,6 +34,7 @@ static void CIATimerHandler(CIATimerT *timer) {
   [TIMER_##CIA##_##TIMER] = {                                                  \
       .server = _INTSERVER(0, (IntFuncT)CIATimerHandler,                       \
                            &Timers[TIMER_##CIA##_##TIMER]),                    \
+      .timeout = NULL,                                                         \
       .cia = CIA,                                                              \
       .event = EVF_##CIAA##(CIAICRF_T##TIMER),                                 \
       .num = TIMER_##CIA##_##TIMER,                                            \
@@ -77,25 +83,40 @@ void ReleaseTimer(CIATimerT *timer) {
   IntrEnable();
 }
 
+static void LoadTimer(CIAPtrT cia, u_char icr, u_short delay, u_short flags) {
+  /* Load counter and start timer in one-shot mode. */
+  if (icr == CIAICRF_TB) {
+    cia->ciacrb |= CIACRF_LOAD;
+    cia->ciatblo = delay;
+    cia->ciatbhi = delay >> 8;
+    cia->ciacrb |= flags | CIACRF_START;
+  } else {
+    cia->ciacra |= CIACRF_LOAD;
+    cia->ciatalo = delay;
+    cia->ciatahi = delay >> 8;
+    cia->ciacra |= flags | CIACRF_START;
+  }
+}
+
+void SetupTimer(CIATimerT *timer, CIATimeoutT timeout,
+                u_short delay, u_short flags)
+{
+  CIAPtrT cia = timer->cia;
+  u_char icr = timer->icr;
+  timer->timeout = timeout;
+
+  WriteICR(cia, icr);
+  LoadTimer(cia, icr, delay, flags);
+  WriteICR(cia, CIAICRF_SETCLR | icr);
+}
+
 void WaitTimerGeneric(CIATimerT *timer, u_short delay, bool spin) {
   CIAPtrT cia = timer->cia;
   u_char icr = timer->icr;
 
   /* Turn off interrupt while the timer is being set up. */
   WriteICR(cia, icr);
-
-  /* Load counter and start timer in one-shot mode. */
-  if (icr == CIAICRF_TB) {
-    cia->ciacrb |= CIACRBF_LOAD;
-    cia->ciatblo = delay;
-    cia->ciatbhi = delay >> 8;
-    cia->ciacrb |= CIACRBF_RUNMODE | CIACRBF_START;
-  } else {
-    cia->ciacra |= CIACRAF_LOAD;
-    cia->ciatalo = delay;
-    cia->ciatahi = delay >> 8;
-    cia->ciacra |= CIACRAF_RUNMODE | CIACRAF_START;
-  }
+  LoadTimer(cia, icr, delay, CIACRF_RUNMODE);
 
   /* Busy wait for interrupt bit. */
   if (spin) {
@@ -107,6 +128,7 @@ void WaitTimerGeneric(CIATimerT *timer, u_short delay, bool spin) {
     Assert(GetIPL() == 0);
     /* Turn on the interrupt and go to sleep. */
     IntrDisable();
+    timer->timeout = NotifyTimeout;
     WriteICR(cia, CIAICRF_SETCLR | icr);
     TaskWait(timer->event);
     IntrEnable();
