@@ -91,5 +91,5 @@ run: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
 debug: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -d $(DEBUGGER) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
-.PHONY: run debug run-floppy debug-floppy gdbserver
+.PHONY: run debug run-floppy debug-floppy
 .PRECIOUS: $(BOOTLOADER)
