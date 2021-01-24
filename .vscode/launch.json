@@ -1,0 +1,26 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [        
+        {
+            "name": "Amiga GDB",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${config:effect}.exe.dbg",
+            "cwd": "${workspaceFolder}/effects/${config:effect}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "m68k-amigaos-gdb",
+            "miDebuggerServerAddress": "localhost:8888",
+            "setupCommands": [
+                { 
+                    "text": "set tcp connect-timeout 30", 
+                    "description": "Set timeout limit in seconds for socket connection to debug server", 
+                    "ignoreFailures": false
+                }    
+            ],
+            "preLaunchTask": "gdbserver"
+        }
+    ]
+}

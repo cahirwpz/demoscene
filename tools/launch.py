@@ -10,11 +10,13 @@ from libtmux import Server, Session
 
 
 def HerePath(*components):
-    return os.path.join(os.environ['TOPDIR'], *components)
+    return os.path.join(os.getenv('TOPDIR', ''), *components)
 
 
 SOCKET = 'fsuae'
 SESSION = 'fsuae'
+GDBSERVER = 'uaedbg.py'
+REMOTE = 'localhost:8888'
 TMUX_CONF = HerePath('.tmux.conf')
 
 
@@ -36,7 +38,7 @@ class Launchable():
 
 class FSUAE(Launchable):
     def __init__(self):
-        super().__init__('fs-uae', HerePath('tools', 'uaedbg.py'))
+        super().__init__('fs-uae', HerePath('tools', GDBSERVER))
 
     def configure(self, floppy=None, rom=None, debug=False):
         self.options.extend(['-e', 'fs-uae'])
@@ -76,7 +78,7 @@ class GDB(Launchable):
             '-iex=directory {}/'.format(HerePath()),
             '-ix={}'.format(HerePath('.gdbinit')),
             '-ex=set tcp connect-timeout 30',
-            '-ex=target remote localhost:8888',
+            '-ex=target remote {}'.format(REMOTE),
             '--nh',
             '--silent',
             program]
@@ -91,8 +93,9 @@ if __name__ == '__main__':
                         help='Floppy disk image in ADF format.')
     parser.add_argument('-e', '--executable', metavar='EXE', type=str,
                         help='Provide executable file for GDB debugger.')
-    parser.add_argument('-d', '--debug', action='store_true',
-                        help='Run the program under GDB debugger control.')
+    parser.add_argument('-d', '--debug', choices=['gdbserver', 'gdb'],
+                        help=('Run gdbserver on {} and launch gdb '
+                              'if requested.'.format(REMOTE)))
     parser.add_argument('-w', '--window', metavar='WIN', type=str,
                         default='fs-uae',
                         help='Select tmux window name to switch to.')
@@ -119,8 +122,9 @@ if __name__ == '__main__':
     par_port = SOCAT('parallel')
     par_port.configure(tcp_port=8001)
 
-    debugger = GDB()
-    debugger.configure(args.executable)
+    if args.debug == 'gdb':
+        debugger = GDB()
+        debugger.configure(args.executable)
 
     subprocess.run(['tmux', '-f', TMUX_CONF, '-L', SOCKET, 'start-server'])
 
@@ -136,18 +140,14 @@ if __name__ == '__main__':
         uae.start(session)
         ser_port.start(session)
         par_port.start(session)
-        if args.debug:
+        if args.debug == 'gdb':
             debugger.start(session)
 
         session.kill_window(':0')
-        if args.debug:
+        if args.debug == 'gdb':
             session.select_window(debugger.name)
         else:
             session.select_window(args.window or par_port.name)
         session.attach_session()
     finally:
-        try:
-            session.kill_session()
-        except Exception:
-            pass
         server.kill_server()

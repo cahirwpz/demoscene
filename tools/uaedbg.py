@@ -30,6 +30,10 @@ async def UaeLaunch(loop, args):
             await GdbStub(GdbConnection(reader, writer), uaeproc).run()
         except Exception:
             traceback.print_exc()
+            # TODO: Better handling of gdbserver client disconnection
+            #       Now it simply throws ValueError(data) exception
+            #       in gdb.py:31 [recv_ack]
+            uaeproc.terminate()
 
     async def GdbListen():
         await uaeproc.prologue()

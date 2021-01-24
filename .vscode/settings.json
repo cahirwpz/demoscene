@@ -1,0 +1,15 @@
+{
+    "files.exclude": {
+        ".ackrc": true,
+        "cscope.out": true,
+        "tags": true
+    },
+    "C_Cpp.errorSquiggles": "Disabled",
+    "task.autoDetect": "off",
+    "debug.openDebug": "openOnSessionStart",
+
+    // Choose effect to build. Use the current opened file's folder name
+    // to identify the effect or specify the exact effect name.
+    // "effect": "${fileDirnameBasename}",
+    "effect": "anim",
+}
