@@ -6,4 +6,5 @@ set verbose off
 
 source gdb-dashboard
 dashboard -layout breakpoints assembly registers source stack variables
+# Please refer to https://github.com/cyrus-and/gdb-dashboard/wiki to learn how to customize visual experience
 dashboard -style style_low '2'

@@ -1,4 +1,4 @@
-// Copy these key bindings to your ~/Library/Application Support/Code/User/keybindings.json file to override the defaults
+// Copy these key bindings to your user's key bindings configuration file to override the defaults
 [
     {
         "key": "shift+cmd+c",

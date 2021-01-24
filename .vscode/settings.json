@@ -1,5 +1,4 @@
 {
-    "python.pythonPath": "/usr/local/bin/python3",
     "files.exclude": {
         ".ackrc": true,
         "cscope.out": true,
@@ -13,5 +12,4 @@
     // to identify the effect or specify the exact effect name.
     // "effect": "${fileDirnameBasename}",
     "effect": "anim",
-
 }

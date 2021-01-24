@@ -74,12 +74,7 @@ install it. You cannot expect us to help you set up your environment!
 Running the effect under emulator
 ---
 
-At first, set the correct path to a kickstart file in 
-[Config.fs-uae](https://github.com/cahirwpz/demoscene/blob/master/effects/Config.fs-uae) 
-by adding _kickstart_file_ option at the end of this emulator configuration file. 
-For example:
-
-_kickstart_file = ~/my_amiga_roms/kick13.A500.rom_
+At first, you have to provide [Kickstart ROMs](https://fs-uae.net/docs/kickstarts) for the emulator to operate. `fs-uae` will automatically find the correct kickstart ROMs for all Amiga models if you have copied the .rom files into its [kickstart-dir](https://fs-uae.net/docs/options/kickstarts-dir).
 
 After that, navigate to any effect's directory and issue `make run` command.
 **run** _make target_ prepares all files in `data` directory, builds executable

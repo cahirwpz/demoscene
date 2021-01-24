@@ -20,13 +20,6 @@
                     "ignoreFailures": false
                 }    
             ],
-            // "logging": {
-            //     "engineLogging": true,
-            //     "exceptions": true,
-            //     "moduleLoad": true,
-            //     "programOutput": true,
-            //     "trace": true,
-            // },
             "preLaunchTask": "gdbserver"
         }
     ]
