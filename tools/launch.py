@@ -94,8 +94,8 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--executable', metavar='EXE', type=str,
                         help='Provide executable file for GDB debugger.')
     parser.add_argument('-d', '--debug', choices=['gdbserver', 'gdb'],
-                        help=('Run gdbserver on {} and launch gdb if requested.'
-                              .format(REMOTE)))
+                        help=('Run gdbserver on {} and launch gdb '
+                              'if requested.'.format(REMOTE)))
     parser.add_argument('-w', '--window', metavar='WIN', type=str,
                         default='fs-uae',
                         help='Select tmux window name to switch to.')
