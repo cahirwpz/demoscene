@@ -76,20 +76,20 @@ data/%.c: data/%.sync
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
 	$(FSUTIL) -b $(BOOTLOADER) create $@ $(filter-out %bootloader.bin,$^)
 
-# Evaluates to -g if gdbserver goal is provided, otherwise evaluates to -d
-DEBUG := -$(firstword $(subst dbserver,,$(filter gdbserver,$(MAKECMDGOALS))) d)
+# Default debugger - can be changed by passing DEBUGGER=xyz to make.
+DEBUGGER ?= gdb
 
 run-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 debug-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
-	$(LAUNCH) $(DEBUG) -f $(EFFECT).adf -e $(EFFECT).elf
+	$(LAUNCH) -d $(DEBUGGER) -f $(EFFECT).adf -e $(EFFECT).elf
 
 run: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 debug: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
-	$(LAUNCH) $(DEBUG) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
+	$(LAUNCH) -d $(DEBUGGER) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 .PHONY: run debug run-floppy debug-floppy gdbserver
 .PRECIOUS: $(BOOTLOADER)

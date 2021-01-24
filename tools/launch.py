@@ -15,6 +15,8 @@ def HerePath(*components):
 
 SOCKET = 'fsuae'
 SESSION = 'fsuae'
+GDBSERVER = 'uaedbg.py'
+REMOTE = 'localhost:8888'
 TMUX_CONF = HerePath('.tmux.conf')
 
 
@@ -36,7 +38,7 @@ class Launchable():
 
 class FSUAE(Launchable):
     def __init__(self):
-        super().__init__('fs-uae', HerePath('tools', 'uaedbg.py'))
+        super().__init__('fs-uae', HerePath('tools', GDBSERVER))
 
     def configure(self, floppy=None, rom=None, debug=False):
         self.options.extend(['-e', 'fs-uae'])
@@ -76,7 +78,7 @@ class GDB(Launchable):
             '-iex=directory {}/'.format(HerePath()),
             '-ix={}'.format(HerePath('.gdbinit')),
             '-ex=set tcp connect-timeout 30',
-            '-ex=target remote localhost:8888',
+            '-ex=target remote {}'.format(REMOTE),
             '--nh',
             '--silent',
             program]
@@ -91,11 +93,9 @@ if __name__ == '__main__':
                         help='Floppy disk image in ADF format.')
     parser.add_argument('-e', '--executable', metavar='EXE', type=str,
                         help='Provide executable file for GDB debugger.')
-    parser.add_argument('-d', '--debug', action='store_true',
-                        help='Run the program under GDB debugger control.')
-    parser.add_argument('-g', '--gdbserver', action='store_true',
-                        help='Run the program under gdbserver control \
-                        on localhost:8888')
+    parser.add_argument('-d', '--debug', choices=['gdbserver', 'gdb'],
+                        help=('Run gdbserver on {} and launch gdb if requested.'
+                              .format(REMOTE)))
     parser.add_argument('-w', '--window', metavar='WIN', type=str,
                         default='fs-uae',
                         help='Select tmux window name to switch to.')
@@ -110,12 +110,11 @@ if __name__ == '__main__':
         raise SystemExit('%s: file does not exist!' % args.rom)
 
     # Check if executable file exists.
-    if (args.debug or args.gdbserver) and not os.path.isfile(args.executable):
+    if args.debug and not os.path.isfile(args.executable):
         raise SystemExit('%s: file does not exist!' % args.executable)
 
     uae = FSUAE()
-    uae.configure(floppy=args.floppy, rom=args.rom,
-                  debug=args.debug or args.gdbserver)
+    uae.configure(floppy=args.floppy, rom=args.rom, debug=args.debug)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)
@@ -123,7 +122,7 @@ if __name__ == '__main__':
     par_port = SOCAT('parallel')
     par_port.configure(tcp_port=8001)
 
-    if args.debug:
+    if args.debug == 'gdb':
         debugger = GDB()
         debugger.configure(args.executable)
 
@@ -141,11 +140,11 @@ if __name__ == '__main__':
         uae.start(session)
         ser_port.start(session)
         par_port.start(session)
-        if args.debug:
+        if args.debug == 'gdb':
             debugger.start(session)
 
         session.kill_window(':0')
-        if args.debug:
+        if args.debug == 'gdb':
             session.select_window(debugger.name)
         else:
             session.select_window(args.window or par_port.name)
