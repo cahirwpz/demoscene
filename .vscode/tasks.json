@@ -1,0 +1,82 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+
+    // BaseTaskConfiguration
+    "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+    },
+    "problemMatcher": {
+        "base": "$gcc",
+    },
+
+    // TaskConfiguration
+    "tasks": [
+        {
+            "label": "CLEAN",
+            "detail": "Clean output files of single effect ________________________ (Shift+Cmd+C)",
+            "type": "shell",
+            "command": "make clean -C ${workspaceFolder}/effects/${config:effect}",
+            "group": "build"
+        },
+        {
+            "label": "CLEAN ALL",
+            "detail": "Clean all output files ______________________ (Shift+Cmd+A, Shift+Cmd+C)",
+            "type": "shell",
+            "command": "make clean -C ${workspaceFolder}",
+            "group": "build"
+        },
+        {
+            "label": "BUILD",
+            "detail": "Build single effect ________________________________________ (Shift+Cmd+B)",
+            "type": "shell",
+            "command": "make -C ${workspaceFolder}/effects/${config:effect}",
+            "group":{
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "BUILD ALL",
+            "detail": "Build all effects ___________________________ (Shift+Cmd+A, Shift+Cmd+B)",
+            "type": "shell",
+            "command": "make -C ${workspaceFolder}",
+            "group": "build"
+        },
+        {
+            "label": "RUN",
+            "detail": "Run the effect without debugging ________________________ (Shift+Cmd+R)",
+            "type": "shell",
+            "command": "make run -C ${workspaceFolder}/effects/${config:effect}",
+            "group": "none"
+        },
+        {
+            "label": "DEBUG",
+            "detail": "Start debugging the effect _______________________________ (Shift+Cmd+D)",
+            "command": "${command:workbench.action.debug.start}",
+            "group": "none"
+        },
+        {
+            "label": "gdbserver",
+            "detail": "Run effect and start gdbserver on localhost:8888",
+            "type": "shell",
+            "command": "make debug DEBUGGER=gdbserver -C ${workspaceFolder}/effects/${config:effect}",
+            "isBackground": true,
+            "problemMatcher": {
+                "base": "$gcc",
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "Listening for gdb connection",
+                    "endsPattern": "Listening for gdb connection"
+                }
+            },
+            "group": "none"
+        },
+    ]
+}

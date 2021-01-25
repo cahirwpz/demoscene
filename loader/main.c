@@ -48,6 +48,10 @@ static void StartBgTask(void) {
 }
 
 int main(void) {
+  /* NOP that triggers fs-uae debugger to stop and inform GDB that it should
+   * fetch segments locations to relocate symbol information read from file. */
+  asm volatile("exg %d7,%d7");
+
   StartBgTask();
 
   AddIntServer(VertBlankChain, VertBlankWakeup);

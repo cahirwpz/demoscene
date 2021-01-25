@@ -5,7 +5,10 @@ _UAEFSDB.___
 
 # ide folders
 .idea
-.vscode
+
+# toolchain files
+gdb-dashboard
+.gdb_history
 
 # executable files, floppy & rom images and archives
 *.adf
@@ -60,3 +63,7 @@ effects/*/data/*.[ch]
 *.taghl
 tags
 cscope.out
+
+# Whitelisted files 
+!README.gdb.png
+!README.vsc.png
