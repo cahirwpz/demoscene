@@ -5,36 +5,7 @@ import (
 	"image"
 	"image/color"
 	"log"
-	"strconv"
-	"strings"
 )
-
-type PaletteParams struct {
-	Name        string
-	Colors      int
-	StoreUnused bool
-}
-
-func ParseDoPaletteParams(paletteFlag string) (PaletteParams, error) {
-	params := strings.Split(paletteFlag, ",")
-	if len(params) < 2 {
-		return PaletteParams{}, nil
-	}
-	colors, err := strconv.Atoi(params[1])
-	if err != nil {
-		return PaletteParams{}, err
-	}
-	storeUnused := false
-	if len(params) == 3 {
-		storeUnused, err = strconv.ParseBool(params[2])
-		return PaletteParams{}, err
-	}
-	return PaletteParams{
-		Name:        params[0],
-		Colors:      colors,
-		StoreUnused: storeUnused,
-	}, nil
-}
 
 func DoPalette(img *image.Paletted, params PaletteParams) {
 	palette := misc.Palette{}

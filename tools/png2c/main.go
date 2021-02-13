@@ -10,13 +10,12 @@ import (
 )
 
 var printHelp bool
-var paletteFlag string
+var palParams PaletteParams
 
 func init() {
 	flag.BoolVar(&printHelp, "help", false,
 		"print help message and exit")
-	flag.StringVar(&paletteFlag, "palette", "",
-		"Output Amiga palette 'name,color'")
+	flag.Var(&palParams, "palette", "Output Amiga palette 'name,color'")
 }
 
 func main() {
@@ -31,14 +30,7 @@ func main() {
 	if !ok {
 		log.Fatal("Only 8-bit images with palette supported.")
 	}
-
-	if len(paletteFlag) != 0 {
-		params, err := ParseDoPaletteParams(paletteFlag)
-		if err != nil {
-			flag.PrintDefaults()
-			os.Exit(1)
-		}
-		DoPalette(img, params)
+	if (PaletteParams{}) != palParams {
+		DoPalette(img, palParams)
 	}
-
 }
