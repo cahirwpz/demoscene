@@ -67,3 +67,4 @@ cscope.out
 # Whitelisted files 
 !README.gdb.png
 !README.vsc.png
+!go.mod

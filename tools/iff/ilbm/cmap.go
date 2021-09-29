@@ -1,7 +1,9 @@
 package ilbm
 
-import ".."
-import "fmt"
+import (
+	"fmt"
+	"ghostown.pl/iff"
+)
 
 type Color struct {
 	R, G, B uint8

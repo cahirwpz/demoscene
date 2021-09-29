@@ -1,6 +1,6 @@
 package ilbm
 
-import ".."
+import "ghostown.pl/iff"
 
 func init() {
 	// Add recognized chunks to global list
