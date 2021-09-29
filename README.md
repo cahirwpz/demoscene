@@ -19,7 +19,7 @@ contents is guaranteed to successfully build in well defined environment that is
 provided by VM image prepared with [Docker](https://www.docker.com/)! If you
 have some problems on your local machine **it's yours responsibility** to fix
 it, unless following icon does say that build failed:
-[![Build status](https://circleci.com/gh/cahirwpz/demoscene.png)](https://circleci.com/gh/cahirwpz/demoscene)
+![Build status](https://github.com/cahirwpz/demoscene/actions/workflows/default.yml/badge.svg)
 
 Setting up build environment
 ---
