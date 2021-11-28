@@ -83,18 +83,28 @@ static inline u_short swap8(u_short a) {
 }
 
 static inline short div16(int a, short b) {
-  asm("divs %1,%0"
-      : "+d" (a)
-      : "dm" (b));
-  return a;
+  short r;
+  asm("divs %2,%0"
+      : "=d" (r)
+      : "0" (a), "dm" (b));
+  return r;
 }
 
 static inline short mod16(int a, short b) {
-  asm("divs %1,%0\n"
+  short r;
+  asm("divs %2,%0\n"
       "swap %0"
-      : "+d" (a)
-      : "dm" (b));
-  return a;
+      : "=d" (r)
+      : "0" (a), "dm" (b));
+  return r;
+}
+
+static inline int mul16(short a, short b) {
+  int r;
+  asm("muls %2,%0"
+      : "=d" (r)
+      : "0" (a), "dm" (b));
+  return r;
 }
 
 static inline void bclr(u_char *ptr, char bit) {
