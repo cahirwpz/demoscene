@@ -223,7 +223,11 @@ struct Custom {
 #define BPLCON2_ZDBPSEL2 __BIT(14) /* ZDBPEN genlock mode */
 #define BPLCON2_PF2PRI __BIT(6)
 #define BPLCON2_PF2P2 __BIT(5)
+#define BPLCON2_PF2P1 __BIT(4)
+#define BPLCON2_PF2P0 __BIT(3)
 #define BPLCON2_PF1P2 __BIT(2)
+#define BPLCON2_PF1P1 __BIT(1)
+#define BPLCON2_PF1P0 __BIT(0)
 
 /* defines for bplcon3 register */
 #define BPLCON3_EXTBLNKEN __BIT(0) /* external blank enable */
