@@ -33,9 +33,7 @@ typedef struct Sprite {
    ((((Y) + (H) + 1) & 256) >> 7) |                                            \
    ((X) & 1))
 
-extern SpriteT NullSpriteData;
-
-#define NullSprite (&NullSpriteData)
+extern SpriteT NullSprite[];
 
 SpriteT *NewSprite(u_short height, bool attached);
 void DeleteSprite(SpriteT *spr);
