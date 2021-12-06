@@ -190,31 +190,32 @@ def do_sprite(im, desc):
     stride = ((width + 15) & ~15) // 16
     bpl = planar(pix, width, height, depth)
 
+    print('static const short %s_height = %d;' % (name, height))
+    print('')
+
     for i in range(width // 16):
         sprite = name
         if width > 16:
             sprite += str(i)
 
-        print('static __data_chip u_short _%s_data[] = {' % sprite)
-        print('  SPRPOS(0, 0), SPRCTL(0, 0, 0, %d),' % height)
-        for j in range(0, stride * depth * height, stride * depth):
-            print('  0x%04x, 0x%04x,' % (bpl[i + j], bpl[i + j + stride]))
-        print('  0, 0')
-        print('};')
-        print('')
         if sequence:
-            print('static const SpriteT _%s = {' % sprite)
+            print('static __data_chip SpriteT _%s = {' % sprite)
         else:
-            print('static const SpriteT %s = {' % sprite)
-        print('  .attached = NULL,')
-        print('  .height = %d,' % height)
-        print('  .data = _%s_data' % sprite)
+            print('static __data_chip SpriteT %s = {' % sprite)
+        print('  .pos = SPRPOS(0, 0),')
+        print('  .ctl = SPRCTL(0, 0, 0, %d),' % height)
+        print('  .data = {')
+        for j in range(0, stride * depth * height, stride * depth):
+            print('    0x%04x, 0x%04x,' % (bpl[i + j], bpl[i + j + stride]))
+        print('    /* end of sprite data */')
+        print('    0x0000, 0x0000,')
+        print('  }')
         print('};')
         print('')
 
     if sequence:
         sprites = ['&_%s%d' % (name, i) for i in range(width // 16)]
-        print('static const SpriteT *%s[] = {' % name)
+        print('static SpriteT *%s[] = {' % name)
         print('  %s' % ', '.join(sprites))
         print('};')
         print('')

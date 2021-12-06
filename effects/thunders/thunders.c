@@ -83,7 +83,7 @@ static void Load(void) {
     short xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
     short yo = Y((HEIGHT - 128) / 2);
 
-    UpdateSprite(thunder[i], xo, yo);
+    SpriteUpdatePos(thunder[i], thunder_height, xo, yo);
   }
 
   FloorPrecalc();
@@ -394,8 +394,8 @@ static void MakeFloorCopperList(short yo, short kyo) {
  
   {
     short i = mod16(frameCount, 10) * 2;
-    u_short *thunder0 = thunder[i]->data;
-    u_short *thunder1 = thunder[i+1]->data;
+    SpriteT *thunder0 = thunder[i];
+    SpriteT *thunder1 = thunder[i+1];
 
     CopMove32(cp, sprpt[0], thunder0);
     CopMove32(cp, sprpt[1], thunder1);
