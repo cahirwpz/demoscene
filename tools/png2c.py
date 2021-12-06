@@ -206,9 +206,9 @@ def do_sprite(im, desc):
         print('  .ctl = SPRCTL(0, 0, 0, %d),' % height)
         print('  .data = {')
         for j in range(0, stride * depth * height, stride * depth):
-            print('    0x%04x, 0x%04x,' % (bpl[i + j], bpl[i + j + stride]))
+            print('    { 0x%04x, 0x%04x },' % (bpl[i + j], bpl[i + j + stride]))
         print('    /* end of sprite data */')
-        print('    0x0000, 0x0000,')
+        print('    { 0x0000, 0x0000 }')
         print('  }')
         print('};')
         print('')

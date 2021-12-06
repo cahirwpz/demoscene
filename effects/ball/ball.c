@@ -289,19 +289,19 @@ static void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
 
     WaitBlitter();
     custom->bltapt = planes + i * 2;
-    custom->bltdpt = &spr0->data[0];
+    custom->bltdpt = &spr0->data[0][0];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr0->data[1];
+    custom->bltdpt = &spr0->data[0][1];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr1->data[0];
+    custom->bltdpt = &spr1->data[0][0];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr1->data[1];
+    custom->bltdpt = &spr1->data[0][1];
     custom->bltsize = bltsize;
   }
 }

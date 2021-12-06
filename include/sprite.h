@@ -7,7 +7,7 @@
 typedef struct Sprite {
   u_short pos;
   u_short ctl;
-  u_short data[0];
+  u_short data[0][2];
 } SpriteT;
 
 /*
