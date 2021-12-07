@@ -5,9 +5,9 @@
 #include "gfx.h"
 
 typedef struct Sprite {
-  bool attached;  /* an attached sprite is in memory just after this one */
-  u_short height;
-  u_short *data;
+  u_short pos;
+  u_short ctl;
+  u_short data[0][2];
 } SpriteT;
 
 /*
@@ -33,13 +33,18 @@ typedef struct Sprite {
    ((((Y) + (H) + 1) & 256) >> 7) |                                            \
    ((X) & 1))
 
-extern u_short NullSprite[];
+extern SpriteT NullSprite[];
 
 SpriteT *NewSprite(u_short height, bool attached);
-void DeleteSprite(SpriteT *sprite);
+void DeleteSprite(SpriteT *spr);
 
 /* Don't call it for null sprites. */
-void UpdateSprite(const SpriteT *sprite, u_short hstart, u_short vstart);
+void SpriteUpdatePos(SpriteT *spr, u_short height,
+                     u_short hstart, u_short vstart);
+
+static inline void SpriteSetAttached(SpriteT *spr) {
+  spr->ctl |= 0x80;
+}
 
 void CopSetupSprites(CopListT *list, CopInsT **sprptr);
 void CopSetupManualSprites(CopListT *list, CopInsT **sprptr);

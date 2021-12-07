@@ -78,8 +78,8 @@ static void Init(void) {
   CopSetupSprites(cp, sprptr);
   CopEnd(cp);
 
-  CopInsSet32(sprptr[0], pointer.data);
-  UpdateSprite(&pointer, X(0), Y(0));
+  CopInsSet32(sprptr[0], &pointer);
+  SpriteUpdatePos(&pointer, pointer_height, X(0), Y(0));
 
   CopListActivate(cp);
 
@@ -112,7 +112,7 @@ static bool HandleEvent(void) {
       return false;
   } else if (ev->type == EV_MOUSE) {
     GuiHandleMouseEvent(gui, &ev->mouse);
-    UpdateSprite(&pointer, X(ev->mouse.x), Y(ev->mouse.y));
+    SpriteUpdatePos(&pointer, pointer_height, X(ev->mouse.x), Y(ev->mouse.y));
   } else if (ev->type == EV_GUI) {
     WidgetT *wg = ev->gui.widget;
 

@@ -38,7 +38,7 @@ SOURCES := \
 	PixmapScramble_4_1.c \
 	PixmapScramble_4_2.c \
 	SetupPlayfield.c \
-	UpdateSprite.c \
+	SpriteUpdatePos.c \
 	c2p_1x1_4.asm
 
 include $(TOPDIR)/build/lib.mk

@@ -16,7 +16,7 @@
 static PixmapT *textureHi, *textureLo;
 static PixmapT *chunky;
 static BitmapT *bitmap;
-static SpriteT *sprite[2][4];
+static SpriteT *sprite[2][8];
 static CopInsT *sprptr[8];
 
 #include "data/dragon-bg.c"
@@ -87,11 +87,8 @@ static void MakeCopperList(CopListT *cp) {
   {
     short i;
 
-    for (i = 0; i < 4; i++) {
-      SpriteT *spr = sprite[active][i];
-      CopInsSet32(sprptr[i * 2], spr[0].data);
-      CopInsSet32(sprptr[i * 2 + 1], spr[1].data);
-    }
+    for (i = 0; i < 8; i++)
+      CopInsSet32(sprptr[i], sprite[active][i]->data);
   }
 }
 
@@ -116,8 +113,8 @@ static void Init(void) {
     short i, j;
 
     for (i = 0; i < 2; i++)
-      for (j = 0; j < 4; j++)
-        sprite[i][j] = NewSprite(64, true);
+      for (j = 0; j < 8; j++)
+        sprite[i][j] = NewSprite(64, j & 1);
   }
 
   SetupPlayfield(MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
@@ -143,7 +140,7 @@ static void Kill(void) {
     short i, j;
 
     for (i = 0; i < 2; i++)
-      for (j = 0; j < 4; j++)
+      for (j = 0; j < 8; j++)
         DeleteSprite(sprite[i][j]);
   }
 
@@ -287,23 +284,24 @@ static void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
   custom->bltdmod = 2;
 
   for (i = 0; i < 4; i++) {
-    SpriteT *spr = *sprite++;
+    SpriteT *spr0 = *sprite++;
+    SpriteT *spr1 = *sprite++;
 
     WaitBlitter();
     custom->bltapt = planes + i * 2;
-    custom->bltdpt = &spr[0].data[2];
+    custom->bltdpt = &spr0->data[0][0];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr[0].data[3];
+    custom->bltdpt = &spr0->data[0][1];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr[1].data[2];
+    custom->bltdpt = &spr1->data[0][0];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr[1].data[3];
+    custom->bltdpt = &spr1->data[0][1];
     custom->bltsize = bltsize;
   }
 }
@@ -315,12 +313,14 @@ static void PositionSprite(SpriteT **sprite, short xo, short yo) {
   short n = 4;
 
   while (--n >= 0) {
-    SpriteT *spr = *sprite++;
+    SpriteT *spr0 = *sprite++;
+    SpriteT *spr1 = *sprite++;
 
-    UpdateSprite(spr, x, y);
+    SpriteUpdatePos(spr0, HEIGHT, x, y);
+    SpriteUpdatePos(spr1, HEIGHT, x, y);
 
-    CopInsSet32(*ptr++, spr[0].data);
-    CopInsSet32(*ptr++, spr[1].data);
+    CopInsSet32(*ptr++, spr0);
+    CopInsSet32(*ptr++, spr1);
 
     x += 16;
   }
