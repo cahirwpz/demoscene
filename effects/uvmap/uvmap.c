@@ -21,7 +21,7 @@ static CopInsT *bplptr[DEPTH];
 #include "data/uvmap.c"
 
 #define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
-void (*UVMapRender)(u_char *chunky asm("a0"),
+void (*UVMapRender)(u_short *chunkyEnd asm("a0"),
                     u_short *textureHi asm("a1"),
                     u_short *textureLo asm("a2"));
 
@@ -61,22 +61,28 @@ static void PixmapToTexture(const PixmapT *image,
 
 static void MakeUVMapRenderCode(void) {
   u_short *code = (void *)UVMapRender;
-  u_short *data = uvmap;
+  u_short *data = uvmap + WIDTH * HEIGHT;
 
   /* The map is pre-scrambled to avoid one c2p pass:
    * [a b c d e f g h] => [a b e f c d g h] */
-  short n = WIDTH * HEIGHT / 4;
+  short n = WIDTH * HEIGHT / 32;
 
   while (n--) {
-    *code++ = 0x3029;  /* 3029 xxxx | move.w xxxx(a1),d0 */
-    *code++ = *data++;
-    *code++ = 0x806a;  /* 806a yyyy | or.w   yyyy(a2),d0 */
-    *code++ = *data++;
-    *code++ = 0x1029;  /* 1029 wwww | move.b wwww(a1),d0 */
-    *code++ = *data++;
-    *code++ = 0x802a;  /* 802a zzzz | or.b   zzzz(a2),d0 */
-    *code++ = *data++;
-    *code++ = 0x30c0;  /* 30c0      | move.w d0,(a0)+    */
+    short m;
+
+    for (m = 0x0e00; m >= 0; m -= 0x0200) {
+      data -= 4;
+      *code++ = 0x3029 | m;  /* 3029 xxxx | move.w xxxx(a1),d0 */
+      *code++ = data[0];
+      *code++ = 0x806a | m;  /* 806a yyyy | or.w   yyyy(a2),d0 */
+      *code++ = data[1];
+      *code++ = 0x1029 | m;  /* 1029 wwww | move.b wwww(a1),d0 */
+      *code++ = data[2];
+      *code++ = 0x802a | m;  /* 802a zzzz | or.b   zzzz(a2),d0 */
+      *code++ = data[3];
+    }
+
+    *code++ = 0x48a0; *code++ = 0xff00; /* d0-d7,-(a0) */
   }
 
   *code++ = 0x4e75; /* rts */
@@ -300,15 +306,17 @@ static void Kill(void) {
 PROFILE(UVMap);
 
 static void Render(void) {
-  short offset = (frameCount * 127) & (texture.width * texture.height - 1);
+  int size = texture.width * texture.height;
+  short offset = (frameCount * 127) & (size - 1);
 
   /* screen's bitplane #0 is used as a chunky buffer */
   ProfilerStart(UVMap);
   {
+    u_short *chunky = screen[active]->planes[0] + WIDTH * HEIGHT / 2;
     u_short *txtHi = textureHi + offset;
     u_short *txtLo = textureLo + offset;
 
-    (*UVMapRender)(screen[active]->planes[0], txtHi, txtLo);
+    (*UVMapRender)(chunky, txtHi, txtLo);
   }
   ProfilerStop(UVMap);
 
