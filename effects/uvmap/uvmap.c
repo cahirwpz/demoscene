@@ -67,6 +67,8 @@ static void MakeUVMapRenderCode(void) {
    * [a b c d e f g h] => [a b e f c d g h] */
   short n = WIDTH * HEIGHT / 32;
 
+  *code++ = 0x48a7; *code++ = 0x3f00; /* movem.w d2-d7,-(sp) */
+
   while (n--) {
     short m;
 
@@ -85,6 +87,7 @@ static void MakeUVMapRenderCode(void) {
     *code++ = 0x48a0; *code++ = 0xff00; /* d0-d7,-(a0) */
   }
 
+  *code++ = 0x4c9f; *code++ = 0x00fc; /* movem.w (sp)+,d2-d7 */
   *code++ = 0x4e75; /* rts */
 }
 
