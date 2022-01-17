@@ -150,7 +150,7 @@ class Array(object):
     @staticmethod
     def Print(*lines):
         for line in lines:
-            print line
+            print(line)
 
 
 class Channel(object):
