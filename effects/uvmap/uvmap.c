@@ -10,7 +10,7 @@
 #define DEPTH 4
 #define FULLPIXEL 1
 
-static PixmapT *textureHi, *textureLo;
+static u_char *textureHi, *textureLo;
 static BitmapT *screen[2];
 static u_short active = 0;
 static CopListT *cp;
@@ -26,15 +26,15 @@ void (*UVMapRender)(u_char *chunky asm("a0"),
                     u_char *textureLo asm("a2"));
 
 static void PixmapToTexture(const PixmapT *image,
-                            PixmapT *imageHi, PixmapT *imageLo) 
+                            void *imageHi, void *imageLo) 
 {
   u_int *data = image->pixels;
   int size = image->width * image->height;
   /* Extra halves for cheap texture motion. */
-  u_int *hi0 = imageHi->pixels;
-  u_int *hi1 = imageHi->pixels + size;
-  u_int *lo0 = imageLo->pixels;
-  u_int *lo1 = imageLo->pixels + size;
+  u_int *hi0 = imageHi;
+  u_int *hi1 = imageHi + size;
+  u_int *lo0 = imageLo;
+  u_int *lo1 = imageLo + size;
   short n = size / 4;
   register u_int m1 asm("d6") = 0x0c0c0c0c;
   register u_int m2 asm("d7") = 0x03030303;
@@ -76,6 +76,9 @@ static struct {
 
 #define BPLSIZE ((WIDTH * 2) * (HEIGHT * 2) / 8) /* 8000 bytes */
 #define BLTSIZE ((WIDTH / 2) * HEIGHT)           /* 8000 bytes */
+
+/* If you think you can speed it up (I doubt it) please first look into
+ * `c2p_2x1_4bpl_mangled_fast_blitter.py` in `prototypes/c2p`. */
 
 static void ChunkyToPlanar(void) {
   register void **bpl asm("a0") = c2p.bpl;
@@ -233,10 +236,8 @@ static void Init(void) {
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
   MakeUVMapRenderCode();
 
-  textureHi = NewPixmap(texture.width, texture.height * 2,
-                        PM_CMAP8, MEMF_PUBLIC);
-  textureLo = NewPixmap(texture.width, texture.height * 2,
-                        PM_CMAP8, MEMF_PUBLIC);
+  textureHi = MemAlloc(texture.width * texture.height * 2, MEMF_PUBLIC);
+  textureLo = MemAlloc(texture.width * texture.height * 2, MEMF_PUBLIC);
   PixmapToTexture(&texture, textureHi, textureLo);
 
   EnableDMA(DMAF_BLITTER);
@@ -263,8 +264,8 @@ static void Kill(void) {
   ResetIntVector(BLIT);
 
   DeleteCopList(cp);
-  DeletePixmap(textureHi);
-  DeletePixmap(textureLo);
+  MemFree(textureHi);
+  MemFree(textureLo);
   MemFree(UVMapRender);
 
   DeleteBitmap(screen[0]);
@@ -274,13 +275,13 @@ static void Kill(void) {
 PROFILE(UVMap);
 
 static void Render(void) {
-  short offset = (frameCount * 127) & 16383;
+  short offset = (frameCount * 127) & (texture.width * texture.height - 1);
 
   /* screen's bitplane #0 is used as a chunky buffer */
   ProfilerStart(UVMap);
   {
-    u_char *txtHi = textureHi->pixels + offset;
-    u_char *txtLo = textureLo->pixels + offset;
+    u_char *txtHi = textureHi + offset;
+    u_char *txtLo = textureLo + offset;
 
     (*UVMapRender)(screen[active]->planes[0], txtHi, txtLo);
   }
