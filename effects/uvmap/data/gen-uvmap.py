@@ -10,14 +10,14 @@ def scramble_cmap4(uvmap):
 
     i = 0
     while i < len(uvmap):
-        out.append(uvmap[i + 0])
-        out.append(uvmap[i + 1])
-        out.append(uvmap[i + 4])
-        out.append(uvmap[i + 5])
-        out.append(uvmap[i + 2])
-        out.append(uvmap[i + 3])
-        out.append(uvmap[i + 6])
-        out.append(uvmap[i + 7])
+        out.append(uvmap[i + 0] * 2)
+        out.append(uvmap[i + 1] * 2)
+        out.append(uvmap[i + 4] * 2)
+        out.append(uvmap[i + 5] * 2)
+        out.append(uvmap[i + 2] * 2)
+        out.append(uvmap[i + 3] * 2)
+        out.append(uvmap[i + 6] * 2)
+        out.append(uvmap[i + 7] * 2)
         i += 8
 
     return out
