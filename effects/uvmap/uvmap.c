@@ -96,8 +96,7 @@ static struct {
   void **bpl;
 } c2p = { 256, NULL };
 
-#define BPLSIZE ((WIDTH * 2) * (HEIGHT * 2) / 8) /* 8000 bytes */
-#define BLTSIZE ((WIDTH / 2) * HEIGHT)           /* 8000 bytes */
+#define BLTSIZE ((WIDTH / 2) * HEIGHT) /* 8000 bytes */
 
 /* If you think you can speed it up (I doubt it) please first look into
  * `c2p_2x1_4bpl_mangled_fast_blitter.py` in `prototypes/c2p`. */
@@ -176,7 +175,7 @@ static void ChunkyToPlanar(void) {
 
       custom->bltapt = bpl[1];
       custom->bltbpt = bpl[1];
-      custom->bltdpt = bpl[2] + BLTSIZE / 2;
+      custom->bltdpt = bpl[3];
 
 #if FULLPIXEL
       /* (a & 0xAAAA) | ((b >> 1) & ~0xAAAA) */
@@ -187,22 +186,14 @@ static void ChunkyToPlanar(void) {
       custom->bltcon0 = (SRCA | DEST) | (ABC | ANBC);
       custom->bltcon1 = 0;
 #endif
-      custom->bltsize = 2 | ((BLTSIZE / 8) << 6);
+      /* overall size: BLTSIZE bytes */
+      custom->bltsize = 4 | ((BLTSIZE / 8) << 6);
       break;
 
     case 5:
-      custom->bltapt = bpl[1] + BLTSIZE / 2;
-      custom->bltbpt = bpl[1] + BLTSIZE / 2;
-      custom->bltdpt = bpl[3] + BLTSIZE / 2;
-
-      /* overall size: BLTSIZE bytes */
-      custom->bltsize = 2 | ((BLTSIZE / 8) << 6);
-      break;
-
-    case 6:
-      custom->bltapt = bpl[1] + BLTSIZE / 2 - 2;
-      custom->bltbpt = bpl[1] + BLTSIZE / 2 - 2;
-      custom->bltdpt = bpl[2] + BLTSIZE / 2 - 2;
+      custom->bltapt = bpl[1] + BLTSIZE - 2;
+      custom->bltbpt = bpl[1] + BLTSIZE - 2;
+      custom->bltdpt = bpl[2] + BLTSIZE - 2;
       custom->bltcdat = 0xAAAA;
 
 #if FULLPIXEL
@@ -214,20 +205,14 @@ static void ChunkyToPlanar(void) {
       custom->bltcon0 = (SRCA | DEST) | (ABNC | ANBNC);
       custom->bltcon1 = BLITREVERSE;
 #endif
-      custom->bltsize = 2 | ((BLTSIZE / 8) << 6);
+      /* overall size: BLTSIZE bytes */
+      custom->bltsize = 4 | ((BLTSIZE / 8) << 6);
       break;
 
-    case 7:
-      custom->bltapt = bpl[1] + BLTSIZE - 2;
-      custom->bltbpt = bpl[1] + BLTSIZE - 2;
-      custom->bltdpt = bpl[3] + BLTSIZE / 2 - 2;
-      custom->bltsize = 2 | ((BLTSIZE / 8) << 6);
-      break;
-
-    case 8:
+    case 6:
       CopInsSet32(bplptr[0], bpl[2]);
-      CopInsSet32(bplptr[1], bpl[2] + BLTSIZE / 2);
-      CopInsSet32(bplptr[2], bpl[3]);
+      CopInsSet32(bplptr[1], bpl[3]);
+      CopInsSet32(bplptr[2], bpl[2] + BLTSIZE / 2);
       CopInsSet32(bplptr[3], bpl[3] + BLTSIZE / 2);
       break;
 
