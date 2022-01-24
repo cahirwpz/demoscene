@@ -53,11 +53,16 @@ static void PixmapToTexture(const PixmapT *image,
   }
 }
 
+#if 0
 #define INTPART(_x) ((u_short)(_x) & 0x7f00)
 #define UVPOS(_u, _v) ((INTPART(_u) >> 1) | (INTPART(_v) >> 8))
 
-static void Rotator(u_short *chunky, u_short *txtHi, u_short *txtLo,
-                    short du, short dv, short dU, short dV) {
+static void Rotator(u_short *chunky asm("a0"),
+                    u_short *txtHi asm("a1"),
+                    u_short *txtLo asm("a2"),
+                    short du asm("d3"), short dv asm("d4"),
+                    short dU asm("d5"), short dV asm("d6"))
+{
   short u = 0, v = 0;
   short j = HEIGHT;
 
@@ -70,21 +75,6 @@ static void Rotator(u_short *chunky, u_short *txtHi, u_short *txtLo,
 
     while (i--) {
       u_short hi0, lo0, hi1, lo1;
-
-#if 0
-      asm volatile(
-                   "move.w (a1,d2.w),d0\n"
-                   "add.w  du, u\n"
-                   "add.b  lo_dv, lo_v\n"
-                   "addx.b hi_"
-                   "or.w   (a2,d2.w),d0\n"
-                   "move.b (a1,d2.w),d0\n"
-                   "or.b   (a2,d2.w),d0\n"
-                   "move.w d0,(a0)+\n"
-                   : 
-                   : 
-                   : "d0");
-#endif
 
       /* [a b c d e f g h] => [a b e f c d g h] */
       hi0 = txtHi[UVPOS(_u, _v)]; /* a */
@@ -112,6 +102,13 @@ static void Rotator(u_short *chunky, u_short *txtHi, u_short *txtLo,
     u += dU, v += dV;
   }
 }
+#else
+void Rotator(u_short *chunky asm("a0"),
+             u_short *txtHi asm("a1"),
+             u_short *txtLo asm("a2"),
+             short du asm("d3"), short dv asm("d4"),
+             short dU asm("d5"), short dV asm("d6"));
+#endif
 
 static struct {
   short phase;
@@ -149,6 +146,8 @@ static void ChunkyToPlanar(void) {
    * Line doubling is performed using copper. Rendered bitmap will have size
    * (WIDTH, HEIGHT/2, DEPTH) and will be placed in bpl[2] and bpl[3].
    */
+
+  ClearIRQ(INTF_BLIT);
 
   switch (c2p.phase) {
     case 0:
@@ -243,8 +242,6 @@ static void ChunkyToPlanar(void) {
   }
 
   c2p.phase++;
-
-  ClearIRQ(INTF_BLIT);
 }
 
 static void MakeCopperList(CopListT *cp) {
@@ -305,22 +302,24 @@ static void Kill(void) {
   DeleteBitmap(screen[1]);
 }
 
-PROFILE(UVMap);
+PROFILE(Rotator);
+
+static void RenderRotator(void) {
+  u_short *chunky = screen[active]->planes[0];
+  u_short *txtHi = textureHi;
+  u_short *txtLo = textureLo;
+  short angle = frameCount * 4;
+
+  Rotator(chunky, txtHi, txtLo, 
+          SIN(angle) >> 4, COS(angle) >> 4,
+          SIN(angle + SIN_HALF_PI) >> 4, COS(angle + SIN_HALF_PI) >> 4);
+}
 
 static void Render(void) {
   /* screen's bitplane #0 is used as a chunky buffer */
-  ProfilerStart(UVMap);
-  {
-    u_short *chunky = screen[active]->planes[0];
-    u_short *txtHi = textureHi;
-    u_short *txtLo = textureLo;
-    short angle = frameCount * 4;
-
-    Rotator(chunky, txtHi, txtLo, 
-            SIN(angle) >> 4, COS(angle) >> 4,
-            SIN(angle + SIN_HALF_PI) >> 4, COS(angle + SIN_HALF_PI) >> 4);
-  }
-  ProfilerStop(UVMap);
+  ProfilerStart(Rotator);
+  RenderRotator();
+  ProfilerStop(Rotator);
 
   c2p.phase = 0;
   c2p.bpl = screen[active]->planes;
