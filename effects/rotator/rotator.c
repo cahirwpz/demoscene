@@ -57,7 +57,7 @@ static void PixmapToTexture(const PixmapT *image,
 #define UVPOS(_u, _v) ((INTPART(_u) >> 1) | (INTPART(_v) >> 8))
 
 static void Rotator(u_short *chunky, u_short *txtHi, u_short *txtLo,
-                    short du, short dv) {
+                    short du, short dv, short dU, short dV) {
   short u = 0, v = 0;
   short j = HEIGHT;
 
@@ -65,7 +65,8 @@ static void Rotator(u_short *chunky, u_short *txtHi, u_short *txtLo,
     short _u = u, _v = v;
     short i = WIDTH / 8;
    
-    Log("%x %x\n", u, v);
+    if (j == 0)
+      Log("%x %x\n", u, v);
 
     while (i--) {
       u_short hi0, lo0, hi1, lo1;
@@ -108,7 +109,7 @@ static void Rotator(u_short *chunky, u_short *txtHi, u_short *txtLo,
       *chunky++ = (lo0 & 0xff00) | (lo1 >> 8);
     }
 
-    u += dv, v += du;
+    u += dU, v += dV;
   }
 }
 
@@ -313,9 +314,11 @@ static void Render(void) {
     u_short *chunky = screen[active]->planes[0];
     u_short *txtHi = textureHi;
     u_short *txtLo = textureLo;
+    short angle = frameCount * 4;
 
     Rotator(chunky, txtHi, txtLo, 
-            SIN(frameCount * 16) >> 4, COS(frameCount * 16) >> 4);
+            SIN(angle) >> 4, COS(angle) >> 4,
+            SIN(angle + SIN_HALF_PI) >> 4, COS(angle + SIN_HALF_PI) >> 4);
   }
   ProfilerStop(UVMap);
 
