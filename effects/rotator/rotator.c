@@ -252,6 +252,8 @@ void Rotator(u_short *chunky asm("a0"),
              u_short *txtLo asm("a2"),
              short dU asm("d2"), short dV asm("d3"));
 
+PROFILE(Rotator);
+
 static void RenderRotator(void) {
   u_short *chunky = screen[active]->planes[0];
   u_short *txtHi = textureHi;
@@ -259,17 +261,16 @@ static void RenderRotator(void) {
   short angle = frameCount * 4;
 
   GenDrawSpan(SIN(angle) >> 4, COS(angle) >> 4);
+
+  ProfilerStart(Rotator);
   Rotator(chunky, txtHi, txtLo, 
           SIN(angle + SIN_HALF_PI) >> 4, COS(angle + SIN_HALF_PI) >> 4);
+  ProfilerStop(Rotator);
 }
-
-PROFILE(Rotator);
 
 static void Render(void) {
   /* screen's bitplane #0 is used as a chunky buffer */
-  ProfilerStart(Rotator);
   RenderRotator();
-  ProfilerStop(Rotator);
 
   c2p.phase = 0;
   c2p.bpl = screen[active]->planes;
@@ -277,4 +278,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(uvmap, NULL, NULL, Init, Kill, Render);
+EFFECT(rotator, NULL, NULL, Init, Kill, Render);

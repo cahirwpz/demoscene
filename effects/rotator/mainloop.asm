@@ -16,12 +16,12 @@ FOURPIX macro
 GROUPSIZE equ 32
 
 GETUV   macro
-        move.w	d1,d4   ; ----VVvv
-	add.l	d3,d1
-	move.b	d0,d4	; ----VVUU
-	addx.b	d2,d0
+        move.w  d1,d4   ; ----VVvv
+        add.l   d3,d1
+        move.b  d0,d4   ; ----VVUU
+        addx.b  d2,d0
         add.b   d4,d4
-        and.w   #$7ffe,d4
+        and.w   d5,d4   ; [d5] $7ffe
         move.w  d4,\1
         endm
 
@@ -30,9 +30,11 @@ GROUPLEN equ (4+4*GROUPSIZE)
 ; [d2] du
 ; [d3] dv
 _GenDrawSpan:
-        movem.l d2-d4/d7,-(sp)
+        movem.l d2-d7,-(sp)
 
         lea     DrawSpanEnd(pc),a0
+
+        move.w  #$7ffe,d5
 
         clr.l   d0      ; ------UU 
         clr.l   d1      ; uu--VVvv
@@ -46,9 +48,9 @@ _GenDrawSpan:
         clr.w   d2      ; --UU----
         swap    d2      ; ------UU [d3]
 
-        move.l	d3,d4   ; uu--VVvv
-	clr.w	d4      ; uu------
-	add.l	d4,d1   ; init X-flag
+        move.l  d3,d4   ; uu--VVvv
+        clr.w   d4      ; uu------
+        add.l   d4,d1   ; init X-flag
 
         move.w  #WIDTH/GROUPSIZE-1,d7
 .loop32
@@ -72,7 +74,7 @@ _GenDrawSpan:
         swap    d7
         dbf     d7,.loop32
 
-        movem.l (sp)+,d2-d4/d7
+        movem.l (sp)+,d2-d7
         rts
 
 ; [a0] chunky
