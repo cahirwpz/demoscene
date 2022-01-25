@@ -53,62 +53,11 @@ static void PixmapToTexture(const PixmapT *image,
   }
 }
 
-#if 0
-#define INTPART(_x) ((u_short)(_x) & 0x7f00)
-#define UVPOS(_u, _v) ((INTPART(_u) >> 1) | (INTPART(_v) >> 8))
-
-static void Rotator(u_short *chunky asm("a0"),
-                    u_short *txtHi asm("a1"),
-                    u_short *txtLo asm("a2"),
-                    short du asm("d3"), short dv asm("d4"),
-                    short dU asm("d5"), short dV asm("d6"))
-{
-  short u = 0, v = 0;
-  short j = HEIGHT;
-
-  while (j--) {
-    short _u = u, _v = v;
-    short i = WIDTH / 8;
-   
-    if (j == 0)
-      Log("%x %x\n", u, v);
-
-    while (i--) {
-      u_short hi0, lo0, hi1, lo1;
-
-      /* [a b c d e f g h] => [a b e f c d g h] */
-      hi0 = txtHi[UVPOS(_u, _v)]; /* a */
-      _u += du, _v += dv;
-      hi0 |= txtLo[UVPOS(_u, _v)]; /* b */
-      _u += du, _v += dv;
-      lo0 = txtHi[UVPOS(_u, _v)]; /* c */
-      _u += du, _v += dv;
-      lo0 |= txtLo[UVPOS(_u, _v)]; /* d */
-      _u += du, _v += dv;
-
-      hi1 = txtHi[UVPOS(_u, _v)]; /* e */
-      _u += du, _v += dv;
-      hi1 |= txtLo[UVPOS(_u, _v)]; /* f */
-      _u += du, _v += dv;
-      lo1 = txtHi[UVPOS(_u, _v)]; /* g */
-      _u += du, _v += dv;
-      lo1 |= txtLo[UVPOS(_u, _v)]; /* h */
-      _u += du, _v += dv;
-
-      *chunky++ = (hi0 & 0xff00) | (hi1 >> 8);
-      *chunky++ = (lo0 & 0xff00) | (lo1 >> 8);
-    }
-
-    u += dU, v += dV;
-  }
-}
-#else
 void Rotator(u_short *chunky asm("a0"),
              u_short *txtHi asm("a1"),
              u_short *txtLo asm("a2"),
              short du asm("d3"), short dv asm("d4"),
              short dU asm("d5"), short dV asm("d6"));
-#endif
 
 static struct {
   short phase;
