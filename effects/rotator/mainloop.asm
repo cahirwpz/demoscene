@@ -15,23 +15,6 @@ FOURPIX macro
 
 GROUPSIZE equ 32
 
-DrawSpan:
-        rept    WIDTH/GROUPSIZE
-        FOURPIX d0
-        FOURPIX d1
-        FOURPIX d2
-        FOURPIX d3
-        FOURPIX d4
-        FOURPIX d5
-        FOURPIX d6
-        FOURPIX d7
-        movem.w d0-d7,-(a0)
-        endr
-
-DrawSpanEnd:
-        rts
-
-
 GETUV   macro
         move.w	d1,d4   ; ----VVvv
 	add.l	d3,d1
@@ -69,20 +52,21 @@ _GenDrawSpan:
 
         move.w  #WIDTH/GROUPSIZE-1,d7
 .loop32
-        lea     -4(a0),a0
+        lea     -132(a0),a0
+        move.l  a0,a1
         swap    d7
         move.w  #4-1,d7
 .loop8
         ; [a b c d e f g h] => [a b e f c d g h]
-        lea     -32(a0),a0
-        GETUV   30(a0)
-        GETUV   26(a0)
-        GETUV   14(a0)
-        GETUV   10(a0)
-        GETUV   22(a0)
-        GETUV   18(a0)
-        GETUV   6(a0)
-        GETUV   2(a0)
+        GETUV   2(a1)
+        GETUV   6(a1)
+        GETUV   18(a1)
+        GETUV   22(a1)
+        GETUV   10(a1)
+        GETUV   14(a1)
+        GETUV   26(a1)
+        GETUV   30(a1)
+        lea     32(a1),a1
         dbf     d7,.loop8
 
         swap    d7
@@ -98,25 +82,47 @@ _GenDrawSpan:
 ; [d3] dV
 
 _Rotator:
-        movem.w d2-d7,-(sp)
+        movem.w d2-d7/a2-a4,-(sp)
 
-        lea     WIDTH*HEIGHT/2(a0),a0
-        clr.w   d0
-        clr.w   d1
+        lea     WIDTH/2(a0),a0
+        clr.l   d0
+        clr.l   d1
+        swap    d2
+        swap    d3
+        move.l  a1,a3
+        move.l  a2,a4
 
         move.w  #HEIGHT-1,d7
-.loopy
-        movem.l d0-d3/d7/a1-a2,-(sp)
-        lsr.w   #8,d0
-        move.b  d0,d1
-        and.w   #$7ffe,d1
-        add.w   d1,a1
-        add.w   d1,a2
-        bsr     DrawSpan
-        movem.l (sp)+,d0-d3/d7/a1-a2
-        add.w   d2,d0
-        add.w   d3,d1
-        dbf     d7,.loopy
+LoopY:
+        swap    d7
+        move.l  d0,d4
+        move.l  d1,d5
+        swap    d4
+        swap    d5
+        lsr.w   #8,d4
+        move.b  d4,d5
+        and.w   #$7ffe,d5
+        lea     (a3,d5.w),a1
+        lea     (a4,d5.w),a2
 
-        movem.w (sp)+,d2-d7
+        rept    WIDTH/GROUPSIZE
+        FOURPIX d0
+        FOURPIX d1
+        FOURPIX d2
+        FOURPIX d3
+        FOURPIX d4
+        FOURPIX d5
+        FOURPIX d6
+        FOURPIX d7
+        movem.w d0-d7,-(a0)
+        endr
+DrawSpanEnd:
+
+        swap    d7
+        lea     WIDTH(a0),a0
+        add.l   d2,d0
+        add.l   d3,d1
+        dbf     d7,LoopY
+
+        movem.w (sp)+,d2-d7/a2-a4
         rts
