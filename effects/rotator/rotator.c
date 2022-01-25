@@ -53,12 +53,6 @@ static void PixmapToTexture(const PixmapT *image,
   }
 }
 
-void Rotator(u_short *chunky asm("a0"),
-             u_short *txtHi asm("a1"),
-             u_short *txtLo asm("a2"),
-             short du asm("d3"), short dv asm("d4"),
-             short dU asm("d5"), short dV asm("d6"));
-
 static struct {
   short phase;
   void **bpl;
@@ -251,7 +245,12 @@ static void Kill(void) {
   DeleteBitmap(screen[1]);
 }
 
-PROFILE(Rotator);
+void GenDrawSpan(short du asm("d2"), short dv asm("d3"));
+
+void Rotator(u_short *chunky asm("a0"),
+             u_short *txtHi asm("a1"),
+             u_short *txtLo asm("a2"),
+             short dU asm("d2"), short dV asm("d3"));
 
 static void RenderRotator(void) {
   u_short *chunky = screen[active]->planes[0];
@@ -259,10 +258,12 @@ static void RenderRotator(void) {
   u_short *txtLo = textureLo;
   short angle = frameCount * 4;
 
+  GenDrawSpan(SIN(angle) >> 4, COS(angle) >> 4);
   Rotator(chunky, txtHi, txtLo, 
-          SIN(angle) >> 4, COS(angle) >> 4,
           SIN(angle + SIN_HALF_PI) >> 4, COS(angle + SIN_HALF_PI) >> 4);
 }
+
+PROFILE(Rotator);
 
 static void Render(void) {
   /* screen's bitplane #0 is used as a chunky buffer */
