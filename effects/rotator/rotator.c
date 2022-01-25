@@ -17,7 +17,7 @@ static u_short active = 0;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 
-#include "data/stained-glass.c"
+#include "data/rork-128.c"
 
 /* [0 0 0 0 a0 a1 a2 a3] => [a0 a1 0 0 a2 a3 0 0] x 2 */
 static u_short PixelHi[16] = {
@@ -258,7 +258,7 @@ static void RenderRotator(void) {
   u_short *chunky = screen[active]->planes[0];
   u_short *txtHi = textureHi;
   u_short *txtLo = textureLo;
-  short angle = frameCount * 4;
+  short angle = frameCount * 11;
 
   GenDrawSpan(SIN(angle) >> 4, COS(angle) >> 4);
 

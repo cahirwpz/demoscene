@@ -103,6 +103,7 @@ LoopY:
         swap    d5
         lsr.w   #8,d4
         move.b  d4,d5
+        add.b   d5,d5
         and.w   #$7ffe,d5
         lea     (a3,d5.w),a1
         lea     (a4,d5.w),a2
