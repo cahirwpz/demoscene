@@ -5,6 +5,7 @@
 
 #define DISP_WIDTH 320
 #define DISP_HEIGHT 256
+#define DISP_DEPTH 4
 #define BOARD_WIDTH (DISP_WIDTH+32)
 #define BOARD_HEIGHT (DISP_HEIGHT+2)
 #define BOARD_DEPTH 1
@@ -19,16 +20,32 @@ static BitmapT* x2;
 static BitmapT* x3;
 static BitmapT* x5;
 static BitmapT* x6;
-static BitmapT* x7;
-static CopListT* cp;
+static CopListT* cp0;
+static CopListT* cp1;
+static BitmapT* prev_states[DISP_DEPTH]; // circular buffer of previous states
+u_short states_head = 0; // states_head & 0x3 points to the newest frame in prev_state
 
 static u_short minterms_table[9] = {0x96, 0xE8, 0x7E, 0x69, 0x69, 0x81, 0xB4, 0x3A, 0x24};
 
 static PaletteT palette = {
-  .count = 2,
+  .count = 16,
   .colors = {
     0x000,
-    0xfff
+    0x001,
+    0x011,
+    0x023,
+    0x034,
+    0x057,
+    0x079,
+    0x09C,
+    0x0BF,
+    0x09C,
+    0x079,
+    0x057,
+    0x034,
+    0x023,
+    0x011,
+    0x001,
   }
 };
 
@@ -106,7 +123,25 @@ static void BlitFunc(const BitmapT* sourceA, const BitmapT* sourceB, const Bitma
   custom->bltsize = bltsize;
 }
 
+static void MakeCopperList(CopListT* cp) {
+  // newest game state is on (DISP_DEPTH-1)th bitplane, oldest on 0th bitplane
+  BitmapT* cur;
+  u_short i;
+  
+  CopInit(cp);
+  for (i = 0; i < DISP_DEPTH; i++)
+  {
+    cur = prev_states[(states_head + i + 1) % DISP_DEPTH];
+    CopMove32(cp, bplpt[i], cur->planes[0] + cur->bytesPerRow + 2);
+  }
+
+  CopMove16(cp, bpl1mod, 4);
+  CopMove16(cp, bpl2mod, 4);
+  CopEnd(cp);
+}
+
 static void Init(void) {
+  u_short i;
   lo = NewBitmap(BOARD_WIDTH, BOARD_HEIGHT, BOARD_DEPTH);
   hi = NewBitmap(BOARD_WIDTH, BOARD_HEIGHT, BOARD_DEPTH);
   x0 = NewBitmap(BOARD_WIDTH, BOARD_HEIGHT, BOARD_DEPTH);
@@ -115,28 +150,29 @@ static void Init(void) {
   x3 = NewBitmap(BOARD_WIDTH, BOARD_HEIGHT, BOARD_DEPTH);
   x5 = NewBitmap(BOARD_WIDTH, BOARD_HEIGHT, BOARD_DEPTH);
   x6 = NewBitmap(BOARD_WIDTH, BOARD_HEIGHT, BOARD_DEPTH);
-  x7 = NewBitmap(BOARD_WIDTH, BOARD_HEIGHT, BOARD_DEPTH);
 
-  SetupPlayfield(MODE_LORES, BOARD_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
+  SetupPlayfield(MODE_LORES, DISP_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
   LoadPalette(&palette, 0);
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
-  cp = NewCopList(80);
-  CopInit(cp);
-  CopMove32(cp, bplpt[0], initial_board.planes[0] + initial_board.bytesPerRow + 2);
-  CopMove16(cp, bpl1mod, 4);
-  CopMove16(cp, bpl2mod, 4);
-  //CopSetupBitplanes(cp, NULL, &initial_board, BOARD_DEPTH);
-  CopEnd(cp);
-  CopListActivate(cp);
+  for (i = 0; i < DISP_DEPTH; i++)
+  {
+    prev_states[i] = NewBitmap(BOARD_WIDTH, BOARD_HEIGHT, BOARD_DEPTH);
+    BlitterCopy(prev_states[i], 0, 0, 0, &initial_board, 0);
+  }
 
+  cp0 = NewCopList(80);
+  cp1 = NewCopList(80);
+  MakeCopperList(cp0);
+  CopListActivate(cp0);
   EnableDMA(DMAF_RASTER);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
-  DeleteCopList(cp);
+  DeleteCopList(cp0);
+  DeleteCopList(cp1);
   DeleteBitmap(lo);
   DeleteBitmap(hi);
   DeleteBitmap(x0);
@@ -145,7 +181,6 @@ static void Kill(void) {
   DeleteBitmap(x3);
   DeleteBitmap(x5);
   DeleteBitmap(x6);
-  DeleteBitmap(x7);
 }
 
 PROFILE(GOLStep)
@@ -166,9 +201,16 @@ static void Render(void) {
   BlitFunc(x1, x5, x3, x6, minterms_table[7]);
   BlitFunc(x2, x0, x6, &initial_board, minterms_table[8]);
 
+  states_head++;
+  BlitterCopy(prev_states[states_head % DISP_DEPTH], 0, 0, 0, &initial_board, 0);
+  
+  MakeCopperList(cp1);
+
   ProfilerStop(GOLStep);
 
+  CopListRun(cp1);
   TaskWaitVBlank();
+  swapr(cp0, cp1);
 }
 
 EFFECT(game_of_life, NULL, NULL, Init, Kill, Render);
