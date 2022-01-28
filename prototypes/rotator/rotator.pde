@@ -1,54 +1,45 @@
 PImage texture;
 Rotator rotator;
 
-class Rotator {
-  /* control variables (input) */
-  PVector scale;
-  PVector translate;
-  float rotate;
-  
-  /* view window (output) */
-  PVector p;   /* pivot (position of left up corner) */
-  PVector f;   /* forward */
-  PVector d;   /* downward */
+class Rotator {  
+  /* view window */
+  PVector pv; /* pivot (position of left up corner) */
+  PVector fw; /* forward */
+  PVector dw; /* downward */
 
   Rotator() {
-    scale = new PVector(1.0, 1.0);
-    translate = new PVector(0.0, 0.0);
-    rotate = 0.0;
+    fw = new PVector();
+    dw = new PVector();
+    pv = new PVector();
   }
 
   void control(float angle, float scale) {
     /* step downward vector */
-    f = new PVector(cos(angle) * scale,
-                    sin(angle) * scale);
+    fw.set(cos(angle) * scale, sin(angle) * scale);
 
     /* step forward vector */
-    d = new PVector(cos(angle + PI / 2) * scale,
-                    sin(angle + PI / 2) * scale);
-                    
-    p = new PVector(0.0, 0.0);
+    dw.set(cos(angle + PI / 2) * scale, sin(angle + PI / 2) * scale);
+                     
+    pv.set(0.0, 0.0);
 
     /* center horizontally */
-    p.x -= d.x * width / 2.0f;
-    p.y -= d.y * width / 2.0f;
+    pv.sub(fw.x * width / 2.0f, fw.y * width / 2.0f);
 
     /* center vertically */
-    p.x -= f.x * height / 2.0f;
-    p.y -= f.y * height / 2.0f;
+    pv.sub(dw.x * height / 2.0f, dw.y * height / 2.0f);
   }
 
   void render() {
-    PVector pq = p.copy();
+    PVector p = pv.copy();
     
     int k = 0;
 
     for (int y = 0; y < height; y++) {
-      PVector uv = pq.copy();
+      PVector q = p.copy();
 
       for (int x = 0; x < width; x++, k++) {
-        int i = (int)uv.x % texture.width;
-        int j = (int)uv.y % texture.height;
+        int i = (int)q.x % texture.width;
+        int j = (int)q.y % texture.height;
 
         if (i < 0)
           i += texture.width;
@@ -57,10 +48,10 @@ class Rotator {
 
         pixels[k] = texture.pixels[i + j * texture.width];
 
-        uv.add(f);
+        q.add(fw);
       }
     
-      pq.add(d);
+      p.add(dw);
     }
   }
 };
