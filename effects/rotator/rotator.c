@@ -247,30 +247,57 @@ static void Kill(void) {
 
 void GenDrawSpan(short du asm("d2"), short dv asm("d3"));
 
-void Rotator(u_short *chunky asm("a0"),
-             u_short *txtHi asm("a1"),
-             u_short *txtLo asm("a2"),
-             short dU asm("d2"), short dV asm("d3"));
+void RenderRotator(u_short *chunky asm("a0"),
+                   u_short *txtHi asm("a1"),
+                   u_short *txtLo asm("a2"),
+                   short U asm("d0"), short V asm("d1"),
+                   short dU asm("d2"), short dV asm("d3"));
 
 PROFILE(Rotator);
 
-static void RenderRotator(void) {
-  u_short *chunky = screen[active]->planes[0];
-  u_short *txtHi = textureHi;
-  u_short *txtLo = textureLo;
-  short angle = frameCount * 11;
+static struct {
+  short du, dv;
+  short dU, dV;
+  short U, V;
+} rot;
 
-  GenDrawSpan(SIN(angle) >> 4, COS(angle) >> 4);
+static void ControlRotator(short radius, short alfa, short beta) {
+  int px = mul16(SIN(alfa), radius);
+  int py = mul16(COS(alfa), radius);
 
-  ProfilerStart(Rotator);
-  Rotator(chunky, txtHi, txtLo, 
-          SIN(angle + SIN_HALF_PI) >> 4, COS(angle + SIN_HALF_PI) >> 4);
-  ProfilerStop(Rotator);
+  rot.U = (px >> 4) & 0x7fff;
+  rot.V = (py >> 4) & 0x7fff;
+
+  {
+    int qx = mul16(SIN(beta), radius);
+    int qy = mul16(COS(beta), radius);
+
+    rot.du = div16(qx - px, WIDTH) >> 4;
+    rot.dv = div16(qy - py, HEIGHT) >> 4;
+  }
+
+  {
+    int rx = mul16(SIN(beta + SIN_PI), radius);
+    int ry = mul16(COS(beta + SIN_PI), radius);
+
+    rot.dU = div16(rx - px, WIDTH) >> 4;
+    rot.dV = div16(ry - py, HEIGHT) >> 4;
+  }
 }
 
 static void Render(void) {
   /* screen's bitplane #0 is used as a chunky buffer */
-  RenderRotator();
+  ProfilerStart(Rotator);
+  {
+    short radius = 96 + (COS(frameCount * 17) >> 7);
+    short alfa = frameCount * 11;
+    short beta = alfa + SIN_HALF_PI + (SIN(frameCount * 13) >> 3);
+    ControlRotator(radius, alfa, beta);
+  }
+  GenDrawSpan(rot.du, rot.dv);
+  RenderRotator(screen[active]->planes[0], textureHi, textureLo,
+                rot.U, rot.V, rot.dU, rot.dV);
+  ProfilerStop(Rotator);
 
   c2p.phase = 0;
   c2p.bpl = screen[active]->planes;

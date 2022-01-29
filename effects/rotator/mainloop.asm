@@ -1,5 +1,5 @@
         xdef    _GenDrawSpan
-        xdef    _Rotator
+        xdef    _RenderRotator
 
 WIDTH   equ 160
 HEIGHT  equ 100
@@ -7,9 +7,9 @@ HEIGHT  equ 100
         section ".text"
 
 FOURPIX macro
-        move.w  $1111(a1),\1
+        move.w  $1112(a1),\1
         or.w    $2222(a2),\1
-        move.b  $3333(a1),\1
+        move.b  $3334(a1),\1
         or.b    $4444(a2),\1
         endm
 
@@ -20,7 +20,6 @@ GETUV   macro
         add.l   d3,d1
         move.b  d0,d4   ; ----VVUU
         addx.b  d2,d0
-        add.b   d4,d4
         and.w   d5,d4   ; [d5] $7ffe
         move.w  d4,\1
         endm
@@ -42,6 +41,7 @@ _GenDrawSpan:
                         ; ----UUuu
                         ; ----VVvv
         lsl.l   #8,d2   ; --UUuu--
+        add.l   d2,d2   ; lowest bit of UU is taken from fractional part!
         swap    d3      ; VVvv----
         move.w  d2,d3   ; VVvvuu--
         swap    d3      ; uu--VVvv [d4]
@@ -83,12 +83,12 @@ _GenDrawSpan:
 ; [d2] dU
 ; [d3] dV
 
-_Rotator:
-        movem.w d2-d7/a2-a4,-(sp)
+_RenderRotator:
+        movem.l d2-d7/a2-a4,-(sp)
 
         lea     WIDTH/2(a0),a0
-        clr.l   d0
-        clr.l   d1
+        swap    d0
+        swap    d1
         swap    d2
         swap    d3
         move.l  a1,a3
@@ -101,9 +101,8 @@ LoopY:
         move.l  d1,d5
         swap    d4
         swap    d5
-        lsr.w   #8,d4
+        lsr.w   #7,d4
         move.b  d4,d5
-        add.b   d5,d5
         and.w   #$7ffe,d5
         lea     (a3,d5.w),a1
         lea     (a4,d5.w),a2
@@ -123,9 +122,11 @@ DrawSpanEnd:
 
         swap    d7
         lea     WIDTH(a0),a0
+        clr.w   d2
+        clr.w   d3
         add.l   d2,d0
         add.l   d3,d1
         dbf     d7,LoopY
 
-        movem.w (sp)+,d2-d7/a2-a4
+        movem.l (sp)+,d2-d7/a2-a4
         rts
