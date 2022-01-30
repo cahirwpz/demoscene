@@ -7,7 +7,7 @@
 
 #define DISP_WIDTH 320
 #define DISP_HEIGHT 256
-#define DISP_DEPTH 1
+#define DISP_DEPTH 4
 
 #define BOARD_WIDTH (DISP_WIDTH/2)
 #define BOARD_HEIGHT (DISP_HEIGHT/2)
@@ -28,7 +28,7 @@ static BitmapT* x5;
 static BitmapT* x6;
 static BitmapT* doubled;
 static CopListT* cp0;
-static CopListT* cp1;
+static CopInsT* bplptr[DISP_DEPTH];
 static BitmapT* prev_states[DISP_DEPTH]; // circular buffer of previous states
 u_short states_head = 0; // states_head & 0x3 points to the newest frame in prev_state
 u_short phase = 0; // phase (0-8) of blitter calculations
@@ -36,26 +36,24 @@ u_short phase = 0; // phase (0-8) of blitter calculations
 static u_short minterms_table[9] = {0x96, 0xE8, 0x7E, 0x69, 0x69, 0x81, 0xB4, 0x3A, 0x24};
 
 static PaletteT palette = {
-  .count = 2,
+  .count = 16,
   .colors = {
     0x000,
-    0xfff
-    // 0x000,
-    // 0x001,
-    // 0x011,
-    // 0x023,
-    // 0x034,
-    // 0x057,
-    // 0x079,
-    // 0x09C,
-    // 0x0BF,
-    // 0x09C,
-    // 0x079,
-    // 0x057,
-    // 0x034,
-    // 0x023,
-    // 0x011,
-    // 0x001,
+    0x001+5,
+    0x011+5,
+    0x023+5,
+    0x034+4,
+    0x057+4,
+    0x079+4,
+    0x09C+3,
+    0x0BF,
+    0x09C+3,
+    0x079+5,
+    0x057+4,
+    0x034+4,
+    0x023+5,
+    0x011+5,
+    0x001+5,
   }
 };
 
@@ -216,6 +214,17 @@ static void MakeCopperList(CopListT* cp) {
   CopEnd(cp);
 }
 
+static void UpdateBitplanePointers(void)
+{
+  BitmapT* cur;
+  u_short i;
+  for (i = 0; i < DISP_DEPTH; i++)
+  {
+    cur = prev_states[(states_head + i + 1) % DISP_DEPTH];
+    CopInsSet32(bplptr[i], cur->planes[0]);
+  }
+}
+
 static void GameOfLife(void)
 {
   switch (phase)
@@ -235,6 +244,8 @@ static void GameOfLife(void)
   }
   phase++;
   ClearIRQ(INTF_BLIT);
+  if (phase == 9)
+    WaitVBlank();
 }
 
 static void Init(void) {
@@ -248,73 +259,52 @@ static void Init(void) {
   x3 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
   x5 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
   x6 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
-  doubled = NewBitmap(DISP_WIDTH, DISP_HEIGHT, BOARD_DEPTH);
 
   SetupPlayfield(MODE_LORES, DISP_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
   LoadPalette(&palette, 0);
 
+  EnableDMA(DMAF_BLITTER);
+
+  for (i = 0; i < DISP_DEPTH; i++)
+  {
+    prev_states[i] = NewBitmap(DISP_WIDTH, DISP_HEIGHT, BOARD_DEPTH);
+    BitmapClear(prev_states[i]);
+  }
+
   PixelDouble = MemAlloc(PixelDoubleSize, MEMF_PUBLIC);
-  MakePixelDoublingCode(&initial_board, doubled);
-
-  EnableDMA(DMAF_BLITTER /*| DMAF_BLITHOG*/);
-
-  // BlitAdjacentHorizontal(&initial_board, lo, minterms_table[0]);
-  // BlitAdjacentHorizontal(&initial_board, hi, minterms_table[1]);
-
-  // BlitAdjacentVertical(lo, x0, minterms_table[2]);
-  // BlitAdjacentVertical(lo, x1, minterms_table[3]);
-
-  // BlitAdjacentVertical(hi, x2, minterms_table[4]);
-  // BlitAdjacentVertical(hi, x3, minterms_table[5]);
-
-  // BlitFunc(x2, &initial_board, x3, x5, minterms_table[6]);
-  // BlitFunc(x1, x5, x3, x6, minterms_table[7]);
-  // BlitFunc(x2, x0, x6, &initial_board, minterms_table[8]);
-
-  //DoublePixelsHorizontal(&initial_board, doubled);
-  PixelDouble(initial_board.planes[0] + initial_board.bytesPerRow + 2, doubled->planes[0], double_pixels);
+  MakePixelDoublingCode(&initial_board, prev_states[0]->planes[0]);
 
   cp0 = NewCopList(300);
   CopInit(cp0);
-  // CopMove32(cp0, bplpt[0], initial_board.planes[0] + initial_board.bytesPerRow + 2);
-  // CopMove16(cp0, bpl1mod, 4);
-  // CopMove16(cp0, bpl2mod, 4);
-  CopMove32(cp0, bplpt[0], doubled->planes[0]);
+  
+  bplptr[0] = CopMove32(cp0, bplpt[0], prev_states[0]->planes[0]);
+  bplptr[1] = CopMove32(cp0, bplpt[1], prev_states[1]->planes[0]);
+  bplptr[2] = CopMove32(cp0, bplpt[2], prev_states[2]->planes[0]);
+  bplptr[3] = CopMove32(cp0, bplpt[3], prev_states[3]->planes[0]);
   for (i = 1; i <= DISP_HEIGHT; i += 2)
   {
-    CopMove16(cp0, bpl1mod, -doubled->bytesPerRow);
-    CopMove16(cp0, bpl2mod, -doubled->bytesPerRow);
+    CopMove16(cp0, bpl1mod, -prev_states[0]->bytesPerRow);
+    CopMove16(cp0, bpl2mod, -prev_states[0]->bytesPerRow);
     CopWaitSafe(cp0, Y(i), 0);
     CopMove16(cp0, bpl1mod, 0);
     CopMove16(cp0, bpl2mod, 0);
     CopWaitSafe(cp0, Y(i+1), 0);
   }
   CopEnd(cp0);
-
-  
-  // cp1 = NewCopList(80);
-  // MakeCopperList(cp0);
   CopListActivate(cp0);
 
   EnableDMA(DMAF_RASTER);
 
   SetIntVector(BLIT, (IntHandlerT)GameOfLife, NULL);
   EnableINT(INTF_BLIT);
-
-  // for (i = 0; i < DISP_DEPTH; i++)
-  // {
-  //   prev_states[i] = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
-  //   BlitterCopy(prev_states[i], 0, 0, 0, &initial_board, 0);
-  // }
 }
 
 static void Kill(void) {
-  // u_short i;
-  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
+  u_short i;
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
   DisableINT(INTF_BLIT);
   ResetIntVector(BLIT);
-  // DeleteCopList(cp0);
-  // DeleteCopList(cp1);
+  DeleteCopList(cp0);
   DeleteBitmap(lo);
   DeleteBitmap(hi);
   DeleteBitmap(x0);
@@ -323,30 +313,20 @@ static void Kill(void) {
   DeleteBitmap(x3);
   DeleteBitmap(x5);
   DeleteBitmap(x6);
-  // for (i = 0; i < DISP_DEPTH; i++)
-  //   DeleteBitmap(prev_states[i]);
+  for (i = 0; i < DISP_DEPTH; i++)
+    DeleteBitmap(prev_states[i]);
 }
 
 PROFILE(GOLStep)
 
 static void Render(void) {
   ProfilerStart(GOLStep);
-    //DoublePixelsHorizontal(&initial_board, doubled);
-    PixelDouble(initial_board.planes[0] + initial_board.bytesPerRow + 2, doubled->planes[0], double_pixels);
+    states_head++;
+    PixelDouble(initial_board.planes[0] + initial_board.bytesPerRow + 2, prev_states[states_head % DISP_DEPTH]->planes[0], double_pixels);
+    UpdateBitplanePointers();
+    phase = 0;
+    GameOfLife();
   ProfilerStop(GOLStep);
-  phase = 0;
-  GameOfLife();
-
-
-
-  // states_head++;
-  // BlitterCopy(prev_states[states_head % DISP_DEPTH], 0, 0, 0, &initial_board, 0);
-  
-  // MakeCopperList(cp1);
-  
-  // CopListRun(cp1);
-  //TaskWaitVBlank();
-  // swapr(cp0, cp1);
 }
 
 EFFECT(game_of_life, NULL, NULL, Init, Kill, Render);
