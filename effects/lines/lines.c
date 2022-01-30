@@ -9,10 +9,15 @@
 
 /*
  * 0 -> BlitterLine
- * 1 -> CpuLine
+ * 1 -> CpuLine (12705)
  * 2 -> CpuEdge
+ * 3 -> CpuLineOpt (11630)
  */
-#define LINE 2
+#define LINE 3
+
+void CpuLineOpt(void *bpl asm("a0"), short stride asm("a1"),
+                short xs asm("d0"), short ys asm("d1"),
+                short xe asm("d2"), short ye asm("d3"));
 
 static BitmapT *screen;
 static CopListT *cp;
@@ -56,7 +61,10 @@ static void Render(void) {
 #endif
 
     for (i = 0; i < screen->width; i += 2) {
-#if LINE == 2
+#if LINE == 3
+      CpuLineOpt(screen->planes[0], screen->bytesPerRow,
+                 i, 0, screen->width - 1 - i, screen->height - 1);
+#elif LINE == 2
       CpuEdge(i, 0, screen->width - 1 - i, screen->height - 1);
 #elif LINE == 1
       CpuLine(i, 0, screen->width - 1 - i, screen->height - 1);
@@ -66,7 +74,10 @@ static void Render(void) {
     }
 
     for (i = 0; i < screen->height; i += 2) {
-#if LINE == 2
+#if LINE == 3
+      CpuLineOpt(screen->planes[0], screen->bytesPerRow,
+                 0, i, screen->width - 1, screen->height - 1 - i);
+#elif LINE == 2
       CpuEdge(0, i, screen->width - 1, screen->height - 1 - i);
 #elif LINE == 1
       CpuLine(0, i, screen->width - 1, screen->height - 1 - i);
