@@ -3,18 +3,12 @@
 
 WIDTH   equ 160
 HEIGHT  equ 100
+GROUPSIZE equ 32
 
         section ".text"
 
-FOURPIX macro
-        move.w  $1112(a1),\1
-        or.w    $2222(a2),\1
-        move.b  $3334(a1),\1
-        or.b    $4444(a2),\1
-        endm
-
-GROUPSIZE equ 32
-
+; Texturing code inspired by article by Kalms
+; https://amycoders.org/opt/innerloops.html
 GETUV   macro
         move.w  d1,d4   ; ----VVvv
         add.l   d3,d1
@@ -86,27 +80,35 @@ _GenDrawSpan:
 _RenderRotator:
         movem.l d2-d7/a2-a4,-(sp)
 
-        lea     WIDTH/2(a0),a0
-        swap    d0
-        swap    d1
+        lea     WIDTH/2(a0),a0  ; the end of first line of chunky buffer
+        swap    d0              ; store vital state in upper part...
+        swap    d1              ; ...of data registers, for speed of course
         swap    d2
         swap    d3
-        move.l  a1,a3
-        move.l  a2,a4
+        move.l  a1,a3           ; txtHi
+        move.l  a2,a4           ; txtLo
 
         move.w  #HEIGHT-1,d7
 LoopY:
         swap    d7
         move.l  d0,d4
         move.l  d1,d5
-        swap    d4
-        swap    d5
-        lsr.w   #7,d4
-        move.b  d4,d5
-        and.w   #$7ffe,d5
+        swap    d4              ; tmpU
+        swap    d5              ; tmpV
+        lsr.w   #7,d4           ; tmpU >> 7
+        move.b  d4,d5           ; (tmpV & 0xff00) | ((tmpU >> 7) & 0x00ff)
+        and.w   #$7ffe,d5       ; offset must be even and limited to 32767
         lea     (a3,d5.w),a1
         lea     (a4,d5.w),a2
 
+FOURPIX macro
+        move.w  $1112(a1),\1
+        or.w    $2222(a2),\1
+        move.b  $3334(a1),\1
+        or.b    $4444(a2),\1
+        endm
+
+        ; GenDrawSpan precalculates offsets for instructions in FOURPIX
         rept    WIDTH/GROUPSIZE
         FOURPIX d0
         FOURPIX d1
@@ -121,11 +123,9 @@ LoopY:
 DrawSpanEnd:
 
         swap    d7
-        lea     WIDTH(a0),a0
-        clr.w   d2
-        clr.w   d3
-        add.l   d2,d0
-        add.l   d3,d1
+        lea     WIDTH(a0),a0    ; move to the end of next line
+        add.l   d2,d0           ; lower part is always below 32768...
+        add.l   d3,d1           ; ... so it will not influence upper part
         dbf     d7,LoopY
 
         movem.l (sp)+,d2-d7/a2-a4

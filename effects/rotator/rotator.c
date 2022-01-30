@@ -36,7 +36,11 @@ static void PixmapToTexture(const PixmapT *image,
 {
   u_char *data = image->pixels;
   short n = image->width * image->height;
-  /* Extra halves for cheap texture motion. */
+  /*
+   * Since texturing loop may iterate over whole texture (offset = 0...16383),
+   * and starting point may be set up at any position (start = 0...16383),
+   * we need the texture to be repeated twice in memory (offset + start!).
+   */
   u_short *hi0 = imageHi;
   u_short *hi1 = imageHi + n;
   u_short *lo0 = imageLo;
@@ -221,7 +225,7 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
 
-  cp = NewCopList(900 + 256);
+  cp = NewCopList(HEIGHT * 2 * (4 - FULLPIXEL) + 50);
   MakeCopperList(cp);
   CopListActivate(cp);
 
@@ -255,48 +259,49 @@ void RenderRotator(u_short *chunky asm("a0"),
 
 PROFILE(Rotator);
 
-static struct {
-  short du, dv;
-  short dU, dV;
-  short U, V;
-} rot;
+/*
+ * Rotator is controlled by parameters that describe rectangle inscribed
+ * into a circle. p/q/r points represent top-left / bottom-left / top-right
+ * corners of screen (i.e. the rectangle) mapped into texture space. 
+ * With radius/alfa/beta it's easy to manipulate the rectange size
+ * and ratio between length of sides. radius/alfa/beta uniquely describe
+ * position and length of one side, hence other sides can be easily calculated.
+ */
+static void Rotator(void) {
+  short radius = 128 + (COS(frameCount * 17) >> 7);
+  short alfa = frameCount * 11;
+  short beta = alfa + SIN_HALF_PI + (SIN(frameCount * 13) >> 3);
 
-static void ControlRotator(short radius, short alfa, short beta) {
   int px = mul16(SIN(alfa), radius);
   int py = mul16(COS(alfa), radius);
-
-  rot.U = (px >> 4) & 0x7fff;
-  rot.V = (py >> 4) & 0x7fff;
 
   {
     int qx = mul16(SIN(beta), radius);
     int qy = mul16(COS(beta), radius);
+    short du = div16(qx - px, WIDTH) >> 4;
+    short dv = div16(qy - py, HEIGHT) >> 4;
 
-    rot.du = div16(qx - px, WIDTH) >> 4;
-    rot.dv = div16(qy - py, HEIGHT) >> 4;
+    GenDrawSpan(du, dv);
   }
 
   {
     int rx = mul16(SIN(beta + SIN_PI), radius);
     int ry = mul16(COS(beta + SIN_PI), radius);
 
-    rot.dU = div16(rx - px, WIDTH) >> 4;
-    rot.dV = div16(ry - py, HEIGHT) >> 4;
+    short dU = div16(rx - px, WIDTH) >> 4;
+    short dV = div16(ry - py, HEIGHT) >> 4;
+    short U = (px >> 4) & 0x7fff;
+    short V = (py >> 4) & 0x7fff;
+
+    RenderRotator(screen[active]->planes[0], textureHi, textureLo,
+                  U, V, dU, dV);
   }
 }
 
 static void Render(void) {
   /* screen's bitplane #0 is used as a chunky buffer */
   ProfilerStart(Rotator);
-  {
-    short radius = 96 + (COS(frameCount * 17) >> 7);
-    short alfa = frameCount * 11;
-    short beta = alfa + SIN_HALF_PI + (SIN(frameCount * 13) >> 3);
-    ControlRotator(radius, alfa, beta);
-  }
-  GenDrawSpan(rot.du, rot.dv);
-  RenderRotator(screen[active]->planes[0], textureHi, textureLo,
-                rot.U, rot.V, rot.dU, rot.dV);
+  Rotator();
   ProfilerStop(Rotator);
 
   c2p.phase = 0;
