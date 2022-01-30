@@ -7,7 +7,12 @@
 #define HEIGHT 256
 #define DEPTH 1
 
-#define CPULINE 0
+/*
+ * 0 -> BlitterLine
+ * 1 -> CpuLine
+ * 2 -> CpuEdge
+ */
+#define LINE 2
 
 static BitmapT *screen;
 static CopListT *cp;
@@ -30,34 +35,42 @@ static void UnLoad(void) {
   DeleteBitmap(screen);
 }
 
-PROFILE(Lines);
-
 static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
+}
 
+PROFILE(Lines);
+
+static void Render(void) {
   ProfilerStart(Lines);
   {
     short i;
 
-#if CPULINE == 1
+#if LINE == 2
+    CpuEdgeSetup(screen, 0);
+#elif LINE == 1
     CpuLineSetup(screen, 0);
-#else
+#elif LINE == 0
     BlitterLineSetup(screen, 0, LINE_OR|LINE_SOLID);
 #endif
 
     for (i = 0; i < screen->width; i += 2) {
-#if CPULINE == 1
+#if LINE == 2
+      CpuEdge(i, 0, screen->width - 1 - i, screen->height - 1);
+#elif LINE == 1
       CpuLine(i, 0, screen->width - 1 - i, screen->height - 1);
-#else
+#elif LINE == 0
       BlitterLine(i, 0, screen->width - 1 - i, screen->height - 1);
 #endif
     }
 
     for (i = 0; i < screen->height; i += 2) {
-#if CPULINE == 1
+#if LINE == 2
+      CpuEdge(0, i, screen->width - 1, screen->height - 1 - i);
+#elif LINE == 1
       CpuLine(0, i, screen->width - 1, screen->height - 1 - i);
-#else
+#elif LINE == 0
       BlitterLine(0, i, screen->width - 1, screen->height - 1 - i);
 #endif
     }
@@ -65,4 +78,4 @@ static void Init(void) {
   ProfilerStop(Lines);
 }
 
-EFFECT(lines, Load, UnLoad, Init, NULL, NULL);
+EFFECT(lines, Load, UnLoad, Init, NULL, Render);
