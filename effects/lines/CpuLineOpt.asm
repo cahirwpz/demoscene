@@ -10,7 +10,7 @@
 ; [d3] ye
 
 _CpuLineOpt:
-        movem.l d2-d6,-(sp)
+        movem.l d2-d5,-(sp)
 
         cmp.w   d3,d1           ; ys > ye ?
         ble.s   .y_ok
@@ -46,45 +46,44 @@ _CpuLineOpt:
 dx_dy:  tst.w   d3              ; dy == 0 ?
         beq.w   exit
 
-        move.w  d2,d5
-        add.w   d5,d5           ; [d5] dg2 = 2 * dx
-        move.w  d5,d1
+        add.w   d2,d2           ; [d2] dg2 = 2 * dx
+        move.w  d2,d1
         sub.w   d3,d1           ; [d1] dg = 2 * dx - dy
-        move.w  d3,d6
-        add.w   d3,d6           ; [d6] dg1 = 2 * dy
+        move.w  d3,d5
+        add.w   d3,d5           ; [d5] dg1 = 2 * dy
 
         tst.w   d0              ; xe < xs ?
         bge.s   case2
 
-case1:  sub.w   d5,d1           ; precompensate for [dg += dg2]
+case1:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 
 .loop   or.w    d4,(a0)         ; *pixels |= color
         add.w   a1,a0           ; pixels += stride
 
-        add.w   d5,d1           ; dg += dg2
+        add.w   d2,d1           ; dg += dg2
         blt.s   .else           ; dg > 0
 
         rol.w   #1,d4
         bcc.s   .skip
         subq.l  #2,a0
 
-.skip   sub.w   d6,d1           ; dg -= dg1
+.skip   sub.w   d5,d1           ; dg -= dg1
 .else   dbf     d3,.loop
         bra.s   exit
 
-case2:  sub.w   d5,d1           ; precompensate for [dg += dg2]
+case2:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 
 .loop   or.w    d4,(a0)         ; *pixels |= color
         add.w   a1,a0           ; pixels += stride
 
-        add.w   d5,d1           ; dg += dg1
+        add.w   d2,d1           ; dg += dg1
         blt.s   .else           ; dg > 0
 
         ror.w   #1,d4
         bcc.s   .skip
         addq.l  #2,a0
 
-.skip   sub.w   d6,d1           ; dg -= dg2
+.skip   sub.w   d5,d1           ; dg -= dg2
 .else   dbf     d3,.loop
         bra.s   exit
 
@@ -93,17 +92,16 @@ case2:  sub.w   d5,d1           ; precompensate for [dg += dg2]
 dy_dx:  tst.w   d2              ; dx == 0 ?
         beq.s   exit
 
-        move.w  d3,d5
-        add.w   d5,d5           ; [d5] dg2 = 2 * dy
-        move.w  d5,d1
+        add.w   d3,d3           ; [d3] dg2 = 2 * dy
+        move.w  d3,d1
         sub.w   d2,d1           ; [d1] dg = 2 * dy - dx
-        move.w  d2,d6
-        add.w   d2,d6           ; [d6] dg1 = 2 * dx
+        move.w  d2,d5
+        add.w   d2,d5           ; [d5] dg1 = 2 * dx
 
         tst.w   d0              ; xe < xs ?
         bge.s   case4
 
-case3:  sub.w   d5,d1           ; precompensate for [dg += dg2]
+case3:  sub.w   d3,d1           ; precompensate for [dg += dg2]
 
 .loop   or.w    d4,(a0)         ; *pixels |= color
 
@@ -111,15 +109,15 @@ case3:  sub.w   d5,d1           ; precompensate for [dg += dg2]
         bcc.s   .skip
         subq.l  #2,a0
 
-.skip   add.w   d5,d1           ; dg += dg2
+.skip   add.w   d3,d1           ; dg += dg2
         blt.s   .else           ; dg > 0
 
         add.w   a1,a0           ; pixels += stride
-        sub.w   d6,d1           ; dg -= dg1
+        sub.w   d5,d1           ; dg -= dg1
 .else   dbf     d2,.loop
         bra.s   exit
 
-case4:  sub.w   d5,d1           ; precompensate for [dg += dg2]
+case4:  sub.w   d3,d1           ; precompensate for [dg += dg2]
 
 .loop   or.w    d4,(a0)         ; *pixels |= color
 
@@ -127,12 +125,12 @@ case4:  sub.w   d5,d1           ; precompensate for [dg += dg2]
         bcc.s   .skip
         addq.l  #2,a0
 
-.skip   add.w   d5,d1           ; dg += dg2
+.skip   add.w   d3,d1           ; dg += dg2
         blt.s   .else           ; dg > 0
 
         add.w   a1,a0           ; pixels += stride
-        sub.w   d6,d1           ; dg -= dg1
+        sub.w   d5,d1           ; dg -= dg1
 .else   dbf     d2,.loop
 
-exit:   movem.l (sp)+,d2-d6
+exit:   movem.l (sp)+,d2-d5
         rts
