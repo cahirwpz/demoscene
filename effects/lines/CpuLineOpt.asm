@@ -1,3 +1,5 @@
+; vim: ft=asm68k:ts=8:sw=8:
+
         xdef    _CpuLineOpt
 
         section ".text"
@@ -57,34 +59,36 @@ dx_dy:  tst.w   d3              ; dy == 0 ?
 
 case1:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 
-.loop   or.w    d4,(a0)         ; *pixels |= color
-        add.w   a1,a0           ; pixels += stride
+.loop   or.w    d4,(a0)         ; [12] *pixels |= color
 
-        add.w   d2,d1           ; dg += dg2
-        blt.s   .else           ; dg > 0
+        add.w   d2,d1           ; [4] dg += dg2
+        blt.s   .skip           ; [8/10] dg > 0
 
-        rol.w   #1,d4
-        bcc.s   .skip
-        subq.l  #2,a0
+	sub.w   d5,d1           ; [4] dg -= dg1
 
-.skip   sub.w   d5,d1           ; dg -= dg1
-.else   dbf     d3,.loop
-        bra.s   exit
+        rol.w   #1,d4		; [4]
+        bcc.s   .skip		; [8/10]
+        subq.l  #2,a0		; [8]
+
+.skip	add.w   a1,a0           ; [8] pixels += stride
+	dbf     d3,.loop	; [10]
+	bra.s   exit		; ~68 cycles per pixel
 
 case2:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 
 .loop   or.w    d4,(a0)         ; *pixels |= color
-        add.w   a1,a0           ; pixels += stride
 
         add.w   d2,d1           ; dg += dg1
-        blt.s   .else           ; dg > 0
+        blt.s   .skip           ; dg > 0
+
+	sub.w   d5,d1           ; dg -= dg2
 
         ror.w   #1,d4
         bcc.s   .skip
         addq.l  #2,a0
 
-.skip   sub.w   d5,d1           ; dg -= dg2
-.else   dbf     d3,.loop
+.skip	add.w   a1,a0           ; pixels += stride
+	dbf     d3,.loop
         bra.s   exit
 
 ; dx >= dy
@@ -105,32 +109,34 @@ case3:  sub.w   d3,d1           ; precompensate for [dg += dg2]
 
 .loop   or.w    d4,(a0)         ; *pixels |= color
 
-        rol.w   #1,d4
+	add.w   d3,d1           ; dg += dg2
+        blt.s   .else           ; dg > 0
+
+        sub.w   d5,d1           ; dg -= dg1
+        add.w   a1,a0           ; pixels += stride
+
+.else	rol.w   #1,d4
         bcc.s   .skip
         subq.l  #2,a0
 
-.skip   add.w   d3,d1           ; dg += dg2
-        blt.s   .else           ; dg > 0
-
-        add.w   a1,a0           ; pixels += stride
-        sub.w   d5,d1           ; dg -= dg1
-.else   dbf     d2,.loop
+.skip   dbf     d2,.loop
         bra.s   exit
 
 case4:  sub.w   d3,d1           ; precompensate for [dg += dg2]
 
 .loop   or.w    d4,(a0)         ; *pixels |= color
 
-        ror.w   #1,d4
+	add.w   d3,d1           ; dg += dg2
+        blt.s   .else           ; dg > 0
+
+        sub.w   d5,d1           ; dg -= dg1
+        add.w   a1,a0           ; pixels += stride
+
+.else	ror.w   #1,d4
         bcc.s   .skip
         addq.l  #2,a0
 
-.skip   add.w   d3,d1           ; dg += dg2
-        blt.s   .else           ; dg > 0
-
-        add.w   a1,a0           ; pixels += stride
-        sub.w   d5,d1           ; dg -= dg1
-.else   dbf     d2,.loop
+.skip   dbf     d2,.loop
 
 exit:   movem.l (sp)+,d2-d5
         rts
