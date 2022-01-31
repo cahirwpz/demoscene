@@ -29,9 +29,10 @@ _CpuLineOpt:
         add.w   d5,a0           ; pixels += (xs >> 3) & -2
 
         move.w  d0,d5
+	not.w	d5
         andi.w  #15,d5
-        move.w  #$8000,d4
-        lsr.w   d5,d4           ; [d4] color = 0x8000 >> (xs & 15)
+	moveq	#0,d4
+	bset.l	d5,d4           ; [d4] color = 0x8000 >> (xs & 15)
 
         sub.w   d0,d2           ; [d2] dx = abs(xe - xs)
         move.w  d2,d0           ; [d0] xe - xs
@@ -46,7 +47,7 @@ _CpuLineOpt:
 ; dx < dy
 
 dx_dy:  tst.w   d3              ; dy == 0 ?
-        beq.w   exit
+        beq	exit
 
         add.w   d2,d2           ; [d2] dg2 = 2 * dx
         move.w  d2,d1
@@ -67,10 +68,13 @@ case1:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 	sub.w   d5,d1           ; [4] dg -= dg1
 
         rol.w   #1,d4		; [4]
-        bcc.s   .skip		; [8/10]
-        subq.l  #2,a0		; [8]
+        bcs.s   .skip2		; [8/10]
 
 .skip	add.w   a1,a0           ; [8] pixels += stride
+	dbf     d3,.loop	; [10]
+	bra.s   exit		; ~68 cycles per pixel
+
+.skip2	lea	-2(a0,a1.w),a0
 	dbf     d3,.loop	; [10]
 	bra.s   exit		; ~68 cycles per pixel
 
@@ -84,10 +88,13 @@ case2:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 	sub.w   d5,d1           ; dg -= dg2
 
         ror.w   #1,d4
-        bcc.s   .skip
-        addq.l  #2,a0
+        bcs.s   .skip2
 
 .skip	add.w   a1,a0           ; pixels += stride
+	dbf     d3,.loop
+        bra.s   exit
+
+.skip2	lea	2(a0,a1.w),a0
 	dbf     d3,.loop
         bra.s   exit
 
@@ -116,10 +123,12 @@ case3:  sub.w   d3,d1           ; precompensate for [dg += dg2]
         add.w   a1,a0           ; pixels += stride
 
 .else	rol.w   #1,d4
-        bcc.s   .skip
-        subq.l  #2,a0
+        bcs.s   .skip
+        dbf     d2,.loop
+        bra.s   exit
 
-.skip   dbf     d2,.loop
+.skip   subq.l  #2,a0
+	dbf     d2,.loop
         bra.s   exit
 
 case4:  sub.w   d3,d1           ; precompensate for [dg += dg2]
@@ -133,10 +142,12 @@ case4:  sub.w   d3,d1           ; precompensate for [dg += dg2]
         add.w   a1,a0           ; pixels += stride
 
 .else	ror.w   #1,d4
-        bcc.s   .skip
-        addq.l  #2,a0
+        bcs.s   .skip
+	dbf     d2,.loop
+	bra.s	exit
 
-.skip   dbf     d2,.loop
+.skip   addq.l  #2,a0
+	dbf     d2,.loop
 
 exit:   movem.l (sp)+,d2-d5
         rts
