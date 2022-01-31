@@ -49,9 +49,9 @@ dx_dy:  tst.w   d3              ; dy == 0 ?
         move.w  d2,d5
         add.w   d5,d5           ; [d5] dg2 = 2 * dx
         move.w  d5,d1
-        sub.w   d3,d1           ; [d1] dg = dg2 - dy
+        sub.w   d3,d1           ; [d1] dg = 2 * dx - dy
         move.w  d1,d6
-        sub.w   d3,d6           ; [d6] dg1 = dg - dy
+        sub.w   d3,d6           ; [d6] dg1 = 2 * dx - 2 * dy
 
         tst.w   d0              ; xe < xs ?
         bge.s   case2
@@ -104,9 +104,9 @@ dy_dx:  tst.w   d2              ; dx == 0 ?
         move.w  d3,d5
         add.w   d5,d5           ; [d5] dg2 = 2 * dy
         move.w  d5,d1
-        sub.w   d2,d1           ; [d1] dg = dg2 - dx
+        sub.w   d2,d1           ; [d1] dg = 2 * dy - dx
         move.w  d1,d6
-        sub.w   d2,d6           ; [d6] dg1 = dg - dx
+        sub.w   d2,d6           ; [d6] dg1 = 2 * dy - 2 * dx
 
         tst.w   d0              ; xe < xs ?
         bge.s   case4
