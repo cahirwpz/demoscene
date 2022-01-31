@@ -11,7 +11,7 @@
  * 0 -> BlitterLine
  * 1 -> CpuLine (12705)
  * 2 -> CpuEdge
- * 3 -> CpuLineOpt (11580)
+ * 3 -> CpuLineOpt (11242)
  */
 #define LINE 3
 
