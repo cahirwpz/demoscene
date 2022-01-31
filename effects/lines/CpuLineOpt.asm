@@ -11,6 +11,8 @@
 ; [d2] xe
 ; [d3] ye
 
+EDGE	equ	0
+
 _CpuLineOpt:
         movem.l d2-d5,-(sp)
 
@@ -60,7 +62,12 @@ dx_dy:  tst.w   d3              ; dy == 0 ?
 
 case1:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 
-.loop   or.w    d4,(a0)         ; [12] *pixels |= color
+.loop
+	ifeq EDGE
+	or.w    d4,(a0)         ; [12] *pixels |= color
+	else
+	eor.w	d4,(a0)
+	endif
 
         add.w   d2,d1           ; [4] dg += dg2
         blt.s   .skip           ; [8/10] dg > 0
@@ -80,7 +87,12 @@ case1:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 
 case2:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 
-.loop   or.w    d4,(a0)         ; *pixels |= color
+.loop
+	ifeq EDGE
+	or.w    d4,(a0)         ; *pixels |= color
+	else
+	eor.w   d4,(a0)
+	endif
 
         add.w   d2,d1           ; dg += dg1
         blt.s   .skip           ; dg > 0
@@ -114,12 +126,18 @@ dy_dx:  tst.w   d2              ; dx == 0 ?
 
 case3:  sub.w   d3,d1           ; precompensate for [dg += dg2]
 
-.loop   or.w    d4,(a0)         ; *pixels |= color
+.loop
+	ifeq	EDGE
+	or.w    d4,(a0)         ; *pixels |= color
+	endif
 
 	add.w   d3,d1           ; dg += dg2
         blt.s   .else           ; dg > 0
 
         sub.w   d5,d1           ; dg -= dg1
+	ifne	EDGE
+	eor.w	d4,(a0)
+	endif
         add.w   a1,a0           ; pixels += stride
 
 .else	rol.w   #1,d4
@@ -133,12 +151,18 @@ case3:  sub.w   d3,d1           ; precompensate for [dg += dg2]
 
 case4:  sub.w   d3,d1           ; precompensate for [dg += dg2]
 
-.loop   or.w    d4,(a0)         ; *pixels |= color
+.loop   
+	ifeq	EDGE
+	or.w    d4,(a0)         ; *pixels |= color
+	endif
 
 	add.w   d3,d1           ; dg += dg2
         blt.s   .else           ; dg > 0
 
         sub.w   d5,d1           ; dg -= dg1
+	ifne	EDGE
+	eor.w	d4,(a0)
+	endif
         add.w   a1,a0           ; pixels += stride
 
 .else	ror.w   #1,d4
