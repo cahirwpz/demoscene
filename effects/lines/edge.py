@@ -1,29 +1,40 @@
 #!/usr/bin/env python3
 
-def edge(x1, y1, x2, y2):
-    if y1 > y2:
-        xt = x1
-        x1 = x2
-        x2 = xt
-        yt = y1
-        y1 = y2
-        y2 = yt
+def edge(xs, ys, xe, ye):
+    print(f'\nedge: ({xs}, {ys}) -> {xe} {ye}')
 
-    dx = x2 - x1
-    dy = y2 - y1
+    if ys > ye:
+        xt = xs
+        xs = xe
+        xe = xt
+        yt = ys
+        ys = ye
+        ye = yt
+
+    dx = xe - xs
+    dy = ye - ys
 
     if dy == 0:
         return
 
-    di = dx // dy
+    di = abs(dx) // dy
     df = abs(dx) % dy
+
+    if dx >= 0:
+        s = 1
+    else:
+        s = -1
+        di = -di
+
     xi = 0
     xf = 0
-    s = [-1, 1][dx >= 0]
 
-    while y1 <= y2:
-        print('{} {}'.format(xi+x1, y1))
-        y1 += 1
+    while ys <= ye:
+        x = xi+xs
+        wi = x >> 4
+        wb = 1 << (15 - (x & 15))
+        print(f'{x:2} ({wi:02}:{wb:04x}) {ys:2}')
+        ys += 1
         xi += di
         xf += df
         if xf >= dy:
@@ -31,4 +42,5 @@ def edge(x1, y1, x2, y2):
             xi += s
 
 
-edge(16, 0, 48, 64)
+edge(8, 0, 56, 32)
+edge(56, 0, 8, 32)
