@@ -26,7 +26,7 @@ static CopListT *cp;
 static short active = 0;
 
 #include "anim_data.c"
-#include "data/anim-pal.c"
+#include "anim-pal.c"
 
 /* Reading polygon data */
 static short current_frame = 0;
