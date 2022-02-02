@@ -2,6 +2,7 @@ TOPDIR := $(realpath ..)
 
 SUBDIRS := \
 	anim \
+	anim-polygons \
 	ball \
 	bobs3d \
 	blurred \
