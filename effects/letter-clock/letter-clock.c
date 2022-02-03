@@ -24,7 +24,7 @@ static CopListT *cp;
 static BitmapT *bckg;
 int old_x[2], old_y[2];
 
-static void circles(int intra_x, int intra_y, int progress, int smallR)
+static void Circles(int intra_x, int intra_y, int progress, int smallR)
 {
     int by_two = progress & 1;
     int plane = by_two ? FIRST_LENS : SECOND_LENS;
@@ -44,6 +44,27 @@ static void circles(int intra_x, int intra_y, int progress, int smallR)
     old_y[by_two] = y;
 }
 
+static void SetupBoxes(void)
+{
+    // Top colour bar
+    BlitterLineSetup(bckg, 3, LINE_OR | LINE_SOLID);
+    BlitterLine(253, 8, 253, 43);
+    BlitterLine(60, 8, 10, 60);
+    BlitterLineSetup(bckg, 4, LINE_OR | LINE_SOLID);
+    BlitterLine(253, 8, 253, 43);
+    BlitterLine(60, 8, 10, 60);
+
+    // Left colour bar
+    BlitterLineSetup(bckg, 3, LINE_OR | LINE_SOLID);
+    BlitterLine(50, 65, 50, 195);
+    BlitterLine(7, 65, 7, 195);
+
+    // Right colour bar
+    BlitterLineSetup(bckg, 4, LINE_OR | LINE_SOLID);
+    BlitterLine(305, 65, 305, 195);
+    BlitterLine(260, 65, 260, 195);
+}
+
 static void Init(void)
 {
     bckg = NewBitmap(WIDTH, HEIGHT, DEPTH);
@@ -60,10 +81,12 @@ static void Init(void)
     CopEnd(cp);
     CopListActivate(cp);
 
-    EnableDMA(DMAF_RASTER);
-
     BlitterClear(bckg, 3);
     BlitterClear(bckg, 4);
+
+    SetupBoxes();
+
+    EnableDMA(DMAF_RASTER);
 
     old_x[0] = circle_movements[0].x_cos[0] + CENTER_X;
     old_y[0] = circle_movements[0].y_sin[0] + CENTER_Y;
@@ -81,7 +104,7 @@ static void Kill(void)
 static void Render(void)
 {
     static int progress = 0;
-    circles(CENTER_X, CENTER_Y, progress, SMALL_R);
+    Circles(CENTER_X, CENTER_Y, progress, SMALL_R);
     progress++;
     progress &= 255;
     TaskWaitVBlank();
