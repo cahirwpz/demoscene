@@ -1,0 +1,9 @@
+//BlitzBlit v0.0.1
+clear
+load 2
+setminterm 130
+setminterm 130
+setminterm 130
+wait 25
+setminterm 243
+wait 50
