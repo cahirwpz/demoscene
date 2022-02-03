@@ -24,6 +24,7 @@ static CopListT *cp;
 static BitmapT *bckg;
 int old_x[2], old_y[2];
 
+// Only one lens is moved at a time. The circular movement is partially preprocessed.
 static void Circles(int intra_x, int intra_y, int progress, int smallR)
 {
     int by_two = progress & 1;
@@ -33,6 +34,7 @@ static void Circles(int intra_x, int intra_y, int progress, int smallR)
     int y = circle_movements[by_two].y_sin[progress] + intra_y;
 
     {
+        // The initial "old" position of the lenses is set in Init()
         Area2D area = {.x = old_x[by_two] - smallR - 2, .y = old_y[by_two] - smallR - 2, .w = smallR * 2 + 4, .h = smallR * 2 + 4};
         BlitterClearArea(bckg, plane, &area);
     }
@@ -44,6 +46,11 @@ static void Circles(int intra_x, int intra_y, int progress, int smallR)
     old_y[by_two] = y;
 }
 
+/*
+    In this function we create areas limited by the lines on left and right.
+    They will be useful during the fill operation from Circles().
+    In the end the colour bars will be places under rectangular "lenses" allowing us to use the whole palette.
+*/
 static void SetupBoxes(void)
 {
     // Top colour bar
@@ -81,6 +88,7 @@ static void Init(void)
     CopEnd(cp);
     CopListActivate(cp);
 
+    // Clear higher planes (not present in the file) in order to prevent artifacts
     BlitterClear(bckg, 3);
     BlitterClear(bckg, 4);
 
