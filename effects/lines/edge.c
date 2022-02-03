@@ -35,9 +35,9 @@ void edge(short xs, short ys, short xe, short ye) {
   short n = dy;
 
   do {
-    short wi = xi >> 4;
-    int wb = 1 << (~xi & 15);
-    printf("%2d %2d (%2d:%04x)\n", xi, ys, wi, wb);
+    short wi = xi >> 3;
+    int wb = 1 << (~xi & 7);
+    printf("%2d %2d (%2d:%02x)\n", xi, ys, wi, wb);
 
     ys += 1;
     xi += di;
@@ -55,9 +55,9 @@ void edge(short xs, short ys, short xe, short ye) {
 
   do {
     short xi = x >> 16;
-    short wi = xi >> 4;
-    int wb = 1 << (~xi & 15);
-    printf("%2d %2d (%2d:%04x)\n", xi, ys, wi, wb);
+    short wi = xi >> 3;
+    int wb = 1 << (~xi & 7);
+    printf("%2d %2d (%2d:%02x)\n", xi, ys, wi, wb);
 
     ys += 1;
     x += d;
