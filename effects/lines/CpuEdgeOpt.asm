@@ -21,49 +21,76 @@ _CpuEdgeOpt:
 
 .y_ok   sub.w   d0,d2           ; [d2] dx = xe - xs
         sub.w   d1,d3           ; [d3] dy = ye - ys
-        beq.s	.exit
+        beq  	.exit           ; return if dy == 0
 
         move.w  a1,d4
         muls.w  d1,d4
-        add.l   d4,a0           ; pixels += ys * stride
+        move.w  d0,d5
+        asr.w   #3,d5
+        add.w   d4,d5
+        add.w   d5,a0           ; pixels += ys * stride + xs / 8
 
-        move.w  d2,d4           ; [d4] abs(dx)
+        move.w  d2,d4           ; [d4] adx = abs(dx)
         bge.s   .dx_ok
         neg.w   d4
 
-.dx_ok  divs.w  d3,d4           ; [d4] (df << 16) | di
+.dx_ok                          ; [d4] df = adx
+        clr.w   d5              ; [d5] di = 0
+        cmp.w   d3,d4
+        blt.s   .no_div
+        divs.w  d3,d4
+        move.w  d4,d5           ; [d5] di = adx / dy
+        swap    d4              ; [d4] df = adx % dy
 
-        swap    d0
-        clr.w   d0              ; [d0] x = (xi << 16) | xf
+.no_div move.w  a1,d1           ; [d1] dp = stride
+        not.w   d0
+        and.w   #7,d0           ; [d0] xi = ~xs & 7
+        move.w  d3,d6
+        neg.w   d6              ; [d6] xf = -dy
 
-        moveq   #1,d1           ; [d1] si
         tst.w   d2              ; dx >= 0 ?
-        bge.s   .di_ok
-        neg.w   d1
-        neg.w   d4
+        blt.s   .case2
 
-.di_ok  swap    d4              ; [d4] d = (di << 16) | df
-        swap    d1              ; [d1] (si << 16)
-        clr.w   d1
-        ext.l   d3
-        sub.l   d3,d1           ; [d1] s = (si << 16) - dy
-        move.w  d3,d2           ; [d2] n
+.case1  move.w  d5,d2
+        asr.w   #3,d2
+        add.w   d2,d1           ; dp += di / 8
+        and.w   #7,d5           ; di = di & 7
+        move.w  d3,d2           ; [d2] n = dy
+        subq.w  #1,d2
 
-.loop   move.l  d0,d5           ; (4)
-        swap    d5              ; (4) [d5] xi
+.loop1  bchg    d0,(a0)         ; (14) put pixel
+        add.w   d1,a0           ; (8) ptr += dp
+        add.w   d4,d6           ; (4) xf += df
+        blt.s   .xf1            ; (8/10) xf >= 0 ?
+        subq.w  #1,d0           ; (4) xi--
+        sub.w   d3,d6           ; (4) xf -= dy
+.xf1    sub.w   d5,d0           ; (4) xi -= di
+        bge.s   .xi1            ; (8/10) xi < 0 ?
+        addq.l  #1,a0           ; (8) ptr++
+        addq.w  #8,d0           ; (4) xi += 8
+.xi1    dbf     d2,.loop1       ; (10)
+        bra.s   .exit
 
-        move.w  d5,d6           ; (4)
-        asr.w   #3,d6           ; (12)
+.case2  move.w  d5,d2
+        asr.w   #3,d2
+        sub.w   d2,d1           ; dp -= di / 8
+        and.w   #7,d5
+        neg.w   d5              ; di = -(di & 7)
+        subq.w  #8,d0           ; xi -= 8
+        move.w  d3,d2           ; [d2] n = dy
+        subq.w  #1,d2
 
-        not.w   d5              ; (4)
-        bchg.b  d5,(a0,d6.w)    ; (8+10)
-
-        add.w   a1,a0           ; (8)
-        add.l   d4,d0           ; (6) x += d
-        cmp.w   d3,d0           ; (4) xf >= dy ?
-        blt.s   .skip           ; (8/10)
-        add.l   d1,d0           ; (6) x += s
-.skip   dbf     d2,.loop        ; (10)
+.loop2  bchg    d0,(a0)         ; (14) put pixel
+        add.w   d1,a0           ; (8) ptr += dp
+        add.w   d4,d6           ; (4) xf += df
+        blt.s   .xf2            ; (8/10) xf >= 0 ?
+        addq.w  #1,d0           ; (4) xi++
+        sub.w   d3,d6           ; (4) xf -= dy
+.xf2    sub.w   d5,d0           ; (4) xi -= di
+        blt.s   .xi2            ; (8/10) xi >= 0 ?
+        subq.l  #1,a0           ; (8) ptr--
+        subq.w  #8,d0           ; (4) xi -= 8
+.xi2    dbf     d2,.loop2       ; (10)
 
 .exit:  movem.l (sp)+,d2-d6
         rts
