@@ -58,17 +58,21 @@ _CpuEdgeOpt:
         move.w  d3,d2           ; [d2] n = dy
         subq.w  #1,d2
 
-.loop1  bchg    d0,(a0)         ; (14) put pixel
+        ; min/max cycles per iteration: 56/76
+.loop1  bchg    d0,(a0)         ; (12) put pixel
         add.w   d1,a0           ; (8) ptr += dp
         add.w   d4,d6           ; (4) xf += df
         blt.s   .xf1            ; (8/10) xf >= 0 ?
         subq.w  #1,d0           ; (4) xi--
         sub.w   d3,d6           ; (4) xf -= dy
 .xf1    sub.w   d5,d0           ; (4) xi -= di
-        bge.s   .xi1            ; (8/10) xi < 0 ?
-        addq.l  #1,a0           ; (8) ptr++
+        blt.s   .xi1            ; (8/10) xi < 0 ?
+        dbf     d2,.loop1       ; (10)
+        bra.s   .exit
+
+.xi1    addq.l  #1,a0           ; (8) ptr++
         addq.w  #8,d0           ; (4) xi += 8
-.xi1    dbf     d2,.loop1       ; (10)
+        dbf     d2,.loop1       ; (10)
         bra.s   .exit
 
 .case2  move.w  d5,d2
@@ -80,17 +84,21 @@ _CpuEdgeOpt:
         move.w  d3,d2           ; [d2] n = dy
         subq.w  #1,d2
 
-.loop2  bchg    d0,(a0)         ; (14) put pixel
+        ; min/max cycles per iteration: 56/76
+.loop2  bchg    d0,(a0)         ; (12) put pixel
         add.w   d1,a0           ; (8) ptr += dp
         add.w   d4,d6           ; (4) xf += df
         blt.s   .xf2            ; (8/10) xf >= 0 ?
         addq.w  #1,d0           ; (4) xi++
         sub.w   d3,d6           ; (4) xf -= dy
 .xf2    sub.w   d5,d0           ; (4) xi -= di
-        blt.s   .xi2            ; (8/10) xi >= 0 ?
-        subq.l  #1,a0           ; (8) ptr--
+        bge.s   .xi2            ; (8/10) xi >= 0 ?
+        dbf     d2,.loop2       ; (10)
+        bra.s   .exit
+
+.xi2    subq.l  #1,a0           ; (8) ptr--
         subq.w  #8,d0           ; (4) xi -= 8
-.xi2    dbf     d2,.loop2       ; (10)
+        dbf     d2,.loop2       ; (10)
 
 .exit:  movem.l (sp)+,d2-d6
         rts
