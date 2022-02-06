@@ -6,7 +6,7 @@ import sys
 
 from math import floor
 from PIL import Image
-from utils import lerp, ccir601
+from utils import constrain, frpart, lerp, ccir601
 
 
 def rgb_to_hsv(c):
@@ -86,13 +86,13 @@ def grayscale(pal):
     return [[ccir601(c)] * 3 for c in pal]
 
 
-def shift_hue(pal, dh):
+def shift_hue(pal, dh, ds, dv):
     out = []
     for h, s, v in map(rgb_to_hsv, pal):
-        h += dh
-        if h > 1.0:
-            h -= 1.0
-        out.append(hsv_to_rgb((h,s,v)))
+        h = frpart(h + dh)
+        s = constrain(s + ds, 0.0, 1.0)
+        v = constrain(v + dv, 0.0, 1.0)
+        out.append(hsv_to_rgb((h, s, v)))
     return out
 
 
@@ -113,10 +113,12 @@ def gradient(pal1, pal2, path_out):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Generate gradient between given pallete.')
+        description='Generate color gradient from given pallete.')
     parser.add_argument('--palette', type=str)
     parser.add_argument('--grayscale', action='store_true')
     parser.add_argument('--hue', type=float, default=0.0)
+    parser.add_argument('--saturation', type=float, default=0.0)
+    parser.add_argument('--value', type=float, default=0.0)
     parser.add_argument('input', metavar='INPUT', type=str)
     parser.add_argument('output', metavar='OUTPUT', type=str)
     args = parser.parse_args()
@@ -132,7 +134,7 @@ if __name__ == '__main__':
         pal_dst = getcolors(args.palette)
     if args.grayscale:
         pal_dst = grayscale(pal_src)
-    if args.hue:
-        pal_dst = shift_hue(pal_src, args.hue)
+    if args.hue or args.saturation or args.value:
+        pal_dst = shift_hue(pal_src, args.hue, args.saturation, args.value)
 
     gradient(pal_src, pal_dst, args.output)
