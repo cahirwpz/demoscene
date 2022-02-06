@@ -11,8 +11,6 @@
 ; [d2] xe
 ; [d3] ye
 
-EDGE	equ	0
-
 _CpuLineOpt:
         movem.l d2-d5,-(sp)
 
@@ -57,57 +55,43 @@ dx_dy:  tst.w   d3              ; dy == 0 ?
         move.w  d3,d5
         add.w   d3,d5           ; [d5] dg1 = 2 * dy
 
+        subq.w  #1,d3           ; [d3] n
+
         tst.w   d0              ; xe < xs ?
         bge.s   case2
 
 case1:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 
-.loop
-	ifeq EDGE
-	or.w    d4,(a0)         ; [12] *pixels |= color
-	else
-	eor.w	d4,(a0)
-	endif
+        ; min/max cycles per iteration: 38/68
+.loop   or.w    d4,(a0)         ; (12) *pixels |= color
+        add.w   d2,d1           ; (4) dg += dg2
+        blt.s   .skip           ; (8/10) dg > 0
+	sub.w   d5,d1           ; (4) dg -= dg1
+        rol.w   #1,d4		; (8)
+        bcs.s   .skip2		; (8/10)
+.skip	add.w   a1,a0           ; (8) pixels += stride
+	dbf     d3,.loop	; (10)
+	bra.s   exit
 
-        add.w   d2,d1           ; [4] dg += dg2
-        blt.s   .skip           ; [8/10] dg > 0
-
-	sub.w   d5,d1           ; [4] dg -= dg1
-
-        rol.w   #1,d4		; [4]
-        bcs.s   .skip2		; [8/10]
-
-.skip	add.w   a1,a0           ; [8] pixels += stride
-	dbf     d3,.loop	; [10]
-	bra.s   exit		; ~68 cycles per pixel
-
-.skip2	lea	-2(a0,a1.w),a0
-	dbf     d3,.loop	; [10]
-	bra.s   exit		; ~68 cycles per pixel
+.skip2	lea	-2(a0,a1.w),a0  ; (12)
+	dbf     d3,.loop	; (10)
+	bra.s   exit
 
 case2:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 
-.loop
-	ifeq EDGE
-	or.w    d4,(a0)         ; *pixels |= color
-	else
-	eor.w   d4,(a0)
-	endif
-
-        add.w   d2,d1           ; dg += dg1
-        blt.s   .skip           ; dg > 0
-
-	sub.w   d5,d1           ; dg -= dg2
-
-        ror.w   #1,d4
-        bcs.s   .skip2
-
-.skip	add.w   a1,a0           ; pixels += stride
-	dbf     d3,.loop
+        ; min/max cycles per iteration: 38/68
+.loop   or.w    d4,(a0)         ; (12) *pixels |= color
+        add.w   d2,d1           ; (4) dg += dg1
+        blt.s   .skip           ; (8/10) dg > 0
+	sub.w   d5,d1           ; (4) dg -= dg2
+        ror.w   #1,d4           ; (8)
+        bcs.s   .skip2          ; (8/10)
+.skip	add.w   a1,a0           ; (8) pixels += stride
+	dbf     d3,.loop        ; (10)
         bra.s   exit
 
-.skip2	lea	2(a0,a1.w),a0
-	dbf     d3,.loop
+.skip2	lea	2(a0,a1.w),a0   ; (12)
+	dbf     d3,.loop        ; (10)
         bra.s   exit
 
 ; dx >= dy
@@ -126,52 +110,36 @@ dy_dx:  tst.w   d2              ; dx == 0 ?
 
 case3:  sub.w   d3,d1           ; precompensate for [dg += dg2]
 
-.loop
-	ifeq	EDGE
-	or.w    d4,(a0)         ; *pixels |= color
-	endif
-
-	add.w   d3,d1           ; dg += dg2
-        blt.s   .else           ; dg > 0
-
-        sub.w   d5,d1           ; dg -= dg1
-	ifne	EDGE
-	eor.w	d4,(a0)
-	endif
-        add.w   a1,a0           ; pixels += stride
-
-.else	rol.w   #1,d4
-        bcs.s   .skip
-        dbf     d2,.loop
+        ; min/max cycles per iteration: 52/72
+.loop   or.w    d4,(a0)         ; (12) *pixels |= color
+	add.w   d3,d1           ; (4) dg += dg2
+        blt.s   .else           ; (8/10) dg > 0
+        sub.w   d5,d1           ; (4) dg -= dg1
+        add.w   a1,a0           ; (8) pixels += stride
+.else	rol.w   #1,d4           ; (8)
+        bcs.s   .skip           ; (8/10)
+        dbf     d2,.loop        ; (10)
         bra.s   exit
 
-.skip   subq.l  #2,a0
-	dbf     d2,.loop
+.skip   subq.l  #2,a0           ; (8)
+	dbf     d2,.loop        ; (10)
         bra.s   exit
 
 case4:  sub.w   d3,d1           ; precompensate for [dg += dg2]
 
-.loop   
-	ifeq	EDGE
-	or.w    d4,(a0)         ; *pixels |= color
-	endif
-
-	add.w   d3,d1           ; dg += dg2
-        blt.s   .else           ; dg > 0
-
-        sub.w   d5,d1           ; dg -= dg1
-	ifne	EDGE
-	eor.w	d4,(a0)
-	endif
-        add.w   a1,a0           ; pixels += stride
-
-.else	ror.w   #1,d4
-        bcs.s   .skip
-	dbf     d2,.loop
+        ; min/max cycles per iteration: 52/72
+.loop   or.w    d4,(a0)         ; (12) *pixels |= color
+	add.w   d3,d1           ; (4) dg += dg2
+        blt.s   .else           ; (8/10) dg > 0
+        sub.w   d5,d1           ; (4) dg -= dg1
+        add.w   a1,a0           ; (8) pixels += stride
+.else	ror.w   #1,d4           ; (8)
+        bcs.s   .skip           ; (8/10)
+	dbf     d2,.loop        ; (10)
 	bra.s	exit
 
-.skip   addq.l  #2,a0
-	dbf     d2,.loop
+.skip   addq.l  #2,a0           ; (8)
+	dbf     d2,.loop        ; (10)
 
 exit:   movem.l (sp)+,d2-d5
         rts
