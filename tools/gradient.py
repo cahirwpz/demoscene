@@ -3,14 +3,97 @@
 import argparse
 import os.path
 import sys
+
+from math import floor
 from PIL import Image
 from utils import lerp, ccir601
 
 
-def getcolors(im):
+def rgb_to_hsv(c):
+    r, g, b = c
+
+    r /= 255.0
+    g /= 255.0
+    b /= 255.0
+
+    c_max = max([r, g, b])
+    c_min = min([r, g, b])
+    diff = c_max - c_min
+
+    h, s, v = 0.0, 0.0, c_max
+
+    if c_max > 0.0:
+        s = diff / c_max
+
+    if s != 0.0:
+        if r == c_max:
+            h = (g - b) / diff
+        elif g == c_max:
+            h = 2.0 + (b - r) / diff
+        else:
+            h = 4.0 + (r - g) / diff
+        h /= 6.0
+        if h < 0.0:
+            h += 1.0
+
+    return (h, s, v)
+
+
+def hsv_to_rgb(c):
+    h, s, v = c
+
+    if s == 0.0:
+        v = int(v * 255.0)
+        return (v, v, v)
+
+    if h == 1.0:
+        h = 0.0
+
+    h *= 6.0
+
+    hi = floor(h)
+    hf = h - hi
+
+    p = v * (1.0 - s)
+    q = v * (1.0 - s * hf)
+    t = v * (1.0 - s * (1.0 - hf))
+
+    if hi == 0:
+        r, g, b = v, t, p
+    elif hi == 1:
+        r, g, b = q, v, p
+    elif hi == 2:
+        r, g, b = p, v, t
+    elif hi == 3:
+        r, g, b = p, q, v
+    elif hi == 4:
+        r, g, b = t, p, v
+    else:
+        r, g, b = v, p, q
+
+    return (int(r * 255.0), int(g * 255.0), int(b * 255.0))
+
+
+def getcolors(path):
+    im = Image.open(path)
     pal = im.getpalette()
-    return [(pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2])
-            for _, i in im.getcolors()]
+    colors = [(pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2])
+              for _, i in im.getcolors()]
+    return sorted(colors, key=ccir601)
+
+
+def grayscale(pal):
+    return [[ccir601(c)] * 3 for c in pal]
+
+
+def shift_hue(pal, dh):
+    out = []
+    for h, s, v in map(rgb_to_hsv, pal):
+        h += dh
+        if h > 1.0:
+            h -= 1.0
+        out.append(hsv_to_rgb((h,s,v)))
+    return out
 
 
 def gradient(pal1, pal2, path_out):
@@ -31,7 +114,9 @@ def gradient(pal1, pal2, path_out):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Generate gradient between given pallete.')
-    parser.add_argument('--palette', type=str, required=True)
+    parser.add_argument('--palette', type=str)
+    parser.add_argument('--grayscale', action='store_true')
+    parser.add_argument('--hue', type=float, default=0.0)
     parser.add_argument('input', metavar='INPUT', type=str)
     parser.add_argument('output', metavar='OUTPUT', type=str)
     args = parser.parse_args()
@@ -39,13 +124,15 @@ if __name__ == '__main__':
     if not os.path.isfile(args.input):
         raise SystemExit('Input file does not exists!')
 
-    if not os.path.isfile(args.palette):
+    if args.palette and not os.path.isfile(args.palette):
         raise SystemExit('Palette file does not exists!')
 
-    im1 = Image.open(args.input)
-    im2 = Image.open(args.palette)
-
-    pal_src = sorted(getcolors(im1), key=ccir601)
-    pal_dst = sorted(getcolors(im2), key=ccir601)
+    pal_src = getcolors(args.input)
+    if args.palette:
+        pal_dst = getcolors(args.palette)
+    if args.grayscale:
+        pal_dst = grayscale(pal_src)
+    if args.hue:
+        pal_dst = shift_hue(pal_src, args.hue)
 
     gradient(pal_src, pal_dst, args.output)
