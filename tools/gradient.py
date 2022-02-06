@@ -1,8 +1,10 @@
-#!/usr/bin/env python3 -B
+#!/usr/bin/env python3
 
+import argparse
+import os.path
+import sys
 from PIL import Image
 from utils import lerp, ccir601
-import sys
 
 
 def getcolors(im):
@@ -11,13 +13,7 @@ def getcolors(im):
             for _, i in im.getcolors()]
 
 
-if __name__ == "__main__":
-    im1 = Image.open(sys.argv[1])
-    im2 = Image.open(sys.argv[2])
-
-    pal1 = sorted(getcolors(im1), key=ccir601)
-    pal2 = sorted(getcolors(im2), key=ccir601)
-
+def gradient(pal1, pal2, path_out):
     im = Image.new('RGB', (16, 16))
     pix = im.load()
 
@@ -29,4 +25,27 @@ if __name__ == "__main__":
 
             pix[x, y] = (int(r), int(g), int(b))
 
-    im.save(sys.argv[3], 'PNG')
+    im.save(path_out, 'PNG')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Generate gradient between given pallete.')
+    parser.add_argument('--palette', type=str, required=True)
+    parser.add_argument('input', metavar='INPUT', type=str)
+    parser.add_argument('output', metavar='OUTPUT', type=str)
+    args = parser.parse_args()
+
+    if not os.path.isfile(args.input):
+        raise SystemExit('Input file does not exists!')
+
+    if not os.path.isfile(args.palette):
+        raise SystemExit('Palette file does not exists!')
+
+    im1 = Image.open(args.input)
+    im2 = Image.open(args.palette)
+
+    pal_src = sorted(getcolors(im1), key=ccir601)
+    pal_dst = sorted(getcolors(im2), key=ccir601)
+
+    gradient(pal_src, pal_dst, args.output)
