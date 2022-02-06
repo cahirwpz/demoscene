@@ -107,6 +107,7 @@ static inline int mul16(short a, short b) {
   return r;
 }
 
+/* _n:int / _d:short -> _q:short (quotient), _r:short (remainder) */ 
 #define divmod16(_n, _d, _q, _r)                                               \
   asm("divs %3,%0\n"                                                           \
       "move.w %0,%1\n"                                                         \
