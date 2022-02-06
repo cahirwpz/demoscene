@@ -107,6 +107,13 @@ static inline int mul16(short a, short b) {
   return r;
 }
 
+#define divmod16(_n, _d, _q, _r)                                               \
+  asm("divs %3,%0\n"                                                           \
+      "move.w %0,%1\n"                                                         \
+      "swap %0\n"                                                              \
+      : "=d" (_q), "=d" (_r)                                                   \
+      : "0" (_n), "d" (_d));
+
 static inline void bclr(u_char *ptr, char bit) {
   asm("bclr %1,%0" :: "m" (*ptr), "dI" (bit));
 }
