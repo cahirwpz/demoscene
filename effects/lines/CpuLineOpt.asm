@@ -81,9 +81,9 @@ case2:  sub.w   d2,d1           ; precompensate for [dg += dg2]
 
         ; min/max cycles per iteration: 38/68
 .loop   or.w    d4,(a0)         ; (12) *pixels |= color
-        add.w   d2,d1           ; (4) dg += dg1
+        add.w   d2,d1           ; (4) dg += dg2
         blt.s   .skip           ; (8/10) dg > 0
-	sub.w   d5,d1           ; (4) dg -= dg2
+	sub.w   d5,d1           ; (4) dg -= dg1
         ror.w   #1,d4           ; (8)
         bcs.s   .skip2          ; (8/10)
 .skip	add.w   a1,a0           ; (8) pixels += stride

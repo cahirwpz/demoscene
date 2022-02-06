@@ -9,7 +9,7 @@
 
 /*
  * 0 -> BlitterLine (1706)
- * 1 -> CpuLine (12705)
+ * 1 -> CpuLine (11245)
  * 2 -> CpuEdge (8550)
  * 3 -> CpuLineOpt (10872)
  * 4 -> CpuEdgeOpt (8253)
