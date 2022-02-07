@@ -82,11 +82,11 @@ def getcolors(path):
     return sorted(colors, key=ccir601)
 
 
-def grayscale(pal):
-    return [[ccir601(c)] * 3 for c in pal]
+def invert(pal):
+    return [(255 - r, 255 - g, 255 - b) for r, g, b in pal]
 
 
-def shift_hue(pal, dh, ds, dv):
+def modify_hsv(pal, dh, ds, dv):
     out = []
     for h, s, v in map(rgb_to_hsv, pal):
         h = frpart(h + dh)
@@ -118,8 +118,8 @@ if __name__ == '__main__':
                     'otherwise is taken from source and modified.')
     parser.add_argument('--palette', type=str,
                         help='Take destination palette from file.')
-    parser.add_argument('--grayscale', action='store_true',
-                        help='Change colors to grayscale.')
+    parser.add_argument('--invert', action='store_true',
+                        help='Invert colors (aka negative).')
     parser.add_argument('--hue', type=float, default=0.0,
                         help='Change Hue component in HSV space. The value '
                              'wraps around in [0.0, 1.0] range.')
@@ -148,9 +148,9 @@ if __name__ == '__main__':
     pal_src = getcolors(args.input)
     if args.palette:
         pal_dst = getcolors(args.palette)
-    if args.grayscale:
-        pal_dst = grayscale(pal_src)
+    if args.invert:
+        pal_dst = invert(pal_src)
     if args.hue or args.saturation or args.value:
-        pal_dst = shift_hue(pal_src, args.hue, args.saturation, args.value)
+        pal_dst = modify_hsv(pal_src, args.hue, args.saturation, args.value)
 
     gradient(pal_src, pal_dst, args.output)
