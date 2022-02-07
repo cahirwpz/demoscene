@@ -12,6 +12,6 @@ data/uvmap.c: data/gen-uvmap.py
 	@echo "[GEN] $@"
 	$(PYTHON3) $^ uvmap > $@
 
-data/gradient.png: data/gradient.py data/texture-16-1.png data/texture-16-2.png
+data/gradient.png: $(GRADIENT) data/texture-16-1.png
 	@echo "[GEN] $@"
-	$(PYTHON3) $^ $@
+	$(PYTHON3) $(GRADIENT) --hue 0.25 $(word 2,$^) $@

@@ -128,6 +128,8 @@ static void ChunkyToPlanar(void) {
    * (WIDTH, HEIGHT/2, DEPTH) and will be placed in bpl[2] and bpl[3].
    */
 
+  ClearIRQ(INTF_BLIT);
+
   switch (c2p.phase) {
     case 0:
       /* Initialize chunky to planar. */
@@ -221,8 +223,6 @@ static void ChunkyToPlanar(void) {
   }
 
   c2p.phase++;
-
-  ClearIRQ(INTF_BLIT);
 }
 
 static void MakeCopperList(CopListT *cp) {
@@ -231,7 +231,8 @@ static void MakeCopperList(CopListT *cp) {
 
   CopInit(cp);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopLoadPal(cp, &texture_pal, 0);
+  for (j = 0; j < 16; j++)
+    CopSetColor(cp, j, *pixels++);
   for (i = 0; i < HEIGHT * 2; i++) {
     CopWaitSafe(cp, Y(i + 28), 0);
     /* Line doubling. */
@@ -241,7 +242,7 @@ static void MakeCopperList(CopListT *cp) {
     /* Alternating shift by one for bitplane data. */
     CopMove16(cp, bplcon1, (i & 1) ? 0x0010 : 0x0021);
 #endif
-    if (i % 12 == 11)
+    if (i % 13 == 12)
       for (j = 0; j < 16; j++)
         CopSetColor(cp, j, *pixels++);
   }
