@@ -113,14 +113,30 @@ def gradient(pal1, pal2, path_out):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Generate color gradient from given pallete.')
-    parser.add_argument('--palette', type=str)
-    parser.add_argument('--grayscale', action='store_true')
-    parser.add_argument('--hue', type=float, default=0.0)
-    parser.add_argument('--saturation', type=float, default=0.0)
-    parser.add_argument('--value', type=float, default=0.0)
-    parser.add_argument('input', metavar='INPUT', type=str)
-    parser.add_argument('output', metavar='OUTPUT', type=str)
+        description='Generate color gradient from given source pallete. '
+                    'Destination palette may be delivered from source one, '
+                    'otherwise is taken from source and modified.')
+    parser.add_argument('--palette', type=str,
+                        help='Take destination palette from file.')
+    parser.add_argument('--grayscale', action='store_true',
+                        help='Change colors to grayscale.')
+    parser.add_argument('--hue', type=float, default=0.0,
+                        help='Change Hue component in HSV space. The value '
+                             'wraps around in [0.0, 1.0] range.')
+    parser.add_argument('--saturation', type=float, default=0.0,
+                        help='Change Saturation component in HSV space. The '
+                             'value is constrained within [0.0, 1.0] range.')
+    parser.add_argument('--value', type=float, default=0.0,
+                        help='Change Value component in HSV space. The '
+                             'value is constrained within [0.0, 1.0] range.')
+    parser.add_argument('input', metavar='INPUT', type=str,
+                        help='Image from which source palette will be '
+                             'extracted.')
+    parser.add_argument('output', metavar='OUTPUT', type=str,
+                        help='Output gradient file. Image of N x 16 size '
+                             'in RGB space. Each line represents single '
+                             'palette. There are 14 transitions between '
+                             'source and destination palette.')
     args = parser.parse_args()
 
     if not os.path.isfile(args.input):
