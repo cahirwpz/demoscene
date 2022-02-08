@@ -14,4 +14,4 @@ data/uvmap.c: data/gen-uvmap.py
 
 data/gradient.png: $(GRADIENT) data/texture-16-1.png
 	@echo "[GEN] $@"
-	$(PYTHON3) $(GRADIENT) --hue 0.25 $(word 2,$^) $@
+	$(PYTHON3) $(GRADIENT) load $(word 2,$^) copy hue 0.25 save $@
