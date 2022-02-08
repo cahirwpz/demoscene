@@ -29,6 +29,7 @@ SUBDIRS := \
 	playp61 \
 	plotter \
 	prisms \
+	rotator \
 	shapes \
 	showpchg \
 	stripes \
