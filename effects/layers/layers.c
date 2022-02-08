@@ -10,20 +10,27 @@
 
 #include "data/background.c"
 #include "data/foreground.c"
+#include "data/bg-gradient.c"
+#include "data/fg-gradient.c"
 
 static CopListT *cp0, *cp1;
 static short fg_y, bg_y, fg_x, bg_x;
 
 static void MakeCopperList(CopListT *cp) {
+  short *bg_pal = bg_gradient.pixels;
+  short *fg_pal = fg_gradient.pixels;
   short bg_bplmod = (background.width - (WIDTH + 16)) / 8;
   short fg_bplmod = (foreground.width - (WIDTH + 16)) / 8;
+  short j;
 
   CopInit(cp);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH + 16);
   CopSetupMode(cp, MODE_DUALPF, DEPTH);
-  CopLoadPal(cp, &background_pal, 0);
-  CopLoadPal(cp, &foreground_pal, 8);
+  for (j = 0; j < bg_gradient.width; j++)
+    CopSetColor(cp, j, *bg_pal++);
+  for (j = 0; j < fg_gradient.width; j++)
+    CopSetColor(cp, 8 + j, *fg_pal++);
   CopSetColor(cp, 0, 0);
   /* Reverse playfields priorities (for testing) */
 #if 0

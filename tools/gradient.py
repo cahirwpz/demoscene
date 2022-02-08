@@ -77,9 +77,8 @@ def hsv_to_rgb(c):
 def getcolors(path):
     im = Image.open(path)
     pal = im.getpalette()
-    colors = [(pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2])
-              for _, i in im.getcolors()]
-    return sorted(colors, key=ccir601)
+    n = max(i for _, i in im.getcolors()) + 1
+    return [(pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2]) for i in range(n)]
 
 
 def invert(pal):
@@ -97,11 +96,12 @@ def modify_hsv(pal, dh, ds, dv):
 
 
 def gradient(pal1, pal2, path_out):
-    im = Image.new('RGB', (16, 16))
+    n = len(pal1)
+    im = Image.new('RGB', (n, 16))
     pix = im.load()
 
     for y in range(16):
-        for x in range(16):
+        for x in range(n):
             r = lerp(pal1[x][0], pal2[x][0], float(y) / 15)
             g = lerp(pal1[x][1], pal2[x][1], float(y) / 15)
             b = lerp(pal1[x][2], pal2[x][2], float(y) / 15)
@@ -152,5 +152,7 @@ if __name__ == '__main__':
         pal_dst = invert(pal_src)
     if args.hue or args.saturation or args.value:
         pal_dst = modify_hsv(pal_src, args.hue, args.saturation, args.value)
+
+    assert len(pal_src) == len(pal_dst)
 
     gradient(pal_src, pal_dst, args.output)
