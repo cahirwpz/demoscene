@@ -33,6 +33,10 @@ static BitmapT* prev_states[DISP_DEPTH]; // circular buffer of previous states
 u_short states_head = 0; // states_head & 0x3 points to the newest frame in prev_state
 u_short phase = 0; // phase (0-8) of blitter calculations
 
+// TODO: promień śmierci/promień życia
+// TODO: zoomowanie się na fragmenty
+// TODO: wblitowywanie ciekawych patternów
+
 static u_short minterms_table[9] = {0x96, 0xE8, 0x7E, 0x69, 0x69, 0x81, 0xB4, 0x3A, 0x24};
 
 static PaletteT palette = {
@@ -227,6 +231,7 @@ static void UpdateBitplanePointers(void)
 
 static void GameOfLife(void)
 {
+  ClearIRQ(INTF_BLIT);
   switch (phase)
   {
     case 0: BlitAdjacentHorizontal(&initial_board, lo, minterms_table[0]); break;
@@ -241,11 +246,9 @@ static void GameOfLife(void)
     case 6: BlitFunc(x2, &initial_board, x3, x5, minterms_table[6]); break;
     case 7: BlitFunc(x1, x5, x3, x6, minterms_table[7]); break;
     case 8: BlitFunc(x2, x0, x6, &initial_board, minterms_table[8]); break;
+    case 9: WaitVBlank();
   }
   phase++;
-  ClearIRQ(INTF_BLIT);
-  if (phase == 9)
-    WaitVBlank();
 }
 
 static void Init(void) {
