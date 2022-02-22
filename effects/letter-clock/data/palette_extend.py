@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
 
+# File format of an extended palette is as follows:
+# first line contains bitmasks of lenses that
+# will be applied to the columns below.
+# Then each line should contain:
+# unique base colour in the first column that coresponds
+# to a colour in the image file;
+# in the second column a colour by which the first one will be replaced
+# in the final palette (can be the same);
+# then each column should contain a colour which will be matched
+# left to right to the masks (lenses) supplied in the first line
+# in order to put the colour into a matching position.
+
 from PIL import Image
-from math import ceil, log
 import argparse
 
 
@@ -28,7 +39,6 @@ def read_palette(im, max_colours):
 
 
 def extend_palette(orig_cmap, path, max_colours):
-    base_bitplans = int(ceil(log(len(orig_cmap), 2)))
     assert len(orig_cmap) == len(
         set([tuple(l) for l in orig_cmap])
     ), "elements in cmap must be unique"
@@ -36,6 +46,7 @@ def extend_palette(orig_cmap, path, max_colours):
     # This way we don't need to enforce complete palettes in txt file.
     new_cmap = orig_cmap + [orig_cmap[0]] * (max_colours - len(orig_cmap))
     with open(path) as f:
+        lens_tab = [int(lens, base=2) for lens in f.readline().split()]
         for line in f:
             colour_line = [
                 [
@@ -46,9 +57,13 @@ def extend_palette(orig_cmap, path, max_colours):
                 for colour in line.split()
             ]
             base_colour = colour_line[0]
-            for index, colour in enumerate(colour_line[1:]):
+            # Should the base colour be replaced (eg. to make it invisible without lens),
+            # put another one in the second column. Otherwise repeat the base colour.
+            base_colour_replacement = colour_line[1]
+            new_cmap[orig_cmap.index(base_colour)] = base_colour_replacement
+            for index, colour in enumerate(colour_line[2:]):
                 new_cmap[
-                    orig_cmap.index(base_colour) | 2 ** (base_bitplans + index)
+                    orig_cmap.index(base_colour) | lens_tab[index]
                 ] = colour
     return new_cmap
 
