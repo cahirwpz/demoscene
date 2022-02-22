@@ -9,13 +9,17 @@
 #define DISP_HEIGHT 256
 #define DISP_DEPTH 4
 
+#define START_OFFSET_X 16
+#define START_OFFSET_Y 1
+
 #define BOARD_WIDTH (DISP_WIDTH/2)
 #define BOARD_HEIGHT (DISP_HEIGHT/2)
-#define EXT_BOARD_WIDTH (BOARD_WIDTH+32)
-#define EXT_BOARD_HEIGHT (BOARD_HEIGHT+2)
+#define EXT_BOARD_WIDTH (BOARD_WIDTH+2*START_OFFSET_X)
+#define EXT_BOARD_HEIGHT (BOARD_HEIGHT+2*START_OFFSET_Y)
 #define BOARD_DEPTH 1
 
 #include "data/current-board.c"
+#include "data/p46basedprng.c"
 #include "double_pixels.h"
 
 static CopListT* cp;
@@ -277,6 +281,9 @@ static void Init(void) {
 
   PixelDouble = MemAlloc(PixelDoubleSize, MEMF_PUBLIC);
   MakePixelDoublingCode(&current_board);
+
+  BitmapClear(&current_board);
+  BitmapCopy(&current_board, START_OFFSET_X+2, START_OFFSET_Y+10, &p46basedprng);
 
   cp = NewCopList(300);
   MakeCopperList(cp);
