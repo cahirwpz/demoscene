@@ -33,14 +33,14 @@ def read_palette(im, max_colours):
         )
 
     r_pal = [num >> 4 for num in pal]
-    r_cmap = [r_pal[i * 3 : (i + 1) * 3] for i in range(colours)]
+    r_cmap = [r_pal[i * 3: (i + 1) * 3] for i in range(colours)]
 
     return r_cmap
 
 
 def extend_palette(orig_cmap, path, max_colours):
     assert len(orig_cmap) == len(
-        set([tuple(l) for l in orig_cmap])
+        set([tuple(colour) for colour in orig_cmap])
     ), "elements in cmap must be unique"
     # We fill any possible holes in a new cmap with the background colour.
     # This way we don't need to enforce complete palettes in txt file.
@@ -57,8 +57,10 @@ def extend_palette(orig_cmap, path, max_colours):
                 for colour in line.split()
             ]
             base_colour = colour_line[0]
-            # Should the base colour be replaced (eg. to make it invisible without lens),
-            # put another one in the second column. Otherwise repeat the base colour.
+            # Should the base colour be replaced
+            # (eg. to make it invisible without lens),
+            # put another one in the second column.
+            # Otherwise repeat the base colour.
             base_colour_replacement = colour_line[1]
             new_cmap[orig_cmap.index(base_colour)] = base_colour_replacement
             for index, colour in enumerate(colour_line[2:]):
@@ -80,7 +82,7 @@ def save_palette(name, r_cmap):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Converts an image to bitmap extended with data from txt file."
+        description="Creates palette extended with data from txt file."
     )
     parser.add_argument("--name", type=str, help="Name of the palette.")
     parser.add_argument(
