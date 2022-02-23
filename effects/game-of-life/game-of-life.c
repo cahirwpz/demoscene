@@ -22,6 +22,7 @@
 #define BOARD_DEPTH 1
 
 #include "data/p46basedprng.c"
+#include "data/weekenders.c"
 #include "double_pixels.h"
 
 static CopListT* cp;
@@ -291,7 +292,8 @@ static void Init(void) {
   MakePixelDoublingCode(current_board);
 
   BitmapClear(current_board);
-  BitmapCopy(current_board, EXT_WIDTH_LEFT+2, EXT_HEIGHT_TOP+10, &p46basedprng);
+  BitmapCopy(current_board, 17, EXT_HEIGHT_TOP+10, &weekenders);
+  BitmapCopy(current_board, 17, EXT_HEIGHT_TOP+68, &weekenders);
 
   cp = NewCopList(300);
   MakeCopperList(cp);
