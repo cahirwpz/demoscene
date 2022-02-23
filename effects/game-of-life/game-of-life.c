@@ -9,20 +9,23 @@
 #define DISP_HEIGHT 256
 #define DISP_DEPTH 4
 
-#define START_OFFSET_X 16
-#define START_OFFSET_Y 1
+#define EXT_WIDTH_LEFT 48
+#define EXT_WIDTH_RIGHT 16
+#define EXT_HEIGHT_TOP 1
+#define EXT_HEIGHT_BOTTOM 1
+#define EXT_BOARD_MODULO (EXT_WIDTH_LEFT/8 + EXT_WIDTH_RIGHT/8)
 
 #define BOARD_WIDTH (DISP_WIDTH/2)
 #define BOARD_HEIGHT (DISP_HEIGHT/2)
-#define EXT_BOARD_WIDTH (BOARD_WIDTH+2*START_OFFSET_X)
-#define EXT_BOARD_HEIGHT (BOARD_HEIGHT+2*START_OFFSET_Y)
+#define EXT_BOARD_WIDTH (BOARD_WIDTH+EXT_WIDTH_LEFT+EXT_WIDTH_RIGHT)
+#define EXT_BOARD_HEIGHT (BOARD_HEIGHT+EXT_HEIGHT_TOP+EXT_HEIGHT_BOTTOM)
 #define BOARD_DEPTH 1
 
-#include "data/current-board.c"
 #include "data/p46basedprng.c"
 #include "double_pixels.h"
 
 static CopListT* cp;
+static BitmapT* current_board;
 
 // intermediate results
 static BitmapT* lo;
@@ -151,9 +154,10 @@ static void MakePixelDoublingCode(const BitmapT* bitmap)
   u_short *code = (void*)PixelDouble;
 
   *code++ = 0x7200; // moveq #0,d1
-  for (y = 1; y < bitmap->height - 1; y++)
+  *code++ = 0x7400 | (EXT_BOARD_MODULO & 0xFF); // moveq #EXT_BOARD_MODULO,d2
+  for (y = EXT_HEIGHT_TOP; y < bitmap->height - EXT_HEIGHT_BOTTOM; y++)
   {
-    for (x = 2; x < bitmap->bytesPerRow - 2; x++)
+    for (x = EXT_WIDTH_LEFT/8; x < bitmap->bytesPerRow - EXT_WIDTH_RIGHT/8; x++)
     {
       *code++ = 0x1218; // move.b (a0)+,d1
       *code++ = 0x2001; // move.l d1,d0
@@ -163,7 +167,10 @@ static void MakePixelDoublingCode(const BitmapT* bitmap)
       // perform a lookup in the pixel doubling lookup table (e.g. 00100110 -> 0000110000111100)    	
       // *double_target++ = double_pixels[*double_src++];
     }
-    *code++ = 0x5888; // addq.l #4,a0
+    //if (EXT_BOARD_MODULO < 8)
+      //*code++ = 0x5088 | (EXT_BOARD_MODULO << 9); // addq.l #EXT_BOARD_MODULO,a0
+    //else
+      *code++ = 0xD1C2; // adda.l d2,a0
     // double_src += 4;
     // bitmap modulo - skip the extra 4 bytes on the edges (2 on the left, 2 on the right on the next row)
   }
@@ -214,8 +221,8 @@ static void GameOfLife(void)
   switch (phase)
   {
     // sum horizontally adjacent pixels - produces two results (sum bits): lo and hi
-    case 0: BlitAdjacentHorizontal(&current_board, lo, minterms_table[0]); break;
-    case 1: BlitAdjacentHorizontal(&current_board, hi, minterms_table[1]); break;
+    case 0: BlitAdjacentHorizontal(current_board, lo, minterms_table[0]); break;
+    case 1: BlitAdjacentHorizontal(current_board, hi, minterms_table[1]); break;
 
     // result based on the number of set bits in lo
     // set bits -> result
@@ -246,9 +253,9 @@ static void GameOfLife(void)
     case 5: BlitAdjacentVertical(hi, x3, minterms_table[5]); break;
 
     // black magic happens here - combines previous results and initial game state into new state
-    case 6: BlitFunc(x2, &current_board, x3, x5, minterms_table[6]); break;
+    case 6: BlitFunc(x2, current_board, x3, x5, minterms_table[6]); break;
     case 7: BlitFunc(x1, x5, x3, x6, minterms_table[7]); break;
-    case 8: BlitFunc(x2, x0, x6, &current_board, minterms_table[8]); break;
+    case 8: BlitFunc(x2, x0, x6, current_board, minterms_table[8]); break;
 
     // hack - avoid graphical artifacts
     case 9: WaitVBlank();
@@ -267,6 +274,7 @@ static void Init(void) {
   x3 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
   x5 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
   x6 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
+  current_board = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
 
   SetupPlayfield(MODE_LORES, DISP_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
   LoadPalette(&palette, 0);
@@ -280,10 +288,10 @@ static void Init(void) {
   }
 
   PixelDouble = MemAlloc(PixelDoubleSize, MEMF_PUBLIC);
-  MakePixelDoublingCode(&current_board);
+  MakePixelDoublingCode(current_board);
 
-  BitmapClear(&current_board);
-  BitmapCopy(&current_board, START_OFFSET_X+2, START_OFFSET_Y+10, &p46basedprng);
+  BitmapClear(current_board);
+  BitmapCopy(current_board, EXT_WIDTH_LEFT+2, EXT_HEIGHT_TOP+10, &p46basedprng);
 
   cp = NewCopList(300);
   MakeCopperList(cp);
@@ -321,7 +329,7 @@ PROFILE(GOLStep)
 
 static void Render(void) {
   ProfilerStart(GOLStep);
-    PixelDouble(current_board.planes[0] + current_board.bytesPerRow + 2, prev_states[states_head % DISP_DEPTH]->planes[0], double_pixels);
+    PixelDouble(current_board->planes[0] + current_board->bytesPerRow + EXT_WIDTH_LEFT/8, prev_states[states_head % DISP_DEPTH]->planes[0], double_pixels);
     UpdateBitplanePointers();
     states_head++;
     phase = 0;
