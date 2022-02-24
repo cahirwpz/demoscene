@@ -23,6 +23,30 @@
 #define EXT_BOARD_HEIGHT (BOARD_HEIGHT+EXT_HEIGHT_TOP+EXT_HEIGHT_BOTTOM)
 #define BOARD_DEPTH 1
 
+// "EXT_BOARD" is the area on which the game of life is calculated
+// "BOARD" is the area which will actually be displayed (size before pixel doubling)
+// Various constants are best described using a drawing (all shown constants are in pixels,
+// drawing not to scale):
+//
+// ------------------------------------------------------------------------------
+// |                                     ^                                      |
+// |                                     | EXT_HEIGHT_TOP                       |
+// |                                     v                                      |
+// |                    -----------------------------------                     |
+// |                    |           BOARD_WIDTH     ^     |                     |
+// |                    |<--------------------------|---->|                     |
+// |                    |                           |     |                     |
+// |<------------------>|              BOARD_HEIGHT |     |<------------------->|
+// |   EXT_WIDTH_LEFT   |                           |     |   EXT_WIDTH_RIGHT   |
+// |                    |                           |     |                     |
+// |                    |                           v     |                     |
+// |                    -----------------------------------                     |
+// |                                     ^                                      |
+// |                                     | EXT_HEIGHT_BOTTOM                    |
+// |                                     v                                      |
+// ------------------------------------------------------------------------------
+//
+
 #include "data/p46basedprng.c"
 #include "data/weekenders.c"
 #include "data/beam.c"
@@ -56,8 +80,18 @@ static u_short phase = 0;
 // x position of the death ray sprite
 static short laser_beam_pos = 0;
 
-// magic constants for blitter operations
-static u_short minterms_table[9] = {0x96, 0xE8, 0x7E, 0x69, 0x69, 0x81, 0xB4, 0x3A, 0x24};
+// minterms for blitter operations
+static u_short minterms_table[9] = {
+  FULL_ADDER,
+  FULL_ADDER_CARRY,
+  NANBC | NABNC | NABC | ANBNC | ANBC | ABNC,
+  NANBNC | NABC | ANBC | ABNC,
+  NANBNC | NABC | ANBC | ABNC,
+  NANBNC | ABC,
+  NABNC | ANBNC | ANBC | ABC,
+  NANBC | NABC | ANBNC | ANBC,
+  NABNC | ANBC
+};
 
 static PaletteT palette = {
   .count = 16,
@@ -82,6 +116,23 @@ static PaletteT palette = {
 };
 
 // setup blitter to calculate a function of three horizontally adjacent lit pixels
+// the setup in this blit is as follows (what data each channel sees):
+//            -1                  0                  1                  2
+// C: [----------------] [----------------] [c---------------] [----------------]
+//            -1                  0                  1                  2
+// A: [----------------] [---------------a] [a---------------] [----------------]
+//                                       |   ^
+//                                       >>>>^
+//                         'a' gets shifted one to the right
+//
+//             0                  1                  2                  3
+// B: [----------------] [-b--------------] [b---------------] [----------------]
+//                         |                 ^
+//                         >>>>>>>>>>>>>>>>>>^
+//                'b' starts one word later and gets shifted 15 to the right
+//
+// Thus a, b and c are lined up properly to perform boolean function on them
+//
 static void BlitAdjacentHorizontal(const BitmapT* source, BitmapT* target, u_short minterms)
 {
   void* srcCenter = source->planes[0] + source->bytesPerRow; // C channel
@@ -151,7 +202,7 @@ static void BlitFunc(const BitmapT* sourceA, const BitmapT* sourceB, const Bitma
 }
 
 static void (*PixelDouble)(u_char* source asm("a0"), u_short* target asm("a1"), u_short* lut asm("a2"));
-#define PixelDoubleSize (BOARD_WIDTH * BOARD_HEIGHT * 16 + 2)
+#define PixelDoubleSize (BOARD_WIDTH * BOARD_HEIGHT * 10 + BOARD_HEIGHT * 2 + 6)
 
 // doubles pixels horizontally
 static void MakePixelDoublingCode(const BitmapT* bitmap)
@@ -174,12 +225,10 @@ static void MakePixelDoublingCode(const BitmapT* bitmap)
       // perform a lookup in the pixel doubling lookup table (e.g. 00100110 -> 0000110000111100)    	
       // *double_target++ = double_pixels[*double_src++];
     }
-    //if (EXT_BOARD_MODULO < 8)
-      //*code++ = 0x5088 | (EXT_BOARD_MODULO << 9); // addq.l #EXT_BOARD_MODULO,a0
-    //else
-      *code++ = 0xD1C2; // adda.l d2,a0
-    // double_src += 4;
-    // bitmap modulo - skip the extra 4 bytes on the edges (2 on the left, 2 on the right on the next row)
+    *code++ = 0xD1C2; // adda.l d2,a0
+    // double_src += EXT_BOARD_MODULO & 0xFF;
+    // bitmap modulo - skip the extra EXT_BOARD_MODULO bytes on the edges
+    // (EXT_WIDTH_LEFT/8 bytes on the left, EXT_WIDTH_RIGHT/8 bytes on the right on the next row)
   }
   *code++ = 0x4e75; // rts
 }
@@ -335,6 +384,7 @@ static void Kill(void) {
   DeleteBitmap(x3);
   DeleteBitmap(x5);
   DeleteBitmap(x6);
+  DeleteBitmap(current_board);
 
   for (i = 0; i < DISP_DEPTH; i++)
     DeleteBitmap(prev_states[i]);
