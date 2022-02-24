@@ -4,12 +4,14 @@
 #include "blitter.h"
 #include "interrupt.h"
 #include "memory.h"
+#include "sprite.h"
+#include "fx.h"
 
 #define DISP_WIDTH 320
 #define DISP_HEIGHT 256
 #define DISP_DEPTH 4
 
-#define EXT_WIDTH_LEFT 48
+#define EXT_WIDTH_LEFT 16
 #define EXT_WIDTH_RIGHT 16
 #define EXT_HEIGHT_TOP 1
 #define EXT_HEIGHT_BOTTOM 1
@@ -23,6 +25,7 @@
 
 #include "data/p46basedprng.c"
 #include "data/weekenders.c"
+#include "data/beam.c"
 #include "double_pixels.h"
 
 static CopListT* cp;
@@ -49,6 +52,9 @@ static u_short states_head = 0;
 
 // phase (0-8) of blitter calculations
 static u_short phase = 0; 
+
+// x position of the death ray sprite
+static short laser_beam_pos = 0;
 
 // magic constants for blitter operations
 static u_short minterms_table[9] = {0x96, 0xE8, 0x7E, 0x69, 0x69, 0x81, 0xB4, 0x3A, 0x24};
@@ -182,6 +188,7 @@ static void MakeCopperList(CopListT* cp) {
   u_short i;
 
   CopInit(cp);
+  CopMove32(cp, sprpt[0], &laser_beam);
   // initially previous states are empty
   // save addresses of these instructions to change bitplane
   // order when new state gets generated
@@ -218,6 +225,7 @@ static void UpdateBitplanePointers(void)
 
 static void GameOfLife(void)
 {
+  Area2D clearArea = { laser_beam_pos, 0, 8, 256 };
   ClearIRQ(INTF_BLIT);
   switch (phase)
   {
@@ -258,8 +266,14 @@ static void GameOfLife(void)
     case 7: BlitFunc(x1, x5, x3, x6, minterms_table[7]); break;
     case 8: BlitFunc(x2, x0, x6, current_board, minterms_table[8]); break;
 
+    // clear a column of cells where the beam is
+    case 9: BitmapClearArea(current_board, &clearArea); break;  // bug: this should be performed on different area
+    case 10: BitmapClearArea(prev_states[(states_head + 1) % DISP_DEPTH], &clearArea); break;
+    case 11: BitmapClearArea(prev_states[(states_head + 2) % DISP_DEPTH], &clearArea); break;
+    case 12: BitmapClearArea(prev_states[(states_head + 3) % DISP_DEPTH], &clearArea); break;
+
     // hack - avoid graphical artifacts
-    case 9: WaitVBlank();
+    case 13: WaitVBlank();
   }
   phase++;
 }
@@ -279,7 +293,7 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DISP_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
   LoadPalette(&palette, 0);
-
+  LoadPalette(&laser_beam_pal, 16);
   EnableDMA(DMAF_BLITTER);
 
   for (i = 0; i < DISP_DEPTH; i++)
@@ -295,11 +309,13 @@ static void Init(void) {
   BitmapCopy(current_board, 17, EXT_HEIGHT_TOP+10, &weekenders);
   BitmapCopy(current_board, 17, EXT_HEIGHT_TOP+68, &weekenders);
 
+  SpriteUpdatePos(&laser_beam, laser_beam_height, X(320), Y(0));
+
   cp = NewCopList(300);
   MakeCopperList(cp);
   CopListActivate(cp);
 
-  EnableDMA(DMAF_RASTER);
+  EnableDMA(DMAF_RASTER | DMAF_SPRITE);
 
   SetIntVector(BLIT, (IntHandlerT)GameOfLife, NULL);
   EnableINT(INTF_BLIT);
@@ -307,7 +323,7 @@ static void Init(void) {
 
 static void Kill(void) {
   u_short i;
-  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
+  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
   DisableINT(INTF_BLIT);
   ResetIntVector(BLIT);
 
@@ -335,6 +351,8 @@ static void Render(void) {
     UpdateBitplanePointers();
     states_head++;
     phase = 0;
+    laser_beam_pos = (normfx(SIN(frameCount * 16) * DISP_WIDTH/2) + DISP_WIDTH/2)/2;
+    SpriteUpdatePos(&laser_beam, laser_beam_height, X(laser_beam_pos), Y(0));
     GameOfLife();
   ProfilerStop(GOLStep);
 }
