@@ -11,7 +11,19 @@ setminterm 58
 wait 50
 clear
 load 2
-setminterm 212
+setminterm 206
+wait 50
+setminterm 104
+wait 100
+clear
+load 2
+setminterm 206
+wait 50
+setminterm 104
+wait 100
+clear
+load 2
+setminterm 206
 wait 50
 setminterm 104
 wait 100
