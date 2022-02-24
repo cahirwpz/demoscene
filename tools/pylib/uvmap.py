@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from math import atan2, cos, sin, pi, sqrt
+from math import atan2, cos, sin, pi, sqrt, tan
 from utils import dist, lerp, frpart
 from array import array
 from PIL import Image
@@ -55,6 +55,31 @@ def Ball(x, y):
         return (u, v)
     except ValueError:
         pass
+
+
+def should_be_cut(x, y):
+    a = 0.1
+    b = 0
+    c = 0.2
+    d = 0
+
+    return abs(y) < a * abs(x) + b or abs(x) < c * abs(y) + d
+
+
+def butterfly(x, y):
+    x = abs(x)
+    y = abs(y)
+
+    a = atan2(x, y)
+    r = dist(x, y, 0.0, 0.0)
+
+    if r == 0 or should_be_cut(x, y):
+        return (0, 0)
+
+    u = .5 * cos(3 * a) + r * tan(a) * 0.1
+    v = .5 * sin(3 * a) + r / (1 if tan(a) == 0 else tan(a))
+
+    return (u, v)
 
 
 class UVMap(object):
