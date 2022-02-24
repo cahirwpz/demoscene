@@ -92,7 +92,8 @@ static void BLITZ_Render(void) {
   const BitmapT *dst = bitmap_back;
   const BitmapT *src = bitmap_curr;
 
-  u_short bytesPerRow = (src->width - 32) >> 3;
+  u_short width = src->width;
+  u_short bytesPerRow = width >> 3;
   u_short blitmods = src->bytesPerRow - bytesPerRow;
 
   //__C__
@@ -108,6 +109,19 @@ static void BLITZ_Render(void) {
   // B = (17,  1) -> start 1, shift 1
   // C = (16, -1) -> start 1, shift 0
 
+
+
+  // CHANGE OF PLANS
+
+  //__C__
+  //__DA_
+  //___B_
+
+  // A = (+1,  0)
+  // B = (+1, +1)
+  // C = ( 0, -1)
+
+
   WaitBlitter();
   // REMOVE CLEARING
   BlitterClear(bitmap_back, 0);
@@ -118,20 +132,20 @@ static void BLITZ_Render(void) {
   custom->bltcmod = blitmods;
   custom->bltdmod = blitmods;
 
-  custom->bltafwm = FirstWordMask[15];
-  custom->bltalwm = LastWordMask[15];
+  custom->bltafwm = FirstWordMask[1];
+  custom->bltalwm = LastWordMask[1];
 
   //                  SHIFT A                                               MINTERM 
-  // custom->bltcon0 = rorw((uint16_t)15, 4) | SRCA | SRCB | SRCC | DEST | (minterm_curr & 0xff);
-  custom->bltcon0 = rorw((uint16_t)15, 4) | SRCA | SRCB | SRCC | DEST | A_TO_D;
+  custom->bltcon0 = rorw((uint16_t)1, 4) | SRCA | SRCB | SRCC | DEST | (minterm_curr & 0xff);
+  // custom->bltcon0 = rorw((uint16_t)1, 4) | SRCA | SRCB | SRCC | DEST | A_TO_D;
 
   //                 SHIFT B
   custom->bltcon1 = rorw((uint16_t)1, 4);
 
-  custom->bltapt = src->planes[0]     + src->bytesPerRow;
-  custom->bltbpt = src->planes[0] + 2 + 2 * src->bytesPerRow;
-  custom->bltcpt = src->planes[0] + 2;
-  custom->bltdpt = dst->planes[0] + 2 + src->bytesPerRow;
+  custom->bltapt = src->planes[0] +     src->bytesPerRow;
+  custom->bltbpt = src->planes[0] + 2 * src->bytesPerRow;
+  custom->bltcpt = src->planes[0];
+  custom->bltdpt = dst->planes[0] + src->bytesPerRow;
 
   custom->bltsize = ((src->height-2) << 6) | (bytesPerRow >> 1);
 }

@@ -73,7 +73,7 @@ void BLITZ_MainLoop(void) {
 			tprint(f"BLITZ_Clear();")
 			dfa_mustwait = True
 		elif cmd == Cmds.SETMINTERM:
-			tprint(f"minterm_curr = {int('{:08b}'.format(arg)[::-1],2)};")
+			tprint(f"minterm_curr = {int(arg)};")
 		elif cmd == Cmds.WAIT:
 			dfa_cstate += 1
 			dfa_prelude = True

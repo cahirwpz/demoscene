@@ -246,11 +246,11 @@ void draw() {
       for (int y = 1; y < HEIGHT-1; y++)
         if (curr_bpl) {
           this.g.set(x, y, pal[bpl0[x][y]]);
-          bpl1[x][y] = calcb(c_minterms, bpl0[x-1][y], bpl0[x+1][y+1], bpl0[x][y-1]); 
+          bpl1[x][y] = calcb(c_minterms, bpl0[x+1][y], bpl0[x+1][y+1], bpl0[x][y-1]); 
         }
         else {
           this.g.set(x, y, pal[bpl1[x][y]]);
-          bpl0[x][y] = calcb(c_minterms, bpl1[x-1][y], bpl1[x+1][y+1], bpl1[x][y-1]);
+          bpl0[x][y] = calcb(c_minterms, bpl1[x+1][y], bpl1[x+1][y+1], bpl1[x][y-1]);
         }
     curr_bpl = !curr_bpl;
   }
