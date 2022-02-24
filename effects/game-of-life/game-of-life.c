@@ -7,6 +7,23 @@
 #include "sprite.h"
 #include "fx.h"
 
+// This effect calculates Conway's game of life (with the classic rules: live cells with
+// <2 or >3 neighbours die, live cells with 2-3 neighbouring cells live to the next
+// generation and dead cells with 3 neightbours become alive). If you need more introductory
+// information check out https://en.wikipedia.org/wiki/Conway's_Game_of_Life
+// 
+// It works the following way - on each iteration we start with a board (a 1-bit bitmap)
+// that is the current game state. On this bitmap, 1's represent alive cells, 0's represent
+// dead cells. We perform several blits: first on this bitmap, producing some intermediate
+// results and then on those intermediate results as well, extensively making use of the
+// blitter's function generator. Minterms for the function generator, the order of blits
+// and input sources were picked in such a way, that the end result calculates the next
+// board state. Then the boards gets his pixels horizontally and vertically doubled -
+// - horizontally by the CPU (using lookup table), vertically by the copper (by line doubling).
+// Previously calculated game states (with pixels already doubled) are kept in a circular
+// buffer and displayed on separate bitplanes with dimmer colors (the dimmer the color, the
+// more time has passed since cell on that square died). This process is repeated indefinitely.
+
 #define DISP_WIDTH 320
 #define DISP_HEIGHT 256
 #define DISP_DEPTH 4
