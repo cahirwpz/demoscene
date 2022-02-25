@@ -19,14 +19,23 @@
 #define Y0 130
 #define START_DRAW 48 
 
-#include "sprite.c"
 #include "data/background.c"
-
+#include "data/spiders.c"
 static CopListT *cp;
 static CopInsT *sprptr[8];
 
+/* Palette and references for spider sprites. */
+static PaletteT sprite_pal = {
+  .count = 15,
+  .colors = {0x0b1, 0xb4f, 0x10b, 0x0, 0x04b, 0xb70, 0x09b, 0x0, 0xbb0, 0xb01, 0x0b3, 0x0, 0x04b, 0xb70, 0x09b} 
+};
+
+static SpriteT *sprite[] = {
+  &spiders_sprite0, &spiders_sprite1, &spiders_sprite2, &spiders_sprite3, &spiders_sprite4, &spiders_sprite5, &spiders_sprite6, &spiders_sprite7
+};
+
 /* Offsets for diverging spiders movement. */
-static short factors[6] = {-28, 6, -20, 20, 30, -27};
+static short factors[8] = {-8, 32, -16, 24, -24, 16, -32, 8};
 
 /* Draws lines with blitter to create a spring.
  * It takes position of a spider, numbers of points in a spring
@@ -78,7 +87,7 @@ static void MakeCopperList(CopListT *cp)
 {
   CopInit(cp);
   CopSetupSprites(cp, sprptr);
-  ITER(i, 0, 6, CopInsSet32(sprptr[i], sprite[i]));
+  ITER(i, 0, 8, CopInsSet32(sprptr[i], sprite[i]));
   CopSetupBitplanes(cp, NULL, &background_bmp, DEPTH);
 
   CopMove16(cp, bplcon2, 0x20);
@@ -109,13 +118,12 @@ static void Kill(void) {
 }
 
 static void Render(void) {
-  short i, phase, y_offset, k; 
-  phase = frameCount >> 1;
+  short i, y_offset, k; 
   /* Draw one half of springs and sprites every second frame. */
   k = (frameCount & 1) ? 3 : 0;
   for(i = 0 + k; i < 3 + k; i++)
   {
-    y_offset = normfx(AMPL * COS(phase * 128 + 8 * factors[i]));
+    y_offset = normfx(AMPL * COS(frameCount * 64 + 6 * factors[i]));
     SpriteUpdatePos(sprite[i], 16, X(X_OFFSET*i), Y(Y0 + y_offset));
     {
       Area2D area = {.x = X_OFFSET * i + 1, .y = START_DRAW, .w = 16, .h = 130};
