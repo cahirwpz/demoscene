@@ -111,10 +111,7 @@ static void Kill(void)
 
 static void Render(void)
 {
-    static int progress = 0;
-    Circles(CENTER_X, CENTER_Y, progress, SMALL_R);
-    progress++;
-    progress &= 255;
+    Circles(CENTER_X, CENTER_Y, frameCount & 255, SMALL_R);
     TaskWaitVBlank();
 }
 
