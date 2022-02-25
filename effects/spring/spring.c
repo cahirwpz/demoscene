@@ -13,7 +13,7 @@
 #define HEIGHT 256
 #define DEPTH 4
 
-#define X_OFFSET 56
+#define X_OFFSET 40 
 
 #define AMPL 32
 #define Y0 130
@@ -122,10 +122,10 @@ PROFILE(Spring);
 static void Render(void) {
   short i, y_offset, k;
   /* Draw one half of springs and sprites every second frame. */
-  k = (frameCount & 1) ? 3 : 0;
+  k = (frameCount & 1) ? 4 : 0;
 
   ProfilerStart(Spring);
-  for (i = 0 + k; i < 3 + k; i++) {
+  for (i = 0 + k; i < 4 + k; i++) {
     y_offset = normfx(AMPL * COS(frameCount * 64 + 6 * factors[i]));
     SpriteUpdatePos(sprite[i], 16, X(X_OFFSET * i), Y(Y0 + y_offset));
     {
