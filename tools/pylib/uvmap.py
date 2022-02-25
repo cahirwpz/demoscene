@@ -59,11 +59,8 @@ def Ball(x, y):
 
 def should_be_cut(x, y):
     a = 0.1
-    b = 0
-    c = 0.2
-    d = 0
-
-    return abs(y) < a * abs(x) + b or abs(x) < c * abs(y) + d
+    b = 0.2
+    return abs(y) < a * abs(x) or abs(x) < b * abs(y)
 
 
 def butterfly(x, y):
