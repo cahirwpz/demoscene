@@ -36,7 +36,7 @@ static SpriteT *sprite[] = {
     &spiders_sprite4, &spiders_sprite5, &spiders_sprite6, &spiders_sprite7};
 
 /* Offsets for diverging spiders movement. */
-static short factors[8] = {-8, 32, -16, 24, -24, 16, -32, 8};
+static short factors[8] = {-32, 128, -96, 64, -160, 0, -224, -64};
 
 /* Draws lines with blitter to create a spring.
  * It takes position of a spider, numbers of points in a spring
@@ -126,7 +126,7 @@ static void Render(void) {
 
   ProfilerStart(Spring);
   for (i = 0 + k; i < 4 + k; i++) {
-    y_offset = normfx(AMPL * COS(frameCount * 64 + 6 * factors[i]));
+    y_offset = normfx(AMPL * COS(frameCount * 48 + factors[i]));
     SpriteUpdatePos(sprite[i], 16, X(X_OFFSET * i), Y(Y0 + y_offset));
     {
       Area2D area = {.x = X_OFFSET * i + 1, .y = START_DRAW, .w = 16, .h = 130};
