@@ -1,10 +1,10 @@
 #include "effect.h"
 
-/* Search following header files for useful procedures. */
-#include "blitter.h" /* blitter handling routines */
-#include "copper.h"  /* copper list construction */
-#include "bitmap.h"  /* bitmap structure */
-#include "palette.h" /* palette structure */
+#include "fx.h"
+#include "blitter.h"
+#include "copper.h"
+#include "bitmap.h"
+#include "palette.h"
 #include "circle.h"
 
 #define WIDTH 320
@@ -13,25 +13,27 @@
 #define CENTER_X (WIDTH / 2)
 #define CENTER_Y (HEIGHT / 2 + 25)
 #define SMALL_R 20
+#define BIG_R 75
+#define MAX_PROGRESS 255
 #define FIRST_LENS 3
 #define SECOND_LENS 4
 
 #include "data/clock-bg.c"
 #include "data/clock-palette.c"
-#include "data/movement_data.c"
 
 static CopListT *cp;
 static BitmapT *bckg;
 int old_x[2], old_y[2];
 
 // Only one lens is moved at a time. The circular movement is partially preprocessed.
-static void Circles(int intra_x, int intra_y, int progress, int smallR)
+static void Circles(short intra_x, short intra_y, short progress, short smallR, short bigR)
 {
-    int by_two = progress & 1;
-    int plane = by_two ? FIRST_LENS : SECOND_LENS;
+    short by_two = progress & 1;
+    short plane = by_two ? FIRST_LENS : SECOND_LENS;
+    short trig_arg = (progress * SIN_MASK) >> 8;
 
-    int x = circle_movements[by_two].x_cos[progress] + intra_x;
-    int y = circle_movements[by_two].y_sin[progress] + intra_y;
+    int x = normfx(bigR * COS(trig_arg + by_two * SIN_PI)) + intra_x;
+    int y = normfx(bigR * SIN(trig_arg + by_two * SIN_PI)) + intra_y;
 
     {
         // The initial "old" position of the lenses is set in Init()
@@ -96,10 +98,10 @@ static void Init(void)
 
     EnableDMA(DMAF_RASTER);
 
-    old_x[0] = circle_movements[0].x_cos[0] + CENTER_X;
-    old_y[0] = circle_movements[0].y_sin[0] + CENTER_Y;
-    old_x[1] = circle_movements[1].x_cos[1] + CENTER_X;
-    old_y[1] = circle_movements[1].y_sin[1] + CENTER_Y;
+    old_x[0] = CENTER_X;
+    old_y[0] = BIG_R + CENTER_Y;
+    old_x[1] = CENTER_X;
+    old_y[1] = CENTER_Y - BIG_R;
 }
 
 static void Kill(void)
@@ -111,7 +113,7 @@ static void Kill(void)
 
 static void Render(void)
 {
-    Circles(CENTER_X, CENTER_Y, frameCount & 255, SMALL_R);
+    Circles(CENTER_X, CENTER_Y, frameCount & MAX_PROGRESS, SMALL_R, BIG_R);
     TaskWaitVBlank();
 }
 
