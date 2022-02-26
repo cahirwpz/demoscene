@@ -21,7 +21,6 @@ void setup() {
   palette[20] = color(#ffff00);
   palette[21] = color(#00ff00);
     
-  // Experimental code:
   String lines[] = loadStrings("background.txt");
   for (int i = 0; i < plane_size / 16 * (bitplane_n - 2); i++)
     background[i] = Integer.reverse(Integer.decode(lines[i])) >> (32 - 16);
