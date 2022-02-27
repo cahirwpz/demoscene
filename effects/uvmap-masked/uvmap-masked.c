@@ -1,1 +1,0 @@
-../uvmap/uvmap.c

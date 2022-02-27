@@ -68,7 +68,7 @@ def Butterfly(x, y):
     r = dist(x, y, 0.0, 0.0)
 
     if r == 0.0 or y < p * x or x < q * y:
-        return (0, 0)
+        return None
 
     u = .5 * cos(3 * a) + r * tan(a) * 0.1
     v = .5 * sin(3 * a) + r / (1 if tan(a) == 0 else tan(a))
