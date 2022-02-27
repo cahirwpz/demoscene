@@ -42,6 +42,7 @@ SUBDIRS := \
 	twister-rgb \
 	uvlight \
 	uvmap \
+	uvmap-masked \
 	uvmap-rgb \
 	wireframe
 

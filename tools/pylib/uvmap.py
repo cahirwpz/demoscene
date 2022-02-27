@@ -57,20 +57,17 @@ def Ball(x, y):
         pass
 
 
-def should_be_cut(x, y):
-    a = 0.1
-    b = 0.2
-    return abs(y) < a * abs(x) or abs(x) < b * abs(y)
-
-
-def butterfly(x, y):
+def Butterfly(x, y):
     x = abs(x)
     y = abs(y)
+
+    p = 0.1
+    q = 0.2
 
     a = atan2(x, y)
     r = dist(x, y, 0.0, 0.0)
 
-    if r == 0 or should_be_cut(x, y):
+    if r == 0.0 or y < p * x or x < q * y:
         return (0, 0)
 
     u = .5 * cos(3 * a) + r * tan(a) * 0.1
