@@ -25,8 +25,7 @@ static CopListT *cp;
 static BitmapT *bckg;
 int old_x[2], old_y[2];
 
-// Only one lens is moved at a time. The circular movement is partially
-// preprocessed.
+// Only one lens is moved at a time.
 static void Circles(short intra_x, short intra_y, short progress, short smallR,
                     short bigR) {
   short by_two = progress & 1;
