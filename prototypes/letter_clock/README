@@ -1,0 +1,2 @@
+data/background.txt is a result of PNG2C conversion with the extra bits manually removed for read simplicity
+There is no point in creating palette automatically unless you come up with some smart method to do it (forcing ImageMagick to order palette in a certain way by remapping it to some palette .png?)
