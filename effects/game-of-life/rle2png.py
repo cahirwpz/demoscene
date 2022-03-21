@@ -4,7 +4,8 @@ from sys import argv
 from PIL import Image
 import re
 import argparse
- 
+
+
 header_pattern = re.compile(
     r'x\s*=\s*(\d+)\s*,\s*y\s*=\s*(\d+)(?:\s*,\s*rule\s*=\s*(\w+\/\w+)\s*)*'
 )
@@ -14,6 +15,7 @@ rotate_transforms = {
     180: Image.ROTATE_180,
     270: Image.ROTATE_270,
 }
+
 
 def convert_rle(infile):
     with open(infile, 'r') as f:
@@ -58,13 +60,14 @@ def convert_rle(infile):
         im.putpalette([0, 0, 0, 255, 255, 255])
         return im
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="Converts RLE game of life description to 1-bit PNG.")
-    parser.add_argument("infile", help="Input RLE file")
-    parser.add_argument("outfile", help="Output PNG file")
-    parser.add_argument('--rotate', help="Rotate output image", type=int,
-        choices=[90, 180, 270])
+        description='Converts RLE game of life description to 1-bit PNG.')
+    parser.add_argument('infile', help='Input RLE file')
+    parser.add_argument('outfile', help='Output PNG file')
+    parser.add_argument('--rotate', help='Rotate output image', type=int,
+                        choices=[90, 180, 270])
     args = parser.parse_args()
 
     im = convert_rle(args.infile)
