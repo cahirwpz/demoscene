@@ -67,7 +67,6 @@
 #include "data/p46basedprng.c"
 #include "data/weekenders.c"
 #include "data/beam.c"
-#include "double_pixels.h"
 
 static CopListT* cp;
 static BitmapT* current_board;
@@ -131,6 +130,23 @@ static PaletteT palette = {
     0x09F,  // 1111
   }
 };
+
+// Used by CPU to quickly transform 1x1 pixels into 2x1 pixels.
+static u_short double_pixels[256];
+
+static void MakeDoublePixels(void) {
+  u_short *data = double_pixels;
+  u_short w = 0;
+  short i;
+
+  for (i = 0; i < 256; i++) {
+    *data++ = w;
+    w |= 0xAAAA; /* let carry propagate through odd bits */
+    w++;
+    w &= 0x5555;
+    w |= w << 1;
+  }
+}
 
 // setup blitter to calculate a function of three horizontally adjacent lit pixels
 // the setup in this blit is as follows (what data each channel sees):
@@ -346,6 +362,8 @@ static void GameOfLife(void)
 
 static void Init(void) {
   u_short i;
+
+  MakeDoublePixels();
 
   lo = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
   hi = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
