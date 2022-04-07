@@ -77,21 +77,41 @@ static void MakeCopperList(CopListT *cp) {
       wrap_fg = foreground.height - fg_y - 1;
 
     for (y = 0; y < HEIGHT; y++) {
-      if ((wrap_bg - 1 == y) || (wrap_fg - 1 == y)) 
-        CopWaitSafe(cp, Y(y), 0);
-      if (wrap_bg - 1 == y)
+      u_char f = 0;
+
+      if (y == wrap_bg - 1)
+        f |= 1;
+      if (y == wrap_fg - 1)
+        f |= 2;
+      if (y == wrap_bg)
+        f |= 4;
+      if (y == wrap_fg)
+        f |= 8;
+      if (y != 0 && !(y & 15))
+        f |= 16;
+
+      if (!f)
+        continue;
+
+      CopWaitSafe(cp, Y(y), 0);
+
+      if (f & 1)
         CopMove16(cp, bpl1mod,
                   -background.bplSize + bg_bplmod + background.bytesPerRow);
-      if (wrap_fg - 1 == y)
+      if (f & 2)
         CopMove16(cp, bpl2mod,
                   -foreground.bplSize + fg_bplmod + foreground.bytesPerRow);
-
-      if ((wrap_bg == y) || (wrap_fg == y)) 
-        CopWaitSafe(cp, Y(y), 0);
-      if (wrap_bg == y)
+      if (f & 4)
         CopMove16(cp, bpl1mod, bg_bplmod);
-      if (wrap_fg == y)
+      if (f & 8)
         CopMove16(cp, bpl2mod, fg_bplmod);
+      if (f & 16) {
+        bg_pal++, fg_pal++;
+        for (j = 1; j < bg_gradient.width; j++)
+          CopSetColor(cp, j, *bg_pal++);
+        for (j = 1; j < fg_gradient.width; j++)
+          CopSetColor(cp, 8 + j, *fg_pal++);
+      }
     }
   }
 
