@@ -43,40 +43,41 @@ static void SetupLayers(CopListT *cp) {
 }
 
 #define STEP 8
-#define COLORS 8
 
 static void SetupRaster(CopListT *cp) {
   short *bg_pal = bg_gradient_pixels;
   short *fg_pal = fg_gradient_pixels;
-  short bg_pal_y = mod16(bg_y / STEP, bg_gradient_height);
-  short fg_pal_y = mod16(fg_y / STEP, fg_gradient_height);
   short wrap_bg = -1;
   short wrap_fg = -1;
-  short y, _bg_y, _fg_y;
+  short y, y_bg, y_fg;
 
-  bg_pal += bg_pal_y * bg_gradient_width + 1;
-  fg_pal += fg_pal_y * fg_gradient_width + 1;
+  {
+    short bg_pal_y = mod16(bg_y / STEP, bg_gradient_height);
+    short fg_pal_y = mod16(fg_y / STEP, fg_gradient_height);
 
-  CopSetColor(cp, 0, 0);
-  CopSetColor(cp, 1, *bg_pal++);
-  CopSetColor(cp, 2, *bg_pal++);
-  CopSetColor(cp, 3, *bg_pal++);
-  CopSetColor(cp, 4, *bg_pal++);
-  CopSetColor(cp, 5, *bg_pal++);
-  CopSetColor(cp, 6, *bg_pal++);
+    bg_pal += bg_pal_y * bg_gradient_width + 1;
+    fg_pal += fg_pal_y * fg_gradient_width + 1;
+  }
+
+  CopSetColor(cp,  0, 0);
+  CopSetColor(cp,  1, *bg_pal++);
+  CopSetColor(cp,  2, *bg_pal++);
+  CopSetColor(cp,  3, *bg_pal++);
+  CopSetColor(cp,  4, *bg_pal++);
+  CopSetColor(cp,  5, *bg_pal++);
+  CopSetColor(cp,  6, *bg_pal++);
   CopSetColor(cp,  9, *fg_pal++);
   CopSetColor(cp, 10, *fg_pal++);
   CopSetColor(cp, 11, *fg_pal++);
   CopSetColor(cp, 12, *fg_pal++);
   CopSetColor(cp, 13, *fg_pal++);
-  bg_pal_y++, fg_pal_y++;
 
   if (bg_y + HEIGHT >= background_height - 1)
     wrap_bg = background_height - bg_y - 1;
   if (fg_y + HEIGHT >= foreground_height - 1)
     wrap_fg = foreground_height - fg_y - 1;
 
-  for (y = 0, _bg_y = bg_y, _fg_y = fg_y; y < HEIGHT; y++, _bg_y++, _fg_y++) {
+  for (y = 0, y_bg = bg_y, y_fg = fg_y; y < HEIGHT; y++, y_bg++, y_fg++) {
     u_char f = 0;
 
     if (y == (short)(wrap_bg - 1))
@@ -87,9 +88,9 @@ static void SetupRaster(CopListT *cp) {
       f |= 4;
     if (y == wrap_fg)
       f |= 8;
-    if (!(_bg_y & 7))
+    if (!(y_bg & 7))
       f |= 16;
-    if (!(_fg_y & 7))
+    if (!(y_fg & 7))
       f |= 32;
 
     if (!f)
@@ -115,11 +116,9 @@ static void SetupRaster(CopListT *cp) {
     /* XXX: swapping too many colors in a single line
      * results in glitches near to the bottom of raster */
     if (f & 16) {
-      if (bg_pal_y >= bg_gradient_height) {
+      if (y_bg >= bg_gradient_height * STEP)
         bg_pal = bg_gradient_pixels;
-        bg_pal_y = 0;
-      }
-      bg_pal++, bg_pal_y++;
+      bg_pal++;
       CopSetColor(cp, 1, *bg_pal++);
       CopSetColor(cp, 2, *bg_pal++);
       CopSetColor(cp, 3, *bg_pal++);
@@ -129,11 +128,9 @@ static void SetupRaster(CopListT *cp) {
     }
 
     if (f & 32) {
-      if (fg_pal_y >= fg_gradient_height) {
+      if (y_fg >= fg_gradient_height * STEP)
         fg_pal = fg_gradient_pixels;
-        fg_pal_y = 0;
-      }
-      fg_pal++, fg_pal_y++;
+      fg_pal++;
       CopSetColor(cp,  9, *fg_pal++);
       CopSetColor(cp, 10, *fg_pal++);
       CopSetColor(cp, 11, *fg_pal++);
