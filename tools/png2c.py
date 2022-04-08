@@ -133,6 +133,12 @@ def do_bitmap(im, desc):
     print('};')
     print('')
 
+    print('#define %s_width %d' % (name, width))
+    print('#define %s_height %d' % (name, height))
+    print('#define %s_bytesPerRow %d' % (name, bytesPerRow))
+    print('#define %s_bplSize %d' % (name, bplSize))
+    print('')
+
     print('static const BitmapT %s = {' % name)
     print('  .width = %d,' % width)
     print('  .height = %d,' % height)
@@ -261,7 +267,7 @@ def do_pixmap(im, desc):
             pixeltype = 'PM_CMAP8'
             data = array('B', im.getdata())
 
-        print('static u_char _%s_data[%d] = {' % (name, stride * height))
+        print('static u_char %s_pixels[%d] = {' % (name, stride * height))
         for i in range(0, stride * height, stride):
             row = ['0x%02x' % p for p in data[i:i + stride]]
             print('  %s,' % ', '.join(row))
@@ -273,7 +279,7 @@ def do_pixmap(im, desc):
         pixeltype = 'PM_RGB12'
         data = rgb12(im)
 
-        print('static u_short _%s_data[%d] = {' % (name, stride * height))
+        print('static u_short %s_pixels[%d] = {' % (name, stride * height))
         for i in range(0, stride * height, stride):
             row = ['0x%04x' % p for p in data[i:i + stride]]
             print('  %s,' % ', '.join(row))
@@ -282,11 +288,15 @@ def do_pixmap(im, desc):
     else:
         raise SystemExit('Image pixel format %s not handled!' % im.mode)
 
+    print('#define %s_width %d' % (name, width))
+    print('#define %s_height %d' % (name, height))
+    print('')
+
     print('static const PixmapT %s = {' % name)
     print('  .type = %s,' % pixeltype)
     print('  .width = %d,' % width)
     print('  .height = %d,' % height)
-    print('  .pixels = _%s_data' % name)
+    print('  .pixels = %s_pixels' % name)
     print('};')
     print('')
 
