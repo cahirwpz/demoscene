@@ -11,19 +11,6 @@
 #include "data/stripe-up.c"
 #include "data/stripe-down.c"
 
-#if 0
-void MakeSpriteDmaChannel(void *start, u_short height[], SpriteT *sprite[]) {
-  SpriteT *spr;
-  short h;
-
-  while ((h = *height++)) {
-    spr = start;
-    start += 
-    
-  }
-}
-#endif
-
 #define WIDTH (320 - 32)
 #define HEIGHT 256
 #define DEPTH 4
