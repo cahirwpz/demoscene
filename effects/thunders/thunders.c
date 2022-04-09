@@ -27,6 +27,7 @@
 
 static BitmapT *screen0, *screen1;
 static CopListT *cp0, *cp1;
+static CopInsT *sprptr[8];
 static u_short tileColor[SIZE * SIZE];
 static short tileCycle[SIZE * SIZE];
 static short tileEnergy[SIZE * SIZE];
@@ -83,7 +84,7 @@ static void Load(void) {
     short xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
     short yo = Y((HEIGHT - 128) / 2);
 
-    SpriteUpdatePos(thunder[i], thunder_height, xo, yo);
+    SpriteUpdatePos(thunder[i], xo, yo);
   }
 
   FloorPrecalc();
@@ -390,21 +391,13 @@ static void MakeFloorCopperList(short yo, short kyo) {
   CopMove16(cp, bpl1mod, - (WIDTH * 2) / 8);
   CopMove16(cp, bpl2mod, - (WIDTH * 2) / 8);
 
-  CopSetupSprites(cp, NULL);
+  CopSetupSprites(cp, sprptr);
  
   {
     short i = mod16(frameCount, 10) * 2;
-    SpriteT *thunder0 = thunder[i];
-    SpriteT *thunder1 = thunder[i+1];
 
-    CopMove32(cp, sprpt[0], thunder0);
-    CopMove32(cp, sprpt[1], thunder1);
-    CopMove32(cp, sprpt[2], NullSprite);
-    CopMove32(cp, sprpt[3], NullSprite);
-    CopMove32(cp, sprpt[4], NullSprite);
-    CopMove32(cp, sprpt[5], NullSprite);
-    CopMove32(cp, sprpt[6], NullSprite);
-    CopMove32(cp, sprpt[7], NullSprite);
+    CopInsSetSprite(sprptr[0], thunder[i]);
+    CopInsSetSprite(sprptr[1], thunder[i+1]);
   }
 
   /* Clear out the colors. */

@@ -1,7 +1,7 @@
 #include <sprite.h>
 
 void CopSetupManualSprites(CopListT *list, CopInsT **sprptr) {
-  SpriteT *spr = NullSprite;
+  SprDataT *spr = NullSprData;
   short i;
 
   for (i = 0; i < 8; i++) {

@@ -26,15 +26,15 @@ SOURCES := \
 	DeleteBitmap.c \
 	DeleteCopList.c \
 	DeletePixmap.c \
-	DeleteSprite.c \
+	EndSprite.c \
 	InitSharedBitmap.c \
 	InsideArea.c \
 	LoadPalette.c \
+	MakeSprite.c \
 	NewBitmapCustom.c \
 	NewCopList.c \
 	NewPixmap.c \
-	NewSprite.c \
-	NullSprite.c \
+	NullSprData.c \
 	PixmapScramble_4_1.c \
 	PixmapScramble_4_2.c \
 	SetupPlayfield.c \

@@ -3,6 +3,7 @@
 #include "copper.h"
 #include "interrupt.h"
 #include "memory.h"
+#include "fx.h"
 #include "pixmap.h"
 
 #define WIDTH 160
@@ -16,14 +17,7 @@ static u_short active = 0;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 
-#include "data/texture-16-1.c"
-#include "data/gradient.c"
-#include "data/uvmap.c"
-
-#define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
-void (*UVMapRender)(u_short *chunkyEnd asm("a0"),
-                    u_short *textureHi asm("a1"),
-                    u_short *textureLo asm("a2"));
+#include "data/rork-128.c"
 
 /* [0 0 0 0 a0 a1 a2 a3] => [a0 a1 0 0 a2 a3 0 0] x 2 */
 static u_short PixelHi[16] = {
@@ -42,7 +36,11 @@ static void PixmapToTexture(const PixmapT *image,
 {
   u_char *data = image->pixels;
   short n = image->width * image->height;
-  /* Extra halves for cheap texture motion. */
+  /*
+   * Since texturing loop may iterate over whole texture (offset = 0...16383),
+   * and starting point may be set up at any position (start = 0...16383),
+   * we need the texture to be repeated twice in memory (offset + start!).
+   */
   u_short *hi0 = imageHi;
   u_short *hi1 = imageHi + n;
   u_short *lo0 = imageLo;
@@ -57,38 +55,6 @@ static void PixmapToTexture(const PixmapT *image,
     *lo0++ = lo;
     *lo1++ = lo;
   }
-}
-
-static void MakeUVMapRenderCode(void) {
-  u_short *code = (void *)UVMapRender;
-  u_short *data = uvmap + WIDTH * HEIGHT;
-
-  /* The map is pre-scrambled to avoid one c2p pass:
-   * [a b c d e f g h] => [a b e f c d g h] */
-  short n = WIDTH * HEIGHT / 32;
-
-  *code++ = 0x48a7; *code++ = 0x3f00; /* movem.w d2-d7,-(sp) */
-
-  while (n--) {
-    short m;
-
-    for (m = 0x0e00; m >= 0; m -= 0x0200) {
-      data -= 4;
-      *code++ = 0x3029 | m;  /* 3029 xxxx | move.w xxxx(a1),d0 */
-      *code++ = data[0];
-      *code++ = 0x806a | m;  /* 806a yyyy | or.w   yyyy(a2),d0 */
-      *code++ = data[1];
-      *code++ = 0x1029 | m;  /* 1029 wwww | move.b wwww(a1),d0 */
-      *code++ = data[2];
-      *code++ = 0x802a | m;  /* 802a zzzz | or.b   zzzz(a2),d0 */
-      *code++ = data[3];
-    }
-
-    *code++ = 0x48a0; *code++ = 0xff00; /* d0-d7,-(a0) */
-  }
-
-  *code++ = 0x4c9f; *code++ = 0x00fc; /* movem.w (sp)+,d2-d7 */
-  *code++ = 0x4e75; /* rts */
 }
 
 static struct {
@@ -226,13 +192,11 @@ static void ChunkyToPlanar(void) {
 }
 
 static void MakeCopperList(CopListT *cp) {
-  short *pixels = gradient.pixels;
-  short i, j;
+  short i;
 
   CopInit(cp);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  for (j = 0; j < 16; j++)
-    CopSetColor(cp, j, *pixels++);
+  CopLoadPal(cp, &texture_pal, 0);
   for (i = 0; i < HEIGHT * 2; i++) {
     CopWaitSafe(cp, Y(i + 28), 0);
     /* Line doubling. */
@@ -242,9 +206,6 @@ static void MakeCopperList(CopListT *cp) {
     /* Alternating shift by one for bitplane data. */
     CopMove16(cp, bplcon1, (i & 1) ? 0x0010 : 0x0021);
 #endif
-    if (i % 13 == 12)
-      for (j = 0; j < 16; j++)
-        CopSetColor(cp, j, *pixels++);
   }
   CopEnd(cp);
 }
@@ -252,9 +213,6 @@ static void MakeCopperList(CopListT *cp) {
 static void Init(void) {
   screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
   screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
-
-  UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
-  MakeUVMapRenderCode();
 
   textureHi = MemAlloc(texture.width * texture.height * 4, MEMF_PUBLIC);
   textureLo = MemAlloc(texture.width * texture.height * 4, MEMF_PUBLIC);
@@ -267,7 +225,7 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
 
-  cp = NewCopList(900 + 256);
+  cp = NewCopList(HEIGHT * 2 * (4 - FULLPIXEL) + 50);
   MakeCopperList(cp);
   CopListActivate(cp);
 
@@ -286,28 +244,65 @@ static void Kill(void) {
   DeleteCopList(cp);
   MemFree(textureHi);
   MemFree(textureLo);
-  MemFree(UVMapRender);
 
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
 }
 
-PROFILE(UVMap);
+void GenDrawSpan(short du asm("d2"), short dv asm("d3"));
+
+void RenderRotator(u_short *chunky asm("a0"),
+                   u_short *txtHi asm("a1"),
+                   u_short *txtLo asm("a2"),
+                   short U asm("d0"), short V asm("d1"),
+                   short dU asm("d2"), short dV asm("d3"));
+
+PROFILE(Rotator);
+
+/*
+ * Rotator is controlled by parameters that describe rectangle inscribed
+ * into a circle. p/q/r points represent top-left / bottom-left / top-right
+ * corners of screen (i.e. the rectangle) mapped into texture space. 
+ * With radius/alfa/beta it's easy to manipulate the rectange size
+ * and ratio between length of sides. radius/alfa/beta uniquely describe
+ * position and length of one side, hence other sides can be easily calculated.
+ */
+static void Rotator(void) {
+  short radius = 128 + (COS(frameCount * 17) >> 7);
+  short alfa = frameCount * 11;
+  short beta = alfa + SIN_HALF_PI + (SIN(frameCount * 13) >> 3);
+
+  int px = mul16(SIN(alfa), radius);
+  int py = mul16(COS(alfa), radius);
+
+  {
+    int qx = mul16(SIN(beta), radius);
+    int qy = mul16(COS(beta), radius);
+    short du = div16(qx - px, WIDTH) >> 4;
+    short dv = div16(qy - py, HEIGHT) >> 4;
+
+    GenDrawSpan(du, dv);
+  }
+
+  {
+    int rx = mul16(SIN(beta + SIN_PI), radius);
+    int ry = mul16(COS(beta + SIN_PI), radius);
+
+    short dU = div16(rx - px, WIDTH) >> 4;
+    short dV = div16(ry - py, HEIGHT) >> 4;
+    short U = (px >> 4) & 0x7fff;
+    short V = (py >> 4) & 0x7fff;
+
+    RenderRotator(screen[active]->planes[0], textureHi, textureLo,
+                  U, V, dU, dV);
+  }
+}
 
 static void Render(void) {
-  int size = texture.width * texture.height;
-  short offset = (frameCount * 127) & (size - 1);
-
   /* screen's bitplane #0 is used as a chunky buffer */
-  ProfilerStart(UVMap);
-  {
-    u_short *chunky = screen[active]->planes[0] + WIDTH * HEIGHT / 2;
-    u_short *txtHi = textureHi + offset;
-    u_short *txtLo = textureLo + offset;
-
-    (*UVMapRender)(chunky, txtHi, txtLo);
-  }
-  ProfilerStop(UVMap);
+  ProfilerStart(Rotator);
+  Rotator();
+  ProfilerStop(Rotator);
 
   c2p.phase = 0;
   c2p.bpl = screen[active]->planes;
@@ -315,4 +310,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(uvmap, NULL, NULL, Init, Kill, Render);
+EFFECT(rotator, NULL, NULL, Init, Kill, Render);
