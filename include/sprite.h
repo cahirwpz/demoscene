@@ -31,7 +31,8 @@
  * |    0 |    0 |
  * +======+======+
  *
- * Obviously you could place several DMA channel continuously in memory.
+ * You could organize continuous chunk of memory into several DMA channel as
+ * well. Data for another channel would begin just after a terminator.
  */
 
 typedef struct SprData {
@@ -62,10 +63,10 @@ typedef struct Sprite {
  *  Bit 0           The HSTART low bit
  */
 #define SPRCTL(X, Y, A, H)                                                     \
-  (((((Y) + (H) + 1) & 255) << 8) |                                            \
+  (((u_short)((Y) + (H) + 1) << 8) |                                           \
    (((A) & 1) << 7) |                                                          \
-   (((Y) & 256) >> 6) |                                                        \
-   ((((Y) + (H) + 1) & 256) >> 7) |                                            \
+   (((Y) >> 6) & 4) |                                                          \
+   (((u_short)((Y) + (H) + 1) >> 7) & 2) |                                     \
    ((X) & 1))
 
 extern SprDataT NullSprData[];
@@ -87,7 +88,7 @@ static inline int SprDataSize(u_short height, u_short nctrl) {
  * Returns a pointer to next usable sprite data (possibly uninitialized).
  * You should call MakeSprite or EndSprite on return value.
  */
-void MakeSprite(SprDataT **datp, u_short height, SpriteT *spr);
+void MakeSprite(SprDataT **datp, u_int height, SpriteT *spr);
 
 /*
  * Terminate sprite data for DMA channel by writing zero long word after
