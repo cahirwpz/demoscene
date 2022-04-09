@@ -1,10 +1,9 @@
 #include <sprite.h>
 
-void SpriteUpdatePos(SpriteT *spr, u_short height,
-                     u_short hstart, u_short vstart)
-{
-  u_short vstop = vstart + height + 1;
-  u_char lowctl = (hstart & 1) | (spr->ctl & 0x80);
+void SpriteUpdatePos(SpriteT *spr, u_short hstart, u_short vstart) {
+  SprDataT *dat = spr->sprdat;
+  u_short vstop = vstart + spr->height + 1;
+  u_char lowctl = (hstart & 1) | (spr->attached ? 0x80 : 0);
 
   /*
    * SPRxPOS:
@@ -26,7 +25,7 @@ void SpriteUpdatePos(SpriteT *spr, u_short height,
     lowctl |= 2;
 
   {
-    u_char *raw = (u_char *)spr;
+    u_char *raw = (u_char *)dat;
 
     *raw++ = vstart;
     *raw++ = hstart >> 1;
