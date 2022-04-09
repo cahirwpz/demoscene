@@ -118,10 +118,8 @@ static void Init(void) {
 
     for (i = 0; i < 2; i++)
       for (j = 0; j < 8; j++) {
-        MakeSprite(&dat, 64, &sprite[i][j]);
+        MakeSprite(&dat, 64, j & 1, &sprite[i][j]);
         EndSprite(&dat);
-        if (j & 1)
-          SpriteSetAttached(&sprite[i][j]);
       }
   }
 

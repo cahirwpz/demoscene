@@ -44,6 +44,7 @@ typedef struct SprData {
 typedef struct Sprite {
   SprDataT *sprdat;
   u_short height;
+  bool attached;
 } SpriteT;
 
 /*
@@ -51,7 +52,7 @@ typedef struct Sprite {
  *  Bits 15-8 contain the low 8 bits of VSTART
  *  Bits 7-0 contain the high 8 bits of HSTART
  */
-#define SPRPOS(X, Y) (((Y) << 8) | (((X) >> 1) & 255))
+#define SPRPOS(X, Y) (u_short)(((Y) << 8) | (((X) >> 1) & 255))
 
 /*
  * SPRxCTL:
@@ -63,8 +64,9 @@ typedef struct Sprite {
  *  Bit 0           The HSTART low bit
  */
 #define SPRCTL(X, Y, A, H)                                                     \
-  (((u_short)((Y) + (H) + 1) << 8) |                                           \
-   (((A) & 1) << 7) |                                                          \
+  (u_short)(                                                                   \
+   ((u_short)(((Y) + (H) + 1)) << 8) |                                         \
+   ((A) ? 0x80 : 0) |                                                          \
    (((Y) >> 6) & 4) |                                                          \
    (((u_short)((Y) + (H) + 1) >> 7) & 2) |                                     \
    ((X) & 1))
@@ -84,11 +86,12 @@ static inline int SprDataSize(u_short height, u_short nctrl) {
  * from `dat` to construct storage for sprite data.
  *
  * Information about sprite will be written back to `spr` structure.
+ * Marks sprite as attached if `attached` is set to true.
  *
  * Returns a pointer to next usable sprite data (possibly uninitialized).
  * You should call MakeSprite or EndSprite on return value.
  */
-void MakeSprite(SprDataT **datp, u_int height, SpriteT *spr);
+void MakeSprite(SprDataT **datp, u_int height, bool attached, SpriteT *spr);
 
 /*
  * Terminate sprite data for DMA channel by writing zero long word after
@@ -98,10 +101,6 @@ void EndSprite(SprDataT **datp);
 
 /* Don't call it for null sprites. */
 void SpriteUpdatePos(SpriteT *spr, u_short hstart, u_short vstart);
-
-static inline void SpriteSetAttached(SpriteT *spr) {
-  spr->sprdat->ctl |= 0x80;
-}
 
 void CopSetupSprites(CopListT *list, CopInsT **sprptr);
 void CopSetupManualSprites(CopListT *list, CopInsT **sprptr);
