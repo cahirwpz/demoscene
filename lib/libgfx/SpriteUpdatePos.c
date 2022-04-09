@@ -1,7 +1,7 @@
 #include <sprite.h>
 
 void SpriteUpdatePos(SpriteT *spr, u_short hstart, u_short vstart) {
-  SprDataT *dat = spr->data;
+  SprDataT *dat = spr->sprdat;
   u_short vstop = vstart + spr->height + 1;
   u_char lowctl = (hstart & 1) | (dat->ctl & 0x80);
 

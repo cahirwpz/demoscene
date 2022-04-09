@@ -41,7 +41,7 @@ typedef struct SprData {
 } SprDataT;
 
 typedef struct Sprite {
-  SprDataT *data;
+  SprDataT *sprdat;
   u_short height;
 } SpriteT;
 
@@ -71,11 +71,12 @@ typedef struct Sprite {
 extern SprDataT NullSprData[];
 
 /*
- * Allocates space for sprite data to be fed into DMA channel.
+ * Calculates space for sprite data to be fed into DMA channel.
  * `height` is total number of pixel lines and `nctrl` number of control words.
  */
-SprDataT *NewSprData(u_short height, u_short nctrl);
-void DeleteSprData(SprDataT *sprdat);
+static inline int SprDataSize(u_short height, u_short nctrl) {
+  return (height + nctrl) * sizeof(u_int);
+}
 
 /*
  * Consumes space for `pos`, `ctr` and `height` long words of pixel data
@@ -86,26 +87,26 @@ void DeleteSprData(SprDataT *sprdat);
  * Returns a pointer to next usable sprite data (possibly uninitialized).
  * You should call MakeSprite or EndSprite on return value.
  */
-SprDataT *MakeSprite(SpriteT *spr, SprDataT *dat, u_short height);
+void MakeSprite(SprDataT **datp, u_short height, SpriteT *spr);
 
 /*
  * Terminate sprite data for DMA channel by writing zero long word after
  * last long word of pixel data.
  */
-SprDataT *EndSprite(SprDataT *dat);
+void EndSprite(SprDataT **datp);
 
 /* Don't call it for null sprites. */
 void SpriteUpdatePos(SpriteT *spr, u_short hstart, u_short vstart);
 
 static inline void SpriteSetAttached(SpriteT *spr) {
-  spr->data->ctl |= 0x80;
+  spr->sprdat->ctl |= 0x80;
 }
 
 void CopSetupSprites(CopListT *list, CopInsT **sprptr);
 void CopSetupManualSprites(CopListT *list, CopInsT **sprptr);
 
 static inline void CopInsSetSprite(CopInsT *sprptr, SpriteT *spr) {
-  CopInsSet32(sprptr, spr->data);
+  CopInsSet32(sprptr, spr->sprdat);
 }
 
 #endif

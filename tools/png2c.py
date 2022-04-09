@@ -204,7 +204,7 @@ def do_sprite(im, desc):
         if width > 16:
             sprite += str(i)
 
-        print('static __data_chip SprDataT %s_data = {' % sprite)
+        print('static __data_chip SprDataT %s_sprdat = {' % sprite)
         print('  .pos = SPRPOS(0, 0),')
         print('  .ctl = SPRCTL(0, 0, 0, %d),' % height)
         print('  .data = {')
@@ -217,7 +217,7 @@ def do_sprite(im, desc):
         print('};')
         print('')
         print('static SpriteT %s = {' % sprite)
-        print('  .data = &%s_data,' % sprite)
+        print('  .sprdat = &%s_sprdat,' % sprite)
         print('  .height = %d,' % height)
         print('};')
         print('')
