@@ -204,24 +204,26 @@ def do_sprite(im, desc):
         if width > 16:
             sprite += str(i)
 
-        if sequence:
-            print('static __data_chip SpriteT _%s = {' % sprite)
-        else:
-            print('static __data_chip SpriteT %s = {' % sprite)
+        print('static __data_chip SprDataT %s_data = {' % sprite)
         print('  .pos = SPRPOS(0, 0),')
         print('  .ctl = SPRCTL(0, 0, 0, %d),' % height)
         print('  .data = {')
         for j in range(0, stride * depth * height, stride * depth):
             words = bpl[i + j], bpl[i + j + stride]
             print('    { 0x%04x, 0x%04x },' % words)
-        print('    /* end of sprite data */')
-        print('    { 0x0000, 0x0000 }')
+        print('    /* sprite channel terminator */')
+        print('    { 0x0000, 0x0000 },')
         print('  }')
+        print('};')
+        print('')
+        print('static SpriteT %s = {' % sprite)
+        print('  .data = &%s_data,' % sprite)
+        print('  .height = %d,' % height)
         print('};')
         print('')
 
     if sequence:
-        sprites = ['&_%s%d' % (name, i) for i in range(width // 16)]
+        sprites = ['&%s%d' % (name, i) for i in range(width // 16)]
         print('static SpriteT *%s[] = {' % name)
         print('  %s' % ', '.join(sprites))
         print('};')

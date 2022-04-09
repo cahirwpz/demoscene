@@ -1,6 +1,6 @@
 #include <sprite.h>
 #include <memory.h>
 
-void DeleteSprite(SpriteT *spr) {
+void DeleteSpriteData(SprDataT *spr) {
   MemFree(spr);
 }

@@ -4,10 +4,45 @@
 #include "copper.h"
 #include "gfx.h"
 
-typedef struct Sprite {
+/*
+ * An array of `SprData` placed in chip memory is a simple abstraction
+ * over data fed into sprite DMA channel.
+ *
+ * The data structure for DMA channel may consist of several sprite data
+ * terminated by control word filled with zeros.
+ *
+ * +======+======+ <- sprite 0
+ * |  POS |  CTL |
+ * +------+------+
+ * | DATA | DATB |
+ * | .... | .... |
+ * | DATA | DATB |
+ * +======+======+ <- sprite 1
+ * | .... | .... |
+ * +======+======+
+ * | .... | .... |
+ * +======+======+ <- sprite N-1
+ * |  POS |  CTL |
+ * +------+------+
+ * | DATA | DATB |
+ * | .... | .... |
+ * | DATA | DATB |
+ * +======+======+ <- terminator
+ * |    0 |    0 |
+ * +======+======+
+ *
+ * Obviously you could place several DMA channel continuously in memory.
+ */
+
+typedef struct SprData {
   u_short pos;
   u_short ctl;
   u_short data[0][2];
+} SprDataT;
+
+typedef struct Sprite {
+  SprDataT *data;
+  u_short height;
 } SpriteT;
 
 /*
@@ -33,20 +68,44 @@ typedef struct Sprite {
    ((((Y) + (H) + 1) & 256) >> 7) |                                            \
    ((X) & 1))
 
-extern SpriteT NullSprite[];
+extern SprDataT NullSprData[];
 
-SpriteT *NewSprite(u_short height, bool attached);
-void DeleteSprite(SpriteT *spr);
+/*
+ * Allocates space for sprite data to be fed into DMA channel.
+ * `height` is total number of pixel lines and `nctrl` number of control words.
+ */
+SprDataT *NewSprData(u_short height, u_short nctrl);
+void DeleteSprData(SprDataT *sprdat);
+
+/*
+ * Consumes space for `pos`, `ctr` and `height` long words of pixel data
+ * from `dat` to construct storage for sprite data.
+ *
+ * Information about sprite will be written back to `spr` structure.
+ *
+ * Returns a pointer to next usable sprite data (possibly uninitialized).
+ * You should call MakeSprite or EndSprite on return value.
+ */
+SprDataT *MakeSprite(SpriteT *spr, SprDataT *dat, u_short height);
+
+/*
+ * Terminate sprite data for DMA channel by writing zero long word after
+ * last long word of pixel data.
+ */
+SprDataT *EndSprite(SprDataT *dat);
 
 /* Don't call it for null sprites. */
-void SpriteUpdatePos(SpriteT *spr, u_short height,
-                     u_short hstart, u_short vstart);
+void SpriteUpdatePos(SpriteT *spr, u_short hstart, u_short vstart);
 
 static inline void SpriteSetAttached(SpriteT *spr) {
-  spr->ctl |= 0x80;
+  spr->data->ctl |= 0x80;
 }
 
 void CopSetupSprites(CopListT *list, CopInsT **sprptr);
 void CopSetupManualSprites(CopListT *list, CopInsT **sprptr);
+
+static inline void CopInsSetSprite(CopInsT *sprptr, SpriteT *spr) {
+  CopInsSet32(sprptr, spr->data);
+}
 
 #endif
