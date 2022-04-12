@@ -1,3 +1,8 @@
+/* ===== floor effect =====
+The general idea behind this effect is to dynamically manipulate the palette of the pre-rendered grayscale bitmap to achieve the illusion of depth and neon lines turning on and off. 
+Shift registers are also used to move and wrap the image around.
+*/
+
 #include "effect.h"
 #include "copper.h"
 #include "gfx.h"
@@ -101,6 +106,7 @@ static void InitStripes(void) {
   }
 }
 
+/* Initialize the table holding information about stripe's width and light intesivity in each scanline. */
 static void Init(void) {
   GenerateTable();
   GenerateStripeLight();
@@ -138,6 +144,7 @@ static void ShiftColors(short offset) {
   }
 }
 
+/* Calculate the color of the stripe, taking the light intesivity into consideration. */
 static void ColorizeStripes(CopInsT **stripeLine) {
   short i;
 
