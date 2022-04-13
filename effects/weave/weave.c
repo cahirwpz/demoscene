@@ -9,7 +9,9 @@
 
 #include "data/bar.c"
 #include "data/stripe-up.c"
+#include "data/stripe-up-2.c"
 #include "data/stripe-down.c"
+#include "data/stripe-down-2.c"
 
 #define WIDTH (320 - 32)
 #define HEIGHT 256
@@ -17,28 +19,15 @@
 #define NSPRITES 8
 
 static CopListT *cp0, *cp1;
+static CopInsT *sprptr[8];
 
 #define STRIPES 5
 #define BARS 4
-
-static void MakeStripe(CopListT *cp, short n) {
-  short i;
-
-  for (i = 0; i < 2; i++) {
-    CopMove16(cp, spr[n + i].datab, 0xffff);
-    CopMove16(cp, spr[n + i].dataa, 0xffff);
-  }
-}
 
 static inline void ChangeStripePosition(CopListT *cp, short n, short hp) {
   CopMove16(cp, spr[n + 0].pos, hp);
   CopMove16(cp, spr[n + 1].pos, hp + 8);
 }
-
-#define SPRCOL0 0xf00
-#define SPRCOL1 0xf80
-#define SPRCOL2 0xfc0
-#define SPRCOL3 0xff0
 
 static short StripePhase[STRIPES] = {1024, 512, 1536, 2048, 3072};
 static short StripePhaseIncr[STRIPES] = {7, -10, 12, -6, 14};
@@ -67,13 +56,23 @@ static void MakeCopperList(CopListT *cp) {
   CopSetupMode(cp, MODE_LORES, DEPTH);
   CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF2P1 | BPLCON2_PF1P1);
   CopLoadPal(cp, &bar_pal, 0);
+  CopLoadPal(cp, &stripe_down_pal, 16);
+  CopLoadPal(cp, &stripe_down_2_pal, 20);
+  CopLoadPal(cp, &stripe_up_pal, 24);
+  CopLoadPal(cp, &stripe_up_2_pal, 28);
 
   SetupBarBitplanes(cp, 0);
+  CopSetupSprites(cp, sprptr);
 
-  MakeStripe(cp, 0);
-  MakeStripe(cp, 4);
-  MakeStripe(cp, 2);
-  MakeStripe(cp, 6);
+  {
+    short i;
+
+    for (i = 0; i < 8; i++) {
+      SpriteT *spr = (i & 2) ? stripe_up[i & 1] : stripe_down[i & 1];
+      SpriteUpdatePos(spr, X(0), Y(0));
+      CopInsSetSprite(sprptr[i], spr);
+    }
+  }
 
   for (y = 0; y < HEIGHT; y++) {
     CopWaitSafe(cp, Y(y), 0);
@@ -83,15 +82,15 @@ static void MakeCopperList(CopListT *cp) {
 
       if (mod_y == 0) {
         if (y & 64) {
-          CopSetColor(cp, 19, SPRCOL2);
-          CopSetColor(cp, 23, SPRCOL3);
-          CopSetColor(cp, 27, SPRCOL0);
-          CopSetColor(cp, 31, SPRCOL1);
+          CopLoadPal(cp, &stripe_up_pal, 16);
+          CopLoadPal(cp, &stripe_up_2_pal, 20);
+          CopLoadPal(cp, &stripe_down_pal, 24);
+          CopLoadPal(cp, &stripe_down_2_pal, 28);
         } else {
-          CopSetColor(cp, 19, SPRCOL0);
-          CopSetColor(cp, 23, SPRCOL1);
-          CopSetColor(cp, 27, SPRCOL2);
-          CopSetColor(cp, 31, SPRCOL3);
+          CopLoadPal(cp, &stripe_down_pal, 16);
+          CopLoadPal(cp, &stripe_down_2_pal, 20);
+          CopLoadPal(cp, &stripe_up_pal, 24);
+          CopLoadPal(cp, &stripe_up_2_pal, 28);
         }
       } else if (mod_y == 16) {
         CopMove16(cp, bpl1mod, (bar.width - WIDTH) / 8 - 2);
@@ -133,14 +132,15 @@ static void Init(void) {
 
   cp0 = NewCopList(HEIGHT * 16 + 100);
   cp1 = NewCopList(HEIGHT * 16 + 100);
+
   MakeCopperList(cp0);
   MakeCopperList(cp1);
   CopListActivate(cp0);
-  EnableDMA(DMAF_RASTER);
+  EnableDMA(DMAF_RASTER|DMAF_SPRITE);
 }
 
 static void Kill(void) {
-  DisableDMA(DMAF_BLITTER|DMAF_RASTER);
+  DisableDMA(DMAF_RASTER|DMAF_SPRITE);
   DeleteCopList(cp0);
   DeleteCopList(cp1);
 }
@@ -150,9 +150,6 @@ PROFILE(MakeCopperList);
 static void Render(void) {
   short w = (bar.width - WIDTH) / 2;
   short i = 0;
-
-  (void)stripe_up;
-  (void)stripe_down;
 
   for (i = 0; i < STRIPES; i++)
     StripePhase[i] += StripePhaseIncr[i];
