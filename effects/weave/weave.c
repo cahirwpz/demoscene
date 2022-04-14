@@ -18,8 +18,53 @@
 #define DEPTH 4
 #define NSPRITES 8
 
+/*
+ * Sprite priorities:
+ *  - are fixed by the hardware
+ *  - 0 is the highest, 7 is the lowest
+ *  - bitplanes were configured to be placed between sprites 4 and 5
+ *
+ * Sprites are displayed on screen as follows:
+ *
+ * +---------+---------+---------+---------+
+ * |  green  | magenta |  yellow |  brown  |
+ * |  down   |   down  |    up   |    up   |
+ * +---------+---------+---------+---------+
+ * |   0-1   |   4-5   |   2-3   |   6-7   |
+ * |  above  |  below  |  above  |  below  |
+ * +---------+---------+---------+---------+
+ * |   4-5   |   0-1   |   6-7   |   2-3   |
+ * |  below  |  above  |  below  |  above  |
+ * +---------+---------+---------+---------+
+ */
+
+#define S0 0
+#define S1 2
+#define S2 1
+#define S3 3
+
+static const PaletteT *stripe_pal[4] = {
+  &stripe_down_pal,   /* green */
+  &stripe_up_pal,     /* yellow */
+  &stripe_down_2_pal, /* magenta */
+  &stripe_up_2_pal,   /* brown */
+};
+
+static SprDataT *spriteA[8] = {
+  &stripe_down0_sprdat, &stripe_down1_sprdat, /* S0 */
+  &stripe_down0_sprdat, &stripe_down1_sprdat, /* S1 */
+    &stripe_up0_sprdat,   &stripe_up1_sprdat, /* S2 */
+    &stripe_up0_sprdat,   &stripe_up1_sprdat, /* S3 */
+};
+
+static SprDataT *spriteB[8] = {
+    &stripe_up0_sprdat,   &stripe_up1_sprdat, /* S2 */
+    &stripe_up0_sprdat,   &stripe_up1_sprdat, /* S3 */
+  &stripe_down0_sprdat, &stripe_down1_sprdat, /* S0 */
+  &stripe_down0_sprdat, &stripe_down1_sprdat, /* S1 */
+};
+
 static CopListT *cp0, *cp1;
-static CopInsT *sprptr[8];
 
 #define STRIPES 5
 #define BARS 4
@@ -46,33 +91,33 @@ static inline void SetupBarBitplanes(CopListT *cp, short n) {
   CopMove16(cp, bpl2mod, -WIDTH / 8 - 2);
 }
 
+static inline void SetupSpriteA(CopListT *cp, u_int y) {
+  int i;
+
+  for (i = 0; i < 8; i++) {
+    u_int *dat = (u_int *)spriteA[i]->data;
+    CopMove32(cp, sprpt[i], dat + y);
+  }
+}
+
+static inline void SetupSpriteB(CopListT *cp, u_int y) {
+  int i;
+
+  for (i = 0; i < 8; i++) {
+    u_int *dat = (u_int *)spriteB[i]->data;
+    CopMove32(cp, sprpt[i], dat + y);
+  }
+}
+
 static void MakeCopperList(CopListT *cp) {
   short offset[STRIPES];
   short y, i;
 
   CopInit(cp);
-  CopSetupDisplayWindow(cp, MODE_LORES, X(16), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(0), WIDTH + 16);
-  CopSetupMode(cp, MODE_LORES, DEPTH);
-  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF2P1 | BPLCON2_PF1P1);
-  CopLoadPal(cp, &bar_pal, 0);
-  CopLoadPal(cp, &stripe_down_pal, 16);
-  CopLoadPal(cp, &stripe_down_2_pal, 20);
-  CopLoadPal(cp, &stripe_up_pal, 24);
-  CopLoadPal(cp, &stripe_up_2_pal, 28);
-
   SetupBarBitplanes(cp, 0);
-  CopSetupSprites(cp, sprptr);
 
-  {
-    short i;
-
-    for (i = 0; i < 8; i++) {
-      SpriteT *spr = (i & 2) ? stripe_up[i & 1] : stripe_down[i & 1];
-      SpriteUpdatePos(spr, X(0), Y(0));
-      CopInsSetSprite(sprptr[i], spr);
-    }
-  }
+  for (i = 0; i < 8; i++)
+    CopMove32(cp, sprpt[i], spriteA[i]);
 
   for (y = 0; y < HEIGHT; y++) {
     CopWaitSafe(cp, Y(y), 0);
@@ -82,15 +127,17 @@ static void MakeCopperList(CopListT *cp) {
 
       if (mod_y == 0) {
         if (y & 64) {
-          CopLoadPal(cp, &stripe_up_pal, 16);
-          CopLoadPal(cp, &stripe_up_2_pal, 20);
-          CopLoadPal(cp, &stripe_down_pal, 24);
-          CopLoadPal(cp, &stripe_down_2_pal, 28);
+          SetupSpriteB(cp, y);
+          CopLoadPal(cp, stripe_pal[2], 16);
+          CopLoadPal(cp, stripe_pal[3], 20);
+          CopLoadPal(cp, stripe_pal[0], 24);
+          CopLoadPal(cp, stripe_pal[1], 28);
         } else {
-          CopLoadPal(cp, &stripe_down_pal, 16);
-          CopLoadPal(cp, &stripe_down_2_pal, 20);
-          CopLoadPal(cp, &stripe_up_pal, 24);
-          CopLoadPal(cp, &stripe_up_2_pal, 28);
+          SetupSpriteA(cp, y);
+          CopLoadPal(cp, stripe_pal[0], 16);
+          CopLoadPal(cp, stripe_pal[1], 20);
+          CopLoadPal(cp, stripe_pal[2], 24);
+          CopLoadPal(cp, stripe_pal[3], 28);
         }
       } else if (mod_y == 16) {
         CopMove16(cp, bpl1mod, (bar.width - WIDTH) / 8 - 2);
@@ -106,15 +153,15 @@ static void MakeCopperList(CopListT *cp) {
       }
 
       if (y & 64) {
-        ChangeStripePosition(cp, 4, offset[0]);
-        ChangeStripePosition(cp, 0, offset[1] + 56 / 2);
-        ChangeStripePosition(cp, 6, offset[2] + 112 / 2);
-        ChangeStripePosition(cp, 2, offset[3] + 172 / 2);
+        ChangeStripePosition(cp, S1 * 2, offset[0]);
+        ChangeStripePosition(cp, S0 * 2, offset[1] + 56 / 2);
+        ChangeStripePosition(cp, S3 * 2, offset[2] + 112 / 2);
+        ChangeStripePosition(cp, S2 * 2, offset[3] + 172 / 2);
       } else {
-        ChangeStripePosition(cp, 0, offset[0]);
-        ChangeStripePosition(cp, 4, offset[1] + 56 / 2);
-        ChangeStripePosition(cp, 2, offset[2] + 112 / 2);
-        ChangeStripePosition(cp, 6, offset[3] + 172 / 2);
+        ChangeStripePosition(cp, S0 * 2, offset[0]);
+        ChangeStripePosition(cp, S1 * 2, offset[1] + 56 / 2);
+        ChangeStripePosition(cp, S2 * 2, offset[2] + 112 / 2);
+        ChangeStripePosition(cp, S3 * 2, offset[3] + 172 / 2);
       }
     } else {
       ChangeStripePosition(cp, (y >> 4) & 4, offset[0]);
@@ -128,10 +175,19 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init(void) {
-  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetupDisplayWindow(MODE_LORES, X(16), Y(0), WIDTH, HEIGHT);
+  SetupBitplaneFetch(MODE_LORES, X(0), WIDTH + 16);
+  SetupMode(MODE_LORES, DEPTH);
+  custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P1 | BPLCON2_PF1P1;
+  LoadPalette(&bar_pal, 0);
 
   cp0 = NewCopList(HEIGHT * 16 + 100);
   cp1 = NewCopList(HEIGHT * 16 + 100);
+
+  SpriteUpdatePos(&stripe_up0, X(0), Y(0));
+  SpriteUpdatePos(&stripe_up1, X(0), Y(0));
+  SpriteUpdatePos(&stripe_down0, X(0), Y(0));
+  SpriteUpdatePos(&stripe_down1, X(0), Y(0));
 
   MakeCopperList(cp0);
   MakeCopperList(cp1);
