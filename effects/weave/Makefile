@@ -1,6 +1,7 @@
 TOPDIR := $(realpath ../..)
 
-CLEAN-FILES := data/bar.c data/stripe-up.c data/stripe-down.c
+CLEAN-FILES := data/bar.c data/stripe-up.c data/stripe-down.c \
+	       data/stripe-up-2.c data/stripe-down-2.c
 
 PNG2C.bar := --bitmap bar,480x33x4 --palette bar_pal,16
 PNG2C.stripe-up := --sprite stripe_up,256,2 \
