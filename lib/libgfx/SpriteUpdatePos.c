@@ -2,7 +2,7 @@
 
 void SpriteUpdatePos(SpriteT *spr, u_short hstart, u_short vstart) {
   SprDataT *dat = spr->sprdat;
-  u_short vstop = vstart + spr->height + 1;
+  u_short vstop = vstart + spr->height;
   u_char lowctl = (hstart & 1) | (spr->attached ? 0x80 : 0);
 
   /*
