@@ -37,6 +37,9 @@ SOURCES := \
 	NullSprData.c \
 	PixmapScramble_4_1.c \
 	PixmapScramble_4_2.c \
+	SetupBitplaneFetch.c \
+	SetupDisplayWindow.c \
+	SetupMode.c \
 	SetupPlayfield.c \
 	SpriteUpdatePos.c \
 	c2p_1x1_4.asm
