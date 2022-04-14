@@ -149,7 +149,7 @@ static void MakeCopperList(CopListT *cp) {
       for (i = 0; i < STRIPES; i++) {
         short phase = StripePhase[i] + (y << 2);
         short y = normfx(SIN(phase << 3) << 3) + 32;
-        offset[i] = X(y) / 2;
+        offset[i] = X(y) >> 1;
       }
 
       if (y & 64) {
@@ -178,16 +178,18 @@ static void Init(void) {
   SetupDisplayWindow(MODE_LORES, X(16), Y(0), WIDTH, HEIGHT);
   SetupBitplaneFetch(MODE_LORES, X(0), WIDTH + 16);
   SetupMode(MODE_LORES, DEPTH);
-  custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P1 | BPLCON2_PF1P1;
   LoadPalette(&bar_pal, 0);
 
-  cp0 = NewCopList(HEIGHT * 16 + 100);
-  cp1 = NewCopList(HEIGHT * 16 + 100);
+  /* Place sprites 0-3 above playfield, and 4-7 below playfield. */
+  custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P1 | BPLCON2_PF1P1;
 
   SpriteUpdatePos(&stripe_up0, X(0), Y(0));
   SpriteUpdatePos(&stripe_up1, X(0), Y(0));
   SpriteUpdatePos(&stripe_down0, X(0), Y(0));
   SpriteUpdatePos(&stripe_down1, X(0), Y(0));
+
+  cp0 = NewCopList(HEIGHT * 16 + 100);
+  cp1 = NewCopList(HEIGHT * 16 + 100);
 
   MakeCopperList(cp0);
   MakeCopperList(cp1);
