@@ -105,12 +105,9 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
   CopListT *cp = NewCopList(INSTRUCTIONS_PER_BALL * 2 + 100);
   ballCp->cp = cp;
   CopInit(cp);
-  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y0, 320, 280);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   CopLoadPal(cp, &testscreen_pal, 0);
-  CopSetupMode(cp, MODE_LORES, testscreen.depth);
   CopSetupBitplanes(cp, NULL, &testscreen, testscreen.depth);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(0), testscreen.width);
 
   ballCp->upperBallCopper = cp->curr;
   InitCopperListBall(cp, Y0 + 2, 2);
@@ -125,6 +122,10 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
 }
 
 static void Init(void) {
+  SetupMode(MODE_LORES, testscreen.depth);
+  SetupDisplayWindow(MODE_LORES, X(0), Y0, 320, 280);
+  SetupBitplaneFetch(MODE_LORES, X(0), testscreen.width);
+
   MakeBallCopperList(&ballCopList1);
   CopListActivate(ballCopList1.cp);
 

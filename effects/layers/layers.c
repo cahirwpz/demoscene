@@ -143,21 +143,19 @@ static void SetupRaster(CopListT *cp) {
 static void MakeCopperList(CopListT *cp) {
 
   CopInit(cp);
-  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH + 16);
-  CopSetupMode(cp, MODE_DUALPF, DEPTH);
-  /* Reverse playfields priorities (for testing) */
-#if 0
-  CopMove16(cp, bplcon2, 0);
-#endif
-
   SetupLayers(cp);
   SetupRaster(cp);
   CopEnd(cp);
 }
 
 static void Init(void) {
-  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
+  SetupDisplayWindow(MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
+  SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH + 16);
+  SetupMode(MODE_DUALPF, DEPTH);
+#if 0
+  /* Reverse playfields priorities (for testing) */
+  custom->bplcon2 = 0;
+#endif
 
   cp0 = NewCopList(500);
   cp1 = NewCopList(500);
@@ -167,7 +165,7 @@ static void Init(void) {
 }
 
 static void Kill(void) {
-  DisableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
+  DisableDMA(DMAF_RASTER);
   DeleteCopList(cp0);
   DeleteCopList(cp1);
 }

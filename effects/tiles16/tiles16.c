@@ -53,9 +53,6 @@ static void Load(void) {
 
 static void MakeCopperList(CopListT *cp, int i) {
   CopInit(cp);
-  CopSetupMode(cp, MODE_LORES, DEPTH);
-  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH - 16, HEIGHT - 16);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH);
   CopSetupBitplanes(cp, bplptr[i], screen[i], DEPTH);
   bplcon1[i] = CopMove16(cp, bplcon1, 0);
   CopEnd(cp);
@@ -73,6 +70,9 @@ static void Init(void) {
   screen[1] = NewBitmapCustom(WIDTH, HEIGHT + extra, DEPTH,
                               BM_CLEAR | BM_DISPLAYABLE | BM_INTERLEAVED);
 
+  SetupMode(MODE_LORES, DEPTH);
+  SetupDisplayWindow(MODE_LORES, X(0), Y(0), WIDTH - 16, HEIGHT - 16);
+  SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH);
   LoadPalette(&tiles_pal, 0);
 
   cp[0] = NewCopList(100);
