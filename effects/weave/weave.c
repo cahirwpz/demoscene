@@ -8,6 +8,7 @@
 #include "fx.h"
 
 #include "data/bar.c"
+#include "data/stripes.c"
 #include "data/stripe-up.c"
 #include "data/stripe-up-2.c"
 #include "data/stripe-down.c"
@@ -27,7 +28,6 @@
  * Sprites are displayed on screen as follows:
  *
  * +---------+---------+---------+---------+
- * |  green  | magenta |  yellow |  brown  |
  * |  down   |   down  |    up   |    up   |
  * +---------+---------+---------+---------+
  * |   0-1   |   4-5   |   2-3   |   6-7   |
@@ -44,24 +44,24 @@
 #define S3 3
 
 static const PaletteT *stripe_pal[4] = {
-  &stripe_down_pal,   /* green */
-  &stripe_up_pal,     /* yellow */
-  &stripe_down_2_pal, /* magenta */
-  &stripe_up_2_pal,   /* brown */
+  &stripe_down_2_pal,
+  &stripe_up_pal,
+  &stripe_down_pal,
+  &stripe_up_2_pal,
 };
 
 static SprDataT *spriteA[8] = {
-  &stripe_down0_sprdat, &stripe_down1_sprdat, /* S0 */
-  &stripe_down0_sprdat, &stripe_down1_sprdat, /* S1 */
-    &stripe_up0_sprdat,   &stripe_up1_sprdat, /* S2 */
-    &stripe_up0_sprdat,   &stripe_up1_sprdat, /* S3 */
+  &stripes0_sprdat, &stripes1_sprdat, /* S0 */
+  &stripes0_sprdat, &stripes1_sprdat, /* S1 */
+  &stripes2_sprdat, &stripes3_sprdat, /* S2 */
+  &stripes2_sprdat, &stripes3_sprdat, /* S3 */
 };
 
 static SprDataT *spriteB[8] = {
-    &stripe_up0_sprdat,   &stripe_up1_sprdat, /* S2 */
-    &stripe_up0_sprdat,   &stripe_up1_sprdat, /* S3 */
-  &stripe_down0_sprdat, &stripe_down1_sprdat, /* S0 */
-  &stripe_down0_sprdat, &stripe_down1_sprdat, /* S1 */
+  &stripes2_sprdat, &stripes3_sprdat, /* S2 */
+  &stripes2_sprdat, &stripes3_sprdat, /* S3 */
+  &stripes0_sprdat, &stripes1_sprdat, /* S0 */
+  &stripes0_sprdat, &stripes1_sprdat, /* S1 */
 };
 
 static CopListT *cp0, *cp1;
@@ -183,10 +183,10 @@ static void Init(void) {
   /* Place sprites 0-3 above playfield, and 4-7 below playfield. */
   custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P1 | BPLCON2_PF1P1;
 
-  SpriteUpdatePos(&stripe_up0, X(0), Y(0));
-  SpriteUpdatePos(&stripe_up1, X(0), Y(0));
-  SpriteUpdatePos(&stripe_down0, X(0), Y(0));
-  SpriteUpdatePos(&stripe_down1, X(0), Y(0));
+  SpriteUpdatePos(&stripes0, X(0), Y(0));
+  SpriteUpdatePos(&stripes1, X(0), Y(0));
+  SpriteUpdatePos(&stripes2, X(0), Y(0));
+  SpriteUpdatePos(&stripes3, X(0), Y(0));
 
   cp0 = NewCopList(HEIGHT * 16 + 100);
   cp1 = NewCopList(HEIGHT * 16 + 100);
