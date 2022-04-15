@@ -75,8 +75,8 @@ static CopListT *cp0, *cp1;
 #define BARS 4
 
 static inline void ChangeStripePosition(CopListT *cp, short n, short hp) {
-  CopMove16(cp, spr[n + 0].pos, hp);
-  CopMove16(cp, spr[n + 1].pos, hp + 8);
+  CopMove16(cp, spr[n * 2 + 0].pos, hp);
+  CopMove16(cp, spr[n * 2 + 1].pos, hp + 8);
 }
 
 #define SL4(x) ((x) << 4)
@@ -182,29 +182,29 @@ static void MakeCopperList(CopListT *cp) {
       }
 
       if (y & 64) {
-        ChangeStripePosition(cp, S1 * 2, offset[0]);
-        ChangeStripePosition(cp, S0 * 2, offset[1] + O1 / 2);
-        ChangeStripePosition(cp, S3 * 2, offset[2] + O2 / 2);
-        ChangeStripePosition(cp, S2 * 2, offset[3] + O3 / 2);
+        ChangeStripePosition(cp, S1, offset[0]);
+        ChangeStripePosition(cp, S0, offset[1] + O1 / 2);
+        ChangeStripePosition(cp, S3, offset[2] + O2 / 2);
+        ChangeStripePosition(cp, S2, offset[3] + O3 / 2);
         CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S1 * 2, offset[4] + O4 / 2);
+        ChangeStripePosition(cp, S1, offset[4] + O4 / 2);
       } else {
-        ChangeStripePosition(cp, S0 * 2, offset[0]);
-        ChangeStripePosition(cp, S1 * 2, offset[1] + O1 / 2);
-        ChangeStripePosition(cp, S2 * 2, offset[2] + O2 / 2);
-        ChangeStripePosition(cp, S3 * 2, offset[3] + O3 / 2);
+        ChangeStripePosition(cp, S0, offset[0]);
+        ChangeStripePosition(cp, S1, offset[1] + O1 / 2);
+        ChangeStripePosition(cp, S2, offset[2] + O2 / 2);
+        ChangeStripePosition(cp, S3, offset[3] + O3 / 2);
         CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S0 * 2, offset[4] + O4 / 2);
+        ChangeStripePosition(cp, S0, offset[4] + O4 / 2);
       }
     } else {
       if (y & 64) {
-        ChangeStripePosition(cp, S1 * 2, offset[0]);
+        ChangeStripePosition(cp, S1, offset[0]);
         CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S1 * 2, offset[4] + O4 / 2);
+        ChangeStripePosition(cp, S1, offset[4] + O4 / 2);
       } else {
-        ChangeStripePosition(cp, S0 * 2, offset[0]);
+        ChangeStripePosition(cp, S0, offset[0]);
         CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S0 * 2, offset[4] + O4 / 2);
+        ChangeStripePosition(cp, S0, offset[4] + O4 / 2);
       }
     }
   }
