@@ -71,16 +71,13 @@ static SprDataT *spriteB[8] = {
 };
 
 static CopListT *cp0, *cp1;
+static char sintab8[256];
 
 #define STRIPES 5
 #define BARS 4
 
-#define SL4(x) ((x) << 4)
-
-static u_short StripePhase[STRIPES] = {
-  SL4(1024), SL4(512), SL4(1536), SL4(2048), SL4(3072)};
-static short StripePhaseIncr[STRIPES] = {
-  SL4(7), SL4(-10), SL4(12), SL4(-6), SL4(14)};
+static short StripePhase[STRIPES] = { 4, 2, 3, 8, 12 };
+static short StripePhaseIncr[STRIPES] = { 7, -10, 12, -6, 14 };
 static short BarOffset[STRIPES];
 
 static inline void SetupBarBitplanes(CopListT *cp, short n) {
@@ -208,42 +205,40 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
-static inline short SIN8(short a) {
-  short res;
-  a &= SIN_MASK << 1;
-  asm("moveb (%2,%1:w),%0\n\t"
-      "extw %0\n\t"
-      : "=r" (res)
-      : "d" (a), "a" (sintab)
-      : "1");
-  return res;
-}
-
-#define COFF(x) (X(x + 32) << 1)
+#define HPOFF(x) (X(x + 32) / 2)
 
 static void CalculateStripeOffsets(void) {
   static const short offset[STRIPES] = {
-    COFF(O0), COFF(O1), COFF(O2), COFF(O3), COFF(O4) };
+    HPOFF(O0), HPOFF(O1), HPOFF(O2), HPOFF(O3), HPOFF(O4) };
   int i;
 
   for (i = 0; i < STRIPES; i++) {
     short *stripes = (short *)StripeOffset + i;
-    short phase = StripePhase[i];
-    short coff = offset[i];
+    u_char phase = StripePhase[i];
+    short hp_off = offset[i];
     short j;
 
     for (j = 0; j <= HEIGHT / 4; j++) {
-      short off = SIN8(phase) + coff;
-      *stripes = off >> 2;
-      stripes += STRIPES;
-      phase += SIN_HALF_PI / 4;
+      short hp = sintab8[phase & 0xff];
+      *stripes++ = hp + hp_off;
+      stripes += STRIPES - 1;
+      phase += 8;
     }
 
     StripePhase[i] += StripePhaseIncr[i];
   }
 }
 
+static void MakeSinTab8(void) {
+  int i, j;
+
+  for (i = 0, j = 0; i < 256; i++, j += 16)
+    sintab8[i] = sintab[j] >> 10;
+}
+
 static void Init(void) {
+  MakeSinTab8();
+
   SetupDisplayWindow(MODE_LORES, X(16), Y(0), WIDTH, HEIGHT);
   SetupBitplaneFetch(MODE_LORES, X(0), WIDTH + 16);
   SetupMode(MODE_LORES, DEPTH);
