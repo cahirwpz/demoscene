@@ -103,19 +103,15 @@ static inline void SetupBarBitplanes(CopListT *cp, short n) {
 static inline void SetupSpriteA(CopListT *cp, u_int y) {
   int i;
 
-  for (i = 0; i < 8; i++) {
-    u_int *dat = (u_int *)spriteA[i]->data;
-    CopMove32(cp, sprpt[i], dat + y);
-  }
+  for (i = 0; i < 8; i++)
+    CopMove32(cp, sprpt[i], spriteA[i]->data[y]);
 }
 
 static inline void SetupSpriteB(CopListT *cp, u_int y) {
   int i;
 
-  for (i = 0; i < 8; i++) {
-    u_int *dat = (u_int *)spriteB[i]->data;
-    CopMove32(cp, sprpt[i], dat + y);
-  }
+  for (i = 0; i < 8; i++)
+    CopMove32(cp, sprpt[i], spriteB[i]->data[y]);
 }
 
 static inline void CopLoadSprPal(CopListT *cp, const PaletteT *pal, u_int i) {
