@@ -103,7 +103,6 @@ void EndSprite(SprDataT **datp);
 void SpriteUpdatePos(SpriteT *spr, u_short hstart, u_short vstart);
 
 void CopSetupSprites(CopListT *list, CopInsT **sprptr);
-void CopSetupManualSprites(CopListT *list, CopInsT **sprptr);
 
 static inline void CopInsSetSprite(CopInsT *sprptr, SpriteT *spr) {
   CopInsSet32(sprptr, spr->sprdat);

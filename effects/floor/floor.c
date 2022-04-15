@@ -68,11 +68,7 @@ static void MakeCopperList(CopListT *cp, short n) {
   short i;
 
   CopInit(cp);
-  CopSetupMode(cp, MODE_LORES, DEPTH);
-  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH + 16);
   CopSetupBitplanes(cp, NULL, &floor, DEPTH);
-  CopSetColor(cp, 0, 0);
 
   for (i = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(i), 0);
@@ -106,6 +102,11 @@ static void Init(void) {
   GenerateStripeLight();
   GenerateStripeWidth();
   InitStripes();
+
+  SetupMode(MODE_LORES, DEPTH);
+  SetupDisplayWindow(MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
+  SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH + 16);
+  SetColor(0, 0);
 
   coplist[0] = NewCopList(100 + 2 * HEIGHT + 15 * HEIGHT / 8);
   coplist[1] = NewCopList(100 + 2 * HEIGHT + 15 * HEIGHT / 8);
