@@ -86,7 +86,7 @@ static short BarOffset[STRIPES];
 static inline void SetupBarBitplanes(CopListT *cp, short n) {
   short offset = (BarOffset[n] >> 3) & -2;
   short shift = 15 - (BarOffset[n] & 15);
-  short i;
+  int i;
 
   for (i = 0; i < 4; i++)
     CopMove32(cp, bplpt[i], bar.planes[i] + offset);
@@ -125,17 +125,6 @@ static inline CopInsT *_ChangeStripePosition(CopInsT *ins, short n, short hp) {
   return ins;
 }
 
-static inline short SIN8(short a) {
-  short res;
-  a &= SIN_MASK << 1;
-  asm("moveb (%2,%1:w),%0\n\t"
-      "extw %0\n\t"
-      : "=r" (res)
-      : "d" (a), "a" (sintab)
-      : "1");
-  return res;
-}
-
 static short StripeOffset[HEIGHT / 4 + 1][STRIPES];
 
 static void MakeCopperList(CopListT *cp) {
@@ -150,7 +139,9 @@ static void MakeCopperList(CopListT *cp) {
     CopMove32(cp, sprpt[i], spriteA[i]);
 
   for (y = 0; y < HEIGHT; y++) {
-    CopWaitSafe(cp, Y(y), 0);
+    short vp = Y(y);
+
+    CopWaitSafe(cp, vp, 0);
 
     if ((y & 3) == 0) {
       short mod_y = y & 63;
@@ -184,14 +175,14 @@ static void MakeCopperList(CopListT *cp) {
           ChangeStripePosition(ins, S0, *offset++);
           ChangeStripePosition(ins, S3, *offset++);
           ChangeStripePosition(ins, S2, *offset++);
-          CopInsWait(ins, Y(y), X(O4));
+          CopInsWait(ins, vp, X(O4));
           ChangeStripePosition(ins, S1, *offset++);
         } else {
           ChangeStripePosition(ins, S0, *offset++);
           ChangeStripePosition(ins, S1, *offset++);
           ChangeStripePosition(ins, S2, *offset++);
           ChangeStripePosition(ins, S3, *offset++);
-          CopInsWait(ins, Y(y), X(O4));
+          CopInsWait(ins, vp, X(O4));
           ChangeStripePosition(ins, S0, *offset++);
         }
 
@@ -202,11 +193,11 @@ static void MakeCopperList(CopListT *cp) {
 
       if (y & 64) {
         ChangeStripePosition(ins, S1, offset[0]);
-        CopInsWait(ins, Y(y), X(O4));
+        CopInsWait(ins, vp, X(O4));
         ChangeStripePosition(ins, S1, offset[4]);
       } else {
         ChangeStripePosition(ins, S0, offset[0]);
-        CopInsWait(ins, Y(y), X(O4));
+        CopInsWait(ins, vp, X(O4));
         ChangeStripePosition(ins, S0, offset[4]);
       }
 
@@ -217,14 +208,28 @@ static void MakeCopperList(CopListT *cp) {
   CopEnd(cp);
 }
 
+static inline short SIN8(short a) {
+  short res;
+  a &= SIN_MASK << 1;
+  asm("moveb (%2,%1:w),%0\n\t"
+      "extw %0\n\t"
+      : "=r" (res)
+      : "d" (a), "a" (sintab)
+      : "1");
+  return res;
+}
+
+#define COFF(x) (X(x + 32) << 1)
+
 static void CalculateStripeOffsets(void) {
-  static const short offset[STRIPES] = { O0, O1, O2, O3, O4 };
+  static const short offset[STRIPES] = {
+    COFF(O0), COFF(O1), COFF(O2), COFF(O3), COFF(O4) };
   int i;
 
   for (i = 0; i < STRIPES; i++) {
     short *stripes = (short *)StripeOffset + i;
     short phase = StripePhase[i];
-    short coff = X(offset[i] + 32) << 1;
+    short coff = offset[i];
     short j;
 
     for (j = 0; j <= HEIGHT / 4; j++) {
