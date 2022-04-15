@@ -49,11 +49,11 @@
 #define O3 172
 #define O4 224
 
-static const PaletteT *stripe_pal[4] = {
-  &stripe_down_2_pal,
-  &stripe_up_pal,
-  &stripe_down_pal,
-  &stripe_up_2_pal,
+static const u_short *stripe_pal[4] = {
+  &stripe_down_2_pal.colors[1],
+  &stripe_up_pal.colors[1],
+  &stripe_down_pal.colors[1],
+  &stripe_up_2_pal.colors[1],
 };
 
 static SprDataT *spriteA[8] = {
@@ -74,11 +74,6 @@ static CopListT *cp0, *cp1;
 
 #define STRIPES 5
 #define BARS 4
-
-static inline void ChangeStripePosition(CopListT *cp, short n, short hp) {
-  CopMove16(cp, spr[n * 2 + 0].pos, hp);
-  CopMove16(cp, spr[n * 2 + 1].pos, hp + 8);
-}
 
 #define SL4(x) ((x) << 4)
 
@@ -115,11 +110,19 @@ static inline void SetupSpriteB(CopListT *cp, u_int y) {
     CopMove32(cp, sprpt[i], spriteB[i]->data[y]);
 }
 
-static inline void CopLoadSprPal(CopListT *cp, const PaletteT *pal, u_int i) {
-  const u_short *col = &pal->colors[1];
-  CopMove16(cp, color[i+1], *col++);
-  CopMove16(cp, color[i+2], *col++);
-  CopMove16(cp, color[i+3], *col++);
+static inline void CopLoadSprPal(CopListT *cp, const u_short *col, u_int i) {
+  CopMove16(cp, color[i+1], col[0]);
+  CopMove16(cp, color[i+2], col[1]);
+  CopMove16(cp, color[i+3], col[2]);
+}
+
+#define ChangeStripePosition(ins, n, hp)                                       \
+  ins = _ChangeStripePosition(ins, n, hp)
+
+static inline CopInsT *_ChangeStripePosition(CopInsT *ins, short n, short hp) {
+  CopInsMove16(ins, spr[n * 2 + 0].pos, hp);
+  CopInsMove16(ins, spr[n * 2 + 1].pos, hp + 8);
+  return ins;
 }
 
 static inline short SIN8(short a) {
@@ -173,33 +176,41 @@ static void MakeCopperList(CopListT *cp) {
         SetupBarBitplanes(cp, 1 + (y >> 6));
       }
 
-      if (y & 64) {
-        ChangeStripePosition(cp, S1, offset[0]);
-        ChangeStripePosition(cp, S0, offset[1]);
-        ChangeStripePosition(cp, S3, offset[2]);
-        ChangeStripePosition(cp, S2, offset[3]);
-        CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S1, offset[4]);
-      } else {
-        ChangeStripePosition(cp, S0, offset[0]);
-        ChangeStripePosition(cp, S1, offset[1]);
-        ChangeStripePosition(cp, S2, offset[2]);
-        ChangeStripePosition(cp, S3, offset[3]);
-        CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S0, offset[4]);
+      {
+        CopInsT *ins = cp->curr;
+
+        if (y & 64) {
+          ChangeStripePosition(ins, S1, *offset++);
+          ChangeStripePosition(ins, S0, *offset++);
+          ChangeStripePosition(ins, S3, *offset++);
+          ChangeStripePosition(ins, S2, *offset++);
+          CopInsWait(ins, Y(y), X(O4));
+          ChangeStripePosition(ins, S1, *offset++);
+        } else {
+          ChangeStripePosition(ins, S0, *offset++);
+          ChangeStripePosition(ins, S1, *offset++);
+          ChangeStripePosition(ins, S2, *offset++);
+          ChangeStripePosition(ins, S3, *offset++);
+          CopInsWait(ins, Y(y), X(O4));
+          ChangeStripePosition(ins, S0, *offset++);
+        }
+
+        cp->curr = ins;
       }
-      
-      offset += STRIPES;
     } else {
+      CopInsT *ins = cp->curr;
+
       if (y & 64) {
-        ChangeStripePosition(cp, S1, offset[0]);
-        CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S1, offset[4]);
+        ChangeStripePosition(ins, S1, offset[0]);
+        CopInsWait(ins, Y(y), X(O4));
+        ChangeStripePosition(ins, S1, offset[4]);
       } else {
-        ChangeStripePosition(cp, S0, offset[0]);
-        CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S0, offset[4]);
+        ChangeStripePosition(ins, S0, offset[0]);
+        CopInsWait(ins, Y(y), X(O4));
+        ChangeStripePosition(ins, S0, offset[4]);
       }
+
+      cp->curr = ins;
     }
   }
 
