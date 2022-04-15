@@ -43,32 +43,39 @@
 #define S2 1
 #define S3 3
 
+#define DAT0A (&stripes0_sprdat) /* S0 */
+#define DAT1A (&stripes1_sprdat)
+#define DAT2A (&stripes0_sprdat) /* S1 */
+#define DAT3A (&stripes1_sprdat)
+#define DAT4A (&stripes2_sprdat) /* S2 */
+#define DAT5A (&stripes3_sprdat)
+#define DAT6A (&stripes2_sprdat) /* S3 */
+#define DAT7A (&stripes3_sprdat)
+
+#define PAL0A (&stripe_down_2_pal.colors[1])
+#define PAL1A (&stripe_up_pal.colors[1])
+#define PAL2A (&stripe_down_pal.colors[1])
+#define PAL3A (&stripe_up_2_pal.colors[1])
+
+#define DAT0B DAT4A
+#define DAT1B DAT5A
+#define DAT2B DAT6A
+#define DAT3B DAT7A
+#define DAT4B DAT0A
+#define DAT5B DAT1A
+#define DAT6B DAT2A
+#define DAT7B DAT3A
+
+#define PAL0B PAL2A
+#define PAL1B PAL3A
+#define PAL2B PAL0A
+#define PAL3B PAL1A
+
 #define O0 0
 #define O1 56
 #define O2 112
 #define O3 172
 #define O4 224
-
-static const u_short *stripe_pal[4] = {
-  &stripe_down_2_pal.colors[1],
-  &stripe_up_pal.colors[1],
-  &stripe_down_pal.colors[1],
-  &stripe_up_2_pal.colors[1],
-};
-
-static SprDataT *spriteA[8] = {
-  &stripes0_sprdat, &stripes1_sprdat, /* S0 */
-  &stripes0_sprdat, &stripes1_sprdat, /* S1 */
-  &stripes2_sprdat, &stripes3_sprdat, /* S2 */
-  &stripes2_sprdat, &stripes3_sprdat, /* S3 */
-};
-
-static SprDataT *spriteB[8] = {
-  &stripes2_sprdat, &stripes3_sprdat, /* S2 */
-  &stripes2_sprdat, &stripes3_sprdat, /* S3 */
-  &stripes0_sprdat, &stripes1_sprdat, /* S0 */
-  &stripes0_sprdat, &stripes1_sprdat, /* S1 */
-};
 
 static CopListT *cp0, *cp1;
 static char sintab8[256];
@@ -81,36 +88,65 @@ static short StripePhaseIncr[STRIPES] = { 7, -10, 12, -6, 14 };
 static short BarOffset[STRIPES];
 
 static inline void SetupBarBitplanes(CopListT *cp, short n) {
+  CopInsT *ins = cp->curr;
+
   short offset = (BarOffset[n] >> 3) & -2;
   short shift = 15 - (BarOffset[n] & 15);
-  int i;
 
-  for (i = 0; i < 4; i++)
-    CopMove32(cp, bplpt[i], bar.planes[i] + offset);
+  CopInsMove32(ins, bplpt[0], bar.planes[0] + offset);
+  CopInsMove32(ins, bplpt[1], bar.planes[1] + offset);
+  CopInsMove32(ins, bplpt[2], bar.planes[2] + offset);
+  CopInsMove32(ins, bplpt[3], bar.planes[3] + offset);
 
-  CopMove16(cp, bplcon1, (shift << 4) | shift);
-  CopMove16(cp, bpl1mod, -WIDTH / 8 - 2);
-  CopMove16(cp, bpl2mod, -WIDTH / 8 - 2);
+  CopInsMove16(ins, bplcon1, (shift << 4) | shift);
+  CopInsMove16(ins, bpl1mod, -WIDTH / 8 - 2);
+  CopInsMove16(ins, bpl2mod, -WIDTH / 8 - 2);
+
+  cp->curr = ins;
 }
 
-static inline void SetupSpriteA(CopListT *cp, u_int y) {
-  int i;
+#define CopLoadSprPal(ins, col, i)                                             \
+  ins = _CopLoadSprPal(ins, col, i)
 
-  for (i = 0; i < 8; i++)
-    CopMove32(cp, sprpt[i], spriteA[i]->data[y]);
+static inline CopInsT *_CopLoadSprPal(CopInsT *ins, const u_short *col, int i) {
+  CopInsMove16(ins, color[i+1], col[0]);
+  CopInsMove16(ins, color[i+2], col[1]);
+  CopInsMove16(ins, color[i+3], col[2]);
+  return ins;
 }
 
-static inline void SetupSpriteB(CopListT *cp, u_int y) {
-  int i;
-
-  for (i = 0; i < 8; i++)
-    CopMove32(cp, sprpt[i], spriteB[i]->data[y]);
+static inline void SetupSpriteA(CopListT *cp, int y) {
+  CopInsT *ins = cp->curr;
+  CopInsMove32(ins, sprpt[0], DAT0A->data[y]);
+  CopInsMove32(ins, sprpt[1], DAT1A->data[y]);
+  CopInsMove32(ins, sprpt[2], DAT2A->data[y]);
+  CopInsMove32(ins, sprpt[3], DAT3A->data[y]);
+  CopInsMove32(ins, sprpt[4], DAT4A->data[y]);
+  CopInsMove32(ins, sprpt[5], DAT5A->data[y]);
+  CopInsMove32(ins, sprpt[6], DAT6A->data[y]);
+  CopInsMove32(ins, sprpt[7], DAT7A->data[y]);
+  CopLoadSprPal(ins, PAL0A, 16);
+  CopLoadSprPal(ins, PAL1A, 20);
+  CopLoadSprPal(ins, PAL2A, 24);
+  CopLoadSprPal(ins, PAL3A, 28);
+  cp->curr = ins;
 }
 
-static inline void CopLoadSprPal(CopListT *cp, const u_short *col, u_int i) {
-  CopMove16(cp, color[i+1], col[0]);
-  CopMove16(cp, color[i+2], col[1]);
-  CopMove16(cp, color[i+3], col[2]);
+static inline void SetupSpriteB(CopListT *cp, int y) {
+  CopInsT *ins = cp->curr;
+  CopInsMove32(ins, sprpt[0], DAT0B->data[y]);
+  CopInsMove32(ins, sprpt[1], DAT1B->data[y]);
+  CopInsMove32(ins, sprpt[2], DAT2B->data[y]);
+  CopInsMove32(ins, sprpt[3], DAT3B->data[y]);
+  CopInsMove32(ins, sprpt[4], DAT4B->data[y]);
+  CopInsMove32(ins, sprpt[5], DAT5B->data[y]);
+  CopInsMove32(ins, sprpt[6], DAT6B->data[y]);
+  CopInsMove32(ins, sprpt[7], DAT7B->data[y]);
+  CopLoadSprPal(ins, PAL2B, 16);
+  CopLoadSprPal(ins, PAL3B, 20);
+  CopLoadSprPal(ins, PAL0B, 24);
+  CopLoadSprPal(ins, PAL1B, 28);
+  cp->curr = ins;
 }
 
 #define ChangeStripePosition(ins, n, hp)                                       \
@@ -127,13 +163,10 @@ static short StripeOffset[HEIGHT / 4 + 1][STRIPES];
 static void MakeCopperList(CopListT *cp) {
   short *offset = (short *)StripeOffset;
   short y;
-  int i;
 
   CopInit(cp);
   SetupBarBitplanes(cp, 0);
-
-  for (i = 0; i < 8; i++)
-    CopMove32(cp, sprpt[i], spriteA[i]);
+  SetupSpriteA(cp, -1);
 
   for (y = 0; y < HEIGHT; y++) {
     short vp = Y(y);
@@ -146,16 +179,8 @@ static void MakeCopperList(CopListT *cp) {
       if (mod_y == 0) {
         if (y & 64) {
           SetupSpriteB(cp, y);
-          CopLoadSprPal(cp, stripe_pal[0], 24);
-          CopLoadSprPal(cp, stripe_pal[1], 28);
-          CopLoadSprPal(cp, stripe_pal[2], 16);
-          CopLoadSprPal(cp, stripe_pal[3], 20);
         } else {
           SetupSpriteA(cp, y);
-          CopLoadSprPal(cp, stripe_pal[0], 16);
-          CopLoadSprPal(cp, stripe_pal[1], 20);
-          CopLoadSprPal(cp, stripe_pal[2], 24);
-          CopLoadSprPal(cp, stripe_pal[3], 28);
         }
       } else if (mod_y == 16) {
         CopMove16(cp, bpl1mod, (bar_width - WIDTH) / 8 - 2);
@@ -229,6 +254,15 @@ static void CalculateStripeOffsets(void) {
   }
 }
 
+static void CalculateBarOffsets(void) {
+  short w = (bar_width - WIDTH) / 2;
+  short f = frameCount * 16;
+  int i = 0;
+
+  for (i = 0; i < BARS; i++, f += SIN_HALF_PI)
+    BarOffset[i] = w + normfx(SIN(f) * w);
+}
+
 static void MakeSinTab8(void) {
   int i, j;
 
@@ -272,15 +306,8 @@ PROFILE(MakeCopperList);
 
 static void Render(void) {
   ProfilerStart(Prepare);
-  {
-    short w = (bar.width - WIDTH) / 2;
-    short i = 0;
-
-    CalculateStripeOffsets();
-
-    for (i = 0; i < BARS; i++)
-      BarOffset[i] = normfx(SIN(frameCount * 16 + i * SIN_HALF_PI) * w) + w;
-  }
+  CalculateStripeOffsets();
+  CalculateBarOffsets();
   ProfilerStop(Prepare);
 
   ProfilerStart(MakeCopperList);
