@@ -183,6 +183,7 @@ CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, short start);
 CopInsT *CopLoadColor(CopListT *list, short start, short end, short color);
 
 void CopSetupMode(CopListT *list, u_short mode, u_short depth);
+/* Arguments must be always specified in low resolution coordinates. */
 void CopSetupDisplayWindow(CopListT *list, u_short mode, 
                            u_short xs, u_short ys, u_short w, u_short h);
 void CopSetupBitplaneFetch(CopListT *list, u_short mode,
