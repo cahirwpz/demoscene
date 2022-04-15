@@ -43,6 +43,7 @@
 #define S2 1
 #define S3 3
 
+#define O0 0
 #define O1 56
 #define O2 112
 #define O3 172
@@ -132,9 +133,12 @@ static inline short SIN8(short a) {
   return res;
 }
 
+static short StripeOffset[HEIGHT / 4 + 1][STRIPES];
+
 static void MakeCopperList(CopListT *cp) {
-  short offset[STRIPES];
-  short y, i;
+  short *offset = (short *)StripeOffset;
+  short y;
+  int i;
 
   CopInit(cp);
   SetupBarBitplanes(cp, 0);
@@ -151,10 +155,10 @@ static void MakeCopperList(CopListT *cp) {
       if (mod_y == 0) {
         if (y & 64) {
           SetupSpriteB(cp, y);
-          CopLoadSprPal(cp, stripe_pal[2], 16);
-          CopLoadSprPal(cp, stripe_pal[3], 20);
           CopLoadSprPal(cp, stripe_pal[0], 24);
           CopLoadSprPal(cp, stripe_pal[1], 28);
+          CopLoadSprPal(cp, stripe_pal[2], 16);
+          CopLoadSprPal(cp, stripe_pal[3], 20);
         } else {
           SetupSpriteA(cp, y);
           CopLoadSprPal(cp, stripe_pal[0], 16);
@@ -169,47 +173,58 @@ static void MakeCopperList(CopListT *cp) {
         SetupBarBitplanes(cp, 1 + (y >> 6));
       }
 
-      {
-        short *phasep = StripePhase;
-        short *offsetp = offset;
-        short yp = SL4(y << 2);
-
-        for (i = 0; i < STRIPES; i++) {
-          short phase = (*phasep++) + yp;
-          short y = SIN8(phase) >> 1;
-          *offsetp++ = (short)X(y + 32) >> 1;
-        }
-      }
-
       if (y & 64) {
         ChangeStripePosition(cp, S1, offset[0]);
-        ChangeStripePosition(cp, S0, offset[1] + O1 / 2);
-        ChangeStripePosition(cp, S3, offset[2] + O2 / 2);
-        ChangeStripePosition(cp, S2, offset[3] + O3 / 2);
+        ChangeStripePosition(cp, S0, offset[1]);
+        ChangeStripePosition(cp, S3, offset[2]);
+        ChangeStripePosition(cp, S2, offset[3]);
         CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S1, offset[4] + O4 / 2);
+        ChangeStripePosition(cp, S1, offset[4]);
       } else {
         ChangeStripePosition(cp, S0, offset[0]);
-        ChangeStripePosition(cp, S1, offset[1] + O1 / 2);
-        ChangeStripePosition(cp, S2, offset[2] + O2 / 2);
-        ChangeStripePosition(cp, S3, offset[3] + O3 / 2);
+        ChangeStripePosition(cp, S1, offset[1]);
+        ChangeStripePosition(cp, S2, offset[2]);
+        ChangeStripePosition(cp, S3, offset[3]);
         CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S0, offset[4] + O4 / 2);
+        ChangeStripePosition(cp, S0, offset[4]);
       }
+      
+      offset += STRIPES;
     } else {
       if (y & 64) {
         ChangeStripePosition(cp, S1, offset[0]);
         CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S1, offset[4] + O4 / 2);
+        ChangeStripePosition(cp, S1, offset[4]);
       } else {
         ChangeStripePosition(cp, S0, offset[0]);
         CopWait(cp, Y(y), X(O4));
-        ChangeStripePosition(cp, S0, offset[4] + O4 / 2);
+        ChangeStripePosition(cp, S0, offset[4]);
       }
     }
   }
 
   CopEnd(cp);
+}
+
+static void CalculateStripeOffsets(void) {
+  static const short offset[STRIPES] = { O0, O1, O2, O3, O4 };
+  int i;
+
+  for (i = 0; i < STRIPES; i++) {
+    short *stripes = (short *)StripeOffset + i;
+    short phase = StripePhase[i];
+    short coff = X(offset[i] + 32) << 1;
+    short j;
+
+    for (j = 0; j <= HEIGHT / 4; j++) {
+      short off = SIN8(phase) + coff;
+      *stripes = off >> 2;
+      stripes += STRIPES;
+      phase += SIN_HALF_PI / 4;
+    }
+
+    StripePhase[i] += StripePhaseIncr[i];
+  }
 }
 
 static void Init(void) {
@@ -241,17 +256,21 @@ static void Kill(void) {
   DeleteCopList(cp1);
 }
 
+PROFILE(Prepare);
 PROFILE(MakeCopperList);
 
 static void Render(void) {
-  short w = (bar.width - WIDTH) / 2;
-  short i = 0;
+  ProfilerStart(Prepare);
+  {
+    short w = (bar.width - WIDTH) / 2;
+    short i = 0;
 
-  for (i = 0; i < STRIPES; i++)
-    StripePhase[i] += StripePhaseIncr[i];
+    CalculateStripeOffsets();
 
-  for (i = 0; i < BARS; i++)
-    BarOffset[i] = normfx(SIN(frameCount * 16 + i * SIN_HALF_PI) * w) + w;
+    for (i = 0; i < BARS; i++)
+      BarOffset[i] = normfx(SIN(frameCount * 16 + i * SIN_HALF_PI) * w) + w;
+  }
+  ProfilerStop(Prepare);
 
   ProfilerStart(MakeCopperList);
   MakeCopperList(cp1);
