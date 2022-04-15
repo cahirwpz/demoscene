@@ -8,11 +8,8 @@
 #include "fx.h"
 
 #include "data/bar.c"
+#include "data/colors.c"
 #include "data/stripes.c"
-#include "data/stripe-up.c"
-#include "data/stripe-up-2.c"
-#include "data/stripe-down.c"
-#include "data/stripe-down-2.c"
 
 #define WIDTH (320 - 32)
 #define HEIGHT 256
@@ -52,10 +49,10 @@
 #define DAT6A (&stripes2_sprdat) /* S3 */
 #define DAT7A (&stripes3_sprdat)
 
-#define PAL0A (&stripe_down_2_pal.colors[1])
-#define PAL1A (&stripe_up_pal.colors[1])
-#define PAL2A (&stripe_down_pal.colors[1])
-#define PAL3A (&stripe_up_2_pal.colors[1])
+#define PAL0A (&stripes_pal.colors[1])
+#define PAL1A (&stripes_pal.colors[13])
+#define PAL2A (&stripes_pal.colors[5])
+#define PAL3A (&stripes_pal.colors[9])
 
 #define DAT0B DAT4A
 #define DAT1B DAT5A
@@ -142,10 +139,10 @@ static inline void SetupSpriteB(CopListT *cp, int y) {
   CopInsMove32(ins, sprpt[5], DAT5B->data[y]);
   CopInsMove32(ins, sprpt[6], DAT6B->data[y]);
   CopInsMove32(ins, sprpt[7], DAT7B->data[y]);
-  CopLoadSprPal(ins, PAL2B, 16);
-  CopLoadSprPal(ins, PAL3B, 20);
-  CopLoadSprPal(ins, PAL0B, 24);
-  CopLoadSprPal(ins, PAL1B, 28);
+  CopLoadSprPal(ins, PAL0B, 16);
+  CopLoadSprPal(ins, PAL1B, 20);
+  CopLoadSprPal(ins, PAL2B, 24);
+  CopLoadSprPal(ins, PAL3B, 28);
   cp->curr = ins;
 }
 
