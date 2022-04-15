@@ -43,6 +43,11 @@
 #define S2 1
 #define S3 3
 
+#define O1 56
+#define O2 112
+#define O3 172
+#define O4 224
+
 static const PaletteT *stripe_pal[4] = {
   &stripe_down_2_pal,
   &stripe_up_pal,
@@ -74,8 +79,12 @@ static inline void ChangeStripePosition(CopListT *cp, short n, short hp) {
   CopMove16(cp, spr[n + 1].pos, hp + 8);
 }
 
-static short StripePhase[STRIPES] = {1024, 512, 1536, 2048, 3072};
-static short StripePhaseIncr[STRIPES] = {7, -10, 12, -6, 14};
+#define SL4(x) ((x) << 4)
+
+static u_short StripePhase[STRIPES] = {
+  SL4(1024), SL4(512), SL4(1536), SL4(2048), SL4(3072)};
+static short StripePhaseIncr[STRIPES] = {
+  SL4(7), SL4(-10), SL4(12), SL4(-6), SL4(14)};
 static short BarOffset[STRIPES];
 
 static inline void SetupBarBitplanes(CopListT *cp, short n) {
@@ -109,6 +118,24 @@ static inline void SetupSpriteB(CopListT *cp, u_int y) {
   }
 }
 
+static inline void CopLoadSprPal(CopListT *cp, const PaletteT *pal, u_int i) {
+  const u_short *col = &pal->colors[1];
+  CopMove16(cp, color[i+1], *col++);
+  CopMove16(cp, color[i+2], *col++);
+  CopMove16(cp, color[i+3], *col++);
+}
+
+static inline short SIN8(short a) {
+  short res;
+  a &= SIN_MASK << 1;
+  asm("moveb (%2,%1:w),%0\n\t"
+      "extw %0\n\t"
+      : "=r" (res)
+      : "d" (a), "a" (sintab)
+      : "1");
+  return res;
+}
+
 static void MakeCopperList(CopListT *cp) {
   short offset[STRIPES];
   short y, i;
@@ -128,47 +155,62 @@ static void MakeCopperList(CopListT *cp) {
       if (mod_y == 0) {
         if (y & 64) {
           SetupSpriteB(cp, y);
-          CopLoadPal(cp, stripe_pal[2], 16);
-          CopLoadPal(cp, stripe_pal[3], 20);
-          CopLoadPal(cp, stripe_pal[0], 24);
-          CopLoadPal(cp, stripe_pal[1], 28);
+          CopLoadSprPal(cp, stripe_pal[2], 16);
+          CopLoadSprPal(cp, stripe_pal[3], 20);
+          CopLoadSprPal(cp, stripe_pal[0], 24);
+          CopLoadSprPal(cp, stripe_pal[1], 28);
         } else {
           SetupSpriteA(cp, y);
-          CopLoadPal(cp, stripe_pal[0], 16);
-          CopLoadPal(cp, stripe_pal[1], 20);
-          CopLoadPal(cp, stripe_pal[2], 24);
-          CopLoadPal(cp, stripe_pal[3], 28);
+          CopLoadSprPal(cp, stripe_pal[0], 16);
+          CopLoadSprPal(cp, stripe_pal[1], 20);
+          CopLoadSprPal(cp, stripe_pal[2], 24);
+          CopLoadSprPal(cp, stripe_pal[3], 28);
         }
       } else if (mod_y == 16) {
-        CopMove16(cp, bpl1mod, (bar.width - WIDTH) / 8 - 2);
-        CopMove16(cp, bpl2mod, (bar.width - WIDTH) / 8 - 2);
+        CopMove16(cp, bpl1mod, (bar_width - WIDTH) / 8 - 2);
+        CopMove16(cp, bpl2mod, (bar_width - WIDTH) / 8 - 2);
       } else if (mod_y == 48) {
         SetupBarBitplanes(cp, 1 + (y >> 6));
       }
 
-      for (i = 0; i < STRIPES; i++) {
-        short phase = StripePhase[i] + (y << 2);
-        short y = normfx(SIN(phase << 3) << 3) + 32;
-        offset[i] = X(y) >> 1;
+      {
+        short *phasep = StripePhase;
+        short *offsetp = offset;
+        short yp = SL4(y << 2);
+
+        for (i = 0; i < STRIPES; i++) {
+          short phase = (*phasep++) + yp;
+          short y = SIN8(phase) >> 1;
+          *offsetp++ = (short)X(y + 32) >> 1;
+        }
       }
 
       if (y & 64) {
         ChangeStripePosition(cp, S1 * 2, offset[0]);
-        ChangeStripePosition(cp, S0 * 2, offset[1] + 56 / 2);
-        ChangeStripePosition(cp, S3 * 2, offset[2] + 112 / 2);
-        ChangeStripePosition(cp, S2 * 2, offset[3] + 172 / 2);
+        ChangeStripePosition(cp, S0 * 2, offset[1] + O1 / 2);
+        ChangeStripePosition(cp, S3 * 2, offset[2] + O2 / 2);
+        ChangeStripePosition(cp, S2 * 2, offset[3] + O3 / 2);
+        CopWait(cp, Y(y), X(O4));
+        ChangeStripePosition(cp, S1 * 2, offset[4] + O4 / 2);
       } else {
         ChangeStripePosition(cp, S0 * 2, offset[0]);
-        ChangeStripePosition(cp, S1 * 2, offset[1] + 56 / 2);
-        ChangeStripePosition(cp, S2 * 2, offset[2] + 112 / 2);
-        ChangeStripePosition(cp, S3 * 2, offset[3] + 172 / 2);
+        ChangeStripePosition(cp, S1 * 2, offset[1] + O1 / 2);
+        ChangeStripePosition(cp, S2 * 2, offset[2] + O2 / 2);
+        ChangeStripePosition(cp, S3 * 2, offset[3] + O3 / 2);
+        CopWait(cp, Y(y), X(O4));
+        ChangeStripePosition(cp, S0 * 2, offset[4] + O4 / 2);
       }
     } else {
-      ChangeStripePosition(cp, (y >> 4) & 4, offset[0]);
+      if (y & 64) {
+        ChangeStripePosition(cp, S1 * 2, offset[0]);
+        CopWait(cp, Y(y), X(O4));
+        ChangeStripePosition(cp, S1 * 2, offset[4] + O4 / 2);
+      } else {
+        ChangeStripePosition(cp, S0 * 2, offset[0]);
+        CopWait(cp, Y(y), X(O4));
+        ChangeStripePosition(cp, S0 * 2, offset[4] + O4 / 2);
+      }
     }
-
-    CopWait(cp, Y(y), X(224));
-    ChangeStripePosition(cp, (y >> 4) & 4, offset[4] + 224 / 2);
   }
 
   CopEnd(cp);
