@@ -194,8 +194,6 @@ void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
                           const BitmapT *bitmap, short x, short y,
                           const Area2D *area);
 void CopUpdateBitplanes(CopInsT **bplptr, const BitmapT *bitmap, short n);
-void CopSetupDualPlayfield(CopListT *list, CopInsT **bplptr,
-                           const BitmapT *pf1, const BitmapT *pf2);
 
 static inline CopInsT *CopSetColor(CopListT *list, short i, short value) {
   return CopMove16(list, color[i], value);
