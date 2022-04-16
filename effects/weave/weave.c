@@ -8,6 +8,7 @@
 #include "fx.h"
 
 #include "data/bar.c"
+#include "data/bar-2.c"
 #include "data/colors.c"
 #include "data/stripes.c"
 
@@ -38,14 +39,15 @@ typedef struct State {
 
 static int active = 1;
 static CopListT *cp[2];
-static char sintab8[256];
+static short sintab8[128];
 static StateT state[2];
 
 #define STRIPES 5
 #define BARS 4
 
-static char StripePhase[STRIPES] = { 4, 2, 3, 8, 12 };
-static char StripePhaseIncr[STRIPES] = { 7, -10, 12, -6, 14 };
+/* These numbers must be odd due to optimizations. */
+static char StripePhase[STRIPES] = { 4, 24, 16, 8, 12 };
+static char StripePhaseIncr[STRIPES] = { 8, -10, 14, -6, 6 };
 
 static inline void CopSpriteSetHP(CopListT *cp, short n) {
   CopMove16(cp, spr[n * 2 + 0].pos, 0);
@@ -87,7 +89,13 @@ static void MakeCopperList(CopListT *cp, StateT *state) {
 
     /* With current solution bitplane setup takes at most 3 copper move
      * instructions (bpl1mod, bpl2mod, bplcon1) per raster line. */
-    if (my == 16) {
+    if (my == 8) {
+      if (y & 64) {
+        CopLoadPal(cp, &bar_pal, 0);
+      } else {
+        CopLoadPal(cp, &bar2_pal, 0);
+      }
+    } else if (my == 16) {
       /* Advance bitplane pointers to display consecutive lines. */
       CopMove16(cp, bpl1mod, bar_bplmod);
       CopMove16(cp, bpl2mod, bar_bplmod);
@@ -180,31 +188,44 @@ static void UpdateBarState(StateT *state) {
 static void UpdateStripeState(StateT *state) {
   static const char offset[STRIPES] = {
     HPOFF(O0), HPOFF(O1), HPOFF(O2), HPOFF(O3), HPOFF(O4) };
-  int i;
+  u_char *phasep = StripePhase;
+  char *incrp = StripePhaseIncr;
+  const char *offsetp = offset;
+  short i;
 
-  for (i = 0; i < STRIPES; i++) {
-    u_char phase = StripePhase[i];
+  for (i = 0; i < STRIPES * 4; i += 4) {
+    u_int phase = (u_char)*phasep;
     CopInsT **stripesp = state->stripes;
-    short hp_off = offset[i];
-    short j;
+    short hp_off = *offsetp++;
+    short n = HEIGHT / 8 - 1;
 
-    StripePhase[i] += StripePhaseIncr[i];
+    (*phasep++) += (*incrp++);
 
-    for (j = 0; j < HEIGHT; j++) {
-      CopInsT *ins = *stripesp++;
-      short hp = sintab8[phase & 0xff] + hp_off;
-      CopInsSet16(&ins[i * 4 + 0], hp);
-      CopInsSet16(&ins[i * 4 + 1], hp + 8);
-      phase += 2;
-    }
+    do {
+      CopInsT *ins;
+      short hp;
+
+#define BODY()                                          \
+      ins = *stripesp++;                                \
+      asm ("movew (%2,%1:w),%0\n\t"                     \
+           "addqb #2,%1\n\t"                            \
+           "addw  %3,%0"                                \
+           : "=d" (hp), "+d" (phase)                    \
+           : "a" (sintab8), "d" (hp_off));              \
+      CopInsSet16(&ins[i + 0], hp);                     \
+      CopInsSet16(&ins[i + 1], hp + 8);
+
+      BODY(); BODY(); BODY(); BODY();
+      BODY(); BODY(); BODY(); BODY();
+    } while (--n != -1);
   }
 }
 
 static void MakeSinTab8(void) {
   int i, j;
 
-  for (i = 0, j = 0; i < 256; i++, j += 16)
-    sintab8[i] = sintab[j] >> 10;
+  for (i = 0, j = 0; i < 128; i++, j += 32)
+    sintab8[i] = (sintab[j] + 512) >> 10;
 }
 
 #define COPLIST_SIZE (HEIGHT * 22 + 100)
@@ -254,7 +275,7 @@ static void Render(void) {
   ProfilerStop(UpdateStripeState);
 
   CopListRun(cp[active]);
-  TaskWaitVBlank();
+  WaitVBlank();
   active ^= 1;
 }
 
