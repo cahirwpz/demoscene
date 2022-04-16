@@ -113,7 +113,7 @@ static inline CopInsT *_CopMove32(CopListT *list, short reg, int data) {
 }
 
 /* Official way to represent no-op copper instruction. */
-#define CopNoOp(cp) CopMoveWord(cp, 0x1FE, 0)
+#define CopNoOp(cp) _CopMove16(cp, 0x1FE, 0)
 
 /* Wait for raster beam position to be greater or equal to (vp, hp). */
 #define CopInsWait(ins, vp, hp) \
@@ -128,7 +128,7 @@ static inline CopInsT *_CopInsWait(CopInsT *ins, short vp, short hp) {
 
 static inline CopInsT *CopWait(CopListT *list, short vp, short hp) {
   CopInsT *pos = list->curr;
-  CopInsWait(pos, vp, hp);
+  CopInsWait(list->curr, vp, hp);
   return pos;
 }
 
