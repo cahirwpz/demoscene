@@ -11,6 +11,8 @@
 #include "data/colors.c"
 #include "data/stripes.c"
 
+#define bar_bplmod ((bar_width - WIDTH) / 8 - 2)
+
 #define WIDTH (320 - 32)
 #define HEIGHT 256
 #define DEPTH 4
@@ -82,11 +84,11 @@ static short StripePhase[STRIPES] = { 4, 2, 3, 8, 12 };
 static short StripePhaseIncr[STRIPES] = { 7, -10, 12, -6, 14 };
 static short BarOffset[STRIPES];
 
-static inline void SetupBarBitplanes(CopListT *cp, short n) {
+static inline void SetupBarBitplanes(CopListT *cp, short x) {
   CopInsT *ins = cp->curr;
 
-  short offset = (BarOffset[n] >> 3) & -2;
-  short shift = 15 - (BarOffset[n] & 15);
+  short offset = (x >> 3) & -2;
+  short shift = ~x & 15;
 
   CopInsMove32(ins, bplpt[0], bar.planes[0] + offset);
   CopInsMove32(ins, bplpt[1], bar.planes[1] + offset);
@@ -94,8 +96,26 @@ static inline void SetupBarBitplanes(CopListT *cp, short n) {
   CopInsMove32(ins, bplpt[3], bar.planes[3] + offset);
 
   CopInsMove16(ins, bplcon1, (shift << 4) | shift);
+
+  /* Move back bitplane pointers to repeat the line. */
   CopInsMove16(ins, bpl1mod, -WIDTH / 8 - 2);
   CopInsMove16(ins, bpl2mod, -WIDTH / 8 - 2);
+
+  cp->curr = ins;
+}
+
+/* Move back bitplane pointers to the beginning of bitmap. Take into
+ * account new bitmap offset and shifter configuration for next bar. */
+static inline void SetupBarFetcher(CopListT *cp, short prev_x, short x) {
+  CopInsT *ins = cp->curr;
+
+  short shift = ~x & 15;
+  short offset = (x & -16) - (prev_x & -16);
+  short bplmod = (bar_bplmod - bar_bplSize) + (offset >> 3);
+
+  CopInsMove16(ins, bplcon1, (shift << 4) | shift);
+  CopInsMove16(ins, bpl1mod, bplmod);
+  CopInsMove16(ins, bpl2mod, bplmod);
 
   cp->curr = ins;
 }
@@ -156,66 +176,74 @@ static inline CopInsT *_ChangeStripePosition(CopInsT *ins, short n, short hp) {
 static short StripeOffset[HEIGHT / 4 + 1][STRIPES];
 
 static void MakeCopperList(CopListT *cp) {
-  short *offset = (short *)StripeOffset;
+  short *stripe_hpos = (short *)StripeOffset;
+  short *bar_x = BarOffset;
   short y;
 
   CopInit(cp);
-  SetupBarBitplanes(cp, 0);
+  SetupBarBitplanes(cp, bar_x[0]);
   SetupSpriteA(cp, -1);
 
   for (y = 0; y < HEIGHT; y++) {
     short vp = Y(y);
+    short my = y & 63;
 
     CopWaitSafe(cp, vp, 0);
 
-    if ((y & 3) == 0) {
-      short mod_y = y & 63;
-
-      if (mod_y == 0) {
+    /* With current solution bitplane setup takes at most 3 copper move
+     * instructions (bpl1mod, bpl2mod, bplcon1) per raster line. */
+    if ((y & 15) == 0) {
+      if (my == 0) {
         if (y & 64) {
           SetupSpriteB(cp, y);
         } else {
           SetupSpriteA(cp, y);
         }
-      } else if (mod_y == 16) {
-        CopMove16(cp, bpl1mod, (bar_width - WIDTH) / 8 - 2);
-        CopMove16(cp, bpl2mod, (bar_width - WIDTH) / 8 - 2);
-      } else if (mod_y == 48) {
-        SetupBarBitplanes(cp, 1 + (y >> 6));
+      } else if (my == 16) {
+        /* Advance bitplane pointers to display consecutive lines. */
+        CopMove16(cp, bpl1mod, bar_bplmod);
+        CopMove16(cp, bpl2mod, bar_bplmod);
+      } else if (my == 48) {
+        SetupBarFetcher(cp, bar_x[0], bar_x[1]);
+        bar_x++;
       }
+    }
 
-      {
-        CopInsT *ins = cp->curr;
+    if (my == 49) {
+      /* Move back bitplane pointers to repeat the line. */
+      CopMove16(cp, bpl1mod, -WIDTH / 8 - 2);
+      CopMove16(cp, bpl2mod, -WIDTH / 8 - 2);
+    }
 
-        if (y & 64) {
-          ChangeStripePosition(ins, S1, *offset++);
-          ChangeStripePosition(ins, S0, *offset++);
-          ChangeStripePosition(ins, S3, *offset++);
-          ChangeStripePosition(ins, S2, *offset++);
-          CopInsWait(ins, vp, X(O4));
-          ChangeStripePosition(ins, S1, *offset++);
-        } else {
-          ChangeStripePosition(ins, S0, *offset++);
-          ChangeStripePosition(ins, S1, *offset++);
-          ChangeStripePosition(ins, S2, *offset++);
-          ChangeStripePosition(ins, S3, *offset++);
-          CopInsWait(ins, vp, X(O4));
-          ChangeStripePosition(ins, S0, *offset++);
-        }
-
-        cp->curr = ins;
-      }
-    } else {
+    {
       CopInsT *ins = cp->curr;
 
-      if (y & 64) {
-        ChangeStripePosition(ins, S1, offset[0]);
-        CopInsWait(ins, vp, X(O4));
-        ChangeStripePosition(ins, S1, offset[4]);
+      if ((y & 3) == 0) {
+        if (y & 64) {
+          ChangeStripePosition(ins, S1, *stripe_hpos++);
+          ChangeStripePosition(ins, S0, *stripe_hpos++);
+          ChangeStripePosition(ins, S3, *stripe_hpos++);
+          ChangeStripePosition(ins, S2, *stripe_hpos++);
+          CopInsWait(ins, vp, X(O4));
+          ChangeStripePosition(ins, S1, *stripe_hpos++);
+        } else {
+          ChangeStripePosition(ins, S0, *stripe_hpos++);
+          ChangeStripePosition(ins, S1, *stripe_hpos++);
+          ChangeStripePosition(ins, S2, *stripe_hpos++);
+          ChangeStripePosition(ins, S3, *stripe_hpos++);
+          CopInsWait(ins, vp, X(O4));
+          ChangeStripePosition(ins, S0, *stripe_hpos++);
+        }
       } else {
-        ChangeStripePosition(ins, S0, offset[0]);
-        CopInsWait(ins, vp, X(O4));
-        ChangeStripePosition(ins, S0, offset[4]);
+        if (y & 64) {
+          ChangeStripePosition(ins, S1, stripe_hpos[0]);
+          CopInsWait(ins, vp, X(O4));
+          ChangeStripePosition(ins, S1, stripe_hpos[4]);
+        } else {
+          ChangeStripePosition(ins, S0, stripe_hpos[0]);
+          CopInsWait(ins, vp, X(O4));
+          ChangeStripePosition(ins, S0, stripe_hpos[4]);
+        }
       }
 
       cp->curr = ins;
@@ -272,6 +300,7 @@ static void Init(void) {
   SetupBitplaneFetch(MODE_LORES, X(0), WIDTH + 16);
   SetupMode(MODE_LORES, DEPTH);
   LoadPalette(&bar_pal, 0);
+  LoadPalette(&stripes_pal, 16);
 
   /* Place sprites 0-3 above playfield, and 4-7 below playfield. */
   custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P1 | BPLCON2_PF1P1;
