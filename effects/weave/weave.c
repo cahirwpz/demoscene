@@ -25,12 +25,10 @@
  * Sprites are displayed on screen as follows:
  *
  * +---------+---------+---------+---------+
- * |  down   |   down  |    up   |    up   |
- * +---------+---------+---------+---------+
- * |   0-1   |   4-5   |   2-3   |   6-7   |
+ * | S0(0-1) | S1(4-5) | S2(2-3) | S3(6-7) |
  * |  above  |  below  |  above  |  below  |
  * +---------+---------+---------+---------+
- * |   4-5   |   0-1   |   6-7   |   2-3   |
+ * | S1(4-5) | S0(0-1) | S3(6-7) | S1(2-3) |
  * |  below  |  above  |  below  |  above  |
  * +---------+---------+---------+---------+
  */
@@ -40,19 +38,19 @@
 #define S2 1
 #define S3 3
 
-#define DAT0A (&stripes0_sprdat) /* S0 */
+#define DAT0A (&stripes0_sprdat) /* S0, up */
 #define DAT1A (&stripes1_sprdat)
-#define DAT2A (&stripes0_sprdat) /* S1 */
+#define DAT2A (&stripes0_sprdat) /* S1, up */
 #define DAT3A (&stripes1_sprdat)
-#define DAT4A (&stripes2_sprdat) /* S2 */
+#define DAT4A (&stripes2_sprdat) /* S2, down */
 #define DAT5A (&stripes3_sprdat)
-#define DAT6A (&stripes2_sprdat) /* S3 */
+#define DAT6A (&stripes2_sprdat) /* S3, down */
 #define DAT7A (&stripes3_sprdat)
 
-#define PAL0A (&stripes_pal.colors[1])
-#define PAL1A (&stripes_pal.colors[13])
-#define PAL2A (&stripes_pal.colors[5])
-#define PAL3A (&stripes_pal.colors[9])
+#define PAL0A (&stripes_pal.colors[1])  /* S0,  1.. 3, warm dull  */
+#define PAL1A (&stripes_pal.colors[9])  /* S1,  9..11, green */
+#define PAL2A (&stripes_pal.colors[5])  /* S2,  5.. 7, warm vivid  */
+#define PAL3A (&stripes_pal.colors[13]) /* S3, 13..15, magenta */
 
 #define DAT0B DAT4A
 #define DAT1B DAT5A
