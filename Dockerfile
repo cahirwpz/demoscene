@@ -10,7 +10,7 @@ WORKDIR /root
 ADD https://github.com/cahirwpz/demoscene-toolchain/releases/download/2022-04-18/demoscene-toolchain.tar.gz \
     demoscene-toolchain.tar.gz
 RUN apt-get -q update && apt-get upgrade -y
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get install -y --no-install-recommends -t bullseye-backports \
             universal-ctags cscope git-lfs optipng gcc g++ make golang \
             python3 python3-pip python3-dev socat tmux
 COPY requirements.txt .
