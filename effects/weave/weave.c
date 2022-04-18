@@ -187,7 +187,7 @@ static void UpdateBarState(StateT *state) {
 
       shift = ~bx & 15;
       offset = (bx & -16) - (bx_prev & -16);
-      bplmod = (bar_bplmod - bar_bplSize) + (offset >> 3);
+      bplmod = bar_bplmod + (offset >> 3);
 
       CopInsSet16(&ins[0], (shift << 4) | shift);
       CopInsSet16(&ins[1], bplmod);
