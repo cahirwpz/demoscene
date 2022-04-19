@@ -11,9 +11,8 @@
 
 #define WIDTH 320
 #define HEIGHT 180
+#define YOFF ((256 - HEIGHT) / 2)
 #define DEPTH 4
-
-#define HEIGHT_P1 210
 
 static BitmapT *screen;
 static CopInsT *bplptr[DEPTH];
@@ -44,8 +43,8 @@ static void MakeCopperList(CopListT *cp) {
     short *pixels = gradient.pixels;
     short i, j;
 
-    for (i = 0; i < HEIGHT_P1 / 10; i++) {
-      CopWait(cp, Y(i * 10 - 1), 0xde);
+    for (i = 0; i < HEIGHT / 10; i++) {
+      CopWait(cp, Y(YOFF + i * 10 - 1), 0xde);
       for (j = 0; j < 16; j++) CopSetColor(cp, j, *pixels++);
     }
   }
@@ -56,7 +55,7 @@ static void Init(void) {
   EnableDMA(DMAF_BLITTER);
   BitmapClear(screen);
 
-  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(YOFF), WIDTH, HEIGHT);
   cp = NewCopList(100 + gradient.height * (gradient.width + 1));
   MakeCopperList(cp);
   CopListActivate(cp);
