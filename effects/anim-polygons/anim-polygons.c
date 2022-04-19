@@ -20,12 +20,11 @@ static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
 static short active = 0;
 
-#include "anim_data.c"
-#include "anim-pal.c"
+#include "data/dancing.c"
+#include "data/dancing-pal.c"
 
 /* Reading polygon data */
 static short current_frame = 0;
-static short frame_count = 260 - 5;
 static short *verts_ptr = verts;
 /* Synchronization */
 static int frame_diff = 0;
@@ -118,7 +117,7 @@ static void DrawFrame(void) {
   current_frame++;
   verts_ptr = vs;
 
-  if (current_frame > frame_count) {
+  if (current_frame > frame_count - 5) {
     current_frame = 0;
     verts_ptr = verts;
   }
@@ -157,4 +156,4 @@ static void Render(void) {
   frame_sync = ReadFrameCounter();
 }
 
-EFFECT(anim - lines, Load, UnLoad, Init, Kill, Render);
+EFFECT(anim_polygons, Load, UnLoad, Init, Kill, Render);
