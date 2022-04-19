@@ -16,7 +16,8 @@
 static PixmapT *textureHi, *textureLo;
 static PixmapT *chunky;
 static BitmapT *bitmap;
-static SpriteT *sprite[2][8];
+static SprDataT *sprdat;
+static SpriteT sprite[2][8];
 static CopInsT *sprptr[8];
 
 #include "data/dragon-bg.c"
@@ -88,7 +89,7 @@ static void MakeCopperList(CopListT *cp) {
     short i;
 
     for (i = 0; i < 8; i++)
-      CopInsSet32(sprptr[i], sprite[active][i]->data);
+      CopInsSetSprite(sprptr[i], &sprite[active][i]);
   }
 }
 
@@ -109,12 +110,17 @@ static void Init(void) {
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
+  sprdat = MemAlloc(SprDataSize(64, 2) * 8 * 2, MEMF_CHIP|MEMF_CLEAR);
+
   {
+    SprDataT *dat = sprdat;
     short i, j;
 
     for (i = 0; i < 2; i++)
-      for (j = 0; j < 8; j++)
-        sprite[i][j] = NewSprite(64, j & 1);
+      for (j = 0; j < 8; j++) {
+        MakeSprite(&dat, 64, j & 1, &sprite[i][j]);
+        EndSprite(&dat);
+      }
   }
 
   SetupPlayfield(MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
@@ -135,14 +141,7 @@ static void Kill(void) {
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
   MemFree(UVMapRender);
-
-  {
-    short i, j;
-
-    for (i = 0; i < 2; i++)
-      for (j = 0; j < 8; j++)
-        DeleteSprite(sprite[i][j]);
-  }
+  MemFree(sprdat);
 
   DeletePixmap(chunky);
   DeleteBitmap(bitmap);
@@ -269,7 +268,7 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
   }
 }
 
-static void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
+static void BitmapToSprite(BitmapT *input, SpriteT sprite[8]) {
   void *planes = input->planes[0];
   short bltsize = (input->height << 6) | 1;
   short i = 0;
@@ -284,43 +283,43 @@ static void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
   custom->bltdmod = 2;
 
   for (i = 0; i < 4; i++) {
-    SpriteT *spr0 = *sprite++;
-    SpriteT *spr1 = *sprite++;
+    SprDataT *sprdat0 = (sprite++)->sprdat;
+    SprDataT *sprdat1 = (sprite++)->sprdat;
 
     WaitBlitter();
     custom->bltapt = planes + i * 2;
-    custom->bltdpt = &spr0->data[0][0];
+    custom->bltdpt = &sprdat0->data[0][0];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr0->data[0][1];
+    custom->bltdpt = &sprdat0->data[0][1];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr1->data[0][0];
+    custom->bltdpt = &sprdat1->data[0][0];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr1->data[0][1];
+    custom->bltdpt = &sprdat1->data[0][1];
     custom->bltsize = bltsize;
   }
 }
 
-static void PositionSprite(SpriteT **sprite, short xo, short yo) {
+static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
   short x = X((S_WIDTH - WIDTH) / 2) + xo;
   short y = Y((S_HEIGHT - HEIGHT) / 2) + yo;
   CopInsT **ptr = sprptr;
   short n = 4;
 
   while (--n >= 0) {
-    SpriteT *spr0 = *sprite++;
-    SpriteT *spr1 = *sprite++;
+    SpriteT *spr0 = sprite++;
+    SpriteT *spr1 = sprite++;
 
-    SpriteUpdatePos(spr0, HEIGHT, x, y);
-    SpriteUpdatePos(spr1, HEIGHT, x, y);
+    SpriteUpdatePos(spr0, x, y);
+    SpriteUpdatePos(spr1, x, y);
 
-    CopInsSet32(*ptr++, spr0);
-    CopInsSet32(*ptr++, spr1);
+    CopInsSetSprite(*ptr++, spr0);
+    CopInsSetSprite(*ptr++, spr1);
 
     x += 16;
   }

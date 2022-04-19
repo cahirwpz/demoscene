@@ -1,3 +1,3 @@
-#include <copper.h>
+#include <playfield.h>
 
 #include "SetupBitplaneFetchImpl.c"

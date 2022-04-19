@@ -20,6 +20,7 @@ SUBDIRS := \
 	glitch \
 	highway \
 	kbtest \
+	layers \
 	lines \
 	metaballs \
 	multipipe \
