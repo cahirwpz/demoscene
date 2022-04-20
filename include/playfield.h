@@ -9,6 +9,14 @@
 #define MODE_LACE   BPLCON0_LACE
 #define MODE_HAM    BPLCON0_HOMOD
 
+void SetupBitplaneFetch(u_short mode, u_short xs, u_short w);
+
+/* Arguments must be always specified in low resolution coordinates. */
+void SetupDisplayWindow(u_short mode, u_short xs, u_short ys,
+                        u_short w, u_short h);
+
+void SetupMode(u_short mode, u_short depth);
+
 void SetupPlayfield(u_short mode, u_short depth,
                     u_short xs, u_short ys, u_short w, u_short h);
 
