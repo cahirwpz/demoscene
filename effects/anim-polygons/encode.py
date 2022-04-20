@@ -4,6 +4,7 @@ import csv
 import sys
 from math import log2, ceil
 from itertools import chain
+from textwrap import TextWrapper
 import logging
 
 
@@ -65,13 +66,20 @@ if __name__ == '__main__':
 
     width = 320
     height = 180
+    wrapper = TextWrapper(initial_indent='  ',
+                          subsequent_indent='    ',
+                          width=80)
 
     print('static u_short verts[] = {')
-    for polys in frames:
+    for fn, polys in enumerate(frames):
+        print('  /* frame %d */' % fn)
         for poly in polys:
+            verts = []
             for x, y in poly:
                 x = min(max(0, x), width - 1)
                 y = min(max(0, y), height - 1)
-                print('%d,' % (y * width + x))
-            print('65535,')
+                verts.append(str(y * width + x))
+            verts.append('65535')
+            for line in wrapper.wrap(', '.join(verts) + ','):
+                print(line)
     print('};')
