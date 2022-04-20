@@ -1,7 +1,9 @@
-/* ===== floor effect =====
-The general idea behind this effect is to dynamically manipulate the palette of the pre-rendered grayscale bitmap to achieve the illusion of depth and neon lines turning on and off. 
-Shift registers are also used to move and wrap the image around.
-*/
+/*
+ * The general idea behind this effect is to dynamically manipulate
+ * the palette of the pre-rendered grayscale bitmap to achieve
+ * the illusion of depth and neon lines turning on and off.
+ * Shift registers are also used to move and wrap the image around.
+ */
 
 #include "effect.h"
 #include "copper.h"
@@ -15,79 +17,83 @@ Shift registers are also used to move and wrap the image around.
 #define HEIGHT 256
 #define DEPTH 4
 
-// Width of the stripes (in pixels) at the point farthest from the camera
+/* Width of the stripes (in pixels) at the point farthest from the camera */
 #define FAR   4
-// Width of the stripes (in pixels) at the point closest to the camera
+/* Width of the stripes (in pixels) at the point closest to the camera */
 #define NEAR 16
 
 static CopListT *coplist[2];
-// ID of the active copper list [0-1]
 static short active = 0;
 
 static CopInsT *copLine[2][HEIGHT];
-// Width of the leftmost stripe (in pixels) at any given scanline
+/* Width of the leftmost stripe (in pixels) at any given scanline */
 static short stripeWidth[HEIGHT];
-// Light level (values [0-11] where 11 is the darkest) at any given scanline,
-// used to depth to the stripe's colors
+/*
+ * Light level (values [0-11] where 11 is the darkest) at any given scanline,
+ * used to depth to the stripe's colors
+ */
 static short stripeLight[HEIGHT];
 
-// A struct that controls stripe's colors:
-// step - counter indicating when transition to the next color in the cycle
-// orig - initial color value from which we start the color cycle
-// color- current stripe's color
+/* A struct that controls stripe's colors */
 typedef struct {
-  short step, orig, color;
+  short step; /* when transition to the next color in the cycle */
+  short orig; /* initial color value from which we start the color cycle */
+  short color; /* current stripe's color */
 } StripeT;
 
 static StripeT stripe[15];
-// A table for storing colors as they are being shifted
+/* A table for storing colors as they are being shifted */
 static short rotated[15];
-static u_char bplShifterValues[4096];
+static u_char shifterValues[16][HEIGHT];
 
 #include "data/stripes.c"
 #include "data/floor.c"
 
-// Set the base light level for every given scanline
+/* Set the base light level for every given scanline */
 static void GenerateStripeLight(void) {
   short *light = stripeLight;
-  // The higher, the more dimmed screen will be. Going under 11 or over 15 will 
-  // cause visual glitches.
+  /* 
+   * The higher, the more dimmed screen will be.
+   * Going under 11 or over 15 will cause visual glitches.
+   */
   short level = 11; 
   short i;
 
-  // Dim the upper half of the screen (the "wall")
+  /* Dim the upper half of the screen (the "wall") */
   for (i = 0; i < HEIGHT / 2; i++)
     *light++ = level;
-  // Set light gradient for the lower half of the screen (the "floor")
+  /* Set light gradient for the lower half of the screen (the "floor") */
   for (i = 0; i < HEIGHT / 2; i++)
     *light++ = level - (12 * i) / (HEIGHT / 2);
 }
 
-// Calculate width of the leftmost stripe at any given scanline
+/* Calculate width of the leftmost stripe at any given scanline */
 static void GenerateStripeWidth(void) {
   short *width = stripeWidth;
   short i;
   
+  /* The width is static for the upper half */
   for (i = 0; i < HEIGHT / 2; i++)
-    // The width is static for the upper half
     *width++ = (FAR << 4);
   for (i = 0; i < HEIGHT / 2; i++)
     *width++ = (FAR << 4) + ((i << 4) * (NEAR - FAR)) / (HEIGHT / 2);
 }
 
-// This one is a bit tricky - generate a table of values that will be written to
-// BPLCON1 (PF1Px and PF2Px bits) while shifting the playfields. If you are
-// wondering why this table is so big and has a lot of repeating values - it
-// makes fetching shift values much faster and easier in the ShiftStripes()
-// function that is executed each frame.
-static void GenerateBPLShifterValues(void) {
-  u_char *data = bplShifterValues;
+/*
+ * This one is a bit tricky - generate a table of values that will be written
+ * to BPLCON1 (PF1Px and PF2Px bits) while shifting the playfields. If you are
+ * wondering why this table is so big and has a lot of repeating values - it
+ * makes fetching shift values much faster and easier in the ShiftStripes()
+ * function that is executed each frame.
+ */
+static void GenerateShifterValues(void) {
+  u_char *data = (u_char *)shifterValues;
   short i, j;
   
-  // 16 - for every possible offset
+  /* for every possible offset */
   for (j = 0; j < 16; j++) {
-    // 256 - for each scanline
-    for (i = 0; i < 256; i++) {
+    /* for each scanline */
+    for (i = 0; i < HEIGHT; i++) {
       short s = 1 + ((i * j) >> 8);
       *data++ = (s << 4) | s;
     }
@@ -124,17 +130,16 @@ static void InitStripes(void) {
   short n = 15;
 
   while (--n >= 0) {
-
     s->step = -16 * (random() & 7);
     s->orig = stripes_pal.colors[random() & 3];
-    // Every stripe starts black
+    /* Every stripe starts black */
     s->color = 0;
     s++;
   }
 }
 
 static void Init(void) {
-  GenerateBPLShifterValues();
+  GenerateShifterValues();
   GenerateStripeLight();
   GenerateStripeWidth();
   InitStripes();
@@ -155,7 +160,7 @@ static void Kill(void) {
   DeleteCopList(coplist[1]);
 }
 
-// Shift colors by an offset
+/* Shift colors by an offset */
 static void ShiftColors(short offset) {
   short *dst = rotated;
   short n = 15;
@@ -171,7 +176,10 @@ static void ShiftColors(short offset) {
   }
 }
 
-/* Calculate the color of the stripe, taking the light intesivity into consideration. */
+/*
+ * Calculate the color of the stripe,
+ * taking the light intesivity into consideration.
+ */
 static void ColorizeStripes(CopInsT **stripeLine) {
   short i;
 
@@ -182,10 +190,10 @@ static void ColorizeStripes(CopInsT **stripeLine) {
     short r, g, b;
 
     {
-      // Get the offseted color of the stripe
+      /* Get the offseted color of the stripe */
       short s = rotated[i - 1];
 
-      // Extract RGB values from color
+      /* Extract RGB values from color */
       r = s & 0xf00;
       s <<= 4;
       g = s & 0xf00;
@@ -193,16 +201,16 @@ static void ColorizeStripes(CopInsT **stripeLine) {
       b = s & 0xf00;
     }
 
-    // Each 8 lines make colors one level brighter
+    /* Each 8 lines make colors one level brighter */
     while (--n >= 0) {
-      // Set the light value
+      /* Set the light value */
       u_char *tab = colortab + (*light);
-      // Write new RGB values back into one variable
+      /* Write new RGB values back into one variable */
       short color = (tab[r] << 4) | (u_char)(tab[g] | (tab[b] >> 4));
 
       CopInsSet16(*line + i, color);
 
-      // Increment the pointers
+      /* Increment the pointers */
       line += 8; light += 8;
     }
   }
@@ -210,20 +218,22 @@ static void ColorizeStripes(CopInsT **stripeLine) {
 
 static void ShiftStripes(CopInsT **line, short offset) {
   short *width = stripeWidth;
-  u_char *data = bplShifterValues;
+  u_char *data = (u_char *)shifterValues;
   u_char *ptr;
   short n = HEIGHT;
 
-  // Offset the starting point 
+  /* Offset the starting point  */
   offset = (offset & 15) << 8;
   data += offset;
   
-  // Get 
   while (--n >= 0) {
-    // The underlying instruction is:
-    // CopMove16(cp, bplcon1, data[*width++]);
+    /* modify copper instruction that sets bplcon1 */
+#if 0
+    CopInsSet16(*line++, data[*width++]);
+#else
     ptr = (u_char *)(*line++);
     ptr[3] = data[*width++];
+#endif
   }
 }
 
@@ -233,10 +243,13 @@ static void ControlStripes(void) {
   short n = 15;
 
   while (--n >= 0) {
-    // Decrement the color counter
+    /* Decrement the color counter */
     s->step -= diff;
     if (s->step < -128) {
-      // If we've reached the end of the cycle, start it again at a random point
+      /* 
+       * If we've reached the end of the cycle,
+       * start it again at a random point.
+       */
       s->step = 64 + (random() & 255);
     }
 
@@ -245,12 +258,12 @@ static void ControlStripes(void) {
       short from, to;
 
       if (step > 15) {
-        // Make color go brighter
+        /* Make color go brighter */
         from = s->orig;
         to = 0xfff;
         step -= 16;
       } else {
-        // Start going back to the original color
+        /* Start going back to the original color */
         from = 0x000;
         to = s->orig;
       }
