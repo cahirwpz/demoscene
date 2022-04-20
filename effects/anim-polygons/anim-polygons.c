@@ -24,7 +24,6 @@ static short active = 0;
 
 /* Reading polygon data */
 static short current_frame = 0;
-static short *verts_ptr = verts;
 /* Synchronization */
 static int frame_diff = 0;
 static int frame_sync;
@@ -76,50 +75,35 @@ static void Kill(void) {
       : "0" ((int)xy), "dmi" (WIDTH));
 
 static void DrawFrame(void) {
-  /* (x/y) previous */
-  short xp = 0, yp = 0;
-  /* (x/y) end */
-  short xe = 0, ye = 0;
-  /* (x/y) first in line strip */
-  short xf = 0, yf = 0;
-  /* -- */
-  short *vs = verts_ptr;
-  short n = 0;
-  u_short xy = 0;
-  bool shape_start = true;
+  short *data = dancing_frame[current_frame];
+  short n;
 
   WaitBlitter();
 
-  n = verts_in_frame[current_frame];
-  while (--n) {
-    if (shape_start) {
-      /* first vert in line strip */
-      xy = *vs++;
-      CalculateXY(xy, xp, yp);
-      xf = xp;
-      yf = yp;
-      shape_start = false;
-    }
-    xy = *vs++;
-    if (xy == 65535) {
-      /* no more verts in line strip */
-      BlitterLine(xp, yp, xf, yf);
-      shape_start = true;
-    } else {
-      CalculateXY(xy, xe, ye);
+  while ((n = *data++)) {
+    /* (x/y) previous */
+    short xp, yp;
+    /* (x/y) end */
+    short xe, ye;
+    /* (x/y) first in line strip */
+    short xf, yf;
+
+    /* first vert in line strip */
+    CalculateXY(*data++, xp, yp);
+    xf = xp, yf = yp;
+
+    while (--n > 0) {
+      CalculateXY(*data++, xe, ye);
       BlitterLine(xp, yp, xe, ye);
-      xp = xe;
-      yp = ye;
+      xp = xe, yp = ye;
     }
+
+    /* last vert in line strip */
+    BlitterLine(xp, yp, xf, yf);
   }
 
-  current_frame++;
-  verts_ptr = vs;
-
-  if (current_frame > frame_count - 5) {
+  if (++current_frame > dancing_frames - 5)
     current_frame = 0;
-    verts_ptr = verts;
-  }
 }
 
 PROFILE(AnimRender);

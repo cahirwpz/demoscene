@@ -2,6 +2,7 @@
 
 import csv
 import sys
+import os.path
 from math import log2, ceil
 from itertools import chain
 from textwrap import TextWrapper
@@ -54,32 +55,38 @@ def read_anim(path):
 
 
 if __name__ == '__main__':
-    frames = read_anim(sys.argv[1])
+    path = sys.argv[1]
+    frames = read_anim(path)
+    name, _ = os.path.splitext(os.path.basename(path))
 
-    print('#define frame_count', len(frames))
-
-    print('static u_char verts_in_frame[] = {')
-    for polys in frames:
-        n = sum(len(poly) for poly in polys) + 1
-        print('%d,' % n)
-    print('};')
+    Wrapper = TextWrapper(initial_indent=' ' * 2,
+                          subsequent_indent=' ' * 4,
+                          width=80)
 
     width = 320
     height = 180
-    wrapper = TextWrapper(initial_indent='  ',
-                          subsequent_indent='    ',
-                          width=80)
 
-    print('static u_short verts[] = {')
     for fn, polys in enumerate(frames):
-        print('  /* frame %d */' % fn)
+        count = sum(len(poly) for poly in polys) + 1
+
+        print('static short %s_frame%d[] = {' % (name, fn))
+
         for poly in polys:
-            verts = []
+            verts = [len(poly)]
             for x, y in poly:
                 x = min(max(0, x), width - 1)
                 y = min(max(0, y), height - 1)
-                verts.append(str(y * width + x))
-            verts.append('65535')
-            for line in wrapper.wrap(', '.join(verts) + ','):
+                verts.append(y * width + x)
+            for line in Wrapper.wrap(', '.join(map(str, verts)) + ','):
                 print(line)
+
+        print('  0,')
+        print('};')
+        print('')
+
+    print('#define %s_frames %d' % (name, len(frames)))
+    print('')
+    print('static short *%s_frame[] = {' % name)
+    for fn, _ in enumerate(frames):
+        print('  %s_frame%d,' % (name, fn))
     print('};')
