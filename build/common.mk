@@ -106,10 +106,6 @@ CLEAN-FILES += $(SOURCES:%=%~)
 	@echo "[CC] $(DIR)$< -> $(DIR)$@"
 	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -fverbose-asm -S -o $@ $<
 
-disass-%: %.S
-	sed -e "/\.stab/d" -e "/^LB[BE]/d" -e "/^Ltext/d" -e "/#APP/d" \
-	    -e "/#NO_APP/d" -e "/.data/,/.text/d" $^ | less
-
 ifeq ($(words $(findstring $(MAKECMDGOALS), clean)), 0)
   -include $(DEPENDENCY-FILES)
 endif
