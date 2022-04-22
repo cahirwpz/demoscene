@@ -67,12 +67,14 @@ static void Kill(void) {
 }
 
 /* Get (x,y) on screen position from linear memory repr */
-#define CalculateXY(xy, x, y)           \
-  asm("divs %3,%0\n\t"                  \
+#define CalculateXY(data, x, y)         \
+  asm("clrl  %0\n\t"                    \
+      "movew %2@+,%0\n\t"               \
+      "divu  %3,%0\n\t"                 \
       "movew %0,%1\n\t"                 \
-      "swap %0"                         \
-      : "=d" (x), "=r" (y)              \
-      : "0" ((int)xy), "dmi" (WIDTH));
+      "swap  %0"                        \
+      : "=d" (x), "=r" (y), "+a" (data) \
+      : "i" (WIDTH));
 
 static void DrawFrame(void) {
   short *data = dancing_frame[current_frame];
@@ -89,11 +91,11 @@ static void DrawFrame(void) {
     short xf, yf;
 
     /* first vert in line strip */
-    CalculateXY(*data++, xp, yp);
+    CalculateXY(data, xp, yp);
     xf = xp, yf = yp;
 
     while (--n > 0) {
-      CalculateXY(*data++, xe, ye);
+      CalculateXY(data, xe, ye);
       BlitterLine(xp, yp, xe, ye);
       xp = xe, yp = ye;
     }
