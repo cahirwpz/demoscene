@@ -2,7 +2,7 @@
 #include "blitter.h"
 #include "copper.h"
 #include "color.h"
-#include "interrupt.h"
+#include <system/interrupt.h>
 #include "memory.h"
 #include "pixmap.h"
 #include "fx.h"

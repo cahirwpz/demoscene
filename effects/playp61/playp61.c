@@ -1,12 +1,12 @@
 #include "effect.h"
-#include "interrupt.h"
 #include "memory.h"
 #include "p61.h"
 #include "console.h"
 #include "copper.h"
-#include <system/keyboard.h>
-#include <system/event.h>
 #include "blitter.h"
+#include <system/event.h>
+#include <system/interrupt.h>
+#include <system/keyboard.h>
 #include <system/timer.h>
 
 #define WIDTH 320

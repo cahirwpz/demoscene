@@ -1,14 +1,14 @@
 #include "effect.h"
-#include "interrupt.h"
-#include <system/cia.h>
-#include <system/timer.h>
 #include "memory.h"
 #include "ahx.h"
 #include "console.h"
 #include "copper.h"
+#include "blitter.h"
+#include <system/cia.h>
+#include <system/interrupt.h>
+#include <system/timer.h>
 #include <system/keyboard.h>
 #include <system/event.h>
-#include "blitter.h"
 
 #define WIDTH 320
 #define HEIGHT 256
