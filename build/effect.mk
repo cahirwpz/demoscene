@@ -5,7 +5,6 @@ SOURCES = $(EFFECT).c
 endif
 
 LIBS += libblit libgfx libmisc libc
-CPPFLAGS += -I$(TOPDIR)/system
 LDEXTRA = $(TOPDIR)/system/system.a
 LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 

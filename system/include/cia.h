@@ -1,7 +1,7 @@
 #ifndef _CIA_H_
 #define _CIA_H_
 
-#include <cia_regdef.h>
+#include <system/cia_regdef.h>
 
 typedef volatile struct CIA *const CIAPtrT;
 

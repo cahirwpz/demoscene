@@ -5,7 +5,7 @@
 #include <string.h>
 #include <debug.h>
 
-#include "profiler.h"
+#include <system/profiler.h>
 
 /* Definitions below are useful for copper list construction. */
 #ifndef X
@@ -81,11 +81,13 @@ typedef struct Effect {
   void (*Render)(void);
 } EffectT;
 
+#ifdef _SYSTEM
 void EffectLoad(EffectT *effect);
 void EffectInit(EffectT *effect);
 void EffectKill(EffectT *effect);
 void EffectUnLoad(EffectT *effect);
 void EffectRun(EffectT *effect);
+#endif
 
 #define EFFECT(NAME, L, U, I, K, R) \
   EffectT Effect = {                \

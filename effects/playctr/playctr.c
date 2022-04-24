@@ -4,8 +4,8 @@
 #include "cinter.h"
 #include "console.h"
 #include "copper.h"
-#include "keyboard.h"
-#include "event.h"
+#include <system/keyboard.h>
+#include <system/event.h>
 #include "blitter.h"
 
 #define WIDTH 320

@@ -15,7 +15,7 @@
 #define PANIC() { BREAK(); HALT(); }
 
 #ifdef UAE
-#include "uae.h"
+#include <system/uae.h>
 #define Log(...) UaeLog(__VA_ARGS__);
 #define Panic(...) { UaeLog(__VA_ARGS__); PANIC(); }
 #else

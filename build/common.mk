@@ -28,6 +28,10 @@ CPPFLAGS += -I$(TOPDIR)/include
 # Don't reload library base for each call
 CPPFLAGS += -D__CONSTLIBBASEDECL__=const
 
+ifeq ($(SYSTEM), yes)
+CPPFLAGS += -D_SYSTEM -I$(TOPDIR)/system/include
+endif
+
 # Default configuration
 FRAMES_PER_ROW ?= 6
 

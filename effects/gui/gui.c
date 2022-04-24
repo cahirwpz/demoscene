@@ -3,9 +3,9 @@
 #include "copper.h"
 #include "sprite.h"
 #include "gui.h"
-#include "event.h"
-#include "keyboard.h"
-#include "mouse.h"
+#include <system/keyboard.h>
+#include <system/mouse.h>
+#include <system/event.h>
 #include "memory.h"
 
 #define WIDTH 320

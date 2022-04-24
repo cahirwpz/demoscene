@@ -11,7 +11,7 @@ include $(TOPDIR)/build/common.mk
 
 bootloader.bin: ASFLAGS += -phxass
 
-FILES := $(shell find include lib -iname '*.c' -or -iname '*.h')
+FILES := $(shell find include lib system -type f -iname '*.[ch]')
 
 tags:
 	ctags -R $(FILES)

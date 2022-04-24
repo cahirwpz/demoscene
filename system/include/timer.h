@@ -1,7 +1,7 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 
-#include <cia.h>
+#include <system/cia.h>
 
 /* CIA timers resolution is E_CLOCK (in ticks per seconds). */
 #define E_CLOCK 709379

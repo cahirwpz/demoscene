@@ -2,7 +2,7 @@
 # http://lallafa.de/blog/2015/09/amiga-parallel-port-how-fast-can-you-go/
 
 #include <asm.h>
-#include <cia_regdef.h>
+#include <system/cia_regdef.h>
 
 # [a0] ciab, ciaa = ciab + $1001
 ENTRY(DPutChar)

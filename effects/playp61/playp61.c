@@ -4,10 +4,10 @@
 #include "p61.h"
 #include "console.h"
 #include "copper.h"
-#include "keyboard.h"
-#include "event.h"
+#include <system/keyboard.h>
+#include <system/event.h>
 #include "blitter.h"
-#include "timer.h"
+#include <system/timer.h>
 
 #define WIDTH 320
 #define HEIGHT 256

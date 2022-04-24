@@ -1,4 +1,5 @@
 TOPDIR := $(realpath ..)
+SYSTEM := yes
 
 # AMIGAOS => save & restore AmigaOS context
 #            (for intros or trackmos that can be launched from AmigaOS)
