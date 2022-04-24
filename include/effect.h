@@ -1,1 +1,1 @@
-../system/include/effect.h
+system/effect.h

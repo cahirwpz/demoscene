@@ -29,7 +29,7 @@ CPPFLAGS += -I$(TOPDIR)/include
 CPPFLAGS += -D__CONSTLIBBASEDECL__=const
 
 ifeq ($(SYSTEM), yes)
-CPPFLAGS += -D_SYSTEM -I$(TOPDIR)/system/include
+CPPFLAGS += -D_SYSTEM -I$(TOPDIR)/include/system
 endif
 
 # Default configuration

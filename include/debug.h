@@ -1,1 +1,1 @@
-../system/include/debug.h
+system/debug.h
