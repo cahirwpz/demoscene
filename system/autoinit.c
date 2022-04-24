@@ -1,4 +1,4 @@
-#include "autoinit.h"
+#include <system/autoinit.h>
  
 /* Introduce weak symbols in case no constructors or descrutors were defined. */
 FuncItemSetT __INIT_LIST__;

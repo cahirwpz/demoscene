@@ -1,8 +1,8 @@
-#include <cpu.h>
 #include <debug.h>
 #include <string.h>
 #include <strings.h>
-#include <task.h>
+#include <system/cpu.h>
+#include <system/task.h>
 
 #define DEBUG 0
 

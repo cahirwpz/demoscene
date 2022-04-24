@@ -1,9 +1,7 @@
 #include <custom.h>
-#include <interrupt.h>
-#include <task.h>
-
-#include "sync.h"
-#include "effect.h"
+#include <effect.h>
+#include <system/interrupt.h>
+#include <system/task.h>
 
 extern EffectT Effect;
 

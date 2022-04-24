@@ -1,5 +1,5 @@
 #include <asm.h>
-#include <trap.h>
+#include <system/trap.h>
 
 ENTRY(EnterTrap)
         movem.l d0-a7,-(sp)     /* save all registers */

@@ -1,9 +1,9 @@
-#include <cpu.h>
-#include <cia.h>
-#include <timer.h>
 #include <debug.h>
-#include <interrupt.h>
-#include <task.h>
+#include <system/cpu.h>
+#include <system/cia.h>
+#include <system/interrupt.h>
+#include <system/task.h>
+#include <system/timer.h>
 
 /* Bitmask marking TIMER_* timers being in use. */
 static uint8_t InUse;

@@ -1,8 +1,8 @@
 #ifndef __TASK_H__
 #define __TASK_H__
 
-#include <queue.h>
 #include <types.h>
+#include <system/queue.h>
 
 #define MAX_TASK_NAME_SIZE 16
 

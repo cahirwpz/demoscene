@@ -1,10 +1,10 @@
-#include <types.h>
-#include <debug.h>
-#include <interrupt.h>
-#include <cia.h>
 #include <custom.h>
-#include <mouse.h>
-#include <event.h>
+#include <debug.h>
+#include <types.h>
+#include <system/cia.h>
+#include <system/event.h>
+#include <system/interrupt.h>
+#include <system/mouse.h>
 
 typedef struct {
   MouseEventT event;

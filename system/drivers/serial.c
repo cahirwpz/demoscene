@@ -1,11 +1,11 @@
+#include <custom.h>
+#include <debug.h>
 #include <stdio.h>
 #include <strings.h>
-#include <file.h>
-#include <debug.h>
-#include <interrupt.h>
-#include <task.h>
-#include <custom.h>
-#include <memory.h>
+#include <system/file.h>
+#include <system/interrupt.h>
+#include <system/memory.h>
+#include <system/task.h>
 
 #define CLOCK 3546895
 #define QUEUELEN 80

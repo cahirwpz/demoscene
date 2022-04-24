@@ -1,9 +1,9 @@
-#include <interrupt.h>
-#include <cia.h>
-#include <timer.h>
-#include <keyboard.h>
-#include <event.h>
 #include <debug.h>
+#include <system/cia.h>
+#include <system/event.h>
+#include <system/interrupt.h>
+#include <system/keyboard.h>
+#include <system/timer.h>
 
 #define LO(K, V) [K] = V
 #define HI(K, V) [K | 0x80] = V

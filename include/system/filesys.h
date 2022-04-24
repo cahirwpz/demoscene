@@ -1,11 +1,11 @@
 #ifndef __FILESYS_H__
 #define __FILESYS_H__
 
-#include <file.h>
+struct File;
 
 #define IOF_BUFFERED 1
 
-FileT *OpenFile(const char *path);
+struct File *OpenFile(const char *path);
 int GetFileSize(const char *path);
 void *LoadFile(const char *path, u_int memoryFlags);
 

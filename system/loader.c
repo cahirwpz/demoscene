@@ -1,16 +1,16 @@
 #include <debug.h>
-#include <boot.h>
-#include <cpu.h>
 #include <custom.h>
-#include <cia.h>
-#include <exception.h>
-#include <interrupt.h>
 #include <memory.h>
-#include <amigahunk.h>
-#include <floppy.h>
-#include <filesys.h>
-#include <task.h>
-#include <autoinit.h>
+#include <system/amigahunk.h>
+#include <system/autoinit.h>
+#include <system/boot.h>
+#include <system/cia.h>
+#include <system/cpu.h>
+#include <system/exception.h>
+#include <system/filesys.h>
+#include <system/floppy.h>
+#include <system/interrupt.h>
+#include <system/task.h>
 
 u_char CpuModel = CPU_68000;
 

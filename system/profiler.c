@@ -1,7 +1,7 @@
 #include <debug.h>
 #include <common.h>
-#include <cia.h>
 #include <effect.h>
+#include <system/cia.h>
 
 void _ProfilerStart(ProfileT *prof) {
   prof->lines = ReadLineCounter();

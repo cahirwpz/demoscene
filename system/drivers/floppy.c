@@ -1,11 +1,11 @@
-#include <debug.h>
-#include <interrupt.h>
-#include <memory.h>
 #include <custom.h>
-#include <cia.h>
-#include <timer.h>
-#include <floppy.h>
-#include <task.h>
+#include <debug.h>
+#include <memory.h>
+#include <system/cia.h>
+#include <system/floppy.h>
+#include <system/interrupt.h>
+#include <system/task.h>
+#include <system/timer.h>
 
 #define DEBUG 0
 

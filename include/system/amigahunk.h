@@ -1,7 +1,7 @@
 #ifndef __AMIGAHUNK_H__
 #define __AMIGAHUNK_H__
 
-#include <file.h>
+struct File;
 
 typedef struct Hunk {
   u_int size;
@@ -9,7 +9,7 @@ typedef struct Hunk {
   u_char data[0];
 } HunkT;
 
-HunkT *LoadHunkList(FileT *file);
+HunkT *LoadHunkList(struct File *file);
 void FreeHunkList(HunkT *hunklist);
 
 #endif

@@ -1,7 +1,7 @@
 #include <string.h>
 #include <memory.h>
-#include <file.h>
-#include <errno.h>
+#include <system/errno.h>
+#include <system/file.h>
 
 struct File {
   FileOpsT *ops;

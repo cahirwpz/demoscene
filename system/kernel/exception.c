@@ -1,6 +1,7 @@
-#include <interrupt.h>
-#include <exception.h>
-#include <trap.h>
+#include <system/boot.h>
+#include <system/exception.h>
+#include <system/interrupt.h>
+#include <system/trap.h>
 
 /* Exception Vector Base: 0 for 68000, for 68010 and above read from VBR */
 ExcVecT *ExcVecBase = (ExcVecT *)NULL;

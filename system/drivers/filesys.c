@@ -2,9 +2,10 @@
 #include <types.h>
 #include <debug.h>
 #include <memory.h>
-#include <filesys.h>
-#include <floppy.h>
-#include <errno.h>
+#include <system/errno.h>
+#include <system/file.h>
+#include <system/filesys.h>
+#include <system/floppy.h>
 
 #define TD_TRACK (TD_SECTOR * NSECTORS)
 #define TD_DISK (TD_TRACK * NTRACKS)

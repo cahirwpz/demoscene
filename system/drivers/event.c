@@ -1,7 +1,7 @@
-#include <cpu.h>
-#include <task.h>
 #include <debug.h>
-#include <event.h>
+#include <system/cpu.h>
+#include <system/event.h>
+#include <system/task.h>
 
 #define QUEUELEN 32
 

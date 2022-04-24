@@ -1,4 +1,4 @@
-#include <cia.h>
+#include <system/cia.h>
 
 static u_char _ICREnabled[2]; /* enabled interrupts mask */
 static u_char _ICRPending[2]; /* pending interrupts mask */

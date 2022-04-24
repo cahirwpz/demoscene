@@ -9,10 +9,11 @@
 #include <proto/exec.h>
 #include <proto/graphics.h>
 
-#include <boot.h>
-#include <cpu.h>
+#include <system/boot.h>
+#include <system/cpu.h>
+#include <system/exception.h>
+
 #include <debug.h>
-#include <exception.h>
 #include <string.h>
 #include <strings.h>
 

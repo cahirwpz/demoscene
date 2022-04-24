@@ -1,6 +1,6 @@
-#include <interrupt.h>
-#include <task.h>
 #include <debug.h>
+#include <system/interrupt.h>
+#include <system/task.h>
 
 /* Predefined interrupt chains. */
 INTCHAIN(PortsChain, PORTS);

@@ -1,6 +1,6 @@
-#include <trap.h>
-#include <cpu.h>
 #include <debug.h>
+#include <system/cpu.h>
+#include <system/trap.h>
 
 static const char *const trapname[T_NTRAPS] = {
   [T_UNKNOWN] = "Bad Trap",
