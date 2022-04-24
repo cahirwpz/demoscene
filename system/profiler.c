@@ -1,8 +1,6 @@
 #include <debug.h>
 #include <common.h>
 #include <cia.h>
-
-#include <profiler.h>
 #include <effect.h>
 
 void _ProfilerStart(ProfileT *prof) {
