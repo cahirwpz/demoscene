@@ -4,6 +4,7 @@
 #include <custom.h>
 #include <cia.h>
 #include <exception.h>
+#include <interrupt.h>
 #include <memory.h>
 #include <amigahunk.h>
 #include <floppy.h>

@@ -7,6 +7,12 @@
 #include <custom.h>
 #include <types.h>
 
+/* All macros below take or'ed INTF_* flags. */
+static inline void EnableINT(u_short x) { custom->intena_ = INTF_SETCLR | x; }
+static inline void DisableINT(u_short x) { custom->intena_ = x; }
+static inline void CauseIRQ(u_short x) { custom->intreq_ = INTF_SETCLR | x; }
+static inline void ClearIRQ(u_short x) { custom->intreq_ = x; }
+
 void WaitIRQ(u_short x);
 
 /* Interrupt Handler Routine */
