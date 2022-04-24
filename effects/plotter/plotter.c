@@ -4,7 +4,7 @@
 #include "blitter.h"
 #include "circle.h"
 #include "fx.h"
-#include "sync.h"
+#include <system/sync.h>
 #include "memory.h"
 
 #define WIDTH 320
