@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "3d.h"
-#include "fx.h"
-#include "pixmap.h"
-#include "memory.h"
+#include <effect.h>
+#include <3d.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <pixmap.h>
+#include <system/memory.h>
 
 #define WIDTH  176
 #define HEIGHT 176

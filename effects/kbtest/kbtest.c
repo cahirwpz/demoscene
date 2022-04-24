@@ -1,9 +1,9 @@
 #include "effect.h"
 #include "console.h"
 #include "copper.h"
-#include "event.h"
-#include "keyboard.h"
-#include "file.h"
+#include <system/event.h>
+#include <system/keyboard.h>
+#include <system/file.h>
 
 #define WIDTH 640
 #define HEIGHT 256

@@ -1,5 +1,5 @@
-#ifndef __DISPLAY_H__
-#define __DISPLAY_H__
+#ifndef __PLAYFIELD_H__
+#define __PLAYFIELD_H__
 
 #include <custom.h>
 

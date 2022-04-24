@@ -1,5 +1,5 @@
-#include <memory.h>
 #include <pixmap.h>
+#include <system/memory.h>
 
 void DeletePixmap(PixmapT *pixmap) {
   if (pixmap) {

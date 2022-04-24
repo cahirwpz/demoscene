@@ -1,7 +1,7 @@
 #include <debug.h>
 #include <3d.h>
-#include <memory.h>
 #include <stdlib.h>
+#include <system/memory.h>
 
 typedef struct ExtEdge {
   short p0, p1;
