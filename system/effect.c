@@ -6,7 +6,7 @@
 #define REMOTE_CONTROL 0
 
 #if SHOW_MEMORY_STATS
-# include "memory.h"
+# include <system/memory.h>
 static void ShowMemStats(void) {
   Log("[Memory] CHIP: %d/%d FAST: %d/%d\n",
       MemAvail(MEMF_CHIP|MEMF_LARGEST), MemAvail(MEMF_CHIP),
@@ -17,7 +17,7 @@ static void ShowMemStats(void) {
 #endif
 
 #if REMOTE_CONTROL
-# include "file.h"
+# include <system/file.h>
 static void SendEffectStatus(EffectT *effect) {
   FilePrintf("ES %s %d\n", effect->name, effect->state);
 }

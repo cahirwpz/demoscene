@@ -1,8 +1,8 @@
-#include "effect.h"
-#include "copper.h"
-#include "memory.h"
-#include "gfx.h"
-#include "blitter.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <gfx.h>
+#include <system/memory.h>
 
 #define TILEW 16
 #define TILEH 16

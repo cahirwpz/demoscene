@@ -1,6 +1,5 @@
 #include <debug.h>
 #include <custom.h>
-#include <memory.h>
 #include <system/amigahunk.h>
 #include <system/autoinit.h>
 #include <system/boot.h>
@@ -10,6 +9,7 @@
 #include <system/filesys.h>
 #include <system/floppy.h>
 #include <system/interrupt.h>
+#include <system/memory.h>
 #include <system/task.h>
 
 u_char CpuModel = CPU_68000;

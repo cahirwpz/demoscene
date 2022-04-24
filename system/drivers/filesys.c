@@ -1,11 +1,11 @@
+#include <debug.h>
 #include <string.h>
 #include <types.h>
-#include <debug.h>
-#include <memory.h>
 #include <system/errno.h>
 #include <system/file.h>
 #include <system/filesys.h>
 #include <system/floppy.h>
+#include <system/memory.h>
 
 #define TD_TRACK (TD_SECTOR * NSECTORS)
 #define TD_DISK (TD_TRACK * NTRACKS)

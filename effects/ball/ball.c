@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "pixmap.h"
-#include "sprite.h"
-#include "fx.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <pixmap.h>
+#include <sprite.h>
+#include <system/memory.h>
 
 #define S_WIDTH 320
 #define S_HEIGHT 256

@@ -1,13 +1,13 @@
-#include "effect.h"
-#include "memory.h"
-#include "ahx.h"
-#include "console.h"
-#include "copper.h"
-#include "blitter.h"
-#include <system/interrupt.h>
-#include <system/timer.h>
-#include <system/keyboard.h>
+#include <effect.h>
+#include <ahx.h>
+#include <blitter.h>
+#include <console.h>
+#include <copper.h>
 #include <system/event.h>
+#include <system/interrupt.h>
+#include <system/keyboard.h>
+#include <system/memory.h>
+#include <system/timer.h>
 
 #define WIDTH 320
 #define HEIGHT 256

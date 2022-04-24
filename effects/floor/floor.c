@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "copper.h"
-#include "gfx.h"
-#include "memory.h"
-#include "fx.h"
-#include "color.h"
+#include <effect.h>
+#include <color.h>
+#include <copper.h>
+#include <fx.h>
+#include <gfx.h>
 #include <stdlib.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256

@@ -2,9 +2,9 @@
 #include <common.h>
 #include <debug.h>
 #include <limits.h>
-#include <memory.h>
 #include <string.h>
 #include <strings.h>
+#include <system/memory.h>
 #include <system/task.h>
 
 #define DEBUG 0

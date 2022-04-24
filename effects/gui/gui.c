@@ -1,12 +1,12 @@
+#include <effect.h>
+#include <copper.h>
+#include <gui.h>
+#include <sprite.h>
 #include <stdio.h>
-#include "effect.h"
-#include "copper.h"
-#include "sprite.h"
-#include "gui.h"
-#include <system/keyboard.h>
-#include <system/mouse.h>
 #include <system/event.h>
-#include "memory.h"
+#include <system/keyboard.h>
+#include <system/memory.h>
+#include <system/mouse.h>
 
 #define WIDTH 320
 #define HEIGHT 256

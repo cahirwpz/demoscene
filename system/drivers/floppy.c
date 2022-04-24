@@ -1,9 +1,9 @@
 #include <custom.h>
 #include <debug.h>
-#include <memory.h>
 #include <system/cia.h>
 #include <system/floppy.h>
 #include <system/interrupt.h>
+#include <system/memory.h>
 #include <system/task.h>
 #include <system/timer.h>
 

@@ -1,5 +1,5 @@
 #include <bitmap.h>
-#include <memory.h>
+#include <system/memory.h>
 
 BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
                          u_char flags)

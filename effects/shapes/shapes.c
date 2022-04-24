@@ -1,9 +1,9 @@
-#include "effect.h"
-#include "2d.h"
-#include "blitter.h"
-#include "copper.h"
-#include "fx.h"
-#include "memory.h"
+#include <effect.h>
+#include <2d.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <system/memory.h>
 
 #define WIDTH  320
 #define HEIGHT 256

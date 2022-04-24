@@ -1,9 +1,9 @@
-#include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <system/amigahunk.h>
 #include <system/file.h>
+#include <system/memory.h>
 
 #define DEBUG 0
 

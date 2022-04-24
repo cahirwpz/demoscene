@@ -1,8 +1,8 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
 #include <stdlib.h>
+#include <system/memory.h>
 
 /* Add tile sized margins on every side to hide visual artifacts. */
 #define WIDTH   (256 + 32)
