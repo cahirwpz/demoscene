@@ -4,7 +4,6 @@
 #include "console.h"
 #include "copper.h"
 #include "blitter.h"
-#include <system/cia.h>
 #include <system/interrupt.h>
 #include <system/timer.h>
 #include <system/keyboard.h>
@@ -218,8 +217,7 @@ static void Kill(void) {
 
 static bool HandleEvent(void);
 
-static void Render(void) {
-  int lines = ReadLineCounter();
+static void RenderScreen(void) {
   short i;
 
   ConsoleSetCursor(&console, 0, 3);
@@ -240,8 +238,14 @@ static void Render(void) {
       BitmapCopy(screen, x, y, wavescope.channel[i].bm);
     }
   }
-  
-  Log("playahx: %d\n", ReadLineCounter() - lines);
+}
+
+PROFILE(PlayAHX);
+
+static void Render(void) {
+  ProfilerStart(PlayAHX);
+  RenderScreen(); 
+  ProfilerStop(PlayAHX);
 
   TaskWaitVBlank();
 

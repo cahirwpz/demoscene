@@ -1,7 +1,7 @@
 #include <cia.h>
 #include <custom.h>
 
-#include "effect.h"
+#include <effect.h>
 
 #define SHOW_MEMORY_STATS 0
 #define REMOTE_CONTROL 0

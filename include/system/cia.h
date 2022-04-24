@@ -1,6 +1,10 @@
 #ifndef _CIA_H_
 #define _CIA_H_
 
+#ifndef _SYSTEM
+#error "cia.h must not be used outside system/ directory"
+#endif
+
 #include <system/cia_regdef.h>
 
 typedef volatile struct CIA *const CIAPtrT;

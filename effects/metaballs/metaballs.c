@@ -110,15 +110,17 @@ static void DrawMetaballs(void) {
   x = *val++; y = *val++; BitmapAddSaturated(screen[active], x, y, &metaball, carry);
 }
 
+PROFILE(Metaballs);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
-
-  // This takes about 100 lines. Could we do better?
-  ClearMetaballs();
-  PositionMetaballs();
-  DrawMetaballs();
-
-  // Log("metaballs : %d\n", ReadLineCounter() - lines);
+  ProfilerStart(Metaballs);
+  {
+    // This takes about 100 lines. Could we do better?
+    ClearMetaballs();
+    PositionMetaballs();
+    DrawMetaballs();
+  }
+  ProfilerStop(Metaballs);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();

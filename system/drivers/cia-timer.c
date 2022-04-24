@@ -1,4 +1,5 @@
 #include <cpu.h>
+#include <cia.h>
 #include <timer.h>
 #include <debug.h>
 #include <interrupt.h>

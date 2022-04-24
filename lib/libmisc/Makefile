@@ -5,7 +5,8 @@ SOURCES := \
 	fx.c \
 	inflate.S \
 	sintab.c \
-	sort.c
+	sort.c \
+	sync.c
 
 SOURCES_GEN := sintab.c
 

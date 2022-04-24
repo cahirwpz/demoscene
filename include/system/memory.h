@@ -21,10 +21,12 @@
 
 void MemCheck(int verbose);
 u_int MemAvail(u_int attributes);
-
-void AddMemory(void *ptr, u_int byteSize, u_int attributes);
 void *MemAlloc(u_int byteSize, u_int attributes);
 void *MemResize(void *memoryBlock, u_int byteSize);
 void MemFree(void *memoryBlock);
+
+#ifdef _SYSTEM
+void AddMemory(void *ptr, u_int byteSize, u_int attributes);
+#endif
 
 #endif

@@ -2,6 +2,7 @@
 #include <interrupt.h>
 #include <memory.h>
 #include <custom.h>
+#include <cia.h>
 #include <timer.h>
 #include <floppy.h>
 #include <task.h>

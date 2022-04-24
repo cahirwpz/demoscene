@@ -2,11 +2,6 @@
 #include <task.h>
 #include <debug.h>
 
-void WaitIRQ(u_short mask) {
-  while (!(custom->intreqr & mask));
-  ClearIRQ(mask);
-}
-
 /* Predefined interrupt chains. */
 INTCHAIN(PortsChain, PORTS);
 INTCHAIN(VertBlankChain, VERTB);

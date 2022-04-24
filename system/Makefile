@@ -16,7 +16,6 @@ SOURCES := \
 	loader.c \
 	main.c \
 	profiler.c \
-	sync.c \
 	uae.S \
 	drivers/cia-frame.c \
 	drivers/cia-icr.c \

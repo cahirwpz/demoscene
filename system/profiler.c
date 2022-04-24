@@ -3,7 +3,7 @@
 #include <cia.h>
 
 #include <profiler.h>
-#include "effect.h"
+#include <effect.h>
 
 void _ProfilerStart(ProfileT *prof) {
   prof->lines = ReadLineCounter();

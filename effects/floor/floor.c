@@ -214,8 +214,10 @@ static void ControlStripes(void) {
   }
 }
 
+PROFILE(Floor);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
+  ProfilerStart(Floor);
   {
     short offset = normfx(SIN(frameCount * 8) * 1024) + 1024;
     CopInsT **line = copLine[active];
@@ -225,7 +227,7 @@ static void Render(void) {
     ColorizeStripes(line);
     ShiftStripes(line, offset);
   }
-  // Log("floor2: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(Floor);
 
   CopListRun(coplist[active]);
   TaskWaitVBlank();

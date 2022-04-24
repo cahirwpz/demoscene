@@ -10,9 +10,7 @@
 #include <floppy.h>
 #include <filesys.h>
 #include <task.h>
-
-#include "autoinit.h"
-#include "sync.h"
+#include <autoinit.h>
 
 u_char CpuModel = CPU_68000;
 
@@ -76,7 +74,6 @@ void Loader(BootDataT *bd) {
   InitFloppy();
   InitFileSys();
 #endif
-  InitTracks();
   CallFuncList(&__INIT_LIST__);
 
   {
