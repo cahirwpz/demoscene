@@ -5,7 +5,7 @@ TOPDIR := $(realpath ..)
 # TRACKMO => initialize file system and floppy device driver
 CPPFLAGS += -DTRACKMO
 
-LIBNAME := loader
+LIBNAME := system
 SOURCES := \
 	amigaos.c \
 	autoinit.c \
