@@ -19,10 +19,13 @@
 #define MEMF_CLEAR (1L << 16)
 #endif
 
+#ifdef _SYSTEM
 void MemCheck(int verbose);
 u_int MemAvail(u_int attributes);
-#ifdef _SYSTEM
 void *MemAlloc(u_int byteSize, u_int attributes);
+void *MemResize(void *memoryBlock, u_int byteSize);
+void MemFree(void *memoryBlock);
+void AddMemory(void *ptr, u_int byteSize, u_int attributes);
 #else
 static inline void *MemAlloc(u_int byteSize, u_int attributes) {
   register u_int _d0 asm("d0") = byteSize;
@@ -34,12 +37,25 @@ static inline void *MemAlloc(u_int byteSize, u_int attributes) {
                 : "d1", "a0", "a1", "cc", "memory");
   return _rv;
 }
-#endif
-void *MemResize(void *memoryBlock, u_int byteSize);
-void MemFree(void *memoryBlock);
 
-#ifdef _SYSTEM
-void AddMemory(void *ptr, u_int byteSize, u_int attributes);
+static inline void *MemResize(void *memoryBlock, u_int byteSize) {
+  register void *_a0 asm("a0") = memoryBlock;
+  register u_int _d0 asm("d0") = byteSize;
+  void *_rv;
+  asm volatile ("jsr 198:W"
+                : "=d" (_rv)
+                : "0" (_d0), "a" (_a0)
+                : "d1", "a1", "cc", "memory");
+  return _rv;
+}
+
+static inline void MemFree(void *memoryBlock) {
+  register void *_a0 asm("a0") = memoryBlock;
+  asm volatile ("jsr 204:W"
+                : 
+                : "a" (_a0)
+                : "d0", "d1", "a1", "cc", "memory");
+}
 #endif
 
 #endif

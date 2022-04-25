@@ -64,5 +64,7 @@ void SetupExceptionVector(BootDataT *bd) {
     void *jmptab = &ExcVec[EXC_TRAP(16)];
 
     JUMP(jmptab, MemAlloc);
+    JUMP(jmptab, MemResize);
+    JUMP(jmptab, MemFree);
   }
 }
