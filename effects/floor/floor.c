@@ -26,13 +26,6 @@ static CopListT *coplist[2];
 static short active = 0;
 
 static CopInsT *copLine[2][HEIGHT];
-/* Width of the leftmost stripe (in pixels) at any given scanline */
-static short stripeWidth[HEIGHT];
-/*
- * Light level (values [0-11] where 11 is the darkest) at any given scanline,
- * used to depth to the stripe's colors
- */
-static short stripeLight[HEIGHT];
 
 /* A struct that controls stripe's colors */
 typedef struct {
@@ -48,36 +41,13 @@ static u_char shifterValues[16][HEIGHT];
 
 #include "data/stripes.c"
 #include "data/floor.c"
-
-/* Set the base light level for every given scanline */
-static void GenerateStripeLight(void) {
-  short *light = stripeLight;
-  /* 
-   * The higher, the more dimmed screen will be.
-   * Going under 11 or over 15 will cause visual glitches.
-   */
-  short level = 11; 
-  short i;
-
-  /* Dim the upper half of the screen (the "wall") */
-  for (i = 0; i < HEIGHT / 2; i++)
-    *light++ = level;
-  /* Set light gradient for the lower half of the screen (the "floor") */
-  for (i = 0; i < HEIGHT / 2; i++)
-    *light++ = level - (12 * i) / (HEIGHT / 2);
-}
-
-/* Calculate width of the leftmost stripe at any given scanline */
-static void GenerateStripeWidth(void) {
-  short *width = stripeWidth;
-  short i;
-  
-  /* The width is static for the upper half */
-  for (i = 0; i < HEIGHT / 2; i++)
-    *width++ = (FAR << 4);
-  for (i = 0; i < HEIGHT / 2; i++)
-    *width++ = (FAR << 4) + ((i << 4) * (NEAR - FAR)) / (HEIGHT / 2);
-}
+/* Width of the leftmost stripe (in pixels) at any given scanline */
+#include "data/stripeWidth.c"
+/*
+ * Light level (values [0-11] where 11 is the darkest) at any given scanline,
+ * used to depth to the stripe's colors
+ */
+#include "data/stripeLight.c"
 
 /*
  * This one is a bit tricky - generate a table of values that will be written
@@ -136,8 +106,6 @@ static void InitStripes(void) {
 
 static void Init(void) {
   GenerateShifterValues();
-  GenerateStripeLight();
-  GenerateStripeWidth();
   InitStripes();
 
   SetupMode(MODE_LORES, DEPTH);
