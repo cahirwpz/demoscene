@@ -1,7 +1,7 @@
 #ifndef __MEMORY_H__
 #define __MEMORY_H__
 
-#include "types.h"
+#include <types.h>
 
 #ifndef MEMF_PUBLIC
 #define MEMF_PUBLIC (1L << 0)
@@ -21,7 +21,20 @@
 
 void MemCheck(int verbose);
 u_int MemAvail(u_int attributes);
+#ifdef _SYSTEM
 void *MemAlloc(u_int byteSize, u_int attributes);
+#else
+static inline void *MemAlloc(u_int byteSize, u_int attributes) {
+  register u_int _d0 asm("d0") = byteSize;
+  register u_int _d1 asm("d1") = attributes;
+  void *_rv;
+  asm volatile ("jsr 192:W"
+                : "=d" (_rv)
+                : "0" (_d0), "d" (_d1)
+                : "d1", "a0", "a1", "cc", "memory");
+  return _rv;
+}
+#endif
 void *MemResize(void *memoryBlock, u_int byteSize);
 void MemFree(void *memoryBlock);
 

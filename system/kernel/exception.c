@@ -1,6 +1,7 @@
 #include <system/boot.h>
 #include <system/exception.h>
 #include <system/interrupt.h>
+#include <system/memory.h>
 #include <system/trap.h>
 
 /* Exception Vector Base: 0 for 68000, for 68010 and above read from VBR */
@@ -8,6 +9,10 @@ ExcVecT *ExcVecBase = (ExcVecT *)NULL;
 
 /* Amiga autovector interrupts table. */
 IntVecT IntVec;
+
+#define JUMP(addr, target)              \
+  *((u_short *)addr)++ = 0x4ef9;        \
+  *((u_int *)addr)++ = (u_int)target;
 
 void SetupExceptionVector(BootDataT *bd) {
   short i;
@@ -54,4 +59,10 @@ void SetupExceptionVector(BootDataT *bd) {
 
   for (i = EXC_TRAP(1); i <= EXC_TRAP(15); i++)
     ExcVec[i] = TrapInstTrap;
+
+  {
+    void *jmptab = &ExcVec[EXC_TRAP(16)];
+
+    JUMP(jmptab, MemAlloc);
+  }
 }
