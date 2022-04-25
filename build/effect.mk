@@ -5,11 +5,10 @@ SOURCES = $(EFFECT).c
 endif
 
 LIBS += libblit libgfx libmisc libc
-CPPFLAGS += -I$(TOPDIR)/loader
-LDEXTRA = $(TOPDIR)/loader/loader.a
+LDEXTRA = $(TOPDIR)/system/system.a
 LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 
-CRT0 = $(TOPDIR)/loader/crt0.o
+CRT0 = $(TOPDIR)/system/crt0.o
 BOOTLOADER = $(TOPDIR)/bootloader.bin
 
 EXTRA-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).adf $(EFFECT).rom
@@ -21,10 +20,10 @@ all: build
 $(TOPDIR)/lib/lib%.a: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-$(TOPDIR)/loader/%.o: FORCE
+$(TOPDIR)/system/%.o: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-$(TOPDIR)/loader/%.a: FORCE
+$(TOPDIR)/system/%.a: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
 $(TOPDIR)/effects/%.a: FORCE

@@ -1,14 +1,13 @@
-#include "effect.h"
-#include "interrupt.h"
-#include "cia.h"
-#include "timer.h"
-#include "memory.h"
-#include "ahx.h"
-#include "console.h"
-#include "copper.h"
-#include "keyboard.h"
-#include "event.h"
-#include "blitter.h"
+#include <effect.h>
+#include <ahx.h>
+#include <blitter.h>
+#include <console.h>
+#include <copper.h>
+#include <system/event.h>
+#include <system/interrupt.h>
+#include <system/keyboard.h>
+#include <system/memory.h>
+#include <system/timer.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -218,8 +217,7 @@ static void Kill(void) {
 
 static bool HandleEvent(void);
 
-static void Render(void) {
-  int lines = ReadLineCounter();
+static void RenderScreen(void) {
   short i;
 
   ConsoleSetCursor(&console, 0, 3);
@@ -240,8 +238,14 @@ static void Render(void) {
       BitmapCopy(screen, x, y, wavescope.channel[i].bm);
     }
   }
-  
-  Log("playahx: %d\n", ReadLineCounter() - lines);
+}
+
+PROFILE(PlayAHX);
+
+static void Render(void) {
+  ProfilerStart(PlayAHX);
+  RenderScreen(); 
+  ProfilerStop(PlayAHX);
 
   TaskWaitVBlank();
 

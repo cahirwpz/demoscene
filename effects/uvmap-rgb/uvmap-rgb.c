@@ -1,9 +1,9 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "interrupt.h"
-#include "memory.h"
-#include "pixmap.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <pixmap.h>
+#include <system/interrupt.h>
+#include <system/memory.h>
 
 #define WIDTH 80
 #define HEIGHT 64

@@ -1,9 +1,9 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "2d.h"
-#include "fx.h"
+#include <effect.h>
+#include <2d.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -110,15 +110,17 @@ static void DrawMetaballs(void) {
   x = *val++; y = *val++; BitmapAddSaturated(screen[active], x, y, &metaball, carry);
 }
 
+PROFILE(Metaballs);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
-
-  // This takes about 100 lines. Could we do better?
-  ClearMetaballs();
-  PositionMetaballs();
-  DrawMetaballs();
-
-  // Log("metaballs : %d\n", ReadLineCounter() - lines);
+  ProfilerStart(Metaballs);
+  {
+    // This takes about 100 lines. Could we do better?
+    ClearMetaballs();
+    PositionMetaballs();
+    DrawMetaballs();
+  }
+  ProfilerStop(Metaballs);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();

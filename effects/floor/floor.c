@@ -5,13 +5,14 @@
  * Shift registers are also used to move and wrap the image around.
  */
 
-#include "effect.h"
-#include "copper.h"
-#include "gfx.h"
-#include "memory.h"
-#include "fx.h"
-#include "color.h"
+#include <effect.h>
+#include <color.h>
+#include <copper.h>
+#include <fx.h>
+#include <gfx.h>
+
 #include <stdlib.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -243,8 +244,10 @@ static void ControlStripes(void) {
   }
 }
 
+PROFILE(Floor);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
+  ProfilerStart(Floor);
   {
     short offset = normfx(SIN(frameCount * 8) * 1024) + 1024;
     CopInsT **line = copLine[active];
@@ -254,7 +257,7 @@ static void Render(void) {
     ColorizeStripes(line);
     ShiftStripes(line, offset);
   }
-  // Log("floor2: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(Floor);
 
   CopListRun(coplist[active]);
   TaskWaitVBlank();

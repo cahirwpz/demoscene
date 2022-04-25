@@ -1,5 +1,5 @@
-#include <memory.h>
 #include <pixmap.h>
+#include <system/memory.h>
 
 static short bitdepth[] = { 0, 4, 8 };
 

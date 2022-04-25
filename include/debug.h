@@ -1,8 +1,6 @@
 #ifndef __DEBUG_H__
 #define __DEBUG_H__
 
-#include <cdefs.h>
-
 /* When simulator is configured to enter debugger on illegal instructions,
  * this macro can be used to set breakpoints in your code. */
 #define BREAK() { asm volatile("\tillegal\n"); }
@@ -14,16 +12,7 @@
  * debugger for program inspection and stop instruction execution. */
 #define PANIC() { BREAK(); HALT(); }
 
-#ifdef UAE
-#include "uae.h"
-#define Log(...) UaeLog(__VA_ARGS__);
-#define Panic(...) { UaeLog(__VA_ARGS__); PANIC(); }
-#else
-void Log(const char *format, ...)
-  __attribute__ ((format (printf, 1, 2)));
-__noreturn void Panic(const char *format, ...)
-  __attribute__ ((format (printf, 1, 2)));
-#endif
+#include <system/debug.h>
 
 #ifdef NDEBUG
 #define Assert(e) {}

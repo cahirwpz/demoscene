@@ -1,4 +1,3 @@
-#include <memory.h>
 #include <pixmap.h>
 
 void PixmapScramble_4_2(const PixmapT *pixmap) {
