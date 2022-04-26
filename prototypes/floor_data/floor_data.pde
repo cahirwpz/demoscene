@@ -9,8 +9,8 @@ final int WIDTH = 320;
 final int HEIGHT = 256;
 final int PART = HEIGHT / 2;
 
-int[] stripeWidth = new int [HEIGHT];
-int[] stripeLight = new int [HEIGHT];
+int[] stripeWidth = new int[HEIGHT];
+int[] stripeLight = new int[HEIGHT];
 
 PrintWriter wr;
 
@@ -30,9 +30,10 @@ void setup() {
   
   for (int y = 0; y < PART; y++, line += width) {
     int stripe_w = far_w << shift;
-    stripeWidth[y] = stripe_w;
     // int start = (y - PART) + stripe_w * 15;
     int start = (int)(stripe_w * 0.25 * (1.0 - sin(y * 4 * PI / PART))) + stripe_w * 11 / 16;
+
+    stripeWidth[y] = stripe_w;
 
     for (int x = 0; x < width; x++) {
       int stripe = (start + x << shift) / stripe_w; 
@@ -43,9 +44,10 @@ void setup() {
   
   for (int y = 0; y < PART; y++, line += width) {
     int stripe_w = (far_w << shift) + ((y << shift) * (near_w - far_w) / PART);
-    stripeWidth[PART+y] = stripe_w;
     int start = 0;
-    
+
+    stripeWidth[PART+y] = stripe_w;
+
     for (int x = 0; x < width; x++) {
       int stripe = start + (x << shift) / stripe_w; 
       int c = (stripe % 15 + 1) * 8 + 128;
@@ -75,18 +77,11 @@ void generateStripeLight() {
 }
 
 void saveArrayToC(int[] arr, String name) {
-  String values = Arrays.toString(arr);
-  values = values.replace("[", "{ ");
-  values = values.replace("]", " };");
-  
-  String out = new String();
-  out += "short " + name + "[] = ";
-  out += values;
-  
+  String values = Arrays.toString(arr).replace("[", "{ ").replace("]", " };");
+  String out = new String("short " + name + "[] = " + values);
   String filename = name + ".c";
-  wr = createWriter(filename);
   
+  wr = createWriter(filename);
   wr.println(out);
-  wr.flush();
   wr.close();
 }
