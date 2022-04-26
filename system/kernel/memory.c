@@ -5,6 +5,7 @@
 #include <string.h>
 #include <strings.h>
 #include <system/memory.h>
+#include <system/mutex.h>
 #include <system/task.h>
 
 #define DEBUG 0
@@ -14,6 +15,8 @@
 #else
 #define Debug(fmt, ...) ((void)0)
 #endif
+
+static MUTEX(MemMtx);
 
 typedef uintptr_t WordT;
 
@@ -233,7 +236,7 @@ static WordT *ArenaMemAlloc(ArenaT *ar, u_int size) {
   u_int reqsz = BlockSize(size);
   WordT *bt;
 
-  IntrDisable();
+  MutexLock(&MemMtx);
 
   bt = ArenaFindFit(ar, reqsz);
   if (bt != NULL) {
@@ -259,7 +262,7 @@ static WordT *ArenaMemAlloc(ArenaT *ar, u_int size) {
     ArenaDecFree(ar, memsz);
   }
 
-  IntrEnable();
+  MutexUnlock(&MemMtx);
 
   return bt;
 }
@@ -270,7 +273,7 @@ static void ArenaMemFree(ArenaT *ar, void *ptr) {
 
   Debug("%s(%p, %p)", __func__, ar, ptr);
 
-  IntrDisable();
+  MutexLock(&MemMtx);
 
   bt = BtFromPtr(ptr);
 
@@ -310,7 +313,7 @@ static void ArenaMemFree(ArenaT *ar, void *ptr) {
   ar->totalFree += memsz;
   ArenaFreeInsert(ar, bt);
 
-  IntrEnable();
+  MutexUnlock(&MemMtx);
 }
 
 static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
@@ -327,7 +330,7 @@ static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
     return old_ptr;
   }
 
-  IntrDisable();
+  MutexLock(&MemMtx);
 
   if (reqsz < sz) {
     BtFlagsT is_last = BtGetIsLast(bt);
@@ -363,7 +366,7 @@ static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
     }
   }
 
-  IntrEnable();
+  MutexUnlock(&MemMtx);
 
   Debug("%s(%p, %ld) = %p", __func__, old_ptr, size, new_ptr);
   return new_ptr;
@@ -378,7 +381,7 @@ static void ArenaCheck(ArenaT *ar, int verbose) {
   int prevfree = 0;
   unsigned freeMem = 0, dangling = 0;
 
-  IntrDisable();
+  MutexLock(&MemMtx);
 
   Msg("Arena: $%08lx - $%08lx [$%x]\n",
       (uintptr_t)ar->start, (uintptr_t)ar->end, ar->attributes);
@@ -413,7 +416,7 @@ static void ArenaCheck(ArenaT *ar, int verbose) {
 
   Assert(dangling == 0 && "Dangling free blocks!");
 
-  IntrEnable();
+  MutexUnlock(&MemMtx);
 }
 
 static ArenaT *ArenaOf(void *ptr) {

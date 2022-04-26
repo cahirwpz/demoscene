@@ -2,6 +2,7 @@
 #include <system/cpu.h>
 #include <system/cia.h>
 #include <system/interrupt.h>
+#include <system/mutex.h>
 #include <system/task.h>
 #include <system/timer.h>
 
@@ -44,6 +45,7 @@ static void NotifyTimeout(CIATimerT *timer) {
 
 static CIATimerT Timers[4] = {TIMER(CIAA, A), TIMER(CIAA, B), TIMER(CIAB, A),
                               TIMER(CIAB, B)};
+static MUTEX(TimerMtx);
 
 CIATimerT *AcquireTimer(u_int num) {
   CIATimerT *timer = NULL;
@@ -51,7 +53,7 @@ CIATimerT *AcquireTimer(u_int num) {
 
   Assert(num <= TIMER_CIAB_B || num == TIMER_ANY);
 
-  IntrDisable();
+  MutexLock(&TimerMtx);
   /* Allocate a timer that is not in use and its' number matches
    * (if specified instead of wildcard). */
   for (i = TIMER_CIAA_A; i <= TIMER_CIAB_B; i++) {
@@ -64,7 +66,7 @@ CIATimerT *AcquireTimer(u_int num) {
       break;
     }
   }
-  IntrEnable();
+  MutexUnlock(&TimerMtx);
 
   if (timer) {
     IntChainT *chain = (num & 2) ? ExterChain : PortsChain;
@@ -75,13 +77,13 @@ CIATimerT *AcquireTimer(u_int num) {
 }
 
 void ReleaseTimer(CIATimerT *timer) {
-  IntrDisable();
+  MutexLock(&TimerMtx);
   {
     IntChainT *chain = (timer->num & 2) ? ExterChain : PortsChain;
     RemIntServer(chain, &timer->server);
     InUse &= ~__BIT(timer->num);
   }
-  IntrEnable();
+  MutexUnlock(&TimerMtx);
 }
 
 static void LoadTimer(CIAPtrT cia, u_char icr, u_short delay, u_short flags) {
