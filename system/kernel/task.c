@@ -80,7 +80,7 @@ void TaskRun(TaskT *tsk, u_char prio, void (*fn)(void *), void *arg) {
   TaskResume(tsk);
 }
 
-static void ReadyAdd(TaskT *tsk) {
+void ReadyAdd(TaskT *tsk) {
   TaskT *before = TAILQ_FIRST(&ReadyList);
   /* Insert before first task with lower priority.
    * Please note that 0 is the highest priority! */
