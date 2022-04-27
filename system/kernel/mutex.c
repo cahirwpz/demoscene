@@ -18,8 +18,7 @@ void MutexLock(MutexT *mtx) {
 void MutexUnlock(MutexT *mtx) {
   TaskT *tsk;
   IntrDisable();
-  if (mtx->owner != CurrentTask)
-    PANIC();
+  Assume(mtx->owner == CurrentTask);
   mtx->owner = NULL;
   if ((tsk = TAILQ_FIRST(&mtx->waitList))) {
     TAILQ_REMOVE(&mtx->waitList, tsk, node);

@@ -7,8 +7,6 @@
 #include <system/task.h>
 #include <system/timer.h>
 
-#define DEBUG 0
-
 #define LOWER 0
 #define UPPER 1
 
@@ -179,9 +177,7 @@ void FloppyTrackRead(short num) {
   ClearIRQ(INTF_DSKBLK);
   EnableDMA(DMAF_DISK);
 
-#if DEBUG
-  Log("[Floppy] Read track %d.\n", num);
-#endif
+  Debug("[Floppy] Read track %d.\n", num);
 
   custom->dskpt = (void *)track;
   /* Write track size twice to initiate DMA transfer. */
@@ -229,11 +225,9 @@ void FloppyTrackDecode(u_int *buf) {
 
     *(u_int *)&info = DecodeLong(sector->info[0], sector->info[1], mask);
 
-#if DEBUG
-    Log("[Floppy] Decode: sector=%p, #sector=%d, #track=%d\n",
-        sector, info.sectorNum, info.trackNum);
-    Assert(info.sectorNum < NSECTORS && info.trackNum < NTRACKS);
-#endif
+    Debug("[Floppy] Decode: sector=%p, #sector=%d, #track=%d\n",
+          sector, info.sectorNum, info.trackNum);
+    Assume(info.sectorNum < NSECTORS && info.trackNum < NTRACKS);
 
     /* Decode sector! */
     {

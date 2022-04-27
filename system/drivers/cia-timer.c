@@ -51,7 +51,7 @@ CIATimerT *AcquireTimer(u_int num) {
   CIATimerT *timer = NULL;
   u_int i;
 
-  Assert(num <= TIMER_CIAB_B || num == TIMER_ANY);
+  Assume(num <= TIMER_CIAB_B || num == TIMER_ANY);
 
   MutexLock(&TimerMtx);
   /* Allocate a timer that is not in use and its' number matches
@@ -128,7 +128,7 @@ void WaitTimerGeneric(CIATimerT *timer, u_short delay, bool spin) {
       continue;
   } else {
     /* Must not sleep while in interrupt context! */
-    Assert(GetIPL() == 0);
+    Assume(GetIPL() == 0);
     /* Turn on the interrupt and go to sleep. */
     IntrDisable();
     timer->timeout = NotifyTimeout;
