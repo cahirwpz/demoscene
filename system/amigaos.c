@@ -7,6 +7,7 @@
 #include <hardware/intbits.h>
 #include <proto/alib.h>
 #include <proto/exec.h>
+#undef Debug
 #include <proto/graphics.h>
 
 #include <system/boot.h>

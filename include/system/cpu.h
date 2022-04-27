@@ -34,23 +34,23 @@ extern u_char CpuModel;
 
 /* Make the processor wait for interrupt. */
 static inline void CpuWait(void) {
-  asm volatile("\tstop\t#0x2000\n");
+  asm volatile("stop #0x2000");
 }
 
 /* Code running in task context executes with IPL set to 0. */
 static inline void CpuIntrDisable(void) {
-  asm volatile("\tor.w\t#0x0700,%sr\n");
+  asm volatile("or.w #0x0700,%sr");
 }
 
 static inline void CpuIntrEnable(void) {
-  asm volatile("\tand.w\t#0xf8ff,%sr\n");
+  asm volatile("and.w #0xf8ff,%sr");
 }
 
 /* Returns current interrupt priority level. Reads whole Status Register
  * (it's privileged instruction on 68010 and above). */
 static inline u_short GetIPL(void) {
   u_short sr;
-  asm volatile("\tmove.w\t%%sr,%0\n" : "=d"(sr));
+  asm volatile("move.w %%sr,%0" : "=d"(sr));
   return sr & SR_IM;
 }
 

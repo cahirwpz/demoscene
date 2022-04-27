@@ -4,14 +4,6 @@
 #include <system/cpu.h>
 #include <system/task.h>
 
-#define DEBUG 0
-
-#if DEBUG
-#define Debug(fmt, ...) Log("[%s] " fmt "\n", __func__, __VA_ARGS__)
-#else
-#define Debug(fmt, ...) ((void)0)
-#endif
-
 static TaskT MainTask;
 TaskT *CurrentTask = &MainTask;
 
@@ -20,7 +12,7 @@ static TaskListT WaitList = TAILQ_HEAD_INITIALIZER(WaitList);
 u_char NeedReschedule = 0;
 
 void IntrEnable(void) {
-  Assert(CurrentTask->intrNest > 0);
+  Assume(CurrentTask->intrNest > 0);
   if (--CurrentTask->intrNest == 0)
     CpuIntrEnable();
 }
@@ -80,7 +72,7 @@ void TaskRun(TaskT *tsk, u_char prio, void (*fn)(void *), void *arg) {
   TaskResume(tsk);
 }
 
-static void ReadyAdd(TaskT *tsk) {
+void ReadyAdd(TaskT *tsk) {
   TaskT *before = TAILQ_FIRST(&ReadyList);
   /* Insert before first task with lower priority.
    * Please note that 0 is the highest priority! */
@@ -96,7 +88,7 @@ static void ReadyAdd(TaskT *tsk) {
 /* Take a task with highest priority. */
 static TaskT *ReadyChoose(void) {
   TaskT *tsk;
-  Assert(GetIPL() == IPL_MAX);
+  Assume(GetIPL() == IPL_MAX);
   tsk = TAILQ_FIRST(&ReadyList);
   if (tsk != NULL)
     TAILQ_REMOVE(&ReadyList, tsk, node);
@@ -116,8 +108,8 @@ static void MaybePreemptISR(void) {
 
 void TaskResumeISR(TaskT *tsk) {
   u_short ipl = SetIPL(SR_IM);
-  Assert(ipl > IPL_NONE);
-  Assert(tsk->state == TS_SUSPENDED);
+  Assume(ipl > IPL_NONE);
+  Assume(tsk->state == TS_SUSPENDED);
   ReadyAdd(tsk);
   MaybePreemptISR();
   (void)SetIPL(ipl);
@@ -136,7 +128,7 @@ static void MaybePreempt(void) {
 
 void TaskResume(TaskT *tsk) {
   IntrDisable();
-  Assert(tsk->state == TS_SUSPENDED);
+  Assume(tsk->state == TS_SUSPENDED);
   ReadyAdd(tsk);
   MaybePreempt();
   IntrEnable();
@@ -144,7 +136,7 @@ void TaskResume(TaskT *tsk) {
 
 void TaskSuspend(TaskT *tsk) {
   IntrDisable();
-  Assert(tsk->state == TS_READY);
+  Assume(tsk->state == TS_READY);
   if (tsk != NULL) {
     TAILQ_REMOVE(&ReadyList, tsk, node);
     tsk->state = TS_SUSPENDED;
@@ -159,7 +151,7 @@ void TaskSuspend(TaskT *tsk) {
 void TaskPrioritySet(TaskT *tsk, u_char prio) {
   IntrDisable();
   if (tsk != NULL) {
-    Assert(tsk->state == TS_READY);
+    Assume(tsk->state == TS_READY);
     TAILQ_REMOVE(&ReadyList, tsk, node);
   } else {
     tsk = CurrentTask;
@@ -172,7 +164,7 @@ void TaskPrioritySet(TaskT *tsk, u_char prio) {
 
 u_int TaskWait(u_int eventSet) {
   TaskT *tsk = CurrentTask;
-  Assert(eventSet != 0);
+  Assume(eventSet != 0);
   IntrDisable();
   tsk->eventSet = eventSet;
   tsk->state = TS_BLOCKED;
@@ -188,7 +180,7 @@ u_int TaskWait(u_int eventSet) {
 static int _TaskNotify(u_int eventSet) {
   TaskT *tsk;
   int ntasks = 0;
-  Assert(eventSet != 0);
+  Assume(eventSet != 0);
   TAILQ_FOREACH(tsk, &WaitList, node) {
     if (tsk->eventSet & eventSet) {
       Debug("Waking up '%s' task waiting on $%08x (got $%08x).",
@@ -199,20 +191,20 @@ static int _TaskNotify(u_int eventSet) {
     }
   }
   if (ntasks == 0)
-    Log("[TaskNotify] Nobody was waiting for %08x events!\n", eventSet);
+    Debug("[TaskNotify] Nobody was waiting for %08x events!\n", eventSet);
   return ntasks;
 }
 
 void TaskNotifyISR(u_int eventSet) {
   u_short ipl = SetIPL(SR_IM);
-  Assert(ipl > IPL_NONE);
+  Assume(ipl > IPL_NONE);
   if (_TaskNotify(eventSet))
     MaybePreemptISR();
   (void)SetIPL(ipl);
 }
 
 void TaskNotify(u_int eventSet) {
-  Assert(GetIPL() == IPL_NONE);
+  Assume(GetIPL() == IPL_NONE);
   IntrDisable();
   if (_TaskNotify(eventSet))
     MaybePreempt();
@@ -220,8 +212,8 @@ void TaskNotify(u_int eventSet) {
 }
 
 void TaskSwitch(TaskT *curtsk) {
-  Assert(GetIPL() == IPL_MAX);
-  Assert(curtsk != NULL);
+  Assume(GetIPL() == IPL_MAX);
+  Assume(curtsk != NULL);
   if (curtsk->state == TS_READY)
     ReadyAdd(curtsk);
   while (!(curtsk = ReadyChoose())) {

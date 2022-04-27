@@ -49,11 +49,15 @@ void TaskResumeISR(TaskT *tsk);
 void TaskSuspend(TaskT *tsk);
 void TaskPrioritySet(TaskT *tsk, u_char prio);
 
+#ifdef _TASK_PRIVATE
+void ReadyAdd(TaskT *tsk);
+#endif
+
 u_int TaskWait(u_int eventSet);
 void TaskNotifyISR(u_int eventSet);
 void TaskNotify(u_int eventSet);
 
-static inline void TaskYield(void) { asm volatile("\ttrap\t#0\n"); }
+static inline void TaskYield(void) { asm volatile("trap #0"); }
 
 /* Enable / disable all interrupts. Handle nested calls. */
 void IntrDisable(void);

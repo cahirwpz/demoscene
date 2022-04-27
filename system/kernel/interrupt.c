@@ -29,7 +29,7 @@ void RemIntServer(IntChainT *ic, IntServerT *is) {
   is_p = &ic->head;
   while (*is_p != is)
     is_p = &(*is_p)->next;
-  Assert(is_p != NULL);
+  Assume(is_p != NULL);
   *is_p = is->next;
   /* If the list is empty after removal then disable the interrupt. */
   if (!ic->head) {
