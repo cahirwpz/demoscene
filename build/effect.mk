@@ -45,7 +45,7 @@ $(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA)
 	@echo "[SED] $(notdir $^) -> $(DIR)$@"
 	sed -e 's,$$(TOPDIR),$(TOPDIR),g' \
 	    -e 's,$$(EFFECT),$(EFFECT),g' \
-	    $(TOPDIR)/a500rom.asm > $@
+	    $(TOPDIR)/a500rom.asm > $@ || (rm -f $@ && exit 1)
 
 %.rom: %.rom.asm %.exe
 	@echo "[VASM] $(addprefix $(DIR),$^) -> $(DIR)$@"
@@ -57,19 +57,19 @@ data/%.c: data/%.lwo
 
 data/%.c: data/%.psfu
 	@echo "[PSF] $(DIR)$^ -> $(DIR)$@"
-	$(PSF2C) $(PSF2C.$*) $< > $@
+	$(PSF2C) $(PSF2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
 data/%.c: data/%.png
 	@echo "[PNG] $(DIR)$< -> $(DIR)$@"
-	$(PNG2C) $(PNG2C.$*) $< > $@
+	$(PNG2C) $(PNG2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
 data/%.c: data/%.2d
 	@echo "[2D] $(DIR)$< -> $(DIR)$@"
-	$(CONV2D) $(CONV2D.$*) $< > $@
+	$(CONV2D) $(CONV2D.$*) $< > $@ || (rm -f $@ && exit 1)
 
 data/%.c: data/%.sync
 	@echo "[SYNC] $(DIR)$< -> $(DIR)$@"
-	$(SYNC2C) $(SYNC2C.$*) $< > $@
+	$(SYNC2C) $(SYNC2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
 %.adf: %.exe $(DATA) $(DATA_GEN) $(BOOTLOADER)
 	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
