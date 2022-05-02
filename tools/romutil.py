@@ -11,13 +11,15 @@ from fsutil import SECTOR, write_pad, Filesystem
 #
 # In memory format description:
 #
-# sector 0..1: boot code
+# sector 0..1: startup code
 #  [LONG] initial stack pointer
 #  [LONG] initial program counter
-#  [LONG] size of executable file aligned to sector size (takes m sectors)
-#  ...    boot code
+#  [LONG] ROM address of executable file, sector aligned
+#  [LONG] size of executable file, in bytes
+#  ...    startup code
 #
 # sector 2..: file system image
+#
 
 ROMADDR = 0xf80000
 ROMSIZE = 0x080000
@@ -33,15 +35,6 @@ def romcode(path):
     return romcode
 
 
-def find_exec(img):
-    with open(img, 'rb') as fs:
-        for entry in Filesystem.load(fs):
-            if entry.exe:
-                return entry
-
-    return None
-
-
 def write_startup(rom, startup, exe):
     startup = BytesIO(startup)
     # Overwrite rom startup hunk file setup
@@ -52,6 +45,11 @@ def write_startup(rom, startup, exe):
     write_pad(startup, 2 * SECTOR)
     # Write fixed boot block to file system image
     rom.write(startup.getvalue())
+
+
+def write_footer(rom):
+    rom.seek(-16, os.SEEK_END)
+    rom.write(bytes.fromhex('471848194f1a531b541c4f1d571e4e1f'))
 
 
 if __name__ == '__main__':
@@ -71,7 +69,7 @@ if __name__ == '__main__':
     startup = romcode(args.startup)
     if not startup:
         raise SystemExit('ROM startup code file does not exists!')
-    executable = find_exec(args.image)
+    executable = Filesystem.find_exec(args.image)
     if not executable:
         raise SystemExit('No AmigaHunk executable found!')
 
@@ -84,7 +82,4 @@ if __name__ == '__main__':
 
         # Complete ROM disk image
         write_pad(rom, ROMSIZE)
-
-        # Write footer
-        rom.seek(-16, os.SEEK_END)
-        rom.write(bytes.fromhex('471848194f1a531b541c4f1d571e4e1f'))
+        write_footer(rom)

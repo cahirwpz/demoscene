@@ -140,6 +140,15 @@ class Filesystem(UserList):
                 fh.write(entry.data)
                 write_pad(fh)
 
+    @classmethod
+    def find_exec(cls, path):
+        with open(path, 'rb') as fs:
+            for entry in cls.load(fs):
+                if entry.exe:
+                    return entry
+
+        return None
+
 
 def extract(archive, patterns, force):
     for pattern in patterns:

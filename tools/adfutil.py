@@ -6,7 +6,7 @@ from array import array
 from struct import pack
 from io import BytesIO
 
-from fsutil import SECTOR, align, write_pad, sectors, Filesystem
+from fsutil import SECTOR, write_pad, sectors, Filesystem
 
 #
 # On disk format description:
@@ -19,6 +19,7 @@ from fsutil import SECTOR, align, write_pad, sectors, Filesystem
 #  ...    boot code
 #
 # sector 2..: file system image
+#
 
 FLOPPY = SECTOR * 80 * 11 * 2
 
@@ -44,15 +45,6 @@ def bootcode(path):
     if len(bootcode) > 2 * SECTOR:
         raise SystemExit('Boot code is larger than 1024 bytes!')
     return bootcode
-
-
-def find_exec(img):
-    with open(img, 'rb') as fs:
-        for entry in Filesystem.load(fs):
-            if entry.exe:
-                return entry
-
-    return None
 
 
 def write_bb(adf, bootcode, exe):
@@ -90,7 +82,7 @@ if __name__ == '__main__':
     executable = None
 
     if bootblock:
-        executable = find_exec(args.image)
+        executable = Filesystem.find_exec(args.image)
         if not executable:
             raise SystemExit('No AmigaHunk executable found!')
 
