@@ -71,9 +71,13 @@ data/%.c: data/%.sync
 	@echo "[SYNC] $(DIR)$< -> $(DIR)$@"
 	$(SYNC2C) $(SYNC2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
-%.adf: %.exe $(DATA) $(DATA_GEN) $(BOOTLOADER)
-	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
-	$(FSUTIL) -b $(BOOTLOADER) create $@ $(filter-out %bootloader.bin,$^)
+%.img: %.exe $(DATA) $(DATA_GEN)
+	@echo "[IMG] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
+	$(FSUTIL) create $@ $(filter-out %bootloader.bin,$^)
+
+%.adf: %.img $(BOOTLOADER) 
+	@echo "[ADF] $(DIR)$< -> $(DIR)$@"
+	$(ADFUTIL) -b $(BOOTLOADER) $< $@ 
 
 # Default debugger - can be changed by passing DEBUGGER=xyz to make.
 DEBUGGER ?= gdb
@@ -91,4 +95,4 @@ debug: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -d $(DEBUGGER) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 .PHONY: run debug run-floppy debug-floppy
-.PRECIOUS: $(BOOTLOADER)
+.PRECIOUS: $(BOOTLOADER) $(EFFECT).img
