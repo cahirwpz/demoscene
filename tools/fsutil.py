@@ -119,14 +119,14 @@ class Filesystem(UserList):
         dir_len = sum(align(8 + len(entry.name) + 1, 2) for entry in self.data)
 
         # Calculate starting position of files in the file system image
-        files_pos = align(dir_len) + 2 * SECTOR
+        files_pos = align(dir_len)
 
         with open(path, 'wb') as fh:
             # Write directory header
             fh.write(pack('>H', dir_len))
             # Write directory entries
             for entry in self.data:
-                start = sectors(entry.offset)
+                start = sectors(entry.offset + files_pos)
                 reclen = align(8 + len(entry.name) + 1, 2)
                 name = entry.name.encode('ascii') + b'\0'
                 fh.write(pack('>BBHI%ds' % len(name),

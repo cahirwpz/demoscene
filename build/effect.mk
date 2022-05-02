@@ -10,9 +10,10 @@ LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 
 CRT0 = $(TOPDIR)/system/crt0.o
 BOOTLOADER = $(TOPDIR)/bootloader.bin
+ROMSTARTUP = $(TOPDIR)/a500rom.bin
 
-EXTRA-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).adf $(EFFECT).rom
-CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe.dbg $(EFFECT).exe.map 
+EXTRA-FILES += $(DATA_GEN) $(EFFECT).img $(EFFECT).adf $(EFFECT).rom
+CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map 
 
 all: build
 
@@ -41,16 +42,6 @@ $(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA)
 	$(CP) $@ $@.dbg
 	$(STRIP) $@
 
-%.rom.asm: $(TOPDIR)/a500rom.asm $(TOPDIR)/bootloader.asm
-	@echo "[SED] $(notdir $^) -> $(DIR)$@"
-	sed -e 's,$$(TOPDIR),$(TOPDIR),g' \
-	    -e 's,$$(EFFECT),$(EFFECT),g' \
-	    $(TOPDIR)/a500rom.asm > $@ || (rm -f $@ && exit 1)
-
-%.rom: %.rom.asm %.exe
-	@echo "[VASM] $(addprefix $(DIR),$^) -> $(DIR)$@"
-	$(VASM) -Fbin $(VASMFLAGS) -o $@ $<
-
 data/%.c: data/%.lwo
 	@echo "[LWO] $(DIR)$< -> $(DIR)$@"
 	$(LWO2C) $(LWO2C.$*) -f $< $@
@@ -78,6 +69,10 @@ data/%.c: data/%.sync
 %.adf: %.img $(BOOTLOADER) 
 	@echo "[ADF] $(DIR)$< -> $(DIR)$@"
 	$(ADFUTIL) -b $(BOOTLOADER) $< $@ 
+
+%.rom: %.img $(ROMSTARTUP)
+	@echo "[ROM] $(DIR)$< -> $(DIR)$@"
+	$(ROMUTIL) $(ROMSTARTUP) $< $@ 
 
 # Default debugger - can be changed by passing DEBUGGER=xyz to make.
 DEBUGGER ?= gdb

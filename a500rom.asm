@@ -21,6 +21,11 @@ Kickstart:
         dc.l    $400             ; Initial SP
         dc.l    Entry            ; Initial PC
 
+HunkFilePtr:
+        dc.l    0
+HunkFileSize:
+        dc.l    0
+
 ; The ROM is located at $fc0000 but is mapped at $0 after reset shadowing RAM
 Entry:
         lea     ciaa,a4
@@ -44,8 +49,8 @@ InitHW:
         clr.b   ciatodlow(a5)
 
 Setup:
-        move.l  #(HunkFileEnd-HunkFile),d2
-        move.l  #HunkFile,d3
+        move.l  HunkFileSize(pc),d2
+        move.l  HunkFilePtr(pc),d3
         move.l  #BD_SIZE+2*MR_SIZE,a3
         sub.l   a3,sp
         move.l  sp,a6
@@ -64,15 +69,7 @@ Setup:
         move.w  #MEMF_CHIP|MEMF_PUBLIC,(a0)+
 
 ROM = 1
-        include '$(TOPDIR)/bootloader.asm'
 
-HunkFile
-        incbin  '$(EFFECT).exe'
-HunkFileEnd
-
-        org     $fffff0
-
-        dc.w    $4718, $4819, $4f1a, $531b
-        dc.w    $541c, $4f1d, $571e, $4e1f
+        include 'bootloader.asm'
 
 ; vim: ft=asm68k:ts=8:sw=8:noet:

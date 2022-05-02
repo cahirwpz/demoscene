@@ -14,7 +14,8 @@ from fsutil import SECTOR, align, write_pad, sectors, Filesystem
 # sector 0..1: bootblock
 #  [LONG] 'DOS\0'
 #  [LONG] checksum
-#  [LONG] size of executable file aligned to sector size (takes m sectors)
+#  [WORD] start of executable file, sector aligned, shifted right by 8
+#  [WORD] offset of executable file, sector aligned, shifte right by 8
 #  ...    boot code
 #
 # sector 2..: file system image
