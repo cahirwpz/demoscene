@@ -77,8 +77,20 @@ void generateStripeLight() {
 }
 
 void saveArrayToC(int[] arr, String name) {
-  String values = Arrays.toString(arr).replace("[", "{ ").replace("]", " };");
-  String out = new String("short " + name + "[] = " + values);
+  String header = "// Generated automatically from prototypes/floor_data/floor_data.pde";
+  String out = new String(header + System.lineSeparator() + "short " + name + "[] = { " +  System.lineSeparator());
+  String line = new String();
+  for (int i = 0; i < arr.length; i++) {
+    String lineTest = new String(line + arr[i] + ", ");
+    // Break the line if adding a new value would go over 80 char limit
+    if (lineTest.length() >= 80) {
+      line +=  System.lineSeparator();
+      out += line;
+      line = "";
+    }
+    line += new String(arr[i] + ", ");
+  }
+  out += "};";
   String filename = name + ".c";
   
   wr = createWriter(filename);
