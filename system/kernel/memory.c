@@ -5,15 +5,10 @@
 #include <string.h>
 #include <strings.h>
 #include <system/memory.h>
+#include <system/mutex.h>
 #include <system/task.h>
 
-#define DEBUG 0
-
-#if DEBUG
-#define Debug(fmt, ...) Log("%s: " fmt "\n", __func__, __VA_ARGS__)
-#else
-#define Debug(fmt, ...) ((void)0)
-#endif
+static MUTEX(MemMtx);
 
 typedef uintptr_t WordT;
 
@@ -204,7 +199,7 @@ void AddMemory(void *ptr, u_int size, u_int attributes) {
   u_int sz = (uintptr_t)end - (uintptr_t)ar->start;
   WordT *bt = ar->start;
 
-  Assert(end > (void *)ar->start + FREEBLK_SZ);
+  Assume(end > (void *)ar->start + FREEBLK_SZ);
 
   ar->succ = NULL;
   Head(ar)->prev = Head(ar);
@@ -233,7 +228,7 @@ static WordT *ArenaMemAlloc(ArenaT *ar, u_int size) {
   u_int reqsz = BlockSize(size);
   WordT *bt;
 
-  IntrDisable();
+  MutexLock(&MemMtx);
 
   bt = ArenaFindFit(ar, reqsz);
   if (bt != NULL) {
@@ -259,7 +254,7 @@ static WordT *ArenaMemAlloc(ArenaT *ar, u_int size) {
     ArenaDecFree(ar, memsz);
   }
 
-  IntrEnable();
+  MutexUnlock(&MemMtx);
 
   return bt;
 }
@@ -270,11 +265,11 @@ static void ArenaMemFree(ArenaT *ar, void *ptr) {
 
   Debug("%s(%p, %p)", __func__, ar, ptr);
 
-  IntrDisable();
+  MutexLock(&MemMtx);
 
   bt = BtFromPtr(ptr);
 
-  Assert(BtUsed(bt) && BtHasCanary(bt)); /* Is block free and has canary? */
+  Assume(BtUsed(bt) && BtHasCanary(bt)); /* Is block free and has canary? */
 
   /* Mark block as free. */
   memsz = BtSize(bt) - USEDBLK_SZ;
@@ -310,7 +305,7 @@ static void ArenaMemFree(ArenaT *ar, void *ptr) {
   ar->totalFree += memsz;
   ArenaFreeInsert(ar, bt);
 
-  IntrEnable();
+  MutexUnlock(&MemMtx);
 }
 
 static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
@@ -327,7 +322,7 @@ static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
     return old_ptr;
   }
 
-  IntrDisable();
+  MutexLock(&MemMtx);
 
   if (reqsz < sz) {
     BtFlagsT is_last = BtGetIsLast(bt);
@@ -363,7 +358,7 @@ static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
     }
   }
 
-  IntrEnable();
+  MutexUnlock(&MemMtx);
 
   Debug("%s(%p, %ld) = %p", __func__, old_ptr, size, new_ptr);
   return new_ptr;
@@ -378,7 +373,7 @@ static void ArenaCheck(ArenaT *ar, int verbose) {
   int prevfree = 0;
   unsigned freeMem = 0, dangling = 0;
 
-  IntrDisable();
+  MutexLock(&MemMtx);
 
   Msg("Arena: $%08lx - $%08lx [$%x]\n",
       (uintptr_t)ar->start, (uintptr_t)ar->end, ar->attributes);
@@ -390,30 +385,30 @@ static void ArenaCheck(ArenaT *ar, int verbose) {
         BtSize(bt), " *"[is_last]);
     if (BtFree(bt)) {
       WordT *ft = BtFooter(bt);
-      Assert(*bt == *ft); /* Header and footer do not match? */
-      Assert(!prevfree); /* Free block not coalesced? */
+      Assume(*bt == *ft); /* Header and footer do not match? */
+      Assume(!prevfree); /* Free block not coalesced? */
       prevfree = 1;
       freeMem += BtSize(bt) - USEDBLK_SZ;
       dangling++;
     } else {
-      Assert(flag == prevfree); /* PREVFREE flag mismatch? */
-      Assert(BtHasCanary(bt)); /* Canary damaged? */
+      Assume(flag == prevfree); /* PREVFREE flag mismatch? */
+      Assume(BtHasCanary(bt)); /* Canary damaged? */
       prevfree = 0;
     }
   }
 
-  Assert(BtGetIsLast(prev)); /* Last block set incorrectly? */
-  Assert(freeMem == ar->totalFree); /* Total free memory miscalculated? */
+  Assume(BtGetIsLast(prev)); /* Last block set incorrectly? */
+  Assume(freeMem == ar->totalFree); /* Total free memory miscalculated? */
 
   for (n = Head(ar)->next; n != Head(ar); n = n->next) {
     WordT *bt = BtFromPtr(n);
-    Assert(BtFree(bt));
+    Assume(BtFree(bt));
     dangling--;
   }
 
-  Assert(dangling == 0 && "Dangling free blocks!");
+  Assume(dangling == 0 && "Dangling free blocks!");
 
-  IntrEnable();
+  MutexUnlock(&MemMtx);
 }
 
 static ArenaT *ArenaOf(void *ptr) {
@@ -421,7 +416,7 @@ static ArenaT *ArenaOf(void *ptr) {
   for (ar = FirstArena; ar != NULL; ar = ar->succ)
     if (ptr >= (void *)ar->start && ptr < (void *)ar->end)
       break;
-  Assert(ar != NULL);
+  Assume(ar != NULL);
   return ar;
 }
 
