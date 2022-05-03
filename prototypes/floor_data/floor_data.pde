@@ -93,6 +93,6 @@ void saveArrayToC(int[] arr, String name) {
     line += elem;
   }
  
-  wr.println("};");
+  wr.println(line + "};");
   wr.close();
 }
