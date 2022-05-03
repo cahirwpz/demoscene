@@ -25,16 +25,6 @@ ROMADDR = 0xf80000
 ROMSIZE = 0x080000
 
 
-def romcode(path):
-    if not os.path.isfile(path):
-        return None
-    with open(path, 'rb') as fh:
-        romcode = fh.read()
-    if len(romcode) > 2 * SECTOR:
-        raise SystemExit('ROM startup code is larger than 1024 bytes!')
-    return romcode
-
-
 def write_startup(rom, startup, exe):
     startup = BytesIO(startup)
     # Overwrite rom startup hunk file setup
@@ -43,7 +33,7 @@ def write_startup(rom, startup, exe):
     # Move to the end and pad it so it takes 2 sectors
     startup.seek(0, os.SEEK_END)
     write_pad(startup, 2 * SECTOR)
-    # Write fixed boot block to file system image
+    # Write startup to ROM image
     rom.write(startup.getvalue())
 
 
@@ -66,10 +56,17 @@ if __name__ == '__main__':
         help='ROM output file')
     args = parser.parse_args()
 
-    startup = romcode(args.startup)
-    if not startup:
+    startup = None
+
+    if not os.path.isfile(args.startup):
         raise SystemExit('ROM startup code file does not exists!')
+    if os.path.getsize(args.startup) > 2 * SECTOR:
+        raise SystemExit('ROM startup code is larger than 1024 bytes!')
+    with open(args.startup, 'rb') as fh:
+        startup = fh.read()
+
     executable = Filesystem.find_exec(args.image)
+
     if not executable:
         raise SystemExit('No AmigaHunk executable found!')
 

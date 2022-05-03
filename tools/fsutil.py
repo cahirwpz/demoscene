@@ -21,10 +21,7 @@ from io import BytesIO
 #   [LONG] #length : size of the file in bytes (up to 1MiB)
 #   [STRING] #name : name of the file (NUL terminated)
 #
-# sector (n)..(n+m-1): executable file in AmigaHunk format
-#  the file is assumed to be first in the directory
-#
-# sector (m+n)..: other files
+# sector (n)..(n+k-1): content of files
 #
 
 SECTOR = 512

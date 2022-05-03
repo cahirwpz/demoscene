@@ -32,21 +32,6 @@ def checksum(data):
     return (~chksum & 0xffffffff)
 
 
-def bootcode(path):
-    # Collect boot code if there's any...
-    if path is None:
-        return ''
-
-    if not os.path.isfile(path):
-        raise SystemExit('Boot code file does not exists!')
-
-    with open(path, 'rb') as fh:
-        bootcode = fh.read()
-    if len(bootcode) > 2 * SECTOR:
-        raise SystemExit('Boot code is larger than 1024 bytes!')
-    return bootcode
-
-
 def write_bb(adf, bootcode, exe):
     boot = BytesIO(bootcode)
     # Overwrite boot block header
@@ -78,10 +63,17 @@ if __name__ == '__main__':
         help='ADF output file')
     args = parser.parse_args()
 
-    bootblock = bootcode(args.bootcode)
+    bootblock = ''
     executable = None
 
-    if bootblock:
+    if args.bootcode:
+        if not os.path.isfile(args.bootcode):
+            raise SystemExit('Boot code file does not exists!')
+        if os.path.getsize(args.bootcode) > 2 * SECTOR:
+            raise SystemExit('Boot code is larger than 1024 bytes!')
+        with open(args.bootcode, 'rb') as fh:
+            bootblock = fh.read()
+
         executable = Filesystem.find_exec(args.image)
         if not executable:
             raise SystemExit('No AmigaHunk executable found!')
