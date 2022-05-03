@@ -1,4 +1,4 @@
-// Generated automatically from prototypes/floor_data/floor_data.pde
+/* Generated automatically from prototypes/floor_data/floor_data.pde */
 short stripeLight[] = { 
 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 
 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 

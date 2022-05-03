@@ -1,5 +1,6 @@
 import java.util.Arrays;
 
+final int max_z = 256;
 final int near_z = 256;
 final int far_z = 64;
 final int stripe = 16;
@@ -21,15 +22,22 @@ void setup() {
   save("floor.png");
 }
 
-/* Convert integer to Q12.4 fixed point format */
-static int Q(int i) {
-  return i << 4;
+/* Convert float to Q12.4 fixed point format */
+static int QF(float f) {
+  return (int)(f * 16.0);
 }
 
-void drawLine(int y, int start, int stripe_w) {
+static int stripeNum(float f, int n) {
+    int r = (int)f % n;
+    if (r < 0)
+      r += n;
+    return r + 1;
+}
+
+void drawLine(int y, float offset, float stripe_w) {
   for (int x = 0; x < width; x++) {
-    int stripe = Q(start + x) / stripe_w; 
-    int c = (stripe % 15 + 1) * 8 + 128;
+    float snum = x / stripe_w + offset;
+    int c = stripeNum(snum, 15) * 8 + 128;
     pixels[y * width + x] = color(c, c, c);
   }
 }
@@ -40,31 +48,27 @@ void calcFloor() {
   /* Values from 0 (normal) to 12 (dark) */
   int[] stripeLight = new int[HEIGHT];
 
-  int near_w = stripe * near_z / 256;
-  int far_w = stripe * far_z / 256;
-
-  int level = 11;
+  int light = 11;
   
   for (int y = 0; y < PART; y++) {
-    int stripe_w = Q(far_w);
-    float wobble = 0.25 * (1.0 - sin(y * 4 * PI / PART));
-    // int start = (y - PART) + stripe_w * 15;
-    int start = (int)(stripe_w * wobble) + stripe_w * 11 / 16;
+    float z = far_z;
+    float stripe_w = stripe * z / max_z;
+    float wobble = 4 * sin(4 * PI * (PART - y) / PART);
 
-    stripeWidth[y] = stripe_w;
-    stripeLight[y] = level;
+    stripeWidth[y] = QF(stripe_w);
+    stripeLight[y] = light;
 
-    drawLine(y, start, stripe_w);
+    drawLine(y, wobble, stripe_w);
   }
   
   for (int y = 0; y < PART; y++) {
-    int stripe_w = Q(far_w) + (Q(y) * (near_w - far_w) / PART);
-    int start = 0;
+    float z = far_z + (near_z - far_z) * y / PART;
+    float stripe_w = stripe * z / max_z;
 
-    stripeWidth[PART + y] = stripe_w;
-    stripeLight[PART + y] = level - (12 * y) / PART;
+    stripeWidth[PART + y] = QF(stripe_w);
+    stripeLight[PART + y] = light - (12 * y) / PART;
 
-    drawLine(PART + y, start, stripe_w);
+    drawLine(PART + y, 0, stripe_w);
   }
 
   saveArrayToC(stripeLight, "stripeLight");
