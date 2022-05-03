@@ -18,11 +18,6 @@
 #define HEIGHT 256
 #define DEPTH 4
 
-/* Width of the stripes (in pixels) at the point farthest from the camera */
-#define FAR   4
-/* Width of the stripes (in pixels) at the point closest to the camera */
-#define NEAR 16
-
 static CopListT *coplist[2];
 static short active = 0;
 
