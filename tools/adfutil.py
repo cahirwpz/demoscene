@@ -35,7 +35,7 @@ def checksum(data):
 def write_bb(adf, bootcode, exe):
     boot = BytesIO(bootcode)
     # Overwrite boot block header
-    exe_start = sectors(exe.offset)
+    exe_start = sectors(exe.offset) + 2
     exe_length = sectors(exe.size)
     boot.write(pack('>4s4xHH', b'DOS\0', exe_length * 2, exe_start * 2))
     # Move to the end and pad it so it takes 2 sectors

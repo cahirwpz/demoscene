@@ -81,7 +81,7 @@ run-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 debug-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
-	$(LAUNCH) -d $(DEBUGGER) -f $(EFFECT).adf -e $(EFFECT).elf
+	$(LAUNCH) -d $(DEBUGGER) -f $(EFFECT).adf -e $(EFFECT).exe.dbg
 
 run: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
