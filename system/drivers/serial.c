@@ -5,6 +5,7 @@
 #include <system/file.h>
 #include <system/interrupt.h>
 #include <system/memory.h>
+#include <system/mutex.h>
 #include <system/task.h>
 
 #define CLOCK 3546895
@@ -104,10 +105,12 @@ static FileOpsT SerialOps = {
   .close = SerialClose
 };
 
+static MUTEX(SerialMtx);
+
 FileT *SerialOpen(u_int baud, u_int flags) {
   static FileT *f = NULL;
 
-  IntrDisable();
+  MutexLock(&SerialMtx);
 
   if (f == NULL) {
     f = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
@@ -123,7 +126,7 @@ FileT *SerialOpen(u_int baud, u_int flags) {
     EnableINT(INTF_TBE | INTF_RBF);
   }
 
-  IntrEnable();
+  MutexUnlock(&SerialMtx);
 
   return f;
 }

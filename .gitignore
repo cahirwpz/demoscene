@@ -12,6 +12,7 @@ gdb-dashboard
 
 # executable files, floppy & rom images and archives
 *.adf
+*.img
 *.exe
 *.exe.dbg
 *.exe.map

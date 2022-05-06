@@ -1,3 +1,4 @@
+#include <debug.h>
 #include <string.h>
 #include <system/errno.h>
 #include <system/file.h>
@@ -37,6 +38,8 @@ static void MemClose(FileT *f) {
 static int MemRead(FileT *f, void *buf, u_int nbyte) {
   int start = f->offset;
   int nread = nbyte;
+
+  Debug("$%p $%p %d+%d", f, buf, f->offset, nbyte);
 
   if (start + nread > f->length)
     nread = f->length - start;

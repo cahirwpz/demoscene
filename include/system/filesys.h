@@ -9,7 +9,7 @@ struct File *OpenFile(const char *path);
 int GetFileSize(const char *path);
 void *LoadFile(const char *path, u_int memoryFlags);
 
-void InitFileSys(void);
+void InitFileSys(struct File *dev);
 void KillFileSys(void);
 
 #endif

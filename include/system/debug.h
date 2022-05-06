@@ -14,4 +14,14 @@ __noreturn void Panic(const char *format, ...)
   __attribute__ ((format (printf, 1, 2)));
 #endif
 
+#ifdef _SYSTEM
+#ifdef DEBUG
+#define Debug(fmt, ...) Log("[%s] " fmt "\n", __func__, __VA_ARGS__)
+#define Assume(e) Assert(e)
+#else
+#define Debug(fmt, ...) ((void)0)
+#define Assume(e) { if (!(e)) HALT(); }
+#endif
+#endif /* !_SYSTEM */
+
 #endif /* !__SYSTEM_DEBUG__ */
