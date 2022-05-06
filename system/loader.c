@@ -7,7 +7,7 @@
 #include <system/cpu.h>
 #include <system/exception.h>
 #include <system/filesys.h>
-#include <system/floppy.h>
+#include <system/file.h>
 #include <system/interrupt.h>
 #include <system/memory.h>
 #include <system/task.h>
@@ -71,8 +71,7 @@ void Loader(BootDataT *bd) {
 
   TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
 #ifdef TRACKMO
-  InitFloppy();
-  InitFileSys();
+  InitFileSys(FloppyOpen());
 #endif
   CallFuncList(&__INIT_LIST__);
 
@@ -84,7 +83,6 @@ void Loader(BootDataT *bd) {
   CallFuncList(&__EXIT_LIST__);
 #ifdef TRACKMO
   KillFileSys();
-  KillFloppy();
 #endif
   
   Log("[Loader] Shutdown complete!\n");

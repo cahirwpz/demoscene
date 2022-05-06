@@ -7,9 +7,6 @@
 #include <system/floppy.h>
 #include <system/memory.h>
 
-#define TD_TRACK (TD_SECTOR * NSECTORS)
-#define TD_DISK (TD_TRACK * NTRACKS)
-
 #define IOF_EOF 0x0002
 #define IOF_ERR 0x8000
 
@@ -26,52 +23,18 @@ static FileEntryT *NextFileEntry(FileEntryT *fe) {
   return (void *)fe + fe->reclen;
 }
 
+static FileT *FileSysDev;
 /* Finished by NUL character (reclen = 0). */
-static FileEntryT *rootDir = NULL;
+static FileEntryT *FileSysRootDir;
 
 struct File {
   FileOpsT *ops;
-
-  u_int offset;
-  u_int length;
-
+  int pos;
   u_short flags;
-  u_int pos;
 
-  struct {
-    u_int left;
-    u_char *pos;
-    u_char *track;
-  } buf;
+  u_int start;
+  u_int size;
 };
-
-static inline bool ReadTrack(void *data, int offset) {
-  int trknum = div16(offset, TD_TRACK);
-  Log("[Floppy] Read track %d.\n", trknum);
-  FloppyTrackRead(trknum);
-  FloppyTrackDecode(data);
-  return true;
-}
-
-static bool FillBuffer(FileT *file) {
-  u_int abspos = file->offset + file->pos;
-  u_int waste = mod16(abspos, TD_TRACK);
-
-  if (file->pos == file->length) {
-    file->flags |= IOF_EOF;
-    return false;
-  }
-
-  if (!ReadTrack(file->buf.track, abspos - waste)) {
-    file->flags |= IOF_ERR;
-    return false;
-  }
-
-  file->buf.pos = file->buf.track + waste;
-  file->buf.left = min(file->length - file->pos, TD_TRACK - waste);
-  file->pos += file->buf.left;
-  return true;
-}
 
 static int FsRead(FileT *f, void *buf, u_int nbyte);
 static int FsSeek(FileT *f, int offset, int whence);
@@ -84,20 +47,8 @@ static FileOpsT FsOps = {
   .close = FsClose
 };
 
-static FileT *NewFile(int length, int offset) {
-  FileT *f = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
-
-  f->ops = &FsOps;
-  f->length = length;
-  f->offset = offset;
-  f->buf.track = MemAlloc(TD_TRACK, MEMF_PUBLIC);
-  f->buf.pos = f->buf.track;
-
-  return f;
-}
-
 static FileEntryT *LookupFile(const char *path) {
-  FileEntryT *fe = rootDir;
+  FileEntryT *fe = FileSysRootDir;
 
   if (fe == NULL)
     return NULL;
@@ -113,80 +64,67 @@ static FileEntryT *LookupFile(const char *path) {
 
 FileT *OpenFile(const char *path) {
   FileEntryT *entry;
-  if ((entry = LookupFile(path)))
-    return NewFile(entry->size, entry->start * TD_SECTOR);
-  return NULL;
+  FileT *f;
+
+  if (!(entry = LookupFile(path)))
+    return NULL;
+
+  f = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
+  f->ops = &FsOps;
+  f->start = entry->start * SECTOR_SIZE;
+  f->size = entry->size;
+  return f;
 }
 
-static void FsClose(FileT *file) {
-  MemFree(file->buf.track);
-  MemFree(file);
+static void FsClose(FileT *f) {
+  MemFree(f);
 }
 
-static int FsRead(FileT *file, void *buf, u_int size) {
-  u_int left = size;
+static int FsRead(FileT *f, void *buf, u_int nbyte) {
+  u_int left = nbyte;
+  int res;
 
-  if (!file)
-    return EBADF;
+  Assume(f != NULL);
 
-  if (file->flags & IOF_ERR)
+  if (f->flags & IOF_ERR)
     return EIO;
 
-  if (size == 0)
-    return 0;
+  Debug("[FileRead] $%p $%p %d+%d\n", f, buf, f->pos, nbyte);
 
-  // Log("[FileRead] $%p $%p %d\n", file, buf, size);
+  left = min(left, f->size - f->pos);
 
-  while (left > 0) {
-    if (!file->buf.left && !FillBuffer(file))
-      break;
+  if ((res = FileRead(FileSysDev, buf, left)) < 0)
+    return res;
 
-    {
-      /* Read to the end of buffer or less. */
-      int length = min(left, file->buf.left);
+  f->pos += res;
 
-      memcpy(buf, file->buf.pos, length);
-
-      file->buf.pos += length;
-      file->buf.left -= length;
-      buf += length; left -= length;
-    }
-  }
-
-  return size - left; /* how much did we read? */
+  return res;
 }
 
-static int FsSeek(FileT *file, int offset, int whence) {
-  if (file->flags & IOF_ERR)
+static int FsSeek(FileT *f, int offset, int whence) {
+  if (f->flags & IOF_ERR)
     return EIO;
   
-  // Log("[FileSeek] $%p %d %d\n", file, pos, mode);
+  Debug("[FileSeek] $%p %d %d\n", f, pos, mode);
 
-  file->flags &= ~IOF_EOF;
+  f->flags &= ~IOF_EOF;
 
   if (whence == SEEK_CUR) {
-    offset += file->pos - file->buf.left;
+    offset += f->pos;
+    whence = SEEK_SET;
+  }
+
+  if (whence == SEEK_END) {
+    offset = f->size - offset;
     whence = SEEK_SET;
   }
 
   if (whence == SEEK_SET) {
-    int bufsize = file->buf.pos - file->buf.track + (int)file->buf.left;
-    int bufstart = file->pos - bufsize;
-    int bufend = file->pos;
-
-    /* New position is within buffer boundaries. */
-    if ((offset >= bufstart) && (offset < bufend)) {
-      file->buf.pos = file->buf.track + offset - bufstart;
-      file->buf.left = file->pos - offset;
-      return offset;
-    }
-
     /* New position is not within file. */
-    if ((offset < 0) || (offset > (int)file->length))
+    if ((offset < 0) || (offset > (int)f->size))
       return EINVAL;
 
-    file->pos = offset;
-    (void)FillBuffer(file);
+    f->pos = offset;
     return offset;
   }
 
@@ -200,36 +138,34 @@ int GetFileSize(const char *path) {
   return ENOENT;
 }
 
-int GetCursorPos(FileT *file) {
-  if (!file)
-    return EBADF;
-  if (file->flags & IOF_ERR)
+int GetCursorPos(FileT *f) {
+  Assume(f != NULL);
+  if (f->flags & IOF_ERR)
     return EIO;
-  return file->pos - file->buf.left;
+  return f->pos;
 }
 
 #define ONSTACK(x) (&(x)), sizeof((x))
 
-void InitFileSys(void) {
-  FileT *fh;
+void InitFileSys(FileT *dev) {
   u_short rootDirLen;
 
-  /* Create a file that represent whole floppy disk without boot sector. */
-  fh = NewFile(TD_DISK - TD_SECTOR * 2, TD_SECTOR * 2);
+  Assume(dev != NULL);
+
+  FileSysDev = dev;
 
   /* read directory size */
-  FileRead(fh, ONSTACK(rootDirLen));
+  FileRead(dev, ONSTACK(rootDirLen));
 
   Log("[FileSys] Reading directory of %d bytes.\n", rootDirLen);
 
   /* read directory entries */
-  rootDir = MemAlloc(rootDirLen + 1, MEMF_PUBLIC|MEMF_CLEAR);
-  FileRead(fh, rootDir, rootDirLen);
-  FileClose(fh);
+  FileSysRootDir = MemAlloc(rootDirLen + 1, MEMF_PUBLIC|MEMF_CLEAR);
+  FileRead(dev, FileSysRootDir, rootDirLen);
 
   /* associate names with file entries */
   {
-    FileEntryT *fe = rootDir;
+    FileEntryT *fe = FileSysRootDir;
     do {
       Log("[FileSys] Sector %d: %s file '%s' of %d bytes.\n",
           fe->start, fe->type ? "executable" : "regular", fe->name, fe->size);
@@ -239,9 +175,11 @@ void InitFileSys(void) {
 }
 
 void KillFileSys(void) {
-  if (rootDir) {
-    MemFree(rootDir);
-    rootDir = NULL;
+  if (FileSysRootDir) {
+    FileClose(FileSysDev);
+    MemFree(FileSysRootDir);
+    FileSysDev = NULL;
+    FileSysRootDir = NULL;
   }
 }
 
