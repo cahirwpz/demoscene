@@ -8,6 +8,7 @@
 #include <system/exception.h>
 #include <system/filesys.h>
 #include <system/file.h>
+#include <system/floppy.h>
 #include <system/interrupt.h>
 #include <system/memory.h>
 #include <system/task.h>

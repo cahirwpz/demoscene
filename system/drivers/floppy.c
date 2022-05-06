@@ -1,4 +1,5 @@
 #include <custom.h>
+#include <common.h>
 #include <debug.h>
 #include <string.h>
 #include <system/cia.h>

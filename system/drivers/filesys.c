@@ -1,4 +1,5 @@
 #include <debug.h>
+#include <common.h>
 #include <string.h>
 #include <types.h>
 #include <system/errno.h>
