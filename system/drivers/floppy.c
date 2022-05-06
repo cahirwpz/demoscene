@@ -155,7 +155,7 @@ static void FloppyTrackRead(FileT *f, short num) {
   ClearIRQ(INTF_DSKBLK);
   EnableDMA(DMAF_DISK);
 
-  Debug("[Floppy] Read track %d.\n", num);
+  Debug("Read track %d", num);
 
   custom->dskpt = (void *)f->encoded;
   /* Write track size twice to initiate DMA transfer. */
@@ -204,7 +204,7 @@ static void FloppyTrackDecode(FileT *f) {
 
     *(u_int *)&info = DecodeLong(sector->info[0], sector->info[1], mask);
 
-    Debug("[Floppy] Decode: sector=%p, #sector=%d, #track=%d\n",
+    Debug("sector=%p, #sector=%d, #track=%d",
           sector, info.sectorNum, info.trackNum);
     Assume(info.sectorNum < NSECTORS && info.trackNum < NTRACKS);
 
@@ -300,7 +300,7 @@ static int FloppyRead(FileT *f, void *buf, u_int nbyte) {
   Assume(f != NULL);
   Assume(f->pos >= 0 && f->pos <= FLOPPY_SIZE);
 
-  Log("[FloppyRead] $%p $%p %d+%d\n", f, buf, f->pos, nbyte);
+  Debug("$%p $%p %d+%d", f, buf, f->pos, nbyte);
 
   left = min(left, FLOPPY_SIZE - f->pos);
 

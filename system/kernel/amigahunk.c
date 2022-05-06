@@ -1,11 +1,10 @@
+#include <debug.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <system/amigahunk.h>
 #include <system/file.h>
 #include <system/memory.h>
-
-#define DEBUG 0
 
 #define HUNK_CODE 1001
 #define HUNK_DATA 1002
@@ -70,7 +69,6 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
       n = ReadLong(fh);
       if (hunkId != HUNK_BSS)
         FileRead(fh, hunk->data, n * sizeof(int));
-#if DEBUG
       {
         const char *hunkType;
 
@@ -81,9 +79,8 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
         else
           hunkType = " BSS";
 
-        printf("%s: %p - %p\n", hunkType, hunk->data, hunk->data + hunk->size);
+        Debug("%s: %p - %p", hunkType, hunk->data, hunk->data + hunk->size);
       }
-#endif
     } else if (hunkId == HUNK_DEBUG) {
       n = ReadLong(fh);
       SkipLongs(fh, n);
@@ -106,9 +103,7 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
         hunk = hunkArray[hunkIndex++];
       }
     } else {
-#if DEBUG
-      printf("Unknown hunk $%04x!\n", hunkCode);
-#endif
+      Debug("Unknown hunk $%04x!", hunkId);
       return false;
     }
   }
@@ -121,8 +116,10 @@ HunkT *LoadHunkList(FileT *fh) {
   int n, first, last, hunkCount;
   HunkT **hunkArray;
 
-  if (hunkId != HUNK_HEADER)
+  if (hunkId != HUNK_HEADER) {
+    Log("Not an Amiga Hunk file!\n");
     return NULL;
+  }
 
   /* Skip resident library names. */
   while ((n = ReadLong(fh)))

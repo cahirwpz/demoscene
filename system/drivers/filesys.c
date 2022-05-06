@@ -72,8 +72,11 @@ FileT *OpenFile(const char *path) {
 
   f = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
   f->ops = &FsOps;
-  f->start = entry->start * SECTOR_SIZE;
+  f->start = (entry->start + 2) * SECTOR_SIZE;
   f->size = entry->size;
+
+  Debug("%s: %d+%d", path, f->start, f->size);
+
   return f;
 }
 
@@ -90,9 +93,11 @@ static int FsRead(FileT *f, void *buf, u_int nbyte) {
   if (f->flags & IOF_ERR)
     return EIO;
 
-  Debug("[FileRead] $%p $%p %d+%d\n", f, buf, f->pos, nbyte);
+  Debug("$%p $%p %d+%d", f, buf, f->pos, nbyte);
 
   left = min(left, f->size - f->pos);
+
+  (void)FileSeek(FileSysDev, f->pos + f->start, SEEK_SET);
 
   if ((res = FileRead(FileSysDev, buf, left)) < 0)
     return res;
@@ -106,7 +111,7 @@ static int FsSeek(FileT *f, int offset, int whence) {
   if (f->flags & IOF_ERR)
     return EIO;
   
-  Debug("[FileSeek] $%p %d %d\n", f, pos, mode);
+  Debug("$%p %d %d", f, offset, whence);
 
   f->flags &= ~IOF_EOF;
 
@@ -156,6 +161,7 @@ void InitFileSys(FileT *dev) {
   FileSysDev = dev;
 
   /* read directory size */
+  FileSeek(dev, SECTOR_SIZE * 2, SEEK_SET);
   FileRead(dev, ONSTACK(rootDirLen));
 
   Log("[FileSys] Reading directory of %d bytes.\n", rootDirLen);
