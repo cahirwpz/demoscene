@@ -79,7 +79,7 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
         else
           hunkType = " BSS";
 
-        Debug("%s: %p - %p", hunkType, hunk->data, hunk->data + hunk->size);
+        Log("%s: %p - %p\n", hunkType, hunk->data, hunk->data + hunk->size);
       }
     } else if (hunkId == HUNK_DEBUG) {
       n = ReadLong(fh);
@@ -103,7 +103,7 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
         hunk = hunkArray[hunkIndex++];
       }
     } else {
-      Debug("Unknown hunk $%04x!", hunkId);
+      Log("Unknown hunk $%04x!\n", hunkId);
       return false;
     }
   }
