@@ -69,7 +69,8 @@ _LVOCacheControl        EQU     -648
         APTR    BD_VBR
         APTR    BD_STKBOT
         LONG    BD_STKSZ
-        WORD    BD_CPUMODEL
+        BYTE    BD_BOOTDEV
+        BYTE    BD_CPUMODEL
         WORD    BD_NREGIONS
         LABEL   BD_REGION
         LABEL   BD_SIZE
@@ -177,10 +178,11 @@ KillOS:
         ; BOOTDATA structure above is placed just after the end of boot loader.
 
         ; [a2] boot loader data
-        lea     BD_CPUMODEL(a2),a3
+        lea     BD_BOOTDEV(a2),a3
 
-        ; save processor model
+        ; start from floppy drive
         clr.b   (a3)+
+        ; save processor model
         move.b  AttnFlags+1(a6),(a3)+
 
         ; save memory regions
@@ -235,7 +237,7 @@ Start:
         clr.l   d0
 
         ; relocate exception vector if cpu has VBR register (68010 or later)
-        tst.w   BD_CPUMODEL(a6)
+        tst.b   BD_CPUMODEL(a6)
         beq.b   .novbr
 
         ; if two regions or more we have fast memory

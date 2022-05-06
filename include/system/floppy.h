@@ -1,17 +1,14 @@
-#ifndef __FLOPPY_H__
-#define __FLOPPY_H__
+#ifndef __SYSTEM_FLOPPY_H__
+#define __SYSTEM_FLOPPY_H__
 
-#include "common.h"
+struct File;
 
-#define TRACK_SIZE 12800
-#define TD_SECTOR 512
+#define RAW_TRACK_SIZE 12800
+#define SECTOR_SIZE 512
 #define NSECTORS 11
 #define NTRACKS 160
+#define TRACK_SIZE (NSECTORS * SECTOR_SIZE)
 
-void InitFloppy(void);
-void KillFloppy(void);
+struct File *FloppyOpen(void);
 
-void FloppyTrackRead(short num);
-void FloppyTrackDecode(u_int *buf);
-
-#endif
+#endif /* !__SYSTEM_FLOPPY__ */
