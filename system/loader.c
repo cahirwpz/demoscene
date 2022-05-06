@@ -72,7 +72,14 @@ void Loader(BootDataT *bd) {
 
   TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
 #ifdef TRACKMO
-  InitFileSys(FloppyOpen());
+  {
+    FileT *dev;
+    if (bd->bd_bootdev)
+      dev = MemOpen((const void *)0xf80000, 0x80000);
+    else
+      dev = FloppyOpen();
+    InitFileSys(dev);
+  }
 #endif
   CallFuncList(&__INIT_LIST__);
 

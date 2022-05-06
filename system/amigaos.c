@@ -48,6 +48,7 @@ static __aligned(4) char FastMem[512 * 1024];
 static BootDataT BootData = {
   .bd_hunk = NULL,
   .bd_vbr = NULL,
+  .bd_bootdev = 2,
   .bd_cpumodel = CPU_68000,
   .bd_stkbot = NULL,
   .bd_stksz = 0,
