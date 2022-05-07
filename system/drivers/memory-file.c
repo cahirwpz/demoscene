@@ -17,7 +17,7 @@ static void MemClose(FileT *f);
 
 static FileOpsT MemOps = {
   .read = MemRead,
-  .write = NULL,
+  .write = NoWrite,
   .seek = MemSeek,
   .close = MemClose
 };

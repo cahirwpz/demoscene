@@ -24,6 +24,9 @@ typedef struct {
   FileCloseT close;
 } FileOpsT;
 
+int NoWrite(FileT *f, const void *buf, u_int nbyte);
+int NoSeek(FileT *f, int offset, int whence);
+
 /* These behave like read/write/lseek known from UNIX */
 int FileRead(FileT *f, void *buf, u_int nbyte);
 int FileWrite(FileT *f, const void *buf, u_int nbyte);

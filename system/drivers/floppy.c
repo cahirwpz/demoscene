@@ -240,7 +240,7 @@ static void FloppyClose(FileT *f);
 
 static FileOpsT FloppyOps = {
   .read = FloppyRead,
-  .write = NULL,
+  .write = NoWrite,
   .seek = FloppySeek,
   .close = FloppyClose,
 };

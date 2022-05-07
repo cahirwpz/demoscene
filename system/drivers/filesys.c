@@ -43,7 +43,7 @@ static void FsClose(FileT *f);
 
 static FileOpsT FsOps = {
   .read = FsRead,
-  .write = NULL,
+  .write = NoWrite,
   .seek = FsSeek,
   .close = FsClose
 };

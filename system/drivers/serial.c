@@ -101,7 +101,7 @@ static void SerialClose(FileT *f);
 static FileOpsT SerialOps = {
   .read = SerialRead,
   .write = SerialWrite,
-  .seek = NULL,
+  .seek = NoSeek,
   .close = SerialClose
 };
 
