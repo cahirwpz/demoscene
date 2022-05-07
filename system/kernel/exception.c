@@ -1,3 +1,4 @@
+#include <effect.h>
 #include <system/boot.h>
 #include <system/exception.h>
 #include <system/interrupt.h>
@@ -66,5 +67,8 @@ void SetupExceptionVector(BootDataT *bd) {
     JUMP(jmptab, MemAlloc);
     JUMP(jmptab, MemResize);
     JUMP(jmptab, MemFree);
+    JUMP(jmptab, _ProfilerStart);
+    JUMP(jmptab, _ProfilerStop);
+    JUMP(jmptab, TaskWaitVBlank);
   }
 }
