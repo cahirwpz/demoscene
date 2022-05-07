@@ -2,6 +2,7 @@ TOPDIR := $(realpath ../..)
 
 SOURCES := \
 	console.c \
+	crc32.c \
 	fx.c \
 	inflate.S \
 	sintab.c \
