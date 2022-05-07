@@ -6,7 +6,8 @@ SOURCES := \
 	inflate.S \
 	sintab.c \
 	sort.c \
-	sync.c
+	sync.c \
+	uae.S
 
 SOURCES_GEN := sintab.c
 
