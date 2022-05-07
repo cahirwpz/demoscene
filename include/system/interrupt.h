@@ -16,33 +16,7 @@ static inline void ClearIRQ(u_short x) { custom->intreq_ = x; }
 /* Interrupt Handler Routine */
 typedef void (*IntHandlerT)(void *);
 
-/* Interrupt Vector Entry */
-typedef struct IntVecEntry {
-  IntHandlerT code;
-  void *data;
-} IntVecEntryT;
-
-typedef IntVecEntryT IntVecT[INTB_INTEN];
-
-extern IntVecT IntVec;
-
-/* Only returns from interrupt, without clearing pending flags. */
-extern void DummyInterruptHandler(void *);
-
-/* Macros for setting up ISR for given interrupt number. */
-#define SetIntVector(INTR, CODE, DATA)                                         \
-  IntVec[INTB_##INTR] = (IntVecEntryT){.code = (CODE), .data = (DATA)}
-#define ResetIntVector(INTR) SetIntVector(INTR, DummyInterruptHandler, NULL)
-
-#ifdef _SYSTEM
-/* Amiga Interrupt Autovector handlers */
-extern void AmigaLvl1Handler(void);
-extern void AmigaLvl2Handler(void);
-extern void AmigaLvl3Handler(void);
-extern void AmigaLvl4Handler(void);
-extern void AmigaLvl5Handler(void);
-extern void AmigaLvl6Handler(void);
-#endif /* !_SYSTEM */
+#define ResetIntVector(irq) SetIntVector((irq), NULL, NULL);
 
 /* Interrupt Server Handler Routine. */
 typedef int (*IntFuncT)(void *);
@@ -53,12 +27,6 @@ typedef struct IntServer {
   void *data;
   short prio;
 } IntServerT;
-
-/* List of interrupt servers. */
-typedef struct IntChain {
-  IntServerT *head;
-  u_short flag; /* interrupt enable/disable flag (INTF_*) */
-} IntChainT;
 
 /* Define Interrupt Server to be used with (Add|Rem)IntServer.
  * Priority is between -128 (lowest) to 127 (highest).
@@ -71,29 +39,20 @@ typedef struct IntChain {
   static IntServerT *NAME = &(IntServerT)_INTSERVER(PRI, CODE, DATA)
 
 #ifdef _SYSTEM
-/* Defines Interrupt Chain of given name. */
-#define INTCHAIN(NAME, NUM)                                                    \
-  IntChainT *NAME = &(IntChainT) { .head = NULL, .flag = INTF(NUM) }
-#endif
+void SetupInterruptVector(void);
 
-#ifdef _SYSTEM
+/* Set up ISR for given interrupt number. */
+void SetIntVector(u_int irq, IntHandlerT code, void *data);
+
 /* Register Interrupt Server for given Interrupt Chain. */
 void AddIntServer(u_int irq, IntServerT *is);
 
 /* Unregister Interrupt Server for given Interrupt Chain. */
 void RemIntServer(u_int irq, IntServerT *is);
-
-/* Run Interrupt Servers for given Interrupt Chain.
- * Use only inside IntVec handler rountine. */
-void RunIntChain(IntChainT *ic);
-
-/* Predefined interrupt chains defined by Amiga port. */
-extern IntChainT *PortsChain;
-extern IntChainT *VertBlankChain;
-extern IntChainT *ExterChain;
 #else
 #include <system/syscall.h>
 
+SCARG3NR(SetIntVector, u_int, irq, d0, IntHandlerT, code, a0, void *, data, a1);
 SCARG2NR(AddIntServer, u_int, irq, d0, IntServerT *, is, a0);
 SCARG2NR(RemIntServer, u_int, irq, d0, IntServerT *, is, a0);
 #endif

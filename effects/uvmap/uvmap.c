@@ -273,7 +273,7 @@ static void Init(void) {
 
   EnableDMA(DMAF_RASTER);
 
-  SetIntVector(BLIT, (IntHandlerT)ChunkyToPlanar, NULL);
+  SetIntVector(INTB_BLIT, (IntHandlerT)ChunkyToPlanar, NULL);
   EnableINT(INTF_BLIT);
 }
 
@@ -281,7 +281,7 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   DisableINT(INTF_BLIT);
-  ResetIntVector(BLIT);
+  ResetIntVector(INTB_BLIT);
 
   DeleteCopList(cp);
   MemFree(textureHi);

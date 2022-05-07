@@ -48,6 +48,7 @@ void Loader(BootDataT *bd) {
   }
 
   SetupExceptionVector(bd);
+  SetupInterruptVector();
 
   /* CIA-A & CIA-B: Stop timers and return to default settings. */
   ciaa->ciacra = 0;

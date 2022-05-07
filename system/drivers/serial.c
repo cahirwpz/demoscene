@@ -119,8 +119,8 @@ FileT *SerialOpen(u_int baud, u_int flags) {
 
     custom->serper = CLOCK / baud - 1;
 
-    SetIntVector(TBE, (IntHandlerT)SendIntHandler, f);
-    SetIntVector(RBF, (IntHandlerT)RecvIntHandler, f);
+    SetIntVector(INTB_TBE, (IntHandlerT)SendIntHandler, f);
+    SetIntVector(INTB_RBF, (IntHandlerT)RecvIntHandler, f);
 
     ClearIRQ(INTF_TBE | INTF_RBF);
     EnableINT(INTF_TBE | INTF_RBF);
@@ -135,8 +135,8 @@ static void SerialClose(FileT *f) {
   DisableINT(INTF_TBE | INTF_RBF);
   ClearIRQ(INTF_TBE | INTF_RBF);
 
-  ResetIntVector(RBF);
-  ResetIntVector(TBE);
+  ResetIntVector(INTB_RBF);
+  ResetIntVector(INTB_TBE);
 
   MemFree(f);
 }
