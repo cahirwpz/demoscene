@@ -67,6 +67,8 @@ void SetupExceptionVector(BootDataT *bd) {
     JUMP(jmptab, MemAlloc);
     JUMP(jmptab, MemResize);
     JUMP(jmptab, MemFree);
+    JUMP(jmptab, AddIntServer);
+    JUMP(jmptab, RemIntServer);
     JUMP(jmptab, _ProfilerStart);
     JUMP(jmptab, _ProfilerStop);
     JUMP(jmptab, TaskWaitVBlank);

@@ -119,9 +119,9 @@ void MouseInit(short minX, short minY, short maxX, short maxY) {
   MouseData.event.y = minY;
   MouseData.event.type = EV_MOUSE;
 
-  AddIntServer(VertBlankChain, MouseServer);
+  AddIntServer(INTB_VERTB, MouseServer);
 }
 
 void MouseKill(void) {
-  RemIntServer(VertBlankChain, MouseServer);
+  RemIntServer(INTB_VERTB, MouseServer);
 }

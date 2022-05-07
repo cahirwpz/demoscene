@@ -7,7 +7,19 @@ INTCHAIN(PortsChain, PORTS);
 INTCHAIN(VertBlankChain, VERTB);
 INTCHAIN(ExterChain, EXTER);
 
-void AddIntServer(IntChainT *ic, IntServerT *is) {
+static IntChainT *GetIntChain(u_int irq) {
+  if (irq == INTB_VERTB)
+    return VertBlankChain;
+  if (irq == INTB_PORTS)
+    return PortsChain;
+  if (irq == INTB_EXTER)
+    return ExterChain;
+  PANIC();
+  return NULL;
+}
+
+void AddIntServer(u_int irq, IntServerT *is) {
+  IntChainT *ic = GetIntChain(irq);
   IntServerT **is_p;
   IntrDisable();
   /* If the list is empty before insertion then enable the interrupt. */
@@ -23,7 +35,8 @@ void AddIntServer(IntChainT *ic, IntServerT *is) {
   IntrEnable();
 }
 
-void RemIntServer(IntChainT *ic, IntServerT *is) {
+void RemIntServer(u_int irq, IntServerT *is) {
+  IntChainT *ic = GetIntChain(irq);
   IntServerT **is_p;
   IntrDisable();
   is_p = &ic->head;

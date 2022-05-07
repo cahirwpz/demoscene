@@ -69,8 +69,8 @@ CIATimerT *AcquireTimer(u_int num) {
   MutexUnlock(&TimerMtx);
 
   if (timer) {
-    IntChainT *chain = (num & 2) ? ExterChain : PortsChain;
-    AddIntServer(chain, &timer->server);
+    u_int irq = (num & 2) ? INTB_EXTER : INTB_PORTS;
+    AddIntServer(irq, &timer->server);
   }
 
   return timer;
@@ -79,8 +79,8 @@ CIATimerT *AcquireTimer(u_int num) {
 void ReleaseTimer(CIATimerT *timer) {
   MutexLock(&TimerMtx);
   {
-    IntChainT *chain = (timer->num & 2) ? ExterChain : PortsChain;
-    RemIntServer(chain, &timer->server);
+    u_int irq = (timer->num & 2) ? INTB_EXTER : INTB_PORTS;
+    RemIntServer(irq, &timer->server);
     InUse &= ~__BIT(timer->num);
   }
   MutexUnlock(&TimerMtx);

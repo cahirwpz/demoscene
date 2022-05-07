@@ -83,7 +83,7 @@ static void Init(void) {
   CinterInit(module, instruments, player);
   musicStart = player->c_MusicPointer;
 
-  AddIntServer(VertBlankChain, CinterMusicServer);
+  AddIntServer(INTB_VERTB, CinterMusicServer);
 
   ConsoleSetCursor(&console, 0, 0);
   ConsolePutStr(&console, 
@@ -94,7 +94,7 @@ static void Init(void) {
 }
 
 static void Kill(void) {
-  RemIntServer(VertBlankChain, CinterMusicServer);
+  RemIntServer(INTB_VERTB, CinterMusicServer);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_AUDIO);
 

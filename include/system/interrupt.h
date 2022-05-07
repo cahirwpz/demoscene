@@ -76,22 +76,27 @@ typedef struct IntChain {
   IntChainT *NAME = &(IntChainT) { .head = NULL, .flag = INTF(NUM) }
 #endif
 
+#ifdef _SYSTEM
 /* Register Interrupt Server for given Interrupt Chain. */
-void AddIntServer(IntChainT *ic, IntServerT *is);
+void AddIntServer(u_int irq, IntServerT *is);
 
 /* Unregister Interrupt Server for given Interrupt Chain. */
-void RemIntServer(IntChainT *ic, IntServerT *is);
+void RemIntServer(u_int irq, IntServerT *is);
 
-#ifdef _SYSTEM
 /* Run Interrupt Servers for given Interrupt Chain.
  * Use only inside IntVec handler rountine. */
 void RunIntChain(IntChainT *ic);
-#endif
 
 /* Predefined interrupt chains defined by Amiga port. */
 extern IntChainT *PortsChain;
 extern IntChainT *VertBlankChain;
 extern IntChainT *ExterChain;
+#else
+#include <system/syscall.h>
+
+SCARG2NR(AddIntServer, u_int, irq, d0, IntServerT *, is, a0);
+SCARG2NR(RemIntServer, u_int, irq, d0, IntServerT *, is, a0);
+#endif
 
 #endif
 

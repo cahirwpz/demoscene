@@ -144,13 +144,13 @@ static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
-  AddIntServer(VertBlankChain, RotatePaletteInterrupt);
+  AddIntServer(INTB_VERTB, RotatePaletteInterrupt);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
-  RemIntServer(VertBlankChain, RotatePaletteInterrupt);
+  RemIntServer(INTB_VERTB, RotatePaletteInterrupt);
 
   DeleteCopList(cp);
 }

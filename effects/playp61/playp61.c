@@ -118,7 +118,7 @@ static void Init(void) {
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
-  AddIntServer(VertBlankChain, P61PlayerServer);
+  AddIntServer(INTB_VERTB, P61PlayerServer);
 
   ConsolePutStr(&console, 
                 "Pause (SPACE) Prev (LEFT) Next (RIGHT)\n"
@@ -129,7 +129,7 @@ static void Kill(void) {
   P61_ControlBlock.Play = 0;
   P61_End();
 
-  RemIntServer(VertBlankChain, P61PlayerServer);
+  RemIntServer(INTB_VERTB, P61PlayerServer);
   ReleaseTimer(p61tmr);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);

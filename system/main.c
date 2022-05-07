@@ -52,7 +52,7 @@ int main(void) {
 
   StartBgTask();
 
-  AddIntServer(VertBlankChain, VertBlankWakeup);
+  AddIntServer(INTB_VERTB, VertBlankWakeup);
 
   EffectLoad(&Effect);
   EffectInit(&Effect);
@@ -60,7 +60,7 @@ int main(void) {
   EffectKill(&Effect);
   EffectUnLoad(&Effect);
 
-  RemIntServer(VertBlankChain, VertBlankWakeup);
+  RemIntServer(INTB_VERTB, VertBlankWakeup);
 
   return 0;
 }
