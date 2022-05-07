@@ -6,6 +6,15 @@ PROVIDE(_SysBase = 0x4);
 PROVIDE(__ciaa = 0xbfe001);
 PROVIDE(__ciab = 0xbfd000);
 PROVIDE(__custom = 0xdff000);
+PROVIDE(__MemAlloc = 0xc0);
+PROVIDE(__MemResize = 0xc6);
+PROVIDE(__MemFree = 0xcc);
+PROVIDE(___ProfilerStart = 0xd2);
+PROVIDE(___ProfilerStop = 0xd8);
+PROVIDE(__TaskWaitVBlank = 0xde);
+PROVIDE(_exitLoop = 0x1f7);
+PROVIDE(_frameCount = 0x1f8);
+PROVIDE(_lastFrameCount = 0x1fc);
 SECTIONS
 {
   . = 0x0;
