@@ -324,6 +324,7 @@ static int FloppyRead(FileT *f, void *buf, u_int nbyte) {
 
     memcpy(buf, f->decoded + trkoff, size);
 
+    buf += size;
     left -= size;
     f->pos += size;
   }
