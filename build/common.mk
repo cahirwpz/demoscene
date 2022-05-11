@@ -129,4 +129,4 @@ clean: $(foreach dir,$(SUBDIRS),clean-$(dir))
 
 .PHONY: all build subdirs clean FORCE
 
-# vim: ts=8 noet
+# vim: ts=8 et
