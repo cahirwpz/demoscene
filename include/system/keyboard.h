@@ -1,7 +1,5 @@
-#ifndef __KEYBOARD_H__
-#define __KEYBOARD_H__
-
-#include "common.h"
+#ifndef __SYSTEM_KEYBOARD_H__
+#define __SYSTEM_KEYBOARD_H__
 
 typedef enum {
   KEY_BACKQUOTE = 0x00,
@@ -115,7 +113,9 @@ typedef enum {
   MOD_AMIGA = MOD_LAMIGA | MOD_RAMIGA
 } __attribute__((packed)) KeyModT;
 
-void KeyboardInit(void);
-void KeyboardKill(void);
+#include <system/syscall.h>
 
-#endif
+SCARG0NR(KeyboardInit);
+SCARG0NR(KeyboardKill);
+
+#endif /* !__SYSTEM_KEYBOARD_H__ */

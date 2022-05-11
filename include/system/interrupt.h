@@ -40,23 +40,18 @@ typedef struct IntServer {
 
 #ifdef _SYSTEM
 void SetupInterruptVector(void);
-
-/* Set up ISR for given interrupt number. */
-void SetIntVector(u_int irq, IntHandlerT code, void *data);
-
-/* Register Interrupt Server for given Interrupt Chain. */
-void AddIntServer(u_int irq, IntServerT *is);
-
-/* Unregister Interrupt Server for given Interrupt Chain. */
-void RemIntServer(u_int irq, IntServerT *is);
-#else
-#include <system/syscall.h>
-
-SCARG3NR(SetIntVector, u_int, irq, d0, IntHandlerT, code, a0, void *, data, a1);
-SCARG2NR(AddIntServer, u_int, irq, d0, IntServerT *, is, a0);
-SCARG2NR(RemIntServer, u_int, irq, d0, IntServerT *, is, a0);
 #endif
 
+#include <system/syscall.h>
+
+/* Set up ISR for given interrupt number. */
+SCARG3NR(SetIntVector, u_int, irq, d0, IntHandlerT, code, a0, void *, data, a1);
+
+/* Register Interrupt Server for given Interrupt Chain. */
+SCARG2NR(AddIntServer, u_int, irq, d0, IntServerT *, is, a0);
+
+/* Unregister Interrupt Server for given Interrupt Chain. */
+SCARG2NR(RemIntServer, u_int, irq, d0, IntServerT *, is, a0);
 #endif
 
 #endif

@@ -3,11 +3,11 @@
 #include <effect.h>
 #include <system/cia.h>
 
-void _ProfilerStart(ProfileT *prof) {
+void _ProfilerStart(ProfileT *prof asm("a0")) {
   prof->lines = ReadLineCounter();
 }
 
-void _ProfilerStop(ProfileT *prof) {
+void _ProfilerStop(ProfileT *prof asm("a0")) {
   u_short lines = ReadLineCounter() - prof->lines;
 
   if (lines > 32767)

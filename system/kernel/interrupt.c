@@ -18,7 +18,8 @@ IntVecT IntVec;
 extern void DummyInterruptHandler(void *);
 
 /* Set up ISR for given interrupt number. */
-void SetIntVector(u_int irq, IntHandlerT code, void *data) {
+void SetIntVector(u_int irq asm("d0"), IntHandlerT code asm("a0"),
+                  void *data asm("a1")) {
   IntVecEntryT *iv = &IntVec[irq];
   iv->code = code ? code : DummyInterruptHandler;
   iv->data = data;
@@ -50,7 +51,7 @@ static IntChainT *GetIntChain(u_int irq) {
   return NULL;
 }
 
-void AddIntServer(u_int irq, IntServerT *is) {
+void AddIntServer(u_int irq asm("d0"), IntServerT *is asm("a0")) {
   IntChainT *ic = GetIntChain(irq);
   IntServerT **is_p;
   IntrDisable();
@@ -67,7 +68,7 @@ void AddIntServer(u_int irq, IntServerT *is) {
   IntrEnable();
 }
 
-void RemIntServer(u_int irq, IntServerT *is) {
+void RemIntServer(u_int irq asm("d0"), IntServerT *is asm("a0")) {
   IntChainT *ic = GetIntChain(irq);
   IntServerT **is_p;
   IntrDisable();

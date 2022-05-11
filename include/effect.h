@@ -108,19 +108,13 @@ typedef struct Profile {
 #define ProfilerStart(NAME) _ProfilerStart(_##NAME##_profile)
 #define ProfilerStop(NAME) _ProfilerStop(_##NAME##_profile)
 
-#ifdef _SYSTEM
-/* Puts a task into sleep waiting for Vertical Blank interrupt.
- * Let's background task do its job. */
-void TaskWaitVBlank(void);
-
-void _ProfilerStart(ProfileT *prof);
-void _ProfilerStop(ProfileT *prof);
-#else
 #include <system/syscall.h>
 
+/* Puts a task into sleep waiting for Vertical Blank interrupt.
+ * Let's background task do its job. */
 SCARG0NR(TaskWaitVBlank);
+
 SCARG1NR(_ProfilerStart, ProfileT *, prof, a0);
 SCARG1NR(_ProfilerStop, ProfileT *, prof, a0);
-#endif
 
 #endif /* !__EFFECT_H__ */
