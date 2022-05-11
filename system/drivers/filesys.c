@@ -3,13 +3,20 @@
 #include <string.h>
 #include <types.h>
 #include <system/errno.h>
-#include <system/file.h>
 #include <system/filesys.h>
 #include <system/floppy.h>
 #include <system/memory.h>
 
 #define IOF_EOF 0x0002
 #define IOF_ERR 0x8000
+
+#define __STRUCT_FILE   \
+  int pos;              \
+  u_short flags;        \
+  u_int start;          \
+  u_int size;
+
+#include <system/file.h>
 
 /* On disk directory entries are always aligned to 2-byte boundary. */
 typedef struct FileEntry {
@@ -27,15 +34,6 @@ static FileEntryT *NextFileEntry(FileEntryT *fe) {
 static FileT *FileSysDev;
 /* Finished by NUL character (reclen = 0). */
 static FileEntryT *FileSysRootDir;
-
-struct File {
-  FileOpsT *ops;
-  int pos;
-  u_short flags;
-
-  u_int start;
-  u_int size;
-};
 
 static int FsRead(FileT *f, void *buf, u_int nbyte);
 static int FsSeek(FileT *f, int offset, int whence);

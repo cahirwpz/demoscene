@@ -5,7 +5,6 @@
 #include <system/cia.h>
 #include <system/errno.h>
 #include <system/floppy.h>
-#include <system/file.h>
 #include <system/interrupt.h>
 #include <system/memory.h>
 #include <system/mutex.h>
@@ -51,18 +50,16 @@ typedef struct Sector {
  * 832 bytes between the end of sector #10 and beginning of sector #0.
  */
 
-struct File {
-  FileOpsT *ops;
-  int pos;
-
-  short headDir;
-  short trackNum;
-  CIATimerT *fdtmr;
-
-  short trkInBuf;
-  SectorT *encoded;
+#define __STRUCT_FILE           \
+  int pos;                      \
+  short headDir;                \
+  short trackNum;               \
+  CIATimerT *fdtmr;             \
+  short trkInBuf;               \
+  SectorT *encoded;             \
   u_char *decoded;
-};
+
+#include <system/file.h>
 
 static inline void WaitDiskReady(void) {
   while (ciaa->ciapra & CIAF_DSKRDY);

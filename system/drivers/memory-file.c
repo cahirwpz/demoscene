@@ -1,15 +1,14 @@
 #include <debug.h>
 #include <string.h>
 #include <system/errno.h>
-#include <system/file.h>
 #include <system/memory.h>
 
-struct File {
-  FileOpsT *ops;
-  const void *buf;
-  u_int offset;
+#define __STRUCT_FILE   \
+  const void *buf;      \
+  u_int offset;         \
   int length;
-};
+
+#include <system/file.h>
 
 static int MemRead(FileT *f, void *buf, u_int nbyte);
 static int MemSeek(FileT *f, int offset, int whence);
