@@ -7,6 +7,6 @@ struct File;
 
 #include <system/syscall.h>
 
-SCARG2(SerialOpen, struct File *, u_int, baud, d0, u_int, flags, d1);
+SYSCALL2(SerialOpen, struct File *, u_int, baud, d0, u_int, flags, d1);
 
-#endif
+#endif /* !__SYSTEM_SERIAL_H__ */

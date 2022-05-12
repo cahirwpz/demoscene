@@ -115,7 +115,7 @@ typedef enum {
 
 #include <system/syscall.h>
 
-SCARG0NR(KeyboardInit);
-SCARG0NR(KeyboardKill);
+SYSCALL0NR(KeyboardInit);
+SYSCALL0NR(KeyboardKill);
 
 #endif /* !__SYSTEM_KEYBOARD_H__ */

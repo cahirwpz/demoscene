@@ -1,5 +1,5 @@
-#ifndef _TIMER_H_
-#define _TIMER_H_
+#ifndef __SYSTEM_TIMER_H__
+#define __SYSTEM_TIMER_H__
 
 /* CIA timers resolution is E_CLOCK (in ticks per seconds). */
 #define E_CLOCK 709379
@@ -19,14 +19,15 @@ typedef struct CIATimer CIATimerT;
 typedef void (*CIATimeoutT)(CIATimerT *timer);
 
 /* Procedures for handling one-shot delays with high resolution timers. */
-CIATimerT *AcquireTimer(u_int num);
-void ReleaseTimer(CIATimerT *timer);
+SYSCALL1(AcquireTimer, CIATimerT *, u_int, num, d0);
+SYSCALL1NR(ReleaseTimer, CIATimerT *, timer, a0);
 
-void SetupTimer(CIATimerT *timer, CIATimeoutT timeout,
-                u_short delay, u_short flags);
+SYSCALL4NR(SetupTimer, CIATimerT *, timer, a0, CIATimeoutT, timeout, a1,
+           u_short, delay, d0, u_short, flags, d1);
 
 /* Consider using wrapper macros below instead of this procedure. */
-void WaitTimerGeneric(CIATimerT *timer, u_short ticks, bool spin);
+SYSCALL3NR(WaitTimerGeneric, CIATimerT *, timer, a0,
+           u_short, ticks, d0, bool, spin, d1);
 
 /* Busy wait while waiting for timer to underflow.
  * Should wait no more than couple handred microseconds.
@@ -39,4 +40,4 @@ void WaitTimerGeneric(CIATimerT *timer, u_short ticks, bool spin);
  * Use TIMER_MS/TIMER_US to convert time unit to timer ticks. */
 #define WaitTimerSleep(TIMER, TICKS) WaitTimerGeneric(TIMER, TICKS, false)
 
-#endif
+#endif /* !__SYSTEM_TIMER_H__ */

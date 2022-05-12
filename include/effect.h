@@ -112,9 +112,9 @@ typedef struct Profile {
 
 /* Puts a task into sleep waiting for Vertical Blank interrupt.
  * Let's background task do its job. */
-SCARG0NR(TaskWaitVBlank);
+SYSCALL0NR(TaskWaitVBlank);
 
-SCARG1NR(_ProfilerStart, ProfileT *, prof, a0);
-SCARG1NR(_ProfilerStop, ProfileT *, prof, a0);
+SYSCALL1NR(_ProfilerStart, ProfileT *, prof, a0);
+SYSCALL1NR(_ProfilerStop, ProfileT *, prof, a0);
 
 #endif /* !__EFFECT_H__ */

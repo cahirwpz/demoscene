@@ -1,5 +1,5 @@
-#ifndef __INTERRUPT_H__
-#define __INTERRUPT_H__
+#ifndef __SYSTEM_INTERRUPT_H__
+#define __SYSTEM_INTERRUPT_H__
 
 #include <cdefs.h>
 
@@ -45,13 +45,13 @@ void SetupInterruptVector(void);
 #include <system/syscall.h>
 
 /* Set up ISR for given interrupt number. */
-SCARG3NR(SetIntVector, u_int, irq, d0, IntHandlerT, code, a0, void *, data, a1);
+SYSCALL3NR(SetIntVector, u_int, irq, d0, IntHandlerT, code, a0, void *, data, a1);
 
 /* Register Interrupt Server for given Interrupt Chain. */
-SCARG2NR(AddIntServer, u_int, irq, d0, IntServerT *, is, a0);
+SYSCALL2NR(AddIntServer, u_int, irq, d0, IntServerT *, is, a0);
 
 /* Unregister Interrupt Server for given Interrupt Chain. */
-SCARG2NR(RemIntServer, u_int, irq, d0, IntServerT *, is, a0);
+SYSCALL2NR(RemIntServer, u_int, irq, d0, IntServerT *, is, a0);
 #endif
 
-#endif
+#endif /* !__SYSTEM_INTERRUPT_H__ */

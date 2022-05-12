@@ -10,7 +10,7 @@
 
 #include <system/syscall.h>
 
-SCARG1NR(MouseInit, Box2D *, win, a0);
-SCARG0NR(MouseKill);
+SYSCALL1NR(MouseInit, Box2D *, win, a0);
+SYSCALL0NR(MouseKill);
 
 #endif /* !__SYSTEM_MOUSE_H__ */

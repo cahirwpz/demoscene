@@ -40,7 +40,7 @@ void PushEventISR(EventT *event);
 
 #include <system/syscall.h>
 
-SCARG1NR(PushEvent, EventT *, event, a0);
-SCARG1(PopEvent, bool, EventT *,event, a0);
+SYSCALL1NR(PushEvent, EventT *, event, a0);
+SYSCALL1(PopEvent, bool, EventT *,event, a0);
 
 #endif /* !__SYSTEM_EVENT_H__ */

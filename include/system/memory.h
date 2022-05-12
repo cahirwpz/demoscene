@@ -1,5 +1,5 @@
-#ifndef __MEMORY_H__
-#define __MEMORY_H__
+#ifndef __SYSTEM_MEMORY_H__
+#define __SYSTEM_MEMORY_H__
 
 #include <types.h>
 
@@ -27,8 +27,8 @@ void AddMemory(void *ptr, u_int byteSize, u_int attributes);
 
 #include <system/syscall.h>
 
-SCARG2(MemAlloc, void *, u_int, byteSize, d0, u_int, attributes, d1);
-SCARG2(MemResize, void *, void *, memoryBlock, a0, u_int, byteSize, d0);
-SCARG1NR(MemFree, void *, memoryBlock, a0);
+SYSCALL2(MemAlloc, void *, u_int, byteSize, d0, u_int, attributes, d1);
+SYSCALL2(MemResize, void *, void *, memoryBlock, a0, u_int, byteSize, d0);
+SYSCALL1NR(MemFree, void *, memoryBlock, a0);
 
-#endif
+#endif /* !__SYSTEM_MEMORY_H__ */
