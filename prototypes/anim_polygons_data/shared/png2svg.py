@@ -35,7 +35,7 @@ if __name__ == "__main__":
                                          "animation output.", type=str)
     parser.add_argument("-o", "--output", metavar="OUT.svg",
                         help="Output svg file name.",
-                        default="anim.svg", type=str)
+                        default="dancing.svg", type=str)
     args = vars(parser.parse_args())
     ANIM_DIR = args["anim-dir"]
     SVG_FILE = args["output"]

@@ -41,7 +41,7 @@ This script takes one positional argument:
 ```anim-dir``` -> Directory with previously rendered animation.
 
 And one optional argument:
-```--output OUTPUT.svg``` -> Output svg file name. (default is ```anim.svg```)
+```--output OUTPUT.svg``` -> Output svg file name. (default is ```dancing.svg```)
 
 
 ```
@@ -50,10 +50,10 @@ python3 png2svg.py anim/
 
 ### 3 Exit docker
 
-If you followed all the steps correctly you should end up with a valid ```anim.svg``` file that you can drop into ```effects/anim-polygons/data``` directory.
+If you followed all the steps correctly you should end up with a valid ```dancing.svg``` file that you can drop into ```effects/anim-polygons/data``` directory.
 
 
 ### Closing remarks
 
 If you want to create your own blender scene and use it in this pipeline, I highly advise you to use provided ```scene.blend``` file.
-It contains all rendering settings and materials you need to successfully create your own ```anim.svg``` file.
+It contains all rendering settings and materials you need to successfully create your own ```dancing.svg``` file.

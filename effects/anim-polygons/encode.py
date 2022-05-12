@@ -1,56 +1,40 @@
 #!/usr/bin/env python3
 
-import csv
 import sys
 import os.path
-from math import log2, ceil
-from itertools import chain
 from textwrap import TextWrapper
-import logging
+import xml.etree.ElementTree as ET
 
+xmlns = {"svg": "http://www.w3.org/2000/svg"}
+OFFSET = 10
+
+def get_coords(code):
+    xy = code.split(",")
+    x = int(xy[0]) - OFFSET
+    y = int(xy[1]) - OFFSET
+    return (x, y)
+
+
+def parse_frame(frame_path):
+    polys = []
+    verts = []
+    for code in frame_path.split():
+        if code[0] == "Z":
+            if len(verts) >= 3:
+                polys.append(verts)
+            verts = []
+        else:
+            verts.append(get_coords(code[1:]))
+    return polys
 
 def read_anim(path):
+    ET.register_namespace('', xmlns["svg"])
+    tree = ET.parse(path)
+    anim = tree.getroot() 
+    
     frames = []
-
-    with open(path) as csvfile:
-        reader = csv.DictReader(csvfile)
-
-        frame = 0
-        shape = 0
-        polys = []
-        verts = []
-
-        for row in reader:
-            x, y, fn, sn = (int(row['x']), int(row['y']), int(row['fn']),
-                            int(row['sn']))
-
-            if fn != frame:
-                if len(verts) < 3:
-                    logging.warning(
-                            f'(fn:{frame},sn:{shape}) is not a polygon!')
-                else:
-                    polys.append(verts)
-                shape = sn
-                verts = []
-
-                frames.append(polys)
-                frame = fn
-                polys = []
-
-            if sn != shape:
-                if len(verts) < 3:
-                    logging.warning(
-                            f'(fn:{frame},sn:{shape}) is not a polygon!')
-                else:
-                    polys.append(verts)
-                shape = sn
-                verts = []
-
-            verts.append((x, y))
-
-        polys.append(verts)
-        frames.append(polys)
-
+    for svg_path in anim:
+        frames.append(parse_frame(svg_path.attrib["d"]))
     return frames
 
 
