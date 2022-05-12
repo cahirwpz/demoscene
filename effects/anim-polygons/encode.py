@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys
 import os.path
 from textwrap import TextWrapper
@@ -7,6 +6,7 @@ import xml.etree.ElementTree as ET
 
 xmlns = {"svg": "http://www.w3.org/2000/svg"}
 OFFSET = 10
+
 
 def get_coords(code):
     xy = code.split(",")
@@ -27,11 +27,12 @@ def parse_frame(frame_path):
             verts.append(get_coords(code[1:]))
     return polys
 
+
 def read_anim(path):
     ET.register_namespace('', xmlns["svg"])
     tree = ET.parse(path)
-    anim = tree.getroot() 
-    
+    anim = tree.getroot()
+
     frames = []
     for svg_path in anim:
         frames.append(parse_frame(svg_path.attrib["d"]))
