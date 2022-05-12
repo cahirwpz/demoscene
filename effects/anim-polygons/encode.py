@@ -16,12 +16,16 @@ def get_coords(code):
 
 
 def parse_frame(frame_path):
+    first = True
     polys = []
     verts = []
     for code in frame_path.split():
         if code[0] == "Z":
             if len(verts) >= 3:
-                polys.append(verts)
+                if first:
+                    first = False
+                else:
+                    polys.append(verts)
             verts = []
         else:
             verts.append(get_coords(code[1:]))
