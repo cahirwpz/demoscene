@@ -1,6 +1,8 @@
 #ifndef __SYSTEM_MOUSE_H__
 #define __SYSTEM_MOUSE_H__
 
+#include <gfx.h>
+
 #define LMB_PRESSED  1
 #define RMB_PRESSED  2
 #define LMB_RELEASED 4
@@ -8,10 +10,7 @@
 
 #include <system/syscall.h>
 
-#ifdef _SYSTEM
-void MouseInit(short minX, short minY, short maxX, short maxY);
-#endif
-
+SCARG1NR(MouseInit, Box2D *, win, a0);
 SCARG0NR(MouseKill);
 
 #endif /* !__SYSTEM_MOUSE_H__ */

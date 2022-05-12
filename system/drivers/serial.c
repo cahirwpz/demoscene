@@ -6,6 +6,7 @@
 #include <system/memory.h>
 #include <system/mutex.h>
 #include <system/task.h>
+#include <system/serial.h>
 
 #define CLOCK 3546895
 #define QUEUELEN 80
@@ -106,7 +107,7 @@ static FileOpsT SerialOps = {
 
 static MUTEX(SerialMtx);
 
-FileT *SerialOpen(u_int baud, u_int flags) {
+FileT *SerialOpen(u_int baud asm("d0"), u_int flags asm("d1")) {
   static FileT *f = NULL;
 
   MutexLock(&SerialMtx);

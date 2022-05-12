@@ -58,6 +58,5 @@ int FileGetChar(FileT *f);
 void FilePrintf(FileT *f, const char *fmt, ...);
 
 FileT *MemOpen(const void *buf, u_int nbyte);
-FileT *SerialOpen(u_int baud, u_int flags);
 
 #endif

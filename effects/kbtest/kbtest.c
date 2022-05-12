@@ -4,6 +4,7 @@
 #include <system/event.h>
 #include <system/keyboard.h>
 #include <system/file.h>
+#include <system/serial.h>
 
 #define WIDTH 640
 #define HEIGHT 256

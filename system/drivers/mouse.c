@@ -104,19 +104,19 @@ static void MouseIntHandler(void *data) {
 
 INTSERVER(MouseServer, -5, (IntFuncT)MouseIntHandler, (void *)&MouseData);
 
-void MouseInit(short minX, short minY, short maxX, short maxY) {
+void MouseInit(Box2D *win asm("a0")) {
   Log("[Mouse] Initialize driver!\n");
 
   /* Settings from MouseData structure. */
-  MouseData.left = minX;
-  MouseData.right = maxX;
-  MouseData.top = minY;
-  MouseData.bottom = maxY;
+  MouseData.left = win->minX;
+  MouseData.right = win->maxX;
+  MouseData.top = win->minY;
+  MouseData.bottom = win->maxY;
   MouseData.xctr = custom->joy0dat & 0xff;
   MouseData.yctr = custom->joy0dat >> 8;
   MouseData.button = ReadButtonState();
-  MouseData.event.x = minX;
-  MouseData.event.y = minY;
+  MouseData.event.x = win->minX;
+  MouseData.event.y = win->minY;
   MouseData.event.type = EV_MOUSE;
 
   AddIntServer(INTB_VERTB, MouseServer);
