@@ -2,6 +2,7 @@
 #include <debug.h>
 #include <stdio.h>
 #include <strings.h>
+#include <system/file.h>
 #include <system/interrupt.h>
 #include <system/memory.h>
 #include <system/mutex.h>
@@ -17,12 +18,12 @@ typedef struct {
   u_char data[QUEUELEN];
 } CharQueueT;
 
-#define __STRUCT_FILE   \
-  u_int flags;          \
-  CharQueueT sendq[1];  \
+struct File {
+  FileOpsT *ops;
+  u_int flags;
+  CharQueueT sendq[1];
   CharQueueT recvq[1];
-
-#include <system/file.h>
+};
 
 static void _PushChar(CharQueueT *queue, u_char data) {
   if (queue->used < QUEUELEN) {

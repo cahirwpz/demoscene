@@ -1,0 +1,39 @@
+; Memory allocation
+syscall MemAlloc
+syscall MemResize
+syscall MemFree
+
+; Interrupt management
+syscall SetIntVector
+syscall AddIntServer
+syscall RemIntServer
+
+; Input-output devices
+syscall KeyboardInit
+syscall KeyboardKill
+syscall MouseInit
+syscall MouseKill
+syscall PopEvent
+syscall PushEvent
+
+; File input-output
+syscall SerialOpen
+syscall FileWrite
+syscall FileRead
+syscall FileSeek
+syscall FileClose
+
+; Timers
+syscall AcquireTimer
+syscall ReleaseTimer
+syscall SetupTimer
+
+; Effect helpers
+syscall _ProfilerStart
+syscall _ProfilerStop
+syscall TaskWaitVBlank
+
+; Effect control variables
+shvar exitLoop 1
+shvar frameCount 4
+shvar lastFrameCount 4
