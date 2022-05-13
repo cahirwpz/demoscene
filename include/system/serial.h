@@ -2,10 +2,9 @@
 #define __SYSTEM_SERIAL_H__
 
 #include <types.h>
+#include <system/syscall.h>
 
 struct File;
-
-#include <system/syscall.h>
 
 SYSCALL2(SerialOpen, struct File *, u_int, baud, d0, u_int, flags, d1);
 

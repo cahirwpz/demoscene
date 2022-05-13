@@ -4,8 +4,8 @@
 #include <string.h>
 #include <system/cia.h>
 #include <system/errno.h>
-#include <system/file.h>
 #include <system/floppy.h>
+#include <system/file.h>
 #include <system/interrupt.h>
 #include <system/memory.h>
 #include <system/mutex.h>
@@ -53,17 +53,16 @@ typedef struct Sector {
 
 struct File {
   FileOpsT *ops;
-
   int pos;
+
   short headDir;
   short trackNum;
-
   CIATimerT *fdtmr;
+
   short trkInBuf;
   SectorT *encoded;
   u_char *decoded;
 };
-
 
 static inline void WaitDiskReady(void) {
   while (ciaa->ciapra & CIAF_DSKRDY);

@@ -11,14 +11,6 @@
 #define IOF_EOF 0x0002
 #define IOF_ERR 0x8000
 
-struct File {
-  FileOpsT *ops;
-  int pos;
-  u_short flags;
-  u_int start;
-  u_int size;
-};
-
 /* On disk directory entries are always aligned to 2-byte boundary. */
 typedef struct FileEntry {
   u_char   reclen;   /* total size of this record in bytes */
@@ -27,6 +19,15 @@ typedef struct FileEntry {
   u_int    size;     /* file size in bytes (up to 1MiB) */
   char     name[0];  /* name of the file (NUL terminated) */
 } FileEntryT;
+
+struct File {
+  FileOpsT *ops;
+  int pos;
+  u_short flags;
+
+  u_int start;
+  u_int size;
+};
 
 static FileEntryT *NextFileEntry(FileEntryT *fe) {
   return (void *)fe + fe->reclen;
