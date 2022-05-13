@@ -84,7 +84,8 @@ static void Init(void) {
   CopListActivate(cp);
 
   KeyboardInit();
-  MouseInit(0, 0, WIDTH - 1, HEIGHT - 1);
+  MouseInit(&(Box2D){.minX = 0, .minY = 0,
+                     .maxX = WIDTH - 1, .maxY = HEIGHT - 1});
 
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 

@@ -43,7 +43,7 @@ static void FsClose(FileT *f);
 
 static FileOpsT FsOps = {
   .read = FsRead,
-  .write = NULL,
+  .write = NoWrite,
   .seek = FsSeek,
   .close = FsClose
 };
@@ -63,7 +63,7 @@ static FileEntryT *LookupFile(const char *path) {
   return NULL;
 }
 
-FileT *OpenFile(const char *path) {
+FileT *OpenFile(const char *path asm("a0")) {
   FileEntryT *entry;
   FileT *f;
 
@@ -137,20 +137,6 @@ static int FsSeek(FileT *f, int offset, int whence) {
   return EINVAL;
 }
 
-int GetFileSize(const char *path) {
-  FileEntryT *entry;
-  if ((entry = LookupFile(path)))
-    return entry->size;
-  return ENOENT;
-}
-
-int GetCursorPos(FileT *f) {
-  Assume(f != NULL);
-  if (f->flags & IOF_ERR)
-    return EIO;
-  return f->pos;
-}
-
 #define ONSTACK(x) (&(x)), sizeof((x))
 
 void InitFileSys(FileT *dev) {
@@ -190,6 +176,21 @@ void KillFileSys(void) {
   }
 }
 
+#if 0
+int GetFileSize(const char *path) {
+  FileEntryT *entry;
+  if ((entry = LookupFile(path)))
+    return entry->size;
+  return ENOENT;
+}
+
+int GetCursorPos(FileT *f) {
+  Assume(f != NULL);
+  if (f->flags & IOF_ERR)
+    return EIO;
+  return f->pos;
+}
+
 void *LoadFile(const char *path, u_int memoryFlags) {
   char *data = NULL;
   int size = GetFileSize(path);
@@ -210,3 +211,4 @@ void *LoadFile(const char *path, u_int memoryFlags) {
 
   return data;
 }
+#endif

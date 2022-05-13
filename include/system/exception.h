@@ -1,5 +1,5 @@
-#ifndef __EXCEPTION_H__
-#define __EXCEPTION_H__
+#ifndef __SYSTEM_EXCEPTION_H__
+#define __SYSTEM_EXCEPTION_H__
 
 struct BootData;
 
@@ -29,4 +29,4 @@ extern ExcVecT *ExcVecBase;
 
 void SetupExceptionVector(struct BootData *bd);
 
-#endif
+#endif /* !__SYSTEM_EXCEPTION_H__ */

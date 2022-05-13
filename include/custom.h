@@ -1,5 +1,5 @@
-#ifndef _CUSTOM_H_
-#define _CUSTOM_H_
+#ifndef __CUSTOM_H__
+#define __CUSTOM_H__
 
 #include <custom_regdef.h>
 
@@ -23,4 +23,4 @@ static inline void WaitLine(uint32_t line) {
 
 static inline void WaitVBlank(void) { WaitLine(303); }
 
-#endif /* !_CUSTOM_H_ */
+#endif /* !__CUSTOM_H__ */

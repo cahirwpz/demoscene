@@ -1,4 +1,5 @@
 #include <debug.h>
+#include <crc32.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
@@ -80,6 +81,7 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
           hunkType = " BSS";
 
         Log("%s: %p - %p\n", hunkType, hunk->data, hunk->data + hunk->size);
+        Debug("%s: crc32: $%08x", hunkType, crc32(hunk->data, hunk->size));
       }
     } else if (hunkId == HUNK_DEBUG) {
       n = ReadLong(fh);

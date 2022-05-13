@@ -7,6 +7,7 @@
 #include <system/memory.h>
 #include <system/mutex.h>
 #include <system/task.h>
+#include <system/serial.h>
 
 #define CLOCK 3546895
 #define QUEUELEN 80
@@ -101,13 +102,13 @@ static void SerialClose(FileT *f);
 static FileOpsT SerialOps = {
   .read = SerialRead,
   .write = SerialWrite,
-  .seek = NULL,
+  .seek = NoSeek,
   .close = SerialClose
 };
 
 static MUTEX(SerialMtx);
 
-FileT *SerialOpen(u_int baud, u_int flags) {
+FileT *OpenSerial(u_int baud asm("d0"), u_int flags asm("d1")) {
   static FileT *f = NULL;
 
   MutexLock(&SerialMtx);
@@ -119,8 +120,8 @@ FileT *SerialOpen(u_int baud, u_int flags) {
 
     custom->serper = CLOCK / baud - 1;
 
-    SetIntVector(TBE, (IntHandlerT)SendIntHandler, f);
-    SetIntVector(RBF, (IntHandlerT)RecvIntHandler, f);
+    SetIntVector(INTB_TBE, (IntHandlerT)SendIntHandler, f);
+    SetIntVector(INTB_RBF, (IntHandlerT)RecvIntHandler, f);
 
     ClearIRQ(INTF_TBE | INTF_RBF);
     EnableINT(INTF_TBE | INTF_RBF);
@@ -135,8 +136,8 @@ static void SerialClose(FileT *f) {
   DisableINT(INTF_TBE | INTF_RBF);
   ClearIRQ(INTF_TBE | INTF_RBF);
 
-  ResetIntVector(RBF);
-  ResetIntVector(TBE);
+  ResetIntVector(INTB_RBF);
+  ResetIntVector(INTB_TBE);
 
   MemFree(f);
 }

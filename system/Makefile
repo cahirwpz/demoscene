@@ -12,10 +12,10 @@ SOURCES := \
 	debug.c \
 	debug-putchar.S \
 	effect.c \
+	jumptab.S \
 	loader.c \
 	main.c \
 	profiler.c \
-	uae.S \
 	drivers/cia-frame.c \
 	drivers/cia-icr.c \
 	drivers/cia-line.c \
@@ -24,7 +24,7 @@ SOURCES := \
 	drivers/floppy.c \
 	drivers/filesys.c \
 	drivers/keyboard.c \
-	drivers/memory-file.c \
+	drivers/memfile.c \
 	drivers/mouse.c \
 	drivers/serial.c \
 	kernel/amigahunk.c \
@@ -44,3 +44,9 @@ CFLAGS.amigaos = -Wno-strict-prototypes
 BUILD-FILES = crt0.o
 		
 include $(TOPDIR)/build/lib.mk
+
+syscall.lds jumptab.S: system-api.py system-api.in 
+	python3 system-api.py system-api.in syscall.lds jumptab.S
+
+$(LDSCRIPT): syscall.lds
+	touch $@

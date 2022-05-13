@@ -1,7 +1,7 @@
-#ifndef __EVENT_H__
-#define __EVENT_H__
+#ifndef __SYSTEM_EVENT_H__
+#define __SYSTEM_EVENT_H__
 
-#include "common.h"
+#include <types.h>
 
 typedef enum { EV_UNKNOWN, EV_KEY, EV_MOUSE, EV_GUI } EventTypeT;
 
@@ -34,8 +34,13 @@ typedef union Event {
   GuiEventT gui;
 } EventT;
 
+#ifdef _SYSTEM
 void PushEventISR(EventT *event);
-void PushEvent(EventT *event);
-bool PopEvent(EventT *event);
-
 #endif
+
+#include <system/syscall.h>
+
+SYSCALL1NR(PushEvent, EventT *, event, a0);
+SYSCALL1(PopEvent, bool, EventT *,event, a0);
+
+#endif /* !__SYSTEM_EVENT_H__ */

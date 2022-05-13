@@ -240,7 +240,7 @@ static void FloppyClose(FileT *f);
 
 static FileOpsT FloppyOps = {
   .read = FloppyRead,
-  .write = NULL,
+  .write = NoWrite,
   .seek = FloppySeek,
   .close = FloppyClose,
 };
@@ -265,7 +265,7 @@ FileT *FloppyOpen(void) {
     custom->adkcon = ADKF_SETCLR | ADKF_MFMPREC | ADKF_WORDSYNC | ADKF_FAST;
 
     DisableDMA(DMAF_DISK);
-    SetIntVector(DSKBLK, DiskBlockInterrupt, NULL);
+    SetIntVector(INTB_DSKBLK, DiskBlockInterrupt, NULL);
     ClearIRQ(INTF_DSKBLK);
     EnableINT(INTF_DSKBLK);
 
@@ -288,7 +288,7 @@ static void FloppyClose(FileT *f) {
   FloppyMotorOff();
   DisableINT(INTF_DSKBLK);
   ClearIRQ(INTF_DSKBLK);
-  ResetIntVector(DSKBLK);
+  ResetIntVector(INTB_DSKBLK);
   ReleaseTimer(f->fdtmr);
   MemFree(f->encoded);
   MemFree(f);
@@ -324,6 +324,7 @@ static int FloppyRead(FileT *f, void *buf, u_int nbyte) {
 
     memcpy(buf, f->decoded + trkoff, size);
 
+    buf += size;
     left -= size;
     f->pos += size;
   }

@@ -24,6 +24,7 @@ OFLAGS	+= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	:= -Wall -W -Werror -Wundef -Wsign-compare -Wredundant-decls
 WFLAGS	+= -Wnested-externs -Wwrite-strings -Wstrict-prototypes
 CPPFLAGS += -I$(TOPDIR)/include
+LDSCRIPT := $(TOPDIR)/system/amiga.lds
 
 # Don't reload library base for each call
 CPPFLAGS += -D__CONSTLIBBASEDECL__=const

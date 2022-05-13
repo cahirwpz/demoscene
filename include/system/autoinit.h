@@ -1,5 +1,5 @@
-#ifndef __AUTOINIT_H__
-#define __AUTOINIT_H__
+#ifndef __SYSTEM_AUTOINIT_H__
+#define __SYSTEM_AUTOINIT_H__
 
 #include <types.h>
 
@@ -20,4 +20,4 @@ extern FuncItemSetT __EXIT_LIST__;
  * reversed by ADD2EXIT so there's no need to handle extra case. */
 void CallFuncList(FuncItemSetT *set);
 
-#endif
+#endif /* !__SYSTEM_AUTOINIT_H__ */

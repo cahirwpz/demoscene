@@ -3,7 +3,7 @@ TOPDIR = $(realpath .)
 SUBDIRS = tools lib effects
 SUBDIRS = tools lib system effects
 EXTRA-FILES = tags cscope.out
-CLEAN-FILES = bootloader.bin 
+CLEAN-FILES = bootloader.bin
 
 all: a500rom.bin bootloader.bin build
 

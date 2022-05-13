@@ -1,13 +1,9 @@
 #include <system/boot.h>
 #include <system/exception.h>
-#include <system/interrupt.h>
 #include <system/trap.h>
 
 /* Exception Vector Base: 0 for 68000, for 68010 and above read from VBR */
 ExcVecT *ExcVecBase = (ExcVecT *)NULL;
-
-/* Amiga autovector interrupts table. */
-IntVecT IntVec;
 
 void SetupExceptionVector(BootDataT *bd) {
   short i;
@@ -32,22 +28,6 @@ void SetupExceptionVector(BootDataT *bd) {
   ExcVec[EXC_LINEA] = IllegalTrap;
   ExcVec[EXC_LINEF] = IllegalTrap;
   ExcVec[EXC_FMTERR] = FmtErrTrap;
-
-  /* Initialize level 1-7 interrupt autovector in Amiga specific way. */
-  ExcVec[EXC_INTLVL(1)] = AmigaLvl1Handler;
-  ExcVec[EXC_INTLVL(2)] = AmigaLvl2Handler;
-  ExcVec[EXC_INTLVL(3)] = AmigaLvl3Handler;
-  ExcVec[EXC_INTLVL(4)] = AmigaLvl4Handler;
-  ExcVec[EXC_INTLVL(5)] = AmigaLvl5Handler;
-  ExcVec[EXC_INTLVL(6)] = AmigaLvl6Handler;
-
-  for (i = INTB_TBE; i <= INTB_EXTER; i++)
-    IntVec[i].code = DummyInterruptHandler;
-
-  /* Initialize PORTS & VERTB & EXTER as interrupt server chain. */
-  SetIntVector(PORTS, (IntHandlerT)RunIntChain, PortsChain);
-  SetIntVector(VERTB, (IntHandlerT)RunIntChain, VertBlankChain);
-  SetIntVector(EXTER, (IntHandlerT)RunIntChain, ExterChain);
 
   /* Intialize TRAP instruction handlers. */
   ExcVec[EXC_TRAP(0)] = YieldHandler;

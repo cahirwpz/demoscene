@@ -24,13 +24,13 @@ void PushEventISR(EventT *event) {
   (void)SetIPL(ipl);
 }
 
-void PushEvent(EventT *event) {
+void PushEvent(EventT *event asm("a0")) {
   IntrDisable();
   _PushEvent(event);
   IntrEnable();
 }
 
-bool PopEvent(EventT *event) {
+bool PopEvent(EventT *event asm("a0")) {
   bool present = false;
 
   IntrDisable();

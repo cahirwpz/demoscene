@@ -1,5 +1,5 @@
-#ifndef __ERRNO_H__
-#define __ERRNO_H__
+#ifndef __SYSTEM_ERRNO_H__
+#define __SYSTEM_ERRNO_H__
 
 /* Semantics of these constants is similar to their Unix counterparts. */
 
@@ -9,4 +9,4 @@
 #define ENOTSUP -4 /* Operation not supported */
 #define EIO -5     /* Input/output error */
 
-#endif
+#endif /* !__SYSTEM_ERRNO_H__ */

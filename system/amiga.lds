@@ -6,6 +6,7 @@ PROVIDE(_SysBase = 0x4);
 PROVIDE(__ciaa = 0xbfe001);
 PROVIDE(__ciab = 0xbfd000);
 PROVIDE(__custom = 0xdff000);
+INCLUDE syscall.lds
 SECTIONS
 {
   . = 0x0;

@@ -1,8 +1,8 @@
 /* This code is covered by BSD license.
  * It was taken from OpenBSD sys/sys/queue.h and slightly modified. */
 
-#ifndef _QUEUE_H_
-#define _QUEUE_H_
+#ifndef __SYSTEM_QUEUE_H__
+#define __SYSTEM_QUEUE_H__
 
 #include <cdefs.h>
 
@@ -407,4 +407,4 @@
     }                                                                          \
   } while (0)
 
-#endif /* !_QUEUE_H_ */
+#endif /* !__SYSTEM_QUEUE_H__ */

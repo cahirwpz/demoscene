@@ -1,5 +1,3 @@
-#include <stdarg.h>
-#include <stdio.h>
 #include <system/file.h>
 #include <system/errno.h>
 
@@ -7,38 +5,27 @@ struct File {
   FileOpsT *ops;
 };
 
-int FileRead(FileT *f, void *buf, u_int nbyte) {
-  return f->ops->read ? f->ops->read(f, buf, nbyte) : ENOTSUP;
+int NoWrite(FileT *f __unused, const void *buf __unused, u_int nbyte __unused) {
+  return ENOTSUP;
 }
 
-int FileWrite(FileT *f, const void *buf, u_int nbyte) {
-  return f->ops->write ? f->ops->write(f, buf, nbyte) : ENOTSUP;
+int NoSeek(FileT *f __unused, int offset __unused, int whence __unused) {
+  return ENOTSUP;
 }
 
-int FileSeek(FileT *f, int offset, int whence) {
-  return f->ops->seek ? f->ops->seek(f, offset, whence) : ENOTSUP;
+int FileRead(FileT *f asm("a0"), void *buf asm("a1"), u_int nbyte asm("d0")) {
+  return f->ops->read(f, buf, nbyte);
 }
 
-void FileClose(FileT *f) {
-  if (f->ops->close)
-    f->ops->close(f);
+int FileWrite(FileT *f asm("a0"), const void *buf asm("a1"),
+              u_int nbyte asm("d0")) {
+  return f->ops->write(f, buf, nbyte);
 }
 
-int FileGetChar(FileT *f) {
-  char c;
-  if (FileRead(f, &c, 1) < 1)
-    return -1;
-  return c;
+int FileSeek(FileT *f asm("a0"), int offset asm("d0"), int whence asm("d1")) {
+  return f->ops->seek(f, offset, whence);
 }
 
-void FilePutChar(FileT *f, char c) {
-  FileWrite(f, &c, 1);
-}
-
-void FilePrintf(FileT *f, const char *fmt, ...) {
-  va_list ap;
-
-  va_start(ap, fmt);
-  kvprintf((kvprintf_fn_t *)FilePutChar, f, fmt, ap);
-  va_end(ap);
+void FileClose(FileT *f asm("a0")) {
+  f->ops->close(f);
 }

@@ -205,10 +205,10 @@ void KeyboardInit(void) {
    * The keyboard is attached to CIA-A serial port. */
   WriteICR(ciaa, CIAICRF_SETCLR | CIAICRF_SP);
 
-  AddIntServer(PortsChain, KeyboardServer);
+  AddIntServer(INTB_PORTS, KeyboardServer);
 }
 
 void KeyboardKill(void) {
-  RemIntServer(PortsChain, KeyboardServer);
+  RemIntServer(INTB_PORTS, KeyboardServer);
   ReleaseTimer(kbdtmr);
 }

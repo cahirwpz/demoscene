@@ -2,6 +2,7 @@
 #include <string.h>
 #include <system/errno.h>
 #include <system/file.h>
+#include <system/memfile.h>
 #include <system/memory.h>
 
 struct File {
@@ -17,7 +18,7 @@ static void MemClose(FileT *f);
 
 static FileOpsT MemOps = {
   .read = MemRead,
-  .write = NULL,
+  .write = NoWrite,
   .seek = MemSeek,
   .close = MemClose
 };

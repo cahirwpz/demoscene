@@ -47,7 +47,7 @@ static CIATimerT Timers[4] = {TIMER(CIAA, A), TIMER(CIAA, B), TIMER(CIAB, A),
                               TIMER(CIAB, B)};
 static MUTEX(TimerMtx);
 
-CIATimerT *AcquireTimer(u_int num) {
+CIATimerT *AcquireTimer(u_int num asm("d0")) {
   CIATimerT *timer = NULL;
   u_int i;
 
@@ -69,18 +69,18 @@ CIATimerT *AcquireTimer(u_int num) {
   MutexUnlock(&TimerMtx);
 
   if (timer) {
-    IntChainT *chain = (num & 2) ? ExterChain : PortsChain;
-    AddIntServer(chain, &timer->server);
+    u_int irq = (num & 2) ? INTB_EXTER : INTB_PORTS;
+    AddIntServer(irq, &timer->server);
   }
 
   return timer;
 }
 
-void ReleaseTimer(CIATimerT *timer) {
+void ReleaseTimer(CIATimerT *timer asm("a0")) {
   MutexLock(&TimerMtx);
   {
-    IntChainT *chain = (timer->num & 2) ? ExterChain : PortsChain;
-    RemIntServer(chain, &timer->server);
+    u_int irq = (timer->num & 2) ? INTB_EXTER : INTB_PORTS;
+    RemIntServer(irq, &timer->server);
     InUse &= ~__BIT(timer->num);
   }
   MutexUnlock(&TimerMtx);
@@ -101,8 +101,8 @@ static void LoadTimer(CIAPtrT cia, u_char icr, u_short delay, u_short flags) {
   }
 }
 
-void SetupTimer(CIATimerT *timer, CIATimeoutT timeout,
-                u_short delay, u_short flags)
+void SetupTimer(CIATimerT *timer asm("a0"), CIATimeoutT timeout asm("a1"),
+                u_short delay asm("d0"), u_short flags asm("d1"))
 {
   CIAPtrT cia = timer->cia;
   u_char icr = timer->icr;
@@ -113,7 +113,8 @@ void SetupTimer(CIATimerT *timer, CIATimeoutT timeout,
   WriteICR(cia, CIAICRF_SETCLR | icr);
 }
 
-void WaitTimerGeneric(CIATimerT *timer, u_short delay, bool spin) {
+void WaitTimerGeneric(CIATimerT *timer asm("a0"),
+                      u_short delay asm("d0"), bool spin asm("d1")) {
   CIAPtrT cia = timer->cia;
   u_char icr = timer->icr;
 

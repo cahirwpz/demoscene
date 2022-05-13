@@ -39,10 +39,6 @@ extern int lastFrameCount;
  */
 extern bool exitLoop;
 
-/* Puts a task into sleep waiting for Vertical Blank interrupt.
- * Let's background task do its job. */
-void TaskWaitVBlank(void);
-
 typedef enum {
   EFFECT_LOADED = 1,
   EFFECT_READY = 2,
@@ -111,7 +107,14 @@ typedef struct Profile {
 
 #define ProfilerStart(NAME) _ProfilerStart(_##NAME##_profile)
 #define ProfilerStop(NAME) _ProfilerStop(_##NAME##_profile)
-void _ProfilerStart(ProfileT *prof);
-void _ProfilerStop(ProfileT *prof);
+
+#include <system/syscall.h>
+
+/* Puts a task into sleep waiting for Vertical Blank interrupt.
+ * Let's background task do its job. */
+SYSCALL0NR(TaskWaitVBlank);
+
+SYSCALL1NR(_ProfilerStart, ProfileT *, prof, a0);
+SYSCALL1NR(_ProfilerStop, ProfileT *, prof, a0);
 
 #endif /* !__EFFECT_H__ */

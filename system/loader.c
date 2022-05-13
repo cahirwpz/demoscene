@@ -1,5 +1,6 @@
 #include <debug.h>
 #include <custom.h>
+#include <string.h>
 #include <system/amigahunk.h>
 #include <system/autoinit.h>
 #include <system/boot.h>
@@ -10,12 +11,15 @@
 #include <system/file.h>
 #include <system/floppy.h>
 #include <system/interrupt.h>
+#include <system/memfile.h>
 #include <system/memory.h>
 #include <system/task.h>
 
 u_char CpuModel = CPU_68000;
 
 extern int main(void);
+extern u_char JumpTable[];
+extern u_char JumpTableSize[];
 
 void Loader(BootDataT *bd) {
   Log("[Loader] VBR at $%08x\n", (u_int)bd->bd_vbr);
@@ -48,6 +52,10 @@ void Loader(BootDataT *bd) {
   }
 
   SetupExceptionVector(bd);
+  SetupInterruptVector();
+
+  /* Set up system interface. */
+  memcpy(&ExcVec[EXC_TRAP(16)], JumpTable, (u_int)JumpTableSize);
 
   /* CIA-A & CIA-B: Stop timers and return to default settings. */
   ciaa->ciacra = 0;

@@ -1,5 +1,5 @@
-#ifndef _CUSTOM_REGDEF_H_
-#define _CUSTOM_REGDEF_H_
+#ifndef __CUSTOM_REGDEF_H__
+#define __CUSTOM_REGDEF_H__
 
 #include <cdefs.h>
 
@@ -339,4 +339,4 @@ struct Custom {
 #define OUTLX __BIT(9)  /* Output enable for bit 8 */
 #define DATLX __BIT(8)  /* Data for port 1, pin 5 (middle mouse button) */
 
-#endif /* !_CUSTOM_REGDEF_H_ */
+#endif /* !__CUSTOM_REGDEF_H__ */

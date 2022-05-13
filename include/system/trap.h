@@ -1,5 +1,5 @@
-#ifndef __TRAP_H__
-#define __TRAP_H__
+#ifndef __SYSTEM_TRAP_H__
+#define __SYSTEM_TRAP_H__
 
 #define T_UNKNOWN   0
 #define T_BUSERR    1
@@ -88,4 +88,4 @@ void TrapInstTrap(void);
 void YieldHandler(void);
 #endif
 
-#endif
+#endif /* !__SYSTEM_TRAP_H__ */

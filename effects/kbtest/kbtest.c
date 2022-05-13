@@ -4,6 +4,7 @@
 #include <system/event.h>
 #include <system/keyboard.h>
 #include <system/file.h>
+#include <system/serial.h>
 
 #define WIDTH 640
 #define HEIGHT 256
@@ -34,7 +35,7 @@ static void Init(void) {
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
 
-  ser = SerialOpen(9600, O_NONBLOCK);
+  ser = OpenSerial(9600, O_NONBLOCK);
   KeyboardInit();
 }
 

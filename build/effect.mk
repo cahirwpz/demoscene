@@ -35,10 +35,10 @@ $(TOPDIR)/%.bin: FORCE
 
 include $(TOPDIR)/build/common.mk
 
-$(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA)
+$(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA) $(LDSCRIPT)
 	@echo "[LD] $(addprefix $(DIR),$(OBJECTS)) -> $(DIR)$@"
-	$(LD) $(LDFLAGS) -T$(TOPDIR)/amiga.ld -Map=$@.map -o $@ \
-		--start-group $^ --end-group
+	$(LD) $(LDFLAGS) -L$(TOPDIR)/system -T$(LDSCRIPT) -Map=$@.map -o $@ \
+		--start-group $(filter-out %.lds,$^) --end-group
 	$(CP) $@ $@.dbg
 	$(STRIP) $@
 
