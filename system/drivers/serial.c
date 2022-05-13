@@ -108,7 +108,7 @@ static FileOpsT SerialOps = {
 
 static MUTEX(SerialMtx);
 
-FileT *SerialOpen(u_int baud asm("d0"), u_int flags asm("d1")) {
+FileT *OpenSerial(u_int baud asm("d0"), u_int flags asm("d1")) {
   static FileT *f = NULL;
 
   MutexLock(&SerialMtx);

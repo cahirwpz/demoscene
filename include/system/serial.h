@@ -6,6 +6,6 @@
 
 struct File;
 
-SYSCALL2(SerialOpen, struct File *, u_int, baud, d0, u_int, flags, d1);
+SYSCALL2(OpenSerial, struct File *, u_int, baud, d0, u_int, flags, d1);
 
 #endif /* !__SYSTEM_SERIAL_H__ */

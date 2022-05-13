@@ -17,7 +17,8 @@ syscall PopEvent
 syscall PushEvent
 
 ; File input-output
-syscall SerialOpen
+syscall OpenFile
+syscall OpenSerial
 syscall FileWrite
 syscall FileRead
 syscall FileSeek

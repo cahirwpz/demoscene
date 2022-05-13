@@ -1,15 +1,16 @@
 #ifndef __FILESYS_H__
 #define __FILESYS_H__
 
+#include <types.h>
+#include <system/syscall.h>
+
 struct File;
 
-#define IOF_BUFFERED 1
-
-struct File *OpenFile(const char *path);
-int GetFileSize(const char *path);
-void *LoadFile(const char *path, u_int memoryFlags);
-
+#ifdef _SYSTEM
 void InitFileSys(struct File *dev);
 void KillFileSys(void);
+#endif
+
+SYSCALL1(OpenFile, struct File *, const char *, path, a0);
 
 #endif

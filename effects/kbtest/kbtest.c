@@ -35,7 +35,7 @@ static void Init(void) {
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
 
-  ser = SerialOpen(9600, O_NONBLOCK);
+  ser = OpenSerial(9600, O_NONBLOCK);
   KeyboardInit();
 }
 
