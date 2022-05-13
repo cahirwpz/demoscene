@@ -1,5 +1,5 @@
-#ifndef __CPU_H__
-#define __CPU_H__
+#ifndef __SYSTEM_CPU_H__
+#define __SYSTEM_CPU_H__
 
 #include <types.h>
 
@@ -59,4 +59,4 @@ static inline u_short GetIPL(void) {
  * bits in SR register. Returns previous value of IPL. */
 u_short SetIPL(u_short);
 
-#endif
+#endif /* !__SYSTEM_CPU_H__ */

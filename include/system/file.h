@@ -1,5 +1,5 @@
-#ifndef __FILE_H__
-#define __FILE_H__
+#ifndef __SYSTEM_FILE_H__
+#define __SYSTEM_FILE_H__
 
 #include <cdefs.h>
 #include <types.h>
@@ -12,6 +12,7 @@
 
 typedef struct File FileT;
 
+#ifdef _SYSTEM
 typedef int (*FileReadT)(FileT *f, void *buf, u_int nbyte);
 typedef int (*FileWriteT)(FileT *f, const void *buf, u_int nbyte);
 typedef int (*FileSeekT)(FileT *f, int offset, int whence);
@@ -26,6 +27,7 @@ typedef struct {
 
 int NoWrite(FileT *f, const void *buf, u_int nbyte);
 int NoSeek(FileT *f, int offset, int whence);
+#endif
 
 #include <system/syscall.h>
 
@@ -40,4 +42,4 @@ void FilePutChar(FileT *f, char c);
 int FileGetChar(FileT *f);
 void FilePrintf(FileT *f, const char *fmt, ...);
 
-#endif
+#endif /* !__SYSTEM_FILE_H__ */

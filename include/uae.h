@@ -1,5 +1,5 @@
-#ifndef _UAE_H_
-#define _UAE_H_
+#ifndef __UAE_H__
+#define __UAE_H__
 
 /*
  * Corresponding interface is implemented in fs-uae:
@@ -22,4 +22,4 @@ enum {
 #define UaeExit() _UaeTrap(uaelib_ExitEmu)
 #define UaeLog(...) _UaeLog(uaelib_Log, __VA_ARGS__)
 
-#endif
+#endif /* !__UAE_H__ */

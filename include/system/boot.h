@@ -1,5 +1,5 @@
-#ifndef __BOOT_H__
-#define __BOOT_H__
+#ifndef __SYSTEM_BOOT_H__
+#define __SYSTEM_BOOT_H__
 
 #include <types.h>
 
@@ -22,4 +22,4 @@ typedef struct BootData {
   MemRegionT bd_region[0];
 } BootDataT;
 
-#endif
+#endif /* !__SYSTEM_BOOT_H__ */

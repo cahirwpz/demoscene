@@ -11,4 +11,4 @@ struct File;
 
 struct File *FloppyOpen(void);
 
-#endif /* !__SYSTEM_FLOPPY__ */
+#endif /* !__SYSTEM_FLOPPY_H__ */

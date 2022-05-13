@@ -1,5 +1,5 @@
-#ifndef __AMIGAHUNK_H__
-#define __AMIGAHUNK_H__
+#ifndef __SYSTEM_AMIGAHUNK_H__
+#define __SYSTEM_AMIGAHUNK_H__
 
 struct File;
 
@@ -12,4 +12,4 @@ typedef struct Hunk {
 HunkT *LoadHunkList(struct File *file);
 void FreeHunkList(HunkT *hunklist);
 
-#endif
+#endif /* !__SYSTEM_AMIGAHUNK_H__ */

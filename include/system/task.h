@@ -1,5 +1,5 @@
-#ifndef __TASK_H__
-#define __TASK_H__
+#ifndef __SYSTEM_TASK_H__
+#define __SYSTEM_TASK_H__
 
 #include <types.h>
 #include <system/queue.h>
@@ -63,4 +63,4 @@ static inline void TaskYield(void) { asm volatile("trap #0"); }
 void IntrDisable(void);
 void IntrEnable(void);
 
-#endif
+#endif /* !__SYSTEM_TASK_H__ */

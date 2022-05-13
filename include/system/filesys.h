@@ -1,5 +1,5 @@
-#ifndef __FILESYS_H__
-#define __FILESYS_H__
+#ifndef __SYSTEM_FILESYS_H__
+#define __SYSTEM_FILESYS_H__
 
 #include <types.h>
 #include <system/syscall.h>
@@ -13,4 +13,4 @@ void KillFileSys(void);
 
 SYSCALL1(OpenFile, struct File *, const char *, path, a0);
 
-#endif
+#endif /* !__SYSTEM_FILESYS_H__ */

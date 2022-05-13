@@ -1,5 +1,5 @@
-#ifndef __MUTEX_H__
-#define __MUTEX_H__
+#ifndef __SYSTEM_MUTEX_H__
+#define __SYSTEM_MUTEX_H__
 
 #include <types.h>
 #include <system/queue.h>
@@ -24,4 +24,4 @@ static inline void MutexInit(MutexT *mtx) {
 void MutexLock(MutexT *mtx);
 void MutexUnlock(MutexT *mtx);
 
-#endif /* !__MUTEX_H__ */
+#endif /* !__SYSTEM_MUTEX_H__ */

@@ -1,11 +1,11 @@
-#ifndef _CIA_H_
-#define _CIA_H_
+#ifndef __SYSTEM_CIA_H__
+#define __SYSTEM_CIA_H__
 
 #ifndef _SYSTEM
 #error "cia.h must not be used outside system/ directory"
 #endif
 
-#include <system/cia_regdef.h>
+#include <cia_regdef.h>
 
 typedef volatile struct CIA *const CIAPtrT;
 
@@ -38,4 +38,4 @@ static inline bool LeftMouseButton(void) {
   return !(ciaa->ciapra & CIAF_GAMEPORT0);
 }
 
-#endif
+#endif /* !__SYSTEM_CIA_H__ */

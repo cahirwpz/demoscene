@@ -4,7 +4,7 @@
 #include <cdefs.h>
 
 #ifdef UAE
-#include <system/uae.h>
+#include <uae.h>
 #define Log(...) UaeLog(__VA_ARGS__);
 #define Panic(...) { UaeLog(__VA_ARGS__); PANIC(); }
 #else
@@ -24,4 +24,4 @@ __noreturn void Panic(const char *format, ...)
 #endif
 #endif /* !_SYSTEM */
 
-#endif /* !__SYSTEM_DEBUG__ */
+#endif /* !__SYSTEM_DEBUG_H__ */
