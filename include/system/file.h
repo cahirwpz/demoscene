@@ -27,9 +27,9 @@ typedef struct {
 int NoWrite(FileT *f, const void *buf, u_int nbyte);
 int NoSeek(FileT *f, int offset, int whence);
 
-/* These behave like read/write/lseek known from UNIX */
 #include <system/syscall.h>
 
+/* These behave like read/write/lseek known from UNIX */
 SYSCALL3(FileRead, int, FileT *, file, a0, void *, buf, a1, u_int, nbyte, d0);
 SYSCALL3(FileWrite, int, FileT *, file, a0, const void *, buf, a1,
          u_int, nbyte, d0);
@@ -39,7 +39,5 @@ SYSCALL1NR(FileClose, FileT *, file, a0);
 void FilePutChar(FileT *f, char c);
 int FileGetChar(FileT *f);
 void FilePrintf(FileT *f, const char *fmt, ...);
-
-FileT *MemOpen(const void *buf, u_int nbyte);
 
 #endif

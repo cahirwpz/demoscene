@@ -2,6 +2,7 @@
 #include <string.h>
 #include <system/errno.h>
 #include <system/file.h>
+#include <system/memfile.h>
 #include <system/memory.h>
 
 struct File {

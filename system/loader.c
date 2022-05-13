@@ -11,6 +11,7 @@
 #include <system/file.h>
 #include <system/floppy.h>
 #include <system/interrupt.h>
+#include <system/memfile.h>
 #include <system/memory.h>
 #include <system/task.h>
 
