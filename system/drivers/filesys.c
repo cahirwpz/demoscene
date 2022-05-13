@@ -20,6 +20,14 @@ typedef struct FileEntry {
   char     name[0];  /* name of the file (NUL terminated) */
 } FileEntryT;
 
+static FileEntryT *NextFileEntry(FileEntryT *fe) {
+  return (void *)fe + fe->reclen;
+}
+
+static FileT *FileSysDev;
+/* Finished by NUL character (reclen = 0). */
+static FileEntryT *FileSysRootDir;
+
 struct File {
   FileOpsT *ops;
   int pos;
@@ -28,14 +36,6 @@ struct File {
   u_int start;
   u_int size;
 };
-
-static FileEntryT *NextFileEntry(FileEntryT *fe) {
-  return (void *)fe + fe->reclen;
-}
-
-static FileT *FileSysDev;
-/* Finished by NUL character (reclen = 0). */
-static FileEntryT *FileSysRootDir;
 
 static int FsRead(FileT *f, void *buf, u_int nbyte);
 static int FsSeek(FileT *f, int offset, int whence);
