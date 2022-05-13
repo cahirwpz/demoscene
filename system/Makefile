@@ -12,6 +12,7 @@ SOURCES := \
 	debug.c \
 	debug-putchar.S \
 	effect.c \
+	jumptab.S \
 	loader.c \
 	main.c \
 	profiler.c \
@@ -43,3 +44,9 @@ CFLAGS.amigaos = -Wno-strict-prototypes
 BUILD-FILES = crt0.o
 		
 include $(TOPDIR)/build/lib.mk
+syscall.lds jumptab.S: system-api.py system-api.in 
+	python3 system-api.py system-api.in syscall.lds jumptab.S
+
+$(LDSCRIPT): syscall.lds
+	touch $@
+

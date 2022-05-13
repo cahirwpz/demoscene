@@ -37,7 +37,7 @@ include $(TOPDIR)/build/common.mk
 
 $(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA) $(LDSCRIPT)
 	@echo "[LD] $(addprefix $(DIR),$(OBJECTS)) -> $(DIR)$@"
-	$(LD) $(LDFLAGS) -L$(TOPDIR) -T$(LDSCRIPT) -Map=$@.map -o $@ \
+	$(LD) $(LDFLAGS) -L$(TOPDIR)/system -T$(LDSCRIPT) -Map=$@.map -o $@ \
 		--start-group $(filter-out %.lds,$^) --end-group
 	$(CP) $@ $@.dbg
 	$(STRIP) $@
