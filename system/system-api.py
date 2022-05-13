@@ -24,7 +24,7 @@ def doit(api, sc, jv):
 
     with redirect_stdout(sc):
         for i, sc in enumerate(syscalls):
-            addr = i * 4 + 0xc0
+            addr = i * 6 + 0xc0
             print(f'PROVIDE(__{sc} = 0x{addr:x});')
 
         addr = 0x400
