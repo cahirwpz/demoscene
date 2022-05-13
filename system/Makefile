@@ -12,6 +12,7 @@ SOURCES := \
 	debug.c \
 	debug-putchar.S \
 	effect.c \
+	jumptab.S \
 	loader.c \
 	main.c \
 	profiler.c \
