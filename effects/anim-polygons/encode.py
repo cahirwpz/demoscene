@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+
 import sys
 import os.path
+import argparse
 from textwrap import TextWrapper
 import xml.etree.ElementTree as ET
 
@@ -44,7 +46,15 @@ def read_anim(path):
 
 
 if __name__ == '__main__':
-    path = sys.argv[1]
+    parser = argparse.ArgumentParser(description="Converts .svg into "
+                                                 ".c animation file "
+                                                 "for anim-polygons effect.")
+    parser.add_argument("animation", help="Path to .svg file "
+                                          "generated using pipeline described "
+                                          "in prototypes/anim_polygons_data/ "
+                                          "directory.", type=str)
+    args = parser.parse_args()
+    path = args.animation
     frames = read_anim(path)
     name, _ = os.path.splitext(os.path.basename(path))
 

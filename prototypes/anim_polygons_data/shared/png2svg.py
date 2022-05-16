@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+
 import os
+import sys
 import argparse
 import xml.etree.ElementTree as ET
 from PIL import Image, ImageOps
@@ -27,7 +29,6 @@ def make_passpepartout(img):
 
 if __name__ == "__main__":
 
-    # Parse arguments:
     parser = argparse.ArgumentParser(description="Process rendered animation "
                                                  "into a single .svg file for "
                                                  "anim-polygons effect.")
@@ -36,22 +37,19 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--output", metavar="OUT.svg",
                         help="Output svg file name.",
                         default="dancing.svg", type=str)
-    args = vars(parser.parse_args())
-    ANIM_DIR = args["anim-dir"]
-    SVG_FILE = args["output"]
+    args = parser.parse_args()
+    ANIM_DIR = args.anim-dir
+    SVG_FILE = args.output
     if os.path.isdir(ANIM_DIR) is False:
-        raise Exception(f"anim-dir must be a valid directory!!")
+        sys.exit(f"anim-dir must be a valid directory!!")
 
-    # Process images
     ET.register_namespace('', xmlns["svg"])
     first = True
     doc = None
     for frame_number, IN_IMG in enumerate(sorted(os.listdir(ANIM_DIR))):
-        # open image and make passepartout
         IN_IMG = make_passpepartout(os.path.join(ANIM_DIR, IN_IMG))
-        # run vtrace
         if run_vtrace(IN_IMG):
-            raise Exception(f"A problem occured on frame: {frame_number}")
+            sys.exit(f"A problem occured on frame: {frame_number}")
         os.remove(IN_IMG)
         if first:
             first = False
