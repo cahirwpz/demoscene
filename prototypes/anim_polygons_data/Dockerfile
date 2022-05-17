@@ -10,15 +10,15 @@ RUN apt-get install -y --no-install-recommends \
     python3-pip xauth \
     libopenexr-dev \
     bzip2 \
-	zlib1g-dev \
-	libxmu-dev \
-	libxi-dev \
-	libxxf86vm-dev \
-	libfontconfig1 \
-	libxrender1 \
-	libgl1-mesa-glx \
-	xz-utils \
-	xvfb
+    zlib1g-dev \
+    libxmu-dev \
+    libxi-dev \
+    libxxf86vm-dev \
+    libfontconfig1 \
+    libxrender1 \
+    libgl1-mesa-glx \
+    xz-utils \
+    xvfb
 
 RUN update-ca-certificates
 RUN pip3 install pillow

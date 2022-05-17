@@ -6,7 +6,7 @@ import argparse
 from textwrap import TextWrapper
 import xml.etree.ElementTree as ET
 
-xmlns = {"svg": "http://www.w3.org/2000/svg"}
+XMLNS = {"svg": "http://www.w3.org/2000/svg"}
 OFFSET = 10
 
 
@@ -35,7 +35,7 @@ def parse_frame(frame_path):
 
 
 def read_anim(path):
-    ET.register_namespace('', xmlns["svg"])
+    ET.register_namespace('', XMLNS["svg"])
     tree = ET.parse(path)
     anim = tree.getroot()
 
@@ -46,19 +46,19 @@ def read_anim(path):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Converts .svg into "
-                                                 ".c animation file "
-                                                 "for anim-polygons effect.")
-    parser.add_argument("animation", help="Path to .svg file "
-                                          "generated using pipeline described "
-                                          "in prototypes/anim_polygons_data/ "
-                                          "directory.", type=str)
+    parser = argparse.ArgumentParser(
+            description="Converts .svg into .c animation file for "
+                        "anim-polygons effect.")
+    parser.add_argument(
+            "animation",
+            help="Path to .svg file generated using pipeline described "
+                 "in prototypes/anim_polygons_data/ directory.",
+            type=str)
     args = parser.parse_args()
-    path = args.animation
-    frames = read_anim(path)
-    name, _ = os.path.splitext(os.path.basename(path))
+    frames = read_anim(args.animation)
+    name, _ = os.path.splitext(os.path.basename(args.animation))
 
-    Wrapper = TextWrapper(initial_indent=' ' * 2,
+    wrapper = TextWrapper(initial_indent=' ' * 2,
                           subsequent_indent=' ' * 4,
                           width=80)
 
@@ -76,7 +76,7 @@ if __name__ == '__main__':
                 x = min(max(0, x), width - 1)
                 y = min(max(0, y), height - 1)
                 verts.append(y * width + x)
-            for line in Wrapper.wrap(', '.join(map(str, verts)) + ','):
+            for line in wrapper.wrap(', '.join(map(str, verts)) + ','):
                 print(line)
 
         print('  0,')

@@ -22,10 +22,10 @@ docker run -v $(pwd)/shared:/root/shared -it anim-polygons /bin/bash
 Use ```render.py``` script provided in ```shared/``` directory to render scene.
 
 This script takes two positional arguments:
-```anim-dir``` -> Directory for blender to output animation.
+```anim_dir``` -> Directory for blender to output animation.
 ```scene``` -> Blender .scene file which is going to be rendered.
 
-WARNING: This script removes ```anim-dir``` contents.
+WARNING: ```anim_dir``` will be removed first if it already exists.
 
 ```
 python3 render.py scene.blend anim/ 
@@ -38,7 +38,7 @@ Now you should have animation rendered and ready for the next step.
 Use ```png2svg.py``` script provided in ```shared/``` directory to process rendered images into single svg file.
 
 This script takes one positional argument:
-```anim-dir``` -> Directory with previously rendered animation.
+```anim_dir``` -> Directory with previously rendered animation.
 
 And one optional argument:
 ```--output OUTPUT.svg``` -> Output svg file name. (default is ```dancing.svg```)
