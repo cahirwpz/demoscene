@@ -16,6 +16,7 @@ SOURCES := \
 	loader.c \
 	main.c \
 	profiler.c \
+	syscall.S \
 	drivers/cia-frame.c \
 	drivers/cia-icr.c \
 	drivers/cia-line.c \
@@ -50,3 +51,5 @@ syscall.lds jumptab.S: system-api.py system-api.in
 
 $(LDSCRIPT): syscall.lds
 	touch $@
+
+CLEAN-FILES += jumptab.S jumptab.o syscall.S syscall.o
