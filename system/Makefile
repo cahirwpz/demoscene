@@ -46,10 +46,7 @@ BUILD-FILES = crt0.o
 		
 include $(TOPDIR)/build/lib.mk
 
-syscall.lds jumptab.S: system-api.py system-api.in 
-	python3 system-api.py system-api.in syscall.lds jumptab.S
-
-$(LDSCRIPT): syscall.lds
-	touch $@
+syscall.S jumptab.S: system-api.py system-api.in 
+	python3 system-api.py system-api.in syscall.S jumptab.S
 
 CLEAN-FILES += jumptab.S jumptab.o syscall.S syscall.o

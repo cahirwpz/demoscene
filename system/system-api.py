@@ -102,11 +102,11 @@ if __name__ == '__main__':
         'api', metavar='API', type=str,
         help='API definition file with system calls and shared variables')
     parser.add_argument(
-        'sc_s', metavar='SCLDS', type=str,
-        help='GNU assembler script file with system calls addresses')
+        'sc_s', metavar='SCS', type=str,
+        help='GNU as file with system calls & shared variables addresses')
     parser.add_argument(
         'jv_s', metavar='JVS', type=str,
-        help='GNU assembler file with jump vector to system calls')
+        help='GNU as file with jump vector to system calls')
     args = parser.parse_args()
 
     sc = StringIO()
