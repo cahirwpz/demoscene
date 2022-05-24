@@ -1,12 +1,11 @@
 #include "effect.h"
-#include "hardware.h"
-#include "interrupts.h"
 #include "copper.h"
 #include "gfx.h"
 #include "blitter.h"
 #include "2d.h"
 #include "fx.h"
-#include "random.h"
+#include <stdlib.h>
+#include <system/interrupt.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -109,7 +108,7 @@ static void UnLoad(void) {
   DeleteBitmap(screen[1]);
 }
 
-static __interrupt int CustomRotatePalette(void) {
+static int CustomRotatePalette(void) {
   u_short *src = palette[0]->colors;
   CopInsT *ins = pal + 1;
   int i = frameCount;
@@ -121,7 +120,7 @@ static __interrupt int CustomRotatePalette(void) {
   return 0;
 }
 
-INTERRUPT(RotatePaletteInterrupt, 0, CustomRotatePalette, NULL);
+INTSERVER(RotatePaletteInterrupt, 0, (IntFuncT)CustomRotatePalette, NULL);
 
 static void Init(void) {
   EnableDMA(DMAF_BLITTER);
@@ -132,10 +131,10 @@ static void Init(void) {
   BlitterClear(screen[0], 4);
   BlitterClear(screen[1], 4);
 
-  cp = NewCopList(100);
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
+  cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
   pal = CopLoadPal(cp, palette[0], 0);
   CopLoadPal(cp, palette[1], 16);
@@ -213,14 +212,16 @@ static void DrawCliparts(void) {
   }
 }
 
-static void Render(void) {
-  // int lines = ReadLineCounter();
+PROFILE(RenderNeons);
 
-  WaitBlitter();
-  ClearCliparts();
-  DrawCliparts();
-  
-  // Log("neons: %d\n", ReadLineCounter() - lines);
+static void Render(void) {
+  ProfilerStart(RenderNeons);
+  {
+    WaitBlitter();
+    ClearCliparts();
+    DrawCliparts();
+  }
+  ProfilerStop(RenderNeons);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();

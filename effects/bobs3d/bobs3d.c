@@ -22,10 +22,8 @@ static Mesh3D *mesh = &pilka;
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   CopWait(cp, Y(-1), 0);
   CopSetupBitplanes(cp, bplptr, screen1, DEPTH);
-  CopLoadPal(cp, &bobs_pal, 0);
   CopEnd(cp);
 }
 
@@ -37,6 +35,9 @@ static void Init(void) {
                             BM_DISPLAYABLE | BM_INTERLEAVED);
   screen1 = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
                             BM_DISPLAYABLE | BM_INTERLEAVED);
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&bobs_pal, 0);
 
   cp = NewCopList(80);
   MakeCopperList(cp);
@@ -68,7 +69,7 @@ static void Kill(void) {
   D = normfx(t0 * t1 + t2 - xy) + t3;   \
 }
 
-static __regargs void TransformVertices(Object3D *object) {
+static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   short *src = (short *)object->mesh->vertex;
   short *dst = (short *)object->vertex;
@@ -180,7 +181,7 @@ void BlitterOrArea(BitmapT *dst asm("a0"), u_short x asm("d0"), u_short y asm("d
   }
 }
 
-static __regargs void DrawObject(Object3D *object, BitmapT *dst) {
+static void DrawObject(Object3D *object, BitmapT *dst) {
   short *data = (short *)object->vertex;
   register short n asm("d7") = object->mesh->vertices;
 
@@ -223,25 +224,28 @@ static void BitmapClearI(BitmapT *bm) {
   custom->bltsize = ((bm->height * bm->depth) << 6) | (bm->bytesPerRow >> 1);
 }
 
+PROFILE(TransformObject);
+PROFILE(DrawObject);
+
 static void Render(void) {
   BitmapClearI(screen0);
 
+  ProfilerStart(TransformObject);
   {
-    int lines = ReadLineCounter();
     cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 12;
 
     UpdateObjectTransformation(cube);
     TransformVertices(cube);
-    Log("transform: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(TransformObject);
 
   WaitBlitter();
 
+  ProfilerStart(DrawObject);
   {
-    int lines = ReadLineCounter();
     DrawObject(cube, screen0);
-    Log("draw: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(DrawObject);
 
   TaskWaitVBlank();
 

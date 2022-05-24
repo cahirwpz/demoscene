@@ -1,4 +1,4 @@
-#!/usr/bin/env python -B
+#!/usr/bin/env python3
 
 from common import Bit, Word, Channel, Blit, Array
 
@@ -7,7 +7,7 @@ def c2p():
     m0 = Word.Mask('00ff')
     m1 = Word.Mask('0f0f')
 
-    print "=[ c2p 1x1 ham6 (blitter + mangled) ]=".center(48, '-')
+    print("=[ c2p 1x1 ham6 (blitter + mangled) ]=".center(48, '-'))
 
     def MakeWord(c, color):
         # mangle: [ 0  0  0  0 r0 r1 r2 r3 g0 g1 g2 g3 b0 b1 b2 b3] =>
@@ -35,20 +35,20 @@ def c2p():
 
     B = Array.Zero(N, 16)
     Blit(lambda a, b: ((a >> 8) & m0) | (b & ~m0),
-         N / 4, 2, Channel(A, 2, 2), Channel(A, 0, 2), Channel(B, 0, 2))
+         N // 4, 2, Channel(A, 2, 2), Channel(A, 0, 2), Channel(B, 0, 2))
     Blit(lambda a, b: ((a << 8) & ~m0) | (b & m0),
-         N / 4, 2, Channel(A, 0, 2), Channel(A, 2, 2), Channel(B, 2, 2))
+         N // 4, 2, Channel(A, 0, 2), Channel(A, 2, 2), Channel(B, 2, 2))
     Array.Print("Swap 8x4:", *B)
 
-    C = [Array.Zero(N / 4, 16) for i in range(4)]
+    C = [Array.Zero(N // 4, 16) for i in range(4)]
     Blit(lambda a, b: ((a >> 4) & m1) | (b & ~m1),
-         N / 4, 1, Channel(B, 1, 3), Channel(B, 0, 3), Channel(C[0]))
+         N // 4, 1, Channel(B, 1, 3), Channel(B, 0, 3), Channel(C[0]))
     Blit(lambda a, b: ((a >> 4) & m1) | (b & ~m1),
-         N / 4, 1, Channel(B, 3, 3), Channel(B, 2, 3), Channel(C[2]))
+         N // 4, 1, Channel(B, 3, 3), Channel(B, 2, 3), Channel(C[2]))
     Blit(lambda a, b: ((a << 4) & ~m1) | (b & m1),
-         N / 4, 1, Channel(B, 0, 3), Channel(B, 1, 3), Channel(C[1]))
+         N // 4, 1, Channel(B, 0, 3), Channel(B, 1, 3), Channel(C[1]))
     Blit(lambda a, b: ((a << 4) & ~m1) | (b & m1),
-         N / 4, 1, Channel(B, 2, 3), Channel(B, 3, 3), Channel(C[3]))
+         N // 4, 1, Channel(B, 2, 3), Channel(B, 3, 3), Channel(C[3]))
     print("Bitplanes:")
     Array.Print("[0]:", *C[0])
     Array.Print("[1]:", *C[1])

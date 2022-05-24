@@ -1,8 +1,8 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "random.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <stdlib.h>
+#include <system/memory.h>
 
 /* Add tile sized margins on every side to hide visual artifacts. */
 #define WIDTH   (256 + 32)
@@ -46,22 +46,21 @@ static void Init(void) {
   screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
+  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), 256, 256);
+  SetColor(0, 0x000);
+  SetColor(1, 0x44f);
+  SetColor(2, 0x88f);
+  SetColor(3, 0xccf);
 
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(32), Y(0), 256, 256);
   CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
   CopMove16(cp, bpl1mod, 4);
   CopMove16(cp, bpl2mod, 4);
-  CopSetColor(cp, 0, 0x000);
-  CopSetColor(cp, 1, 0x44f);
-  CopSetColor(cp, 2, 0x88f);
-  CopSetColor(cp, 3, 0xccf);
   CopEnd(cp);
 
   CopListActivate(cp);
-  EnableDMA(DMAF_RASTER);
+  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
 static void Kill(void) {
@@ -116,10 +115,10 @@ static void MoveTiles(void) {
     sx &= 15; dx &= 15; shift = dx - sx;
 
     if (shift >= 0) {
-      bltcon1 = shift << BSHIFTSHIFT;
+      bltcon1 = BSHIFT(shift);
       mask = 0xffff0000;
     } else {
-      bltcon1 = (-shift << BSHIFTSHIFT) | BLITREVERSE;
+      bltcon1 = BSHIFT(-shift) | BLITREVERSE;
       mask = 0x0000ffff;
 
       srcpt += WIDTH * (TILESIZE - 1) / 8 + 2;
@@ -149,11 +148,15 @@ static void MoveTiles(void) {
   } while (--n >= 0);
 }
 
+PROFILE(TileZoomer);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
-  DrawSeed();
-  MoveTiles();
-  // Log("tilezoomer: %d\n", ReadLineCounter() - lines);
+  ProfilerStart(TileZoomer);
+  {
+    DrawSeed();
+    MoveTiles();
+  }
+  ProfilerStop(TileZoomer);
 
   CopInsSet32(bplptr[0], screen1->planes[0] + 2 + WIDTH * TILESIZE / 8);
   CopInsSet32(bplptr[1], screen1->planes[1] + 2 + WIDTH * TILESIZE / 8);

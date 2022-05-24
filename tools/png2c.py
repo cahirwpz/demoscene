@@ -133,6 +133,12 @@ def do_bitmap(im, desc):
     print('};')
     print('')
 
+    print('#define %s_width %d' % (name, width))
+    print('#define %s_height %d' % (name, height))
+    print('#define %s_bytesPerRow %d' % (name, bytesPerRow))
+    print('#define %s_bplSize %d' % (name, bplSize))
+    print('')
+
     print('static const BitmapT %s = {' % name)
     print('  .width = %d,' % width)
     print('  .height = %d,' % height)
@@ -190,31 +196,38 @@ def do_sprite(im, desc):
     stride = ((width + 15) & ~15) // 16
     bpl = planar(pix, width, height, depth)
 
+    print('static const short %s_height = %d;' % (name, height))
+    print('')
+
     for i in range(width // 16):
         sprite = name
         if width > 16:
             sprite += str(i)
 
-        print('static __data_chip u_short _%s_data[] = {' % sprite)
-        print('  SPRPOS(0, 0), SPRCTL(0, 0, 0, %d),' % height)
+        attached_str = ['false', 'true'][attached]
+
+        print('static __data_chip SprDataT %s_sprdat = {' % sprite)
+        print('  .pos = SPRPOS(0, 0),')
+        print('  .ctl = SPRCTL(0, 0, %s, %d),' % (attached_str, height))
+        print('  .data = {')
         for j in range(0, stride * depth * height, stride * depth):
-            print('  0x%04x, 0x%04x,' % (bpl[i + j], bpl[i + j + stride]))
-        print('  0, 0')
+            words = bpl[i + j], bpl[i + j + stride]
+            print('    { 0x%04x, 0x%04x },' % words)
+        print('    /* sprite channel terminator */')
+        print('    { 0x0000, 0x0000 },')
+        print('  }')
         print('};')
         print('')
-        if sequence:
-            print('static const SpriteT _%s = {' % sprite)
-        else:
-            print('static const SpriteT %s = {' % sprite)
-        print('  .attached = NULL,')
+        print('static SpriteT %s = {' % sprite)
+        print('  .sprdat = &%s_sprdat,' % sprite)
         print('  .height = %d,' % height)
-        print('  .data = _%s_data' % sprite)
+        print('  .attached = %s,' % attached_str)
         print('};')
         print('')
 
     if sequence:
-        sprites = ['&_%s%d' % (name, i) for i in range(width // 16)]
-        print('static const SpriteT *%s[] = {' % name)
+        sprites = ['&%s%d' % (name, i) for i in range(width // 16)]
+        print('static SpriteT *%s[] = {' % name)
         print('  %s' % ', '.join(sprites))
         print('};')
         print('')
@@ -259,7 +272,7 @@ def do_pixmap(im, desc):
             pixeltype = 'PM_CMAP8'
             data = array('B', im.getdata())
 
-        print('static u_char _%s_data[%d] = {' % (name, stride * height))
+        print('static u_char %s_pixels[%d] = {' % (name, stride * height))
         for i in range(0, stride * height, stride):
             row = ['0x%02x' % p for p in data[i:i + stride]]
             print('  %s,' % ', '.join(row))
@@ -271,7 +284,7 @@ def do_pixmap(im, desc):
         pixeltype = 'PM_RGB12'
         data = rgb12(im)
 
-        print('static u_short _%s_data[%d] = {' % (name, stride * height))
+        print('static u_short %s_pixels[%d] = {' % (name, stride * height))
         for i in range(0, stride * height, stride):
             row = ['0x%04x' % p for p in data[i:i + stride]]
             print('  %s,' % ', '.join(row))
@@ -280,11 +293,15 @@ def do_pixmap(im, desc):
     else:
         raise SystemExit('Image pixel format %s not handled!' % im.mode)
 
+    print('#define %s_width %d' % (name, width))
+    print('#define %s_height %d' % (name, height))
+    print('')
+
     print('static const PixmapT %s = {' % name)
     print('  .type = %s,' % pixeltype)
     print('  .width = %d,' % width)
     print('  .height = %d,' % height)
-    print('  .pixels = _%s_data' % name)
+    print('  .pixels = %s_pixels' % name)
     print('};')
     print('')
 

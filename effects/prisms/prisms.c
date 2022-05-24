@@ -1,11 +1,10 @@
 #include "effect.h"
-#include "hardware.h"
 #include "copper.h"
 #include "blitter.h"
 #include "sprite.h"
 #include "fx.h"
-#include "random.h"
 #include "color.h"
+#include <stdlib.h>
 
 #define WIDTH   320
 #define HEIGHT  256
@@ -122,13 +121,6 @@ static void MakeCopperList(CopListT *cp, CopInsT **cline) {
 
   CopInit(cp);
   CopSetupSprites(cp, sprptr);
-  CopLoadPal(cp, &sprite_pal, 16);
-  CopLoadPal(cp, &sprite_pal, 20);
-  CopLoadPal(cp, &sprite_pal, 24);
-  CopLoadPal(cp, &sprite_pal, 28);
-
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetColor(cp, 0, BGCOL);
 
   for (i = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(i - 1), 0xDE);
@@ -139,7 +131,7 @@ static void MakeCopperList(CopListT *cp, CopInsT **cline) {
 
   CopEnd(cp);
 
-  ITER(i, 0, 7, CopInsSet32(sprptr[i], sprite[i]->data));
+  ITER(i, 0, 7, CopInsSetSprite(sprptr[i], sprite[i]));
 }
 
 static void Init(void) {
@@ -149,13 +141,20 @@ static void Init(void) {
   GenerateColorShades();
   GenerateLines();
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetColor(0, BGCOL);
+  LoadPalette(&sprite_pal, 16);
+  LoadPalette(&sprite_pal, 20);
+  LoadPalette(&sprite_pal, 24);
+  LoadPalette(&sprite_pal, 28);
+
   cp[0] = NewCopList(HEIGHT * 5 + 200);
   cp[1] = NewCopList(HEIGHT * 5 + 200);
 
   MakeCopperList(cp[0], clines[0]);
   MakeCopperList(cp[1], clines[1]);
 
-  ITER(i, 0, 7, UpdateSprite(sprite[i], X(96 + 16 * i), Y((256 - 24) / 2)));
+  ITER(i, 0, 7, SpriteUpdatePos(sprite[i], X(96 + 16 * i), Y((256 - 24) / 2)));
 
   CopListActivate(cp[0]);
   EnableDMA(DMAF_RASTER | DMAF_SPRITE);
@@ -329,10 +328,14 @@ static void RenderPrisms(short rotate) {
   DrawVisibleSpans(spanInfo, clines[active]);
 }
 
+PROFILE(RenderPrisms);
+
 static void Render(void) {
-  int start = ReadLineCounter();
-  RenderPrisms(frameCount << 3);
-  Log("prisms: %d\n", ReadLineCounter() - start);
+  ProfilerStop(RenderPrisms); 
+  {
+    RenderPrisms(frameCount << 3);
+  }
+  ProfilerStop(RenderPrisms);
 
   CopListRun(cp[active]);
   TaskWaitVBlank();

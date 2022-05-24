@@ -1,10 +1,10 @@
 #include "effect.h"
 #include "console.h"
-#include "hardware.h"
 #include "copper.h"
-#include "event.h"
-#include "keyboard.h"
-#include "serial.h"
+#include <system/event.h>
+#include <system/keyboard.h>
+#include <system/file.h>
+#include <system/serial.h>
 
 #define WIDTH 640
 #define HEIGHT 256
@@ -15,18 +15,19 @@
 static BitmapT *screen;
 static CopListT *cp;
 static ConsoleT console;
+static FileT *ser;
 
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
 
-  CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetColor(cp, 0, 0x000);
-  CopSetColor(cp, 1, 0xfff);
-  CopEnd(cp);
+  SetupPlayfield(MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetColor(0, 0x000);
+  SetColor(1, 0xfff);
 
+  CopInit(cp);
+  CopSetupBitplanes(cp, NULL, screen, DEPTH);
+  CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
@@ -34,7 +35,7 @@ static void Init(void) {
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
 
-  SerialInit(9600);
+  ser = OpenSerial(9600, O_NONBLOCK);
   KeyboardInit();
 }
 
@@ -42,7 +43,7 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER);
 
   KeyboardKill();
-  SerialKill();
+  FileClose(ser);
 
   DeleteCopList(cp);
   DeleteBitmap(screen);
@@ -50,7 +51,7 @@ static void Kill(void) {
 
 static bool HandleEvent(void) {
   EventT ev;
-  int c = SerialGet();
+  int c = FileGetChar(ser);
 
   if (c >= 0) {
     ConsolePutChar(&console, c);
@@ -95,7 +96,7 @@ static bool HandleEvent(void) {
 
   if (ev.key.ascii) {
     ConsolePutChar(&console, ev.key.ascii);
-    SerialPut(ev.key.ascii);
+    FilePutChar(ser, ev.key.ascii);
   }
 
   ConsoleDrawCursor(&console);

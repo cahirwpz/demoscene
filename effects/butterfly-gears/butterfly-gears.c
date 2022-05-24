@@ -1,16 +1,13 @@
-#include "effect.h"
-
-#include "hardware.h"
-#include "interrupts.h"
-#include "blitter.h"
-#include "color.h"
-#include "copper.h"
-#include "bitmap.h"
-#include "palette.h"
-#include "pixmap.h"
-#include "memory.h"
-#include "sprite.h"
-#include "fx.h"
+#include <effect.h>
+#include <bitmap.h>
+#include <blitter.h>
+#include <color.h>
+#include <copper.h>
+#include <fx.h>
+#include <palette.h>
+#include <pixmap.h>
+#include <sprite.h>
+#include <system/memory.h>
 
 #define ROTZOOM_W 24
 #define ROTZOOM_H 24
@@ -107,12 +104,9 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
   CopListT *cp = NewCopList(INSTRUCTIONS_PER_BALL * 2 + 100);
   ballCp->cp = cp;
   CopInit(cp);
-  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y0, 320, 280);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   CopLoadPal(cp, &testscreen_pal, 0);
-  CopSetupMode(cp, MODE_LORES, testscreen.depth);
   CopSetupBitplanes(cp, NULL, &testscreen, testscreen.depth);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(0), testscreen.width);
 
   ballCp->upperBallCopper = cp->curr;
   InitCopperListBall(cp, Y0 + 2, 2);
@@ -127,6 +121,10 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
 }
 
 static void Init(void) {
+  SetupMode(MODE_LORES, testscreen.depth);
+  SetupDisplayWindow(MODE_LORES, X(0), Y0, 320, 280);
+  SetupBitplaneFetch(MODE_LORES, X(0), testscreen.width);
+
   MakeBallCopperList(&ballCopList1);
   CopListActivate(ballCopList1.cp);
 
@@ -153,6 +151,7 @@ static void Init(void) {
 }
 
 static void Kill(void) {
+  DisableDMA(DMAF_RASTER|DMAF_COPPER);
   DeleteCopList(ballCopList1.cp);
 }
 

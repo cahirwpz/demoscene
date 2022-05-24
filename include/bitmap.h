@@ -29,13 +29,16 @@ typedef struct Bitmap {
   void *planes[BM_NPLANES];
 } BitmapT;
 
-__regargs void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
-                                u_short depth, BitmapT *donor);
+u_int BitmapSize(BitmapT *bitmap);
+void BitmapSetPointers(BitmapT *bitmap, void *planes);
 
-__regargs BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
-                                   u_char flags);
-__regargs void DeleteBitmap(BitmapT *bitmap);
-__regargs void BitmapMakeDisplayable(BitmapT *bitmap);
+void InitSharedBitmap(BitmapT *bitmap, u_short width, u_short height,
+                      u_short depth, BitmapT *donor);
+
+BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
+                         u_char flags);
+void DeleteBitmap(BitmapT *bitmap);
+void BitmapMakeDisplayable(BitmapT *bitmap);
 
 static inline BitmapT *NewBitmap(u_short width, u_short height, u_short depth) {
   return NewBitmapCustom(width, height, depth, BM_CLEAR|BM_DISPLAYABLE);

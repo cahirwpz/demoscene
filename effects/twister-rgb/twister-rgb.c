@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "pixmap.h"
-#include "fx.h"
-#include "memory.h"
-#include "sprite.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <pixmap.h>
+#include <sprite.h>
+#include <system/memory.h>
 
 #define WIDTH   144
 #define HEIGHT  255
@@ -31,12 +31,9 @@ static void MakeCopperList(CopListT **ptr, short n) {
   short i, j, k;
 
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(STARTX), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr[n], &twister, DEPTH);
   CopSetupSprites(cp, sprptr[n]);
   CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
-  CopMove16(cp, diwstrt, 0x2c81);
-  CopMove16(cp, diwstop, 0x2bc1);
   CopSetColor(cp, 0, gradient.colors[0]);
 
   for (i = 0, k = 0; i < HEIGHT; i++) {
@@ -56,10 +53,10 @@ static void MakeCopperList(CopListT **ptr, short n) {
 
   CopEnd(cp);
 
-  CopInsSet32(sprptr[n][4], left[0]->data);
-  CopInsSet32(sprptr[n][5], left[1]->data);
-  CopInsSet32(sprptr[n][6], right[0]->data);
-  CopInsSet32(sprptr[n][7], right[1]->data);
+  CopInsSetSprite(sprptr[n][4], left[0]);
+  CopInsSetSprite(sprptr[n][5], left[1]);
+  CopInsSetSprite(sprptr[n][6], right[0]);
+  CopInsSetSprite(sprptr[n][7], right[1]);
 
   *ptr = cp;
 }
@@ -67,13 +64,17 @@ static void MakeCopperList(CopListT **ptr, short n) {
 static void Init(void) {
   EnableDMA(DMAF_BLITTER);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(STARTX), Y(0), WIDTH, HEIGHT);
+  custom->diwstrt = 0x2c81;
+  custom->diwstop = 0x2bc1;
+
   MakeCopperList(&cp[0], 0);
   MakeCopperList(&cp[1], 1);
 
-  UpdateSprite(left[0], X(0), Y(0));
-  UpdateSprite(left[1], X(16), Y(0));
-  UpdateSprite(right[0], X(320 - 32), Y(0));
-  UpdateSprite(right[1], X(320 - 16), Y(0));
+  SpriteUpdatePos(left[0], X(0), Y(0));
+  SpriteUpdatePos(left[1], X(16), Y(0));
+  SpriteUpdatePos(right[0], X(320 - 32), Y(0));
+  SpriteUpdatePos(right[1], X(320 - 16), Y(0));
 
   CopListActivate(cp[1]);
   EnableDMA(DMAF_RASTER | DMAF_SPRITE);
@@ -119,7 +120,7 @@ static void SetupLines(short f) {
   }
 }
 
-static __regargs void SetupTexture(CopInsT **colors, short y) {
+static void SetupTexture(CopInsT **colors, short y) {
   short *pixels = texture.pixels;
   short height = texture.height;
   short width = texture.width;
@@ -173,11 +174,15 @@ static __regargs void SetupTexture(CopInsT **colors, short y) {
   }
 }
 
+PROFILE(TwisterRGB);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
-  SetupLines(frameCount * 16);
-  SetupTexture(colors[active], frameCount);
-  // Log("twister: %d\n", ReadLineCounter() - lines);
+  ProfilerStart(TwisterRGB);
+  {
+    SetupLines(frameCount * 16);
+    SetupTexture(colors[active], frameCount);
+  }
+  ProfilerStop(TwisterRGB);
 
   CopListRun(cp[active]);
   TaskWaitVBlank();

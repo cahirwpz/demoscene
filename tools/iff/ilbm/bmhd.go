@@ -1,6 +1,6 @@
 package ilbm
 
-import ".."
+import "ghostown.pl/iff"
 import "fmt"
 
 type BodyComp uint8

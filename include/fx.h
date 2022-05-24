@@ -39,6 +39,6 @@ static inline int shift12(short a) {
 #define fx12f(f) \
   (short)((float)(f) * 4096.0)
 
-__regargs int isqrt(int x);
+int isqrt(int x);
 
 #endif

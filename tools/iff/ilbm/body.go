@@ -1,10 +1,10 @@
 package ilbm
 
 import (
-	".."
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"ghostown.pl/iff"
 	"io"
 )
 

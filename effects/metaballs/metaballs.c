@@ -1,9 +1,9 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "2d.h"
-#include "fx.h"
+#include <effect.h>
+#include <2d.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -43,21 +43,13 @@ static void SetInitialPositions(void) {
   }
 }
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopLoadPal(cp, &metaball_pal, 0);
-  CopEnd(cp);
-}
-
 static void Init(void) {
   short j;
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   for (j = 0; j < 2; j++) {
-    BitmapClearArea(screen[j], STRUCT(Area2D, 32, 0, WIDTH - 64, HEIGHT));
+    BitmapClearArea(screen[j], &((Area2D){32, 0, WIDTH - 64, HEIGHT}));
     BitmapCopy(screen[j], 0, 0, &bgLeft);
     BitmapCopy(screen[j], WIDTH - 32, 0, &bgRight);
   }
@@ -67,7 +59,12 @@ static void Init(void) {
 
   SetInitialPositions();
 
-  MakeCopperList(cp);
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&metaball_pal, 0);
+
+  CopInit(cp);
+  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
+  CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }
@@ -113,15 +110,17 @@ static void DrawMetaballs(void) {
   x = *val++; y = *val++; BitmapAddSaturated(screen[active], x, y, &metaball, carry);
 }
 
+PROFILE(Metaballs);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
-
-  // This takes about 100 lines. Could we do better?
-  ClearMetaballs();
-  PositionMetaballs();
-  DrawMetaballs();
-
-  // Log("metaballs : %d\n", ReadLineCounter() - lines);
+  ProfilerStart(Metaballs);
+  {
+    // This takes about 100 lines. Could we do better?
+    ClearMetaballs();
+    PositionMetaballs();
+    DrawMetaballs();
+  }
+  ProfilerStop(Metaballs);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();

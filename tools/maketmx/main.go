@@ -1,11 +1,11 @@
 package main
 
 import (
-	"../misc"
-	"../tmx"
 	"encoding/xml"
 	"flag"
 	"fmt"
+	"ghostown.pl/misc"
+	"ghostown.pl/tmx"
 	"hash/fnv"
 	"image"
 	"image/color"

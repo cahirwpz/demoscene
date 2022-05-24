@@ -13,11 +13,12 @@ static void Load(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
   cp = NewCopList(100);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetColor(0, 0x000);
+  SetColor(1, 0xfff);
+
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetColor(cp, 0, 0x000);
-  CopSetColor(cp, 1, 0xfff);
   CopEnd(cp);
 }
 
@@ -26,19 +27,20 @@ static void UnLoad(void) {
   DeleteBitmap(screen);
 }
 
+PROFILE(DrawCircle);
+
 static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
+  ProfilerStart(DrawCircle);
   {
-    int lines = ReadLineCounter();
     short r;
 
     for (r = 2; r < screen->height / 2 - 2; r += 2)
       Circle(screen, 0, screen->width / 2, screen->height / 2, r);
-
-    Log("circles: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(DrawCircle);
 }
 
 EFFECT(circles, Load, UnLoad, Init, NULL, NULL);

@@ -1,9 +1,9 @@
-#include "effect.h"
-#include "2d.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "fx.h"
+#include <effect.h>
+#include <2d.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <system/memory.h>
 
 #define WIDTH  320
 #define HEIGHT 240
@@ -38,11 +38,12 @@ static void Init(void) {
   EnableDMA(DMAF_BLITTER);
   BitmapClear(screen);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&running_pal, 0);
+
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopLoadPal(cp, &running_pal, 0);
   CopEnd(cp);
 
   CopListActivate(cp);
@@ -81,14 +82,16 @@ static void DrawSpans(u_char *bpl) {
     running.current -= running.count;
 }
 
+PROFILE(AnimRender);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
+  ProfilerStart(AnimRender);
   {
     BlitterClear(screen, active);
     DrawSpans(screen->planes[active]);
     BlitterFill(screen, active);
   }
-  // Log("anim: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(AnimRender);
 
   {
     short n = DEPTH;

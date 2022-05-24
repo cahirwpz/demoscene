@@ -1,10 +1,10 @@
 package main
 
 import (
-	"../iff"
-	_ "../iff/ilbm"
 	"flag"
 	"fmt"
+	"ghostown.pl/iff"
+	_ "ghostown.pl/iff/ilbm"
 	"log"
 	"os"
 )

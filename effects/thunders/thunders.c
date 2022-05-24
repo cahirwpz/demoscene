@@ -1,12 +1,12 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "fx.h"
-#include "random.h"
-#include "color.h"
-#include "pixmap.h"
-#include "sprite.h"
+#include <effect.h>
+#include <blitter.h>
+#include <color.h>
+#include <copper.h>
+#include <fx.h>
+#include <pixmap.h>
+#include <sprite.h>
+#include <stdlib.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -27,6 +27,7 @@
 
 static BitmapT *screen0, *screen1;
 static CopListT *cp0, *cp1;
+static CopInsT *sprptr[8];
 static u_short tileColor[SIZE * SIZE];
 static short tileCycle[SIZE * SIZE];
 static short tileEnergy[SIZE * SIZE];
@@ -83,7 +84,7 @@ static void Load(void) {
     short xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
     short yo = Y((HEIGHT - 128) / 2);
 
-    UpdateSprite(thunder[i], xo, yo);
+    SpriteUpdatePos(thunder[i], xo, yo);
   }
 
   FloorPrecalc();
@@ -92,20 +93,18 @@ static void Load(void) {
 }
 
 static void MakeCopperList(CopListT *cp, BitmapT *screen) {
-  short j;
-
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopSetupSprites(cp, NULL);
-  for (j = 0; j < 8; j++)
-    CopSetColor(cp, j, BGCOL);
   CopEnd(cp);
 }
 
 static void Init(void) {
   screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  ITER(k, 0, 7, SetColor(k, BGCOL));
 
   cp0 = NewCopList((HEIGHT - FAR_Y) * 16 + 200);
   cp1 = NewCopList((HEIGHT - FAR_Y) * 16 + 200);
@@ -186,7 +185,7 @@ static void DrawLine(void *data asm("a2"), short x1 asm("d2"), short y1 asm("d3"
   }
 }
 
-static __regargs void DrawStripes(short xo, short kxo) {
+static void DrawStripes(short xo, short kxo) {
   short k;
 
   /* Setup fast line drawing. */
@@ -243,7 +242,7 @@ static __regargs void DrawStripes(short xo, short kxo) {
   }
 }
 
-static __regargs void FillStripes(u_short plane) {
+static void FillStripes(u_short plane) {
   void *bltpt = screen0->planes[plane] + (HEIGHT * WIDTH) / 8 - 2;
   u_short bltsize = ((HEIGHT - FAR_Y - 1) << 6) | (WIDTH >> 4);
 
@@ -297,7 +296,7 @@ void ControlTileColors(void) {
   }
 }
 
-static __regargs void ColorizeUpperHalf(CopListT *cp, short yi, short kyo) {
+static void ColorizeUpperHalf(CopListT *cp, short yi, short kyo) {
   short k;
   short y0 = HEIGHT;
   void *pixels = tileColor;
@@ -339,7 +338,7 @@ static __regargs void ColorizeUpperHalf(CopListT *cp, short yi, short kyo) {
   }
 }
 
-static __regargs void ColorizeLowerHalf(CopListT *cp, short yi, short kyo) {
+static void ColorizeLowerHalf(CopListT *cp, short yi, short kyo) {
   short k;
   short y0 = FAR_Y;
   void *pixels = tileColor;
@@ -383,7 +382,6 @@ static void MakeFloorCopperList(short yo, short kyo) {
   CopListT *cp = cp0;
 
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   {
     void **planes = screen0->planes;
     CopMove32(cp, bplpt[0], (*planes++) + WIDTH * (HEIGHT - 1) / 8);
@@ -393,21 +391,13 @@ static void MakeFloorCopperList(short yo, short kyo) {
   CopMove16(cp, bpl1mod, - (WIDTH * 2) / 8);
   CopMove16(cp, bpl2mod, - (WIDTH * 2) / 8);
 
-  CopSetupSprites(cp, NULL);
+  CopSetupSprites(cp, sprptr);
  
   {
     short i = mod16(frameCount, 10) * 2;
-    u_short *thunder0 = thunder[i]->data;
-    u_short *thunder1 = thunder[i+1]->data;
 
-    CopMove32(cp, sprpt[0], thunder0);
-    CopMove32(cp, sprpt[1], thunder1);
-    CopMove32(cp, sprpt[2], NullSprite);
-    CopMove32(cp, sprpt[3], NullSprite);
-    CopMove32(cp, sprpt[4], NullSprite);
-    CopMove32(cp, sprpt[5], NullSprite);
-    CopMove32(cp, sprpt[6], NullSprite);
-    CopMove32(cp, sprpt[7], NullSprite);
+    CopInsSetSprite(sprptr[0], thunder[i]);
+    CopInsSetSprite(sprptr[1], thunder[i+1]);
   }
 
   /* Clear out the colors. */
@@ -427,10 +417,12 @@ static void MakeFloorCopperList(short yo, short kyo) {
   CopEnd(cp);
 }
 
-static void Render(void) {
-  // PROFILE_BEGIN(floor);
+PROFILE(Thunders);
 
-  BitmapClearArea(screen0, STRUCT(Area2D, 0, FAR_Y, WIDTH, HEIGHT - FAR_Y));
+static void Render(void) {
+  ProfilerStart(Thunders);
+
+  BitmapClearArea(screen0, &((Area2D){0, FAR_Y, WIDTH, HEIGHT - FAR_Y}));
 
   {
     short xo = (N / 4) + normfx(SIN(frameCount * 16) * N * 15 / 64);
@@ -449,7 +441,7 @@ static void Render(void) {
     MakeFloorCopperList(yo & (TILESIZE - 1), kyo);
   }
 
-  // PROFILE_END(floor);
+  ProfilerStop(Thunders);
 
   CopListRun(cp0);
   TaskWaitVBlank();

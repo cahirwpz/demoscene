@@ -1,16 +1,13 @@
-#include "effect.h"
-#include "hardware.h"
-#include "interrupts.h"
-#include "memory.h"
-#include "ahx.h"
-#include "console.h"
-#include "copper.h"
-#include "keyboard.h"
-#include "event.h"
-#include "blitter.h"
-
-int __chipmem = 100 * 1024;
-int __fastmem = 430 * 1024;
+#include <effect.h>
+#include <ahx.h>
+#include <blitter.h>
+#include <console.h>
+#include <copper.h>
+#include <system/event.h>
+#include <system/interrupt.h>
+#include <system/keyboard.h>
+#include <system/memory.h>
+#include <system/timer.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -19,6 +16,7 @@ int __fastmem = 430 * 1024;
 static BitmapT *screen;
 static CopListT *cp;
 static ConsoleT console;
+static CIATimerT *ahxtmr;
 
 #include "data/lat2-08.c"
 
@@ -139,32 +137,14 @@ static void WaveScopeDrawChannel(short num) {
   ch->i = i;
 }
 
-static void Load(void) {
-  if (AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS) != 0)
-    exit(10);
+static void AhxPlayerTimeout(__unused CIATimerT *timer) {
+  custom->color[0] = 0x448;
+  AhxInterrupt();
+  custom->color[0] = 0;
 }
-
-static void UnLoad(void) {
-  AhxKillPlayer();
-}
-
-static __interrupt int AhxPlayerIntHandler(void) {
-  /* Handle CIA Timer A interrupt. */
-  if (ReadICR(ciaa) & CIAICRF_TA) {
-    custom->color[0] = 0x448;
-    AhxInterrupt();
-    custom->color[0] = 0;
-  }
-
-  return 0;
-}
-
-INTERRUPT(AhxPlayerInterrupt, 10, AhxPlayerIntHandler, NULL);
 
 static void AhxSetTempo(u_short tempo asm("d0")) {
-  ciaa->ciatalo = tempo & 0xff;
-  ciaa->ciatahi = tempo >> 8;
-  ciaa->ciacra |= CIACRAF_START;
+  SetupTimer(ahxtmr, AhxPlayerTimeout, tempo, 0);
 }
 
 static void DrawFrames(void) {
@@ -188,12 +168,13 @@ static void DrawFrames(void) {
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetColor(0, 0x000);
+  SetColor(1, 0xfff);
+
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetColor(cp, 0, 0x000);
-  CopSetColor(cp, 1, 0xfff);
   CopEnd(cp);
   CopListActivate(cp);
 
@@ -208,21 +189,27 @@ static void Init(void) {
   InitWaveScope();
   KeyboardInit();
 
-  if (AhxInitHardware((void *)AhxSetTempo, AHX_KILL_SYSTEM) == 0)
-    if (AhxInitModule(module) == 0)
-      AhxInitSubSong(0, 0);
+  ahxtmr = AcquireTimer(TIMER_ANY);
+  Assert(ahxtmr != NULL);
 
-  AddIntServer(INTB_PORTS, AhxPlayerInterrupt);
+  if (AhxInitPlayer(AHX_LOAD_WAVES_FILE, AHX_FILTERS))
+    Panic("AhxInitPlayer() failed!");
+  if (AhxInitCIA((void *)AhxSetTempo))
+    Panic("AhxInitHardware() failed!");
+  if (AhxInitModule(module))
+    Panic("AhxInitModule() failed!");
+  AhxInitSubSong(0, 0);
 }
 
 static void Kill(void) {
-  RemIntServer(INTB_PORTS, AhxPlayerInterrupt);
+  ReleaseTimer(ahxtmr);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   KillWaveScope();
   AhxStopSong();
-  AhxKillHardware();
+  AhxKillCIA();
+  AhxKillPlayer();
 
   DeleteCopList(cp);
   DeleteBitmap(screen);
@@ -230,8 +217,7 @@ static void Kill(void) {
 
 static bool HandleEvent(void);
 
-static void Render(void) {
-  int lines = ReadLineCounter();
+static void RenderScreen(void) {
   short i;
 
   ConsoleSetCursor(&console, 0, 3);
@@ -252,8 +238,14 @@ static void Render(void) {
       BitmapCopy(screen, x, y, wavescope.channel[i].bm);
     }
   }
-  
-  Log("playahx: %d\n", ReadLineCounter() - lines);
+}
+
+PROFILE(PlayAHX);
+
+static void Render(void) {
+  ProfilerStart(PlayAHX);
+  RenderScreen(); 
+  ProfilerStop(PlayAHX);
 
   TaskWaitVBlank();
 
@@ -277,7 +269,10 @@ static bool HandleEvent(void) {
 
   if (ev.key.code == KEY_SPACE) {
     Ahx.Public->Playing = ~Ahx.Public->Playing;
-    custom->dmacon = (Ahx.Public->Playing ? DMAF_SETCLR : 0) | DMAF_AUDIO;
+    if (Ahx.Public->Playing)
+      EnableDMA(DMAF_AUDIO);
+    else
+      DisableDMA(DMAF_AUDIO);
   }
 
   if (ev.key.code == KEY_LEFT)
@@ -289,4 +284,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(playahx, Load, UnLoad, Init, Kill, Render);
+EFFECT(playahx, NULL, NULL, Init, Kill, Render);

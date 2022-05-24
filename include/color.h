@@ -6,6 +6,6 @@
 extern u_char colortab[4096];
 
 /* Each argument must be in range 0-15. */
-__regargs u_short ColorTransition(u_short from, u_short to, u_short step);
+u_short ColorTransition(u_short from, u_short to, u_short step);
 
 #endif

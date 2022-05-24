@@ -19,6 +19,7 @@ SUBDIRS := \
 	glitch \
 	highway \
 	kbtest \
+	layers \
 	lines \
 	metaballs \
 	multipipe \
@@ -29,6 +30,7 @@ SUBDIRS := \
 	playp61 \
 	plotter \
 	prisms \
+	rotator \
 	shapes \
 	showpchg \
 	stripes \

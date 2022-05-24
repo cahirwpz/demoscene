@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "2d.h"
-#include "fx.h"
-#include "circle.h"
+#include <effect.h>
+#include <2d.h>
+#include <blitter.h>
+#include <circle.h>
+#include <copper.h>
+#include <fx.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -39,7 +39,6 @@ static void MakeCopperList(CopListT *cp) {
   short i;
 
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr[active], screen[active], DEPTH);
   CopWait(cp, Y(-18), 0);
   CopLoadPal(cp, &blurred_1_pal, 0);
@@ -71,6 +70,8 @@ static void Init(void) {
 
   buffer = NewBitmap(SIZE, SIZE, 4);
   carry = NewBitmap(SIZE, SIZE, 2);
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
   cp = NewCopList(200);
   MakeCopperList(cp);
@@ -116,18 +117,19 @@ static void DrawShape(void) {
   BlitterFill(carry, 0);
 }
 
+PROFILE(BlurredRender);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
-
-  if (iterCount++ & 1)
-    BitmapDecSaturated(buffer, carry);
-
-  DrawShape();
-  BitmapIncSaturated(buffer, carry);
-
-  BitmapCopy(screen[active], 16, 0, buffer);
-
-  // Log("blurred: %d\n", ReadLineCounter() - lines);
+  ProfilerStart(BlurredRender);
+  {
+    if (iterCount++ & 1)
+      BitmapDecSaturated(buffer, carry);
+    DrawShape();
+    BitmapIncSaturated(buffer, carry);
+    BitmapCopy(screen[active], 16, 0, buffer);
+  }
+  ProfilerStop(BlurredRender);
+  
 
   ITER(i, 0, DEPTH - 1, {
     CopInsSet32(bplptr[0][i], screen[active]->planes[i]);

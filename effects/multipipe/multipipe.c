@@ -1,9 +1,9 @@
-#include "effect.h"
-#include "copper.h"
-#include "blitter.h"
-#include "memory.h"
-#include "pixmap.h"
-#include "gfx.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <gfx.h>
+#include <pixmap.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -95,9 +95,6 @@ static void MakeCopperList(CopListT *cp, CopInsT **ins) {
   void *data = cache[0];
 
   CopInit(cp);
-  CopSetupMode(cp, MODE_LORES, DEPTH);
-  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH + 16);
   CopSetColor(cp, 0, 0x000);
   CopSetColor(cp, 1, 0x000);
   for (i = 0; i < HEIGHT; i++) {
@@ -113,6 +110,10 @@ static void MakeCopperList(CopListT *cp, CopInsT **ins) {
 
 static void Init(void) {
   CalcLines();
+
+  SetupMode(MODE_LORES, DEPTH);
+  SetupDisplayWindow(MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
+  SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH + 16);
 
   cp[0] = NewCopList(50 + HEIGHT * 8);
   cp[1] = NewCopList(50 + HEIGHT * 8);
@@ -196,10 +197,14 @@ static void RenderPipes(void) {
   }
 }
 
+PROFILE(RenderPipes);
+
 static void Render(void) {
-  //int lines = ReadLineCounter();
-  RenderPipes();
-  //Log("multipipe: %d\n", ReadLineCounter() - lines);
+  ProfilerStart(RenderPipes);
+  {
+    RenderPipes();
+  }
+  ProfilerStop(RenderPipes); 
 
   CopListRun(cp[active]);
   TaskWaitVBlank();
