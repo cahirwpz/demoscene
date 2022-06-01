@@ -70,18 +70,34 @@ static void MakeUVMapRenderCode(void) {
   *code++ = 0x48a7; *code++ = 0x3f00; /* movem.w d2-d7,-(sp) */
 
   while (n--) {
-    short m;
+    short m, q, uv;
 
-    for (m = 0x0e00; m >= 0; m -= 0x0200) {
+    for (m = 0x0e00, q = 7; m >= 0; m -= 0x0200, q--) {
       data -= 4;
-      *code++ = 0x3029 | m;  /* 3029 xxxx | move.w xxxx(a1),d0 */
-      *code++ = data[0];
-      *code++ = 0x806a | m;  /* 806a yyyy | or.w   yyyy(a2),d0 */
-      *code++ = data[1];
-      *code++ = 0x1029 | m;  /* 1029 wwww | move.b wwww(a1),d0 */
-      *code++ = data[2];
-      *code++ = 0x802a | m;  /* 802a zzzz | or.b   zzzz(a2),d0 */
-      *code++ = data[3];
+      uv = data[0];
+      if (uv >= 0) {
+        *code++ = 0x3029 | m;  /* 3029 xxxx | move.w xxxx(a1),d0 */
+        *code++ = uv;
+      } else {
+        *code++ = 0x4240 | q;  /* 4240      | clr.w  d0 */
+      }
+      uv = data[1];
+      if (uv >= 0) {
+        *code++ = 0x806a | m;  /* 806a yyyy | or.w   yyyy(a2),d0 */
+        *code++ = uv;
+      }
+      uv = data[2];
+      if (uv >= 0) {
+        *code++ = 0x1029 | m;  /* 1029 wwww | move.b wwww(a1),d0 */
+        *code++ = uv;
+      } else {
+        *code++ = 0x4200 | q;  /* 4200      | clr.b  d0 */
+      }
+      uv = data[3];
+      if (uv >= 0) {
+        *code++ = 0x802a | m;  /* 802a zzzz | or.b   zzzz(a2),d0 */
+        *code++ = uv;
+      }
     }
 
     *code++ = 0x48a0; *code++ = 0xff00; /* d0-d7,-(a0) */
