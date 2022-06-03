@@ -22,8 +22,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if not os.path.isfile(args.scene):
         sys.exit(f"No such file as: {args.scene}")
-    if os.path.isdir(args.anim_dir):
-        shutil.rmtree(args.anim_dir)
+    shutil.rmtree(args.anim_dir, ignore_errors=True)
     os.makedirs(args.anim_dir)
     os.system(
             "xvfb-run --auto-servernum "

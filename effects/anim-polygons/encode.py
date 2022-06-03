@@ -1,48 +1,46 @@
 #!/usr/bin/env python3
 
-import sys
 import os.path
 import argparse
 from textwrap import TextWrapper
 import xml.etree.ElementTree as ET
 
 XMLNS = {"svg": "http://www.w3.org/2000/svg"}
-OFFSET = 10
 
 
 def get_coords(code):
     xy = code.split(",")
-    x = int(xy[0]) - OFFSET
-    y = int(xy[1]) - OFFSET
+    x = int(xy[0])
+    y = int(xy[1])
     return (x, y)
 
 
-def parse_frame(frame_path):
-    first = True
-    polys = []
+def parse_frame(frame_path, polys):
     verts = []
     for code in frame_path.split():
         if code[0] == "Z":
-            if len(verts) >= 3:
-                if first:
-                    first = False
-                else:
-                    polys.append(verts)
+            polys.append(verts)
             verts = []
         else:
             verts.append(get_coords(code[1:]))
-    return polys
 
 
 def read_anim(path):
     ET.register_namespace('', XMLNS["svg"])
     tree = ET.parse(path)
-    anim = tree.getroot()
+    svg_element = tree.getroot()
+    width = svg_element.attrib["width"]
+    height = svg_element.attrib["height"]
+    anim = svg_element[0]
 
     frames = []
-    for svg_path in anim:
-        frames.append(parse_frame(svg_path.attrib["d"]))
-    return frames
+    for frame in anim:
+        polys = []
+        for element in frame[0]:
+            parse_frame(element.attrib["d"], polys)
+        frames.append(polys)
+
+    return frames, int(width), int(height)
 
 
 if __name__ == '__main__':
@@ -55,15 +53,12 @@ if __name__ == '__main__':
                  "in prototypes/anim_polygons_data/ directory.",
             type=str)
     args = parser.parse_args()
-    frames = read_anim(args.animation)
+    frames, width, height = read_anim(args.animation)
     name, _ = os.path.splitext(os.path.basename(args.animation))
 
     wrapper = TextWrapper(initial_indent=' ' * 2,
                           subsequent_indent=' ' * 4,
                           width=80)
-
-    width = 320
-    height = 180
 
     for fn, polys in enumerate(frames):
         count = sum(len(poly) for poly in polys) + 1
