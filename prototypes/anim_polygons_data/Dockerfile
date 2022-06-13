@@ -3,7 +3,7 @@ FROM debian:bullseye-backports
 WORKDIR /root
 
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get install -y --no-install-recommends -t bullseye-backports \
     build-essential \
     python3 curl git \
     ca-certificates \
@@ -39,4 +39,5 @@ RUN cd vtracer/cmdapp && cargo build --release && cd ../..
 ENV PATH="/root/vtracer/target/release:${PATH}"
 
 # Create shared directory 
-RUN mkdir shared
+COPY shared .
+RUN make

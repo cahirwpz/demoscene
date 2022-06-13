@@ -129,6 +129,7 @@ if __name__ == "__main__":
     animation = append_group(svg_root, "Animation")
 
     for frame_number, in_img in enumerate(sorted(frames_files)):
+        print(f'Converting frame #{frame_number}.')
         in_img = make_passepartout(in_img)
         if run_vtrace(in_img):
             sys.exit(f"A problem occured on frame: {frame_number}")
