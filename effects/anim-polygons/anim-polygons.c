@@ -1,13 +1,12 @@
-#include "2d.h"
-#include "blitter.h"
-#include "cia.h"
-#include "copper.h"
-#include "effect.h"
-#include "fx.h"
-#include "line.h"
-#include "memory.h"
-#include "pixmap.h"
-#include "types.h"
+#include <2d.h>
+#include <blitter.h>
+#include <copper.h>
+#include <effect.h>
+#include <fx.h>
+#include <line.h>
+#include <pixmap.h>
+#include <types.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 180
@@ -18,22 +17,13 @@ static BitmapT *screen;
 static CopInsT *bplptr[DEPTH];
 static CopListT *cp;
 static short active = 0;
+static short maybeSkipFrame = 0;
 
 #include "data/dancing.c"
 #include "data/dancing-pal.c"
 
 /* Reading polygon data */
 static short current_frame = 0;
-/* Synchronization */
-static int frame_diff = 0;
-static int frame_sync;
-
-static void Load(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
-  frame_sync = ReadFrameCounter();
-}
-
-static void UnLoad(void) { DeleteBitmap(screen); }
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
@@ -51,6 +41,7 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init(void) {
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
   EnableDMA(DMAF_BLITTER);
   BitmapClear(screen);
 
@@ -64,6 +55,7 @@ static void Init(void) {
 static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
   DeleteCopList(cp);
+  DeleteBitmap(screen);
 }
 
 /* Get (x,y) on screen position from linear memory repr */
@@ -111,6 +103,15 @@ static void DrawFrame(void) {
 PROFILE(AnimRender);
 
 static void Render(void) {
+  /* Frame lock the effect to 25 FPS */
+  if (maybeSkipFrame) {
+    maybeSkipFrame = 0;
+    if (frameCount - lastFrameCount == 1) {
+      TaskWaitVBlank();
+      return;
+    }
+  }
+
   ProfilerStart(AnimRender);
   {
     BlitterClear(screen, active);
@@ -130,15 +131,9 @@ static void Render(void) {
     }
   }
 
-  /* synchronizing to frame counter */
-  frame_diff = ReadFrameCounter() - frame_sync;
-  if (frame_diff < 1) {
-    TaskWaitVBlank();
-  }
   TaskWaitVBlank();
-
   active = mod16(active + 1, DEPTH + 1);
-  frame_sync = ReadFrameCounter();
+  maybeSkipFrame = 1;
 }
 
-EFFECT(anim_polygons, Load, UnLoad, Init, Kill, Render);
+EFFECT(anim_polygons, NULL, NULL, Init, Kill, Render);
