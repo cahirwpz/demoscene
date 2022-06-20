@@ -130,8 +130,8 @@ static inline void bchg(u_char *ptr, char bit) {
 #define rorw(a, b) \
   (((a) << (16 - (b))) | ((a) >> (b)))
 
-static inline u_int ror(u_int a, u_int b) {
-  return (a << (sizeof(a) * 8 - b)) | (a >> b);
+static inline u_int rol(u_int a, u_int b) {
+  return (a >> (sizeof(a) * 8 - b)) | (a << b);
 }
 
 #define swapr(a, b) \
