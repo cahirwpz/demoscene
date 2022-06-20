@@ -1,5 +1,5 @@
 #include <3d.h>
-#include <memory.h>
+#include <system/memory.h>
 
 /*
  * Calculates a map from vertex index into a list of face the vertex belongs

@@ -1,7 +1,7 @@
 #include "debug.h"
 #include "gui.h"
 #include "gfx.h"
-#include "mouse.h"
+#include <system/mouse.h>
 #include "blitter.h"
 
 #define WidgetRedraw(gui, wg) \

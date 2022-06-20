@@ -1,7 +1,7 @@
 #include <debug.h>
 #include <3d.h>
 #include <fx.h>
-#include <memory.h>
+#include <system/memory.h>
 
 /*
  * For given triangle T with vertices A, B and C, surface normal N is a cross

@@ -1,12 +1,12 @@
+#include <effect.h>
+#include <copper.h>
+#include <gui.h>
+#include <sprite.h>
 #include <stdio.h>
-#include "effect.h"
-#include "copper.h"
-#include "sprite.h"
-#include "gui.h"
-#include "event.h"
-#include "keyboard.h"
-#include "mouse.h"
-#include "memory.h"
+#include <system/event.h>
+#include <system/keyboard.h>
+#include <system/memory.h>
+#include <system/mouse.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -84,7 +84,8 @@ static void Init(void) {
   CopListActivate(cp);
 
   KeyboardInit();
-  MouseInit(0, 0, WIDTH - 1, HEIGHT - 1);
+  MouseInit(&(Box2D){.minX = 0, .minY = 0,
+                     .maxX = WIDTH - 1, .maxY = HEIGHT - 1});
 
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 

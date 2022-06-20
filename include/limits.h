@@ -1,5 +1,5 @@
-#ifndef _LIMITS_H_
-#define _LIMITS_H_
+#ifndef __LIMITS_H__
+#define __LIMITS_H__
 
 /* Number of bits in a `char'. */
 #define CHAR_BIT 8
@@ -43,4 +43,4 @@
 /* Maximum value an `unsigned long long int' can hold. */
 #define ULONG_LONG_MAX (LONG_LONG_MAX * 2ULL + 1)
 
-#endif /* !_LIMITS_H_ */
+#endif /* !__LIMITS_H__ */

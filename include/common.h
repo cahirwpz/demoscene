@@ -112,7 +112,7 @@ static inline int mul16(short a, short b) {
   asm("divs %3,%0\n"                                                           \
       "move.w %0,%1\n"                                                         \
       "swap %0\n"                                                              \
-      : "=d" (_q), "=d" (_r)                                                   \
+      : "=d" (_r), "=d" (_q)                                                   \
       : "0" (_n), "d" (_d));
 
 static inline void bclr(u_char *ptr, char bit) {

@@ -38,7 +38,7 @@ void CpuEdge(short xs asm("d0"), short ys asm("d1"),
     di = 0;
     df = adx;
   } else {
-    divmod16(adx, dy, df, di);
+    divmod16(adx, dy, di, df);
   }
 
   xi = ~xs & 7;

@@ -1,6 +1,6 @@
-#include <string.h>
-#include <memory.h>
 #include <bitmap.h>
+#include <string.h>
+#include <system/memory.h>
 
 void BitmapMakeDisplayable(BitmapT *bitmap) {
   if (!(bitmap->flags & BM_DISPLAYABLE)) {

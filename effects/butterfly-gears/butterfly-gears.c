@@ -1,14 +1,13 @@
-#include "effect.h"
-
-#include "blitter.h"
-#include "color.h"
-#include "copper.h"
-#include "bitmap.h"
-#include "palette.h"
-#include "pixmap.h"
-#include "memory.h"
-#include "sprite.h"
-#include "fx.h"
+#include <effect.h>
+#include <bitmap.h>
+#include <blitter.h>
+#include <color.h>
+#include <copper.h>
+#include <fx.h>
+#include <palette.h>
+#include <pixmap.h>
+#include <sprite.h>
+#include <system/memory.h>
 
 #define ROTZOOM_W 24
 #define ROTZOOM_H 24
