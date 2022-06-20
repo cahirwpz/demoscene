@@ -1,6 +1,19 @@
 #include <stdlib.h>
 #include <common.h>
 
+#define roll(a, b) (((a) >> (32 - (b))) | ((a) << (b)))
+#define rorl(a, b) (((a) << (32 - (b))) | ((a) >> (b)))
+
+static inline u_int rol(u_int a, u_int b) {
+  if (b <= 8)
+    return roll(a, b);
+  if (b < 16 && b > 8)
+    return rorl(swap16(a), 16 - b);
+  if (b < 24 && b >= 16)
+    return roll(swap16(a), b - 16);
+  return rorl(a, 32 - b);
+}
+
 /*
  * xoroshiro64++ algorithm, based on:
  * https://github.com/ZiCog/xoroshiro/blob/master/src/main/c/xoroshiro.h
