@@ -50,6 +50,8 @@ FAILURES := \
 	tests \
 	vscaler
 
+BUILD-FILES = crt0.o
+
 all: build
 
 include $(TOPDIR)/build/common.mk

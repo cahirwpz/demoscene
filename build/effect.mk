@@ -5,10 +5,10 @@ SOURCES = $(EFFECT).c
 endif
 
 LIBS += libblit libgfx libmisc libc
-LDEXTRA = $(TOPDIR)/system/system.a
-LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
+LDEXTRA = $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 
-CRT0 = $(TOPDIR)/system/crt0.o
+SYSTEM = $(TOPDIR)/system/system.exe
+CRT0 = $(TOPDIR)/effects/crt0.o
 BOOTLOADER = $(TOPDIR)/bootloader.bin
 ROMSTARTUP = $(TOPDIR)/a500rom.bin
 
@@ -21,16 +21,16 @@ all: build
 $(TOPDIR)/lib/lib%.a: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-$(TOPDIR)/system/%.o: FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
-$(TOPDIR)/system/%.a: FORCE
-	$(MAKE) -C $(dir $@) $(notdir $@)
-
-$(TOPDIR)/effects/%.a: FORCE
+$(TOPDIR)/effects/%.o: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
 $(TOPDIR)/%.bin: FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
+$(TOPDIR)/system/system.exe: FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
+$(LDSCRIPT): FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
 include $(TOPDIR)/build/common.mk
@@ -62,7 +62,7 @@ data/%.c: data/%.sync
 	@echo "[SYNC] $(DIR)$< -> $(DIR)$@"
 	$(SYNC2C) $(SYNC2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
-%.img: %.exe $(DATA) $(DATA_GEN)
+%.img: $(SYSTEM) %.exe $(DATA) $(DATA_GEN)
 	@echo "[IMG] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
 	$(FSUTIL) create $@ $(filter-out %bootloader.bin,$^)
 
@@ -81,13 +81,13 @@ run-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 debug-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
-	$(LAUNCH) -d $(DEBUGGER) -f $(EFFECT).adf -e $(EFFECT).exe.dbg
+	$(LAUNCH) -d $(DEBUGGER) -f $(EFFECT).adf -e $(SYSTEM).dbg
 
 run: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 debug: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
-	$(LAUNCH) -d $(DEBUGGER) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
+	$(LAUNCH) -d $(DEBUGGER) -r $(EFFECT).rom -e $(SYSTEM).dbg -f $(EFFECT).adf
 
 .PHONY: run debug run-floppy debug-floppy
 .PRECIOUS: $(BOOTLOADER) $(EFFECT).img

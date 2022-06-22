@@ -78,7 +78,7 @@ def doit(api, sc, jv):
             print(f'\t.stabs\t__STRING(_L({name})), '
                   f'N_ABS|N_EXT, 0, 0, 0x{addr:x}')
             print(f'\t.stabs\t\"{name}:G{TYPES[typ].idx}\",'
-                  f' N_GSYM, 0, 1, 0x{addr:x}')
+                  f' N_GSYM, 0, 0, 0x{addr:x}')
         print()
         print("# vim: ft=gas:ts=8:sw=8:noet")
 

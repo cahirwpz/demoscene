@@ -79,7 +79,6 @@ void Loader(BootDataT *bd) {
   SetIPL(IPL_NONE);
 
   TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
-#ifdef TRACKMO
   {
     FileT *dev;
     if (bd->bd_bootdev)
@@ -88,7 +87,6 @@ void Loader(BootDataT *bd) {
       dev = FloppyOpen();
     InitFileSys(dev);
   }
-#endif
   CallFuncList(&__INIT_LIST__);
 
   {
@@ -97,9 +95,7 @@ void Loader(BootDataT *bd) {
   }
 
   CallFuncList(&__EXIT_LIST__);
-#ifdef TRACKMO
   KillFileSys();
-#endif
   
   Log("[Loader] Shutdown complete!\n");
 }

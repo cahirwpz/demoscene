@@ -11,16 +11,7 @@
 #define IOF_EOF 0x0002
 #define IOF_ERR 0x8000
 
-/* On disk directory entries are always aligned to 2-byte boundary. */
-typedef struct FileEntry {
-  u_char   reclen;   /* total size of this record in bytes */
-  u_char   type;     /* type of file (1: executable, 0: regular) */
-  u_short  start;    /* sector where the file begins (0..1759) */
-  u_int    size;     /* file size in bytes (up to 1MiB) */
-  char     name[0];  /* name of the file (NUL terminated) */
-} FileEntryT;
-
-static FileEntryT *NextFileEntry(FileEntryT *fe) {
+static const FileEntryT *NextFileEntry(const FileEntryT *fe) {
   return (void *)fe + fe->reclen;
 }
 
@@ -48,8 +39,8 @@ static FileOpsT FsOps = {
   .close = FsClose
 };
 
-static FileEntryT *LookupFile(const char *path) {
-  FileEntryT *fe = FileSysRootDir;
+static const FileEntryT *LookupFile(const char *path) {
+  const FileEntryT *fe = FileSysRootDir;
 
   if (fe == NULL)
     return NULL;
@@ -63,21 +54,36 @@ static FileEntryT *LookupFile(const char *path) {
   return NULL;
 }
 
-FileT *OpenFile(const char *path asm("a0")) {
-  FileEntryT *entry;
-  FileT *f;
+bool FileSysList(const FileEntryT **fep) {
+  const FileEntryT *fe = *fep;
 
-  if (!(entry = LookupFile(path)))
-    return NULL;
+  fe = fe ? NextFileEntry(fe) : FileSysRootDir;
 
-  f = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
+  if (!fe->reclen)
+    return false;
+
+  *fep = fe;
+  return true;
+}
+
+FileT *OpenFileEntry(const FileEntryT *fe) {
+  FileT *f = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
+
   f->ops = &FsOps;
-  f->start = (entry->start + 2) * SECTOR_SIZE;
-  f->size = entry->size;
+  f->start = (fe->start + 2) * SECTOR_SIZE;
+  f->size = fe->size;
 
   Debug("%s: %d+%d", path, f->start, f->size);
-
   return f;
+}
+
+FileT *OpenFile(const char *path asm("a0")) {
+  const FileEntryT *fe;
+
+  if ((fe = LookupFile(path)))
+    return OpenFileEntry(fe);
+
+  return NULL;
 }
 
 static void FsClose(FileT *f) {
@@ -158,7 +164,7 @@ void InitFileSys(FileT *dev) {
 
   /* associate names with file entries */
   {
-    FileEntryT *fe = FileSysRootDir;
+    const FileEntryT *fe = FileSysRootDir;
     do {
       Log("[FileSys] Sector %d: %s file '%s' of %d bytes.\n",
           fe->start, fe->type ? "executable" : "regular", fe->name, fe->size);

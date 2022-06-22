@@ -1,9 +1,10 @@
 #include <custom.h>
 #include <effect.h>
+#include <system/amigahunk.h>
+#include <system/file.h>
+#include <system/filesys.h>
 #include <system/interrupt.h>
 #include <system/task.h>
-
-extern EffectT Effect;
 
 static u_char IsWaiting = 0;
 
@@ -45,6 +46,20 @@ static void StartBgTask(void) {
 #endif
 }
 
+static void DoEffect(FileT *fh) {
+  HunkT *hl = LoadHunkList(fh);
+  EffectT *(*entry)(void) = (void *)hl->data;
+  EffectT *effect = entry();
+
+  EffectLoad(effect);
+  EffectInit(effect);
+  EffectRun(effect);
+  EffectKill(effect);
+  EffectUnLoad(effect);
+
+  FreeHunkList(hl);
+}
+
 int main(void) {
   /* NOP that triggers fs-uae debugger to stop and inform GDB that it should
    * fetch segments locations to relocate symbol information read from file. */
@@ -54,11 +69,20 @@ int main(void) {
 
   AddIntServer(INTB_VERTB, VertBlankWakeup);
 
-  EffectLoad(&Effect);
-  EffectInit(&Effect);
-  EffectRun(&Effect);
-  EffectKill(&Effect);
-  EffectUnLoad(&Effect);
+  {
+    const FileEntryT *fe = NULL;
+    FileT *fh;
+
+    while (FileSysList(&fe)) {
+      if (!strcmp(fe->name, "system.exe"))
+        continue;
+      if (fe->type != FE_EXEC)
+        continue;
+      fh = OpenFileEntry(fe);
+      DoEffect(fh);
+      FileClose(fh);
+    }
+  }
 
   RemIntServer(INTB_VERTB, VertBlankWakeup);
 
