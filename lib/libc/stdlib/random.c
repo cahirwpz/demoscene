@@ -22,8 +22,13 @@ static inline u_int lsl9(u_int a) {
 }
 
 /*
- * xoroshiro64++ algorithm, based on:
- * https://github.com/ZiCog/xoroshiro/blob/master/src/main/c/xoroshiro.h
+ * xoroshiro64++ algorithm based on https://arxiv.org/pdf/1805.01407.pdf
+ *
+ * Please note that the paper states "as for the + scrambler, we do not suggest
+ * to use the ++ scrambler with xoroshiro64", but that's exactly what is done
+ * below. They recommend using ** scrambler, but it would use 32-bit
+ * multiplication and be too slow. Since we care more about efficiency that
+ * randomness let's leave it as is.
  */
 
 static u_int state[2] = { 1, 0 };
