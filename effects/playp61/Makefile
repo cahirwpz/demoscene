@@ -9,7 +9,7 @@ PSF2C.drdos8x8 := --name drdos8x8 --type console
 
 include $(TOPDIR)/build/effect.mk
 
-OBJCOPY-CHIPMEM := --rename-section .data=.data_chip,alloc,load,data,contents
+OBJCOPY-CHIPMEM := --rename-section .data=.datachip,alloc,load,data,contents
 
 data/%.o: data/%.p61
 	@echo "[OBJCOPY] $(DIR)$< -> $(DIR)$@"
