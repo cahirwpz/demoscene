@@ -60,7 +60,7 @@ static void MakeCopperList(CopListT *cp, int i) {
 
 static void Init(void) {
   /* extra memory for horizontal scrolling */
-  short extra = div16(tilemap_width * TILEW, WIDTH);
+  short extra = tilemap_width * TILEW / WIDTH;
 
   Log("Allocate %d extra lines!\n", extra);
 
