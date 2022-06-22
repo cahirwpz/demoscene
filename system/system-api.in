@@ -35,6 +35,6 @@ syscall _ProfilerStop
 syscall TaskWaitVBlank
 
 ; Effect control variables
-shvar exitLoop 1
-shvar frameCount 4
-shvar lastFrameCount 4
+shvar exitLoop u_char
+shvar frameCount int
+shvar lastFrameCount int

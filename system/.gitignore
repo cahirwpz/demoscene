@@ -1,2 +1,2 @@
-syscall.lds
+syscall.S
 jumptab.S
