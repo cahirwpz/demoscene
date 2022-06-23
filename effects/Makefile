@@ -44,6 +44,7 @@ SUBDIRS := \
 	uvlight \
 	uvmap \
 	uvmap-rgb \
+	weave \
 	wireframe
 
 FAILURES := \
