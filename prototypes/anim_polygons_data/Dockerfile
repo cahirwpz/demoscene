@@ -3,7 +3,7 @@ FROM debian:bullseye-backports
 WORKDIR /root
 
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y --no-install-recommends -t bullseye-backports \
+RUN apt-get install -y --no-install-recommends \
     build-essential \
     python3 curl git \
     ca-certificates \
@@ -38,6 +38,6 @@ RUN git clone https://github.com/visioncortex/vtracer.git
 RUN cd vtracer/cmdapp && cargo build --release && cd ../..
 ENV PATH="/root/vtracer/target/release:${PATH}"
 
-# Create shared directory 
-COPY shared .
+# Create docker-files directory 
+COPY docker-files/* /root/
 RUN make

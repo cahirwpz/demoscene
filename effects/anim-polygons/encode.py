@@ -1,81 +1,123 @@
 #!/usr/bin/env python3
 
-import sys
-import os.path
 import argparse
+import os.path
+import re
 from textwrap import TextWrapper
 import xml.etree.ElementTree as ET
 
 XMLNS = {"svg": "http://www.w3.org/2000/svg"}
 
-
-def get_coords(letter, prev_coords, current_coords):
-    if letter == "M" or letter == "L":
-        return (current_coords[0], current_coords[1])
-    if letter == "m" or letter == "l":
-        x = prev_coords[0] + current_coords[0]
-        y = prev_coords[1] + current_coords[1]
-        return (x, y)
-    if letter == "H":
-        x = current_coords[0]
-        y = prev_coords[1]
-        return (x, y)
-    if letter == "h":
-        x = prev_coords[0] + current_coords[0]
-        y = prev_coords[1]
-        return (x, y)
-    if letter == "V":
-        x = prev_coords[0]
-        y = current_coords[0]
-        return (x, y)
-    if letter == "v":
-        x = prev_coords[0]
-        y = prev_coords[1] + current_coords[0]
-        return (x, y)
-    sys.exit(f"Unknown letter in path element: {letter}")
+# Grammar of SVG path is described here:
+# https://www.w3.org/TR/SVG/paths.html#PathDataBNF
+# XML EBNF notation is decsribed here:
+# https://www.w3.org/TR/REC-xml/#sec-notation
 
 
-def parse_numbers(frame_path, it):
-    coords = [0, 0]
-    i = it
-    j = it + 1
-    for xy in range(2):
-        while (frame_path[j].isdecimal() or frame_path[j] in "-.") \
-               and j < len(frame_path) - 1:
-            j += 1
-        coords[xy] = int(float(frame_path[i:j]))
-        while frame_path[j].isspace():
-            j += 1
-        if frame_path[j] != ",":
-            break
-        i = j + 1
-        j += 2
-    return (coords[0], coords[1]), j - 1
+def seq_to_coords(seq, char, last):
+    coords = []
+    for coord in seq:
+        new_coord = [0, 0]
+        if char in "ML":
+            new_coord = coord
+        elif char in "ml":
+            new_coord[0] = coord[0] + last[0]
+            new_coord[1] = coord[1] + last[1]
+        elif char == 'H':
+            new_coord[0] = coord
+            new_coord[1] = last[1]
+        elif char == 'h':
+            new_coord[0] = coord + last[0]
+            new_coord[1] = last[1]
+        elif char == 'V':
+            new_coord[0] = last[0]
+            new_coord[1] = coord
+        elif char == 'v':
+            new_coord[0] = last[0]
+            new_coord[1] = coord + last[1]
+        coords.append(new_coord)
+        last = new_coord
+    return coords, last
 
 
-def parse_frame(frame_path, polys):
+def parse_wsp(path):
+    if m := re.match(r"\s*", path):
+        s = m.group(0)
+        return path[len(s):]
+    raise ValueError("parse_wsp: white space expected!")
+
+
+def parse_opt_comma_wsp(path):
+    # comma_wsp ::= (wsp+ ","? wsp*) | ("," wsp*)
+    if m := re.match(r"\s+,?\s*|,\s*", path):
+        s = m.group(0)
+        return path[len(s):]
+    return path
+
+
+def parse_coord(path):
+    # coord ::= sign? number
+    if m := re.match(r"[+-]?\d+\.*\d*", path):
+        s = m.group(0)
+        return path[len(s):], int(float(s))
+    raise ValueError("parse_coord: number expected!")
+
+
+def parse_coord_pair(path):
+    # coord_pair ::= coord comma_wsp? coord
+    path, x = parse_coord(path)
+    path = parse_opt_comma_wsp(path)
+    path, y = parse_coord(path)
+    return path, [x, y]
+
+
+def parse_coord_seq(path):
+    # coord_seq ::= coord | (coord comma_wsp? coord_seq)
+    seq = []
+    while re.match(r"[+-]?\d+", path):
+        path, x = parse_coord(path)
+        seq.append(x)
+        path = parse_opt_comma_wsp(path)
+    return path, seq
+
+
+def parse_coord_pair_seq(path):
+    # coord_pair_seq ::= coord_pair | (coord_pair comma_wsp? coord_pair_seq)
+    seq = []
+    while re.match(r"[+-]?\d+", path):
+        path, p = parse_coord_pair(path)
+        seq.append(p)
+        path = parse_opt_comma_wsp(path)
+    return path, seq
+
+
+def parse_path(path, polys):
     verts = []
-    frame_path += " "
-    letter = ""
-    current_coords = (0, 0)
-    prev_coords = (0, 0)
+    last = [0, 0]
 
-    i = -1
-    while i < len(frame_path) - 1:
-        i += 1
-        if frame_path[i].isspace():
-            continue
-        if frame_path[i].isalpha():
-            letter = frame_path[i]
-            if letter.upper() == "Z":
-                polys.append(verts)
-                verts = []
-                prev_coords = (0, 0)
-            continue
-        if frame_path[i].isdecimal() or frame_path[i] == "-":
-            current_coords, i = parse_numbers(frame_path, i)
-            prev_coords = get_coords(letter, prev_coords, current_coords)
-            verts.append(prev_coords)
+    while len(path):
+        char, path = path[0], path[1:]
+        if char in "MmLl":
+            # moveto ::= ("M"|"m") wsp* coordinate_pair_sequence
+            # lineto ::= ("L"|"l") wsp* coordinate_pair_sequence
+            path = parse_wsp(path)
+            path, seq = parse_coord_pair_seq(path)
+            seq, last = seq_to_coords(seq, char, last)
+            verts += seq
+        elif char in "HhVv":
+            # horizontal_lineto ::= ("H"|"h") wsp* coordinate_sequence
+            # vertical_lineto ::= ("V"|"v") wsp* coordinate_sequence
+            path = parse_wsp(path)
+            path, seq = parse_coord_seq(path)
+            seq, last = seq_to_coords(seq, char, last)
+            verts += seq
+        elif char in "Zz":
+            # closepath::= ("Z"|"z")
+            polys.append(verts)
+            verts = []
+            last = [0, 0]
+        else:
+            raise ValueError(f"Unknown drawto command '{char}'!")
 
 
 def read_anim(path):
@@ -95,7 +137,7 @@ def read_anim(path):
     for frame in anim:
         polys = []
         for element in frame[0]:
-            parse_frame(element.attrib["d"], polys)
+            parse_path(element.attrib["d"], polys)
         frames.append(polys)
     return frames, int(width), int(height)
 
