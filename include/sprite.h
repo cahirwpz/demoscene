@@ -35,10 +35,12 @@
  * well. Data for another channel would begin just after a terminator.
  */
 
+typedef u_short SprWordT[2];
+
 typedef struct SprData {
   u_short pos;
   u_short ctl;
-  u_short data[0][2];
+  SprWordT data[0];
 } SprDataT;
 
 typedef struct Sprite {
