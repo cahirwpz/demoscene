@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "2d.h"
-#include "fx.h"
-#include "circle.h"
+#include <effect.h>
+#include <2d.h>
+#include <blitter.h>
+#include <circle.h>
+#include <copper.h>
+#include <fx.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256

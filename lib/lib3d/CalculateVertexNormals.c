@@ -1,5 +1,5 @@
 #include <3d.h>
-#include <memory.h>
+#include <system/memory.h>
 
 void CalculateVertexNormals(Mesh3D *mesh) {
   mesh->vertexNormal = MemAlloc(sizeof(Point3D) * mesh->vertices,

@@ -1,10 +1,12 @@
 #ifndef __ASM_H__
 #define __ASM_H__
 
+#include <cdefs.h>
+
 #ifdef __ELF__
 #define _L(name) name
 #else
-#define _L(name) _##name
+#define _L(name) __CONCAT(_, name)
 #endif
 
 #define ENTRY(name)                                                            \

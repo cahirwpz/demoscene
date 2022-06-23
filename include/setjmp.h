@@ -1,5 +1,5 @@
-#ifndef _SETJMP_H_
-#define _SETJMP_H_
+#ifndef __SETJMP_H__
+#define __SETJMP_H__
 
 #include <cdefs.h>
 #include <types.h>
@@ -25,4 +25,4 @@ typedef u_int jmp_buf[_JBLEN];
 __returns_twice int setjmp(jmp_buf asm("a0"));
 __noreturn void longjmp(jmp_buf asm("a0"), int asm("d1"));
 
-#endif /* !_SETJMP_H_ */
+#endif /* !__SETJMP_H__ */

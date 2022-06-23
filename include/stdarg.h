@@ -1,5 +1,5 @@
-#ifndef _STDARG_H_
-#define _STDARG_H_
+#ifndef __STDARG_H__
+#define __STDARG_H__
 
 typedef void *__gnuc_va_list;
 
@@ -17,4 +17,4 @@ typedef void *__gnuc_va_list;
 
 typedef __gnuc_va_list va_list;
 
-#endif
+#endif /* !__STDARG_H__ */

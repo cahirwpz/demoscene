@@ -2,12 +2,13 @@ TOPDIR := $(realpath ../..)
 
 SOURCES := \
 	console.c \
-	debug.c \
-	debug-putchar.S \
+	crc32.c \
+	file.c \
 	fx.c \
 	inflate.S \
 	sintab.c \
 	sort.c \
+	sync.c \
 	uae.S
 
 SOURCES_GEN := sintab.c

@@ -48,4 +48,9 @@
 
 #define __BIT(x) (1L << (x))
 
+#define __CONCAT1(x, y) x##y
+#define __CONCAT(x, y) __CONCAT1(x, y)
+#define __STRING1(x) #x
+#define __STRING(x) __STRING1(x)
+
 #endif

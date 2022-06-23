@@ -1,13 +1,13 @@
-#include "effect.h"
-#include "interrupt.h"
-#include "memory.h"
-#include "p61.h"
-#include "console.h"
-#include "copper.h"
-#include "keyboard.h"
-#include "event.h"
-#include "blitter.h"
-#include "timer.h"
+#include <effect.h>
+#include <blitter.h>
+#include <console.h>
+#include <copper.h>
+#include <p61.h>
+#include <system/event.h>
+#include <system/interrupt.h>
+#include <system/keyboard.h>
+#include <system/memory.h>
+#include <system/timer.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -118,7 +118,7 @@ static void Init(void) {
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
-  AddIntServer(VertBlankChain, P61PlayerServer);
+  AddIntServer(INTB_VERTB, P61PlayerServer);
 
   ConsolePutStr(&console, 
                 "Pause (SPACE) Prev (LEFT) Next (RIGHT)\n"
@@ -129,7 +129,7 @@ static void Kill(void) {
   P61_ControlBlock.Play = 0;
   P61_End();
 
-  RemIntServer(VertBlankChain, P61PlayerServer);
+  RemIntServer(INTB_VERTB, P61PlayerServer);
   ReleaseTimer(p61tmr);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);

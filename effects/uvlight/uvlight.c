@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "interrupt.h"
-#include "memory.h"
-#include "color.h"
-#include "pixmap.h"
+#include <effect.h>
+#include <blitter.h>
+#include <color.h>
+#include <copper.h>
+#include <pixmap.h>
+#include <system/interrupt.h>
+#include <system/memory.h>
 
 #define WIDTH 80
 #define HEIGHT 64
@@ -300,7 +300,7 @@ static void Init(void) {
 
   EnableDMA(DMAF_RASTER);
 
-  SetIntVector(BLIT, (IntHandlerT)ChunkyToPlanar, NULL);
+  SetIntVector(INTB_BLIT, (IntHandlerT)ChunkyToPlanar, NULL);
   EnableINT(INTF_BLIT);
 }
 
@@ -308,7 +308,7 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER);
 
   DisableINT(INTF_BLIT);
-  ResetIntVector(BLIT);
+  ResetIntVector(INTB_BLIT);
 
   DeleteCopList(cp);
 #if OPTIMIZED
