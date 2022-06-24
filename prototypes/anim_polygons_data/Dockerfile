@@ -37,7 +37,3 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN git clone https://github.com/visioncortex/vtracer.git
 RUN cd vtracer/cmdapp && cargo build --release && cd ../..
 ENV PATH="/root/vtracer/target/release:${PATH}"
-
-# Create docker-files directory 
-COPY docker-files/* /root/
-RUN make
