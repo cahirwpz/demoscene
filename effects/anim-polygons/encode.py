@@ -14,30 +14,24 @@ XMLNS = {"svg": "http://www.w3.org/2000/svg"}
 # https://www.w3.org/TR/REC-xml/#sec-notation
 
 
-def seq_to_coords(seq, char, last):
-    coords = []
+def seq_to_coords(seq, cmd, verts):
+    last = verts[-1] if verts else [0, 0]
     for coord in seq:
-        new_coord = [0, 0]
-        if char in "ML":
-            new_coord = coord
-        elif char in "ml":
-            new_coord[0] = coord[0] + last[0]
-            new_coord[1] = coord[1] + last[1]
-        elif char == 'H':
-            new_coord[0] = coord
-            new_coord[1] = last[1]
-        elif char == 'h':
-            new_coord[0] = coord + last[0]
-            new_coord[1] = last[1]
-        elif char == 'V':
-            new_coord[0] = last[0]
-            new_coord[1] = coord
-        elif char == 'v':
-            new_coord[0] = last[0]
-            new_coord[1] = coord + last[1]
-        coords.append(new_coord)
-        last = new_coord
-    return coords, last
+        if cmd in "ML":
+            last = coord
+        elif cmd in "ml":
+            last = [coord[0] + last[0], coord[1] + last[1]]
+        elif cmd == 'H':
+            last = [coord, last[1]]
+        elif cmd == 'h':
+            last = [coord + last[0], last[1]]
+        elif cmd == 'V':
+            last = [last[0], coord]
+        elif cmd == 'v':
+            last = [last[0], coord + last[1]]
+        else:
+            raise ValueError
+        verts.append(last)
 
 
 def parse_wsp(path):
@@ -93,31 +87,27 @@ def parse_coord_pair_seq(path):
 
 def parse_path(path, polys):
     verts = []
-    last = [0, 0]
 
     while len(path):
-        char, path = path[0], path[1:]
-        if char in "MmLl":
+        cmd, path = path[0], path[1:]
+        if cmd in "MmLl":
             # moveto ::= ("M"|"m") wsp* coordinate_pair_sequence
             # lineto ::= ("L"|"l") wsp* coordinate_pair_sequence
             path = parse_wsp(path)
             path, seq = parse_coord_pair_seq(path)
-            seq, last = seq_to_coords(seq, char, last)
-            verts += seq
-        elif char in "HhVv":
+            seq_to_coords(seq, cmd, verts)
+        elif cmd in "HhVv":
             # horizontal_lineto ::= ("H"|"h") wsp* coordinate_sequence
             # vertical_lineto ::= ("V"|"v") wsp* coordinate_sequence
             path = parse_wsp(path)
             path, seq = parse_coord_seq(path)
-            seq, last = seq_to_coords(seq, char, last)
-            verts += seq
-        elif char in "Zz":
+            seq_to_coords(seq, cmd, verts)
+        elif cmd in "Zz":
             # closepath::= ("Z"|"z")
             polys.append(verts)
             verts = []
-            last = [0, 0]
         else:
-            raise ValueError(f"Unknown drawto command '{char}'!")
+            raise ValueError(f"Unknown drawto command '{cmd}'!")
 
 
 def read_anim(path):
