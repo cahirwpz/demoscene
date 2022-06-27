@@ -224,8 +224,6 @@ static void RenderScreen(void) {
   ConsolePrint(&console, "Position : %02d/%02d\n\n",
                Ahx.Public->Pos, Ahx.Public->Row);
 
-  Log("Playing %d!\n", Ahx.Public->Playing);
-
   if (Ahx.Public->Playing) {
     WaitLine(Y(96));
 
