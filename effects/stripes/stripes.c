@@ -132,7 +132,7 @@ static void SetLineColor(short *s) {
     if (l > 31)
       l = 31;
 
-    {
+    if ((i >= 0) && (i + h < HEIGHT)) {
       CopInsT **line = &lines[i];
       short c0 = shades[color | l];
       short c1 = shades[color | (l >> 1)];

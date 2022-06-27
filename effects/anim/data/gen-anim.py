@@ -26,12 +26,13 @@ if __name__ == '__main__':
         pix = img.load()
         for y in range(img.size[1]):
             line = []
-            p = 1
+            p = pix[0, y]
             for x in range(img.size[0]):
                 if p == pix[x, y]:
                     continue
                 p = pix[x, y]
                 line.append(x)
+            assert(len(line) % 2 == 0)
             line.insert(0, len(line))
             print('  %s,' % ', '.join(map(str, line)))
         print('};')

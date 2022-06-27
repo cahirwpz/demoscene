@@ -30,16 +30,16 @@ SECTIONS
     *(COMMON)
   }
   __bss_size = SIZEOF(.bss);
-  .data_chip :
+  .datachip :
   {
     __data_chip = .;
-    *(.data_chip)
+    *(.datachip)
   }
-  __data_chip_size = SIZEOF(.data_chip);
-  .bss_chip :
+  __data_chip_size = SIZEOF(.datachip);
+  .bsschip :
   {
     __bss_chip = .;
-    *(.bss_chip)
+    *(.bsschip)
   }
-  __bss_chip_size = SIZEOF(.bss_chip);
+  __bss_chip_size = SIZEOF(.bsschip);
 }
