@@ -66,7 +66,7 @@
 
 #include "data/p46basedprng.c"
 #include "data/weekenders.c"
-#include "data/beam.c"
+// #include "data/beam.c"
 
 static CopListT* cp;
 static BitmapT* current_board;
@@ -94,7 +94,7 @@ static u_short states_head = 0;
 static u_short phase = 0; 
 
 // x position of the death ray sprite
-static short laser_beam_pos = 0;
+// static short laser_beam_pos = 0;
 
 // minterms for blitter operations
 static u_short minterms_table[9] = {
@@ -244,21 +244,20 @@ static void MakePixelDoublingCode(const BitmapT* bitmap)
   u_short y;
   u_short *code = (void*)PixelDouble;
 
-  *code++ = 0x7200; // moveq #0,d1
-  *code++ = 0x7400 | (EXT_BOARD_MODULO & 0xFF); // moveq #EXT_BOARD_MODULO,d2
+  *code++ = 0x7200 | (EXT_BOARD_MODULO & 0xFF); // moveq #EXT_BOARD_MODULO,d1
   for (y = EXT_HEIGHT_TOP; y < bitmap->height - EXT_HEIGHT_BOTTOM; y++)
   {
     for (x = EXT_WIDTH_LEFT/8; x < bitmap->bytesPerRow - EXT_WIDTH_RIGHT/8; x++)
     {
-      *code++ = 0x1218; // move.b (a0)+,d1
-      *code++ = 0x2001; // move.l d1,d0
-      *code++ = 0xd081; // add.l d1,d0
-      *code++ = 0x32f2; //
-      *code++ = 0x0800; // move.w (0,a2,d0.l),(a1)+
+      *code++ = 0x4240; // clr.w  d0               # 4
+      *code++ = 0x1018; // move.b (a0)+,d0         # 8
+      *code++ = 0xd080; // add.l  d0,d0            # 6
+      *code++ = 0x32f2;
+      *code++ = 0x0000; // move.w (a2,d0.w),(a1)+  # 18
       // perform a lookup in the pixel doubling lookup table (e.g. 00100110 -> 0000110000111100)    	
       // *double_target++ = double_pixels[*double_src++];
     }
-    *code++ = 0xD1C2; // adda.l d2,a0
+    *code++ = 0xD1C1; // adda.l d1,a0
     // double_src += EXT_BOARD_MODULO & 0xFF;
     // bitmap modulo - skip the extra EXT_BOARD_MODULO bytes on the edges
     // (EXT_WIDTH_LEFT/8 bytes on the left, EXT_WIDTH_RIGHT/8 bytes on the right on the next row)
@@ -270,7 +269,7 @@ static void MakeCopperList(CopListT* cp) {
   u_short i;
 
   CopInit(cp);
-  CopMove32(cp, sprpt[0], &laser_beam);
+  //CopMove32(cp, sprpt[0], &laser_beam);
   // initially previous states are empty
   // save addresses of these instructions to change bitplane
   // order when new state gets generated
@@ -307,7 +306,7 @@ static void UpdateBitplanePointers(void)
 
 static void GameOfLife(void)
 {
-  Area2D clearArea = { laser_beam_pos, 0, 8, 256 };
+  Area2D clearArea = { /*laser_beam_pos*/ 0, 0, 8, 256 };
   ClearIRQ(INTF_BLIT);
   switch (phase)
   {
@@ -377,7 +376,7 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DISP_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
   LoadPalette(&palette, 0);
-  LoadPalette(&laser_beam_pal, 16);
+  //LoadPalette(&laser_beam_pal, 16);
   EnableDMA(DMAF_BLITTER);
 
   for (i = 0; i < DISP_DEPTH; i++)
@@ -393,7 +392,7 @@ static void Init(void) {
   BitmapCopy(current_board, 17, EXT_HEIGHT_TOP+10, &weekenders);
   BitmapCopy(current_board, 17, EXT_HEIGHT_TOP+68, &weekenders);
 
-  SpriteUpdatePos(&laser_beam, laser_beam_height, X(320), Y(0));
+  //SpriteUpdatePos(&laser_beam, laser_beam_height, X(320), Y(0));
 
   cp = NewCopList(300);
   MakeCopperList(cp);
@@ -436,8 +435,8 @@ static void Render(void) {
     UpdateBitplanePointers();
     states_head++;
     phase = 0;
-    laser_beam_pos = (normfx(SIN(frameCount * 16) * DISP_WIDTH/2) + DISP_WIDTH/2)/2;
-    SpriteUpdatePos(&laser_beam, laser_beam_height, X(laser_beam_pos), Y(0));
+    //laser_beam_pos = (normfx(SIN(frameCount * 16) * DISP_WIDTH/2) + DISP_WIDTH/2)/2;
+    //SpriteUpdatePos(&laser_beam, laser_beam_height, X(laser_beam_pos), Y(0));
     GameOfLife();
   ProfilerStop(GOLStep);
 }
