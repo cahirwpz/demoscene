@@ -1,7 +1,10 @@
 static Board board;
-static Turmite turmite;
+ArrayList<Turmite> turmites;
 static boolean fadeaway = false;
+static int active = 0;
 
+final color BGCOL = #000000;
+final color FGCOL = #ff0000;
 final int STEPS = 64;
 
 void setup() {
@@ -11,9 +14,15 @@ void setup() {
   textFont(loadFont("Monaco-16.vlw"));
   textSize(16);
   
+  color[] pal1 = { #000000, #ff0000 };
+  color[] pal2 = { #000000, #00ff00 };
+  
   board = new Board(128, 128);
-  turmite = new Turmite(ChaoticGrowth);
-  turmite.position(board.w / 2, board.h / 2);
+  turmites = new ArrayList<Turmite>();
+  turmites.add(new Turmite(ChaoticGrowth, pal1,
+                           board.w / 4, board.h / 4));
+  turmites.add(new Turmite(ChaoticGrowth, pal2,
+                           board.w * 3 / 4, board.h * 3 / 4));
 }
 
 void status() {
@@ -21,13 +30,20 @@ void status() {
   rect(4, 512, width-8, 28+16, 8);
   
   fill(255);
-  text("[f]adeaway: " + (fadeaway ? "yes" : "no ") + " [r]eset", 6, 530); 
+  
+  String bar = String.format("[r]eset [1-%d] active (%d) [f]adeaway: %s",
+                             turmites.size(), active + 1,
+                             fadeaway ? "yes" : "no ");
+  
+  text(bar, 6, 530);
   text("mouse (L) set pos", 6, 550);
 }
 
 void draw() {
-  for (int i = 0; i < STEPS; i++) {
-    turmite.move(board);
+  for (Turmite t : turmites) {
+    for (int i = 0; i < STEPS; i++) {
+      t.move(board);
+    }
   }
 
   loadPixels();
@@ -37,8 +53,9 @@ void draw() {
     board.fadeaway();
   }
 
-  board.updateCell(turmite.x, turmite.y, #ff0000);
-  
+  for (Turmite t : turmites) {
+    board.updateCell(t.x, t.y, FGCOL);
+  }
   updatePixels();  
   
   status();
@@ -50,39 +67,61 @@ void keyPressed() {
   }
   if (key == 'r') {
     board.reset();
-    turmite.position(board.w / 2, board.h / 2);
+    for (Turmite t : turmites) {
+      t.reset();
+    }
+  }
+  if (key >= '1' && key <= '9') {
+    int num = key - '1';
+    if (num < turmites.size()) {
+      active = num;
+    }
   }
 }
 
 void mousePressed() {
   if (mouseX < 512 && mouseY < 512) {
-    turmite.position(mouseX / 4, mouseY / 4);
+    turmites.get(active).position(mouseX / 4, mouseY / 4);
   }
 }
 
 class Tile {
   int ci; /* color index */
   int life;
+  Turmite owner;
   
   void age() {
     life = life > 0 ? life - 1 : 0;
-    if (life == 0)
-      ci = 0;
+    if (life == 0) {
+      reset();
+    }
+  }
+  
+  void reset() {
+    ci = 0;
+    life = 0;
+    owner = null;
   }
   
   int get() {
     return ci;
   }
   
-  void set(int ci) {
+  void set(Turmite owner, int ci) {
+    this.owner = owner;
     this.ci = ci;
     life = ci > 0 ? 255 : 0;
   }
+
+  color colorOf() {
+    if (ci == 0 || owner == null) return BGCOL;
+    return lerpColor(0, owner.palette[ci], life / 255.0);
+  }
+
 }
 
 class Board {
   Tile[] board;
-  color[] palette = { #000000, #ffffff };
   int w, h;
   
   Board(int w, int h) {
@@ -96,7 +135,7 @@ class Board {
   
   void reset() {
     for (int i = 0; i < board.length; i++) {
-      board[i].set(0);
+      board[i].reset();
     }
   }
   
@@ -136,17 +175,11 @@ class Board {
     }
   }
 
-  color colorOf(Tile tile) {
-    int ci = tile.get();
-    if (ci == 0) return palette[ci];
-    return lerpColor(0, palette[ci], tile.life / 255.0);
-  }
-
   void update() {
     for (int j = 0; j < h; j++) {
       for (int i = 0; i < w; i++) {
         Tile tile = board[j * w + i];
-        drawCell(i, j, colorOf(tile));
+        drawCell(i, j, tile.colorOf());
       }
     }
   }
@@ -159,20 +192,32 @@ final int EAST = 3;
 
 /* 2D Turing machine */
 class Turmite {
+  int initial_x, initial_y;
   int x, y;
   int dir;
   int state;
   int[][][] transition;
+  color[] palette;
   
-  Turmite(int[][][] specs) {
+  Turmite(int[][][] specs, color[] pal, int x, int y) {
     transition = specs;
-    dir = NORTH;
+    palette = pal;
+    dir = int(random(SOUTH, EAST));
     state = 0;
+    initial_x = x;
+    initial_y = y;
+    reset();
+  }
+
+  void reset() {
+    position(initial_x, initial_y);
   }
 
   void position(int x, int y) {
     this.x = x;
     this.y = y;
+    initial_x = x;
+    initial_y = y;
   }
 
   void move(Board b) {
@@ -180,7 +225,7 @@ class Turmite {
     
     int[] change = transition[state][tile.get()];
     
-    tile.set(change[0]);
+    tile.set(this, change[0]);
     dir += change[1];
     state = change[2];
     
