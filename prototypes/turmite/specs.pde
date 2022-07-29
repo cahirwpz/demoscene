@@ -9,6 +9,17 @@
  * +2 = UTURN
  *  0 = NO-TURN
  */
+
+final int[][][] Irregular = {
+  {
+    { 1, +1, 0 },
+    { 1, +1, 1 }
+  }, {
+    { 0,  0, 0 },
+    { 0,  0, 1 }
+  }
+};
+
 final int[][][] SpiralGrowth = { 
   {
     { 1,  0, 1 },

@@ -2,24 +2,27 @@ static Board board;
 static Turmite turmite;
 static boolean fadeaway = false;
 
-final int STEPS = 32;
+final int STEPS = 64;
 
 void setup() {
-  size(512, 540);
+  size(512, 560);
   background(0);
   
+  textFont(loadFont("Monaco-16.vlw"));
   textSize(16);
   
   board = new Board(128, 128);
-  turmite = new Turmite(board.w / 2, board.h / 2, ChaoticGrowth);
+  turmite = new Turmite(ChaoticGrowth);
+  turmite.position(board.w / 2, board.h / 2);
 }
 
 void status() {
   fill(64);
-  rect(0, 512, width, 28, 8);
+  rect(4, 512, width-8, 28+16, 8);
   
   fill(255);
-  text("[f]adeaway: " + (fadeaway ? "yes" : "no"), 4, 530); 
+  text("[f]adeaway: " + (fadeaway ? "yes" : "no ") + " [r]eset", 6, 530); 
+  text("mouse (L) set pos", 6, 550);
 }
 
 void draw() {
@@ -45,6 +48,16 @@ void keyPressed() {
   if (key == 'f') {
     fadeaway = !fadeaway;
   }
+  if (key == 'r') {
+    board.reset();
+    turmite.position(board.w / 2, board.h / 2);
+  }
+}
+
+void mousePressed() {
+  if (mouseX < 512 && mouseY < 512) {
+    turmite.position(mouseX / 4, mouseY / 4);
+  }
 }
 
 class Board {
@@ -55,6 +68,12 @@ class Board {
     this.w = w;
     this.h = h;
     board = new int[w * h];
+  }
+  
+  void reset() {
+    for (int i = 0; i < w * h; i++) {
+      board[i] = 0;
+    }
   }
   
   int hp(int x) {
@@ -121,12 +140,15 @@ class Turmite {
   int state;
   int[][][] transition;
   
-  Turmite(int x, int y, int[][][] specs) {
-    this.x = x;
-    this.y = y;
+  Turmite(int[][][] specs) {
     transition = specs;
     dir = NORTH;
     state = 0;
+  }
+
+  void position(int x, int y) {
+    this.x = x;
+    this.y = y;
   }
 
   void move(Board b) {
