@@ -26,11 +26,11 @@ void status() {
 }
 
 void draw() {
-  loadPixels();
-
   for (int i = 0; i < STEPS; i++) {
     turmite.move(board);
   }
+
+  loadPixels();
   board.update();
   
   if (fadeaway) {
@@ -60,19 +60,43 @@ void mousePressed() {
   }
 }
 
+class Tile {
+  int ci; /* color index */
+  int life;
+  
+  void age() {
+    life = life > 0 ? life - 1 : 0;
+    if (life == 0)
+      ci = 0;
+  }
+  
+  int get() {
+    return ci;
+  }
+  
+  void set(int ci) {
+    this.ci = ci;
+    life = ci > 0 ? 255 : 0;
+  }
+}
+
 class Board {
-  int board[];
+  Tile[] board;
+  color[] palette = { #000000, #ffffff };
   int w, h;
   
   Board(int w, int h) {
     this.w = w;
     this.h = h;
-    board = new int[w * h];
+    board = new Tile[w * h];
+    for (int i = 0; i < board.length; i++) {
+      board[i] = new Tile();
+    }
   }
   
   void reset() {
-    for (int i = 0; i < w * h; i++) {
-      board[i] = 0;
+    for (int i = 0; i < board.length; i++) {
+      board[i].set(0);
     }
   }
   
@@ -90,26 +114,21 @@ class Board {
     return y;
   }
   
-  int get(int x, int y) {
+  Tile tile(int x, int y) {
     return board[vp(y) * w + hp(x)];
   }
-  
-  void set(int x, int y, int v) {
-    board[vp(y) * w + hp(x)] = v;
-  }
-  
+      
   void fadeaway() {
     for (int i = 0; i < w * h; i++) {
-      if (board[i] > 0)
-        board[i]--;
+      board[i].age();
     }
   }
   
-  void updateCell(int x, int y, int c) {
-    _updateCell(hp(x), vp(y), c);
+  void updateCell(int x, int y, color c) {
+    drawCell(hp(x), vp(y), c);
   }
 
-  void _updateCell(int x, int y, int c) {
+  void drawCell(int x, int y, color c) {
     for (int j = 0; j < 4; j++) {
       for (int i = 0; i < 4; i++) {
         pixels[(y * 4 + j) * width + (x * 4 + i)] = c;
@@ -117,12 +136,17 @@ class Board {
     }
   }
 
+  color colorOf(Tile tile) {
+    int ci = tile.get();
+    if (ci == 0) return palette[ci];
+    return lerpColor(0, palette[ci], tile.life / 255.0);
+  }
+
   void update() {
     for (int j = 0; j < h; j++) {
       for (int i = 0; i < w; i++) {
-        int v = board[j * w + i];
-        int c = color(v,v,v);
-        _updateCell(i, j, c);
+        Tile tile = board[j * w + i];
+        drawCell(i, j, colorOf(tile));
       }
     }
   }
@@ -152,10 +176,11 @@ class Turmite {
   }
 
   void move(Board b) {
-    int col = b.get(x, y) > 0 ? 1 : 0;
-    int change[] = transition[state][col];
+    Tile tile = b.tile(x, y);
     
-    b.set(x, y, boolean(change[0]) ? 255 : 0);
+    int[] change = transition[state][tile.get()];
+    
+    tile.set(change[0]);
     dir += change[1];
     state = change[2];
     
