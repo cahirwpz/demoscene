@@ -9,7 +9,7 @@
 
 // This effect calculates Conway's game of life (with the classic rules: live cells with
 // <2 or >3 neighbours die, live cells with 2-3 neighbouring cells live to the next
-// generation and dead cells with 3 neightbours become alive). If you need more introductory
+// generation and dead cells with 3 neighbours become alive). If you need more introductory
 // information check out https://en.wikipedia.org/wiki/Conway's_Game_of_Life
 // 
 // It works the following way - on each iteration we start with a board (a 1-bit bitmap)
@@ -18,7 +18,7 @@
 // results and then on those intermediate results as well, extensively making use of the
 // blitter's function generator. Minterms for the function generator, the order of blits
 // and input sources were picked in such a way, that the end result calculates the next
-// board state. Then the boards gets his pixels horizontally and vertically doubled -
+// board state. Then the board gets its pixels horizontally and vertically doubled -
 // - horizontally by the CPU (using lookup table), vertically by the copper (by line doubling).
 // Previously calculated game states (with pixels already doubled) are kept in a circular
 // buffer and displayed on separate bitplanes with dimmer colors (the dimmer the color, the
@@ -27,6 +27,7 @@
 #define DISP_WIDTH 320
 #define DISP_HEIGHT 256
 #define DISP_DEPTH 4
+#define PREV_STATES_DEPTH (DISP_DEPTH + 1)
 
 #define EXT_WIDTH_LEFT 16
 #define EXT_WIDTH_RIGHT 16
@@ -64,7 +65,7 @@
 // ------------------------------------------------------------------------------
 //
 
-#include "data/weekenders.c"
+#include "data/p46basedprng.c"
 
 static CopListT* cp;
 static BitmapT* current_board;
@@ -83,9 +84,10 @@ static BitmapT* x6;
 static CopInsT* bplptr[DISP_DEPTH];
 
 // circular buffer of previous game states as they would be rendered (with horizontally doubled pixels)
-static BitmapT* prev_states[DISP_DEPTH];
+static BitmapT* prev_states[PREV_STATES_DEPTH];
 
-// states_head % DISP_DEPTH points to the newest game state in prev_states
+// states_head % PREV_STATES_DEPTH points to the newest (currently being pixel-doubled,
+// not displayed yet) game state in prev_states
 static u_short states_head = 0;
 
 // phase (0-8) of blitter calculations
@@ -289,13 +291,15 @@ static void UpdateBitplanePointers(void)
   BitmapT* cur;
   u_short i;
   ClearIRQ(INTF_VERTB);
-  for (i = 0; i < DISP_DEPTH; i++)
+  for (i = 1; i < PREV_STATES_DEPTH; i++)
   {
-    // update bitplane order: (states_head + i + 1) % DISP_DEPTH iterates from
-    // the oldest to newest game state, so 0th bitplane displays the oldest state
-    // and (DISP_DEPTH-1)'th bitplane displays the newest state
-    cur = prev_states[(states_head + i + 1) % DISP_DEPTH];
-    CopInsSet32(bplptr[i], cur->planes[0]);
+    // update bitplane order: (states_head + i + 1) % PREV_STATES_DEPTH iterates from
+    // the oldest+1 (to facilitate double buffering; truly oldest state is the one we
+    // won't display as it's gonna be a buffer for the next game state) to newest game
+    // state, so 0th bitplane displays the oldest+1 state and (PREV_STATES_DEPTH-1)'th
+    // bitplane displays the newest state
+    cur = prev_states[(states_head + i + 1) % PREV_STATES_DEPTH];
+    CopInsSet32(bplptr[i - 1], cur->planes[0]);
   }
 }
 
@@ -365,7 +369,7 @@ static void Init(void) {
   LoadPalette(&palette, 0);
   EnableDMA(DMAF_BLITTER);
 
-  for (i = 0; i < DISP_DEPTH; i++)
+  for (i = 0; i < PREV_STATES_DEPTH; i++)
   {
     prev_states[i] = NewBitmap(DISP_WIDTH, DISP_HEIGHT, BOARD_DEPTH);
     BitmapClear(prev_states[i]);
@@ -374,9 +378,9 @@ static void Init(void) {
   PixelDouble = MemAlloc(PixelDoubleSize, MEMF_PUBLIC);
   MakePixelDoublingCode(current_board);
 
+  // set up initial state
   BitmapClear(current_board);
-  BitmapCopy(current_board, 17, EXT_HEIGHT_TOP+10, &weekenders);
-  BitmapCopy(current_board, 17, EXT_HEIGHT_TOP+68, &weekenders);
+  BitmapCopy(current_board, 20, EXT_HEIGHT_TOP+10, &p46basedprng);
 
   cp = NewCopList(300);
   MakeCopperList(cp);
@@ -406,7 +410,7 @@ static void Kill(void) {
   DeleteBitmap(x6);
   DeleteBitmap(current_board);
 
-  for (i = 0; i < DISP_DEPTH; i++)
+  for (i = 0; i < PREV_STATES_DEPTH; i++)
     DeleteBitmap(prev_states[i]);
 
   MemFree(PixelDouble);
@@ -417,7 +421,7 @@ PROFILE(GOLStep)
 
 static void Render(void) {
   ProfilerStart(GOLStep);
-    PixelDouble(current_board->planes[0] + current_board->bytesPerRow + EXT_WIDTH_LEFT/8, prev_states[states_head % DISP_DEPTH]->planes[0], double_pixels);
+    PixelDouble(current_board->planes[0] + current_board->bytesPerRow + EXT_WIDTH_LEFT/8, prev_states[states_head % PREV_STATES_DEPTH]->planes[0], double_pixels);
     states_head++;
     phase = 0;
     GameOfLife();
