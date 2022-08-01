@@ -32,7 +32,7 @@ if __name__ == '__main__':
                     continue
                 p = pix[x, y]
                 line.append(x)
-            assert(len(line) % 2 == 0)
+            assert len(line) % 2 == 0
             line.insert(0, len(line))
             print('  %s,' % ', '.join(map(str, line)))
         print('};')
