@@ -24,7 +24,7 @@ class Turmite {
   protected int init_x, init_y, init_state, init_dir;
 
   int x, y;
-  
+
   Turmite(int[][][] rules, color[] palette) {
     this.rules = rules;
     this.palette = palette;
@@ -53,13 +53,13 @@ class Turmite {
 
   int transition(int col) {
     int[] change = rules[state][col];
-    
+
     col = change[0];
     dir += change[1];
     state = change[2];
-    
+
     dir &= 3;
-    
+
     if (dir == SOUTH)
       y++; 
     else if (dir == WEST) 
@@ -68,7 +68,7 @@ class Turmite {
       y--;
     else if (dir == EAST)
       x++;
-      
+
     return col;
   }
 }
@@ -76,11 +76,11 @@ class Turmite {
 Turmite Irregular(color[] pal) {
   int[][][] rules = {
     {
-      { 1, +1, 0 },
+      { 1, +1, 0 }, 
       { 1, +1, 1 }
     }, {
-      { 0,  0, 0 },
-      { 0,  0, 1 }
+      { 0, 0, 0 }, 
+      { 0, 0, 1 }
     }
   };
   return new Turmite(rules, pal);
@@ -89,11 +89,11 @@ Turmite Irregular(color[] pal) {
 Turmite SpiralGrowth(color[] pal) {
   int[][][] rules = { 
     {
-      { 1,  0, 1 },
-      { 1, -1, 0 },
+      { 1, 0, 1 }, 
+      { 1, -1, 0 }, 
     }, {
-      { 1, +1, 1 },
-      { 0,  0, 0 },
+      { 1, +1, 1 }, 
+      { 0, 0, 0 }, 
     }
   };
   return new Turmite(rules, pal);
@@ -102,11 +102,11 @@ Turmite SpiralGrowth(color[] pal) {
 Turmite ChaoticGrowth(color[] pal) {
   int[][][] rules = {
     {
-      { 1, +1, 1 },
-      { 1, -1, 1 },
+      { 1, +1, 1 }, 
+      { 1, -1, 1 }, 
     }, {
-      { 1, +1, 1 },
-      { 0, +1, 0 },
+      { 1, +1, 1 }, 
+      { 0, +1, 0 }, 
     }
   };
   return new Turmite(rules, pal);
@@ -115,11 +115,11 @@ Turmite ChaoticGrowth(color[] pal) {
 Turmite ExpandingFrame(color[] pal) {
   int[][][] rules = {
     {
-      { 1, -1, 0 },
-      { 1, +1, 1 },
+      { 1, -1, 0 }, 
+      { 1, +1, 1 }, 
     }, {
-      { 0, +1, 0 },
-      { 0, -1, 1 },
+      { 0, +1, 0 }, 
+      { 0, -1, 1 }, 
     }
   };
   return new Turmite(rules, pal);
@@ -128,26 +128,26 @@ Turmite ExpandingFrame(color[] pal) {
 Turmite FibonacciSpiral(color[] pal) {
   int[][][] rules = {
     {
-      {1, -1, 1},
+      {1, -1, 1}, 
       {1, -1, 1}
     }, {
-      {1, +1, 1},
-      {0,  0, 0}
+      {1, +1, 1}, 
+      {0, 0, 0}
     }
   };
   return new Turmite(rules, pal);
 }
 
-Turmite Snowflake(color[] pal) {
+Turmite SnowFlake(color[] pal) {
   int[][][] rules = {
     {
-      {1, -1, 1},
+      {1, -1, 1}, 
       {1, +1, 0}
     }, {
-      {1, +2, 1},
+      {1, +2, 1}, 
       {1, +2, 2}
     }, {
-      {},
+      {}, 
       {0, +2, 0}
     } 
   };

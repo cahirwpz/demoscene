@@ -1,28 +1,28 @@
 static Board board;
 
 static int active = 0;
-static int experiment = 0;
+static int experiment = 3;
 
 Experiment[] experiments = {
-  new DualPlay(), new RandomPlay()
+  new DualPlay(), new RandomPlay(), new AdditivePlay(), new GenerationPlay()
 };
 
 void setup() {
   size(512, 604);
   background(0);
-  
+
   textFont(loadFont("Monaco-16.vlw"));
   textSize(16);
-  
-  board = new Board(128, 128);
+
   turmites = new ArrayList<Turmite>();
- 
+  board = new Board(128, 128);
+
   reset();
 }
 
 void status() {
   String status = experiments[experiment].status();
-  
+
   fill(64);
   rect(2, 512, width-8, 88, 8);
   fill(255);
@@ -35,11 +35,11 @@ void draw() {
 }
 
 void reset() {
-  board.reset();
   turmites.clear();
   experiments[experiment].setup();
+  board.reset();
 }
-  
+
 
 void keyPressed() {
   if (key == 'r') {

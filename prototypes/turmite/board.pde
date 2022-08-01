@@ -1,71 +1,58 @@
+import java.lang.reflect.*;
+
+final PApplet PAPPLET = this;
+
 static ArrayList<Turmite> turmites;
-static boolean fadeaway = false;
+static int generation = 0;
 
 final color BGCOL = #000000;
 final color FGCOL = #ff0000;
-final int STEPS = 64;
-
-class Tile {
-  int ci; /* color index */
-  int life;
-  Turmite owner;
-  
-  void age() {
-    life = life > 0 ? life - 1 : 0;
-    if (life == 0) {
-      reset();
-    }
-  }
-  
-  void reset() {
-    ci = 0;
-    life = 0;
-    owner = null;
-  }
-  
-  void move(Turmite turmite) {
-    ci = turmite.transition(ci);
-    life = ci > 0 ? 255 : 0;  
-    owner = turmite;
-  }
-
-  color colorOf() {
-    if (ci == 0 || owner == null) return BGCOL;
-    return lerpColor(0, owner.palette[ci], life / 255.0);
-  }
-
-}
 
 class Board {
+  boolean fadeaway;
+  boolean showhead;
+  int nsteps;
+
+  Class<? extends Tile> tileClass;
+
   Tile[] tiles;
   int w, h;
-  
+
   Board(int w, int h) {
     this.w = w;
     this.h = h;
+
+    tileClass = BasicTile.class;
     tiles = new Tile[w * h];
-    for (int i = 0; i < tiles.length; i++) {
-      tiles[i] = new Tile();
-    }
+
+    reset();
   }
-  
+
   void reset() {
-    for (int i = 0; i < tiles.length; i++) {
-      tiles[i].reset();
+    // MAGIC: https://discourse.processing.org/t/newinstance-method/25324/5
+    try {
+      Constructor<? extends Tile> ctor =
+        tileClass.getDeclaredConstructor(PAPPLET.getClass());
+      for (int i = 0; i < tiles.length; i++) {
+        tiles[i] = ctor.newInstance(PAPPLET);
+      }
+    } 
+    catch (Exception ex) {
+      System.out.println(ex.toString());
     }
 
     for (Turmite t : turmites) {
       t.reset();
     }
   }
-  
+
   int hp(int x) {
     x %= w;
     if (x < 0)
       x += w;
     return x;
   }
-  
+
   int vp(int y) {
     y %= h;
     if (y < 0)
@@ -80,17 +67,19 @@ class Board {
       }
     }
   }
-  
+
   void moveTurmites() {
     for (Turmite t : turmites) {
-      for (int i = 0; i < STEPS; i++) {
+      for (int i = 0; i < nsteps; i++) {
         int x = hp(t.x);
         int y = vp(t.y);
         tiles[y * w + x].move(t);
       }
     }
+
+    generation++;
   }
-  
+
   void draw() {
     loadPixels();
 
@@ -100,12 +89,14 @@ class Board {
         drawTile(i, j, tile.colorOf());
       }
     }
-    
-    for (Turmite t : turmites) {
-      drawTile(hp(t.x), vp(t.y), FGCOL);
+
+    if (showhead) {
+      for (Turmite t : turmites) {
+        drawTile(hp(t.x), vp(t.y), FGCOL);
+      }
     }
-    
-    updatePixels(); 
+
+    updatePixels();
   }
 
   void simulate() {
