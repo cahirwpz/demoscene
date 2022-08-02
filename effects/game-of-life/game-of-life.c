@@ -1,9 +1,9 @@
-#include "effect.h"
 #include "bitmap.h"
-#include "copper.h"
 #include "blitter.h"
-#include "sprite.h"
+#include "copper.h"
+#include "effect.h"
 #include "fx.h"
+#include "sprite.h"
 #include <system/interrupt.h>
 #include <system/memory.h>
 
@@ -12,7 +12,7 @@
 // live to the next generation and dead cells with 3 neighbours become alive).
 // If you need more introductory information check out
 // https://en.wikipedia.org/wiki/Conway's_Game_of_Life
-// 
+//
 // It works the following way - on each iteration we start with a board (a 1-bit
 // bitmap) that is the current game state. On this bitmap, 1's represent alive
 // cells, 0's represent dead cells. We perform several blits: first on this
@@ -36,12 +36,12 @@
 #define EXT_WIDTH_RIGHT 16
 #define EXT_HEIGHT_TOP 1
 #define EXT_HEIGHT_BOTTOM 1
-#define EXT_BOARD_MODULO (EXT_WIDTH_LEFT/8 + EXT_WIDTH_RIGHT/8)
+#define EXT_BOARD_MODULO (EXT_WIDTH_LEFT / 8 + EXT_WIDTH_RIGHT / 8)
 
-#define BOARD_WIDTH (DISP_WIDTH/2)
-#define BOARD_HEIGHT (DISP_HEIGHT/2)
-#define EXT_BOARD_WIDTH (BOARD_WIDTH+EXT_WIDTH_LEFT+EXT_WIDTH_RIGHT)
-#define EXT_BOARD_HEIGHT (BOARD_HEIGHT+EXT_HEIGHT_TOP+EXT_HEIGHT_BOTTOM)
+#define BOARD_WIDTH (DISP_WIDTH / 2)
+#define BOARD_HEIGHT (DISP_HEIGHT / 2)
+#define EXT_BOARD_WIDTH (BOARD_WIDTH + EXT_WIDTH_LEFT + EXT_WIDTH_RIGHT)
+#define EXT_BOARD_HEIGHT (BOARD_HEIGHT + EXT_HEIGHT_TOP + EXT_HEIGHT_BOTTOM)
 #define BOARD_DEPTH 1
 
 // "EXT_BOARD" is the area on which the game of life is calculated
@@ -70,25 +70,25 @@
 
 #include "data/p46basedprng.c"
 
-static CopListT* cp;
-static BitmapT* current_board;
+static CopListT *cp;
+static BitmapT *current_board;
 
 // intermediate results
-static BitmapT* lo;
-static BitmapT* hi;
-static BitmapT* x0;
-static BitmapT* x1;
-static BitmapT* x2;
-static BitmapT* x3;
-static BitmapT* x5;
-static BitmapT* x6;
+static BitmapT *lo;
+static BitmapT *hi;
+static BitmapT *x0;
+static BitmapT *x1;
+static BitmapT *x2;
+static BitmapT *x3;
+static BitmapT *x5;
+static BitmapT *x6;
 
 // pointers to copper instructions, for rewriting bitplane pointers
-static CopInsT* bplptr[DISP_DEPTH];
+static CopInsT *bplptr[DISP_DEPTH];
 
 // circular buffer of previous game states as they would be rendered (with
 // horizontally doubled pixels)
-static BitmapT* prev_states[PREV_STATES_DEPTH];
+static BitmapT *prev_states[PREV_STATES_DEPTH];
 
 // states_head % PREV_STATES_DEPTH points to the newest (currently being
 // pixel-doubled, not displayed yet) game state in prev_states
@@ -107,29 +107,30 @@ static u_short minterms_table[9] = {
   NANBNC | ABC,
   NABNC | ANBNC | ANBC | ABC,
   NANBC | NABC | ANBNC | ANBC,
-  NABNC | ANBC
+  NABNC | ANBC,
 };
 
 static PaletteT palette = {
   .count = 16,
-  .colors = {
-    0x000,  // 0000
-    0x006,  // 0001
-    0x026,  // 0010
-    0x026,  // 0011
-    0x05B,  // 0100
-    0x05B,  // 0101
-    0x05B,  // 0110
-    0x05B,  // 0111
-    0x09F,  // 1000
-    0x09F,  // 1001
-    0x09F,  // 1010
-    0x09F,  // 1011
-    0x09F,  // 1100
-    0x09F,  // 1101
-    0x09F,  // 1110
-    0x09F,  // 1111
-  }
+  .colors =
+    {
+      0x000, // 0000
+      0x006, // 0001
+      0x026, // 0010
+      0x026, // 0011
+      0x05B, // 0100
+      0x05B, // 0101
+      0x05B, // 0110
+      0x05B, // 0111
+      0x09F, // 1000
+      0x09F, // 1001
+      0x09F, // 1010
+      0x09F, // 1011
+      0x09F, // 1100
+      0x09F, // 1101
+      0x09F, // 1110
+      0x09F, // 1111
+    },
 };
 
 // Used by CPU to quickly transform 1x1 pixels into 2x1 pixels.
@@ -151,28 +152,27 @@ static void MakeDoublePixels(void) {
 
 // setup blitter to calculate a function of three horizontally adjacent lit
 // pixels the setup in this blit is as follows (what data each channel sees):
-//            -1                  0                  1                  2
-// C: [----------------] [----------------] [c---------------] [----------------]
-//            -1                  0                  1                  2
-// A: [----------------] [---------------a] [a---------------] [----------------]
-//                                       |   ^
-//                                       >>>>^
+//            -1                 0                 1                 2
+// C: [---------------] [---------------] [c--------------] [---------------]
+//            -1                 0                 1                 2
+// A: [---------------] [--------------a] [a--------------] [---------------]
+//                                     |   ^
+//                                     >>>>^
 //                         'a' gets shifted one to the right
 //
-//             0                  1                  2                  3
-// B: [----------------] [-b--------------] [b---------------] [----------------]
-//                         |                 ^
-//                         >>>>>>>>>>>>>>>>>>^
+//             0                 1                 2                 3
+// B: [---------------] [-b-------------] [b--------------] [---------------]
+//                        |                ^
+//                        >>>>>>>>>>>>>>>>>^
 //                'b' starts one word later and gets shifted 15 to the right
 //
 // Thus a, b and c are lined up properly to perform boolean function on them
 //
-static void BlitAdjacentHorizontal(const BitmapT* source, BitmapT* target,
-                                   u_short minterms)
-{
-  void* srcCenter = source->planes[0] + source->bytesPerRow; // C channel
-  void* srcRight = source->planes[0] + source->bytesPerRow + 2; // B channel
-  void* srcLeft = source->planes[0] + source->bytesPerRow; // A channel
+static void BlitAdjacentHorizontal(const BitmapT *source, BitmapT *target,
+                                   u_short minterms) {
+  void *srcCenter = source->planes[0] + source->bytesPerRow;    // C channel
+  void *srcRight = source->planes[0] + source->bytesPerRow + 2; // B channel
+  void *srcLeft = source->planes[0] + source->bytesPerRow;      // A channel
   u_short bltsize = (BOARD_HEIGHT << 6) | ((EXT_BOARD_WIDTH / 16));
 
   custom->bltcon0 = ASHIFT(1) | minterms | (SRCA | SRCB | SRCC | DEST);
@@ -192,12 +192,11 @@ static void BlitAdjacentHorizontal(const BitmapT* source, BitmapT* target,
 }
 
 // setup blitter to calculate a function of three vertically adjacent lit pixels
-static void BlitAdjacentVertical(const BitmapT* source, BitmapT* target, u_short
-                                 minterms)
-{
-  void* srcCenter = source->planes[0] + source->bytesPerRow; // C channel
-  void* srcUp = source->planes[0]; // A channel
-  void* srcDown = source->planes[0] + 2*source->bytesPerRow; // B channel
+static void BlitAdjacentVertical(const BitmapT *source, BitmapT *target,
+                                 u_short minterms) {
+  void *srcCenter = source->planes[0] + source->bytesPerRow;   // C channel
+  void *srcUp = source->planes[0];                             // A channel
+  void *srcDown = source->planes[0] + 2 * source->bytesPerRow; // B channel
   u_short bltsize = (BOARD_HEIGHT << 6) | ((EXT_BOARD_WIDTH / 16));
 
   custom->bltcon0 = minterms | (SRCA | SRCB | SRCC | DEST);
@@ -217,9 +216,9 @@ static void BlitAdjacentVertical(const BitmapT* source, BitmapT* target, u_short
 }
 
 // setup blitter for a standard blit without shifts
-static void BlitFunc(const BitmapT* sourceA, const BitmapT* sourceB, const
-                     BitmapT* sourceC, const BitmapT* target, u_short minterms)
-{
+static void BlitFunc(const BitmapT *sourceA, const BitmapT *sourceB,
+                     const BitmapT *sourceC, const BitmapT *target,
+                     u_short minterms) {
   u_short bltsize = (BOARD_HEIGHT << 6) | ((EXT_BOARD_WIDTH / 16));
 
   custom->bltcon0 = minterms | (SRCA | SRCB | SRCC | DEST);
@@ -238,28 +237,28 @@ static void BlitFunc(const BitmapT* sourceA, const BitmapT* sourceB, const
   custom->bltsize = bltsize;
 }
 
-static void (*PixelDouble)(u_char* source asm("a0"), u_short* target asm("a1"),
-                           u_short* lut asm("a2"));
+static void (*PixelDouble)(u_char *source asm("a0"), u_short *target asm("a1"),
+                           u_short *lut asm("a2"));
 
 #define PixelDoubleSize (BOARD_WIDTH * BOARD_HEIGHT * 10 + BOARD_HEIGHT * 2 + 6)
 
 // doubles pixels horizontally
-static void MakePixelDoublingCode(const BitmapT* bitmap) {
+static void MakePixelDoublingCode(const BitmapT *bitmap) {
   u_short x;
   u_short y;
-  u_short *code = (void*)PixelDouble;
+  u_short *code = (void *)PixelDouble;
 
   *code++ = 0x7200 | (EXT_BOARD_MODULO & 0xFF); // moveq #EXT_BOARD_MODULO,d1
   for (y = EXT_HEIGHT_TOP; y < bitmap->height - EXT_HEIGHT_BOTTOM; y++) {
-    for (x = EXT_WIDTH_LEFT/8; x < bitmap->bytesPerRow - EXT_WIDTH_RIGHT/8; x++)
-    {
+    for (x = EXT_WIDTH_LEFT / 8; x < bitmap->bytesPerRow - EXT_WIDTH_RIGHT / 8;
+         x++) {
       *code++ = 0x4240; // clr.w  d0               # 4
       *code++ = 0x1018; // move.b (a0)+,d0         # 8
       *code++ = 0xd080; // add.l  d0,d0            # 6
       *code++ = 0x32f2;
       *code++ = 0x0000; // move.w (a2,d0.w),(a1)+  # 18
       // perform a lookup in the pixel doubling lookup table
-      // (e.g. 00100110 -> 0000110000111100)    	
+      // (e.g. 00100110 -> 0000110000111100)
       // *double_target++ = double_pixels[*double_src++];
     }
     *code++ = 0xD1C1; // adda.l d1,a0
@@ -271,7 +270,7 @@ static void MakePixelDoublingCode(const BitmapT* bitmap) {
   *code++ = 0x4e75; // rts
 }
 
-static void MakeCopperList(CopListT* cp) {
+static void MakeCopperList(CopListT *cp) {
   u_short i;
 
   CopInit(cp);
@@ -282,24 +281,22 @@ static void MakeCopperList(CopListT* cp) {
   bplptr[1] = CopMove32(cp, bplpt[1], prev_states[1]->planes[0]);
   bplptr[2] = CopMove32(cp, bplpt[2], prev_states[2]->planes[0]);
   bplptr[3] = CopMove32(cp, bplpt[3], prev_states[3]->planes[0]);
-  for (i = 1; i <= DISP_HEIGHT; i += 2)
-  {
+  for (i = 1; i <= DISP_HEIGHT; i += 2) {
     // vertical pixel doubling
     CopMove16(cp, bpl1mod, -prev_states[0]->bytesPerRow);
     CopMove16(cp, bpl2mod, -prev_states[0]->bytesPerRow);
     CopWaitSafe(cp, Y(i), 0);
     CopMove16(cp, bpl1mod, 0);
     CopMove16(cp, bpl2mod, 0);
-    CopWaitSafe(cp, Y(i+1), 0);
+    CopWaitSafe(cp, Y(i + 1), 0);
   }
   CopEnd(cp);
 }
 
 static void UpdateBitplanePointers(void) {
-  BitmapT* cur;
+  BitmapT *cur;
   u_short i;
-  for (i = 1; i < PREV_STATES_DEPTH; i++)
-  {
+  for (i = 1; i < PREV_STATES_DEPTH; i++) {
     // update bitplane order: (states_head + i + 1) % PREV_STATES_DEPTH iterates
     // from the oldest+1 (to facilitate double buffering; truly oldest state is
     // the one we won't display as it's gonna be a buffer for the next game
@@ -316,7 +313,8 @@ static void GameOfLife(void) {
   ClearIRQ(INTF_BLIT);
 
   switch (phase) {
-    // sum horizontally adjacent pixels - produces two results (sum bits): lo and hi
+    // sum horizontally adjacent pixels - produces two results (sum bits): lo
+    // and hi
     case 0:
       BlitAdjacentHorizontal(current_board, lo, minterms_table[0]);
       break;
@@ -451,8 +449,8 @@ PROFILE(GOLStep)
 
 static void Render(void) {
   void *src = prev_states[states_head % PREV_STATES_DEPTH]->planes[0];
-  void *dst = current_board->planes[0] +
-    current_board->bytesPerRow + EXT_WIDTH_LEFT / 8;
+  void *dst =
+    current_board->planes[0] + current_board->bytesPerRow + EXT_WIDTH_LEFT / 8;
 
   ProfilerStart(GOLStep);
   PixelDouble(dst, src, double_pixels);
