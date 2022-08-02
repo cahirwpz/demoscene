@@ -46,8 +46,8 @@ class DualPlay implements Experiment {
   String status() {
     return String.format(
       "Multiple Turmites Experiment\n" +
-      "[n]ext [p]revious [r]eset\n" +
-      "[1-%d] active (%d) [f]adeaway: %s\n" +
+      "next [e]xperiment, next [t]ile, [r]eset\n" +
+      "[1-%d] active (%d), [f]adeaway: %s\n" +
       "(LMB) set position", 
       turmites.size(), active + 1, board.fadeaway ? "yes" : "no ");
   }
@@ -71,12 +71,15 @@ class RandomPlay implements Experiment {
   }
 
   void keyPressed() {
+    Turmite t = turmites.get(active);
     if (key == 'g') {
-      Turmite t = turmites.get(active);
       Turmite r = RandomTurmite(4, t.palette);
       r.position(t.init_x, t.init_y);
       turmites.set(active, r);
       board.reset();
+    }
+    if (key == 'd') {
+      t.dump();
     }
   }
 
@@ -86,8 +89,8 @@ class RandomPlay implements Experiment {
   String status() {
     return String.format(
       "Random Turmite Experiment\n" +
-      "[n]ext [p]revious [r]eset\n" +
-      "[g]enerate");
+      "next [e]xperiment, next [t]ile, [r]eset\n" +
+      "[g]enerate, [d]ump");
   }
 }
 
@@ -115,7 +118,7 @@ class AdditivePlay implements Experiment {
   String status() {
     return String.format(
       "Additive Turmite Experiment\n" +
-      "[n]ext [p]revious [r]eset\n" +
+      "next [e]xperiment, next [t]ile, [r]eset\n" +
       "");
   }
 }
@@ -144,7 +147,7 @@ class GenerationPlay implements Experiment {
   String status() {
     return String.format(
       "Generation Count Turmite Experiment\n" +
-      "[n]ext [p]revious [r]eset\n" +
+      "next [e]xperiment, next [t]ile, [r]eset\n" +
       "");
   }
 }

@@ -1,7 +1,7 @@
 static Board board;
 
 static int active = 0;
-static int experiment = 3;
+static int experiment = 0;
 
 Experiment[] experiments = {
   new DualPlay(), new RandomPlay(), new AdditivePlay(), new GenerationPlay()
@@ -42,14 +42,10 @@ void reset() {
 
 
 void keyPressed() {
-  if (key == 'r') {
+  if (key == 'e') {
     board.reset();
-  } else if (key == 'p') {
-    experiment--;
-    if (experiment < 0) {
-      experiment = experiments.length - 1;
-    }
-    reset();
+  } else if (key == 't') {
+    board.nextTileClass();
   } else if (key == 'n') {
     experiment++;
     if (experiment >= experiments.length) {

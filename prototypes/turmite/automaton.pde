@@ -71,6 +71,20 @@ class Turmite {
 
     return col;
   }
+  
+  void dump() {
+    println("{");
+    for (int i = 0; i < rules.length; i++) {
+      println("  {");
+      for (int j = 0; j < rules[i].length; j++) {
+        int[] row = rules[i][j];
+        println(String.format("    {%d, %d, %d},",
+                               row[0], row[1], row[2]));
+      }
+      println("  },");
+    }
+    println("}");
+  }
 }
 
 Turmite Irregular(color[] pal) {
@@ -147,7 +161,7 @@ Turmite SnowFlake(color[] pal) {
       {1, +2, 1}, 
       {1, +2, 2}
     }, {
-      {}, 
+      {0, +2, 0}, 
       {0, +2, 0}
     } 
   };

@@ -14,6 +14,7 @@ class Board {
   int nsteps;
 
   Class<? extends Tile> tileClass;
+  int activeClass;
 
   Tile[] tiles;
   int w, h;
@@ -44,6 +45,15 @@ class Board {
     for (Turmite t : turmites) {
       t.reset();
     }
+  }
+
+  void nextTileClass() {
+    final Class[] classes = {
+      BasicTile.class, HeatTile.class, GenerationTile.class 
+    };
+    activeClass = (activeClass + 1) % classes.length;
+    tileClass = classes[activeClass];
+    reset();
   }
 
   int hp(int x) {
