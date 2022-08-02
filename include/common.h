@@ -47,8 +47,8 @@
 /* assumes that abs(idx) < 32768 */
 static inline short getword(void *tab, short idx) {
   short res;
-  asm("addw  %1,%1\n"
-      "movew (%2,%1:w),%0\n"
+  asm("addw  %1,%1\n\t"
+      "movew (%2,%1:w),%0"
       : "=r" (res)
       : "d" (idx), "a" (tab)
       : "1");
@@ -58,9 +58,9 @@ static inline short getword(void *tab, short idx) {
 /* assumes that abs(idx) < 16384 */
 static inline int getlong(void *tab, short idx) {
   int res;
-  asm("addw  %1,%1\n"
-      "addw  %1,%1\n"
-      "movel (%2,%1:w),%0\n"
+  asm("addw  %1,%1\n\t"
+      "addw  %1,%1\n\t"
+      "movel (%2,%1:w),%0"
       : "=r" (res)
       : "d" (idx), "a" (tab)
       : "1");
@@ -92,7 +92,7 @@ static inline short div16(int a, short b) {
 
 static inline short mod16(int a, short b) {
   short r;
-  asm("divs %2,%0\n"
+  asm("divs %2,%0\n\t"
       "swap %0"
       : "=d" (r)
       : "0" (a), "dm" (b));
@@ -106,6 +106,14 @@ static inline int mul16(short a, short b) {
       : "0" (a), "dm" (b));
   return r;
 }
+
+/* _n:int / _d:short -> _q:short (quotient), _r:short (remainder) */ 
+#define divmod16(_n, _d, _q, _r)                                               \
+  asm("divs %3,%0\n\t"                                                         \
+      "move.w %0,%1\n\t"                                                       \
+      "swap %0"                                                                \
+      : "=d" (_r), "=d" (_q)                                                   \
+      : "0" (_n), "d" (_d));
 
 static inline void bclr(u_char *ptr, char bit) {
   asm("bclr %1,%0" :: "m" (*ptr), "dI" (bit));

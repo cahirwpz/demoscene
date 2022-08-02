@@ -1,12 +1,12 @@
-#include "effect.h"
-#include "interrupt.h"
-#include "memory.h"
-#include "cinter.h"
-#include "console.h"
-#include "copper.h"
-#include "keyboard.h"
-#include "event.h"
-#include "blitter.h"
+#include <effect.h>
+#include <blitter.h>
+#include <cinter.h>
+#include <console.h>
+#include <copper.h>
+#include <system/event.h>
+#include <system/interrupt.h>
+#include <system/keyboard.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -83,7 +83,7 @@ static void Init(void) {
   CinterInit(module, instruments, player);
   musicStart = player->c_MusicPointer;
 
-  AddIntServer(VertBlankChain, CinterMusicServer);
+  AddIntServer(INTB_VERTB, CinterMusicServer);
 
   ConsoleSetCursor(&console, 0, 0);
   ConsolePutStr(&console, 
@@ -94,7 +94,7 @@ static void Init(void) {
 }
 
 static void Kill(void) {
-  RemIntServer(VertBlankChain, CinterMusicServer);
+  RemIntServer(INTB_VERTB, CinterMusicServer);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_AUDIO);
 

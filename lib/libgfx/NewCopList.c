@@ -1,5 +1,5 @@
 #include <copper.h>
-#include <memory.h>
+#include <system/memory.h>
 
 CopListT *NewCopList(u_short length) {
   CopListT *list = MemAlloc(sizeof(CopListT) + length * sizeof(CopInsT),

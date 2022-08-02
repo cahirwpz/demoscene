@@ -2,9 +2,9 @@
 #define __GUI_H__
 
 #include "common.h"
-#include "event.h"
 #include "gfx.h"
 #include "font.h"
+#include <system/event.h>
 
 typedef enum {
   UI_BG_INACTIVE = 0,

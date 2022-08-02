@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "pixmap.h"
-#include "fx.h"
-#include "memory.h"
-#include "sprite.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <pixmap.h>
+#include <sprite.h>
+#include <system/memory.h>
 
 #define WIDTH   144
 #define HEIGHT  255
@@ -53,10 +53,10 @@ static void MakeCopperList(CopListT **ptr, short n) {
 
   CopEnd(cp);
 
-  CopInsSet32(sprptr[n][4], left[0]);
-  CopInsSet32(sprptr[n][5], left[1]);
-  CopInsSet32(sprptr[n][6], right[0]);
-  CopInsSet32(sprptr[n][7], right[1]);
+  CopInsSetSprite(sprptr[n][4], left[0]);
+  CopInsSetSprite(sprptr[n][5], left[1]);
+  CopInsSetSprite(sprptr[n][6], right[0]);
+  CopInsSetSprite(sprptr[n][7], right[1]);
 
   *ptr = cp;
 }
@@ -71,10 +71,10 @@ static void Init(void) {
   MakeCopperList(&cp[0], 0);
   MakeCopperList(&cp[1], 1);
 
-  SpriteUpdatePos(left[0], left_height, X(0), Y(0));
-  SpriteUpdatePos(left[1], left_height, X(16), Y(0));
-  SpriteUpdatePos(right[0], right_height, X(320 - 32), Y(0));
-  SpriteUpdatePos(right[1], right_height, X(320 - 16), Y(0));
+  SpriteUpdatePos(left[0], X(0), Y(0));
+  SpriteUpdatePos(left[1], X(16), Y(0));
+  SpriteUpdatePos(right[0], X(320 - 32), Y(0));
+  SpriteUpdatePos(right[1], X(320 - 16), Y(0));
 
   CopListActivate(cp[1]);
   EnableDMA(DMAF_RASTER | DMAF_SPRITE);

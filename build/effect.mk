@@ -5,15 +5,15 @@ SOURCES = $(EFFECT).c
 endif
 
 LIBS += libblit libgfx libmisc libc
-CPPFLAGS += -I$(TOPDIR)/loader
-LDEXTRA = $(TOPDIR)/loader/loader.a
+LDEXTRA = $(TOPDIR)/system/system.a
 LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 
-CRT0 = $(TOPDIR)/loader/crt0.o
+CRT0 = $(TOPDIR)/system/crt0.o
 BOOTLOADER = $(TOPDIR)/bootloader.bin
+ROMSTARTUP = $(TOPDIR)/a500rom.bin
 
-EXTRA-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).adf $(EFFECT).rom
-CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe.dbg $(EFFECT).exe.map 
+EXTRA-FILES += $(DATA_GEN) $(EFFECT).img $(EFFECT).adf $(EFFECT).rom
+CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map 
 
 all: build
 
@@ -21,10 +21,10 @@ all: build
 $(TOPDIR)/lib/lib%.a: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-$(TOPDIR)/loader/%.o: FORCE
+$(TOPDIR)/system/%.o: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-$(TOPDIR)/loader/%.a: FORCE
+$(TOPDIR)/system/%.a: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
 $(TOPDIR)/effects/%.a: FORCE
@@ -35,22 +35,12 @@ $(TOPDIR)/%.bin: FORCE
 
 include $(TOPDIR)/build/common.mk
 
-$(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA)
+$(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA) $(LDSCRIPT)
 	@echo "[LD] $(addprefix $(DIR),$(OBJECTS)) -> $(DIR)$@"
-	$(LD) $(LDFLAGS) -T$(TOPDIR)/amiga.ld -Map=$@.map -o $@ \
-		--start-group $^ --end-group
+	$(LD) $(LDFLAGS) -L$(TOPDIR)/system -T$(LDSCRIPT) -Map=$@.map -o $@ \
+		--start-group $(filter-out %.lds,$^) --end-group
 	$(CP) $@ $@.dbg
 	$(STRIP) $@
-
-%.rom.asm: $(TOPDIR)/a500rom.asm $(TOPDIR)/bootloader.asm
-	@echo "[SED] $(notdir $^) -> $(DIR)$@"
-	sed -e 's,$$(TOPDIR),$(TOPDIR),g' \
-	    -e 's,$$(EFFECT),$(EFFECT),g' \
-	    $(TOPDIR)/a500rom.asm > $@
-
-%.rom: %.rom.asm %.exe
-	@echo "[VASM] $(addprefix $(DIR),$^) -> $(DIR)$@"
-	$(VASM) -Fbin $(VASMFLAGS) -o $@ $<
 
 data/%.c: data/%.lwo
 	@echo "[LWO] $(DIR)$< -> $(DIR)$@"
@@ -58,23 +48,31 @@ data/%.c: data/%.lwo
 
 data/%.c: data/%.psfu
 	@echo "[PSF] $(DIR)$^ -> $(DIR)$@"
-	$(PSF2C) $(PSF2C.$*) $< > $@
+	$(PSF2C) $(PSF2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
 data/%.c: data/%.png
 	@echo "[PNG] $(DIR)$< -> $(DIR)$@"
-	$(PNG2C) $(PNG2C.$*) $< > $@
+	$(PNG2C) $(PNG2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
 data/%.c: data/%.2d
 	@echo "[2D] $(DIR)$< -> $(DIR)$@"
-	$(CONV2D) $(CONV2D.$*) $< > $@
+	$(CONV2D) $(CONV2D.$*) $< > $@ || (rm -f $@ && exit 1)
 
 data/%.c: data/%.sync
 	@echo "[SYNC] $(DIR)$< -> $(DIR)$@"
-	$(SYNC2C) $(SYNC2C.$*) $< > $@
+	$(SYNC2C) $(SYNC2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
-%.adf: %.exe $(DATA) $(DATA_GEN) $(BOOTLOADER)
-	@echo "[ADF] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
-	$(FSUTIL) -b $(BOOTLOADER) create $@ $(filter-out %bootloader.bin,$^)
+%.img: %.exe $(DATA) $(DATA_GEN)
+	@echo "[IMG] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
+	$(FSUTIL) create $@ $(filter-out %bootloader.bin,$^)
+
+%.adf: %.img $(BOOTLOADER) 
+	@echo "[ADF] $(DIR)$< -> $(DIR)$@"
+	$(ADFUTIL) -b $(BOOTLOADER) $< $@ 
+
+%.rom: %.img $(ROMSTARTUP)
+	@echo "[ROM] $(DIR)$< -> $(DIR)$@"
+	$(ROMUTIL) $(ROMSTARTUP) $< $@ 
 
 # Default debugger - can be changed by passing DEBUGGER=xyz to make.
 DEBUGGER ?= gdb
@@ -83,7 +81,7 @@ run-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 debug-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
-	$(LAUNCH) -d $(DEBUGGER) -f $(EFFECT).adf -e $(EFFECT).elf
+	$(LAUNCH) -d $(DEBUGGER) -f $(EFFECT).adf -e $(EFFECT).exe.dbg
 
 run: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
@@ -92,4 +90,4 @@ debug: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -d $(DEBUGGER) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 .PHONY: run debug run-floppy debug-floppy
-.PRECIOUS: $(BOOTLOADER)
+.PRECIOUS: $(BOOTLOADER) $(EFFECT).img

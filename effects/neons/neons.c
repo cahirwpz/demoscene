@@ -1,11 +1,11 @@
 #include "effect.h"
-#include "interrupt.h"
 #include "copper.h"
 #include "gfx.h"
 #include "blitter.h"
 #include "2d.h"
 #include "fx.h"
 #include <stdlib.h>
+#include <system/interrupt.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -144,13 +144,13 @@ static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
-  AddIntServer(VertBlankChain, RotatePaletteInterrupt);
+  AddIntServer(INTB_VERTB, RotatePaletteInterrupt);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
-  RemIntServer(VertBlankChain, RotatePaletteInterrupt);
+  RemIntServer(INTB_VERTB, RotatePaletteInterrupt);
 
   DeleteCopList(cp);
 }

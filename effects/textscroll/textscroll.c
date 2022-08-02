@@ -1,8 +1,8 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "gfx.h"
-#include "memory.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <gfx.h>
+#include <system/memory.h>
 
 #define WIDTH 640
 #define HEIGHT 256

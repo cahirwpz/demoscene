@@ -16,8 +16,6 @@ SOURCES := \
 	CopSetupBitplaneFetch.c \
 	CopSetupBitplanes.c \
 	CopSetupDisplayWindow.c \
-	CopSetupDualPlayfield.c \
-	CopSetupManualSprites.c \
 	CopSetupMode.c \
 	CopSetupSprites.c \
 	CopUpdateBitplanes.c \
@@ -26,17 +24,20 @@ SOURCES := \
 	DeleteBitmap.c \
 	DeleteCopList.c \
 	DeletePixmap.c \
-	DeleteSprite.c \
+	EndSprite.c \
 	InitSharedBitmap.c \
 	InsideArea.c \
 	LoadPalette.c \
+	MakeSprite.c \
 	NewBitmapCustom.c \
 	NewCopList.c \
 	NewPixmap.c \
-	NewSprite.c \
-	NullSprite.c \
+	NullSprData.c \
 	PixmapScramble_4_1.c \
 	PixmapScramble_4_2.c \
+	SetupBitplaneFetch.c \
+	SetupDisplayWindow.c \
+	SetupMode.c \
 	SetupPlayfield.c \
 	SpriteUpdatePos.c \
 	c2p_1x1_4.asm

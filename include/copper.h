@@ -66,31 +66,27 @@ static inline void CopListRun(CopListT *list) {
 
 /* Low-level functions */
 #define CSREG(reg) offsetof(struct Custom, reg)
-#define CopMove16(cp, reg, data) CopMoveWord((cp), CSREG(reg), (data))
-#define CopMove32(cp, reg, data) CopMoveLong((cp), CSREG(reg), (int)(data))
+#define CopInsMove16(ins, reg, data) \
+  ins = _CopInsMove16(ins, CSREG(reg), (data))
+#define CopInsMove32(ins, reg, data) \
+  ins = _CopInsMove32(ins, CSREG(reg), (int)(data))
 
-static inline CopInsT *CopMoveWord(CopListT *list, short reg, short data) {
-  CopInsT *pos = list->curr;
-  CopInsT *ins = list->curr;
+static inline CopInsT *_CopInsMove16(CopInsT *ins, short reg, short data) {
   *((u_short *)ins)++ = reg;
   *((u_short *)ins)++ = data;
-  list->curr = ins;
-  return pos;
+  return ins;
 }
 
-static inline void CopInsSet16(CopInsT *ins, short data) {
-  ins->move.data = data;
-}
-
-static inline CopInsT *CopMoveLong(CopListT *list, short reg, int data) {
-  CopInsT *pos = list->curr;
-  CopInsT *ins = list->curr;
+static inline CopInsT *_CopInsMove32(CopInsT *ins, short reg, int data) {
   *((u_short *)ins)++ = reg + 2;
   *((u_short *)ins)++ = data;
   *((u_short *)ins)++ = reg;
   *((u_short *)ins)++ = swap16(data);
-  list->curr = ins;
-  return pos;
+  return ins;
+}
+
+static inline void CopInsSet16(CopInsT *ins, short data) {
+  ins->move.data = data;
 }
 
 static inline void CopInsSet32(CopInsT *ins, void *data) {
@@ -101,17 +97,38 @@ static inline void CopInsSet32(CopInsT *ins, void *data) {
                : "m" (ins[1].move.data), "m" (ins[0].move.data));
 }
 
+#define CopMove16(cp, reg, data) _CopMove16((cp), CSREG(reg), (data))
+#define CopMove32(cp, reg, data) _CopMove32((cp), CSREG(reg), (int)(data))
+
+static inline CopInsT *_CopMove16(CopListT *list, short reg, short data) {
+  CopInsT *pos = list->curr;
+  list->curr = _CopInsMove16(list->curr, reg, data);
+  return pos;
+}
+
+static inline CopInsT *_CopMove32(CopListT *list, short reg, int data) {
+  CopInsT *pos = list->curr;
+  list->curr = _CopInsMove32(list->curr, reg, data);
+  return pos;
+}
+
 /* Official way to represent no-op copper instruction. */
-#define CopNoOp(cp) CopMoveWord(cp, 0x1FE, 0)
+#define CopNoOp(cp) _CopMove16(cp, 0x1FE, 0)
 
 /* Wait for raster beam position to be greater or equal to (vp, hp). */
-static inline CopInsT *CopWait(CopListT *list, short vp, short hp) {
-  CopInsT *pos = list->curr;
-  CopInsT *ins = list->curr;
+#define CopInsWait(ins, vp, hp) \
+  ins = _CopInsWait(ins, vp, hp)
+
+static inline CopInsT *_CopInsWait(CopInsT *ins, short vp, short hp) {
   *((u_char *)ins)++ = vp;
   *((u_char *)ins)++ = hp | 1;
   *((u_short *)ins)++ = 0xfffe;
-  list->curr = ins;
+  return ins;
+}
+
+static inline CopInsT *CopWait(CopListT *list, short vp, short hp) {
+  CopInsT *pos = list->curr;
+  CopInsWait(list->curr, vp, hp);
   return pos;
 }
 
@@ -183,6 +200,7 @@ CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, short start);
 CopInsT *CopLoadColor(CopListT *list, short start, short end, short color);
 
 void CopSetupMode(CopListT *list, u_short mode, u_short depth);
+/* Arguments must be always specified in low resolution coordinates. */
 void CopSetupDisplayWindow(CopListT *list, u_short mode, 
                            u_short xs, u_short ys, u_short w, u_short h);
 void CopSetupBitplaneFetch(CopListT *list, u_short mode,
@@ -193,8 +211,6 @@ void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
                           const BitmapT *bitmap, short x, short y,
                           const Area2D *area);
 void CopUpdateBitplanes(CopInsT **bplptr, const BitmapT *bitmap, short n);
-void CopSetupDualPlayfield(CopListT *list, CopInsT **bplptr,
-                           const BitmapT *pf1, const BitmapT *pf2);
 
 static inline CopInsT *CopSetColor(CopListT *list, short i, short value) {
   return CopMove16(list, color[i], value);

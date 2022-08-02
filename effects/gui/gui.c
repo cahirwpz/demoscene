@@ -1,12 +1,12 @@
+#include <effect.h>
+#include <copper.h>
+#include <gui.h>
+#include <sprite.h>
 #include <stdio.h>
-#include "effect.h"
-#include "copper.h"
-#include "sprite.h"
-#include "gui.h"
-#include "event.h"
-#include "keyboard.h"
-#include "mouse.h"
-#include "memory.h"
+#include <system/event.h>
+#include <system/keyboard.h>
+#include <system/memory.h>
+#include <system/mouse.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -78,13 +78,14 @@ static void Init(void) {
   CopSetupSprites(cp, sprptr);
   CopEnd(cp);
 
-  CopInsSet32(sprptr[0], &pointer);
-  SpriteUpdatePos(&pointer, pointer_height, X(0), Y(0));
+  CopInsSetSprite(sprptr[0], &pointer);
+  SpriteUpdatePos(&pointer, X(0), Y(0));
 
   CopListActivate(cp);
 
   KeyboardInit();
-  MouseInit(0, 0, WIDTH - 1, HEIGHT - 1);
+  MouseInit(&(Box2D){.minX = 0, .minY = 0,
+                     .maxX = WIDTH - 1, .maxY = HEIGHT - 1});
 
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
@@ -112,7 +113,7 @@ static bool HandleEvent(void) {
       return false;
   } else if (ev->type == EV_MOUSE) {
     GuiHandleMouseEvent(gui, &ev->mouse);
-    SpriteUpdatePos(&pointer, pointer_height, X(ev->mouse.x), Y(ev->mouse.y));
+    SpriteUpdatePos(&pointer, X(ev->mouse.x), Y(ev->mouse.y));
   } else if (ev->type == EV_GUI) {
     WidgetT *wg = ev->gui.widget;
 

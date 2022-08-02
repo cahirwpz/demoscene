@@ -2,6 +2,7 @@ TOPDIR := $(realpath ..)
 
 SUBDIRS := \
 	anim \
+	anim-polygons \
 	ball \
 	bobs3d \
 	blurred \
@@ -19,6 +20,7 @@ SUBDIRS := \
 	glitch \
 	highway \
 	kbtest \
+	layers \
 	lines \
 	metaballs \
 	multipipe \
@@ -29,6 +31,7 @@ SUBDIRS := \
 	playp61 \
 	plotter \
 	prisms \
+	rotator \
 	shapes \
 	showpchg \
 	stripes \
@@ -42,6 +45,7 @@ SUBDIRS := \
 	uvlight \
 	uvmap \
 	uvmap-rgb \
+	weave \
 	wireframe
 
 FAILURES := \

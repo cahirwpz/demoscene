@@ -1,6 +1,6 @@
 #include <debug.h>
 #include <copper.h>
-#include <memory.h>
+#include <system/memory.h>
 
 void DeleteCopList(CopListT *list) {
   int unused = list->length - (list->curr - list->entry);
