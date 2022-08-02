@@ -409,7 +409,7 @@ static void Init(void) {
   BitmapClear(current_board);
   BitmapCopy(current_board, 20, EXT_HEIGHT_TOP + 10, &p46basedprng);
 
-  cp = NewCopList(300);
+  cp = NewCopList(800);
   MakeCopperList(cp);
   CopListActivate(cp);
 
