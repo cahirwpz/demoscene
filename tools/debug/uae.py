@@ -90,7 +90,7 @@ def ParseProcessorState(lines):
     regs['PC'] = int(lines.pop(0).split()[0], 16)
 
     # 'Next PC: 00fc0614'
-    assert(lines.pop(0).startswith('Next PC'))
+    assert lines.pop(0).startswith('Next PC')
 
     return regs
 
