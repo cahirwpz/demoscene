@@ -9,12 +9,13 @@ float field[];
 ForceField[] ff;
 
 HashMap<Integer, PImage> tiles;
+PGraphics pg;
 
 PImage getTile(float p0, float p1, float p2, float p3) {
-  boolean b0 = p0 < THRESHOLD;
-  boolean b1 = p1 < THRESHOLD;
-  boolean b2 = p2 < THRESHOLD;
-  boolean b3 = p3 < THRESHOLD;
+  boolean b0 = p0 > THRESHOLD;
+  boolean b1 = p1 > THRESHOLD;
+  boolean b2 = p2 > THRESHOLD;
+  boolean b3 = p3 > THRESHOLD;
 
   boolean i0 = b0 ^ b1;
   boolean i1 = b1 ^ b2;
@@ -29,8 +30,7 @@ PImage getTile(float p0, float p1, float p2, float p3) {
 
   assert(ni % 2 == 0);
 
-  boolean empty = b0 && b1 && b2 && b3;
-  boolean full = !(b0 || b1 || b2 || b3);
+  boolean full = b0 && b1 && b2 && b3;
 
   if (full) {
     i |= 1 << 12;
@@ -38,7 +38,7 @@ PImage getTile(float p0, float p1, float p2, float p3) {
 
   int l0 = 0, l1 = 0, l2 = 0, l3 = 0;
 
-  if (!full || !empty) {
+  if (ni > 0) {
     if (i0) {
       l0 = int(N * (THRESHOLD - p0) / (p1 - p0));
       assert(l0 < N && l0 >= 0);
@@ -74,13 +74,30 @@ PImage getTile(float p0, float p1, float p2, float p3) {
         tile.pixels[k] = color(255);
       }
     } else {
+      pg.beginDraw();
+      pg.background(0);
+      pg.stroke(255);
+
       if (ni == 2) {
         println("generate tile:", i, l0, l1, l2, l3);
+        
+        pg.beginShape();
+        
+        if (b0) pg.vertex(0, 0);
+        if (b1) pg.vertex(7, 0);
+        if (b2) pg.vertex(7, 7);
+        if (b3) pg.vertex(0, 7);
+        
+        pg.endShape(CLOSE);
       } else if (ni == 4) {
+        pg.line(0, N-1, N-1, 0);
+      } else {
       }
-
+      
+      pg.endDraw();
+        
       for (int k = 0; k < N * N; k++) {
-        tile.pixels[k] = color(0);
+        tile.pixels[k] = pg.pixels[k];
       }
     }
 
@@ -94,8 +111,10 @@ void setup() {
   size(640, 512);
 
   tiles = new HashMap<Integer, PImage>();
+  pg = createGraphics(N, N);
 
   field = new float[(WIDTH + N) * (HEIGHT + N)];
+  
   ff = new ForceField[3];
   ff[0] = new ForceField(new Circle(0.1));
   ff[1] = new ForceField(new Circle(0.1));
