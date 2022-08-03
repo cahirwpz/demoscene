@@ -54,6 +54,15 @@ func (h HunkExt) Type() HunkType {
 	return HUNK_EXT
 }
 
+func IsSymDef(et ExtType) bool {
+	return et == EXT_DEF || et == EXT_ABS || et == EXT_RES
+}
+
+func IsSymRef(et ExtType) bool {
+	return et == EXT_REF32 || et == EXT_REF16 || et == EXT_REF8 ||
+		et == EXT_DEXT32 || et == EXT_DEXT16 || et == EXT_DEXT8
+}
+
 func (h HunkExt) String() string {
 	var sb strings.Builder
 
