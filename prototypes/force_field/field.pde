@@ -1,21 +1,19 @@
-class ForceField {
+abstract class ForceField {
   private PVector o, dx, dy;
 
   private PVector origin, size;
   private float angle;
 
-  public ForceFunction func;
-
-  ForceField(ForceFunction func) {
+  ForceField() {
     origin = new PVector();
     size = new PVector();
 
     o = new PVector();
     dx = new PVector();
     dy = new PVector();
-
-    this.func = func;
   }
+  
+  abstract float force(PVector p);
 
   void scale(float x, float y) {
     size.set(x, y);
@@ -46,7 +44,7 @@ class ForceField {
     for (int y = 0; y < grid.h; y++, q.add(dy)) {
       p.set(q);
       for (int x = 0; x < grid.w; x++, p.add(dx)) {
-        field.add(x, y, opDist(func.force(p)));
+        field.add(x, y, opDist(force(p)));
       }
     }
   }

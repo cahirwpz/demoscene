@@ -12,11 +12,7 @@ float sign(float x) {
   return x >= 0.0 ? 1.0 : -1.0;
 }
 
-interface ForceFunction {
-  public float force(PVector p);
-}
-
-class Circle implements ForceFunction {
+class Circle extends ForceField {
   float r;
 
   Circle(float r) {
@@ -28,7 +24,7 @@ class Circle implements ForceFunction {
   }
 }
 
-class Box implements ForceFunction {
+class Box extends ForceField {
   PVector b;
 
   Box(PVector b) {

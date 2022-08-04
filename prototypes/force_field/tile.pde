@@ -72,7 +72,6 @@ PImage makeTile(float p0, float p1, float p2, float p3) {
   return tile;
 }
 
-
 PImage getTile(float p0, float p1, float p2, float p3) {
   int ti = indexTile(p0, p1, p2, p3); 
   PImage tile = tiles.get(ti);
