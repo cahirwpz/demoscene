@@ -1,5 +1,6 @@
 final int WIDTH = 320;
 final int HEIGHT = 256;
+final int FPS = 60; 
 final float RATIO = (float)WIDTH / (float)HEIGHT;
 final int N = 8;
 final float THRESHOLD = 0.9;
@@ -9,32 +10,43 @@ float field[];
 ForceField[] ff;
 
 HashMap<Integer, PImage> tiles;
-PGraphics pg;
 
-PImage getTile(float p0, float p1, float p2, float p3) {
+void setup() {
+  size(640, 512);
+  frameRate(FPS);
+  noSmooth();
+
+  tiles = new HashMap<Integer, PImage>();
+  field = new float[WIDTH * HEIGHT];
+
+  ff = new ForceField[3];
+  ff[0] = new ForceField(new Circle(0.1));
+  ff[1] = new ForceField(new Circle(0.1));
+  ff[2] = new ForceField(new Circle(0.1));
+
+  // return sdEquilateralTriangle(p);
+  // return opOnion(c, 0.1);
+}
+
+int tileIndex(float p0, float p1, float p2, float p3) {
   boolean b0 = p0 > THRESHOLD;
   boolean b1 = p1 > THRESHOLD;
   boolean b2 = p2 > THRESHOLD;
   boolean b3 = p3 > THRESHOLD;
+
+  if (b0 && b1 && b2 && b3) // full ? 
+    return 1;
 
   boolean i0 = b0 ^ b1;
   boolean i1 = b1 ^ b2;
   boolean i2 = b2 ^ b3;
   boolean i3 = b3 ^ b0;
 
-  int i = (int(i0) << 12)
-    | (int(i1) << 13)
-    | (int(i2) << 14)
-    | (int(i3) << 15);
+  int i = (int(i0) << 12) | (int(i1) << 13) | (int(i2) << 14) | (int(i3) << 15)
+        | (int(b0) << 16) | (int(b1) << 17) | (int(b2) << 18) | (int(b3) << 19);
   int ni = int(i0) + int(i1) + int(i2) + int(i3);
 
   assert(ni % 2 == 0);
-
-  boolean full = b0 && b1 && b2 && b3;
-
-  if (full) {
-    i |= 1 << 12;
-  }
 
   int l0 = 0, l1 = 0, l2 = 0, l3 = 0;
 
@@ -58,82 +70,60 @@ PImage getTile(float p0, float p1, float p2, float p3) {
     }
 
     if (i3) {
-      l3 = int(N * (THRESHOLD - p3) / (p0 - p3));
+      l3 = int(N * (THRESHOLD - p0) / (p3 - p0));
       assert(l3 < N && l3 >= 0);
       i |= l3 << 9;
     }
   }
+  
+  return i;
+}
 
-  PImage tile = tiles.get(i);
+PImage getTile(float p0, float p1, float p2, float p3) {
+  int ti = tileIndex(p0, p1, p2, p3); 
+  PImage tile = tiles.get(ti);
 
   if (tile == null) {
     tile = createImage(N, N, RGB);
 
-    if (full) {
-      for (int k = 0; k < N * N; k++) {
-        tile.pixels[k] = color(255);
-      }
-    } else {
-      pg.beginDraw();
-      pg.background(0);
-      pg.stroke(255);
+    float dl = (p3 - p0) / N;
+    float dr = (p2 - p1) / N;
 
-      if (ni == 2) {
-        println("generate tile:", i, l0, l1, l2, l3);
-        
-        pg.beginShape();
-        
-        if (b0) pg.vertex(0, 0);
-        if (b1) pg.vertex(7, 0);
-        if (b2) pg.vertex(7, 7);
-        if (b3) pg.vertex(0, 7);
-        
-        pg.endShape(CLOSE);
-      } else if (ni == 4) {
-        pg.line(0, N-1, N-1, 0);
-      } else {
+    for (int ty = 0; ty < N; ty++) {
+      for (int tx = 0; tx < N; tx++) {
+        float p = lerp(p0, p1, (float)tx / N);
+        int v = (p >= THRESHOLD) ? 255 : 0;
+        tile.pixels[ty * N + tx] = color(v, v, v);
       }
-      
-      pg.endDraw();
-        
-      for (int k = 0; k < N * N; k++) {
-        tile.pixels[k] = pg.pixels[k];
-      }
+      p0 += dl;
+      p1 += dr;
     }
 
-    tiles.put(i, tile);
+    tiles.put(ti, tile);
   }
 
   return tile;
 }
 
-void setup() {
-  size(640, 512);
-
-  tiles = new HashMap<Integer, PImage>();
-  pg = createGraphics(N, N);
-
-  field = new float[(WIDTH + N) * (HEIGHT + N)];
-  
-  ff = new ForceField[3];
-  ff[0] = new ForceField(new Circle(0.1));
-  ff[1] = new ForceField(new Circle(0.1));
-  ff[2] = new ForceField(new Circle(0.1));
-
-  // return sdEquilateralTriangle(p);
-  // return opOnion(c, 0.1);
-}
-
-void bigPixel(int x, int y, color c) {
-  for (int j = y * 2; j < (y + 1) * 2; j++) {
-    for (int i = x * 2; i < (x + 1) * 2; i++) {
-      pixels[j * width + i] = c;
+void bigPixel(int xp, int yp, color c) {
+  xp *= 2; 
+  yp *= 2;
+  for (int y = yp; y < yp + 2; y++) {
+    for (int x = xp; x < xp + 2; x++) {
+      pixels[y * width + x] = c;
     }
   }
 }
 
+float lastSec = 0.0;
+
 void draw() {
-  float t = frameCount / 60.0;
+  float t = float(frameCount) / FPS;
+
+  if (t >= lastSec + 1.0) {
+    println("#tiles =", tiles.size());
+    lastSec += 1.0;
+  }
 
   ff[0].angle = HALF_PI * t;
   ff[0].size.set(4.0 * RATIO, 4.0);
@@ -154,16 +144,16 @@ void draw() {
 
   background(0);
   loadPixels(); 
-  for (int y = 0; y < HEIGHT; y += N) {
-    for (int x = 0; x < WIDTH; x += N) {
+  for (int y = 0; y < HEIGHT - N; y += N) {
+    for (int x = 0; x < WIDTH - N; x += N) {
       float p0 = field[y * WIDTH + x];
       float p1 = field[y * WIDTH + x + N];
-      float p2 = field[(y + N) * WIDTH + x];
-      float p3 = field[(y + N) * WIDTH + x + N];
+      float p2 = field[(y + N) * WIDTH + x + N];
+      float p3 = field[(y + N) * WIDTH + x];
       PImage tile = getTile(p0, p1, p2, p3);
-      for (int j = 0; j < N; j++) {
-        for (int i = 0; i < N; i++) {
-          bigPixel(x + i, y + j, tile.pixels[j * N + i]);
+      for (int ty = 0; ty < N; ty++) {
+        for (int tx = 0; tx < N; tx++) {
+          bigPixel(x + tx, y + ty, tile.pixels[ty * N + tx]);
         }
       }
     }
