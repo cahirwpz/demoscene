@@ -18,11 +18,11 @@ interface ForceFunction {
 
 class Circle implements ForceFunction {
   float r;
-  
-  Circle(float _r) {
-    r = _r;
+
+  Circle(float r) {
+    this.r = r;
   }
-  
+
   float force(PVector p) {
     return length(p) - r;
   }
@@ -30,12 +30,12 @@ class Circle implements ForceFunction {
 
 class Box implements ForceFunction {
   PVector b;
-  
-  Box(PVector _b) {
-    b = new PVector();
-    b.set(_b);
+
+  Box(PVector b) {
+    this.b = new PVector();
+    this.b.set(b);
   }
-  
+
   float force(PVector p) {
     float x = abs(p.x) - b.x;
     float y = abs(p.y) - b.y;
@@ -50,7 +50,8 @@ float sdEquilateralTriangle(PVector p) {
   if (x + k * y > 0.0) {
     float _x = 0.5 * (x - k * y);
     float _y = 0.5 * (-k * x - y);
-    x = _x; y = _y;
+    x = _x; 
+    y = _y;
   }
   x -= constrain(x, -2.0, 0.0);
   return -length(x, y) * sign(y);
@@ -68,46 +69,4 @@ float opDist(float d) {
   if (d < 0.0)
     return 1.0;
   return 1.0 / sq(1.0 + d);
-}
-
-class ForceField {
-  private PVector o, dx, dy;
-  
-  public PVector origin, size;
-  public float angle;
-  
-  public ForceFunction func;
-  
-  ForceField(ForceFunction ff) {
-    origin = new PVector();
-    size = new PVector();
-    
-    o = new PVector();
-    dx = new PVector();
-    dy = new PVector();
-  
-    func = ff;
-  }
-
-  void render(float field[]) {
-    dx.set(size.x / WIDTH, 0.0);
-    dy.set(0.0, size.y / HEIGHT);
-    dx.rotate(angle);
-    dy.rotate(angle);
-    
-    o.set(origin);  
-    o.sub(dx.x * WIDTH / 2, dx.y * WIDTH / 2);
-    o.sub(dy.x * HEIGHT / 2, dy.y * HEIGHT / 2);
-  
-    PVector q = new PVector();
-    PVector p = new PVector();
-   
-    q.set(o);
-    for (int y = 0, i = 0; y < HEIGHT; y++, q.add(dy)) {
-      p.set(q);
-      for (int x = 0; x < WIDTH; x++, i++, p.add(dx)) {
-        field[i] += opDist(func.force(p));
-      }
-    }
-  }
 }
