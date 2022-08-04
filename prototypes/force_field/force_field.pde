@@ -1,11 +1,10 @@
 final int N = 8;
 final int WIDTH = 320 / N + 1;
 final int HEIGHT = 256 / N + 1;
-final int FPS = 60; 
-final float RATIO = (float)WIDTH / (float)HEIGHT;
+final int FPS = 60;
 
-ForceField[] ff;
-Grid field;
+ArrayList<ForceField> fields;
+Grid grid;
 
 void setup() {
   size(640, 512);
@@ -13,12 +12,12 @@ void setup() {
   noSmooth();
 
   tiles = new HashMap<Integer, PImage>();
-  field = new Grid(WIDTH, HEIGHT);
+  grid = new Grid(WIDTH, HEIGHT);
 
-  ff = new ForceField[3];
-  ff[0] = new ForceField(new Circle(0.1));
-  ff[1] = new ForceField(new Circle(0.1));
-  ff[2] = new ForceField(new Circle(0.1));
+  fields = new ArrayList<ForceField>();
+  fields.add(new Circle());
+  fields.add(new EquilateralTriangle());
+  fields.add(new Box());
 
   // return sdEquilateralTriangle(p);
   // return opOnion(c, 0.1);
@@ -44,30 +43,35 @@ void draw() {
     lastSec += 1.0;
   }
 
-  ff[0].angle(HALF_PI * t);
-  ff[0].scale(4.0 * RATIO, 4.0);
-  ff[0].origin(1.25, 1.25 * sin(t * PI * 0.8));
+  ForceField ff;
+  
+  ff = fields.get(0);
+  ff.angle(HALF_PI * t);
+  ff.scale(.1, .1);
+  ff.origin(2.5, 2.5 * sin(t * PI * 0.85));
 
-  ff[1].angle(-HALF_PI * t);
-  ff[1].scale(4.0 * RATIO, 4.0);
-  ff[1].origin(-1.25, 1.25 * cos(t * PI * 0.7));
+  ff = fields.get(1);
+  ff.angle(-HALF_PI * t * 2);
+  ff.scale(.1, .1);
+  ff.origin(-2.5, 2.5 * cos(t * PI * 0.65));
 
-  ff[2].angle(-HALF_PI * t);
-  ff[2].scale(4.0 * RATIO, 4.0);
-  ff[2].origin(0.5 * sin(t * PI), 0.5 * cos(t * PI));
+  ff = fields.get(2);
+  ff.angle(-HALF_PI * t * 2);
+  ff.scale(.15, .15);
+  ff.origin(0.5 * sin(t * PI), 0.5 * cos(t * PI));
 
-  field.reset();
-  for (int i = 0; i < ff.length; i++)
-    ff[i].render(field);
+  grid.reset();
+  for (ForceField f : fields)
+    f.render(grid);
 
   background(0);
   loadPixels(); 
-  for (int y = 0; y < field.h - 1; y++) {
-    for (int x = 0; x < field.w - 1; x++) {
-      float p0 = field.get(x, y);
-      float p1 = field.get(x + 1, y);
-      float p2 = field.get(x + 1, y + 1);
-      float p3 = field.get(x, y + 1);
+  for (int y = 0; y < grid.h - 1; y++) {
+    for (int x = 0; x < grid.w - 1; x++) {
+      float p0 = grid.get(x, y);
+      float p1 = grid.get(x + 1, y);
+      float p2 = grid.get(x + 1, y + 1);
+      float p3 = grid.get(x, y + 1);
 
       PImage tile = getTile(p0, p1, p2, p3);
       for (int ty = 0; ty < N; ty++) {

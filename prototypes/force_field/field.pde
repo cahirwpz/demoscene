@@ -1,8 +1,12 @@
+final float RATIO = (float)WIDTH / (float)HEIGHT;
+
 abstract class ForceField {
   private PVector o, dx, dy;
 
   private PVector origin, size;
   private float angle;
+
+  float magnitude;
 
   ForceField() {
     origin = new PVector();
@@ -11,12 +15,14 @@ abstract class ForceField {
     o = new PVector();
     dx = new PVector();
     dy = new PVector();
+    
+    magnitude = 1.0;
   }
   
   abstract float force(PVector p);
 
   void scale(float x, float y) {
-    size.set(x, y);
+    size.set(1.0 / x * RATIO, 1.0 / y);
   }
 
   void origin(float x, float y) {
@@ -28,6 +34,7 @@ abstract class ForceField {
   }
 
   void render(Grid grid) {
+    // Intended transformation order: scale -> rotate -> translate
     dx.set(size.x / grid.w, 0.0);
     dy.set(0.0, size.y / grid.h);
     dx.rotate(angle);
@@ -44,7 +51,7 @@ abstract class ForceField {
     for (int y = 0; y < grid.h; y++, q.add(dy)) {
       p.set(q);
       for (int x = 0; x < grid.w; x++, p.add(dx)) {
-        field.add(x, y, opDist(force(p)));
+        grid.add(x, y, magnitude * opDist(force(p)));
       }
     }
   }
