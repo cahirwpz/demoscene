@@ -16,10 +16,14 @@
 
 #define GENERATION 1
 
+/* don't decrease it since color's value is stored on lower 3 bits of tile */
+#define STEP 8
+
 static CopListT *cp;
 static BitmapT *screen;
+
+/* higher 5 bits store value, lower 3 bits store color information */
 static u_char board[WIDTH * HEIGHT];
-static u_char value[WIDTH * HEIGHT];
 
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
@@ -192,20 +196,18 @@ static u_char generation = 0;
 
 static TurmiteT *TheTurmite =
 #if GENERATION
-&SnowFlake;
+  &SnowFlake;
 #else
-&Irregular;
+  &Irregular;
 #endif
 
 #if 1
 static inline
 #endif
-void TurmiteMove(TurmiteT *t, u_char *board, u_char *value, u_char *bpl) {
+void TurmiteMove(TurmiteT *t, u_char *board, u_char *bpl) {
   int pos = t->pos;
   short col = board[pos];
-  RuleT *rule = GetRule(t, col);
-
-  (void)value;
+  RuleT *rule = GetRule(t, col & (STEP - 1));
 
   t->state = rule->nstate;
 
@@ -213,17 +215,17 @@ void TurmiteMove(TurmiteT *t, u_char *board, u_char *value, u_char *bpl) {
     short newcol = rule->ncolor;
     u_char val;
 
-    board[pos] = newcol;
-
 #if GENERATION
     val = generation;
 #else
-    val = value[pos];
-    val += 4;
+    val = col & -STEP;
+    val += STEP;
     if (val == 0)
-       val -= 4;
-    value[pos] = val;
+       val -= STEP;
+    newcol |= val;
 #endif
+
+    board[pos] = newcol;
 
     SetPixel(bpl, pos, val);
   }
@@ -241,11 +243,11 @@ void SimulateTurmite(void) {
   short i;
 
   for (i = 0; i < NSTEPS; i++) {
-    TurmiteMove(TheTurmite, board, value, bpl);
+    TurmiteMove(TheTurmite, board, bpl);
   }
 
 #if GENERATION
-  generation += 2;
+  generation += STEP;
 #endif
 }
 
