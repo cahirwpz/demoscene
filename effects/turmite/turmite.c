@@ -50,12 +50,18 @@ static void Kill(void) {
 typedef struct Turmite {
   u_short pos;
   u_short dir, state;
-  u_char rules[2][2][4];
+  u_char rules[2][2][2];
 } TurmiteT;
 
 /* board color is assumed to be binary */
-#define RULE(col, dir, state) { (col), (dir), (state) }
+#define RULE(ncolor, ndir, nstate) \
+  { (nstate) * 2 + (ncolor), (ndir) }
+#define GETRULE(rules, state, color) \
+  ((u_char *)(rules) + ((state) | (color)) * 2)
 #define POS(x, y) ((y) * WIDTH + (x))
+#define RCOLOR(r) ((r)[0] & 1)
+#define RSTATE(r) ((r)[0] & -2)
+#define RDIR(r) ((r)[1])
 
 TurmiteT SpiralGrowth = {
   .pos = POS(128, 128),
@@ -87,17 +93,17 @@ TurmiteT ChaoticGrowth = {
   }
 };
 
-void TurmiteMove(TurmiteT *t) {
+/* static inline */
+void TurmiteMove(TurmiteT *t, u_char *board, u_char *bpl) {
   u_int pos = t->pos;
   u_char col = board[pos];
-  u_char *change = t->rules[t->state][col];
+  u_char *rule = GETRULE(t->rules, t->state, col);
   u_short dir;
 
-  board[pos] = change[0];
-  t->state = change[2];
+  board[pos] = RCOLOR(rule);
+  t->state = RSTATE(rule);
 
   {
-    u_char *bpl = screen->planes[0]; 
     u_int offset = pos >> 3;
     u_char bit = ~pos;
     if (t->state) {
@@ -108,7 +114,7 @@ void TurmiteMove(TurmiteT *t) {
   }
 
   dir = t->dir;
-  dir += change[1];
+  dir += RDIR(rule);
   dir &= 3;
 
   t->dir = dir;
@@ -125,10 +131,11 @@ void TurmiteMove(TurmiteT *t) {
 }
 
 /* static */ void SimulateTurmite(void) {
+  u_char *bpl = screen->planes[0]; 
   short i;
 
   for (i = 0; i < NSTEPS; i++) {
-    TurmiteMove(&ChaoticGrowth);
+    TurmiteMove(&ChaoticGrowth, board, bpl);
   }
 }
 
