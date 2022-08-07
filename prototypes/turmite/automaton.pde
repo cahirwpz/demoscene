@@ -85,6 +85,25 @@ class Turmite {
     }
     println("}");
   }
+
+  void dumpJSON(String filename) {
+    JSONArray dump = new JSONArray();
+    for (int i = 0; i < rules.length; i++) {
+      JSONArray outer = new JSONArray();
+      for (int j = 0; j < rules[i].length; j++) {
+        JSONArray inner = new JSONArray();
+        int[] row = rules[i][j];
+        inner.append(row[0]);
+        inner.append(row[1]);
+        inner.append(row[2]);
+        outer.append(inner);
+      }
+      dump.append(outer);
+    }
+    JSONArray prevdump = loadJSONArray(filename);
+    prevdump.append(dump);
+    saveJSONArray(prevdump, filename);
+  }
 }
 
 Turmite Irregular(color[] pal) {
