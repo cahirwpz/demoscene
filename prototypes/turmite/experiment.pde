@@ -198,7 +198,14 @@ class FromJSONPlay implements Experiment {
   void resetExperiment() {
     turmites.clear();
     board.reset();
-    Turmite t = new Turmite(rules[index], pal);
+    Turmite t;
+    if (rules.length > 0)
+      t = new Turmite(rules[index], pal);
+    else
+    {
+      int[][][] placeholderRules = {{{0, 0, 0}}};
+      t = new Turmite(placeholderRules, pal);
+    }
     t.position(board.w / 2, board.h / 2);
     t.reset();
     turmites.add(t);
