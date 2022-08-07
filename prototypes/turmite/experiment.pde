@@ -224,7 +224,7 @@ class FromJSONPlay implements Experiment {
     return String.format(
       "Turmites from %s\n" +
       "next [e]xperiment, next [t]ile, [r]eset\n" +
-      "[n]ext wolfram turmite, [p]rev wolfram turmite\n" +
+      "[n]ext turmite, [p]rev turmite\n" +
       "index: %d" +
       "", filename, index);
   }
