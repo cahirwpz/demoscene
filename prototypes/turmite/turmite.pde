@@ -3,8 +3,15 @@ static Board board;
 static int active = 0;
 static int experiment = 0;
 
+Random random = new Random();
+
 Experiment[] experiments = {
-  new DualPlay(), new RandomPlay(), new AdditivePlay(), new GenerationPlay()
+  new DualPlay(),
+  new RandomPlay(),
+  new AdditivePlay(),
+  new GenerationPlay(),
+  new FromJSONPlay("wolfram.json"), // extracted from https://demonstrations.wolfram.com/Turmites/ 
+  new FromJSONPlay("dumps.json"),
 };
 
 void setup() {
@@ -42,11 +49,11 @@ void reset() {
 
 
 void keyPressed() {
-  if (key == 'e') {
+  if (key == 'r') {
     board.reset();
   } else if (key == 't') {
     board.nextTileClass();
-  } else if (key == 'n') {
+  } else if (key == 'e') {
     experiment++;
     if (experiment >= experiments.length) {
       experiment = 0;
