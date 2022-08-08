@@ -119,8 +119,7 @@ class AdditivePlay implements Experiment {
   String status() {
     return String.format(
       "Additive Turmite Experiment\n" +
-      "next [e]xperiment, next [t]ile, [r]eset\n" +
-      "");
+      "next [e]xperiment, next [t]ile, [r]eset\n");
   }
 }
 
@@ -199,10 +198,9 @@ class FromJSONPlay implements Experiment {
     turmites.clear();
     board.reset();
     Turmite t;
-    if (rules.length > 0)
+    if (rules.length > 0) {
       t = new Turmite(rules[index], pal);
-    else
-    {
+    } else {
       int[][][] placeholderRules = {{{0, 0, 0}}};
       t = new Turmite(placeholderRules, pal);
     }
@@ -212,13 +210,10 @@ class FromJSONPlay implements Experiment {
   }
 
   void keyPressed() {
-    if (key == 'n')
-    {
+    if (key == 'n') {
       index = (index + 1) % rules.length;
       resetExperiment();
-    }
-    else if (key == 'p')
-    {
+    } else if (key == 'p') {
       index = (index - 1 + rules.length) % rules.length; //<>//
       resetExperiment();
     }
@@ -232,7 +227,7 @@ class FromJSONPlay implements Experiment {
       "Turmites from %s\n" +
       "next [e]xperiment, next [t]ile, [r]eset\n" +
       "[n]ext turmite, [p]rev turmite\n" +
-      "index: %d" +
-      "", filename, index);
+      "index: %d",
+      filename, index);
   }
 }
