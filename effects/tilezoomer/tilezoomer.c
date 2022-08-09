@@ -4,59 +4,112 @@
 #include <stdlib.h>
 #include <system/memory.h>
 
+#define MOTIONBLUR 1
+
 /* Add tile sized margins on every side to hide visual artifacts. */
-#define WIDTH   (256 + 32)
-#define HEIGHT  (256 + 32)
+#define MARGIN  32
+#define WIDTH   (256 + MARGIN)
+#define HEIGHT  (224 + MARGIN)
+
+#if MOTIONBLUR
+#define DEPTH   1
+#define SHADOW  4
+#else
 #define DEPTH   2
+#define SHADOW  0
+#endif
 
 #define TILESIZE  16
-#define TILES     (WIDTH / TILESIZE)
+#define WTILES    (WIDTH / TILESIZE)
+#define HTILES    (HEIGHT / TILESIZE)
+#define NTILES    ((WTILES - 1) * (HTILES - 1))
 #define ROTATION  1
 #define ZOOM      1
 
-static BitmapT *screen0, *screen1;
+static BitmapT *screen0;
+#if !MOTIONBLUR
+static BitmapT *screen1;
+#endif
+static int active = 0;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
-static short tiles[(TILES - 1) * (TILES -1) * 4];
+static CopInsT *bplptr[DEPTH + SHADOW];
 
-static void CalculateTiles(void) { 
-  short *tile = tiles;
+/* for each tile following array stores source and destination offsets relative
+ * to the beginning of a bitplane */
+static int tiles[NTILES * 2];
+
+#include "data/tilezoomer-pal.c"
+
+static void CalculateTiles(int *tile, short rotation, short zoom) { 
   short x, y;
+  short dx, dy;
 
-  for (y = 0; y < TILES - 1; y++) {
-    for (x = 0; x < TILES - 1; x++) {
+  for (y = 0, dy = 0; y < HTILES - 1; y++, dy += TILESIZE) {
+    short yo = (HTILES - 1 - y) - TILESIZE / 2;
+    for (x = 0, dx = 0; x < WTILES - 1; x++, dx += TILESIZE) {
       short xo = x - TILESIZE / 2;
-      short yo = (TILES - y) - TILESIZE / 2;
-      short dy = y * TILESIZE;
-      short dx = x * TILESIZE;
-      short sx = dx + yo * ROTATION - xo * ZOOM;
-      short sy = dy + xo * ROTATION + yo * ZOOM;
+      short sx = dx;
+      short sy = dy;
 
-      *tile++ = sx;
-      *tile++ = dx;
-      *tile++ = sy * WIDTH / 8;
-      *tile++ = dy * WIDTH / 8;
+      if (rotation > 0) {
+        sx += yo;
+        sy += xo;
+      } else if (rotation < 0) {
+        sx -= yo;
+        sy -= xo;
+      }
+
+      if (zoom > 0) {
+        sx -= xo;
+        sy += yo;
+      } else if (zoom < 0) {
+        sx += xo;
+        sy -= yo;
+      }
+
+      *tile++ = sy * WIDTH * DEPTH + sx; /* source tile offset */
+      *tile++ = dy * WIDTH * DEPTH + dx; /* destination tile offset */
     }
   }
 }
 
 static void Init(void) {
-  CalculateTiles();
+  CalculateTiles(tiles, ROTATION, ZOOM);
 
-  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
+#if MOTIONBLUR
+  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH + SHADOW);
+#else
+  screen0 = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
+                            BM_CLEAR|BM_DISPLAYABLE|BM_INTERLEAVED);
+  screen1 = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
+                            BM_CLEAR|BM_DISPLAYABLE|BM_INTERLEAVED);
+#endif
 
-  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), 256, 256);
+#if MOTIONBLUR
+  SetupPlayfield(MODE_LORES, SHADOW, X(MARGIN), Y((256 - HEIGHT + MARGIN) / 2),
+                 WIDTH - MARGIN, HEIGHT - MARGIN);
+  LoadPalette(&tilezoomer_pal, 0);
+#else
+  SetupPlayfield(MODE_LORES, DEPTH, X(MARGIN), Y((256 - HEIGHT + MARGIN) / 2),
+                 WIDTH - MARGIN, HEIGHT - MARGIN);
   SetColor(0, 0x000);
   SetColor(1, 0x44f);
   SetColor(2, 0x88f);
   SetColor(3, 0xccf);
+#endif
 
   cp = NewCopList(100);
   CopInit(cp);
+#if MOTIONBLUR
+  CopSetupBitplanes(cp, bplptr, screen0, SHADOW);
+  CopMove16(cp, bpl1mod, MARGIN / 8);
+  CopMove16(cp, bpl2mod, MARGIN / 8);
+#else
   CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
-  CopMove16(cp, bpl1mod, 4);
-  CopMove16(cp, bpl2mod, 4);
+  /* Screen bitplanes are interleaved! */
+  CopMove16(cp, bpl1mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
+  CopMove16(cp, bpl2mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
+#endif
   CopEnd(cp);
 
   CopListActivate(cp);
@@ -65,33 +118,33 @@ static void Init(void) {
 
 static void Kill(void) {
   DeleteBitmap(screen0);
+#if !MOTIONBLUR
   DeleteBitmap(screen1);
+#endif
   DeleteCopList(cp);
 }
 
-static void DrawSeed(void) {
-  u_char *bpl0 = screen0->planes[0];
-  u_char *bpl1 = screen0->planes[1];
-  int offset = ((HEIGHT / 2 + 2 * TILESIZE - TILESIZE / 4) * WIDTH + (WIDTH / 2 - TILESIZE / 2)) / 8;
-  short n = 8;
+static void DrawSeed(u_char *bpl) {
+  short y = HEIGHT / 2 - TILESIZE / 2;
+  short x = WIDTH / 2 - TILESIZE / 2;
+  int offset = (y * WIDTH * DEPTH + x) / 8;
+  short n = DEPTH * 8 - 1;
 
-  while (--n >= 0) {
-    bpl0[offset] = random();
-    bpl1[offset] = random();
+  do {
+    bpl[offset] = random();
     offset += WIDTH / 8;
-  }
+  } while (--n >= 0);
 }
 
 #define BLTMOD (WIDTH / 8 - TILESIZE / 8 - 2)
-#define BLTSIZE ((TILESIZE << 6) | ((TILESIZE + 16) >> 4))
+#define BLTSIZE ((TILESIZE * DEPTH << 6) | ((TILESIZE + 16) >> 4))
 
-static void MoveTiles(void) {
-  void *src = screen0->planes[0];
-  void *dst = screen1->planes[0];
-  short xshift = random() & (TILESIZE - 1);
-  short yshift = random() & (TILESIZE - 1);
-  short n = (TILES - 1) * (TILES - 1) - 1;
-  short *tile = tiles;
+static void MoveTiles(void *src, void *dst, short xshift, short yshift) {
+  short n = NTILES - 1;
+  int *tile = tiles;
+  int offset;
+
+  register volatile void *bltptr asm("a4") = &custom->bltcon1;
 
   custom->bltadat = 0xffff;
   custom->bltbmod = BLTMOD;
@@ -99,69 +152,121 @@ static void MoveTiles(void) {
   custom->bltdmod = BLTMOD;
   custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | ABNC | NABC | NANBC);
 
-  yshift *= WIDTH / 8;
+  offset = yshift * WIDTH * DEPTH + xshift;
 
   do {
-    short sx = *tile++ + xshift;
-    short dx = *tile++ + xshift;
-    short sy = *tile++ + yshift + ((sx >> 3) & ~1);
-    short dy = *tile++ + yshift + ((dx >> 3) & ~1);
-    void *srcpt = src + sy;
-    void *dstpt = dst + dy;
+    int srcoff = *tile++ + offset;
+    int dstoff = *tile++ + offset;
+    register void *srcpt asm("a2") = src + ((srcoff >> 3) & ~1);
+    register void *dstpt asm("a3") = dst + ((dstoff >> 3) & ~1);
+    short sx = srcoff;
+    short dx = dstoff;
     u_short bltcon1;
     u_int mask;
     short shift;
 
-    sx &= 15; dx &= 15; shift = dx - sx;
+    sx &= 15; dx &= 15;
 
+    shift = dx - sx;
     if (shift >= 0) {
-      bltcon1 = BSHIFT(shift);
       mask = 0xffff0000;
+      bltcon1 = rorw(shift, 4);
     } else {
-      bltcon1 = BSHIFT(-shift) | BLITREVERSE;
       mask = 0x0000ffff;
+      bltcon1 = rorw(-shift, 4) | BLITREVERSE;
 
-      srcpt += WIDTH * (TILESIZE - 1) / 8 + 2;
-      dstpt += WIDTH * (TILESIZE - 1) / 8 + 2;
+      srcpt += WIDTH * DEPTH * (TILESIZE - 1) / 8 + 2;
+      dstpt += WIDTH * DEPTH * (TILESIZE - 1) / 8 + 2;
     }
 
-    asm("ror.l %1,%0" : "+d" (mask) : "d" (dx));
+    mask = rorl(mask, dx);
 
+#if 1
+    {
+      volatile void *ptr = bltptr;
+
+      WaitBlitter();
+
+      *((short *)ptr)++ = bltcon1;
+      *((int *)ptr)++ = mask;
+      *((int *)ptr)++ = (int)dstpt;
+      *((int *)ptr)++ = (int)srcpt;
+      ptr += 4;
+      *((int *)ptr)++ = (int)dstpt;
+      *((short *)ptr)++ = BLTSIZE;
+    }
+#else
     WaitBlitter();
 
     custom->bltcon1 = bltcon1;
-    custom->bltafwm = mask >> 16;
     custom->bltalwm = mask;
+    custom->bltafwm = swap16(mask);
     custom->bltcpt = dstpt;
     custom->bltbpt = srcpt;
     custom->bltdpt = dstpt;
     custom->bltsize = BLTSIZE;
-
-    srcpt += WIDTH * HEIGHT / 8;
-    dstpt += WIDTH * HEIGHT / 8;
-
-    WaitBlitter();
-    custom->bltcpt = dstpt;
-    custom->bltbpt = srcpt;
-    custom->bltdpt = dstpt;
-    custom->bltsize = BLTSIZE;
+#endif
   } while (--n >= 0);
+}
+
+static void UpdateBitplanePointers(void) {
+  int offset = (TILESIZE + WIDTH * DEPTH * TILESIZE) / 8;
+  short i;
+#if MOTIONBLUR
+  short j = active;
+  for (i = SHADOW - 1; i >= 0; i--) {
+    CopInsSet32(bplptr[i], screen0->planes[j] + offset);
+    j--;
+    if (j < 0)
+      j += DEPTH + SHADOW;
+  }
+#else
+  for (i = 0; i < DEPTH; i++)
+    CopInsSet32(bplptr[i], screen1->planes[i] + offset);
+#endif
 }
 
 PROFILE(TileZoomer);
 
 static void Render(void) {
+#if MOTIONBLUR
+  static short rotation = 0;
+  static short zoom = 0;
+#endif
   ProfilerStart(TileZoomer);
-  {
-    DrawSeed();
-    MoveTiles();
+#if MOTIONBLUR
+  if ((frameCount & 63) < 2) {
+    rotation = random() % 2;
+    zoom = random() % 2;
+    if (rotation == 0)
+      rotation = -1;
+    CalculateTiles(tiles, rotation, zoom);
   }
+#endif
+  if (zoom && ((random() & 3) == 0))
+    DrawSeed(screen0->planes[active]);
+  {
+    short xshift = random() & (TILESIZE - 1);
+    short yshift = random() & (TILESIZE - 1);
+    void *src = screen0->planes[active];
+    void *dst;
+#if MOTIONBLUR
+    if (++active == DEPTH + SHADOW)
+      active = 0;
+    dst = screen0->planes[active];
+#else
+    dst = screen1->planes[0];
+#endif
+
+    MoveTiles(src, dst, xshift, yshift);
+  }
+  UpdateBitplanePointers();
   ProfilerStop(TileZoomer);
 
-  CopInsSet32(bplptr[0], screen1->planes[0] + 2 + WIDTH * TILESIZE / 8);
-  CopInsSet32(bplptr[1], screen1->planes[1] + 2 + WIDTH * TILESIZE / 8);
   TaskWaitVBlank();
+#if !MOTIONBLUR
   swapr(screen0, screen1);
+#endif
 }
 
 EFFECT(tilezoomer, NULL, NULL, Init, Kill, Render);
