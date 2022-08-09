@@ -18,10 +18,10 @@
 static BitmapT *screen0, *screen1;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static short tiles[(TILES - 1) * (TILES - 1) * 4];
+static int tiles[(TILES - 1) * (TILES - 1) * 4];
 
 static void CalculateTiles(void) { 
-  short *tile = tiles;
+  int *tile = tiles;
   short x, y;
 
   for (y = 0; y < TILES - 1; y++) {
@@ -33,10 +33,8 @@ static void CalculateTiles(void) {
       short sx = dx + yo * ROTATION - xo * ZOOM;
       short sy = dy + xo * ROTATION + yo * ZOOM;
 
-      *tile++ = sx;
-      *tile++ = dx;
-      *tile++ = sy * WIDTH * DEPTH / 8;
-      *tile++ = dy * WIDTH * DEPTH / 8;
+      *tile++ = sy * WIDTH * DEPTH + sx;
+      *tile++ = dy * WIDTH * DEPTH + dx;
     }
   }
 }
@@ -95,7 +93,8 @@ void MoveTiles(void) {
   short xshift = random() & (TILESIZE - 1);
   short yshift = random() & (TILESIZE - 1);
   short n = (TILES - 1) * (TILES - 1) - 1;
-  short *tile = tiles;
+  int *tile = tiles;
+  int offset;
 
   custom->bltadat = 0xffff;
   custom->bltbmod = BLTMOD;
@@ -103,15 +102,14 @@ void MoveTiles(void) {
   custom->bltdmod = BLTMOD;
   custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | ABNC | NABC | NANBC);
 
-  yshift *= WIDTH * DEPTH / 8;
+  offset = yshift * WIDTH * DEPTH + xshift;
 
   do {
-    short sx = *tile++ + xshift;
-    short dx = *tile++ + xshift;
-    short sy = *tile++ + yshift + ((sx >> 3) & ~1);
-    short dy = *tile++ + yshift + ((dx >> 3) & ~1);
-    void *srcpt = src + sy;
-    void *dstpt = dst + dy;
+    int srcoff = *tile++ + offset;
+    int dstoff = *tile++ + offset;
+    void *srcpt = src + ((srcoff >> 3) & ~1);
+    void *dstpt = dst + ((dstoff >> 3) & ~1);
+    short sx = srcoff, dx = dstoff;
     u_short bltcon1;
     u_int mask;
 
