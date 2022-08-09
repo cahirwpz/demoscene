@@ -33,19 +33,12 @@ static BitmapT *screen1;
 static int active = 0;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH + SHADOW];
+
+/* for each tile following array stores source and destination offsets relative
+ * to the beginning of a bitplane */
 static int tiles[NTILES * 2];
 
 #include "data/tilezoomer-pal.c"
-
-static u_short xorshift16(void) {
-  static u_short xs = 1;
-  xs ^= xs << 7;
-  xs ^= xs >> 9;
-  xs ^= xs << 8;
-  return xs;
-}
-
-#define random xorshift16
 
 static void CalculateTiles(int *tile, short rotation, short zoom) { 
   short x, y;
@@ -74,8 +67,8 @@ static void CalculateTiles(int *tile, short rotation, short zoom) {
         sy -= yo;
       }
 
-      *tile++ = sy * WIDTH * DEPTH + sx;
-      *tile++ = dy * WIDTH * DEPTH + dx;
+      *tile++ = sy * WIDTH * DEPTH + sx; /* source tile offset */
+      *tile++ = dy * WIDTH * DEPTH + dx; /* destination tile offset */
     }
   }
 }
@@ -146,7 +139,7 @@ static void DrawSeed(u_char *bpl) {
 #define BLTMOD (WIDTH / 8 - TILESIZE / 8 - 2)
 #define BLTSIZE ((TILESIZE * DEPTH << 6) | ((TILESIZE + 16) >> 4))
 
-void MoveTiles(void *src, void *dst, short xshift, short yshift) {
+static void MoveTiles(void *src, void *dst, short xshift, short yshift) {
   short n = NTILES - 1;
   int *tile = tiles;
   int offset;
@@ -236,17 +229,28 @@ static void UpdateBitplanePointers(void) {
 PROFILE(TileZoomer);
 
 static void Render(void) {
+#if MOTIONBLUR
+  static short rotation = 0;
+  static short zoom = 0;
+#endif
   ProfilerStart(TileZoomer);
-  DrawSeed(screen0->planes[active]);
+#if MOTIONBLUR
+  if ((frameCount & 63) < 2) {
+    rotation = random() % 2;
+    zoom = random() % 2;
+    if (rotation == 0)
+      rotation = -1;
+    CalculateTiles(tiles, rotation, zoom);
+  }
+#endif
+  if (zoom && ((random() & 3) == 0))
+    DrawSeed(screen0->planes[active]);
   {
     short xshift = random() & (TILESIZE - 1);
     short yshift = random() & (TILESIZE - 1);
     void *src = screen0->planes[active];
     void *dst;
 #if MOTIONBLUR
-    if ((frameCount & 63) < 2) {
-      CalculateTiles(tiles, (random() % 3) - 1, 1);
-    }
     if (++active == DEPTH + SHADOW)
       active = 0;
     dst = screen0->planes[active];
