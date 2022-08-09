@@ -45,25 +45,22 @@
 }
 
 /* assumes that abs(idx) < 32768 */
-static inline short getword(void *tab, short idx) {
+static inline short getword(const void *tab, short idx) {
   short res;
-  asm("addw  %1,%1\n\t"
-      "movew (%2,%1:w),%0"
+  idx *= 2;
+  asm("movew (%2,%1:w),%0"
       : "=r" (res)
-      : "d" (idx), "a" (tab)
-      : "1");
+      : "d" (idx), "a" (tab));
   return res;
 }
 
 /* assumes that abs(idx) < 16384 */
-static inline int getlong(void *tab, short idx) {
+static inline int getlong(const void *tab, short idx) {
   int res;
-  asm("addw  %1,%1\n\t"
-      "addw  %1,%1\n\t"
-      "movel (%2,%1:w),%0"
+  idx *= 4;
+  asm("movel (%2,%1:w),%0"
       : "=r" (res)
-      : "d" (idx), "a" (tab)
-      : "1");
+      : "d" (idx), "a" (tab));
   return res;
 }
 
@@ -127,8 +124,21 @@ static inline void bchg(u_char *ptr, char bit) {
   asm("bchg %1,%0" :: "m" (*ptr), "dI" (bit));
 }
 
-#define rorw(a, b) \
-  (((a) << (16 - (b))) | ((a) >> (b)))
+static inline short rorw(short a, short b) {
+  short r;
+  asm("ror.w %2,%0"
+      : "=d" (r)
+      : "0" (a), "dI" (b));
+  return r;
+}
+
+static inline int rorl(int a, short b) {
+  int r;
+  asm("ror.l %2,%0"
+      : "=d" (r)
+      : "0" (a), "dI" (b));
+  return r;
+}
 
 #define swapr(a, b) \
   asm ("exg %0,%1" : "+r" (a), "+r" (b))

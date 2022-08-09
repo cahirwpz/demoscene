@@ -110,28 +110,27 @@ static void MoveTiles(void) {
     void *dstpt = dst + dy;
     u_short bltcon1;
     u_int mask;
-    short shift;
 
-    sx &= 15; dx &= 15; shift = dx - sx;
+    sx &= 15; dx &= 15;
 
-    if (shift >= 0) {
-      bltcon1 = BSHIFT(shift);
+    if (dx >= sx) {
       mask = 0xffff0000;
+      bltcon1 = rorw((dx - sx) & 15, 4);
     } else {
-      bltcon1 = BSHIFT(-shift) | BLITREVERSE;
       mask = 0x0000ffff;
+      bltcon1 = rorw((sx - dx) & 15, 4) | BLITREVERSE;
 
       srcpt += WIDTH * (TILESIZE - 1) / 8 + 2;
       dstpt += WIDTH * (TILESIZE - 1) / 8 + 2;
     }
 
-    asm("ror.l %1,%0" : "+d" (mask) : "d" (dx));
+    mask = rorl(mask, dx);
 
     WaitBlitter();
 
     custom->bltcon1 = bltcon1;
-    custom->bltafwm = mask >> 16;
     custom->bltalwm = mask;
+    custom->bltafwm = swap16(mask);
     custom->bltcpt = dstpt;
     custom->bltbpt = srcpt;
     custom->bltdpt = dstpt;
