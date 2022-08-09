@@ -20,18 +20,32 @@ static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 static int tiles[(TILES - 1) * (TILES - 1) * 4];
 
-static void CalculateTiles(void) { 
-  int *tile = tiles;
+static void CalculateTiles(int *tile, short rotation, short zoom) { 
   short x, y;
+  short dx, dy;
 
-  for (y = 0; y < TILES - 1; y++) {
-    for (x = 0; x < TILES - 1; x++) {
+  for (y = 0, dy = 0; y < TILES - 1; y++, dy += TILESIZE) {
+    short yo = (TILES - y) - TILESIZE / 2;
+    for (x = 0, dx = 0; x < TILES - 1; x++, dx += TILESIZE) {
       short xo = x - TILESIZE / 2;
-      short yo = (TILES - y) - TILESIZE / 2;
-      short dy = y * TILESIZE;
-      short dx = x * TILESIZE;
-      short sx = dx + yo * ROTATION - xo * ZOOM;
-      short sy = dy + xo * ROTATION + yo * ZOOM;
+      short sx = dx;
+      short sy = dy;
+
+      if (rotation > 0) {
+        sx += yo;
+        sy += xo;
+      } else if (rotation < 0) {
+        sx -= yo;
+        sy -= xo;
+      }
+
+      if (zoom > 0) {
+        sx -= xo;
+        sy += yo;
+      } else if (zoom < 0) {
+        sx += xo;
+        sy -= yo;
+      }
 
       *tile++ = sy * WIDTH * DEPTH + sx;
       *tile++ = dy * WIDTH * DEPTH + dx;
@@ -40,7 +54,7 @@ static void CalculateTiles(void) {
 }
 
 static void Init(void) {
-  CalculateTiles();
+  CalculateTiles(tiles, ROTATION, ZOOM);
 
   screen0 = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
                             BM_CLEAR|BM_DISPLAYABLE|BM_INTERLEAVED);
