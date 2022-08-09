@@ -9,7 +9,7 @@
 /* Add tile sized margins on every side to hide visual artifacts. */
 #define MARGIN  32
 #define WIDTH   (256 + MARGIN)
-#define HEIGHT  (256 + MARGIN)
+#define HEIGHT  (224 + MARGIN)
 
 #if MOTIONBLUR
 #define DEPTH   1
@@ -20,7 +20,9 @@
 #endif
 
 #define TILESIZE  16
-#define TILES     (WIDTH / TILESIZE)
+#define WTILES    (WIDTH / TILESIZE)
+#define HTILES    (HEIGHT / TILESIZE)
+#define NTILES    ((WTILES - 1) * (HTILES - 1))
 #define ROTATION  1
 #define ZOOM      1
 
@@ -31,17 +33,27 @@ static BitmapT *screen1;
 static int active = 0;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH + SHADOW];
-static int tiles[(TILES - 1) * (TILES - 1) * 4];
+static int tiles[NTILES * 2];
 
 #include "data/tilezoomer-pal.c"
+
+static u_short xorshift16(void) {
+  static u_short xs = 1;
+  xs ^= xs << 7;
+  xs ^= xs >> 9;
+  xs ^= xs << 8;
+  return xs;
+}
+
+#define random xorshift16
 
 static void CalculateTiles(int *tile, short rotation, short zoom) { 
   short x, y;
   short dx, dy;
 
-  for (y = 0, dy = 0; y < TILES - 1; y++, dy += TILESIZE) {
-    short yo = (TILES - y) - TILESIZE / 2;
-    for (x = 0, dx = 0; x < TILES - 1; x++, dx += TILESIZE) {
+  for (y = 0, dy = 0; y < HTILES - 1; y++, dy += TILESIZE) {
+    short yo = (HTILES - 1 - y) - TILESIZE / 2;
+    for (x = 0, dx = 0; x < WTILES - 1; x++, dx += TILESIZE) {
       short xo = x - TILESIZE / 2;
       short sx = dx;
       short sy = dy;
@@ -81,10 +93,12 @@ static void Init(void) {
 #endif
 
 #if MOTIONBLUR
-  SetupPlayfield(MODE_LORES, SHADOW, X(32), Y(0), 256, 256);
+  SetupPlayfield(MODE_LORES, SHADOW, X(MARGIN), Y((256 - HEIGHT + MARGIN) / 2),
+                 WIDTH - MARGIN, HEIGHT - MARGIN);
   LoadPalette(&tilezoomer_pal, 0);
 #else
-  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), 256, 256);
+  SetupPlayfield(MODE_LORES, DEPTH, X(MARGIN), Y((256 - HEIGHT + MARGIN) / 2),
+                 WIDTH - MARGIN, HEIGHT - MARGIN);
   SetColor(0, 0x000);
   SetColor(1, 0x44f);
   SetColor(2, 0x88f);
@@ -118,7 +132,7 @@ static void Kill(void) {
 }
 
 static void DrawSeed(u_char *bpl) {
-  short y = HEIGHT / 2 + 2 * TILESIZE - TILESIZE / 4;
+  short y = HEIGHT / 2 - TILESIZE / 2;
   short x = WIDTH / 2 - TILESIZE / 2;
   int offset = (y * WIDTH * DEPTH + x) / 8;
   short n = DEPTH * 8 - 1;
@@ -132,12 +146,12 @@ static void DrawSeed(u_char *bpl) {
 #define BLTMOD (WIDTH / 8 - TILESIZE / 8 - 2)
 #define BLTSIZE ((TILESIZE * DEPTH << 6) | ((TILESIZE + 16) >> 4))
 
-static void MoveTiles(void *src, void *dst) {
-  short xshift = random() & (TILESIZE - 1);
-  short yshift = random() & (TILESIZE - 1);
-  short n = (TILES - 1) * (TILES - 1) - 1;
+void MoveTiles(void *src, void *dst, short xshift, short yshift) {
+  short n = NTILES - 1;
   int *tile = tiles;
   int offset;
+
+  register volatile void *bltptr asm("a4") = &custom->bltcon1;
 
   custom->bltadat = 0xffff;
   custom->bltbmod = BLTMOD;
@@ -150,20 +164,23 @@ static void MoveTiles(void *src, void *dst) {
   do {
     int srcoff = *tile++ + offset;
     int dstoff = *tile++ + offset;
-    void *srcpt = src + ((srcoff >> 3) & ~1);
-    void *dstpt = dst + ((dstoff >> 3) & ~1);
-    short sx = srcoff, dx = dstoff;
+    register void *srcpt asm("a2") = src + ((srcoff >> 3) & ~1);
+    register void *dstpt asm("a3") = dst + ((dstoff >> 3) & ~1);
+    short sx = srcoff;
+    short dx = dstoff;
     u_short bltcon1;
     u_int mask;
+    short shift;
 
     sx &= 15; dx &= 15;
 
-    if (dx >= sx) {
+    shift = dx - sx;
+    if (shift >= 0) {
       mask = 0xffff0000;
-      bltcon1 = rorw((dx - sx) & 15, 4);
+      bltcon1 = rorw(shift, 4);
     } else {
       mask = 0x0000ffff;
-      bltcon1 = rorw((sx - dx) & 15, 4) | BLITREVERSE;
+      bltcon1 = rorw(-shift, 4) | BLITREVERSE;
 
       srcpt += WIDTH * DEPTH * (TILESIZE - 1) / 8 + 2;
       dstpt += WIDTH * DEPTH * (TILESIZE - 1) / 8 + 2;
@@ -171,6 +188,21 @@ static void MoveTiles(void *src, void *dst) {
 
     mask = rorl(mask, dx);
 
+#if 1
+    {
+      volatile void *ptr = bltptr;
+
+      WaitBlitter();
+
+      *((short *)ptr)++ = bltcon1;
+      *((int *)ptr)++ = mask;
+      *((int *)ptr)++ = (int)dstpt;
+      *((int *)ptr)++ = (int)srcpt;
+      ptr += 4;
+      *((int *)ptr)++ = (int)dstpt;
+      *((short *)ptr)++ = BLTSIZE;
+    }
+#else
     WaitBlitter();
 
     custom->bltcon1 = bltcon1;
@@ -180,6 +212,7 @@ static void MoveTiles(void *src, void *dst) {
     custom->bltbpt = srcpt;
     custom->bltdpt = dstpt;
     custom->bltsize = BLTSIZE;
+#endif
   } while (--n >= 0);
 }
 
@@ -206,6 +239,8 @@ static void Render(void) {
   ProfilerStart(TileZoomer);
   DrawSeed(screen0->planes[active]);
   {
+    short xshift = random() & (TILESIZE - 1);
+    short yshift = random() & (TILESIZE - 1);
     void *src = screen0->planes[active];
     void *dst;
 #if MOTIONBLUR
@@ -219,11 +254,11 @@ static void Render(void) {
     dst = screen1->planes[0];
 #endif
 
-    MoveTiles(src, dst);
+    MoveTiles(src, dst, xshift, yshift);
   }
+  UpdateBitplanePointers();
   ProfilerStop(TileZoomer);
 
-  UpdateBitplanePointers();
   TaskWaitVBlank();
 #if !MOTIONBLUR
   swapr(screen0, screen1);
