@@ -71,8 +71,8 @@ static void Init(void) {
   CopInit(cp);
   CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
   /* Screen bitplanes are interleaved! */
-  CopMove16(cp, bpl1mod, (WIDTH + MARGIN) / 8);
-  CopMove16(cp, bpl2mod, (WIDTH + MARGIN) / 8);
+  CopMove16(cp, bpl1mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
+  CopMove16(cp, bpl2mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
   CopEnd(cp);
 
   CopListActivate(cp);
@@ -87,19 +87,19 @@ static void Kill(void) {
 
 static void DrawSeed(void) {
   u_char *bpl = screen0->planes[0];
-  int y = HEIGHT / 2 + 2 * TILESIZE - TILESIZE / 4;
-  int x = WIDTH / 2 - TILESIZE / 2;
+  short y = HEIGHT / 2 + 2 * TILESIZE - TILESIZE / 4;
+  short x = WIDTH / 2 - TILESIZE / 2;
   int offset = (y * WIDTH * DEPTH + x) / 8;
-  short n = DEPTH * 8;
+  short n = DEPTH * 8 - 1;
 
-  while (--n >= 0) {
+  do {
     bpl[offset] = random();
     offset += WIDTH / 8;
-  }
+  } while (--n >= 0);
 }
 
 #define BLTMOD (WIDTH / 8 - TILESIZE / 8 - 2)
-#define BLTSIZE ((TILESIZE * 2 << 6) | ((TILESIZE + 16) >> 4))
+#define BLTSIZE ((TILESIZE * DEPTH << 6) | ((TILESIZE + 16) >> 4))
 
 void MoveTiles(void) {
   void *src = screen0->planes[0];
@@ -166,8 +166,9 @@ static void Render(void) {
 
   {
     int offset = (TILESIZE + WIDTH * DEPTH * TILESIZE) / 8;
-    CopInsSet32(bplptr[0], screen1->planes[0] + offset);
-    CopInsSet32(bplptr[1], screen1->planes[1] + offset);
+    short i;
+    for (i = 0; i < DEPTH; i++)
+      CopInsSet32(bplptr[i], screen1->planes[i] + offset);
   }
   TaskWaitVBlank();
   swapr(screen0, screen1);
