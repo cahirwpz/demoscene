@@ -5,8 +5,9 @@
 #include <system/memory.h>
 
 /* Add tile sized margins on every side to hide visual artifacts. */
-#define WIDTH   (256 + 32)
-#define HEIGHT  (256 + 32)
+#define MARGIN  32
+#define WIDTH   (256 + MARGIN)
+#define HEIGHT  (256 + MARGIN)
 #define DEPTH   2
 
 #define TILESIZE  16
@@ -17,7 +18,7 @@
 static BitmapT *screen0, *screen1;
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
-static short tiles[(TILES - 1) * (TILES -1) * 4];
+static short tiles[(TILES - 1) * (TILES - 1) * 4];
 
 static void CalculateTiles(void) { 
   short *tile = tiles;
@@ -34,8 +35,8 @@ static void CalculateTiles(void) {
 
       *tile++ = sx;
       *tile++ = dx;
-      *tile++ = sy * WIDTH / 8;
-      *tile++ = dy * WIDTH / 8;
+      *tile++ = sy * WIDTH * DEPTH / 8;
+      *tile++ = dy * WIDTH * DEPTH / 8;
     }
   }
 }
@@ -43,8 +44,10 @@ static void CalculateTiles(void) {
 static void Init(void) {
   CalculateTiles();
 
-  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen0 = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
+                            BM_CLEAR|BM_DISPLAYABLE|BM_INTERLEAVED);
+  screen1 = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
+                            BM_CLEAR|BM_DISPLAYABLE|BM_INTERLEAVED);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), 256, 256);
   SetColor(0, 0x000);
@@ -55,8 +58,9 @@ static void Init(void) {
   cp = NewCopList(100);
   CopInit(cp);
   CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
-  CopMove16(cp, bpl1mod, 4);
-  CopMove16(cp, bpl2mod, 4);
+  /* Screen bitplanes are interleaved! */
+  CopMove16(cp, bpl1mod, (WIDTH + MARGIN) / 8);
+  CopMove16(cp, bpl2mod, (WIDTH + MARGIN) / 8);
   CopEnd(cp);
 
   CopListActivate(cp);
@@ -70,22 +74,22 @@ static void Kill(void) {
 }
 
 static void DrawSeed(void) {
-  u_char *bpl0 = screen0->planes[0];
-  u_char *bpl1 = screen0->planes[1];
-  int offset = ((HEIGHT / 2 + 2 * TILESIZE - TILESIZE / 4) * WIDTH + (WIDTH / 2 - TILESIZE / 2)) / 8;
-  short n = 8;
+  u_char *bpl = screen0->planes[0];
+  int y = HEIGHT / 2 + 2 * TILESIZE - TILESIZE / 4;
+  int x = WIDTH / 2 - TILESIZE / 2;
+  int offset = (y * WIDTH * DEPTH + x) / 8;
+  short n = DEPTH * 8;
 
   while (--n >= 0) {
-    bpl0[offset] = random();
-    bpl1[offset] = random();
+    bpl[offset] = random();
     offset += WIDTH / 8;
   }
 }
 
 #define BLTMOD (WIDTH / 8 - TILESIZE / 8 - 2)
-#define BLTSIZE ((TILESIZE << 6) | ((TILESIZE + 16) >> 4))
+#define BLTSIZE ((TILESIZE * 2 << 6) | ((TILESIZE + 16) >> 4))
 
-static void MoveTiles(void) {
+void MoveTiles(void) {
   void *src = screen0->planes[0];
   void *dst = screen1->planes[0];
   short xshift = random() & (TILESIZE - 1);
@@ -99,7 +103,7 @@ static void MoveTiles(void) {
   custom->bltdmod = BLTMOD;
   custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | ABNC | NABC | NANBC);
 
-  yshift *= WIDTH / 8;
+  yshift *= WIDTH * DEPTH / 8;
 
   do {
     short sx = *tile++ + xshift;
@@ -120,8 +124,8 @@ static void MoveTiles(void) {
       mask = 0x0000ffff;
       bltcon1 = rorw((sx - dx) & 15, 4) | BLITREVERSE;
 
-      srcpt += WIDTH * (TILESIZE - 1) / 8 + 2;
-      dstpt += WIDTH * (TILESIZE - 1) / 8 + 2;
+      srcpt += WIDTH * DEPTH * (TILESIZE - 1) / 8 + 2;
+      dstpt += WIDTH * DEPTH * (TILESIZE - 1) / 8 + 2;
     }
 
     mask = rorl(mask, dx);
@@ -131,15 +135,6 @@ static void MoveTiles(void) {
     custom->bltcon1 = bltcon1;
     custom->bltalwm = mask;
     custom->bltafwm = swap16(mask);
-    custom->bltcpt = dstpt;
-    custom->bltbpt = srcpt;
-    custom->bltdpt = dstpt;
-    custom->bltsize = BLTSIZE;
-
-    srcpt += WIDTH * HEIGHT / 8;
-    dstpt += WIDTH * HEIGHT / 8;
-
-    WaitBlitter();
     custom->bltcpt = dstpt;
     custom->bltbpt = srcpt;
     custom->bltdpt = dstpt;
@@ -157,8 +152,11 @@ static void Render(void) {
   }
   ProfilerStop(TileZoomer);
 
-  CopInsSet32(bplptr[0], screen1->planes[0] + 2 + WIDTH * TILESIZE / 8);
-  CopInsSet32(bplptr[1], screen1->planes[1] + 2 + WIDTH * TILESIZE / 8);
+  {
+    int offset = (TILESIZE + WIDTH * DEPTH * TILESIZE) / 8;
+    CopInsSet32(bplptr[0], screen1->planes[0] + offset);
+    CopInsSet32(bplptr[1], screen1->planes[1] + offset);
+  }
   TaskWaitVBlank();
   swapr(screen0, screen1);
 }
