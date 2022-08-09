@@ -5,19 +5,49 @@ ArrayList<VectorField> fields = new ArrayList<VectorField>();
 boolean showVectors = false;
 boolean mouseDraw = false;
 color mouseColor;
-int active = 1;
+int active = 0;
 
 void setup() {
   size(512, 512);
   background(0);
 
-  VectorField f1 = new TestField1(512 / size + 1, 512 / size + 1);
+  VectorField f1 = new TestField1();
   f1.calc(PI/3, PI, -1.0, 0.25);
   fields.add(f1);
 
-  VectorField f2 = new TestField2(512 / size + 1, 512 / size + 1);
+  VectorField f2 = new TestField2();
   f2.calc(-PI/2, PI/2, 0, PI/2);
   fields.add(f2);
+  
+  VectorField f3 = new TestField3();
+  f3.calc(-PI, PI, -PI/2, PI/2);
+  fields.add(f3);
+  
+  VectorField f4 = new TestField4();
+  f4.calc(-2 * PI, 2 * PI, -PI, PI);
+  fields.add(f4);
+  
+  VectorField f5 = new TestField5();
+  f5.calc(-1.0, 1.0, -1.0, 1.0);
+  fields.add(f5);
+  
+  VectorField f6 = new TestField6();
+  f6.calc(-PI / 4, PI / 4, -PI, PI);
+  fields.add(f6);
+  
+  VectorField f7 = new TestField7();
+  f7.calc(PI / 8, PI / 2, -PI / 4, PI / 4);
+  fields.add(f7);
+
+  VectorField f8 = new TestField8();
+  f8.calc(-PI / 2, PI / 2, -PI / 2, PI / 2);
+  fields.add(f8);
+
+  VectorField f9 = new TestField8();
+  f9.calc(-PI / 3, PI / 3, PI / 3, PI * 1.5);
+  fields.add(f9);
+
+  active = fields.size() - 1;
 }
 
 void renderVectors() {
@@ -104,6 +134,8 @@ void keyPressed() {
     background(0);
   } else if (key == 'v') {
     showVectors = !showVectors;
+  } else if (key == 'n') {
+    active = (active + 1) % fields.size();
   }
 }
 
