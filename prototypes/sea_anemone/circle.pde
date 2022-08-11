@@ -1,5 +1,5 @@
 final float LIMIT = 6.0;
-final int RADIUS = 40;
+final int RADIUS = 42;
 boolean solid = true;
 
 class Circle {
@@ -9,10 +9,10 @@ class Circle {
   int s;
 
   Circle() {
-    this.pos = new PVector(WIDTH / 2, HEIGHT / 2);
-    this.vel = new PVector();
-    this.accel = new PVector();
-    this.s = RADIUS;
+    pos = new PVector(WIDTH / 2, HEIGHT / 2);
+    vel = new PVector();
+    accel = new PVector();
+    s = int(random(RADIUS / 2, RADIUS));
   }
   
   void move() {
