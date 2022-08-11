@@ -370,8 +370,6 @@ static void UpdateBitplanePointers(void) {
   }
 }
 
-INTSERVER(RotateBitplanes, 0, (IntFuncT)UpdateBitplanePointers, NULL);
-
 static void GameOfLife(void) {
   ClearIRQ(INTF_BLIT);
   if (phase < current_game->num_phases) {
@@ -412,10 +410,9 @@ static void Init(void) {
   MakeCopperList(cp);
   CopListActivate(cp);
 
-  EnableDMA(DMAF_RASTER | DMAF_SPRITE);
+  EnableDMA(DMAF_RASTER);
 
   SetIntVector(INTB_BLIT, (IntHandlerT)GameOfLife, NULL);
-  AddIntServer(INTB_VERTB, RotateBitplanes);
   EnableINT(INTF_BLIT);
 }
 
@@ -425,7 +422,6 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
   DisableINT(INTF_BLIT);
   ResetIntVector(INTB_BLIT);
-  RemIntServer(INTB_VERTB, RotateBitplanes);
 
   for (i = 0; i < BOARD_COUNT; i++)
     DeleteBitmap(boards[i]);
@@ -446,7 +442,8 @@ static void Render(void) {
 
   ProfilerStart(GOLStep);
   PixelDouble(dst, src, double_pixels);
-  states_head++;
+  UpdateBitplanePointers();
+  states_head = (states_head+1) % PREV_STATES_DEPTH;
   phase = 0;
   GameOfLife();
   ProfilerStop(GOLStep);
