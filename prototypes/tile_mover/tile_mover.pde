@@ -3,6 +3,7 @@ final int size = 16;
 PGraphics screen;
 boolean showVectors = false;
 boolean mouseDraw = false;
+boolean motionBlur = false;
 color mouseColor;
 int active = 0;
 
@@ -116,14 +117,20 @@ void renderFrame() {
     screen.endDraw();
   }
   
-  image(screen, 0, 0); 
+  if (motionBlur) {
+    tint(255, 128);
+  } else {
+    noTint();
+  }
+  
+  image(screen, 0, 0);
 }
 
 void status() {
   String status = String.format(
     "Tile Mover prototype\n" +
     "[c]lear, show [v]ectors, [n]ext vector field\n" +
-    "(LMB) draw rectangle"
+    "[m]otion blur, (LMB) draw rectangle"
   );
 
   fill(64);
@@ -150,6 +157,8 @@ void keyPressed() {
     screen.endDraw();
   } else if (key == 'v') {
     showVectors = !showVectors;
+  } else if (key == 'm') {
+    motionBlur = !motionBlur;
   } else if (key == 'n') {
     active = (active + 1) % fields.size();
   }
