@@ -1,5 +1,9 @@
 /* Placeholders for vector fields generated using
  * https://anvaka.github.io/fieldplay */
+ 
+import java.lang.reflect.*;
+
+final PApplet PAPPLET = this;
 
 abstract class VectorField {
   PVector field[];
@@ -103,5 +107,21 @@ class TestField8 extends VectorField {
     v.x = sin(p.y * p.y);
     v.y = sin(p.x * p.x);
     return v;
+  }
+}
+
+VectorField makeVectorField(Class<? extends VectorField> cls,
+                            float fx, float tx, float fy, float ty)
+{
+  try {
+    Constructor<? extends VectorField> ctor =
+      cls.getDeclaredConstructor(PAPPLET.getClass());
+    VectorField f = ctor.newInstance(PAPPLET);
+    f.calc(fx, tx, fy, ty);
+    return f;
+  }
+  catch (Exception ex) {
+    System.out.println(ex.toString());
+    return null;
   }
 }
