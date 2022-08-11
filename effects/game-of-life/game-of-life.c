@@ -27,6 +27,9 @@
 // with dimmer colors (the dimmer the color, the more time has passed since cell
 // on that square died). This process is repeated indefinitely.
 
+// max amount boards for current board + intermediate results
+#define BOARD_COUNT 10
+
 #define DISP_WIDTH 320
 #define DISP_HEIGHT 256
 #define DISP_DEPTH 4
@@ -73,15 +76,8 @@
 static CopListT *cp;
 static BitmapT *current_board;
 
-// intermediate results
-static BitmapT *lo;
-static BitmapT *hi;
-static BitmapT *x0;
-static BitmapT *x1;
-static BitmapT *x2;
-static BitmapT *x3;
-static BitmapT *x5;
-static BitmapT *x6;
+// current board = boards[0], the rest is intermediate results
+static BitmapT *boards[BOARD_COUNT];
 
 // pointers to copper instructions, for rewriting bitplane pointers
 static CopInsT *bplptr[DISP_DEPTH];
@@ -97,18 +93,83 @@ static u_short states_head = 0;
 // phase (0-8) of blitter calculations
 static u_short phase = 0;
 
-// minterms for blitter operations
-static u_short minterms_table[9] = {
-  FULL_ADDER,
-  FULL_ADDER_CARRY,
-  NANBC | NABNC | NABC | ANBNC | ANBC | ABNC,
-  NANBNC | NABC | ANBC | ABNC,
-  NANBNC | NABC | ANBC | ABNC,
-  NANBNC | ABC,
-  NABNC | ANBNC | ANBC | ABC,
-  NANBC | NABC | ANBNC | ANBC,
-  NABNC | ANBC,
+typedef void (BlitterPhaseFunc)(const BitmapT*, const BitmapT*, const BitmapT*, const BitmapT*, u_short minterms);
+
+typedef struct BlitterPhaseT {
+  BlitterPhaseFunc* blitfunc;
+  u_short minterm;
+  u_char srca;
+  u_char srcb;
+  u_char srcc;
+  u_char dst;
+} BlitterPhaseT;
+
+typedef struct GameDefinitionT {
+  const BlitterPhaseT* phases;
+  u_short num_phases;
+} GameDefinitionT;
+
+static void BlitAdjacentHorizontal(const BitmapT *sourceA, const BitmapT* sourceB,
+                                   const BitmapT *sourceC, const BitmapT *target,
+                                   u_short minterms);
+
+static void BlitAdjacentVertical(const BitmapT *sourceA, const BitmapT* sourceB,
+                                 const BitmapT *sourceC, const BitmapT *target,
+                                 u_short minterms);
+
+static void BlitFunc(const BitmapT *sourceA, const BitmapT* sourceB,
+                     const BitmapT *sourceC, const BitmapT *target,
+                     u_short minterms);
+
+#define PHASE(sa, sb, sc, d, mt, bf) \
+  (BlitterPhaseT){.blitfunc=bf, .minterm=mt, .srca=sa, .srcb=sb, .srcc=sc, .dst=d}
+#define PHASE_SIMPLE(s, d, mt, bf) PHASE(s, 0, 0, d, mt, bf)
+
+static const BlitterPhaseT gol_phases[9] = {
+  PHASE_SIMPLE(0, 1, FULL_ADDER, BlitAdjacentHorizontal),
+  PHASE_SIMPLE(0, 2, FULL_ADDER_CARRY, BlitAdjacentHorizontal),
+  PHASE_SIMPLE(1, 3, NANBC | NABNC | NABC | ANBNC | ANBC | ABNC, BlitAdjacentVertical),
+  PHASE_SIMPLE(1, 4, NANBNC | NABC | ANBC | ABNC, BlitAdjacentVertical),
+  PHASE_SIMPLE(2, 5, NANBNC | NABC | ANBC | ABNC, BlitAdjacentVertical),
+  PHASE_SIMPLE(2, 6, NANBNC | ABC, BlitAdjacentVertical),
+  PHASE(5, 0, 6, 7, NABNC | ANBNC | ANBC | ABC, BlitFunc),
+  PHASE(4, 7, 6, 8, NANBC | NABC | ANBNC | ANBC, BlitFunc),
+  PHASE(5, 3, 8, 0, NABNC | ANBC, BlitFunc)
 };
+
+static const GameDefinitionT classic_gol = {
+  .phases = gol_phases,
+  .num_phases = 9
+};
+
+// 0 - NANBNC
+// 1 - NANBC
+// 2 - NABNC
+// 3 - NABC
+// 4 - ANBNC
+// 5 - ANBC
+// 6 - ABNC
+// 7 - ABC
+
+static const BlitterPhaseT maze_phases[10] = {
+  PHASE_SIMPLE(0, 1, FULL_ADDER, BlitAdjacentHorizontal),
+  PHASE_SIMPLE(0, 2, FULL_ADDER_CARRY, BlitAdjacentHorizontal),
+  PHASE_SIMPLE(1, 3, NANBC | NABNC | ANBNC | ABC, BlitAdjacentVertical),
+  PHASE_SIMPLE(1, 4, NABC | ANBC | ABNC | ABC, BlitAdjacentVertical),
+  PHASE_SIMPLE(2, 5, NANBNC | ABC, BlitAdjacentVertical),
+  PHASE_SIMPLE(2, 6, NABC | ANBC | ABNC | ABC, BlitAdjacentVertical),
+  PHASE(4, 6, 5, 7, NANBC | NABNC | ANBNC | ABC, BlitFunc),
+  PHASE(3, 5, 7, 8, NANBNC | NANBC | NABNC | ANBC, BlitFunc),
+  PHASE(6, 7, 6, 9, NANBC | NABNC | ANBNC | ANBC | ABC, BlitFunc),
+  PHASE(9, 0, 8, 0, NANBNC | NABNC | NABC | ABC, BlitFunc)
+};
+
+static const GameDefinitionT maze = {
+  .phases = maze_phases,
+  .num_phases = 10
+};
+
+static const GameDefinitionT* current_game;
 
 static PaletteT palette = {
   .count = 16,
@@ -168,11 +229,12 @@ static void MakeDoublePixels(void) {
 //
 // Thus a, b and c are lined up properly to perform boolean function on them
 //
-static void BlitAdjacentHorizontal(const BitmapT *source, BitmapT *target,
+static void BlitAdjacentHorizontal(const BitmapT *sourceA, __attribute__((unused)) const BitmapT* sourceB,
+                                   __attribute__((unused)) const BitmapT *sourceC, const BitmapT *target,
                                    u_short minterms) {
-  void *srcCenter = source->planes[0] + source->bytesPerRow;    // C channel
-  void *srcRight = source->planes[0] + source->bytesPerRow + 2; // B channel
-  void *srcLeft = source->planes[0] + source->bytesPerRow;      // A channel
+  void *srcCenter = sourceA->planes[0] + sourceA->bytesPerRow;    // C channel
+  void *srcRight = sourceA->planes[0] + sourceA->bytesPerRow + 2; // B channel
+  void *srcLeft = sourceA->planes[0] + sourceA->bytesPerRow;      // A channel
   u_short bltsize = (BOARD_HEIGHT << 6) | ((EXT_BOARD_WIDTH / 16));
 
   custom->bltcon0 = ASHIFT(1) | minterms | (SRCA | SRCB | SRCC | DEST);
@@ -192,11 +254,12 @@ static void BlitAdjacentHorizontal(const BitmapT *source, BitmapT *target,
 }
 
 // setup blitter to calculate a function of three vertically adjacent lit pixels
-static void BlitAdjacentVertical(const BitmapT *source, BitmapT *target,
+static void BlitAdjacentVertical(const BitmapT *sourceA, __attribute__((unused)) const BitmapT* sourceB,
+                                 __attribute__((unused)) const BitmapT *sourceC, const BitmapT *target,
                                  u_short minterms) {
-  void *srcCenter = source->planes[0] + source->bytesPerRow;   // C channel
-  void *srcUp = source->planes[0];                             // A channel
-  void *srcDown = source->planes[0] + 2 * source->bytesPerRow; // B channel
+  void *srcCenter = sourceA->planes[0] + sourceA->bytesPerRow;   // C channel
+  void *srcUp = sourceA->planes[0];                             // A channel
+  void *srcDown = sourceA->planes[0] + 2 * sourceA->bytesPerRow; // B channel
   u_short bltsize = (BOARD_HEIGHT << 6) | ((EXT_BOARD_WIDTH / 16));
 
   custom->bltcon0 = minterms | (SRCA | SRCB | SRCC | DEST);
@@ -311,68 +374,9 @@ INTSERVER(RotateBitplanes, 0, (IntFuncT)UpdateBitplanePointers, NULL);
 
 static void GameOfLife(void) {
   ClearIRQ(INTF_BLIT);
-
-  switch (phase) {
-    // sum horizontally adjacent pixels - produces two results (sum bits): lo
-    // and hi
-    case 0:
-      BlitAdjacentHorizontal(current_board, lo, minterms_table[0]);
-      break;
-    case 1:
-      BlitAdjacentHorizontal(current_board, hi, minterms_table[1]);
-      break;
-
-      // result based on the number of set bits in lo
-      // set bits -> result
-      // 0        -> 0
-      // 1        -> 1
-      // 2        -> 1
-      // 3        -> 0
-    case 2:
-      BlitAdjacentVertical(lo, x0, minterms_table[2]);
-      break;
-
-      // set bits -> result
-      // 0        -> 1
-      // 1        -> 0
-      // 2        -> 1
-      // 3        -> 0
-    case 3:
-      BlitAdjacentVertical(lo, x1, minterms_table[3]);
-      break;
-
-      // result based on the number of set bits in hi
-      // set bits -> result
-      // 0 -> 1
-      // 1 -> 0
-      // 2 -> 1
-      // 3 -> 0
-    case 4:
-      BlitAdjacentVertical(hi, x2, minterms_table[4]);
-      break;
-
-      // set bits -> result
-      // 0 -> 1
-      // 1 -> 0
-      // 2 -> 0
-      // 3 -> 1
-    case 5:
-      BlitAdjacentVertical(hi, x3, minterms_table[5]);
-      break;
-
-      // black magic happens here - combines previous results and initial game
-      // state into new state
-    case 6:
-      BlitFunc(x2, current_board, x3, x5, minterms_table[6]);
-      break;
-
-    case 7:
-      BlitFunc(x1, x5, x3, x6, minterms_table[7]);
-      break;
-
-    case 8:
-      BlitFunc(x2, x0, x6, current_board, minterms_table[8]);
-      break;
+  if (phase < current_game->num_phases) {
+    BlitterPhaseT p = current_game->phases[phase];
+    p.blitfunc(boards[p.srca], boards[p.srcb], boards[p.srcc], boards[p.dst], p.minterm);
   }
   phase++;
 }
@@ -382,16 +386,11 @@ static void Init(void) {
 
   MakeDoublePixels();
 
-  lo = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
-  hi = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
-  x0 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
-  x1 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
-  x2 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
-  x3 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
-  x5 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
-  x6 = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
+  for (i = 0; i < BOARD_COUNT; i++)
+    boards[i] = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
 
-  current_board = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
+  current_board = boards[0];
+  current_game = &maze;
 
   SetupPlayfield(MODE_LORES, DISP_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
   LoadPalette(&palette, 0);
@@ -428,15 +427,8 @@ static void Kill(void) {
   ResetIntVector(INTB_BLIT);
   RemIntServer(INTB_VERTB, RotateBitplanes);
 
-  DeleteBitmap(lo);
-  DeleteBitmap(hi);
-  DeleteBitmap(x0);
-  DeleteBitmap(x1);
-  DeleteBitmap(x2);
-  DeleteBitmap(x3);
-  DeleteBitmap(x5);
-  DeleteBitmap(x6);
-  DeleteBitmap(current_board);
+  for (i = 0; i < BOARD_COUNT; i++)
+    DeleteBitmap(boards[i]);
 
   for (i = 0; i < PREV_STATES_DEPTH; i++)
     DeleteBitmap(prev_states[i]);
