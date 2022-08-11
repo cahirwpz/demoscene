@@ -8,12 +8,15 @@ final int HEIGHT = 256;
 
 PGraphics screen;
 int maxBranches;
+color fruitColor;
 
 void reset() {
   branches = new ArrayList<Branch>();
   branches.add(new Branch(WIDTH / 2, HEIGHT));
 
   maxBranches = 1;
+  
+  fruitColor = color(random(64, 255), random(64, 255), random(64, 255));
 
   screen.beginDraw();
   screen.background(255);
@@ -62,28 +65,25 @@ void draw() {
   }
 
   screen.beginDraw();
-  screen.fill(0);
   screen.stroke(0);
 
   for (int i = branches.size() - 1; i >= 0; i--) {
     Branch b = branches.get(i);
-    PVector loc = b.location;
-    PVector lastLoc = b.lastLocation;
-
-    screen.line(lastLoc.x, lastLoc.y, loc.x, loc.y);
+    PVector lastPos = b.position.copy();
 
     b.grow();
 
-    if (b.maySplit()) {
-      branches.add(new Branch(b));
-    }
-
     if (b.isFinished()) {
-      screen.noStroke();
-      screen.fill(color(255, 0, 0));
-      screen.ellipse(loc.x, loc.y, 10, 10);
-      screen.stroke(0);
+      screen.fill(fruitColor);
+      screen.ellipse(b.position.x, b.position.y, 7, 7);
       branches.remove(i);
+    } else {
+      PVector pos = b.position;
+      screen.line(lastPos.x, lastPos.y, pos.x, pos.y);
+      
+      if (b.maySplit()) {
+        branches.add(new Branch(b));
+      }
     }
   }
   screen.endDraw();
