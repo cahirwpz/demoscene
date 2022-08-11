@@ -1,8 +1,5 @@
 ArrayList<Branch> branches;
 
-final int MARGIN = 10;
-final float LENGTH = 0.2;
-
 class Branch {
   PVector lastLocation;
   PVector location;
@@ -43,12 +40,12 @@ class Branch {
     velocity.normalize();
     velocity.mult(0.75);
     velocity.add(bump);
-    velocity.mult(random(5.0, 10.0));
+    velocity.mult(random(4.0, 8.0));
 
     location.add(velocity);
   }
 
   boolean maySplit() {
-    return random(0, 1) < LENGTH;
+    return random(0, 1) < 0.2;
   }
 }

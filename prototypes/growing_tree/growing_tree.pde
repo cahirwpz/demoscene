@@ -10,11 +10,10 @@ PGraphics screen;
 int maxBranches;
 
 void reset() {
-  maxBranches = 0;
-
   branches = new ArrayList<Branch>();
-  for (int i = 0; i < 1; i++)
-    branches.add(new Branch(WIDTH / 2, HEIGHT));
+  branches.add(new Branch(WIDTH / 2, HEIGHT));
+
+  maxBranches = 1;
 
   screen.beginDraw();
   screen.background(255);
