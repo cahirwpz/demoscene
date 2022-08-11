@@ -2,6 +2,9 @@ final float LIMIT = 6.0;
 final int RADIUS = 42;
 boolean solid = true;
 
+color armDark = #006663;
+color armLight = #DFF5F4;
+
 class Circle {
   PVector pos;
   PVector vel;
@@ -14,7 +17,7 @@ class Circle {
     accel = new PVector();
     s = int(random(RADIUS / 2, RADIUS));
   }
-  
+
   void move() {
     accel = PVector.random2D();
     vel.add(accel.mult(0.5));
@@ -22,10 +25,10 @@ class Circle {
     pos.add(vel);
     s--;
   }
-  
+
   void show(PGraphics pg) {
     if (solid) {
-      color c = lerpColor(#DFF5F4, #217373, float(s) / RADIUS);
+      color c = lerpColor(armLight, armDark, float(s) / RADIUS);
       pg.noStroke();
       pg.fill(c);
     } else {
@@ -34,7 +37,7 @@ class Circle {
     }
     pg.ellipse(pos.x, pos.y, s, s);
   }
-  
+
   boolean isDead() {
     return s < 1;
   }

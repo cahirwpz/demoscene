@@ -13,19 +13,22 @@ void setup() {
   size(640, 556);
   background(0);
   noSmooth();
-  
+
   textFont(loadFont("Monaco-16.vlw"));
   textSize(16);
-  
+
   screen = createGraphics(WIDTH, HEIGHT);
 }
 
-void doublePixels() {
+void amigaPixels() {
   loadPixels();
   screen.loadPixels();
   for (int j = 0; j < HEIGHT; j++) {
     for (int i = 0; i < WIDTH; i++) {
       int c = screen.pixels[j * WIDTH + i];
+      c &= 0xF0F0F0;
+      c |= c >> 4;
+      c |= 0xFF000000;
       pixels[(j * 2 + 0) * width + (i * 2 + 0)] = c;
       pixels[(j * 2 + 1) * width + (i * 2 + 0)] = c;
       pixels[(j * 2 + 0) * width + (i * 2 + 1)] = c;
@@ -39,7 +42,7 @@ void doublePixels() {
 void status() {
   String status = String.format(
     "Sea Anemone prototype\n" +
-    "[c]lear, [s]olid");
+    "[c]lear, [s]olid, [r]andomize colors");
 
   fill(64);
   rect(2, 512, width-8, 88, 8);
@@ -60,8 +63,8 @@ void draw() {
     }
   }
   screen.endDraw();
-  
-  doublePixels();
+
+  amigaPixels();
   status();
 }
 
@@ -69,7 +72,7 @@ void reset() {
   screen.beginDraw();
   screen.background(0);
   screen.endDraw();
-  
+
   circles.clear();
   circles.add(new Circle());
 }
@@ -79,6 +82,10 @@ void keyPressed() {
     reset();
   } else if (key == 's') {
     solid = !solid;
+    reset();
+  } else if (key == 'r') {
+    armLight = color(random(255), random(255), random(255));
+    armDark = color(random(255), random(255), random(255));
     reset();
   }
 }
