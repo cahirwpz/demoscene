@@ -1,7 +1,5 @@
 final int size = 16;
 
-ArrayList<VectorField> fields = new ArrayList<VectorField>();
-
 PGraphics screen;
 boolean showVectors = false;
 boolean mouseDraw = false;
@@ -9,7 +7,7 @@ color mouseColor;
 int active = 0;
 
 void setup() {
-  size(512, 604);
+  size(512, 578);
   background(0);
   noStroke();
   
@@ -18,15 +16,15 @@ void setup() {
   
   screen = createGraphics(512, 512);
   
-  fields.add(makeVectorField(TestField1.class, PI/3, PI, -1.0, 0.25));
-  fields.add(makeVectorField(TestField2.class, -PI/2, PI/2, 0, PI/2));
-  fields.add(makeVectorField(TestField3.class, -PI, PI, -PI/2, PI/2));
-  fields.add(makeVectorField(TestField4.class, -2 * PI, 2 * PI, -PI, PI));
-  fields.add(makeVectorField(TestField5.class, -1.0, 1.0, -1.0, 1.0));
-  fields.add(makeVectorField(TestField6.class, -PI / 4, PI / 4, -PI, PI));
-  fields.add(makeVectorField(TestField7.class, PI / 8, PI / 2, -PI / 4, PI / 4));
-  fields.add(makeVectorField(TestField8.class, -PI / 2, PI / 2, -PI / 2, PI / 2));
-  fields.add(makeVectorField(TestField8.class, -PI / 3, PI / 3, PI / 3, PI * 1.5));
+  addVectorField(new TestField1(), PI/3, PI, -1.0, 0.25);
+  addVectorField(new TestField2(), -PI/2, PI/2, 0, PI/2);
+  addVectorField(new TestField3(), -PI, PI, -PI/2, PI/2);
+  addVectorField(new TestField4(), -2 * PI, 2 * PI, -PI, PI);
+  addVectorField(new TestField5(), -1.0, 1.0, -1.0, 1.0);
+  addVectorField(new TestField6(), -PI / 4, PI / 4, -PI, PI);
+  addVectorField(new TestField7(), PI / 8, PI / 2, -PI / 4, PI / 4);
+  addVectorField(new TestField8(), -PI / 2, PI / 2, -PI / 2, PI / 2);
+  addVectorField(new TestField8(), -PI / 3, PI / 3, PI / 3, PI * 1.5);
 
   active = fields.size() - 1;
 }

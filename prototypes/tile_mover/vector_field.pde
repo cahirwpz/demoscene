@@ -1,17 +1,17 @@
 /* Placeholders for vector fields generated using
  * https://anvaka.github.io/fieldplay */
  
-import java.lang.reflect.*;
+import java.util.function.Function;
 
-final PApplet PAPPLET = this;
-
-abstract class VectorField {
+class VectorField {
   PVector field[];
   int w, h;
+  Function<PVector, PVector> func;
   
-  VectorField() {
+  VectorField(Function<PVector, PVector> func) {
     this.w = width / size + 1;
     this.h = height / size + 1;
+    this.func = func;
     field = new PVector[w * h];
     for (int i = 0; i < w * h; i++) {
       field[i] = new PVector();
@@ -21,8 +21,6 @@ abstract class VectorField {
   PVector get(int x, int y) {
     return field[y * w + x];
   }
-
-  abstract PVector func(PVector p);
   
   void calc(float fx, float tx, float fy, float ty) {
     PVector p = new PVector();
@@ -30,7 +28,7 @@ abstract class VectorField {
       p.y = map(y, 0, h - 1, ty, fy);
       for (int x = 0; x < w; x++) {
         p.x = map(x, 0, w - 1, fx, tx);
-        PVector v = func(p);
+        PVector v = this.func.apply(p);
         v.x = - v.x;
         field[y * w + x] = v;
       }
@@ -38,8 +36,9 @@ abstract class VectorField {
   }
 }
 
-class TestField1 extends VectorField {
-  PVector func(PVector p) {
+class TestField1 implements Function<PVector, PVector> {
+  @Override
+  PVector apply(PVector p) {
     PVector v = new PVector();
     v.x = sin(p.mag());
     v.y = cos(p.mag()) - p.y;
@@ -47,8 +46,9 @@ class TestField1 extends VectorField {
   }
 }
 
-class TestField2 extends VectorField {
-  PVector func(PVector p) {
+class TestField2 implements Function<PVector, PVector> {
+  @Override
+  PVector apply(PVector p) {
     PVector v = new PVector();
     v.x = min(p.y, p.x * p.y);
     v.y = p.mag();
@@ -56,8 +56,9 @@ class TestField2 extends VectorField {
   }
 }
 
-class TestField3 extends VectorField {
-  PVector func(PVector p) {
+class TestField3 implements Function<PVector, PVector> {
+  @Override
+  PVector apply(PVector p) {
     PVector v = new PVector();
     v.x = sin(p.y);
     v.y = sin(p.x) - p.x;
@@ -65,8 +66,9 @@ class TestField3 extends VectorField {
   }
 }
 
-class TestField4 extends VectorField {
-  PVector func(PVector p) {
+class TestField4 implements Function<PVector, PVector> {
+  @Override
+  PVector apply(PVector p) {
     PVector v = new PVector();
     v.x = 0.5 * sin(p.y);
     v.y = 0.0;
@@ -74,8 +76,9 @@ class TestField4 extends VectorField {
   }
 }
 
-class TestField5 extends VectorField {
-  PVector func(PVector p) {
+class TestField5 implements Function<PVector, PVector> {
+  @Override
+  PVector apply(PVector p) {
     PVector v = new PVector();
     v.x = p.y;
     v.y = p.x;
@@ -83,8 +86,9 @@ class TestField5 extends VectorField {
   }
 }
 
-class TestField6 extends VectorField {
-  PVector func(PVector p) {
+class TestField6 implements Function<PVector, PVector> {
+  @Override
+  PVector apply(PVector p) {
     PVector v = new PVector();
     v.x = 0.5 * cos(p.x);
     v.y = p.x;
@@ -92,8 +96,9 @@ class TestField6 extends VectorField {
   }
 }
 
-class TestField7 extends VectorField {
-  PVector func(PVector p) {
+class TestField7 implements Function<PVector, PVector> {
+  @Override
+  PVector apply(PVector p) {
     PVector v = new PVector();
     v.x = sin(min(p.y,p.x));
     v.y = sin(exp(p.mag()));
@@ -101,8 +106,9 @@ class TestField7 extends VectorField {
   }
 }
 
-class TestField8 extends VectorField {
-  PVector func(PVector p) {
+class TestField8 implements Function<PVector, PVector> {
+  @Override
+  PVector apply(PVector p) {
     PVector v = new PVector();
     v.x = sin(p.y * p.y);
     v.y = sin(p.x * p.x);
@@ -110,18 +116,12 @@ class TestField8 extends VectorField {
   }
 }
 
-VectorField makeVectorField(Class<? extends VectorField> cls,
+ArrayList<VectorField> fields = new ArrayList<VectorField>();
+
+void addVectorField(Function<PVector, PVector> func,
                             float fx, float tx, float fy, float ty)
 {
-  try {
-    Constructor<? extends VectorField> ctor =
-      cls.getDeclaredConstructor(PAPPLET.getClass());
-    VectorField f = ctor.newInstance(PAPPLET);
-    f.calc(fx, tx, fy, ty);
-    return f;
-  }
-  catch (Exception ex) {
-    System.out.println(ex.toString());
-    return null;
-  }
+  VectorField f = new VectorField(func);
+  f.calc(fx, tx, fy, ty);
+  fields.add(f);
 }
