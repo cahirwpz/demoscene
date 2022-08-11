@@ -1,13 +1,13 @@
 /* Placeholders for vector fields generated using
  * https://anvaka.github.io/fieldplay */
- 
+
 import java.util.function.Function;
 
 class VectorField {
   PVector field[];
   int w, h;
   Function<PVector, PVector> func;
-  
+
   VectorField(Function<PVector, PVector> func) {
     this.w = width / size + 1;
     this.h = height / size + 1;
@@ -17,11 +17,11 @@ class VectorField {
       field[i] = new PVector();
     }
   }
-  
+
   PVector get(int x, int y) {
     return field[y * w + x];
   }
-  
+
   void calc(float fx, float tx, float fy, float ty) {
     PVector p = new PVector();
     for (int y = 0; y < h; y++) {
@@ -100,7 +100,7 @@ class TestField7 implements Function<PVector, PVector> {
   @Override
   PVector apply(PVector p) {
     PVector v = new PVector();
-    v.x = sin(min(p.y,p.x));
+    v.x = sin(min(p.y, p.x));
     v.y = sin(exp(p.mag()));
     return v;
   }
@@ -118,8 +118,8 @@ class TestField8 implements Function<PVector, PVector> {
 
 ArrayList<VectorField> fields = new ArrayList<VectorField>();
 
-void addVectorField(Function<PVector, PVector> func,
-                            float fx, float tx, float fy, float ty)
+void addVectorField(Function<PVector, PVector> func, 
+                    float fx, float tx, float fy, float ty)
 {
   VectorField f = new VectorField(func);
   f.calc(fx, tx, fy, ty);

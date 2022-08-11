@@ -11,12 +11,12 @@ void setup() {
   size(512, 578);
   background(0);
   noStroke();
-  
+
   textFont(loadFont("Monaco-16.vlw"));
   textSize(16);
-  
+
   screen = createGraphics(512, 512);
-  
+
   addVectorField(new TestField1(), PI/3, PI, -1.0, 0.25);
   addVectorField(new TestField2(), -PI/2, PI/2, 0, PI/2);
   addVectorField(new TestField3(), -PI, PI, -PI/2, PI/2);
@@ -36,7 +36,7 @@ void renderVectors() {
   screen.beginDraw();
   screen.background(0);
   screen.stroke(255);
-  
+
   for (int y = 0; y < f.h; y++) {
     for (int x = 0; x < f.w; x++) {
       PVector v = f.get(x, y);
@@ -54,7 +54,7 @@ void renderVectors() {
     }
   }
   screen.endDraw();
-  
+
   image(screen, 0, 0);
 }
 
@@ -65,7 +65,7 @@ void moveTiles() {
   loadPixels();
   screen.beginDraw();
   screen.loadPixels();
-  
+
   for (int y = 0; y < f.h; y++) {
     for (int x = 0; x < f.w; x++) {
       PVector v = f.get(x, y);
@@ -79,7 +79,7 @@ void moveTiles() {
       for (int j = 0; j < size; j++) {
         int tsy = sy + s + j;
         int tdy = dy + s + j;
-        
+
         if (tsy < 0 || tsy >= screen.height ||
             tdy < 0 || tdy >= screen.height)
           continue;
@@ -87,11 +87,11 @@ void moveTiles() {
         for (int i = 0; i < size; i++) {
           int tsx = sx + i;
           int tdx = dx + i;
-          
+
           if (tsx < 0 || tsx >= screen.width ||
               tdx < 0 || tdx >= screen.width)
             continue;
-        
+
           int src = tsy * width + tsx;
           int dst = tdy * width + tdx;
           int p = pixels[src];
@@ -100,7 +100,7 @@ void moveTiles() {
       }
     }
   }
-  
+
   screen.updatePixels();
   screen.endDraw();
   updatePixels();
@@ -116,13 +116,13 @@ void renderFrame() {
     screen.rect(mouseX - size, mouseY - size, 2 * size, 2 * size);
     screen.endDraw();
   }
-  
+
   if (motionBlur) {
     tint(255, 128);
   } else {
     noTint();
   }
-  
+
   image(screen, 0, 0);
 }
 
@@ -130,8 +130,7 @@ void status() {
   String status = String.format(
     "Tile Mover prototype\n" +
     "[c]lear, show [v]ectors, [n]ext vector field\n" +
-    "[m]otion blur, (LMB) draw rectangle"
-  );
+    "[m]otion blur, (LMB) draw rectangle");
 
   fill(64);
   rect(2, 512, width-8, 88, 8);
