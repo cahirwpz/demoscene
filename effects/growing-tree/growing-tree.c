@@ -33,12 +33,12 @@ typedef struct Branch {
 #define vel_x_b _vel_x.byte
 #define vel_y_b _vel_y.byte
 
-#define MAXBRANCHES 256
+#define MAXBRANCHES 56
 
 static BranchT branches[MAXBRANCHES];
 static BranchT *lastBranch = branches;
 
-static u_short fastrand(void) {
+static inline u_short fastrand(void) {
   static int ma = 0x3E50B28C;
   static int mb = 0xD461A7F9;
 
@@ -187,18 +187,7 @@ void GrowingTree(BranchT *branches, BranchT **lastp) {
 
 PROFILE(GrowTree);
 
-static short maybeSkipFrame = 0;
-
 static void Render(void) {
-  /* Frame lock the effect to 25 FPS */
-  if (maybeSkipFrame) {
-    maybeSkipFrame = 0;
-    if (frameCount - lastFrameCount == 1) {
-      TaskWaitVBlank();
-      return;
-    }
-  }
-
   BlitterLineSetup(screen, 0, LINE_OR|LINE_SOLID);
 
   if (lastBranch == branches) {
@@ -211,7 +200,6 @@ static void Render(void) {
   ProfilerStop(GrowTree);
 
   TaskWaitVBlank();
-  maybeSkipFrame = 1;
 }
 
 EFFECT(growing_tree, NULL, NULL, Init, Kill, Render);
