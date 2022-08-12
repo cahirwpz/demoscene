@@ -17,9 +17,21 @@ static BitmapT *screen;
 
 typedef struct Branch {
   short pos_x, pos_y; // Q12.4
-  short vel_x, vel_y; // Q4.12
+  union { // Q4.12
+    short word;
+    char byte;
+  } _vel_x;
+  union { // Q4.12
+    short word;
+    char byte;
+  } _vel_y;
   short diameter;     // Q12.4
 } BranchT;
+
+#define vel_x _vel_x.word
+#define vel_y _vel_y.word
+#define vel_x_b _vel_x.byte
+#define vel_y_b _vel_y.byte
 
 #define MAXBRANCHES 256
 
@@ -87,18 +99,38 @@ static void MakeBranch(short x, short y) {
   b->diameter = fx4i(20);
 }
 
-static void SplitBranch(BranchT *parent) {
-  BranchT *b = NewBranch();
-  if (!b)
-    return;
-  b->pos_x = parent->pos_x;
-  b->pos_y = parent->pos_y;
-  b->vel_x = parent->vel_x;
-  b->vel_y = parent->vel_y;
-  b->diameter = normfx(mul16(parent->diameter, fx12f(0.6)));
-  parent->diameter = b->diameter;
+static inline void KillBranch(BranchT *b, BranchT **lastp) {
+  BranchT *last = --(*lastp);
+  if (b != last)
+    *b = *last;
 }
 
+static void SplitBranch(BranchT *parent, BranchT **lastp) {
+  short newDiameter = normfx(mul16(parent->diameter, fx12f(0.6)));
+
+  if (newDiameter < fx4f(0.2)) {
+    KillBranch(parent, lastp);
+  } else {
+    BranchT *b = NewBranch();
+    if (!b)
+      return;
+    b->pos_x = parent->pos_x;
+    b->pos_y = parent->pos_y;
+    b->vel_x = parent->vel_x;
+    b->vel_y = parent->vel_y;
+    b->diameter = newDiameter;
+    parent->diameter = newDiameter;
+  }
+}
+
+static inline int shift14(short a) {
+  int b;
+  asm("swap %0\n\t"
+      "clrw %0\n\t"
+      "asrl #2,%0"
+      : "=d" (b) : "0" (a));
+  return b;
+}
 
 /*
  * float scale = random(1.0, 2.0);
@@ -125,25 +157,21 @@ void GrowingTree(BranchT *branches, BranchT **lastp) {
       short scale = (random() & 0xfff) + 0x1000; // Q4.12
       short bump_x = (random() & 0x3fff) - 0x2000; // Q4.12
       short bump_y = (random() & 0x3fff) - 0x2000; // Q4.12
-      short vel_x = b->vel_x;
-      short vel_y = b->vel_y;
-      short vel_scale = shift12(scale * 4) / (abs(vel_x) + abs(vel_y));
+      short vx = b->vel_x;
+      short vy = b->vel_y;
+      short vel_scale = shift14(scale) / (abs(vx) + abs(vy));
 
-      vel_x = bump_x + normfx(vel_scale * vel_x); 
-      vel_y = bump_y + normfx(vel_scale * vel_y);
-      b->vel_x = vel_x;
-      b->vel_y = vel_y;
+      b->vel_x = bump_x + normfx(vel_scale * vx);
+      b->vel_y = bump_y + normfx(vel_scale * vy);
 
-      curr_x = prev_x + (vel_x >> 8);
-      curr_y = prev_y + (vel_y >> 8);
+      curr_x = prev_x + b->vel_x_b;
+      curr_y = prev_y + b->vel_y_b;
     }
 
     if (curr_x < 0 || curr_x >= fx4i(WIDTH) ||
-        curr_y < 0 || curr_y >= fx4i(HEIGHT) || b->diameter < fx4f(0.2))
+        curr_y < 0 || curr_y >= fx4i(HEIGHT))
     {
-      BranchT *last = --(*lastp);
-      if (b != last)
-        *b = *last;
+      KillBranch(b, lastp);
     } else {
       BlitterLine(prev_x >> 4, prev_y >> 4, curr_x >> 4, curr_y >> 4);
 
@@ -151,7 +179,7 @@ void GrowingTree(BranchT *branches, BranchT **lastp) {
       b->pos_y = curr_y;
 
       if ((u_short)random() < (u_short)(65536 * 0.2f)) {
-        SplitBranch(b);
+        SplitBranch(b, lastp);
       }
     }
   }
