@@ -33,22 +33,24 @@ typedef struct Branch {
 #define vel_x_b _vel_x.byte
 #define vel_y_b _vel_y.byte
 
-#define MAXBRANCHES 56
+#define MAXBRANCHES 58
 
 static BranchT branches[MAXBRANCHES];
 static BranchT *lastBranch = branches;
 
-static inline u_short fastrand(void) {
-  static int ma = 0x3E50B28C;
-  static int mb = 0xD461A7F9;
+static inline int fastrand(void) {
+  static int m[2] = { 0x3E50B28C, 0xD461A7F9 };
 
-  int a = ma;
-  int b = mb;
+  int a, b;
 
-  b = swap16(b);
-
-  ma += b;
-  mb += a;
+  // https://www.atari-forum.com/viewtopic.php?p=188000#p188000
+  asm volatile("move.l (%2)+,%0\n"
+               "move.l (%2),%1\n"
+               "swap   %1\n"
+               "add.l  %0,(%2)\n"
+               "add.l  %1,-(%2)\n"
+               : "=d" (a), "=d" (b)
+               : "a" (m));
   
   return a;
 }
