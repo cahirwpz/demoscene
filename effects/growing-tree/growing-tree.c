@@ -33,7 +33,7 @@ typedef struct Branch {
 #define vel_x_b _vel_x.byte
 #define vel_y_b _vel_y.byte
 
-#define MAXBRANCHES 58
+#define MAXBRANCHES 75
 
 static BranchT branches[MAXBRANCHES];
 static BranchT *lastBranch = branches;
@@ -108,7 +108,7 @@ static inline void KillBranch(BranchT *b, BranchT **lastp) {
 }
 
 static void SplitBranch(BranchT *parent, BranchT **lastp) {
-  short newDiameter = normfx(mul16(parent->diameter, fx12f(0.6)));
+  short newDiameter = normfx(mul16(parent->diameter, fx12f(0.58)));
 
   if (newDiameter < fx4f(0.2)) {
     KillBranch(parent, lastp);
@@ -135,7 +135,7 @@ static inline int shift14(short a) {
 }
 
 /*
- * float scale = random(1.0, 2.0);
+ * float scale = random(1.0, 1.5);
  * float bump_x = random(-1.0, 1.0) * scale;
  * float bump_y = random(-1.0, 1.0) * scale;
  * float mag = abs(velocity.x) + abs(velocity.y);
@@ -156,12 +156,12 @@ void GrowingTree(BranchT *branches, BranchT **lastp) {
     short curr_x, curr_y;
 
     {
-      short scale = (random() & 0xfff) + 0x1000; // Q4.12
-      short bump_x = (random() & 0x3fff) - 0x2000; // Q4.12
-      short bump_y = (random() & 0x3fff) - 0x2000; // Q4.12
+      short scale = (random() & 0x7ff) + 0x1000; // Q4.12
+      short bump_x = (random() & 0x1fff) - 0x1000; // Q4.12
+      short bump_y = (random() & 0x1fff) - 0x1000; // Q4.12
       short vx = b->vel_x;
       short vy = b->vel_y;
-      short vel_scale = shift14(scale) / (abs(vx) + abs(vy));
+      short vel_scale = div16(shift14(scale), (abs(vx) + abs(vy)));
 
       b->vel_x = bump_x + normfx(vel_scale * vx);
       b->vel_y = bump_y + normfx(vel_scale * vy);
