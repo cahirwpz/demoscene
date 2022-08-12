@@ -47,7 +47,7 @@
 /* assumes that abs(idx) < 32768 */
 static inline short getword(const void *tab, short idx) {
   short res;
-  idx *= 2;
+  idx <<= 1;
   asm("movew (%2,%1:w),%0"
       : "=r" (res)
       : "d" (idx), "a" (tab));
@@ -57,12 +57,14 @@ static inline short getword(const void *tab, short idx) {
 /* assumes that abs(idx) < 16384 */
 static inline int getlong(const void *tab, short idx) {
   int res;
-  idx *= 4;
+  idx <<= 2;
   asm("movel (%2,%1:w),%0"
       : "=r" (res)
       : "d" (idx), "a" (tab));
   return res;
 }
+
+#define getptr(tab, idx) ((void *)getlong(tab, idx))
 
 static inline short absw(short a) {
   if (a < 0)
