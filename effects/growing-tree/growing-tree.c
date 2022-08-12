@@ -187,7 +187,18 @@ void GrowingTree(BranchT *branches, BranchT **lastp) {
 
 PROFILE(GrowTree);
 
+static short maybeSkipFrame = 0;
+
 static void Render(void) {
+  /* Frame lock the effect to 25 FPS */
+  if (maybeSkipFrame) {
+    maybeSkipFrame = 0;
+    if (frameCount - lastFrameCount == 1) {
+      TaskWaitVBlank();
+      return;
+    }
+  }
+
   BlitterLineSetup(screen, 0, LINE_OR|LINE_SOLID);
 
   if (lastBranch == branches) {
@@ -200,6 +211,7 @@ static void Render(void) {
   ProfilerStop(GrowTree);
 
   TaskWaitVBlank();
+  maybeSkipFrame = 1;
 }
 
 EFFECT(growing_tree, NULL, NULL, Init, Kill, Render);
