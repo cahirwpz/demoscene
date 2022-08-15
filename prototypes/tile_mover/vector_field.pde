@@ -116,6 +116,16 @@ class TestField8 implements Function<PVector, PVector> {
   }
 }
 
+class TestField9 implements Function<PVector, PVector> {
+  @Override
+  PVector apply(PVector p) {
+    PVector v = new PVector();
+    v.x = sin(p.y * 10) / 5;
+    v.y = sin(p.x * 10) / 5;
+    return v;
+  }
+}
+
 ArrayList<VectorField> fields = new ArrayList<VectorField>();
 
 void addVectorField(Function<PVector, PVector> func, 

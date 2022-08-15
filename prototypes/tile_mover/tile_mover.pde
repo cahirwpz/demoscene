@@ -1,7 +1,7 @@
 final int size = 16;
 
 PGraphics screen;
-boolean showDebug = false;
+boolean showDebug = true;
 boolean showBoundingBoxes = false;
 boolean mouseDraw = false;
 boolean motionBlur = false;
@@ -18,7 +18,7 @@ void setup() {
 
   screen = createGraphics(512, 512);
 
- // addVectorField(new TestField1(), PI/3, PI, -1.0, 0.25);
+  addVectorField(new TestField1(), PI/3, PI, -1.0, 0.25);
   addVectorField(new TestField2(), -PI/2, PI/2, 0, PI/2);
   addVectorField(new TestField3(), -PI, PI, -PI/2, PI/2);
   addVectorField(new TestField4(), -2 * PI, 2 * PI, -PI, PI);
@@ -27,6 +27,7 @@ void setup() {
   addVectorField(new TestField7(), PI / 8, PI / 2, -PI / 4, PI / 4);
   addVectorField(new TestField8(), -PI / 2, PI / 2, -PI / 2, PI / 2);
   addVectorField(new TestField8(), -PI / 3, PI / 3, PI / 3, PI * 1.5);
+  addVectorField(new TestField9(), -1.0, 1.0, -1.0, 1.0);
 
   active = fields.size() - 1;
 }
