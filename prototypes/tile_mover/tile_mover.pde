@@ -1,7 +1,7 @@
 final int size = 16;
 
 PGraphics screen;
-boolean showDebug = true;
+boolean showDebug = false;
 boolean showBoundingBoxes = false;
 boolean mouseDraw = false;
 boolean motionBlur = false;
