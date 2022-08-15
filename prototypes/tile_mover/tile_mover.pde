@@ -1,7 +1,8 @@
 final int size = 16;
 
 PGraphics screen;
-boolean showVectors = false;
+boolean showDebug = false;
+boolean showBoundingBoxes = false;
 boolean mouseDraw = false;
 boolean motionBlur = false;
 color mouseColor;
@@ -17,7 +18,7 @@ void setup() {
 
   screen = createGraphics(512, 512);
 
-  addVectorField(new TestField1(), PI/3, PI, -1.0, 0.25);
+ // addVectorField(new TestField1(), PI/3, PI, -1.0, 0.25);
   addVectorField(new TestField2(), -PI/2, PI/2, 0, PI/2);
   addVectorField(new TestField3(), -PI, PI, -PI/2, PI/2);
   addVectorField(new TestField4(), -2 * PI, 2 * PI, -PI, PI);
@@ -51,6 +52,33 @@ void renderVectors() {
       screen.point(sx, sy);
       screen.stroke(255, 0, 0);
       screen.point(dx, dy);
+    }
+  }
+  screen.endDraw();
+
+  image(screen, 0, 0);
+}
+
+void renderBoxes() {
+  VectorField f = fields.get(active);
+
+  screen.beginDraw();
+  screen.background(0);
+  screen.stroke(255);
+  for (int y = 0; y < f.h; y++) {
+    for (int x = 0; x < f.w; x++) {
+      PVector v = f.get(x, y);
+      int dx = x * size;
+      int dy = y * size;
+      int sx = int((x + v.x) * size);
+      int sy = int((y + v.y) * size);
+
+      screen.stroke(128);
+      screen.line(dx, dy, dx+size, dy);
+      screen.line(dx+size, dy, dx+size, dy+size);
+      screen.stroke(255);
+      screen.line(sx, sy, sx+size, sy);
+      screen.line(sx+size, sy, sx+size, sy+size);
     }
   }
   screen.endDraw();
@@ -129,7 +157,7 @@ void renderFrame() {
 void status() {
   String status = String.format(
     "Tile Mover prototype\n" +
-    "[c]lear, show [v]ectors, [n]ext vector field\n" +
+    "[c]lear, show [d]ebug, toggle [b]ounding box view\n, [n]ext vector field\n" +
     "[m]otion blur, (LMB) draw rectangle");
 
   fill(64);
@@ -139,8 +167,12 @@ void status() {
 }
 
 void draw() {  
-  if (showVectors) {
-    renderVectors();
+  if (showDebug) {
+    if (showBoundingBoxes) {
+    renderBoxes(); 
+    } else {
+      renderVectors();
+    }
   } else {
     renderFrame();
   }
@@ -154,8 +186,10 @@ void keyPressed() {
     screen.beginDraw();
     screen.background(0);
     screen.endDraw();
-  } else if (key == 'v') {
-    showVectors = !showVectors;
+  } else if (key == 'd') {
+    showDebug = !showDebug;
+  } else if (key == 'b') {
+    showBoundingBoxes = !showBoundingBoxes;
   } else if (key == 'm') {
     motionBlur = !motionBlur;
   } else if (key == 'n') {
