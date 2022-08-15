@@ -28,7 +28,7 @@
 // on that square died). This process is repeated indefinitely.
 
 // max amount boards for current board + intermediate results
-#define BOARD_COUNT 10
+#define BOARD_COUNT 11
 
 #define DISP_WIDTH 320
 #define DISP_HEIGHT 256
@@ -72,6 +72,7 @@
 //
 
 #include "data/p46basedprng.c"
+#include "games.c"
 
 static CopListT *cp;
 static BitmapT *current_board;
@@ -92,82 +93,6 @@ static u_short states_head = 0;
 
 // phase (0-8) of blitter calculations
 static u_short phase = 0;
-
-typedef void (BlitterPhaseFunc)(const BitmapT*, const BitmapT*, const BitmapT*, const BitmapT*, u_short minterms);
-
-typedef struct BlitterPhaseT {
-  BlitterPhaseFunc* blitfunc;
-  u_short minterm;
-  u_char srca;
-  u_char srcb;
-  u_char srcc;
-  u_char dst;
-} BlitterPhaseT;
-
-typedef struct GameDefinitionT {
-  const BlitterPhaseT* phases;
-  u_short num_phases;
-} GameDefinitionT;
-
-static void BlitAdjacentHorizontal(const BitmapT *sourceA, const BitmapT* sourceB,
-                                   const BitmapT *sourceC, const BitmapT *target,
-                                   u_short minterms);
-
-static void BlitAdjacentVertical(const BitmapT *sourceA, const BitmapT* sourceB,
-                                 const BitmapT *sourceC, const BitmapT *target,
-                                 u_short minterms);
-
-static void BlitFunc(const BitmapT *sourceA, const BitmapT* sourceB,
-                     const BitmapT *sourceC, const BitmapT *target,
-                     u_short minterms);
-
-#define PHASE(sa, sb, sc, d, mt, bf) \
-  (BlitterPhaseT){.blitfunc=bf, .minterm=mt, .srca=sa, .srcb=sb, .srcc=sc, .dst=d}
-#define PHASE_SIMPLE(s, d, mt, bf) PHASE(s, 0, 0, d, mt, bf)
-
-static const BlitterPhaseT gol_phases[9] = {
-  PHASE_SIMPLE(0, 1, FULL_ADDER, BlitAdjacentHorizontal),
-  PHASE_SIMPLE(0, 2, FULL_ADDER_CARRY, BlitAdjacentHorizontal),
-  PHASE_SIMPLE(1, 3, NANBC | NABNC | NABC | ANBNC | ANBC | ABNC, BlitAdjacentVertical),
-  PHASE_SIMPLE(1, 4, NANBNC | NABC | ANBC | ABNC, BlitAdjacentVertical),
-  PHASE_SIMPLE(2, 5, NANBNC | NABC | ANBC | ABNC, BlitAdjacentVertical),
-  PHASE_SIMPLE(2, 6, NANBNC | ABC, BlitAdjacentVertical),
-  PHASE(5, 0, 6, 7, NABNC | ANBNC | ANBC | ABC, BlitFunc),
-  PHASE(4, 7, 6, 8, NANBC | NABC | ANBNC | ANBC, BlitFunc),
-  PHASE(5, 3, 8, 0, NABNC | ANBC, BlitFunc)
-};
-
-static const GameDefinitionT classic_gol = {
-  .phases = gol_phases,
-  .num_phases = 9
-};
-
-// 0 - NANBNC
-// 1 - NANBC
-// 2 - NABNC
-// 3 - NABC
-// 4 - ANBNC
-// 5 - ANBC
-// 6 - ABNC
-// 7 - ABC
-
-static const BlitterPhaseT maze_phases[10] = {
-  PHASE_SIMPLE(0, 1, FULL_ADDER, BlitAdjacentHorizontal),
-  PHASE_SIMPLE(0, 2, FULL_ADDER_CARRY, BlitAdjacentHorizontal),
-  PHASE_SIMPLE(1, 3, NANBC | NABNC | ANBNC | ABC, BlitAdjacentVertical),
-  PHASE_SIMPLE(1, 4, NABC | ANBC | ABNC | ABC, BlitAdjacentVertical),
-  PHASE_SIMPLE(2, 5, NANBNC | ABC, BlitAdjacentVertical),
-  PHASE_SIMPLE(2, 6, NABC | ANBC | ABNC | ABC, BlitAdjacentVertical),
-  PHASE(4, 6, 5, 7, NANBC | NABNC | ANBNC | ABC, BlitFunc),
-  PHASE(3, 5, 7, 8, NANBNC | NANBC | NABNC | ANBC, BlitFunc),
-  PHASE(6, 7, 6, 9, NANBC | NABNC | ANBNC | ANBC | ABC, BlitFunc),
-  PHASE(9, 0, 8, 0, NANBNC | NABNC | NABC | ABC, BlitFunc)
-};
-
-static const GameDefinitionT maze = {
-  .phases = maze_phases,
-  .num_phases = 10
-};
 
 static const GameDefinitionT* current_game;
 
@@ -370,11 +295,11 @@ static void UpdateBitplanePointers(void) {
   }
 }
 
-static void GameOfLife(void) {
+void GameOfLife(void) {
   ClearIRQ(INTF_BLIT);
   if (phase < current_game->num_phases) {
-    BlitterPhaseT p = current_game->phases[phase];
-    p.blitfunc(boards[p.srca], boards[p.srcb], boards[p.srcc], boards[p.dst], p.minterm);
+    const BlitterPhaseT *p = &current_game->phases[phase];
+    p->blitfunc(boards[p->srca], boards[p->srcb], boards[p->srcc], boards[p->dst], p->minterm);
   }
   phase++;
 }
@@ -388,7 +313,7 @@ static void Init(void) {
     boards[i] = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
 
   current_board = boards[0];
-  current_game = &maze;
+  current_game = &classic_gol;
 
   SetupPlayfield(MODE_LORES, DISP_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
   LoadPalette(&palette, 0);
