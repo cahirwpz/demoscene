@@ -420,7 +420,7 @@ static ArenaT *ArenaOf(void *ptr) {
   return ar;
 }
 
-void *MemAlloc(u_int size asm("d0"), u_int attributes asm("d1")) {
+void *MemAlloc(u_int size, u_int attributes) {
   WordT *bt = NULL;
   ArenaT *ar;
   void *ptr;
@@ -447,12 +447,12 @@ void *MemAlloc(u_int size asm("d0"), u_int attributes asm("d1")) {
   return ptr;
 }
 
-void MemFree(void *p asm("a0")) {
+void MemFree(void *p) {
   if (p != NULL)
     ArenaMemFree(ArenaOf(p), p);
 }
 
-void *MemResize(void *old_ptr asm("a0"), u_int size asm("d0")) {
+void *MemResize(void *old_ptr, u_int size) {
   void *new_ptr;
   ArenaT *ar;
 
