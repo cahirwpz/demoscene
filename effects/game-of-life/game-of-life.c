@@ -28,7 +28,7 @@
 // on that square died). This process is repeated indefinitely.
 
 // max amount boards for current board + intermediate results
-#define BOARD_COUNT 11
+#define BOARD_COUNT 12
 
 #define DISP_WIDTH 320
 #define DISP_HEIGHT 256
@@ -71,7 +71,18 @@
 // -----------------------------------------------------------------------------
 //
 
+#define DEBUG_KBD 0
+
+#ifdef DEBUG_KBD
+  #include <system/event.h>
+  #include <system/keyboard.h>
+#endif
+
 #include "data/p46basedprng.c"
+#include "data/wire.c"
+#include "data/electrons.c"
+#include "data/tails.c"
+#include "data/run.c"
 #include "games.c"
 
 static CopListT *cp;
@@ -93,6 +104,9 @@ static u_short states_head = 0;
 
 // phase (0-8) of blitter calculations
 static u_short phase = 0;
+
+// which wireworld game (0-1) phase are we on
+static u_short wireworld_step = 0;
 
 static const GameDefinitionT* current_game;
 
@@ -225,6 +239,22 @@ static void BlitFunc(const BitmapT *sourceA, const BitmapT *sourceB,
   custom->bltsize = bltsize;
 }
 
+// This is a bit hacky way to reuse the current interface for blitter phases
+// to do something after the last blit has been completed. For technical
+// reasons wireworld implementation requires 2 separate games to be ran
+// in alternating fashion, and the switch between them must be done precisely
+// when the board for a game finishes being calculated or things will break
+// in ways undebuggable by single-stepping the game state
+static void WireworldSwitch(__attribute__((unused)) const BitmapT *sourceA,
+                            __attribute__((unused)) const BitmapT *sourceB,
+                            __attribute__((unused)) const BitmapT *sourceC,
+                            __attribute__((unused)) const BitmapT *target,
+                            __attribute__((unused)) u_short minterms) {
+  current_board = boards[wireworld_step];
+  current_game = wireworlds[wireworld_step];
+  wireworld_step ^= 1;
+}
+
 static void (*PixelDouble)(u_char *source asm("a0"), u_short *target asm("a1"),
                            u_short *lut asm("a2"));
 
@@ -265,10 +295,9 @@ static void MakeCopperList(CopListT *cp) {
   // initially previous states are empty
   // save addresses of these instructions to change bitplane
   // order when new state gets generated
-  bplptr[0] = CopMove32(cp, bplpt[0], prev_states[0]->planes[0]);
-  bplptr[1] = CopMove32(cp, bplpt[1], prev_states[1]->planes[0]);
-  bplptr[2] = CopMove32(cp, bplpt[2], prev_states[2]->planes[0]);
-  bplptr[3] = CopMove32(cp, bplpt[3], prev_states[3]->planes[0]);
+  for (i = 0; i < DISP_DEPTH; i++)
+    bplptr[i] = CopMove32(cp, bplpt[i], prev_states[i]->planes[0]);
+
   for (i = 1; i <= DISP_HEIGHT; i += 2) {
     // vertical pixel doubling
     CopMove16(cp, bpl1mod, -prev_states[0]->bytesPerRow);
@@ -313,7 +342,8 @@ static void Init(void) {
     boards[i] = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
 
   current_board = boards[0];
-  current_game = &classic_gol;
+  current_game = &wireworld1;
+  BitmapCopy(boards[11], EXT_WIDTH_LEFT, EXT_HEIGHT_TOP, &run);
 
   SetupPlayfield(MODE_LORES, DISP_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
   LoadPalette(&palette, 0);
@@ -329,11 +359,17 @@ static void Init(void) {
 
   // set up initial state
   BitmapClear(current_board);
-  BitmapCopy(current_board, 20, EXT_HEIGHT_TOP + 10, &p46basedprng);
+  BitmapCopy(current_board, EXT_WIDTH_LEFT, EXT_HEIGHT_TOP, &electrons);
+  BitmapClear(boards[1]);
+  BitmapCopy(boards[1], EXT_WIDTH_LEFT, EXT_HEIGHT_TOP, &tails);
 
   cp = NewCopList(800);
   MakeCopperList(cp);
   CopListActivate(cp);
+
+#ifdef DEBUG_KBD
+  KeyboardInit();
+#endif
 
   EnableDMA(DMAF_RASTER);
 
@@ -348,6 +384,10 @@ static void Kill(void) {
   DisableINT(INTF_BLIT);
   ResetIntVector(INTB_BLIT);
 
+#ifdef DEBUG_KBD
+  KeyboardKill();
+#endif
+
   for (i = 0; i < BOARD_COUNT; i++)
     DeleteBitmap(boards[i]);
 
@@ -360,18 +400,50 @@ static void Kill(void) {
 
 PROFILE(GOLStep)
 
-static void Render(void) {
-  void *src = prev_states[states_head % PREV_STATES_DEPTH]->planes[0];
-  void *dst =
-    current_board->planes[0] + current_board->bytesPerRow + EXT_WIDTH_LEFT / 8;
+static void GolStep(void) {
+  void *dst = prev_states[states_head % PREV_STATES_DEPTH]->planes[0];
+  void *src = current_board->planes[0] + current_board->bytesPerRow + EXT_WIDTH_LEFT / 8;
 
   ProfilerStart(GOLStep);
-  PixelDouble(dst, src, double_pixels);
+  PixelDouble(src, dst, double_pixels);
   UpdateBitplanePointers();
   states_head = (states_head+1) % PREV_STATES_DEPTH;
   phase = 0;
   GameOfLife();
   ProfilerStop(GOLStep);
+}
+
+static u_short run_continous = 1;
+
+#ifdef DEBUG_KBD
+
+static bool HandleEvent(void) {
+  EventT ev[1];
+
+  if (!PopEvent(ev))
+    return true;
+
+  if (ev->type == EV_KEY && !(ev->key.modifier & MOD_PRESSED)) {
+    if (ev->key.code == KEY_ESCAPE)
+      return false;
+    else if (ev->key.code == KEY_SPACE)
+      GolStep();
+    else if (ev->key.code == KEY_C)
+      run_continous ^= 1;
+  }
+
+  return true;
+}
+
+#endif
+
+static void Render(void) {
+  if (run_continous)
+    GolStep();
+
+#ifdef DEBUG_KBD
+  exitLoop = !HandleEvent();
+#endif
 }
 
 EFFECT(GameOfLife, NULL, NULL, Init, Kill, Render);

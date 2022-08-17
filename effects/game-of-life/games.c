@@ -26,6 +26,12 @@ static void BlitFunc(const BitmapT *sourceA, const BitmapT* sourceB,
                      const BitmapT *sourceC, const BitmapT *target,
                      u_short minterms);
 
+static void WireworldSwitch(__attribute__((unused)) const BitmapT *sourceA,
+                            __attribute__((unused)) const BitmapT *sourceB,
+                            __attribute__((unused)) const BitmapT *sourceC,
+                            __attribute__((unused)) const BitmapT *target,
+                            __attribute__((unused)) u_short minterms);
+
 #define PHASE(sa, sb, sc, d, mt, bf) \
   (BlitterPhaseT){.blitfunc=bf, .minterm=mt, .srca=sa, .srcb=sb, .srcc=sc, .dst=d}
 #define PHASE_SIMPLE(s, d, mt, bf) PHASE(s, 0, 0, d, mt, bf)
@@ -136,18 +142,71 @@ static const GameDefinitionT day_and_night = {
   .num_phases = 10
 };
 
-static const BlitterPhaseT wireworld_phases[8] = {
+static const BlitterPhaseT three_four_phases[9] = {
   PHASE_SIMPLE(0, 1, FULL_ADDER, BlitAdjacentHorizontal),
   PHASE_SIMPLE(0, 2, FULL_ADDER_CARRY, BlitAdjacentHorizontal),
-  PHASE_SIMPLE(1, 3, NANBNC | ABC, BlitAdjacentVertical),
-  PHASE_SIMPLE(1, 4, NANBNC, BlitAdjacentVertical),
-  PHASE_SIMPLE(2, 5, NANBC | NABNC | ANBNC | NABC | ANBC | ABNC | ABC, BlitAdjacentVertical),
-  PHASE_SIMPLE(2, 6, NANBNC | NABC | ANBC | ABNC | ABC, BlitAdjacentVertical),
-  PHASE(6, 3, 0, 7, NABC | ANBC | ABNC | ABC, BlitFunc),
-  PHASE(5, 7, 4, 0, NANBNC | ANBC, BlitFunc),
+  PHASE_SIMPLE(1, 3, NANBNC | NABC | ANBC | ABNC, BlitAdjacentVertical),
+  PHASE_SIMPLE(1, 4, NANBNC | NANBC | NABNC | ANBNC, BlitAdjacentVertical),
+  PHASE_SIMPLE(2, 5, NANBC | NABNC | ANBNC | NABC | ANBC | ABNC, BlitAdjacentVertical),
+  PHASE_SIMPLE(2, 6, NANBC | NABNC | ANBNC | ABC, BlitAdjacentVertical),
+  PHASE(3, 0, 6, 7, NANBC | NABNC | ANBNC | ABNC, BlitFunc),
+  PHASE(5, 6, 7, 8, NANBNC | ANBC | ABNC | ABC, BlitFunc),
+  PHASE(7, 8, 4, 0, NABNC | ABC, BlitFunc),
 };
 
-static const GameDefinitionT wireworld = {
-  .phases = wireworld_phases,
-  .num_phases = 8
+static const GameDefinitionT three_four = {
+  .phases = three_four_phases,
+  .num_phases = 9
+};
+
+// take GOL board for rule B12345678/S12345678, only leave pixels which lie on the
+// circuit, and remove pixels which were lit one and two generations ago
+static const BlitterPhaseT wireworld_phases1[11] = {
+  // 0 = state from one generation ago
+  // 1 = state from two generations ago
+  // 11 = circuit
+  PHASE_SIMPLE(0, 2, FULL_ADDER, BlitAdjacentHorizontal), 
+  PHASE_SIMPLE(0, 3, FULL_ADDER_CARRY, BlitAdjacentHorizontal),
+  PHASE_SIMPLE(2, 4, NANBNC | NABC | ANBC | ABNC, BlitAdjacentVertical),
+  PHASE_SIMPLE(2, 5, NABC | ANBC | ABNC | ABC, BlitAdjacentVertical),
+  PHASE_SIMPLE(3, 6, NANBNC | NANBC | NABNC | ANBNC | NABC | ANBC | ABNC, BlitAdjacentVertical),
+  PHASE_SIMPLE(3, 7, NANBNC | ABC, BlitAdjacentVertical),
+  PHASE(7, 4, 0, 8, ANBC | ABNC | ABC, BlitFunc),
+  PHASE(6, 5, 8, 9, NANBNC | NANBC | NABC | ANBNC | ABNC | ABC, BlitFunc),
+  PHASE(11, 9, 0, 10, ABNC, BlitFunc),
+  PHASE(1, 10, 10, 1, NABC, BlitFunc),
+  PHASE(0, 0, 0, 0, 0x0, WireworldSwitch),
+  //PHASE(10, 10, 10, 0, ABC, BlitFunc), 
+};
+
+static const BlitterPhaseT wireworld_phases2[11] = {
+  // 1 = state from one generation ago
+  // 0 = state from two generations ago
+  // 11 = circuit
+  PHASE_SIMPLE(1, 2, FULL_ADDER, BlitAdjacentHorizontal),
+  PHASE_SIMPLE(1, 3, FULL_ADDER_CARRY, BlitAdjacentHorizontal),
+  PHASE_SIMPLE(2, 4, NANBNC | NABC | ANBC | ABNC, BlitAdjacentVertical),
+  PHASE_SIMPLE(2, 5, NABC | ANBC | ABNC | ABC, BlitAdjacentVertical),
+  PHASE_SIMPLE(3, 6, NANBNC | NANBC | NABNC | ANBNC | NABC | ANBC | ABNC, BlitAdjacentVertical),
+  PHASE_SIMPLE(3, 7, NANBNC | ABC, BlitAdjacentVertical),
+  PHASE(7, 4, 1, 8, ANBC | ABNC | ABC, BlitFunc),
+  PHASE(6, 5, 8, 9, NANBNC | NANBC | NABC | ANBNC | ABNC | ABC, BlitFunc),
+  PHASE(11, 9, 1, 10, ABNC, BlitFunc),
+  PHASE(0, 10, 10, 0, NABC, BlitFunc),
+  PHASE(0, 0, 0, 0, 0x0, WireworldSwitch),
+};
+
+static const GameDefinitionT wireworld1 = {
+  .phases = wireworld_phases1,
+  .num_phases = 11
+};
+
+static const GameDefinitionT wireworld2 = {
+  .phases = wireworld_phases2,
+  .num_phases = 11
+};
+
+static const GameDefinitionT* wireworlds[2] = {
+  &wireworld1,
+  &wireworld2
 };
