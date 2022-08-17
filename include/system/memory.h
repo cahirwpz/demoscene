@@ -25,10 +25,8 @@ u_int MemAvail(u_int attributes);
 void AddMemory(void *ptr, u_int byteSize, u_int attributes);
 #endif
 
-#include <system/syscall.h>
-
-SYSCALL2(MemAlloc, void *, u_int, byteSize, d0, u_int, attributes, d1);
-SYSCALL2(MemResize, void *, void *, memoryBlock, a0, u_int, byteSize, d0);
-SYSCALL1NR(MemFree, void *, memoryBlock, a0);
+void *MemAlloc(u_int byteSize, u_int attributes);
+void *MemResize(void *memoryBlock, u_int byteSize);
+void MemFree(void *memoryBlock);
 
 #endif /* !__SYSTEM_MEMORY_H__ */

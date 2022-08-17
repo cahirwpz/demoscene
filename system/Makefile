@@ -12,11 +12,9 @@ SOURCES := \
 	debug.c \
 	debug-putchar.S \
 	effect.c \
-	jumptab.S \
 	loader.c \
 	main.c \
 	profiler.c \
-	syscall.S \
 	drivers/cia-frame.c \
 	drivers/cia-icr.c \
 	drivers/cia-line.c \
@@ -45,8 +43,3 @@ CFLAGS.amigaos = -Wno-strict-prototypes
 BUILD-FILES = crt0.o
 		
 include $(TOPDIR)/build/lib.mk
-
-syscall.S jumptab.S: system-api.py system-api.in 
-	python3 system-api.py system-api.in syscall.S jumptab.S
-
-CLEAN-FILES += jumptab.S jumptab.o syscall.S syscall.o

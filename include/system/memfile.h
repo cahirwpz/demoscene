@@ -2,7 +2,6 @@
 #define __SYSTEM_MEMFILE_H__
 
 #include <types.h>
-#include <system/syscall.h>
 
 struct File;
 

@@ -2,7 +2,6 @@
 #define __SYSTEM_FILESYS_H__
 
 #include <types.h>
-#include <system/syscall.h>
 
 struct File;
 
@@ -11,6 +10,6 @@ void InitFileSys(struct File *dev);
 void KillFileSys(void);
 #endif
 
-SYSCALL1(OpenFile, struct File *, const char *, path, a0);
+struct File *OpenFile(const char *path);
 
 #endif /* !__SYSTEM_FILESYS_H__ */

@@ -63,7 +63,7 @@ static FileEntryT *LookupFile(const char *path) {
   return NULL;
 }
 
-FileT *OpenFile(const char *path asm("a0")) {
+FileT *OpenFile(const char *path) {
   FileEntryT *entry;
   FileT *f;
 

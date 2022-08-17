@@ -42,16 +42,14 @@ typedef struct IntServer {
 void SetupInterruptVector(void);
 #endif
 
-#include <system/syscall.h>
-
 /* Set up ISR for given interrupt number. */
-SYSCALL3NR(SetIntVector, u_int, irq, d0, IntHandlerT, code, a0, void *, data, a1);
+void SetIntVector(u_int irq, IntHandlerT code, void *data);
 
 /* Register Interrupt Server for given Interrupt Chain. */
-SYSCALL2NR(AddIntServer, u_int, irq, d0, IntServerT *, is, a0);
+void AddIntServer(u_int irq, IntServerT *is);
 
 /* Unregister Interrupt Server for given Interrupt Chain. */
-SYSCALL2NR(RemIntServer, u_int, irq, d0, IntServerT *, is, a0);
+void RemIntServer(u_int irq, IntServerT *is);
 #endif
 
 #endif /* !__SYSTEM_INTERRUPT_H__ */
