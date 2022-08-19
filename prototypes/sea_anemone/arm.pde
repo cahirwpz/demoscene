@@ -5,13 +5,13 @@ boolean solid = true;
 color armDark = #006663;
 color armLight = #DFF5F4;
 
-class Circle {
+class Arm {
   PVector pos;
   PVector vel;
   PVector accel;
   int s;
 
-  Circle() {
+  Arm() {
     pos = new PVector(WIDTH / 2, HEIGHT / 2);
     vel = new PVector();
     accel = new PVector();

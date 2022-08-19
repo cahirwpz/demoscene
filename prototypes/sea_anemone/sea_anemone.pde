@@ -6,7 +6,7 @@
 final int WIDTH = 320;
 final int HEIGHT = 256;
 
-ArrayList<Circle> circles = new ArrayList<Circle>();
+ArrayList<Arm> arms = new ArrayList<Arm>();
 PGraphics screen;
 
 void setup() {
@@ -51,15 +51,15 @@ void status() {
 }
 
 void draw() {
-  circles.add(new Circle());
+  arms.add(new Arm());
 
   screen.beginDraw();
-  for (int i = circles.size() - 1; i >= 0; i--) {
-    Circle c = circles.get(i);
-    c.show(screen);
-    c.move();
-    if (c.isDead()) {
-      circles.remove(i);
+  for (int i = arms.size() - 1; i >= 0; i--) {
+    Arm a = arms.get(i);
+    a.show(screen);
+    a.move();
+    if (a.isDead()) {
+      arms.remove(i);
     }
   }
   screen.endDraw();
@@ -73,8 +73,8 @@ void reset() {
   screen.background(0);
   screen.endDraw();
 
-  circles.clear();
-  circles.add(new Circle());
+  arms.clear();
+  arms.add(new Arm());
 }
 
 void keyPressed() {
