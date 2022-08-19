@@ -1,8 +1,8 @@
 final int size = 16;
 
 PGraphics screen;
-boolean showDebug = false;
-boolean showBoundingBoxes = false;
+boolean showVectors = false;
+boolean showTiles = false;
 boolean mouseDraw = false;
 boolean motionBlur = false;
 color mouseColor;
@@ -32,7 +32,7 @@ void setup() {
   active = fields.size() - 1;
 }
 
-void renderVectors() {
+void renderInfo() {
   VectorField f = fields.get(active);
 
   screen.beginDraw();
@@ -47,39 +47,21 @@ void renderVectors() {
       int sx = int((x + v.x) * size);
       int sy = int((y + v.y) * size);
 
-      screen.stroke(128);
-      screen.line(sx, sy, dx, dy);
-      screen.stroke(255);
-      screen.point(sx, sy);
-      screen.stroke(255, 0, 0);
-      screen.point(dx, dy);
-    }
-  }
-  screen.endDraw();
-
-  image(screen, 0, 0);
-}
-
-void renderBoxes() {
-  VectorField f = fields.get(active);
-
-  screen.beginDraw();
-  screen.background(0);
-  screen.stroke(255);
-  for (int y = 0; y < f.h; y++) {
-    for (int x = 0; x < f.w; x++) {
-      PVector v = f.get(x, y);
-      int dx = x * size;
-      int dy = y * size;
-      int sx = int((x + v.x) * size);
-      int sy = int((y + v.y) * size);
-
-      screen.stroke(128);
-      screen.line(dx, dy, dx+size, dy);
-      screen.line(dx+size, dy, dx+size, dy+size);
-      screen.stroke(255);
-      screen.line(sx, sy, sx+size, sy);
-      screen.line(sx+size, sy, sx+size, sy+size);
+      if (showTiles) {
+        screen.stroke(128);
+        screen.line(dx, dy, dx + size, dy);
+        screen.line(dx + size, dy, dx + size, dy + size);
+        screen.stroke(255);
+        screen.line(sx, sy, sx + size, sy);
+        screen.line(sx + size, sy, sx + size, sy + size);
+      } else {
+        screen.stroke(128);
+        screen.line(sx, sy, dx, dy);
+        screen.stroke(255);
+        screen.point(sx, sy);
+        screen.stroke(255, 0, 0);
+        screen.point(dx, dy);
+      }
     }
   }
   screen.endDraw();
@@ -158,39 +140,41 @@ void renderFrame() {
 void status() {
   String status = String.format(
     "Tile Mover prototype\n" +
-    "[c]lear, show [d]ebug, toggle [b]ounding box view\n, [n]ext vector field\n" +
-    "[m]otion blur, (LMB) draw rectangle");
+    "[c]lear, [n]ext vector field, [m]otion blur\n" +
+    "show [v]ectors, show [t]iles, (LMB) draw rectangle");
 
   fill(64);
-  rect(2, 512, width-8, 88, 8);
+  rect(2, 512, width - 4, 64, 8);
   fill(255);
   text(status, 6, 528);
 }
 
 void draw() {  
-  if (showDebug) {
-    if (showBoundingBoxes) {
-    renderBoxes(); 
-    } else {
-      renderVectors();
-    }
+  if (showVectors || showTiles) {
+    renderInfo();
   } else {
     renderFrame();
   }
   status();
 }
 
+void clear() {
+  screen.beginDraw();
+  screen.background(0);
+  screen.endDraw();
+}
+
 void keyPressed() {
   if (key == 'c') {
     fill(0);
     rect(0, 0, screen.width, screen.height);
-    screen.beginDraw();
-    screen.background(0);
-    screen.endDraw();
-  } else if (key == 'd') {
-    showDebug = !showDebug;
-  } else if (key == 'b') {
-    showBoundingBoxes = !showBoundingBoxes;
+    clear();
+  } else if (key == 'v') {
+    showVectors = !showVectors;
+    showTiles = false;
+  } else if (key == 't') {
+    showTiles = !showTiles;
+    showVectors = false;
   } else if (key == 'm') {
     motionBlur = !motionBlur;
   } else if (key == 'n') {
