@@ -5,25 +5,6 @@
 
 extern EffectT Effect;
 
-static u_char IsWaiting = 0;
-
-static void VBlankWakeupHandler(void) {
-  if (IsWaiting) {
-    IsWaiting = 0;
-    TaskNotifyISR(INTF_VERTB);
-  }
-}
-
-INTSERVER(VertBlankWakeup, 0, (IntFuncT)VBlankWakeupHandler, NULL);
-
-/* Puts a task into sleep waiting for VBlank interrupt. */
-void TaskWaitVBlank(void) {
-  IntrDisable();
-  IsWaiting = -1;
-  TaskWait(INTF_VERTB);
-  IntrEnable();
-}
-
 #define BGTASK 0
 
 #if BGTASK
@@ -52,15 +33,11 @@ int main(void) {
 
   StartBgTask();
 
-  AddIntServer(INTB_VERTB, VertBlankWakeup);
-
   EffectLoad(&Effect);
   EffectInit(&Effect);
   EffectRun(&Effect);
   EffectKill(&Effect);
   EffectUnLoad(&Effect);
-
-  RemIntServer(INTB_VERTB, VertBlankWakeup);
 
   return 0;
 }

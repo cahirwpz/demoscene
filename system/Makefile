@@ -15,6 +15,7 @@ SOURCES := \
 	loader.c \
 	main.c \
 	profiler.c \
+	vblank.c \
 	drivers/cia-frame.c \
 	drivers/cia-icr.c \
 	drivers/cia-line.c \
