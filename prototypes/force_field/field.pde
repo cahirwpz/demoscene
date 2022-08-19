@@ -15,10 +15,10 @@ abstract class ForceField {
     o = new PVector();
     dx = new PVector();
     dy = new PVector();
-    
+
     magnitude = 1.0;
   }
-  
+
   abstract float force(PVector p);
 
   void scale(float x, float y) {
