@@ -88,4 +88,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(transparency, NULL, NULL, Init, Kill, Render);
+EFFECT(Transparency, NULL, NULL, Init, Kill, Render);

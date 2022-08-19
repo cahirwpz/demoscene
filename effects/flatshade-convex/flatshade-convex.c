@@ -342,4 +342,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(flatshade_convex, Load, UnLoad, Init, Kill, Render);
+EFFECT(FlatShadeConvex, Load, UnLoad, Init, Kill, Render);

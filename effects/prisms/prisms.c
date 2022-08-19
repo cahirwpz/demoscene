@@ -342,4 +342,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(prisms, NULL, NULL, Init, Kill, Render);
+EFFECT(Prisms, NULL, NULL, Init, Kill, Render);

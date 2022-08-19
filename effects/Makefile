@@ -52,6 +52,9 @@ FAILURES := \
 	tests \
 	vscaler
 
+EXTRA-FILES += main.o
+CLEAN-FILES += main.o
+
 all: build
 
 include $(TOPDIR)/build/common.mk
