@@ -2,6 +2,7 @@ final int size = 16;
 
 PGraphics screen;
 boolean showVectors = false;
+boolean showTiles = false;
 boolean mouseDraw = false;
 boolean motionBlur = false;
 color mouseColor;
@@ -26,11 +27,12 @@ void setup() {
   addVectorField(new TestField7(), PI / 8, PI / 2, -PI / 4, PI / 4);
   addVectorField(new TestField8(), -PI / 2, PI / 2, -PI / 2, PI / 2);
   addVectorField(new TestField8(), -PI / 3, PI / 3, PI / 3, PI * 1.5);
+  addVectorField(new TestField9(), -1.0, 1.0, -1.0, 1.0);
 
   active = fields.size() - 1;
 }
 
-void renderVectors() {
+void renderInfo() {
   VectorField f = fields.get(active);
 
   screen.beginDraw();
@@ -45,12 +47,21 @@ void renderVectors() {
       int sx = int((x + v.x) * size);
       int sy = int((y + v.y) * size);
 
-      screen.stroke(128);
-      screen.line(sx, sy, dx, dy);
-      screen.stroke(255);
-      screen.point(sx, sy);
-      screen.stroke(255, 0, 0);
-      screen.point(dx, dy);
+      if (showTiles) {
+        screen.stroke(128);
+        screen.line(dx, dy, dx + size, dy);
+        screen.line(dx + size, dy, dx + size, dy + size);
+        screen.stroke(255);
+        screen.line(sx, sy, sx + size, sy);
+        screen.line(sx + size, sy, sx + size, sy + size);
+      } else {
+        screen.stroke(128);
+        screen.line(sx, sy, dx, dy);
+        screen.stroke(255);
+        screen.point(sx, sy);
+        screen.stroke(255, 0, 0);
+        screen.point(dx, dy);
+      }
     }
   }
   screen.endDraw();
@@ -129,33 +140,41 @@ void renderFrame() {
 void status() {
   String status = String.format(
     "Tile Mover prototype\n" +
-    "[c]lear, show [v]ectors, [n]ext vector field\n" +
-    "[m]otion blur, (LMB) draw rectangle");
+    "[c]lear, [n]ext vector field, [m]otion blur\n" +
+    "show [v]ectors, show [t]iles, (LMB) draw rectangle");
 
   fill(64);
-  rect(2, 512, width-8, 88, 8);
+  rect(2, 512, width - 4, 64, 8);
   fill(255);
   text(status, 6, 528);
 }
 
 void draw() {  
-  if (showVectors) {
-    renderVectors();
+  if (showVectors || showTiles) {
+    renderInfo();
   } else {
     renderFrame();
   }
   status();
 }
 
+void clear() {
+  screen.beginDraw();
+  screen.background(0);
+  screen.endDraw();
+}
+
 void keyPressed() {
   if (key == 'c') {
     fill(0);
     rect(0, 0, screen.width, screen.height);
-    screen.beginDraw();
-    screen.background(0);
-    screen.endDraw();
+    clear();
   } else if (key == 'v') {
     showVectors = !showVectors;
+    showTiles = false;
+  } else if (key == 't') {
+    showTiles = !showTiles;
+    showVectors = false;
   } else if (key == 'm') {
     motionBlur = !motionBlur;
   } else if (key == 'n') {
