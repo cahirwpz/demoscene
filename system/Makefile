@@ -13,7 +13,6 @@ SOURCES := \
 	debug-putchar.S \
 	effect.c \
 	loader.c \
-	main.c \
 	profiler.c \
 	vblank.c \
 	drivers/cia-frame.c \

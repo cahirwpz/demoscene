@@ -359,4 +359,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EFFECT(flatshade, Load, UnLoad, Init, Kill, Render);
+EFFECT(FlatShade, Load, UnLoad, Init, Kill, Render);

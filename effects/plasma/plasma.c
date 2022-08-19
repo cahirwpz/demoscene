@@ -177,4 +177,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(plasma, Load, NULL, Init, Kill, Render);
+EFFECT(Plasma, Load, NULL, Init, Kill, Render);

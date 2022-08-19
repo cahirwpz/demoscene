@@ -308,4 +308,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(weave, NULL, NULL, Init, Kill, Render);
+EFFECT(Weave, NULL, NULL, Init, Kill, Render);

@@ -150,4 +150,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(textscroll, NULL, NULL, Init, Kill, Render);
+EFFECT(TextScroll, NULL, NULL, Init, Kill, Render);

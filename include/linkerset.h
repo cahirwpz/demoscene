@@ -26,9 +26,4 @@
   ADD2LIST(dtor, __EXIT_LIST__, N_SETT);                                       \
   STABS(_L(__EXIT_LIST__), N_SETA, 0, 0, 128 - pri)
 
-/* Make symbol alias from a to b. */
-#define ALIAS(a, b)                                                            \
-  STABS(_L(a), N_INDR | N_EXT, 0, 0, 0);                                       \
-  STABS(_L(b), N_UNDF | N_EXT, 0, 0, 0)
-
-#endif
+#endif /* !__LINKERSET_H__ */

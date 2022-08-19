@@ -216,4 +216,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(highway, NULL, NULL, Init, Kill, Render);
+EFFECT(HighWay, NULL, NULL, Init, Kill, Render);

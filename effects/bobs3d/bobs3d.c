@@ -253,4 +253,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EFFECT(bobs3d, NULL, NULL, Init, Kill, Render);
+EFFECT(Bobs3D, NULL, NULL, Init, Kill, Render);

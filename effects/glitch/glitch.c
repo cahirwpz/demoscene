@@ -133,4 +133,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(glitch, NULL, NULL, Init, Kill, Render);
+EFFECT(Glitch, NULL, NULL, Init, Kill, Render);

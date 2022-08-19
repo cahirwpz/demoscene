@@ -261,4 +261,4 @@ static void Render(void) {
   WaitVBlank();
 }
 
-EFFECT(turmite, NULL, NULL, Init, Kill, Render);
+EFFECT(Turmite, NULL, NULL, Init, Kill, Render);

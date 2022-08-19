@@ -282,4 +282,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(playahx, NULL, NULL, Init, Kill, Render);
+EFFECT(PlayAHX, NULL, NULL, Init, Kill, Render);

@@ -347,4 +347,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(ball, NULL, NULL, Init, Kill, Render);
+EFFECT(Ball, NULL, NULL, Init, Kill, Render);
