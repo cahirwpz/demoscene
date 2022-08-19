@@ -67,8 +67,8 @@
       __STRING(other) "," __STRING(desc) "," __STRING(value))
 
 /* Make references to `alias` refer to `symbol` */
-#define ALIAS(symbol, alias)                                                            \
-  STABS(_L(alias), 11 /* N_INDR | N_EXT */, 0, 0, 0);                                         \
+#define ALIAS(symbol, alias)                                                   \
+  STABS(_L(alias), 11 /* N_INDR | N_EXT */, 0, 0, 0);                          \
   STABS(_L(symbol), 1 /* N_UNDF | N_EXT */, 0, 0, 0)
 
 #endif /* !__SLAB_H__ */
