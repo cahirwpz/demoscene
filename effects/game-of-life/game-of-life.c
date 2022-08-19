@@ -4,6 +4,7 @@
 #include "effect.h"
 #include "fx.h"
 #include "sprite.h"
+#include "pixmap.h"
 #include <system/interrupt.h>
 #include <system/memory.h>
 
@@ -34,6 +35,7 @@
 #define DISP_HEIGHT 256
 #define DISP_DEPTH 4
 #define PREV_STATES_DEPTH (DISP_DEPTH + 1)
+#define COLORS 16
 
 #define EXT_WIDTH_LEFT 16
 #define EXT_WIDTH_RIGHT 16
@@ -83,6 +85,7 @@
 #include "data/electrons.c"
 #include "data/tails.c"
 #include "data/run.c"
+#include "data/cell-gradient.c"
 #include "games.c"
 
 static CopListT *cp;
@@ -93,6 +96,9 @@ static BitmapT *boards[BOARD_COUNT];
 
 // pointers to copper instructions, for rewriting bitplane pointers
 static CopInsT *bplptr[DISP_DEPTH];
+
+// pointers to copper instructions, for setting colors
+static CopInsT *palptr[COLORS];
 
 // circular buffer of previous game states as they would be rendered (with
 // horizontally doubled pixels)
@@ -288,8 +294,25 @@ static void MakePixelDoublingCode(const BitmapT *bitmap) {
   *code++ = 0x4e75; // rts
 }
 
+static void ChangePalette(const u_short* pal) {
+    u_short i, j;
+    
+    // I wonder if this would be better just being unrolled...
+    // increment `pal` on every power of 2, essentially setting
+    // 4 consecutive colors from `pal` to 1, 2, 4 and 8 colors respectively
+    for (i = 1; i < COLORS;)
+    {
+      u_short next_i = i << 1;
+      for (j = i; j < next_i; j++)
+        CopInsSet16(palptr[j], *pal);
+      i = next_i;
+      pal++;
+    }
+}
+
 static void MakeCopperList(CopListT *cp) {
   u_short i;
+  u_short* color = palette.colors;
 
   CopInit(cp);
   // initially previous states are empty
@@ -297,6 +320,9 @@ static void MakeCopperList(CopListT *cp) {
   // order when new state gets generated
   for (i = 0; i < DISP_DEPTH; i++)
     bplptr[i] = CopMove32(cp, bplpt[i], prev_states[i]->planes[0]);
+
+  for (i = 0; i < COLORS; i++)
+    palptr[i] = CopSetColor(cp, i, *color++);
 
   for (i = 1; i <= DISP_HEIGHT; i += 2) {
     // vertical pixel doubling
@@ -321,6 +347,27 @@ static void UpdateBitplanePointers(void) {
     // and (PREV_STATES_DEPTH-1)'th bitplane displays the newest state
     cur = prev_states[(states_head + i + 1) % PREV_STATES_DEPTH];
     CopInsSet32(bplptr[i - 1], cur->planes[0]);
+  }
+}
+
+
+u_short* cur_pal = gradient_pixels;
+u_short pal_phase = 0;  
+
+static void CyclePalette(void) {
+  ChangePalette(cur_pal);
+  
+  if (pal_phase)
+    cur_pal -= 4;
+  else
+    cur_pal += 4;
+
+  if (cur_pal >= (u_short*)(gradient_pixels)+gradient_width*gradient_height || cur_pal <= gradient_pixels) {
+    pal_phase ^= 1;
+    if (pal_phase)
+      cur_pal -= 4;
+    else
+      cur_pal += 4;
   }
 }
 
@@ -410,6 +457,7 @@ static void GolStep(void) {
   states_head = (states_head+1) % PREV_STATES_DEPTH;
   phase = 0;
   GameOfLife();
+  CyclePalette();
   ProfilerStop(GOLStep);
 }
 
