@@ -22,4 +22,6 @@ typedef struct BootData {
   MemRegionT bd_region[0];
 } BootDataT;
 
+extern u_char BootDev;
+
 #endif /* !__SYSTEM_BOOT_H__ */

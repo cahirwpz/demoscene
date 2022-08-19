@@ -1,6 +1,8 @@
 #ifndef __SYSTEM_AMIGAHUNK_H__
 #define __SYSTEM_AMIGAHUNK_H__
 
+#include <types.h>
+
 struct File;
 
 typedef struct Hunk {
