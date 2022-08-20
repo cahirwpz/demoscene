@@ -5,12 +5,12 @@
 
 /* First four types are based upon their counterparts in GNU rocket! */
 typedef enum {
-  TRACK_STEP    = 1, /* set constant value */
-  TRACK_LINEAR  = 2, /* lerp to the next value */
-  TRACK_SMOOTH  = 3, /* smooth curve to the next value */
-  TRACK_RAMP    = 4, /* lerp with quadratic factor */
-  TRACK_TRIGGER = 5, /* count down (with every frame) from given number */
-  TRACK_EVENT   = 6  /* like ramp but value is delivered only once */
+  TRACK_STEP      = 1, /* set constant value */
+  TRACK_LINEAR    = 2, /* lerp to the next value */
+  TRACK_SMOOTH    = 3, /* smooth curve to the next value */
+  TRACK_QUADRATIC = 4, /* lerp with quadratic factor */
+  TRACK_TRIGGER   = 5, /* count down (with every frame) from given number */
+  TRACK_EVENT     = 6, /* like ramp but value is delivered only once */
 } __attribute__((packed)) TrackTypeT;
 
 #define END_KEY  -1
@@ -38,16 +38,10 @@ typedef struct Track {
   short delta;
   bool pending;
   /* public: provided by user */
-  const char *name;
   TrackKeyT data[0];
 } TrackT;
 
-extern TrackT *__TRACK_LIST__[];
-
-void InitTracks(void);
-
-void TrackReset(TrackT *track);
-TrackT *TrackLookup(const char *name);
+void TrackInit(TrackT *track);
 short TrackValueGet(TrackT *track, short frame);
 
 #endif

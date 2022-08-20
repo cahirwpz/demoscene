@@ -3,9 +3,6 @@
 #include "sync.h"
 #include "fx.h"
 
-/* Introduce weak symbol in case no tracks were defined by user. */
-TrackT *__TRACK_LIST__[1];
-
 static void TrackAdvance(TrackT *track, TrackKeyT *curr) {
   TrackKeyT *next;
 
@@ -27,21 +24,11 @@ static void TrackAdvance(TrackT *track, TrackKeyT *curr) {
   }
 }
 
-void TrackReset(TrackT *track) {
+void TrackInit(TrackT *track) {
   track->type = TRACK_LINEAR;
   track->pending = true;
 
   TrackAdvance(track, track->data);
-}
-
-void InitTracks(void) {
-  TrackT **tracks = __TRACK_LIST__;
-  TrackT *track;
-
-  while ((track = *tracks++)) {
-    Log("[Sync] Initializing track '%s'\n", track->name);
-    TrackReset(track);
-  }
 }
 
 short TrackValueGet(TrackT *track, short frame) {
@@ -90,7 +77,7 @@ short TrackValueGet(TrackT *track, short frame) {
         return curr->value + normfx(track->delta * k);
       }
 
-    case TRACK_RAMP:
+    case TRACK_QUADRATIC:
       {
         short t = div16(shift12(step), track->interval);
         short k = normfx(t * t);
@@ -112,16 +99,4 @@ short TrackValueGet(TrackT *track, short frame) {
     default:
       return 0;
   }
-}
-
-TrackT *TrackLookup(const char *name) {
-  TrackT **tracks = __TRACK_LIST__;
-  do {
-    TrackT *track = *tracks++;
-
-    if (!strcmp(track->name, name))
-      return track;
-  } while (*tracks);
-
-  return NULL;
 }
