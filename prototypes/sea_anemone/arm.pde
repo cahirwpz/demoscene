@@ -1,9 +1,4 @@
-final float LIMIT = 6.0;
-final int RADIUS = 42;
-boolean solid = true;
-
-color armDark = #006663;
-color armLight = #DFF5F4;
+final int RADIUS = 48;
 
 class Arm implements Comparable {
   PVector pos;
@@ -15,7 +10,7 @@ class Arm implements Comparable {
     float py = 0.0; // sin(frameCount / 50.0 * PI) * 30.0;
     pos = new PVector(WIDTH / 2 + px, HEIGHT / 2 + py);
     vel = new PVector();
-    s = int(random(RADIUS / 2, RADIUS));
+    s = int(random(RADIUS * 0.75, RADIUS));
   }
 
   void move() {
@@ -23,7 +18,7 @@ class Arm implements Comparable {
     PVector accel = new PVector(cos(angle), sin(angle));
     vel.add(accel.mult(0.5));
     float mag = vel.mag();
-    float maxMag = min(LIMIT, sqrt(s));
+    float maxMag = sqrt(s);
     if (mag > maxMag) {
       vel.mult(maxMag / mag);
     }

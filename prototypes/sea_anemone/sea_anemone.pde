@@ -6,6 +6,7 @@ import java.util.Collections;
 
 final int WIDTH = 320;
 final int HEIGHT = 256;
+boolean solid = true;
 
 ArrayList<Arm> arms = new ArrayList<Arm>();
 CircleCache cache = new CircleCache(); 
@@ -55,7 +56,9 @@ void status() {
 }
 
 void draw() {
-  arms.add(new Arm());
+  if (frameCount % 4 == 0) {
+    arms.add(new Arm());
+  }
 
   // If `arms` could a cyclic array sorted by ascending `Arm.s`, then we could
   // insert new arm into sorted array saving ourselves from full sort.
@@ -91,10 +94,12 @@ void keyPressed() {
     reset();
   } else if (key == 's') {
     solid = !solid;
+    cache.setSolid(solid);
     reset();
   } else if (key == 'r') {
-    armLight = color(random(255), random(255), random(255));
-    armDark = color(random(255), random(255), random(255));
+    color armLight = color(random(255), random(255), random(255));
+    color armDark = color(random(255), random(255), random(255));
+    cache.setColor(armLight, armDark);
     reset();
   }
 }
