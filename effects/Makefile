@@ -16,8 +16,9 @@ SUBDIRS := \
 	flatshade-convex \
 	floor \
 	floor-old \
-	gui \
 	glitch \
+	growing-tree \
+	gui \
 	highway \
 	kbtest \
 	layers \

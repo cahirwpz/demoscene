@@ -323,4 +323,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(growing_tree, NULL, NULL, Init, Kill, Render);
+EFFECT(GrowingTree, NULL, NULL, Init, Kill, Render);
