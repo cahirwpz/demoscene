@@ -36,6 +36,12 @@ static inline int shift12(short a) {
 #define fx4i(i) \
   (short)((u_short)(i) << 4)
 
+#define fx12i(i) \
+  (short)((u_short)(i) << 12)
+
+#define fx4f(f) \
+  (short)((float)(f) * 16.0)
+
 #define fx12f(f) \
   (short)((float)(f) * 4096.0)
 
