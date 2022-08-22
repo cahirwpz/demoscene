@@ -1,10 +1,12 @@
 ArrayList<Branch> branches;
 
+final boolean reallyFast = true;
+  
 class Branch {
   PVector position;
   PVector velocity;
   float diameter;
-
+  
   Branch(int x, int y) {
     position = new PVector(x, y);
     velocity = new PVector(0, -10);
@@ -12,10 +14,10 @@ class Branch {
   }
 
   Branch(Branch parent) {
+    parent.diameter *= random(0.55, 0.65);    
     position = parent.position.copy();
     velocity = parent.velocity.copy();
-    diameter = parent.diameter * 0.62;
-    parent.diameter = diameter;
+    diameter = parent.diameter;
   }
 
   boolean isFinished() {
@@ -28,16 +30,42 @@ class Branch {
     return false;
   }
 
-  void grow() {  
-    PVector bump = PVector.random2D();
-    bump.mult(0.25);
+  void grow() {
+    if (reallyFast) {
+      // On A500 we use Q4.12 to represent the values in range [-8.0, 8.0)
+      // assertions below are needed to catch overflows
 
-    velocity.normalize();
-    velocity.mult(0.75);
-    velocity.add(bump);
-    velocity.mult(random(4.0, 8.0));
+      float scale = random(1.0, 1.5);
+      float angle = random(0.0, 2 * PI);
+      PVector bump = new PVector(cos(angle) * scale, sin(angle) * scale);
+      
+      // `abs(x) + abs(y)` is good enough to approximate unit vector length.
+      // It needs to be multiplied by at most sqrt(2.0) to get the exact result.
 
-    position.add(velocity);
+      float mag = abs(velocity.x) / 4.0 + abs(velocity.y) / 4.0;
+      assert(mag >= 0.5 && mag < 4.0);
+      
+      velocity.mult(scale / mag);
+      assert(velocity.x >= -8.0 && velocity.x < 8.0);
+      assert(velocity.y >= -8.0 && velocity.y < 8.0);
+      
+      velocity.add(bump);
+      assert(velocity.x >= -8.0 && velocity.x < 8.0);
+      assert(velocity.y >= -8.0 && velocity.y < 8.0);
+      
+      position.add(velocity);
+    } else {
+      float angle = random(0, 2 * PI);
+      PVector bump = new PVector(cos(angle), sin(angle));
+      bump.mult(0.25);
+
+      velocity.normalize();
+      velocity.mult(0.75);
+      velocity.add(bump);
+      velocity.mult(random(4.0, 8.0));
+
+      position.add(velocity);
+    }
   }
 
   boolean maySplit() {

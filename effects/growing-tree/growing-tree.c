@@ -35,7 +35,7 @@ typedef struct Branch {
 #define vel_x_b _vel_x.byte
 #define vel_y_b _vel_y.byte
 
-#define MAXBRANCHES 75
+#define MAXBRANCHES 256
 
 static BranchT branches[MAXBRANCHES];
 static BranchT *lastBranch = branches;
@@ -94,7 +94,7 @@ static inline BranchT *NewBranch(void) {
 
 #define screen_bytesPerRow (WIDTH / 8)
 
-static void CopyFruit(u_short x, u_short y) {
+static void _CopyFruit(u_short x, u_short y) {
   u_short dstmod = screen_bytesPerRow - fruit_bytesPerRow;
   u_short bltshift = rorw(x & 15, 4);
   u_short bltsize = (fruit_height << 6) | (fruit_bytesPerRow >> 1);
@@ -128,6 +128,10 @@ static void CopyFruit(u_short x, u_short y) {
   custom->bltbpt = dstbpt;
   custom->bltdpt = dstbpt;
   custom->bltsize = bltsize;
+}
+
+static void CopyFruit(u_short x, u_short y) {
+  _CopyFruit(x - fruit_width / 2, y - fruit_height / 2);
 }
 
 static void DrawBranch(short x1, short y1, short x2, short y2) {
@@ -179,19 +183,19 @@ static void DrawBranch(short x1, short y1, short x2, short y2) {
 
     WaitBlitter();
 
-    custom->bltafwm = -1;
-    custom->bltalwm = -1;
     custom->bltadat = 0x8000;
     custom->bltbdat = -1;
-    custom->bltcmod = screen_bytesPerRow;
-    custom->bltdmod = screen_bytesPerRow;
 
     custom->bltcon0 = bltcon0;
     custom->bltcon1 = bltcon1;
-    custom->bltamod = bltamod;
+    custom->bltafwm = -1;
+    custom->bltalwm = -1;
+    custom->bltcmod = screen_bytesPerRow;
     custom->bltbmod = bltbmod;
-    custom->bltapt = (void *)(int)derr;
+    custom->bltamod = bltamod;
+    custom->bltdmod = screen_bytesPerRow;
     custom->bltcpt = data;
+    custom->bltapt = (void *)(int)derr;
     custom->bltdpt = data;
     custom->bltsize = bltsize;
   }
@@ -234,28 +238,6 @@ static bool SplitBranch(BranchT *parent, BranchT **lastp) {
   return false;
 }
 
-static inline int shift14(short a) {
-  int b;
-  asm("swap %0\n\t"
-      "clrw %0\n\t"
-      "asrl #2,%0"
-      : "=d" (b) : "0" (a));
-  return b;
-}
-
-/*
- * float scale = random(1.0, 1.5);
- * float bump_x = random(-1.0, 1.0) * scale;
- * float bump_y = random(-1.0, 1.0) * scale;
- * float mag = abs(velocity.x) + abs(velocity.y);
- * velocity.mult(scale * 4.0 / mag);
- * velocity.add(bump_x, bump_y);
- * position.add(velocity);
- *
- * assert(velocity.x > -8.0 && velocity.x < 8.0);
- * assert(velocity.y > -8.0 && velocity.y < 8.0);
- * assert(mag > 2.0 && mag < 12.0);
- */
 void GrowingTree(BranchT *branches, BranchT **lastp) {
   BranchT *b;
 
@@ -264,24 +246,33 @@ void GrowingTree(BranchT *branches, BranchT **lastp) {
     short prev_y = b->pos_y;
     short curr_x, curr_y;
 
+    /*
+     * Watch out! The code below is very brittle. You can easily generate
+     * overflow that will cause branches to go in the opposite direction.
+     * Code below was carefully crafted in Processing prototype using
+     * lots of assertion on numeric results of each operation.
+     */
     {
       short scale = (random() & 0x7ff) + 0x1000; // Q4.12
-      short bump_x = (random() & 0x1fff) - 0x1000; // Q4.12
-      short bump_y = (random() & 0x1fff) - 0x1000; // Q4.12
+      short angle = random();
       short vx = b->vel_x;
       short vy = b->vel_y;
-      short vel_scale = div16(shift14(scale), (abs(vx) + abs(vy)));
+      short mag = abs(vx) / 4 + abs(vy) / 4;
+      short vel_scale = div16(shift12(scale), mag);
 
-      b->vel_x = bump_x + normfx(vel_scale * vx);
-      b->vel_y = bump_y + normfx(vel_scale * vy);
+      b->vel_x = normfx(COS(angle) * scale + vel_scale * vx);
+      b->vel_y = normfx(SIN(angle) * scale + vel_scale * vy);
 
       curr_x = prev_x + b->vel_x_b;
       curr_y = prev_y + b->vel_y_b;
     }
 
-    if (curr_x < 0 || curr_x >= fx4i(WIDTH) ||
-        curr_y < 0 || curr_y >= fx4i(HEIGHT))
+    if (curr_x < fx4i(fruit_width / 2) ||
+        curr_x >= fx4i(WIDTH - (fruit_width / 2)) ||
+        curr_y < fx4i(fruit_height / 2) ||
+        curr_y >= fx4i(HEIGHT - (fruit_height / 2)))
     {
+      CopyFruit(prev_x >> 4, prev_y >> 4);
       KillBranch(b, lastp);
     } else {
       b->pos_x = curr_x;
@@ -295,13 +286,8 @@ void GrowingTree(BranchT *branches, BranchT **lastp) {
       DrawBranch(prev_x, prev_y, curr_x, curr_y);
 
       if ((u_short)random() < (u_short)(65536 * 0.2f)) {
-        if (!SplitBranch(b, lastp) && b->diameter < fx4f(0.3)) {
-          curr_x -= fruit_width / 8;
-          curr_y -= fruit_height / 8;
-
-          if ((curr_x >= 0) && (curr_x < WIDTH - fruit_width) &&
-              (curr_y >= 0) && (curr_y < HEIGHT - fruit_height))
-            CopyFruit(curr_x, curr_y);
+        if (!SplitBranch(b, lastp)) {
+          CopyFruit(curr_x, curr_y);
         }
       }
     }
@@ -310,15 +296,29 @@ void GrowingTree(BranchT *branches, BranchT **lastp) {
 
 PROFILE(GrowTree);
 
+static short waitFrame = 0;
+
 static void Render(void) {
-  if (lastBranch == branches) {
+  if (waitFrame > 0) {
+    if (frameCount - waitFrame < 100) {
+      TaskWaitVBlank();
+      return;
+    }
+    waitFrame = 0;
     BitmapClear(screen);
-    MakeBranch(WIDTH / 2, HEIGHT - 1);
+  }
+
+  if (lastBranch == branches) {
+    MakeBranch(WIDTH / 2, HEIGHT - fruit_height / 2 - 1);
   }
 
   ProfilerStart(GrowTree);
   GrowingTree(branches, &lastBranch);
   ProfilerStop(GrowTree);
+
+  if (lastBranch == branches) {
+    waitFrame = frameCount;
+  }
 
   TaskWaitVBlank();
 }
