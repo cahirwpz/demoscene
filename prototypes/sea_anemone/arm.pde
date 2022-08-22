@@ -1,16 +1,16 @@
-final int RADIUS = 48;
+final int DIAMETER = 48;
 
 class Arm implements Comparable {
   PVector pos;
   PVector vel;
-  int s;
+  int diameter;
 
   Arm() {
     float px = 0.0; // cos(frameCount / 50.0 * PI) * 30.0;
     float py = 0.0; // sin(frameCount / 50.0 * PI) * 30.0;
     pos = new PVector(WIDTH / 2 + px, HEIGHT / 2 + py);
     vel = new PVector();
-    s = int(random(RADIUS * 0.75, RADIUS));
+    diameter = int(random(DIAMETER * 0.75, DIAMETER));
   }
 
   void move() {
@@ -18,25 +18,25 @@ class Arm implements Comparable {
     PVector accel = new PVector(cos(angle), sin(angle));
     vel.add(accel.mult(0.5));
     float mag = vel.mag();
-    float maxMag = sqrt(s);
+    float maxMag = sqrt(diameter);
     if (mag > maxMag) {
       vel.mult(maxMag / mag);
     }
     pos.add(vel);
-    s--;
+    diameter--;
   }
 
   void show(PGraphics pg) {
-    cache.draw(pg, pos.x, pos.y, s);
+    cache.draw(pg, int(pos.x), int(pos.y), diameter / 2);
   }
 
   boolean isDead() {
-    return s < 1;
+    return diameter < 1;
   }
 
   @Override
   int compareTo(Object arm) {
     // descending order by the size of arm
-    return this.s - ((Arm)arm).s;
+    return this.diameter - ((Arm)arm).diameter;
   }
 }

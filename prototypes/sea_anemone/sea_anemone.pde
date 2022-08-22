@@ -14,7 +14,7 @@ PGraphics screen;
 PGraphics buffer;
 
 void setup() {
-  size(640, 556);
+  size(640, 558);
   background(0);
   noSmooth();
 
@@ -22,7 +22,7 @@ void setup() {
   textSize(16);
 
   screen = createGraphics(WIDTH, HEIGHT);
-  buffer = createGraphics(RADIUS * 2, RADIUS * 2);
+  buffer = createGraphics(DIAMETER, DIAMETER);
 }
 
 void amigaPixels() {
@@ -50,7 +50,7 @@ void status() {
     "[c]lear, [s]olid, [r]andomize colors");
 
   fill(64);
-  rect(2, 512, width-8, 88, 8);
+  rect(2, 512, width-4, 43, 8);
   fill(255);
   text(status, 6, 528);
 }
@@ -71,7 +71,6 @@ void draw() {
     a.move();
     if (a.isDead()) {
       arms.remove(i);
-      println("dead", i);
     }
   }
   screen.endDraw();

@@ -1,6 +1,3 @@
-// final int RADIUS = 28;
-final boolean useCache = false;
-
 class CircleCache {
   boolean solid;
   color dark, light;
@@ -14,7 +11,7 @@ class CircleCache {
   }
 
   void reset() {
-    circles = new PImage[RADIUS + 1];
+    circles = new PImage[DIAMETER / 2 + 1];
   }
 
   void setSolid(boolean solid) {
@@ -31,45 +28,35 @@ class CircleCache {
     reset();
   }
 
+  void drawCircle(PGraphics pg, int x, int y, int r) {
+    if (solid) {
+      color c = lerpColor(light, dark, 2.0 * float(r) / DIAMETER);
+      pg.noStroke();
+      pg.fill(c);
+    } else {
+      pg.fill(0);
+      pg.stroke(255);
+    }
+    pg.ellipseMode(RADIUS);
+    pg.ellipse(x, y, r, r);
+  }
+  
   void add(int r) {
     buffer.beginDraw();
     buffer.background(color(0, 1.0));
-    if (solid) {
-      color c = lerpColor(light, dark, float(r) / RADIUS);
-      buffer.noStroke();
-      buffer.fill(c);
-    } else {
-      buffer.fill(0);
-      buffer.stroke(255);
-    }
-    buffer.ellipse(r, r, r * 2, r * 2);
+    drawCircle(buffer, r, r, r);
     buffer.endDraw();
 
     circles[r] = buffer.get(0, 0, r * 2, r * 2);
   }
 
-  void draw(PGraphics pg, float fx, float fy, int r) {
-    // assert(r <= RADIUS);
+  void draw(PGraphics pg, int x, int y, int r) {
+    assert(r <= DIAMETER / 2);
 
-    if (useCache) {
-      int x = int(fx);
-      int y = int(fy);
-
-      if (circles[r] == null) {
-        add(r);
-      }
-
-      pg.image(circles[r], x - r, y - r);
-    } else {
-      if (solid) {
-        color c = lerpColor(light, dark, float(r) / RADIUS);
-        screen.noStroke();
-        screen.fill(c);
-      } else {
-        screen.fill(0);
-        screen.stroke(255);
-      }
-      screen.ellipse(fx, fy, r, r);
+    if (circles[r] == null) {
+      add(r);
     }
+
+    pg.image(circles[r], x - r, y - r);
   }
 }
