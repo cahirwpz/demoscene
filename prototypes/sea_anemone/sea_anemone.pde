@@ -2,12 +2,15 @@
  * Adapted and modified version of:
  * https://openprocessing.org/sketch/1339477
  */
+import java.util.Collections;
 
 final int WIDTH = 320;
 final int HEIGHT = 256;
 
 ArrayList<Arm> arms = new ArrayList<Arm>();
+CircleCache cache = new CircleCache(); 
 PGraphics screen;
+PGraphics buffer;
 
 void setup() {
   size(640, 556);
@@ -18,6 +21,7 @@ void setup() {
   textSize(16);
 
   screen = createGraphics(WIDTH, HEIGHT);
+  buffer = createGraphics(RADIUS * 2, RADIUS * 2);
 }
 
 void amigaPixels() {
@@ -53,6 +57,10 @@ void status() {
 void draw() {
   arms.add(new Arm());
 
+  // If `arms` could a cyclic array sorted by ascending `Arm.s`, then we could
+  // insert new arm into sorted array saving ourselves from full sort.
+  Collections.sort(arms);
+
   screen.beginDraw();
   for (int i = arms.size() - 1; i >= 0; i--) {
     Arm a = arms.get(i);
@@ -60,6 +68,7 @@ void draw() {
     a.move();
     if (a.isDead()) {
       arms.remove(i);
+      println("dead", i);
     }
   }
   screen.endDraw();
