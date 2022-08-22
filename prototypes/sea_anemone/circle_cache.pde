@@ -47,7 +47,7 @@ class CircleCache {
     drawCircle(buffer, r, r, r);
     buffer.endDraw();
 
-    circles[r] = buffer.get(0, 0, r * 2, r * 2);
+    circles[r] = buffer.get(0, 0, r * 2 + 1, r * 2 + 1);
   }
 
   void draw(PGraphics pg, int x, int y, int r) {
