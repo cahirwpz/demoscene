@@ -1,3 +1,6 @@
+#include "bitmap.h"
+#include "blitter.h"
+
 typedef void (BlitterPhaseFunc)(const BitmapT*, const BitmapT*, const BitmapT*, const BitmapT*, u_short minterms);
 
 typedef struct BlitterPhaseT {

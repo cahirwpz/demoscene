@@ -73,7 +73,7 @@
 // -----------------------------------------------------------------------------
 //
 
-#define DEBUG_KBD 0
+//#define DEBUG_KBD
 
 #ifdef DEBUG_KBD
   #include <system/event.h>
@@ -81,11 +81,9 @@
 #endif
 
 #include "data/p46basedprng.c"
-#include "data/wire.c"
-#include "data/electrons.c"
-#include "data/tails.c"
-#include "data/run.c"
+#include "data/electric-lifeforms.c"
 #include "data/cell-gradient.c"
+#include "data/logo-electrons.c"
 #include "games.c"
 
 static CopListT *cp;
@@ -110,6 +108,9 @@ static u_short states_head = 0;
 
 // phase (0-8) of blitter calculations
 static u_short phase = 0;
+
+// like frameCount, but counts game of life generations (sim steps)
+static u_short stepCount = 0;
 
 // which wireworld game (0-1) phase are we on
 static u_short wireworld_step = 0;
@@ -350,11 +351,10 @@ static void UpdateBitplanePointers(void) {
   }
 }
 
-
-u_short* cur_pal = gradient_pixels;
-u_short pal_phase = 0;  
-
 static void CyclePalette(void) {
+  static u_short* cur_pal = gradient_pixels;
+  static u_short pal_phase = 0;  
+
   ChangePalette(cur_pal);
   
   if (pal_phase)
@@ -380,6 +380,18 @@ void GameOfLife(void) {
   phase++;
 }
 
+static void SpawnElectrons(const ElectronsT *electrons, u_short board) {
+  u_short i;
+  for (i = 0; i < electrons->count; i++)
+  {
+    u_short bit = ((EXT_BOARD_WIDTH * (electrons->points[i].y + EXT_HEIGHT_TOP)) + 
+                  (EXT_WIDTH_LEFT + electrons->points[i].x));
+    u_short pos = bit / 8;
+    bit = 7 - (bit & 0x7);
+    bset((u_char*)boards[board]->planes[0]+pos, bit);
+  }
+}
+
 static void Init(void) {
   u_short i;
 
@@ -390,25 +402,32 @@ static void Init(void) {
 
   current_board = boards[0];
   current_game = &wireworld1;
-  BitmapCopy(boards[11], EXT_WIDTH_LEFT, EXT_HEIGHT_TOP, &run);
+  // board 11 is special in case of wireworld - it contains the electron paths
+  BitmapCopy(boards[11], EXT_WIDTH_LEFT, EXT_HEIGHT_TOP, &logo);
 
   SetupPlayfield(MODE_LORES, DISP_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
   LoadPalette(&palette, 0);
   EnableDMA(DMAF_BLITTER);
 
   for (i = 0; i < PREV_STATES_DEPTH; i++) {
-    prev_states[i] = NewBitmap(DISP_WIDTH, DISP_HEIGHT, BOARD_DEPTH);
+    // only needs half the vertical resolution, other half 
+    // achieved via copper line doubling
+    prev_states[i] = NewBitmap(DISP_WIDTH, DISP_HEIGHT / 2, BOARD_DEPTH);
     BitmapClear(prev_states[i]);
   }
 
   PixelDouble = MemAlloc(PixelDoubleSize, MEMF_PUBLIC);
   MakePixelDoublingCode(current_board);
 
-  // set up initial state
-  BitmapClear(current_board);
-  BitmapCopy(current_board, EXT_WIDTH_LEFT, EXT_HEIGHT_TOP, &electrons);
+   // electron heads/tails in case of wireworld
+  BitmapClear(boards[0]);
   BitmapClear(boards[1]);
-  BitmapCopy(boards[1], EXT_WIDTH_LEFT, EXT_HEIGHT_TOP, &tails);
+
+  // This took good part of my sanity do debug
+  // Wait until the clearing is complete, otherwise we would overwrite
+  // the bits we're setting below *after* they're set
+  WaitBlitter();
+  ClearIRQ(INTF_BLIT);
 
   cp = NewCopList(800);
   MakeCopperList(cp);
@@ -458,6 +477,15 @@ static void GolStep(void) {
   phase = 0;
   GameOfLife();
   CyclePalette();
+  
+  if ((stepCount & 0x7) == 0) {
+    // set pixels on correct board
+    SpawnElectrons(&heads, wireworld_step^1);
+    SpawnElectrons(&tails, wireworld_step);
+  }
+
+  stepCount++;
+
   ProfilerStop(GOLStep);
 }
 
