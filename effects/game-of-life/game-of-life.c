@@ -446,7 +446,7 @@ static void Init(void) {
 static void Kill(void) {
   u_short i;
 
-  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
+  DisableDMA(DMAF_RASTER | DMAF_BLITTER);
   DisableINT(INTF_BLIT);
   ResetIntVector(INTB_BLIT);
 
