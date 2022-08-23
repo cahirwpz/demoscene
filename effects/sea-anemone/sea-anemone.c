@@ -3,6 +3,7 @@
 #include <copper.h>
 #include <fx.h>
 #include <gfx.h>
+#include <circle.h>
 #include <line.h>
 #include <stdlib.h>
 #include <system/memory.h>
@@ -11,9 +12,13 @@
 #define HEIGHT 256
 #define DEPTH 1
 
+#define DIAMETER 48
+#define NARMS 31 /* must be power of two minus one */
+
 static CopListT *cp;
 static CopInsT *bplptr[DEPTH];
 static BitmapT *screen;
+static BitmapT *circles[DIAMETER / 2];
 
 #include "data/anemone-pal.c"
 
@@ -35,9 +40,6 @@ static inline int fastrand(void) {
 }
 
 #define random fastrand
-
-#define DIAMETER 48
-#define NARMS 31 /* must be power of two minus one */
 
 typedef struct Arm {
   short diameter;
@@ -151,9 +153,31 @@ static void ArmMove(ArmT *arm) {
   arm->diameter--;
 }
 
-static void DrawPoint(short x, short y) {
-  u_int bit = y * WIDTH + x;
-  bset((u_char *)screen->planes[0] + bit / 8, ~bit);
+static void Load(void) {
+  BitmapT **circlep = circles;
+  short r;
+
+  EnableDMA(DMAF_BLITTER);
+
+  for (r = 1; r <= DIAMETER / 2; r++) {
+    short diameter = r * 2;
+    short width = (diameter + 15) & -15;
+    BitmapT *circle = NewBitmap(width, diameter + 1, 1);
+    *circlep++ = circle;
+    CircleEdge(circle, 0, r, r, r);
+    BlitterFill(circle, 0);
+  }
+
+  WaitBlitter();
+  DisableDMA(DMAF_BLITTER);
+}
+
+static void UnLoad(void) {
+  short i;
+
+  for (i = 0; i < DIAMETER / 2; i++) {
+    DeleteBitmap(circles[i]);
+  }
 }
 
 static void Init(void) {
@@ -181,6 +205,42 @@ static void Kill(void) {
 
 #define screen_bytesPerRow (WIDTH / 8)
 
+static void DrawCircle(u_short x, u_short y, BitmapT *circle) {
+  u_short dstmod = screen_bytesPerRow - circle->bytesPerRow;
+  u_short bltshift = rorw(x & 15, 4);
+  u_short bltsize = (circle->height << 6) | (circle->bytesPerRow >> 1);
+  void *srcbpt = circle->planes[0];
+  void *dstbpt = screen->planes[0];
+  u_short bltcon0;
+
+  if (bltshift)
+    bltsize++, dstmod -= 2;
+
+  dstbpt += (x & ~15) >> 3;
+  dstbpt += y * screen_bytesPerRow;
+  bltcon0 = (SRCA | SRCB | DEST | A_OR_B) | bltshift;
+
+  WaitBlitter();
+
+  if (bltshift) {
+    custom->bltalwm = 0;
+    custom->bltamod = -2;
+  } else {
+    custom->bltalwm = -1;
+    custom->bltamod = 0;
+  }
+
+  custom->bltbmod = dstmod;
+  custom->bltdmod = dstmod;
+  custom->bltcon0 = bltcon0;
+  custom->bltcon1 = 0;
+  custom->bltafwm = -1;
+  custom->bltapt = srcbpt;
+  custom->bltbpt = dstbpt;
+  custom->bltdpt = dstbpt;
+  custom->bltsize = bltsize;
+}
+
 void SeaAnemone(ArmQueueT *arms) {
   static ArmT arm;
 
@@ -193,7 +253,12 @@ void SeaAnemone(ArmQueueT *arms) {
 
     while (true) {
       ArmMove(curr);
-      DrawPoint(curr->pos_x >> 4, curr->pos_y >> 4);
+      if (curr->diameter > 1) {
+        short r = curr->diameter / 2;
+        short x = (curr->pos_x >> 4) - r;
+        short y = (curr->pos_y >> 4) - r;
+        DrawCircle(x, y, circles[r - 1]);
+      }
       if (curr == last)
         break;
       curr = ArmPrev(arms, curr);
@@ -219,4 +284,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(SeaAnemone, NULL, NULL, Init, Kill, Render);
+EFFECT(SeaAnemone, Load, UnLoad, Init, Kill, Render);
