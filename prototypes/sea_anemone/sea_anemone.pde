@@ -8,8 +8,8 @@ final int WIDTH = 320;
 final int HEIGHT = 256;
 boolean solid = true;
 
-ArrayList<Arm> arms = new ArrayList<Arm>();
 CircleCache cache = new CircleCache(); 
+SortedQueue<Arm> arms = new SortedQueue<Arm>(32);
 PGraphics screen;
 PGraphics buffer;
 
@@ -56,24 +56,21 @@ void status() {
 }
 
 void draw() {
-  if (frameCount % 4 == 0) {
+  if (frameCount % 2 == 0) {
     arms.add(new Arm());
   }
 
-  // If `arms` could a cyclic array sorted by ascending `Arm.s`, then we could
-  // insert new arm into sorted array saving ourselves from full sort.
-  Collections.sort(arms);
-
   screen.beginDraw();
-  for (int i = arms.size() - 1; i >= 0; i--) {
+  for (int i = 0; i < arms.size(); i++) {
     Arm a = arms.get(i);
     a.show(screen);
     a.move();
-    if (a.isDead()) {
-      arms.remove(i);
-    }
   }
   screen.endDraw();
+
+  while (!arms.empty() && arms.last().isDead()) {
+    arms.pop();
+  }
 
   amigaPixels();
   status();

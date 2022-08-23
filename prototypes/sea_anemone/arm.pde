@@ -24,14 +24,14 @@ class Arm implements Comparable {
     assert(vel.x >= -8.0 && vel.x < 8.0);
     assert(vel.y >= -8.0 && vel.y < 8.0);
     
-    float mag = sq(vel.x) + sq(vel.y);
-    assert(mag < 32.0);
+    float magSq = sq(vel.x) + sq(vel.y);
+    assert(magSq < 64.0);
     
-    if (mag > diameter) {
-      assert(diameter / mag < 8.0);
+    if (magSq > diameter) {
+      assert(diameter / magSq < 8.0);
       
       // omitting sqrt here does not cause visible problems so...
-      vel.mult(diameter / mag);
+      vel.mult(diameter / magSq);
       assert(vel.x >= -8.0 && vel.x < 8.0);
       assert(vel.y >= -8.0 && vel.y < 8.0);
     }
@@ -53,4 +53,4 @@ class Arm implements Comparable {
     // descending order by the size of arm
     return this.diameter - ((Arm)arm).diameter;
   }
-};
+}
