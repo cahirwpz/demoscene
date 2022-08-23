@@ -16,6 +16,7 @@ typedef struct ElectronsT {\n\
 } ElectronsT;\n\
 #endif\n\n"
 
+
 def get_positions(infile):
     with Image.open(infile) as im:
         if im.mode != 'P':
@@ -39,6 +40,7 @@ def get_positions(infile):
 
         return heads, tails
 
+
 def generate_array(points, name):
     res = ""
     res += "static Point2D {}_points[{}] = {{\n".format(name, len(points))
@@ -51,6 +53,7 @@ def generate_array(points, name):
     res += "};\n\n"
     return res
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Converts 1-bit PNG with electron positions to C file."
@@ -59,12 +62,12 @@ if __name__ == "__main__":
     parser.add_argument("outfile", help="Output C file")
     parser.add_argument("--heads", default="heads",
                         help="Name of the heads array")
-    parser.add_argument("--tails", default="tails", 
+    parser.add_argument("--tails", default="tails",
                         help="Name of the tails array")
     args = parser.parse_args()
 
     heads, tails = get_positions(args.infile)
-    
+
     with open(args.outfile, "w") as out:
         out.write(header)
         out.write(generate_array(heads, args.heads))
