@@ -33,6 +33,7 @@ SUBDIRS := \
 	plotter \
 	prisms \
 	rotator \
+	sea-anemone \
 	shapes \
 	showpchg \
 	stripes \
