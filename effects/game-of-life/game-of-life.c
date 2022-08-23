@@ -460,4 +460,4 @@ static void Render(void) {
   ProfilerStop(GOLStep);
 }
 
-EFFECT(game_of_life, NULL, NULL, Init, Kill, Render);
+EFFECT(GameOfLife, NULL, NULL, Init, Kill, Render);

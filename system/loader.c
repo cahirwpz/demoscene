@@ -1,21 +1,16 @@
 #include <debug.h>
-#include <custom.h>
-#include <string.h>
 #include <system/amigahunk.h>
 #include <system/autoinit.h>
 #include <system/boot.h>
 #include <system/cia.h>
 #include <system/cpu.h>
 #include <system/exception.h>
-#include <system/filesys.h>
-#include <system/file.h>
-#include <system/floppy.h>
 #include <system/interrupt.h>
-#include <system/memfile.h>
 #include <system/memory.h>
 #include <system/task.h>
 
 u_char CpuModel = CPU_68000;
+u_char BootDev;
 
 extern int main(void);
 
@@ -38,6 +33,7 @@ void Loader(BootDataT *bd) {
 #endif
 
   CpuModel = bd->bd_cpumodel;
+  BootDev = bd->bd_bootdev;
   ExcVecBase = bd->bd_vbr;
 
   {
@@ -74,16 +70,6 @@ void Loader(BootDataT *bd) {
   SetIPL(IPL_NONE);
 
   TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
-#ifdef TRACKMO
-  {
-    FileT *dev;
-    if (bd->bd_bootdev)
-      dev = MemOpen((const void *)0xf80000, 0x80000);
-    else
-      dev = FloppyOpen();
-    InitFileSys(dev);
-  }
-#endif
   CallFuncList(&__INIT_LIST__);
 
   {
@@ -92,9 +78,6 @@ void Loader(BootDataT *bd) {
   }
 
   CallFuncList(&__EXIT_LIST__);
-#ifdef TRACKMO
-  KillFileSys();
-#endif
   
   Log("[Loader] Shutdown complete!\n");
 }

@@ -228,4 +228,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(neons, Load, UnLoad, Init, Kill, Render);
+EFFECT(Neons, Load, UnLoad, Init, Kill, Render);

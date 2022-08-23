@@ -43,4 +43,4 @@ static void Init(void) {
   ProfilerStop(DrawCircle);
 }
 
-EFFECT(circles, Load, UnLoad, Init, NULL, NULL);
+EFFECT(Circles, Load, UnLoad, Init, NULL, NULL);

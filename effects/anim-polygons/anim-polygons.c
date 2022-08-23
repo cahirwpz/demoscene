@@ -136,4 +136,4 @@ static void Render(void) {
   maybeSkipFrame = 1;
 }
 
-EFFECT(anim_polygons, NULL, NULL, Init, Kill, Render);
+EFFECT(AnimPolygons, NULL, NULL, Init, Kill, Render);

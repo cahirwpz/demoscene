@@ -16,8 +16,9 @@ SUBDIRS := \
 	flatshade-convex \
 	floor \
 	floor-old \
-	gui \
 	glitch \
+	growing-tree \
+	gui \
 	highway \
 	kbtest \
 	layers \
@@ -51,6 +52,9 @@ SUBDIRS := \
 FAILURES := \
 	tests \
 	vscaler
+
+EXTRA-FILES += main.o
+CLEAN-FILES += main.o
 
 all: build
 

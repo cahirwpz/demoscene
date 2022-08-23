@@ -2,7 +2,7 @@
 #ifndef __STAB_H__
 #define __STAB_H__
 
-#include <cdefs.h>
+#include <asm.h>
 
 /*
  * Taken from FreeBSD <sys/sys/nlist_aout.h>.
@@ -65,5 +65,10 @@
 #define STABS(string, type, other, desc, value)                                \
   asm(".stabs \"" __STRING(string) "\"," __STRING(type) ","                    \
       __STRING(other) "," __STRING(desc) "," __STRING(value))
+
+/* Make references to `alias` refer to `symbol` */
+#define ALIAS(symbol, alias)                                                   \
+  STABS(_L(alias), 11 /* N_INDR | N_EXT */, 0, 0, 0);                          \
+  STABS(_L(symbol), 1 /* N_UNDF | N_EXT */, 0, 0, 0)
 
 #endif /* !__SLAB_H__ */

@@ -211,4 +211,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(multipipe, Load, UnLoad, Init, Kill, Render);
+EFFECT(MultiPipe, Load, UnLoad, Init, Kill, Render);

@@ -2,8 +2,7 @@ TOPDIR := $(realpath ..)
 
 # AMIGAOS => save & restore AmigaOS context
 #            (for intros or trackmos that can be launched from AmigaOS)
-# TRACKMO => initialize file system and floppy device driver
-CPPFLAGS += -DTRACKMO -D_SYSTEM
+CPPFLAGS += -D_SYSTEM
 
 LIBNAME := system
 SOURCES := \
@@ -13,8 +12,9 @@ SOURCES := \
 	debug-putchar.S \
 	effect.c \
 	loader.c \
-	main.c \
 	profiler.c \
+	trackmo.c \
+	vblank.c \
 	drivers/cia-frame.c \
 	drivers/cia-icr.c \
 	drivers/cia-line.c \

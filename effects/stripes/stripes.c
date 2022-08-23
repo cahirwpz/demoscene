@@ -186,4 +186,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(stripes, NULL, NULL, Init, Kill, Render);
+EFFECT(Stripes, NULL, NULL, Init, Kill, Render);

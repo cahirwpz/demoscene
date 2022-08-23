@@ -98,4 +98,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(plotter, NULL, NULL, Init, Kill, Render);
+EFFECT(Plotter, NULL, NULL, Init, Kill, Render);

@@ -3,6 +3,7 @@
 
 #include <types.h>
 #include <string.h>
+#include <stab.h>
 #include <debug.h>
 
 /* Definitions below are useful for copper list construction. */
@@ -75,24 +76,23 @@ typedef struct Effect {
   void (*Render)(void);
 } EffectT;
 
-#ifdef _SYSTEM
 void EffectLoad(EffectT *effect);
 void EffectInit(EffectT *effect);
 void EffectKill(EffectT *effect);
 void EffectUnLoad(EffectT *effect);
 void EffectRun(EffectT *effect);
-#endif
 
-#define EFFECT(NAME, L, U, I, K, R) \
-  EffectT Effect = {                \
-    .name = #NAME,                  \
-    .state = 0,                     \
-    .Load = (L),                    \
-    .UnLoad = (U),                  \
-    .Init = (I),                    \
-    .Kill = (K),                    \
-    .Render = (R),                  \
-  };                                \
+#define EFFECT(NAME, L, U, I, K, R)                                            \
+  EffectT NAME##Effect = {                                                     \
+    .name = #NAME,                                                             \
+    .state = 0,                                                                \
+    .Load = (L),                                                               \
+    .UnLoad = (U),                                                             \
+    .Init = (I),                                                               \
+    .Kill = (K),                                                               \
+    .Render = (R),                                                             \
+  };                                                                           \
+  ALIAS(NAME##Effect, Effect);
 
 typedef struct Profile {
   const char *name;
@@ -103,7 +103,13 @@ typedef struct Profile {
 
 #define PROFILE(NAME)                                                          \
   static ProfileT *_##NAME##_profile = &(ProfileT){                            \
-    .name = #NAME, .lines = 0, .total = 0, .min = 65535, .max = 0, .count = 0};
+    .name = #NAME,                                                             \
+    .lines = 0,                                                                \
+    .total = 0,                                                                \
+    .min = 65535,                                                              \
+    .max = 0,                                                                  \
+    .count = 0,                                                                \
+  };
 
 #define ProfilerStart(NAME) _ProfilerStart(_##NAME##_profile)
 #define ProfilerStop(NAME) _ProfilerStop(_##NAME##_profile)

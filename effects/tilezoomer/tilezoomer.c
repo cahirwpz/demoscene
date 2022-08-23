@@ -269,4 +269,4 @@ static void Render(void) {
 #endif
 }
 
-EFFECT(tilezoomer, NULL, NULL, Init, Kill, Render);
+EFFECT(TileZoomer, NULL, NULL, Init, Kill, Render);

@@ -8,7 +8,7 @@ LIBS += libblit libgfx libmisc libc
 LDEXTRA = $(TOPDIR)/system/system.a
 LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 
-CRT0 = $(TOPDIR)/system/crt0.o
+CRT0 = $(TOPDIR)/system/crt0.o $(TOPDIR)/effects/main.o
 BOOTLOADER = $(TOPDIR)/bootloader.bin
 ROMSTARTUP = $(TOPDIR)/a500rom.bin
 
@@ -28,6 +28,9 @@ $(TOPDIR)/system/%.a: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
 $(TOPDIR)/effects/%.a: FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
+$(TOPDIR)/effects/%.o: FORCE
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
 $(TOPDIR)/%.bin: FORCE
