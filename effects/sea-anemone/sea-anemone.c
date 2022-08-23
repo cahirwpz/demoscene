@@ -134,7 +134,10 @@ static void ArmMove(ArmT *arm) {
   diameter = arm->diameter << 24;
 
   if (magSq > diameter) {
-    short scale = div16(diameter, normfx(magSq));
+    // short scale = div16(diameter, normfx(magSq));
+    // `magSq` does get truncated if converted to 16-bit,
+    // so it's not eligible for 16-bit division.
+    short scale = diameter / (magSq >> 12);
     vx = normfx(vx * scale);
     vy = normfx(vy * scale);
   }

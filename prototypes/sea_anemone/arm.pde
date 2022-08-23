@@ -28,10 +28,11 @@ class Arm implements Comparable {
     assert(magSq < 64.0);
     
     if (magSq > diameter) {
-      assert(diameter / magSq < 8.0);
+      float scale = diameter / magSq;
+      assert(scale < 8.0);
       
       // omitting sqrt here does not cause visible problems so...
-      vel.mult(diameter / magSq);
+      vel.mult(scale);
       assert(vel.x >= -8.0 && vel.x < 8.0);
       assert(vel.y >= -8.0 && vel.y < 8.0);
     }
