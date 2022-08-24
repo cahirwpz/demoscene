@@ -123,21 +123,6 @@ class AdditivePlay implements Experiment {
   }
 }
 
-class MultiplePlay implements Experiment {
-  void setup() {}
-  
-   void keyPressed() {}
-
-  void mousePressed(int x, int y) {}
-
-  String status() {
-    return String.format(
-      "Turmite Interaction Experiment\n" +
-      "next [e]xperiment, next [t]ile, [r]eset\n" +
-      "");
-  }
-}
-
 class GenerationPlay implements Experiment {
   void setup() {
     color[] pal = { #000000, #FF4858 };
@@ -172,7 +157,6 @@ class FromJSONPlay implements Experiment {
   String filename;
   color[] pal = { #000000, #002664, #146CFD, #8CE0FF, #FAAF05, #F3631B };
   int[][][][] rules;
-  Turmite t;
 
   FromJSONPlay(String fname) {
     filename = fname;
@@ -184,8 +168,7 @@ class FromJSONPlay implements Experiment {
     board.fadeaway = false;
     board.showhead = true;
     board.nsteps = 64;
-    resetExperiment(t);
-
+    resetExperiment();
   }
 
   int[][][][] rulesFromJSON(String filename) {
@@ -211,9 +194,10 @@ class FromJSONPlay implements Experiment {
     return rules;
   }
 
-  void resetExperiment(Turmite t) {
+  void resetExperiment() {
     turmites.clear();
     board.reset();
+    Turmite t;
     
     if (rules.length > 0) {
       t = new Turmite(rules[index], pal);
@@ -229,10 +213,10 @@ class FromJSONPlay implements Experiment {
   void keyPressed() {
     if (key == 'n') {
       index = (index + 1) % rules.length;
-      resetExperiment(t);
+      resetExperiment();
     } else if (key == 'p') {
       index = (index - 1 + rules.length) % rules.length; //<>//
-      resetExperiment(t);
+      resetExperiment();
     } else if (key == 'o') {
         paused = true;
         selectInput("Select a file to process:", "fileSelected");
