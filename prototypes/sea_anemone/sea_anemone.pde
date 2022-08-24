@@ -2,15 +2,19 @@
  * Adapted and modified version of:
  * https://openprocessing.org/sketch/1339477
  */
+import java.util.Collections;
 
 final int WIDTH = 320;
 final int HEIGHT = 256;
+boolean solid = true;
 
-ArrayList<Circle> circles = new ArrayList<Circle>();
+CircleCache cache = new CircleCache(); 
+SortedQueue<Arm> arms = new SortedQueue<Arm>(32);
 PGraphics screen;
+PGraphics buffer;
 
 void setup() {
-  size(640, 556);
+  size(640, 558);
   background(0);
   noSmooth();
 
@@ -18,6 +22,7 @@ void setup() {
   textSize(16);
 
   screen = createGraphics(WIDTH, HEIGHT);
+  buffer = createGraphics(DIAMETER, DIAMETER);
 }
 
 void amigaPixels() {
@@ -45,24 +50,27 @@ void status() {
     "[c]lear, [s]olid, [r]andomize colors");
 
   fill(64);
-  rect(2, 512, width-8, 88, 8);
+  rect(2, 512, width-4, 43, 8);
   fill(255);
   text(status, 6, 528);
 }
 
 void draw() {
-  circles.add(new Circle());
+  if (frameCount % 2 == 0) {
+    arms.add(new Arm());
+  }
 
   screen.beginDraw();
-  for (int i = circles.size() - 1; i >= 0; i--) {
-    Circle c = circles.get(i);
-    c.show(screen);
-    c.move();
-    if (c.isDead()) {
-      circles.remove(i);
-    }
+  for (int i = 0; i < arms.size(); i++) {
+    Arm a = arms.get(i);
+    a.show(screen);
+    a.move();
   }
   screen.endDraw();
+
+  while (!arms.empty() && arms.last().isDead()) {
+    arms.pop();
+  }
 
   amigaPixels();
   status();
@@ -73,8 +81,8 @@ void reset() {
   screen.background(0);
   screen.endDraw();
 
-  circles.clear();
-  circles.add(new Circle());
+  arms.clear();
+  arms.add(new Arm());
 }
 
 void keyPressed() {
@@ -82,10 +90,12 @@ void keyPressed() {
     reset();
   } else if (key == 's') {
     solid = !solid;
+    cache.setSolid(solid);
     reset();
   } else if (key == 'r') {
-    armLight = color(random(255), random(255), random(255));
-    armDark = color(random(255), random(255), random(255));
+    color armLight = color(random(255), random(255), random(255));
+    color armDark = color(random(255), random(255), random(255));
+    cache.setColor(armLight, armDark);
     reset();
   }
 }

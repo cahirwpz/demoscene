@@ -45,6 +45,7 @@
 /* some commonly used operations */
 #define A_AND_B (ABC | ABNC)
 #define A_AND_NOT_B (ANBC | ANBNC)
+#define NOT_A_AND_B (NABC | NABNC)
 #define A_OR_B (ABC | ANBC | NABC | ABNC | ANBNC | NABNC)
 #define A_OR_C (ABC | NABC | ABNC | ANBC | NANBC | ANBNC)
 #define A_TO_D (ABC | ANBC | ABNC | ANBNC)
