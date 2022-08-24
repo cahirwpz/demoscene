@@ -10,7 +10,7 @@
 
 #define WIDTH 320
 #define HEIGHT 256
-#define DEPTH 1
+#define DEPTH 4
 
 #define DIAMETER 48
 #define NARMS 31 /* must be power of two minus one */
@@ -63,7 +63,7 @@ typedef struct Arm {
 typedef struct ArmQueue {
   short head; // points to first unused entry
   short tail; // points to the last element
-  ArmT elems[NARMS + 1]; // One guard element
+  ArmT elems[NARMS + 1]; // contains one empty guard element
 } ArmQueueT;
 
 static inline ArmT *ArmGet(ArmQueueT *arms, short i) {
@@ -185,7 +185,6 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   LoadPalette(&anemone_pal, 0);
-  SetColor(1, anemone_pal.colors[15]);
 
   cp = NewCopList(50);
   CopInit(cp);
@@ -193,11 +192,18 @@ static void Init(void) {
   CopEnd(cp);
   CopListActivate(cp);
 
-  EnableDMA(DMAF_RASTER | DMAF_BLITTER);
+  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
+
+  /* Moved from DrawCircle, since we use only one type of blit. */
+  {
+    WaitBlitter();
+    custom->bltcon1 = 0;
+    custom->bltafwm = -1;
+  }
 }
 
 static void Kill(void) {
-  DisableDMA(DMAF_COPPER | DMAF_BLITTER | DMAF_RASTER);
+  DisableDMA(DMAF_COPPER | DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 
   DeleteBitmap(screen);
   DeleteCopList(cp);
@@ -205,24 +211,22 @@ static void Kill(void) {
 
 #define screen_bytesPerRow (WIDTH / 8)
 
-static void DrawCircle(u_short x, u_short y, BitmapT *circle) {
+void DrawCircle(BitmapT *circle, short x, short y, short c) {
   u_short dstmod = screen_bytesPerRow - circle->bytesPerRow;
   u_short bltshift = rorw(x & 15, 4);
   u_short bltsize = (circle->height << 6) | (circle->bytesPerRow >> 1);
   void *srcbpt = circle->planes[0];
-  void *dstbpt = screen->planes[0];
-  u_short bltcon0;
+  void **dstbpts = screen->planes;
+  int start;
 
-  if (bltshift)
-    bltsize++, dstmod -= 2;
-
-  dstbpt += (x & ~15) >> 3;
-  dstbpt += y * screen_bytesPerRow;
-  bltcon0 = (SRCA | SRCB | DEST | A_OR_B) | bltshift;
+  start = y * screen_bytesPerRow;
+  start += (x & ~15) >> 3;
 
   WaitBlitter();
 
   if (bltshift) {
+    bltsize++, dstmod -= 2; 
+
     custom->bltalwm = 0;
     custom->bltamod = -2;
   } else {
@@ -232,13 +236,31 @@ static void DrawCircle(u_short x, u_short y, BitmapT *circle) {
 
   custom->bltbmod = dstmod;
   custom->bltdmod = dstmod;
-  custom->bltcon0 = bltcon0;
-  custom->bltcon1 = 0;
-  custom->bltafwm = -1;
-  custom->bltapt = srcbpt;
-  custom->bltbpt = dstbpt;
-  custom->bltdpt = dstbpt;
-  custom->bltsize = bltsize;
+  
+  {
+    short n = DEPTH - 1;
+
+    do {
+      void *dstbpt = (*dstbpts++) + start;
+      u_short bltcon0 = bltshift;
+
+      if (c & 1) {
+        bltcon0 |= SRCA | SRCB | DEST | A_OR_B;
+      } else {
+        bltcon0 |= SRCA | SRCB | DEST | NOT_A_AND_B;
+      }
+
+      WaitBlitter();
+
+      custom->bltcon0 = bltcon0;
+      custom->bltapt = srcbpt;
+      custom->bltbpt = dstbpt;
+      custom->bltdpt = dstbpt;
+      custom->bltsize = bltsize;
+
+      c >>= 1;
+    } while (--n != -1);
+  }
 }
 
 void SeaAnemone(ArmQueueT *arms) {
@@ -254,10 +276,15 @@ void SeaAnemone(ArmQueueT *arms) {
     while (true) {
       ArmMove(curr);
       if (curr->diameter > 1) {
-        short r = curr->diameter / 2;
+        short d = curr->diameter;
+        short r = d / 2;
         short x = (curr->pos_x >> 4) - r;
         short y = (curr->pos_y >> 4) - r;
-        DrawCircle(x, y, circles[r - 1]);
+        short c = min(r / 2, (1 << DEPTH)) - 1;
+        if ((x < 0) || (y < 0) || (x >= WIDTH - d) || (y >= HEIGHT - d))
+          continue;
+        if (r < 16)
+          DrawCircle(circles[r - 1], x, y, c);
       }
       if (curr == last)
         break;
