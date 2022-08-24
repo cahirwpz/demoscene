@@ -118,7 +118,7 @@ static void ArmsAdd(ArmQueueT *arms, ArmT *arm) {
   arms->head = (arms->head + 1) & NARMS;
 }
 
-static void ArmsPop(ArmQueueT *arms) {
+static inline void ArmsPop(ArmQueueT *arms) {
   arms->tail = (arms->tail + 1) & NARMS;
 }
 
@@ -211,7 +211,7 @@ static void Kill(void) {
 
 #define screen_bytesPerRow (WIDTH / 8)
 
-void DrawCircle(BitmapT *circle, short x, short y, short c) {
+static void DrawCircle(BitmapT *circle, short x, short y, short c) {
   u_short dstmod = screen_bytesPerRow - circle->bytesPerRow;
   u_short bltshift = rorw(x & 15, 4);
   u_short bltsize = (circle->height << 6) | (circle->bytesPerRow >> 1);
@@ -263,7 +263,7 @@ void DrawCircle(BitmapT *circle, short x, short y, short c) {
   }
 }
 
-void SeaAnemone(ArmQueueT *arms) {
+static void SeaAnemone(ArmQueueT *arms) {
   static ArmT arm;
 
   MakeArm(&arm);
@@ -280,11 +280,10 @@ void SeaAnemone(ArmQueueT *arms) {
         short r = d / 2;
         short x = (curr->pos_x >> 4) - r;
         short y = (curr->pos_y >> 4) - r;
-        short c = min(r / 2, (1 << DEPTH)) - 1;
         if ((x < 0) || (y < 0) || (x >= WIDTH - d) || (y >= HEIGHT - d))
           continue;
         if (r < 16)
-          DrawCircle(circles[r - 1], x, y, c);
+          DrawCircle(circles[r - 1], x, y, 15 - r);
       }
       if (curr == last)
         break;
