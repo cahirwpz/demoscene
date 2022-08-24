@@ -198,6 +198,7 @@ class FromJSONPlay implements Experiment {
     turmites.clear();
     board.reset();
     Turmite t;
+
     if (rules.length > 0) {
       t = new Turmite(rules[index], pal);
     } else {
@@ -214,20 +215,39 @@ class FromJSONPlay implements Experiment {
       index = (index + 1) % rules.length;
       resetExperiment();
     } else if (key == 'p') {
-      index = (index - 1 + rules.length) % rules.length; //<>//
+      index = (index - 1 + rules.length) % rules.length;
       resetExperiment();
+    } else if (key == 'o') {
+      paused = true;
+      selectInput("Select a file to process:", "fileSelected");
     }
   }
 
   void mousePressed(int x, int y) {
+    if (image == null) return;
+
+    Turmite t = turmites.get(0);
+    for (int ix = 0; ix < image.width; ix++) {
+      for (int iy = 0; iy < image.height; iy++) {
+        int pos = (y + iy - image.height / 2) * board.w + (x + ix - image.width / 2);
+        int val = image.pixels[iy * image.width + ix];
+
+        if (pos < 0 || pos >= board.tiles.length) continue;
+        if ((val & 0xffffff) == 0) continue;
+
+        board.tiles[pos].ci = 1;
+        board.tiles[pos].life = 127;
+        board.tiles[pos].owner = t;
+      }
+    }
   }
 
   String status() {
     return String.format(
       "Turmites from %s\n" +
       "next [e]xperiment, next [t]ile, [r]eset\n" +
-      "[n]ext turmite, [p]rev turmite\n" +
-      "index: %d",
+      "[n]ext turmite, [p]rev turmite, [o]pen image\n" +
+      "p[a]use, LMB place image, index: %d", 
       filename, index);
   }
 }
