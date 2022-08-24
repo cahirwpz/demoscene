@@ -198,7 +198,7 @@ class FromJSONPlay implements Experiment {
     turmites.clear();
     board.reset();
     Turmite t;
-    
+
     if (rules.length > 0) {
       t = new Turmite(rules[index], pal);
     } else {
@@ -215,36 +215,30 @@ class FromJSONPlay implements Experiment {
       index = (index + 1) % rules.length;
       resetExperiment();
     } else if (key == 'p') {
-      index = (index - 1 + rules.length) % rules.length; //<>//
+      index = (index - 1 + rules.length) % rules.length;
       resetExperiment();
     } else if (key == 'o') {
-        paused = true;
-        selectInput("Select a file to process:", "fileSelected");
+      paused = true;
+      selectInput("Select a file to process:", "fileSelected");
     }
   }
 
   void mousePressed(int x, int y) {
-    Turmite ft = new Turmite(rules[index], pal);
-    if (image != null) {
-      int j = 0;
-      for (int ix = 0; ix < image.width -1; ix++) {
-        for (int iy = 0; iy < image.height -1; iy++) {
-          int screenCoords = (y+iy)*128+(x+ix);
-          if (image.pixels[(iy*image.width+ix)] != 0 && screenCoords < board.tiles.length) {
-            if (board.activeClass == 0) {
-              board.tiles[screenCoords] = new Tile();
-            } else if (board.activeClass == 1) {
-              board.tiles[screenCoords] = new HeatTile();
-            } else if (board.activeClass == 2) {
-              board.tiles[screenCoords] = new GenerationTile();
-            }
-            
-            board.tiles[screenCoords].ci = 1;
-            board.tiles[screenCoords].life = 40;
-            board.tiles[screenCoords].owner = ft;
-          }
-        }
-      }; 
+    if (image == null) return;
+
+    Turmite t = turmites.get(0);
+    for (int ix = 0; ix < image.width; ix++) {
+      for (int iy = 0; iy < image.height; iy++) {
+        int pos = (y + iy - image.height / 2) * board.w + (x + ix - image.width / 2);
+        int val = image.pixels[iy * image.width + ix];
+
+        if (pos < 0 || pos >= board.tiles.length) continue;
+        if ((val & 0xffffff) == 0) continue;
+
+        board.tiles[pos].ci = 1;
+        board.tiles[pos].life = 127;
+        board.tiles[pos].owner = t;
+      }
     }
   }
 
@@ -252,8 +246,8 @@ class FromJSONPlay implements Experiment {
     return String.format(
       "Turmites from %s\n" +
       "next [e]xperiment, next [t]ile, [r]eset\n" +
-      "[n]ext turmite, [p]rev turmite, [o]pen image,\n p[a]use, LMB place image  " +
-      "index: %d",
+      "[n]ext turmite, [p]rev turmite, [o]pen image\n" +
+      "p[a]use, LMB place image, index: %d", 
       filename, index);
   }
 }
