@@ -23,73 +23,42 @@
 static CopListT *cp;
 static BitmapT *screen;
 
-// 1 bit version of logo for blitting
-static BitmapT *blit;
-
 /* higher 5 bits store value, lower 3 bits store color information */
 static u_char board[WIDTH * HEIGHT];
-static u_char temp_board[WIDTH * HEIGHT];
+static u_int lookup[256][2];
 
-static void BlitSimple(void *sourceA, void *sourceB,
-                       void *sourceC, const BitmapT *target,
-                       u_short minterms) {
-  u_short bltsize = (target->height << 6) | (target->width >> 4);
-
-  custom->bltcon0 = minterms | (SRCA | SRCB | SRCC | DEST);
-  custom->bltcon1 = 0;
-
-  custom->bltafwm = 0xFFFF;
-  custom->bltalwm = 0xFFFF;
-  custom->bltamod = 0;
-  custom->bltbmod = 0;
-  custom->bltcmod = 0;
-  custom->bltdmod = 0;
-
-  custom->bltapt = sourceA;
-  custom->bltbpt = sourceB;
-  custom->bltcpt = sourceC;
-  custom->bltdpt = target->planes[0];
-  custom->bltsize = bltsize;
-}
-
-static void BitmapToBoard(void) {
-  short i, j;
-  u_char *srcbpt = scene.planes[0];
-  for (i = 0; i < scene_bplSize; i += 8) {
-    for (j = 0; j < 8; j++) {
-      if ((srcbpt[i] >> j)  & 0x01) {
-        temp_board[i+j] = 0x6;
-      } else temp_board[i+j] = 0x0;
-    }
-  }
+void BitmapToBoard(const BitmapT *bm, u_char *board) {
+  short n = WIDTH * HEIGHT / 8 - 1;
+  u_char *src = bm->planes[0];
+  u_int *dst = (u_int *)board;
+  u_int *tab;
+  
+  do {
+    tab = lookup[*src++];
+    *dst++ = *tab++;
+    *dst++ = *tab++;
+  } while (--n != -1);
 }
 
 static void Load(void) {
-    EnableDMA(DMAF_BLITTER);
-
-    // bitmap size aligned to word
-    blit = NewBitmap(WIDTH, HEIGHT, 1);
-    BlitSimple(scene.planes[0], scene.planes[0], scene.planes[0], blit,
-               ABC | ANBC | ABNC | ANBNC | NABC | NANBC | NABNC);
-
-    BitmapToBoard();
-    memcpy(board, temp_board, 8192);
-    WaitBlitter();
-    DisableDMA(DMAF_BLITTER);
+  short i, j;
+  for (i = 0; i < 256; i++) {
+    u_char *tab = (u_char *)&lookup[i];
+    for (j = 0; j < 8; j++)
+      tab[j] = i & (1 << (7 - j)) ? 6 : 0;
+  }
 }
-
-static void UnLoad(void) {
-  DeleteBitmap(blit);
-}
-
 
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0),
-                 WIDTH , HEIGHT);
+  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   LoadPalette(&turmite_pal, 0);
 
+  EnableDMA(DMAF_BLITTER);
+  BlitterCopyFastSetup(screen, 0, 0, &scene);
+  BlitterCopyFastStart(DEPTH - 1, 0);
+  BitmapToBoard(&scene, board);
 
   cp = NewCopList(100);
   CopInit(cp);
@@ -97,12 +66,13 @@ static void Init(void) {
   CopEnd(cp);
   CopListActivate(cp);
   
-  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill(void) {
-  DisableDMA(DMAF_RASTER);
+  DisableDMA(DMAF_RASTER | DMAF_BLITTER);
   DeleteCopList(cp);
+  DeleteBitmap(screen);
 }
 
 #define SOUTH 0
@@ -327,17 +297,11 @@ void SimulateTurmite(void) {
 PROFILE(SimulateTurmite);
 
 static void Render(void) {
-  //short i;
   ProfilerStart(SimulateTurmite);
-  //BlitterCopySetup(screen, 0, 0, blit);
-  // monkeypatch minterms to perform screen = screen | logo_blit
-  //custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | ANBC | ABNC);
-  //for (i = 0; i < screen->depth; i++)
-    //BlitterCopyStart(i, 0);
   SimulateTurmite();
   ProfilerStop(SimulateTurmite);
 
   TaskWaitVBlank();
 }
 
-EFFECT(Turmite, Load, UnLoad, Init, Kill, Render);
+EFFECT(Turmite, Load, NULL, Init, Kill, Render);
