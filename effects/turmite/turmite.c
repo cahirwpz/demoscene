@@ -8,6 +8,7 @@
 #include "fx.h"
 
 #include "data/turmite-pal.c"
+#include "data/scene.c"
 
 #define WIDTH 256
 #define HEIGHT 256
@@ -24,27 +25,54 @@ static BitmapT *screen;
 
 /* higher 5 bits store value, lower 3 bits store color information */
 static u_char board[WIDTH * HEIGHT];
+static u_int lookup[256][2];
+
+void BitmapToBoard(const BitmapT *bm, u_char *board) {
+  short n = WIDTH * HEIGHT / 8 - 1;
+  u_char *src = bm->planes[0];
+  u_int *dst = (u_int *)board;
+  u_int *tab;
+  
+  do {
+    tab = lookup[*src++];
+    *dst++ = *tab++;
+    *dst++ = *tab++;
+  } while (--n != -1);
+}
+
+static void Load(void) {
+  short i, j;
+  for (i = 0; i < 256; i++) {
+    u_char *tab = (u_char *)&lookup[i];
+    for (j = 0; j < 8; j++)
+      tab[j] = i & (1 << (7 - j)) ? 6 : 0;
+  }
+}
 
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  SetupDisplayWindow(MODE_LORES, X(32), Y(0), WIDTH, HEIGHT);
-  SetupBitplaneFetch(MODE_LORES, X(32), WIDTH);
-  SetupMode(MODE_LORES, DEPTH);
+  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   LoadPalette(&turmite_pal, 0);
+
+  EnableDMA(DMAF_BLITTER);
+  BlitterCopyFastSetup(screen, 0, 0, &scene);
+  BlitterCopyFastStart(DEPTH - 1, 0);
+  BitmapToBoard(&scene, board);
 
   cp = NewCopList(100);
   CopInit(cp);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopEnd(cp);
   CopListActivate(cp);
-
+  
   EnableDMA(DMAF_RASTER);
 }
 
 static void Kill(void) {
-  DisableDMA(DMAF_RASTER);
+  DisableDMA(DMAF_RASTER | DMAF_BLITTER);
   DeleteCopList(cp);
+  DeleteBitmap(screen);
 }
 
 #define SOUTH 0
@@ -135,6 +163,21 @@ TurmiteT Irregular = {
   }
 };
 
+TurmiteT Credits = {
+  .pos = POS(128,128),
+  .dir = 0,
+  .state = 0,
+  .rules = {
+    {
+      RULE(0, 1, 1),
+      RULE(0, -1, 0),
+    }, {
+      RULE(1, -1, 1),
+      RULE(1, 0, 0),
+    }
+  }
+};
+
 static const u_short PosChange[4] = {
   [SOUTH] = +WIDTH,
   [WEST] = -1,
@@ -196,7 +239,7 @@ static u_char generation = 0;
 
 static TurmiteT *TheTurmite =
 #if GENERATION
-  &SnowFlake;
+  &Credits;
 #else
   &Irregular;
 #endif
@@ -258,7 +301,7 @@ static void Render(void) {
   SimulateTurmite();
   ProfilerStop(SimulateTurmite);
 
-  WaitVBlank();
+  TaskWaitVBlank();
 }
 
-EFFECT(Turmite, NULL, NULL, Init, Kill, Render);
+EFFECT(Turmite, Load, NULL, Init, Kill, Render);
