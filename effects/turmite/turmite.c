@@ -8,6 +8,7 @@
 #include "fx.h"
 
 #include "data/turmite-pal.c"
+#include "data/scene.c"
 
 #define WIDTH 256
 #define HEIGHT 256
@@ -22,24 +23,81 @@
 static CopListT *cp;
 static BitmapT *screen;
 
+// 1 bit version of logo for blitting
+static BitmapT *blit;
+
 /* higher 5 bits store value, lower 3 bits store color information */
 static u_char board[WIDTH * HEIGHT];
+static u_char temp_board[WIDTH * HEIGHT];
+
+static void BlitSimple(void *sourceA, void *sourceB,
+                       void *sourceC, const BitmapT *target,
+                       u_short minterms) {
+  u_short bltsize = (target->height << 6) | (target->width >> 4);
+
+  custom->bltcon0 = minterms | (SRCA | SRCB | SRCC | DEST);
+  custom->bltcon1 = 0;
+
+  custom->bltafwm = 0xFFFF;
+  custom->bltalwm = 0xFFFF;
+  custom->bltamod = 0;
+  custom->bltbmod = 0;
+  custom->bltcmod = 0;
+  custom->bltdmod = 0;
+
+  custom->bltapt = sourceA;
+  custom->bltbpt = sourceB;
+  custom->bltcpt = sourceC;
+  custom->bltdpt = target->planes[0];
+  custom->bltsize = bltsize;
+}
+
+static void BitmapToBoard(void) {
+  short i, j;
+  u_char *srcbpt = scene.planes[0];
+  for (i = 0; i < scene_bplSize; i += 8) {
+    for (j = 0; j < 8; j++) {
+      if ((srcbpt[i] >> j)  & 0x01) {
+        temp_board[i+j] = 0x6;
+      } else temp_board[i+j] = 0x0;
+    }
+  }
+}
+
+static void Load(void) {
+    EnableDMA(DMAF_BLITTER);
+
+    // bitmap size aligned to word
+    blit = NewBitmap(WIDTH, HEIGHT, 1);
+    BlitSimple(scene.planes[0], scene.planes[0], scene.planes[0], blit,
+               ABC | ANBC | ABNC | ANBNC | NABC | NANBC | NABNC);
+
+    BitmapToBoard();
+    memcpy(board, temp_board, 8192);
+    WaitBlitter();
+    DisableDMA(DMAF_BLITTER);
+}
+
+static void UnLoad(void) {
+  DeleteBitmap(blit);
+}
+
 
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
-  SetupDisplayWindow(MODE_LORES, X(32), Y(0), WIDTH, HEIGHT);
-  SetupBitplaneFetch(MODE_LORES, X(32), WIDTH);
-  SetupMode(MODE_LORES, DEPTH);
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0),
+                 WIDTH , HEIGHT);
   LoadPalette(&turmite_pal, 0);
+
 
   cp = NewCopList(100);
   CopInit(cp);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopEnd(cp);
   CopListActivate(cp);
-
-  EnableDMA(DMAF_RASTER);
+  
+  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
 static void Kill(void) {
@@ -135,6 +193,21 @@ TurmiteT Irregular = {
   }
 };
 
+TurmiteT Credits = {
+  .pos = POS(128,128),
+  .dir = 0,
+  .state = 0,
+  .rules = {
+    {
+      RULE(0, 1, 1),
+      RULE(0, -1, 0),
+    }, {
+      RULE(1, -1, 1),
+      RULE(1, 0, 0),
+    }
+  }
+};
+
 static const u_short PosChange[4] = {
   [SOUTH] = +WIDTH,
   [WEST] = -1,
@@ -196,7 +269,7 @@ static u_char generation = 0;
 
 static TurmiteT *TheTurmite =
 #if GENERATION
-  &SnowFlake;
+  &Credits;
 #else
   &Irregular;
 #endif
@@ -254,11 +327,17 @@ void SimulateTurmite(void) {
 PROFILE(SimulateTurmite);
 
 static void Render(void) {
+  //short i;
   ProfilerStart(SimulateTurmite);
+  //BlitterCopySetup(screen, 0, 0, blit);
+  // monkeypatch minterms to perform screen = screen | logo_blit
+  //custom->bltcon0 = (SRCB | SRCC | DEST) | (ABC | ANBC | ABNC);
+  //for (i = 0; i < screen->depth; i++)
+    //BlitterCopyStart(i, 0);
   SimulateTurmite();
   ProfilerStop(SimulateTurmite);
 
-  WaitVBlank();
+  TaskWaitVBlank();
 }
 
-EFFECT(Turmite, NULL, NULL, Init, Kill, Render);
+EFFECT(Turmite, Load, UnLoad, Init, Kill, Render);
