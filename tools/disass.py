@@ -11,6 +11,12 @@ from collections import namedtuple, defaultdict
 from pygments import lexers
 from pygments import formatters
 
+from pyparsing import (
+        Word, Char, Literal, Opt, ZeroOrMore, Empty, Regex,
+        Suppress, Combine, White, Group)
+from pyparsing.exceptions import ParseException
+
+
 Reloc = namedtuple('Reloc', 'sect addr typ sym')
 Symbol = namedtuple('Symbol', 'sect addr name')
 SourceLine = namedtuple('SourceLine', 'path num')
@@ -19,8 +25,70 @@ DisassLine = namedtuple('DisassLine', 'addr code insn')
 c_lexer = lexers.get_lexer_by_name('c')
 formatter = formatters.get_formatter_by_name('terminal16m', style='dracula')
 reloc_addr = re.compile(
-  r'([0-9a-f]+ [0-9a-f]+ )?<([^+-]+)([+-]0x[0-9a-f]+)?>')
+  r'([0-9a-f]+\s+)?([0-9a-f]+\s+)?<([^+-]+)([+-]0x[0-9a-f]+)?>')
 symbol_addr = re.compile(r'<([^+-]+)([+-]0x[0-9a-f]+)?>')
+
+
+Dot = Char('.')
+Hash = Char('#')
+Comma = Char(',')
+LBrace = Char('(')
+RBrace = Char(')')
+Plus = Char('+')
+Minus = Char('-')
+RegNum = Char('01234567')
+WordSize = Literal('.w')
+LongSize = Literal('.l')
+StackReg = Literal('sp')
+PCReg = Literal('pc')
+Digits = Word('0123456789')
+HexDigits = Word('0123456789abcdef')
+Number = Opt(Minus) + Digits
+HexNumber = Combine((Suppress(Plus) | Minus) +
+                    Suppress(Literal('0x')) + HexDigits)
+Section = Literal('.text') | Literal('.data') | Literal('.bss')
+Label = Group(
+          Opt(HexDigits + Suppress(White())) +
+          Opt(Suppress(HexDigits + White())) +
+          Suppress(Char('<')) + (Section | Regex('[A-Za-z0-9_]+')) +
+          Opt(HexNumber) + Suppress(Char('>')))
+
+# data register direct
+DataReg = Combine(Char('d') + RegNum)
+# address register direct
+AddrReg = Combine(Char('a') + RegNum | StackReg)
+# address register indirect
+Indirect = Combine(LBrace + AddrReg + RBrace)
+# address register indirect with pre-decrement
+IndirectPreDec = Combine(Minus + Indirect)
+# address register indirect with post-increment
+IndirectPostInc = Combine(Indirect + Plus)
+# address register indirect with displacement
+IndirectDisp = Combine(Number + Indirect)
+# address register indeirect with index
+IndirectIndex = Combine(LBrace + Opt(Number + Comma) + AddrReg + Comma +
+                        DataReg + (WordSize | LongSize) + RBrace)
+# absolute short
+AbsoluteShort = Combine(Number + WordSize)
+# absolute long
+AbsoluteLong = Combine(Number + Opt(LongSize))
+# program counter with displacement
+PCDisp = Group(Label + Combine(LBrace + PCReg + RBrace))
+# program counter with index
+PCIndex = Combine(LBrace + Opt((Label | Number) + Comma) + PCReg + Comma +
+                  DataReg + (WordSize | LongSize) + RBrace)
+# immediate
+Immediate = Combine(Hash + Number)
+# register list (movem)
+RegRange = (AddrReg + Minus + AddrReg) | (DataReg + Minus + DataReg)
+RegListItem = RegRange | AddrReg | DataReg
+RegList = Combine(RegListItem + ZeroOrMore(Char('/') + RegListItem))
+
+Operand = (IndirectPreDec | IndirectPostInc | IndirectIndex | Indirect |
+           IndirectDisp | PCDisp | PCIndex |
+           Label('label') | AbsoluteShort | AbsoluteLong | Immediate |
+           RegList | DataReg | AddrReg)
+Operands = Operand + ZeroOrMore(Suppress(Comma) + Operand)
 
 
 class SourceReader:
@@ -122,14 +190,6 @@ class ObjectInfo:
         return self._symbols_by_name.get(name, None)
 
 
-def format_symbol(name, addr):
-    if addr == 0:
-        return '<{}>'.format(name)
-    if addr < 0:
-        return '<{}{}>'.format(name, hex(addr))
-    return '<{}+{}>'.format(name, hex(addr))
-
-
 class Disassembler:
     def __init__(self, path):
         self._path = path
@@ -168,6 +228,10 @@ class Disassembler:
 
         return lines
 
+    def _count_cycles(self, length, mnemonic, operands):
+        # print([mnemonic] + operands)
+        pass
+
     def _dump_source_line(self, path, num):
         srcline = self._reader.get(path, num)
         srcfile = path.split('/')[-1]
@@ -176,53 +240,65 @@ class Disassembler:
         print(f'{srcfile:>27}:{num:<3} {srcline}')
         print()
 
-    def _rewrite_operand(self, insn, rel):
+    def _parse_operands(self, s):
+        if not s:
+            return None
+        try:
+            operands = Operands.parse_string(s, parse_all=True).as_list()
+        except ParseException as ex:
+            operands = None
+        return operands
+
+
+    def _rewrite_label(self, addend, name, addr, rel):
         if rel:
-            if m := reloc_addr.search(insn):
-                try:
-                    addend = int(m.group(1).split()[0], 16)
-                except AttributeError:
-                    addend = 0
-                if addend == rel.addr or addend == 0:
-                    target = f'<{rel.sym}>'
-                else:
-                    target = f'<{rel.sym}+0x{addend:x}>'
-                insn = insn.replace(m.group(0), target)
+            name, addr = rel.sym, addend
 
-        if m := reloc_addr.search(insn):
-            symname = m.group(2)
-            try:
-                symaddr = int(m.group(3), 16)
-            except TypeError:
-                symaddr = 0
-            if target := self._info.preceding_symbol(symname, symaddr):
-                insn = insn.replace(m.group(0), format_symbol(*target))
+        if target := self._info.preceding_symbol(name, addr):
+            name, addr = target
 
-        elif m := symbol_addr.search(insn):
-            symname = m.group(1)
-            try:
-                symaddr = int(m.group(2), 16)
-            except TypeError:
-                symaddr = 0
-            if target := self._info.preceding_symbol(symname, symaddr):
-                insn = insn.replace(m.group(0), format_symbol(*target))
+        if addr == 0:
+            return '<{}>'.format(name)
+        if addr < 0:
+            return '<{}{}>'.format(name, hex(addr))
+        return '<{}+{}>'.format(name, hex(addr))
 
-        return insn
+    def _rewrite_operand(self, operand, rel):
+        if type(operand) is not list:
+            return operand
+
+        if len(operand) == 2:
+            o0, o1 = operand
+            if o1 == '(pc)':
+                return self._rewrite_operand(o0, rel) + o1
+            return self._rewrite_label(int(o0, 16), o1, 0, rel)
+        elif len(operand) == 3:
+            o0, o1, o2 = operand
+            return self._rewrite_label(int(o0, 16), o1, int(o2, 16), rel)
+        else:
+            raise RuntimeError(operand)
 
     def _dump_disass_line(self, addr, code, insn):
         size = len(code.split() * 2)
         rel = self._info.find_reloc('.text', addr, addr + size)
 
         try:
-            mnemonic, operands = insn.split(maxsplit=1)
+            mnemonic, args = insn.split(maxsplit=1)
         except ValueError:
-            mnemonic, operands = insn, ''
+            mnemonic, args = insn, ''
 
-        operands = [self._rewrite_operand(op, rel)
-                    for op in operands.split(',')]
+        operands = self._parse_operands(args)
+
+        if mnemonic.startswith('.') or 'out of bounds' in args or not operands:
+            print(f'{addr:4x}:\t{code}\t{mnemonic}\t{args}')
+            return
+
+        operands = [self._rewrite_operand(op, rel) for op in operands]
+
+        cycles = self._count_cycles(size, mnemonic, operands)
         operands = ','.join(operands)
 
-        print(f'{addr:4x}:\t{code}\t{mnemonic}\t{operands}')
+        print(f'{addr:4x}:\t{code}\t{mnemonic}\t{operands}\t; {cycles}')
 
     def disassemble(self, func):
         for line in self._read(func):
