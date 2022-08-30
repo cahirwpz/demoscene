@@ -3,7 +3,6 @@
 import argparse
 import subprocess
 import pygments
-import re
 
 from bisect import bisect
 from collections import namedtuple, defaultdict
@@ -21,12 +20,6 @@ Reloc = namedtuple('Reloc', 'sect addr typ sym')
 Symbol = namedtuple('Symbol', 'sect addr name')
 SourceLine = namedtuple('SourceLine', 'path num')
 DisassLine = namedtuple('DisassLine', 'addr code insn')
-
-c_lexer = lexers.get_lexer_by_name('c')
-formatter = formatters.get_formatter_by_name('terminal16m', style='dracula')
-reloc_addr = re.compile(
-  r'([0-9a-f]+\s+)?([0-9a-f]+\s+)?<([^+-]+)([+-]0x[0-9a-f]+)?>')
-symbol_addr = re.compile(r'<([^+-]+)([+-]0x[0-9a-f]+)?>')
 
 
 Dot = Char('.')
@@ -93,14 +86,17 @@ Operands = Operand + ZeroOrMore(Suppress(Comma) + Operand)
 
 class SourceReader:
     def __init__(self):
-        self.files = {}
+        self._files = {}
+        self._c_lexer = lexers.get_lexer_by_name('c')
+        self._formatter = formatters.get_formatter_by_name('terminal16m',
+                                                           style='dracula')
 
     def get(self, path, line):
-        if path not in self.files:
+        if path not in self._files:
             data = open(path, 'r').read()
-            data = pygments.highlight(data, c_lexer, formatter)
-            self.files[path] = data.split('\n')
-        return self.files[path][int(line) - 1]
+            data = pygments.highlight(data, self._c_lexer, self._formatter)
+            self._files[path] = data.split('\n')
+        return self._files[path][int(line) - 1]
 
 
 class ObjectInfo:
@@ -248,7 +244,6 @@ class Disassembler:
         except ParseException as ex:
             operands = None
         return operands
-
 
     def _rewrite_label(self, addend, name, addr, rel):
         if rel:
