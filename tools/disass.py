@@ -5,7 +5,7 @@ import subprocess
 import pygments
 
 from bisect import bisect
-from collections import namedtuple, defaultdict
+from collections import namedtuple, defaultdict, UserString
 
 from pygments import lexers
 from pygments import formatters
@@ -20,6 +20,18 @@ Symbol = namedtuple('Symbol', 'sect addr name')
 SourceLine = namedtuple('SourceLine', 'path num')
 DisassLine = namedtuple('DisassLine', 'addr code insn')
 
+OpDataReg = type('OpDataReg', (UserString,), dict())
+OpAddrReg = type('OpAddrReg', (UserString,), dict())
+OpIndirect = type('OpIndirect', (UserString,), dict())
+OpIndirectPreDec = type('OpIndirectPreDec', (UserString,), dict())
+OpIndirectPostInc = type('OpIndirectPostInc', (UserString,), dict())
+OpIndirectDisp = type('OpIndirectDisp', (UserString,), dict())
+OpIndirectIndex = type('OpIndirectIndex', (UserString,), dict())
+OpAbsoluteShort = type('OpAbsoluteShort', (UserString,), dict())
+OpAbsoluteLong = type('OpAbsoluteLong', (UserString,), dict())
+OpPCDisp = type('OpPCDisp', (UserString,), dict())
+OpPCIndex = type('OpPCIndex', (UserString,), dict())
+OpImmediate = type('OpImmediate', (UserString,), dict())
 
 Dot = Char('.')
 Hash = Char('#')
@@ -47,23 +59,32 @@ Label = Group(
 
 # data register direct
 DataReg = Combine(Char('d') + RegNum)
+DataReg.set_parse_action(lambda t: OpDataReg(t[0]))
 # address register direct
 AddrReg = Combine(Char('a') + RegNum | StackReg)
+AddrReg.set_parse_action(lambda t: OpAddrReg(t[0]))
 # address register indirect
 Indirect = Combine(LBrace + AddrReg + RBrace)
+Indirect.set_parse_action(lambda t: OpIndirect(t[0]))
 # address register indirect with pre-decrement
 IndirectPreDec = Combine(Minus + Indirect)
+IndirectPreDec.set_parse_action(lambda t: OpIndirectPreDec(t[0]))
 # address register indirect with post-increment
 IndirectPostInc = Combine(Indirect + Plus)
+IndirectPostInc.set_parse_action(lambda t: OpIndirectPostInc(t[0]))
 # address register indirect with displacement
 IndirectDisp = Combine(Number + Indirect)
+IndirectDisp.set_parse_action(lambda t: OpIndirectDisp(t[0]))
 # address register indeirect with index
 IndirectIndex = Combine(LBrace + Opt(Number + Comma) + AddrReg + Comma +
                         (DataReg | AddrReg) + (WordSize | LongSize) + RBrace)
+IndirectIndex.set_parse_action(lambda t: OpIndirectIndex(t[0]))
 # absolute short
 AbsoluteShort = Combine(Number + WordSize)
+AbsoluteShort.set_parse_action(lambda t: OpAbsoluteShort(t[0]))
 # absolute long
-AbsoluteLong = Label | Combine(Number + Opt(LongSize))
+AbsoluteLong = Combine(Number + Opt(LongSize))
+AbsoluteLong.set_parse_action(lambda t: OpAbsoluteLong(t[0]))
 # program counter with displacement
 PCDisp = Group(Label + Combine(LBrace + PCReg + RBrace))
 # program counter with index
@@ -72,6 +93,7 @@ PCIndex = Group(LBrace + Opt(Label | Number) +
                         DataReg + (WordSize | LongSize) + RBrace))
 # immediate
 Immediate = Combine(Hash + Number)
+Immediate.set_parse_action(lambda t: OpImmediate(t[0]))
 # register list (movem)
 RegRange = (AddrReg + Minus + AddrReg) | (DataReg + Minus + DataReg)
 RegListItem = RegRange | AddrReg | DataReg
@@ -79,55 +101,45 @@ RegList = Combine(RegRange | RegListItem + OneOrMore(Char('/') + RegListItem))
 
 Operand = (IndirectPreDec | IndirectPostInc | IndirectIndex | Indirect |
            IndirectDisp | PCDisp | PCIndex | AbsoluteShort | AbsoluteLong |
-           Immediate | RegList | DataReg | AddrReg)
+           Label | Immediate | RegList | DataReg | AddrReg)
 Operands = Operand + ZeroOrMore(Suppress(Comma) + Operand)
 
 
 class InsnCost:
     OperandCost = {
             # byte/word, long, lea
-            DataReg: (0, 0, 0),
-            AddrReg: (0, 0, 0),
-            Indirect: (4, 8, 4),
-            IndirectPostInc: (4, 8, 0),
-            IndirectPreDec: (6, 10, 0),
-            IndirectDisp: (8, 12, 8),
-            IndirectIndex: (10, 14, 12),
-            AbsoluteLong: (12, 16, 12),
-            AbsoluteShort: (8, 12, 8),
-            PCDisp: (8, 12, 8),
-            PCIndex: (10, 14, 12),
-            Immediate: (4, 8, 0),
-            Label: (12, 16, 12)}
+            OpDataReg: (0, 0, 0),
+            OpAddrReg: (0, 0, 0),
+            OpIndirect: (4, 8, 4),
+            OpIndirectPostInc: (4, 8, 0),
+            OpIndirectPreDec: (6, 10, 0),
+            OpIndirectDisp: (8, 12, 8),
+            OpIndirectIndex: (10, 14, 12),
+            OpAbsoluteLong: (12, 16, 12),
+            OpAbsoluteShort: (8, 12, 8),
+            OpPCDisp: (8, 12, 8),
+            OpPCIndex: (10, 14, 12),
+            OpImmediate: (4, 8, 0)}
 
     def __init__(self):
         pass
 
     def operand_cost(self, base, kind, operand):
-        for parser, cost in self.OperandCost.items():
-            try:
-                parser.parse_string(operand, parse_all=True)
-            except ParseException:
-                continue
-            if kind in 'sbw':
-                return base + cost[0]
-            if kind == 'l':
-                return base + cost[1]
-            if kind == 'lea':
-                return base + cost[2]
-        raise RuntimeError(operand)
-
-    def parsed_as(self, operand, parser):
-        try:
-            return bool(parser.parse_string(operand, parse_all=True))
-        except ParseException:
-            return False
+        for tokenCls, cost in self.OperandCost.items():
+            if isinstance(operand, tokenCls):
+                if kind in 'sbw':
+                    return base + cost[0]
+                if kind == 'l':
+                    return base + cost[1]
+                if kind == 'lea':
+                    return base + cost[2]
+        raise RuntimeError(operand, type(operand))
 
     def is_areg(self, operand):
-        return self.parsed_as(operand, AddrReg)
+        return isinstance(operand, OpAddrReg)
 
     def is_dreg(self, operand):
-        return self.parsed_as(operand, DataReg)
+        return isinstance(operand, OpDataReg)
 
     def cycles(self, length, mnemonic, operands):
         try:
@@ -406,10 +418,10 @@ class Disassembler:
             name, addr = target
 
         if addr == 0:
-            return '<{}>'.format(name)
+            return OpAbsoluteLong('<{}>'.format(name))
         if addr < 0:
-            return '<{}{}>'.format(name, hex(addr))
-        return '<{}+{}>'.format(name, hex(addr))
+            return OpAbsoluteLong('<{}{}>'.format(name, hex(addr)))
+        return OpAbsoluteLong('<{}+{}>'.format(name, hex(addr)))
 
     def _rewrite_operand(self, operand, rel):
         if type(operand) is not list:
@@ -418,12 +430,12 @@ class Disassembler:
         if len(operand) == 2:
             o0, o1 = operand
             if o1 == '(pc)':
-                return self._rewrite_operand(o0, rel) + o1
+                return OpPCDisp(str(self._rewrite_operand(o0, rel)) + o1)
             return self._rewrite_label(int(o0, 16), o1, 0, rel)
         elif len(operand) == 3:
             o0, o1, o2 = operand
             if 'pc' in o2:
-                return o0 + self._rewrite_operand(o1, rel) + o2
+                return OpPCIndex(o0 + str(self._rewrite_operand(o1, rel)) + o2)
             return self._rewrite_label(int(o0, 16), o1, int(o2, 16), rel)
         else:
             raise RuntimeError(operand)
@@ -449,7 +461,7 @@ class Disassembler:
         count = self._cost.cycles(size, mnemonic, operands)
         count = f'; {count}' if count else '; ?'
 
-        operands = ','.join(operands)
+        operands = ','.join(map(str, operands))
 
         print(f'{addr:4x}:\t{code}\t{mnemonic}\t{operands:36}{count}')
 
