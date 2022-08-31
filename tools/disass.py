@@ -413,8 +413,6 @@ class InsnCost:
         if mnemonic == 'dbf':
             return 't:10/f:14'
 
-        # print(mnemonic, [self._operand_cost(size, op) for op in operands])
-
 
 class SourceReader:
     def __init__(self):
@@ -502,9 +500,9 @@ class ObjectInfo:
         self._relocs_by_section = index
 
     def preceding_symbol(self, name, addr):
-        if symbol := self._symbols_by_name.get('_' + name, None):
-            name = symbol.sect
-            addr = addr + symbol.addr
+        if sym := self._symbols_by_name.get('_' + name, None):
+            name = sym.sect
+            addr = addr + sym.addr
 
         if symbols := self._symbols_by_section.get(name, None):
             addresses = [x.addr for x in symbols]
@@ -591,7 +589,12 @@ class Disassembler:
             return s
 
     def _rewrite_label(self, addend, name, addr, rel):
+        if name[0] not in '._':
+            name = '_' + name
+
         if rel:
+            if addr == rel.addr:
+                addend = 0
             name, addr = rel.sym, addend
 
         if target := self._info.preceding_symbol(name, addr):
