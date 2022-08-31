@@ -246,6 +246,7 @@ class InsnCost:
             'bra': 10,
             'bsr': 18,
             'rte': 20,
+            'unlk': 12,
         }
 
     def operand_cost(self, base, kind, operand):
@@ -387,6 +388,9 @@ class InsnCost:
 
         if mnemonic in ['jmp', 'jsr', 'lea', 'pea']:
             return self.InsnCost[mnemonic][type(o0)]
+
+        if mnemonic in ['movep']:
+            return 16 if short else 24
 
         if mnemonic in ['movem']:
             if self.is_reglist(o1):
