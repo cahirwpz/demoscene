@@ -433,18 +433,17 @@ class SourceReader:
 
 class ObjectInfo:
     def __init__(self, path):
-        self._symbols = self.read_symbols(path)
-        self._relocs = self.read_relocs(path)
-
+        self.read_symbols(path)
+        self.read_relocs(path)
         self.make_indices()
 
-    @staticmethod
-    def read_symbols(path):
+    def read_symbols(self, path):
         output = subprocess.run(
                 ['m68k-amigaos-objdump', '-G', path], capture_output=True)
         secmap = {'FUN': '.text', 'STSYM': '.data', 'LCSYM': '.bss'}
 
         symbols = []
+        regs = defaultdict(dict)
 
         for line in output.stdout.decode('utf-8').splitlines():
             fs = line.split()
@@ -453,11 +452,21 @@ class ObjectInfo:
             if secname := secmap.get(fs[1], None):
                 addr, name = int(fs[4], 16), fs[6].split(':')[0]
                 symbols.append(Symbol(secname, addr, '_' + name))
+            elif fs[1] == 'RSYM':
+                line = int(fs[3])
+                reg = int(fs[4], 16)
+                if reg < 8:
+                    reg = f'd{reg}'
+                else:
+                    reg -= 8
+                    reg = f'a{reg}'
+                var = fs[6].split(':')[0]
+                regs[line][var] = reg
 
-        return symbols
+        self._regs = regs
+        self._symbols = symbols
 
-    @staticmethod
-    def read_relocs(path):
+    def read_relocs(self, path):
         output = subprocess.run(
                 ['m68k-amigaos-objdump', '-r', path], capture_output=True)
 
@@ -474,7 +483,7 @@ class ObjectInfo:
                 val, typ, sym = int(fs[0], 16), fs[1], fs[2]
                 relocs.append(Reloc(sect, val, typ, sym))
 
-        return relocs
+        self._relocs = relocs
 
     def make_indices(self):
         index = defaultdict(list)
@@ -516,6 +525,9 @@ class ObjectInfo:
 
     def find_symbol(self, name):
         return self._symbols_by_name.get(name, None)
+
+    def local_vars(self, line):
+        return self._regs.get(line, dict())
 
 
 class Disassembler:
@@ -564,6 +576,10 @@ class Disassembler:
         print()
         print(f'{srcfile:>27}:{num:<3} {srcline}')
         print()
+
+        if lvars := self._info.local_vars(num):
+            print(' ' * 31, '; variable',
+                  ', '.join(f'`{n}` in {r}' for n, r in lvars.items()))
 
     def _parse_operands(self, s):
         if not s:
