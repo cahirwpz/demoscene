@@ -5,7 +5,7 @@ import subprocess
 import pygments
 
 from bisect import bisect
-from collections import namedtuple, defaultdict, UserString
+from collections import namedtuple, defaultdict, UserString, UserList
 
 from pygments import lexers
 from pygments import formatters
@@ -32,6 +32,25 @@ OpAbsoluteLong = type('OpAbsoluteLong', (UserString,), dict())
 OpPCDisp = type('OpPCDisp', (UserString,), dict())
 OpPCIndex = type('OpPCIndex', (UserString,), dict())
 OpImmediate = type('OpImmediate', (UserString,), dict())
+
+
+class OpRegList(UserList):
+    def __str__(self):
+        return '/'.join(map(str, self.data))
+
+    def regcount(self):
+        cnt = 0
+        for rl in self.data:
+            try:
+                first, last = rl.split('-')
+                if last == 'sp':
+                    last = 'a7'
+                assert first[0] == last[0]
+                cnt += int(last[1]) - int(first[1]) + 1
+            except ValueError:
+                cnt += 1
+        return cnt
+
 
 Dot = Char('.')
 Hash = Char('#')
@@ -95,34 +114,139 @@ PCIndex = Group(LBrace + Opt(Label | Number) +
 Immediate = Combine(Hash + Number)
 Immediate.set_parse_action(lambda t: OpImmediate(t[0]))
 # register list (movem)
-RegRange = (AddrReg + Minus + AddrReg) | (DataReg + Minus + DataReg)
+RegRange = Combine((AddrReg + Minus + AddrReg) | (DataReg + Minus + DataReg))
 RegListItem = RegRange | AddrReg | DataReg
-RegList = Combine(RegRange | RegListItem + OneOrMore(Char('/') + RegListItem))
+RegList = Group(RegListItem + OneOrMore(Suppress(Char('/')) + RegListItem) |
+                RegRange)
+RegList.set_parse_action(lambda t: OpRegList(t[0]))
 
 Operand = (IndirectPreDec | IndirectPostInc | IndirectIndex | Indirect |
-           IndirectDisp | PCDisp | PCIndex | AbsoluteShort | AbsoluteLong |
-           Label | Immediate | RegList | DataReg | AddrReg)
+           IndirectDisp | PCDisp | PCIndex | Label | AbsoluteShort |
+           AbsoluteLong | Immediate | RegList | DataReg | AddrReg)
 Operands = Operand + ZeroOrMore(Suppress(Comma) + Operand)
 
 
 class InsnCost:
     OperandCost = {
-            # byte/word, long, lea
-            OpDataReg: (0, 0, 0),
-            OpAddrReg: (0, 0, 0),
-            OpIndirect: (4, 8, 4),
-            OpIndirectPostInc: (4, 8, 0),
-            OpIndirectPreDec: (6, 10, 0),
-            OpIndirectDisp: (8, 12, 8),
-            OpIndirectIndex: (10, 14, 12),
-            OpAbsoluteLong: (12, 16, 12),
-            OpAbsoluteShort: (8, 12, 8),
-            OpPCDisp: (8, 12, 8),
-            OpPCIndex: (10, 14, 12),
-            OpImmediate: (4, 8, 0)}
+            OpDataReg: (0, 0),
+            OpAddrReg: (0, 0),
+            OpIndirect: (4, 8),
+            OpIndirectPostInc: (4, 8),
+            OpIndirectPreDec: (6, 10),
+            OpIndirectDisp: (8, 12),
+            OpIndirectIndex: (10, 14),
+            OpAbsoluteShort: (8, 12),
+            OpAbsoluteLong: (12, 16),
+            OpPCDisp: (8, 12),
+            OpPCIndex: (10, 14),
+            OpImmediate: (4, 8),
+        }
 
-    def __init__(self):
-        pass
+    MoveDest = {
+            OpDataReg: 0,
+            OpAddrReg: 1,
+            OpIndirect: 2,
+            OpIndirectPostInc: 3,
+            OpIndirectPreDec: 4,
+            OpIndirectDisp: 5,
+            OpIndirectIndex: 6,
+            OpAbsoluteShort: 7,
+            OpAbsoluteLong: 8,
+        }
+
+    MoveShortCost = {
+            OpDataReg: (4, 4, 8, 8, 8, 12, 14, 12, 16),
+            OpAddrReg: (4, 4, 8, 8, 8, 12, 14, 12, 16),
+            OpIndirect: (8, 8, 12, 12, 12, 16, 18, 16, 20),
+            OpIndirectPostInc: (8, 8, 12, 12, 12, 16, 18, 16, 20),
+            OpIndirectPreDec: (10, 10, 14, 14, 14, 18, 20, 18, 22),
+            OpIndirectDisp: (12, 12, 16, 16, 16, 20, 22, 20, 24),
+            OpIndirectIndex: (14, 14, 18, 18, 18, 22, 24, 22, 26),
+            OpAbsoluteShort: (12, 12, 16, 16, 16, 20, 22, 20, 24),
+            OpAbsoluteLong: (16, 16, 20, 20, 20, 24, 26, 24, 28),
+            OpPCDisp: (12, 12, 16, 16, 16, 20, 22, 20, 24),
+            OpPCIndex: (14, 14, 18, 18, 18, 22, 24, 22, 26),
+            OpImmediate: (8, 8, 12, 12, 12, 16, 18, 16, 20),
+        }
+
+    MoveLongCost = {
+            OpDataReg: (4, 4, 12, 12, 12, 16, 18, 16, 20),
+            OpAddrReg: (4, 4, 12, 12, 12, 16, 18, 16, 20),
+            OpIndirect: (12, 12, 20, 20, 20, 24, 26, 24, 28),
+            OpIndirectPostInc: (12, 12, 20, 20, 20, 24, 26, 24, 28),
+            OpIndirectPreDec: (14, 14, 22, 22, 22, 26, 28, 26, 30),
+            OpIndirectDisp: (16, 16, 24, 24, 24, 28, 30, 28, 32),
+            OpIndirectIndex: (18, 18, 26, 26, 26, 30, 32, 30, 34),
+            OpAbsoluteShort: (16, 16, 24, 24, 24, 28, 30, 28, 32),
+            OpAbsoluteLong: (20, 20, 28, 28, 28, 32, 34, 32, 36),
+            OpPCDisp: (16, 16, 24, 24, 24, 28, 30, 28, 32),
+            OpPCIndex: (18, 18, 26, 26, 26, 30, 32, 30, 34),
+            OpImmediate: (12, 12, 20, 20, 20, 24, 26, 24, 28),
+        }
+
+    InsnCost = {
+            'jmp': {
+                OpIndirect: 8,
+                OpIndirectDisp: 10,
+                OpIndirectIndex: 14,
+                OpAbsoluteShort: 10,
+                OpAbsoluteLong: 12,
+                OpPCDisp: 10,
+                OpPCIndex: 14,
+            },
+            'jsr': {
+                OpIndirect: 16,
+                OpIndirectDisp: 18,
+                OpIndirectIndex: 22,
+                OpAbsoluteShort: 18,
+                OpAbsoluteLong: 20,
+                OpPCDisp: 18,
+                OpPCIndex: 22,
+            },
+            'lea': {
+                OpIndirect: 4,
+                OpIndirectDisp: 8,
+                OpIndirectIndex: 12,
+                OpAbsoluteShort: 8,
+                OpAbsoluteLong: 12,
+                OpPCDisp: 8,
+                OpPCIndex: 12,
+            },
+            'pea': {
+                OpIndirect: 4,
+                OpIndirectDisp: 8,
+                OpIndirectIndex: 12,
+                OpAbsoluteShort: 8,
+                OpAbsoluteLong: 12,
+                OpPCDisp: 8,
+                OpPCIndex: 12,
+            }
+        }
+
+    MovemCost = {
+            OpIndirect: (12, 8),
+            OpIndirectPostInc: (12, None),
+            OpIndirectPreDec: (None, 8),
+            OpIndirectDisp: (16, 12),
+            OpIndirectIndex: (18, 14),
+            OpAbsoluteShort: (16, 12),
+            OpAbsoluteLong: (20, 16),
+            OpPCDisp: (16, None),
+            OpPCIndex: (16, None),
+        }
+
+    MiscCost = {
+            'nop': 4,
+            'swap': 4,
+            'ext': 4,
+            'moveq': 4,
+            'exg': 6,
+            'rts': 16,
+            'link': 16,
+            'bra': 10,
+            'bsr': 18,
+            'rte': 20,
+        }
 
     def operand_cost(self, base, kind, operand):
         for tokenCls, cost in self.OperandCost.items():
@@ -131,15 +255,22 @@ class InsnCost:
                     return base + cost[0]
                 if kind == 'l':
                     return base + cost[1]
-                if kind == 'lea':
-                    return base + cost[2]
         raise RuntimeError(operand, type(operand))
 
-    def is_areg(self, operand):
-        return isinstance(operand, OpAddrReg)
+    def is_areg(self, op):
+        return isinstance(op, OpAddrReg)
 
-    def is_dreg(self, operand):
-        return isinstance(operand, OpDataReg)
+    def is_dreg(self, op):
+        return isinstance(op, OpDataReg)
+
+    def is_imm(self, op):
+        return isinstance(op, OpImmediate)
+
+    def is_reglist(self, op):
+        return isinstance(op, OpRegList)
+
+    def is_direct(self, op):
+        return self.is_areg(op) or self.is_dreg(op) or self.is_imm(op)
 
     def cycles(self, length, mnemonic, operands):
         try:
@@ -154,14 +285,25 @@ class InsnCost:
         else:
             o0, o1 = '', ''
 
-        cost = None
         short = size in 'bsw'
 
-        if mnemonic in ['add', 'adda', 'sub', 'suba', 'and', 'or', 'eor']:
+        if mnemonic in ['move', 'movea']:
+            if short:
+                return self.MoveShortCost[type(o0)][self.MoveDest[type(o1)]]
+            return self.MoveLongCost[type(o0)][self.MoveDest[type(o1)]]
+
+        if mnemonic in ['add', 'adda', 'sub', 'suba', 'and', 'or']:
+            l_cost = 8 if self.is_direct(o0) else 6
             if self.is_areg(o1):
-                return self.operand_cost(8 if short else 6, size, o0)
+                return self.operand_cost(8 if short else l_cost, size, o0)
             if self.is_dreg(o1):
-                return self.operand_cost(4 if short else 6, size, o0)
+                return self.operand_cost(4 if short else l_cost, size, o0)
+            if self.is_dreg(o0):
+                return self.operand_cost(8 if short else 12, size, o0)
+
+        if mnemonic in ['eor']:
+            if self.is_dreg(o1):
+                return self.operand_cost(4 if short else 8, size, o0)
             if self.is_dreg(o0):
                 return self.operand_cost(8 if short else 12, size, o0)
 
@@ -176,9 +318,14 @@ class InsnCost:
             cost = self.operand_cost(base[mnemonic], size, o0)
             return f'max:{cost}'
 
-        if mnemonic in ['addi', 'subi', 'andi', 'eori', 'ori']:
+        if mnemonic in ['addi', 'subi', 'eori', 'ori']:
             if self.is_dreg(o1):
                 return 8 if short else 16
+            return self.operand_cost(12 if short else 20, size, o1)
+
+        if mnemonic in ['andi']:
+            if self.is_dreg(o1):
+                return 8 if short else 14
             return self.operand_cost(12 if short else 20, size, o1)
 
         if mnemonic in ['cmpi']:
@@ -186,20 +333,32 @@ class InsnCost:
                 return 8 if short else 14
             return self.operand_cost(8 if short else 12, size, o1)
 
-        if mnemonic in ['addq', 'subq']:
+        if mnemonic in ['addq']:
+            if self.is_dreg(o1) or self.is_areg(o1):
+                return 4 if short else 8
+            return self.operand_cost(8 if short else 12, size, o1)
+
+        if mnemonic in ['subq']:
             if self.is_dreg(o1):
                 return 4 if short else 8
             if self.is_areg(o1):
                 return 8
             return self.operand_cost(8 if short else 12, size, o1)
 
-        if mnemonic in ['lea']:
-            return self.operand_cost(0, 'lea', o0)
-
         if mnemonic in ['clr', 'neg', 'negx', 'not']:
             if self.is_dreg(o0):
                 return 4 if short else 6
             return self.operand_cost(8 if short else 12, size, o0)
+
+        if mnemonic in ['nbcd']:
+            if self.is_dreg(o0):
+                return 4
+            return self.operand_cost(6, 'b', o0)
+
+        if mnemonic in ['tas']:
+            if self.is_dreg(o0):
+                return 4
+            return self.operand_cost(14, 'b', o0)
 
         if mnemonic in ['tst']:
             return self.operand_cost(4, size, o0)
@@ -208,17 +367,17 @@ class InsnCost:
             dynamic = self.is_dreg(o0)
             return self.operand_cost(8 if dynamic else 12, 'b', o1)
 
-        if mnemonic in ['btst']:
-            dynamic = self.is_dreg(o0)
-            if not self.is_dreg(o1):
-                return self.operand_cost(4 if dynamic else 8, 'b', o1)
-            return 6 if dynamic else 10
-
         if mnemonic in ['bclr']:
             dynamic = self.is_dreg(o0)
             if self.is_dreg(o1):
                 return self.operand_cost(8 if dynamic else 12, 'b', o1)
             return 10 if dynamic else 14
+
+        if mnemonic in ['btst']:
+            dynamic = self.is_dreg(o0)
+            if not self.is_dreg(o1):
+                return self.operand_cost(4 if dynamic else 8, 'b', o1)
+            return 6 if dynamic else 10
 
         if mnemonic in ['asr', 'asl', 'lsr', 'lsl', 'ror', 'rol', 'roxr',
                         'roxl']:
@@ -226,17 +385,18 @@ class InsnCost:
                 return (6 if short else 8) + 2 * int(o0[1:])
             return self.operand_cost(8, size, o0)
 
-        if mnemonic in ['nop', 'swap', 'ext', 'moveq']:
-            return 4
+        if mnemonic in ['jmp', 'jsr', 'lea', 'pea']:
+            return self.InsnCost[mnemonic][type(o0)]
 
-        if mnemonic in ['rts', 'link']:
-            return 16
+        if mnemonic in ['movem']:
+            if self.is_reglist(o1):
+                cnt = o1.regcount() * (4 if short else 8)
+                return self.MovemCost[type(o0)][0] + cnt
+            cnt = o0.regcount() * (4 if short else 8)
+            return self.MovemCost[type(o1)][1] + cnt
 
-        if mnemonic in ['bra']:
-            return 10
-
-        if mnemonic in ['bsr']:
-            return 18
+        if cost := self.MiscCost.get(mnemonic):
+            return cost
 
         if mnemonic.startswith('b'):
             return 't:10/f:8' if short else 't:10/f:12'
