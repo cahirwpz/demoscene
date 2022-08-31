@@ -10,9 +10,8 @@ from collections import namedtuple, defaultdict
 from pygments import lexers
 from pygments import formatters
 
-from pyparsing import (
-        Word, Char, Literal, Opt, ZeroOrMore, Empty, Regex,
-        Suppress, Combine, White, Group)
+from pyparsing import (Word, Char, Literal, Opt, ZeroOrMore, OneOrMore, Regex,
+                       Suppress, Combine, White, Group)
 from pyparsing.exceptions import ParseException
 
 
@@ -60,28 +59,185 @@ IndirectPostInc = Combine(Indirect + Plus)
 IndirectDisp = Combine(Number + Indirect)
 # address register indeirect with index
 IndirectIndex = Combine(LBrace + Opt(Number + Comma) + AddrReg + Comma +
-                        DataReg + (WordSize | LongSize) + RBrace)
+                        (DataReg | AddrReg) + (WordSize | LongSize) + RBrace)
 # absolute short
 AbsoluteShort = Combine(Number + WordSize)
 # absolute long
-AbsoluteLong = Combine(Number + Opt(LongSize))
+AbsoluteLong = Label | Combine(Number + Opt(LongSize))
 # program counter with displacement
 PCDisp = Group(Label + Combine(LBrace + PCReg + RBrace))
 # program counter with index
-PCIndex = Combine(LBrace + Opt((Label | Number) + Comma) + PCReg + Comma +
-                  DataReg + (WordSize | LongSize) + RBrace)
+PCIndex = Group(LBrace + Opt(Label | Number) +
+                Combine(Opt(Comma) + PCReg + Comma +
+                        DataReg + (WordSize | LongSize) + RBrace))
 # immediate
 Immediate = Combine(Hash + Number)
 # register list (movem)
 RegRange = (AddrReg + Minus + AddrReg) | (DataReg + Minus + DataReg)
 RegListItem = RegRange | AddrReg | DataReg
-RegList = Combine(RegListItem + ZeroOrMore(Char('/') + RegListItem))
+RegList = Combine(RegRange | RegListItem + OneOrMore(Char('/') + RegListItem))
 
 Operand = (IndirectPreDec | IndirectPostInc | IndirectIndex | Indirect |
-           IndirectDisp | PCDisp | PCIndex |
-           Label('label') | AbsoluteShort | AbsoluteLong | Immediate |
-           RegList | DataReg | AddrReg)
+           IndirectDisp | PCDisp | PCIndex | AbsoluteShort | AbsoluteLong |
+           Immediate | RegList | DataReg | AddrReg)
 Operands = Operand + ZeroOrMore(Suppress(Comma) + Operand)
+
+
+class InsnCost:
+    OperandCost = {
+            # byte/word, long, lea
+            DataReg: (0, 0, 0),
+            AddrReg: (0, 0, 0),
+            Indirect: (4, 8, 4),
+            IndirectPostInc: (4, 8, 0),
+            IndirectPreDec: (6, 10, 0),
+            IndirectDisp: (8, 12, 8),
+            IndirectIndex: (10, 14, 12),
+            AbsoluteLong: (12, 16, 12),
+            AbsoluteShort: (8, 12, 8),
+            PCDisp: (8, 12, 8),
+            PCIndex: (10, 14, 12),
+            Immediate: (4, 8, 0),
+            Label: (12, 16, 12)}
+
+    def __init__(self):
+        pass
+
+    def operand_cost(self, base, kind, operand):
+        for parser, cost in self.OperandCost.items():
+            try:
+                parser.parse_string(operand, parse_all=True)
+            except ParseException:
+                continue
+            if kind in 'sbw':
+                return base + cost[0]
+            if kind == 'l':
+                return base + cost[1]
+            if kind == 'lea':
+                return base + cost[2]
+        raise RuntimeError(operand)
+
+    def parsed_as(self, operand, parser):
+        try:
+            return bool(parser.parse_string(operand, parse_all=True))
+        except ParseException:
+            return False
+
+    def is_areg(self, operand):
+        return self.parsed_as(operand, AddrReg)
+
+    def is_dreg(self, operand):
+        return self.parsed_as(operand, DataReg)
+
+    def cycles(self, length, mnemonic, operands):
+        try:
+            mnemonic, size = mnemonic.split('.', maxsplit=1)
+        except ValueError:
+            size = ''
+
+        if len(operands) == 2:
+            o0, o1 = operands
+        elif len(operands) == 1:
+            o0, o1 = operands[0], ''
+        else:
+            o0, o1 = '', ''
+
+        cost = None
+        short = size in 'bsw'
+
+        if mnemonic in ['add', 'adda', 'sub', 'suba', 'and', 'or', 'eor']:
+            if self.is_areg(o1):
+                return self.operand_cost(8 if short else 6, size, o0)
+            if self.is_dreg(o1):
+                return self.operand_cost(4 if short else 6, size, o0)
+            if self.is_dreg(o0):
+                return self.operand_cost(8 if short else 12, size, o0)
+
+        if mnemonic in ['cmp', 'cmpa']:
+            if self.is_areg(o1):
+                return self.operand_cost(6, size, o0)
+            if self.is_dreg(o1):
+                return self.operand_cost(4 if short else 6, size, o0)
+
+        if mnemonic in ['muls', 'mulu', 'divs', 'divu']:
+            base = {'muls': 70, 'mulu': 70, 'divs': 158, 'divu': 140}
+            cost = self.operand_cost(base[mnemonic], size, o0)
+            return f'max:{cost}'
+
+        if mnemonic in ['addi', 'subi', 'andi', 'eori', 'ori']:
+            if self.is_dreg(o1):
+                return 8 if short else 16
+            return self.operand_cost(12 if short else 20, size, o1)
+
+        if mnemonic in ['cmpi']:
+            if self.is_dreg(o1):
+                return 8 if short else 14
+            return self.operand_cost(8 if short else 12, size, o1)
+
+        if mnemonic in ['addq', 'subq']:
+            if self.is_dreg(o1):
+                return 4 if short else 8
+            if self.is_areg(o1):
+                return 8
+            return self.operand_cost(8 if short else 12, size, o1)
+
+        if mnemonic in ['lea']:
+            return self.operand_cost(0, 'lea', o0)
+
+        if mnemonic in ['clr', 'neg', 'negx', 'not']:
+            if self.is_dreg(o0):
+                return 4 if short else 6
+            return self.operand_cost(8 if short else 12, size, o0)
+
+        if mnemonic in ['tst']:
+            return self.operand_cost(4, size, o0)
+
+        if mnemonic in ['bchg', 'bset']:
+            dynamic = self.is_dreg(o0)
+            return self.operand_cost(8 if dynamic else 12, 'b', o1)
+
+        if mnemonic in ['btst']:
+            dynamic = self.is_dreg(o0)
+            if not self.is_dreg(o1):
+                return self.operand_cost(4 if dynamic else 8, 'b', o1)
+            return 6 if dynamic else 10
+
+        if mnemonic in ['bclr']:
+            dynamic = self.is_dreg(o0)
+            if self.is_dreg(o1):
+                return self.operand_cost(8 if dynamic else 12, 'b', o1)
+            return 10 if dynamic else 14
+
+        if mnemonic in ['asr', 'asl', 'lsr', 'lsl', 'ror', 'rol', 'roxr',
+                        'roxl']:
+            if self.is_dreg(o1):
+                return (6 if short else 8) + 2 * int(o0[1:])
+            return self.operand_cost(8, size, o0)
+
+        if mnemonic in ['nop', 'swap', 'ext', 'moveq']:
+            return 4
+
+        if mnemonic in ['rts', 'link']:
+            return 16
+
+        if mnemonic in ['bra']:
+            return 10
+
+        if mnemonic in ['bsr']:
+            return 18
+
+        if mnemonic.startswith('b'):
+            return 't:10/f:8' if short else 't:10/f:12'
+
+        if mnemonic.startswith('s'):
+            if self.is_dreg(o1):
+                return 4 if short else 6
+            return self.operand_cost(8, 'b', o0)
+
+        if mnemonic == 'dbf':
+            return 't:10/f:14'
+
+        # print(mnemonic, [self._operand_cost(size, op) for op in operands])
 
 
 class SourceReader:
@@ -191,6 +347,7 @@ class Disassembler:
         self._path = path
         self._reader = SourceReader()
         self._info = ObjectInfo(path)
+        self._cost = InsnCost()
 
     def _read(self, func):
         output = subprocess.run(
@@ -224,10 +381,6 @@ class Disassembler:
 
         return lines
 
-    def _count_cycles(self, length, mnemonic, operands):
-        # print([mnemonic] + operands)
-        pass
-
     def _dump_source_line(self, path, num):
         srcline = self._reader.get(path, num)
         srcfile = path.split('/')[-1]
@@ -238,12 +391,12 @@ class Disassembler:
 
     def _parse_operands(self, s):
         if not s:
-            return None
+            return []
         try:
-            operands = Operands.parse_string(s, parse_all=True).as_list()
+            operands = Operands.parse_string(s, parse_all=True)
+            return operands.as_list()
         except ParseException as ex:
-            operands = None
-        return operands
+            return s
 
     def _rewrite_label(self, addend, name, addr, rel):
         if rel:
@@ -269,6 +422,8 @@ class Disassembler:
             return self._rewrite_label(int(o0, 16), o1, 0, rel)
         elif len(operand) == 3:
             o0, o1, o2 = operand
+            if 'pc' in o2:
+                return o0 + self._rewrite_operand(o1, rel) + o2
             return self._rewrite_label(int(o0, 16), o1, int(o2, 16), rel)
         else:
             raise RuntimeError(operand)
@@ -284,16 +439,19 @@ class Disassembler:
 
         operands = self._parse_operands(args)
 
-        if mnemonic.startswith('.') or 'out of bounds' in args or not operands:
+        if (mnemonic.startswith('.') or 'out of bounds' in args
+                or operands == args):
             print(f'{addr:4x}:\t{code}\t{mnemonic}\t{args}')
             return
 
         operands = [self._rewrite_operand(op, rel) for op in operands]
 
-        cycles = self._count_cycles(size, mnemonic, operands)
+        count = self._cost.cycles(size, mnemonic, operands)
+        count = f'; {count}' if count else '; ?'
+
         operands = ','.join(operands)
 
-        print(f'{addr:4x}:\t{code}\t{mnemonic}\t{operands}\t; {cycles}')
+        print(f'{addr:4x}:\t{code}\t{mnemonic}\t{operands:36}{count}')
 
     def disassemble(self, func):
         for line in self._read(func):
