@@ -456,9 +456,16 @@ class SourceReader:
 class ObjectInfo:
     def __init__(self, path):
         self.read_sections(path)
-        self.read_symbols(path)
+        self.read_stabs(path)
+
+        if not self._symbols:
+            self.read_symbols(path)
+
         self.read_relocs(path)
         self.make_indices()
+
+        if self._fns:
+            self.calc_functions()
 
     def read_sections(self, path):
         output = subprocess.run(['m68k-amigaos-objdump', '-h', path],
@@ -477,6 +484,22 @@ class ObjectInfo:
         self._secsize = secsize
 
     def read_symbols(self, path):
+        output = subprocess.run(
+                ['m68k-amigaos-objdump', '-t', path], capture_output=True)
+
+        symbols = []
+
+        for line in output.stdout.decode('utf-8').splitlines()[4:]:
+            try:
+                addr, vis, sect, _1, _2, name = line.split()
+            except ValueError:
+                continue
+            if vis == 'g':
+                symbols.append(Symbol(sect, int(addr, 16), name))
+
+        self._symbols = symbols
+
+    def read_stabs(self, path):
         output = subprocess.run(
                 ['m68k-amigaos-objdump', '-G', path], capture_output=True)
         secmap = {'FUN': '.text', 'STSYM': '.data', 'LCSYM': '.bss'}
@@ -536,10 +559,11 @@ class ObjectInfo:
         self._symbols = symbols
         self._lines = lines
         self._lastaddr = lastaddr
+        self._fns = fns
 
+    def calc_functions(self):
         # determine address range for each function and store it in `_fns`
-        fns.append((self._secsize['.text'], None))
-        fns = sorted(fns)
+        fns = sorted(self._fns + [(self._secsize['.text'], None)])
 
         self._fns = []
         for (s_addr, s_fn), (e_addr, _) in zip(fns, fns[1:]):
@@ -608,18 +632,25 @@ class ObjectInfo:
     def find_symbol(self, name):
         return self._symbols_by_name.get(name, None)
 
+    def symbol_at(self, sect, addr):
+        if symbols := self._symbols_by_section.get(sect, None):
+            return next((s.name for s in symbols if s.addr == addr), None)
+
     def local_vars(self, line):
         return self._regs.get(line, dict())
 
     @property
     def functions(self):
-        return iter(self._fns)
+        return list(self._fns)
 
     def source_lines(self, addr):
         return self._lines.get(addr, list())
 
     def last_addr(self, fn):
         return self._lastaddr.get(fn, None)
+
+    def section_size(self, name):
+        return self._secsize.get(name, None)
 
     @property
     def source(self):
@@ -732,6 +763,10 @@ class Disassembler:
 
     def _disassemble_one(self, show_source, start_addr, stop_addr, last_addr):
         for addr, code, insn, args in self._read_disass(start_addr, stop_addr):
+            if name := self._info.symbol_at('.text', addr):
+                print()
+                print(f'{term.bold}{term.blue}{name}:{term.normal}')
+
             size = len(code.split()) * 2
             rel = self._info.find_reloc('.text', addr, addr + size)
             ops = self._parse_operands(args)
@@ -742,8 +777,10 @@ class Disassembler:
 
             count = ''
 
-            if (not insn.startswith('.') and ('out of bounds' not in args)
-                    and ops != args):
+            if insn == 'Address' or insn.startswith('.'):
+                insn, args = '', ''
+
+            if insn and ops != args:
                 ops = [self._rewrite_operand(op, rel) for op in ops]
 
                 count = self._cost.cycles(insn, ops)
@@ -772,13 +809,15 @@ class Disassembler:
                 break
 
     def disassemble(self, show_source, func):
-        for fn_name, start_addr, stop_addr in self._info.functions:
-            if func and func != fn_name:
-                continue
-            print(f'{term.bold}{term.blue}{fn_name}:{term.normal}')
-            self._disassemble_one(show_source, start_addr, stop_addr,
-                                  self._info.last_addr(fn_name))
-            print()
+        if functions := self._info.functions:
+            for fn_name, start_addr, stop_addr in functions:
+                if func and func != fn_name:
+                    continue
+                self._disassemble_one(show_source, start_addr, stop_addr,
+                                      self._info.last_addr(fn_name))
+        else:
+            text_size = self._info.section_size('.text')
+            self._disassemble_one(show_source, 0, text_size, text_size)
 
 
 if __name__ == '__main__':
