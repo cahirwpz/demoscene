@@ -13,12 +13,14 @@ from pygments import formatters
 from pyparsing import (Word, Char, Literal, Opt, ZeroOrMore, OneOrMore, Regex,
                        Suppress, Combine, White, Group)
 from pyparsing.exceptions import ParseException
+from blessings import Terminal
 
+term = Terminal()
 
 Reloc = namedtuple('Reloc', 'sect addr typ sym')
 Symbol = namedtuple('Symbol', 'sect addr name')
-SourceLine = namedtuple('SourceLine', 'path num')
-DisassLine = namedtuple('DisassLine', 'addr code insn')
+DisassLine = namedtuple('DisassLine', 'addr code insn args')
+SourceLine = namedtuple('SourceLine', 'source num')
 
 OpDataReg = type('OpDataReg', (UserString,), dict())
 OpAddrReg = type('OpAddrReg', (UserString,), dict())
@@ -273,7 +275,7 @@ class InsnCost:
     def is_direct(self, op):
         return self.is_areg(op) or self.is_dreg(op) or self.is_imm(op)
 
-    def cycles(self, length, mnemonic, operands):
+    def cycles(self, mnemonic, operands):
         try:
             mnemonic, size = mnemonic.split('.', maxsplit=1)
         except ValueError:
@@ -431,42 +433,101 @@ class SourceReader:
 
 class ObjectInfo:
     def __init__(self, path):
+        self.read_sections(path)
         self.read_symbols(path)
         self.read_relocs(path)
         self.make_indices()
+
+    def read_sections(self, path):
+        output = subprocess.run(['m68k-amigaos-objdump', '-h', path],
+                                capture_output=True)
+
+        secsize = {}
+        for line in output.stdout.decode('utf-8').splitlines():
+            fs = line.split()
+            try:
+                int(fs[0])
+            except (IndexError, ValueError):
+                continue
+            if fs[1] in ['.text', '.data', '.bss', '.datachip', '.bsschip']:
+                secsize[fs[1]] = int(fs[2], 16)
+
+        self._secsize = secsize
 
     def read_symbols(self, path):
         output = subprocess.run(
                 ['m68k-amigaos-objdump', '-G', path], capture_output=True)
         secmap = {'FUN': '.text', 'STSYM': '.data', 'LCSYM': '.bss'}
 
+        currfn = None
+        lastaddr = {}
+        source = ''
         symbols = []
+        fns = []
         regs = defaultdict(dict)
+        lines = defaultdict(list)
 
-        for line in output.stdout.decode('utf-8').splitlines():
-            fs = line.split()
-            if len(fs) != 7:
+        for line in output.stdout.decode('utf-8').splitlines()[7:]:
+            fs = line.split(maxsplit=6)
+
+            if len(fs) < 6:
                 continue
-            if secname := secmap.get(fs[1], None):
-                addr, name = int(fs[4], 16), fs[6].split(':')[0]
+
+            try:
+                _1, n_type, _2, n_desc, n_value, _3, n_str = fs
+            except ValueError:
+                _1, n_type, _2, n_desc, n_value, _3 = fs
+                n_str = ''
+
+            n_value = int(n_value, 16)
+            n_str = n_str.split(':', maxsplit=1)
+
+            if secname := secmap.get(n_type, None):
+                addr, name = n_value, n_str[0]
                 symbols.append(Symbol(secname, addr, '_' + name))
-            elif fs[1] == 'RSYM':
-                line = int(fs[3])
-                reg = int(fs[4], 16)
+
+            if n_type == 'FUN':
+                is_fn = n_str[1][0] in 'fF'
+                fns.append((n_value, n_str[0] if is_fn else None))
+                if is_fn:
+                    currfn = n_str[0]
+            elif n_type == 'SO':
+                self._source = n_str[0]
+                source = self._source
+            elif n_type == 'SOL':
+                source = n_str[0]
+            elif n_type == 'SLINE':
+                # group lines by address
+                lines[n_value].append(SourceLine(source, n_desc))
+            elif n_type == 'RSYM':
+                line, reg, var = n_desc, n_value, n_str[0]
                 if reg < 8:
                     reg = f'd{reg}'
                 else:
                     reg -= 8
                     reg = f'a{reg}'
-                var = fs[6].split(':')[0]
                 regs[line][var] = reg
+            elif n_type == 'RBRAC':
+                lastaddr[currfn] = n_value
 
         self._regs = regs
         self._symbols = symbols
+        self._lines = lines
+        self._lastaddr = lastaddr
+
+        # determine address range for each function and store it in `_fns`
+        fns.append((self._secsize['.text'], None))
+        fns = sorted(fns)
+
+        self._fns = []
+        for (s_addr, s_fn), (e_addr, _) in zip(fns, fns[1:]):
+            if s_fn is None:
+                continue
+            self._fns.append((s_fn, s_addr, e_addr))
 
     def read_relocs(self, path):
-        output = subprocess.run(
-                ['m68k-amigaos-objdump', '-r', path], capture_output=True)
+        output = subprocess.run(['m68k-amigaos-objdump', '-r', path],
+                                capture_output=True)
 
         relocs = []
         sect = None
@@ -527,6 +588,20 @@ class ObjectInfo:
     def local_vars(self, line):
         return self._regs.get(line, dict())
 
+    @property
+    def functions(self):
+        return iter(self._fns)
+
+    def source_lines(self, addr):
+        return self._lines.get(addr, list())
+
+    def last_addr(self, fn):
+        return self._lastaddr.get(fn, None)
+
+    @property
+    def source(self):
+        return self._source
+
 
 class Disassembler:
     def __init__(self, path):
@@ -535,56 +610,65 @@ class Disassembler:
         self._info = ObjectInfo(path)
         self._cost = InsnCost()
 
-    def _read(self, func):
+    def _read_disass(self, start_addr, stop_addr):
         output = subprocess.run(
-                ['m68k-amigaos-objdump', '-d', '-l', '-C',
-                 '--source-comment=;', '--insn-width=8', self._path],
-                capture_output=True)
+                ['m68k-amigaos-objdump', '-d', '-C', '--insn-width=10',
+                 f'--start-address={start_addr}',
+                 f'--stop-address={stop_addr}',
+                 self._path], capture_output=True)
 
-        inside = func is None
         lines = []
 
         for line in output.stdout.decode('utf-8').splitlines():
             if line.startswith(';'):
                 continue
 
-            if func and line.endswith(':'):
-                inside = line[:-1] == func
-            if not inside:
+            try:
+                addr, code, insn = line.split('\t')
+            except ValueError:
                 continue
 
-            if line.startswith('/'):
-                path, line = line.split(':')
-                lines.append(SourceLine(path, int(line)))
-            else:
-                try:
-                    addr, code, insn = line.split('\t')
-                except ValueError:
-                    continue
+            try:
+                insn, args = insn.split(maxsplit=1)
+            except ValueError:
+                args = ''
 
-                addr = int(addr[:-1], 16)
-                lines.append(DisassLine(addr, code, insn))
+            addr = int(addr[:-1], 16)
+            lines.append(DisassLine(addr, code, insn, args))
 
         return lines
 
-    def _dump_source_line(self, path, num):
-        srcline = self._reader.get(path, num)
-        srcfile = path.split('/')[-1]
+    def _dump_source_lines(self, addr):
+        if lines := self._info.source_lines(addr):
+            path, num = lines[-1]
 
-        print()
-        print(f'{srcfile:>27}:{num:<3} {srcline}')
-        print()
+            srcline = self._reader.get(path, num)
+            srcfile = path.split('/')[-1]
 
-        if lvars := self._info.local_vars(num):
-            print(' ' * 31, '; variable',
-                  ', '.join(f'`{n}` in {r}' for n, r in lvars.items()))
+            print()
+            print(f'{term.black}{term.bold}{srcfile:>27}:{num:<4} ' +
+                  f'{term.normal}{srcline}')
+            print()
+
+    def _dump_local_vars(self, addr):
+        if lines := self._info.source_lines(addr):
+            lvars = {}
+
+            for source, num in lines:
+                if source != self._info.source:
+                    continue
+                lvars.update(self._info.local_vars(num))
+
+            for n, r in lvars.items():
+                print(' ' * 32,
+                      f'{term.black}{term.bold}; variable',
+                      f'`{n}` in {r}{term.normal}')
 
     def _parse_operands(self, s):
         if not s:
             return []
         try:
-            operands = Operands.parse_string(s, parse_all=True)
-            return operands.as_list()
+            return Operands.parse_string(s, parse_all=True).as_list()
         except ParseException as ex:
             return s
 
@@ -623,37 +707,56 @@ class Disassembler:
         else:
             raise RuntimeError(operand)
 
-    def _dump_disass_line(self, addr, code, insn):
-        size = len(code.split() * 2)
-        rel = self._info.find_reloc('.text', addr, addr + size)
+    def _disassemble_one(self, show_source, start_addr, stop_addr, last_addr):
+        for addr, code, insn, args in self._read_disass(start_addr, stop_addr):
+            size = len(code.split()) * 2
+            rel = self._info.find_reloc('.text', addr, addr + size)
+            ops = self._parse_operands(args)
 
-        try:
-            mnemonic, args = insn.split(maxsplit=1)
-        except ValueError:
-            mnemonic, args = insn, ''
+            if show_source:
+                self._dump_source_lines(addr)
+                self._dump_local_vars(addr)
 
-        operands = self._parse_operands(args)
+            disp_addr = addr - start_addr
 
-        if (mnemonic.startswith('.') or 'out of bounds' in args
-                or operands == args):
-            print(f'{addr:4x}:\t{code}\t{mnemonic}\t{args}')
-            return
+            print(f'{term.blue}{disp_addr:4x}:  ' +
+                  f'{term.bold}{term.black}{code:24}{term.normal} ' +
+                  f'{insn:9}', end='')
 
-        operands = [self._rewrite_operand(op, rel) for op in operands]
+            if insn.startswith('.') or 'out of bounds' in args or ops == args:
+                print(f'{args:36}')
+            else:
+                ops = [self._rewrite_operand(op, rel) for op in ops]
 
-        count = self._cost.cycles(size, mnemonic, operands)
-        count = f'; {count}' if count else '; ?'
+                count = self._cost.cycles(insn, ops)
 
-        operands = ','.join(map(str, operands))
+                if isinstance(count, int):
+                    if count <= 8:
+                        count = f'{term.green}{count}{term.normal}'
+                    elif count <= 16:
+                        count = f'{term.yellow}{count}{term.normal}'
+                    else:
+                        count = f'{term.red}{count}{term.normal}'
+                elif count is None:
+                    count = f'{term.bold}?{term.normal}'
+                else:
+                    count = f'{term.magenta}{count}{term.normal}'
 
-        print(f'{addr:4x}:\t{code}\t{mnemonic}\t{operands:36}{count}')
+                ops = ','.join(map(str, ops))
 
-    def disassemble(self, func):
-        for line in self._read(func):
-            if type(line) == SourceLine:
-                self._dump_source_line(*line)
-            if type(line) == DisassLine:
-                self._dump_disass_line(*line)
+                print(f'{ops:36}{count}')
+
+            if (not last_addr or addr >= last_addr) and insn == 'rts':
+                break
+
+    def disassemble(self, show_source, func):
+        for fn_name, start_addr, stop_addr in self._info.functions:
+            if func and func != fn_name:
+                continue
+            print(f'{term.bold}{term.blue}{fn_name}:{term.normal}')
+            self._disassemble_one(show_source, start_addr, stop_addr,
+                                  self._info.last_addr(fn_name))
+            print()
 
 
 if __name__ == '__main__':
@@ -661,8 +764,10 @@ if __name__ == '__main__':
         description='Dump function assembly from given file.')
     parser.add_argument('objfile', metavar='OBJFILE', type=str,
                         help='AmigaHunk object file.')
+    parser.add_argument('--show-source', action='store_true',
+                        help='Show source code.')
     parser.add_argument('--function', type=str, help='Function name.')
     args = parser.parse_args()
 
     disass = Disassembler(args.objfile)
-    disass.disassemble(args.function)
+    disass.disassemble(args.show_source, args.function)
