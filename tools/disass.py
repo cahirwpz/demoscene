@@ -332,7 +332,7 @@ class InsnCost:
         if mnemonic in ['muls', 'mulu']:
             if self.is_imm(o0):
                 return self.mul_imm_cost(mnemonic, o0)
-            return 'max:' + str(self.operand_cost(70, size, o0))
+            return (self.operand_cost(70, size, o0), 'max')
 
         if mnemonic in ['divs']:
             return self.operand_cost(158, size, o0)
@@ -407,7 +407,8 @@ class InsnCost:
                 cost = 6 if short else 8
                 if self.is_imm(o0):
                     return cost + 2 * int(o0[1:])
-                return f'{cost}+2*n'
+                mask = {'b': 7, 'w': 15, 'l': 31}[size]
+                return cost, f'+ 2 * ({o0} & {mask})'
             return self.operand_cost(8, size, o0)
 
         if mnemonic in ['jmp', 'jsr', 'lea', 'pea']:
@@ -427,7 +428,9 @@ class InsnCost:
             return cost
 
         if mnemonic.startswith('b'):
-            return 't:10/f:8' if short else 't:10/f:12'
+            if short:
+                return 8, '10 if taken'
+            return 12, '10 if taken'
 
         if mnemonic.startswith('s'):
             if self.is_dreg(o1):
@@ -435,7 +438,7 @@ class InsnCost:
             return self.operand_cost(8, 'b', o0)
 
         if mnemonic == 'dbf':
-            return 't:10/f:14'
+            return 10, ('14 if not taken')
 
 
 class SourceReader:
@@ -761,9 +764,19 @@ class Disassembler:
         else:
             raise RuntimeError(operand)
 
+    def _dump_cycles(self, sum_cycles):
+        msg = 'cycles count:'
+        print(f'{term.magenta}{msg:>77} {sum_cycles:>4}{term.normal}')
+
     def _disassemble_one(self, show_source, start_addr, stop_addr, last_addr):
+        sum_cycles = 0
+
         for addr, code, insn, args in self._read_disass(start_addr, stop_addr):
             if name := self._info.symbol_at('.text', addr):
+                if sum_cycles > 0:
+                    self._dump_cycles(sum_cycles)
+                    sum_cycles = 0
+
                 print()
                 print(f'{term.bold}{term.blue}{name}:{term.normal}')
 
@@ -775,7 +788,7 @@ class Disassembler:
                 self._dump_source_lines(addr)
                 self._dump_local_vars(addr)
 
-            count = ''
+            cycles = ''
 
             if insn == 'Address' or insn.startswith('.'):
                 insn, args = '', ''
@@ -783,19 +796,27 @@ class Disassembler:
             if insn and ops != args:
                 ops = [self._rewrite_operand(op, rel) for op in ops]
 
-                count = self._cost.cycles(insn, ops)
+                cycles = self._cost.cycles(insn, ops)
 
-                if isinstance(count, int):
-                    if count <= 8:
-                        count = f'{term.green}{count}{term.normal}'
-                    elif count <= 16:
-                        count = f'{term.yellow}{count}{term.normal}'
+                try:
+                    cycles, comment = cycles
+                except (ValueError, TypeError):
+                    cycles, comment = cycles, ''
+
+                if isinstance(cycles, int):
+                    sum_cycles += cycles
+
+                    if cycles <= 8:
+                        cycles = f'{term.green}{cycles:>4}{term.normal}'
+                    elif cycles <= 16:
+                        cycles = f'{term.yellow}{cycles:>4}{term.normal}'
                     else:
-                        count = f'{term.red}{count}{term.normal}'
-                elif count is None:
-                    count = f'{term.bold}?{term.normal}'
+                        cycles = f'{term.red}{cycles:>4}{term.normal}'
                 else:
-                    count = f'{term.magenta}{count}{term.normal}'
+                    cycles = f'{term.bold}?{term.normal}'
+
+                if comment:
+                    cycles += f' {term.magenta}({comment}){term.normal}'
 
                 args = ','.join(map(str, ops))
 
@@ -803,10 +824,12 @@ class Disassembler:
 
             print(f'{term.blue}{disp_addr:4x}:  ' +
                   f'{term.bold}{term.black}{code:24}{term.normal} ' +
-                  f'{insn:9}{args:36}{count}')
+                  f'{insn:9}{args:36}{cycles}')
 
             if (not last_addr or addr >= last_addr) and insn == 'rts':
                 break
+
+        self._dump_cycles(sum_cycles)
 
     def disassemble(self, show_source, func):
         if functions := self._info.functions:
