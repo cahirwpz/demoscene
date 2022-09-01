@@ -260,6 +260,19 @@ class InsnCost:
                     return base + cost[1]
         raise RuntimeError(operand, type(operand))
 
+    def mul_imm_cost(self, mnemonic, imm):
+        imm = int(imm[1:]) & 65535
+        arg = '0' + bin(imm)[2:] + '0'
+        if mnemonic == 'mulu':
+            cost = 2 * sum(int(bit) for bit in arg)
+        else:
+            cost = 0
+            while len(arg) > 1:
+                if arg[:2] in ['01', '10']:
+                    cost += 2
+                arg = arg[1:]
+        return 4 + 38 + cost
+
     def is_areg(self, op):
         return isinstance(op, OpAddrReg)
 
@@ -316,10 +329,16 @@ class InsnCost:
             if self.is_dreg(o1):
                 return self.operand_cost(4 if short else 6, size, o0)
 
-        if mnemonic in ['muls', 'mulu', 'divs', 'divu']:
-            base = {'muls': 70, 'mulu': 70, 'divs': 158, 'divu': 140}
-            cost = self.operand_cost(base[mnemonic], size, o0)
-            return f'max:{cost}'
+        if mnemonic in ['muls', 'mulu']:
+            if self.is_imm(o0):
+                return self.mul_imm_cost(mnemonic, o0)
+            return 'max:' + str(self.operand_cost(70, size, o0))
+
+        if mnemonic in ['divs']:
+            return self.operand_cost(158, size, o0)
+
+        if mnemonic in ['divu']:
+            return self.operand_cost(140, size, o0)
 
         if mnemonic in ['addi', 'subi', 'eori', 'ori']:
             if self.is_dreg(o1):
@@ -385,7 +404,10 @@ class InsnCost:
         if mnemonic in ['asr', 'asl', 'lsr', 'lsl', 'ror', 'rol', 'roxr',
                         'roxl']:
             if self.is_dreg(o1):
-                return (6 if short else 8) + 2 * int(o0[1:])
+                cost = 6 if short else 8
+                if self.is_imm(o0):
+                    return cost + 2 * int(o0[1:])
+                return f'{cost}+2*n'
             return self.operand_cost(8, size, o0)
 
         if mnemonic in ['jmp', 'jsr', 'lea', 'pea']:
@@ -718,15 +740,10 @@ class Disassembler:
                 self._dump_source_lines(addr)
                 self._dump_local_vars(addr)
 
-            disp_addr = addr - start_addr
+            count = ''
 
-            print(f'{term.blue}{disp_addr:4x}:  ' +
-                  f'{term.bold}{term.black}{code:24}{term.normal} ' +
-                  f'{insn:9}', end='')
-
-            if insn.startswith('.') or 'out of bounds' in args or ops == args:
-                print(f'{args:36}')
-            else:
+            if (not insn.startswith('.') and ('out of bounds' not in args)
+                    and ops != args):
                 ops = [self._rewrite_operand(op, rel) for op in ops]
 
                 count = self._cost.cycles(insn, ops)
@@ -743,9 +760,13 @@ class Disassembler:
                 else:
                     count = f'{term.magenta}{count}{term.normal}'
 
-                ops = ','.join(map(str, ops))
+                args = ','.join(map(str, ops))
 
-                print(f'{ops:36}{count}')
+            disp_addr = addr - start_addr
+
+            print(f'{term.blue}{disp_addr:4x}:  ' +
+                  f'{term.bold}{term.black}{code:24}{term.normal} ' +
+                  f'{insn:9}{args:36}{count}')
 
             if (not last_addr or addr >= last_addr) and insn == 'rts':
                 break
