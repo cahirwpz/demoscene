@@ -561,9 +561,10 @@ class ObjectInfo:
         self._relocs_by_section = index
 
     def preceding_symbol(self, name, addr):
-        if sym := self._symbols_by_name.get('_' + name, None):
-            name = sym.sect
-            addr = addr + sym.addr
+        for n in [name, '_' + name]:
+            if sym := self._symbols_by_name.get(n, None):
+                name = sym.sect
+                addr = addr + sym.addr
 
         if symbols := self._symbols_by_section.get(name, None):
             addresses = [x.addr for x in symbols]
@@ -677,7 +678,7 @@ class Disassembler:
             name = '_' + name
 
         if rel:
-            if addr == rel.addr:
+            if addr == rel.addr or rel.typ == 'RELRELOC16':
                 addend = 0
             name, addr = rel.sym, addend
 
