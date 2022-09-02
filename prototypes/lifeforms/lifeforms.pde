@@ -1,6 +1,8 @@
 static final int org_count = 70;
 static final int init_food = 30;
 
+
+
 ArrayList<Organism> organisms;
 Flowfield ff;
 float weights[] = {0.9, 0, 0, 0.5, 0.3};
@@ -63,24 +65,26 @@ class Flowfield {
   }
 }
 
+final float MIN_Q12 = -8.0;
+final float MAX_Q12 = 7.999755859375;
+
+final float maxspeed = MAX_Q12;
+final float maxforce = 0.5;
+final float orgSize = 30;
+
+
+
 class Organism {
   PVector pos;
   PVector vel;
   PVector accel;
-  float mass;
-  float size;
-  float maxspeed;
-  float maxforce;
   
   Organism(float x, float y) {
-    pos = new PVector(x/float(width), y/float(height));
-    vel = new PVector(random(-1, 1), random(-1, 1));
+    pos = new PVector(x, y);
+    vel = new PVector(random(MIN_Q12, MAX_Q12), random(MIN_Q12, MAX_Q12));
     
-    accel = new PVector(random(-0.0001, 0.0001), random(-0.0001, 0.0001));
-    mass = 1;
-    size = 30;
-    maxspeed = 0.009;
-    maxforce = 0.0005;
+    accel = new PVector(random(-0.1, 0.1), random(-0.1, 0.1));
+    
     vel.limit(maxspeed);
   }
   
@@ -92,40 +96,39 @@ class Organism {
     
     if (wallBounce) {
       PVector desiredVel = new PVector(vel.x, vel.y);
-      if (pos.x < 0.05)
+      if (pos.x < 0)
         desiredVel.x = maxspeed;
-      else if (pos.x > 0.95)
+      else if (pos.x > 1000)
         desiredVel.x = -maxspeed;
-      if (pos.y < 0.05)
+      if (pos.y < 0)
         desiredVel.y = maxspeed;
-      else if (pos.y > 0.95)
+      else if (pos.y > 1000)
         desiredVel.y = -maxspeed;
       
       applyDesiredVel(desiredVel);
     } else {
       if (pos.x < 0)
-        pos.x += 1.0;
+        pos.x += 1000;
       if (pos.y < 0)
-        pos.y += 1.0;
-      pos.x = pos.x % 1.0;
-      pos.y = pos.y % 1.0;
+        pos.y += 1000;
+      pos.x = pos.x % 1000.0;
+      pos.y = pos.y % 1000.0;
     }
   }
 
   void draw() {
     stroke(#FFFFFF);
     fill(#AAAAAA);
-    circle(pos.x * width, pos.y * height, size);
+    circle(pos.x, pos.y, orgSize);
     
-    PVector vel_graph = PVector.mult(vel, 10000);
+    PVector vel_graph = PVector.mult(vel, 4);
     stroke(#FF0000);
-    line(pos.x * width, pos.y * height, pos.x * width + vel_graph.x, pos.y * height + vel_graph.y);
+    line(pos.x, pos.y, pos.x + vel_graph.x, pos.y + vel_graph.y);
     fill(#0000FF);
   }
   
   void applyForce(PVector force) {
-    PVector f = PVector.div(force, mass);
-    accel.add(f);
+    accel.add(force);
   }
   
   void applyDesiredVel(PVector desired) {
@@ -157,8 +160,8 @@ class Organism {
     PVector desired = PVector.sub(target, pos);
     float dist = desired.mag();
     float speed = maxspeed;
-    if (dist < 0.1) {
-      speed = map(dist, 0, 0.1, 0, maxspeed);
+    if (dist < 100) {
+      speed = map(dist, 0, 100, 0, maxspeed);
     }
     desired.normalize();
     desired.mult(speed);
@@ -166,7 +169,7 @@ class Organism {
   }
   
   PVector separate(ArrayList<Organism> orgs) {
-    float desiredSep = size/float(width) * 1.5;
+    float desiredSep = orgSize * 1.5;
     PVector avg = new PVector();
     int cnt = 0;
     
@@ -191,7 +194,7 @@ class Organism {
   }
   
   PVector align(ArrayList<Organism> orgs) {
-    float neighborDist = 0.1;
+    float neighborDist = 100;
     PVector avg = new PVector();
     int cnt = 0;
     
@@ -213,7 +216,7 @@ class Organism {
   }
   
   PVector cohese(ArrayList<Organism> orgs) {
-    float neighborDist = 0.1;
+    float neighborDist = 100;
     PVector avg = new PVector();
     int cnt = 0;
     
@@ -234,11 +237,11 @@ class Organism {
   
   void applyBehaviors(ArrayList<Organism> others) {
     PVector sep = separate(others);
-    PVector mouse = seek(new PVector(float(mouseX) / float(width), float(mouseY) / float(height)));
+    PVector mouse = seek(new PVector(mouseX, mouseY));
     
-    int x = int(pos.x * ff.w);
-    int y = int(pos.y * ff.h);
-    PVector ffForce = steerForce(ff.get(x, y), 0.005);
+    int x = int(pos.x / ff.w);
+    int y = int(pos.y / ff.h);
+    PVector ffForce = steerForce(PVector.mult(ff.get(x, y), 20), maxforce);
     
     PVector alignment = align(others);
     PVector cohesion = cohese(others);
