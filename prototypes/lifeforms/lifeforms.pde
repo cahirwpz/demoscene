@@ -240,7 +240,7 @@ class Organism {
   
   void applyBehaviors(ArrayList<Organism> others) {
     PVector sep = separate(others);
-    PVector mouse = seek(new PVector(mouseX, mouseY));
+    PVector mouse = seek(new PVector(mouseX/scale, mouseY/scale));
     
     int x = int(pos.x / ff.w);
     int y = int(pos.y / ff.h);
