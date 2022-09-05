@@ -15,51 +15,49 @@ boolean wallBounce = false;
 
 class Flowfield {
   PVector[][] vectors;
-  int w;
-  int h;
-  int resolutionX;
-  int resolutionY;
+  int ffw;
+  int ffh;
+  int resolution;
   
-  Flowfield(int resX, int resY) {
-    resolutionX = resX;
-    resolutionY = resY;
-    w = round(float(screen.width)/float(resolutionX));
-    h = round(float(screen.height)/float(resolutionY));
+  Flowfield(int res) {
+    resolution = res;
+    ffw = w/resolution;
+    ffh = h/resolution;
     vectors = new PVector[w][h];
-    for (int i = 0; i < w; i++) {
-      for (int j = 0; j < h; j++) {
-        float sample = noise(map(i, 0, w-1, 0, 1), map(j, 0, h-1, 0, 1), float(frameCount)/100.0);
+    for (int i = 0; i < ffw; i++) {
+      for (int j = 0; j < ffh; j++) {
+        float sample = noise(map(i, 0, ffw-1, 0, 1), map(j, 0, ffh-1, 0, 1), float(frameCount)/100.0);
         float theta = map(sample, 0, 1, -TWO_PI, TWO_PI);
         vectors[i][j] = new PVector(cos(theta), sin(theta));
-        float sample2 = noise(map(i, 0, w-1, 3, 6), map(j, 0, h-1, 3, 6), float(frameCount)/100.0);
+        float sample2 = noise(map(i, 0, ffw-1, 3, 6), map(j, 0, ffh-1, 3, 6), float(frameCount)/100.0);
         vectors[i][j].limit(sample2);
       }
     }
   }
   
   PVector get(int x, int y) {
-    return vectors[constrain(y, 0, h - 1)][constrain(x, 0, w - 1)];
+    return vectors[constrain(x, 0, ffw - 1)][constrain(y, 0, ffh - 1)];
   }
   
   void draw() {
     PVector reference = new PVector(1, 0);
-    for (int y = 0; y < h; y++) {
-      for (int x = 0; x < w; x++) {
+    for (int y = 0; y < ffh; y++) {
+      for (int x = 0; x < ffw; x++) {
         if (heatmap) {
-          float sx = x * resolutionX;
-          float sy = y * resolutionY;
+          float sx = x * resolution;
+          float sy = y * resolution;
           screen.colorMode(HSB, TWO_PI, 1.0, 1.0);
           float h = PVector.angleBetween(reference, vectors[y][x]);
-          screen.stroke(h, 0.5, 0.5);
-          screen.fill(h, 0.5, 0.5);
-          screen.rect(sx, sy, resolutionX, resolutionY);
+          screen.stroke(ffh, 0.5, 0.5);
+          screen.fill(ffh, 0.5, 0.5);
+          screen.rect(sx, sy, resolution, resolution);
           screen.colorMode(RGB);
         } else {
-          PVector v = vectors[y][x];
-          float sx = x * resolutionX + resolutionX/2;
-          float sy = y * resolutionY + resolutionY/2;
-          float dx = v.x * resolutionX;
-          float dy = v.y * resolutionY;
+          PVector v = vectors[x][y];
+          float sx = x * resolution + resolution/2;
+          float sy = y * resolution + resolution/2;
+          float dx = v.x * resolution;
+          float dy = v.y * resolution;
   
           screen.stroke(128); screen.line(sx, sy, sx+dx, sy+dy);
           screen.stroke(255); screen.point(sx, sy);
@@ -242,8 +240,8 @@ class Organism {
     PVector sep = separate(others);
     PVector mouse = seek(new PVector(mouseX/scale, mouseY/scale));
     
-    int x = int(pos.x / ff.w);
-    int y = int(pos.y / ff.h);
+    int x = int(pos.x / ff.ffw);
+    int y = int(pos.y / ff.ffh);
     PVector ffForce = steerForce(PVector.mult(ff.get(x, y), 20), maxforce);
     
     PVector alignment = align(others);
@@ -280,7 +278,7 @@ void draw() {
   screen.clear();
   screen.scale(scale);
 
-  ff = new Flowfield(20, 16);
+  ff = new Flowfield(16);
   ff.draw();
   
   screen.fill(#ffffff);
