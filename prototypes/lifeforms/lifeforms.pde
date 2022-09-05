@@ -47,9 +47,9 @@ class Flowfield {
           float sx = x * resolution;
           float sy = y * resolution;
           screen.colorMode(HSB, TWO_PI, 1.0, 1.0);
-          float h = PVector.angleBetween(reference, vectors[y][x]);
-          screen.stroke(ffh, 0.5, 0.5);
-          screen.fill(ffh, 0.5, 0.5);
+          float h = PVector.angleBetween(reference, vectors[x][y]);
+          screen.stroke(h, 0.5, 0.5);
+          screen.fill(h, 0.5, 0.5);
           screen.rect(sx, sy, resolution, resolution);
           screen.colorMode(RGB);
         } else {
