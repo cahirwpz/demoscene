@@ -1,7 +1,10 @@
-static final int org_count = 70;
-static final int init_food = 30;
+static final int w = 320;
+static final int h = 256;
+static final int scale = 3;
 
+static final int org_count = 30;
 
+PGraphics screen;
 
 ArrayList<Organism> organisms;
 Flowfield ff;
@@ -14,12 +17,14 @@ class Flowfield {
   PVector[][] vectors;
   int w;
   int h;
-  int resolution;
+  int resolutionX;
+  int resolutionY;
   
-  Flowfield(int res) {
-    resolution = res;
-    w = round(float(width)/float(resolution));
-    h = round(float(height)/float(resolution));
+  Flowfield(int resX, int resY) {
+    resolutionX = resX;
+    resolutionY = resY;
+    w = round(float(screen.width)/float(resolutionX));
+    h = round(float(screen.height)/float(resolutionY));
     vectors = new PVector[w][h];
     for (int i = 0; i < w; i++) {
       for (int j = 0; j < h; j++) {
@@ -41,24 +46,24 @@ class Flowfield {
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
         if (heatmap) {
-          float sx = x * resolution;
-          float sy = y * resolution;
-          colorMode(HSB, TWO_PI, 1.0, 1.0);
+          float sx = x * resolutionX;
+          float sy = y * resolutionY;
+          screen.colorMode(HSB, TWO_PI, 1.0, 1.0);
           float h = PVector.angleBetween(reference, vectors[y][x]);
-          stroke(h, 0.5, 0.5);
-          fill(h, 0.5, 0.5);
-          rect(sx, sy, resolution, resolution);
-          colorMode(RGB);
+          screen.stroke(h, 0.5, 0.5);
+          screen.fill(h, 0.5, 0.5);
+          screen.rect(sx, sy, resolutionX, resolutionY);
+          screen.colorMode(RGB);
         } else {
           PVector v = vectors[y][x];
-          float sx = x * resolution + resolution/2;
-          float sy = y * resolution + resolution/2;
-          float dx = v.x * resolution;
-          float dy = v.y * resolution;
+          float sx = x * resolutionX + resolutionX/2;
+          float sy = y * resolutionY + resolutionY/2;
+          float dx = v.x * resolutionX;
+          float dy = v.y * resolutionY;
   
-          stroke(128); line(sx, sy, sx+dx, sy+dy);
-          stroke(255); point(sx, sy);
-          stroke(255, 0, 0); point(sx+dx, sy+dy);
+          screen.stroke(128); screen.line(sx, sy, sx+dx, sy+dy);
+          screen.stroke(255); screen.point(sx, sy);
+          screen.stroke(255, 0, 0); screen.point(sx+dx, sy+dy);
         }
       }
     }
@@ -68,11 +73,9 @@ class Flowfield {
 final float MIN_Q12 = -8.0;
 final float MAX_Q12 = 7.999755859375;
 
-final float maxspeed = MAX_Q12;
-final float maxforce = 0.5;
-final float orgSize = 30;
-
-
+final float maxspeed = MAX_Q12/2;
+final float maxforce = 0.5/2;
+final float orgSize = 10;
 
 class Organism {
   PVector pos;
@@ -98,33 +101,33 @@ class Organism {
       PVector desiredVel = new PVector(vel.x, vel.y);
       if (pos.x < 0)
         desiredVel.x = maxspeed;
-      else if (pos.x > 1000)
+      else if (pos.x > w)
         desiredVel.x = -maxspeed;
       if (pos.y < 0)
         desiredVel.y = maxspeed;
-      else if (pos.y > 1000)
+      else if (pos.y > h)
         desiredVel.y = -maxspeed;
       
       applyDesiredVel(desiredVel);
     } else {
       if (pos.x < 0)
-        pos.x += 1000;
+        pos.x += w;
       if (pos.y < 0)
-        pos.y += 1000;
-      pos.x = pos.x % 1000.0;
-      pos.y = pos.y % 1000.0;
+        pos.y += h;
+      pos.x = pos.x % w;
+      pos.y = pos.y % h;
     }
   }
 
   void draw() {
-    stroke(#FFFFFF);
-    fill(#AAAAAA);
-    circle(pos.x, pos.y, orgSize);
+    screen.stroke(#FFFFFF);
+    screen.fill(#AAAAAA);
+    screen.circle(pos.x, pos.y, orgSize);
     
     PVector vel_graph = PVector.mult(vel, 4);
-    stroke(#FF0000);
-    line(pos.x, pos.y, pos.x + vel_graph.x, pos.y + vel_graph.y);
-    fill(#0000FF);
+    screen.stroke(#FF0000);
+    screen.line(pos.x, pos.y, pos.x + vel_graph.x, pos.y + vel_graph.y);
+    screen.fill(#0000FF);
   }
   
   void applyForce(PVector force) {
@@ -194,7 +197,7 @@ class Organism {
   }
   
   PVector align(ArrayList<Organism> orgs) {
-    float neighborDist = 100;
+    float neighborDist = 32;
     PVector avg = new PVector();
     int cnt = 0;
     
@@ -216,7 +219,7 @@ class Organism {
   }
   
   PVector cohese(ArrayList<Organism> orgs) {
-    float neighborDist = 100;
+    float neighborDist = 32;
     PVector avg = new PVector();
     int cnt = 0;
     
@@ -262,7 +265,10 @@ class Organism {
 }
 
 void setup() {
-  size(1000, 1000); //<>//
+  size(960, 768); //<>//
+  noSmooth();
+  screen = createGraphics(scale*w, scale*h);
+
   organisms = new ArrayList<Organism>();
   for (int i = 0; i < org_count; i++)
     organisms.add(new Organism(150, 200));
@@ -270,19 +276,25 @@ void setup() {
 
 void draw() {
   clear();
-  ff = new Flowfield(40);
+  screen.beginDraw();
+  screen.clear();
+  screen.scale(scale);
+
+  ff = new Flowfield(20, 16);
   ff.draw();
   
-  fill(#ffffff);
-  textSize(30);
-  text(String.format("Separation: %.2f\nMouse: %.2f\nFlowfield: %.2f\nAlignment: %.2f\nCohesion: %.2f", 
-       weights[0], weights[1], weights[2], weights[3], weights[4]), 0, 30);
+  screen.fill(#ffffff);
+  screen.textSize(10);
+  screen.text(String.format("Separation: %.2f\nMouse: %.2f\nFlowfield: %.2f\nAlignment: %.2f\nCohesion: %.2f",
+              weights[0], weights[1], weights[2], weights[3], weights[4]), 0, 10);
 
   for (Organism org : organisms) {
     org.applyBehaviors(organisms);
     org.update();
     org.draw();
   }
+  screen.endDraw();
+  image(screen, 0, 0);
 }
 
 void keyPressed() {
