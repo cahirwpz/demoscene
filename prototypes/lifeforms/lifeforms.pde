@@ -1,12 +1,16 @@
 static final int w = 320;
 static final int h = 256;
 static final int scale = 3;
+static final int tilesize = 8;
+static final int tilew = w/tilesize;
+static final int tileh = h/tilesize;
 
-static final int org_count = 30;
+static final int orgcount = 30;
 
 PGraphics screen;
 
-ArrayList<Organism> organisms;
+Organism buckets[];
+Organism organisms[];
 Flowfield ff;
 float weights[] = {0.9, 0, 0, 0.5, 0.3};
 
@@ -79,14 +83,18 @@ class Organism {
   PVector pos;
   PVector vel;
   PVector accel;
+  int bucketid;
+  Organism next;
   
-  Organism(float x, float y) {
+  Organism(float x, float y, int id) {
     pos = new PVector(x, y);
     vel = new PVector(random(MIN_Q12, MAX_Q12), random(MIN_Q12, MAX_Q12));
     
     accel = new PVector(random(-0.1, 0.1), random(-0.1, 0.1));
     
     vel.limit(maxspeed);
+    bucketid = id;
+    next = null;
   }
   
   void update() {
@@ -94,6 +102,7 @@ class Organism {
     vel.limit(maxspeed);
     pos.add(vel);
     accel.mult(0);
+    Organism _buckets[] = buckets; // force to show up in debugger
     
     if (wallBounce) {
       PVector desiredVel = new PVector(vel.x, vel.y);
@@ -114,6 +123,42 @@ class Organism {
         pos.y += h;
       pos.x = pos.x % w;
       pos.y = pos.y % h;
+    }
+
+    int tx = constrain(floor(pos.x / tilesize), 0, tilew-1);
+    int ty = constrain(floor(pos.y / tilesize), 0, tileh-1);
+    int bucket = ty*tilew + tx;
+
+    Organism org = buckets[bucketid];
+    while (org.next != null) {
+      assert(org.bucketid == bucketid);
+      org = org.next;
+    }
+
+    if (bucket != bucketid) {
+      Organism self = buckets[bucketid];
+      Organism prev = buckets[bucketid];
+      while (self != this) {
+        assert(self.next != null);
+        prev = self;
+        self = self.next;
+      }
+      assert(self.next != prev);
+      prev.next = self.next;
+      // only one boid in the bucket
+      if (self == prev)
+        buckets[bucketid] = self.next;
+
+      if (_buckets[bucket] == null)
+        buckets[bucket] = self;
+      else {
+        Organism cur = buckets[bucket];
+        while (cur.next != null)
+          cur = cur.next;
+        cur.next = self;
+      }
+      self.next = null;
+      self.bucketid = bucket;
     }
   }
 
@@ -169,7 +214,7 @@ class Organism {
     return steerForce(desired);
   }
   
-  PVector separate(ArrayList<Organism> orgs) {
+  PVector separate(Organism[] orgs) {
     float desiredSep = orgSize * 1.5;
     PVector avg = new PVector();
     int cnt = 0;
@@ -194,7 +239,7 @@ class Organism {
     return avg;
   }
   
-  PVector align(ArrayList<Organism> orgs) {
+  PVector align(Organism[] orgs) {
     float neighborDist = 32;
     PVector avg = new PVector();
     int cnt = 0;
@@ -216,7 +261,7 @@ class Organism {
     return avg;
   }
   
-  PVector cohese(ArrayList<Organism> orgs) {
+  PVector cohese(Organism[] orgs) {
     float neighborDist = 32;
     PVector avg = new PVector();
     int cnt = 0;
@@ -236,7 +281,7 @@ class Organism {
     return avg;
   }
   
-  void applyBehaviors(ArrayList<Organism> others) {
+  void applyBehaviors(Organism[] others) {
     PVector sep = separate(others);
     PVector mouse = seek(new PVector(mouseX/scale, mouseY/scale));
     
@@ -265,11 +310,23 @@ class Organism {
 void setup() {
   size(960, 768); //<>//
   noSmooth();
+  randomSeed(42);
   screen = createGraphics(scale*w, scale*h);
 
-  organisms = new ArrayList<Organism>();
-  for (int i = 0; i < org_count; i++)
-    organisms.add(new Organism(150, 200));
+  buckets = new Organism[tilew * tileh];
+  organisms = new Organism[orgcount];
+
+  int i = 0;
+  while (i < orgcount) {
+    int x = floor(random(0, float(tilew)));
+    int y = floor(random(0, float(tileh)));
+    int bucket = y*tilew + x;
+    if (buckets[bucket] == null) {
+      organisms[i] = new Organism(x*tilesize - tilesize/2, y*tilesize - tilesize/2, bucket);
+      buckets[bucket] = organisms[i];
+      i++;
+    }
+  }
 }
 
 void draw() {
@@ -278,7 +335,7 @@ void draw() {
   screen.clear();
   screen.scale(scale);
 
-  ff = new Flowfield(16);
+  ff = new Flowfield(tilesize);
   ff.draw();
   
   screen.fill(#ffffff);
@@ -291,6 +348,20 @@ void draw() {
     org.update();
     org.draw();
   }
+
+  int count = 0;
+  for (int i = 0; i < buckets.length; i++) {
+    if (buckets[i] != null) {
+      Organism org = buckets[i];
+      while (org.next != null) {
+        org = org.next;
+        count++;
+      }
+      count++;
+    }
+  }
+  assert(count == orgcount);
+
   screen.endDraw();
   image(screen, 0, 0);
 }
