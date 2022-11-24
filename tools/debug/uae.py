@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import asyncio
+import logging
 import signal
 
 from prompt_toolkit.patch_stdout import patch_stdout
@@ -52,6 +53,9 @@ def ParseProcessorState(lines):
     regs = Registers()
     lines = [line.strip() for line in lines]
 
+    if lines[0].startswith('Cycles'):
+        lines.pop(0)
+
     # Read general purpose and supervisor registers,
     # until you hit Status Register info.
     # 'D0 000424B9   D1 00000000   D2 00000000   D3 00000000'
@@ -90,7 +94,7 @@ def ParseProcessorState(lines):
     regs['PC'] = int(lines.pop(0).split()[0], 16)
 
     # 'Next PC: 00fc0614'
-    assert lines.pop(0).startswith('Next PC')
+    assert lines[-1].startswith('Next PC')
 
     return regs
 
@@ -199,12 +203,12 @@ class UaeCommandsMixin():
     async def insert_breakpoint(self, addr):
         # {f <address>} Add/remove breakpoint.
         lines = await self.communicate('f %X' % addr)
-        assert lines and lines[0] == 'Breakpoint added'
+        assert lines and lines[0] == 'Breakpoint added.'
 
     async def remove_breakpoint(self, addr):
         # {f <address>} Add/remove breakpoint.
         lines = await self.communicate('f %X' % addr)
-        assert lines and lines[0] == 'Breakpoint removed'
+        assert lines and lines[0] == 'Breakpoint removed.'
 
     async def insert_watchpoint(self, addr, size, kind='I'):
         # w <num> <address> <length> <R/W/I/F/C> [<value>[.x]]
@@ -324,6 +328,7 @@ class UaeProcess(UaeCommandsMixin):
         return await self.recv()
 
     def send(self, cmd):
+        logging.debug(f"(uae) <- " + repr(cmd))
         self.writer.write(cmd.encode() + b'\n')
 
     async def recv(self):
@@ -338,7 +343,10 @@ class UaeProcess(UaeCommandsMixin):
             # finished by debugger prompt ?
             if text.endswith('\n>'):
                 text = text[:-2]
-                return [line.rstrip() for line in text.splitlines()]
+                lines = [line.rstrip() for line in text.splitlines()]
+                for line in lines:
+                    logging.debug("(uae) -> " + repr(line))
+                return lines
 
     async def logger(self):
         try:
