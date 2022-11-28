@@ -51,8 +51,6 @@ async def UaeLaunch(loop, args):
     if args.gdbserver:
         await GdbListen()
     else:
-        # Call FS-UAE debugger on CTRL+C
-        loop.add_signal_handler(signal.SIGINT, uaeproc.interrupt)
         prompt_task = asyncio.ensure_future(UaeDebugger(uaeproc))
 
     await uaeproc.wait()
@@ -70,9 +68,9 @@ if __name__ == '__main__':
 
     if sys.platform == 'win32':
         loop = asyncio.ProactorEventLoop()
-        asyncio.set_event_loop(loop)
     else:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.SelectorEventLoop()
+    asyncio.set_event_loop(loop)
     # loop.set_debug(True)
 
     parser = argparse.ArgumentParser(

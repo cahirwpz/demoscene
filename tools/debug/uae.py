@@ -272,6 +272,10 @@ class UaeCommandsMixin():
 
 
 async def UaeDebugger(uaedbg):
+    # Call FS-UAE debugger on CTRL+C
+    loop = asyncio.get_event_loop()
+    loop.add_signal_handler(signal.SIGINT, uaedbg.interrupt)
+
     history = InMemoryHistory()
     session = PromptSession('(debug) ', history=history)
     with patch_stdout():
@@ -285,6 +289,9 @@ async def UaeDebugger(uaedbg):
                     while not cmd:
                         cmd = await session.prompt_async()
                         cmd.strip()
+                        # prompt_async removes our SIGINT handler :(
+                        loop.add_signal_handler(signal.SIGINT,
+                                                uaedbg.interrupt)
                     uaedbg.send(cmd)
                 except EOFError:
                     uaedbg.resume()

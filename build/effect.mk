@@ -83,14 +83,17 @@ DEBUGGER ?= gdb
 run-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
-debug-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
+debug-floppy: $(EFFECT).exe.dbg $(EFFECT).adf $(TOPDIR)/gdb-dashboard
 	$(LAUNCH) -d $(DEBUGGER) -f $(EFFECT).adf -e $(EFFECT).exe.dbg
 
 run: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
-debug: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
+debug: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf $(TOPDIR)/gdb-dashboard
 	$(LAUNCH) -d $(DEBUGGER) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
+
+$(TOPDIR)/gdb-dashboard:
+	make -C $(TOPDIR) gdb-dashboard
 
 .PHONY: run debug run-floppy debug-floppy
 .PRECIOUS: $(BOOTLOADER) $(EFFECT).img
