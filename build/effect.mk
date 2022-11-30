@@ -11,9 +11,14 @@ LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 CRT0 = $(TOPDIR)/system/crt0.o $(TOPDIR)/effects/main.o
 BOOTLOADER = $(TOPDIR)/bootloader.bin
 ROMSTARTUP = $(TOPDIR)/a500rom.bin
+BOOTBLOCK = $(TOPDIR)/addchip.bootblock.bin
 
-EXTRA-FILES += $(DATA_GEN) $(EFFECT).img $(EFFECT).adf $(EFFECT).rom
-CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map 
+EXTRA-FILES += $(DATA_GEN) $(EFFECT).adf
+CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map
+
+ifeq ($(AMIGAOS), 0)
+EXTRA-FILES += $(EFFECT).img $(EFFECT).rom
+endif
 
 all: build
 
@@ -65,6 +70,7 @@ data/%.c: data/%.sync
 	@echo "[SYNC] $(DIR)$< -> $(DIR)$@"
 	$(SYNC2C) $(SYNC2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
+ifeq ($(AMIGAOS), 0)
 %.img: %.exe $(DATA) $(DATA_GEN)
 	@echo "[IMG] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
 	$(FSUTIL) create $@ $(filter-out %bootloader.bin,$^)
@@ -76,6 +82,14 @@ data/%.c: data/%.sync
 %.rom: %.img $(ROMSTARTUP)
 	@echo "[ROM] $(DIR)$< -> $(DIR)$@"
 	$(ROMUTIL) $(ROMSTARTUP) $< $@ 
+else
+%.adf: %.exe $(BOOTBLOCK)
+	@echo "[ADF] $(DIR)$< -> $(DIR)$@"
+	echo $< > startup-sequence
+	xdftool $@ format dos + write $< + makedir s + write startup-sequence s
+	dd if=$(BOOTBLOCK) of=$@ conv=notrunc status=none
+	rm startup-sequence
+endif
 
 # Default debugger - can be changed by passing DEBUGGER=xyz to make.
 DEBUGGER ?= gdb
@@ -96,4 +110,4 @@ $(TOPDIR)/gdb-dashboard:
 	make -C $(TOPDIR) gdb-dashboard
 
 .PHONY: run debug run-floppy debug-floppy
-.PRECIOUS: $(BOOTLOADER) $(EFFECT).img
+.PRECIOUS: $(BOOTLOADER) $(BOOTBLOCK) $(EFFECT).img

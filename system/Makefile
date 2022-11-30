@@ -1,7 +1,5 @@
 TOPDIR := $(realpath ..)
 
-# AMIGAOS => save & restore AmigaOS context
-#            (for intros or trackmos that can be launched from AmigaOS)
 CPPFLAGS += -D_SYSTEM
 
 LIBNAME := system
@@ -9,7 +7,8 @@ SOURCES := \
 	amigaos.c \
 	autoinit.c \
 	debug.c \
-	debug-putchar.S \
+	dputchar.S \
+	kputchar.S \
 	effect.c \
 	loader.c \
 	profiler.c \

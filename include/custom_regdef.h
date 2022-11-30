@@ -147,6 +147,8 @@ struct Custom {
 #define intena 0x09a
 #define intreqr 0x01e
 #define intreq 0x09c
+#define serdatr 0x018
+#define serdat 0x030
 
 #endif
 

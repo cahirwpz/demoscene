@@ -5,3 +5,4 @@ pycodestyle
 pygments
 zopflipy
 blessings
+amitools
