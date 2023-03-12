@@ -16,12 +16,12 @@ const (
 	TrkCtrl = -2 // control key
 	TrkEnd  = -1 // last frame (sentinel element)
 
-	TrkStep    = 1 // set constant value
-	TrkLinear  = 2 // lerp to the next value
-	TrkSmooth  = 3 // smooth curve to the next value
-	TrkRamp    = 4 // lerp with quadratic factor
-	TrkTrigger = 5 // count down (with every frame) from given number
-	TrkEvent   = 6 // like step but value is delivered only once
+	TrkStep      = 1 // set constant value
+	TrkLinear    = 2 // lerp to the next value
+	TrkSmooth    = 3 // smooth curve to the next value
+	TrkQuadratic = 4 // lerp with quadratic factor
+	TrkTrigger   = 5 // count down (with every frame) from given number
+	TrkEvent     = 6 // like step but value is delivered only once
 )
 
 const (
@@ -117,8 +117,8 @@ func parseTrack(tokens []string, track *Track) (err error) {
 			track.AddItem(TrkCtrl, TrkLinear)
 		} else if typ == "smooth" {
 			track.AddItem(TrkCtrl, TrkSmooth)
-		} else if typ == "ramp" {
-			track.AddItem(TrkCtrl, TrkRamp)
+		} else if typ == "quadratic" {
+			track.AddItem(TrkCtrl, TrkQuadratic)
 		} else if typ == "trigger" {
 			track.AddItem(TrkCtrl, TrkTrigger)
 		} else if typ == "event" {
@@ -204,7 +204,6 @@ TrackT {{ .Name }} = {
   .interval = 0,
   .delta = 0,
   .pending = false,
-  .name = "{{ .RawName }}",
   .data = {
 {{- range .Items }}
     { {{ .Key }}, {{ .Value }} },
@@ -212,12 +211,6 @@ TrackT {{ .Name }} = {
   }
 };
 {{ end }}
-TrackT *__TRACK_LIST__[] = {
-{{- range . }}
-  &{{ .Name }},
-{{- end }}
-  NULL
-};
 `
 
 func exportTracks(tracks []Track) {

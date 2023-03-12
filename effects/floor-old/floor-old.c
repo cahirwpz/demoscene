@@ -1,11 +1,11 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "fx.h"
-#include "random.h"
-#include "color.h"
-#include "pixmap.h"
+#include <effect.h>
+#include <blitter.h>
+#include <color.h>
+#include <copper.h>
+#include <fx.h>
+#include <pixmap.h>
+#include <stdlib.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 212
@@ -99,7 +99,6 @@ static void MakeCopperList(CopListT *cp, short num) {
   short i, j;
 
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen[num], DEPTH);
   CopLoadColor(cp, 0, 3, 0);
 
@@ -141,10 +140,13 @@ static void Init(void) {
     BlitterSetArea(screen[i], 1, &bottom, -1);
   }
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+
   cp[0] = NewCopList((HEIGHT - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
   cp[1] = NewCopList((HEIGHT - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
 
-  ITER(j, 0, 1, MakeCopperList(cp[j], j));
+  MakeCopperList(cp[0], 0);
+  MakeCopperList(cp[1], 1);
   CopListActivate(cp[active]);
   EnableDMA(DMAF_RASTER);
 }
@@ -156,7 +158,7 @@ static void Kill(void) {
   DeleteCopList(cp[1]);
 }
 
-static __regargs void ClearLine(short k) {
+static void ClearLine(short k) {
   u_char *pos = linePos[active][k];
   u_char x = (k < 4 ? CPX : (X(WIDTH) >> 1)) | 1;
   short n = (HEIGHT - FAR_Y) / 8;
@@ -211,7 +213,7 @@ static inline void CopperLine(u_char *pos, short x1, short y2, int delta) {
   }
 }
 
-static __regargs void DrawStripesCopper(short xo) {
+static void DrawStripesCopper(short xo) {
   /* Color switching with copper. */
   short xi = (xo & (TILESIZE - 1));
   u_char **activeLinePos = linePos[active];
@@ -224,7 +226,7 @@ static __regargs void DrawStripesCopper(short xo) {
   }
 }
 
-static __regargs void DrawStripes(short xo, short kxo) {
+static void DrawStripes(short xo, short kxo) {
   LineDataT first = { 0, 0, WIDTH - 1, FAR_Y, {0} };
   LineDataT *l0, *l1;
   short k;
@@ -293,7 +295,7 @@ static __regargs void DrawStripes(short xo, short kxo) {
   }
 }
 
-__regargs static void AssignColorToTileColumn(short k, short kxo);
+static void AssignColorToTileColumn(short k, short kxo);
 
 static void FillStripes(short kxo) {
   BitmapT *buffer = screen[active];
@@ -356,7 +358,7 @@ static void HorizontalStripes(short yo) {
   }
 }
 
-__regargs static void CalculateTileColumns(short yo, short kyo) {
+static void CalculateTileColumns(short yo, short kyo) {
   short k;
   short y0 = FAR_Y;
   short yi = (yo & (TILESIZE - 1)) + 16;
@@ -376,7 +378,7 @@ __regargs static void CalculateTileColumns(short yo, short kyo) {
 
 #define STRIDE2 (STRIDE / sizeof(short))
 
-__regargs static void AssignColorToTileColumn(short k, short kxo) {
+static void AssignColorToTileColumn(short k, short kxo) {
   u_short *color = lineColor[active][k];
   u_short column = (k + kxo) & (TILES - 1);
   void *textureRow = &tileColor[column * TILES];
@@ -438,8 +440,10 @@ static void ControlTileColors(void) {
   }
 }
 
+PROFILE(RenderFloor);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
+  ProfilerStart(RenderFloor);
 
   ControlTileColors();
   {
@@ -456,11 +460,11 @@ static void Render(void) {
     FillStripes(kxo);
   }
 
-  // Log("floor: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(RenderFloor);
 
   CopListRun(cp[active]);
   TaskWaitVBlank();
   active ^= 1;
 }
 
-EFFECT(floor_old, Load, UnLoad, Init, Kill, Render);
+EFFECT(FloorOld, Load, UnLoad, Init, Kill, Render);

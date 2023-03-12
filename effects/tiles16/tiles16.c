@@ -1,12 +1,8 @@
-#include "effect.h"
-#include "hardware.h"
-#include "copper.h"
-#include "memory.h"
-#include "gfx.h"
-#include "blitter.h"
-#include "random.h"
-
-int __chipmem = 128 * 1024;
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <gfx.h>
+#include <system/memory.h>
 
 #define TILEW 16
 #define TILEH 16
@@ -57,18 +53,14 @@ static void Load(void) {
 
 static void MakeCopperList(CopListT *cp, int i) {
   CopInit(cp);
-  CopSetupMode(cp, MODE_LORES, DEPTH);
-  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH - 16, HEIGHT - 16);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH);
   CopSetupBitplanes(cp, bplptr[i], screen[i], DEPTH);
   bplcon1[i] = CopMove16(cp, bplcon1, 0);
-  CopLoadPal(cp, &tiles_pal, 0);
   CopEnd(cp);
 }
 
 static void Init(void) {
   /* extra memory for horizontal scrolling */
-  short extra = div16(tilemap_width * TILEW, WIDTH);
+  short extra = tilemap_width * TILEW / WIDTH;
 
   Log("Allocate %d extra lines!\n", extra);
 
@@ -77,6 +69,11 @@ static void Init(void) {
                               BM_CLEAR | BM_DISPLAYABLE | BM_INTERLEAVED);
   screen[1] = NewBitmapCustom(WIDTH, HEIGHT + extra, DEPTH,
                               BM_CLEAR | BM_DISPLAYABLE | BM_INTERLEAVED);
+
+  SetupMode(MODE_LORES, DEPTH);
+  SetupDisplayWindow(MODE_LORES, X(0), Y(0), WIDTH - 16, HEIGHT - 16);
+  SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH);
+  LoadPalette(&tiles_pal, 0);
 
   cp[0] = NewCopList(100);
   MakeCopperList(cp[0], 0);
@@ -98,7 +95,7 @@ static void Kill(void) {
   DeleteBitmap(screen[1]);
 }
 
-__regargs void TriggerRefresh(short x, short y, short w __unused, short h __unused)
+void TriggerRefresh(short x, short y, short w __unused, short h __unused)
 {
   short *map = tilemap;
   int tilemod = tilemap_width - HTILES;
@@ -124,8 +121,8 @@ __regargs void TriggerRefresh(short x, short y, short w __unused, short h __unus
       "   bnes 1b"                              \
       :: "a" (custom));
 
-static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
-                                  volatile struct Custom* const custom asm("a6"))
+static void UpdateTiles(BitmapT *screen, short x, short y,
+                        CustomPtrT custom_ asm("a6"))
 {
   short *map = tilemap;
   void *ptrs = tileptrs;
@@ -138,12 +135,12 @@ static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
 
   WAITBLT();
 
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
-  custom->bltamod = 0;
-  custom->bltdmod = (WIDTH - TILEW) / 8;
-  custom->bltcon0 = (SRCA | DEST | A_TO_D);
-  custom->bltcon1 = 0;
+  custom_->bltafwm = -1;
+  custom_->bltalwm = -1;
+  custom_->bltamod = 0;
+  custom_->bltdmod = (WIDTH - TILEW) / 8;
+  custom_->bltcon0 = (SRCA | DEST | A_TO_D);
+  custom_->bltcon1 = 0;
 
   {
     short j = VTILES - 1;
@@ -158,9 +155,9 @@ static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
           void *src = *(void **)(ptrs + (tile & ~3));
 
           WAITBLT();
-          custom->bltapt = src;
-          custom->bltdpt = dst;
-          custom->bltsize = size;
+          custom_->bltapt = src;
+          custom_->bltdpt = dst;
+          custom_->bltsize = size;
 
           map[-1] ^= current;
         }
@@ -174,32 +171,36 @@ static __regargs void UpdateTiles(BitmapT *screen, short x, short y,
   }
 }
 
+PROFILE(Tiles16);
+
 static void Render(void) {
-  int lines = ReadLineCounter();
-  short t = frameCount;
-  short tile = t >> 4;
-  short pixel = 15 - (t & 15);
-
-  short x = tile % (tilemap_width - HTILES);
-  short y = 35;
-
-  UpdateTiles(screen[active], x, y, custom);
-
+  ProfilerStart(Tiles16);
   {
-    short i;
-    CopInsT **_bplptr = bplptr[active];
-    void **_planes = screen[active]->planes;
-    int offset = x << 1;
+    short t = frameCount;
+    short tile = t >> 4;
+    short pixel = 15 - (t & 15);
 
-    for (i = 0; i < DEPTH; i++)
-      CopInsSet32(_bplptr[i], _planes[i] + offset);
+    short x = tile % (tilemap_width - HTILES);
+    short y = 35;
+
+    UpdateTiles(screen[active], x, y, custom);
+
+    {
+      short i;
+      CopInsT **_bplptr = bplptr[active];
+      void **_planes = screen[active]->planes;
+      int offset = x << 1;
+
+      for (i = 0; i < DEPTH; i++)
+        CopInsSet32(_bplptr[i], _planes[i] + offset);
+    }
+    CopInsSet16(bplcon1[active], pixel | (pixel << 4));
+    CopListRun(cp[active]);
   }
-  CopInsSet16(bplcon1[active], pixel | (pixel << 4));
-  CopListRun(cp[active]);
-  Log("all: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(Tiles16);
 
   TaskWaitVBlank();
   active ^= 1;
 }
 
-EFFECT(tiles16, Load, NULL, Init, Kill, Render);
+EFFECT(Tiles16, Load, NULL, Init, Kill, Render);

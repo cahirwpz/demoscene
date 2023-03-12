@@ -9,7 +9,7 @@ SUBDIRS := \
 	libctr \
 	libgui \
 	libgfx \
-	libp61 \
-	libsys
+	libmisc \
+	libp61
 
 include $(TOPDIR)/build/common.mk

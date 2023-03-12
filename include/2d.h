@@ -23,18 +23,18 @@ typedef struct {
   short m10, m11, y;
 } Matrix2D;
 
-__regargs void LoadIdentity2D(Matrix2D *M);
-__regargs void Translate2D(Matrix2D *M, short x, short y);
-__regargs void Scale2D(Matrix2D *M, short sx, short sy);
-__regargs void Rotate2D(Matrix2D *M, short a);
-__regargs void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, short n);
+void LoadIdentity2D(Matrix2D *M);
+void Translate2D(Matrix2D *M, short x, short y);
+void Scale2D(Matrix2D *M, short sx, short sy);
+void Rotate2D(Matrix2D *M, short a);
+void Transform2D(Matrix2D *M, Point2D *out, Point2D *in, short n);
 
 extern Box2D ClipWin;
 
-__regargs void PointsInsideBox(Point2D *in, u_char *flags, short n);
-__regargs bool ClipLine2D(Line2D *line);
-__regargs u_short ClipPolygon2D(Point2D *in, Point2D **outp, u_short n,
-                                u_short clipFlags);
+void PointsInsideBox(Point2D *in, u_char *flags, short n);
+bool ClipLine2D(Line2D *line);
+u_short ClipPolygon2D(Point2D *in, Point2D **outp, u_short n,
+                      u_short clipFlags);
 
 typedef struct Shape {
   short points;

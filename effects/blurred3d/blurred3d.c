@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "3d.h"
-#include "fx.h"
-#include "pixmap.h"
-#include "memory.h"
+#include <effect.h>
+#include <3d.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <pixmap.h>
+#include <system/memory.h>
 
 #define WIDTH  176
 #define HEIGHT 176
@@ -36,7 +36,6 @@ static void UnLoad(void) {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(STARTX), Y(STARTY), WIDTH, HEIGHT * 5 / 4);
   CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
 
   {
@@ -76,6 +75,8 @@ static void Init(void) {
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(STARTX), Y(STARTY), WIDTH, HEIGHT * 5 / 4);
+
   cp = NewCopList(80 + gradient.height * (gradient.width + 1));
   MakeCopperList(cp);
   CopListActivate(cp);
@@ -83,6 +84,8 @@ static void Init(void) {
 }
 
 static void Kill(void) {
+  DisableDMA(DMAF_RASTER|DMAF_BLITTER);
+
   DeleteBitmap(screen0);
   DeleteBitmap(screen1);
   DeleteBitmap(scratchpad);
@@ -99,7 +102,7 @@ static void Kill(void) {
   D = normfx(t0 * t1 + t2 - x * y) + t3;        \
 }
 
-static __regargs void TransformVertices(Object3D *object) {
+static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   short *src = (short *)object->mesh->vertex;
   short *dst = (short *)object->vertex;
@@ -140,7 +143,7 @@ static __regargs void TransformVertices(Object3D *object) {
   } while (--n != -1);
 }
 
-static __regargs void DrawLine(short x0, short y0, short x1, short y1) {
+static void DrawLine(short x0, short y0, short x1, short y1) {
   short dmax = x1 - x0;
   short dmin = y1 - y0;
   short derr;
@@ -326,7 +329,7 @@ static void DrawObject(Object3D *object) {
   }
 }
 
-static __regargs void BitmapDecSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
+static void BitmapDecSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
   void *borrow0 = carry->planes[0];
   void *borrow1 = carry->planes[1];
   void **srcbpl = srcbm->planes;
@@ -391,7 +394,7 @@ static __regargs void BitmapDecSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
   }
 }
 
-static __regargs void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
+static void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
   void *carry0 = carry->planes[0];
   void *carry1 = carry->planes[1];
   void **srcbpl = srcbm->planes;
@@ -444,31 +447,32 @@ static __regargs void BitmapIncSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
   }
 }
 
+PROFILE(UpdateGeometry);
+PROFILE(DrawObject);
+
 static void RenderObject3D(void) {
   BlitterClear(carry, 0);
 
+  ProfilerStart(UpdateGeometry);
   {
-    // int lines = ReadLineCounter();
-    cube->rotate.x = cube->rotate.y = cube->rotate.z =
-      ReadFrameCounter() * 6;
+    cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 6;
 
     UpdateObjectTransformation(cube);
     UpdateFaceVisibility(cube);
     TransformVertices(cube);
-    // Log("transform: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(UpdateGeometry);
 
+  ProfilerStart(DrawObject);
   {
-    // int lines = ReadLineCounter();
     DrawObject(cube);
-    // Log("draw: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(DrawObject);
 }
 
 static short iterCount = 0;
 
 static void Render(void) {
-  // int lines = ReadLineCounter();
   BitmapT *source = screen1;
 
   if (iterCount++ & 1) {
@@ -479,8 +483,6 @@ static void Render(void) {
   RenderObject3D();
 
   BitmapIncSaturatedFast(screen0, source);
-
-  // Log("blurred3d: %d\n", ReadLineCounter() - lines);
 
   {
     short n = DEPTH;
@@ -493,4 +495,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EFFECT(blurred3d, Load, UnLoad, Init, Kill, Render);
+EFFECT(Blurred3D, Load, UnLoad, Init, Kill, Render);

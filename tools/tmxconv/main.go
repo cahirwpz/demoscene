@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"../misc"
-	"../tmx"
+	"ghostown.pl/misc"
+	"ghostown.pl/tmx"
 )
 
 type cTileMap struct {

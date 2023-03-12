@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "interrupts.h"
-#include "memory.h"
-#include "color.h"
-#include "pixmap.h"
+#include <effect.h>
+#include <blitter.h>
+#include <color.h>
+#include <copper.h>
+#include <pixmap.h>
+#include <system/interrupt.h>
+#include <system/memory.h>
 
 #define WIDTH 80
 #define HEIGHT 64
@@ -158,7 +158,7 @@ static void ChunkyToPlanar(void) {
       custom->bltdpt = dst;
 
       /* ((a >> 8) & 0x00FF) | (b & ~0x00FF) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | (8 << ASHIFTSHIFT);
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | ASHIFT(8);
       custom->bltcon1 = 0;
       custom->bltsize = 2 | ((BLTSIZE / 16) << 6);
       break;
@@ -174,7 +174,7 @@ static void ChunkyToPlanar(void) {
       custom->bltdpt = dst + BLTSIZE - 2;
 
       /* ((a << 8) & ~0x00FF) | (b & 0x00FF) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | (8 << ASHIFTSHIFT);
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | ASHIFT(8);
       custom->bltcon1 = BLITREVERSE;
       custom->bltsize = 2 | ((BLTSIZE / 16) << 6);
       break;
@@ -194,7 +194,7 @@ static void ChunkyToPlanar(void) {
       custom->bltdpt = bpl[0];
 
       /* ((a >> 4) & 0x0F0F) | (b & ~0x0F0F) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | (4 << ASHIFTSHIFT);
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | ASHIFT(4);
       custom->bltcon1 = 0;
       custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
@@ -220,7 +220,7 @@ static void ChunkyToPlanar(void) {
       custom->bltdpt = bpl[1] + BPLSIZE - 2;
 
       /* ((a << 8) & ~0x0F0F) | (b & 0x0F0F) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | (4 << ASHIFTSHIFT);
+      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | ASHIFT(4);
       custom->bltcon1 = BLITREVERSE;
       custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
@@ -253,21 +253,14 @@ static void ChunkyToPlanar(void) {
 
   c2p.phase++;
 
-  custom->intreq = INTF_BLIT;
+  ClearIRQ(INTF_BLIT);
 }
-
-INTERRUPT(ChunkyToPlanarInterrupt, 0, ChunkyToPlanar, NULL);
-
-static struct Interrupt *oldBlitInt;
 
 static void MakeCopperList(CopListT *cp) {
   short i;
 
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_HAM, 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopMove16(cp, bpldat[4], 0x7777); // rgbb: 0111
-  CopMove16(cp, bpldat[5], 0xcccc); // rgbb: 1100
   CopLoadColor(cp, 0, 15, 0);
   for (i = 0; i < HEIGHT * 4; i++) {
     CopWaitSafe(cp, Y(i), 0);
@@ -297,13 +290,17 @@ static void Init(void) {
   BitmapClear(screen[0]);
   BitmapClear(screen[1]);
 
+  SetupPlayfield(MODE_HAM, 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
+  custom->bpldat[4] = 0x7777; // rgbb: 0111
+  custom->bpldat[5] = 0xcccc; // rgbb: 1100
+
   cp = NewCopList(1200);
   MakeCopperList(cp);
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER);
 
-  oldBlitInt = SetIntVector(INTB_BLIT, ChunkyToPlanarInterrupt);
+  SetIntVector(INTB_BLIT, (IntHandlerT)ChunkyToPlanar, NULL);
   EnableINT(INTF_BLIT);
 }
 
@@ -311,7 +308,7 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER);
 
   DisableINT(INTF_BLIT);
-  SetIntVector(INTB_BLIT, oldBlitInt);
+  ResetIntVector(INTB_BLIT);
 
   DeleteCopList(cp);
 #if OPTIMIZED
@@ -325,8 +322,10 @@ static void Kill(void) {
   DeleteBitmap(screen[1]);
 }
 
+PROFILE(UVLight);
+
 static void Render(void) {
-  int lines = ReadLineCounter();
+  ProfilerStart(UVLight);
 #if OPTIMIZED
   (*UVMapRender)(chunky[active], &texture[frameCount & 16383], shademap);
 #else
@@ -351,7 +350,7 @@ static void Render(void) {
     }
   }
 #endif
-  Log("uvlight: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(UVLight);
 
   c2p.phase = 0;
   c2p.chunky = chunky[active];
@@ -360,4 +359,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(uvlight, Load, NULL, Init, Kill, Render);
+EFFECT(UVLight, Load, NULL, Init, Kill, Render);

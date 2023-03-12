@@ -1,4 +1,4 @@
-LIBNAME ?= $(notdir $(PWD))
+LIBNAME ?= $(notdir $(CURDIR))
 
 all: build
 
@@ -8,5 +8,6 @@ include $(TOPDIR)/build/common.mk
 
 %.a:	$(OBJECTS)
 	@echo "[AR] $(addprefix $(DIR),$^) -> $(DIR)$@"
-	@m68k-amigaos-ar cr $@ $^
-	@m68k-amigaos-ranlib $@
+	@truncate -s 0 $@
+	@$(AR) cr $@ $^
+	@$(RANLIB) $@

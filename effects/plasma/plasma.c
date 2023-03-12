@@ -1,10 +1,9 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "pixmap.h"
-#include "random.h"
-#include "fx.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <pixmap.h>
+#include <system/memory.h>
 
 #define WIDTH (320 - 32)
 #define HEIGHT 256
@@ -164,16 +163,18 @@ static void UpdateChunky(void) {
   }
 }
 
-static void Render(void) {
-  int lines;
+PROFILE(RenderPlasma);
 
-  lines = ReadLineCounter();
-  UpdateChunky();
-  Log("update: %d\n", ReadLineCounter() - lines);
+static void Render(void) {
+  ProfilerStart(RenderPlasma);
+  {
+    UpdateChunky();
+  }
+  ProfilerStop(RenderPlasma);
 
   CopListRun(cp[active]);
   TaskWaitVBlank();
   active ^= 1;
 }
 
-EFFECT(plasma, Load, NULL, Init, Kill, Render);
+EFFECT(Plasma, Load, NULL, Init, Kill, Render);

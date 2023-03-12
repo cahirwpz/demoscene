@@ -1,9 +1,8 @@
 #include "effect.h"
-#include "hardware.h"
 #include "copper.h"
 #include "fx.h"
-#include "random.h"
 #include "color.h"
+#include <stdlib.h>
 
 #define WIDTH   320
 #define HEIGHT  256
@@ -133,7 +132,7 @@ static void SetLineColor(short *s) {
     if (l > 31)
       l = 31;
 
-    {
+    if ((i >= 0) && (i + h < HEIGHT)) {
       CopInsT **line = &lines[i];
       short c0 = shades[color | l];
       short c1 = shades[color | (l >> 1)];
@@ -173,14 +172,18 @@ static void RenderStripes(short rotate) {
   SetLineColor((short *)temp);
 }
 
+PROFILE(RenderStripes);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
-  RenderStripes(SIN(frameCount * 4) * 2);
-  // Log("hstripes: %d\n", ReadLineCounter() - lines);
+  ProfilerStart(RenderStripes);
+  {
+    RenderStripes(SIN(frameCount * 4) * 2);
+  }
+  ProfilerStop(RenderStripes);
 
   CopListRun(cp[active]);
   TaskWaitVBlank();
   active ^= 1;
 }
 
-EFFECT(stripes, NULL, NULL, Init, Kill, Render);
+EFFECT(Stripes, NULL, NULL, Init, Kill, Render);

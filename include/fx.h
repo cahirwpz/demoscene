@@ -18,17 +18,17 @@ static inline short COS(short a) {
 }
 
 static inline short normfx(int a) {
-  asm("lsll #4,%0\n"
-      "swap %0\n"
+  asm("lsll #4,%0\n\t"
+      "swap %0"
       : "+d" (a));
   return a;
 }
 
 static inline int shift12(short a) {
   int b;
-  asm("swap %0\n"
-      "clrw %0\n"
-      "asrl #4,%0\n"
+  asm("swap %0\n\t"
+      "clrw %0\n\t"
+      "asrl #4,%0"
       : "=d" (b) : "0" (a));
   return b;
 }
@@ -36,9 +36,15 @@ static inline int shift12(short a) {
 #define fx4i(i) \
   (short)((u_short)(i) << 4)
 
+#define fx12i(i) \
+  (short)((u_short)(i) << 12)
+
+#define fx4f(f) \
+  (short)((float)(f) * 16.0)
+
 #define fx12f(f) \
   (short)((float)(f) * 4096.0)
 
-__regargs int isqrt(int x);
+int isqrt(int x);
 
 #endif

@@ -1,5 +1,4 @@
 #include "effect.h"
-#include "hardware.h"
 #include "copper.h"
 #include "gfx.h"
 #include "blitter.h"
@@ -54,18 +53,19 @@ static void Init(void) {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(XSTART), Y(YSTART), WIDTH, HEIGHT);
+  SetColor(0, 0x000);
+  SetColor(1, 0x00F);
+  SetColor(2, 0x0F0);
+  SetColor(3, 0xF00);
+  SetColor(4, 0x0FF);
+  SetColor(5, 0xF0F);
+  SetColor(6, 0xFF0);
+  SetColor(7, 0xFFF);
+
   cp = NewCopList(100 + HEIGHT * 2);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(XSTART), Y(YSTART), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopSetColor(cp, 0, 0x000);
-  CopSetColor(cp, 1, 0x00F);
-  CopSetColor(cp, 2, 0x0F0);
-  CopSetColor(cp, 3, 0xF00);
-  CopSetColor(cp, 4, 0x0FF);
-  CopSetColor(cp, 5, 0xF0F);
-  CopSetColor(cp, 6, 0xFF0);
-  CopSetColor(cp, 7, 0xFFF);
   for (i = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(YSTART + i), 0);
     /* Alternating shift by one for bitplane data. */
@@ -95,9 +95,12 @@ static inline u_short random(void) {
   return seed;
 }
 
+PROFILE(RenderGlitch);
+
 static void Render(void) {
-  // int lines = ReadLineCounter();
   short i;
+
+  ProfilerStart(RenderGlitch);
 
   if (RightMouseButton()) {
     int x1 = (random() % 5) - 2;
@@ -123,11 +126,11 @@ static void Render(void) {
     }
   }
 
-  // Log("glitch: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(RenderGlitch);
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();
   active ^= 1;
 }
 
-EFFECT(glitch, NULL, NULL, Init, Kill, Render);
+EFFECT(Glitch, NULL, NULL, Init, Kill, Render);

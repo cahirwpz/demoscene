@@ -27,14 +27,6 @@ static void UnLoad(void) {
   ResetMesh3D(mesh);
 }
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
-  CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
-  CopLoadPal(cp, &flatshade_pal, 0);
-  CopEnd(cp);
-}
-
 static void Init(void) {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(-250);
@@ -43,13 +35,19 @@ static void Init(void) {
   screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
   buffer = NewBitmap(WIDTH, HEIGHT, 1);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&flatshade_pal, 0);
+
   cp = NewCopList(80);
-  MakeCopperList(cp);
+  CopInit(cp);
+  CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
+  CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 }
 
 static void Kill(void) {
+  DisableDMA(DMAF_RASTER);
   DeleteBitmap(screen0);
   DeleteBitmap(screen1);
   DeleteBitmap(buffer);
@@ -73,7 +71,7 @@ static void Kill(void) {
   D = normfx(t0 * t1 + t2 - x * y) + t3; \
 }
 
-static __regargs void TransformVertices(Object3D *object) {
+static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   short *v = (short *)M;
   short *src = (short *)object->mesh->vertex;
@@ -125,7 +123,7 @@ static __regargs void TransformVertices(Object3D *object) {
   } while (--n != -1);
 }
 
-static void DrawObject(Object3D *object, volatile struct Custom* const custom asm("a6")) {
+static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
   IndexListT **faces = object->mesh->face;
   SortItemT *item = object->visibleFace;
   char *faceFlags = object->faceFlags;
@@ -133,8 +131,8 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
   void *point = object->vertex;
   void *temp = buffer->planes[0];
 
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
+  custom_->bltafwm = -1;
+  custom_->bltalwm = -1;
 
   for (; --n >= 0; item++) {
     short index = item->index;
@@ -217,18 +215,18 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
 
             WaitBlitter();
 
-            custom->bltbdat = 0xffff;
-            custom->bltadat = 0x8000;
-            custom->bltcon0 = bltcon0;
-            custom->bltcon1 = bltcon1;
-            custom->bltcpt = dst;
-            custom->bltapt = (void *)(int)derr;
-            custom->bltdpt = temp;
-            custom->bltcmod = WIDTH / 8;
-            custom->bltbmod = bltbmod;
-            custom->bltamod = bltamod;
-            custom->bltdmod = WIDTH / 8;
-            custom->bltsize = bltsize;
+            custom_->bltbdat = 0xffff;
+            custom_->bltadat = 0x8000;
+            custom_->bltcon0 = bltcon0;
+            custom_->bltcon1 = bltcon1;
+            custom_->bltcpt = dst;
+            custom_->bltapt = (void *)(int)derr;
+            custom_->bltdpt = temp;
+            custom_->bltcmod = WIDTH / 8;
+            custom_->bltbmod = bltbmod;
+            custom_->bltamod = bltamod;
+            custom_->bltdmod = WIDTH / 8;
+            custom_->bltsize = bltsize;
           }
         }
 
@@ -261,14 +259,14 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
 
         WaitBlitter();
 
-        custom->bltcon0 = (SRCA | DEST) | A_TO_D;
-        custom->bltcon1 = BLITREVERSE | FILL_XOR;
-        custom->bltapt = src;
-        custom->bltdpt = src;
-        custom->bltamod = bltmod;
-        custom->bltbmod = bltmod;
-        custom->bltdmod = bltmod;
-        custom->bltsize = bltsize;
+        custom_->bltcon0 = (SRCA | DEST) | A_TO_D;
+        custom_->bltcon1 = BLITREVERSE | FILL_XOR;
+        custom_->bltapt = src;
+        custom_->bltdpt = src;
+        custom_->bltamod = bltmod;
+        custom_->bltbmod = bltmod;
+        custom_->bltdmod = bltmod;
+        custom_->bltsize = bltsize;
       }
 
       /* Copy filled face to screen. */
@@ -290,12 +288,12 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
 
           WaitBlitter();
 
-          custom->bltcon0 = bltcon0;
-          custom->bltcon1 = 0;
-          custom->bltapt = src;
-          custom->bltbpt = dst;
-          custom->bltdpt = dst;
-          custom->bltsize = bltsize;
+          custom_->bltcon0 = bltcon0;
+          custom_->bltcon1 = 0;
+          custom_->bltapt = src;
+          custom_->bltbpt = dst;
+          custom_->bltdpt = dst;
+          custom_->bltsize = bltsize;
 
           mask >>= 1;
         }
@@ -307,16 +305,16 @@ static void DrawObject(Object3D *object, volatile struct Custom* const custom as
 
         WaitBlitter();
 
-        custom->bltcon0 = (DEST | A_TO_D);
-        custom->bltadat = 0;
-        custom->bltdpt = data;
-        custom->bltsize = bltsize;
+        custom_->bltcon0 = (DEST | A_TO_D);
+        custom_->bltadat = 0;
+        custom_->bltdpt = data;
+        custom_->bltsize = bltsize;
       }
     }
   }
 }
 
-static __regargs void BitmapClearFast(BitmapT *dst) {
+static void BitmapClearFast(BitmapT *dst) {
   u_short height = (short)dst->height * (short)dst->depth;
   u_short bltsize = (height << 6) | (dst->bytesPerRow >> 1);
   void *bltpt = dst->planes[0];
@@ -333,38 +331,32 @@ static __regargs void BitmapClearFast(BitmapT *dst) {
   custom->bltsize = bltsize;
 }
 
-static void Render(void) {
-  int lines = ReadLineCounter();
+PROFILE(Transform);
+PROFILE(Draw);
 
+static void Render(void) {
   BitmapClearFast(screen0);
 
+  ProfilerStart(Transform);
   {
-    // int lines = ReadLineCounter();
     cube->rotate.x = cube->rotate.y = cube->rotate.z = frameCount * 8;
     UpdateObjectTransformation(cube);
     UpdateFaceVisibility(cube);
     UpdateVertexVisibility(cube);
     TransformVertices(cube);
-    // Log("transform: %d\n", ReadLineCounter() - lines);
-  }
-
-  {
-    // int lines = ReadLineCounter();
     SortFaces(cube);
-    // Log("sort: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(Transform);
 
+  ProfilerStart(Draw);
   {
-    // int lines = ReadLineCounter();
     DrawObject(cube, custom);
-    // Log("draw: %d\n", ReadLineCounter() - lines);
   }
-
-  Log("all: %d\n", ReadLineCounter() - lines);
+  ProfilerStop(Draw);
 
   CopUpdateBitplanes(bplptr, screen0, DEPTH);
   TaskWaitVBlank();
   swapr(screen0, screen1);
 }
 
-EFFECT(flatshade, Load, UnLoad, Init, Kill, Render);
+EFFECT(FlatShade, Load, UnLoad, Init, Kill, Render);

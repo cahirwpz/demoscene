@@ -1,9 +1,11 @@
 #ifndef __3D_H__
 #define __3D_H__
 
-#include "sort.h"
-#include "2d.h"
-#include "pixmap.h"
+#include <sort.h>
+#include <2d.h>
+#include <pixmap.h>
+
+extern char SqrtTab8[256];
 
 /* 3D transformations */
 
@@ -22,13 +24,13 @@ typedef struct {
   short m20, m21, m22, z;
 } Matrix3D;
 
-__regargs void LoadIdentity3D(Matrix3D *M);
-__regargs void Translate3D(Matrix3D *M, short x, short y, short z);
-__regargs void Scale3D(Matrix3D *M, short sx, short sy, short sz);
-__regargs void LoadRotate3D(Matrix3D *M, short ax, short ay, short az);
-__regargs void LoadReverseRotate3D(Matrix3D *M, short ax, short ay, short az);
-__regargs void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb);
-__regargs void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, short n);
+void LoadIdentity3D(Matrix3D *M);
+void Translate3D(Matrix3D *M, short x, short y, short z);
+void Scale3D(Matrix3D *M, short sx, short sy, short sz);
+void LoadRotate3D(Matrix3D *M, short ax, short ay, short az);
+void LoadReverseRotate3D(Matrix3D *M, short ax, short ay, short az);
+void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb);
+void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, short n);
 
 /* 3D polygon and line clipping */
 
@@ -42,9 +44,9 @@ typedef struct {
 
 extern Frustum3D ClipFrustum;
 
-__regargs void PointsInsideFrustum(Point3D *in, u_char *flags, u_short n);
-__regargs u_short ClipPolygon3D(Point3D *in, Point3D **outp, u_short n,
-                              u_short clipFlags);
+void PointsInsideFrustum(Point3D *in, u_char *flags, u_short n);
+u_short ClipPolygon3D(Point3D *in, Point3D **outp, u_short n,
+                      u_short clipFlags);
 
 /* 3D mesh representation */
 
@@ -81,11 +83,11 @@ typedef struct {
   MeshSurfaceT *surface;
 } Mesh3D;
 
-__regargs void CalculateEdges(Mesh3D *mesh);
-__regargs void CalculateVertexFaceMap(Mesh3D *mesh);
-__regargs void CalculateVertexNormals(Mesh3D *mesh);
-__regargs void CalculateFaceNormals(Mesh3D *mesh);
-__regargs void ResetMesh3D(Mesh3D *mesh);
+void CalculateEdges(Mesh3D *mesh);
+void CalculateVertexFaceMap(Mesh3D *mesh);
+void CalculateVertexNormals(Mesh3D *mesh);
+void CalculateFaceNormals(Mesh3D *mesh);
+void ResetMesh3D(Mesh3D *mesh);
 
 /* 3D object representation */
 
@@ -110,12 +112,12 @@ typedef struct {
   short visibleFaces;
 } Object3D;
 
-__regargs Object3D *NewObject3D(Mesh3D *mesh);
-__regargs void DeleteObject3D(Object3D *object);
-__regargs void UpdateFaceNormals(Object3D *object);
-__regargs void UpdateObjectTransformation(Object3D *object);
-__regargs void UpdateFaceVisibility(Object3D *object);
-__regargs void UpdateVertexVisibility(Object3D *object);
-__regargs void SortFaces(Object3D *object);
+Object3D *NewObject3D(Mesh3D *mesh);
+void DeleteObject3D(Object3D *object);
+void UpdateFaceNormals(Object3D *object);
+void UpdateObjectTransformation(Object3D *object);
+void UpdateFaceVisibility(Object3D *object);
+void UpdateVertexVisibility(Object3D *object);
+void SortFaces(Object3D *object);
 
 #endif

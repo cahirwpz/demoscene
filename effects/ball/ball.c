@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "pixmap.h"
-#include "sprite.h"
-#include "fx.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <pixmap.h>
+#include <sprite.h>
+#include <system/memory.h>
 
 #define S_WIDTH 320
 #define S_HEIGHT 256
@@ -16,7 +16,8 @@
 static PixmapT *textureHi, *textureLo;
 static PixmapT *chunky;
 static BitmapT *bitmap;
-static SpriteT *sprite[2][4];
+static SprDataT *sprdat;
+static SpriteT sprite[2][8];
 static CopInsT *sprptr[8];
 
 #include "data/dragon-bg.c"
@@ -31,8 +32,8 @@ void (*UVMapRender)(u_char *chunky asm("a0"),
                     u_char *textureHi asm("a1"),
                     u_char *textureLo asm("a2"));
 
-static __regargs void PixmapToTexture(const PixmapT *image,
-                                      PixmapT *imageHi, PixmapT *imageLo)
+static void PixmapToTexture(const PixmapT *image,
+                            PixmapT *imageHi, PixmapT *imageLo)
 {
   u_char *data = image->pixels;
   int size = image->width * image->height;
@@ -80,21 +81,15 @@ static void MakeUVMapRenderCode(void) {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
   CopSetupBitplanes(cp, NULL, &background, S_DEPTH);
-  CopLoadPal(cp, &background_pal, 0);
-  CopLoadPal(cp, &texture_pal, 16);
   CopSetupSprites(cp, sprptr);
   CopEnd(cp);
 
   {
     short i;
 
-    for (i = 0; i < 4; i++) {
-      SpriteT *spr = sprite[active][i];
-      CopInsSet32(sprptr[i * 2], spr[0].data);
-      CopInsSet32(sprptr[i * 2 + 1], spr[1].data);
-    }
+    for (i = 0; i < 8; i++)
+      CopInsSetSprite(sprptr[i], &sprite[active][i]);
   }
 }
 
@@ -115,13 +110,22 @@ static void Init(void) {
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
+  sprdat = MemAlloc(SprDataSize(64, 2) * 8 * 2, MEMF_CHIP|MEMF_CLEAR);
+
   {
+    SprDataT *dat = sprdat;
     short i, j;
 
     for (i = 0; i < 2; i++)
-      for (j = 0; j < 4; j++)
-        sprite[i][j] = NewSprite(64, true);
+      for (j = 0; j < 8; j++) {
+        MakeSprite(&dat, 64, j & 1, &sprite[i][j]);
+        EndSprite(&dat);
+      }
   }
+
+  SetupPlayfield(MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
+  LoadPalette(&background_pal, 0);
+  LoadPalette(&texture_pal, 16);
 
   cp = NewCopList(80);
   MakeCopperList(cp);
@@ -137,14 +141,7 @@ static void Kill(void) {
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
   MemFree(UVMapRender);
-
-  {
-    short i, j;
-
-    for (i = 0; i < 2; i++)
-      for (j = 0; j < 4; j++)
-        DeleteSprite(sprite[i][j]);
-  }
+  MemFree(sprdat);
 
   DeletePixmap(chunky);
   DeleteBitmap(bitmap);
@@ -156,7 +153,7 @@ static void Kill(void) {
 #error "blit size too big!"
 #endif
 
-static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
+static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
   void *planes = output->planes[0];
   void *chunky = input->pixels;
 
@@ -166,7 +163,7 @@ static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
 
     /* (a & 0xFF00) | ((b >> 8) & ~0xFF00) */
     custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-    custom->bltcon1 = 8 << BSHIFTSHIFT;
+    custom->bltcon1 = BSHIFT(8);
     custom->bltafwm = -1;
     custom->bltalwm = -1;
     custom->bltamod = 4;
@@ -185,7 +182,7 @@ static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
     WaitBlitter();
 
     /* ((a << 8) & 0xFF00) | (b & ~0xFF00) */
-    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (8 << ASHIFTSHIFT);
+    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(8);
     custom->bltcon1 = BLITREVERSE;
 
     custom->bltapt = chunky + BLTSIZE - 6;
@@ -200,7 +197,7 @@ static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
 
     /* (a & 0xF0F0) | ((b >> 4) & ~0xF0F0) */
     custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-    custom->bltcon1 = 4 << BSHIFTSHIFT;
+    custom->bltcon1 = BSHIFT(4);
     custom->bltamod = 2;
     custom->bltbmod = 2;
     custom->bltdmod = 2;
@@ -217,7 +214,7 @@ static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
     WaitBlitter();
 
     /* ((a << 4) & 0xF0F0) | (b & ~0xF0F0) */
-    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (4 << ASHIFTSHIFT);
+    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(4);
     custom->bltcon1 = BLITREVERSE;
 
     custom->bltapt = planes + BLTSIZE - 4;
@@ -236,7 +233,7 @@ static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
     custom->bltdmod = 0;
     custom->bltcdat = 0xCCCC;
     custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-    custom->bltcon1 = 2 << BSHIFTSHIFT;
+    custom->bltcon1 = BSHIFT(2);
 
     custom->bltapt = chunky;
     custom->bltbpt = chunky + 4;
@@ -255,7 +252,7 @@ static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
     WaitBlitter();
 
     /* ((a << 2) & 0xCCCC) | (b & ~0xCCCC) */
-    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | (2 << ASHIFTSHIFT);
+    custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(2);
     custom->bltcon1 = BLITREVERSE;
 
     custom->bltapt = chunky + BLTSIZE - 8;
@@ -271,7 +268,7 @@ static __regargs void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
   }
 }
 
-static __regargs void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
+static void BitmapToSprite(BitmapT *input, SpriteT sprite[8]) {
   void *planes = input->planes[0];
   short bltsize = (input->height << 6) | 1;
   short i = 0;
@@ -286,64 +283,68 @@ static __regargs void BitmapToSprite(BitmapT *input, SpriteT **sprite) {
   custom->bltdmod = 2;
 
   for (i = 0; i < 4; i++) {
-    SpriteT *spr = *sprite++;
+    SprDataT *sprdat0 = (sprite++)->sprdat;
+    SprDataT *sprdat1 = (sprite++)->sprdat;
 
     WaitBlitter();
     custom->bltapt = planes + i * 2;
-    custom->bltdpt = &spr[0].data[2];
+    custom->bltdpt = &sprdat0->data[0][0];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr[0].data[3];
+    custom->bltdpt = &sprdat0->data[0][1];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr[1].data[2];
+    custom->bltdpt = &sprdat1->data[0][0];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &spr[1].data[3];
+    custom->bltdpt = &sprdat1->data[0][1];
     custom->bltsize = bltsize;
   }
 }
 
-static __regargs void PositionSprite(SpriteT **sprite, short xo, short yo) {
+static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
   short x = X((S_WIDTH - WIDTH) / 2) + xo;
   short y = Y((S_HEIGHT - HEIGHT) / 2) + yo;
   CopInsT **ptr = sprptr;
   short n = 4;
 
   while (--n >= 0) {
-    SpriteT *spr = *sprite++;
+    SpriteT *spr0 = sprite++;
+    SpriteT *spr1 = sprite++;
 
-    UpdateSprite(spr, x, y);
+    SpriteUpdatePos(spr0, x, y);
+    SpriteUpdatePos(spr1, x, y);
 
-    CopInsSet32(*ptr++, spr[0].data);
-    CopInsSet32(*ptr++, spr[1].data);
+    CopInsSetSprite(*ptr++, spr0);
+    CopInsSetSprite(*ptr++, spr1);
 
     x += 16;
   }
 }
 
+PROFILE(UVMapRender);
+
 static void Render(void) {
   short xo = normfx(SIN(frameCount * 16) * 128);
   short yo = normfx(COS(frameCount * 16) * 100);
   short offset = ((64 - xo) + (64 - yo) * 128) & 16383;
+  u_char *txtHi = textureHi->pixels + offset;
+  u_char *txtLo = textureLo->pixels + offset;
 
+  ProfilerStart(UVMapRender);
   {
-    u_char *txtHi = textureHi->pixels + offset;
-    u_char *txtLo = textureLo->pixels + offset;
-
-    // int lines = ReadLineCounter();
     (*UVMapRender)(chunky->pixels, txtHi, txtLo);
     ChunkyToPlanar(chunky, bitmap);
     BitmapToSprite(bitmap, sprite[active]);
     PositionSprite(sprite[active], xo / 2, yo / 2);
-    // Log("uvmap: %d\n", ReadLineCounter() - lines);
   }
+  ProfilerStop(UVMapRender);
 
   TaskWaitVBlank();
   active ^= 1;
 }
 
-EFFECT(ball, NULL, NULL, Init, Kill, Render);
+EFFECT(Ball, NULL, NULL, Init, Kill, Render);

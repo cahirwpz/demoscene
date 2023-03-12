@@ -5,13 +5,18 @@ _UAEFSDB.___
 
 # ide folders
 .idea
-.vscode
 
-# executable files, floppy images and archives
+# toolchain files
+gdb-dashboard
+.gdb_history
+
+# executable files, floppy & rom images and archives
 *.adf
+*.img
 *.exe
 *.exe.dbg
 *.exe.map
+*.rom
 *.7z
 
 # AmigaOS files
@@ -26,7 +31,7 @@ _UAEFSDB.___
 *.pyc
 *.o
 *.a
-*.P
+*.D
 
 # data files
 *.2d
@@ -59,3 +64,8 @@ effects/*/data/*.[ch]
 *.taghl
 tags
 cscope.out
+
+# Whitelisted files 
+!README.gdb.png
+!README.vsc.png
+!go.mod

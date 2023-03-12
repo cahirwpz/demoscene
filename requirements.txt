@@ -1,0 +1,7 @@
+libtmux
+pillow
+prompt_toolkit
+pycodestyle
+pygments
+zopflipy
+blessings

@@ -24,8 +24,8 @@ typedef struct {
   u_short bpl;
 } FontDrawCtxT;
 
-__regargs void DrawTextN(FontDrawCtxT *ctx, const char *text, u_short n);
-__regargs Size2D DrawTextSizeN(FontT *font, const char *text, u_short n);
+void DrawTextN(FontDrawCtxT *ctx, const char *text, u_short n);
+Size2D DrawTextSizeN(FontT *font, const char *text, u_short n);
 
 #define DrawText(font, text) DrawTextN((font), (text), 65535);
 #define DrawTextSize(font, text) DrawTextSizeN((font), (text), 65535);

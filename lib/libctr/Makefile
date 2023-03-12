@@ -1,7 +1,7 @@
 TOPDIR := $(realpath ../..)
 
-SOURCES := cinter.s
+SOURCES := cinter.asm
 
 include $(TOPDIR)/build/lib.mk
 
-cinter.o: cinter.s $(TOPDIR)/include/cinter.h
+cinter.o: cinter.asm $(TOPDIR)/include/cinter.h

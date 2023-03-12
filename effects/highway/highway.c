@@ -1,13 +1,12 @@
 #include "effect.h"
-#include "hardware.h"
 #include "copper.h"
 #include "gfx.h"
 #include "blitter.h"
 #include "circle.h"
 #include "fx.h"
 #include "2d.h"
-#include "random.h"
 #include "sprite.h"
+#include <stdlib.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -49,12 +48,7 @@ static BitmapT *lanes[2];
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopSetupSprites(cp, sprptr);
-  CopLoadPal(cp, &sprite_pal, 16);
-  CopLoadPal(cp, &sprite_pal, 20);
-  CopLoadPal(cp, &sprite_pal, 24);
-  CopLoadPal(cp, &sprite_pal, 28);
 
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, &city_top, DEPTH);
   CopWait(cp, Y(-18), 0);
   CopLoadPal(cp, &city_top_pal, 0);
@@ -111,7 +105,7 @@ static void MakeCopperList(CopListT *cp) {
 
   CopEnd(cp);
 
-  ITER(i, 0, 7, CopInsSet32(sprptr[i], sprite[i]->data));
+  ITER(i, 0, 7, CopInsSetSprite(sprptr[i], sprite[i]));
 }
 
 static void Init(void) {
@@ -119,12 +113,20 @@ static void Init(void) {
   lanes[1] = NewBitmap(LANE_W, LANE_H * 2, DEPTH);
   carry = NewBitmap(HSIZE + 16, VSIZE, 2);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+
+  LoadPalette(&sprite_pal, 16);
+  LoadPalette(&sprite_pal, 20);
+  LoadPalette(&sprite_pal, 24);
+  LoadPalette(&sprite_pal, 28);
+
   cp = NewCopList(300);
   MakeCopperList(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
-  ITER(i, 0, 7, UpdateSprite(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
+  ITER(i, 0, 7,
+       SpriteUpdatePos(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
 }
 
 static void Kill(void) {
@@ -214,4 +216,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(highway, NULL, NULL, Init, Kill, Render);
+EFFECT(HighWay, NULL, NULL, Init, Kill, Render);

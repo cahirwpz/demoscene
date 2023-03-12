@@ -1,5 +1,4 @@
 #include "effect.h"
-#include "hardware.h"
 #include "copper.h"
 #include "gfx.h"
 #include "blitter.h"
@@ -131,8 +130,6 @@ static void Init(void) {
   MakeCopperList(cp0);
   CopListActivate(cp0);
   EnableDMA(DMAF_RASTER);
-
-  SetFrameCounter(0);
 }
 
 static void Kill(void) {
@@ -192,4 +189,4 @@ static void Render(void) {
   swapr(cp0, cp1);
 }
 
-EFFECT(credits, NULL, NULL, Init, Kill, Render);
+EFFECT(Credits, NULL, NULL, Init, Kill, Render);

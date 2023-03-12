@@ -8,21 +8,28 @@
 #define __GNUC_PREREQ__(x, y) 0
 #endif
 
-#define ___STRING(x) __STRING(x)
-#define ___CONCAT(x, y) __CONCAT(x, y)
-
 #define __unused __attribute__((unused))
 #define __constfunc __attribute__((const))
 #define __packed __attribute__((packed))
 #define __noreturn __attribute__((noreturn))
+#undef __aligned
+#define __aligned(x) __attribute__((aligned(x)))
 
 #define __data_chip __attribute__((section(".datachip")))
-#define __data_bss __attribute__((section(".bsschip")))
+#define __bss_chip __attribute__((section(".bsschip")))
 
-#if __GNUC_PREREQ__(3, 0) || defined(__lint__)
+#if __GNUC_PREREQ__(4, 1)
+#define __returns_twice __attribute__((returns_twice))
+#else
+#define __returns_twice
+#endif
+
+#if __GNUC_PREREQ__(3, 0)
 #define __noinline __attribute__((noinline))
+#define __always_inline __attribute__((__always_inline__))
 #else
 #define __noinline
+#define __always_inline
 #endif
 
 #if __GNUC_PREREQ__(2, 92)
@@ -40,5 +47,10 @@
 #define align(x, n) (((x) + (n)-1) & (-(n)))
 
 #define __BIT(x) (1L << (x))
+
+#define __CONCAT1(x, y) x##y
+#define __CONCAT(x, y) __CONCAT1(x, y)
+#define __STRING1(x) #x
+#define __STRING(x) __STRING1(x)
 
 #endif

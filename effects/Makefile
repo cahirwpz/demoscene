@@ -2,6 +2,7 @@ TOPDIR := $(realpath ..)
 
 SUBDIRS := \
 	anim \
+	anim-polygons \
 	ball \
 	bobs3d \
 	blurred \
@@ -15,10 +16,12 @@ SUBDIRS := \
 	flatshade-convex \
 	floor \
 	floor-old \
-	gui \
 	glitch \
+	growing-tree \
+	gui \
 	highway \
 	kbtest \
+	layers \
 	lines \
 	metaballs \
 	multipipe \
@@ -29,6 +32,8 @@ SUBDIRS := \
 	playp61 \
 	plotter \
 	prisms \
+	rotator \
+	sea-anemone \
 	shapes \
 	showpchg \
 	stripes \
@@ -42,11 +47,15 @@ SUBDIRS := \
 	uvlight \
 	uvmap \
 	uvmap-rgb \
+	weave \
 	wireframe
 
 FAILURES := \
 	tests \
 	vscaler
+
+EXTRA-FILES += main.o
+CLEAN-FILES += main.o
 
 all: build
 

@@ -1,42 +1,63 @@
-@ 0396          _LVOAllocMem
-- 4eaeff3a
-+ 610029a4
-@ 03be          _LVOAllocMem
-- 4eaeff3a
-+ 6100297c
-@ 02a6          _LVOFreeMem
+@ 00be          _LVOOpenResource -> illegal + nop
+- 4eaefe0e
++ 4afc4e71
+@ 00d4          _LVOOpenResource -> illegal + nop
+- 4eaefe0e
++ 4afc4e71
+@ 00fa          _LVOAddICRVector -> illegal + nop
+- 4eaefffa
++ 4afc4e71
+@ 0108          _LVOAddICRVector -> illegal + nop
+- 4eaefffa
++ 4afc4e71
+@ 0128          _LVOAddICRVector -> illegal + nop
+- 4eaefffa
++ 4afc4e71
+@ 013e          _LVOAddICRVector -> illegal + nop
+- 4eaefffa
++ 4afc4e71
+@ 01d0          _LVORemICRVector -> illegal + nop
+- 4eaefff4
++ 4afc4e71
+@ 0232          _LVOCause -> illegal + nop
+- 4eaeff4c
++ 4afc4e71
+@ 02a6          _LVOFreeMem -> MemFree wrapper
 - 4eaeff2e
 + 61002a98
-@ 02bc          _LVOFreeMem
+@ 02bc          _LVOFreeMem -> MemFree wrapper
 - 4eaeff2e
 + 61002a82
-@ 03e4          _LVOOldOpenLibrary dos.library
+@ 0396          _LVOAllocMem -> MemAlloc wrapper
+- 4eaeff3a
++ 610029a4
+@ 03be          _LVOAllocMem -> MemAlloc wrapper
+- 4eaeff3a
++ 6100297c
+@ 03e4          _LVOOldOpenLibrary dos.library -> moveq.l #1,d0 + nop
 - 4eaefe68
-+ 4e714e71
-@ 03f6          _LVOOpen
++ 70014e71
+@ 03f6          _LVOOpen -> OpenFile wrapper
 - 4eaeffe2
 + 6100294c
-@ 044c          _LVOOpen
-- 4eaeffe2
-+ 610028f6
-@ 0416          _LVORead
+@ 0416          _LVORead -> FileRead wrapper
 - 4eaeffd6
 + 61002930
-@ 046c          _LVORead
-- 4eaeffd6
-+ 610028da
-@ 041e          _LVOClose
+@ 041e          _LVOClose -> FileClose wrapper
 - 4eaeffdc
 + 6100292c
-@ 047e          _LVOClose
+@ 044c          _LVOOpen -> OpenFile wrapper
+- 4eaeffe2
++ 610028f6
+@ 046c          _LVORead -> FileRead wrapper
+- 4eaeffd6
++ 610028da
+@ 047e          _LVOClose -> FileClose wrapper
 - 4eaeffdc
 + 610028cc
-@ 0488          _LVOCloseLibrary DOSBase
+@ 0488          _LVOCloseLibrary DOSBase -> nop + nop
 - 4eaefe62
 + 4e714e71
 @ 03ec          "S:ahxWaves.Location" -> "ahxWaves.Location"
 - 0426
 + 0428
-@ 0736          ???
-- 2a7af8f4      move.l  _Ahx+4(pc),a5
-+ 600000b8      bra.w   LAB_005C

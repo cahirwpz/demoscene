@@ -1,13 +1,12 @@
-#include "effect.h"
-#include "hardware.h"
-#include "interrupts.h"
-#include "memory.h"
-#include "cinter.h"
-#include "console.h"
-#include "copper.h"
-#include "keyboard.h"
-#include "event.h"
-#include "blitter.h"
+#include <effect.h>
+#include <blitter.h>
+#include <cinter.h>
+#include <console.h>
+#include <copper.h>
+#include <system/event.h>
+#include <system/interrupt.h>
+#include <system/keyboard.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -50,7 +49,7 @@ static void UnLoad(void) {
   MemFree(module);
 }
 
-static __interrupt int CinterMusic(void) {
+static int CinterMusic(void) {
   if (stopped)
     return 0;
   CinterPlay1(player);
@@ -58,19 +57,20 @@ static __interrupt int CinterMusic(void) {
   return 0;
 }
 
-INTERRUPT(CinterPlayerInterrupt, 10, CinterMusic, NULL);
+INTSERVER(CinterMusicServer, 10, (IntFuncT)CinterMusic, NULL);
 
 static void Init(void) {
   KeyboardInit();
 
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetColor(0, 0x000);
+  SetColor(1, 0xfff);
+
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetColor(cp, 0, 0x000);
-  CopSetColor(cp, 1, 0xfff);
   CopEnd(cp);
 
   ConsoleInit(&console, &latin2, screen);
@@ -83,7 +83,7 @@ static void Init(void) {
   CinterInit(module, instruments, player);
   musicStart = player->c_MusicPointer;
 
-  AddIntServer(INTB_VERTB, CinterPlayerInterrupt);
+  AddIntServer(INTB_VERTB, CinterMusicServer);
 
   ConsoleSetCursor(&console, 0, 0);
   ConsolePutStr(&console, 
@@ -94,7 +94,7 @@ static void Init(void) {
 }
 
 static void Kill(void) {
-  RemIntServer(INTB_VERTB, CinterPlayerInterrupt);
+  RemIntServer(INTB_VERTB, CinterMusicServer);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_AUDIO);
 
@@ -173,4 +173,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(playctr, Load, UnLoad, Init, Kill, Render);
+EFFECT(PlayCinter, Load, UnLoad, Init, Kill, Render);

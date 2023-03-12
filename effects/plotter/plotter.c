@@ -1,12 +1,10 @@
-#include "effect.h"
-#include "hardware.h"
-#include "copper.h"
-#include "gfx.h"
-#include "blitter.h"
-#include "circle.h"
-#include "fx.h"
-#include "sync.h"
-#include "memory.h"
+#include <effect.h>
+#include <blitter.h>
+#include <circle.h>
+#include <copper.h>
+#include <fx.h>
+#include <gfx.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -48,11 +46,12 @@ static void Init(void) {
   for (i = 0; i < 2; i++)
     BitmapClear(screen[i]);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&flares_pal, 0);
+
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopWait(cp, Y(-1), 0);
   CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopLoadPal(cp, &flares_pal, 0);
   CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
@@ -91,7 +90,7 @@ static void DrawPlotter(void) {
 
 static void Render(void) {
   BitmapClearArea(screen[active], 
-                  STRUCT(Area2D, 0, 0, MAX_W * 2 + SIZE, MAX_H * 2 + SIZE));
+                  &((Area2D){0, 0, MAX_W * 2 + SIZE, MAX_H * 2 + SIZE}));
   DrawPlotter();
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
@@ -99,4 +98,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(plotter, NULL, NULL, Init, Kill, Render);
+EFFECT(Plotter, NULL, NULL, Init, Kill, Render);

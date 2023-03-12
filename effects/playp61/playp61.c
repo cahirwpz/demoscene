@@ -1,19 +1,17 @@
-#include "effect.h"
-#include "hardware.h"
-#include "interrupts.h"
-#include "memory.h"
-#include "p61.h"
-#include "console.h"
-#include "copper.h"
-#include "keyboard.h"
-#include "event.h"
-#include "blitter.h"
+#include <effect.h>
+#include <blitter.h>
+#include <console.h>
+#include <copper.h>
+#include <p61.h>
+#include <system/event.h>
+#include <system/interrupt.h>
+#include <system/keyboard.h>
+#include <system/memory.h>
+#include <system/timer.h>
 
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 1
-
-long __chipmem = 128 * 1024;
 
 #include "data/drdos8x8.c"
 
@@ -24,14 +22,15 @@ static BitmapT *screen;
 static BitmapT *osc[4];
 static CopListT *cp;
 static ConsoleT console;
+static CIATimerT *p61tmr;
 
-INTERRUPT(P61PlayerInterrupt, 10, P61_Music, NULL);
+INTSERVER(P61PlayerServer, 10, (IntFuncT)P61_Music, NULL);
 
 static inline void putpixel(u_char *line, short x) {
   bset(line + (x >> 3), ~x);
 }
 
-static __regargs void DrawOsc(BitmapT *osc, P61_OscData *data) {
+static void DrawOsc(BitmapT *osc, P61_OscData *data) {
   u_char *line = osc->planes[0];
   char *sample, *end;
   short n = 64;
@@ -78,12 +77,13 @@ static void Init(void) {
 
   ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1));
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetColor(0, 0x000);
+  SetColor(1, 0xfff);
+
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetColor(cp, 0, 0x000);
-  CopSetColor(cp, 1, 0xfff);
   CopEnd(cp);
 
   ConsoleInit(&console, &drdos8x8, screen);
@@ -111,10 +111,14 @@ static void Init(void) {
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
+  /* This timer launches P61 sound DMA reprogramming. */
+  p61tmr = AcquireTimer(TIMER_CIAB_B);
+  Assert(p61tmr != NULL);
+
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
-  AddIntServer(INTB_VERTB, P61PlayerInterrupt);
+  AddIntServer(INTB_VERTB, P61PlayerServer);
 
   ConsolePutStr(&console, 
                 "Pause (SPACE) Prev (LEFT) Next (RIGHT)\n"
@@ -125,7 +129,8 @@ static void Kill(void) {
   P61_ControlBlock.Play = 0;
   P61_End();
 
-  RemIntServer(INTB_VERTB, P61PlayerInterrupt);
+  RemIntServer(INTB_VERTB, P61PlayerServer);
+  ReleaseTimer(p61tmr);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
@@ -178,7 +183,7 @@ static void Render(void) {
 
   TaskWaitVBlank();
 
-  exitLoop = HandleEvent();
+  exitLoop = !HandleEvent();
 }
 
 static bool HandleEvent(void) {
@@ -217,4 +222,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(playp61, NULL, NULL, Init, Kill, Render);
+EFFECT(PlayP61, NULL, NULL, Init, Kill, Render);

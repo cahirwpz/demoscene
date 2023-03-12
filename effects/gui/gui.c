@@ -1,12 +1,12 @@
-#include "effect.h"
-#include "hardware.h"
-#include "copper.h"
-#include "sprite.h"
-#include "gui.h"
-#include "event.h"
-#include "keyboard.h"
-#include "mouse.h"
-#include "memory.h"
+#include <effect.h>
+#include <copper.h>
+#include <gui.h>
+#include <sprite.h>
+#include <stdio.h>
+#include <system/event.h>
+#include <system/keyboard.h>
+#include <system/memory.h>
+#include <system/mouse.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -61,28 +61,31 @@ static void Load(void) {
 
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  cp = NewCopList(120);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+
+  SetColor(UI_BG_INACTIVE, 0x888);
+  SetColor(UI_BG_ACTIVE, 0xaaa);
+  SetColor(UI_FRAME_IN, 0x444);
+  SetColor(UI_FRAME_OUT, 0xeee);
+  SetColor(UI_FG_INACTIVE, 0x24a);
+  SetColor(UI_FG_ACTIVE, 0x46e);
+  LoadPalette(&pointer_pal, 16);
+
+  cp = NewCopList(120);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, NULL, screen, DEPTH);
   CopSetupSprites(cp, sprptr);
-  CopSetColor(cp, UI_BG_INACTIVE, 0x888);
-  CopSetColor(cp, UI_BG_ACTIVE,   0xaaa);
-  CopSetColor(cp, UI_FRAME_IN,    0x444);
-  CopSetColor(cp, UI_FRAME_OUT,   0xeee);
-  CopSetColor(cp, UI_FG_INACTIVE, 0x24a);
-  CopSetColor(cp, UI_FG_ACTIVE,   0x46e);
-  CopLoadPal(cp, &pointer_pal, 16);
   CopEnd(cp);
 
-  CopInsSet32(sprptr[0], pointer.data);
-  UpdateSprite(&pointer, X(0), Y(0));
+  CopInsSetSprite(sprptr[0], &pointer);
+  SpriteUpdatePos(&pointer, X(0), Y(0));
 
   CopListActivate(cp);
 
   KeyboardInit();
-  MouseInit(0, 0, WIDTH - 1, HEIGHT - 1);
+  MouseInit(&(Box2D){.minX = 0, .minY = 0,
+                     .maxX = WIDTH - 1, .maxY = HEIGHT - 1});
 
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
@@ -110,7 +113,7 @@ static bool HandleEvent(void) {
       return false;
   } else if (ev->type == EV_MOUSE) {
     GuiHandleMouseEvent(gui, &ev->mouse);
-    UpdateSprite(&pointer, X(ev->mouse.x), Y(ev->mouse.y));
+    SpriteUpdatePos(&pointer, X(ev->mouse.x), Y(ev->mouse.y));
   } else if (ev->type == EV_GUI) {
     WidgetT *wg = ev->gui.widget;
 
@@ -134,4 +137,4 @@ static void Render(void) {
   exitLoop = !HandleEvent();
 }
 
-EFFECT(gui, Load, NULL, Init, Kill, Render);
+EFFECT(GUI, Load, NULL, Init, Kill, Render);

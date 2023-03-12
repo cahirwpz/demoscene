@@ -1,9 +1,9 @@
-#include "effect.h"
-#include "2d.h"
-#include "blitter.h"
-#include "copper.h"
-#include "fx.h"
-#include "memory.h"
+#include <effect.h>
+#include <2d.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <system/memory.h>
 
 #define WIDTH  320
 #define HEIGHT 256
@@ -38,14 +38,15 @@ static void Init(void) {
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
   BitmapClear(screen);
 
+  SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  LoadPalette(&shapes_pal, 0);
+
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupGfxSimple(cp, MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopLoadPal(cp, &shapes_pal, 0);
   CopEnd(cp);
-
   CopListActivate(cp);
+
   EnableDMA(DMAF_RASTER);
 }
 
@@ -73,7 +74,7 @@ static void DrawPolygon(Point2D *out, short n) {
   }
 }
 
-static __regargs void DrawShape(ShapeT *shape) {
+static void DrawShape(ShapeT *shape) {
   IndexListT **polygons = shape->polygon;
   Point2D *point = shape->viewPoint;
   u_char *flags = shape->viewPointFlags;
@@ -103,22 +104,28 @@ static __regargs void DrawShape(ShapeT *shape) {
   }
 }
 
-static void Render(void) {
-  // int lines = ReadLineCounter();
-  short i, a = frameCount * 64;
-  Matrix2D t;
+PROFILE(Shapes);
 
-  BlitterClear(screen, plane);
-  LoadIdentity2D(&t);
-  Rotate2D(&t, frameCount * 8);
-  Scale2D(&t, fx12f(1.0) + SIN(a) / 2, fx12f(1.0) + COS(a) / 2);
-  Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
-  Transform2D(&t, shape.viewPoint, shape.origPoint, shape.points);
-  PointsInsideBox(shape.viewPoint, shape.viewPointFlags, shape.points);
-  BlitterLineSetup(screen, plane, LINE_EOR|LINE_ONEDOT);
-  DrawShape(&shape);
-  BlitterFill(screen, plane);
-  // Log("shape: %d\n", ReadLineCounter() - lines);
+static void Render(void) {
+  short i;
+
+  ProfilerStart(Shapes);
+  {
+    short a = frameCount * 64;
+    Matrix2D t;
+
+    BlitterClear(screen, plane);
+    LoadIdentity2D(&t);
+    Rotate2D(&t, frameCount * 8);
+    Scale2D(&t, fx12f(1.0) + SIN(a) / 2, fx12f(1.0) + COS(a) / 2);
+    Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
+    Transform2D(&t, shape.viewPoint, shape.origPoint, shape.points);
+    PointsInsideBox(shape.viewPoint, shape.viewPointFlags, shape.points);
+    BlitterLineSetup(screen, plane, LINE_EOR|LINE_ONEDOT);
+    DrawShape(&shape);
+    BlitterFill(screen, plane);
+  }
+  ProfilerStop(Shapes);
 
   for (i = 0; i < DEPTH; i++) {
     short j = (plane + i) % DEPTH;
@@ -133,4 +140,4 @@ static void Render(void) {
   planeC ^= 1;
 }
 
-EFFECT(shapes, Load, UnLoad, Init, Kill, Render);
+EFFECT(Shapes, Load, UnLoad, Init, Kill, Render);
