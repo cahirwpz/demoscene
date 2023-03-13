@@ -196,8 +196,15 @@ static inline CopInsT *CopSkipMask(CopListT *list, short vp, short hp,
 #define CopSkipV(cp, vp) CopSkipMask((cp), (vp), 0, 255, 0)
 
 /* High-level functions */
-CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, short start);
+CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, short first);
 CopInsT *CopLoadColor(CopListT *list, short start, short end, short color);
+
+/* Load `ncols` colors from array `col`. A range of color register will be set
+ * starting from `first` ending at `first + ncols - 1`.
+ *
+ * Warning: no check on `ncols` value is performed! */
+CopInsT *CopLoadColorArray(CopListT *list, const u_short *col, short ncols,
+                           short first);
 
 void CopSetupMode(CopListT *list, u_short mode, u_short depth);
 /* Arguments must be always specified in low resolution coordinates. */
