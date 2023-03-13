@@ -104,7 +104,7 @@ CLEAN-FILES += $(SOURCES:%=%~)
 
 %.o: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
-	$(VASM) -Fhunk $(VASMFLAGS) -o $@ $<
+	$(VASM) -Fhunk $(VASMFLAGS) $(VASMFLAGS.$*) -o $@ $<
 
 %.bin: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"

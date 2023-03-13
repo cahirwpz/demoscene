@@ -687,8 +687,10 @@ resetch:
 	clr.b	n_sfxpri(a0)
 	clr.b	n_looped(a0)
 	clr.b	n_gliss(a0)
+        ifeq    MINIMAL
 	clr.b	n_musiconly(a0)
 	st	n_enable(a0)
+        endc
 	rts
 
 
