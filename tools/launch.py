@@ -32,6 +32,7 @@ class Launchable():
 
     def start(self, session):
         cmd = ' '.join([self.cmd] + list(map(shlex.quote, self.options)))
+        # XXX: print `cmd` to display command and its arguments
         self.window = session.new_window(
             attach=False, window_name=self.name, window_shell=cmd)
 

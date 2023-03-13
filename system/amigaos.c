@@ -40,8 +40,8 @@ static ExcVecT oldExcVec;
 static void *oldSysStack;
 
 /* Memory for framework allocator. */
-static __aligned(4) __bss_chip char ChipMem[512 * 1024];
-static __aligned(4) char FastMem[512 * 1024];
+static __aligned(4) __bss_chip char ChipMem[CHIPMEM_KB * 1024];
+static __aligned(4) char FastMem[FASTMEM_KB * 1024];
 
 /* Normally BootDataT is provided by the boot loader. Since we were started
  * from AmigaOS we have to fill this structure and pass it to Loader. */

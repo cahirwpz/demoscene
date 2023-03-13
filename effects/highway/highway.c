@@ -105,7 +105,7 @@ static void MakeCopperList(CopListT *cp) {
 
   CopEnd(cp);
 
-  ITER(i, 0, 7, CopInsSetSprite(sprptr[i], sprite[i]));
+  ITER(i, 0, 7, CopInsSetSprite(sprptr[i], &sprite[i]));
 }
 
 static void Init(void) {
@@ -126,7 +126,7 @@ static void Init(void) {
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
   ITER(i, 0, 7,
-       SpriteUpdatePos(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
+       SpriteUpdatePos(&sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
 }
 
 static void Kill(void) {

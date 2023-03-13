@@ -6,38 +6,71 @@ from math import ceil, log
 import argparse
 
 
-def dim(s):
-    w, h, d = s.split('x')
-    return int(w), int(h), int(d)
+def coerce(name, typ, value):
+    try:
+        return typ(value)
+    except ValueError:
+        raise SystemExit(f'{name}: could not convert {value} to {typ}!')
 
 
-def parse(spec, *desc, **kwargs):
-    param = dict(kwargs)
-
-    sl = []
-    for s in spec.split(','):
-        if s[0] in '+-':
-            flag = s[1:]
-            if flag not in kwargs:
-                raise SystemExit('Unknown flag {}!'.format(flag))
-            param[flag] = bool(s[0] == '+')
+def convert(name, cast, value, result):
+    if type(cast) == tuple:
+        names = name.split(',')
+        values = value.split('x')
+        if len(names) > 1:
+            assert len(names) == len(values)
+            for n, c, v in zip(names, cast, values):
+                result[n] = coerce(n, c, v)
         else:
-            sl.append(s)
+            result[name] = tuple(coerce(n, c, v)
+                                 for n, c, v in zip(name, cast, values))
+    else:
+        result[name] = coerce(name, cast, value)
 
-    if len(sl) != len(desc):
-        raise SystemExit('Got {}, but expected {}!'.format(s, desc))
 
-    for value, (name, cast) in zip(sl, desc):
+def parse(desc, *params):
+    mandatory = []
+    optional = {}
+    result = {}
+
+    for param in params:
+        if len(param) == 2:
+            mandatory.append(param)
+        elif len(param) == 3:
+            name, cast, defval = param
+            optional[name] = cast
+            result[name] = defval
+        else:
+            raise RuntimeError
+
+    desc = desc.split(',')
+
+    for name, cast in mandatory:
         try:
-            if type(name) == tuple:
-                for n, v in zip(name, cast(value)):
-                    param[n] = v
-            else:
-                param[name] = cast(value)
+            value = desc.pop(0)
         except ValueError:
-            raise SystemExit('Got {}, but expected {}!'.format(v, cast))
+            raise SystemExit(f'Missing {name} argument!')
 
-    return param
+        convert(name, cast, value, result)
+
+    for s in desc:
+        if not s:
+            continue
+
+        if s[0] in '+-':
+            name, value = s[1:], bool(s[0] == '+')
+        else:
+            try:
+                name, value = s.split('=', 1)
+            except ValueError:
+                raise SystemExit(f'Malformed optional argument {s}!')
+
+        if name not in optional:
+            raise SystemExit(f'Unknown optional argument {name}!')
+
+        convert(name, optional[name], value, result)
+
+    return result
 
 
 def planar(pix, width, height, depth):
@@ -93,20 +126,37 @@ def do_bitmap(im, desc):
     if im.mode not in ['1', 'L', 'P']:
         raise SystemExit('Only 8-bit images supported.')
 
-    param = parse(desc, ('name', str), (('width', 'height', 'depth'), dim),
-                  interleaved=False)
+    param = parse(desc,
+                  ('name', str),
+                  ('width,height,depth', (int, int, int)),
+                  ('extract_at', (int, int), (0, 0)),
+                  ('interleaved', bool, False),
+                  ('displayable', bool, True),
+                  ('shared', bool, False),
+                  ('limit_depth', bool, False),
+                  ('onlydata', bool, False))
 
     name = param['name']
     has_width = param['width']
     has_height = param['height']
     has_depth = param['depth']
+    x, y = param['extract_at']
     interleaved = param['interleaved']
+    displayable = param['displayable']
+    shared = param['shared']
+    limit_depth = param['limit_depth']
+    onlydata = param['onlydata']
+
+    w, h = im.size
+    im = im.copy().crop((x, y, min(x + has_width, w), min(y + has_height, h)))
 
     pix = array('B', im.getdata())
 
     width, height = im.size
     colors = im.getextrema()[1] + 1
     depth = int(ceil(log(colors, 2)))
+    if limit_depth:
+        depth = min(depth, has_depth)
 
     if width != has_width or height != has_height or depth != has_depth:
         raise SystemExit(
@@ -119,7 +169,9 @@ def do_bitmap(im, desc):
     bplSize = bytesPerRow * height
     bpl = planar(pix, width, height, depth)
 
-    print('static __data_chip u_short _%s_bpl[] = {' % name)
+    data_chip = '__data_chip' if displayable else ''
+
+    print(f'static {data_chip} u_short _{name}_bpl[] = {{')
     if interleaved:
         for i in range(0, depth * wordsPerRow * height, wordsPerRow):
             words = ['0x%04x' % bpl[i + x] for x in range(wordsPerRow)]
@@ -133,19 +185,26 @@ def do_bitmap(im, desc):
     print('};')
     print('')
 
-    print('#define %s_width %d' % (name, width))
-    print('#define %s_height %d' % (name, height))
-    print('#define %s_bytesPerRow %d' % (name, bytesPerRow))
-    print('#define %s_bplSize %d' % (name, bplSize))
+    print(f'#define {name}_width {width}')
+    print(f'#define {name}_height {height}')
+    print(f'#define {name}_depth {depth}')
+    print(f'#define {name}_bytesPerRow {bytesPerRow}')
+    print(f'#define {name}_bplSize {bplSize}')
+    print(f'#define {name}_size {bplSize*depth}')
     print('')
 
-    print('static const BitmapT %s = {' % name)
-    print('  .width = %d,' % width)
-    print('  .height = %d,' % height)
-    print('  .depth = %s,' % depth)
-    print('  .bytesPerRow = %d,' % bytesPerRow)
-    print('  .bplSize = %d,' % bplSize)
-    flags = ['BM_DISPLAYABLE', 'BM_STATIC']
+    if onlydata:
+        return
+
+    print('%sconst BitmapT %s = {' % ('' if shared else 'static ', name))
+    print(f'  .width = {width},')
+    print(f'  .height = {height},')
+    print(f'  .depth = {depth},')
+    print(f'  .bytesPerRow = {bytesPerRow},')
+    print(f'  .bplSize = {bplSize},')
+    flags = ['BM_STATIC']
+    if displayable:
+        flags.append('BM_DISPLAYABLE')
     if interleaved:
         flags.append('BM_INTERLEAVED')
     print('  .flags = %s,' % '|'.join(flags))
@@ -155,7 +214,7 @@ def do_bitmap(im, desc):
             offset = i * bytesPerRow
         else:
             offset = i * bplSize
-        print('    (void *)_%s_bpl + %d,' % (name, offset))
+        print(f'    (void *)_{name}_bpl + {offset},')
     print('  }')
     print('};')
 
@@ -164,13 +223,15 @@ def do_sprite(im, desc):
     if im.mode not in ['1', 'L', 'P']:
         raise SystemExit('Only 8-bit images supported.')
 
-    param = parse(desc, ('name', str), ('height', int), ('count', int),
-                  attached=False, array=False)
+    param = parse(desc,
+                  ('name', str),
+                  ('height', int),
+                  ('count', int),
+                  ('attached', bool, False))
 
     name = param['name']
     has_height = param['height']
     has_count = param['count']
-    sequence = param['array']
     attached = param['attached']
 
     pix = array('B', im.getdata())
@@ -181,65 +242,86 @@ def do_sprite(im, desc):
 
     if height != has_height:
         raise SystemExit(
-            'Image height is %d, expected %d!' % (height, has_height))
+            f'Image height is {height}, expected {has_height}!')
 
-    if width != has_count * 16:
+    exp_width = has_count * 16
+    if width != exp_width:
         raise SystemExit(
-            'Image width is %d, expected %d!' % (width, has_count * 16))
+            f'Image width is {width}, expected {exp_width}!')
 
     if not attached and depth != 2:
-        raise SystemExit('Image depth is %d, expected 2!' % depth)
+        raise SystemExit(f'Image depth is {depth}, expected 2!')
 
     if attached and depth != 4:
-        raise SystemExit('Image depth is %d, expected 2!' % depth)
+        raise SystemExit(f'Image depth is {depth}, expected 4!')
 
     stride = ((width + 15) & ~15) // 16
     bpl = planar(pix, width, height, depth)
 
-    print('static const short %s_height = %d;' % (name, height))
+    print(f'static const short {name}_height = {height};')
     print('')
 
-    for i in range(width // 16):
+    n = width // 16
+    if attached:
+        n *= 2
+
+    sprites = []
+
+    for i in range(n):
         sprite = name
         if width > 16:
             sprite += str(i)
 
-        attached_str = ['false', 'true'][attached]
+        attached_sprite = attached and i % 2 == 1
 
-        print('static __data_chip SprDataT %s_sprdat = {' % sprite)
-        print('  .pos = SPRPOS(0, 0),')
-        print('  .ctl = SPRCTL(0, 0, %s, %d),' % (attached_str, height))
+        offset = stride * 2 if attached_sprite else 0
+        offset += i // 2 if attached else i
+
+        attached_str = str(attached_sprite).lower()
+
+        print(f'static __data_chip SprDataT {sprite}_sprdat = {{')
+        print(f'  .pos = SPRPOS(0, 0),')
+        print(f'  .ctl = SPRCTL(0, 0, {attached_str}, {height}),')
         print('  .data = {')
         for j in range(0, stride * depth * height, stride * depth):
-            words = bpl[i + j], bpl[i + j + stride]
+            words = bpl[offset + j], bpl[offset + j + stride]
             print('    { 0x%04x, 0x%04x },' % words)
         print('    /* sprite channel terminator */')
         print('    { 0x0000, 0x0000 },')
         print('  }')
         print('};')
         print('')
-        print('static SpriteT %s = {' % sprite)
-        print('  .sprdat = &%s_sprdat,' % sprite)
-        print('  .height = %d,' % height)
-        print('  .attached = %s,' % attached_str)
-        print('};')
-        print('')
 
-    if sequence:
-        sprites = ['&%s%d' % (name, i) for i in range(width // 16)]
-        print('static SpriteT *%s[] = {' % name)
-        print('  %s' % ', '.join(sprites))
+        sprites.append((sprite, attached_str))
+
+    if n > 1:
+        print(f'static SpriteT {name}[{n}] = {{')
+        for sprite, attached_str in sprites:
+            print('  {')
+            print(f'    .sprdat = &{sprite}_sprdat,')
+            print(f'    .height = {height},')
+            print(f'    .attached = {attached_str},')
+            print('  },')
         print('};')
-        print('')
+    else:
+        print(f'static SpriteT {name} = {{')
+        print(f'  .sprdat = &{name}_sprdat,')
+        print(f'  .height = {height},')
+        print(f'  .attached = false,')
+        print('};')
 
 
 def do_pixmap(im, desc):
-    param = parse(desc, ('name', str), (('width', 'height', 'bpp'), dim))
+    param = parse(desc,
+                  ('name', str),
+                  ('width,height,bpp', (int, int, int)),
+                  ('onlydata', bool, False))
 
     name = param['name']
     has_width = param['width']
     has_height = param['height']
     has_bpp = param['bpp']
+    onlydata = param['onlydata']
 
     width, height = im.size
 
@@ -297,20 +379,24 @@ def do_pixmap(im, desc):
     print('#define %s_height %d' % (name, height))
     print('')
 
-    print('static const PixmapT %s = {' % name)
-    print('  .type = %s,' % pixeltype)
-    print('  .width = %d,' % width)
-    print('  .height = %d,' % height)
-    print('  .pixels = %s_pixels' % name)
-    print('};')
-    print('')
+    if not onlydata:
+        print('static const PixmapT %s = {' % name)
+        print('  .type = %s,' % pixeltype)
+        print('  .width = %d,' % width)
+        print('  .height = %d,' % height)
+        print('  .pixels = %s_pixels' % name)
+        print('};')
+        print('')
 
 
 def do_palette(im, desc):
     if im.mode != 'P':
         raise SystemExit('Only 8-bit images with palette supported.')
 
-    param = parse(desc, ('name', str), ('colors', int), store_unused=False)
+    param = parse(desc,
+                  ('name', str),
+                  ('colors', int),
+                  ('store_unused', bool, False))
 
     name = param['name']
     has_colors = param['colors']
@@ -342,7 +428,7 @@ def do_palette(im, desc):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Converts an image to bitmap.')
-    parser.add_argument('--bitmap', type=str,
+    parser.add_argument('--bitmap', type=str, action='append',
                         help='Output Amiga bitmap [name,dimensions,flags]')
     parser.add_argument('--pixmap', type=str,
                         help='Output pixel map '
@@ -362,7 +448,8 @@ if __name__ == '__main__':
         print('')
 
     if args.bitmap:
-        do_bitmap(im, args.bitmap)
+        for bm in args.bitmap:
+            do_bitmap(im, bm)
         print('')
 
     if args.pixmap:

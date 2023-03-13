@@ -669,7 +669,8 @@ class Disassembler:
 
     def _read_disass(self, start_addr, stop_addr):
         output = subprocess.run(
-                ['m68k-amigaos-objdump', '-d', '-C', '--insn-width=10',
+                ['m68k-amigaos-objdump', '-d', '-C',
+                 # '--insn-width=10',
                  f'--start-address={start_addr}',
                  f'--stop-address={stop_addr}',
                  self._path], capture_output=True)

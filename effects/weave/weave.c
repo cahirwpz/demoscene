@@ -270,10 +270,10 @@ static void Init(void) {
   /* Place sprites 0-3 above playfield, and 4-7 below playfield. */
   custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P1 | BPLCON2_PF1P1;
 
-  SpriteUpdatePos(&stripes0, X(0), Y(0));
-  SpriteUpdatePos(&stripes1, X(0), Y(0));
-  SpriteUpdatePos(&stripes2, X(0), Y(0));
-  SpriteUpdatePos(&stripes3, X(0), Y(0));
+  SpriteUpdatePos(&stripes[0], X(0), Y(0));
+  SpriteUpdatePos(&stripes[1], X(0), Y(0));
+  SpriteUpdatePos(&stripes[2], X(0), Y(0));
+  SpriteUpdatePos(&stripes[3], X(0), Y(0));
 
   cp[0] = NewCopList(COPLIST_SIZE);
   cp[1] = NewCopList(COPLIST_SIZE);

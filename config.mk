@@ -1,0 +1,29 @@
+# 1 => Use fs-uae dependant features i.e. call-traps (see `include/uae.h`)
+#      to aid debugging and profiling. This may render executable files
+#      unusable (most likely crash) on real hardware.
+# 0 => Disable use of aforementioned features. Required for a release!
+UAE := 1
+
+# [only when UAE=0] Redirect diagnostic and log messages to:
+# 0 => null output (drop messages)
+# 1 => parallel port
+# 2 => serial port
+LOGOUT := 2
+
+# 1 => Make executable files compatible with AmigaOS. Created ADFs will
+#      be formatted with Old Filesystem (KS1.3) and contain special bootblock
+#      that maximizes amount of chip memory. Executable file will be started
+#      automatically facilitating `startup-sequence` feature of AmigaDOS.
+# 0 => Executable files must be started from ROM or ADF since they require
+#      custom environment created by bootstrap code.
+AMIGAOS := 0
+
+# [only when AMIGAOS=1] Amount of chip and fast (or public) memory 
+# (in kilobytes!) passed to our custom memory allocator.
+# To calculate total memory taken after an executable file
+# is loaded into memory please use `m68k-amigaos-objdump` tool.
+CHIPMEM := 160
+FASTMEM := 288
+
+# Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
+VERBOSE ?= 0

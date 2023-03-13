@@ -9,6 +9,6 @@ PNG2C.city-top-2 := --bitmap city_top,320x70x4 --palette city_top_pal,16
 PNG2C.city-bottom-2 := --bitmap city_bottom,320x70x4 --palette city_bottom_pal,16
 PNG2C.car-left-2 := --bitmap car_left,32x10x4 --palette car_left_pal,16
 PNG2C.car-right-2 := --bitmap car_right,32x10x4 --palette car_right_pal,16
-PNG2C.sprite := --sprite sprite,24,8,+array --palette sprite_pal,4
+PNG2C.sprite := --sprite sprite,24,8 --palette sprite_pal,4
 
 include $(TOPDIR)/build/effect.mk

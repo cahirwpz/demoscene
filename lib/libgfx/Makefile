@@ -11,6 +11,7 @@ SOURCES := \
 	ColorTransition.c \
 	CopListActivate.c \
 	CopLoadColor.c \
+	CopLoadColorArray.c \
 	CopLoadPal.c \
 	CopSetupBitplaneArea.c \
 	CopSetupBitplaneFetch.c \

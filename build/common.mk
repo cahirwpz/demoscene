@@ -28,14 +28,19 @@ LDSCRIPT := $(TOPDIR)/system/amiga.lds
 
 # Don't reload library base for each call
 CPPFLAGS += -D__CONSTLIBBASEDECL__=const
+CPPFLAGS += -DCHIPMEM_KB=$(CHIPMEM) -DFASTMEM_KB=$(FASTMEM) -DLOGOUT=$(LOGOUT)
 
-# Default configuration
-FRAMES_PER_ROW ?= 6
+include $(TOPDIR)/config.mk
 
+ifeq ($(UAE), 1)
 CPPFLAGS += -DUAE
+endif
 
-# Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
-ifneq ($(VERBOSE), 1)
+ifeq ($(AMIGAOS), 1)
+CPPFLAGS += -DAMIGAOS
+endif
+
+ifeq ($(VERBOSE), 0)
 .SILENT:
 QUIET := --quiet
 endif
@@ -99,7 +104,7 @@ CLEAN-FILES += $(SOURCES:%=%~)
 
 %.o: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
-	$(VASM) -Fhunk $(VASMFLAGS) -o $@ $<
+	$(VASM) -Fhunk $(VASMFLAGS) $(VASMFLAGS.$*) -o $@ $<
 
 %.bin: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"

@@ -84,7 +84,7 @@ static void Load(void) {
     short xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
     short yo = Y((HEIGHT - 128) / 2);
 
-    SpriteUpdatePos(thunder[i], xo, yo);
+    SpriteUpdatePos(&thunder[i], xo, yo);
   }
 
   FloorPrecalc();
@@ -396,8 +396,8 @@ static void MakeFloorCopperList(short yo, short kyo) {
   {
     short i = mod16(frameCount, 10) * 2;
 
-    CopInsSetSprite(sprptr[0], thunder[i]);
-    CopInsSetSprite(sprptr[1], thunder[i+1]);
+    CopInsSetSprite(sprptr[0], &thunder[i]);
+    CopInsSetSprite(sprptr[1], &thunder[i+1]);
   }
 
   /* Clear out the colors. */
