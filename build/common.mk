@@ -58,6 +58,7 @@ LWO2C := $(TOPDIR)/tools/lwo2c.py $(QUIET)
 CONV2D := $(TOPDIR)/tools/conv2d.py
 GRADIENT := $(TOPDIR)/tools/gradient.py
 TMXCONV := $(TOPDIR)/tools/tmxconv/tmxconv
+MAKETMX := $(TOPDIR)/tools/maketmx/maketmx
 PCHG2C := $(TOPDIR)/tools/pchg2c/pchg2c
 PNG2C := $(TOPDIR)/tools/png2c.py
 PSF2C := $(TOPDIR)/tools/psf2c.py
