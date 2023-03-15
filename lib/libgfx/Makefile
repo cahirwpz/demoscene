@@ -26,6 +26,7 @@ SOURCES := \
 	DeleteCopList.c \
 	DeletePixmap.c \
 	EndSprite.c \
+	HsvToRgb.c \
 	InitSharedBitmap.c \
 	InsideArea.c \
 	LoadPalette.c \
