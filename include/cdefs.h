@@ -15,7 +15,15 @@
 #undef __aligned
 #define __aligned(x) __attribute__((aligned(x)))
 
+/* Annotate variable to be put into text section. This should be used only on
+ * scalar variable if you want it to be accessed with PC-relative addressing.
+ * This saves 4 cycles / 2 bytes of instruction memory / 1 relocation. */
+#define __code __attribute__((section(".text")))
+/* Annotate initialized variable to be put into memory accessible
+ * by custom chipset. */
 #define __data_chip __attribute__((section(".datachip")))
+/* Annotate uninitialized variable to be put into memory accessible
+ * by custom chipset. */
 #define __bss_chip __attribute__((section(".bsschip")))
 
 #if __GNUC_PREREQ__(4, 1)
