@@ -29,10 +29,6 @@ void CpuLine(short xs asm("d0"), short ys asm("d1"),
   color = 0x8000 >> (xs & 15);
 
   dy = ye - ys;
-
-  if (dy == 0)
-    return;
-
   dx = abs(xe - xs);
 
   if (dx < dy) {
