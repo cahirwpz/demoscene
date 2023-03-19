@@ -101,6 +101,7 @@ typedef struct Profile {
   u_short count;
 } ProfileT;
 
+#if PROFILER
 #define PROFILE(NAME)                                                          \
   static ProfileT *_##NAME##_profile = &(ProfileT){                            \
     .name = #NAME,                                                             \
@@ -113,6 +114,11 @@ typedef struct Profile {
 
 #define ProfilerStart(NAME) _ProfilerStart(_##NAME##_profile)
 #define ProfilerStop(NAME) _ProfilerStop(_##NAME##_profile)
+#else
+#define PROFILE(NAME)
+#define ProfilerStart(NAME)
+#define ProfilerStop(NAME)
+#endif
 
 /* Puts a task into sleep waiting for Vertical Blank interrupt.
  * Let's background task do its job. */

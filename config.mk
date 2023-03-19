@@ -18,6 +18,12 @@ LOGOUT := 2
 #      custom environment created by bootstrap code.
 AMIGAOS := 0
 
+# 1 => Turn on profiler that reports minimum-average-maximum number of raster
+#      lines measured between calls to ProfilerStart / ProfilerStop.
+#      The measurement is reported every 50 frames (i.e. once a second).
+# 0 => Disable the profiler.
+PROFILER := 1
+
 # [only when AMIGAOS=1] Amount of chip and fast (or public) memory 
 # (in kilobytes!) passed to our custom memory allocator.
 # To calculate total memory taken after an executable file
