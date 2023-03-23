@@ -1,4 +1,5 @@
 #include <debug.h>
+#include <system/cpu.h>
 #include <system/exception.h>
 #include <system/interrupt.h>
 #include <system/task.h>
@@ -22,6 +23,23 @@ void SetIntVector(u_int irq, IntHandlerT code, void *data) {
   IntVecEntryT *iv = &IntVec[irq];
   iv->code = code ? code : DummyInterruptHandler;
   iv->data = data;
+}
+
+#if MULTITASK
+#define IntrNest CurrentTask->intrNest
+#else
+static __code short IntrNest = 0;
+#endif
+
+void IntrEnable(void) {
+  Assume(IntrNest > 0);
+  if (--IntrNest == 0)
+    CpuIntrEnable();
+}
+
+void IntrDisable(void) {
+  CpuIntrDisable();
+  IntrNest++;
 }
 
 /* List of interrupt servers. */

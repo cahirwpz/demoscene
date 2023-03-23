@@ -71,6 +71,7 @@ ENTRY(EnterIntr)
 END(EnterIntr)
 
 ENTRY(LeaveIntr)
+#if MULTITASK
         /*
          * Check if we need to reschedule a task - usually as a result waking
          * up a higher priorty task while running interrupt service routine.
@@ -91,6 +92,7 @@ ENTRY(LeaveIntr)
         clr.b   (a0)                    /* clear reschedule flag */
         movem.l (sp)+,d0-d1/a0-a1       /* restore registers */
         jra     _L(YieldHandler)+4      /* force a task switch (skip or.w to sr) */
+#endif
 
 .Lnoswitch:
         movem.l (sp)+,d0-d1/a0-a1
@@ -140,10 +142,12 @@ END(DummyInterruptHandler)
         rte                             /* restore SR and PC */
 .endm
 
+#if MULTITASK
 ENTRY(YieldHandler)
         SAVECTX
         jsr     _L(TaskSwitch)
         LOADCTX
 END(YieldHandler)
+#endif
 
 # vim: ft=gas:ts=8:sw=8:noet:

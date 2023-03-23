@@ -21,8 +21,15 @@ AMIGAOS := 0
 # 1 => Turn on profiler that reports minimum-average-maximum number of raster
 #      lines measured between calls to ProfilerStart / ProfilerStop.
 #      The measurement is reported every 50 frames (i.e. once a second).
-# 0 => Disable the profiler.
 PROFILER := 1
+
+# 1 => Enable multitasking feature. It can be necessary to run background thread
+#      that loads data from disk while the effects are running.
+MULTITASK := 1
+
+# 1 => Enable dynamic memory allocation debugging incl. nice diagnostic printout
+#      when memory corruption is detected or we run out of memory.
+MEMDEBUG := 1
 
 # [only when AMIGAOS=1] Amount of chip and fast (or public) memory 
 # (in kilobytes!) passed to our custom memory allocator.

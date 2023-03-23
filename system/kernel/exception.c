@@ -30,7 +30,7 @@ void SetupExceptionVector(BootDataT *bd) {
   ExcVec[EXC_FMTERR] = FmtErrTrap;
 
   /* Intialize TRAP instruction handlers. */
-  ExcVec[EXC_TRAP(0)] = YieldHandler;
+  ExcVec[EXC_TRAP(0)] = MULTITASK ? YieldHandler : TrapInstTrap;
 
   for (i = EXC_TRAP(1); i <= EXC_TRAP(15); i++)
     ExcVec[i] = TrapInstTrap;

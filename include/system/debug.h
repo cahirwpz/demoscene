@@ -14,7 +14,7 @@ void Log(const char *format, ...)
 __noreturn void Panic(const char *format, ...)
   __attribute__ ((format (printf, 1, 2)));
 #else
-#define Log(...)
+#define Log(...) ((void)0)
 #define Panic(...) HALT()
 #endif
 #endif

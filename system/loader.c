@@ -69,11 +69,13 @@ void Loader(BootDataT *bd) {
   /* Lower interrupt priority level to nominal. */
   SetIPL(IPL_NONE);
 
+#if MULTITASK
   TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
+#endif
   CallFuncList(&__INIT_LIST__);
 
   {
-    int retval = main();
+    __unused int retval = main();
     Log("[Loader] main() returned %d.\n", retval);
   }
 

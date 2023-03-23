@@ -120,9 +120,13 @@ typedef struct Profile {
 #define ProfilerStop(NAME)
 #endif
 
+#if MULTITASK
 /* Puts a task into sleep waiting for Vertical Blank interrupt.
  * Let's background task do its job. */
 void TaskWaitVBlank(void);
+#else
+#define TaskWaitVBlank WaitVBlank
+#endif
 
 void _ProfilerStart(ProfileT *prof);
 void _ProfilerStop(ProfileT *prof);

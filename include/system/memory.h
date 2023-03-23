@@ -20,8 +20,13 @@
 #endif
 
 #ifdef _SYSTEM
+#if MEMDEBUG
 void MemCheck(int verbose);
 u_int MemAvail(u_int attributes);
+#else
+#define MemCheck(_) { (void)0; }
+#define MemAvail(_) 0
+#endif
 void AddMemory(void *ptr, u_int byteSize, u_int attributes);
 #endif
 
