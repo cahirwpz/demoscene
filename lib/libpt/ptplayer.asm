@@ -2,27 +2,29 @@
 ;*    ----- Protracker V2.3B Playroutine -----	  *
 ;**************************************************
 ;
-; Version 6.2
-; Written by Frank Wille in 2013, 2016, 2017, 2018, 2019, 2020, 2021, 2022.
+; Version 6.1
+; Written by Frank Wille in 2013, 2016, 2017, 2018, 2019, 2020.
 ;
 ; I, the copyright holder of this work, hereby release it into the
 ; public domain. This applies worldwide.
+;
+; 6.1 minimal (unofficial) - Antiriad's mods for small executable size
+; - Removed SDATA code.
+; - mt_data is in BSS (no longer completely PC relative, focused on exe size)
+; - Period and finetune table generated in code saving about 1KB.
+; - Vibrato sine table generate in code saving about 1KB.
+; - VUMeter trigger added in _mt_VUMeter which allows for demo/music sync effects with playing notes
 ;
 ; The default version (single section, local base register) should
 ; work with most assemblers. Tested are: Devpac, vasm, PhxAss,
 ; Barfly-Asm, SNMA, AsmOne, AsmPro.
 ;
-; The small data model can be enabled by defining the symbol SDATA. In
-; this case all functions expect a4 to be initialised with the small
-; data base register. Interrupt functions restore a4 from _LinkerDB.
-; Small data may work with vasm and PhxAss only.
-;
 ; Exported functions and variables:
 ; (CUSTOM is the custom-chip register set base address $dff000.)
 ;
 ; _mt_install_cia(a6=CUSTOM, a0=VectorBase, d0=PALflag.b)
-;   Install a CIA-B interrupt for calling mt_music or mt_sfxonly.
-;   The music module is replayed via mt_music when _mt_Enable is non-zero.
+;   Install a CIA-B interrupt for calling _mt_music or mt_sfxonly.
+;   The music module is replayed via _mt_music when _mt_Enable is non-zero.
 ;   Otherwise the interrupt handler calls mt_sfxonly to play sound
 ;   effects only. VectorBase is 0 for 68000, otherwise set it to the CPU's
 ;   VBR register. A non-zero PALflag selects PAL-clock for the CIA timers
@@ -45,9 +47,9 @@
 ;             d0=SampleLength.w, d1=SamplePeriod.w, d2=SampleVolume.w)
 ;   Request playing of an external sound effect on the most unused channel.
 ;   This function is for compatibility with the old API only.
-;   You should call _mt_playfx instead. MINIMAL=0 only.
+;   You should call _mt_playfx instead. !MINIMAL only.
 ;
-; channelStatus(d0) = _mt_playfx(a6=CUSTOM, a0=SfxStructurePointer)
+; channelStatus = _mt_playfx(a6=CUSTOM, a0=SfxStructurePointer)
 ;   Request playing of a prioritized external sound effect, either on a
 ;   fixed channel or on the most unused one.
 ;   Structure layout of SfxStructure:
@@ -64,7 +66,7 @@
 ;   completely been replayed.
 ;   Returns a pointer to a channel-status structure when the sample
 ;   is scheduled for playing, and NULL when the request was ignored.
-;   MINIMAL=0 only.
+;   !MINIMAL only.
 ;
 ; _mt_loopfx(a6=CUSTOM, a0=SfxStructurePointer)
 ;   Request playing of a looped sound effect on a fixed channel, which
@@ -76,43 +78,35 @@
 ;   Also make sure the sample starts with a zero-word, which is used
 ;   for idling when the effect is stopped. This word is included in the
 ;   total length calculation, but excluded when actually playing the loop.
-;   MINIMAL=0 only.
+;   !MINIMAL only.
 ;
 ; _mt_stopfx(a6=CUSTOM, d0=Channel.b)
 ;   Immediately stop a currently playing sound effect on a channel (0..3)
 ;   and make it available for music, or other effects, again. This is the
 ;   only way to stop a looped sound effect (_mt_loopfx), besides stopping
-;   replay completely (_mt_end). MINIMAL=0 only.
+;   replay completely (_mt_end). !MINIMAL only.
 ;
 ; _mt_musicmask(a6=CUSTOM, d0=ChannelMask.b)
 ;   Bits set in the mask define which specific channels are reserved
 ;   for music only. Set bit 0 for channel 0, ..., bit 3 for channel 3.
 ;   When calling _mt_soundfx or _mt_playfx with automatic channel selection
 ;   (sfx_cha=-1) then these masked channels will never be picked.
-;   The mask defaults to 0. MINIMAL=0 only.
+;   The mask defaults to 0. !MINIMAL only.
 ;
 ; _mt_mastervol(a6=CUSTOM, d0=MasterVolume.w)
 ;   Set a master volume from 0 to 64 for all music channels.
 ;   Note that the master volume does not affect the volume of external
-;   sound effects (which is desired). MINIMAL=0 only.
+;   sound effects (which is desired). !MINIMAL only.
 ;
 ; _mt_samplevol(d0=SampleNumber.w, d1=Volume.b)
 ;   Redefine a sample's volume. May also be done while the song is playing.
 ;   Warning: Does not check arguments for valid range! You must have done
 ;   _mt_init before calling this function!
 ;   The new volume is persistent. Even when the song is restarted.
-;   MINIMAL=0 only.
-;
-; _mt_channelmask(a6=CUSTOM, d0=ChannelMask.b)
-;  Bits cleared in the mask define which specific channels are muted
-;  for music replay. Clear bit 0 for channel 0, ..., bit 3 for channel 3.
-;  The mask defaults to all channels unmuted (bits set) and is reset to
-;  this state on _mt_init and _mt_end. MINIMAL=0 only.
+;   !MINIMAL only.
 ;
 ; _mt_music(a6=CUSTOM)
-;   The replayer routine. Can be called from your own VBlank interrupt
-;   handler when VBLANK_MUSIC is set. Is otherwise called automatically
-;   by Timer-A interrupts after _mt_install_cia.
+;   The replayer routine. Is called automatically after _mt_install_cia.
 ;
 ; Byte Variables:
 ;
@@ -129,21 +123,21 @@
 ;   This byte defines the number of channels which should be dedicated
 ;   for playing music. So sound effects will never use more
 ;   than 4 - _mt_MusicChannels channels at once. Defaults to 0.
-;   MINIMAL=0 only.
+;   !MINIMAL only.
 ;
 
 ; Optionally you can build a minimal version, which includes just
 ; the player. No sound effects insert, no master volume, no sample
 ; volume, etc. Define the symbol MINIMAL=1 for it.
 	ifnd	MINIMAL
-MINIMAL		equ	0
+MINIMAL		equ	1
 	endc
 
 ; You may disable sawtooth and rectangle vibratos/tremolos here, which
 ; will be replaced by sine-waves. They are rarely used and disabling
 ; them will free a lot of memory for the tables.
 	ifnd	ENABLE_SAWRECT
-ENABLE_SAWRECT	equ	1
+ENABLE_SAWRECT	equ	0
 	endc
 
 ; Set this if you can guarantee that the word at $0 is cleared and if
@@ -151,14 +145,10 @@ ENABLE_SAWRECT	equ	1
 	ifnd	NULL_IS_CLEARED
 NULL_IS_CLEARED	equ	0
 	endc
-
-; This disables initialization of CIA Timer-A interrupts for music
-; replay, which means you cannot set the tempo with the F-command
-; anymore and you have to call _mt_music yourself out of your own
-; VBlank interrupt handler. Also sound effects will no longer work,
-; when no music is playing (_mt_Enable=0).
-	ifnd	VBLANK_MUSIC
-VBLANK_MUSIC	equ	0
+	
+;Antiriad: Added vumeter polling for syncing demos
+	ifnd	ENABLE_VUMETER
+ENABLE_VUMETER	equ	1
 	endc
 
 ; Delay in CIA-ticks, which guarantees that at least one Audio-DMA
@@ -168,13 +158,21 @@ VBLANK_MUSIC	equ	0
 DMADELAY	equ	576		; was 496
 
 
-; Custom chip registers
+; Custom chip registers - try and catch predefined EQUs - if it fails sort this
+; out yourself :)
+	ifnd CUSTOM
 CUSTOM		equ	$dff000
+	endc	;CUSTOM
+
+	ifnd INTREQR
 INTREQR		equ	$01e
 INTENAR		equ	$01c
 DMACON		equ	$096
 INTENA		equ	$09a
 INTREQ		equ	$09c
+	endc	;INTREQR
+
+	ifnd AUD0LC
 AUD0LC		equ	$0a0
 AUD0LEN		equ	$0a4
 AUD0VOL		equ	$0a8
@@ -187,16 +185,23 @@ AUD2VOL		equ	$0c8
 AUD3LC		equ	$0d0
 AUD3LEN		equ	$0d4
 AUD3VOL		equ	$0d8
+	endc	;AUD0LC
 
 ; Audio channel registers
+	ifnd	AUDLC
 AUDLC		equ	0
 AUDLEN		equ	4
 AUDPER		equ	6
 AUDVOL		equ	8
+	endc	;AUDLC
 
 ; CIA registers
+	ifnd	CIAA
 CIAA		equ	$bfe001
 CIAB		equ	$bfd000
+	endc	;CIAA
+
+	ifnd	CIATALO
 CIAPRA		equ	$000
 CIATALO		equ	$400
 CIATAHI		equ	$500
@@ -205,7 +210,7 @@ CIATBHI		equ	$700
 CIAICR		equ	$d00
 CIACRA		equ	$e00
 CIACRB		equ	$f00
-
+	endc	;CIATALO
 
 ; Sound effects structure, passed into _mt_playfx
 		rsreset
@@ -264,33 +269,22 @@ n_retrigcount	rs.b	1
 	ifeq	MINIMAL
 n_freecnt	rs.b	1
 n_musiconly	rs.b	1
-n_enable	rs.b	1
+n_reserved2	rs.b	1
 	else
 n_reserved2	rs.b	3
 	endc
 n_sizeof	rs.b	0
 
-
-	ifd	SDATA
-	xref	_LinkerDB		; small data base from linker
-	near	a4
-	code
-	endc
-
-
-
 ;---------------------------------------------------------------------------
 	xdef	_mt_install_cia
 _mt_install_cia:
-; Install a CIA-B interrupt for calling mt_music.
+; Install a CIA-B interrupt for calling _mt_music.
 ; a6 = CUSTOM
 ; a0 = VectorBase
 ; d0 = PALflag.b (0 is NTSC)
 
-	ifnd	SDATA
 	move.l	a4,-(sp)
-	lea	mt_data(pc),a4
-	endc
+	lea	mt_data,a4
 
 	clr.b	mt_Enable(a4)
 
@@ -324,7 +318,6 @@ _mt_install_cia:
 	move.b	CIATBLO(a0),(a1)+
 	move.b	CIATBHI(a0),(a1)
 
-	ifeq	VBLANK_MUSIC
 	; determine if 02 clock for timers is based on PAL or NTSC
 	tst.b	d0
 	bne	.1
@@ -339,7 +332,6 @@ _mt_install_cia:
 	lsr.w	#8,d0
 	move.b	d0,CIATAHI(a0)
 	move.b	#$11,CIACRA(a0)		; load timer, start continuous
-	endc	; !VBLANK_MUSIC
 
 	; load TimerB with DMADELAY ticks for setting DMA and repeat
 	move.b	#DMADELAY&255,CIATBLO(a0)
@@ -348,11 +340,7 @@ _mt_install_cia:
 	; Ack. pending interrupts, TimerA and TimerB interrupt enable
 	tst.b	CIAICR(a0)
 	move.w	#$2000,INTREQ(a6)
-	ifne	VBLANK_MUSIC
-	move.b	#$82,CIAICR(a0)		; TimerB only for VBLANK_MUSIC
-	else
 	move.b	#$83,CIAICR(a0)
-	endc
 
 	; enable level 6 interrupts
 	move.w	#$a000,INTENA(a6)
@@ -366,10 +354,8 @@ _mt_remove_cia:
 ; Remove CIA-B music interrupt and restore the old vector.
 ; a6 = CUSTOM
 
-	ifnd	SDATA
 	move.l	a4,-(sp)
-	lea	mt_data(pc),a4
-	endc
+	lea	mt_data,a4
 
 	; disable level 6 and CIA-B interrupts
 	lea	CIAB,a0
@@ -398,36 +384,24 @@ _mt_remove_cia:
 	; reenable previous level 6 interrupt
 	move.w	mt_Lev6Ena(a4),INTENA(a6)
 
-	ifnd	SDATA
 	move.l	(sp)+,a4
-	endc
 	rts
 
 
 ;---------------------------------------------------------------------------
 mt_TimerAInt:
-; TimerA interrupt calls mt_music at a selectable tempo (Fxx command),
+; TimerA interrupt calls _mt_music at a selectable tempo (Fxx command),
 ; which defaults to 50 times per second.
 
 	; check for TB interrupt and clear CIAB interrupt flags
 	btst	#1,CIAB+CIAICR
 	bne	mt_TimerBInt
 
-	ifne	VBLANK_MUSIC
-	move.w	#$2000,CUSTOM+INTREQ	; ack interrupt and leave
-	nop
-	rte
-
-	else
 	; Now it should be a TA interrupt.
 	; Other level 6 interrupt sources have to be handled elsewhere.
 	movem.l	d0-d7/a0-a6,-(sp)
 	lea	CUSTOM,a6
-	ifd	SDATA
-	lea	_LinkerDB,a4
-	else
-	lea	mt_data(pc),a4
-	endc
+	lea	mt_data,a4
 
 	; clear EXTER interrupt flag
 	move.w	#$2000,INTREQ(a6)
@@ -440,7 +414,7 @@ mt_TimerAInt:
 	beq	.1
 	endc
 
-	bsr	mt_music		; music with sfx inserted
+	bsr	_mt_music		; music with sfx inserted
 .1:	movem.l	(sp)+,d0-d7/a0-a6
 	nop
 	rte
@@ -451,7 +425,6 @@ mt_TimerAInt:
 	nop
 	rte
 	endc
-	endc	; !VBLANK_MUSIC
 
 
 ;---------------------------------------------------------------------------
@@ -496,11 +469,7 @@ mt_TimerBsetrep:
 	move.l	a4,d0
 
 	; set repeat sample pointers and lengths
-	ifd	SDATA
-	lea	_LinkerDB,a4
-	else
-	lea	mt_data(pc),a4
-	endc
+	lea	mt_data,a4
 	move.l	mt_chan1+n_loopstart(a4),AUD0LC-INTREQ(a0)
 	move.w	mt_chan1+n_replen(a4),AUD0LEN-INTREQ(a0)
 	move.l	mt_chan2+n_loopstart(a4),AUD1LC-INTREQ(a0)
@@ -517,6 +486,118 @@ mt_TimerBsetrep:
 
 
 ;---------------------------------------------------------------------------
+; Antiriad:
+; Generates an accurate period/finetune table in ~140 bytes
+; In: a4, mt_data
+;
+; See: https://eab.abime.net/showpost.php?p=1416034&postcount=47
+
+mt_generate_period_table:
+	movem.l	d2-d5,-(sp)
+
+	lea	mt_PeriodTable(a4),a0
+	lea	.seeds(pc),a1
+	moveq	#0,d3
+	moveq	#16-1,d5		;16 tuning tables
+.tloop:
+	move.w	(a1)+,d0		;get 'patched' semitone-up period *64
+	move.l	(a1)+,d2		;get correction bitmap
+	moveq	#36-1,d4		;36 words per table
+.loop1:
+	mulu	#$F1A8,d0	        ;~1/(2^(1/12))*65536 - 0.16 fixed point
+	swap.w	d0			;/65536
+	move.w	d0,d1
+	lsr.w	#6,d1			;/64
+	add.l	d2,d2
+	subx.w	d3,d1
+	move.w	d1,(a0)+
+	dbf	d4,.loop1
+	dbf	d5,.tloop
+
+	; Create the finetune lookup table. This is a word offset like so:
+;mt_PerFineTune: (16 words)
+;	dc.w	mt_Tuning0-mt_PerFineTune,mt_Tuning1-mt_PerFineTune
+;	dc.w	mt_Tuning2-mt_PerFineTune,mt_Tuning3-mt_PerFineTune
+;	dc.w	mt_Tuning4-mt_PerFineTune,mt_Tuning5-mt_PerFineTune
+;	dc.w	mt_Tuning6-mt_PerFineTune,mt_Tuning7-mt_PerFineTune
+;	dc.w	mt_TuningM8-mt_PerFineTune,mt_TuningM7-mt_PerFineTune
+;	dc.w	mt_TuningM6-mt_PerFineTune,mt_TuningM5-mt_PerFineTune
+;	dc.w	mt_TuningM4-mt_PerFineTune,mt_TuningM3-mt_PerFineTune
+;	dc.w	mt_TuningM2-mt_PerFineTune,mt_TuningM1-mt_PerFineTune
+;mt_PeriodTable:
+;mt_Tuning0:	
+
+	;mt_PerfFineTune is 16 words, each tuning table is 36 words
+	lea	mt_PerFineTune(a4),a0
+	moveq	#16*2,d0		;First offset is just the size of mt_PerfFineTune
+	moveq	#16-1,d1		;16 tables
+	moveq	#36*2,d2		;table size
+.floop:
+	move.w	d0,(a0)+
+	add.w	d2,d0
+	dbf	d1,.floop
+
+	movem.l	(sp)+,d2-d5
+	rts
+
+.seeds:
+	dc.w	$E2B4,$0FC0,$F920	;mt_Tuning0
+	dc.w	$E159,$69D5,$E000	;mt_Tuning1
+	dc.w	$DF8C,$0000,$0000	;mt_Tuning2
+	dc.w	$DE31,$3B67,$A080	;mt_Tuning3
+	dc.w	$DC64,$0006,$0000	;mt_Tuning4
+	dc.w	$DAC2,$0000,$0400	;mt_Tuning5
+	dc.w	$D977,$F5F2,$C840	;mt_Tuning6
+	dc.w	$D7AF,$1200,$0000	;mt_Tuning7
+	dc.w	$F036,$07E0,$7C90	;mt_TuningM8
+	dc.w	$EE85,$0200,$1120	;mt_TuningM7
+	dc.w	$ECCC,$0000,$0000	;mt_TuningM6
+	dc.w	$EB62,$9DB3,$D040	;mt_TuningM5
+	dc.w	$E96E,$0023,$0000	;mt_TuningM4
+	dc.w	$E7BF,$0000,$0200	;mt_TuningM3
+	dc.w	$E632,$9868,$4000	;mt_TuningM2
+	dc.w	$E461,$0000,$0000	;mt_TuningM1
+
+
+;---------------------------------------------------------------------------
+; Antiriad:
+; Generates the sine vibrato table. Thanks to a/b.
+; In: a4, mt_data
+;
+; See: https://eab.abime.net/showpost.php?p=1465997&postcount=132
+
+mt_generate_vib_sine_table:
+	move.l	d2,-(sp)
+
+	lea	(mt_VibratoSineTable_End-64)(a4),a1
+	moveq	#15*2,d2
+.VTLoop1
+	lea	(.table,pc),a0
+	moveq	#64/2-1,d1
+.VTLoop2
+	move.w	(a0)+,d0
+	mulu.w	d2,d0
+	swap	d0
+	move.b	d0,(a1)+
+	neg.b	d0
+	move.b	d0,(32-1,a1)
+	dbf	d1,.VTLoop2
+	lea	(-64/2-64,a1),a1
+	subq.w	#1*2,d2
+	bge.b	.VTLoop1
+
+	move.l	(sp)+,d2
+	rts
+
+.table
+	dc.w	$0000,$1800,$3100,$4a00,$6100,$7800,$8d00,$a100
+	dc.w	$b400,$c500,$d400,$e000,$eb00,$f400,$fa00,$fd00
+	dc.w	$ff00,$fd00,$fa00,$f400,$eb00,$e000,$d400,$c500
+	dc.w	$b400,$a100,$8d00,$7800,$6100,$4a00,$3100,$1800
+
+
+;---------------------------------------------------------------------------
+
 	xdef	_mt_init
 _mt_init:
 ; Initialize new module.
@@ -527,10 +608,8 @@ _mt_init:
 ; a1 = sample pointer (NULL means samples are stored within the module)
 ; d0 = initial song position
 
-	ifnd	SDATA
 	move.l	a4,-(sp)
-	lea	mt_data(pc),a4
-	endc
+	lea	mt_data,a4
 
 	move.l	a0,mt_mod(a4)
 	movem.l	d2/a2,-(sp)
@@ -559,7 +638,8 @@ _mt_init:
 	moveq	#10,d0
 	asl.l	d0,d2
 	lea	(a0,d2.l),a1
-	add.w	#1084,a1
+	;add.w	#1084,a1
+	lea	1084(a1),a1	;Antiriad
 
 	; save start address of each sample and do some fixes for broken mods
 .4:	lea	mt_SampleStarts(a4),a2
@@ -579,14 +659,18 @@ _mt_init:
 
 	movem.l	(sp)+,d2/a2
 
-	ifeq	VBLANK_MUSIC
 	; reset CIA timer A to default (125)
 	move.l	mt_timerval(a4),d0
 	divu	#125,d0
 	move.b	d0,CIAB+CIATALO
 	lsr.w	#8,d0
 	move.b	d0,CIAB+CIATAHI
-	endc
+
+	;Antiriad - generator code
+	bsr	mt_generate_period_table	;Create period table
+	bsr	mt_generate_vib_sine_table	;Create sine vibrato table
+	;Antiriad - end
+	;Fallthrough to mt_reset
 
 mt_reset:
 ; a4 must be initialised with base register
@@ -595,18 +679,13 @@ mt_reset:
 	move.b	#6,mt_Speed(a4)
 	clr.b	mt_Counter(a4)
 	clr.w	mt_PatternPos(a4)
-	clr.b	mt_PattDelTime(a4)
-	clr.b	mt_PattDelTime2(a4)
-	clr.w	mt_PBreakPos(a4)
-	clr.b	mt_PBreakFlag(a4)
-	clr.b	mt_PosJumpFlag(a4)
 
 	; disable the filter
 	or.b	#2,CIAA+CIAPRA
 
 	ifeq	MINIMAL
 	; set master volume to 64
-	lea	MasterVolTab64(pc),a0
+	lea	MasterVolTab64(pc),a0	
 	move.l	a0,mt_MasterVolTab(a4)
 	endc
 
@@ -626,15 +705,26 @@ mt_reset:
 	move.w	#$0200,mt_chan3+n_intbit(a4)
 	move.w	#$0400,mt_chan4+n_intbit(a4)
 
+	; make sure n_period doesn't start as 0
+	move.w	#320,d0
+	move.w	d0,mt_chan1+n_period(a4)
+	move.w	d0,mt_chan2+n_period(a4)
+	move.w	d0,mt_chan3+n_period(a4)
+	move.w	d0,mt_chan4+n_period(a4)
+
+	; disable sound effects
+	clr.w	mt_chan1+n_sfxlen(a4)
+	clr.w	mt_chan2+n_sfxlen(a4)
+	clr.w	mt_chan3+n_sfxlen(a4)
+	clr.w	mt_chan4+n_sfxlen(a4)
+
 	clr.b	mt_E8Trigger(a4)
 	ifeq	MINIMAL
 	clr.b	mt_SongEnd(a4)
 	clr.b	mt_SilCntValid(a4)
 	endc
 
-	ifnd	SDATA
 	move.l	(sp)+,a4
-	endc
 
 
 ;---------------------------------------------------------------------------
@@ -643,54 +733,19 @@ _mt_end:
 ; Stop playing current module.
 ; a6 = CUSTOM
 
-	move.w	#$4000,INTENA(a6)
-	ifd	SDATA
-	clr.b	mt_Enable(a4)
-	lea	mt_chan1(a4),a0
-	bsr	resetch
-	lea	mt_chan2(a4),a0
-	bsr	resetch
-	lea	mt_chan3(a4),a0
-	bsr	resetch
-	lea	mt_chan4(a4),a0
-	bsr	resetch
-	else
-	lea	mt_data(pc),a1
-	clr.b	mt_Enable(a1)
-	lea	mt_chan1(a1),a0
-	bsr	resetch
-	lea	mt_chan2(a1),a0
-	bsr	resetch
-	lea	mt_chan3(a1),a0
-	bsr	resetch
-	lea	mt_chan4(a1),a0
-	bsr	resetch
-	endc
+	lea	mt_data,a0
+	clr.b	mt_Enable(a0)
+	clr.w	mt_chan1+n_volume(a0)
+	clr.w	mt_chan2+n_volume(a0)
+	clr.w	mt_chan3+n_volume(a0)
+	clr.w	mt_chan4+n_volume(a0)
+
 	moveq	#0,d0
 	move.w	d0,AUD0VOL(a6)
 	move.w	d0,AUD1VOL(a6)
 	move.w	d0,AUD2VOL(a6)
 	move.w	d0,AUD3VOL(a6)
 	move.w	#$000f,DMACON(a6)
-	move.w	#$c000,INTENA(a6)
-	rts
-
-
-resetch:
-; a0 = channel status
-; All registers are preserved!
-
-	move.w	#320,n_period(a0)	; make sure period is not illegal
-	clr.w	n_volume(a0)
-	clr.w	n_sfxlen(a0)
-	clr.w	n_funk(a0)
-	clr.b	n_sfxpri(a0)
-	clr.b	n_looped(a0)
-	clr.b	n_gliss(a0)
-        ifeq    MINIMAL
-	clr.b	n_musiconly(a0)
-	st	n_enable(a0)
-        endc
 	rts
 
 
@@ -730,12 +785,8 @@ _mt_playfx:
 ;      0: ptr, 4: len.w, 6: period.w, 8: vol.w, 10: channel.b, 11: priority.b
 ; -> d0 = pointer to channel status or NULL when sample was ignored
 
-	ifd	SDATA
-	movem.l	d2-d7/a0-a3/a5,-(sp)
-	else
 	movem.l	d2-d7/a0-a5,-(sp)
-	lea	mt_data(pc),a4
-	endc
+	lea	mt_data,a4
 
 	move.w	#$4000,INTENA(a6)
 	moveq	#0,d0
@@ -999,11 +1050,7 @@ exit_playfx:
 	move.w	#$c000,INTENA(a6)
 	move.l	a2,d0			; ptr to selected channel or NULL
 
-	ifd	SDATA
-	movem.l	(sp)+,d2-d7/a0-a3/a5
-	else
 	movem.l	(sp)+,d2-d7/a0-a5
-	endc
 	rts
 
 channel_offsets:
@@ -1026,11 +1073,7 @@ _mt_loopfx:
 ; a0 = sfx-structure pointer with the following layout:
 ;      0: ptr, 4: len.w, 6: period.w, 8: vol.w, 10: channel.b
 
-	ifnd	SDATA
-	lea	mt_data+mt_chan1(pc),a1
-	else
-	lea	mt_chan1(a4),a1
-	endc
+	lea	mt_data+mt_chan1,a1
 
 	moveq	#3,d0
 	and.b	sfx_cha(a0),d0
@@ -1055,11 +1098,7 @@ _mt_stopfx:
 ; a6 = CUSTOM
 ; d0.b = channel (0..3)
 
-	ifnd	SDATA
-	lea	mt_data+mt_chan1(pc),a0
-	else
-	lea	mt_chan1(a4),a0
-	endc
+	lea	mt_data+mt_chan1,a0
 
 	and.w	#3,d0
 	add.w	d0,d0
@@ -1095,10 +1134,8 @@ _mt_musicmask:
 ; a6 = CUSTOM
 ; d0.b = channel-mask (bit 0 for channel 0, ..., bit 3 for channel 3)
 
-	ifnd	SDATA
 	move.l	a4,-(sp)
-	lea	mt_data(pc),a4
-	endc
+	lea	mt_data,a4
 
 	move.w	#$4000,INTENA(a6)
 
@@ -1113,9 +1150,7 @@ _mt_musicmask:
 
 	move.w	#$c000,INTENA(a6)
 
-	ifnd	SDATA
 	move.l	(sp)+,a4
-	endc
 	rts
 
 
@@ -1128,10 +1163,8 @@ _mt_mastervol:
 ; a6 = CUSTOM
 ; d0.w = master volume
 
-	ifnd	SDATA
 	move.l	a4,-(sp)
-	lea	mt_data(pc),a4
-	endc
+	lea	mt_data,a4
 
 	; stingray, since each volume table has a size of 65 bytes
 	; we simply multiply (optimised of course) by 65 to get the
@@ -1141,80 +1174,27 @@ _mt_mastervol:
 	lsl.w	#6,d0
 	add.w	d0,a0
 
-	; set new table and adapt all channel volumes immediately
 	move.w	#$4000,INTENA(a6)
+
+	; adapt all channel volumes immediately
 	move.l	a0,mt_MasterVolTab(a4)
-	bsr	set_all_volumes
-	move.w	#$c000,INTENA(a6)
-
-	ifnd	SDATA
-	move.l	(sp)+,a4
-	endc
-	rts
-
-
-;---------------------------------------------------------------------------
-	xdef	_mt_channelmask
-_mt_channelmask:
-; Define which music channels are muted. Doesn't affect sound effects.
-; a6 = CUSTOM
-; d0.b = channel-mask (bit 0 for channel 0, ..., bit 3 for channel 3)
-
-	ifnd	SDATA
-	move.l	a4,-(sp)
-	lea	mt_data(pc),a4
-	endc
-
-	move.w	#$4000,INTENA(a6)
-
-	lsl.b	#5,d0
-	scs	mt_chan4+n_enable(a4)
-	add.b	d0,d0
-	scs	mt_chan3+n_enable(a4)
-	add.b	d0,d0
-	scs	mt_chan2+n_enable(a4)
-	add.b	d0,d0
-	scs	mt_chan1+n_enable(a4)
-	move.l	mt_MasterVolTab(a4),a0
-	bsr	set_all_volumes
-
-	move.w	#$c000,INTENA(a6)
-
-	ifnd	SDATA
-	move.l	(sp)+,a4
-	endc
-	rts
-
-
-;---------------------------------------------------------------------------
-set_all_volumes:
-; a0 = Master volume table
-
-	tst.b	mt_chan1+n_sfxpri(a4)
-	bne	.1
 	move.w	mt_chan1+n_volume(a4),d0
 	move.b	(a0,d0.w),d0
-	and.b	mt_chan1+n_enable(a4),d0
 	move.w	d0,AUD0VOL(a6)
-.1:	tst.b	mt_chan2+n_sfxpri(a4)
-	bne	.2
 	move.w	mt_chan2+n_volume(a4),d0
 	move.b	(a0,d0.w),d0
-	and.b	mt_chan2+n_enable(a4),d0
 	move.w	d0,AUD1VOL(a6)
-.2:	tst.b	mt_chan3+n_sfxpri(a4)
-	bne	.3
 	move.w	mt_chan3+n_volume(a4),d0
 	move.b	(a0,d0.w),d0
-	and.b	mt_chan3+n_enable(a4),d0
 	move.w	d0,AUD2VOL(a6)
-.3:	tst.b	mt_chan4+n_sfxpri(a4)
-	bne	.4
 	move.w	mt_chan4+n_volume(a4),d0
 	move.b	(a0,d0.w),d0
-	and.b	mt_chan4+n_enable(a4),d0
 	move.w	d0,AUD3VOL(a6)
-.4:	rts
+
+	move.w	#$c000,INTENA(a6)
+
+	move.l	(sp)+,a4
+	rts
 
 
 ;---------------------------------------------------------------------------
@@ -1227,11 +1207,7 @@ _mt_samplevol:
 ; d0.w = sample number (0-31)
 ; d1.b = volume (0-64)
 
-	ifd	SDATA
-	move.l	mt_mod(a4),a0
-	else
-	move.l	mt_data+mt_mod(pc),a0
-	endc
+	move.l	mt_data+mt_mod,a0
 
 	swap	d1
 	move.w	d0,d1
@@ -1247,23 +1223,6 @@ _mt_samplevol:
 ;---------------------------------------------------------------------------
 	xdef	_mt_music
 _mt_music:
-; Used when called by external interrupt handler.
-; Saves/restores all registers and sets up A4 when needed.
-; a6 = CUSTOM
-
-	ifd	SDATA
-	movem.l	d2-d7/a2-a3/a5,-(sp)
-	bsr	mt_music
-	movem.l	(sp)+,d2-d7/a2-a3/a5
-	else	; !SDATA
-	movem.l	d2-d7/a2-a5,-(sp)
-	lea	mt_data(pc),a4
-	bsr	mt_music
-	movem.l	(sp)+,d2-d7/a2-a5
-	endc
-	rts
-
-mt_music:
 ; Called from interrupt.
 ; Play next position when Counter equals Speed.
 ; Effects are always handled.
@@ -1348,6 +1307,31 @@ get_new_note:
 	lea	AUD3LC(a6),a5
 	lea	mt_chan4(a4),a2
 	bsr	mt_playvoice
+
+;Antiriad: Check which channels are playing new notes and set bitmask in _mt_VUMeter
+;chan1 = 1, chan2 = 2, chan3  = 4, chan4 = 8
+;Note up to the caller to clear _mt_VUMeter when reading.
+	ifne	ENABLE_VUMETER
+	moveq	#0,d0
+.vu1:
+	tst.w	mt_chan1(a4)
+	beq.s	.vu2
+	addq.b	#1,d0
+.vu2:
+	tst.w	mt_chan2(a4)
+	beq.s	.vu3
+	addq.b	#2,d0
+.vu3:
+	tst.w	mt_chan3(a4)
+	beq.s	.vu4
+	addq.b	#4,d0
+.vu4:
+	tst.w	mt_chan4(a4)
+	beq.s	.vuwrite
+	addq.b	#8,d0
+.vuwrite:
+	or.b	d0,mt_VUMeter(a4)	;merge final flag
+	endc				;ENABLE_VUMETER
 
 settb_step:
 	; set one-shot TimerB interrupt for enabling DMA, when needed
@@ -1684,7 +1668,7 @@ mt_playvoice:
 	move.b	(a0)+,d3
 	add.w	d3,d3
 	move.l	a0,d1
-	lea	mt_PerFineTune(pc),a0
+	lea	mt_PerFineTune(a4),a0	;Antiriad: Finetune table is generated and in mt_data section
 	add.w	(a0,d3.w),a0
 	move.l	a0,n_pertab(a2)
 	move.l	d1,a0
@@ -1731,12 +1715,14 @@ set_len_start:
 	move.l	d2,n_loopstart(a2)
 	move.l	d2,n_wavestart(a2)
 
+	; Virgill: deleted volume here for fixing the clickerfuck bug at low volumes
 	ifeq	MINIMAL
 	move.l	mt_MasterVolTab(a4),a0
 	move.b	(a0,d1.w),d1
-	and.b	n_enable(a2),d1
 	endc
-	move.w	d1,AUDVOL(a5)
+	move.w	d1,AUDVOL(a5) ;
+
+
 
 	; remember if sample is looped
 	; @@@ FIXME: also need to check if n_loopstart equals n_start
@@ -1770,111 +1756,6 @@ prefx_tab:
 	dc.w	set_period-prefx_tab,set_period-prefx_tab,set_period-prefx_tab
 	dc.w	set_period-prefx_tab,set_period-prefx_tab,set_period-prefx_tab
 
-
-mt_sampleoffset:
-; cmd 9 x y (xy = offset in 256 bytes)
-; d4 = xy
-
-	moveq	#0,d0
-	move.b	d4,d0
-	bne	.1
-	move.b	n_sampleoffset(a2),d0
-	bra	.2
-.1:	move.b	d0,n_sampleoffset(a2)
-
-.2:	lsl.w	#7,d0
-	cmp.w	n_length(a2),d0
-	bhs	.3
-	sub.w	d0,n_length(a2)
-	add.w	d0,d0
-	add.l	d0,n_start(a2)
-	rts
-
-.3:	move.w	#1,n_length(a2)
-	rts
-
-
-set_sampleoffset:
-	bsr	mt_sampleoffset
-	bra	set_period
-
-set_finetune:
-	lea	mt_PerFineTune(pc),a0
-	moveq	#$0f,d0
-	and.b	d4,d0
-	add.w	d0,d0
-	add.w	(a0,d0.w),a0
-	move.l	a0,n_pertab(a2)
-	cmp.w	#2*8,d0
-	shs	n_minusft(a2)
-
-set_period:
-; find nearest period for a note value, then apply finetuning
-; d3 = masked E-cmd
-; d4 = cmd argument
-; d5 = cmd*2
-; d6 = note.w
-
-	lea	mt_PeriodTable(pc),a0
-	moveq	#36-1,d0
-	moveq	#-2,d1
-.1:	addq.w	#2,d1			; table offset
-	cmp.w	(a0)+,d6
-	dbhs	d0,.1
-
-	; apply finetuning, set period and note-offset
-	move.l	n_pertab(a2),a0
-	move.w	(a0,d1.w),d2
-	move.w	d2,n_period(a2)
-	move.w	d1,n_noteoff(a2)
-
-	; check for notedelay
-	cmp.w	#$0ed0,d3		; notedelay
-	beq	checkmorefx
-
-	; disable DMA
-	move.w	n_dmabit(a2),d0
-	move.w	d0,DMACON(a6)
-
-	btst	#2,n_vibratoctrl(a2)
-	bne	.2
-	move.b	d7,n_vibratopos(a2)
-
-.2:	btst	#2,n_tremoloctrl(a2)
-	bne	.3
-	move.b	d7,n_tremolopos(a2)
-
-.3:	move.l	n_start(a2),AUDLC(a5)
-	move.w	n_length(a2),AUDLEN(a5)
-	move.w	d2,AUDPER(a5)
-	lea	mt_dmaon(pc),a0
-	or.w	d0,(a0)
-
-checkmorefx:
-; d4 = cmd argument
-; d5 = cmd*2
-; d6 = note.w
-
-	move.w	n_funk(a2),d0
-	beq	.1
-	bsr	mt_updatefunk
-
-.1:	move.w	morefx_tab(pc,d5.w),d0
-	jmp	morefx_tab(pc,d0.w)
-
-morefx_tab:
-	dc.w	mt_pernop-morefx_tab,mt_pernop-morefx_tab,mt_pernop-morefx_tab
-	dc.w	mt_pernop-morefx_tab,mt_pernop-morefx_tab,mt_pernop-morefx_tab
-	dc.w	mt_pernop-morefx_tab,mt_pernop-morefx_tab,mt_pernop-morefx_tab
-	dc.w	mt_sampleoffset-morefx_tab		; $9
-	dc.w	mt_pernop-morefx_tab
-	dc.w	mt_posjump-morefx_tab			; $B
-	dc.w	mt_volchange-morefx_tab
-	dc.w	mt_patternbrk-morefx_tab		; $D
-	dc.w	mt_e_cmds-morefx_tab
-	dc.w	mt_setspeed-morefx_tab
-
-
 set_toneporta:
 	move.l	n_pertab(a2),a0		; tuned period table
 
@@ -1906,6 +1787,107 @@ set_toneporta:
 
 .4:	move.w	d2,AUDPER(a5)
 	rts
+
+set_sampleoffset:
+; cmd 9 x y (xy = offset in 256 bytes)
+; d4 = xy
+	moveq	#0,d0
+	move.b	d4,d0
+	bne	.1
+	move.b	n_sampleoffset(a2),d0
+	bra	.2
+.1:	move.b	d0,n_sampleoffset(a2)
+
+.2:	lsl.w	#7,d0
+	cmp.w	n_length(a2),d0
+	bhs	.3
+	sub.w	d0,n_length(a2)
+	add.w	d0,d0
+	add.l	d0,n_start(a2)
+	bra	set_period
+
+.3:	move.w	#1,n_length(a2)
+	bra	set_period
+
+set_finetune:
+	lea	mt_PerFineTune(a4),a0	;Antiriad: Finetune table is generated and in mt_data section
+	moveq	#$0f,d0
+	and.b	n_cmdlo(a2),d0
+	add.w	d0,d0
+	add.w	(a0,d0.w),a0
+	move.l	a0,n_pertab(a2)
+	cmp.w	#2*8,d0
+	shs	n_minusft(a2)
+
+set_period:
+; find nearest period for a note value, then apply finetuning
+; d3 = masked E-cmd
+; d4 = cmd argument
+; d5 = cmd*2
+; d6 = note.w
+
+	lea	mt_PeriodTable(a4),a0	;Antiriad: Finetune table is generated and in mt_data section
+	moveq	#36-1,d0
+	moveq	#-2,d1
+.1:	addq.w	#2,d1			; table offset
+	cmp.w	(a0)+,d6
+	dbhs	d0,.1
+
+	; apply finetuning, set period and note-offset
+	move.l	n_pertab(a2),a0
+	move.w	(a0,d1.w),d2
+	move.w	d2,n_period(a2)
+	move.w	d1,n_noteoff(a2)
+
+	; check for notedelay
+	cmp.w	#$0ed0,d3		; notedelay
+	beq	checkmorefx
+
+	; disable DMA
+	move.w	n_dmabit(a2),d0
+	move.w	d0,DMACON(a6)
+
+	btst	#2,n_vibratoctrl(a2)
+	bne	.2
+	move.b	d7,n_vibratopos(a2)
+
+.2:	btst	#2,n_tremoloctrl(a2)
+	bne	.3
+	move.b	d7,n_tremolopos(a2)
+
+.3:	move.l	n_start(a2),AUDLC(a5)
+	move.w	n_length(a2),AUDLEN(a5)
+	move.w	d2,AUDPER(a5)
+
+	; Virgill: added volume here for fixing the clickerfuck bug
+	; move.w	n_volume(a2),AUDVOL(a5)
+
+	lea	mt_dmaon(pc),a0
+	or.w	d0,(a0)
+
+checkmorefx:
+; d4 = cmd argument
+; d5 = cmd*2
+; d6 = note.w
+
+	move.w	n_funk(a2),d0
+	beq	.1
+	bsr	mt_updatefunk
+
+.1:	move.w	morefx_tab(pc,d5.w),d0
+	jmp	morefx_tab(pc,d0.w)
+
+morefx_tab:
+	dc.w	mt_pernop-morefx_tab,mt_pernop-morefx_tab,mt_pernop-morefx_tab
+	dc.w	mt_pernop-morefx_tab,mt_pernop-morefx_tab,mt_pernop-morefx_tab
+	dc.w	mt_pernop-morefx_tab,mt_pernop-morefx_tab,mt_pernop-morefx_tab
+	dc.w	mt_pernop-morefx_tab			; $9
+	dc.w	mt_pernop-morefx_tab
+	dc.w	mt_posjump-morefx_tab			; $B
+	dc.w	mt_volchange-morefx_tab
+	dc.w	mt_patternbrk-morefx_tab		; $D
+	dc.w	mt_e_cmds-morefx_tab
+	dc.w	mt_setspeed-morefx_tab
 
 
 	ifeq	MINIMAL
@@ -2114,7 +2096,7 @@ mt_vibrato_nc:
 	endc	; ENABLE_SAWRECT
 
 	; ctrl 0 selects a sine vibrato
-.6:	lea	mt_VibratoSineTable(pc),a0
+.6:	lea	mt_VibratoSineTable(a4),a0
 
 	; add vibrato-offset to period
 .9:	move.b	(a0,d2.w),d0
@@ -2189,7 +2171,7 @@ mt_tremolo:
 	endc	; ENABLE_SAWRECT
 
 	; ctrl 0 selects a sine tremolo
-.6:	lea	mt_VibratoSineTable(pc),a0
+.6:	lea	mt_VibratoSineTable(a4),a0
 
 	; add tremolo-offset to volume
 .9:	move.w	n_volume(a2),d0
@@ -2203,7 +2185,6 @@ mt_tremolo:
 	ifeq	MINIMAL
 	move.l	mt_MasterVolTab(a4),a0
 	move.b	(a0,d0.w),d0
-	and.b	n_enable(a2),d0
 	endc
 	move.w	d0,AUDVOL(a5)
 
@@ -2242,7 +2223,6 @@ set_vol:
 	ifeq	MINIMAL
 	move.l	mt_MasterVolTab(a4),a0
 	move.b	(a0,d0.w),d0
-	and.b	n_enable(a2),d0
 	endc
 	move.w	d0,AUDVOL(a5)
 	rts
@@ -2273,7 +2253,6 @@ mt_volchange:
 	ifeq	MINIMAL
 	move.l	mt_MasterVolTab(a4),a0
 	move.b	(a0,d4.w),d4
-	and.b	n_enable(a2),d4
 	endc
 	move.w	d4,AUDVOL(a5)
 	rts
@@ -2304,16 +2283,12 @@ mt_setspeed:
 ; cmd F x y (xy<$20 new speed, xy>=$20 new tempo)
 ; d4 = xy
 
-	ifeq	VBLANK_MUSIC
 	cmp.b	#$20,d4
 	bhs	.1
-	endc
-
 	move.b	d4,mt_Speed(a4)
 	beq	_mt_end
 	rts
 
-	ifeq	VBLANK_MUSIC
 	; set tempo (CIA only)
 .1:	and.w	#$00ff,d4
 	move.l	mt_timerval(a4),d0
@@ -2322,7 +2297,6 @@ mt_setspeed:
 	lsr.w	#8,d0
 	move.b	d0,CIAB+CIATAHI
 	rts
-	endc
 
 
 mt_e_cmds:
@@ -2422,7 +2396,7 @@ mt_finetune:
 ; cmd E 5 x (x = finetune)
 ; d0 = x
 
-	lea	mt_PerFineTune(pc),a0
+	lea	mt_PerFineTune(a4),a0	;Antiriad: Finetune table is generated and in mt_data section
 	add.w	d0,d0
 	add.w	(a0,d0.w),a0
 	move.l	a0,n_pertab(a2)
@@ -2608,72 +2582,6 @@ mt_updatefunk:
 mt_FunkTable:
 	dc.b	0,5,6,7,8,10,11,13,16,19,22,26,32,43,64,128
 
-mt_VibratoSineTable:
-	dc.b	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	dc.b	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	dc.b	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	dc.b	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	dc.b	0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1
-	dc.b	1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0
-	dc.b	0,0,0,0,0,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
-	dc.b	-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0
-	dc.b	0,0,0,1,1,1,2,2,2,3,3,3,3,3,3,3
-	dc.b	3,3,3,3,3,3,3,3,2,2,2,1,1,1,0,0
-	dc.b	0,0,0,-1,-1,-1,-2,-2,-2,-3,-3,-3,-3,-3,-3,-3
-	dc.b	-3,-3,-3,-3,-3,-3,-3,-3,-2,-2,-2,-1,-1,-1,0,0
-	dc.b	0,0,1,1,2,2,3,3,4,4,4,5,5,5,5,5
-	dc.b	5,5,5,5,5,5,4,4,4,3,3,2,2,1,1,0
-	dc.b	0,0,-1,-1,-2,-2,-3,-3,-4,-4,-4,-5,-5,-5,-5,-5
-	dc.b	-5,-5,-5,-5,-5,-5,-4,-4,-4,-3,-3,-2,-2,-1,-1,0
-	dc.b	0,0,1,2,3,3,4,5,5,6,6,7,7,7,7,7
-	dc.b	7,7,7,7,7,7,6,6,5,5,4,3,3,2,1,0
-	dc.b	0,0,-1,-2,-3,-3,-4,-5,-5,-6,-6,-7,-7,-7,-7,-7
-	dc.b	-7,-7,-7,-7,-7,-7,-6,-6,-5,-5,-4,-3,-3,-2,-1,0
-	dc.b	0,0,1,2,3,4,5,6,7,7,8,8,9,9,9,9
-	dc.b	9,9,9,9,9,8,8,7,7,6,5,4,3,2,1,0
-	dc.b	0,0,-1,-2,-3,-4,-5,-6,-7,-7,-8,-8,-9,-9,-9,-9
-	dc.b	-9,-9,-9,-9,-9,-8,-8,-7,-7,-6,-5,-4,-3,-2,-1,0
-	dc.b	0,1,2,3,4,5,6,7,8,9,9,10,11,11,11,11
-	dc.b	11,11,11,11,11,10,9,9,8,7,6,5,4,3,2,1
-	dc.b	0,-1,-2,-3,-4,-5,-6,-7,-8,-9,-9,-10,-11,-11,-11,-11
-	dc.b	-11,-11,-11,-11,-11,-10,-9,-9,-8,-7,-6,-5,-4,-3,-2,-1
-	dc.b	0,1,2,4,5,6,7,8,9,10,11,12,12,13,13,13
-	dc.b	13,13,13,13,12,12,11,10,9,8,7,6,5,4,2,1
-	dc.b	0,-1,-2,-4,-5,-6,-7,-8,-9,-10,-11,-12,-12,-13,-13,-13
-	dc.b	-13,-13,-13,-13,-12,-12,-11,-10,-9,-8,-7,-6,-5,-4,-2,-1
-	dc.b	0,1,3,4,6,7,8,10,11,12,13,14,14,15,15,15
-	dc.b	15,15,15,15,14,14,13,12,11,10,8,7,6,4,3,1
-	dc.b	0,-1,-3,-4,-6,-7,-8,-10,-11,-12,-13,-14,-14,-15,-15,-15
-	dc.b	-15,-15,-15,-15,-14,-14,-13,-12,-11,-10,-8,-7,-6,-4,-3,-1
-	dc.b	0,1,3,5,6,8,9,11,12,13,14,15,16,17,17,17
-	dc.b	17,17,17,17,16,15,14,13,12,11,9,8,6,5,3,1
-	dc.b	0,-1,-3,-5,-6,-8,-9,-11,-12,-13,-14,-15,-16,-17,-17,-17
-	dc.b	-17,-17,-17,-17,-16,-15,-14,-13,-12,-11,-9,-8,-6,-5,-3,-1
-	dc.b	0,1,3,5,7,9,11,12,14,15,16,17,18,19,19,19
-	dc.b	19,19,19,19,18,17,16,15,14,12,11,9,7,5,3,1
-	dc.b	0,-1,-3,-5,-7,-9,-11,-12,-14,-15,-16,-17,-18,-19,-19,-19
-	dc.b	-19,-19,-19,-19,-18,-17,-16,-15,-14,-12,-11,-9,-7,-5,-3,-1
-	dc.b	0,2,4,6,8,10,12,13,15,16,18,19,20,20,21,21
-	dc.b	21,21,21,20,20,19,18,16,15,13,12,10,8,6,4,2
-	dc.b	0,-2,-4,-6,-8,-10,-12,-13,-15,-16,-18,-19,-20,-20,-21,-21
-	dc.b	-21,-21,-21,-20,-20,-19,-18,-16,-15,-13,-12,-10,-8,-6,-4,-2
-	dc.b	0,2,4,6,9,11,13,15,16,18,19,21,22,22,23,23
-	dc.b	23,23,23,22,22,21,19,18,16,15,13,11,9,6,4,2
-	dc.b	0,-2,-4,-6,-9,-11,-13,-15,-16,-18,-19,-21,-22,-22,-23,-23
-	dc.b	-23,-23,-23,-22,-22,-21,-19,-18,-16,-15,-13,-11,-9,-6,-4,-2
-	dc.b	0,2,4,7,9,12,14,16,18,20,21,22,23,24,25,25
-	dc.b	25,25,25,24,23,22,21,20,18,16,14,12,9,7,4,2
-	dc.b	0,-2,-4,-7,-9,-12,-14,-16,-18,-20,-21,-22,-23,-24,-25,-25
-	dc.b	-25,-25,-25,-24,-23,-22,-21,-20,-18,-16,-14,-12,-9,-7,-4,-2
-	dc.b	0,2,5,8,10,13,15,17,19,21,23,24,25,26,27,27
-	dc.b	27,27,27,26,25,24,23,21,19,17,15,13,10,8,5,2
-	dc.b	0,-2,-5,-8,-10,-13,-15,-17,-19,-21,-23,-24,-25,-26,-27,-27
-	dc.b	-27,-27,-27,-26,-25,-24,-23,-21,-19,-17,-15,-13,-10,-8,-5,-2
-	dc.b	0,2,5,8,11,14,16,18,21,23,24,26,27,28,29,29
-	dc.b	29,29,29,28,27,26,24,23,21,18,16,14,11,8,5,2
-	dc.b	0,-2,-5,-8,-11,-14,-16,-18,-21,-23,-24,-26,-27,-28,-29,-29
-	dc.b	-29,-29,-29,-28,-27,-26,-24,-23,-21,-18,-16,-14,-11,-8,-5,-2
-
 	ifne	ENABLE_SAWRECT
 mt_VibratoSawTable:
 	dc.b	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -2809,81 +2717,6 @@ mt_VibratoRectTable:
 	endc	; ENABLE_SAWRECT
 
 
-mt_PerFineTune:
-	dc.w	mt_Tuning0-mt_PerFineTune,mt_Tuning1-mt_PerFineTune
-	dc.w	mt_Tuning2-mt_PerFineTune,mt_Tuning3-mt_PerFineTune
-	dc.w	mt_Tuning4-mt_PerFineTune,mt_Tuning5-mt_PerFineTune
-	dc.w	mt_Tuning6-mt_PerFineTune,mt_Tuning7-mt_PerFineTune
-	dc.w	mt_TuningM8-mt_PerFineTune,mt_TuningM7-mt_PerFineTune
-	dc.w	mt_TuningM6-mt_PerFineTune,mt_TuningM5-mt_PerFineTune
-	dc.w	mt_TuningM4-mt_PerFineTune,mt_TuningM3-mt_PerFineTune
-	dc.w	mt_TuningM2-mt_PerFineTune,mt_TuningM1-mt_PerFineTune
-
-mt_PeriodTable:
-mt_Tuning0:	; Tuning 0, Normal c-1 - b3
-	dc.w	856,808,762,720,678,640,604,570,538,508,480,453
-	dc.w	428,404,381,360,339,320,302,285,269,254,240,226
-	dc.w	214,202,190,180,170,160,151,143,135,127,120,113
-mt_Tuning1:
-	dc.w	850,802,757,715,674,637,601,567,535,505,477,450
-	dc.w	425,401,379,357,337,318,300,284,268,253,239,225
-	dc.w	213,201,189,179,169,159,150,142,134,126,119,113
-mt_Tuning2:
-	dc.w	844,796,752,709,670,632,597,563,532,502,474,447
-	dc.w	422,398,376,355,335,316,298,282,266,251,237,224
-	dc.w	211,199,188,177,167,158,149,141,133,125,118,112
-mt_Tuning3:
-	dc.w	838,791,746,704,665,628,592,559,528,498,470,444
-	dc.w	419,395,373,352,332,314,296,280,264,249,235,222
-	dc.w	209,198,187,176,166,157,148,140,132,125,118,111
-mt_Tuning4:
-	dc.w	832,785,741,699,660,623,588,555,524,495,467,441
-	dc.w	416,392,370,350,330,312,294,278,262,247,233,220
-	dc.w	208,196,185,175,165,156,147,139,131,124,117,110
-mt_Tuning5:
-	dc.w	826,779,736,694,655,619,584,551,520,491,463,437
-	dc.w	413,390,368,347,328,309,292,276,260,245,232,219
-	dc.w	206,195,184,174,164,155,146,138,130,123,116,109
-mt_Tuning6:
-	dc.w	820,774,730,689,651,614,580,547,516,487,460,434
-	dc.w	410,387,365,345,325,307,290,274,258,244,230,217
-	dc.w	205,193,183,172,163,154,145,137,129,122,115,109
-mt_Tuning7:
-	dc.w	814,768,725,684,646,610,575,543,513,484,457,431
-	dc.w	407,384,363,342,323,305,288,272,256,242,228,216
-	dc.w	204,192,181,171,161,152,144,136,128,121,114,108
-mt_TuningM8:
-	dc.w	907,856,808,762,720,678,640,604,570,538,508,480
-	dc.w	453,428,404,381,360,339,320,302,285,269,254,240
-	dc.w	226,214,202,190,180,170,160,151,143,135,127,120
-mt_TuningM7:
-	dc.w	900,850,802,757,715,675,636,601,567,535,505,477
-	dc.w	450,425,401,379,357,337,318,300,284,268,253,238
-	dc.w	225,212,200,189,179,169,159,150,142,134,126,119
-mt_TuningM6:
-	dc.w	894,844,796,752,709,670,632,597,563,532,502,474
-	dc.w	447,422,398,376,355,335,316,298,282,266,251,237
-	dc.w	223,211,199,188,177,167,158,149,141,133,125,118
-mt_TuningM5:
-	dc.w	887,838,791,746,704,665,628,592,559,528,498,470
-	dc.w	444,419,395,373,352,332,314,296,280,264,249,235
-	dc.w	222,209,198,187,176,166,157,148,140,132,125,118
-mt_TuningM4:
-	dc.w	881,832,785,741,699,660,623,588,555,524,494,467
-	dc.w	441,416,392,370,350,330,312,294,278,262,247,233
-	dc.w	220,208,196,185,175,165,156,147,139,131,123,117
-mt_TuningM3:
-	dc.w	875,826,779,736,694,655,619,584,551,520,491,463
-	dc.w	437,413,390,368,347,328,309,292,276,260,245,232
-	dc.w	219,206,195,184,174,164,155,146,138,130,123,116
-mt_TuningM2:
-	dc.w	868,820,774,730,689,651,614,580,547,516,487,460
-	dc.w	434,410,387,365,345,325,307,290,274,258,244,230
-	dc.w	217,205,193,183,172,163,154,145,137,129,122,115
-mt_TuningM1:
-	dc.w	862,814,768,725,684,646,610,575,543,513,484,457
-	dc.w	431,407,384,363,342,323,305,288,272,256,242,228
-	dc.w	216,203,192,181,171,161,152,144,136,128,121,114
 
 	ifeq	MINIMAL
 MasterVolTab0:
@@ -3280,85 +3113,37 @@ MasterVolTab64:
 	endc	; !MINIMAL
 
 
-	ifd	SDATA
+*****************************************************************************
 
 	section	__MERGED,bss
 
-mt_chan1:
-	ds.b	n_sizeof
-mt_chan2:
-	ds.b	n_sizeof
-mt_chan3:
-	ds.b	n_sizeof
-mt_chan4:
-	ds.b	n_sizeof
-
-mt_SampleStarts:
-	ds.l	31
-
-mt_mod:
-	ds.l	1
-mt_oldLev6:
-	ds.l	1
-mt_timerval:
-	ds.l	1
-mt_oldtimers:
-	ds.b	4
-mt_Lev6Int:
-	ds.l	1
-mt_Lev6Ena:
-	ds.w	1
-mt_PatternPos:
-	ds.w	1
-mt_PBreakPos:
-	ds.w	1
-mt_PosJumpFlag:
-	ds.b	1
-mt_PBreakFlag:
-	ds.b	1
-mt_Speed:
-	ds.b	1
-mt_Counter:
-	ds.b	1
-mt_SongPos:
-	ds.b	1
-mt_PattDelTime:
-	ds.b	1
-mt_PattDelTime2:
-	ds.b	1
-
-	ifeq	MINIMAL
-mt_SilCntValid:
-	ds.b	1
-mt_MasterVolTab:
-	ds.l	1
-	endc
-
-	xdef	_mt_Enable
-_mt_Enable:
-mt_Enable:
-	ds.b	1
-
-	xdef	_mt_E8Trigger
-_mt_E8Trigger:
-mt_E8Trigger:
-	ds.b	1
-
-	ifeq	MINIMAL
-	xdef	_mt_MusicChannels
-_mt_MusicChannels:
-mt_MusicChannels:
-	ds.b	1
-
-	xdef	_mt_SongEnd
-_mt_SongEnd:
-mt_SongEnd:
-	ds.b	1
-	endc	; !MINIMAL
-
-	else	; !SDATA : single section with local base register
-
 	rsreset
+; Antiriad - put this at the start of mt_data to avoid alignment issues with the rs.b near the end
+mt_PerFineTune	rs.w	16
+mt_PeriodTable	rs.w	0
+mt_Tuning0	rs.w	36
+mt_Tuning1	rs.w	36
+mt_Tuning2	rs.w	36
+mt_Tuning3	rs.w	36
+mt_Tuning4	rs.w	36
+mt_Tuning5	rs.w	36
+mt_Tuning6	rs.w	36
+mt_Tuning7	rs.w	36
+mt_TuningM8	rs.w	36
+mt_TuningM7	rs.w	36
+mt_TuningM6	rs.w	36
+mt_TuningM5	rs.w	36
+mt_TuningM4	rs.w	36
+mt_TuningM3	rs.w	36
+mt_TuningM2	rs.w	36
+mt_TuningM1	rs.w	36
+; Antiriad - end of periodtable
+
+; Antiriad - vibrato sine table
+mt_VibratoSineTable	rs.b	16*64
+mt_VibratoSineTable_End	rs.b	0
+; Antiriad - end of vibrato sine table
+
 mt_chan1	rs.b	n_sizeof
 mt_chan2	rs.b	n_sizeof
 mt_chan3	rs.b	n_sizeof
@@ -3379,14 +3164,21 @@ mt_Counter	rs.b	1
 mt_SongPos	rs.b	1
 mt_PattDelTime	rs.b	1
 mt_PattDelTime2	rs.b	1
+
 	ifeq	MINIMAL
 mt_SilCntValid	rs.b	1
 mt_MasterVolTab	rs.l	1
-	endc
+	endc	; !MINIMAL
 mt_Enable	rs.b	1		; exported as _mt_Enable
 mt_E8Trigger	rs.b	1		; exported as _mt_E8Trigger
+	ifeq	MINIMAL
 mt_MusicChannels rs.b	1		; exported as _mt_MusicChannels
 mt_SongEnd	rs.b	1		; exported as _mt_SongEnd
+	endc	; !MINIMAL
+	ifne	ENABLE_VUMETER
+mt_VUMeter	rs.b	1		; exported as _mt_VUMeter
+	endc	;ENABLE_VUMETER
+
 
 mt_data:
 	ds.b	mt_Enable
@@ -3396,6 +3188,7 @@ _mt_Enable:
 	xdef	_mt_E8Trigger
 _mt_E8Trigger:
 	ds.b	1
+
 	ifeq	MINIMAL
 	xdef	_mt_MusicChannels
 _mt_MusicChannels:
@@ -3405,6 +3198,8 @@ _mt_SongEnd:
 	ds.b	1
 	endc	; !MINIMAL
 
-	endc	; SDATA/!SDATA
-
-	end
+	ifne	ENABLE_VUMETER
+	xdef	_mt_VUMeter
+_mt_VUMeter:
+	ds.b	1
+	endc	;ENABLE_VUMETER
