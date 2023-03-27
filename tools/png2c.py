@@ -396,10 +396,12 @@ def do_palette(im, desc):
     param = parse(desc,
                   ('name', str),
                   ('colors', int),
+                  ('shared', bool, False),
                   ('store_unused', bool, False))
 
     name = param['name']
     has_colors = param['colors']
+    shared = param['shared']
     store_unused = param['store_unused']
 
     pal = im.getpalette()
@@ -416,7 +418,7 @@ def do_palette(im, desc):
 
     cmap = [pal[i * 3:(i + 1) * 3] for i in range(colors)]
 
-    print('static const PaletteT %s = {' % name)
+    print('%sconst PaletteT %s = {' % ('' if shared else 'static ', name))
     print('  .count = %d,' % len(cmap))
     print('  .colors = {')
     for r, g, b in cmap:
