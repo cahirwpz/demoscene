@@ -196,7 +196,8 @@ def do_bitmap(im, desc):
     if onlydata:
         return
 
-    print('%sconst __data BitmapT %s = {' % ('' if shared else 'static ', name))
+    print('%sconst __data BitmapT %s = {' %
+          ('' if shared else 'static ', name))
     print(f'  .width = {width},')
     print(f'  .height = {height},')
     print(f'  .depth = {depth},')
@@ -420,7 +421,8 @@ def do_palette(im, desc):
 
     print("#define %s_count %d\n" % (name, len(cmap)))
 
-    print('%sconst __data PaletteT %s = {' % ('' if shared else 'static ', name))
+    print('%sconst __data PaletteT %s = {' %
+          ('' if shared else 'static ', name))
     print('  .count = %d,' % len(cmap))
     print('  .colors = {')
     for r, g, b in cmap:
