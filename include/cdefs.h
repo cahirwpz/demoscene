@@ -19,6 +19,8 @@
  * scalar variable if you want it to be accessed with PC-relative addressing.
  * This saves 4 cycles / 2 bytes of instruction memory / 1 relocation. */
 #define __code __attribute__((section(".text")))
+/* Annotate initialized variable to be put into memory section. */
+#define __data __attribute__((section(".data")))
 /* Annotate initialized variable to be put into memory accessible
  * by custom chipset. */
 #define __data_chip __attribute__((section(".datachip")))

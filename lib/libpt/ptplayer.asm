@@ -3139,7 +3139,7 @@ MasterVolTab64:
 
 *****************************************************************************
 
-	section	__MERGED,bss
+	section	'.bss',bss
 
 	rsreset
 ; Antiriad - put this at the start of mt_data to avoid alignment issues with the rs.b near the end
