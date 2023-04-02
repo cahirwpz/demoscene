@@ -46,6 +46,8 @@ typedef enum {
   EFFECT_RUNNING = 4,
 } EffectStateT;
 
+typedef void (*EffectFuncT)(void);
+
 typedef struct Effect {
   const char *name;
   EffectStateT state;
@@ -53,11 +55,11 @@ typedef struct Effect {
    * Executed in background task when other effect is running.
    * Precalculates data for the effect to be launched.
    */
-  void (*Load)(void);
+  EffectFuncT Load;
   /*
    * Frees all resources allocated by "Load" step.
    */
-  void (*UnLoad)(void);
+  EffectFuncT UnLoad;
   /*
    * Does all initialization steps required to launch the effect:
    * 1) Allocate memory for buffers
@@ -65,15 +67,20 @@ typedef struct Effect {
    *    (setup for display window, display data fetch, palette, sprites, etc.)
    * 3) Set up interrupts and DMA channels (copper, blitter, etc.)
    */
-  void (*Init)(void);
+  EffectFuncT Init;
   /*
    * Frees all resources allocated by "Init" step.
    */
-  void (*Kill)(void);
+  EffectFuncT Kill;
   /*
    * Renders single frame of an effect.
    */
-  void (*Render)(void);
+  EffectFuncT Render;
+  /*
+   * Called each frame during VBlank interrupt.
+   * Effect::data will be passed as the argument.
+   */
+  EffectFuncT VBlank;
 } EffectT;
 
 void EffectLoad(EffectT *effect);
@@ -82,7 +89,7 @@ void EffectKill(EffectT *effect);
 void EffectUnLoad(EffectT *effect);
 void EffectRun(EffectT *effect);
 
-#define EFFECT(NAME, L, U, I, K, R)                                            \
+#define EFFECT(NAME, L, U, I, K, R, V)                                         \
   EffectT NAME##Effect = {                                                     \
     .name = #NAME,                                                             \
     .state = 0,                                                                \
@@ -91,6 +98,7 @@ void EffectRun(EffectT *effect);
     .Init = (I),                                                               \
     .Kill = (K),                                                               \
     .Render = (R),                                                             \
+    .VBlank = (V)                                                              \
   };                                                                           \
   ALIAS(NAME##Effect, Effect);
 
