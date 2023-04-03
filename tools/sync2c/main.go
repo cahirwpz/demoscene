@@ -211,6 +211,12 @@ TrackT {{ .Name }} = {
   }
 };
 {{ end }}
+static TrackT *AllTracks[] = {
+{{- range . }}
+  &{{ .Name }},
+{{- end }}
+  NULL
+};
 `
 
 func exportTracks(tracks []Track) {
