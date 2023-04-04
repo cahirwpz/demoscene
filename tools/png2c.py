@@ -316,6 +316,8 @@ def do_pixmap(im, desc):
     param = parse(desc,
                   ('name', str),
                   ('width,height,bpp', (int, int, int)),
+                  ('limit_bpp', bool, False),
+                  ('displayable', bool, False),
                   ('onlydata', bool, False))
 
     name = param['name']
@@ -323,6 +325,8 @@ def do_pixmap(im, desc):
     has_height = param['height']
     has_bpp = param['bpp']
     onlydata = param['onlydata']
+    displayable = param['displayable']
+    limit_bpp = param['limit_bpp']
 
     width, height = im.size
 
@@ -337,12 +341,17 @@ def do_pixmap(im, desc):
     pixeltype = None
     data = None
 
+    data_chip = '__data_chip' if displayable else ''
+
     if im.mode in ['1', 'L', 'P']:
         if has_bpp > 8:
             raise SystemExit('Expected grayscale / color mapped image!')
 
         colors = im.getextrema()[1] + 1
         bpp = int(ceil(log(colors, 2)))
+        if limit_bpp:
+            bpp = min(bpp, has_bpp)
+
         if bpp > has_bpp:
             raise SystemExit(
                 'Image\'s bits per pixel is %d, expected %d!' % (bpp, has_bpp))
@@ -355,7 +364,8 @@ def do_pixmap(im, desc):
             pixeltype = 'PM_CMAP8'
             data = array('B', im.getdata())
 
-        print('static u_char %s_pixels[%d] = {' % (name, stride * height))
+        print('static %s u_char %s_pixels[%d] = {' %
+              (data_chip, name, stride * height))
         for i in range(0, stride * height, stride):
             row = ['0x%02x' % p for p in data[i:i + stride]]
             print('  %s,' % ', '.join(row))
