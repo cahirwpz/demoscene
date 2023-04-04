@@ -82,12 +82,26 @@ func parseFrame(token string) (frame int64, err error) {
 		}
 	}
 
+	if prevFrame >= 0 {
+		delta := frame - prevFrame
+		if delta < 0 {
+			return 0, &parseError{
+				"frame numbers must be specified in ascending order"}
+		}
+		prevFrame = frame
+		frame = delta
+	} else {
+		prevFrame = frame
+	}
+
 	return frame, err
 }
 
 func parseValue(token string) (value int64, err error) {
 	return strconv.ParseInt(token, 0, 16)
 }
+
+var prevFrame int64
 
 func parseTrack(tokens []string, track *Track) (err error) {
 	var frame, value int64
@@ -104,9 +118,6 @@ func parseTrack(tokens []string, track *Track) (err error) {
 	}
 	if value, err = parseValue(tokens[1]); err != nil {
 		return err
-	}
-	if track.First != nil && track.First.Key > int(frame) {
-		return &parseError{"frame numbers must be specified in ascending order"}
 	}
 
 	if len(tokens) == 3 && tokens[2][0] == '!' {
@@ -167,6 +178,7 @@ func parseSyncFile(path string) []Track {
 
 		// Create new track
 		if tokens[0] == "@track" {
+			prevFrame = -1
 			track = &Track{RawName: tokens[1]}
 			continue
 		}

@@ -28,6 +28,19 @@ void TrackInit(TrackT *track) {
   track->type = TRACK_LINEAR;
   track->pending = true;
 
+  {
+    short prevFrame = -1;
+    TrackKeyT *curr;
+
+    for (curr = track->data; curr->frame != END_KEY; curr++) {
+      if (curr->frame < 0)
+        continue;
+      if (prevFrame >= 0)
+        curr->frame += prevFrame;
+      prevFrame = curr->frame;
+    }
+  }
+
   TrackAdvance(track, track->data);
 }
 
