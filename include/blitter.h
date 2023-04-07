@@ -128,6 +128,17 @@ void BitmapCopyMasked(const BitmapT *dst, u_short x, u_short y,
 void BitmapCopyArea(const BitmapT *dst, u_short dx, u_short dy, 
                     const BitmapT *src, const Area2D *area);
 
+/* Blitter or operation. */
+/* TODO: does not behave correctly for unaligned `x` */
+void BlitterOrSetup(const BitmapT *dst, u_short x, u_short y,
+                      const BitmapT *src);
+void BlitterOrStart(short dstbpl, short srcbpl);
+
+#define BlitterOr(dst, dstbpl, x, y, src, srcbpl) ({  \
+  BlitterOrSetup((dst), (x), (y), (src));             \
+  BlitterOrStart((dstbpl), (srcbpl));                 \
+})
+
 /* Blitter fill. */
 void BlitterFillArea(const BitmapT *bitmap, short plane, const Area2D *area);
 
