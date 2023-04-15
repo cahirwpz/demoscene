@@ -7,7 +7,7 @@ FROM debian:bullseye-backports
 
 WORKDIR /root
 
-ADD https://github.com/cahirwpz/demoscene-toolchain/releases/download/2022-04-18/demoscene-toolchain.tar.gz \
+ADD https://github.com/cahirwpz/demoscene-toolchain/releases/download/2023-04-15/demoscene-toolchain.tar.gz \
     demoscene-toolchain.tar.gz
 RUN apt-get -q update && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends -t bullseye-backports \

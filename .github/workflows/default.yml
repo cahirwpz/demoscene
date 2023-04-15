@@ -13,10 +13,12 @@ jobs:
     name: Python Style
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
           lfs: true
-      - uses: actions/setup-python@v3
+      - name: Setup Python 3.9
+        uses: actions/setup-python@v3
         with:
           python-version: 3.9
       - name: Install dependencies
@@ -31,11 +33,18 @@ jobs:
     runs-on: ubuntu-latest
     container: cahirwpz/demoscene:latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
           lfs: true
-      - run: make
-      - uses: actions/upload-artifact@v3
+      - name: Setup GoLang
+        uses: actions/setup-go@v4
+        with:
+          go-version: '>=1.19.0'
+      - name: Build everything
+        run: make
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
         with:
           name: effects
           path: effects/*/*.adf
