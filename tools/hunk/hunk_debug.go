@@ -45,7 +45,6 @@ func readStrTab(r io.Reader, size uint32) []byte {
 }
 
 func readHunkDebugGnu(r io.Reader, name string) HunkDebugGnu {
-	fmt.Printf("HunkDebugGnu: %s\n", name)
 	var stabTab []Stab
 	var stabstrTab []byte
 	if name == "" {

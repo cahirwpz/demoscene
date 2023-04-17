@@ -39,6 +39,7 @@ const (
 	EXT_DEF               = 1   // relocatable definition
 	EXT_ABS               = 2   // Absolute definition
 	EXT_RES               = 3   // no longer supported
+	EXT_GNU_LOCAL         = 33  // GNU local symbol definition
 	EXT_REF32             = 129 // 32 bit absolute reference to symbol
 	EXT_COMMON            = 130 // 32 bit absolute reference to COMMON block
 	EXT_REF16             = 131 // 16 bit PC-relative reference to symbol
@@ -103,6 +104,7 @@ func init() {
 		EXT_DEF:       "EXT_DEF",
 		EXT_ABS:       "EXT_ABS",
 		EXT_RES:       "EXT_RES",
+		EXT_GNU_LOCAL: "EXT_GNU_LOCAL",
 		EXT_REF32:     "EXT_REF32",
 		EXT_COMMON:    "EXT_COMMON",
 		EXT_REF16:     "EXT_REF16",

@@ -29,7 +29,7 @@ func readHunkExt(r io.Reader) HunkExt {
 		extType := ExtType(nlongs >> 24)
 		name := readStringOfSize(r, length)
 		switch extType {
-		case EXT_DEF, EXT_ABS, EXT_RES:
+		case EXT_DEF, EXT_ABS, EXT_RES, EXT_GNU_LOCAL:
 			value := readLong(r)
 			ext = append(ext, Extern{extType, name, value, nil})
 		case EXT_REF32, EXT_REF16, EXT_REF8, EXT_DEXT32, EXT_DEXT16, EXT_DEXT8:
@@ -38,7 +38,7 @@ func readHunkExt(r io.Reader) HunkExt {
 			size := readLong(r)
 			ext = append(ext, Extern{extType, name, size, readArrayOfLong(r)})
 		default:
-			panic("unknown external type")
+			panic(fmt.Sprintf("unknown external type: %v", extType))
 		}
 	}
 	sort.Slice(ext, func(i, j int) bool {
