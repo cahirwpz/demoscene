@@ -41,7 +41,8 @@ void Loader(BootDataT *bd) {
 
     for (i = 0; i < bd->bd_nregions; i++) {
       MemRegionT *mr = &bd->bd_region[i];
-      AddMemory((void *)mr->mr_lower, mr->mr_upper - mr->mr_lower, mr->mr_attr);
+      uintptr_t lower = mr->mr_lower ? mr->mr_lower : 1;
+      AddMemory((void *)lower, mr->mr_upper - lower, mr->mr_attr);
     }
   }
 

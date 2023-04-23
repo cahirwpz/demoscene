@@ -199,6 +199,7 @@ void AddMemory(void *ptr, u_int size, u_int attributes) {
   u_int sz = (uintptr_t)end - (uintptr_t)ar->start;
   WordT *bt = ar->start;
 
+  Assume(ar != NULL);
   Assume(end > (void *)ar->start + FREEBLK_SZ);
 
   ar->succ = NULL;

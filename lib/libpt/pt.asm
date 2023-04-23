@@ -17,7 +17,7 @@ _PtPatternPos   set     mt_data+mt_PatternPos
 _PtInstallCIA:
         movem.l d2-d7/a2-a6,-(sp)
         st.b    d0
-        suba.l  a0,a0
+        move.l  _ExcVecBase,a0
         lea     $dff000,a6
         bsr     _mt_install_cia
         movem.l (sp)+,d2-d7/a2-a6
