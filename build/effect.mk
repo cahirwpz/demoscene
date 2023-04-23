@@ -12,6 +12,7 @@ CRT0 = $(TOPDIR)/system/crt0.o $(TOPDIR)/effects/main.o
 BOOTLOADER = $(TOPDIR)/bootloader.bin
 ROMSTARTUP = $(TOPDIR)/a500rom.bin
 BOOTBLOCK = $(TOPDIR)/addchip.bootblock.bin
+VBRMOVE = $(TOPDIR)/vbrmove
 
 EXTRA-FILES += $(DATA_GEN) $(EFFECT).adf
 CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map

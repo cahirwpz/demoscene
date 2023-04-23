@@ -107,6 +107,10 @@ CLEAN-FILES += $(SOURCES:%=%~)
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
 	$(VASM) -Fhunk $(VASMFLAGS) $(VASMFLAGS.$*) -o $@ $<
 
+%: %.asm
+	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
+	$(VASM) -Fhunkexe -nosym $(VASMFLAGS) $(VASMFLAGS.$*) -o $@ $<
+
 %.bin: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
 	$(VASM) -Fbin $(VASMFLAGS) -o $@ $<

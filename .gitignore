@@ -66,6 +66,9 @@ effects/*/data/*.[ch]
 tags
 cscope.out
 
+# specific binary files
+vbrmove
+
 # Whitelisted files 
 !README.gdb.png
 !README.vsc.png
