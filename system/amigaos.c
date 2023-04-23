@@ -250,6 +250,8 @@ BootDataT *SaveOS(void) {
   return &BootData;
 }
 
+extern void UserState34(void *stack);
+
 void RestoreOS(void) {
   BootDataT *bd = &BootData;
 
@@ -266,8 +268,13 @@ void RestoreOS(void) {
 
   /* Restore exception vector and leave supervisor mode. */
   memcpy(bd->bd_vbr, old.excVec, sizeof(old.excVec));
-  /* TODO: This function is broken in V33/34 Kickstart, hangs on 68010. */
-  UserState(old.sysStack);
+
+  /* UserState is broken on V33/34 Kickstart, hangs on 68010. */
+  if (ExecVer <= 34) {
+    UserState34(old.sysStack);
+  } else {
+    UserState(old.sysStack);
+  }
 
   /* CIA-A & CIA-B: Restore state of all timers. */
   SetTimerState(&ciaa->ciacra, &ciaa->ciatalo, &ciaa->ciatahi, &old.timer[0]);
