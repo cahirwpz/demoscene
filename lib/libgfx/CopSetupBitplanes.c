@@ -6,13 +6,15 @@ void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
   {
     void **planes = bitmap->planes;
     short n = depth - 1;
-    short i = 0;
+    short reg = CSREG(bplpt);
 
     do {
-      CopInsT *ins = CopMove32(list, bplpt[i++], *planes++);
+      CopInsT *ins = CopMoveLong(list, reg, (int)(*planes++));
 
       if (bplptr)
         *bplptr++ = ins;
+
+      reg += 4;
     } while (--n != -1);
   }
 
