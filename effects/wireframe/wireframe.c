@@ -335,4 +335,4 @@ static void Render(void) {
     active = 0;
 }
 
-EFFECT(Wireframe, Load, UnLoad, Init, Kill, Render);
+EFFECT(Wireframe, Load, UnLoad, Init, Kill, Render, NULL);

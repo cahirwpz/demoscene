@@ -467,4 +467,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(FloorOld, Load, UnLoad, Init, Kill, Render);
+EFFECT(FloorOld, Load, UnLoad, Init, Kill, Render, NULL);

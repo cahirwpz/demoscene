@@ -108,4 +108,4 @@ static void Render(void) {
   exitLoop = !HandleEvent();
 }
 
-EFFECT(KbdTest, NULL, NULL, Init, Kill, Render);
+EFFECT(KbdTest, NULL, NULL, Init, Kill, Render, NULL);

@@ -189,4 +189,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(TwisterRGB, NULL, NULL, Init, Kill, Render);
+EFFECT(TwisterRGB, NULL, NULL, Init, Kill, Render, NULL);

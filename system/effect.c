@@ -94,7 +94,7 @@ void EffectRun(EffectT *effect) {
     int t = ReadFrameCounter();
     exitLoop = LeftMouseButton();
     frameCount = t;
-    if (effect->Render)
+    if ((lastFrameCount != frameCount) && effect->Render)
       effect->Render();
     lastFrameCount = t;
   } while (!exitLoop);

@@ -44,4 +44,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(Circles, NULL, NULL, Init, Kill, Render);
+EFFECT(Circles, NULL, NULL, Init, Kill, Render, NULL);

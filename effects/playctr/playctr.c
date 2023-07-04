@@ -4,7 +4,6 @@
 #include <console.h>
 #include <copper.h>
 #include <system/event.h>
-#include <system/interrupt.h>
 #include <system/keyboard.h>
 #include <system/memory.h>
 
@@ -49,15 +48,13 @@ static void UnLoad(void) {
   MemFree(module);
 }
 
-static int CinterMusic(void) {
+static void CinterMusic(void) {
   if (stopped)
-    return 0;
+    return;
   CinterPlay1(player);
   CinterPlay2(player);
-  return 0;
+  return;
 }
-
-INTSERVER(CinterMusicServer, 10, (IntFuncT)CinterMusic, NULL);
 
 static void Init(void) {
   KeyboardInit();
@@ -83,8 +80,6 @@ static void Init(void) {
   CinterInit(module, instruments, player);
   musicStart = player->c_MusicPointer;
 
-  AddIntServer(INTB_VERTB, CinterMusicServer);
-
   ConsoleSetCursor(&console, 0, 0);
   ConsolePutStr(&console, 
                 "Pause (SPACE) -10s (LEFT) +10s (RIGHT)\n"
@@ -94,8 +89,6 @@ static void Init(void) {
 }
 
 static void Kill(void) {
-  RemIntServer(INTB_VERTB, CinterMusicServer);
-
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_AUDIO);
 
   DeleteCopList(cp);
@@ -173,4 +166,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(PlayCinter, Load, UnLoad, Init, Kill, Render);
+EFFECT(PlayCinter, Load, UnLoad, Init, Kill, Render, CinterMusic);

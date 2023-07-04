@@ -310,4 +310,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(SeaAnemone, Load, UnLoad, Init, Kill, Render);
+EFFECT(SeaAnemone, Load, UnLoad, Init, Kill, Render, NULL);

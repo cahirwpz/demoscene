@@ -495,4 +495,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EFFECT(Blurred3D, Load, UnLoad, Init, Kill, Render);
+EFFECT(Blurred3D, Load, UnLoad, Init, Kill, Render, NULL);

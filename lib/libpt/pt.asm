@@ -2,17 +2,15 @@
         xdef    _PtRemoveCIA
         xdef    _PtInit
         xdef    _PtEnd
-        xdef    _PtSongPos
-        xdef    _PtPatternPos
+        xdef    _PtData
         xdef    _PtEnable
         xdef    _PtE8Trigger
 
         section '.text',code
 
+_PtData         set     mt_data+mt_chan1
 _PtEnable       set     _mt_Enable
 _PtE8Trigger    set     _mt_E8Trigger
-_PtSongPos      set     mt_data+mt_SongPos
-_PtPatternPos   set     mt_data+mt_PatternPos
 
 _PtInstallCIA:
         movem.l d2-d7/a2-a6,-(sp)

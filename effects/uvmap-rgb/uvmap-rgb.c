@@ -291,4 +291,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(UVMapRGB, Load, UnLoad, Init, Kill, Render);
+EFFECT(UVMapRGB, Load, UnLoad, Init, Kill, Render, NULL);

@@ -5,7 +5,6 @@
 #include "2d.h"
 #include "fx.h"
 #include <stdlib.h>
-#include <system/interrupt.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -108,7 +107,7 @@ static void UnLoad(void) {
   DeleteBitmap(screen[1]);
 }
 
-static int CustomRotatePalette(void) {
+static void CustomRotatePalette(void) {
   u_short *src = palette[0]->colors;
   CopInsT *ins = pal + 1;
   int i = frameCount;
@@ -117,10 +116,8 @@ static int CustomRotatePalette(void) {
   while (--n >= 0)
     CopInsSet16(ins++, src[i++ & 15]);
 
-  return 0;
+  return;
 }
-
-INTSERVER(RotatePaletteInterrupt, 0, (IntFuncT)CustomRotatePalette, NULL);
 
 static void Init(void) {
   EnableDMA(DMAF_BLITTER);
@@ -143,14 +140,10 @@ static void Init(void) {
 
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
-
-  AddIntServer(INTB_VERTB, RotatePaletteInterrupt);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
-
-  RemIntServer(INTB_VERTB, RotatePaletteInterrupt);
 
   DeleteCopList(cp);
 }
@@ -228,4 +221,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Neons, Load, UnLoad, Init, Kill, Render);
+EFFECT(Neons, Load, UnLoad, Init, Kill, Render, CustomRotatePalette);

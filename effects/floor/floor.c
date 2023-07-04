@@ -259,4 +259,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Floor, NULL, NULL, Init, Kill, Render);
+EFFECT(Floor, NULL, NULL, Init, Kill, Render, NULL);

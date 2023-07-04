@@ -222,4 +222,4 @@ static void Render(void) {
   swapr(screen0, screen1);
 }
 
-EFFECT(Tiles8, Load, NULL, Init, Kill, Render);
+EFFECT(Tiles8, Load, NULL, Init, Kill, Render, NULL);

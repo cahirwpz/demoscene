@@ -522,4 +522,4 @@ static void Render(void) {
 #endif
 }
 
-EFFECT(GameOfLife, NULL, NULL, Init, Kill, Render);
+EFFECT(GameOfLife, NULL, NULL, Init, Kill, Render, NULL);

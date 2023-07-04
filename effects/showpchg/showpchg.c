@@ -52,4 +52,4 @@ static void Kill(void) {
   DeleteCopList(cp);
 }
 
-EFFECT(ShowPCHG, NULL, NULL, Init, Kill, NULL);
+EFFECT(ShowPCHG, NULL, NULL, Init, Kill, NULL, NULL);

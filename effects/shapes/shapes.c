@@ -140,4 +140,4 @@ static void Render(void) {
   planeC ^= 1;
 }
 
-EFFECT(Shapes, Load, UnLoad, Init, Kill, Render);
+EFFECT(Shapes, Load, UnLoad, Init, Kill, Render, NULL);

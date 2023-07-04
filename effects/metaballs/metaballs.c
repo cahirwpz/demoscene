@@ -127,4 +127,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(MetaBalls, Load, UnLoad, Init, Kill, Render);
+EFFECT(MetaBalls, Load, UnLoad, Init, Kill, Render, NULL);

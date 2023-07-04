@@ -4,7 +4,6 @@
 #include <copper.h>
 #include <p61.h>
 #include <system/event.h>
-#include <system/interrupt.h>
 #include <system/keyboard.h>
 #include <system/memory.h>
 #include <system/timer.h>
@@ -23,8 +22,6 @@ static BitmapT *osc[4];
 static CopListT *cp;
 static ConsoleT console;
 static CIATimerT *p61tmr;
-
-INTSERVER(P61PlayerServer, 10, (IntFuncT)P61_Music, NULL);
 
 static inline void putpixel(u_char *line, short x) {
   bset(line + (x >> 3), ~x);
@@ -118,8 +115,6 @@ static void Init(void) {
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
-  AddIntServer(INTB_VERTB, P61PlayerServer);
-
   ConsolePutStr(&console, 
                 "Pause (SPACE) Prev (LEFT) Next (RIGHT)\n"
                 "Exit (ESC)\n");
@@ -129,7 +124,6 @@ static void Kill(void) {
   P61_ControlBlock.Play = 0;
   P61_End();
 
-  RemIntServer(INTB_VERTB, P61PlayerServer);
   ReleaseTimer(p61tmr);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
@@ -222,4 +216,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(PlayP61, NULL, NULL, Init, Kill, Render);
+EFFECT(PlayP61, NULL, NULL, Init, Kill, Render, P61_Music);

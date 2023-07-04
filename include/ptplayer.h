@@ -129,7 +129,6 @@ typedef struct {
   u_char mt_PattDelTime2;
 } __attribute__((packed)) PtPlayer;
 
-extern u_short PtPatternPos;
-extern u_char PtSongPos;
+extern PtPlayer PtData;
 
 #endif

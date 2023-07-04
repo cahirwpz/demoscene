@@ -109,4 +109,4 @@ static void Render(void) {
   active = (active + 1) % (DEPTH + 1);
 }
 
-EFFECT(Anim, Load, UnLoad, Init, Kill, Render);
+EFFECT(Anim, Load, UnLoad, Init, Kill, Render, NULL);

@@ -140,4 +140,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Blurred, Load, UnLoad, Init, Kill, Render);
+EFFECT(Blurred, Load, UnLoad, Init, Kill, Render, NULL);

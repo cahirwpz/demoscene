@@ -203,4 +203,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(ButterflyGears, NULL, NULL, Init, Kill, Render);
+EFFECT(ButterflyGears, NULL, NULL, Init, Kill, Render, NULL);

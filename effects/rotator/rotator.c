@@ -310,4 +310,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Rotator, NULL, NULL, Init, Kill, Render);
+EFFECT(Rotator, NULL, NULL, Init, Kill, Render, NULL);

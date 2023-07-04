@@ -449,4 +449,4 @@ static void Render(void) {
   { BitmapT *tmp = screen0; screen0 = screen1; screen1 = tmp; }
 }
 
-EFFECT(Thunders, Load, NULL, Init, Kill, Render);
+EFFECT(Thunders, Load, NULL, Init, Kill, Render, NULL);

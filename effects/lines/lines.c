@@ -101,4 +101,4 @@ static void Render(void) {
   ProfilerStop(Lines);
 }
 
-EFFECT(Lines, Load, UnLoad, Init, NULL, Render);
+EFFECT(Lines, Load, UnLoad, Init, NULL, Render, NULL);

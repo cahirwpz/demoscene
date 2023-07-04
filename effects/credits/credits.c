@@ -189,4 +189,4 @@ static void Render(void) {
   swapr(cp0, cp1);
 }
 
-EFFECT(Credits, NULL, NULL, Init, Kill, Render);
+EFFECT(Credits, NULL, NULL, Init, Kill, Render, NULL);

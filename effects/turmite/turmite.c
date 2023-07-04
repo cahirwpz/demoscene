@@ -304,4 +304,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(Turmite, Load, NULL, Init, Kill, Render);
+EFFECT(Turmite, Load, NULL, Init, Kill, Render, NULL);

@@ -137,4 +137,4 @@ static void Render(void) {
   exitLoop = !HandleEvent();
 }
 
-EFFECT(GUI, Load, NULL, Init, Kill, Render);
+EFFECT(GUI, Load, NULL, Init, Kill, Render, NULL);
