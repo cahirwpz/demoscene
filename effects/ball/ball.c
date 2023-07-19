@@ -18,7 +18,7 @@ static PixmapT *chunky;
 static BitmapT *bitmap;
 static SprDataT *sprdat;
 static SpriteT sprite[2][8];
-static CopInsT *sprptr[8];
+static CopInsPairT *sprptr;
 
 #include "data/dragon-bg.c"
 #include "data/texture-15.c"
@@ -81,15 +81,15 @@ static void MakeUVMapRenderCode(void) {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopSetupBitplanes(cp, NULL, &background, S_DEPTH);
-  CopSetupSprites(cp, sprptr);
+  CopSetupBitplanes(cp, &background, S_DEPTH);
+  sprptr = CopSetupSprites(cp);
   CopEnd(cp);
 
   {
     short i;
 
     for (i = 0; i < 8; i++)
-      CopInsSetSprite(sprptr[i], &sprite[active][i]);
+      CopInsSetSprite(&sprptr[i], &sprite[active][i]);
   }
 }
 
@@ -308,7 +308,7 @@ static void BitmapToSprite(BitmapT *input, SpriteT sprite[8]) {
 static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
   short x = X((S_WIDTH - WIDTH) / 2) + xo;
   short y = Y((S_HEIGHT - HEIGHT) / 2) + yo;
-  CopInsT **ptr = sprptr;
+  CopInsPairT *ptr = sprptr;
   short n = 4;
 
   while (--n >= 0) {
@@ -318,8 +318,8 @@ static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
     SpriteUpdatePos(spr0, x, y);
     SpriteUpdatePos(spr1, x, y);
 
-    CopInsSetSprite(*ptr++, spr0);
-    CopInsSetSprite(*ptr++, spr1);
+    CopInsSetSprite(ptr++, spr0);
+    CopInsSetSprite(ptr++, spr1);
 
     x += 16;
   }

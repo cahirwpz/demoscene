@@ -9,8 +9,16 @@
 #define HEIGHT 256
 #define DEPTH 2
 
+typedef struct {
+  CopInsT bplshift;
+  CopInsPairT bplptr0;
+  CopInsPairT bplptr1;
+  CopInsT color0;
+  CopInsT color1;
+} CopLineT;
+
 static CopListT *cp[2];
-static CopInsT *copins[2][HEIGHT];
+static CopLineT *copLines[2][HEIGHT];
 static short active = 1;
 
 #include "stripes.c"
@@ -90,7 +98,7 @@ static void UnLoad(void) {
     MemFree(cache[s]);
 }
 
-static void MakeCopperList(CopListT *cp, CopInsT **ins) {
+static void MakeCopperList(CopListT *cp, CopLineT **line) {
   short i;
   void *data = cache[0];
 
@@ -99,7 +107,7 @@ static void MakeCopperList(CopListT *cp, CopInsT **ins) {
   CopSetColor(cp, 1, 0x000);
   for (i = 0; i < HEIGHT; i++) {
     CopWaitSafe(cp, Y(i), 0);
-    ins[i] = CopMove16(cp, bplcon1, 0x00);
+    line[i] = (CopLineT *)CopMove16(cp, bplcon1, 0x00);
     CopMove32(cp, bplpt[0], data + EMPTY * CWIDTH / 8);
     CopMove32(cp, bplpt[1], data + FULL * CWIDTH / 8);
     CopSetColor(cp, 2, 0x000);
@@ -117,8 +125,8 @@ static void Init(void) {
 
   cp[0] = NewCopList(50 + HEIGHT * 8);
   cp[1] = NewCopList(50 + HEIGHT * 8);
-  MakeCopperList(cp[0], copins[0]);
-  MakeCopperList(cp[1], copins[1]);
+  MakeCopperList(cp[0], copLines[0]);
+  MakeCopperList(cp[1], copLines[1]);
   CopListActivate(cp[0]);
   EnableDMA(DMAF_RASTER);
 }
@@ -131,7 +139,7 @@ static void Kill(void) {
 
 static void RenderPipes(void) {
   u_short *pixels = (u_short *)colors.pixels;
-  CopInsT **ins_tab = copins[active];
+  CopLineT **lineTab = copLines[active];
   int *offset = offsets;
   short *stripe = stripes;
   short i;
@@ -139,7 +147,7 @@ static void RenderPipes(void) {
   register int center asm("d7") = - WIDTH * STEP / 2;
 
   for (i = 0; i < HEIGHT; i++) {
-    CopInsT *ins = *ins_tab++;
+    CopLineT *lineIns = *lineTab++;
     short w = *stripe++;
     int x = ((short)w * (short)frame) >> 3;
     short _x, _c;
@@ -178,11 +186,11 @@ static void RenderPipes(void) {
           "addl %1,%0"
           : "+d" (line) : "d" (off) : "1");
 #endif
-      CopInsSet32(ins + 1, line);
+      CopInsSet32(&lineIns->bplptr0, line);
     }
 
     /* Shift bitplanes */
-    CopInsSet16(ins, getword(shifts, _x & 15));
+    CopInsSet16(&lineIns->bplshift, getword(shifts, _x & 15));
 
     /* Stripes colouring */
     {
@@ -191,8 +199,8 @@ static void RenderPipes(void) {
 
       if (_c & 1) swapr(c0, c1);
 
-      CopInsSet16(ins + 5, c0);
-      CopInsSet16(ins + 6, c1);
+      CopInsSet16(&lineIns->color0, c0);
+      CopInsSet16(&lineIns->color1, c1);
     }
   }
 }

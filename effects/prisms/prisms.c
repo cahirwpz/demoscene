@@ -43,15 +43,21 @@ typedef struct {
   short color;
 } SpanInfoT;
 
+typedef struct {
+  CopInsT color;
+  CopInsT bplpri;
+  CopInsPairT bplptr;
+} CopLineT;
+
 static CopListT *cp[2];
-static CopInsT *clines[2][HEIGHT];
+static CopLineT *copLines[2][HEIGHT];
 static BitmapT *stripes;
 static void *rowAddr[WIDTH / 2];
 static SpanInfoT spanInfo[HEIGHT];
 static PrismT prisms[PRISMS];
 static short active = 0;
 
-static CopInsT *sprptr[8];
+static CopInsPairT *sprptr;
 
 static u_short colorSet[NCOLORS] = {
   0xC0F, 0xF0C, 0x80F, 0xF08
@@ -116,22 +122,22 @@ static void GenerateColorShades(void) {
   }
 }
 
-static void MakeCopperList(CopListT *cp, CopInsT **cline) {
+static void MakeCopperList(CopListT *cp, CopLineT **line) {
   short i;
 
   CopInit(cp);
-  CopSetupSprites(cp, sprptr);
+  sprptr = CopSetupSprites(cp);
 
   for (i = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(i - 1), 0xDE);
-    cline[i] = CopSetColor(cp, 1, 0);
+    line[i] = (CopLineT *)CopSetColor(cp, 1, 0);
     CopMove16(cp, bplcon2, 0);
     CopMove32(cp, bplpt[0], rowAddr[0]);
   }
 
   CopEnd(cp);
 
-  ITER(i, 0, 7, CopInsSetSprite(sprptr[i], &sprite[i]));
+  ITER(i, 0, 7, CopInsSetSprite(&sprptr[i], &sprite[i]));
 }
 
 static void Init(void) {
@@ -151,8 +157,8 @@ static void Init(void) {
   cp[0] = NewCopList(HEIGHT * 5 + 200);
   cp[1] = NewCopList(HEIGHT * 5 + 200);
 
-  MakeCopperList(cp[0], clines[0]);
-  MakeCopperList(cp[1], clines[1]);
+  MakeCopperList(cp[0], copLines[0]);
+  MakeCopperList(cp[1], copLines[1]);
 
   ITER(i, 0, 7, SpriteUpdatePos(&sprite[i], X(96 + 16 * i), Y((256 - 24) / 2)));
 
@@ -290,7 +296,7 @@ static void DrawPrismFaces(PrismT *prism, SpanInfoT *spanInfo) {
 }
 
 
-static void DrawVisibleSpans(SpanInfoT *si, CopInsT **cline) {
+static void DrawVisibleSpans(SpanInfoT *si, CopLineT **lineTab) {
   short n = HEIGHT;
 
   while (--n >= 0) {
@@ -299,11 +305,11 @@ static void DrawVisibleSpans(SpanInfoT *si, CopInsT **cline) {
     short width = *wp++;
     short color = *wp++;
     short bplcon2 = (depth > centerZ) ? BPLCON2_PF1P2|BPLCON2_PF2P2 : 0;
-    CopInsT *ins = *cline++;
+    CopLineT *lineIns = *lineTab++;
 
-    CopInsSet16(ins, color);
-    CopInsSet16(ins + 1, bplcon2);
-    CopInsSet32(ins + 2, (void *)getlong(rowAddr, width));
+    CopInsSet16(&lineIns->color, color);
+    CopInsSet16(&lineIns->bplpri, bplcon2);
+    CopInsSet32(&lineIns->bplptr, (void *)getlong(rowAddr, width));
 
     si = (SpanInfoT *)wp;
   }
@@ -325,7 +331,7 @@ static void RenderPrisms(short rotate) {
     prism++;
   }
 
-  DrawVisibleSpans(spanInfo, clines[active]);
+  DrawVisibleSpans(spanInfo, copLines[active]);
 }
 
 PROFILE(RenderPrisms);

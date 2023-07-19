@@ -16,7 +16,7 @@ static u_short active = 0;
 
 static BitmapT *carry;
 static BitmapT *buffer;
-static CopInsT *bplptr[2][DEPTH];
+static CopInsPairT *bplptr[2];
 static CopListT *cp;
 
 #include "data/blurred-pal-1.c"
@@ -39,7 +39,7 @@ static void MakeCopperList(CopListT *cp) {
   short i;
 
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr[active], screen[active], DEPTH);
+  bplptr[0] = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopWait(cp, Y(-18), 0);
   CopLoadPal(cp, &blurred_1_pal, 0);
   CopWait(cp, Y(127), 0);
@@ -47,8 +47,12 @@ static void MakeCopperList(CopListT *cp) {
   CopLoadPal(cp, &blurred_2_pal, 0);
   CopWait(cp, Y(128), 0);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  for (i = 0; i < DEPTH; i++)
-    bplptr[1][i] = CopMove32(cp, bplpt[i], screen[active]->planes[i] - WIDTH / 16);
+  for (i = 0; i < DEPTH; i++) {
+    CopInsPairT *ins =
+      CopMove32(cp, bplpt[i], screen[0]->planes[i] - WIDTH / 16);
+    if (bplptr[1])
+      bplptr[1] = ins;
+  }
   CopEnd(cp);
 }
 
@@ -132,8 +136,8 @@ static void Render(void) {
   
 
   ITER(i, 0, DEPTH - 1, {
-    CopInsSet32(bplptr[0][i], screen[active]->planes[i]);
-    CopInsSet32(bplptr[1][i], screen[active]->planes[i] - WIDTH / 16);
+    CopInsSet32(&bplptr[0][i], screen[active]->planes[i]);
+    CopInsSet32(&bplptr[1][i], screen[active]->planes[i] - WIDTH / 16);
     });
 
   TaskWaitVBlank();

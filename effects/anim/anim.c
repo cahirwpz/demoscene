@@ -10,7 +10,7 @@
 #define DEPTH  4
 
 static BitmapT *screen;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static CopListT *cp;
 static short active = 0;
 
@@ -43,7 +43,7 @@ static void Init(void) {
 
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen, DEPTH);
   CopEnd(cp);
 
   CopListActivate(cp);
@@ -100,7 +100,7 @@ static void Render(void) {
       short i = (active + n + 1 - DEPTH) % (DEPTH + 1);
       if (i < 0)
         i += DEPTH + 1;
-      CopInsSet32(bplptr[n], screen->planes[i]);
+      CopInsSet32(&bplptr[n], screen->planes[i]);
     }
   }
 

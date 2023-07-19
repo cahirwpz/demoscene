@@ -11,7 +11,7 @@
 
 static Object3D *cube;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static BitmapT *screen[2];
 static short active;
 
@@ -42,7 +42,7 @@ static void Init(void) {
 
   cp = NewCopList(80);
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[0], DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
   CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);

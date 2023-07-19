@@ -93,10 +93,10 @@ static BitmapT *current_board;
 static BitmapT *boards[BOARD_COUNT];
 
 // pointers to copper instructions, for rewriting bitplane pointers
-static CopInsT *bplptr[DISP_DEPTH];
+static CopInsPairT *bplptr;
 
 // pointers to copper instructions, for setting colors
-static CopInsT *palptr[COLORS];
+static CopInsT *palptr;
 
 // circular buffer of previous game states as they would be rendered (with
 // horizontally doubled pixels)
@@ -305,25 +305,24 @@ static void ChangePalette(const u_short* pal) {
     {
       u_short next_i = i << 1;
       for (j = i; j < next_i; j++)
-        CopInsSet16(palptr[j], *pal);
+        CopInsSet16(&palptr[j], *pal);
       i = next_i;
       pal++;
     }
 }
 
 static void MakeCopperList(CopListT *cp) {
-  u_short i;
-  u_short* color = palette.colors;
+  short i;
 
   CopInit(cp);
   // initially previous states are empty
   // save addresses of these instructions to change bitplane
   // order when new state gets generated
-  for (i = 0; i < DISP_DEPTH; i++)
-    bplptr[i] = CopMove32(cp, bplpt[i], prev_states[i]->planes[0]);
+  bplptr = CopInsPtr(cp);
+  for (i = 0; i < DISP_DEPTH; i++) 
+    CopMove32(cp, bplpt[i], prev_states[i]->planes[0]);
 
-  for (i = 0; i < COLORS; i++)
-    palptr[i] = CopSetColor(cp, i, *color++);
+  palptr = CopLoadPal(cp, &palette, 0);
 
   for (i = 1; i <= DISP_HEIGHT; i += 2) {
     // vertical pixel doubling
@@ -347,7 +346,7 @@ static void UpdateBitplanePointers(void) {
     // state) to newest game state, so 0th bitplane displays the oldest+1 state
     // and (PREV_STATES_DEPTH-1)'th bitplane displays the newest state
     cur = prev_states[(states_head + i + 1) % PREV_STATES_DEPTH];
-    CopInsSet32(bplptr[i - 1], cur->planes[0]);
+    CopInsSet32(&bplptr[i - 1], cur->planes[0]);
   }
 }
 

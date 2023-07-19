@@ -99,7 +99,7 @@ static void MakeCopperList(CopListT *cp, short num) {
   short i, j;
 
   CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen[num], DEPTH);
+  CopSetupBitplanes(cp, screen[num], DEPTH);
   CopLoadColor(cp, 0, 3, 0);
 
   for (i = 0; i < FAR_Y; i++) {

@@ -15,7 +15,7 @@ static short active = 0;
 
 static Point2D pos[2][3];
 static BitmapT *carry;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static CopListT *cp;
 
 #include "data/metaball.c"
@@ -63,7 +63,7 @@ static void Init(void) {
   LoadPalette(&metaball_pal, 0);
 
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
@@ -122,7 +122,7 @@ static void Render(void) {
   }
   ProfilerStop(Metaballs);
 
-  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  ITER(i, 0, DEPTH - 1, CopInsSet32(&bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();
   active ^= 1;
 }

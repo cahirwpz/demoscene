@@ -15,7 +15,7 @@
 
 static Object3D *cube;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static BitmapT *screen0, *screen1;
 static BitmapT *scratchpad;
 static BitmapT *carry;
@@ -36,7 +36,7 @@ static void UnLoad(void) {
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen0, DEPTH);
 
   {
     short *pixels = gradient.pixels;
@@ -488,7 +488,7 @@ static void Render(void) {
     short n = DEPTH;
 
     while (--n >= 0)
-      CopInsSet32(bplptr[n], screen0->planes[n]);
+      CopInsSet32(&bplptr[n], screen0->planes[n]);
   }
 
   TaskWaitVBlank();

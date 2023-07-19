@@ -21,7 +21,7 @@ static void Init(void) {
   SetupPlayfield(MODE_HAM, DEPTH, xs, ys, w, h);
 
   CopInit(cp);
-  CopSetupBitplanes(cp, NULL, &face, DEPTH);
+  CopSetupBitplanes(cp, &face, DEPTH);
 
   {
     u_short *data = face_pchg;

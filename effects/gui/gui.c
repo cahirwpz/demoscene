@@ -14,7 +14,7 @@
 
 static BitmapT *screen;
 static CopListT *cp;
-static CopInsT *sprptr[8];
+static CopInsPairT *sprptr;
 
 #include "data/toggle_0.c"
 #include "data/toggle_1.c"
@@ -74,11 +74,11 @@ static void Init(void) {
 
   cp = NewCopList(120);
   CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetupSprites(cp, sprptr);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  sprptr = CopSetupSprites(cp);
   CopEnd(cp);
 
-  CopInsSetSprite(sprptr[0], &pointer);
+  CopInsSetSprite(&sprptr[0], &pointer);
   SpriteUpdatePos(&pointer, X(0), Y(0));
 
   CopListActivate(cp);

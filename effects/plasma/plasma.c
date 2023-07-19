@@ -72,7 +72,7 @@ static void MakeCopperList(CopListT *cp, CopInsT **row) {
   CopWaitV(cp, VP(0));
 
   for (y = 0; y < VTILES; y++) {
-    CopInsT *location = CopMove32(cp, cop2lc, 0);
+    CopInsPairT *location = CopMove32(cp, cop2lc, 0);
     CopInsT *label = CopWaitH(cp, VP(y * 4), HP(-4));
     CopInsSet32(location, label);
     row[y] = CopSetColor(cp, 0, 0);

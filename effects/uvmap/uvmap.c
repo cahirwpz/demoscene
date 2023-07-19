@@ -14,7 +14,7 @@ static u_short *textureHi, *textureLo;
 static BitmapT *screen[2];
 static u_short active = 0;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 
 #include "data/texture-16-1.c"
 #include "data/gradient.c"
@@ -212,10 +212,10 @@ static void ChunkyToPlanar(void) {
       break;
 
     case 6:
-      CopInsSet32(bplptr[0], bpl[2]);
-      CopInsSet32(bplptr[1], bpl[3]);
-      CopInsSet32(bplptr[2], bpl[2] + BLTSIZE / 2);
-      CopInsSet32(bplptr[3], bpl[3] + BLTSIZE / 2);
+      CopInsSet32(&bplptr[0], bpl[2]);
+      CopInsSet32(&bplptr[1], bpl[3]);
+      CopInsSet32(&bplptr[2], bpl[2] + BLTSIZE / 2);
+      CopInsSet32(&bplptr[3], bpl[3] + BLTSIZE / 2);
       break;
 
     default:
@@ -230,7 +230,7 @@ static void MakeCopperList(CopListT *cp) {
   short i, j;
 
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   for (j = 0; j < 16; j++)
     CopSetColor(cp, j, *pixels++);
   for (i = 0; i < HEIGHT * 2; i++) {

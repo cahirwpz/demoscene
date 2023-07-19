@@ -35,6 +35,11 @@ typedef union {
 } CopInsT;
 
 typedef struct {
+  CopInsT lo;
+  CopInsT hi;
+} CopInsPairT;
+
+typedef struct {
   CopInsT *curr;
   u_short length;
   u_char  overflow; /* -1 if Vertical Position counter overflowed */
@@ -53,6 +58,11 @@ static inline void CopEnd(CopListT *list) {
   CopInsT *ins = list->curr;
   *((u_int *)ins)++ = 0xfffffffe;
   list->curr = ins;
+}
+
+/* @brief Return a pointer to the current copper instruction pointer. */
+static inline void *CopInsPtr(CopListT *list) {
+  return list->curr;
 }
 
 /* @brief Enable copper and activate copper list.
@@ -77,24 +87,24 @@ static inline CopInsT *_CopInsMove16(CopInsT *ins, short reg, short data) {
   return ins;
 }
 
-static inline CopInsT *_CopInsMove32(CopInsT *ins, short reg, int data) {
+static inline CopInsPairT *_CopInsMove32(CopInsT *ins, short reg, int data) {
   *((u_short *)ins)++ = reg + 2;
   *((u_short *)ins)++ = data;
   *((u_short *)ins)++ = reg;
   *((u_short *)ins)++ = swap16(data);
-  return ins;
+  return (CopInsPairT *)ins;
 }
 
 static inline void CopInsSet16(CopInsT *ins, short data) {
   ins->move.data = data;
 }
 
-static inline void CopInsSet32(CopInsT *ins, void *data) {
+static inline void CopInsSet32(CopInsPairT *ins, void *data) {
   asm volatile("movew %0,%2\n"
                "swap  %0\n"
                "movew %0,%1\n"
                : "+d" (data)
-               : "m" (ins[1].move.data), "m" (ins[0].move.data));
+               : "m" (ins->hi.move.data), "m" (ins->lo.move.data));
 }
 
 #define CopMove16(cp, reg, data) _CopMove16((cp), CSREG(reg), (data))
@@ -106,9 +116,9 @@ static inline CopInsT *_CopMove16(CopListT *list, short reg, short data) {
   return pos;
 }
 
-static inline CopInsT *_CopMove32(CopListT *list, short reg, int data) {
-  CopInsT *pos = list->curr;
-  list->curr = _CopInsMove32(list->curr, reg, data);
+static inline CopInsPairT *_CopMove32(CopListT *list, short reg, int data) {
+  CopInsPairT *pos = (CopInsPairT *)list->curr;
+  list->curr = (CopInsT *)_CopInsMove32(list->curr, reg, data);
   return pos;
 }
 
@@ -212,12 +222,12 @@ void CopSetupDisplayWindow(CopListT *list, u_short mode,
                            u_short xs, u_short ys, u_short w, u_short h);
 void CopSetupBitplaneFetch(CopListT *list, u_short mode,
                            u_short xs, u_short w);
-void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
-                       const BitmapT *bitmap, u_short depth);
+CopInsPairT *CopSetupBitplanes(CopListT *list, const BitmapT *bitmap,
+                               u_short depth);
 void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
                           const BitmapT *bitmap, short x, short y,
                           const Area2D *area);
-void CopUpdateBitplanes(CopInsT **bplptr, const BitmapT *bitmap, short n);
+void CopUpdateBitplanes(CopInsPairT *bplptr, const BitmapT *bitmap, short n);
 
 static inline CopInsT *CopSetColor(CopListT *list, short i, short value) {
   return CopMove16(list, color[i], value);

@@ -16,7 +16,7 @@ static u_short active = 0;
 static u_short *shademap;
 static u_short *chunky[2];
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static u_short *texture;
 
 #include "data/torus-map.c"
@@ -241,10 +241,10 @@ static void ChunkyToPlanar(void) {
       break;
 
     case 12:
-      CopInsSet32(bplptr[0], bpl[3]);
-      CopInsSet32(bplptr[1], bpl[2]);
-      CopInsSet32(bplptr[2], bpl[1]);
-      CopInsSet32(bplptr[3], bpl[0]);
+      CopInsSet32(&bplptr[0], bpl[3]);
+      CopInsSet32(&bplptr[1], bpl[2]);
+      CopInsSet32(&bplptr[2], bpl[1]);
+      CopInsSet32(&bplptr[3], bpl[0]);
       break;
 
     default:
@@ -260,7 +260,7 @@ static void MakeCopperList(CopListT *cp) {
   short i;
 
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopLoadColor(cp, 0, 15, 0);
   for (i = 0; i < HEIGHT * 4; i++) {
     CopWaitSafe(cp, Y(i), 0);

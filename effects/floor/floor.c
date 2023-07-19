@@ -70,7 +70,7 @@ static void MakeCopperList(CopListT *cp, short n) {
   short i;
 
   CopInit(cp);
-  CopSetupBitplanes(cp, NULL, &floor, DEPTH);
+  CopSetupBitplanes(cp, &floor, DEPTH);
 
   for (i = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(i), 0);

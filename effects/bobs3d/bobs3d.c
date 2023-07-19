@@ -13,7 +13,7 @@
 static Object3D *cube;
 static CopListT *cp;
 static BitmapT *screen0, *screen1;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 
 #include "data/flares32.c"
 #include "data/pilka.c"
@@ -23,7 +23,7 @@ static Mesh3D *mesh = &pilka;
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
   CopWait(cp, Y(-1), 0);
-  CopSetupBitplanes(cp, bplptr, screen1, DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen1, DEPTH);
   CopEnd(cp);
 }
 

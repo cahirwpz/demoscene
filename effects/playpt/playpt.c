@@ -32,7 +32,6 @@ void AK_Generate(void *TmpBuf asm("a1"));
 
 static void Load(void) {
   void *TmpBuf = MemAlloc(AKLANG_BUFLEN, MEMF_PUBLIC);
-  Log("Generating samples, please wait...\n");
   AK_Generate(TmpBuf);
   MemFree(TmpBuf);
 }
@@ -48,7 +47,7 @@ static void Init(void) {
 
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
+  CopSetupBitplanes(cp, screen, DEPTH);
   CopEnd(cp);
 
   ConsoleInit(&console, &latin2, screen);

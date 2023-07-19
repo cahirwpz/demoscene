@@ -17,7 +17,7 @@
 #define MAX_H 96
 
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static BitmapT *screen[2];
 static u_short active = 0;
 
@@ -51,7 +51,7 @@ static void Init(void) {
 
   CopInit(cp);
   CopWait(cp, Y(-1), 0);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
@@ -93,7 +93,7 @@ static void Render(void) {
                   &((Area2D){0, 0, MAX_W * 2 + SIZE, MAX_H * 2 + SIZE}));
   DrawPlotter();
 
-  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  ITER(i, 0, DEPTH - 1, CopInsSet32(&bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();
   active ^= 1;
 }

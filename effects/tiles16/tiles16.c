@@ -16,7 +16,7 @@
 #define HTILES (WIDTH / TILEW)
 #define TILESIZE (TILEW * TILEH * DEPTH / 8)
 
-static CopInsT *bplptr[2][DEPTH];
+static CopInsPairT *bplptr[2];
 static BitmapT *screen[2];
 static CopInsT *bplcon1[2];
 static CopListT *cp[2];
@@ -53,7 +53,7 @@ static void Load(void) {
 
 static void MakeCopperList(CopListT *cp, int i) {
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr[i], screen[i], DEPTH);
+  bplptr[i] = CopSetupBitplanes(cp, screen[i], DEPTH);
   bplcon1[i] = CopMove16(cp, bplcon1, 0);
   CopEnd(cp);
 }
@@ -187,12 +187,12 @@ static void Render(void) {
 
     {
       short i;
-      CopInsT **_bplptr = bplptr[active];
+      CopInsPairT *_bplptr = bplptr[active];
       void **_planes = screen[active]->planes;
       int offset = x << 1;
 
       for (i = 0; i < DEPTH; i++)
-        CopInsSet32(_bplptr[i], _planes[i] + offset);
+        CopInsSet32(&_bplptr[i], _planes[i] + offset);
     }
     CopInsSet16(bplcon1[active], pixel | (pixel << 4));
     CopListRun(cp[active]);

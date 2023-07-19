@@ -61,7 +61,7 @@ static void MakeCopperList(CopListT *cp) {
   CopWaitSafe(cp, DISCO_Y - 1, 0);
   CopLoadPal(cp, &disco_pal, 0);
   CopSetupMode(cp, MODE_LORES, disco.depth);
-  CopSetupBitplanes(cp, NULL, &disco, disco.depth);
+  CopSetupBitplanes(cp, &disco, disco.depth);
   CopSetupBitplaneFetch(cp, MODE_LORES, DISCO_X, disco.width);
 
   CopWaitSafe(cp, DISCO_Y, 0);

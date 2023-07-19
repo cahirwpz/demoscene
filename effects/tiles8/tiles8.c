@@ -22,7 +22,7 @@
 #define X(x) ((x) + 0x84)
 #define HP(x) (X(x) / 2)
 
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static CopInsT *chunky[VTILES];
 static BitmapT *screen0, *screen1;
 static CopListT *cp;
@@ -62,7 +62,7 @@ static void Init(void) {
 
   CopInit(cp);
   /* X(-1) to align with copper induced color changes */
-  CopSetupBitplanes(cp, bplptr, screen1, DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen1, DEPTH);
   CopWaitV(cp, VP(0));
 
   /* Copper Chunky.
@@ -85,7 +85,7 @@ static void Init(void) {
   {
     short x, y;
     for (y = 0; y < VTILES; y++) {
-      CopInsT *location = CopMove32(cp, cop2lc, 0);
+      CopInsPairT *location = CopMove32(cp, cop2lc, 0);
       CopInsT *label = CopWaitH(cp, VP(y * 8), HP(-4));
       CopInsSet32(location, label);
       chunky[y] = CopSetColor(cp, 1, 0);

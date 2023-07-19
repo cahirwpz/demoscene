@@ -12,7 +12,7 @@
 #define DEPTH 2
 
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static BitmapT *screen;
 
 #include "data/fruit.c"
@@ -70,7 +70,7 @@ static void Init(void) {
 
   cp = NewCopList(50);
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen, DEPTH);
   CopEnd(cp);
   CopListActivate(cp);
 

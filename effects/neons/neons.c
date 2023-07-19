@@ -14,7 +14,7 @@
 
 static BitmapT *screen[2];
 static u_short active = 0;
-static CopInsT *bplptr[5];
+static CopInsPairT *bplptr;
 
 static const PaletteT *palette[3];
 static CopListT *cp;
@@ -132,7 +132,7 @@ static void Init(void) {
 
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   pal = CopLoadPal(cp, palette[0], 0);
   CopLoadPal(cp, palette[1], 16);
   CopLoadPal(cp, palette[2], 24);
@@ -216,7 +216,7 @@ static void Render(void) {
   }
   ProfilerStop(RenderNeons);
 
-  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  ITER(i, 0, DEPTH - 1, CopInsSet32(&bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();
   active ^= 1;
 }

@@ -32,8 +32,8 @@ static Car cars[CARS];
 
 static CopListT *cp;
 static u_short active = 0;
-static CopInsT *sprptr[8];
-static CopInsT *bplptr[2][DEPTH];
+static CopInsPairT *sprptr;
+static CopInsPairT *bplptr[2];
 static BitmapT *carry;
 
 #include "data/car-left-2.c"
@@ -47,9 +47,9 @@ static BitmapT *lanes[2];
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopSetupSprites(cp, sprptr);
+  sprptr = CopSetupSprites(cp);
 
-  CopSetupBitplanes(cp, NULL, &city_top, DEPTH);
+  CopSetupBitplanes(cp, &city_top, DEPTH);
   CopWait(cp, Y(-18), 0);
   CopLoadPal(cp, &city_top_pal, 0);
 
@@ -59,7 +59,7 @@ static void MakeCopperList(CopListT *cp) {
     CopWait(cp, Y(LANEL_Y - 2), 8);
     CopMove16(cp, dmacon, DMAF_RASTER);
     CopLoadPal(cp, &car_left_pal, 0);
-    CopSetupBitplanes(cp, bplptr[0], lanes[active], DEPTH);
+    bplptr[0] = CopSetupBitplanes(cp, lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
 
@@ -85,7 +85,7 @@ static void MakeCopperList(CopListT *cp) {
   {
     CopWait(cp, Y(LANER_Y - 1), 8);
     CopLoadPal(cp, &car_right_pal, 0);
-    CopSetupBitplanes(cp, bplptr[1], lanes[active], DEPTH);
+    bplptr[1] = CopSetupBitplanes(cp, lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
 
@@ -98,14 +98,14 @@ static void MakeCopperList(CopListT *cp) {
   {
     CopWait(cp, Y(LANER_Y + LANE_H + 1), 8);
     CopLoadPal(cp, &city_bottom_pal, 0);
-    CopSetupBitplanes(cp, NULL, &city_bottom, DEPTH);
+    CopSetupBitplanes(cp, &city_bottom, DEPTH);
     CopWait(cp, Y(LANER_Y + LANE_H + 2), 8);
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   }
 
   CopEnd(cp);
 
-  ITER(i, 0, 7, CopInsSetSprite(sprptr[i], &sprite[i]));
+  ITER(i, 0, 7, CopInsSetSprite(&sprptr[i], &sprite[i]));
 }
 
 static void Init(void) {
@@ -207,8 +207,8 @@ static void Render(void) {
     for (i = 0; i < DEPTH; i++) {
       void *bplpt = lanes[active]->planes[i] + 4;
       u_short stride = lanes[active]->bytesPerRow;
-      CopInsSet32(bplptr[0][i], bplpt);
-      CopInsSet32(bplptr[1][i], bplpt + stride * LANE_H);
+      CopInsSet32(&bplptr[0][i], bplpt);
+      CopInsSet32(&bplptr[1][i], bplpt + stride * LANE_H);
     }
   }
 

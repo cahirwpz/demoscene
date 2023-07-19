@@ -14,7 +14,7 @@
 #define DEPTH 4
 
 static BitmapT *screen;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static CopListT *cp;
 static short active = 0;
 static short maybeSkipFrame = 0;
@@ -27,7 +27,7 @@ static short current_frame = 0;
 
 static void MakeCopperList(CopListT *cp) {
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen, DEPTH);
   {
     short *pixels = gradient.pixels;
     short i, j;
@@ -127,7 +127,7 @@ static void Render(void) {
     while (--n >= 0) {
       short i = mod16(active + n + 1 - DEPTH, DEPTH + 1);
       if (i < 0) i += DEPTH + 1;
-      CopInsSet32(bplptr[n], screen->planes[i]);
+      CopInsSet32(&bplptr[n], screen->planes[i]);
     }
   }
 

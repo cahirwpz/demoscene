@@ -106,7 +106,7 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
   CopInit(cp);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   CopLoadPal(cp, &testscreen_pal, 0);
-  CopSetupBitplanes(cp, NULL, &testscreen, testscreen.depth);
+  CopSetupBitplanes(cp, &testscreen, testscreen.depth);
 
   ballCp->upperBallCopper = cp->curr;
   InitCopperListBall(cp, Y0 + 2, 2);

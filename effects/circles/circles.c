@@ -18,7 +18,7 @@ static void Init(void) {
   SetColor(1, 0xfff);
 
   CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
+  CopSetupBitplanes(cp, screen, DEPTH);
   CopEnd(cp);
 
   CopListActivate(cp);

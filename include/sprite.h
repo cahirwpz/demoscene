@@ -104,9 +104,11 @@ void EndSprite(SprDataT **datp);
 /* Don't call it for null sprites. */
 void SpriteUpdatePos(SpriteT *spr, u_short hstart, u_short vstart);
 
-void CopSetupSprites(CopListT *list, CopInsT **sprptr);
+CopInsPairT *CopSetupSprites(CopListT *list);
 
-static inline void CopInsSetSprite(CopInsT *sprptr, SpriteT *spr) {
+void ResetSprites(void);
+
+static inline void CopInsSetSprite(CopInsPairT *sprptr, SpriteT *spr) {
   CopInsSet32(sprptr, spr->sprdat);
 }
 

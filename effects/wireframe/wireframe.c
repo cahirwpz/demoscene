@@ -13,7 +13,7 @@ static Object3D *cube;
 static CopListT *cp;
 static BitmapT *screen;
 static u_short active = 0;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 
 #include "data/wireframe-pal.c"
 #include "data/pilka.c"
@@ -41,7 +41,7 @@ static void Init(void) {
 
   cp = NewCopList(80);
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen, DEPTH);
   CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
@@ -321,7 +321,7 @@ static void Render(void) {
     short i = active;
 
     while (--n >= 0) {
-      CopInsSet32(bplptr[n], planes[i]);
+      CopInsSet32(&bplptr[n], planes[i]);
       if (i == 0)
         i = DEPTH + 1;
       i--;

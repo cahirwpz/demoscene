@@ -29,9 +29,9 @@
 #define O4 224
 
 typedef struct State {
-  CopInsT *sprite;
+  CopInsPairT *sprite;
   /* at the beginning: 4 bitplane pointers and bplcon1 */
-  CopInsT *bar;
+  CopInsPairT *bar;
   /* for each bar moves to bplcon1, bpl1mod and bpl2mod */
   CopInsT *bar_change[4];
   /* for each line five horizontal positions */
@@ -61,8 +61,7 @@ static void MakeCopperList(CopListT *cp, StateT *state) {
   CopInit(cp);
 
   /* Setup initial bitplane pointers. */
-  state->bar = cp->curr;
-  CopMove32(cp, bplpt[0], NULL);
+  state->bar = CopMove32(cp, bplpt[0], NULL);
   CopMove32(cp, bplpt[1], NULL);
   CopMove32(cp, bplpt[2], NULL);
   CopMove32(cp, bplpt[3], NULL);
@@ -83,9 +82,8 @@ static void MakeCopperList(CopListT *cp, StateT *state) {
   CopMove32(cp, sprpt[7], &stripes3_sprdat);
 
   CopWait(cp, Y(-1), 0);
-
-  state->sprite = cp->curr;
-  CopMove32(cp, sprpt[0], stripes0_sprdat.data); /* up */
+  
+  state->sprite = CopMove32(cp, sprpt[0], stripes0_sprdat.data); /* up */
   CopMove32(cp, sprpt[1], stripes1_sprdat.data);
   CopMove32(cp, sprpt[2], stripes2_sprdat.data); /* down */
   CopMove32(cp, sprpt[3], stripes3_sprdat.data);
@@ -162,16 +160,16 @@ static void UpdateBarState(StateT *state) {
   short bx = w + normfx(SIN(f) * w);
 
   {
-    CopInsT *ins = state->bar;
+    CopInsPairT *ins = state->bar;
 
     short offset = (bx >> 3) & -2;
     short shift = ~bx & 15;
 
     CopInsSet32(&ins[0], bar.planes[0] + offset);
-    CopInsSet32(&ins[2], bar.planes[1] + offset);
-    CopInsSet32(&ins[4], bar.planes[2] + offset);
-    CopInsSet32(&ins[6], bar.planes[3] + offset);
-    CopInsSet16(&ins[8], (shift << 4) | shift);
+    CopInsSet32(&ins[1], bar.planes[1] + offset);
+    CopInsSet32(&ins[2], bar.planes[2] + offset);
+    CopInsSet32(&ins[3], bar.planes[3] + offset);
+    CopInsSet16((CopInsT *)&ins[4], (shift << 4) | shift);
   }
 
   {
@@ -197,18 +195,18 @@ static void UpdateBarState(StateT *state) {
 }
 
 static void UpdateSpriteState(StateT *state) {
-  CopInsT *ins = state->sprite;
+  CopInsPairT *ins = state->sprite;
   int fu = frameCount & 63;
   int fd = (~frameCount) & 63;
 
-  CopInsSet32(ins + 0, stripes0_sprdat.data + fu); /* up */
-  CopInsSet32(ins + 2, stripes1_sprdat.data + fu);
-  CopInsSet32(ins + 4, stripes2_sprdat.data + fd); /* down */
-  CopInsSet32(ins + 6, stripes3_sprdat.data + fd);
-  CopInsSet32(ins + 8, stripes0_sprdat.data + fu); /* up */
-  CopInsSet32(ins + 10, stripes1_sprdat.data + fu);
-  CopInsSet32(ins + 12, stripes2_sprdat.data + fd); /* down */
-  CopInsSet32(ins + 14, stripes3_sprdat.data + fd);
+  CopInsSet32(ins++, stripes0_sprdat.data + fu); /* up */
+  CopInsSet32(ins++, stripes1_sprdat.data + fu);
+  CopInsSet32(ins++, stripes2_sprdat.data + fd); /* down */
+  CopInsSet32(ins++, stripes3_sprdat.data + fd);
+  CopInsSet32(ins++, stripes0_sprdat.data + fu); /* up */
+  CopInsSet32(ins++, stripes1_sprdat.data + fu);
+  CopInsSet32(ins++, stripes2_sprdat.data + fd); /* down */
+  CopInsSet32(ins++, stripes3_sprdat.data + fd);
 }
 
 #define HPOFF(x) HP(x + 32)

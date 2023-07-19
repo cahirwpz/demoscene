@@ -174,7 +174,7 @@ static void Init(void) {
 
   cp = NewCopList(100);
   CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
+  CopSetupBitplanes(cp, screen, DEPTH);
   CopEnd(cp);
   CopListActivate(cp);
 

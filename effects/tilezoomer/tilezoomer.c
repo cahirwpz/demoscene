@@ -32,7 +32,7 @@ static BitmapT *screen1;
 #endif
 static int active = 0;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH + SHADOW];
+static CopInsPairT *bplptr;
 
 /* for each tile following array stores source and destination offsets relative
  * to the beginning of a bitplane */
@@ -101,11 +101,11 @@ static void Init(void) {
   cp = NewCopList(100);
   CopInit(cp);
 #if MOTIONBLUR
-  CopSetupBitplanes(cp, bplptr, screen0, SHADOW);
+  bplptr = CopSetupBitplanes(cp, screen0, SHADOW);
   CopMove16(cp, bpl1mod, MARGIN / 8);
   CopMove16(cp, bpl2mod, MARGIN / 8);
 #else
-  CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen0, DEPTH);
   /* Screen bitplanes are interleaved! */
   CopMove16(cp, bpl1mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
   CopMove16(cp, bpl2mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
@@ -215,14 +215,14 @@ static void UpdateBitplanePointers(void) {
 #if MOTIONBLUR
   short j = active;
   for (i = SHADOW - 1; i >= 0; i--) {
-    CopInsSet32(bplptr[i], screen0->planes[j] + offset);
+    CopInsSet32(&bplptr[i], screen0->planes[j] + offset);
     j--;
     if (j < 0)
       j += DEPTH + SHADOW;
   }
 #else
   for (i = 0; i < DEPTH; i++)
-    CopInsSet32(bplptr[i], screen1->planes[i] + offset);
+    CopInsSet32(&bplptr[i], screen1->planes[i] + offset);
 #endif
 }
 

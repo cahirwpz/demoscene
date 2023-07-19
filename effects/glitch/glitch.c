@@ -11,7 +11,7 @@
 
 static BitmapT *screen[2];
 static short active = 0;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static CopListT *cp;
 static CopInsT *line[HEIGHT];
 
@@ -65,7 +65,7 @@ static void Init(void) {
 
   cp = NewCopList(100 + HEIGHT * 2);
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   for (i = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(YSTART + i), 0);
     /* Alternating shift by one for bitplane data. */
@@ -128,7 +128,7 @@ static void Render(void) {
 
   ProfilerStop(RenderGlitch);
 
-  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  ITER(i, 0, DEPTH - 1, CopInsSet32(&bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();
   active ^= 1;
 }

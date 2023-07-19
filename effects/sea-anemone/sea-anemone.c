@@ -16,7 +16,6 @@
 #define NARMS 31 /* must be power of two minus one */
 
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
 static BitmapT *screen;
 static BitmapT *circles[DIAMETER / 2];
 
@@ -188,7 +187,7 @@ static void Init(void) {
 
   cp = NewCopList(50);
   CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
+  CopSetupBitplanes(cp, screen, DEPTH);
   CopEnd(cp);
   CopListActivate(cp);
 
