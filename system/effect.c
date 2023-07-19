@@ -29,8 +29,10 @@ static void SendEffectStatus(EffectT *effect) {
 # define SendEffectStatus(x)
 #endif
 
+#define DONE 1
+
 void EffectLoad(EffectT *effect) {
-  if (effect->state & EFFECT_LOADED)
+  if ((intptr_t)effect->Load & DONE)
     return;
 
   if (effect->Load) {
@@ -39,12 +41,12 @@ void EffectLoad(EffectT *effect) {
     ShowMemStats();
   }
 
-  effect->state |= EFFECT_LOADED;
+  (intptr_t)effect->Load |= DONE; 
   SendEffectStatus(effect);
 }
 
 void EffectInit(EffectT *effect) {
-  if (effect->state & EFFECT_READY)
+  if ((intptr_t)effect->Init & DONE)
     return;
 
   if (effect->Init) {
@@ -53,12 +55,12 @@ void EffectInit(EffectT *effect) {
     ShowMemStats();
   }
 
-  effect->state |= EFFECT_READY;
+  (intptr_t)effect->Init |= DONE;
   SendEffectStatus(effect);
 }
 
 void EffectKill(EffectT *effect) {
-  if (!(effect->state & EFFECT_READY))
+  if (!((intptr_t)effect->Init & DONE))
     return;
 
   if (effect->Kill) {
@@ -67,12 +69,12 @@ void EffectKill(EffectT *effect) {
     ShowMemStats();
   }
 
-  effect->state &= ~EFFECT_READY;
+  (intptr_t)effect->Init ^= DONE;
   SendEffectStatus(effect);
 }
 
 void EffectUnLoad(EffectT *effect) {
-  if (!(effect->state & EFFECT_LOADED))
+  if (!((intptr_t)effect->Load & DONE))
     return;
 
   if (effect->UnLoad) {
@@ -81,7 +83,7 @@ void EffectUnLoad(EffectT *effect) {
     ShowMemStats();
   }
 
-  effect->state &= ~EFFECT_LOADED;
+  (intptr_t)effect->Load ^= DONE;
   SendEffectStatus(effect);
 }
 
