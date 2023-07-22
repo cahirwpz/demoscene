@@ -24,7 +24,7 @@ typedef struct {
 #include "data/running.c"
 
 static void Load(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1, BM_CLEAR);
 
   Log("Animation has %d frames %d x %d.\n", 
       running.count, running.width, running.height);

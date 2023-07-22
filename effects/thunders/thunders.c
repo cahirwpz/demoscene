@@ -100,8 +100,8 @@ static void MakeCopperList(CopListT *cp, BitmapT *screen) {
 }
 
 static void Init(void) {
-  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   ITER(k, 0, 7, SetColor(k, BGCOL));

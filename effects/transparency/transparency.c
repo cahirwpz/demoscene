@@ -50,7 +50,7 @@ static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
 }
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   EnableDMA(DMAF_BLITTER);
   BitmapCopy(screen, 0, 0, &background);

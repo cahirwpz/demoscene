@@ -29,18 +29,19 @@ static BitmapT *flare[8];
 static void Init(void) {
   short i;
 
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   EnableDMA(DMAF_BLITTER);
 
   for (i = 0; i < 8; i++) {
     Area2D flare_area = { 0, i * SIZE, SIZE, SIZE };
-    flare[i] = NewBitmap(SIZE, SIZE, DEPTH);
+    flare[i] = NewBitmap(SIZE, SIZE, DEPTH, 0);
+    BitmapClear(flare[i]);
     BitmapCopyArea(flare[i], 0, 0, &flares, &flare_area);
   }
 
-  carry = NewBitmap(SIZE + 16, SIZE, 2);
+  carry = NewBitmap(SIZE + 16, SIZE, 2, 0);
   cp = NewCopList(50);
 
   for (i = 0; i < 2; i++)

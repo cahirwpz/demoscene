@@ -22,16 +22,6 @@ static CopListT *cp;
 #include "data/metaball-bg-left-1.c"
 #include "data/metaball-bg-right-1.c"
 
-static void Load(void) {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-}
-
-static void UnLoad(void) {
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
-}
-
 static void SetInitialPositions(void) {
   short i, j;
 
@@ -46,6 +36,9 @@ static void SetInitialPositions(void) {
 static void Init(void) {
   short j;
 
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   for (j = 0; j < 2; j++) {
@@ -55,7 +48,7 @@ static void Init(void) {
   }
 
   cp = NewCopList(100);
-  carry = NewBitmap(SIZE + 16, SIZE, 2);
+  carry = NewBitmap(SIZE + 16, SIZE, 2, 0);
 
   SetInitialPositions();
 
@@ -74,6 +67,8 @@ static void Kill(void) {
 
   DeleteBitmap(carry);
   DeleteCopList(cp);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 static void ClearMetaballs(void) {
@@ -127,4 +122,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(MetaBalls, Load, UnLoad, Init, Kill, Render, NULL);
+EFFECT(MetaBalls, NULL, NULL, Init, Kill, Render, NULL);

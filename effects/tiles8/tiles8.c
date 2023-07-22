@@ -52,8 +52,8 @@ static void Load(void) {
 }
 
 static void Init(void) {
-  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   LoadPalette(&tilegfx_pal, 0);

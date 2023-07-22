@@ -274,8 +274,8 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init(void) {
-  screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
+  screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH, BM_CLEAR);
 
   chunky[0] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP|MEMF_CLEAR);
   chunky[1] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP|MEMF_CLEAR);

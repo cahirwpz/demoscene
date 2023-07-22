@@ -45,7 +45,7 @@ static CopListT *MakeCopperList(short n) {
 }
 
 static void Init(void) {
-  scroll = NewBitmap(WIDTH, HEIGHT + 16, 1);
+  scroll = NewBitmap(WIDTH, HEIGHT + 16, 1, BM_CLEAR);
 
   EnableDMA(DMAF_BLITTER);
   BitmapClear(scroll);

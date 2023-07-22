@@ -161,7 +161,7 @@ static void Load(void) {
   for (r = 1; r <= DIAMETER / 2; r++) {
     short diameter = r * 2;
     short width = (diameter + 15) & -15;
-    BitmapT *circle = NewBitmap(width, diameter + 1, 1);
+    BitmapT *circle = NewBitmap(width, diameter + 1, 1, BM_CLEAR);
     *circlep++ = circle;
     CircleEdge(circle, 0, r, r, r);
     BlitterFill(circle, 0);
@@ -180,7 +180,7 @@ static void UnLoad(void) {
 }
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   LoadPalette(&anemone_pal, 0);

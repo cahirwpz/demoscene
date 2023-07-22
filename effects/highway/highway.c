@@ -109,9 +109,9 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init(void) {
-  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, DEPTH);
-  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, DEPTH);
-  carry = NewBitmap(HSIZE + 16, VSIZE, 2);
+  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, DEPTH, BM_CLEAR);
+  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, DEPTH, BM_CLEAR);
+  carry = NewBitmap(HSIZE + 16, VSIZE, 2, 0);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 

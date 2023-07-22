@@ -250,8 +250,8 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init(void) {
-  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
-  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
+  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, BM_CLEAR);
 
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
   MakeUVMapRenderCode();

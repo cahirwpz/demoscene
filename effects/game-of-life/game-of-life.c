@@ -397,7 +397,7 @@ static void Init(void) {
   MakeDoublePixels();
 
   for (i = 0; i < BOARD_COUNT; i++)
-    boards[i] = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
+    boards[i] = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH, 0);
 
   current_board = boards[0];
   current_game = &wireworld1;
@@ -411,7 +411,7 @@ static void Init(void) {
   for (i = 0; i < PREV_STATES_DEPTH; i++) {
     // only needs half the vertical resolution, other half 
     // achieved via copper line doubling
-    prev_states[i] = NewBitmap(DISP_WIDTH, DISP_HEIGHT / 2, BOARD_DEPTH);
+    prev_states[i] = NewBitmap(DISP_WIDTH, DISP_HEIGHT / 2, BOARD_DEPTH, 0);
     BitmapClear(prev_states[i]);
   }
 

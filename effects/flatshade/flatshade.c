@@ -11,8 +11,9 @@
 static Object3D *cube;
 static CopListT *cp;
 static CopInsPairT *bplptr;
-static BitmapT *screen0, *screen1;
+static BitmapT *screen[2];
 static BitmapT *buffer;
+static int active = 0;
 
 #include "data/flatshade-pal.c"
 #include "data/pilka.c"
@@ -31,16 +32,16 @@ static void Init(void) {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(-250);
 
-  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  buffer = NewBitmap(WIDTH, HEIGHT, 1);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  buffer = NewBitmap(WIDTH, HEIGHT, 1, 0);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   LoadPalette(&flatshade_pal, 0);
 
   cp = NewCopList(80);
   CopInit(cp);
-  bplptr = CopSetupBitplanes(cp, screen0, DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
   CopEnd(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
@@ -48,8 +49,8 @@ static void Init(void) {
 
 static void Kill(void) {
   DisableDMA(DMAF_RASTER);
-  DeleteBitmap(screen0);
-  DeleteBitmap(screen1);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
   DeleteBitmap(buffer);
   DeleteCopList(cp);
   DeleteObject3D(cube);
@@ -271,14 +272,14 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
 
       /* Copy filled face to screen. */
       {
-        void **screen = &screen0->planes[DEPTH];
+        void **dstbpl = &screen[active]->planes[DEPTH];
         void *src = temp + bltstart;
         char mask = 1 << (DEPTH - 1);
         char color = faceFlags[index];
         short n = DEPTH;
 
         while (--n >= 0) {
-          void *dst = *(--screen) + bltstart;
+          void *dst = *(--dstbpl) + bltstart;
           u_short bltcon0;
 
           if (color & mask)
@@ -335,7 +336,7 @@ PROFILE(Transform);
 PROFILE(Draw);
 
 static void Render(void) {
-  BitmapClearFast(screen0);
+  BitmapClearFast(screen[active]);
 
   ProfilerStart(Transform);
   {
@@ -354,9 +355,9 @@ static void Render(void) {
   }
   ProfilerStop(Draw);
 
-  CopUpdateBitplanes(bplptr, screen0, DEPTH);
+  CopUpdateBitplanes(bplptr, screen[active], DEPTH);
   TaskWaitVBlank();
-  swapr(screen0, screen1);
+  active ^= 1;
 }
 
 EFFECT(FlatShade, Load, UnLoad, Init, Kill, Render, NULL);

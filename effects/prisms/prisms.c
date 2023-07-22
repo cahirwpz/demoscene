@@ -141,7 +141,7 @@ static void MakeCopperList(CopListT *cp, CopLineT **line) {
 }
 
 static void Init(void) {
-  stripes = NewBitmap(WIDTH, WIDTH / 2, 1);
+  stripes = NewBitmap(WIDTH, WIDTH / 2, 1, BM_CLEAR);
 
   GeneratePrisms();
   GenerateColorShades();

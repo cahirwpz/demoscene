@@ -17,15 +17,9 @@ static short plane, planeC;
 #include "data/shapes-pal.c"
 #include "data/night.c"
 
-static void Load(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-}
-
-static void UnLoad(void) {
-  DeleteBitmap(screen);
-}
-
 static void Init(void) {
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+
   /* Set up clipping window. */
   ClipWin.minX = fx4i(0);
   ClipWin.maxX = fx4i(319);
@@ -54,6 +48,7 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   DeleteCopList(cp);
+  DeleteBitmap(screen);
 }
 
 static Point2D tmpPoint[2][16];
@@ -140,4 +135,4 @@ static void Render(void) {
   planeC ^= 1;
 }
 
-EFFECT(Shapes, Load, UnLoad, Init, Kill, Render, NULL);
+EFFECT(Shapes, NULL, NULL, Init, Kill, Render, NULL);

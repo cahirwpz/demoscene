@@ -31,7 +31,7 @@ SOURCES := \
 	InsideArea.c \
 	LoadPalette.c \
 	MakeSprite.c \
-	NewBitmapCustom.c \
+	NewBitmap.c \
 	NewCopList.c \
 	NewPixmap.c \
 	NullSprData.c \

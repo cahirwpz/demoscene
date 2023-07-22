@@ -65,10 +65,10 @@ static void Init(void) {
   Log("Allocate %d extra lines!\n", extra);
 
   /* Use interleaved mode to limit number of issued blitter operations. */
-  screen[0] = NewBitmapCustom(WIDTH, HEIGHT + extra, DEPTH,
-                              BM_CLEAR | BM_DISPLAYABLE | BM_INTERLEAVED);
-  screen[1] = NewBitmapCustom(WIDTH, HEIGHT + extra, DEPTH,
-                              BM_CLEAR | BM_DISPLAYABLE | BM_INTERLEAVED);
+  screen[0] = NewBitmap(WIDTH, HEIGHT + extra, DEPTH,
+                        BM_CLEAR | BM_INTERLEAVED);
+  screen[1] = NewBitmap(WIDTH, HEIGHT + extra, DEPTH,
+                        BM_CLEAR | BM_INTERLEAVED);
 
   SetupMode(MODE_LORES, DEPTH);
   SetupDisplayWindow(MODE_LORES, X(0), Y(0), WIDTH - 16, HEIGHT - 16);

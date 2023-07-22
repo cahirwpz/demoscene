@@ -131,7 +131,7 @@ def do_bitmap(im, desc):
                   ('width,height,depth', (int, int, int)),
                   ('extract_at', (int, int), (0, 0)),
                   ('interleaved', bool, False),
-                  ('displayable', bool, True),
+                  ('cpuonly', bool, False),
                   ('shared', bool, False),
                   ('limit_depth', bool, False),
                   ('onlydata', bool, False))
@@ -142,7 +142,7 @@ def do_bitmap(im, desc):
     has_depth = param['depth']
     x, y = param['extract_at']
     interleaved = param['interleaved']
-    displayable = param['displayable']
+    cpuonly = param['cpuonly']
     shared = param['shared']
     limit_depth = param['limit_depth']
     onlydata = param['onlydata']
@@ -169,7 +169,7 @@ def do_bitmap(im, desc):
     bplSize = bytesPerRow * height
     bpl = planar(pix, width, height, depth)
 
-    data_chip = '__data_chip' if displayable else ''
+    data_chip = '' if cpuonly else '__data_chip'
 
     print(f'static {data_chip} u_short _{name}_bpl[] = {{')
     if interleaved:
@@ -204,8 +204,8 @@ def do_bitmap(im, desc):
     print(f'  .bytesPerRow = {bytesPerRow},')
     print(f'  .bplSize = {bplSize},')
     flags = ['BM_STATIC']
-    if displayable:
-        flags.append('BM_DISPLAYABLE')
+    if cpuonly:
+        flags.append('BM_CPUONLY')
     if interleaved:
         flags.append('BM_INTERLEAVED')
     print('  .flags = %s,' % '|'.join(flags))

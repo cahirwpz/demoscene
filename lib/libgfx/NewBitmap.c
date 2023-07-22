@@ -1,9 +1,7 @@
 #include <bitmap.h>
 #include <system/memory.h>
 
-BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
-                         u_char flags)
-{
+BitmapT *NewBitmap(u_short width, u_short height, u_short depth, u_char flags) {
   BitmapT *bitmap = MemAlloc(sizeof(BitmapT), MEMF_PUBLIC|MEMF_CLEAR);
   u_short bytesPerRow = ((width + 15) & ~15) / 8;
 
@@ -22,10 +20,10 @@ BitmapT *NewBitmapCustom(u_short width, u_short height, u_short depth,
     if (flags & BM_CLEAR)
       memoryFlags |= MEMF_CLEAR;
 
-    if (flags & BM_DISPLAYABLE)
-      memoryFlags |= MEMF_CHIP;
-    else
+    if (flags & BM_CPUONLY)
       memoryFlags |= MEMF_PUBLIC;
+    else
+      memoryFlags |= MEMF_CHIP;
 
     BitmapSetPointers(bitmap, MemAlloc(BitmapSize(bitmap), memoryFlags));
   }

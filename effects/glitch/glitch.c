@@ -50,8 +50,8 @@ static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
 static void Init(void) {
   short i;
 
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(XSTART), Y(YSTART), WIDTH, HEIGHT);
   SetColor(0, 0x000);

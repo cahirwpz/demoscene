@@ -70,9 +70,9 @@ static void DrawOsc(BitmapT *osc, P61_OscData *data) {
 static void Init(void) {
   KeyboardInit();
 
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
-  ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1));
+  ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1, BM_CLEAR));
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);

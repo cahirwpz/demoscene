@@ -23,16 +23,6 @@ static CopListT *cp;
 #include "data/blurred-pal-2.c"
 #include "data/blurred-clip.c"
 
-static void Load(void) {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-}
-
-static void UnLoad(void) {
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
-}
-
 static short iterCount = 0;
 
 static void MakeCopperList(CopListT *cp) {
@@ -59,6 +49,9 @@ static void MakeCopperList(CopListT *cp) {
 static void Init(void) {
   short i;
 
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   for (i = 0; i < 2; i++) {
@@ -72,8 +65,8 @@ static void Init(void) {
     BitmapCopy(screen[i], WIDTH / 2, 0, &clip);
   }
 
-  buffer = NewBitmap(SIZE, SIZE, 4);
-  carry = NewBitmap(SIZE, SIZE, 2);
+  buffer = NewBitmap(SIZE, SIZE, 4, 0);
+  carry = NewBitmap(SIZE, SIZE, 2, 0);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
@@ -89,6 +82,8 @@ static void Kill(void) {
   DeleteCopList(cp);
   DeleteBitmap(carry);
   DeleteBitmap(buffer);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 static void RotatingTriangle(short t, short phi, short size) {
@@ -144,4 +139,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Blurred, Load, UnLoad, Init, Kill, Render, NULL);
+EFFECT(Blurred, NULL, NULL, Init, Kill, Render, NULL);

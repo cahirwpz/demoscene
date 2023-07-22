@@ -81,17 +81,9 @@ static void FloorPrecalc(void) {
 }
 
 static void Load(void) {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-
   FloorPrecalc();
 
   ITER(i, 0, 255, cycleStart[i] = random() & 63);
-}
-
-static void UnLoad(void) {
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
 }
 
 static void MakeCopperList(CopListT *cp, short num) {
@@ -129,6 +121,9 @@ static void MakeCopperList(CopListT *cp, short num) {
 static void Init(void) {
   short i;
 
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+
   EnableDMA(DMAF_BLITTER);
 
   for (i = 0; i < 2; i++) {
@@ -156,6 +151,8 @@ static void Kill(void) {
 
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 static void ClearLine(short k) {
@@ -467,4 +464,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(FloorOld, Load, UnLoad, Init, Kill, Render, NULL);
+EFFECT(FloorOld, Load, NULL, Init, Kill, Render, NULL);

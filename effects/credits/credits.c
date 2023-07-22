@@ -116,12 +116,9 @@ static void MakeCopperList(CopListT *cp) {
 }
 
 static void Init(void) {
-  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
-
   foreground = NewBitmap(max(floor.width, dance[0]->width),
                          max(floor.height, dance[0]->height),
-                         floor.depth);
-  BitmapClear(foreground);
+                         floor.depth, BM_CLEAR);
 
   lower = NULL;
 
@@ -129,7 +126,7 @@ static void Init(void) {
   cp1 = NewCopList(300);
   MakeCopperList(cp0);
   CopListActivate(cp0);
-  EnableDMA(DMAF_RASTER);
+  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
 static void Kill(void) {
