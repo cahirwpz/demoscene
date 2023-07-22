@@ -25,10 +25,10 @@ static CopListT *cp;
 
 static short iterCount = 0;
 
-static void MakeCopperList(CopListT *cp) {
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(200);
   short i;
 
-  CopInit(cp);
   bplptr[0] = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopWait(cp, Y(-18), 0);
   CopLoadPal(cp, &blurred_1_pal, 0);
@@ -43,7 +43,7 @@ static void MakeCopperList(CopListT *cp) {
     if (bplptr[1])
       bplptr[1] = ins;
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -70,8 +70,7 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
-  cp = NewCopList(200);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }

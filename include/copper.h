@@ -46,24 +46,17 @@ typedef struct {
   CopInsT entry[0]; 
 } CopListT;
 
-CopListT *NewCopList(u_short length);
+/* @brief Returns a new copper list of `length` entries ready to be used. */
+CopListT *NewCopList(int length);
+
+/* @brief Reclaim memory used by the copper list. */
 void DeleteCopList(CopListT *list);
 
-static inline void CopInit(CopListT *list) {
-  list->curr = list->entry;
-  list->overflow = 0;
-}
+/* @brief Reuse existing copper list by resetting to initial state. */
+void CopListReset(CopListT *list);
 
-static inline void CopEnd(CopListT *list) {
-  CopInsT *ins = list->curr;
-  *((u_int *)ins)++ = 0xfffffffe;
-  list->curr = ins;
-}
-
-/* @brief Return a pointer to the current copper instruction pointer. */
-static inline void *CopInsPtr(CopListT *list) {
-  return list->curr;
-}
+/* @brief Finish off copper list by inserting special WAIT instruction. */
+CopListT *CopListFinish(CopListT *list);
 
 /* @brief Enable copper and activate copper list.
  * @warning This function busy-waits for vertical blank. */
@@ -72,6 +65,11 @@ void CopListActivate(CopListT *list);
 /* @brief Set up copper list to start after vertical blank. */
 static inline void CopListRun(CopListT *list) {
   custom->cop1lc = (u_int)list->entry;
+}
+
+/* @brief Return a pointer to the current copper instruction pointer. */
+static inline void *CopInsPtr(CopListT *list) {
+  return list->curr;
 }
 
 /* Low-level functions */

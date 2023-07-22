@@ -69,9 +69,8 @@ static void Init(void) {
   SetColor(3, 0xf00);
 
   cp = NewCopList(50);
-  CopInit(cp);
   bplptr = CopSetupBitplanes(cp, screen, DEPTH);
-  CopEnd(cp);
+  CopListFinish(cp);
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER | DMAF_BLITTER);

@@ -46,9 +46,8 @@ static void Init(void) {
   SetColor(1, 0xfff);
 
   cp = NewCopList(100);
-  CopInit(cp);
   CopSetupBitplanes(cp, screen, DEPTH);
-  CopEnd(cp);
+  CopListFinish(cp);
 
   ConsoleInit(&console, &latin2, screen);
 

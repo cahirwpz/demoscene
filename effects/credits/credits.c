@@ -9,11 +9,12 @@
 #define DEPTH 4
 
 static BitmapT *foreground;
-static CopListT *cp0, *cp1;
+static CopListT *cp[2];
 static const BitmapT *lower;
 static const PaletteT *lower_pal;
 static Point2D lower_pos;
 static Area2D lower_area;
+static short active = 0;
 
 /* 'credits_logo' and 'txt_*' must have empty 16 pixels on the left and on the
  * right. Otherwise Display Data Fetcher will show some artifact when image
@@ -53,7 +54,7 @@ static const BitmapT *member[5] = {
 #define FLOOR_Y Y(64)
 
 static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
+  CopListReset(cp);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), 320, 256); 
   CopMove16(cp, dmacon, DMAF_RASTER);
 
@@ -112,7 +113,7 @@ static void MakeCopperList(CopListT *cp) {
     CopMove16(cp, dmacon, DMAF_RASTER);
   }
 
-  CopEnd(cp);
+  CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -122,17 +123,17 @@ static void Init(void) {
 
   lower = NULL;
 
-  cp0 = NewCopList(300);
-  cp1 = NewCopList(300);
-  MakeCopperList(cp0);
-  CopListActivate(cp0);
+  cp[0] = NewCopList(300);
+  cp[1] = NewCopList(300);
+  MakeCopperList(cp[0]);
+  CopListActivate(cp[0]);
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
-  DeleteCopList(cp0);
-  DeleteCopList(cp1);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
   DeleteBitmap(foreground);
 }
 
@@ -180,10 +181,10 @@ static void Render(void) {
       lower = NULL;
   }
 
-  MakeCopperList(cp1);
-  CopListRun(cp1);
+  MakeCopperList(cp[active]);
+  CopListRun(cp[active]);
   TaskWaitVBlank();
-  swapr(cp0, cp1);
+  active ^= 1;
 }
 
 EFFECT(Credits, NULL, NULL, Init, Kill, Render, NULL);

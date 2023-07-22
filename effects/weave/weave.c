@@ -55,10 +55,11 @@ static inline void CopSpriteSetHP(CopListT *cp, short n) {
   CopMove16(cp, spr[n * 2 + 1].pos, 0);
 }
 
-static void MakeCopperList(CopListT *cp, StateT *state) {
-  short b, y;
+#define COPLIST_SIZE (HEIGHT * 22 + 100)
 
-  CopInit(cp);
+static CopListT *MakeCopperList(StateT *state) {
+  CopListT *cp = NewCopList(COPLIST_SIZE);
+  short b, y;
 
   /* Setup initial bitplane pointers. */
   state->bar = CopMove32(cp, bplpt[0], NULL);
@@ -151,7 +152,7 @@ static void MakeCopperList(CopListT *cp, StateT *state) {
     }
   }
 
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void UpdateBarState(StateT *state) {
@@ -254,8 +255,6 @@ static void MakeSinTab8(void) {
     sintab8[i] = (sintab[j] + 512) >> 10;
 }
 
-#define COPLIST_SIZE (HEIGHT * 22 + 100)
-
 static void Init(void) {
   MakeSinTab8();
 
@@ -273,15 +272,10 @@ static void Init(void) {
   SpriteUpdatePos(&stripes[2], X(0), Y(0));
   SpriteUpdatePos(&stripes[3], X(0), Y(0));
 
-  cp[0] = NewCopList(COPLIST_SIZE);
-  cp[1] = NewCopList(COPLIST_SIZE);
-
-  MakeCopperList(cp[0], &state[0]);
-  MakeCopperList(cp[1], &state[1]);
+  cp[0] = MakeCopperList(&state[0]);
+  cp[1] = MakeCopperList(&state[1]);
   CopListActivate(cp[0]);
 
-  Log("CopperList: %ld instructions left\n",
-      COPLIST_SIZE - (cp[0]->curr - cp[0]->entry));
   EnableDMA(DMAF_RASTER|DMAF_SPRITE);
 }
 

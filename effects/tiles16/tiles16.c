@@ -51,11 +51,11 @@ static void Load(void) {
   }
 }
 
-static void MakeCopperList(CopListT *cp, int i) {
-  CopInit(cp);
+static CopListT *MakeCopperList(int i) {
+  CopListT *cp = NewCopList(100);
   bplptr[i] = CopSetupBitplanes(cp, screen[i], DEPTH);
   bplcon1[i] = CopMove16(cp, bplcon1, 0);
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -75,10 +75,8 @@ static void Init(void) {
   SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH);
   LoadPalette(&tiles_pal, 0);
 
-  cp[0] = NewCopList(100);
-  MakeCopperList(cp[0], 0);
-  cp[1] = NewCopList(100);
-  MakeCopperList(cp[1], 1);
+  cp[0] = MakeCopperList(0);
+  cp[1] = MakeCopperList(1);
 
   CopListActivate(cp[1]);
 

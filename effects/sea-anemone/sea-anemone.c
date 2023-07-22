@@ -186,9 +186,8 @@ static void Init(void) {
   LoadPalette(&anemone_pal, 0);
 
   cp = NewCopList(50);
-  CopInit(cp);
   CopSetupBitplanes(cp, screen, DEPTH);
-  CopEnd(cp);
+  CopListFinish(cp);
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);

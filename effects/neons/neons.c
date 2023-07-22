@@ -118,6 +118,15 @@ static void CustomRotatePalette(void) {
 
   return;
 }
+  
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(100);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
+  pal = CopLoadPal(cp, palette[0], 0);
+  CopLoadPal(cp, palette[1], 16);
+  CopLoadPal(cp, palette[2], 24);
+  return CopListFinish(cp);
+}
 
 static void Init(void) {
   EnableDMA(DMAF_BLITTER);
@@ -130,14 +139,7 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
-  cp = NewCopList(100);
-  CopInit(cp);
-  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
-  pal = CopLoadPal(cp, palette[0], 0);
-  CopLoadPal(cp, palette[1], 16);
-  CopLoadPal(cp, palette[2], 24);
-  CopEnd(cp);
-
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }

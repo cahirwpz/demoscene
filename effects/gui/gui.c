@@ -14,7 +14,6 @@
 
 static BitmapT *screen;
 static CopListT *cp;
-static CopInsPairT *sprptr;
 
 #include "data/toggle_0.c"
 #include "data/toggle_1.c"
@@ -59,6 +58,16 @@ static void Load(void) {
   GuiInit(gui, &font);
 }
 
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(120);
+  CopInsPairT *sprptr = CopSetupSprites(cp);
+
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopInsSetSprite(&sprptr[0], &pointer);
+  SpriteUpdatePos(&pointer, X(0), Y(0));
+  return CopListFinish(cp);
+}
+
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
@@ -72,15 +81,7 @@ static void Init(void) {
   SetColor(UI_FG_ACTIVE, 0x46e);
   LoadPalette(&pointer_pal, 16);
 
-  cp = NewCopList(120);
-  CopInit(cp);
-  CopSetupBitplanes(cp, screen, DEPTH);
-  sprptr = CopSetupSprites(cp);
-  CopEnd(cp);
-
-  CopInsSetSprite(&sprptr[0], &pointer);
-  SpriteUpdatePos(&pointer, X(0), Y(0));
-
+  cp = MakeCopperList();
   CopListActivate(cp);
 
   KeyboardInit();

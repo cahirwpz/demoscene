@@ -31,8 +31,7 @@ typedef struct {
 static Car cars[CARS];
 
 static CopListT *cp;
-static u_short active = 0;
-static CopInsPairT *sprptr;
+static short active = 0;
 static CopInsPairT *bplptr[2];
 static BitmapT *carry;
 
@@ -45,9 +44,10 @@ static BitmapT *carry;
 
 static BitmapT *lanes[2];
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
-  sprptr = CopSetupSprites(cp);
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(300);
+  CopInsPairT *sprptr = CopSetupSprites(cp);
+  short i;
 
   CopSetupBitplanes(cp, &city_top, DEPTH);
   CopWait(cp, Y(-18), 0);
@@ -103,9 +103,12 @@ static void MakeCopperList(CopListT *cp) {
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   }
 
-  CopEnd(cp);
+  for (i = 0; i < 8; i++) {
+    CopInsSetSprite(&sprptr[i], &sprite[i]);
+    SpriteUpdatePos(&sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4));
+  }
 
-  ITER(i, 0, 7, CopInsSetSprite(&sprptr[i], &sprite[i]));
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -120,13 +123,9 @@ static void Init(void) {
   LoadPalette(&sprite_pal, 24);
   LoadPalette(&sprite_pal, 28);
 
-  cp = NewCopList(300);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
-
-  ITER(i, 0, 7,
-       SpriteUpdatePos(&sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
 }
 
 static void Kill(void) {

@@ -23,18 +23,12 @@ typedef struct {
 #include "data/running-pal.c"
 #include "data/running.c"
 
-static void Load(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1, BM_CLEAR);
+static void Init(void) {
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1, 0);
 
   Log("Animation has %d frames %d x %d.\n", 
       running.count, running.width, running.height);
-}
 
-static void UnLoad(void) {
-  DeleteBitmap(screen);
-}
-
-static void Init(void) {
   EnableDMA(DMAF_BLITTER);
   BitmapClear(screen);
 
@@ -42,10 +36,8 @@ static void Init(void) {
   LoadPalette(&running_pal, 0);
 
   cp = NewCopList(100);
-  CopInit(cp);
   bplptr = CopSetupBitplanes(cp, screen, DEPTH);
-  CopEnd(cp);
-
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }
@@ -54,6 +46,7 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   DeleteCopList(cp);
+  DeleteBitmap(screen);
 }
 
 static void DrawSpans(u_char *bpl) {
@@ -109,4 +102,4 @@ static void Render(void) {
   active = (active + 1) % (DEPTH + 1);
 }
 
-EFFECT(Anim, Load, UnLoad, Init, Kill, Render, NULL);
+EFFECT(Anim, NULL, NULL, Init, Kill, Render, NULL);

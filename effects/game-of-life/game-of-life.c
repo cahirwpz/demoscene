@@ -311,10 +311,10 @@ static void ChangePalette(const u_short* pal) {
     }
 }
 
-static void MakeCopperList(CopListT *cp) {
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(800);
   short i;
 
-  CopInit(cp);
   // initially previous states are empty
   // save addresses of these instructions to change bitplane
   // order when new state gets generated
@@ -333,7 +333,7 @@ static void MakeCopperList(CopListT *cp) {
     CopMove16(cp, bpl2mod, 0);
     CopWaitSafe(cp, Y(i + 1), 0);
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void UpdateBitplanePointers(void) {
@@ -428,8 +428,7 @@ static void Init(void) {
   WaitBlitter();
   ClearIRQ(INTF_BLIT);
 
-  cp = NewCopList(800);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
 
 #ifdef DEBUG_KBD

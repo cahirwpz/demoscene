@@ -73,6 +73,21 @@ static void CalculateTiles(int *tile, short rotation, short zoom) {
   }
 }
 
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(100);
+#if MOTIONBLUR
+  bplptr = CopSetupBitplanes(cp, screen0, SHADOW);
+  CopMove16(cp, bpl1mod, MARGIN / 8);
+  CopMove16(cp, bpl2mod, MARGIN / 8);
+#else
+  bplptr = CopSetupBitplanes(cp, screen0, DEPTH);
+  /* Screen bitplanes are interleaved! */
+  CopMove16(cp, bpl1mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
+  CopMove16(cp, bpl2mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
+#endif
+  return CopListFinish(cp);
+}
+
 static void Init(void) {
   CalculateTiles(tiles, ROTATION, ZOOM);
 
@@ -96,20 +111,7 @@ static void Init(void) {
   SetColor(3, 0xccf);
 #endif
 
-  cp = NewCopList(100);
-  CopInit(cp);
-#if MOTIONBLUR
-  bplptr = CopSetupBitplanes(cp, screen0, SHADOW);
-  CopMove16(cp, bpl1mod, MARGIN / 8);
-  CopMove16(cp, bpl2mod, MARGIN / 8);
-#else
-  bplptr = CopSetupBitplanes(cp, screen0, DEPTH);
-  /* Screen bitplanes are interleaved! */
-  CopMove16(cp, bpl1mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
-  CopMove16(cp, bpl2mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
-#endif
-  CopEnd(cp);
-
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }

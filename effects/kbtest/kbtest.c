@@ -19,15 +19,14 @@ static FileT *ser;
 
 static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
-  cp = NewCopList(100);
 
   SetupPlayfield(MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);
   SetColor(1, 0xfff);
 
-  CopInit(cp);
+  cp = NewCopList(100);
   CopSetupBitplanes(cp, screen, DEPTH);
-  CopEnd(cp);
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 

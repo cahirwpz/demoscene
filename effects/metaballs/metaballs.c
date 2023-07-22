@@ -47,7 +47,6 @@ static void Init(void) {
     BitmapCopy(screen[j], WIDTH - 32, 0, &bgRight);
   }
 
-  cp = NewCopList(100);
   carry = NewBitmap(SIZE + 16, SIZE, 2, 0);
 
   SetInitialPositions();
@@ -55,9 +54,9 @@ static void Init(void) {
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   LoadPalette(&metaball_pal, 0);
 
-  CopInit(cp);
+  cp = NewCopList(100);
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
-  CopEnd(cp);
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }

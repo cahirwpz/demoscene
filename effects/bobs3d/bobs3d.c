@@ -21,11 +21,11 @@ static int active = 0;
 
 static Mesh3D *mesh = &pilka;
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(80);
   CopWait(cp, Y(-1), 0);
   bplptr = CopSetupBitplanes(cp, screen[1], DEPTH);
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -38,8 +38,7 @@ static void Init(void) {
   SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   LoadPalette(&bobs_pal, 0);
 
-  cp = NewCopList(80);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }

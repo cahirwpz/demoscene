@@ -29,7 +29,6 @@ extern uint8_t binary_data_text_scroll_txt_start[];
 
 static CopListT *MakeCopperList(short n) {
   CopListT *cp = NewCopList(100 + 3 * HEIGHT);
-  CopInit(cp);
   CopSetupBitplanes(cp, scroll, DEPTH);
   {
     u_short i;
@@ -40,8 +39,7 @@ static CopListT *MakeCopperList(short n) {
       linebpl[n][i] = CopMove32(cp, bplpt[0], ptr);
     }
   }
-  CopEnd(cp);
-  return cp;
+  return CopListFinish(cp);
 }
 
 static void Init(void) {

@@ -47,9 +47,20 @@ static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
   custom->bltsize = bltsize;
 }
 
-static void Init(void) {
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(100 + HEIGHT * 2);
   short i;
 
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
+  for (i = 0; i < HEIGHT; i++) {
+    CopWait(cp, Y(YSTART + i), 0);
+    /* Alternating shift by one for bitplane data. */
+    line[i] = CopMove16(cp, bplcon1, 0);
+  }
+  return CopListFinish(cp);
+}
+
+static void Init(void) {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
@@ -63,16 +74,7 @@ static void Init(void) {
   SetColor(6, 0xFF0);
   SetColor(7, 0xFFF);
 
-  cp = NewCopList(100 + HEIGHT * 2);
-  CopInit(cp);
-  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
-  for (i = 0; i < HEIGHT; i++) {
-    CopWait(cp, Y(YSTART + i), 0);
-    /* Alternating shift by one for bitplane data. */
-    line[i] = CopMove16(cp, bplcon1, 0);
-  }
-  CopEnd(cp);
-
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER | DMAF_BLITTER);
 }

@@ -25,8 +25,8 @@ static short maybeSkipFrame = 0;
 /* Reading polygon data */
 static short current_frame = 0;
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(100 + gradient.height * (gradient.width + 1));
   bplptr = CopSetupBitplanes(cp, screen, DEPTH);
   {
     short *pixels = gradient.pixels;
@@ -37,7 +37,7 @@ static void MakeCopperList(CopListT *cp) {
       for (j = 0; j < 16; j++) CopSetColor(cp, j, *pixels++);
     }
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -46,8 +46,7 @@ static void Init(void) {
   BitmapClear(screen);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(YOFF), WIDTH, HEIGHT);
-  cp = NewCopList(100 + gradient.height * (gradient.width + 1));
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }

@@ -59,10 +59,9 @@ static void Init(void) {
   LoadPalette(&background_pal, 0);
 
   cp = NewCopList(100);
-  CopInit(cp);
   CopSetupBitplanes(cp, screen, DEPTH);
   pal = CopLoadColor(cp, 8, 31, 0);
-  CopEnd(cp);
+  CopListFinish(cp);
 
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);

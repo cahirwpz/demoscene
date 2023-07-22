@@ -36,9 +36,8 @@ static void Init(void) {
   LoadPalette(&shapes_pal, 0);
 
   cp = NewCopList(100);
-  CopInit(cp);
   bplptr = CopSetupBitplanes(cp, screen, DEPTH);
-  CopEnd(cp);
+  CopListFinish(cp);
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER);

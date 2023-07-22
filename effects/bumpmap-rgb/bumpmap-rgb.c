@@ -265,10 +265,10 @@ static void ChunkyToPlanar(void) {
   ClearIRQ(INTF_BLIT);
 }
 
-static void MakeCopperList(CopListT *cp) {
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(1200);
   short i;
 
-  CopInit(cp);
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopLoadColor(cp, 0, 15, 0);
   for (i = 0; i < HEIGHT * 4; i++) {
@@ -279,7 +279,7 @@ static void MakeCopperList(CopListT *cp) {
     /* Alternating shift by one for bitplane data. */
     CopMove16(cp, bplcon1, (i & 1) ? 0x0022 : 0x0000);
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -299,8 +299,7 @@ static void Init(void) {
   custom->bpldat[4] = 0x7777; // rgbb: 0111
   custom->bpldat[5] = 0xcccc; // rgbb: 1100
 
-  cp = NewCopList(1200);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER);

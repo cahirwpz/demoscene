@@ -35,8 +35,8 @@ static void UnLoad(void) {
   ResetMesh3D(mesh);
 }
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(80 + gradient.height * (gradient.width + 1));
   bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
 
   {
@@ -62,7 +62,7 @@ static void MakeCopperList(CopListT *cp) {
     }
   }
 
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -78,8 +78,7 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(STARTX), Y(STARTY), WIDTH, HEIGHT * 5 / 4);
 
-  cp = NewCopList(80 + gradient.height * (gradient.width + 1));
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }

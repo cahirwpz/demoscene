@@ -98,11 +98,11 @@ static void UnLoad(void) {
     MemFree(cache[s]);
 }
 
-static void MakeCopperList(CopListT *cp, CopLineT **line) {
-  short i;
+static CopListT *MakeCopperList(CopLineT **line) {
+  CopListT *cp = NewCopList(50 + HEIGHT * 8);
   void *data = cache[0];
+  short i;
 
-  CopInit(cp);
   CopSetColor(cp, 0, 0x000);
   CopSetColor(cp, 1, 0x000);
   for (i = 0; i < HEIGHT; i++) {
@@ -113,7 +113,7 @@ static void MakeCopperList(CopListT *cp, CopLineT **line) {
     CopSetColor(cp, 2, 0x000);
     CopSetColor(cp, 3, 0x000);
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -123,10 +123,8 @@ static void Init(void) {
   SetupDisplayWindow(MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
   SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH + 16);
 
-  cp[0] = NewCopList(50 + HEIGHT * 8);
-  cp[1] = NewCopList(50 + HEIGHT * 8);
-  MakeCopperList(cp[0], copLines[0]);
-  MakeCopperList(cp[1], copLines[1]);
+  cp[0] = MakeCopperList(copLines[0]);
+  cp[1] = MakeCopperList(copLines[1]);
   CopListActivate(cp[0]);
   EnableDMA(DMAF_RASTER);
 }

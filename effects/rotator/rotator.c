@@ -191,10 +191,10 @@ static void ChunkyToPlanar(void) {
   c2p.phase++;
 }
 
-static void MakeCopperList(CopListT *cp) {
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(HEIGHT * 2 * (4 - FULLPIXEL) + 50);
   short i;
 
-  CopInit(cp);
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopLoadPal(cp, &texture_pal, 0);
   for (i = 0; i < HEIGHT * 2; i++) {
@@ -207,7 +207,7 @@ static void MakeCopperList(CopListT *cp) {
     CopMove16(cp, bplcon1, (i & 1) ? 0x0010 : 0x0021);
 #endif
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -225,8 +225,7 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
 
-  cp = NewCopList(HEIGHT * 2 * (4 - FULLPIXEL) + 50);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER);

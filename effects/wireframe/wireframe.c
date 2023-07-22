@@ -40,9 +40,8 @@ static void Init(void) {
   LoadPalette(&wireframe_pal, 0);
 
   cp = NewCopList(80);
-  CopInit(cp);
   bplptr = CopSetupBitplanes(cp, screen, DEPTH);
-  CopEnd(cp);
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 }

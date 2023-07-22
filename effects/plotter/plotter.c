@@ -42,7 +42,6 @@ static void Init(void) {
   }
 
   carry = NewBitmap(SIZE + 16, SIZE, 2, 0);
-  cp = NewCopList(50);
 
   for (i = 0; i < 2; i++)
     BitmapClear(screen[i]);
@@ -50,10 +49,10 @@ static void Init(void) {
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   LoadPalette(&flares_pal, 0);
 
-  CopInit(cp);
+  cp = NewCopList(50);
   CopWait(cp, Y(-1), 0);
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
-  CopEnd(cp);
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }
