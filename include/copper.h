@@ -53,7 +53,7 @@ CopListT *NewCopList(int length);
 void DeleteCopList(CopListT *list);
 
 /* @brief Reuse existing copper list by resetting to initial state. */
-void CopListReset(CopListT *list);
+CopListT *CopListReset(CopListT *list);
 
 /* @brief Finish off copper list by inserting special WAIT instruction. */
 CopListT *CopListFinish(CopListT *list);
