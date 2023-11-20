@@ -23,9 +23,9 @@ class Bit(object):
         a = self._value
         b = bit._value
 
-        if type(a) == int:
+        if isinstance(a, int):
             return Bit(a or b, bit._color)
-        elif type(b) == int:
+        elif isinstance(b, int):
             return Bit(b or a, self._color)
         else:
             return Bit('?', None)
@@ -34,9 +34,9 @@ class Bit(object):
         a = self._value
         b = bit._value
 
-        if type(a) == int:
+        if isinstance(a, int):
             return Bit(a and b, bit._color)
-        elif type(b) == int:
+        elif isinstance(b, int):
             return Bit(b and a, self._color)
         else:
             return Bit('?', None)
@@ -68,7 +68,7 @@ class Word(object):
         return cls(Bit.Var(char, i, color) for i in range(width))
 
     def __init__(self, value_or_width):
-        if type(value_or_width) == int:
+        if isinstance(value_or_width, int):
             self._value = [Bit.Const(0) for i in range(value_or_width)]
             self._width = value_or_width
         else:
@@ -79,7 +79,7 @@ class Word(object):
         return iter(self._value)
 
     def __getitem__(self, index):
-        if type(index) == slice:
+        if isinstance(index, slice):
             return Word(self._value[index])
         else:
             return self._value[index]

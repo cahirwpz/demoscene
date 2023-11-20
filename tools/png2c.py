@@ -14,7 +14,7 @@ def coerce(name, typ, value):
 
 
 def convert(name, cast, value, result):
-    if type(cast) == tuple:
+    if isinstance(cast, tuple):
         names = name.split(',')
         values = value.split('x')
         if len(names) > 1:
