@@ -47,7 +47,7 @@ static void Init(void) {
     BitmapClear(screen[i]);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&flares_pal, 0);
+  LoadColors(flares_colors, 0);
 
   cp = NewCopList(50);
   CopWait(cp, Y(-1), 0);

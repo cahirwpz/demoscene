@@ -120,8 +120,8 @@ static void Init(void) {
   }
 
   SetupPlayfield(MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
-  LoadPalette(&background_pal, 0);
-  LoadPalette(&texture_pal, 16);
+  LoadColors(background_colors, 0);
+  LoadColors(texture_colors, 16);
 
   cp[0] = MakeCopperList(0);
   cp[1] = MakeCopperList(1);

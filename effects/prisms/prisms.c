@@ -149,10 +149,10 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, BGCOL);
-  LoadPalette(&sprite_pal, 16);
-  LoadPalette(&sprite_pal, 20);
-  LoadPalette(&sprite_pal, 24);
-  LoadPalette(&sprite_pal, 28);
+  LoadColors(sprite_colors, 16);
+  LoadColors(sprite_colors, 20);
+  LoadColors(sprite_colors, 24);
+  LoadColors(sprite_colors, 28);
 
   cp[0] = MakeCopperList(copLines[0]);
   cp[1] = MakeCopperList(copLines[1]);

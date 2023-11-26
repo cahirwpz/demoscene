@@ -117,27 +117,23 @@ static u_short wireworld_step = 0;
 
 static const GameDefinitionT* current_game;
 
-static PaletteT palette = {
-  .count = 16,
-  .colors =
-    {
-      0x000, // 0000
-      0x006, // 0001
-      0x026, // 0010
-      0x026, // 0011
-      0x05B, // 0100
-      0x05B, // 0101
-      0x05B, // 0110
-      0x05B, // 0111
-      0x09F, // 1000
-      0x09F, // 1001
-      0x09F, // 1010
-      0x09F, // 1011
-      0x09F, // 1100
-      0x09F, // 1101
-      0x09F, // 1110
-      0x09F, // 1111
-    },
+static const u_short palette_colors[16] = {
+  0x000, // 0000
+  0x006, // 0001
+  0x026, // 0010
+  0x026, // 0011
+  0x05B, // 0100
+  0x05B, // 0101
+  0x05B, // 0110
+  0x05B, // 0111
+  0x09F, // 1000
+  0x09F, // 1001
+  0x09F, // 1010
+  0x09F, // 1011
+  0x09F, // 1100
+  0x09F, // 1101
+  0x09F, // 1110
+  0x09F, // 1111
 };
 
 // Used by CPU to quickly transform 1x1 pixels into 2x1 pixels.
@@ -322,7 +318,7 @@ static CopListT *MakeCopperList(void) {
   for (i = 0; i < DISP_DEPTH; i++) 
     CopMove32(cp, bplpt[i], prev_states[i]->planes[0]);
 
-  palptr = CopLoadPal(cp, &palette, 0);
+  palptr = CopLoadColors(cp, palette_colors, 0);
 
   for (i = 1; i <= DISP_HEIGHT; i += 2) {
     // vertical pixel doubling
@@ -405,7 +401,7 @@ static void Init(void) {
   BitmapCopy(boards[11], EXT_WIDTH_LEFT, EXT_HEIGHT_TOP, &logo);
 
   SetupPlayfield(MODE_LORES, DISP_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
-  LoadPalette(&palette, 0);
+  LoadColors(palette_colors, 0);
   EnableDMA(DMAF_BLITTER);
 
   for (i = 0; i < PREV_STATES_DEPTH; i++) {

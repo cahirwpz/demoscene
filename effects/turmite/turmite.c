@@ -50,10 +50,12 @@ static void Load(void) {
 }
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
-  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&turmite_pal, 0);
+  SetupDisplayWindow(MODE_LORES, X(32), Y(0), WIDTH, HEIGHT);
+  SetupBitplaneFetch(MODE_LORES, X(32), WIDTH);
+  SetupMode(MODE_LORES, DEPTH);
+  LoadColors(turmite_colors, 0);
 
   EnableDMA(DMAF_BLITTER);
   BlitterCopyFastSetup(screen, 0, 0, &scene);
@@ -61,9 +63,8 @@ static void Init(void) {
   BitmapToBoard(&scene, board);
 
   cp = NewCopList(100);
-  CopInit(cp);
   CopSetupBitplanes(cp, screen, DEPTH);
-  CopEnd(cp);
+  CopListFinish(cp);
   CopListActivate(cp);
   
   EnableDMA(DMAF_RASTER);

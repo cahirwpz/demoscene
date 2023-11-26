@@ -97,11 +97,11 @@ static void Load(void) {
       *dst++ = (*src++ >> 2) & 0x3E;
   }
 
-  shademap = MemAlloc(32 * sizeof(u_short) * texture_pal.count, MEMF_PUBLIC);
+  shademap = MemAlloc(32 * sizeof(u_short) * texture_colors_count, MEMF_PUBLIC);
   {
-    u_short *cp = texture_pal.colors;
+    u_short *cp = texture_colors;
     u_short *dst = shademap;
-    short n = texture_pal.count;
+    short n = texture_colors_count;
     short i;
 
     while (--n >= 0) {
@@ -112,7 +112,7 @@ static void Load(void) {
         *dst++ = ColorTransition(c, 0xfff, i);
     }
   }
-  DataScramble(shademap, texture_pal.count * 32);
+  DataScramble(shademap, texture_colors_count * 32);
 
   texture = MemAlloc(128 * 128 * 2 * sizeof(u_short), MEMF_PUBLIC);
   {

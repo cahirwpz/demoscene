@@ -37,7 +37,7 @@ static void Init(void) {
   buffer = NewBitmap(WIDTH, HEIGHT, 1, 0);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&flatshade_pal, 0);
+  LoadColors(flatshade_colors, 0);
 
   cp = NewCopList(80);
   bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);

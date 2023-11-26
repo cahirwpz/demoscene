@@ -51,7 +51,7 @@ static void Init(void) {
   line_start = text;
 
   SetupPlayfield(MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&font_pal, 0);
+  LoadColors(font_colors, 0);
 
   cp[0] = MakeCopperList(0);
   cp[1] = MakeCopperList(1);

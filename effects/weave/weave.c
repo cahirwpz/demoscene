@@ -103,9 +103,9 @@ static CopListT *MakeCopperList(StateT *state) {
      * instructions (bpl1mod, bpl2mod, bplcon1) per raster line. */
     if (my == 8) {
       if (y & 64) {
-        CopLoadPal(cp, &bar_pal, 0);
+        CopLoadColors(cp, bar_colors, 0);
       } else {
-        CopLoadPal(cp, &bar2_pal, 0);
+        CopLoadColors(cp, bar2_colors, 0);
       }
     } else if (my == 16) {
       /* Advance bitplane pointers to display consecutive lines. */
@@ -261,8 +261,8 @@ static void Init(void) {
   SetupDisplayWindow(MODE_LORES, X(16), Y(0), WIDTH, HEIGHT);
   SetupBitplaneFetch(MODE_LORES, X(0), WIDTH + 16);
   SetupMode(MODE_LORES, DEPTH);
-  LoadPalette(&bar_pal, 0);
-  LoadPalette(&stripes_pal, 16);
+  LoadColors(bar_colors, 0);
+  LoadColors(stripes_colors, 16);
 
   /* Place sprites 0-3 above playfield, and 4-7 below playfield. */
   custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P1 | BPLCON2_PF1P1;

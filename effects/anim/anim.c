@@ -33,7 +33,7 @@ static void Init(void) {
   BitmapClear(screen);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&running_pal, 0);
+  LoadColors(running_colors, 0);
 
   cp = NewCopList(100);
   bplptr = CopSetupBitplanes(cp, screen, DEPTH);

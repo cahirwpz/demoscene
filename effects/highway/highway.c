@@ -51,14 +51,14 @@ static CopListT *MakeCopperList(void) {
 
   CopSetupBitplanes(cp, &city_top, DEPTH);
   CopWait(cp, Y(-18), 0);
-  CopLoadPal(cp, &city_top_pal, 0);
+  CopLoadColors(cp, city_top_colors, 0);
 
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
 
   {
     CopWait(cp, Y(LANEL_Y - 2), 8);
     CopMove16(cp, dmacon, DMAF_RASTER);
-    CopLoadPal(cp, &car_left_pal, 0);
+    CopLoadColors(cp, car_left_colors, 0);
     bplptr[0] = CopSetupBitplanes(cp, lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
@@ -84,7 +84,7 @@ static CopListT *MakeCopperList(void) {
 
   {
     CopWait(cp, Y(LANER_Y - 1), 8);
-    CopLoadPal(cp, &car_right_pal, 0);
+    CopLoadColors(cp, car_right_colors, 0);
     bplptr[1] = CopSetupBitplanes(cp, lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
@@ -97,7 +97,7 @@ static CopListT *MakeCopperList(void) {
 
   {
     CopWait(cp, Y(LANER_Y + LANE_H + 1), 8);
-    CopLoadPal(cp, &city_bottom_pal, 0);
+    CopLoadColors(cp, city_bottom_colors, 0);
     CopSetupBitplanes(cp, &city_bottom, DEPTH);
     CopWait(cp, Y(LANER_Y + LANE_H + 2), 8);
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
@@ -118,10 +118,10 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
-  LoadPalette(&sprite_pal, 16);
-  LoadPalette(&sprite_pal, 20);
-  LoadPalette(&sprite_pal, 24);
-  LoadPalette(&sprite_pal, 28);
+  LoadColors(sprite_colors, 16);
+  LoadColors(sprite_colors, 20);
+  LoadColors(sprite_colors, 24);
+  LoadColors(sprite_colors, 28);
 
   cp = MakeCopperList();
   CopListActivate(cp);

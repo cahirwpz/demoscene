@@ -73,7 +73,7 @@ static void Init(void) {
   SetupMode(MODE_LORES, DEPTH);
   SetupDisplayWindow(MODE_LORES, X(0), Y(0), WIDTH - 16, HEIGHT - 16);
   SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH);
-  LoadPalette(&tiles_pal, 0);
+  LoadColors(tiles_colors, 0);
 
   cp[0] = MakeCopperList(0);
   cp[1] = MakeCopperList(1);

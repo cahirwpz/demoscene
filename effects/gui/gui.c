@@ -79,7 +79,7 @@ static void Init(void) {
   SetColor(UI_FRAME_OUT, 0xeee);
   SetColor(UI_FG_INACTIVE, 0x24a);
   SetColor(UI_FG_ACTIVE, 0x46e);
-  LoadPalette(&pointer_pal, 16);
+  LoadColors(pointer_colors, 16);
 
   cp = MakeCopperList();
   CopListActivate(cp);

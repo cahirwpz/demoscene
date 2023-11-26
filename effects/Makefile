@@ -45,6 +45,7 @@ SUBDIRS := \
 	tilezoomer \
 	transparency \
 	twister-rgb \
+	turmite \
 	uvlight \
 	uvmap \
 	uvmap-rgb \

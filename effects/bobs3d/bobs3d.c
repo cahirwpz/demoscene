@@ -36,7 +36,7 @@ static void Init(void) {
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR|BM_INTERLEAVED);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&bobs_pal, 0);
+  LoadColors(bobs_colors, 0);
 
   cp = MakeCopperList();
   CopListActivate(cp);

@@ -183,7 +183,7 @@ static void Init(void) {
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&anemone_pal, 0);
+  LoadColors(anemone_colors, 0);
 
   cp = NewCopList(50);
   CopSetupBitplanes(cp, screen, DEPTH);

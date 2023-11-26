@@ -15,8 +15,6 @@
 static BitmapT *screen[2];
 static u_short active = 0;
 static CopInsPairT *bplptr;
-
-static const PaletteT *palette[3];
 static CopListT *cp;
 static CopInsT *pal;
 
@@ -95,10 +93,6 @@ static void Load(void) {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
-  palette[0] = &background_pal;
-  palette[1] = &moods_pal;
-  palette[2] = &rno_pal;
-
   PositionGreetings();
 }
 
@@ -108,7 +102,7 @@ static void UnLoad(void) {
 }
 
 static void CustomRotatePalette(void) {
-  u_short *src = palette[0]->colors;
+  u_short *src = background_colors;
   CopInsT *ins = pal + 1;
   int i = frameCount;
   short n = 15;
@@ -122,9 +116,9 @@ static void CustomRotatePalette(void) {
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(100);
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
-  pal = CopLoadPal(cp, palette[0], 0);
-  CopLoadPal(cp, palette[1], 16);
-  CopLoadPal(cp, palette[2], 24);
+  pal = CopLoadColors(cp, background_colors, 0);
+  CopLoadColors(cp, moods_colors, 16);
+  CopLoadColors(cp, rno_colors, 24);
   return CopListFinish(cp);
 }
 

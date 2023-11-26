@@ -52,7 +52,7 @@ static void Init(void) {
   SetInitialPositions();
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&metaball_pal, 0);
+  LoadColors(metaball_colors, 0);
 
   cp = NewCopList(100);
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);

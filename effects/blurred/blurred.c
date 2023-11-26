@@ -31,18 +31,15 @@ static CopListT *MakeCopperList(void) {
 
   bplptr[0] = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopWait(cp, Y(-18), 0);
-  CopLoadPal(cp, &blurred_1_pal, 0);
+  CopLoadColors(cp, blurred_1_colors, 0);
   CopWait(cp, Y(127), 0);
   CopMove16(cp, dmacon, DMAF_RASTER);
-  CopLoadPal(cp, &blurred_2_pal, 0);
+  CopLoadColors(cp, blurred_2_colors, 0);
   CopWait(cp, Y(128), 0);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  for (i = 0; i < DEPTH; i++) {
-    CopInsPairT *ins =
-      CopMove32(cp, bplpt[i], screen[0]->planes[i] - WIDTH / 16);
-    if (bplptr[1])
-      bplptr[1] = ins;
-  }
+  bplptr[1] = CopInsPtr(cp);
+  for (i = 0; i < DEPTH; i++)
+    CopMove32(cp, bplpt[i], screen[0]->planes[i] - WIDTH / 16);
   return CopListFinish(cp);
 }
 

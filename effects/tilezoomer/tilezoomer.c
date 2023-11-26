@@ -101,7 +101,7 @@ static void Init(void) {
 #if MOTIONBLUR
   SetupPlayfield(MODE_LORES, SHADOW, X(MARGIN), Y((256 - HEIGHT + MARGIN) / 2),
                  WIDTH - MARGIN, HEIGHT - MARGIN);
-  LoadPalette(&tilezoomer_pal, 0);
+  LoadColors(tilezoomer_colors, 0);
 #else
   SetupPlayfield(MODE_LORES, DEPTH, X(MARGIN), Y((256 - HEIGHT + MARGIN) / 2),
                  WIDTH - MARGIN, HEIGHT - MARGIN);

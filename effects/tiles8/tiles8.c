@@ -97,7 +97,7 @@ static void Init(void) {
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&tilegfx_pal, 0);
+  LoadColors(tilegfx_colors, 0);
 
   cp = MakeCopperList();
   CopListActivate(cp);

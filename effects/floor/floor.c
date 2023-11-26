@@ -92,7 +92,7 @@ static void InitStripes(void) {
 
   while (--n >= 0) {
     s->step = -16 * (random() & 7);
-    s->orig = stripes_pal.colors[random() & 3];
+    s->orig = stripes_colors[random() & 3];
     /* Every stripe starts black */
     s->color = 0;
     s++;

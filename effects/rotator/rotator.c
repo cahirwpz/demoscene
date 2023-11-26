@@ -196,7 +196,6 @@ static CopListT *MakeCopperList(void) {
   short i;
 
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
-  CopLoadPal(cp, &texture_pal, 0);
   for (i = 0; i < HEIGHT * 2; i++) {
     CopWaitSafe(cp, Y(i + 28), 0);
     /* Line doubling. */
@@ -224,6 +223,7 @@ static void Init(void) {
   BitmapClear(screen[1]);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
+  LoadColors(texture_colors, 0);
 
   cp = MakeCopperList();
   CopListActivate(cp);

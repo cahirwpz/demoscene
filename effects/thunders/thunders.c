@@ -394,7 +394,7 @@ static void MakeFloorCopperList(CopListT *cp, short yo, short kyo) {
 
   /* Clear out the colors. */
   CopSetColor(cp, 0, BGCOL);
-  CopLoadPal(cp, &thunder_pal, 16);
+  CopLoadColors(cp, thunder_colors, 16);
 
   FillStripes(1);
   ColorizeUpperHalf(cp, yo, kyo);

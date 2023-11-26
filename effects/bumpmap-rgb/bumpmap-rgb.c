@@ -98,11 +98,11 @@ static void Load(void) {
       *dst++ = *src++ << 6;
   }
 
-  shademap = MemAlloc(32 * sizeof(u_short) * dragon_pal.count, MEMF_PUBLIC);
+  shademap = MemAlloc(32 * sizeof(u_short) * dragon_colors_count, MEMF_PUBLIC);
   {
-    u_short *cp = dragon_pal.colors;
+    const u_short *cp = dragon_colors;
     u_short *dst = shademap;
-    short n = dragon_pal.count;
+    short n = dragon_colors_count;
     short i;
 
     /*
@@ -120,7 +120,7 @@ static void Load(void) {
     }
   }
 
-  DataScramble(shademap, dragon_pal.count * 32);
+  DataScramble(shademap, dragon_colors_count * 32);
 
   {
     short n = WIDTH * HEIGHT;
