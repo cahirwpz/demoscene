@@ -63,6 +63,10 @@ data/%.c: data/%.png
 	@echo "[PNG] $(DIR)$< -> $(DIR)$@"
 	$(PNG2C) $(PNG2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
+data/%.c: data/%.svg
+	@echo "[SVG] $(DIR)$< -> $(DIR)$@"
+	$(SVG2C) $(SVG2C.$*) -o $@ $<
+
 data/%.c: data/%.2d
 	@echo "[2D] $(DIR)$< -> $(DIR)$@"
 	$(CONV2D) $(CONV2D.$*) $< > $@ || (rm -f $@ && exit 1)
