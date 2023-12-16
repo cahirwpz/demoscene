@@ -7,7 +7,7 @@ group   macro                   ; cpu/bus cycles
         or.b    $4444(a2),\1    ; 12/3
         endm
 
-        movem.w d2-d7,-(sp)
+        movem.l d2-d7,-(sp)
 
         group   d0
         group   d1
@@ -20,4 +20,4 @@ group   macro                   ; cpu/bus cycles
         movem.w d0-d7,-(a0)     ; 8+4*8/8
                                 ; 13.25/3.25 per pixel
 
-        movem.w (sp)+,d2-d7
+        movem.l (sp)+,d2-d7

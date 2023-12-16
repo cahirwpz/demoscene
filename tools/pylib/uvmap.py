@@ -121,10 +121,11 @@ class UVMap(object):
             print('  %s,' % ', '.join(row))
         print('};')
 
-    def save_uv(self, name):
+    def save_uv(self, name, scale=256):
+        size = self.texsize
         im = Image.new('L', (self.width, self.height))
-        im.putdata([frpart(u) * 256 for u in self.umap])
+        im.putdata([int(frpart(u) * scale) % size for u in self.umap])
         im.save(name + '-u.png', 'PNG')
         im = Image.new('L', (self.width, self.height))
-        im.putdata([frpart(v) * 256 for v in self.vmap])
+        im.putdata([int(frpart(v) * scale) % size for v in self.vmap])
         im.save(name + '-v.png', 'PNG')
