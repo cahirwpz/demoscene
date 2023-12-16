@@ -418,6 +418,8 @@ def do_palette(im, desc):
 
     cmap = [pal[i * 3:(i + 1) * 3] for i in range(colors)]
 
+    print("#define %s_count %d\n" % (name, len(cmap)))
+
     print('%sconst PaletteT %s = {' % ('' if shared else 'static ', name))
     print('  .count = %d,' % len(cmap))
     print('  .colors = {')
