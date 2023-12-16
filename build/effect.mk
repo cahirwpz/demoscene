@@ -8,7 +8,8 @@ LIBS += libblit libgfx libmisc libc
 LDEXTRA = $(TOPDIR)/system/system.a
 LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 
-CRT0 = $(TOPDIR)/system/crt0.o $(TOPDIR)/effects/main.o
+CRT0 = $(TOPDIR)/system/crt0.o
+MAIN ?= $(TOPDIR)/effects/main.o
 BOOTLOADER = $(TOPDIR)/bootloader.bin
 ROMSTARTUP = $(TOPDIR)/a500rom.bin
 BOOTBLOCK = $(TOPDIR)/addchip.bootblock.bin
@@ -44,7 +45,7 @@ $(TOPDIR)/%.bin: FORCE
 
 include $(TOPDIR)/build/common.mk
 
-$(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA) $(LDSCRIPT)
+$(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(MAIN) $(OBJECTS) $(LDEXTRA) $(LDSCRIPT)
 	@echo "[LD] $(addprefix $(DIR),$(OBJECTS)) -> $(DIR)$@"
 	$(LD) $(LDFLAGS) -L$(TOPDIR)/system -T$(LDSCRIPT) -Map=$@.map -o $@ \
 		--start-group $(filter-out %.lds,$^) --end-group

@@ -4,13 +4,16 @@
 #include <console.h>
 #include <copper.h>
 #include <system/event.h>
-#include <system/interrupt.h>
 #include <system/keyboard.h>
 #include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
 #define DEPTH 1
+
+/* XXX: Always consult this value with AmigaKlang output,
+ * otherwise you'll experience a really nasty debugging session. */
+#define AKLANG_BUFLEN 36864
 
 #include "data/lat2-08.c"
 
@@ -28,27 +31,23 @@ extern u_int AK_Progress;
 void AK_Generate(void *TmpBuf asm("a1"));
 
 static void Load(void) {
-  void *TmpBuf = MemAlloc(32768, MEMF_PUBLIC);
+  void *TmpBuf = MemAlloc(AKLANG_BUFLEN, MEMF_PUBLIC);
   AK_Generate(TmpBuf);
   MemFree(TmpBuf);
-}
-
-static void UnLoad(void) {
 }
 
 static void Init(void) {
   KeyboardInit();
 
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);
   SetColor(1, 0xfff);
 
   cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopEnd(cp);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
 
   ConsoleInit(&console, &latin2, screen);
 
@@ -181,4 +180,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(PlayProtracker, Load, UnLoad, Init, Kill, Render);
+EFFECT(PlayProtracker, Load, NULL, Init, Kill, Render, NULL);

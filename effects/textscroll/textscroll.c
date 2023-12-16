@@ -16,7 +16,7 @@
 static short active = 0;
 
 static CopListT *cp[2];
-static CopInsT *linebpl[2][HEIGHT];
+static CopInsPairT *linebpl[2][HEIGHT];
 static BitmapT *scroll;
 
 static short last_line = -1;
@@ -29,8 +29,7 @@ extern uint8_t binary_data_text_scroll_txt_start[];
 
 static CopListT *MakeCopperList(short n) {
   CopListT *cp = NewCopList(100 + 3 * HEIGHT);
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, scroll, DEPTH);
+  CopSetupBitplanes(cp, scroll, DEPTH);
   {
     u_short i;
     void *ptr = scroll->planes[0];
@@ -40,12 +39,11 @@ static CopListT *MakeCopperList(short n) {
       linebpl[n][i] = CopMove32(cp, bplpt[0], ptr);
     }
   }
-  CopEnd(cp);
-  return cp;
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  scroll = NewBitmap(WIDTH, HEIGHT + 16, 1);
+  scroll = NewBitmap(WIDTH, HEIGHT + 16, 1, BM_CLEAR);
 
   EnableDMA(DMAF_BLITTER);
   BitmapClear(scroll);
@@ -53,7 +51,7 @@ static void Init(void) {
   line_start = text;
 
   SetupPlayfield(MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&font_pal, 0);
+  LoadColors(font_colors, 0);
 
   cp[0] = MakeCopperList(0);
   cp[1] = MakeCopperList(1);
@@ -92,7 +90,7 @@ static void RenderLine(u_char *dst, char *line, short size) {
 }
 
 static void SetupLinePointers(void) {
-  CopInsT **ins = linebpl[active];
+  CopInsPairT **ins = linebpl[active];
   void *plane = scroll->planes[0];
   int stride = scroll->bytesPerRow;
   int bplsize = scroll->bplSize;
@@ -150,4 +148,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(TextScroll, NULL, NULL, Init, Kill, Render);
+EFFECT(TextScroll, NULL, NULL, Init, Kill, Render, NULL);

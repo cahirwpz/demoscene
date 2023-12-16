@@ -13,6 +13,7 @@ amiga_model = A500
 # uae_cpu_model = 68010
 # uae_cpu_multiplier = 16
 automatic_input_grab = 0
+stereo_separation = 0
 floppy_drive_speed = 800
 # floppy_drive_speed = 100
 floppy_drive_volume = 10

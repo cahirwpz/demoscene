@@ -15,22 +15,12 @@ static short active = 0;
 
 static Point2D pos[2][3];
 static BitmapT *carry;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static CopListT *cp;
 
 #include "data/metaball.c"
 #include "data/metaball-bg-left-1.c"
 #include "data/metaball-bg-right-1.c"
-
-static void Load(void) {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-}
-
-static void UnLoad(void) {
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
-}
 
 static void SetInitialPositions(void) {
   short i, j;
@@ -46,6 +36,9 @@ static void SetInitialPositions(void) {
 static void Init(void) {
   short j;
 
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   for (j = 0; j < 2; j++) {
@@ -54,17 +47,16 @@ static void Init(void) {
     BitmapCopy(screen[j], WIDTH - 32, 0, &bgRight);
   }
 
-  cp = NewCopList(100);
-  carry = NewBitmap(SIZE + 16, SIZE, 2);
+  carry = NewBitmap(SIZE + 16, SIZE, 2, 0);
 
   SetInitialPositions();
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&metaball_pal, 0);
+  LoadColors(metaball_colors, 0);
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopEnd(cp);
+  cp = NewCopList(100);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }
@@ -74,6 +66,8 @@ static void Kill(void) {
 
   DeleteBitmap(carry);
   DeleteCopList(cp);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 static void ClearMetaballs(void) {
@@ -122,9 +116,9 @@ static void Render(void) {
   }
   ProfilerStop(Metaballs);
 
-  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  ITER(i, 0, DEPTH - 1, CopInsSet32(&bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();
   active ^= 1;
 }
 
-EFFECT(MetaBalls, Load, UnLoad, Init, Kill, Render);
+EFFECT(MetaBalls, NULL, NULL, Init, Kill, Render, NULL);

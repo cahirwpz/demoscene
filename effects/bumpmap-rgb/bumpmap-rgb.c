@@ -18,7 +18,7 @@ static u_short *shademap;
 static u_short *colormap;
 static u_short *chunky[2];
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 
 #include "data/dragon.c"
 #include "data/light.c"
@@ -98,11 +98,11 @@ static void Load(void) {
       *dst++ = *src++ << 6;
   }
 
-  shademap = MemAlloc(32 * sizeof(u_short) * dragon_pal.count, MEMF_PUBLIC);
+  shademap = MemAlloc(32 * sizeof(u_short) * dragon_colors_count, MEMF_PUBLIC);
   {
-    u_short *cp = dragon_pal.colors;
+    const u_short *cp = dragon_colors;
     u_short *dst = shademap;
-    short n = dragon_pal.count;
+    short n = dragon_colors_count;
     short i;
 
     /*
@@ -120,7 +120,7 @@ static void Load(void) {
     }
   }
 
-  DataScramble(shademap, dragon_pal.count * 32);
+  DataScramble(shademap, dragon_colors_count * 32);
 
   {
     short n = WIDTH * HEIGHT;
@@ -250,10 +250,10 @@ static void ChunkyToPlanar(void) {
       break;
 
     case 12:
-      CopInsSet32(bplptr[0], bpl[3]);
-      CopInsSet32(bplptr[1], bpl[2]);
-      CopInsSet32(bplptr[2], bpl[1]);
-      CopInsSet32(bplptr[3], bpl[0]);
+      CopInsSet32(&bplptr[0], bpl[3]);
+      CopInsSet32(&bplptr[1], bpl[2]);
+      CopInsSet32(&bplptr[2], bpl[1]);
+      CopInsSet32(&bplptr[3], bpl[0]);
       break;
 
     default:
@@ -265,11 +265,11 @@ static void ChunkyToPlanar(void) {
   ClearIRQ(INTF_BLIT);
 }
 
-static void MakeCopperList(CopListT *cp) {
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(1200);
   short i;
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopLoadColor(cp, 0, 15, 0);
   for (i = 0; i < HEIGHT * 4; i++) {
     CopWaitSafe(cp, Y(i), 0);
@@ -279,15 +279,12 @@ static void MakeCopperList(CopListT *cp) {
     /* Alternating shift by one for bitplane data. */
     CopMove16(cp, bplcon1, (i & 1) ? 0x0022 : 0x0000);
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
-
-  screen[0]->flags |= BM_HAM;
-  screen[1]->flags |= BM_HAM;
+  screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH, BM_HAM);
+  screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH, BM_HAM);
 
   chunky[0] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);
   chunky[1] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);
@@ -302,8 +299,7 @@ static void Init(void) {
   custom->bpldat[4] = 0x7777; // rgbb: 0111
   custom->bpldat[5] = 0xcccc; // rgbb: 1100
 
-  cp = NewCopList(1200);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER);
@@ -381,4 +377,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(BumpMapRGB, Load, UnLoad, Init, Kill, Render);
+EFFECT(BumpMapRGB, Load, UnLoad, Init, Kill, Render, NULL);

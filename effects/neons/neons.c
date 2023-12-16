@@ -5,7 +5,6 @@
 #include "2d.h"
 #include "fx.h"
 #include <stdlib.h>
-#include <system/interrupt.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -15,9 +14,7 @@
 
 static BitmapT *screen[2];
 static u_short active = 0;
-static CopInsT *bplptr[5];
-
-static const PaletteT *palette[3];
+static CopInsPairT *bplptr;
 static CopListT *cp;
 static CopInsT *pal;
 
@@ -93,12 +90,8 @@ static void PositionGreetings(void) {
 }
 
 static void Load(void) {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-
-  palette[0] = &background_pal;
-  palette[1] = &moods_pal;
-  palette[2] = &rno_pal;
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   PositionGreetings();
 }
@@ -108,8 +101,8 @@ static void UnLoad(void) {
   DeleteBitmap(screen[1]);
 }
 
-static int CustomRotatePalette(void) {
-  u_short *src = palette[0]->colors;
+static void CustomRotatePalette(void) {
+  u_short *src = background_colors;
   CopInsT *ins = pal + 1;
   int i = frameCount;
   short n = 15;
@@ -117,10 +110,17 @@ static int CustomRotatePalette(void) {
   while (--n >= 0)
     CopInsSet16(ins++, src[i++ & 15]);
 
-  return 0;
+  return;
 }
-
-INTSERVER(RotatePaletteInterrupt, 0, (IntFuncT)CustomRotatePalette, NULL);
+  
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(100);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
+  pal = CopLoadColors(cp, background_colors, 0);
+  CopLoadColors(cp, moods_colors, 16);
+  CopLoadColors(cp, rno_colors, 24);
+  return CopListFinish(cp);
+}
 
 static void Init(void) {
   EnableDMA(DMAF_BLITTER);
@@ -133,24 +133,13 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
-  cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  pal = CopLoadPal(cp, palette[0], 0);
-  CopLoadPal(cp, palette[1], 16);
-  CopLoadPal(cp, palette[2], 24);
-  CopEnd(cp);
-
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
-
-  AddIntServer(INTB_VERTB, RotatePaletteInterrupt);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
-
-  RemIntServer(INTB_VERTB, RotatePaletteInterrupt);
 
   DeleteCopList(cp);
 }
@@ -223,9 +212,9 @@ static void Render(void) {
   }
   ProfilerStop(RenderNeons);
 
-  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  ITER(i, 0, DEPTH - 1, CopInsSet32(&bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();
   active ^= 1;
 }
 
-EFFECT(Neons, Load, UnLoad, Init, Kill, Render);
+EFFECT(Neons, Load, UnLoad, Init, Kill, Render, CustomRotatePalette);

@@ -15,10 +15,11 @@
 
 static Object3D *cube;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
-static BitmapT *screen0, *screen1;
+static CopInsPairT *bplptr;
+static BitmapT *screen[2];
 static BitmapT *scratchpad;
 static BitmapT *carry;
+static int active = 0;
 
 #include "data/blurred3d-pal.c"
 #include "data/szescian.c"
@@ -34,9 +35,9 @@ static void UnLoad(void) {
   ResetMesh3D(mesh);
 }
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(80 + gradient.height * (gradient.width + 1));
+  bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
 
   {
     short *pixels = gradient.pixels;
@@ -61,24 +62,23 @@ static void MakeCopperList(CopListT *cp) {
     }
   }
 
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(-250);
 
-  screen0 = NewBitmap(WIDTH, HEIGHT + 1, DEPTH);
-  screen1 = NewBitmap(WIDTH, HEIGHT + 1, DEPTH);
-  carry = NewBitmap(WIDTH, HEIGHT, 2);
-  scratchpad = NewBitmap(WIDTH, HEIGHT, 2);
+  screen[0] = NewBitmap(WIDTH, HEIGHT + 1, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH, HEIGHT + 1, DEPTH, BM_CLEAR);
+  carry = NewBitmap(WIDTH, HEIGHT, 2, 0);
+  scratchpad = NewBitmap(WIDTH, HEIGHT, 2, 0);
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(STARTX), Y(STARTY), WIDTH, HEIGHT * 5 / 4);
 
-  cp = NewCopList(80 + gradient.height * (gradient.width + 1));
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }
@@ -86,8 +86,8 @@ static void Init(void) {
 static void Kill(void) {
   DisableDMA(DMAF_RASTER|DMAF_BLITTER);
 
-  DeleteBitmap(screen0);
-  DeleteBitmap(screen1);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
   DeleteBitmap(scratchpad);
   DeleteBitmap(carry);
   DeleteCopList(cp);
@@ -473,26 +473,26 @@ static void RenderObject3D(void) {
 static short iterCount = 0;
 
 static void Render(void) {
-  BitmapT *source = screen1;
+  BitmapT *source = screen[active ^ 1];
 
   if (iterCount++ & 1) {
-    BitmapDecSaturatedFast(screen0, screen1);
-    source = screen0;
+    BitmapDecSaturatedFast(screen[active], screen[active ^ 1]);
+    source = screen[active];
   }
 
   RenderObject3D();
 
-  BitmapIncSaturatedFast(screen0, source);
+  BitmapIncSaturatedFast(screen[active], source);
 
   {
     short n = DEPTH;
 
     while (--n >= 0)
-      CopInsSet32(bplptr[n], screen0->planes[n]);
+      CopInsSet32(&bplptr[n], screen[active]->planes[n]);
   }
 
   TaskWaitVBlank();
-  swapr(screen0, screen1);
+  active ^= 1;
 }
 
-EFFECT(Blurred3D, Load, UnLoad, Init, Kill, Render);
+EFFECT(Blurred3D, Load, UnLoad, Init, Kill, Render, NULL);

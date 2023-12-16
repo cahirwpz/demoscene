@@ -18,10 +18,9 @@
 #define HEIGHT 256
 #define DEPTH 4
 
-static CopListT *coplist[2];
-static short active = 0;
-
+static CopListT *cp[2];
 static CopInsT *copLine[2][HEIGHT];
+static short active = 0;
 
 /* A struct that controls stripe's colors */
 typedef struct {
@@ -66,15 +65,15 @@ static void GenerateShifterValues(void) {
   }
 }
 
-static void MakeCopperList(CopListT *cp, short n) {
+static CopListT *MakeCopperList(CopInsT **line) {
+  CopListT *cp = NewCopList(100 + 2 * HEIGHT + 15 * HEIGHT / 8);
   short i;
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, &floor, DEPTH);
+  CopSetupBitplanes(cp, &floor, DEPTH);
 
   for (i = 0; i < HEIGHT; i++) {
     CopWait(cp, Y(i), 0);
-    copLine[n][i] = CopMove16(cp, bplcon1, 0);
+    line[i] = CopMove16(cp, bplcon1, 0);
 
     if ((i & 7) == 0) {
       short j;
@@ -84,7 +83,7 @@ static void MakeCopperList(CopListT *cp, short n) {
     }
   }
 
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void InitStripes(void) {
@@ -93,7 +92,7 @@ static void InitStripes(void) {
 
   while (--n >= 0) {
     s->step = -16 * (random() & 7);
-    s->orig = stripes_pal.colors[random() & 3];
+    s->orig = stripes_colors[random() & 3];
     /* Every stripe starts black */
     s->color = 0;
     s++;
@@ -109,20 +108,17 @@ static void Init(void) {
   SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH + 16);
   SetColor(0, 0);
 
-  coplist[0] = NewCopList(100 + 2 * HEIGHT + 15 * HEIGHT / 8);
-  coplist[1] = NewCopList(100 + 2 * HEIGHT + 15 * HEIGHT / 8);
+  cp[0] = MakeCopperList(copLine[0]);
+  cp[1] = MakeCopperList(copLine[1]);
 
-  MakeCopperList(coplist[0], 0);
-  MakeCopperList(coplist[1], 1);
-
-  CopListActivate(coplist[active ^ 1]);
+  CopListActivate(cp[active ^ 1]);
   EnableDMA(DMAF_RASTER);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_RASTER);
-  DeleteCopList(coplist[0]);
-  DeleteCopList(coplist[1]);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
 }
 
 /* Shift colors by an offset */
@@ -254,9 +250,9 @@ static void Render(void) {
   }
   ProfilerStop(Floor);
 
-  CopListRun(coplist[active]);
+  CopListRun(cp[active]);
   TaskWaitVBlank();
   active ^= 1;
 }
 
-EFFECT(Floor, NULL, NULL, Init, Kill, Render);
+EFFECT(Floor, NULL, NULL, Init, Kill, Render, NULL);

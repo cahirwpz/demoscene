@@ -12,35 +12,33 @@
 
 static Object3D *cube;
 static CopListT *cp;
-static BitmapT *screen0, *screen1;
-static CopInsT *bplptr[DEPTH];
+static BitmapT *screen[2];
+static CopInsPairT *bplptr;
+static int active = 0;
 
 #include "data/flares32.c"
 #include "data/pilka.c"
 
 static Mesh3D *mesh = &pilka;
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(80);
   CopWait(cp, Y(-1), 0);
-  CopSetupBitplanes(cp, bplptr, screen1, DEPTH);
-  CopEnd(cp);
+  bplptr = CopSetupBitplanes(cp, screen[1], DEPTH);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(TZ);
 
-  screen0 = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
-                            BM_DISPLAYABLE | BM_INTERLEAVED);
-  screen1 = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
-                            BM_DISPLAYABLE | BM_INTERLEAVED);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR|BM_INTERLEAVED);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR|BM_INTERLEAVED);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&bobs_pal, 0);
+  LoadColors(bobs_colors, 0);
 
-  cp = NewCopList(80);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }
@@ -48,8 +46,8 @@ static void Init(void) {
 static void Kill(void) {
   DeleteCopList(cp);
   DisableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
-  DeleteBitmap(screen0);
-  DeleteBitmap(screen1);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
   DeleteObject3D(cube);
 }
 
@@ -228,7 +226,7 @@ PROFILE(TransformObject);
 PROFILE(DrawObject);
 
 static void Render(void) {
-  BitmapClearI(screen0);
+  BitmapClearI(screen[active]);
 
   ProfilerStart(TransformObject);
   {
@@ -243,14 +241,14 @@ static void Render(void) {
 
   ProfilerStart(DrawObject);
   {
-    DrawObject(cube, screen0);
+    DrawObject(cube, screen[active]);
   }
   ProfilerStop(DrawObject);
 
   TaskWaitVBlank();
 
-  CopUpdateBitplanes(bplptr, screen0, DEPTH);
-  swapr(screen0, screen1);
+  CopUpdateBitplanes(bplptr, screen[active], DEPTH);
+  active ^= 1;
 }
 
-EFFECT(Bobs3D, NULL, NULL, Init, Kill, Render);
+EFFECT(Bobs3D, NULL, NULL, Init, Kill, Render, NULL);

@@ -33,15 +33,15 @@ PNG2C.greet_fd := --bitmap greet_fd,64x120x3
 PNG2C.greet_floppy := --bitmap greet_floppy,32x115x3
 PNG2C.greet_lemon := --bitmap greet_lemon,48x120x3
 PNG2C.greet_loonies := --bitmap greet_loonies,32x107x3
-PNG2C.greet_moods := --bitmap greet_moods,48x120x3 --palette moods_pal,8
+PNG2C.greet_moods := --bitmap greet_moods,48x120x3 --palette moods,8
 PNG2C.greet_nah := --bitmap greet_nah,32x98x3
-PNG2C.greet_rno := --bitmap greet_rno,32x84x3 --palette rno_pal,8
+PNG2C.greet_rno := --bitmap greet_rno,32x84x3 --palette rno,8
 PNG2C.greet_skarla := --bitmap greet_skarla,48x120x3
 PNG2C.greet_speccy := --bitmap greet_speccy,32x119x3
 PNG2C.greet_tulou := --bitmap greet_tulou,32x120x3
 PNG2C.greet_wanted := --bitmap greet_wanted,48x120x3
 PNG2C.greet_ycrew := --bitmap greet_ycrew,32x120x3
-PNG2C.neons := --bitmap background,320x256x4 --palette background_pal,16
+PNG2C.neons := --bitmap background,320x256x4 --palette background,16
 
 include $(TOPDIR)/build/effect.mk
 

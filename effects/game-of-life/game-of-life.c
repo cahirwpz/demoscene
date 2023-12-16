@@ -93,10 +93,10 @@ static BitmapT *current_board;
 static BitmapT *boards[BOARD_COUNT];
 
 // pointers to copper instructions, for rewriting bitplane pointers
-static CopInsT *bplptr[DISP_DEPTH];
+static CopInsPairT *bplptr;
 
 // pointers to copper instructions, for setting colors
-static CopInsT *palptr[COLORS];
+static CopInsT *palptr;
 
 // circular buffer of previous game states as they would be rendered (with
 // horizontally doubled pixels)
@@ -117,27 +117,23 @@ static u_short wireworld_step = 0;
 
 static const GameDefinitionT* current_game;
 
-static PaletteT palette = {
-  .count = 16,
-  .colors =
-    {
-      0x000, // 0000
-      0x006, // 0001
-      0x026, // 0010
-      0x026, // 0011
-      0x05B, // 0100
-      0x05B, // 0101
-      0x05B, // 0110
-      0x05B, // 0111
-      0x09F, // 1000
-      0x09F, // 1001
-      0x09F, // 1010
-      0x09F, // 1011
-      0x09F, // 1100
-      0x09F, // 1101
-      0x09F, // 1110
-      0x09F, // 1111
-    },
+static const u_short palette_colors[16] = {
+  0x000, // 0000
+  0x006, // 0001
+  0x026, // 0010
+  0x026, // 0011
+  0x05B, // 0100
+  0x05B, // 0101
+  0x05B, // 0110
+  0x05B, // 0111
+  0x09F, // 1000
+  0x09F, // 1001
+  0x09F, // 1010
+  0x09F, // 1011
+  0x09F, // 1100
+  0x09F, // 1101
+  0x09F, // 1110
+  0x09F, // 1111
 };
 
 // Used by CPU to quickly transform 1x1 pixels into 2x1 pixels.
@@ -305,25 +301,24 @@ static void ChangePalette(const u_short* pal) {
     {
       u_short next_i = i << 1;
       for (j = i; j < next_i; j++)
-        CopInsSet16(palptr[j], *pal);
+        CopInsSet16(&palptr[j], *pal);
       i = next_i;
       pal++;
     }
 }
 
-static void MakeCopperList(CopListT *cp) {
-  u_short i;
-  u_short* color = palette.colors;
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(800);
+  short i;
 
-  CopInit(cp);
   // initially previous states are empty
   // save addresses of these instructions to change bitplane
   // order when new state gets generated
-  for (i = 0; i < DISP_DEPTH; i++)
-    bplptr[i] = CopMove32(cp, bplpt[i], prev_states[i]->planes[0]);
+  bplptr = CopInsPtr(cp);
+  for (i = 0; i < DISP_DEPTH; i++) 
+    CopMove32(cp, bplpt[i], prev_states[i]->planes[0]);
 
-  for (i = 0; i < COLORS; i++)
-    palptr[i] = CopSetColor(cp, i, *color++);
+  palptr = CopLoadColors(cp, palette_colors, 0);
 
   for (i = 1; i <= DISP_HEIGHT; i += 2) {
     // vertical pixel doubling
@@ -334,7 +329,7 @@ static void MakeCopperList(CopListT *cp) {
     CopMove16(cp, bpl2mod, 0);
     CopWaitSafe(cp, Y(i + 1), 0);
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void UpdateBitplanePointers(void) {
@@ -347,7 +342,7 @@ static void UpdateBitplanePointers(void) {
     // state) to newest game state, so 0th bitplane displays the oldest+1 state
     // and (PREV_STATES_DEPTH-1)'th bitplane displays the newest state
     cur = prev_states[(states_head + i + 1) % PREV_STATES_DEPTH];
-    CopInsSet32(bplptr[i - 1], cur->planes[0]);
+    CopInsSet32(&bplptr[i - 1], cur->planes[0]);
   }
 }
 
@@ -398,7 +393,7 @@ static void Init(void) {
   MakeDoublePixels();
 
   for (i = 0; i < BOARD_COUNT; i++)
-    boards[i] = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH);
+    boards[i] = NewBitmap(EXT_BOARD_WIDTH, EXT_BOARD_HEIGHT, BOARD_DEPTH, 0);
 
   current_board = boards[0];
   current_game = &wireworld1;
@@ -406,13 +401,13 @@ static void Init(void) {
   BitmapCopy(boards[11], EXT_WIDTH_LEFT, EXT_HEIGHT_TOP, &logo);
 
   SetupPlayfield(MODE_LORES, DISP_DEPTH, X(0), Y(0), DISP_WIDTH, DISP_HEIGHT);
-  LoadPalette(&palette, 0);
+  LoadColors(palette_colors, 0);
   EnableDMA(DMAF_BLITTER);
 
   for (i = 0; i < PREV_STATES_DEPTH; i++) {
     // only needs half the vertical resolution, other half 
     // achieved via copper line doubling
-    prev_states[i] = NewBitmap(DISP_WIDTH, DISP_HEIGHT / 2, BOARD_DEPTH);
+    prev_states[i] = NewBitmap(DISP_WIDTH, DISP_HEIGHT / 2, BOARD_DEPTH, 0);
     BitmapClear(prev_states[i]);
   }
 
@@ -429,8 +424,7 @@ static void Init(void) {
   WaitBlitter();
   ClearIRQ(INTF_BLIT);
 
-  cp = NewCopList(800);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
 
 #ifdef DEBUG_KBD
@@ -522,4 +516,4 @@ static void Render(void) {
 #endif
 }
 
-EFFECT(GameOfLife, NULL, NULL, Init, Kill, Render);
+EFFECT(GameOfLife, NULL, NULL, Init, Kill, Render, NULL);

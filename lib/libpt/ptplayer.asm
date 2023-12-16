@@ -566,7 +566,7 @@ mt_generate_period_table:
 ;
 ; See: https://eab.abime.net/showpost.php?p=1465997&postcount=132
 
-        rem
+        ifeq JAZZCAT
 mt_generate_vib_sine_table:
 	move.l	d2,-(sp)
 
@@ -595,7 +595,7 @@ mt_generate_vib_sine_table:
 	dc.w	$b400,$c500,$d400,$e000,$eb00,$f400,$fa00,$fd00
 	dc.w	$ff00,$fd00,$fa00,$f400,$eb00,$e000,$d400,$c500
 	dc.w	$b400,$a100,$8d00,$7800,$6100,$4a00,$3100,$1800
-        erem
+        endc ; JAZZCAT
 
 ;---------------------------------------------------------------------------
 
@@ -669,9 +669,9 @@ _mt_init:
 
 	;Antiriad - generator code
 	bsr	mt_generate_period_table	;Create period table
-        rem
+        ifeq JAZZCAT
 	bsr	mt_generate_vib_sine_table	;Create sine vibrato table
-        erem
+        endc ; JAZZCAT
 	;Antiriad - end
 	;Fallthrough to mt_reset
 
@@ -1559,13 +1559,14 @@ mt_checkfx:
 	move.w	fx_tab(pc,d0.w),d0
 	jmp	fx_tab(pc,d0.w)
 
-; [cahir] disabled commands
+        ifne JAZZCAT
 mt_arpeggio set mt_nop                  ; 0 x y
 mt_portaup set mt_nop                   ; 1 x y
 mt_vibrato set mt_nop                   ; 4 x y
 mt_vibrvolslide set mt_nop              ; 6 x y
 mt_tremolo set mt_nop                   ; 7 x y
 mt_e_cmds set mt_nop                    ; E x y
+        endc ; JAZZCAT
 
 fx_tab:
 	dc.w	mt_arpeggio-fx_tab	; $0
@@ -1888,10 +1889,11 @@ checkmorefx:
 .1:	move.w	morefx_tab(pc,d5.w),d0
 	jmp	morefx_tab(pc,d0.w)
 
-; [cahir] disabled commands
+        ifne JAZZCAT
 mt_posjump set mt_pernop        ; B x y
 mt_patternbrk set mt_pernop     ; D x y
 mt_e_cmds set mt_pernop         ; E x y
+        endc ; JAZZCAT
 
 morefx_tab:
 	dc.w	mt_pernop-morefx_tab,mt_pernop-morefx_tab,mt_pernop-morefx_tab
@@ -1917,12 +1919,13 @@ moreblockedfx:
 	move.w	blmorefx_tab(pc,d6.w),d0
 	jmp	blmorefx_tab(pc,d0.w)
 
-; [cahir] disabled commands
+        ifne JAZZCAT
 mt_arpeggio set mt_nop          ; 0 x y
 mt_fineportaup set mt_nop       ; 1 x y
 mt_posjump set mt_nop           ; B x y
 mt_patternbrk set mt_nop        ; D x y
 blocked_e_cmds set mt_nop       ; E x y
+        endc ; JAZZCAT
 
 blmorefx_tab:
 	dc.w	mt_nop-blmorefx_tab,mt_nop-blmorefx_tab
@@ -1938,7 +1941,7 @@ blmorefx_tab:
 	dc.w	mt_setspeed-blmorefx_tab		; $F
 	endc	; !MINIMAL
 
-        rem
+        ifeq JAZZCAT
 mt_arpeggio:
 ; cmd 0 x y (x = first arpeggio offset, y = second arpeggio offset)
 ; d4 = xy
@@ -2005,7 +2008,7 @@ mt_fineportadn:
 	tst.b	mt_Counter(a4)
 	beq	do_porta_down
 	rts
-        erem
+        endc ; JAZZCAT
 
 mt_portadown:
 ; cmd 2 x x (add xx to period)
@@ -2076,7 +2079,7 @@ mt_toneporta_nc:
 .5:	move.w	d2,AUDPER(a5)
 .6	rts
 
-        rem
+        ifeq JAZZCAT
 mt_vibrato:
 ; cmd 4 x y (x = speed, y = amplitude)
 ; d4 = xy
@@ -2130,7 +2133,7 @@ mt_vibrato_nc:
 	; increase vibratopos by speed
 	add.b	d4,n_vibratopos(a2)
 	rts
-        erem
+        endc ; JAZZCAT
 
 mt_tonevolslide:
 ; cmd 5 x y (x = volume-up, y = volume-down)
@@ -2139,7 +2142,7 @@ mt_tonevolslide:
 	pea	mt_volumeslide(pc)
 	bra	mt_toneporta_nc
 
-        rem
+        ifeq JAZZCAT
 mt_vibrvolslide:
 ; cmd 6 x y (x = volume-up, y = volume-down)
 ; d4 = xy
@@ -2214,7 +2217,7 @@ mt_tremolo:
 	; increase tremolopos by speed
 	add.b	d4,n_tremolopos(a2)
 	rts
-        erem
+        endc ; JAZZCAT
 
 mt_volumeslide:
 ; cmd A x y (x = volume-up, y = volume-down)
@@ -2250,7 +2253,7 @@ set_vol:
 	move.w	d0,AUDVOL(a5)
 	rts
 
-        rem
+        ifeq JAZZCAT
 mt_posjump:
 ; cmd B x y (xy = new song position)
 ; d4 = xy
@@ -2263,7 +2266,7 @@ jump_pos0:
 	move.w	d7,mt_PBreakPos(a4)
 	st	mt_PosJumpFlag(a4)
 	rts
-        erem
+        endc ; JAZZCAT
 
 mt_volchange:
 ; cmd C x y (xy = new volume)
@@ -2280,7 +2283,7 @@ mt_volchange:
 	move.w	d4,AUDVOL(a5)
 	rts
 
-        rem
+        ifeq JAZZCAT
 mt_patternbrk:
 ; cmd D x y (xy = break pos in decimal)
 ; d4 = xy
@@ -2300,7 +2303,7 @@ mt_patternbrk:
 
 mult10tab:
 	dc.b	0,10,20,30,40,50,60,70,80,90,0,0,0,0,0,0
-        erem
+        endc ; JAZZCAT
 
 mt_setspeed:
 ; cmd F x y (xy<$20 new speed, xy>=$20 new tempo)
@@ -2321,7 +2324,7 @@ mt_setspeed:
 	move.b	d0,CIAB+CIATAHI
 	rts
 
-        rem
+        ifeq JAZZCAT
 mt_e_cmds:
 ; cmd E x y (x=command, y=argument)
 ; d4 = xy
@@ -2577,7 +2580,7 @@ mt_funk:
 	move.w	d0,n_funk(a2)
 	bne	mt_updatefunk
 .1:	rts
-        erem
+        endc ; JAZZCAT
 
 mt_updatefunk:
 ; d0 = funk speed
@@ -3164,10 +3167,10 @@ mt_TuningM1	rs.w	36
 ; Antiriad - end of periodtable
 
 ; Antiriad - vibrato sine table
-        rem
+        ifeq JAZZCAT
 mt_VibratoSineTable	rs.b	16*64
 mt_VibratoSineTable_End	rs.b	0
-        erem
+        endc ; JAZZCAT
 ; Antiriad - end of vibrato sine table
 
 mt_chan1	rs.b	n_sizeof

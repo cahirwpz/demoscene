@@ -13,7 +13,7 @@ static Object3D *cube;
 static CopListT *cp;
 static BitmapT *screen;
 static u_short active = 0;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 
 #include "data/wireframe-pal.c"
 #include "data/pilka.c"
@@ -34,15 +34,14 @@ static void Init(void) {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(-250);
 
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&wireframe_pal, 0);
+  LoadColors(wireframe_colors, 0);
 
   cp = NewCopList(80);
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopEnd(cp);
+  bplptr = CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 }
@@ -321,7 +320,7 @@ static void Render(void) {
     short i = active;
 
     while (--n >= 0) {
-      CopInsSet32(bplptr[n], planes[i]);
+      CopInsSet32(&bplptr[n], planes[i]);
       if (i == 0)
         i = DEPTH + 1;
       i--;
@@ -335,4 +334,4 @@ static void Render(void) {
     active = 0;
 }
 
-EFFECT(Wireframe, Load, UnLoad, Init, Kill, Render);
+EFFECT(Wireframe, Load, UnLoad, Init, Kill, Render, NULL);

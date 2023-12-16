@@ -4,7 +4,6 @@
 #include <copper.h>
 #include <p61.h>
 #include <system/event.h>
-#include <system/interrupt.h>
 #include <system/keyboard.h>
 #include <system/memory.h>
 #include <system/timer.h>
@@ -23,8 +22,6 @@ static BitmapT *osc[4];
 static CopListT *cp;
 static ConsoleT console;
 static CIATimerT *p61tmr;
-
-INTSERVER(P61PlayerServer, 10, (IntFuncT)P61_Music, NULL);
 
 static inline void putpixel(u_char *line, short x) {
   bset(line + (x >> 3), ~x);
@@ -73,18 +70,17 @@ static void DrawOsc(BitmapT *osc, P61_OscData *data) {
 static void Init(void) {
   KeyboardInit();
 
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
-  ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1));
+  ITER(i, 0, 3, osc[i] = NewBitmap(64, 64, 1, BM_CLEAR));
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);
   SetColor(1, 0xfff);
 
   cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopEnd(cp);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
 
   ConsoleInit(&console, &drdos8x8, screen);
 
@@ -118,8 +114,6 @@ static void Init(void) {
   P61_Init(module, NULL, NULL);
   P61_ControlBlock.Play = 1;
 
-  AddIntServer(INTB_VERTB, P61PlayerServer);
-
   ConsolePutStr(&console, 
                 "Pause (SPACE) Prev (LEFT) Next (RIGHT)\n"
                 "Exit (ESC)\n");
@@ -129,7 +123,6 @@ static void Kill(void) {
   P61_ControlBlock.Play = 0;
   P61_End();
 
-  RemIntServer(INTB_VERTB, P61PlayerServer);
   ReleaseTimer(p61tmr);
 
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
@@ -222,4 +215,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(PlayP61, NULL, NULL, Init, Kill, Render);
+EFFECT(PlayP61, NULL, NULL, Init, Kill, Render, P61_Music);

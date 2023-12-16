@@ -1,11 +1,11 @@
 #include <copper.h>
 #include <system/memory.h>
 
-CopListT *NewCopList(u_short length) {
-  CopListT *list = MemAlloc(sizeof(CopListT) + length * sizeof(CopInsT),
-                            MEMF_CHIP|MEMF_CLEAR);
-
+CopListT *NewCopList(int length) {
+  CopListT *list =
+    MemAlloc(sizeof(CopListT) + length * sizeof(CopInsT), MEMF_CHIP);
   list->length = length;
-  CopInit(list);
+  list->curr = list->entry;
+  list->overflow = 0;
   return list;
 }

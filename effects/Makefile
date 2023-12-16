@@ -16,6 +16,7 @@ SUBDIRS := \
 	flatshade-convex \
 	floor \
 	floor-old \
+	game-of-life \
 	glitch \
 	growing-tree \
 	gui \
@@ -45,6 +46,7 @@ SUBDIRS := \
 	tilezoomer \
 	transparency \
 	twister-rgb \
+	turmite \
 	uvlight \
 	uvmap \
 	uvmap-rgb \

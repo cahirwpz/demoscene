@@ -10,16 +10,15 @@ static BitmapT *screen;
 static CopListT *cp;
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  cp = NewCopList(100);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);
   SetColor(1, 0xfff);
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopEnd(cp);
+  cp = NewCopList(100);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
 
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
@@ -44,4 +43,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(Circles, NULL, NULL, Init, Kill, Render);
+EFFECT(Circles, NULL, NULL, Init, Kill, Render, NULL);

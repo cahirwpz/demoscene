@@ -26,13 +26,13 @@
 /*
  * Number of frames (50Hz) from time point when Render() was called first.
  */
-extern int frameCount;
+extern short frameCount;
 
 /*
  * The time when Render() was called previously.
  * Used to calculate how much did it take to render last frame.
  */
-extern int lastFrameCount;
+extern short lastFrameCount;
 
 /*
  * When set to true effect render loop breaks.
@@ -40,17 +40,15 @@ extern int lastFrameCount;
  */
 extern bool exitLoop;
 
-typedef enum {
-  EFFECT_LOADED = 1,
-  EFFECT_READY = 2,
-  EFFECT_RUNNING = 4,
-} EffectStateT;
+#ifdef INTRO
+extern short frameFromStart;
+extern short frameTillEnd;
+#endif
 
 typedef void (*EffectFuncT)(void);
 
 typedef struct Effect {
   const char *name;
-  EffectStateT state;
   /*
    * Executed in background task when other effect is running.
    * Precalculates data for the effect to be launched.
@@ -89,10 +87,14 @@ void EffectKill(EffectT *effect);
 void EffectUnLoad(EffectT *effect);
 void EffectRun(EffectT *effect);
 
+#ifdef INTRO
+#undef ALIAS
+#define ALIAS(a, b)
+#endif
+
 #define EFFECT(NAME, L, U, I, K, R, V)                                         \
   EffectT NAME##Effect = {                                                     \
     .name = #NAME,                                                             \
-    .state = 0,                                                                \
     .Load = (L),                                                               \
     .UnLoad = (U),                                                             \
     .Init = (I),                                                               \

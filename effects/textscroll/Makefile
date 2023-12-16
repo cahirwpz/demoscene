@@ -3,7 +3,7 @@ TOPDIR := $(realpath ../..)
 CLEAN-FILES := data/text-scroll-font.c
 OBJECTS := data/text-scroll.o
 
-PNG2C.text-scroll-font := --bitmap font,768x8x1 --palette font_pal,2
+PNG2C.text-scroll-font := --bitmap font,768x8x1 --palette font,2
 
 include $(TOPDIR)/build/effect.mk
 

@@ -12,12 +12,10 @@
 #define STARTX  96
 
 static CopListT *cp[2];
-static CopInsT *bplptr[2][DEPTH];
+static CopInsPairT *bplptr[2];
 static CopInsT *bplmod[2][HEIGHT];
 static CopInsT *colors[2][HEIGHT];
 static short active = 0;
-
-static CopInsT *sprptr[2][8];
 
 #include "data/twister-gradient.c"
 #include "data/twister-texture.c"
@@ -25,16 +23,16 @@ static CopInsT *sprptr[2][8];
 #include "data/twister-right.c"
 #include "data/twister.c"
 
-static void MakeCopperList(CopListT **ptr, short n) {
+static CopListT *MakeCopperList(short n) {
   CopListT *cp = NewCopList(100 + HEIGHT * 5 + (31 * HEIGHT / 3));
+  CopInsPairT *sprptr = CopSetupSprites(cp);
   short *pixels = texture.pixels;
   short i, j, k;
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr[n], &twister, DEPTH);
-  CopSetupSprites(cp, sprptr[n]);
+  bplptr[n] = CopSetupBitplanes(cp, &twister, DEPTH);
+  
   CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
-  CopSetColor(cp, 0, gradient.colors[0]);
+  CopSetColor(cp, 0, gradient_colors[0]);
 
   for (i = 0, k = 0; i < HEIGHT; i++) {
     CopWaitSafe(cp, Y(i), 0);
@@ -42,7 +40,7 @@ static void MakeCopperList(CopListT **ptr, short n) {
     CopMove16(cp, bpl2mod, -32);
     CopMove16(cp, bpldat[0], 0);
 
-    CopSetColor(cp, 0, gradient.colors[i]);
+    CopSetColor(cp, 0, gradient_colors[i]);
 
     if ((i % 3) == 0) {
       colors[n][k++] = CopSetColor(cp, 1, *pixels++);
@@ -51,14 +49,12 @@ static void MakeCopperList(CopListT **ptr, short n) {
     }
   }
 
-  CopEnd(cp);
+  CopInsSetSprite(&sprptr[4], &left[0]);
+  CopInsSetSprite(&sprptr[5], &left[1]);
+  CopInsSetSprite(&sprptr[6], &right[0]);
+  CopInsSetSprite(&sprptr[7], &right[1]);
 
-  CopInsSetSprite(sprptr[n][4], &left[0]);
-  CopInsSetSprite(sprptr[n][5], &left[1]);
-  CopInsSetSprite(sprptr[n][6], &right[0]);
-  CopInsSetSprite(sprptr[n][7], &right[1]);
-
-  *ptr = cp;
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -68,8 +64,8 @@ static void Init(void) {
   custom->diwstrt = 0x2c81;
   custom->diwstop = 0x2bc1;
 
-  MakeCopperList(&cp[0], 0);
-  MakeCopperList(&cp[1], 1);
+  cp[0] = MakeCopperList(0);
+  cp[1] = MakeCopperList(1);
 
   SpriteUpdatePos(&left[0], X(0), Y(0));
   SpriteUpdatePos(&left[1], X(16), Y(0));
@@ -96,11 +92,11 @@ static void SetupLines(short f) {
   {
     int y = (short)twister.bytesPerRow * y0;
     void **planes = twister.planes;
-    CopInsT **bpl = bplptr[active];
+    CopInsPairT *_bplptr = bplptr[active];
     short n = DEPTH;
 
     while (--n >= 0)
-      CopInsSet32(*bpl++, (*planes++) + y);
+      CopInsSet32(_bplptr++, (*planes++) + y);
   }
 
   /* consecutive lines */
@@ -189,4 +185,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(TwisterRGB, NULL, NULL, Init, Kill, Render);
+EFFECT(TwisterRGB, NULL, NULL, Init, Kill, Render, NULL);

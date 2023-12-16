@@ -11,7 +11,7 @@
 
 static Object3D *cube;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static BitmapT *screen[2];
 static short active;
 
@@ -34,16 +34,15 @@ static void Init(void) {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(-250);
 
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&flatshade_pal, 0);
+  LoadColors(flatshade_colors, 0);
 
   cp = NewCopList(80);
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[0], DEPTH);
-  CopEnd(cp);
+  bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
 }
@@ -342,4 +341,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(FlatShadeConvex, Load, UnLoad, Init, Kill, Render);
+EFFECT(FlatShadeConvex, Load, UnLoad, Init, Kill, Render, NULL);

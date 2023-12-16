@@ -10,18 +10,10 @@
 
 static CopListT *cp;
 
-static void Init(void) {
-  short w = face.width;
-  short h = face.height;
-  short xs = X((WIDTH - w) / 2);
-  short ys = Y((HEIGHT - h) / 2);
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(100 + face_pchg_count + face.height * 2);
 
-  cp = NewCopList(100 + face_pchg_count + face.height * 2);
-
-  SetupPlayfield(MODE_HAM, DEPTH, xs, ys, w, h);
-
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, &face, DEPTH);
+  CopSetupBitplanes(cp, &face, DEPTH);
 
   {
     u_short *data = face_pchg;
@@ -40,10 +32,18 @@ static void Init(void) {
     }
   }
 
-  CopEnd(cp);
+  return CopListFinish(cp);
+}
 
-  Log("Used copper list slots: %ld\n", (ptrdiff_t)(cp->curr - cp->entry));
+static void Init(void) {
+  short w = face.width;
+  short h = face.height;
+  short xs = X((WIDTH - w) / 2);
+  short ys = Y((HEIGHT - h) / 2);
 
+  SetupPlayfield(MODE_HAM, DEPTH, xs, ys, w, h);
+
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }
@@ -52,4 +52,4 @@ static void Kill(void) {
   DeleteCopList(cp);
 }
 
-EFFECT(ShowPCHG, NULL, NULL, Init, Kill, NULL);
+EFFECT(ShowPCHG, NULL, NULL, Init, Kill, NULL, NULL);

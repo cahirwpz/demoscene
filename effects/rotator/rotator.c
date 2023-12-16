@@ -15,7 +15,7 @@ static u_short *textureHi, *textureLo;
 static BitmapT *screen[2];
 static u_short active = 0;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 
 #include "data/rork-128.c"
 
@@ -178,10 +178,10 @@ static void ChunkyToPlanar(void) {
       break;
 
     case 6:
-      CopInsSet32(bplptr[0], bpl[2]);
-      CopInsSet32(bplptr[1], bpl[3]);
-      CopInsSet32(bplptr[2], bpl[2] + BLTSIZE / 2);
-      CopInsSet32(bplptr[3], bpl[3] + BLTSIZE / 2);
+      CopInsSet32(&bplptr[0], bpl[2]);
+      CopInsSet32(&bplptr[1], bpl[3]);
+      CopInsSet32(&bplptr[2], bpl[2] + BLTSIZE / 2);
+      CopInsSet32(&bplptr[3], bpl[3] + BLTSIZE / 2);
       break;
 
     default:
@@ -191,12 +191,11 @@ static void ChunkyToPlanar(void) {
   c2p.phase++;
 }
 
-static void MakeCopperList(CopListT *cp) {
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(HEIGHT * 2 * (4 - FULLPIXEL) + 50);
   short i;
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopLoadPal(cp, &texture_pal, 0);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   for (i = 0; i < HEIGHT * 2; i++) {
     CopWaitSafe(cp, Y(i + 28), 0);
     /* Line doubling. */
@@ -207,12 +206,12 @@ static void MakeCopperList(CopListT *cp) {
     CopMove16(cp, bplcon1, (i & 1) ? 0x0010 : 0x0021);
 #endif
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
-  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
+  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, BM_CLEAR);
 
   textureHi = MemAlloc(texture.width * texture.height * 4, MEMF_PUBLIC);
   textureLo = MemAlloc(texture.width * texture.height * 4, MEMF_PUBLIC);
@@ -224,9 +223,9 @@ static void Init(void) {
   BitmapClear(screen[1]);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
+  LoadColors(texture_colors, 0);
 
-  cp = NewCopList(HEIGHT * 2 * (4 - FULLPIXEL) + 50);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER);
@@ -310,4 +309,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Rotator, NULL, NULL, Init, Kill, Render);
+EFFECT(Rotator, NULL, NULL, Init, Kill, Render, NULL);
