@@ -18,6 +18,7 @@ gdb-dashboard
 *.exe.map
 *.rom
 *.7z
+*.dSYM
 
 # AmigaOS files
 *.info

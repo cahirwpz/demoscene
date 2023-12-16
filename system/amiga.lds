@@ -13,6 +13,7 @@ SECTIONS
   {
     __text = .;
     *(.text)
+    *(.text.*)
   }
   __text_size = SIZEOF(.text);
   . = ALIGN(0x0);

@@ -44,4 +44,12 @@ typedef struct Track {
 void TrackInit(TrackT *track);
 short TrackValueGet(TrackT *track, short frame);
 
+static inline short CurrKeyFrame(TrackT *track) {
+  return track->curr->frame;
+}
+
+static inline short NextKeyFrame(TrackT *track) {
+  return track->next->frame;
+}
+
 #endif

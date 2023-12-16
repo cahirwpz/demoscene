@@ -1,6 +1,7 @@
 #include <sprite.h>
 
-void MakeSprite(SprDataT **datp, u_int height, bool attached, SpriteT *spr) {
+SprWordT *MakeSprite(SprDataT **datp, u_int height, bool attached, SpriteT *spr)
+{
   SprDataT *dat = *datp;
   *datp = (SprDataT *)&dat->data[height];
   spr->sprdat = dat;
@@ -8,4 +9,5 @@ void MakeSprite(SprDataT **datp, u_int height, bool attached, SpriteT *spr) {
   spr->attached = attached;
   dat->pos = SPRPOS(0, 0);
   dat->ctl = SPRCTL(0, 0, attached, height);
+  return &dat->data[0];
 }

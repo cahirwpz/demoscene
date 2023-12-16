@@ -26,19 +26,24 @@
 /*
  * Number of frames (50Hz) from time point when Render() was called first.
  */
-extern int frameCount;
+extern short frameCount;
 
 /*
  * The time when Render() was called previously.
  * Used to calculate how much did it take to render last frame.
  */
-extern int lastFrameCount;
+extern short lastFrameCount;
 
 /*
  * When set to true effect render loop breaks.
  * Normally set by LeftMouseButton routine, but can be overwritten.
  */
 extern bool exitLoop;
+
+#ifdef INTRO
+extern short frameFromStart;
+extern short frameTillEnd;
+#endif
 
 typedef void (*EffectFuncT)(void);
 
@@ -81,6 +86,11 @@ void EffectInit(EffectT *effect);
 void EffectKill(EffectT *effect);
 void EffectUnLoad(EffectT *effect);
 void EffectRun(EffectT *effect);
+
+#ifdef INTRO
+#undef ALIAS
+#define ALIAS(a, b)
+#endif
 
 #define EFFECT(NAME, L, U, I, K, R, V)                                         \
   EffectT NAME##Effect = {                                                     \

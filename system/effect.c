@@ -2,8 +2,8 @@
 #include <effect.h>
 #include <system/cia.h>
 
-int frameCount = 0;
-int lastFrameCount = 0;
+short frameCount = 0;
+short lastFrameCount = 0;
 bool exitLoop = false;
 
 #define SHOW_MEMORY_STATS 0

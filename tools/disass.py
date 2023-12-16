@@ -391,7 +391,7 @@ class InsnCost:
 
         if mnemonic in ['bclr']:
             dynamic = self.is_dreg(o0)
-            if self.is_dreg(o1):
+            if not self.is_dreg(o1):
                 return self.operand_cost(8 if dynamic else 12, 'b', o1)
             return 10 if dynamic else 14
 

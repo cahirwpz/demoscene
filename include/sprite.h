@@ -90,10 +90,13 @@ static inline int SprDataSize(u_short height, u_short nctrl) {
  * Information about sprite will be written back to `spr` structure.
  * Marks sprite as attached if `attached` is set to true.
  *
- * Returns a pointer to next usable sprite data (possibly uninitialized).
- * You should call MakeSprite or EndSprite on return value.
+ * `datp` will point to next usable sprite data (possibly uninitialized).
+ * You should call MakeSprite or EndSprite on this value.
+ *
+ * Returns pointer to first word of sprite data.
  */
-void MakeSprite(SprDataT **datp, u_int height, bool attached, SpriteT *spr);
+SprWordT *MakeSprite(SprDataT **datp, u_int height, bool attached,
+                     SpriteT *spr);
 
 /*
  * Terminate sprite data for DMA channel by writing zero long word after
