@@ -1,6 +1,6 @@
 TOPDIR = $(realpath .)
 
-SUBDIRS = tools lib system effects
+SUBDIRS = tools lib system effects demo
 EXTRA-FILES = tags cscope.out
 CLEAN-FILES = bootloader.bin a500rom.bin addchip.bootblock.bin vbrmove
 

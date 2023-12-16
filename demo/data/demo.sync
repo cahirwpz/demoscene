@@ -1,0 +1,4 @@
+@track EffectNumber
+$0000 0 !step
+$1000 -1
+@end

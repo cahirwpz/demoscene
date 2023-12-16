@@ -17,6 +17,7 @@ VBRMOVE = $(TOPDIR)/vbrmove
 
 EXTRA-FILES += $(DATA_GEN) $(EFFECT).adf
 CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map
+CLEAN-FILES += $(EFFECT).img $(EFFECT).rom
 
 ifeq ($(AMIGAOS), 0)
 EXTRA-FILES += $(EFFECT).img $(EFFECT).rom
