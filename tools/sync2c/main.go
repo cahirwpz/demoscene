@@ -86,7 +86,7 @@ func parseFrame(token string) (frame int64, err error) {
 }
 
 func parseValue(token string) (value int64, err error) {
-	return strconv.ParseInt(token, 10, 16)
+	return strconv.ParseInt(token, 0, 16)
 }
 
 func parseTrack(tokens []string, track *Track) (err error) {
