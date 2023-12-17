@@ -26,6 +26,7 @@ SUBDIRS := \
 	lines \
 	metaballs \
 	multipipe \
+	neoncity \
 	neons \
 	plasma \
 	playahx \
