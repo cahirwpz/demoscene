@@ -1,9 +1,7 @@
-#!/usr/bin/env python2
-
-from __future__ import print_function
+#!/usr/bin/env python3
 
 from PIL import Image
-from collections import defaultdict
+
 
 # reduce colors to 4-bit components
 def rgb12(pix, w, h):
@@ -27,7 +25,8 @@ for N in range(1, 8):
 
     for y in range(N, h):
         line = img.crop((0, y - N, w, y + 1))
-        line = line.convert("P", dither=Image.NONE, palette=Image.ADAPTIVE, colors=K)
+        line = line.convert("P", dither=Image.NONE, palette=Image.ADAPTIVE,
+                            colors=K)
         line = line.convert("RGB")
         line = line.load()
         for k in range(N):
