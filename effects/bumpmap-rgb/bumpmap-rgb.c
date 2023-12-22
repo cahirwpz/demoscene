@@ -15,7 +15,6 @@ static BitmapT *screen[2];
 static u_short active = 0;
 static u_short *lightmap;
 static u_short *shademap;
-static u_short *colormap;
 static u_short *chunky[2];
 static CopListT *cp;
 static CopInsPairT *bplptr;
@@ -39,6 +38,44 @@ static u_short redtab[16] = {
   0x8000, 0x8008, 0x8080, 0x8088, 0x8800, 0x8808, 0x8880, 0x8888,
 };
 
+#define BumpMapRenderSize (WIDTH * HEIGHT * 8 + 2)
+void (*BumpMapRender)(u_short *chunky asm("a0"), 
+                      u_short *lightmap asm("a1"),
+                      u_short *shademap asm("a2"));
+
+static void MakeBumpMapRenderCode(void) {
+  u_short *code = (void *)BumpMapRender;
+
+  /* The image is 80x64 and 8-bit color map with separate palette */
+  u_char *cmap = dragon.pixels;
+  u_short *bmap = bumpmap;
+
+  short n = WIDTH * HEIGHT;
+
+  while (n--) {
+    /* 3029 xxxx | move.w $xxxx(a1),d0 */
+    *code++ = 0x3029;
+ 
+    /* We're going to index 16-bit values, hence multiply by word size. */
+    *code++ = *bmap++ * 2;
+
+    /* 30f2 00yy | move.w $yy(a2,d0.w),(a0)+ */
+    *code++ = 0x30f2;
+
+    /* 
+     * 7-bit value of color index of shaded pixels, multiplied by word size
+     * for same reasons as above
+     *
+     * please note that 8-bit displacement is sign extended, so colors 64..127
+     * will generate negative offset, this will be handled by offsetting
+     * shadowmap by 128 bytes
+     */
+    *code++ = (*cmap++ * 2) & 0xff;
+  }
+
+  *code++ = 0x4e75; /* rts */
+}
+
 /* RGB12 pixels preprocessing for faster chunky-to-planar */
 static void DataScramble(u_short *data, short n) {
   u_char *in = (u_char *)data;
@@ -61,8 +98,13 @@ static void DataScramble(u_short *data, short n) {
   }
 }
 
+#define N 128
+
 static void Load(void) {
   int lightSize = light_w * light_h;
+
+  BumpMapRender = MemAlloc(BumpMapRenderSize, MEMF_PUBLIC);
+  MakeBumpMapRenderCode();
 
   lightmap = MemAlloc(lightSize * sizeof(u_short) * 2, MEMF_PUBLIC);
   {
@@ -74,65 +116,51 @@ static void Load(void) {
 
     /*
      * lightmap: 16-bit values of light intensity from 0 to 31
-     *           in following format {000000000, l4...l0, 0}
+     *           in following format {000, l4...l0, 00000000}
      */
     while (--n >= 0) {
-      short v = ((*src++) >> 2) & 0x3e;
+      short v = ((*src++) << 5) & 0x1f00;
       *dst0++ = v;
       *dst1++ = v;
     }
   }
 
-  colormap = MemAlloc(WIDTH * HEIGHT * sizeof(u_short), MEMF_PUBLIC);
+  shademap = MemAlloc(32 * N * sizeof(u_short), MEMF_PUBLIC);
   {
-    /* The image is 80x64 and 8-bit color map with separate palette */
-    u_char *src = dragon.pixels;
-    u_short *dst = colormap;
-    short n = WIDTH * HEIGHT;
-
-    /* 
-     * colormap: 16-bit values of color indices of shaded pixels
-     *           in following format {00, c7...c0, 000000}
-     */
-    while (--n >= 0)
-      *dst++ = *src++ << 6;
-  }
-
-  shademap = MemAlloc(32 * sizeof(u_short) * dragon_colors_count, MEMF_PUBLIC);
-  {
-    const u_short *cp = dragon_colors;
-    u_short *dst = shademap;
-    short n = dragon_colors_count;
-    short i;
+    u_short *dst0 = &shademap[0 * N];
+    u_short *dst1 = &shademap[16 * N];
+    short i, j;
 
     /*
      * shademap: each row is transition from black to color to white
      *           and consists of 32 pixels in RGB12 format,
      *           it must be indexed by pair (c: color, l: light)
-     *           in following format {00, c7...c0, l4...l0, 0}
+     *           in following format {000, l4...l0, c6...c0, 0}
      */
-    while (--n >= 0) {
-      u_short c = *cp++;
-      for (i = 0; i < 16; i++)
-        *dst++ = ColorTransition(0, c, i);
-      for (i = 0; i < 16; i++)
-        *dst++ = ColorTransition(c, 0xfff, i);
+
+    for (i = 0; i < 16; i++) {
+      const u_short *cp = dragon_colors;
+
+      for (j = 0; j < N; j++) {
+        u_short c = (j < dragon_colors_count) ? *cp++ : 0xf00;
+
+        /* handle 8-bit displacement in the speed code */
+        int o = (j < N / 2) ? (j + N / 2) : (j - N / 2);
+
+        dst0[o] = ColorTransition(0x000, c, i);
+        dst1[o] = ColorTransition(c, 0xfff, i);
+      }
+
+      dst0 += N;
+      dst1 += N;
     }
   }
 
-  DataScramble(shademap, dragon_colors_count * 32);
-
-  {
-    short n = WIDTH * HEIGHT;
-    u_short *bmap = bumpmap;
-
-    while (--n >= 0)
-      *bmap++ *= 2; /* We're going to index 16-bit values */
-  }
+  DataScramble(shademap, N * 32);
 }
 
 static void UnLoad(void) {
-  MemFree(colormap);
+  MemFree(BumpMapRender);
   MemFree(shademap);
   MemFree(lightmap);
 }
@@ -150,6 +178,8 @@ static void ChunkyToPlanar(void) {
   void *src = c2p.chunky;
   void *dst = c2p.chunky + BLTSIZE;
   void **bpl = c2p.bpl;
+
+  ClearIRQ(INTF_BLIT);
 
   switch (c2p.phase) {
     case 0:
@@ -261,8 +291,6 @@ static void ChunkyToPlanar(void) {
   }
 
   c2p.phase++;
-
-  ClearIRQ(INTF_BLIT);
 }
 
 static CopListT *MakeCopperList(void) {
@@ -305,7 +333,6 @@ static void Init(void) {
   EnableDMA(DMAF_RASTER);
 
   SetIntVector(INTB_BLIT, (IntHandlerT)ChunkyToPlanar, NULL);
-  ClearIRQ(INTF_BLIT);
   EnableINT(INTF_BLIT);
 }
 
@@ -324,41 +351,6 @@ static void Kill(void) {
   DeleteBitmap(screen[1]);
 }
 
-#define OPTIMIZED 1
-
-static void BumpMapRender(void *lmap) {
-  void *smap = shademap;
-  u_short *cmap = colormap;
-  u_short *bmap = bumpmap;
-  u_short *dst = chunky[active];
-  short n = HEIGHT * WIDTH / 2 - 1;
-
-  do {
-#if OPTIMIZED
-    asm volatile("movew %1@+,d0\n"
-                 "movew %3@(d0:w),d0\n"
-                 "orw   %2@+,d0\n"
-                 "movew %4@(d0:w),%0@+\n"
-                 "movew %1@+,d0\n"
-                 "movew %3@(d0:w),d0\n"
-                 "orw   %2@+,d0\n"
-                 "movew %4@(d0:w),%0@+\n"
-                 : "+a" (dst), "+a" (bmap), "+a" (cmap)
-                 : "a" (lmap), "a" (smap)
-                 : "d0");
-#else
-    {
-      short s = *(short *)(lmap + (*bmap++)) | *cmap++;
-      *dst++ = *(u_short *)(smap + s);
-    }
-    {
-      short s = *(short *)(lmap + (*bmap++)) | *cmap++;
-      *dst++ = *(u_short *)(smap + s);
-    }
-#endif
-  } while (--n >= 0);
-}
-
 PROFILE(BumpMapRender);
 
 static void Render(void) {
@@ -366,7 +358,9 @@ static void Render(void) {
   {
     short xo = normfx(SIN(frameCount * 16) * HEIGHT / 2) + 24;
     short yo = normfx(COS(frameCount * 16) * HEIGHT / 2) + 32;
-    BumpMapRender(&lightmap[(yo * 128 + xo) & 16383]);
+    BumpMapRender(chunky[active],
+                  &lightmap[(yo * 128 + xo) & 16383],
+                  &shademap[N / 2]);
   }
   ProfilerStop(BumpMapRender);
 
