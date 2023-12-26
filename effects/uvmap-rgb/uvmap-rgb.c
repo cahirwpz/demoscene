@@ -1,6 +1,7 @@
 #include <effect.h>
 #include <blitter.h>
 #include <copper.h>
+#include <fx.h>
 #include <pixmap.h>
 #include <system/interrupt.h>
 #include <system/memory.h>
@@ -19,13 +20,18 @@ static CopInsPairT *bplptr;
 #include "data/texture-rgb.c"
 #include "data/uvmap-rgb.c"
 
-#define UVMapRenderSize (WIDTH * HEIGHT * 8 + 2)
-static void (*UVMapRender)(u_short *chunky asm("a0"), u_short *texture asm("a1"));
+#define UVMapRenderSize (uvmap_width * uvmap_height * 4 + 2)
+typedef void (*UVMapRenderT)(u_short *chunky asm("a0"),
+                             u_short *texture asm("a1"));
+static UVMapRenderT UVMapRender;
+
+#define UVMapRenderBackupSize (HEIGHT * 4)
+static u_short *UVMapRenderBackup;
 
 static void MakeUVMapRenderCode(void) {
   u_short *code = (void *)UVMapRender;
   u_short *data = uvmap;
-  short n = WIDTH * HEIGHT;
+  short n = uvmap_width * uvmap_height;
 
   while (--n >= 0) {
     *code++ = 0x30e9; /* 30e9 xxxx | move.w xxxx(a1),(a0)+ */
@@ -229,6 +235,54 @@ static CopListT *MakeCopperList(void) {
   return CopListFinish(cp);
 }
 
+static void* UVMapRenderCrop(void *code, void *backup, short x, short y) {
+  u_short *data = code;
+  u_short *save = backup;
+  short i;
+
+  /* move to selected location */
+  data += (y * uvmap_width + x) * 2;
+  
+  /* save the pointer to rendering code */
+  code = data;
+
+  /* move to the first instruction that should be skipped */
+  data += WIDTH * 2;
+
+  for (i = 0; i < HEIGHT - 1; i++) {
+    /* 6000 xxxx | bra.w xxxx */
+    *save++ = *data;
+    *data++ = 0x6000;
+    *save++ = *data;
+    *data++ = (uvmap_width - WIDTH) * 4 - 2;
+    /* move to the next row */
+    data += (uvmap_width - 1) * 2;
+  }
+
+  *save++ = *data;
+  *data++ = 0x4e75; /* rts */
+  *save++ = *data;
+  *data++ = 0x4e75; /* rts */
+
+  return code;
+}
+
+static void UVMapRenderRestore(void *code, void *backup) {
+  u_short *data = code;
+  u_short *save = backup;
+  short i;
+
+  /* move to the first instruction that should be restored */
+  data += WIDTH * 2;
+
+  for (i = 0; i < HEIGHT; i++) {
+    *data++ = *save++;
+    *data++ = *save++;
+    /* move to the next row */
+    data += (uvmap_width - 1) * 2;
+  }
+}
+
 static void Init(void) {
   screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH, BM_CLEAR);
   screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH, BM_CLEAR);
@@ -238,6 +292,8 @@ static void Init(void) {
 
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
   MakeUVMapRenderCode();
+
+  UVMapRenderBackup = MemAlloc(UVMapRenderBackupSize, MEMF_PUBLIC);
 
   EnableDMA(DMAF_BLITTER);
 
@@ -265,6 +321,8 @@ static void Kill(void) {
   ResetIntVector(INTB_BLIT);
 
   DeleteCopList(cp);
+
+  MemFree(UVMapRenderBackup);
   MemFree(UVMapRender);
 
   MemFree(chunky[0]);
@@ -279,7 +337,11 @@ PROFILE(UVMapRGB);
 static void Render(void) {
   ProfilerStart(UVMapRGB);
   {
-    (*UVMapRender)(chunky[active], &texture[frameCount & 16383]);
+    short x = normfx(SIN(frameCount * 16) * WIDTH / 2) + WIDTH / 2;
+    short y = normfx(COS(frameCount * 16) * HEIGHT / 2) + HEIGHT / 2;
+    UVMapRenderT code = UVMapRenderCrop(UVMapRender, UVMapRenderBackup, x, y);
+    (*code)(chunky[active], &texture[(frameCount * 2) & 16383]);
+    UVMapRenderRestore(code, UVMapRenderBackup);
   }
   ProfilerStop(UVMapRGB);
 

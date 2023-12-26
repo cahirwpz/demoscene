@@ -115,8 +115,12 @@ class UVMap(object):
                 data.append(0xffff)
         if fn:
             data = fn(data)
-        print('u_short %s[%d] = {' % (name, self.width * self.height))
-        for i in range(0, self.width * self.height, self.width):
+        w, h = self.width, self.height
+        print(f'#define {name}_width {w}')
+        print(f'#define {name}_height {h}')
+        print()
+        print(f'u_short {name}[{name}_width * {name}_height] = {{')
+        for i in range(0, w * h, self.width):
             row = ['0x%04x' % val for val in data[i:i + self.width]]
             print('  %s,' % ', '.join(row))
         print('};')

@@ -15,6 +15,6 @@ def scramble_rgb12(uvmap):
 
 
 if __name__ == "__main__":
-    uvmap = UVMap(80, 64)
-    uvmap.generate(Anamorphosis, (0.25, 1.6 + 0.25, 0.25, 1.28 + 0.25))
+    uvmap = UVMap(80 * 2, 64 * 2)
+    uvmap.generate(Anamorphosis, (-3.2, 3.2, -2.56, 2.56))
     uvmap.save(sys.argv[1], scramble_rgb12)
