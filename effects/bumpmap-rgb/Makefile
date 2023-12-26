@@ -1,12 +1,12 @@
 TOPDIR := $(realpath ../..)
 
-CLEAN-FILES := data/bumpmap.c data/light.c data/dragon.c
+CLEAN-FILES := data/skulls_map.c data/light.c data/skulls_128col.c
 
-PNG2C.dragon := --pixmap dragon,80x64x8 --palette dragon,97
+PNG2C.skulls_128col := --pixmap skulls,160x128x8 --palette skulls,128
 
 include $(TOPDIR)/build/effect.mk
 
-data/bumpmap.c: data/bumpmap.py data/bumpmap.png
+data/skulls_map.c: data/bumpmap.py data/skulls_map.png
 	@echo "[GEN] $@"
 	$(PYTHON3) $^ bumpmap > $@
 

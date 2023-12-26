@@ -19,9 +19,9 @@ static u_short *chunky[2];
 static CopListT *cp;
 static CopInsPairT *bplptr;
 
-#include "data/dragon.c"
+#include "data/skulls_128col.c"
+#include "data/skulls_map.c"
 #include "data/light.c"
-#include "data/bumpmap.c"
 
 static u_short bluetab[16] = {
   0x0000, 0x0003, 0x0030, 0x0033, 0x0300, 0x0303, 0x0330, 0x0333,
@@ -38,19 +38,23 @@ static u_short redtab[16] = {
   0x8000, 0x8008, 0x8080, 0x8088, 0x8800, 0x8808, 0x8880, 0x8888,
 };
 
-#define BumpMapRenderSize (WIDTH * HEIGHT * 8 + 2)
-void (*BumpMapRender)(u_short *chunky asm("a0"), 
-                      u_short *lightmap asm("a1"),
-                      u_short *shademap asm("a2"));
+#define BumpMapRenderSize (skulls_width * skulls_height * 8 + 2)
+typedef void (*BumpMapRenderT)(u_short *chunky asm("a0"), 
+                               u_short *lightmap asm("a1"),
+                               u_short *shademap asm("a2"));
+static BumpMapRenderT BumpMapRender;
+
+#define BumpMapRenderBackupSize (HEIGHT * 4)
+static u_short *BumpMapRenderBackup;
 
 static void MakeBumpMapRenderCode(void) {
   u_short *code = (void *)BumpMapRender;
 
-  /* The image is 80x64 and 8-bit color map with separate palette */
-  u_char *cmap = dragon.pixels;
+  /* The image has up to 128 colors. */
+  u_char *cmap = skulls.pixels;
   u_short *bmap = bumpmap;
 
-  short n = WIDTH * HEIGHT;
+  short n = skulls_width * skulls_height;
 
   while (n--) {
     /* 3029 xxxx | move.w $xxxx(a1),d0 */
@@ -74,6 +78,54 @@ static void MakeBumpMapRenderCode(void) {
   }
 
   *code++ = 0x4e75; /* rts */
+}
+
+static void *BumpMapRenderCrop(void *code, void *backup, short x, short y) {
+  u_short *data = code;
+  u_short *save = backup;
+  short i;
+
+  /* move to selected location */
+  data += (y * skulls_width + x) * 4;
+  
+  /* save the pointer to rendering code */
+  code = data;
+
+  /* move to the first instruction that should be skipped */
+  data += WIDTH * 4;
+
+  for (i = 0; i < HEIGHT - 1; i++) {
+    /* 6000 xxxx | bra.w xxxx */
+    *save++ = *data;
+    *data++ = 0x6000;
+    *save++ = *data;
+    *data++ = (skulls_width - WIDTH) * 8 - 2;
+    /* move to the next row */
+    data += (skulls_width - 1) * 4 + 2;
+  }
+
+  *save++ = *data;
+  *data++ = 0x4e75; /* rts */
+  *save++ = *data;
+  *data++ = 0x4e75; /* rts */
+
+  return code;
+}
+
+static void BumpMapRenderRestore(void *code, void *backup) {
+  u_short *data = code;
+  u_short *save = backup;
+  short i;
+
+  /* move to the first instruction that should be restored */
+  data += WIDTH * 4;
+
+  for (i = 0; i < HEIGHT; i++) {
+    *data++ = *save++;
+    *data++ = *save++;
+    /* move to the next row */
+    data += (skulls_width - 1) * 4 + 2;
+  }
 }
 
 /* RGB12 pixels preprocessing for faster chunky-to-planar */
@@ -139,10 +191,10 @@ static void Load(void) {
      */
 
     for (i = 0; i < 16; i++) {
-      const u_short *cp = dragon_colors;
+      const u_short *cp = skulls_colors;
 
       for (j = 0; j < N; j++) {
-        u_short c = (j < dragon_colors_count) ? *cp++ : 0xf00;
+        u_short c = (j < skulls_colors_count) ? *cp++ : 0xf00;
 
         /* handle 8-bit displacement in the speed code */
         int o = (j < N / 2) ? (j + N / 2) : (j - N / 2);
@@ -317,6 +369,8 @@ static void Init(void) {
   chunky[0] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);
   chunky[1] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);
 
+  BumpMapRenderBackup = MemAlloc(BumpMapRenderBackupSize, MEMF_PUBLIC);
+
   EnableDMA(DMAF_BLITTER);
 
   BitmapClear(screen[0]);
@@ -344,6 +398,8 @@ static void Kill(void) {
 
   DeleteCopList(cp);
 
+  MemFree(BumpMapRenderBackup);
+
   MemFree(chunky[0]);
   MemFree(chunky[1]);
 
@@ -356,11 +412,15 @@ PROFILE(BumpMapRender);
 static void Render(void) {
   ProfilerStart(BumpMapRender);
   {
-    short xo = normfx(SIN(frameCount * 16) * HEIGHT / 2) + 24;
-    short yo = normfx(COS(frameCount * 16) * HEIGHT / 2) + 32;
-    BumpMapRender(chunky[active],
-                  &lightmap[(yo * 128 + xo) & 16383],
-                  &shademap[N / 2]);
+    short xc = normfx(SIN(frameCount * 16) * WIDTH / 2) + WIDTH / 2;
+    short yc = normfx(COS(frameCount * 16) * HEIGHT / 2) + HEIGHT / 2;
+    short xo = 24 - xc - normfx(SIN(frameCount * 16) * HEIGHT / 2);
+    short yo = 32 - yc - normfx(COS(frameCount * 16) * HEIGHT / 2);
+    BumpMapRenderT code = BumpMapRenderCrop(BumpMapRender, BumpMapRenderBackup,
+                                            xc, yc);
+    (*code)(chunky[active], &lightmap[(yo * 128 + xo) & 16383],
+            &shademap[N / 2]);
+    BumpMapRenderRestore(code, BumpMapRenderBackup);
   }
   ProfilerStop(BumpMapRender);
 
