@@ -153,7 +153,7 @@ static void DataScramble(u_short *data, short n) {
 #define N 128
 
 static void Load(void) {
-  int lightSize = light_w * light_h;
+  int lightSize = light_width * light_height;
 
   BumpMapRender = MemAlloc(BumpMapRenderSize, MEMF_PUBLIC);
   MakeBumpMapRenderCode();

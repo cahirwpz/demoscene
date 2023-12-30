@@ -15,7 +15,7 @@ if __name__ == '__main__':
     print(f'#define {name}_width {width}')
     print(f'#define {name}_height {height}')
     print()
-    print(f'u_short {name}[{name}_width * {name}_height] = {{')
+    print(f'static u_short {name}[{name}_width * {name}_height] = {{')
 
     for y in range(height):
         sys.stdout.write(' ')
