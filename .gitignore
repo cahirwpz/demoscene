@@ -16,6 +16,7 @@ gdb-dashboard
 *.exe
 *.exe.dbg
 *.exe.map
+*.obj
 *.rom
 *.7z
 *.dSYM

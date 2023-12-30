@@ -71,7 +71,8 @@ OBJCOPY := m68k-amigaos-objcopy
 SOURCES_C = $(filter %.c,$(SOURCES))
 SOURCES_S = $(filter %.S,$(SOURCES))
 SOURCES_ASM = $(filter %.asm,$(SOURCES))
-OBJECTS += $(SOURCES_C:%.c=%.o) $(SOURCES_S:%.S=%.o) $(SOURCES_ASM:%.asm=%.o)
+OBJECTS += $(filter-out $(LOADABLES),\
+             $(SOURCES_C:%.c=%.o) $(SOURCES_S:%.S=%.o) $(SOURCES_ASM:%.asm=%.o))
 
 DEPENDENCY-FILES += $(foreach f, $(SOURCES_C),\
 		      $(dir $(f))$(patsubst %.c,.%.D,$(notdir $(f))))
@@ -80,7 +81,7 @@ DEPENDENCY-FILES += $(foreach f, $(SOURCES_S),\
 
 $(DEPENDENCY-FILES): $(SOURCES_GEN)
 
-CLEAN-FILES += $(DEPENDENCY-FILES) $(SOURCES_GEN) $(OBJECTS) $(DATA_GEN)
+CLEAN-FILES += $(DEPENDENCY-FILES) $(SOURCES_GEN) $(OBJECTS) $(LOADABLES)
 CLEAN-FILES += $(SOURCES:%=%~)
 
 # Disable all built-in recipes and define our own
@@ -136,7 +137,7 @@ clean-%: FORCE
 # Rules for build
 subdirs: $(foreach dir,$(SUBDIRS),build-$(dir))
 
-build: $(OBJECTS) $(BUILD-FILES) subdirs $(EXTRA-FILES) 
+build: $(OBJECTS) $(LOADABLES) $(BUILD-FILES) subdirs $(EXTRA-FILES) 
 
 clean: $(foreach dir,$(SUBDIRS),clean-$(dir)) 
 	$(RM) $(BUILD-FILES) $(EXTRA-FILES) $(CLEAN-FILES) *~ *.taghl

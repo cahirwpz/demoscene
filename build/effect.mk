@@ -15,13 +15,9 @@ ROMSTARTUP = $(TOPDIR)/a500rom.bin
 BOOTBLOCK = $(TOPDIR)/addchip.bootblock.bin
 VBRMOVE = $(TOPDIR)/vbrmove
 
-EXTRA-FILES += $(DATA_GEN) $(EFFECT).adf
-CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map
-CLEAN-FILES += $(EFFECT).img $(EFFECT).rom
-
-ifeq ($(AMIGAOS), 0)
-EXTRA-FILES += $(EFFECT).img $(EFFECT).rom
-endif
+EXTRA-FILES += $(EFFECT).adf
+CLEAN-FILES += $(LOADABLES)
+CLEAN-FILES += $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map
 
 all: build
 
@@ -53,6 +49,10 @@ $(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(MAIN) $(OBJECTS) $(LDEXTRA) $(LDSCRIP
 	$(CP) $@ $@.dbg
 	$(STRIP) $@
 
+%.obj: %.o
+	@echo "[STRIP] $(DIR)$< -> $(DIR)$@"
+	$(STRIP) $(STRIP.$*) -R .stab -R .stabstr -o $@ $^
+
 data/%.c: data/%.lwo
 	@echo "[LWO] $(DIR)$< -> $(DIR)$@"
 	$(LWO2C) $(LWO2C.$*) -f $< $@
@@ -78,8 +78,11 @@ data/%.c: data/%.sync
 	$(SYNC2C) $(SYNC2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
 ifeq ($(AMIGAOS), 0)
-%.img: %.exe $(DATA) $(DATA_GEN)
-	@echo "[IMG] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
+EXTRA-FILES += $(EFFECT).img $(EFFECT).rom
+CLEAN-FILES += $(EFFECT).img $(EFFECT).rom
+
+%.img: %.exe $(patsubst %.o,%.obj,$(LOADABLES)) $(DATA)
+	@echo "[IMG] $(addprefix $(DIR),$<) -> $(DIR)$@"
 	$(FSUTIL) create $@ $(filter-out %bootloader.bin,$^)
 
 %.adf: %.img $(BOOTLOADER) 
