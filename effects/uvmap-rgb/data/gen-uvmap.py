@@ -8,8 +8,8 @@ import sys
 
 
 def Polar(x, y):
-    a = atan2(x, y);
-    r = dist(x, y, 0.0, 0.0);
+    a = atan2(x, y)
+    r = dist(x, y, 0.0, 0.0)
     return (a * 0.5 / pi, r / 2.56)
 
 
