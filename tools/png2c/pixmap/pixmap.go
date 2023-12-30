@@ -58,7 +58,7 @@ func Make(in image.Image, cfg image.Config, opts map[string]any) string {
 
 		// Set and validate bpp
 		if o.Bpp > 8 {
-			log.Panic("Depth too big!")
+			log.Panicf("Depth too big: %d!", o.Bpp)
 		}
 		bpp := util.GetDepth(pix)
 		if o.LimitBpp {

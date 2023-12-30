@@ -20,25 +20,89 @@ static CopInsPairT *bplptr;
 #include "data/texture-rgb.c"
 #include "data/uvmap-rgb.c"
 
-#define UVMapRenderSize (uvmap_width * uvmap_height * 4 + 2)
+#define UVMapRenderSize (uvmap_width * uvmap_height * 8 + 2)
 typedef void (*UVMapRenderT)(u_short *chunky asm("a0"),
-                             u_short *texture asm("a1"));
+                             u_short *offsets asm("a1"),
+                             u_short *texture asm("a2"));
 static UVMapRenderT UVMapRender;
+static u_short UVMapOffsets[image_height];
 
 #define UVMapRenderBackupSize (HEIGHT * 4)
 static u_short *UVMapRenderBackup;
 
 static void MakeUVMapRenderCode(void) {
   u_short *code = (void *)UVMapRender;
-  u_short *data = uvmap;
+  u_char *data = (void *)uvmap;
   short n = uvmap_width * uvmap_height;
 
   while (--n >= 0) {
-    *code++ = 0x30e9; /* 30e9 xxxx | move.w xxxx(a1),(a0)+ */
-    *code++ = *data++;
+    /* both are already multiplied by 2 */
+    u_short u = *data++;
+    u_short v = *data++;
+
+    /* 3029 00uu | move.w $00uu(a1),d0 */
+    *code++ = 0x3029;
+ 
+    /* We're going to index 16-bit values. */
+    *code++ = u;
+
+    /* 30f2 00vv | move.w $vv(a2,d0.w),(a0)+ */
+    *code++ = 0x30f2;
+
+    /* Same as with `u`, though for 64..127 the value will be sign extended
+     * hence will wrap around. */
+    *code++ = v;
   }
 
   *code++ = 0x4e75; /* rts */
+}
+
+static void* UVMapRenderCrop(void *code, void *backup, short x, short y) {
+  u_short *data = code;
+  u_short *save = backup;
+  short i;
+
+  /* move to selected location */
+  data += (y * uvmap_width + x) * 4;
+  
+  /* save the pointer to rendering code */
+  code = data;
+
+  /* move to the first instruction that should be skipped */
+  data += WIDTH * 4;
+
+  for (i = 0; i < HEIGHT - 1; i++) {
+    /* 6000 xxxx | bra.w xxxx */
+    *save++ = *data;
+    *data++ = 0x6000;
+    *save++ = *data;
+    *data++ = (uvmap_width - WIDTH) * 8 - 2;
+    /* move to the next row */
+    data += (uvmap_width - 1) * 4 + 2;
+  }
+
+  *save++ = *data;
+  *data++ = 0x4e75; /* rts */
+  *save++ = *data;
+  *data++ = 0x4e75; /* rts */
+
+  return code;
+}
+
+static void UVMapRenderRestore(void *code, void *backup) {
+  u_short *data = code;
+  u_short *save = backup;
+  short i;
+
+  /* move to the first instruction that should be restored */
+  data += WIDTH * 4;
+
+  for (i = 0; i < HEIGHT; i++) {
+    *data++ = *save++;
+    *data++ = *save++;
+    /* move to the next row */
+    data += (uvmap_width - 1) * 4 + 2;
+  }
 }
 
 static u_short bluetab[16] = {
@@ -235,54 +299,6 @@ static CopListT *MakeCopperList(void) {
   return CopListFinish(cp);
 }
 
-static void* UVMapRenderCrop(void *code, void *backup, short x, short y) {
-  u_short *data = code;
-  u_short *save = backup;
-  short i;
-
-  /* move to selected location */
-  data += (y * uvmap_width + x) * 2;
-  
-  /* save the pointer to rendering code */
-  code = data;
-
-  /* move to the first instruction that should be skipped */
-  data += WIDTH * 2;
-
-  for (i = 0; i < HEIGHT - 1; i++) {
-    /* 6000 xxxx | bra.w xxxx */
-    *save++ = *data;
-    *data++ = 0x6000;
-    *save++ = *data;
-    *data++ = (uvmap_width - WIDTH) * 4 - 2;
-    /* move to the next row */
-    data += (uvmap_width - 1) * 2;
-  }
-
-  *save++ = *data;
-  *data++ = 0x4e75; /* rts */
-  *save++ = *data;
-  *data++ = 0x4e75; /* rts */
-
-  return code;
-}
-
-static void UVMapRenderRestore(void *code, void *backup) {
-  u_short *data = code;
-  u_short *save = backup;
-  short i;
-
-  /* move to the first instruction that should be restored */
-  data += WIDTH * 2;
-
-  for (i = 0; i < HEIGHT; i++) {
-    *data++ = *save++;
-    *data++ = *save++;
-    /* move to the next row */
-    data += (uvmap_width - 1) * 2;
-  }
-}
-
 static void Init(void) {
   screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH, BM_CLEAR);
   screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH, BM_CLEAR);
@@ -334,13 +350,31 @@ static void Kill(void) {
 
 PROFILE(UVMapRGB);
 
+static void ControlOffsets(void) {
+  u_char *off = (u_char *)UVMapOffsets;
+  short i;
+
+  for (i = 0; i < image_height; i++) {
+    short j;
+
+    j = SIN(frameCount * 128 - i * 64) >> 10;
+    // j = -4;
+    *off++ = (i + j + 4) & 127;
+
+    j = SIN(frameCount * 128 + i * 128) >> 10;
+    // j = -4;
+    *off++ = (j + 4) * 2;
+  }
+}
+
 static void Render(void) {
   ProfilerStart(UVMapRGB);
+  ControlOffsets();
   {
-    short x = normfx(SIN(frameCount * 16) * WIDTH / 2) + WIDTH / 2;
-    short y = normfx(COS(frameCount * 16) * HEIGHT / 2) + HEIGHT / 2;
+    short x = normfx(SIN(frameCount * 8) * WIDTH / 2) + WIDTH / 2;
+    short y = normfx(COS(frameCount * 8) * HEIGHT / 2) + HEIGHT / 2;
     UVMapRenderT code = UVMapRenderCrop(UVMapRender, UVMapRenderBackup, x, y);
-    (*code)(chunky[active], &texture[(frameCount * 2) & 16383]);
+    (*code)(chunky[active], UVMapOffsets, &texture[(frameCount * 2) & 16383]);
     UVMapRenderRestore(code, UVMapRenderBackup);
   }
   ProfilerStop(UVMapRGB);
