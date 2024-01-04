@@ -1,6 +1,8 @@
 package hunk
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"sort"
@@ -8,6 +10,7 @@ import (
 )
 
 type HunkDebugGnu struct {
+	Name       string
 	StabTab    []Stab
 	StabStrTab []byte
 }
@@ -36,6 +39,19 @@ func readStabs(r io.Reader, size uint32) []Stab {
 	return symtab
 }
 
+func dumpStabTab(stabtab []Stab) []byte {
+	var bb bytes.Buffer
+	w := bufio.NewWriter(&bb)
+
+	for _, stab := range stabtab {
+		stab.Write(w)
+	}
+
+	w.Flush()
+
+	return bb.Bytes()
+}
+
 func readStrTab(r io.Reader, size uint32) []byte {
 	strtab := readData(r, size)
 	if size&3 != 0 {
@@ -44,33 +60,50 @@ func readStrTab(r io.Reader, size uint32) []byte {
 	return strtab
 }
 
-func readHunkDebugGnu(r io.Reader, name string) HunkDebugGnu {
+func readHunkDebugGnu(r io.Reader, name string) *HunkDebugGnu {
 	var stabTab []Stab
 	var stabstrTab []byte
-	if name == "" {
+	switch name {
+	case "":
 		skipBytes(r, 4)
-		debugger := readLong(r)
-		if debugger != 0x10b {
+		debugger := DebugType(readLong(r))
+		if debugger != DEBUG_ZMAGIC {
 			panic(fmt.Sprintf("unknown debugger: %08x", debugger))
 		}
 		stabSize := readLong(r)
 		strtabSize := readLong(r)
 		stabTab = readStabs(r, stabSize)
 		stabstrTab = readStrTab(r, strtabSize)
-	}
-	if name == ".stab" {
+	case ".stab":
 		stabSize := readLong(r) * 4
 		stabTab = readStabs(r, stabSize)
-	}
-	if name == ".stabstr" {
+	case ".stabstr":
 		stabstrSize := readLong(r) * 4
 		stabstrTab = readStrTab(r, stabstrSize)
 	}
-	return HunkDebugGnu{stabTab, stabstrTab}
+	return &HunkDebugGnu{name, stabTab, stabstrTab}
 }
 
 func (h HunkDebugGnu) Type() HunkType {
 	return HUNK_DEBUG
+}
+
+func (h HunkDebugGnu) Write(w io.Writer) {
+	writeLong(w, uint32(HUNK_DEBUG))
+	stab := dumpStabTab(h.StabTab)
+	switch h.Name {
+	case "":
+		writeLong(w, 3+bytesSize(stab)+bytesSize(h.StabStrTab))
+		writeLong(w, uint32(DEBUG_ZMAGIC))
+		writeLong(w, uint32(len(stab)))
+		writeLong(w, uint32(len(h.StabStrTab)))
+		writeData(w, stab)
+		writeData(w, h.StabStrTab)
+	case ".stab":
+		writeDataWithSize(w, stab)
+	case ".stabstr":
+		writeDataWithSize(w, h.StabStrTab)
+	}
 }
 
 func (h HunkDebugGnu) String() string {
@@ -85,7 +118,7 @@ func (h HunkDebugGnu) String() string {
 		}
 	} else {
 		var index []int
-		for k, _ := range stabstr {
+		for k := range stabstr {
 			index = append(index, k)
 		}
 		sort.Ints(index)

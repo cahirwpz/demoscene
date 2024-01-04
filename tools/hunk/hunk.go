@@ -1,125 +1,226 @@
 package hunk
 
+import (
+	"io"
+)
+
 /* Refer to The AmigaDOS Manual (3rd Edition), chapter 10. */
 
 type HunkType uint32
 
 const (
 	HUNK_NONE         HunkType = 0
-	HUNK_UNIT                  = 999
-	HUNK_NAME                  = 1000
-	HUNK_CODE                  = 1001
-	HUNK_DATA                  = 1002
-	HUNK_BSS                   = 1003
-	HUNK_RELOC32               = 1004
-	HUNK_RELOC16               = 1005
-	HUNK_RELOC8                = 1006
-	HUNK_EXT                   = 1007
-	HUNK_SYMBOL                = 1008
-	HUNK_DEBUG                 = 1009
-	HUNK_END                   = 1010
-	HUNK_HEADER                = 1011
-	HUNK_OVERLAY               = 1013
-	HUNK_BREAK                 = 1014
-	HUNK_DREL32                = 1015
-	HUNK_DREL16                = 1016
-	HUNK_DREL8                 = 1017
-	HUNK_LIB                   = 1018
-	HUNK_INDEX                 = 1019
-	HUNK_RELOC32SHORT          = 1020
-	HUNK_RELRELOC32            = 1021
-	HUNK_ABSRELOC16            = 1022
+	HUNK_UNIT         HunkType = 999
+	HUNK_NAME         HunkType = 1000
+	HUNK_CODE         HunkType = 1001
+	HUNK_DATA         HunkType = 1002
+	HUNK_BSS          HunkType = 1003
+	HUNK_RELOC32      HunkType = 1004
+	HUNK_RELOC16      HunkType = 1005
+	HUNK_RELOC8       HunkType = 1006
+	HUNK_EXT          HunkType = 1007
+	HUNK_SYMBOL       HunkType = 1008
+	HUNK_DEBUG        HunkType = 1009
+	HUNK_END          HunkType = 1010
+	HUNK_HEADER       HunkType = 1011
+	HUNK_OVERLAY      HunkType = 1013
+	HUNK_BREAK        HunkType = 1014
+	HUNK_DREL32       HunkType = 1015
+	HUNK_DREL16       HunkType = 1016
+	HUNK_DREL8        HunkType = 1017
+	HUNK_LIB          HunkType = 1018
+	HUNK_INDEX        HunkType = 1019
+	HUNK_RELOC32SHORT HunkType = 1020
+	HUNK_RELRELOC32   HunkType = 1021
+	HUNK_ABSRELOC16   HunkType = 1022
 )
+
+func (ht HunkType) String() string {
+	switch ht {
+	case HUNK_UNIT:
+		return "HUNK_UNIT"
+	case HUNK_NAME:
+		return "HUNK_NAME"
+	case HUNK_CODE:
+		return "HUNK_CODE"
+	case HUNK_DATA:
+		return "HUNK_DATA"
+	case HUNK_BSS:
+		return "HUNK_BSS"
+	case HUNK_RELOC32:
+		return "HUNK_RELOC32"
+	case HUNK_RELOC16:
+		return "HUNK_RELOC16"
+	case HUNK_RELOC8:
+		return "HUNK_RELOC8"
+	case HUNK_EXT:
+		return "HUNK_EXT"
+	case HUNK_SYMBOL:
+		return "HUNK_SYMBOL"
+	case HUNK_DEBUG:
+		return "HUNK_DEBUG"
+	case HUNK_END:
+		return "HUNK_END"
+	case HUNK_HEADER:
+		return "HUNK_HEADER"
+	case HUNK_OVERLAY:
+		return "HUNK_OVERLAY"
+	case HUNK_BREAK:
+		return "HUNK_BREAK"
+	case HUNK_DREL32:
+		return "HUNK_DREL32"
+	case HUNK_DREL16:
+		return "HUNK_DREL16"
+	case HUNK_DREL8:
+		return "HUNK_DREL8"
+	case HUNK_LIB:
+		return "HUNK_LIB"
+	case HUNK_INDEX:
+		return "HUNK_INDEX"
+	case HUNK_RELOC32SHORT:
+		return "HUNK_RELOC32SHORT"
+	case HUNK_RELRELOC32:
+		return "HUNK_RELRELOC32"
+	case HUNK_ABSRELOC16:
+		return "HUNK_ABSRELOC16"
+	default:
+		return "?"
+	}
+}
 
 type ExtType uint8
 
 const (
 	EXT_NONE      ExtType = 255
-	EXT_SYMB              = 0   // symbol table
-	EXT_DEF               = 1   // relocatable definition
-	EXT_ABS               = 2   // Absolute definition
-	EXT_RES               = 3   // no longer supported
-	EXT_GNU_LOCAL         = 33  // GNU local symbol definition
-	EXT_REF32             = 129 // 32 bit absolute reference to symbol
-	EXT_COMMON            = 130 // 32 bit absolute reference to COMMON block
-	EXT_REF16             = 131 // 16 bit PC-relative reference to symbol
-	EXT_REF8              = 132 // 8  bit PC-relative reference to symbol
-	EXT_DEXT32            = 133 // 32 bit data relative reference
-	EXT_DEXT16            = 134 // 16 bit data relative reference
-	EXT_DEXT8             = 135 // 8  bit data relative reference
-	EXT_RELREF32          = 136 // 32 bit PC-relative reference to symbol
-	EXT_RELCOMMON         = 137 // 32 bit PC-relative reference to COMMON block
-	EXT_ABSREF16          = 138 // 16 bit absolute reference to symbol
-	EXT_ABSREF8           = 139 // 8 bit absolute reference to symbol
+	EXT_SYMB      ExtType = 0   // symbol table
+	EXT_DEF       ExtType = 1   // relocatable definition
+	EXT_ABS       ExtType = 2   // Absolute definition
+	EXT_RES       ExtType = 3   // no longer supported
+	EXT_GNU_LOCAL ExtType = 33  // GNU local symbol definition
+	EXT_REF32     ExtType = 129 // 32 bit absolute reference to symbol
+	EXT_COMMON    ExtType = 130 // 32 bit absolute reference to COMMON block
+	EXT_REF16     ExtType = 131 // 16 bit PC-relative reference to symbol
+	EXT_REF8      ExtType = 132 // 8  bit PC-relative reference to symbol
+	EXT_DEXT32    ExtType = 133 // 32 bit data relative reference
+	EXT_DEXT16    ExtType = 134 // 16 bit data relative reference
+	EXT_DEXT8     ExtType = 135 // 8  bit data relative reference
+	EXT_RELREF32  ExtType = 136 // 32 bit PC-relative reference to symbol
+	EXT_RELCOMMON ExtType = 137 // 32 bit PC-relative reference to COMMON block
+	EXT_ABSREF16  ExtType = 138 // 16 bit absolute reference to symbol
+	EXT_ABSREF8   ExtType = 139 // 8 bit absolute reference to symbol
 )
+
+func (et ExtType) String() string {
+	switch et {
+	case EXT_SYMB:
+		return "EXT_SYMB"
+	case EXT_DEF:
+		return "EXT_DEF"
+	case EXT_ABS:
+		return "EXT_ABS"
+	case EXT_RES:
+		return "EXT_RES"
+	case EXT_GNU_LOCAL:
+		return "EXT_GNU_LOCAL"
+	case EXT_REF32:
+		return "EXT_REF32"
+	case EXT_COMMON:
+		return "EXT_COMMON"
+	case EXT_REF16:
+		return "EXT_REF16"
+	case EXT_REF8:
+		return "EXT_REF8"
+	case EXT_DEXT32:
+		return "EXT_DEXT32"
+	case EXT_DEXT16:
+		return "EXT_DEXT16"
+	case EXT_DEXT8:
+		return "EXT_DEXT8"
+	case EXT_RELREF32:
+		return "EXT_RELREF32"
+	case EXT_RELCOMMON:
+		return "EXT_RELCOMMON"
+	case EXT_ABSREF16:
+		return "EXT_ABSREF16"
+	case EXT_ABSREF8:
+		return "EXT_ABSREF8"
+	default:
+		return "?"
+	}
+}
+
+type HunkFlag uint32
 
 const (
 	/* Any hunks that have the HUNKB_ADVISORY bit set will be ignored if they
 	 * aren't understood.  When ignored, they're treated like HUNK_DEBUG hunks.
 	 * NOTE: this handling of HUNKB_ADVISORY started as of V39 dos.library!  If
-	 * lading such executables is attempted under <V39 dos, it will fail with a
+	 * loading such executables is attempted under <V39 dos, it will fail with a
 	 * bad hunk type. */
 	HUNKB_ADVISORY = 29
 	HUNKB_CHIP     = 30
 	HUNKB_FAST     = 31
 
-	HUNKF_ADVISORY = 1 << HUNKB_ADVISORY
-	HUNKF_CHIP     = 1 << HUNKB_CHIP
-	HUNKF_FAST     = 1 << HUNKB_FAST
-	HUNKF_MASK     = HUNKF_ADVISORY | HUNKF_CHIP | HUNKF_FAST
+	HUNKF_PUBLIC   HunkFlag = 0
+	HUNKF_ADVISORY HunkFlag = 1 << HUNKB_ADVISORY
+	HUNKF_CHIP     HunkFlag = 1 << HUNKB_CHIP
+	HUNKF_FAST     HunkFlag = 1 << HUNKB_FAST
+
+	HUNKF_MEMORY_MASK = uint32(HUNKF_ADVISORY) | uint32(HUNKF_CHIP) | uint32(HUNKF_FAST)
+	HUNKF_SIZE_MASK   = ^HUNKF_MEMORY_MASK
 )
 
-var HunkNameMap map[HunkType]string
-var HunkExtNameMap map[ExtType]string
-
-func init() {
-	HunkNameMap = map[HunkType]string{
-		HUNK_UNIT:         "HUNK_UNIT",
-		HUNK_NAME:         "HUNK_NAME",
-		HUNK_CODE:         "HUNK_CODE",
-		HUNK_DATA:         "HUNK_DATA",
-		HUNK_BSS:          "HUNK_BSS",
-		HUNK_RELOC32:      "HUNK_RELOC32",
-		HUNK_RELOC16:      "HUNK_RELOC16",
-		HUNK_RELOC8:       "HUNK_RELOC8",
-		HUNK_EXT:          "HUNK_EXT",
-		HUNK_SYMBOL:       "HUNK_SYMBOL",
-		HUNK_DEBUG:        "HUNK_DEBUG",
-		HUNK_END:          "HUNK_END",
-		HUNK_HEADER:       "HUNK_HEADER",
-		HUNK_OVERLAY:      "HUNK_OVERLAY",
-		HUNK_BREAK:        "HUNK_BREAK",
-		HUNK_DREL32:       "HUNK_DREL32",
-		HUNK_DREL16:       "HUNK_DREL16",
-		HUNK_DREL8:        "HUNK_DREL8",
-		HUNK_LIB:          "HUNK_LIB",
-		HUNK_INDEX:        "HUNK_INDEX",
-		HUNK_RELOC32SHORT: "HUNK_RELOC32SHORT",
-		HUNK_RELRELOC32:   "HUNK_RELRELOC32",
-		HUNK_ABSRELOC16:   "HUNK_ABSRELOC16",
+func (hf HunkFlag) String() string {
+	switch hf {
+	case HUNKF_PUBLIC:
+		return "MEMF_PUBLIC"
+	case HUNKF_FAST:
+		return "MEMF_FAST"
+	case HUNKF_CHIP:
+		return "MEMF_CHIP"
+	case HUNKF_ADVISORY:
+		return "ADVISORY"
+	default:
+		return "?"
 	}
+}
 
-	HunkExtNameMap = map[ExtType]string{
-		EXT_SYMB:      "EXT_SYMB",
-		EXT_DEF:       "EXT_DEF",
-		EXT_ABS:       "EXT_ABS",
-		EXT_RES:       "EXT_RES",
-		EXT_GNU_LOCAL: "EXT_GNU_LOCAL",
-		EXT_REF32:     "EXT_REF32",
-		EXT_COMMON:    "EXT_COMMON",
-		EXT_REF16:     "EXT_REF16",
-		EXT_REF8:      "EXT_REF8",
-		EXT_DEXT32:    "EXT_DEXT32",
-		EXT_DEXT16:    "EXT_DEXT16",
-		EXT_DEXT8:     "EXT_DEXT8",
-		EXT_RELREF32:  "EXT_RELREF32",
-		EXT_RELCOMMON: "EXT_RELCOMMON",
-		EXT_ABSREF16:  "EXT_ABSREF16",
-		EXT_ABSREF8:   "EXT_ABSREF8",
+func hunkSpec(x uint32) (HunkFlag, uint32) {
+	return HunkFlag(x & HUNKF_MEMORY_MASK), (x & HUNKF_SIZE_MASK) * 4
+}
+
+type DebugType uint32
+
+const (
+	DEBUG_HCLN   DebugType = 0x48434c4e
+	DEBUG_HEAD   DebugType = 0x48454144
+	DEBUG_LINE   DebugType = 0x4c494e45
+	DEBUG_ODEF   DebugType = 0x4f444546
+	DEBUG_OPTS   DebugType = 0x4f505453
+	DEBUG_ZMAGIC DebugType = 267
+)
+
+func (dt DebugType) String() string {
+	switch dt {
+	case DEBUG_HCLN:
+		return "HCLN"
+	case DEBUG_HEAD:
+		return "HEAD"
+	case DEBUG_LINE:
+		return "LINE"
+	case DEBUG_ODEF:
+		return "ODEF"
+	case DEBUG_OPTS:
+		return "OPTS"
+	case DEBUG_ZMAGIC:
+		return "ZMAGIC"
+	default:
+		return "?"
 	}
 }
 
 type Hunk interface {
 	String() string
 	Type() HunkType
+	Write(w io.Writer)
 }
