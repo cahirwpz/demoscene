@@ -13,11 +13,14 @@ else
 OBJECTS += data/$(MODULE).smp.o
 endif
 
+LDSCRIPT := demo.lds
+
 LIBS := libpt
 
 CLEAN-FILES := data/$(MODULE)*.o data/$(MODULE).{smp,trk}* data/loader.c
 
 SOURCES := main.c load.c empty.c
+LOADABLES := spooky-town.exe
 MAIN := #
 
 CPPFLAGS += -DDELTA=$(DELTA) -I.
@@ -26,10 +29,20 @@ PNG2C.loader := --bitmap loader,64x64x1 --palette loader,2
 
 include $(TOPDIR)/build/effect.mk
 
+$(LOADABLES): demo.exe
+	@echo "[SPLITEXE] $^ -> $(LOADABLES)"
+	$(SPLITEXE) $^ $(LOADABLES)
+
 data/%.trk data/%.smp: data/%.mod
 	$(PYTHON3) $(TOPDIR)/effects/playpt/data/ptsplit.py $^
 	mv data/$*.mod.trk data/$*.trk
 	mv data/$*.mod.smp data/$*.smp
+
+demo.lds: demo.json
+	@echo "[LDS] $< -> $@"
+	$(PYTHON3) gen-lds.py $< $@
+
+CLEAN-FILES += demo.lds
 
 OBJCOPY-CHIP := --rename-section .data=.datachip,alloc,load,data,contents
 

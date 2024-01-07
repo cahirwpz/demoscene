@@ -20,18 +20,6 @@ void Loader(BootDataT *bd) {
   Log("[Loader] Stack at $%08x (%d bytes)\n",
       (u_int)bd->bd_stkbot, bd->bd_stksz);
 
-#ifndef AMIGAOS
-  Log("[Loader] Executable file segments:\n");
-  {
-    HunkT *hunk = bd->bd_hunk;
-    do {
-      Log("[Loader] * $%08x - $%08lx\n",
-          (u_int)hunk->data, (u_int)hunk->data + hunk->size - sizeof(HunkT));
-      hunk = hunk->next;
-    } while (hunk);
-  }
-#endif
-
   CpuModel = bd->bd_cpumodel;
   BootDev = bd->bd_bootdev;
   ExcVecBase = bd->bd_vbr;
@@ -45,6 +33,21 @@ void Loader(BootDataT *bd) {
       AddMemory((void *)lower, mr->mr_upper - lower, mr->mr_attr);
     }
   }
+
+#ifndef AMIGAOS
+  Log("[Loader] Executable file segments:\n");
+  {
+    HunkT *hunk = bd->bd_hunk;
+    do {
+      Log("[Loader] * $%08x - $%08lx\n",
+          (u_int)hunk->data, (u_int)hunk->data + hunk->size - sizeof(HunkT));
+      hunk = hunk->next;
+    } while (hunk);
+  }
+
+  Log("[Loader] Setup shared hunks.\n");
+  SetupSharedHunks(bd->bd_hunk);
+#endif
 
   SetupExceptionVector(bd);
   SetupInterruptVector();

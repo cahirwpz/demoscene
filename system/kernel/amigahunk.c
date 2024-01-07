@@ -2,8 +2,10 @@
 #include <crc32.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include <system/amigahunk.h>
+#include <system/boot.h>
 #include <system/file.h>
 #include <system/memory.h>
 
@@ -18,6 +20,11 @@
 
 #define HUNKF_CHIP __BIT(30)
 #define HUNKF_FAST __BIT(31)
+
+static struct {
+  int count;
+  HunkT **array;
+} SharedHunks = { 0, NULL };
 
 static long ReadLong(FileT *fh) {
   long v = 0;
@@ -137,7 +144,11 @@ HunkT *LoadHunkList(FileT *fh) {
   last = ReadLong(fh);
 
   hunkCount = last - first + 1;
-  hunkArray = alloca(sizeof(HunkT *) * hunkCount);
+  hunkArray = alloca(sizeof(HunkT *) * (hunkCount + SharedHunks.count));
+
+  if (SharedHunks.count)
+    memcpy(&hunkArray[hunkCount],
+           SharedHunks.array, sizeof(HunkT *) * SharedHunks.count);
 
   if (AllocHunks(fh, hunkArray, hunkCount))
     if (LoadHunks(fh, hunkArray))
@@ -153,4 +164,21 @@ void FreeHunkList(HunkT *hunk) {
     MemFree(hunk);
     hunk = next;
   } while (hunk);
+}
+
+void SetupSharedHunks(HunkT *hunk) {
+  HunkT **array;
+  HunkT *h;
+  int n, i;
+
+  for (h = hunk, n = 0; h != NULL; h = h->next, n++);
+
+  array = MemAlloc(sizeof(HunkT *) + n * sizeof(HunkT *), MEMF_PUBLIC);
+  for (h = hunk, i = 0; h != NULL; h = h->next, i++)
+    array[i] = h;
+
+  if (SharedHunks.array)
+    MemFree(SharedHunks.array);
+  SharedHunks.count = n;
+  SharedHunks.array = array;
 }

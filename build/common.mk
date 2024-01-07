@@ -24,7 +24,7 @@ OFLAGS	+= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	:= -Wall -W -Werror -Wundef -Wsign-compare -Wredundant-decls
 WFLAGS	+= -Wnested-externs -Wwrite-strings -Wstrict-prototypes
 CPPFLAGS += -I$(TOPDIR)/include
-LDSCRIPT := $(TOPDIR)/system/amiga.lds
+LDSCRIPT ?= $(TOPDIR)/system/amiga.lds
 
 # Don't reload library base for each call
 CPPFLAGS += -D__CONSTLIBBASEDECL__=const
@@ -64,6 +64,7 @@ PNG2C := $(TOPDIR)/tools/png2c/png2c
 PSF2C := $(TOPDIR)/tools/psf2c.py
 SYNC2C := $(TOPDIR)/tools/sync2c/sync2c
 SVG2C := $(TOPDIR)/tools/svg2c/svg2c
+SPLITEXE := $(TOPDIR)/tools/splitexe/splitexe
 STRIP := m68k-amigaos-strip -s
 OBJCOPY := m68k-amigaos-objcopy
 
@@ -99,11 +100,13 @@ CLEAN-FILES += $(SOURCES:%=%~)
 
 %.o: %.c
 	@echo "[CC] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $(CURDIR)/$<
+	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) \
+                -c -o $@ $(abspath $<)
 
 %.o: %.S
 	@echo "[AS] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(ASFLAGS) $(ASFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $(CURDIR)/$<
+	$(CC) $(ASFLAGS) $(ASFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) \
+                -c -o $@ $(abspath $<)
 
 %.o: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"

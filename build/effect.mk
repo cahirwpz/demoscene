@@ -4,6 +4,8 @@ ifndef SOURCES
 SOURCES = $(EFFECT).c
 endif
 
+LOADABLES ?= $(EFFECT).exe
+
 LIBS += libblit libgfx libmisc libc
 LDEXTRA = $(TOPDIR)/system/system.a
 LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
@@ -49,10 +51,6 @@ $(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(MAIN) $(OBJECTS) $(LDEXTRA) $(LDSCRIP
 	$(CP) $@ $@.dbg
 	$(STRIP) $@
 
-%.obj: %.o
-	@echo "[STRIP] $(DIR)$< -> $(DIR)$@"
-	$(STRIP) $(STRIP.$*) -R .stab -R .stabstr -o $@ $^
-
 data/%.c: data/%.lwo
 	@echo "[LWO] $(DIR)$< -> $(DIR)$@"
 	$(LWO2C) $(LWO2C.$*) -f $< $@
@@ -81,7 +79,7 @@ ifeq ($(AMIGAOS), 0)
 EXTRA-FILES += $(EFFECT).img $(EFFECT).rom
 CLEAN-FILES += $(EFFECT).img $(EFFECT).rom
 
-%.img: %.exe $(patsubst %.o,%.obj,$(LOADABLES)) $(DATA)
+%.img: $(LOADABLES) $(DATA)
 	@echo "[IMG] $(addprefix $(DIR),$<) -> $(DIR)$@"
 	$(FSUTIL) create $@ $(filter-out %bootloader.bin,$^)
 

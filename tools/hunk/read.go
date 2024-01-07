@@ -94,7 +94,7 @@ func ReadFile(path string) (hunks []Hunk, err error) {
 			hunk = readHunkUnit(file)
 		case HUNK_NAME:
 			hunk = readHunkName(file)
-			hs := hunk.(HunkStr)
+			hs := hunk.(*HunkStr)
 			name = hs.Name
 		case HUNK_CODE, HUNK_DATA:
 			hunk = readHunkBin(file, hunkId)

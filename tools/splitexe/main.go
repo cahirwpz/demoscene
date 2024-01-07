@@ -61,6 +61,10 @@ func splitExe(hunks []hunk.Hunk) []*Loadable {
 		if ht == hunk.HUNK_RELOC32 {
 			hs = append(hs, h)
 		}
+
+		if ht == hunk.HUNK_END && hs[len(hs)-1].Type() != hunk.HUNK_END {
+			hs = append(hs, h)
+		}
 	}
 
 	return append(loadables, &Loadable{hs, is})
@@ -69,9 +73,7 @@ func splitExe(hunks []hunk.Hunk) []*Loadable {
 func writeExe(exeName string, l *Loadable) {
 	println(l.Hunks[0].String())
 
-	hs := append(l.Hunks, &hunk.HunkEnd{})
-
-	for _, h := range hs {
+	for _, h := range l.Hunks {
 		if h.Type() == hunk.HUNK_RELOC32 {
 			hr := h.(*hunk.HunkReloc32)
 			for i, r := range hr.Relocs {
@@ -86,7 +88,7 @@ func writeExe(exeName string, l *Loadable) {
 		}
 	}
 
-	if err := hunk.WriteFile(exeName, hs); err != nil {
+	if err := hunk.WriteFile(exeName, l.Hunks, 0755); err != nil {
 		panic("failed to write Amiga Hunk file")
 	}
 }
