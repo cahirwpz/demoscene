@@ -64,6 +64,7 @@ PNG2C := $(TOPDIR)/tools/png2c/png2c
 PSF2C := $(TOPDIR)/tools/psf2c.py
 SYNC2C := $(TOPDIR)/tools/sync2c/sync2c
 SVG2C := $(TOPDIR)/tools/svg2c/svg2c
+PACKEXE := $(TOPDIR)/tools/packexe/packexe
 SPLITEXE := $(TOPDIR)/tools/splitexe/splitexe
 STRIP := m68k-amigaos-strip -s
 OBJCOPY := m68k-amigaos-objcopy

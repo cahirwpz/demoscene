@@ -1,6 +1,7 @@
 package hunk
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -9,12 +10,12 @@ import (
 type HunkBin struct {
 	htype HunkType
 	Flags HunkFlag
-	Bytes []byte
+	Data  *bytes.Buffer
 }
 
 func readHunkBin(r io.Reader, htype HunkType) *HunkBin {
 	flags, size := hunkSpec(readLong(r))
-	return &HunkBin{htype, flags, readData(r, size)}
+	return &HunkBin{htype, flags, bytes.NewBuffer(readData(r, size))}
 }
 
 func (h HunkBin) Type() HunkType {
@@ -23,11 +24,11 @@ func (h HunkBin) Type() HunkType {
 
 func (h HunkBin) Write(w io.Writer) {
 	writeLong(w, uint32(h.htype))
-	writeLong(w, uint32(h.Flags)|bytesSize(h.Bytes))
-	writeData(w, h.Bytes)
+	writeLong(w, uint32(h.Flags)|bytesSize(h.Data.Bytes()))
+	writeData(w, h.Data.Bytes())
 }
 
 func (h HunkBin) String() string {
 	return fmt.Sprintf("%s [%s, %d bytes]\n%s", h.Type().String(),
-		h.Flags.String(), len(h.Bytes), hex.Dump(h.Bytes))
+		h.Flags.String(), h.Data.Len(), hex.Dump(h.Data.Bytes()))
 }

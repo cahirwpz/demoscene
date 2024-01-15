@@ -152,41 +152,33 @@ func (et ExtType) String() string {
 type HunkFlag uint32
 
 const (
-	/* Any hunks that have the HUNKB_ADVISORY bit set will be ignored if they
-	 * aren't understood.  When ignored, they're treated like HUNK_DEBUG hunks.
-	 * NOTE: this handling of HUNKB_ADVISORY started as of V39 dos.library!  If
-	 * loading such executables is attempted under <V39 dos, it will fail with a
-	 * bad hunk type. */
-	HUNKB_ADVISORY = 29
-	HUNKB_CHIP     = 30
-	HUNKB_FAST     = 31
+	HUNKB_CHIP = 30
+	HUNKB_FAST = 31
 
-	HUNKF_PUBLIC   HunkFlag = 0
-	HUNKF_ADVISORY HunkFlag = 1 << HUNKB_ADVISORY
-	HUNKF_CHIP     HunkFlag = 1 << HUNKB_CHIP
-	HUNKF_FAST     HunkFlag = 1 << HUNKB_FAST
+	HUNKF_PUBLIC HunkFlag = 0
+	HUNKF_CHIP   HunkFlag = 1 << HUNKB_CHIP
+	HUNKF_FAST   HunkFlag = 1 << HUNKB_FAST
+	HUNKF_OTHER  HunkFlag = 3 << HUNKB_CHIP
 
-	HUNKF_MEMORY_MASK = uint32(HUNKF_ADVISORY) | uint32(HUNKF_CHIP) | uint32(HUNKF_FAST)
-	HUNKF_SIZE_MASK   = ^HUNKF_MEMORY_MASK
+	HUNKF_FLAG_MASK = uint32(HUNKF_CHIP) | uint32(HUNKF_FAST)
+	HUNKF_SIZE_MASK = ^HUNKF_FLAG_MASK
 )
 
-func (hf HunkFlag) String() string {
-	switch hf {
+func (flag HunkFlag) String() string {
+	switch flag & HunkFlag(HUNKF_FLAG_MASK) {
 	case HUNKF_PUBLIC:
 		return "MEMF_PUBLIC"
-	case HUNKF_FAST:
-		return "MEMF_FAST"
 	case HUNKF_CHIP:
 		return "MEMF_CHIP"
-	case HUNKF_ADVISORY:
-		return "ADVISORY"
+	case HUNKF_FAST:
+		return "MEMF_FAST"
 	default:
-		return "?"
+		return "OTHER"
 	}
 }
 
 func hunkSpec(x uint32) (HunkFlag, uint32) {
-	return HunkFlag(x & HUNKF_MEMORY_MASK), (x & HUNKF_SIZE_MASK) * 4
+	return HunkFlag(x & HUNKF_FLAG_MASK), (x & HUNKF_SIZE_MASK) * 4
 }
 
 type DebugType uint32

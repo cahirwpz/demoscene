@@ -58,6 +58,7 @@ gdb-dashboard
 *.thx
 *.tmx
 *.trk
+*.zx0
 ahxWaves*
 p61.*
 smp.*

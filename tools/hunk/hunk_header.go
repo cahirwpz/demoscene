@@ -47,15 +47,9 @@ func (h HunkHeader) String() string {
 	sb.WriteString("HUNK_HEADER\n")
 	fmt.Fprintf(&sb, "  Residents: %s\n", h.Residents)
 	for i, spec := range h.Specifiers {
-		mem, size := hunkSpec(spec)
-		fmt.Fprintf(&sb, "  Hunk %d: %6d bytes", i+int(h.First), size)
-		if mem == HUNKF_CHIP {
-			sb.WriteString(" [MEMF_CHIP]\n")
-		} else if mem == HUNKF_FAST {
-			sb.WriteString(" [MEMF_FAST]\n")
-		} else {
-			sb.WriteString(" [MEMF_PUBLIC]\n")
-		}
+		flag, size := hunkSpec(spec)
+		fmt.Fprintf(&sb, "  Hunk %d: %6d bytes [%s]\n", i+int(h.First), size,
+			flag.String())
 	}
 	return sb.String()
 }
