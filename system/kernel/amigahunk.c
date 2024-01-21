@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <zx0.h>
 #include <system/amigahunk.h>
 #include <system/boot.h>
 #include <system/file.h>
@@ -20,6 +21,7 @@
 
 #define HUNKF_CHIP __BIT(30)
 #define HUNKF_FAST __BIT(31)
+#define HUNKF_OTHER (HUNKF_CHIP|HUNKF_FAST)
 
 static struct {
   int count;
@@ -75,8 +77,20 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
     if (hunkId == HUNK_CODE || hunkId == HUNK_DATA || hunkId == HUNK_BSS) {
       hunkRoot = true;
       n = ReadLong(fh);
-      if (hunkId != HUNK_BSS)
-        FileRead(fh, hunk->data, n * sizeof(int));
+      if (hunkId != HUNK_BSS) {
+        int size = n * sizeof(int);
+
+        /* HUNKF_OTHER is added by packexe tool and notifies that the hunk
+         * is compressed with ZX0 algorithm. */
+        if ((n & HUNKF_OTHER) == HUNKF_OTHER) {
+          int offset = hunk->size - size;
+          FileRead(fh, hunk->data + offset, size);
+          /* in-place decompression, watch out for delta - see ZX0 algorithm! */
+          zx0_decompress(hunk->data + offset, hunk->data);
+        } else {
+          FileRead(fh, hunk->data, size);
+        }
+      }
       {
         const char *hunkType;
 
