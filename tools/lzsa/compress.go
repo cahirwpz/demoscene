@@ -1,17 +1,24 @@
-package zx0
+package lzsa
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
 )
 
-func Compress(data []byte) []byte {
+func Compress(format Format, data []byte) []byte {
 	var f *os.File
 	var fi os.FileInfo
 	var err error
 
-	if f, err = os.CreateTemp("", "salvador-*"); err != nil {
+	lzsaVer := "1"
+	if format == V2 {
+		lzsaVer = "2"
+	}
+	lzsaStr := "lzsa" + lzsaVer
+
+	if f, err = os.CreateTemp("", lzsaStr+"-*"); err != nil {
 		log.Fatal("CreateTemp:", err)
 	}
 
@@ -26,16 +33,18 @@ func Compress(data []byte) []byte {
 		log.Fatal("Close:", err)
 	}
 
-	cmd := exec.Command("salvador", name, name+".zx0")
+	outName := fmt.Sprintf("%s.%s", name, lzsaStr)
+
+	cmd := exec.Command("lzsa", "-f", lzsaVer, name, outName)
 	if err := cmd.Run(); err != nil {
 		log.Fatalf("%s: %v", cmd.String(), err)
 	}
 
-	if f, err = os.Open(name + ".zx0"); err != nil {
+	if f, err = os.Open(outName); err != nil {
 		log.Fatal("Open:", err)
 	}
 
-	defer os.Remove(name + ".zx0")
+	defer os.Remove(outName)
 
 	if fi, err = f.Stat(); err != nil {
 		log.Fatal("Stat:", err)

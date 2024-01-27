@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ..)
 
-SUBDIRS := dumphunk dumpilbm makepchg maketmx \
+SUBDIRS := dumphunk dumpilbm lzsa makepchg maketmx \
 	   pchg2c ptdump sync2c tmxconv svg2c png2c packexe splitexe
 
 include $(TOPDIR)/build/common.mk
