@@ -7,6 +7,7 @@ CLEAN-FILES = bootloader.bin a500rom.bin addchip.bootblock.bin vbrmove
 all: a500rom.bin bootloader.bin addchip.bootblock.bin vbrmove build
 
 addchip.bootblock.bin: VASMFLAGS += -phxass -cnop=0
+a500rom.bin: a500rom.asm bootloader.asm
 
 include $(TOPDIR)/build/common.mk
 
