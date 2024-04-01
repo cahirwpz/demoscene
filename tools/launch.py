@@ -149,6 +149,6 @@ if __name__ == '__main__':
             session.select_window(debugger.name)
         else:
             session.select_window(args.window or par_port.name)
-        session.attach_session()
+        Session.attach(session)
     finally:
-        server.kill_server()
+        Server.kill(server)
