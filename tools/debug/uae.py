@@ -261,7 +261,8 @@ class UaeCommandsMixin():
         # Exception 27, PC=00C15AC6
         while lines[0].startswith('Exception'):
             line = lines.pop(0)
-            data['exception'] = int(line[10:].split(',')[0])
+            if not line.endswith('breakpoint'):
+                data['exception'] = int(line[10:].split(',')[0])
         # just processor state
         data['regs'] = ParseProcessorState(lines)
         return data
