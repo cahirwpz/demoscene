@@ -6,6 +6,10 @@ replace ghostown.pl/hunk => ../hunk
 
 replace ghostown.pl/zx0 => ../zx0
 
+replace ghostown.pl/lzsa => ../lzsa
+
 require ghostown.pl/hunk v0.0.0-00010101000000-000000000000
 
 require ghostown.pl/zx0 v0.0.0-00010101000000-000000000000
+
+require ghostown.pl/lzsa v0.0.0-00010101000000-000000000000

@@ -8,17 +8,21 @@ import (
 	"os"
 
 	"ghostown.pl/hunk"
+	"ghostown.pl/lzsa"
 	"ghostown.pl/zx0"
 )
 
 var unpack bool
 var printHelp bool
+var compAlgoStr string
 
 func init() {
 	flag.BoolVar(&unpack, "unpack", false,
 		"unpack hunks instead of packing them")
 	flag.BoolVar(&printHelp, "help", false,
 		"print help message and exit")
+	flag.StringVar(&compAlgoStr, "algo", "zx0",
+		"default compression algorithm [zx0,lzsa2,lzsa1]")
 }
 
 type Action int
@@ -27,6 +31,69 @@ const (
 	Pack   Action = 0
 	Unpack Action = 1
 )
+
+type CompAlgo int
+
+const (
+	Zx0   CompAlgo = 0
+	Lzsa1 CompAlgo = 1
+	Lzsa2 CompAlgo = 2
+)
+
+var compAlgo CompAlgo
+
+func setCompAlgo(s string) {
+	switch s {
+	case "zx0":
+		compAlgo = Zx0
+	case "lzsa2":
+		compAlgo = Lzsa2
+	case "lzsa1":
+		compAlgo = Lzsa1
+	default:
+		log.Fatalf("Unknown compression algorithm: %s", s)
+	}
+}
+
+func packData(input *bytes.Buffer, algo CompAlgo) (*bytes.Buffer, hunk.CompType) {
+	var packed []byte
+	var comp hunk.CompType
+
+	data := input.Bytes()
+
+	switch algo {
+	case Zx0:
+		comp = hunk.COMP_ZX0
+		packed = zx0.Compress(data)
+	case Lzsa1:
+		comp = hunk.COMP_LZSA
+		packed = lzsa.Compress(lzsa.V1, data)
+	case Lzsa2:
+		comp = hunk.COMP_LZSA
+		packed = lzsa.Compress(lzsa.V2, data)
+	default:
+		panic("unknown compression algorithm")
+	}
+
+	return bytes.NewBuffer(packed), comp
+}
+
+func unpackData(input *bytes.Buffer, comp hunk.CompType) *bytes.Buffer {
+	var unpacked []byte
+
+	data := input.Bytes()
+
+	switch comp {
+	case hunk.COMP_ZX0:
+		unpacked = zx0.Decompress(data)
+	case hunk.COMP_LZSA:
+		unpacked = lzsa.Decompress(data)
+	default:
+		panic("unknown compression algorithm")
+	}
+
+	return bytes.NewBuffer(unpacked)
+}
 
 func FileSize(path string) int64 {
 	fi, err := os.Stat(path)
@@ -37,7 +104,7 @@ func FileSize(path string) int64 {
 }
 
 func packHunk(hd *hunk.HunkBin, hunkNum int, header *hunk.HunkHeader) {
-	if hd.Flags == hunk.HUNKF_OTHER {
+	if hd.Comp != hunk.COMP_NONE {
 		fmt.Printf("Hunk %d (%s): already packed\n", hunkNum,
 			hd.Type().String())
 		return
@@ -45,20 +112,22 @@ func packHunk(hd *hunk.HunkBin, hunkNum int, header *hunk.HunkHeader) {
 
 	fmt.Printf("Compressing hunk %d (%s): %d", hunkNum,
 		hd.Type().String(), hd.Data.Len())
-	packed := zx0.Compress(hd.Data.Bytes())
-	fmt.Printf(" -> %d\n", len(packed))
-	if len(packed) >= hd.Data.Len() {
+	packed, comp := packData(hd.Data, compAlgo)
+	fmt.Printf(" -> %d\n", packed.Len())
+
+	if packed.Len() >= hd.Data.Len() {
 		println("Skipping compression...")
-	} else {
-		hd.Data = bytes.NewBuffer(packed)
-		hd.Flags = hunk.HUNKF_OTHER
-		/* add extra 8 bytes for in-place decompression */
-		header.Specifiers[hunkNum] += 2
+		return
 	}
+
+	hd.Data = packed
+	hd.Comp = comp
+	/* add extra 8 bytes for in-place decompression */
+	header.Specifiers[hunkNum] += 2
 }
 
 func unpackHunk(hd *hunk.HunkBin, hunkNum int, header *hunk.HunkHeader) {
-	if hd.Flags != hunk.HUNKF_OTHER {
+	if hd.Comp == hunk.COMP_NONE {
 		fmt.Printf("Hunk %d (%s): already unpacked\n", hunkNum,
 			hd.Type().String())
 		return
@@ -66,10 +135,9 @@ func unpackHunk(hd *hunk.HunkBin, hunkNum int, header *hunk.HunkHeader) {
 
 	fmt.Printf("Decompressing hunk %d (%s): %d", hunkNum,
 		hd.Type().String(), hd.Data.Len())
-	unpacked := zx0.Decompress(hd.Data.Bytes())
-	hd.Data = bytes.NewBuffer(unpacked)
+	hd.Data = unpackData(hd.Data, hd.Comp)
 	fmt.Printf(" -> %d\n", hd.Data.Len())
-	hd.Flags = 0
+	hd.Comp = 0
 	header.Specifiers[hunkNum] -= 2
 }
 
@@ -103,6 +171,8 @@ func main() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
+
+	setCompAlgo(compAlgoStr)
 
 	hunks, err := hunk.ReadFile(flag.Arg(0))
 	if err != nil {
