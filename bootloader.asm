@@ -62,6 +62,11 @@ _LVOCacheControl        EQU     -648
         BITDEF  M,CLEAR,1       ; clear allocated block
         BITDEF  M,REVERSE,2     ; allocate from the top down
 
+; Compression type
+
+COMP_LZSA       EQU     1
+COMP_ZX0        EQU     3
+
 ; Boot loader data definition
 
  STRUCTURE BD,0                 ; Boot Data
@@ -512,13 +517,14 @@ SetupHunkFile:
 .hdata  move.l  (a3),a1
         add.w   #SEG_START,a1
         move.l  (a2)+,d0
-        rol.l   #2,d0           ; [d0] hunk specification
-        moveq   #3,d1
-        and.w   d0,d1           ; [d1] hunk flags
-        and.w   #-4,d0          ; [d0] hunk size
+        rol.l   #4,d0           ; [d0] hunk size + flags + compression
+        moveq.l #15,d1
+        and.l   d0,d1           ; [d1] hunk flags + compression
+        and.w   #-16,d0         ; [d0] hunk size
+        lsr.l   #2,d0
         move.l  a2,a0
         add.l   d0,a2           ; move pointer to next hunk
-        cmp.w   #3,d1           ; is compressed with ZX0? (HUNKF_OTHER)
+        cmp.w   #COMP_ZX0,d1    ; is compressed with ZX0?
         beq.b   .hunzx0
         bsr     CopyMem
         bra     .parse

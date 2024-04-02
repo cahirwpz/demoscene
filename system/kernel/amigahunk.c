@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <lzsa.h>
 #include <zx0.h>
 #include <system/amigahunk.h>
 #include <system/boot.h>
@@ -21,7 +22,14 @@
 
 #define HUNKF_CHIP __BIT(30)
 #define HUNKF_FAST __BIT(31)
-#define HUNKF_OTHER (HUNKF_CHIP|HUNKF_FAST)
+
+#define COMP_NONE (0 * __BIT(28))
+#define COMP_LZSA (1 * __BIT(28))
+#define COMP_ZX0 (3 * __BIT(28))
+#define COMP_MASK (__BIT(29) | __BIT(28))
+
+#define FLAG_MASK (HUNKF_CHIP | HUNKF_FAST)
+#define SIZE_MASK (~(COMP_MASK | FLAG_MASK))
 
 static struct {
   int count;
@@ -72,21 +80,27 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
   bool hunkRoot = true;
 
   while ((hunkId = ReadLong(fh))) {
-    int n;
+    int n, comp;
 
     if (hunkId == HUNK_CODE || hunkId == HUNK_DATA || hunkId == HUNK_BSS) {
       hunkRoot = true;
-      n = ReadLong(fh);
+      comp = n = ReadLong(fh);
+      n &= SIZE_MASK;
+      comp &= COMP_MASK;
       if (hunkId != HUNK_BSS) {
         int size = n * sizeof(int);
 
-        /* HUNKF_OTHER is added by packexe tool and notifies that the hunk
-         * is compressed with ZX0 algorithm. */
-        if ((n & HUNKF_OTHER) == HUNKF_OTHER) {
+        /* Compression type is added by packexe tool and notifies that the hunk
+         * is compressed with LZSA or ZX0 algorithm. */
+        if (comp != COMP_NONE) {
           int offset = hunk->size - size;
           FileRead(fh, hunk->data + offset, size);
-          /* in-place decompression, watch out for delta - see ZX0 algorithm! */
-          zx0_decompress(hunk->data + offset, hunk->data);
+          /* in-place decompression, watch out for delta */
+          if (comp == COMP_ZX0) {
+            zx0_decompress(hunk->data + offset, hunk->data);
+          } else if (comp == COMP_LZSA) {
+            lzsa_depack_stream(hunk->data + offset, hunk->data);
+          }
         } else {
           FileRead(fh, hunk->data, size);
         }
