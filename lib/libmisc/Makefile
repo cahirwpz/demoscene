@@ -6,6 +6,7 @@ SOURCES := \
 	file.c \
 	fx.c \
 	inflate.S \
+	lzsa.asm \
 	sintab.c \
 	sort.c \
 	sync.c \
