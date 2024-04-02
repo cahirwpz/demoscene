@@ -3,6 +3,7 @@ pillow
 prompt_toolkit
 pycodestyle
 pygments
+pyparsing
 zopflipy
 blessings
 amitools

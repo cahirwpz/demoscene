@@ -424,6 +424,12 @@ class InsnCost:
             cnt = o0.regcount() * (4 if short else 8)
             return self.MovemCost[type(o1)][1] + cnt
 
+        if mnemonic in ['addx', 'subx']:
+            if self.is_direct(o0):
+                return 4 if short else 8
+            else:
+                return 18 if short else 30
+
         if cost := self.MiscCost.get(mnemonic):
             return cost
 
