@@ -44,7 +44,7 @@ jobs:
           cache-dependency-path: tools/**/go.sum
       - name: Build everything
         run: |
-          . demoscene/bin/activate
+          . /root/demoscene/bin/activate
           make
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
