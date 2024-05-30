@@ -15,17 +15,16 @@ void CalculateVertexFaceMap(Mesh3D *mesh) {
    * number of faces it belongs to.
    */
   {
-    IndexListT **faces = mesh->face;
-    IndexListT *face;
+    short **faces = mesh->face;
+    short *face;
     short count = 0;
 
     while ((face = *faces++)) {
-      short n = face->count;
-      short *v = face->indices;
+      short n = face[-1];
 
       count += n;
       while (--n >= 0) {
-        short k = *v++;
+        short k = *face++;
         faceCount[k]++;
       }
     }
@@ -54,16 +53,15 @@ void CalculateVertexFaceMap(Mesh3D *mesh) {
   /* Finally, fill in the map. */
   {
     IndexListT **vertexFaces = mesh->vertexFace;
-    IndexListT **faces = mesh->face;
-    IndexListT *face;
+    short **faces = mesh->face;
+    short *face;
     short i = 0;
 
     while ((face = *faces++)) {
-      short n = face->count;
-      short *v = face->indices;
+      short n = face[-1];
 
       while (--n >= 0) {
-        IndexListT *vf = vertexFaces[*v++];
+        IndexListT *vf = vertexFaces[*face++];
         vf->indices[vf->count++] = i;
       }
 

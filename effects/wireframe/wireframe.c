@@ -54,7 +54,7 @@ static void Kill(void) {
 
 static void UpdateFaceVisibilityFast(Object3D *object) {
   short *src = (short *)object->mesh->faceNormal;
-  IndexListT **faces = object->mesh->face;
+  short **faces = object->mesh->face;
   char *faceFlags = object->faceFlags;
   void *vertex = object->mesh->vertex;
   short n = object->mesh->faces - 1;
@@ -64,12 +64,12 @@ static void UpdateFaceVisibilityFast(Object3D *object) {
   short cz = object->camera.z;
 
   do {
-    IndexListT *face = *faces++;
+    short *face = *faces++;
     short px, py, pz;
     int f;
 
     {
-      short *p = (short *)(vertex + (short)(*face->indices << 3));
+      short *p = (short *)(vertex + (short)(*face << 3));
       px = cx - *p++;
       py = cy - *p++;
       pz = cz - *p++;
@@ -93,8 +93,8 @@ static void UpdateEdgeVisibility(Object3D *object) {
   char *vertexFlags = object->vertexFlags;
   char *edgeFlags = object->edgeFlags;
   char *faceFlags = object->faceFlags;
-  IndexListT **faces = object->mesh->face;
-  IndexListT *face = *faces++;
+  short **faces = object->mesh->face;
+  short *face = *faces++;
   IndexListT **faceEdges = object->mesh->faceEdge;
   IndexListT *faceEdge = *faceEdges++;
   
@@ -103,18 +103,17 @@ static void UpdateEdgeVisibility(Object3D *object) {
 
   do {
     if (*faceFlags++ >= 0) {
-      short n = face->count - 3;
-      short *vi = face->indices;
+      short n = face[-1] - 3;
       short *ei = faceEdge->indices;
 
       /* Face has at least (and usually) three vertices / edges. */
-      vertexFlags[*vi++] = -1;
+      vertexFlags[*face++] = -1;
       edgeFlags[*ei++] = -1;
-      vertexFlags[*vi++] = -1;
+      vertexFlags[*face++] = -1;
       edgeFlags[*ei++] = -1;
 
       do {
-        vertexFlags[*vi++] = -1;
+        vertexFlags[*face++] = -1;
         edgeFlags[*ei++] = -1;
       } while (--n != -1);
     }

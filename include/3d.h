@@ -51,36 +51,18 @@ u_short ClipPolygon3D(Point3D *in, Point3D **outp, u_short n,
 /* 3D mesh representation */
 
 typedef struct {
-  PixmapT *pixmap;
-  char filename[0];
-} MeshImageT;
-
-typedef struct {
-  u_char r, g, b;
-  u_char sideness;
-  short  texture;
-} MeshSurfaceT;
-
-typedef struct {
   short vertices;
   short faces;
   short edges;
-  short surfaces;
-  short images;
 
   Point3D *vertex;
-  UVCoord *uv;
   Point3D *faceNormal;
-  u_char *faceSurface;
   Point3D *vertexNormal;
   EdgeT *edge;
-  IndexListT **face;       /* { #face => [#vertex] } */
+  /* '|' indicates 0 offset, '[x]' is an array of x's */
+  short **face;            /* { #face => [#vertices | [vertex]] } */
   IndexListT **faceEdge;   /* { #face => [#edge] } */
-  IndexListT **faceUV;     /* { #face => [#uv] } */
   IndexListT **vertexFace; /* { #vertex => [#face] } */
-
-  MeshImageT **image;
-  MeshSurfaceT *surface;
 } Mesh3D;
 
 void CalculateEdges(Mesh3D *mesh);

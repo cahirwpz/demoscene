@@ -2,7 +2,7 @@
 
 void UpdateFaceVisibility(Object3D *object) {
   short *src = (short *)object->mesh->faceNormal;
-  IndexListT **faces = object->mesh->face;
+  short **faces = object->mesh->face;
   char *faceFlags = object->faceFlags;
   void *vertex = object->mesh->vertex;
   short n = object->mesh->faces;
@@ -11,12 +11,12 @@ void UpdateFaceVisibility(Object3D *object) {
   short *camera = (short *)&object->camera;
 
   while (--n >= 0) {
-    IndexListT *face = *faces++;
+    short *face = *faces++;
     short px, py, pz;
     int f;
 
     {
-      short *p = (short *)(vertex + (short)(*face->indices << 3));
+      short *p = (short *)(vertex + (short)(*face << 3));
       short *c = camera;
       px = *c++ - *p++;
       py = *c++ - *p++;

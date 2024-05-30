@@ -124,7 +124,7 @@ static void TransformVertices(Object3D *object) {
 }
 
 static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
-  IndexListT **faces = object->mesh->face;
+  short **faces = object->mesh->face;
   SortItemT *item = object->visibleFace;
   char *faceFlags = object->faceFlags;
   short n = object->visibleFaces;
@@ -136,15 +136,14 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
 
   for (; --n >= 0; item++) {
     short index = item->index;
-    IndexListT *face = faces[index];
+    short *face = faces[index];
 
     short minX, minY, maxX, maxY;
 
     /* Draw edges and calculate bounding box. */
     {
-      short *i = face->indices;
-      register short m asm("d7") = face->count - 1;
-      short *ptr = (short *)(point + (short)(i[m] << 3));
+      register short m asm("d7") = face[-1] - 1;
+      short *ptr = (short *)(point + (short)(face[m] << 3));
       short xs = *ptr++;
       short ys = *ptr++;
       short xe, ye;
@@ -155,7 +154,7 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
       maxY = ys;
 
       do {
-        ptr = (short *)(point + (short)(*i++ << 3));
+        ptr = (short *)(point + (short)(*face++ << 3));
         xe = *ptr++;
         ye = *ptr++;
 

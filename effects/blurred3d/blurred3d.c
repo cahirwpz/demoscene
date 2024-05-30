@@ -200,8 +200,8 @@ static void DrawObject(Object3D *object) {
   Point3D *point = object->vertex;
   char *faceFlags = object->faceFlags;
   IndexListT **faceEdges = object->mesh->faceEdge;
-  IndexListT **faces = object->mesh->face;
-  IndexListT *face;
+  short **faces = object->mesh->face;
+  short *face;
 
   custom->bltafwm = -1;
   custom->bltalwm = -1;
@@ -215,16 +215,15 @@ static void DrawObject(Object3D *object) {
 
       /* Estimate the size of rectangle that contains a face. */
       {
-        short *i = face->indices;
-        Point3D *p = &point[*i++];
+        short n = face[-1] - 2;
+        Point3D *p = &point[*face++];
         short minX = p->x;
         short minY = p->y;
         short maxX = minX; 
         short maxY = minY;
-        short n = face->count - 2;
 
         do {
-          p = &point[*i++];
+          p = &point[*face++];
 
           if (p->x < minX)
             minX = p->x;

@@ -31,32 +31,31 @@ void CalculateEdges(Mesh3D *mesh) {
 
   /* Count edges. */
   {
-    IndexListT **faces = mesh->face;
-    IndexListT *face;
+    short **faces = mesh->face;
+    short *face;
 
     count = 0;
 
     while ((face = *faces++))
-      count += face->count;
+      count += face[-1];
 
     edge = MemAlloc(sizeof(ExtEdgeT) * count, MEMF_PUBLIC);
   }
 
   /* Create all edges. */
   {
-    IndexListT **faces = mesh->face;
-    IndexListT *face;
+    short **faces = mesh->face;
+    short *face;
     short *e = (short *)edge;
     short i = 0;
 
     while ((face = *faces++)) {
-      short *vertex = face->indices;
-      short n = face->count;
-      short p0 = vertex[n-1] * sizeof(Point3D);
+      short n = face[-1];
+      short p0 = face[n-1] * sizeof(Point3D);
       short p1;
 
       while (--n >= 0) {
-        p1 = *vertex++ * sizeof(Point3D);
+        p1 = *face++ * sizeof(Point3D);
 
         /* Make sure lower index is first. */
         if (p0 > p1) {
@@ -124,14 +123,14 @@ void CalculateEdges(Mesh3D *mesh) {
                                       sizeof(short) * (count + mesh->faces),
                                       MEMF_PUBLIC|MEMF_CLEAR);
     short *faceEdgeData = (short *)&faceEdges[mesh->faces + 1];
-    IndexListT **faces = mesh->face;
-    IndexListT *face;
+    short **faces = mesh->face;
+    short *face;
 
     mesh->faceEdge = faceEdges;
 
     while ((face = *faces++)) {
       *faceEdges++ = (IndexListT *)faceEdgeData;
-      faceEdgeData += face->count + 1;
+      faceEdgeData += face[-1] + 1;
     }
   }
 

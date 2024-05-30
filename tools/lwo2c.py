@@ -419,8 +419,6 @@ def convertLWO2(lwo, name, scale):
         i = tags.index(surf.data[0])
         srfs[i] = (surf.data[0], surf.data[2])
 
-    print('static MeshSurfaceT _%s_surf[%d] = {' % (name, len(tags)))
-
     surf_vmap = {}
     for surf in srfs:
         if type(surf) is str:
@@ -443,37 +441,16 @@ def convertLWO2(lwo, name, scale):
                     if key == 'VMAP':
                         surf_vmap[value] = tags.index(surf_name)
 
-        print('  [%d] = { /* name = "%s" */' % (surf_index, surf_name))
-        print('    .r = %d, .g = %d, .b = %d,' % (r, g, b))
-        print('    .sideness = %d,' % sideness)
-        print('    .texture = %d,' % texture)
-        print('  },')
-    print('};\n')
-
     pnts = lwo['PNTS']
-    print('static Point3D _%s_pnts[%d] = {' % (name, len(pnts.data)))
+    npnts = len(pnts.data) * 4
+    print(f'static short _{name}_pnts[{npnts}] = {{')
+    print('  /* x, y, z, pad */')
     for point in pnts.data:
         x = int(point[0] * scale * 16)
         y = int(point[1] * scale * 16)
         z = int(point[2] * scale * 16)
-        print('  {.x = %5d, .y = %5d, .z = %5d, .pad = 0},' % (x, y, z))
+        print('  %5d, %5d, %5d, 0,' % (x, y, z))
     print('};\n')
-
-    vmap_txuv = []
-    for name, values in txuv.items():
-        surface = surf_vmap.get(name, None)
-        if not surface:
-            continue
-        for vertex, uv in values:
-            vmap_txuv.append((surface, vertex, tuple(uv)))
-
-    if vmap_txuv:
-        print('static UVCoord _%s_pnts_uv[%d] = {' % (name, len(vmap_txuv)))
-        for _, _, uv in vmap_txuv:
-            u = int(uv[0] * 16)
-            v = int(uv[1] * 16)
-            print('  {.u = %5d, .v = %5d},' % (u, v))
-        print('};\n')
 
     pols_surf = {}
     for ptag in lwo.get('PTAG', always_list=True):
@@ -483,63 +460,34 @@ def convertLWO2(lwo, name, scale):
                 pols_surf[polygon] = surface
 
     pols = lwo['POLS'].data[1]
-    print('static IndexListT *_%s_face[%d] = {' % (name, len(pols) + 1))
-    for i, polygon in enumerate(pols):
-        print('  (IndexListT *)(short[%d]){%d, %s},' % (
-            len(polygon) + 1, len(polygon), ', '.join(map(str, polygon))))
+    npols = sum(len(p) + 1 for p in pols) + 2
+    print(f'static short _{name}_face_data[{npols}] = {{')
+    print('  /* #vertices, vertices... */')
+    for pol in pols:
+        line = [len(pol)] + list(pol)
+        print('  %s,' % ', '.join(map(str, line)))
+    print('  0')
+    print('};\n')
+
+    print(f'static short *_{name}_face[] = {{')
+    pos = 2
+    for polygon in pols:
+        print(f'  &_{name}_face_data[{pos}],')
+        pos += len(polygon) + 2
     print('  NULL')
     print('};\n')
 
-    print('static u_char _%s_face_surf[%d] = {' % (name, len(pols)))
-    for i, _ in enumerate(pols):
-        print('  %d,' % pols_surf[i])
-    print('};\n')
-
-    if vmap_txuv:
-        pols_txuv = {}
-        for i, txuv in enumerate(vmap_txuv):
-            surface, vertex, _ = txuv
-            surf_dict = pols_txuv.get(surface, {})
-            surf_dict[vertex] = i
-            pols_txuv[surface] = surf_dict
-
-        print('static IndexListT *_%s_face_uv[%d] = {' % (name, len(pols) + 1))
-        for i, vertices in enumerate(pols):
-            surface = pols_surf[i]
-            vertices = [str(pols_txuv[surface][v]) for v in vertices]
-            print('  (IndexListT *)(short[%d]){%d, %s},' % (
-                len(vertices) + 1, len(vertices), ', '.join(vertices)))
-        print('  NULL')
-        print('};\n')
-
-    # TODO: image
     print('Mesh3D %s = {' % name)
     print('  .vertices = %d,' % len(pnts.data))
     print('  .faces = %d,' % len(pols))
     print('  .edges = 0,')
-    print('  .surfaces = %d,' % len(tags))
-    print('  .images = %d,' % len(clips))
-    print('  .vertex = _%s_pnts,' % name)
-    if vmap_txuv:
-        print('  .uv = _%s_pnts_uv,' % name)
-    else:
-        print('  .uv = NULL,')
+    print('  .vertex = (Point3D *)&_%s_pnts,' % name)
     print('  .faceNormal = NULL,')
-    print('  .faceSurface = _%s_face_surf,' % name)
     print('  .vertexNormal = NULL,')
     print('  .edge = NULL,')
     print('  .face = _%s_face,' % name)
     print('  .faceEdge = NULL,')
-    if vmap_txuv:
-        print('  .faceUV = _%s_face_uv,' % name)
-    else:
-        print('  .faceUV = NULL,')
     print('  .vertexFace = NULL,')
-    if len(clips):
-        print('  .image = _%s_img,' % name)
-    else:
-        print('  .image = NULL,')
-    print('  .surface = _%s_surf,' % name)
     print('};')
 
 

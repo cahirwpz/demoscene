@@ -18,16 +18,14 @@ void CalculateFaceNormals(Mesh3D *mesh) {
 
   {
     Point3D *vertex = mesh->vertex;
-    IndexListT **faces = mesh->face;
     short *normal = (short *)mesh->faceNormal;
-    IndexListT *face;
+    short **faces = mesh->face;
+    short *face;
 
     while ((face = *faces++)) {
-      short *v = face->indices;
-
-      Point3D *p1 = &vertex[*v++];
-      Point3D *p2 = &vertex[*v++];
-      Point3D *p3 = &vertex[*v++];
+      Point3D *p1 = &vertex[*face++];
+      Point3D *p2 = &vertex[*face++];
+      Point3D *p3 = &vertex[*face++];
 
       int x, y, z;
       short l;

@@ -58,8 +58,8 @@ static void UpdateEdgeVisibilityConvex(Object3D *object) {
   char *vertexFlags = object->vertexFlags;
   char *edgeFlags = object->edgeFlags;
   char *faceFlags = object->faceFlags;
-  IndexListT **faces = object->mesh->face;
-  IndexListT *face = *faces++;
+  short **faces = object->mesh->face;
+  short *face = *faces++;
   IndexListT **faceEdges = object->mesh->faceEdge;
   IndexListT *faceEdge = *faceEdges++;
 
@@ -70,18 +70,17 @@ static void UpdateEdgeVisibilityConvex(Object3D *object) {
     char f = *faceFlags++;
 
     if (f >= 0) {
-      short n = face->count - 3;
-      short *vi = face->indices;
+      short n = face[-1] - 3;
       short *ei = faceEdge->indices;
 
       /* Face has at least (and usually) three vertices / edges. */
-      vertexFlags[*vi++] = -1;
+      vertexFlags[*face++] = -1;
       edgeFlags[*ei++] ^= f;
-      vertexFlags[*vi++] = -1;
+      vertexFlags[*face++] = -1;
       edgeFlags[*ei++] ^= f;
 
       do {
-        vertexFlags[*vi++] = -1;
+        vertexFlags[*face++] = -1;
         edgeFlags[*ei++] ^= f;
       } while (--n != -1);
     }
