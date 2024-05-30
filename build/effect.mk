@@ -51,9 +51,9 @@ $(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(MAIN) $(OBJECTS) $(LDEXTRA) $(LDSCRIP
 	$(CP) $@ $@.dbg
 	$(STRIP) $@
 
-data/%.c: data/%.lwo
-	@echo "[LWO] $(DIR)$< -> $(DIR)$@"
-	$(LWO2C) $(LWO2C.$*) -f $< $@
+data/%.c: data/%.obj
+	@echo "[MODEL/OBJ] $(DIR)$< -> $(DIR)$@"
+	$(OBJ2C) $(OBJ2C.$*) $< $@
 
 data/%.c: data/%.psfu
 	@echo "[PSF] $(DIR)$^ -> $(DIR)$@"

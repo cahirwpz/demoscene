@@ -55,7 +55,6 @@ ROMUTIL := $(TOPDIR)/tools/romutil.py
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 LAUNCH := $(PYTHON3) $(TOPDIR)/tools/launch.py
-LWO2C := $(TOPDIR)/tools/lwo2c.py $(QUIET)
 CONV2D := $(TOPDIR)/tools/conv2d.py
 GRADIENT := $(TOPDIR)/tools/gradient.py
 TMXCONV := $(TOPDIR)/tools/tmxconv/tmxconv
@@ -66,6 +65,7 @@ SYNC2C := $(TOPDIR)/tools/sync2c/sync2c
 SVG2C := $(TOPDIR)/tools/svg2c/svg2c
 PACKEXE := $(TOPDIR)/tools/packexe/packexe
 SPLITEXE := $(TOPDIR)/tools/splitexe/splitexe
+OBJ2C := $(TOPDIR)/tools/obj2c/obj2c
 STRIP := m68k-amigaos-strip -s
 OBJCOPY := m68k-amigaos-objcopy
 
