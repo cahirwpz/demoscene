@@ -50,32 +50,21 @@ u_short ClipPolygon3D(Point3D *in, Point3D **outp, u_short n,
 
 /* 3D mesh representation */
 
-typedef struct {
+typedef struct Mesh3D {
   short vertices;
   short faces;
   short edges;
 
   Point3D *vertex;
   Point3D *faceNormal;
-  Point3D *vertexNormal;
   EdgeT *edge;
-  /* '|' indicates 0 offset, '[x]' is an array of x's */
-  short **face;            /* { #face => [#vertices | [vertex]] } */
-  IndexListT **faceEdge;   /* { #face => [#edge] } */
-  IndexListT **vertexFace; /* { #vertex => [#face] } */
+  short *face;       /* [#vertices vertices...] */
+  short *faceEdge;   /* [#edge edges...] */
 } Mesh3D;
-
-void CalculateEdges(Mesh3D *mesh);
-void CalculateVertexFaceMap(Mesh3D *mesh);
-void CalculateVertexNormals(Mesh3D *mesh);
-void CalculateFaceNormals(Mesh3D *mesh);
-void ResetMesh3D(Mesh3D *mesh);
 
 /* 3D object representation */
 
-typedef struct {
-  Mesh3D *mesh;
-
+typedef struct Object3D {
   Point3D rotate;
   Point3D scale;
   Point3D translate;
@@ -83,8 +72,22 @@ typedef struct {
   Matrix3D objectToWorld; /* object -> world transformation */
   Matrix3D worldToObject; /* world -> object transformation */
 
-  Point3D camera;      /* camera position in object space */
+  /* camera position in object space */
+  Point3D camera;
 
+  /* potentially shared between objects, copied from mesh */
+  short faces;
+  short vertices;
+  short edges;
+
+  Point3D *point;
+  /* '|' indicates 0 offset */
+  short **face;       /* { #face => [#vertices | vertices...] } */
+  short **faceEdge;   /* { #face => [#edge | edges...] } */
+  Point3D *faceNormal;
+
+  /* private */
+  EdgeT *edge;
   Point3D *vertex;     /* camera coordinates or screen coordinates + depth */
   char *vertexFlags;   /* used by clipping */
   char *faceFlags;     /* e.g. visiblity flags */

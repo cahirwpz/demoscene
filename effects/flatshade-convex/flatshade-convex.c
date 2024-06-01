@@ -18,20 +18,8 @@ static short active;
 #include "data/flatshade-pal.c"
 #include "data/pilka.c"
 
-static Mesh3D *mesh = &pilka;
-
-static void Load(void) {
-  CalculateVertexFaceMap(mesh);
-  CalculateFaceNormals(mesh);
-  CalculateEdges(mesh);
-}
-
-static void UnLoad(void) {
-  ResetMesh3D(mesh);
-}
-
 static void Init(void) {
-  cube = NewObject3D(mesh);
+  cube = NewObject3D(&pilka);
   cube->translate.z = fx4i(-250);
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
@@ -58,61 +46,59 @@ static void UpdateEdgeVisibilityConvex(Object3D *object) {
   char *vertexFlags = object->vertexFlags;
   char *edgeFlags = object->edgeFlags;
   char *faceFlags = object->faceFlags;
-  short **faces = object->mesh->face;
-  short *face = *faces++;
-  IndexListT **faceEdges = object->mesh->faceEdge;
-  IndexListT *faceEdge = *faceEdges++;
+  short **faces = object->face;
+  short **faceEdges = object->faceEdge;
+  short *face;
 
-  bzero(vertexFlags, object->mesh->vertices);
-  bzero(edgeFlags, object->mesh->edges);
+  register char s asm("d7") = -1;
 
-  do {
+  bzero(vertexFlags, object->vertices);
+  bzero(edgeFlags, object->edges);
+
+  while ((face = *faces++)) {
+    short *faceEdge = *faceEdges++;
     char f = *faceFlags++;
 
     if (f >= 0) {
       short n = face[-1] - 3;
-      short *ei = faceEdge->indices;
 
       /* Face has at least (and usually) three vertices / edges. */
-      vertexFlags[*face++] = -1;
-      edgeFlags[*ei++] ^= f;
-      vertexFlags[*face++] = -1;
-      edgeFlags[*ei++] ^= f;
+      vertexFlags[*face++] = s;
+      edgeFlags[*faceEdge++] ^= f;
+      vertexFlags[*face++] = s;
+      edgeFlags[*faceEdge++] ^= f;
 
       do {
-        vertexFlags[*face++] = -1;
-        edgeFlags[*ei++] ^= f;
+        vertexFlags[*face++] = s;
+        edgeFlags[*faceEdge++] ^= f;
       } while (--n != -1);
     }
-
-    faceEdge = *faceEdges++;
-    face = *faces++;
-  } while (face);
+  }
 }
 
-#define MULVERTEX1(D, E) {               \
-  short t0 = (*v++) + y;                  \
-  short t1 = (*v++) + x;                  \
-  int t2 = (*v++) * z;                  \
-  v++;                                   \
-  D = ((t0 * t1 + t2 - x * y) >> 4) + E; \
+#define MULVERTEX1(D, E) {                      \
+  short t0 = (*v++) + y;                        \
+  short t1 = (*v++) + x;                        \
+  int t2 = (*v++) * z;                          \
+  v++;                                          \
+  D = ((t0 * t1 + t2 - x * y) >> 4) + E;        \
 }
 
-#define MULVERTEX2(D) {                  \
-  short t0 = (*v++) + y;                  \
-  short t1 = (*v++) + x;                  \
-  int t2 = (*v++) * z;                  \
-  short t3 = (*v++);                      \
-  D = normfx(t0 * t1 + t2 - x * y) + t3; \
+#define MULVERTEX2(D) {                         \
+  short t0 = (*v++) + y;                        \
+  short t1 = (*v++) + x;                        \
+  int t2 = (*v++) * z;                          \
+  short t3 = (*v++);                            \
+  D = normfx(t0 * t1 + t2 - x * y) + t3;        \
 }
 
 static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   short *v = (short *)M;
-  short *src = (short *)object->mesh->vertex;
+  short *src = (short *)object->point;
   short *dst = (short *)object->vertex;
   char *flags = object->vertexFlags;
-  register short n asm("d7") = object->mesh->vertices - 1;
+  register short n asm("d7") = object->vertices - 1;
 
   int m0 = (M->x << 8) - ((M->m00 * M->m01) >> 4);
   int m1 = (M->y << 8) - ((M->m10 * M->m11) >> 4);
@@ -161,14 +147,13 @@ static void TransformVertices(Object3D *object) {
   } while (--n != -1);
 }
 
-static void DrawObject(BitmapT *screen, Object3D *object,
+static void DrawObject(void *planes, Object3D *object,
                        CustomPtrT custom_ asm("a6"))
 {
-  short *edge = (short *)object->mesh->edge;
+  short *edge = (short *)object->edge;
   char *edgeFlags = object->edgeFlags;
   Point3D *point = object->vertex;
-  short n = object->mesh->edges - 1;
-  void *planes = screen->planes[0];
+  short n = object->edges - 1;
 
   WaitBlitter();
   custom_->bltafwm = -1;
@@ -179,91 +164,92 @@ static void DrawObject(BitmapT *screen, Object3D *object,
   custom_->bltdmod = WIDTH / 8;
 
   do {
-    char f = *edgeFlags++;
-
-    if (f) {
-      short x0, y0, x1, y1;
-      void *data;
+    if (*edgeFlags) {
+      short bltcon0, bltcon1, bltsize, bltbmod, bltamod;
+      int bltapt, bltcpt;
 
       {
-        short *p0 = (void *)point + *edge++;
-        x0 = *p0++;
-        y0 = *p0++;
-      }
-      
-      {
-        short *p1 = (void *)point + *edge++;
-        x1 = *p1++;
-        y1 = *p1++;
-      }
+        short x0, y0, x1, y1;
+        short dmin, dmax, derr;
 
-      if (y0 > y1) {
-        swapr(x0, x1);
-        swapr(y0, y1);
-      }
+        {
+          short *p0 = (void *)point + *edge++;
+          x0 = *p0++;
+          y0 = *p0++;
+        }
 
-      {
-        short dmax = x1 - x0;
-        short dmin = y1 - y0;
-        short derr;
-        u_short bltcon1 = LINEMODE | ONEDOT;
+        {
+          short *p1 = (void *)point + *edge++;
+          x1 = *p1++;
+          y1 = *p1++;
+        }
 
+        if (y0 == y1) {
+          edgeFlags++;
+          continue;
+        }
+        if (y0 > y1) {
+          swapr(x0, x1);
+          swapr(y0, y1);
+        }
+
+        dmax = x1 - x0;
         if (dmax < 0)
           dmax = -dmax;
 
+        dmin = y1 - y0;
         if (dmax >= dmin) {
           if (x0 >= x1)
-            bltcon1 |= (AUL | SUD);
+            bltcon1 = AUL | SUD | LINEMODE | ONEDOT;
           else
-            bltcon1 |= SUD;
+            bltcon1 = SUD | LINEMODE | ONEDOT;
         } else {
           if (x0 >= x1)
-            bltcon1 |= SUL;
+            bltcon1 = SUL | LINEMODE | ONEDOT;
+          else
+            bltcon1 = LINEMODE | ONEDOT;
           swapr(dmax, dmin);
         }
 
-        {
-          short y0_ = y0 << 5;
-          short x0_ = x0 >> 3;
-          short start = (y0_ + x0_) & ~1;
-          data = planes + start;
-        }
+        bltcpt = (int)planes + (short)(((y0 << 5) + (x0 >> 3)) & ~1);
+
+        bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
+        bltcon1 |= rorw(x0 & 15, 4);
 
         dmin <<= 1;
         derr = dmin - dmax;
-        if (derr < 0)
-          bltcon1 |= SIGNFLAG;
-        bltcon1 |= rorw(x0 & 15, 4);
 
-        {
-          u_short bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
-          u_short bltamod = derr - dmax;
-          u_short bltbmod = dmin;
-          u_short bltsize = (dmax << 6) + 66;
-          void *bltapt = (void *)(int)derr;
-          
-#define DRAWLINE()                      \
-          WaitBlitter();                \
-          custom_->bltcon0 = bltcon0;    \
-          custom_->bltcon1 = bltcon1;    \
-          custom_->bltcpt = data;        \
-          custom_->bltapt = bltapt;      \
-          custom_->bltdpt = planes;      \
-          custom_->bltbmod = bltbmod;    \
-          custom_->bltamod = bltamod;    \
-          custom_->bltsize = bltsize;
+        bltamod = derr - dmax;
+        bltbmod = dmin;
+        bltsize = (dmax << 6) + 66;
+        bltapt = derr;
+      }
 
-          if (f & 1) { DRAWLINE(); }
-          data += WIDTH * HEIGHT / 8;
-          if (f & 2) { DRAWLINE(); }
-          data += WIDTH * HEIGHT / 8;
-          if (f & 4) { DRAWLINE(); }
-          data += WIDTH * HEIGHT / 8;
-          if (f & 8) { DRAWLINE(); }
-        }
+#define DRAWLINE()                              \
+      WaitBlitter();                            \
+      custom_->bltcon0 = bltcon0;               \
+      custom_->bltcon1 = bltcon1;               \
+      custom_->bltcpt = (void *)bltcpt;         \
+      custom_->bltapt = (void *)bltapt;         \
+      custom_->bltdpt = planes;                 \
+      custom_->bltbmod = bltbmod;               \
+      custom_->bltamod = bltamod;               \
+      custom_->bltsize = bltsize;
+
+      {
+        char edgeColor = *edgeFlags++;
+
+        if (edgeColor & 1) { DRAWLINE(); }
+        bltcpt += WIDTH * HEIGHT / 8;
+        if (edgeColor & 2) { DRAWLINE(); }
+        bltcpt += WIDTH * HEIGHT / 8;
+        if (edgeColor & 4) { DRAWLINE(); }
+        bltcpt += WIDTH * HEIGHT / 8;
+        if (edgeColor & 8) { DRAWLINE(); }
       }
     } else {
       edge += 2;
+      edgeFlags++;
     }
   } while (--n != -1);
 }
@@ -325,7 +311,7 @@ static void Render(void) {
 
   ProfilerStart(Draw);
   {
-    DrawObject(screen[active], cube, custom); // 237 lines
+    DrawObject(screen[active]->planes[0], cube, custom); // 237 lines
   }
   ProfilerStop(Draw);
 
@@ -340,4 +326,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(FlatShadeConvex, Load, UnLoad, Init, Kill, Render, NULL);
+EFFECT(FlatShadeConvex, NULL, NULL, Init, Kill, Render, NULL);

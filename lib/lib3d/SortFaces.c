@@ -1,9 +1,9 @@
 #include <3d.h>
 
 void SortFaces(Object3D *object) {
-  short **faces = object->mesh->face;
-  short n = object->mesh->faces;
-  void *points = object->vertex;
+  short **faces = object->face;
+  short n = object->faces;
+  void *vertex = object->vertex;
   char *faceFlags = object->faceFlags;
   short count = 0;
   short index = 0;
@@ -18,11 +18,11 @@ void SortFaces(Object3D *object) {
       short i;
 
       i = *face++ << 3;
-      z = ((Point3D *)(points + i))->z;
+      z = ((Point3D *)(vertex + i))->z;
       i = *face++ << 3;
-      z += ((Point3D *)(points + i))->z;
+      z += ((Point3D *)(vertex + i))->z;
       i = *face++ << 3;
-      z += ((Point3D *)(points + i))->z;
+      z += ((Point3D *)(vertex + i))->z;
 
       *item++ = z;
       *item++ = index;

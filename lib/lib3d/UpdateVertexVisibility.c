@@ -4,10 +4,10 @@
 void UpdateVertexVisibility(Object3D *object) {
   char *vertexFlags = object->vertexFlags;
   char *faceFlags = object->faceFlags;
-  short **faces = object->mesh->face;
-  short n = object->mesh->faces;
+  short **faces = object->face;
+  short n = object->faces;
 
-  bzero(vertexFlags, object->mesh->vertices);
+  bzero(vertexFlags, object->vertices);
 
   while (--n >= 0) {
     short *face = *faces++;

@@ -1,11 +1,11 @@
 #include <3d.h>
 
 void UpdateFaceVisibility(Object3D *object) {
-  short *src = (short *)object->mesh->faceNormal;
-  short **faces = object->mesh->face;
+  short *src = (short *)object->faceNormal;
+  short **faces = object->face;
   char *faceFlags = object->faceFlags;
-  void *vertex = object->mesh->vertex;
-  short n = object->mesh->faces;
+  void *point = object->point;
+  short n = object->faces;
   char *sqrt = SqrtTab8;
 
   short *camera = (short *)&object->camera;
@@ -16,7 +16,7 @@ void UpdateFaceVisibility(Object3D *object) {
     int f;
 
     {
-      short *p = (short *)(vertex + (short)(*face << 3));
+      short *p = (short *)(point + (short)(*face << 3));
       short *c = camera;
       px = *c++ - *p++;
       py = *c++ - *p++;

@@ -8,7 +8,52 @@ Object3D *NewObject3D(Mesh3D *mesh) {
   short faces = mesh->faces;
   short edges = mesh->edges;
 
-  object->mesh = mesh;
+  object->vertices = vertices;
+  object->faces = faces;
+  object->edges = edges;
+
+  object->point = mesh->vertex;
+  object->faceNormal = mesh->faceNormal;
+
+  object->edge = MemAlloc(sizeof(EdgeT) * edges, MEMF_PUBLIC);
+  {
+    short *in = (short *)mesh->edge;
+    short *out = (short *)object->edge;
+    short n = edges * 2;
+
+    while (--n >= 0) {
+      *out++ = *in++ * sizeof(Point3D);
+    }
+  }
+
+  object->face = MemAlloc((sizeof(short *) + 1) * faces, MEMF_PUBLIC);
+  {
+    short **facePtr = object->face;
+    short *face = mesh->face;
+    short n;
+
+    while ((n = *face++)) {
+      *facePtr++ = face;
+      face += n;
+    }
+
+    *facePtr = NULL;
+  }
+
+  object->faceEdge = MemAlloc((sizeof(short *) + 1) * faces, MEMF_PUBLIC);
+  {
+    short **faceEdgePtr = object->faceEdge;
+    short *faceEdge = mesh->faceEdge;
+    short n;
+
+    while ((n = *faceEdge++)) {
+      *faceEdgePtr++ = faceEdge;
+      faceEdge += n;
+    }
+
+    *faceEdgePtr = NULL;
+  }
+
   object->vertex = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
   object->vertexFlags = MemAlloc(vertices, MEMF_PUBLIC);
   object->faceFlags = MemAlloc(faces, MEMF_PUBLIC);

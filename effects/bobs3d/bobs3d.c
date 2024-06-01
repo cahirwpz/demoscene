@@ -69,9 +69,9 @@ static void Kill(void) {
 
 static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
-  short *src = (short *)object->mesh->vertex;
+  short *src = (short *)object->point;
   short *dst = (short *)object->vertex;
-  register short n asm("d7") = object->mesh->vertices;
+  register short n asm("d7") = object->vertices;
 
   int m0 = (M->x - normfx(M->m00 * M->m01)) << 8;
   int m1 = (M->y - normfx(M->m10 * M->m11)) << 8;
@@ -181,7 +181,7 @@ void BlitterOrArea(BitmapT *dst asm("a0"), u_short x asm("d0"), u_short y asm("d
 
 static void DrawObject(Object3D *object, BitmapT *dst) {
   short *data = (short *)object->vertex;
-  register short n asm("d7") = object->mesh->vertices;
+  register short n asm("d7") = object->vertices;
 
 #if 0
   short minZ = 32767, maxZ = -32768;

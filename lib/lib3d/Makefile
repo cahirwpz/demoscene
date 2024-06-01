@@ -1,10 +1,6 @@
 TOPDIR := $(realpath ../..)
 
 SOURCES := \
-	CalculateEdges.c \
-	CalculateFaceNormals.c \
-	CalculateVertexFaceMap.c \
-	CalculateVertexNormals.c \
 	ClipFrustum.c \
 	ClipPolygon3D.c \
 	Compose3D.c \
@@ -14,7 +10,6 @@ SOURCES := \
 	LoadRotate3D.c \
 	NewObject3D.c \
 	PointsInsideFrustum.c \
-	ResetMesh3D.c \
 	Scale3D.c \
 	SortFaces.c \
 	SqrtTab8.c \

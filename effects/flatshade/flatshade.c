@@ -20,14 +20,6 @@ static int active = 0;
 
 static Mesh3D *mesh = &pilka;
 
-static void Load(void) {
-  CalculateFaceNormals(mesh);
-}
-
-static void UnLoad(void) {
-  ResetMesh3D(mesh);
-}
-
 static void Init(void) {
   cube = NewObject3D(mesh);
   cube->translate.z = fx4i(-250);
@@ -74,10 +66,10 @@ static void Kill(void) {
 static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
   short *v = (short *)M;
-  short *src = (short *)object->mesh->vertex;
+  short *src = (short *)object->point;
   short *dst = (short *)object->vertex;
   char *flags = object->vertexFlags;
-  register short n asm("d7") = object->mesh->vertices - 1;
+  register short n asm("d7") = object->vertices - 1;
 
   int m0 = (M->x << 8) - ((M->m00 * M->m01) >> 4);
   int m1 = (M->y << 8) - ((M->m10 * M->m11) >> 4);
@@ -124,11 +116,11 @@ static void TransformVertices(Object3D *object) {
 }
 
 static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
-  short **faces = object->mesh->face;
+  short **faces = object->face;
   SortItemT *item = object->visibleFace;
   char *faceFlags = object->faceFlags;
   short n = object->visibleFaces;
-  void *point = object->vertex;
+  void *vertex = object->vertex;
   void *temp = buffer->planes[0];
 
   custom_->bltafwm = -1;
@@ -143,7 +135,7 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
     /* Draw edges and calculate bounding box. */
     {
       register short m asm("d7") = face[-1] - 1;
-      short *ptr = (short *)(point + (short)(face[m] << 3));
+      short *ptr = (short *)(vertex + (short)(face[m] << 3));
       short xs = *ptr++;
       short ys = *ptr++;
       short xe, ye;
@@ -154,7 +146,7 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
       maxY = ys;
 
       do {
-        ptr = (short *)(point + (short)(*face++ << 3));
+        ptr = (short *)(vertex + (short)(*face++ << 3));
         xe = *ptr++;
         ye = *ptr++;
 
@@ -358,4 +350,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(FlatShade, Load, UnLoad, Init, Kill, Render, NULL);
+EFFECT(FlatShade, NULL, NULL, Init, Kill, Render, NULL);

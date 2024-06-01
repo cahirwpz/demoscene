@@ -26,15 +26,6 @@ static int active = 0;
 
 static Mesh3D *mesh = &szescian;
 
-static void Load(void) {
-  CalculateEdges(mesh);
-  CalculateFaceNormals(mesh);
-}
-
-static void UnLoad(void) {
-  ResetMesh3D(mesh);
-}
-
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(80 + gradient.height * (gradient.width + 1));
   bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
@@ -104,9 +95,9 @@ static void Kill(void) {
 
 static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
-  short *src = (short *)object->mesh->vertex;
+  short *src = (short *)object->point;
   short *dst = (short *)object->vertex;
-  register short n asm("d7") = object->mesh->vertices - 1;
+  register short n asm("d7") = object->vertices - 1;
 
   /* WARNING! This modifies camera matrix! */
   M->x -= normfx(M->m00 * M->m01);
@@ -199,15 +190,15 @@ static void DrawObject(Object3D *object) {
   void *tmpbuf = scratchpad->planes[0];
   Point3D *point = object->vertex;
   char *faceFlags = object->faceFlags;
-  IndexListT **faceEdges = object->mesh->faceEdge;
-  short **faces = object->mesh->face;
+  short **faceEdges = object->faceEdge;
+  short **faces = object->face;
   short *face;
 
   custom->bltafwm = -1;
   custom->bltalwm = -1;
 
   while ((face = *faces++)) {
-    IndexListT *faceEdge = *faceEdges++;
+    short *faceEdge = *faceEdges++;
 
     if (*faceFlags++) {
       u_short bltmod, bltsize;
@@ -254,12 +245,11 @@ static void DrawObject(Object3D *object) {
 
       /* Draw face. */
       {
-        EdgeT *edges = object->mesh->edge;
-        short m = faceEdge->count;
-        short *i = faceEdge->indices;
+        EdgeT *edges = object->edge;
+        short m = faceEdge[-1];
 
         while (--m >= 0) {
-          short *edge = (short *)&edges[*i++];
+          short *edge = (short *)&edges[*faceEdge++];
 
           short *p0 = (void *)point + *edge++;
           short *p1 = (void *)point + *edge++;
@@ -494,4 +484,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Blurred3D, Load, UnLoad, Init, Kill, Render, NULL);
+EFFECT(Blurred3D, NULL, NULL, Init, Kill, Render, NULL);
