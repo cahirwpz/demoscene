@@ -44,7 +44,7 @@ static void Kill(void) {
 
 static void UpdateFaceVisibilityFast(Object3D *object) {
   short *src = (short *)object->faceNormal;
-  short **faces = object->face;
+  short **vertexIndexList = object->faceVertexIndexList;
   char *faceFlags = object->faceFlags;
   void *point = object->point;
   short n = object->faces - 1;
@@ -54,12 +54,12 @@ static void UpdateFaceVisibilityFast(Object3D *object) {
   short cz = object->camera.z;
 
   do {
-    short *face = *faces++;
+    short *vertexIndex = *vertexIndexList++;
     short px, py, pz;
     int f;
 
     {
-      short *p = (short *)(point + (short)(*face << 3));
+      short *p = (short *)(point + (short)(*vertexIndex << 3));
       px = cx - *p++;
       py = cy - *p++;
       pz = cz - *p++;
@@ -83,29 +83,29 @@ static void UpdateEdgeVisibility(Object3D *object) {
   char *vertexFlags = object->vertexFlags;
   char *edgeFlags = object->edgeFlags;
   char *faceFlags = object->faceFlags;
-  short **faces = object->face;
-  short **faceEdges = object->faceEdge;
+  short **vertexIndexList = object->faceVertexIndexList;
+  short **edgeIndexList = object->faceEdgeIndexList;
   short f = object->faces;
   
   bzero(vertexFlags, object->vertices);
   bzero(edgeFlags, object->edges);
 
   while (--f >= 0) {
-    short *face = *faces++;
-    short *faceEdge = *faceEdges++;
+    short *vertexIndex = *vertexIndexList++;
+    short *edgeIndex = *edgeIndexList++;
 
     if (*faceFlags++ >= 0) {
-      short n = face[-1] - 3;
+      short n = vertexIndex[-1] - 3;
 
       /* Face has at least (and usually) three vertices / edges. */
-      vertexFlags[*face++] = -1;
-      edgeFlags[*faceEdge++] = -1;
-      vertexFlags[*face++] = -1;
-      edgeFlags[*faceEdge++] = -1;
+      vertexFlags[*vertexIndex++] = -1;
+      edgeFlags[*edgeIndex++] = -1;
+      vertexFlags[*vertexIndex++] = -1;
+      edgeFlags[*edgeIndex++] = -1;
 
       do {
-        vertexFlags[*face++] = -1;
-        edgeFlags[*faceEdge++] = -1;
+        vertexFlags[*vertexIndex++] = -1;
+        edgeFlags[*edgeIndex++] = -1;
       } while (--n != -1);
     }
   }
@@ -182,9 +182,8 @@ static void TransformVertices(Object3D *object) {
 static void DrawObject(Object3D *object, void *bplpt,
                        CustomPtrT custom_ asm("a6"))
 {
-  short *edge = (short *)object->edge;
+  short **edge = (short **)object->edge;
   char *edgeFlags = object->edgeFlags;
-  Point3D *point = object->vertex;
   short n = object->edges - 1;
 
   WaitBlitter();
@@ -201,15 +200,15 @@ static void DrawObject(Object3D *object, void *bplpt,
       short x0, y0, x1, y1;
 
       {
-        short *p0 = (void *)point + *edge++;
-        x0 = *p0++;
-        y0 = *p0++;
+        short *p = *edge++;
+        x0 = *p++;
+        y0 = *p++;
       }
       
       {
-        short *p1 = (void *)point + *edge++;
-        x1 = *p1++;
-        y1 = *p1++;
+        short *p = *edge++;
+        x1 = *p++;
+        y1 = *p++;
       }
 
       if (y0 > y1) {

@@ -116,7 +116,7 @@ static void TransformVertices(Object3D *object) {
 }
 
 static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
-  short **faces = object->face;
+  short **vertexIndexList = object->faceVertexIndexList;
   SortItemT *item = object->visibleFace;
   char *faceFlags = object->faceFlags;
   short n = object->visibleFaces;
@@ -127,15 +127,15 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
   custom_->bltalwm = -1;
 
   for (; --n >= 0; item++) {
-    short index = item->index;
-    short *face = faces[index];
+    short faceIndex = item->index;
+    short *vertexIndex = vertexIndexList[faceIndex];
 
     short minX, minY, maxX, maxY;
 
     /* Draw edges and calculate bounding box. */
     {
-      register short m asm("d7") = face[-1] - 1;
-      short *ptr = (short *)(vertex + (short)(face[m] << 3));
+      register short m asm("d7") = vertexIndex[-1] - 1;
+      short *ptr = (short *)(vertex + (short)(vertexIndex[m] << 3));
       short xs = *ptr++;
       short ys = *ptr++;
       short xe, ye;
@@ -146,7 +146,7 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
       maxY = ys;
 
       do {
-        ptr = (short *)(vertex + (short)(*face++ << 3));
+        ptr = (short *)(vertex + (short)(*vertexIndex++ << 3));
         xe = *ptr++;
         ye = *ptr++;
 
@@ -265,7 +265,7 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
         void **dstbpl = &screen[active]->planes[DEPTH];
         void *src = temp + bltstart;
         char mask = 1 << (DEPTH - 1);
-        char color = faceFlags[index];
+        char color = faceFlags[faceIndex];
         short n = DEPTH;
 
         while (--n >= 0) {
@@ -337,13 +337,13 @@ static void Render(void) {
     TransformVertices(cube);
     SortFaces(cube);
   }
-  ProfilerStop(Transform);
+  ProfilerStop(Transform); // Average: 163
 
   ProfilerStart(Draw);
   {
     DrawObject(cube, custom);
   }
-  ProfilerStop(Draw);
+  ProfilerStop(Draw); // Average: 671
 
   CopUpdateBitplanes(bplptr, screen[active], DEPTH);
   TaskWaitVBlank();

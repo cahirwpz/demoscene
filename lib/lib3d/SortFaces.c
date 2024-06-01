@@ -1,7 +1,7 @@
 #include <3d.h>
 
 void SortFaces(Object3D *object) {
-  short **faces = object->face;
+  short **vertexIndexList = object->faceVertexIndexList;
   short n = object->faces;
   void *vertex = object->vertex;
   char *faceFlags = object->faceFlags;
@@ -11,17 +11,17 @@ void SortFaces(Object3D *object) {
   short *item = (short *)object->visibleFace;
 
   while (--n >= 0) {
-    short *face = *faces++;
+    short *vertexIndex = *vertexIndexList++;
 
     if (*faceFlags++ >= 0) {
       short z;
       short i;
 
-      i = *face++ << 3;
+      i = *vertexIndex++ << 3;
       z = ((Point3D *)(vertex + i))->z;
-      i = *face++ << 3;
+      i = *vertexIndex++ << 3;
       z += ((Point3D *)(vertex + i))->z;
-      i = *face++ << 3;
+      i = *vertexIndex++ << 3;
       z += ((Point3D *)(vertex + i))->z;
 
       *item++ = z;

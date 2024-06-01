@@ -1,11 +1,11 @@
-static short _{{ .Name }}_pnts[{{ .VertexCount }} * 4] = {
+static short _{{ .Name }}_vertex[{{ .VertexCount }} * 4] = {
   /* x, y, z, pad */
   {{- range .Vertices }}
   {{ range . }}{{ . }}, {{ end -}} 0,
 {{- end }}
 };
 
-static short _{{ .Name }}_face[{{ .FaceDataCount }}] = {
+static short _{{ .Name }}_face_vertex[{{ .FaceDataCount }}] = {
   /* #vertices, vertices... */
   {{- range .Faces }}
   {{range . }}{{ . }}, {{ end -}}
@@ -15,7 +15,7 @@ static short _{{ .Name }}_face[{{ .FaceDataCount }}] = {
 
 {{- if .Edges }}
 
-static short _{{ .Name }}_edge_data[{{ .EdgeCount }} * 2] = {
+static short _{{ .Name }}_edges[{{ .EdgeCount }} * 2] = {
   {{- range .Edges }}
   {{ range . }}{{ . }}, {{ end -}}
 {{- end }}
@@ -44,16 +44,16 @@ Mesh3D {{ .Name }} = {
   .vertices = {{ .VertexCount }},
   .faces = {{ .FaceCount }},
   .edges = {{ .EdgeCount }},
-  .vertex = (Point3D *)&_{{ .Name }}_pnts,
+  .vertex = (Point3D *)&_{{ .Name }}_vertex,
 {{- if .FaceNormals }}
   .faceNormal = (Point3D *)&_{{ .Name }}_face_normals,
 {{- else }}
   .faceNormal = NULL,{{ end }}
 {{- if .Edges }}
-  .edge = (EdgeT *)&_{{ .Name }}_edge_data,
+  .edge = (EdgeT *)&_{{ .Name }}_edges,
 {{- else }}
   .edge = NULL,{{ end }}
-  .face = _{{ .Name }}_face,
+  .faceVertex = _{{ .Name }}_face_vertex,
 {{- if .Edges }}
   .faceEdge = _{{ .Name }}_face_edge,
 {{- else }}

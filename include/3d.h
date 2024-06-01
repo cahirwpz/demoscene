@@ -58,11 +58,15 @@ typedef struct Mesh3D {
   Point3D *vertex;
   Point3D *faceNormal;
   EdgeT *edge;
-  short *face;       /* [#vertices vertices...] */
+  short *faceVertex; /* [#vertices vertices...] */
   short *faceEdge;   /* [#edge edges...] */
 } Mesh3D;
 
 /* 3D object representation */
+
+typedef struct Pair3D {
+  Point3D *p0, *p1;
+} Pair3D;
 
 typedef struct Object3D {
   Point3D rotate;
@@ -82,12 +86,12 @@ typedef struct Object3D {
 
   Point3D *point;
   /* '|' indicates 0 offset */
-  short **face;       /* { #face => [#vertices | vertices...] } */
-  short **faceEdge;   /* { #face => [#edge | edges...] } */
+  short **faceVertexIndexList; /* [#vertices | vertex-indices...] */
+  short **faceEdgeIndexList;   /* [#edge | edge-indices...] */
   Point3D *faceNormal;
 
   /* private */
-  EdgeT *edge;
+  Pair3D *edge;
   Point3D *vertex;     /* camera coordinates or screen coordinates + depth */
   char *vertexFlags;   /* used by clipping */
   char *faceFlags;     /* e.g. visiblity flags */

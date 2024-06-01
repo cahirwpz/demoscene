@@ -4,25 +4,25 @@
 void UpdateVertexVisibility(Object3D *object) {
   char *vertexFlags = object->vertexFlags;
   char *faceFlags = object->faceFlags;
-  short **faces = object->face;
+  short **vertexIndexList = object->faceVertexIndexList;
   short n = object->faces;
 
   bzero(vertexFlags, object->vertices);
 
   while (--n >= 0) {
-    short *face = *faces++;
+    short *vertexIndex = *vertexIndexList++;
 
     if (*faceFlags++ >= 0) {
-      short count = face[-1];
+      short count = vertexIndex[-1];
 
       /* Face has at least (and usually) three vertices. */
       switch (count) {
-        case 6: vertexFlags[*face++] = -1;
-        case 5: vertexFlags[*face++] = -1;
-        case 4: vertexFlags[*face++] = -1;
-        case 3: vertexFlags[*face++] = -1;
-                vertexFlags[*face++] = -1;
-                vertexFlags[*face++] = -1;
+        case 6: vertexFlags[*vertexIndex++] = -1;
+        case 5: vertexFlags[*vertexIndex++] = -1;
+        case 4: vertexFlags[*vertexIndex++] = -1;
+        case 3: vertexFlags[*vertexIndex++] = -1;
+                vertexFlags[*vertexIndex++] = -1;
+                vertexFlags[*vertexIndex++] = -1;
         default: break;
       }
     }
