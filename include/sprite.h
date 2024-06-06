@@ -105,7 +105,7 @@ SprWordT *MakeSprite(SprDataT **datp, u_int height, bool attached,
 void EndSprite(SprDataT **datp);
 
 /* Don't call it for null sprites. */
-void SpriteUpdatePos(SpriteT *spr, u_short hstart, u_short vstart);
+void SpriteUpdatePos(SpriteT *spr, short hstart, short vstart);
 
 CopInsPairT *CopSetupSprites(CopListT *list);
 
