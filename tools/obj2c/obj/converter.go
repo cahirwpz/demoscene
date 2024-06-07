@@ -26,7 +26,7 @@ func Convert(obj *WavefrontObj, cp ConverterParams) (string, error) {
 			of = append(of, fi.Vertex-1)
 		}
 		ps.Faces = append(ps.Faces, of)
-		ps.FaceDataCount += len(f) + 1
+		ps.FaceDataCount += len(f)
 		ps.FaceCount += 1
 	}
 

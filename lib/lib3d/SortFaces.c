@@ -4,7 +4,6 @@ void SortFaces(Object3D *object) {
   short **vertexIndexList = object->faceVertexIndexList;
   short n = object->faces;
   void *vertex = object->vertex;
-  char *faceFlags = object->faceFlags;
   short count = 0;
   short index = 0;
 
@@ -13,7 +12,7 @@ void SortFaces(Object3D *object) {
   while (--n >= 0) {
     short *vertexIndex = *vertexIndexList++;
 
-    if (*faceFlags++ >= 0) {
+    if (vertexIndex[FV_FLAGS] >= 0) {
       short z;
       short i;
 

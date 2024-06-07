@@ -189,7 +189,6 @@ static void DrawObject(Object3D *object) {
   void *outbuf = carry->planes[0];
   void *tmpbuf = scratchpad->planes[0];
   Point3D *vertex = object->vertex;
-  char *faceFlags = object->faceFlags;
   short **edgeIndexList = object->faceEdgeIndexList;
   short **vertexIndexList = object->faceVertexIndexList;
   short *vertexIndex;
@@ -200,13 +199,13 @@ static void DrawObject(Object3D *object) {
   while ((vertexIndex = *vertexIndexList++)) {
     short *faceEdge = *edgeIndexList++;
 
-    if (*faceFlags++) {
+    if (vertexIndex[FV_FLAGS] >= 0) {
       u_short bltmod, bltsize;
       short bltstart, bltend;
 
       /* Estimate the size of rectangle that contains a face. */
       {
-        short n = vertexIndex[-1] - 2;
+        short n = vertexIndex[FV_COUNT] - 2;
         Point3D *p = &vertex[*vertexIndex++];
         short minX = p->x;
         short minY = p->y;
@@ -245,11 +244,11 @@ static void DrawObject(Object3D *object) {
 
       /* Draw face. */
       {
-        Pair3D *edges = object->edge;
+        EdgeT *edges = object->edge;
         short m = faceEdge[-1];
 
         while (--m >= 0) {
-          short **edge = (short **)&edges[*faceEdge++];
+          short **edge = (short **)edges[*faceEdge++].point;
 
           short *p0 = *edge++;
           short *p1 = *edge++;

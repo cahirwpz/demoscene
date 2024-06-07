@@ -3,7 +3,6 @@
 void UpdateFaceVisibility(Object3D *object) {
   short *src = (short *)object->faceNormal;
   short **vertexIndexList = object->faceVertexIndexList;
-  char *faceFlags = object->faceFlags;
   void *point = object->point;
   short n = object->faces;
   char *sqrt = SqrtTab8;
@@ -13,10 +12,12 @@ void UpdateFaceVisibility(Object3D *object) {
   while (--n >= 0) {
     short *vertexIndex = *vertexIndexList++;
     short px, py, pz;
+    short l;
     int f;
 
     {
-      short *p = (short *)(point + (short)(*vertexIndex << 3));
+      short i = *vertexIndex << 3;
+      short *p = (short *)(point + i);
       short *c = camera;
       px = *c++ - *p++;
       py = *c++ - *p++;
@@ -34,7 +35,6 @@ void UpdateFaceVisibility(Object3D *object) {
 
     if (f >= 0) {
       /* normalize dot product */
-      short l;
 #if 0
       int s = px * px + py * py + pz * pz;
       s = swap16(s); /* s >>= 16, ignore upper word */
@@ -52,11 +52,13 @@ void UpdateFaceVisibility(Object3D *object) {
       f = swap16(f); /* f >>= 16, ignore upper word */
       l = div16((short)f * (short)f, s);
       if (l >= 256)
-        *faceFlags++ = 15;
+        l = 15;
       else
-        *faceFlags++ = sqrt[l];
+        l = sqrt[l];
     } else {
-      *faceFlags++ = -1;
+      l = -1;
     }
+
+    vertexIndex[FV_FLAGS] = l;
   }
 }

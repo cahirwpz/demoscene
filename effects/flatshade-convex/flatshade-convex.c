@@ -43,34 +43,32 @@ static void Kill(void) {
 }
 
 static void UpdateEdgeVisibilityConvex(Object3D *object) {
-  char *vertexFlags = object->vertexFlags;
-  char *edgeFlags = object->edgeFlags;
-  char *faceFlags = object->faceFlags;
-  short **vertexIndexList = object->faceVertexIndexList;
+  char *vertexFlags = &object->vertex[0].flags;
+  char *edgeFlags = &object->edge[0].flags;
+  register short **vertexIndexList asm("a6") = object->faceVertexIndexList;
   short **edgeIndexList = object->faceEdgeIndexList;
   short *vertexIndex;
 
-  register char s asm("d7") = -1;
-
-  bzero(vertexFlags, object->vertices);
-  bzero(edgeFlags, object->edges);
+  register short s asm("d7") = -1;
 
   while ((vertexIndex = *vertexIndexList++)) {
     short *edgeIndex = *edgeIndexList++;
-    char f = *faceFlags++;
-
+    short f = vertexIndex[FV_FLAGS];
+    
     if (f >= 0) {
-      short n = vertexIndex[-1] - 3;
+      short i, n;
+
+      n = vertexIndex[FV_COUNT] - 3;
 
       /* Face has at least (and usually) three vertices / edges. */
-      vertexFlags[*vertexIndex++] = s;
-      edgeFlags[*edgeIndex++] ^= f;
-      vertexFlags[*vertexIndex++] = s;
-      edgeFlags[*edgeIndex++] ^= f;
+      i = *vertexIndex++ << 3; vertexFlags[i] = s;
+      i = *edgeIndex++ << 4; edgeFlags[i] ^= f;
+      i = *vertexIndex++ << 3; vertexFlags[i] = s;
+      i = *edgeIndex++ << 4; edgeFlags[i] ^= f;
 
       do {
-        vertexFlags[*vertexIndex++] = s;
-        edgeFlags[*edgeIndex++] ^= f;
+        i = *vertexIndex++ << 3; vertexFlags[i] = s;
+        i = *edgeIndex++ << 4; edgeFlags[i] ^= f;
       } while (--n != -1);
     }
   }
@@ -94,16 +92,13 @@ static void UpdateEdgeVisibilityConvex(Object3D *object) {
 
 static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
-  short *v = (short *)M;
+  short *mx = (short *)M;
   short *src = (short *)object->point;
   short *dst = (short *)object->vertex;
-  char *flags = object->vertexFlags;
   register short n asm("d7") = object->vertices - 1;
 
   int m0 = (M->x << 8) - ((M->m00 * M->m01) >> 4);
   int m1 = (M->y << 8) - ((M->m10 * M->m11) >> 4);
-
-  short cnt = 0;
 
   /* WARNING! This modifies camera matrix! */
   M->z -= normfx(M->m20 * M->m21);
@@ -120,26 +115,24 @@ static void TransformVertices(Object3D *object) {
    */
 
   do {
-    if (*flags++) {
+    if (((Point3D *)dst)->flags) {
       short x = *src++;
       short y = *src++;
       short z = *src++;
+      short *v = mx;
       int xp, yp;
       short zp;
 
-      pushl(v);
       MULVERTEX1(xp, m0);
       MULVERTEX1(yp, m1);
       MULVERTEX2(zp);
-      popl(v);
 
       *dst++ = div16(xp, zp) + WIDTH / 2;  /* div(xp * 256, zp) */
       *dst++ = div16(yp, zp) + HEIGHT / 2; /* div(yp * 256, zp) */
       *dst++ = zp;
 
       src++;
-      dst++;
-      cnt++;
+      *dst++ = 0;
     } else {
       src += 4;
       dst += 4;
@@ -150,8 +143,7 @@ static void TransformVertices(Object3D *object) {
 static void DrawObject(void *planes, Object3D *object,
                        CustomPtrT custom_ asm("a6"))
 {
-  short **edge = (short **)object->edge;
-  char *edgeFlags = object->edgeFlags;
+  EdgeT *edge = object->edge;
   short n = object->edges - 1;
 
   WaitBlitter();
@@ -163,7 +155,7 @@ static void DrawObject(void *planes, Object3D *object,
   custom_->bltdmod = WIDTH / 8;
 
   do {
-    if (*edgeFlags) {
+    if (edge->flags) {
       short bltcon0, bltcon1, bltsize, bltbmod, bltamod;
       int bltapt, bltcpt;
 
@@ -172,21 +164,20 @@ static void DrawObject(void *planes, Object3D *object,
         short dmin, dmax, derr;
 
         {
-          short *p = *edge++;
+          short *p = &edge->point[0]->x;
           x0 = *p++;
           y0 = *p++;
         }
 
         {
-          short *p = *edge++;
+          short *p = &edge->point[1]->x;
           x1 = *p++;
           y1 = *p++;
         }
 
-        if (y0 == y1) {
-          edgeFlags++;
-          continue;
-        }
+        if (y0 == y1)
+          goto next;
+
         if (y0 > y1) {
           swapr(x0, x1);
           swapr(y0, y1);
@@ -236,7 +227,8 @@ static void DrawObject(void *planes, Object3D *object,
       custom_->bltsize = bltsize;
 
       {
-        char edgeColor = *edgeFlags++;
+        char edgeColor = edge->flags;
+
 
         if (edgeColor & 1) { DRAWLINE(); }
         bltcpt += WIDTH * HEIGHT / 8;
@@ -246,10 +238,13 @@ static void DrawObject(void *planes, Object3D *object,
         bltcpt += WIDTH * HEIGHT / 8;
         if (edgeColor & 8) { DRAWLINE(); }
       }
-    } else {
-      edge += 2;
-      edgeFlags++;
+
+next:
+      /* clear visibility */
+      edge->flags = 0;
     }
+
+    edge++;
   } while (--n != -1);
 }
 

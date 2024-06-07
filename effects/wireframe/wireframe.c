@@ -42,10 +42,19 @@ static void Kill(void) {
   DeleteObject3D(cube);
 }
 
+static void SetFaceVisibility(Object3D *object) {
+  short **vertexIndexList = object->faceVertexIndexList;
+  short n = object->faces - 1;
+
+  do {
+    short *vertexIndex = *vertexIndexList++;
+    vertexIndex[FV_FLAGS] = 0;
+  } while (--n != -1);
+}
+
 static void UpdateFaceVisibilityFast(Object3D *object) {
   short *src = (short *)object->faceNormal;
   short **vertexIndexList = object->faceVertexIndexList;
-  char *faceFlags = object->faceFlags;
   void *point = object->point;
   short n = object->faces - 1;
 
@@ -73,66 +82,62 @@ static void UpdateFaceVisibilityFast(Object3D *object) {
     }
 
     /* This depends on condition codes set by previous calculations! */
-    asm volatile("smi %0@+" : "+a" (faceFlags) : "d" (f));
+    vertexIndex[FV_FLAGS] = (f < 0) ? f : 0;
 
     src++;
   } while (--n != -1);
 }
 
 static void UpdateEdgeVisibility(Object3D *object) {
-  char *vertexFlags = object->vertexFlags;
-  char *edgeFlags = object->edgeFlags;
-  char *faceFlags = object->faceFlags;
+  char *vertexFlags = &object->vertex[0].flags;
+  char *edgeFlags = &object->edge[0].flags;
   short **vertexIndexList = object->faceVertexIndexList;
   short **edgeIndexList = object->faceEdgeIndexList;
   short f = object->faces;
   
-  bzero(vertexFlags, object->vertices);
-  bzero(edgeFlags, object->edges);
-
   while (--f >= 0) {
     short *vertexIndex = *vertexIndexList++;
     short *edgeIndex = *edgeIndexList++;
 
-    if (*faceFlags++ >= 0) {
-      short n = vertexIndex[-1] - 3;
+    if (vertexIndex[FV_FLAGS] >= 0) {
+      short n = vertexIndex[FV_COUNT] - 3;
+      short i;
 
       /* Face has at least (and usually) three vertices / edges. */
-      vertexFlags[*vertexIndex++] = -1;
-      edgeFlags[*edgeIndex++] = -1;
-      vertexFlags[*vertexIndex++] = -1;
-      edgeFlags[*edgeIndex++] = -1;
+      i = *vertexIndex++ << 3; vertexFlags[i] = -1;
+      i = *edgeIndex++ << 4; edgeFlags[i] = -1;
+      i = *vertexIndex++ << 3; vertexFlags[i] = -1;
+      i = *edgeIndex++ << 4; edgeFlags[i] = -1;
 
       do {
-        vertexFlags[*vertexIndex++] = -1;
-        edgeFlags[*edgeIndex++] = -1;
+        i = *vertexIndex++ << 3; vertexFlags[i] = -1;
+        i = *edgeIndex++ << 4; edgeFlags[i] = -1;
       } while (--n != -1);
     }
   }
 }
 
-#define MULVERTEX1(D, E) {            \
-  short t0 = (*v++) + y;               \
-  short t1 = (*v++) + x;               \
-  int t2 = (*v++) * z;               \
-  v++;                                \
-  D = ((t0 * t1 + t2 - xy) >> 4) + E; \
+#define MULVERTEX1(D, E) {              \
+  short t0 = (*v++) + y;                \
+  short t1 = (*v++) + x;                \
+  int t2 = (*v++) * z;                  \
+  v++;                                  \
+  D = ((t0 * t1 + t2 - xy) >> 4) + E;   \
 }
 
-#define MULVERTEX2(D) {               \
-  short t0 = (*v++) + y;               \
-  short t1 = (*v++) + x;               \
-  int t2 = (*v++) * z;               \
-  short t3 = (*v++);                   \
-  D = normfx(t0 * t1 + t2 - xy) + t3; \
+#define MULVERTEX2(D) {                 \
+  short t0 = (*v++) + y;                \
+  short t1 = (*v++) + x;                \
+  int t2 = (*v++) * z;                  \
+  short t3 = (*v++);                    \
+  D = normfx(t0 * t1 + t2 - xy) + t3;   \
 }
 
 static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
-  short *v = (short *)M;
+  short *mx = (short *)M;
   short *src = (short *)object->point;
   short *dst = (short *)object->vertex;
-  char *flags = object->vertexFlags;
   register short n asm("d7") = object->vertices - 1;
 
   int m0 = (M->x - normfx(M->m00 * M->m01)) << 8;
@@ -152,26 +157,25 @@ static void TransformVertices(Object3D *object) {
    */
 
   do {
-    if (*flags++) {
+    if (((Point3D *)dst)->flags) {
       short x = *src++;
       short y = *src++;
       short z = *src++;
+      short *v = mx;
       int xy = x * y;
       int xp, yp;
       short zp;
 
-      pushl(v);
       MULVERTEX1(xp, m0);
       MULVERTEX1(yp, m1);
       MULVERTEX2(zp);
-      popl(v);
 
       *dst++ = div16(xp, zp) + WIDTH / 2;  /* div(xp * 256, zp) */
       *dst++ = div16(yp, zp) + HEIGHT / 2; /* div(yp * 256, zp) */
       *dst++ = zp;
 
       src++;
-      dst++;
+      *dst++ = 0;
     } else {
       src += 4;
       dst += 4;
@@ -182,8 +186,7 @@ static void TransformVertices(Object3D *object) {
 static void DrawObject(Object3D *object, void *bplpt,
                        CustomPtrT custom_ asm("a6"))
 {
-  short **edge = (short **)object->edge;
-  char *edgeFlags = object->edgeFlags;
+  EdgeT *edge = object->edge;
   short n = object->edges - 1;
 
   WaitBlitter();
@@ -195,21 +198,24 @@ static void DrawObject(Object3D *object, void *bplpt,
   custom_->bltdmod = WIDTH / 8;
 
   do {
-    if (*edgeFlags++) {
+    if (edge->flags) {
       void *data;
       short x0, y0, x1, y1;
 
       {
-        short *p = *edge++;
+        short *p = &edge->point[0]->x;
         x0 = *p++;
         y0 = *p++;
       }
       
       {
-        short *p = *edge++;
+        short *p = &edge->point[1]->x;
         x1 = *p++;
         y1 = *p++;
       }
+
+      /* clear visibility */
+      edge->flags = 0;
 
       if (y0 > y1) {
         swapr(x0, x1);
@@ -268,9 +274,9 @@ static void DrawObject(Object3D *object, void *bplpt,
           custom_->bltsize = bltsize;
         }
       }
-    } else {
-      edge += 2;
     }
+
+    edge++;
   } while (--n != -1);
 }
 
@@ -286,7 +292,7 @@ static void Render(void) {
 
     UpdateObjectTransformation(cube);
     if (RightMouseButton())
-      bzero(cube->faceFlags, cube->faces);
+      SetFaceVisibility(cube);
     else
       UpdateFaceVisibilityFast(cube);
     UpdateEdgeVisibility(cube);

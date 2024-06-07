@@ -10,13 +10,16 @@ extern char SqrtTab8[256];
 /* 3D transformations */
 
 typedef struct {
-  short u, v;
-} UVCoord;
-
-typedef struct {
   short x, y, z;
-  short pad;
-} Point3D;
+  char flags; /* remember to reset after use */
+  char pad;
+} Point3D;  /* sizeof(Point3D) = 8, for easy indexing */
+
+typedef struct Edge {
+  Point3D *point[2];
+  char flags; /* remember to reset after use */
+  char pad[7];
+} EdgeT; /* sizeof(EdgeT) = 16, for easy indexing */
 
 typedef struct {
   short m00, m01, m02, x;
@@ -32,22 +35,6 @@ void LoadReverseRotate3D(Matrix3D *M, short ax, short ay, short az);
 void Compose3D(Matrix3D *md, Matrix3D *ma, Matrix3D *mb);
 void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, short n);
 
-/* 3D polygon and line clipping */
-
-#define PF_NEAR 16
-#define PF_FAR  32
-
-typedef struct {
-  short near;
-  short far;
-} Frustum3D;
-
-extern Frustum3D ClipFrustum;
-
-void PointsInsideFrustum(Point3D *in, u_char *flags, u_short n);
-u_short ClipPolygon3D(Point3D *in, Point3D **outp, u_short n,
-                      u_short clipFlags);
-
 /* 3D mesh representation */
 
 typedef struct Mesh3D {
@@ -55,18 +42,19 @@ typedef struct Mesh3D {
   short faces;
   short edges;
 
-  Point3D *vertex;
-  Point3D *faceNormal;
-  EdgeT *edge;
+  short *vertex;
+  short *faceNormal;
+  short *edge;       /* [vertex_0 vertex_1] */
   short *faceVertex; /* [#vertices vertices...] */
   short *faceEdge;   /* [#edge edges...] */
 } Mesh3D;
 
 /* 3D object representation */
 
-typedef struct Pair3D {
-  Point3D *p0, *p1;
-} Pair3D;
+/* '|' indicates 0 offset */
+#define FV_FLAGS -2 /* offset to flags in faceVertexIndexList */
+#define FV_COUNT -1 /* offset to #vertices in faceVertexIndexList */
+#define FE_COUNT -1 /* offset to #edges in faceEdgeIndexList */
 
 typedef struct Object3D {
   Point3D rotate;
@@ -85,17 +73,13 @@ typedef struct Object3D {
   short edges;
 
   Point3D *point;
-  /* '|' indicates 0 offset */
   short **faceVertexIndexList; /* [#vertices | vertex-indices...] */
-  short **faceEdgeIndexList;   /* [#edge | edge-indices...] */
+  short **faceEdgeIndexList;   /* [#edges | edge-indices...] */
   Point3D *faceNormal;
 
   /* private */
-  Pair3D *edge;
+  EdgeT *edge;
   Point3D *vertex;     /* camera coordinates or screen coordinates + depth */
-  char *vertexFlags;   /* used by clipping */
-  char *faceFlags;     /* e.g. visiblity flags */
-  char *edgeFlags;
 
   SortItemT *visibleFace;
   short visibleFaces;

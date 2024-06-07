@@ -12,18 +12,21 @@ Object3D *NewObject3D(Mesh3D *mesh) {
   object->faces = faces;
   object->edges = edges;
 
-  object->point = mesh->vertex;
-  object->faceNormal = mesh->faceNormal;
+  object->point = (Point3D *)mesh->vertex;
+  object->faceNormal = (Point3D *)mesh->faceNormal;
 
   object->vertex = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
-  object->edge = MemAlloc(sizeof(Point3D *) * 2 * edges, MEMF_PUBLIC);
+  object->edge = MemAlloc(sizeof(EdgeT) * edges, MEMF_PUBLIC);
   {
-    short *in = (short *)mesh->edge;
-    Point3D **out = &object->edge[0].p0;
-    short n = edges * 2;
+    short *in = mesh->edge;
+    EdgeT *out = object->edge;
+    short n = edges;
 
     while (--n >= 0) {
-      *out++ = &object->vertex[*in++];
+      out->flags = 0;
+      out->point[0] = &object->vertex[*in++];
+      out->point[1] = &object->vertex[*in++];
+      out++;
     }
   }
 
@@ -31,12 +34,12 @@ Object3D *NewObject3D(Mesh3D *mesh) {
     MemAlloc((sizeof(short *) + 1) * faces, MEMF_PUBLIC);
   {
     short **indexListPtr = object->faceVertexIndexList;
-    short *list = mesh->faceVertex;
+    short *list = mesh->faceVertex + 1;
     short n;
 
     while ((n = *list++)) {
       *indexListPtr++ = list;
-      list += n;
+      list += n + 1;
     }
 
     *indexListPtr = NULL;
@@ -57,10 +60,6 @@ Object3D *NewObject3D(Mesh3D *mesh) {
     *indexListPtr = NULL;
   }
 
-  object->vertexFlags = MemAlloc(vertices, MEMF_PUBLIC);
-  object->faceFlags = MemAlloc(faces, MEMF_PUBLIC);
-  if (edges)
-    object->edgeFlags = MemAlloc(edges, MEMF_PUBLIC);
   object->visibleFace = MemAlloc(sizeof(SortItemT) * faces, MEMF_PUBLIC);
 
   object->scale.x = fx12f(1.0);
