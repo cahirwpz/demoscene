@@ -18,10 +18,8 @@ static int active = 0;
 #include "data/flatshade-pal.c"
 #include "data/pilka.c"
 
-static Mesh3D *mesh = &pilka;
-
 static void Init(void) {
-  cube = NewObject3D(mesh);
+  cube = NewObject3D(&pilka);
   cube->translate.z = fx4i(-250);
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
@@ -47,20 +45,20 @@ static void Kill(void) {
   DeleteObject3D(cube);
 }
 
-#define MULVERTEX1(D, E) {               \
-  short t0 = (*v++) + y;                  \
-  short t1 = (*v++) + x;                  \
-  int t2 = (*v++) * z;                  \
-  v++;                                   \
-  D = ((t0 * t1 + t2 - x * y) >> 4) + E; \
+#define MULVERTEX1(D, E) {                      \
+  short t0 = (*v++) + y;                        \
+  short t1 = (*v++) + x;                        \
+  int t2 = (*v++) * z;                          \
+  v++;                                          \
+  D = ((t0 * t1 + t2 - x * y) >> 4) + E;        \
 }
 
-#define MULVERTEX2(D) {                  \
-  short t0 = (*v++) + y;                  \
-  short t1 = (*v++) + x;                  \
-  int t2 = (*v++) * z;                  \
-  short t3 = (*v++);                      \
-  D = normfx(t0 * t1 + t2 - x * y) + t3; \
+#define MULVERTEX2(D) {                         \
+  short t0 = (*v++) + y;                        \
+  short t1 = (*v++) + x;                        \
+  int t2 = (*v++) * z;                          \
+  short t3 = (*v++);                            \
+  D = normfx(t0 * t1 + t2 - x * y) + t3;        \
 }
 
 static void TransformVertices(Object3D *object) {
@@ -103,9 +101,9 @@ static void TransformVertices(Object3D *object) {
       *dst++ = div16(xp, zp) + WIDTH / 2;  /* div(xp * 256, zp) */
       *dst++ = div16(yp, zp) + HEIGHT / 2; /* div(yp * 256, zp) */
       *dst++ = zp;
+      *dst++ = 0; /* reset flags */
 
       src++;
-      *dst++ = 0;
     } else {
       src += 4;
       dst += 4;

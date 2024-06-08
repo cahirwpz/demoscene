@@ -18,10 +18,8 @@ static CopInsPairT *bplptr;
 #include "data/wireframe-pal.c"
 #include "data/pilka.c"
 
-static Mesh3D *mesh = &pilka;
-
 static void Init(void) {
-  cube = NewObject3D(mesh);
+  cube = NewObject3D(&pilka);
   cube->translate.z = fx4i(-250);
 
   screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1, BM_CLEAR);
@@ -68,7 +66,7 @@ static void UpdateFaceVisibilityFast(Object3D *object) {
     int f;
 
     {
-      short *p = (short *)(point + (short)(*vertexIndex << 3));
+      short *p = (short *)(point + (short)(vertexIndex[0] << 3));
       px = cx - *p++;
       py = cy - *p++;
       pz = cz - *p++;
@@ -81,8 +79,7 @@ static void UpdateFaceVisibilityFast(Object3D *object) {
       f = x + y + z;
     }
 
-    /* This depends on condition codes set by previous calculations! */
-    vertexIndex[FV_FLAGS] = (f < 0) ? f : 0;
+    vertexIndex[FV_FLAGS] = f >= 0 ? 0 : -1;
 
     src++;
   } while (--n != -1);
@@ -94,6 +91,8 @@ static void UpdateEdgeVisibility(Object3D *object) {
   short **vertexIndexList = object->faceVertexIndexList;
   short **edgeIndexList = object->faceEdgeIndexList;
   short f = object->faces;
+
+  register char s asm("d7") = 1;
   
   while (--f >= 0) {
     short *vertexIndex = *vertexIndexList++;
@@ -104,14 +103,14 @@ static void UpdateEdgeVisibility(Object3D *object) {
       short i;
 
       /* Face has at least (and usually) three vertices / edges. */
-      i = *vertexIndex++ << 3; vertexFlags[i] = -1;
-      i = *edgeIndex++ << 4; edgeFlags[i] = -1;
-      i = *vertexIndex++ << 3; vertexFlags[i] = -1;
-      i = *edgeIndex++ << 4; edgeFlags[i] = -1;
+      i = *vertexIndex++ << 3; vertexFlags[i] = s;
+      i = *edgeIndex++ << 4; edgeFlags[i] = s;
+      i = *vertexIndex++ << 3; vertexFlags[i] = s;
+      i = *edgeIndex++ << 4; edgeFlags[i] = s;
 
       do {
-        i = *vertexIndex++ << 3; vertexFlags[i] = -1;
-        i = *edgeIndex++ << 4; edgeFlags[i] = -1;
+        i = *vertexIndex++ << 3; vertexFlags[i] = s;
+        i = *edgeIndex++ << 4; edgeFlags[i] = s;
       } while (--n != -1);
     }
   }
@@ -173,9 +172,9 @@ static void TransformVertices(Object3D *object) {
       *dst++ = div16(xp, zp) + WIDTH / 2;  /* div(xp * 256, zp) */
       *dst++ = div16(yp, zp) + HEIGHT / 2; /* div(yp * 256, zp) */
       *dst++ = zp;
+      *dst++ = 0;
 
       src++;
-      *dst++ = 0;
     } else {
       src += 4;
       dst += 4;

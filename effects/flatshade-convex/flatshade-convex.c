@@ -49,7 +49,7 @@ static void UpdateEdgeVisibilityConvex(Object3D *object) {
   short **edgeIndexList = object->faceEdgeIndexList;
   short *vertexIndex;
 
-  register short s asm("d7") = -1;
+  register char s asm("d7") = 1;
 
   while ((vertexIndex = *vertexIndexList++)) {
     short *edgeIndex = *edgeIndexList++;
@@ -155,7 +155,7 @@ static void DrawObject(void *planes, Object3D *object,
   custom_->bltdmod = WIDTH / 8;
 
   do {
-    if (edge->flags) {
+    if (edge->flags > 0) {
       short bltcon0, bltcon1, bltsize, bltbmod, bltamod;
       int bltapt, bltcpt;
 

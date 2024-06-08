@@ -6,12 +6,12 @@ void UpdateVertexVisibility(Object3D *object) {
   short **vertexIndexList = object->faceVertexIndexList;
   short n = object->faces;
 
-  register short s asm("d7") = -1;
+  register char s asm("d7") = 1;
 
   while (--n >= 0) {
     short *vertexIndex = *vertexIndexList++;
 
-    if (vertexIndex[FV_FLAGS]) {
+    if (vertexIndex[FV_FLAGS] >= 0) {
       short count = vertexIndex[FV_COUNT];
       short i;
 

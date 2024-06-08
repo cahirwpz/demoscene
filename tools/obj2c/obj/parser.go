@@ -188,6 +188,8 @@ func ParseWavefrontObj(filename string) (*WavefrontObj, error) {
 			if err != nil {
 				return nil, err
 			}
+		case "s":
+			/* Smooth group, ignore */
 		case "p":
 		case "l":
 			/* Line element */

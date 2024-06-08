@@ -11,13 +11,19 @@ extern char SqrtTab8[256];
 
 typedef struct {
   short x, y, z;
-  char flags; /* remember to reset after use */
+  /* one if vertex belongs to a face that is visible,
+   * otherwise set to zero,
+   * remember to set to 0 after use */
+  char flags;
   char pad;
 } Point3D;  /* sizeof(Point3D) = 8, for easy indexing */
 
 typedef struct Edge {
   Point3D *point[2];
-  char flags; /* remember to reset after use */
+  /* negative if edge belongs to a face that is not visible,
+   * otherwise it's an edge color in range 0..15
+   * remember to set to -1 after use */
+  char flags;
   char pad[7];
 } EdgeT; /* sizeof(EdgeT) = 16, for easy indexing */
 
@@ -51,7 +57,8 @@ typedef struct Mesh3D {
 
 /* 3D object representation */
 
-/* '|' indicates 0 offset */
+/* Flags store negative value when face is not visible,
+ * or a color of face normalized to 0..15 range. */
 #define FV_FLAGS -2 /* offset to flags in faceVertexIndexList */
 #define FV_COUNT -1 /* offset to #vertices in faceVertexIndexList */
 #define FE_COUNT -1 /* offset to #edges in faceEdgeIndexList */
@@ -73,7 +80,8 @@ typedef struct Object3D {
   short edges;
 
   Point3D *point;
-  short **faceVertexIndexList; /* [#vertices | vertex-indices...] */
+  /* '|' indicates 0 offset */
+  short **faceVertexIndexList; /* [flags #vertices | vertex-indices...] */
   short **faceEdgeIndexList;   /* [#edges | edge-indices...] */
   Point3D *faceNormal;
 
