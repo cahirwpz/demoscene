@@ -114,14 +114,13 @@ static void TransformVertices(Object3D *object) {
 static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
   short **vertexIndexList = object->faceVertexIndexList;
   SortItemT *item = object->visibleFace;
-  short n = object->visibleFaces;
   void *vertex = object->vertex;
   void *temp = buffer->planes[0];
 
   custom_->bltafwm = -1;
   custom_->bltalwm = -1;
 
-  for (; --n >= 0; item++) {
+  for (; item->index >= 0; item++) {
     short faceIndex = item->index;
     short *vertexIndex = vertexIndexList[faceIndex];
     char color = vertexIndex[FV_FLAGS];
@@ -131,7 +130,8 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
     /* Draw edges and calculate bounding box. */
     {
       register short m asm("d7") = vertexIndex[FV_COUNT] - 1;
-      short *ptr = (short *)(vertex + (short)(vertexIndex[m] << 3));
+      short i = vertexIndex[m];
+      short *ptr = (short *)(vertex + i);
       short xs = *ptr++;
       short ys = *ptr++;
       short xe, ye;
@@ -142,7 +142,8 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
       maxY = ys;
 
       do {
-        ptr = (short *)(vertex + (short)(*vertexIndex++ << 3));
+        i = *vertexIndex++;
+        ptr = (short *)(vertex + i);
         xe = *ptr++;
         ye = *ptr++;
 
@@ -200,7 +201,7 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
             u_short bltbmod = dy + dy;
             u_short bltsize = (dx << 6) + 66;
 
-            WaitBlitter();
+            _WaitBlitter(custom_);
 
             custom_->bltbdat = 0xffff;
             custom_->bltadat = 0x8000;
@@ -244,7 +245,7 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
       {
         void *src = temp + bltend;
 
-        WaitBlitter();
+        _WaitBlitter(custom_);
 
         custom_->bltcon0 = (SRCA | DEST) | A_TO_D;
         custom_->bltcon1 = BLITREVERSE | FILL_XOR;
@@ -272,7 +273,7 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
            else
             bltcon0 = (SRCA | SRCB | DEST) | (NABC | NABNC);
 
-          WaitBlitter();
+          _WaitBlitter(custom_);
 
           custom_->bltcon0 = bltcon0;
           custom_->bltcon1 = 0;
@@ -289,7 +290,7 @@ static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
       {
         void *data = temp + bltstart;
 
-        WaitBlitter();
+        _WaitBlitter(custom_);
 
         custom_->bltcon0 = (DEST | A_TO_D);
         custom_->bltadat = 0;

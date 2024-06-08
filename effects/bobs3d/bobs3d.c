@@ -19,8 +19,6 @@ static int active = 0;
 #include "data/flares32.c"
 #include "data/pilka.c"
 
-static Mesh3D *mesh = &pilka;
-
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(80);
   CopWait(cp, Y(-1), 0);
@@ -29,7 +27,7 @@ static CopListT *MakeCopperList(void) {
 }
 
 static void Init(void) {
-  cube = NewObject3D(mesh);
+  cube = NewObject3D(&pilka);
   cube->translate.z = fx4i(TZ);
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR|BM_INTERLEAVED);

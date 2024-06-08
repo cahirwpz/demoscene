@@ -16,7 +16,7 @@ void UpdateFaceVisibility(Object3D *object) {
     int f;
 
     {
-      short i = *vertexIndex << 3;
+      short i = *vertexIndex;
       short *p = (short *)(point + i);
       short *c = camera;
       px = *c++ - *p++;

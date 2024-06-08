@@ -15,17 +15,15 @@ typedef struct {
    * otherwise set to zero,
    * remember to set to 0 after use */
   char flags;
-  char pad;
-} Point3D;  /* sizeof(Point3D) = 8, for easy indexing */
+} Point3D;
 
 typedef struct Edge {
-  Point3D *point[2];
   /* negative if edge belongs to a face that is not visible,
    * otherwise it's an edge color in range 0..15
    * remember to set to -1 after use */
-  char flags;
-  char pad[7];
-} EdgeT; /* sizeof(EdgeT) = 16, for easy indexing */
+  short flags;
+  short point[2];
+} EdgeT;
 
 typedef struct {
   short m00, m01, m02, x;
@@ -89,8 +87,8 @@ typedef struct Object3D {
   EdgeT *edge;
   Point3D *vertex;     /* camera coordinates or screen coordinates + depth */
 
+  /* ends with guard element */
   SortItemT *visibleFace;
-  short visibleFaces;
 } Object3D;
 
 Object3D *NewObject3D(Mesh3D *mesh);

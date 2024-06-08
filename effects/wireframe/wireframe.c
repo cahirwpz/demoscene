@@ -66,7 +66,8 @@ static void UpdateFaceVisibilityFast(Object3D *object) {
     int f;
 
     {
-      short *p = (short *)(point + (short)(vertexIndex[0] << 3));
+      short i = *vertexIndex;
+      short *p = (short *)(point + i);
       px = cx - *p++;
       py = cy - *p++;
       pz = cz - *p++;
@@ -87,14 +88,14 @@ static void UpdateFaceVisibilityFast(Object3D *object) {
 
 static void UpdateEdgeVisibility(Object3D *object) {
   char *vertexFlags = &object->vertex[0].flags;
-  char *edgeFlags = &object->edge[0].flags;
+  void *edgeFlags = &object->edge[0].flags;
   short **vertexIndexList = object->faceVertexIndexList;
   short **edgeIndexList = object->faceEdgeIndexList;
-  short f = object->faces;
 
-  register char s asm("d7") = 1;
+  register short m asm("d2") = object->faces - 1;
+  register short s asm("d3") = 1;
   
-  while (--f >= 0) {
+  do {
     short *vertexIndex = *vertexIndexList++;
     short *edgeIndex = *edgeIndexList++;
 
@@ -103,17 +104,17 @@ static void UpdateEdgeVisibility(Object3D *object) {
       short i;
 
       /* Face has at least (and usually) three vertices / edges. */
-      i = *vertexIndex++ << 3; vertexFlags[i] = s;
-      i = *edgeIndex++ << 4; edgeFlags[i] = s;
-      i = *vertexIndex++ << 3; vertexFlags[i] = s;
-      i = *edgeIndex++ << 4; edgeFlags[i] = s;
+      i = *vertexIndex++; vertexFlags[i] = s;
+      i = *edgeIndex++; *(short *)(edgeFlags + i) = s;
+      i = *vertexIndex++; vertexFlags[i] = s;
+      i = *edgeIndex++; *(short *)(edgeFlags + i) = s;
 
       do {
-        i = *vertexIndex++ << 3; vertexFlags[i] = s;
-        i = *edgeIndex++ << 4; edgeFlags[i] = s;
+        i = *vertexIndex++; vertexFlags[i] = s;
+        i = *edgeIndex++; *(short *)(edgeFlags + i) = s;
       } while (--n != -1);
     }
-  }
+  } while (--m != -1);
 }
 
 #define MULVERTEX1(D, E) {              \
@@ -185,10 +186,11 @@ static void TransformVertices(Object3D *object) {
 static void DrawObject(Object3D *object, void *bplpt,
                        CustomPtrT custom_ asm("a6"))
 {
-  EdgeT *edge = object->edge;
+  void *vertex = object->vertex;
+  short *edge = (short *)object->edge;
   short n = object->edges - 1;
 
-  WaitBlitter();
+  _WaitBlitter(custom_);
   custom_->bltafwm = -1;
   custom_->bltalwm = -1;
   custom_->bltadat = 0x8000;
@@ -197,24 +199,24 @@ static void DrawObject(Object3D *object, void *bplpt,
   custom_->bltdmod = WIDTH / 8;
 
   do {
-    if (edge->flags) {
+    if (*edge) {
       void *data;
       short x0, y0, x1, y1;
 
-      {
-        short *p = &edge->point[0]->x;
-        x0 = *p++;
-        y0 = *p++;
-      }
-      
-      {
-        short *p = &edge->point[1]->x;
-        x1 = *p++;
-        y1 = *p++;
-      }
-
       /* clear visibility */
-      edge->flags = 0;
+      *edge++ = 0;
+
+      {
+        short i;
+
+        i = *edge++;
+        x0 = ((Point3D *)(vertex + i))->x;
+        y0 = ((Point3D *)(vertex + i))->y;
+
+        i = *edge++;
+        x1 = ((Point3D *)(vertex + i))->x;
+        y1 = ((Point3D *)(vertex + i))->y;
+      }
 
       if (y0 > y1) {
         swapr(x0, x1);
@@ -261,8 +263,7 @@ static void DrawObject(Object3D *object, void *bplpt,
           u_short bltsize = (dmax << 6) + 66;
           void *bltapt = (void *)(int)derr;
 
-          WaitBlitter();
-
+          _WaitBlitter(custom_);
           custom_->bltcon0 = bltcon0;
           custom_->bltcon1 = bltcon1;
           custom_->bltamod = bltamod;
@@ -273,9 +274,9 @@ static void DrawObject(Object3D *object, void *bplpt,
           custom_->bltsize = bltsize;
         }
       }
+    } else {
+      edge += sizeof(EdgeT) / sizeof(short);
     }
-
-    edge++;
   } while (--n != -1);
 }
 

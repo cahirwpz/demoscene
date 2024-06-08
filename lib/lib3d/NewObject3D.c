@@ -16,19 +16,6 @@ Object3D *NewObject3D(Mesh3D *mesh) {
   object->faceNormal = (Point3D *)mesh->faceNormal;
 
   object->vertex = MemAlloc(sizeof(Point3D) * vertices, MEMF_PUBLIC);
-  object->edge = MemAlloc(sizeof(EdgeT) * edges, MEMF_PUBLIC);
-  {
-    short *in = mesh->edge;
-    EdgeT *out = object->edge;
-    short n = edges;
-
-    while (--n >= 0) {
-      out->flags = 0;
-      out->point[0] = &object->vertex[*in++];
-      out->point[1] = &object->vertex[*in++];
-      out++;
-    }
-  }
 
   object->faceVertexIndexList =
     MemAlloc((sizeof(short *) + 1) * faces, MEMF_PUBLIC);
@@ -39,28 +26,48 @@ Object3D *NewObject3D(Mesh3D *mesh) {
 
     while ((n = *list++)) {
       *indexListPtr++ = list;
-      list += n + 1;
+      while (n--)
+        *list++ *= sizeof(Point3D);
+      list++;
     }
 
     *indexListPtr = NULL;
   }
 
-  object->faceEdgeIndexList =
-    MemAlloc((sizeof(short *) + 1) * faces, MEMF_PUBLIC);
-  {
-    short **indexListPtr = object->faceEdgeIndexList;
-    short *list = mesh->faceEdge;
-    short n;
+  if (edges) {
+    object->edge = MemAlloc(sizeof(EdgeT) * edges, MEMF_PUBLIC);
+    object->faceEdgeIndexList =
+      MemAlloc((sizeof(short *) + 1) * faces, MEMF_PUBLIC);
 
-    while ((n = *list++)) {
-      *indexListPtr++ = list;
-      list += n;
+    {
+      short *in = mesh->edge;
+      EdgeT *out = object->edge;
+      short n = edges - 1;
+
+      do {
+        out->flags = 0;
+        out->point[0] = *in++ * sizeof(Point3D);
+        out->point[1] = *in++ * sizeof(Point3D);
+        out++;
+      } while (--n != -1);
     }
 
-    *indexListPtr = NULL;
+    {
+      short **indexListPtr = object->faceEdgeIndexList;
+      short *list = mesh->faceEdge;
+      short n;
+
+      while ((n = *list++)) {
+        *indexListPtr++ = list;
+        while (n--)
+          *list++ *= sizeof(EdgeT);
+      }
+
+      *indexListPtr = NULL;
+    }
   }
 
-  object->visibleFace = MemAlloc(sizeof(SortItemT) * faces, MEMF_PUBLIC);
+  object->visibleFace = MemAlloc(sizeof(SortItemT) * (faces + 1), MEMF_PUBLIC);
 
   object->scale.x = fx12f(1.0);
   object->scale.y = fx12f(1.0);

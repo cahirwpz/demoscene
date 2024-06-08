@@ -188,7 +188,7 @@ static void DrawLine(short x0, short y0, short x1, short y1) {
 static void DrawObject(Object3D *object) {
   void *outbuf = carry->planes[0];
   void *tmpbuf = scratchpad->planes[0];
-  Point3D *vertex = object->vertex;
+  void *vertex = object->vertex;
   short **edgeIndexList = object->faceEdgeIndexList;
   short **vertexIndexList = object->faceVertexIndexList;
   short *vertexIndex;
@@ -206,14 +206,16 @@ static void DrawObject(Object3D *object) {
       /* Estimate the size of rectangle that contains a face. */
       {
         short n = vertexIndex[FV_COUNT] - 2;
-        Point3D *p = &vertex[*vertexIndex++];
+        short i = *vertexIndex++;
+        Point3D *p = (Point3D *)(vertex + i);
         short minX = p->x;
         short minY = p->y;
         short maxX = minX; 
         short maxY = minY;
 
         do {
-          p = &vertex[*vertexIndex++];
+          i = *vertexIndex++;
+          p = (Point3D *)(vertex + i);
 
           if (p->x < minX)
             minX = p->x;
@@ -244,19 +246,23 @@ static void DrawObject(Object3D *object) {
 
       /* Draw face. */
       {
-        EdgeT *edges = object->edge;
+        void *edges = object->edge;
         short m = faceEdge[-1];
 
         while (--m >= 0) {
-          short **edge = (short **)edges[*faceEdge++].point;
+          short x0, y0, x1, y1, i;
+          short *edge;
 
-          short *p0 = *edge++;
-          short *p1 = *edge++;
+          i = *faceEdge++;
+          edge = (short *)(edges + i + 2);
 
-          short x0 = *p0++;
-          short y0 = *p0++;
-          short x1 = *p1++;
-          short y1 = *p1++;
+          i = *edge++;
+          x0 = ((Point3D *)(vertex + i))->x;
+          y0 = ((Point3D *)(vertex + i))->y;
+
+          i = *edge++;
+          x1 = ((Point3D *)(vertex + i))->x;
+          y1 = ((Point3D *)(vertex + i))->y;
 
           if (y0 > y1) {
             swapr(x0, x1);
