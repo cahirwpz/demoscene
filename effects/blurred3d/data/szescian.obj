@@ -1,5 +1,5 @@
+mtllib szescian.mtl
 o szescian
-
 v -0.5 -0.5 0.5
 v 0.5 -0.5 0.5
 v 0.5 -0.5 -0.5
@@ -14,7 +14,8 @@ v 0.5 0.0 0.0
 v 0.0 0.0 -0.5
 v -0.5 0.0 0.0
 v 0.0 0.5 0.0
-
+usemtl default
+g default
 f 2 9 3
 f 4 9 1
 f 5 10 6

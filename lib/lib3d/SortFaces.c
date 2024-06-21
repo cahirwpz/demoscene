@@ -1,35 +1,33 @@
 #include <3d.h>
 
 void SortFaces(Object3D *object) {
-  short **vertexIndexList = object->faceVertexIndexList;
-  short n = object->faces;
-  void *vertex = object->vertex;
-  short count = 0;
-  short index = 0;
-
   short *item = (short *)object->visibleFace;
+  short count = 0;
 
-  while (--n >= 0) {
-    short *vertexIndex = *vertexIndexList++;
+  void *_objdat = object->objdat;
+  short *group = object->faceGroups;
 
-    if (vertexIndex[FV_FLAGS] >= 0) {
-      short z;
-      short i;
+  do {
+    short f;
 
-      i = *vertexIndex++;
-      z = ((Point3D *)(vertex + i))->z;
-      i = *vertexIndex++;
-      z += ((Point3D *)(vertex + i))->z;
-      i = *vertexIndex++;
-      z += ((Point3D *)(vertex + i))->z;
+    while ((f = *group++)) {
+      if (FACE(f)->flags >= 0) {
+        short z;
+        short i;
 
-      *item++ = z;
-      *item++ = index;
-      count++;
+        i = FACE(f)->indices[0].vertex;
+        z = VERTEX(i)->z;
+        i = FACE(f)->indices[1].vertex;
+        z += VERTEX(i)->z;
+        i = FACE(f)->indices[2].vertex;
+        z += VERTEX(i)->z;
+
+        *item++ = z;
+        *item++ = f;
+        count++;
+      }
     }
-
-    index++;
-  }
+  } while (*group);
 
   /* guard element */
   *item++ = 0;

@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -10,19 +11,18 @@ import (
 
 var printHelp bool
 var scaleFactor float64
-var calcFaceNormals bool
-var calcEdges bool
+var vertexSize int
+var edgeSize int
+var meshName string
+var indexSize int
 
 func init() {
 	flag.BoolVar(&printHelp, "help", false,
 		"print help message and exit")
 	flag.Float64Var(&scaleFactor, "scale", 1.0,
 		"the object will be scaled by this factor")
-	flag.BoolVar(&calcFaceNormals, "face-normals", false,
-		"calculate normal vector to each face")
-	flag.BoolVar(&calcEdges, "edges", false,
-		"calculate edges and face-to-edge map")
-
+	flag.StringVar(&meshName, "mesh-name", "",
+		"mesh C identifier")
 }
 
 func main() {
@@ -33,17 +33,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	object, err := obj.ParseWavefrontObj(flag.Arg(0))
+	if meshName == "" {
+		fmt.Println("Mesh name was not provided!")
+		os.Exit(1)
+	}
+
+	data, err := obj.ParseWavefrontObj(flag.Arg(0))
 	if err != nil {
 		log.Fatalf("failed to parse file: %v", err)
 	}
 
 	cp := obj.ConverterParams{
-		Scale:       scaleFactor,
-		FaceNormals: calcFaceNormals,
-		Edges:       calcEdges}
+		Name:  meshName,
+		Scale: scaleFactor,
+	}
 
-	output, err := obj.Convert(object, cp)
+	output, err := obj.Convert(data, cp)
 	if err != nil {
 		log.Fatalf("failed to convert file: %v", err)
 	}

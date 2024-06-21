@@ -50,7 +50,7 @@
 
 #define __DECONST(type, var) ((type)(unsigned long)(const void *)(var))
 
-#define offsetof(st, m) ((u_int)((char *)&((st *)0)->m - (char *)0))
+#define offsetof(st, m) ((int)((char *)&((st *)0)->m - (char *)0))
 
 #define alloca __builtin_alloca
 

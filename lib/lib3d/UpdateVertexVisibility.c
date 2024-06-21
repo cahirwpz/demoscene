@@ -2,26 +2,27 @@
 #include <3d.h>
 
 void UpdateVertexVisibility(Object3D *object) {
-  char *vertexFlags = &object->vertex[0].flags;
-  short **vertexIndexList = object->faceVertexIndexList;
-
-  register short n asm("d2") = object->faces - 1;
   register char s asm("d3") = 1;
 
+  void *_objdat = object->objdat;
+  register short *group asm("a2") = object->faceGroups;
+  short f;
+
   do {
-    short *vertexIndex = *vertexIndexList++;
+    while ((f = *group++)) {
+      if (FACE(f)->flags >= 0) {
+        register FaceIndexT *index asm("a3") = FACE(f)->indices;
+        short vertices = FACE(f)->count - 3;
+        short i;
 
-    if (vertexIndex[FV_FLAGS] >= 0) {
-      short m = vertexIndex[FV_COUNT] - 3;
-      short i;
+        /* Face has at least (and usually) three vertices / edges. */
+        i = index->vertex; index++; NODE3D(i)->flags = s;
+        i = index->vertex; index++; NODE3D(i)->flags = s;
 
-      /* Face has at least (and usually) three vertices / edges. */
-      i = *vertexIndex++; vertexFlags[i] = s;
-      i = *vertexIndex++; vertexFlags[i] = s;
-
-      do {
-        i = *vertexIndex++; vertexFlags[i] = s;
-      } while (--m != -1);
+        do {
+          i = index->vertex; index++; NODE3D(i)->flags = s;
+        } while (--vertices != -1);
+      }
     }
-  } while (--n != -1);
+  } while (*group);
 }

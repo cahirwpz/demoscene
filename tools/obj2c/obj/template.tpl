@@ -1,61 +1,94 @@
-static short _{{ .Name }}_vertex[{{ .VertexCount }} * 4] = {
-  /* x, y, z, pad */
+/* all indices are offsets in bytes from the beginning of data array */
+
+static short _{{ .Name }}_data[] = {
+  /* vertices: [flags orig_x orig_y orig_z x y z] */
+  /* offset: 0, count: {{ len .Vertices }} */
   {{- range .Vertices }}
-  {{ range . }}{{ . }}, {{ end -}} 0,
-{{- end }}
-};
-
-static short _{{ .Name }}_face_vertex[{{ .FaceDataCount }} + 2*({{ .FaceCount }}+1)] = {
-  /* #vertices, vertices... */
-  {{- range .Faces }}
-  0, {{range . }}{{ . }}, {{ end -}}
-{{- end}}
-  0, 0 
-};
-
-{{- if .Edges }}
-
-static short _{{ .Name }}_edges[{{ .EdgeCount }} * 2] = {
-  {{- range .Edges }}
   {{ range . }}{{ . }}, {{ end -}}
-{{- end }}
-};
+{{ end }} 
 
-static short _{{ .Name }}_face_edge[{{ .FaceDataCount }} + ({{ .FaceCount }} + 1)] = {
-  /* #edge, edges... */
-  {{- range .FaceEdges }}
-  {{range . }}{{ . }}, {{ end -}}
+  /* edges: [flags vertex-index-0 vertex-index-1] */
+  /* offset: {{ .EdgeOffset }}, count: {{ len .Edges }} */
+  {{- range .Edges }}
+  {{ .Flags }}, {{ range .Point }}{{ . }}, {{ end -}}
+{{- end }}
+
+  /* faces: [face-normal{x y z} {flags:8 material:8} #indices | {vertex-index edge-index}...] */
+  /* lines/points: [{flags:8 material:8} #indices | vertex-index...] */
+  /* offset: {{ .FaceDataOffset }}, count: {{ .FaceDataCount }} */
+  {{- range .Faces }}
+  {{range .Normal }}{{ . }}, {{ end -}}{{.Material}}, {{.Count}}, {{ range .Indices }}{{ . }}, {{ end -}}
 {{- end}}
-  0 
-};
-{{- end }}
 
-{{- if .FaceNormals }}
+  /* vertex-groups: [vertex-index... 0] */
+  {{- range $obj := .Objects }}
 
-static short _{{ .Name }}_face_normals[{{ .FaceCount }} * 4] = {
-  /* x, y, z, pad */
-  {{- range .FaceNormals }}
-  {{ range . }}{{ . }}, {{ end -}} 0,
+  {{- range .Groups }}
+  /* {{ $obj.Name }}:{{ .Name }}, offset: {{ .Vertex.Offset }} */
+  {{ range .Vertex.Indices }}{{ . }}, {{ end -}} 0,
+{{- end}}
+{{- end}}
+  /* end */
+  0,
+
+  /* edge-groups: [edge-index... 0] */
+  {{- range $obj := .Objects }}
+
+  {{- range .Groups }}
+  {{- if len .Edge.Indices }}
+  /* {{ $obj.Name }}:{{ .Name }} offset: {{ .Edge.Offset }} */
+  {{ range .Edge.Indices }}{{ . }}, {{ end -}} 0,
+  {{- end }}
+{{- end}}
+{{- end}}
+  /* end */
+  0,
+
+  /* face-groups: [face-index... 0] */
+  {{- range $obj := .Objects }}
+
+  {{- range .Groups }}
+  /* {{ $obj.Name }}:{{ .Name }} offset: {{ .Face.Offset }} */
+  {{ range .Face.Indices }}{{ . }}, {{ end -}} 0,
 {{- end }}
+{{- end }}
+  /* end */
+  0,
+
+  /* object: [#groups [vertices-offset edge-offset faces-offset]] */
+  /* offset: {{ .ObjectDataOffset }} */
+  {{- range $obj := .Objects }}
+
+  /* object: {{ $obj.Name }} */
+  {{ len .Groups }},
+  {{- range .Groups }}
+    /* group: {{ .Name }} */
+    {{ .Vertex.Offset }}, {{ .Edge.Offset }}, {{ .Face.Offset }},
+{{- end}}
+{{- end}}
+
+  /* end */
+  0,
 };
-{{- end }}
+
+{{ range $obj := .Objects }}
+#define obj_{{ $obj.Name }} {{ $obj.Offset }}
+{{- range $grp := $obj.Groups }}
+#define grp_{{ $obj.Name }}_{{ $grp.Name }} {{ $grp.Offset }}
+{{- end}}
+{{- end}}
+{{ range .Materials }}
+#define mtl_{{ $.Name }}_{{ .Name }} {{ .Index }}
+{{- end}}
 
 Mesh3D {{ .Name }} = {
-  .vertices = {{ .VertexCount }},
-  .faces = {{ .FaceCount }},
-  .edges = {{ .EdgeCount }},
-  .vertex = _{{ .Name }}_vertex,
-{{- if .FaceNormals }}
-  .faceNormal = _{{ .Name }}_face_normals,
-{{- else }}
-  .faceNormal = NULL,{{ end }}
-{{- if .Edges }}
-  .edge = _{{ .Name }}_edges,
-{{- else }}
-  .edge = NULL,{{ end }}
-  .faceVertex = _{{ .Name }}_face_vertex,
-{{- if .Edges }}
-  .faceEdge = _{{ .Name }}_face_edge,
-{{- else }}
-  .faceEdge = NULL,{{ end }}
+  .vertices = {{ len .Vertices }},
+  .edges = {{ len .Edges }},
+  .faces = {{ len .Faces }},
+  .materials = {{ len .Materials }},
+  .data = _{{ .Name }}_data,
+  .vertexGroups = (void *)_{{ .Name }}_data + {{ .VertexGroupDataOffset }},
+  .edgeGroups = (void *)_{{ .Name }}_data + {{ .EdgeGroupDataOffset }},
+  .faceGroups = (void *)_{{ .Name }}_data + {{ .FaceGroupDataOffset }},
+  .objects = (void *)_{{ .Name }}_data + {{ .ObjectDataOffset }}
 };

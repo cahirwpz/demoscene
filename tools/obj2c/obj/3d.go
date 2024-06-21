@@ -2,7 +2,7 @@ package obj
 
 import (
 	"cmp"
-	"fmt"
+	"log"
 	"math"
 	"slices"
 )
@@ -16,39 +16,37 @@ import (
  *
  * Clockwise convention is used.
  */
-func CalculateFaceNormals(obj *WavefrontObj) ([]Vector, error) {
-	var ns []Vector
+func CalculateFaceNormal(obj *WavefrontObj, i int) ObjVector {
+	face := obj.Faces[i]
 
-	for i, face := range obj.Faces {
-		p1 := obj.Vertices[face[0].Vertex-1]
-		p2 := obj.Vertices[face[1].Vertex-1]
-		p3 := obj.Vertices[face[2].Vertex-1]
-
-		ax := p1[0] - p2[0]
-		ay := p1[1] - p2[1]
-		az := p1[2] - p2[2]
-		bx := p2[0] - p3[0]
-		by := p2[1] - p3[1]
-		bz := p2[2] - p3[2]
-
-		x := ay*bz - by*az
-		y := az*bx - bz*ax
-		z := ax*by - bx*ay
-
-		l := math.Sqrt(x*x + y*y + z*z)
-
-		if l == 0 {
-			return nil, fmt.Errorf("face #%d normal vector has zero length", i)
-		}
-
-		// Normal vector has a unit length.
-		ns = append(ns, Vector{x / l, y / l, z / l})
+	if len(face.Indices) < 3 {
+		log.Panicf("cannot compute normal to point/line #%d", i)
 	}
 
-	return ns, nil
-}
+	p1 := obj.Vertices[face.Indices[0].Vertex-1]
+	p2 := obj.Vertices[face.Indices[1].Vertex-1]
+	p3 := obj.Vertices[face.Indices[2].Vertex-1]
 
-type Edge [2]int
+	ax := p1[0] - p2[0]
+	ay := p1[1] - p2[1]
+	az := p1[2] - p2[2]
+	bx := p2[0] - p3[0]
+	by := p2[1] - p3[1]
+	bz := p2[2] - p3[2]
+
+	x := ay*bz - by*az
+	y := az*bx - bz*ax
+	z := ax*by - bx*ay
+
+	l := math.Sqrt(x*x + y*y + z*z)
+
+	if l == 0 {
+		log.Panicf("face #%d normal vector has zero length", i)
+	}
+
+	// Normal vector has a unit length.
+	return ObjVector{x / l, y / l, z / l}
+}
 
 type FaceEdge struct {
 	Edge Edge
@@ -56,28 +54,31 @@ type FaceEdge struct {
 }
 
 func EdgeCmp(a, b Edge) int {
-	if n := cmp.Compare(a[0], b[0]); n != 0 {
+	if n := cmp.Compare(a.Point[0], b.Point[0]); n != 0 {
 		return n
 	}
-	return cmp.Compare(a[1], b[1])
+	return cmp.Compare(a.Point[1], b.Point[1])
 }
 
-func CalculateEdges(obj *WavefrontObj) ([]Edge, [][]int) {
+func CalculateEdges(obj *WavefrontObj) []Edge {
 	var fes []FaceEdge
 
 	/* Create all edges. */
 	for i, face := range obj.Faces {
-		for j := 0; j < len(face); j++ {
+		if len(face.Indices) < 3 {
+			continue
+		}
+		for j := 0; j < len(face.Indices); j++ {
 			k := j + 1
-			if k == len(face) {
+			if k == len(face.Indices) {
 				k = 0
 			}
-			p0 := face[j].Vertex - 1
-			p1 := face[k].Vertex - 1
+			p0 := face.Indices[j].Vertex - 1
+			p1 := face.Indices[k].Vertex - 1
 			if p1 < p0 {
 				p0, p1 = p1, p0
 			}
-			fes = append(fes, FaceEdge{Edge: Edge{p0, p1}, Face: i})
+			fes = append(fes, FaceEdge{Edge: Edge{Point: [2]int{p0, p1}}, Face: i})
 		}
 	}
 
@@ -86,7 +87,7 @@ func CalculateEdges(obj *WavefrontObj) ([]Edge, [][]int) {
 		return EdgeCmp(a.Edge, b.Edge)
 	})
 
-	/* Construct { #face => [#edge] } map. */
+	/* Modify existing face index list. */
 	var es []Edge
 	eis := make([][]int, len(obj.Faces))
 	n := -1
@@ -100,5 +101,11 @@ func CalculateEdges(obj *WavefrontObj) ([]Edge, [][]int) {
 		eis[fe.Face] = append(eis[fe.Face], n)
 	}
 
-	return es, eis
+	for i, ei := range eis {
+		for j, e := range ei {
+			obj.Faces[i].Indices[j].Edge = e
+		}
+	}
+
+	return es
 }

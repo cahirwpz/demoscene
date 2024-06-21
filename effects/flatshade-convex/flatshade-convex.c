@@ -43,35 +43,35 @@ static void Kill(void) {
 }
 
 static void UpdateEdgeVisibilityConvex(Object3D *object) {
-  char *vertexFlags = &object->vertex[0].flags;
-  void *edgeFlags = &object->edge[0].flags;
-  short **vertexIndexList = object->faceVertexIndexList;
-  short **edgeIndexList = object->faceEdgeIndexList;
+  register char s asm("d2") = 1;
 
-  register short m asm("d2") = object->faces - 1;
-  register short s asm("d3") = 1;
+  void *_objdat = object->objdat;
+  short *group = object->faceGroups;
+  short f;
 
   do {
-    short *vertexIndex = *vertexIndexList++;
-    short *edgeIndex = *edgeIndexList++;
-    short f = vertexIndex[FV_FLAGS];
-    
-    if (f >= 0) {
-      short n = vertexIndex[FV_COUNT] - 3;
-      short i;
+    while ((f = *group++)) {
+      register char flags asm("d3") = FACE(f)->flags;
 
-      /* Face has at least (and usually) three vertices / edges. */
-      i = *vertexIndex++; vertexFlags[i] = s;
-      i = *edgeIndex++; *(short *)(edgeFlags + i) ^= f;
-      i = *vertexIndex++; vertexFlags[i] = s;
-      i = *edgeIndex++; *(short *)(edgeFlags + i) ^= f;
+      if (flags >= 0) {
+        register short *index asm("a3") = (short *)(&FACE(f)->count);
+        short vertices = *index++ - 3;
+        short i;
 
-      do {
-        i = *vertexIndex++; vertexFlags[i] = s;
-        i = *edgeIndex++; *(short *)(edgeFlags + i) ^= f;
-      } while (--n != -1);
+        /* Face has at least (and usually) three vertices / edges. */
+        i = *index++; NODE3D(i)->flags = s;
+        i = *index++; EDGE(i)->flags ^= flags;
+
+        i = *index++; NODE3D(i)->flags = s;
+        i = *index++; EDGE(i)->flags ^= flags;
+
+        do {
+          i = *index++; NODE3D(i)->flags = s;
+          i = *index++; EDGE(i)->flags ^= flags; 
+        } while (--vertices != -1);
+      }
     }
-  } while (--m != -1);
+  } while (*group);
 }
 
 #define MULVERTEX1(D, E) {                      \
@@ -92,10 +92,8 @@ static void UpdateEdgeVisibilityConvex(Object3D *object) {
 
 static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
-  short *mx = (short *)M;
-  short *src = (short *)object->point;
-  short *dst = (short *)object->vertex;
-  register short n asm("d7") = object->vertices - 1;
+  void *_objdat = object->objdat;
+  short *group = object->vertexGroups;
 
   int m0 = (M->x << 8) - ((M->m00 * M->m01) >> 4);
   int m1 = (M->y << 8) - ((M->m10 * M->m11) >> 4);
@@ -115,37 +113,40 @@ static void TransformVertices(Object3D *object) {
    */
 
   do {
-    if (((Point3D *)dst)->flags) {
-      short x = *src++;
-      short y = *src++;
-      short z = *src++;
-      short *v = mx;
-      int xp, yp;
-      short zp;
+    short i;
 
-      MULVERTEX1(xp, m0);
-      MULVERTEX1(yp, m1);
-      MULVERTEX2(zp);
+    while ((i = *group++)) {
+      if (NODE3D(i)->flags) {
+        short *pt = (short *)NODE3D(i);
+        short *v = (short *)M;
+        short x, y, z, zp;
+        int xy, xp, yp;
 
-      *dst++ = div16(xp, zp) + WIDTH / 2;  /* div(xp * 256, zp) */
-      *dst++ = div16(yp, zp) + HEIGHT / 2; /* div(yp * 256, zp) */
-      *dst++ = zp;
+        /* clear flags */
+        *pt++ = 0;
 
-      src++;
-      *dst++ = 0;
-    } else {
-      src += 4;
-      dst += 4;
+        x = *pt++;
+        y = *pt++;
+        z = *pt++;
+        xy = x * y;
+
+        MULVERTEX1(xp, m0);
+        MULVERTEX1(yp, m1);
+        MULVERTEX2(zp);
+
+        *pt++ = div16(xp, zp) + WIDTH / 2;  /* div(xp * 256, zp) */
+        *pt++ = div16(yp, zp) + HEIGHT / 2; /* div(yp * 256, zp) */
+        *pt++ = zp;
+      }
     }
-  } while (--n != -1);
+  } while (*group);
 }
 
 static void DrawObject(void *planes, Object3D *object,
                        CustomPtrT custom_ asm("a6"))
 {
-  void *vertex = object->vertex;
-  EdgeT *edge = object->edge;
-  short n = object->edges - 1;
+  void *_objdat = object->objdat;
+  short *group = object->edgeGroups;
 
   _WaitBlitter(custom_);
   custom_->bltafwm = -1;
@@ -156,96 +157,101 @@ static void DrawObject(void *planes, Object3D *object,
   custom_->bltdmod = WIDTH / 8;
 
   do {
-    if (edge->flags > 0) {
-      short bltcon0, bltcon1, bltsize, bltbmod, bltamod;
-      int bltapt, bltcpt;
+    short e;
 
-      {
-        short x0, y0, x1, y1;
-        short dmin, dmax, derr;
-        
+    while ((e = *group++)) {
+      char edgeColor = EDGE(e)->flags;
+      short *edge = (short *)EDGE(e);
+
+      if (edgeColor > 0) {
+        short bltcon0, bltcon1, bltsize, bltbmod, bltamod;
+        int bltapt, bltcpt;
+
+        /* clear visibility */
+        *edge++ = 0;
+
         {
-          short i;
+          short x0, y0, x1, y1;
+          short dmin, dmax, derr;
 
-          i = edge->point[0];
-          x0 = ((Point3D *)(vertex + i))->x;
-          y0 = ((Point3D *)(vertex + i))->y;
+          {
+            short *pt;
+            short i;
 
-          i = edge->point[1];
-          x1 = ((Point3D *)(vertex + i))->x;
-          y1 = ((Point3D *)(vertex + i))->y;
+            i = *edge++;
+            pt = (short *)VERTEX(i);
+            x0 = *pt++;
+            y0 = *pt++;
+
+            i = *edge++;
+            pt = (short *)VERTEX(i);
+            x1 = *pt++;
+            y1 = *pt++;
+          }
+
+          if (y0 == y1)
+            continue;
+
+          if (y0 > y1) {
+            swapr(x0, x1);
+            swapr(y0, y1);
+          }
+
+          dmax = x1 - x0;
+          if (dmax < 0)
+            dmax = -dmax;
+
+          dmin = y1 - y0;
+          if (dmax >= dmin) {
+            if (x0 >= x1)
+              bltcon1 = AUL | SUD | LINEMODE | ONEDOT;
+            else
+              bltcon1 = SUD | LINEMODE | ONEDOT;
+          } else {
+            if (x0 >= x1)
+              bltcon1 = SUL | LINEMODE | ONEDOT;
+            else
+              bltcon1 = LINEMODE | ONEDOT;
+            swapr(dmax, dmin);
+          }
+
+          bltcpt = (int)planes + (short)(((y0 << 5) + (x0 >> 3)) & ~1);
+
+          bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
+          bltcon1 |= rorw(x0 & 15, 4);
+
+          dmin <<= 1;
+          derr = dmin - dmax;
+
+          bltamod = derr - dmax;
+          bltbmod = dmin;
+          bltsize = (dmax << 6) + 66;
+          bltapt = derr;
         }
-
-        if (y0 == y1)
-          goto next;
-
-        if (y0 > y1) {
-          swapr(x0, x1);
-          swapr(y0, y1);
-        }
-
-        dmax = x1 - x0;
-        if (dmax < 0)
-          dmax = -dmax;
-
-        dmin = y1 - y0;
-        if (dmax >= dmin) {
-          if (x0 >= x1)
-            bltcon1 = AUL | SUD | LINEMODE | ONEDOT;
-          else
-            bltcon1 = SUD | LINEMODE | ONEDOT;
-        } else {
-          if (x0 >= x1)
-            bltcon1 = SUL | LINEMODE | ONEDOT;
-          else
-            bltcon1 = LINEMODE | ONEDOT;
-          swapr(dmax, dmin);
-        }
-
-        bltcpt = (int)planes + (short)(((y0 << 5) + (x0 >> 3)) & ~1);
-
-        bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
-        bltcon1 |= rorw(x0 & 15, 4);
-
-        dmin <<= 1;
-        derr = dmin - dmax;
-
-        bltamod = derr - dmax;
-        bltbmod = dmin;
-        bltsize = (dmax << 6) + 66;
-        bltapt = derr;
-      }
 
 #define DRAWLINE()                              \
-      _WaitBlitter(custom_);                    \
-      custom_->bltcon0 = bltcon0;               \
-      custom_->bltcon1 = bltcon1;               \
-      custom_->bltcpt = (void *)bltcpt;         \
-      custom_->bltapt = (void *)bltapt;         \
-      custom_->bltdpt = planes;                 \
-      custom_->bltbmod = bltbmod;               \
-      custom_->bltamod = bltamod;               \
-      custom_->bltsize = bltsize;
+        _WaitBlitter(custom_);                    \
+        custom_->bltcon0 = bltcon0;               \
+        custom_->bltcon1 = bltcon1;               \
+        custom_->bltcpt = (void *)bltcpt;         \
+        custom_->bltapt = (void *)bltapt;         \
+        custom_->bltdpt = planes;                 \
+        custom_->bltbmod = bltbmod;               \
+        custom_->bltamod = bltamod;               \
+        custom_->bltsize = bltsize;
 
-      {
-        char edgeColor = edge->flags;
-
-        if (edgeColor & 1) { DRAWLINE(); }
-        bltcpt += WIDTH * HEIGHT / 8;
-        if (edgeColor & 2) { DRAWLINE(); }
-        bltcpt += WIDTH * HEIGHT / 8;
-        if (edgeColor & 4) { DRAWLINE(); }
-        bltcpt += WIDTH * HEIGHT / 8;
-        if (edgeColor & 8) { DRAWLINE(); }
+        {
+          if (edgeColor & 1) { DRAWLINE(); }
+          bltcpt += WIDTH * HEIGHT / 8;
+          if (edgeColor & 2) { DRAWLINE(); }
+          bltcpt += WIDTH * HEIGHT / 8;
+          if (edgeColor & 4) { DRAWLINE(); }
+          bltcpt += WIDTH * HEIGHT / 8;
+          if (edgeColor & 8) { DRAWLINE(); }
+        }
       }
-
-next:
-      /* clear visibility */
-      edge->flags = 0;
     }
-
-    edge++;
-  } while (--n != -1);
+  } while (*group);
 }
 
 static void BitmapClearFast(BitmapT *dst) {

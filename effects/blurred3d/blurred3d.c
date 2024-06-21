@@ -24,8 +24,6 @@ static int active = 0;
 #include "data/blurred3d-pal.c"
 #include "data/szescian.c"
 
-static Mesh3D *mesh = &szescian;
-
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(80 + gradient.height * (gradient.width + 1));
   bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
@@ -57,7 +55,7 @@ static CopListT *MakeCopperList(void) {
 }
 
 static void Init(void) {
-  cube = NewObject3D(mesh);
+  cube = NewObject3D(&szescian);
   cube->translate.z = fx4i(-250);
 
   screen[0] = NewBitmap(WIDTH, HEIGHT + 1, DEPTH, BM_CLEAR);
@@ -95,9 +93,8 @@ static void Kill(void) {
 
 static void TransformVertices(Object3D *object) {
   Matrix3D *M = &object->objectToWorld;
-  short *src = (short *)object->point;
-  short *dst = (short *)object->vertex;
-  register short n asm("d7") = object->vertices - 1;
+  void *_objdat = object->objdat;
+  short *group = object->vertexGroups;
 
   /* WARNING! This modifies camera matrix! */
   M->x -= normfx(M->m00 * M->m01);
@@ -116,22 +113,27 @@ static void TransformVertices(Object3D *object) {
    */
 
   do {
-    short *v = (short *)M;
-    short x = *src++;
-    short y = *src++;
-    short z = *src++;
-    short xp, yp, zp;
+    short i;
 
-    MULVERTEX(xp);
-    MULVERTEX(yp);
-    MULVERTEX(zp);
+    while ((i = *group++)) {
+      short *pt = (short *)POINT(i);
+      short *v = (short *)M;
+      short x, y, z;
+      int xp, yp, zp;
 
-    *dst++ = div16(xp << 8, zp) + WIDTH / 2;
-    *dst++ = div16(yp << 8, zp) + HEIGHT / 2;
-    *dst++ = zp;
+      x = *pt++;
+      y = *pt++;
+      z = *pt++;
 
-    src++; dst++;
-  } while (--n != -1);
+      MULVERTEX(xp);
+      MULVERTEX(yp);
+      MULVERTEX(zp);
+
+      *pt++ = div16(xp << 8, zp) + WIDTH / 2;
+      *pt++ = div16(yp << 8, zp) + HEIGHT / 2;
+      *pt++ = zp;
+    }
+  } while (*group);
 }
 
 static void DrawLine(short x0, short y0, short x1, short y1) {
@@ -185,142 +187,141 @@ static void DrawLine(short x0, short y0, short x1, short y1) {
   }
 }
 
-static void DrawObject(Object3D *object) {
+static void DrawObject(Object3D *object, CustomPtrT custom_ asm("a6")) {
   void *outbuf = carry->planes[0];
   void *tmpbuf = scratchpad->planes[0];
-  void *vertex = object->vertex;
-  short **edgeIndexList = object->faceEdgeIndexList;
-  short **vertexIndexList = object->faceVertexIndexList;
-  short *vertexIndex;
 
-  custom->bltafwm = -1;
-  custom->bltalwm = -1;
+  void *_objdat = object->objdat;
+  short *group = object->faceGroups;
 
-  while ((vertexIndex = *vertexIndexList++)) {
-    short *faceEdge = *edgeIndexList++;
+  custom_->bltafwm = -1;
+  custom_->bltalwm = -1;
 
-    if (vertexIndex[FV_FLAGS] >= 0) {
-      u_short bltmod, bltsize;
-      short bltstart, bltend;
+  do {
+    short f;
 
-      /* Estimate the size of rectangle that contains a face. */
-      {
-        short n = vertexIndex[FV_COUNT] - 2;
-        short i = *vertexIndex++;
-        Point3D *p = (Point3D *)(vertex + i);
-        short minX = p->x;
-        short minY = p->y;
-        short maxX = minX; 
-        short maxY = minY;
-
-        do {
-          i = *vertexIndex++;
-          p = (Point3D *)(vertex + i);
-
-          if (p->x < minX)
-            minX = p->x;
-          else if (p->x > maxX)
-            maxX = p->x;
-
-          if (p->y < minY)
-            minY = p->y;
-          else if (p->y > maxY)
-            maxY = p->y;
-        } while (--n != -1);
-
-        /* Align to word boundary. */
-        minX &= ~15;
-        maxX += 16; /* to avoid case where a line is on right edge */
-        maxX &= ~15;
+    while ((f = *group++)) {
+      if (FACE(f)->flags >= 0) {
+        short minX = 32767;
+        short minY = 32767;
+        short maxX = -32768;
+        short maxY = -32768;
 
         {
-          short w = maxX - minX;
-          short h = maxY - minY + 1;
+          register short *index asm("a3") = (short *)(FACE(f)->indices);
+          short n = FACE(f)->count - 1;
 
-          bltstart = (minX >> 3) + minY * WIDTH / 8;
-          bltend = (maxX >> 3) + maxY * WIDTH / 8 - 2;
-          bltsize = (h << 6) | (w >> 4);
-          bltmod = (WIDTH / 8) - (w >> 3);
+          do {
+            /* Calculate area. */
+            {
+              short i = *index++; /* vertex */
+              short x = VERTEX(i)->x;
+              short y = VERTEX(i)->y;
+
+              if (x < minX)
+                minX = x;
+              if (x > maxX)
+                maxX = x;
+
+              if (y < minY)
+                minY = y;
+              if (y > maxY)
+                maxY = y;
+            }
+
+            /* Draw edge. */
+            {
+              short j = *index++; /* edge */
+              short x0, y0, x1, y1, i;
+
+              i = EDGE(j)->point[0];
+              x0 = VERTEX(i)->x;
+              y0 = VERTEX(i)->y;
+
+              i = EDGE(j)->point[1];
+              x1 = VERTEX(i)->x;
+              y1 = VERTEX(i)->y;
+
+              if (y0 > y1) {
+                swapr(x0, x1);
+                swapr(y0, y1);
+              }
+
+              DrawLine(x0, y0, x1, y1);
+            }
+          } while (--n != -1);
         }
-      }
 
-      /* Draw face. */
-      {
-        void *edges = object->edge;
-        short m = faceEdge[-1];
+        /* Estimate the size of rectangle that contains a face. */
+        {
+          u_short bltmod, bltsize;
+          short bltstart, bltend;
 
-        while (--m >= 0) {
-          short x0, y0, x1, y1, i;
-          short *edge;
+          /* Align to word boundary. */
+          minX &= ~15;
+          maxX += 16; /* to avoid case where a line is on right edge */
+          maxX &= ~15;
 
-          i = *faceEdge++;
-          edge = (short *)(edges + i + 2);
+          {
+            short w = maxX - minX;
+            short h = maxY - minY + 1;
 
-          i = *edge++;
-          x0 = ((Point3D *)(vertex + i))->x;
-          y0 = ((Point3D *)(vertex + i))->y;
-
-          i = *edge++;
-          x1 = ((Point3D *)(vertex + i))->x;
-          y1 = ((Point3D *)(vertex + i))->y;
-
-          if (y0 > y1) {
-            swapr(x0, x1);
-            swapr(y0, y1);
+            bltstart = (minX >> 3) + minY * WIDTH / 8;
+            bltend = (maxX >> 3) + maxY * WIDTH / 8 - 2;
+            bltsize = (h << 6) | (w >> 4);
+            bltmod = (WIDTH / 8) - (w >> 3);
           }
 
-          DrawLine(x0, y0, x1, y1);
+          /* Fill face. */
+          {
+            void *src = tmpbuf + bltend;
+
+            _WaitBlitter(custom_);
+
+            custom_->bltcon0 = (SRCA | DEST) | A_TO_D;
+            custom_->bltcon1 = BLITREVERSE | FILL_XOR;
+            custom_->bltapt = src;
+            custom_->bltdpt = src;
+            custom_->bltamod = bltmod;
+            custom_->bltdmod = bltmod;
+            custom_->bltsize = bltsize;
+          }
+
+          /* Copy filled face to outbuf. */
+          {
+            void *src = tmpbuf + bltstart;
+            void *dst = outbuf + bltstart;
+
+            _WaitBlitter(custom_);
+
+            custom_->bltcon0 = (SRCA | SRCB | DEST) | A_XOR_B;
+            custom_->bltcon1 = 0;
+            custom_->bltapt = src;
+            custom_->bltbpt = dst;
+            custom_->bltdpt = dst;
+            custom_->bltamod = bltmod;
+            custom_->bltbmod = bltmod;
+            custom_->bltdmod = bltmod;
+            custom_->bltsize = bltsize;
+          }
+
+          /* Clear working area. */
+          {
+            void *data = tmpbuf + bltstart;
+
+            _WaitBlitter(custom_);
+
+            custom_->bltcon0 = (DEST | A_TO_D);
+            custom_->bltcon1 = 0;
+            custom_->bltadat = 0;
+            custom_->bltdpt = data;
+            custom_->bltdmod = bltmod;
+            custom_->bltsize = bltsize;
+          }
         }
       }
-
-      /* Fill face. */
-      {
-        void *src = tmpbuf + bltend;
-
-        WaitBlitter();
-
-        custom->bltcon0 = (SRCA | DEST) | A_TO_D;
-        custom->bltcon1 = BLITREVERSE | FILL_XOR;
-        custom->bltapt = src;
-        custom->bltdpt = src;
-        custom->bltamod = bltmod;
-        custom->bltdmod = bltmod;
-        custom->bltsize = bltsize;
-      }
-
-      /* Copy filled face to outbuf. */
-      {
-        void *src = tmpbuf + bltstart;
-        void *dst = outbuf + bltstart;
-
-        WaitBlitter();
-
-        custom->bltcon0 = (SRCA | SRCB | DEST) | A_XOR_B;
-        custom->bltcon1 = 0;
-        custom->bltapt = src;
-        custom->bltbpt = dst;
-        custom->bltdpt = dst;
-        custom->bltamod = bltmod;
-        custom->bltbmod = bltmod;
-        custom->bltdmod = bltmod;
-        custom->bltsize = bltsize;
-      }
-
-      /* Clear working area. */
-      {
-        void *data = tmpbuf + bltstart;
-
-        WaitBlitter();
-
-        custom->bltcon0 = (DEST | A_TO_D);
-        custom->bltcon1 = 0;
-        custom->bltadat = 0;
-        custom->bltdpt = data;
-        custom->bltdmod = bltmod;
-        custom->bltsize = bltsize;
-      }
     }
-  }
+  } while (*group);
 }
 
 static void BitmapDecSaturatedFast(BitmapT *dstbm, BitmapT *srcbm) {
@@ -459,7 +460,7 @@ static void RenderObject3D(void) {
 
   ProfilerStart(DrawObject);
   {
-    DrawObject(cube);
+    DrawObject(cube, custom);
   }
   ProfilerStop(DrawObject);
 }

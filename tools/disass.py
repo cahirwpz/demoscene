@@ -315,13 +315,13 @@ class InsnCost:
             if self.is_dreg(o1):
                 return self.operand_cost(4 if short else l_cost, size, o0)
             if self.is_dreg(o0):
-                return self.operand_cost(8 if short else 12, size, o0)
+                return self.operand_cost(8 if short else 12, size, o1)
 
         if mnemonic in ['eor']:
             if self.is_dreg(o1):
                 return self.operand_cost(4 if short else 8, size, o0)
             if self.is_dreg(o0):
-                return self.operand_cost(8 if short else 12, size, o0)
+                return self.operand_cost(8 if short else 12, size, o1)
 
         if mnemonic in ['cmp', 'cmpa']:
             if self.is_areg(o1):
