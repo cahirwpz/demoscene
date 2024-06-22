@@ -28,11 +28,12 @@ import sys
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Split pallette per scanline image into colors and raw data.')
+        description='Split pallette per image line into colors and raw data.')
     parser.add_argument('ncols', metavar='N', type=int,
-        help='Number of colors to be changed per scanline.')
+                        help='Number of colors to be changed per scanline.')
     parser.add_argument('filename', type=str,
-        help='Image where first N columns are taken by colors and the rest by image data.')
+                        help='Image where first N columns are taken by colors '
+                             + 'and the rest by image data.')
     args = parser.parse_args()
 
     img = Image.open(args.filename)
@@ -41,7 +42,8 @@ if __name__ == "__main__":
     data_width = width - args.ncols
 
     if data_width & 15:
-        sys.exit(f'Please fix the image: image data width ({data_width}) is not divisible by 16!')
+        sys.exit(f'Please fix the image: image data width ({data_width}) '
+                 + 'is not divisible by 16!')
 
     img_pal = Image.new('RGB', (args.ncols, height))
     img_data = Image.new('P', (data_width, height))
@@ -62,12 +64,12 @@ if __name__ == "__main__":
                 try:
                     data[x - args.ncols, y] = cols[c]
                 except KeyError:
-                    sys.exit(f'Please fix the image at (x:{x},y:{y}) where {pix[x,y]} ' +
-                             f'not in {list(cols.keys())}!')
+                    sys.exit(f'Please fix the image at (x:{x},y:{y}) where '
+                             + f'{pix[x, y]} not in {list(cols.keys())}!')
 
     img_data_pal = []
     for i in range(0, 256, 256 // args.ncols):
-        img_data_pal.extend([i,i,i])
+        img_data_pal.extend([i, i, i])
     img_data.putpalette(img_data_pal)
 
     basename = path.splitext(args.filename)[0]
