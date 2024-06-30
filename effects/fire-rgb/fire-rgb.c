@@ -28,7 +28,7 @@ static struct {
 #define BPLSIZE ((WIDTH * 4) * HEIGHT / 8) /* 2560 bytes */
 #define BLTSIZE ((WIDTH * 4) * HEIGHT / 2) /* 10240 bytes */
 
-static void ChunkyToPlanar(void) {
+static void ChunkyToPlanar(CustomPtrT custom_ asm("a0")) {
   void *src = c2p.chunky;
   void *dst = c2p.chunky + BLTSIZE;
   void **bpl = c2p.bpl;
@@ -36,99 +36,99 @@ static void ChunkyToPlanar(void) {
   switch (c2p.phase) {
     case 0:
       /* Initialize chunky to planar. */
-      custom->bltamod = 4;
-      custom->bltbmod = 4;
-      custom->bltdmod = 4;
-      custom->bltcdat = 0x00FF;
-      custom->bltafwm = -1;
-      custom->bltalwm = -1;
+      custom_->bltamod = 4;
+      custom_->bltbmod = 4;
+      custom_->bltdmod = 4;
+      custom_->bltcdat = 0x00FF;
+      custom_->bltafwm = -1;
+      custom_->bltalwm = -1;
 
       /* Swap 8x4, pass 1. */
-      custom->bltapt = src + 4;
-      custom->bltbpt = src;
-      custom->bltdpt = dst;
+      custom_->bltapt = src + 4;
+      custom_->bltbpt = src;
+      custom_->bltdpt = dst;
 
       /* ((a >> 8) & 0x00FF) | (b & ~0x00FF) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | ASHIFT(8);
-      custom->bltcon1 = 0;
-      custom->bltsize = 2 | ((BLTSIZE / 16) << 6);
+      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | ASHIFT(8);
+      custom_->bltcon1 = 0;
+      custom_->bltsize = 2 | ((BLTSIZE / 16) << 6);
       break;
 
     case 1:
-      custom->bltsize = 2 | ((BLTSIZE / 16) << 6);
+      custom_->bltsize = 2 | ((BLTSIZE / 16) << 6);
       break;
 
     case 2:
       /* Swap 8x4, pass 2. */
-      custom->bltapt = src + BLTSIZE - 6;
-      custom->bltbpt = src + BLTSIZE - 2;
-      custom->bltdpt = dst + BLTSIZE - 2;
+      custom_->bltapt = src + BLTSIZE - 6;
+      custom_->bltbpt = src + BLTSIZE - 2;
+      custom_->bltdpt = dst + BLTSIZE - 2;
 
       /* ((a << 8) & ~0x00FF) | (b & 0x00FF) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | ASHIFT(8);
-      custom->bltcon1 = BLITREVERSE;
-      custom->bltsize = 2 | ((BLTSIZE / 16) << 6);
+      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | ASHIFT(8);
+      custom_->bltcon1 = BLITREVERSE;
+      custom_->bltsize = 2 | ((BLTSIZE / 16) << 6);
       break;
 
     case 3:
-      custom->bltsize = 2 | ((BLTSIZE / 16) << 6);
+      custom_->bltsize = 2 | ((BLTSIZE / 16) << 6);
       break;
 
     case 4:
-      custom->bltamod = 6;
-      custom->bltbmod = 6;
-      custom->bltdmod = 0;
-      custom->bltcdat = 0x0F0F;
+      custom_->bltamod = 6;
+      custom_->bltbmod = 6;
+      custom_->bltdmod = 0;
+      custom_->bltcdat = 0x0F0F;
 
-      custom->bltapt = dst + 2;
-      custom->bltbpt = dst;
-      custom->bltdpt = bpl[0];
+      custom_->bltapt = dst + 2;
+      custom_->bltbpt = dst;
+      custom_->bltdpt = bpl[0];
 
       /* ((a >> 4) & 0x0F0F) | (b & ~0x0F0F) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | ASHIFT(4);
-      custom->bltcon1 = 0;
-      custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
+      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ANBC | ABNC | NABNC) | ASHIFT(4);
+      custom_->bltcon1 = 0;
+      custom_->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
 
     case 5:
-      custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
+      custom_->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
 
     case 6:
-      custom->bltapt = dst + 6;
-      custom->bltbpt = dst + 4;
-      custom->bltdpt = bpl[2];
-      custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
+      custom_->bltapt = dst + 6;
+      custom_->bltbpt = dst + 4;
+      custom_->bltdpt = bpl[2];
+      custom_->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
 
     case 7:
-      custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
+      custom_->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
 
     case 8:
-      custom->bltapt = dst + BLTSIZE - 8;
-      custom->bltbpt = dst + BLTSIZE - 6;
-      custom->bltdpt = bpl[1] + BPLSIZE - 2;
+      custom_->bltapt = dst + BLTSIZE - 8;
+      custom_->bltbpt = dst + BLTSIZE - 6;
+      custom_->bltdpt = bpl[1] + BPLSIZE - 2;
 
       /* ((a << 8) & ~0x0F0F) | (b & 0x0F0F) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | ASHIFT(4);
-      custom->bltcon1 = BLITREVERSE;
-      custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
+      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABNC | ANBNC | ABC | NABC) | ASHIFT(4);
+      custom_->bltcon1 = BLITREVERSE;
+      custom_->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
 
     case 9:
-      custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
+      custom_->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
 
     case 10:
-      custom->bltapt = dst + BLTSIZE - 4;
-      custom->bltbpt = dst + BLTSIZE - 2;
-      custom->bltdpt = bpl[3] + BPLSIZE - 2;
-      custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
+      custom_->bltapt = dst + BLTSIZE - 4;
+      custom_->bltbpt = dst + BLTSIZE - 2;
+      custom_->bltdpt = bpl[3] + BPLSIZE - 2;
+      custom_->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
 
     case 11:
-      custom->bltsize = 1 | ((BLTSIZE / 16) << 6);
+      custom_->bltsize = 1 | ((BLTSIZE / 16) << 6);
       break;
 
     case 12:
@@ -185,7 +185,7 @@ static void Init(void) {
 
   EnableDMA(DMAF_RASTER);
 
-  SetIntVector(INTB_BLIT, (IntHandlerT)ChunkyToPlanar, NULL);
+  SetIntVector(INTB_BLIT, (IntHandlerT)ChunkyToPlanar, (void *)custom);
   EnableINT(INTF_BLIT);
 }
 
@@ -309,7 +309,7 @@ static void Render(void) {
   c2p.phase = 0;
   c2p.chunky = chunky[active];
   c2p.bpl = screen[active]->planes;
-  ChunkyToPlanar();
+  ChunkyToPlanar(custom);
 
   active ^= 1;
 }
