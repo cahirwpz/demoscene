@@ -20,6 +20,7 @@ SUBDIRS := \
 	fire-rgb \
 	game-of-life \
 	glitch \
+	glitches \
 	growing-tree \
 	gui \
 	highway \
