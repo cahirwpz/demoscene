@@ -19,8 +19,6 @@ const (
 )
 
 func Convert(data *WavefrontData, cp ConverterParams) (string, error) {
-	var s float64
-
 	/* IMPORTANT! make sure no index is equal to 0 */
 	geom := Geometry{Name: cp.Name}
 
@@ -31,12 +29,14 @@ func Convert(data *WavefrontData, cp ConverterParams) (string, error) {
 		var faceIndices []int
 
 		/* vertices */
-		s = cp.Scale * 16
 		for _, v := range obj.Vertices {
 			vertexIndices = append(vertexIndices,
 				len(geom.Vertices)*VertexSize+VertexOffset)
+			x := (v[0] + cp.OffsetX) * cp.Scale
+			y := (v[1] + cp.OffsetY) * cp.Scale
+			z := (v[2] + cp.OffsetZ) * cp.Scale
 			geom.Vertices = append(geom.Vertices,
-				Vector{0, int(v[0] * s), int(v[1] * s), int(v[2] * s), 0, 0, 0})
+				Vector{0, int(x * 16), int(y * 16), int(z * 16), 0, 0, 0})
 		}
 
 		/* edges */
@@ -204,8 +204,11 @@ func Convert(data *WavefrontData, cp ConverterParams) (string, error) {
 }
 
 type ConverterParams struct {
-	Name  string
-	Scale float64
+	Name    string
+	Scale   float64
+	OffsetX float64
+	OffsetY float64
+	OffsetZ float64
 }
 
 type Vector []int
