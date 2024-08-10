@@ -12,6 +12,7 @@ SUBDIRS := \
 	carrion \
 	circles \
 	credits \
+	dna3d \
 	empty \
 	flatshade \
 	flatshade-convex \
