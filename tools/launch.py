@@ -6,7 +6,7 @@ import os.path
 import shutil
 import shlex
 import subprocess
-from libtmux import Server, Session
+from libtmux import Server, Session, exc
 
 
 def HerePath(*components):
@@ -150,5 +150,7 @@ if __name__ == '__main__':
         else:
             session.select_window(args.window or par_port.name)
         Session.attach(session)
+    except exc.TmuxObjectDoesNotExist:
+        pass
     finally:
         Server.kill(server)
