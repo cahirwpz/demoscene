@@ -6,8 +6,6 @@
 #include <2d.h>
 #include <pixmap.h>
 
-extern char SqrtTab8[256];
-
 /* 3D transformations */
 
 typedef struct Point3D {

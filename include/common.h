@@ -49,7 +49,7 @@
 /* assumes that abs(idx) < 32768 */
 static inline short getword(const void *tab, short idx) {
   short res;
-  idx <<= 1;
+  idx += idx;
   asm("movew (%2,%1:w),%0"
       : "=r" (res)
       : "d" (idx), "a" (tab));

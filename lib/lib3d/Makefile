@@ -9,7 +9,6 @@ SOURCES := \
 	NewObject3D.c \
 	Scale3D.c \
 	SortFaces.c \
-	SqrtTab8.c \
 	Transform3D.c \
 	Translate3D.c \
 	UpdateFaceVisibility.c \
