@@ -109,6 +109,7 @@ typedef struct Profile {
   u_int lines, total;
   u_short min, max;
   u_short count;
+  u_short reportFrame;
 } ProfileT;
 
 #if PROFILER
@@ -120,6 +121,7 @@ typedef struct Profile {
     .min = 65535,                                                              \
     .max = 0,                                                                  \
     .count = 0,                                                                \
+    .reportFrame = 0,                                                          \
   };
 
 #define ProfilerStart(NAME) _ProfilerStart(_##NAME##_profile)
