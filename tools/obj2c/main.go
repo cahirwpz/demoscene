@@ -9,15 +9,20 @@ import (
 	"ghostown.pl/obj2c/obj"
 )
 
-var printHelp bool
-var scaleFactor float64
-var vertexSize int
-var edgeSize int
-var meshName string
-var indexSize int
-var offsetX float64
-var offsetY float64
-var offsetZ float64
+var (
+	printHelp    bool
+	scaleFactor  float64
+	vertexSize   int
+	edgeSize     int
+	meshName     string
+	indexSize    int
+	offsetX      float64
+	offsetY      float64
+	offsetZ      float64
+	noEdges      bool
+	textured     bool
+	textureScale float64
+)
 
 func init() {
 	flag.BoolVar(&printHelp, "help", false,
@@ -32,6 +37,12 @@ func init() {
 		"the object will be scaled by this factor")
 	flag.StringVar(&meshName, "mesh-name", "",
 		"mesh C identifier")
+	flag.BoolVar(&noEdges, "no-edges", false,
+		"don't augment the object with edges")
+	flag.BoolVar(&textured, "textured", false,
+		"add per vertex uv coordinates")
+	flag.Float64Var(&textureScale, "texture-scale", 1.0,
+		"scale uv coordinates by this number")
 }
 
 func main() {
@@ -53,11 +64,14 @@ func main() {
 	}
 
 	cp := obj.ConverterParams{
-		Name:    meshName,
-		Scale:   scaleFactor,
-		OffsetX: offsetX,
-		OffsetY: offsetY,
-		OffsetZ: offsetZ,
+		Name:         meshName,
+		Scale:        scaleFactor,
+		OffsetX:      offsetX,
+		OffsetY:      offsetY,
+		OffsetZ:      offsetZ,
+		Edges:        !noEdges,
+		TextureScale: textureScale,
+		Textured:     textured,
 	}
 
 	output, err := obj.Convert(data, cp)

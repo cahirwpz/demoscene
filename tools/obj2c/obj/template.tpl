@@ -6,6 +6,12 @@ static short _{{ .Name }}_data[] = {
   {{- range .Vertices }}
   {{ range . }}{{ . }}, {{ end -}}
 {{ end }} 
+  
+  /* texture coordinates: [u v] */
+  /* offset: {{ .TexCoordOffset }}, count: {{ len .TexCoords }} */
+  {{- range .TexCoords }}
+  {{ range . }}{{ . }}, {{ end -}}
+{{ end }} 
 
   /* edges: [flags vertex-index-0 vertex-index-1] */
   /* offset: {{ .EdgeOffset }}, count: {{ len .Edges }} */
@@ -13,7 +19,7 @@ static short _{{ .Name }}_data[] = {
   {{ .Flags }}, {{ range .Point }}{{ . }}, {{ end -}}
 {{- end }}
 
-  /* faces: [face-normal{x y z} {flags:8 material:8} #indices | {vertex-index edge-index}...] */
+  /* faces: [face-normal{x y z} {flags:8 material:8} #indices | {vertex-index{{ if gt .FaceTexCoordIndex 0 }} texcoord-index{{end}}{{ if gt .FaceEdgeIndex 0 }} edge-index{{ end }}}...] */
   /* lines/points: [{flags:8 material:8} #indices | vertex-index...] */
   /* offset: {{ .FaceDataOffset }}, count: {{ .FaceDataCount }} */
   {{- range .Faces }}
@@ -83,6 +89,7 @@ static short _{{ .Name }}_data[] = {
 
 Mesh3D {{ .Name }} = {
   .vertices = {{ len .Vertices }},
+  .texcoords = {{ len .TexCoords }},
   .edges = {{ len .Edges }},
   .faces = {{ len .Faces }},
   .materials = {{ len .Materials }},

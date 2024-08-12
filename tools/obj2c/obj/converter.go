@@ -14,17 +14,34 @@ const (
 	WordSize     = 2
 	VertexSize   = 7 * WordSize
 	VertexOffset = 1 * WordSize
+	TexCoordSize = 2 * WordSize
 	EdgeSize     = 3 * WordSize
 	IndexSize    = WordSize
 )
 
 func Convert(data *WavefrontData, cp ConverterParams) (string, error) {
 	/* IMPORTANT! make sure no index is equal to 0 */
-	geom := Geometry{Name: cp.Name}
+	geom := Geometry{
+		Name:              cp.Name,
+		FaceIndexSize:     1,
+		FaceTexCoordIndex: -1,
+		FaceEdgeIndex:     -1,
+	}
+
+	if cp.Textured {
+		geom.FaceTexCoordIndex = geom.FaceIndexSize
+		geom.FaceIndexSize += 1
+	}
+
+	if cp.Edges {
+		geom.FaceEdgeIndex = geom.FaceIndexSize
+		geom.FaceIndexSize += 1
+	}
 
 	/* dump geometry data from all the objects */
 	for _, obj := range data.Objects {
 		var vertexIndices []int
+		var texCoordIndices []int
 		var edgeIndices []int
 		var faceIndices []int
 
@@ -39,15 +56,28 @@ func Convert(data *WavefrontData, cp ConverterParams) (string, error) {
 				Vector{0, int(x * 16), int(y * 16), int(z * 16), 0, 0, 0})
 		}
 
+		/* texture coordinates */
+		if cp.Textured {
+			s := cp.TextureScale
+			for _, vt := range obj.TexCoords {
+				texCoordIndices = append(texCoordIndices,
+					len(geom.TexCoords)*TexCoordSize)
+				geom.TexCoords = append(geom.TexCoords,
+					Vector{int(vt[0] * s), int(vt[1] * s)})
+			}
+		}
+
 		/* edges */
-		edges := CalculateEdges(obj)
-		for _, e := range edges {
-			edgeIndices = append(edgeIndices,
-				len(geom.Edges)*EdgeSize)
-			/* pre-compute vertex indices */
-			e.Point[0] = vertexIndices[e.Point[0]]
-			e.Point[1] = vertexIndices[e.Point[1]]
-			geom.Edges = append(geom.Edges, e)
+		if cp.Edges {
+			edges := CalculateEdges(obj)
+			for _, e := range edges {
+				edgeIndices = append(edgeIndices,
+					len(geom.Edges)*EdgeSize)
+				/* pre-compute vertex indices */
+				e.Point[0] = vertexIndices[e.Point[0]]
+				e.Point[1] = vertexIndices[e.Point[1]]
+				geom.Edges = append(geom.Edges, e)
+			}
 		}
 
 		/* faces */
@@ -67,7 +97,12 @@ func Convert(data *WavefrontData, cp ConverterParams) (string, error) {
 				/* precompute vertex / edge indices */
 				of.Indices = append(of.Indices, vertexIndices[fi.Vertex-1])
 				if poly {
-					of.Indices = append(of.Indices, edgeIndices[fi.Edge])
+					if cp.Edges {
+						of.Indices = append(of.Indices, edgeIndices[fi.Edge])
+					}
+					if cp.Textured {
+						of.Indices = append(of.Indices, texCoordIndices[fi.TexCoord-1])
+					}
 				}
 			}
 			geom.Faces = append(geom.Faces, of)
@@ -82,7 +117,7 @@ func Convert(data *WavefrontData, cp ConverterParams) (string, error) {
 			vertexSet := make(map[int]bool)
 			edgeSet := make(map[int]bool)
 
-			/* face group */
+			/* calculate per object face group... */
 			for _, gi := range g.Indices {
 				og.Face.Indices = append(og.Face.Indices, faceIndices[gi])
 				for _, fi := range obj.Faces[gi].Indices {
@@ -93,13 +128,15 @@ func Convert(data *WavefrontData, cp ConverterParams) (string, error) {
 				}
 			}
 
-			/* vertex group */
+			/* TODO what about texcoord group? */
+
+			/* ... and corresponding vertex group */
 			for vi := range vertexSet {
 				og.Vertex.Indices = append(og.Vertex.Indices, vertexIndices[vi])
 			}
 			sort.Ints(og.Vertex.Indices)
 
-			/* edge group */
+			/* ... and edge group */
 			for ei := range edgeSet {
 				og.Edge.Indices = append(og.Edge.Indices, edgeIndices[ei])
 			}
@@ -113,15 +150,19 @@ func Convert(data *WavefrontData, cp ConverterParams) (string, error) {
 	}
 
 	/* determine subarrays position after merging into single array */
-	geom.EdgeOffset = len(geom.Vertices) * VertexSize
+	geom.TexCoordOffset = len(geom.Vertices) * VertexSize
+	geom.EdgeOffset = geom.TexCoordOffset + len(geom.TexCoords)*TexCoordSize
 	geom.FaceDataOffset = geom.EdgeOffset + len(geom.Edges)*EdgeSize
 	geom.ObjectDataOffset = geom.FaceDataOffset + geom.FaceDataCount*IndexSize
 
-	/* relocate edge indices in faces */
+	/* relocate texture coordinate & edge indices in faces */
 	for i, face := range geom.Faces {
-		if len(face.Indices) >= 3 {
-			for j := 1; j < len(face.Indices); j += 2 {
-				geom.Faces[i].Indices[j] += geom.EdgeOffset
+		for j := 0; j < len(face.Indices); j += geom.FaceIndexSize {
+			if geom.FaceTexCoordIndex > 0 {
+				geom.Faces[i].Indices[j+geom.FaceTexCoordIndex] += geom.TexCoordOffset
+			}
+			if geom.FaceEdgeIndex > 0 {
+				geom.Faces[i].Indices[j+geom.FaceEdgeIndex] += geom.EdgeOffset
 			}
 		}
 	}
@@ -204,11 +245,14 @@ func Convert(data *WavefrontData, cp ConverterParams) (string, error) {
 }
 
 type ConverterParams struct {
-	Name    string
-	Scale   float64
-	OffsetX float64
-	OffsetY float64
-	OffsetZ float64
+	Name         string
+	Scale        float64
+	OffsetX      float64
+	OffsetY      float64
+	OffsetZ      float64
+	TextureScale float64
+	Edges        bool
+	Textured     bool
 }
 
 type Vector []int
@@ -255,6 +299,11 @@ type Geometry struct {
 	FaceDataCount   int
 	ObjectDataCount int
 
+	FaceIndexSize     int
+	FaceTexCoordIndex int
+	FaceEdgeIndex     int
+
+	TexCoordOffset        int
 	EdgeOffset            int
 	FaceDataOffset        int
 	VertexGroupDataOffset int
@@ -263,6 +312,7 @@ type Geometry struct {
 	ObjectDataOffset      int
 
 	Vertices  []Vector
+	TexCoords []Vector
 	Edges     []Edge
 	Faces     []Face
 	Objects   []Object
