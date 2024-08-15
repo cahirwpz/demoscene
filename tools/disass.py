@@ -75,7 +75,7 @@ Section = Literal('.text') | Literal('.data') | Literal('.bss')
 Label = Group(
           Opt(HexDigits + Suppress(White())) +
           Opt(Suppress(HexDigits + White())) +
-          Suppress(Char('<')) + (Section | Regex('[A-Za-z0-9_]+')) +
+          Suppress(Char('<')) + (Section | Regex('[A-Za-z0-9_.]+')) +
           Opt(HexNumber) + Suppress(Char('>')))
 
 # data register direct
@@ -733,7 +733,7 @@ class Disassembler:
             return []
         try:
             return Operands.parse_string(s, parse_all=True).as_list()
-        except ParseException as ex:
+        except ParseException:
             return s
 
     def _rewrite_label(self, addend, name, addr, rel):
