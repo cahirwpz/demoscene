@@ -1,6 +1,6 @@
 TOPDIR := $(realpath ../..)
 
-CLEAN-FILES := data/dancing.c data/dancing-pal.c 
+CLEAN-FILES := data/dancing.c data/cock.c data/dancing-pal.c 
 
 PNG2C.dancing-pal := --pixmap gradient,16x22x12
 

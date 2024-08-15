@@ -1,33 +1,36 @@
-FROM debian:bullseye-backports
+FROM debian:bookworm-backports
 
 WORKDIR /root
 
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends \
-    build-essential \
-    python3 curl git \
-    ca-certificates \
-    python3-pip xauth \
-    libopenexr-dev \
-    bzip2 \
-    zlib1g-dev \
-    libxmu-dev \
-    libxi-dev \
-    libxxf86vm-dev \
-    libfontconfig1 \
-    libxrender1 \
-    libgl1-mesa-glx \
-    xz-utils \
-    xvfb
+  build-essential \
+  curl \
+  git \
+  ca-certificates \
+  imagemagick \
+  python3 \
+  xauth \
+  libopenexr-dev \
+  bzip2 \
+  zlib1g-dev \
+  libxmu-dev \
+  libxi-dev \
+  libxxf86vm-dev \
+  libfontconfig1 \
+  libxkbcommon0 \
+  libxrender1 \
+  libgl1-mesa-glx \
+  xz-utils \
+  xvfb
 
 RUN update-ca-certificates
-RUN pip3 install pillow
 
 # Download and install Blender
-RUN curl -o blender-3.1.0-linux-x64.tar.xz https://mirror.clarkson.edu/blender/release/Blender3.1/blender-3.1.0-linux-x64.tar.xz \
-	&& tar -xvf blender-3.1.0-linux-x64.tar.xz --strip-components=1 -C /bin \
-	&& rm -rf blender-3.1.0-linux-x64.tar.xz \
-	&& rm -rf blender-3.1.0-linux-x64
+RUN curl -o blender-4.2.0-linux-x64.tar.xz https://mirrors.dotsrc.org/blender/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz \
+  && tar -xvf blender-4.2.0-linux-x64.tar.xz --strip-components=1 -C /bin \
+  && rm -rf blender-4.2.0-linux-x64.tar.xz \
+  && rm -rf blender-4.2.0-linux-x64
 
 # install rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y
