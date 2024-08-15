@@ -40,6 +40,7 @@ void UpdateFaceVisibility(Object3D *object) {
         s = swap16(s); /* s >>= 16, ignore upper word */
 #else
         short s;
+      light:
         asm("mulsw %0,%0\n"
             "mulsw %1,%1\n"
             "mulsw %2,%2\n"
@@ -62,6 +63,12 @@ void UpdateFaceVisibility(Object3D *object) {
           *(char *)fn = res;
         }
       } else {
+        /* if the face is double-sided, use reversed vector direction */
+        if (FACE(f)->material < 0) {
+          v = -v;
+          goto light;
+        }
+
         *(char *)fn = -1;
       }
     }

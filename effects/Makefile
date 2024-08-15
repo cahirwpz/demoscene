@@ -41,6 +41,7 @@ SUBDIRS := \
 	sea-anemone \
 	shapes \
 	showpchg \
+	stencil3d \
 	stripes \
 	textscroll \
 	thunders \
