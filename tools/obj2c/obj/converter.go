@@ -157,6 +157,10 @@ func Convert(data *WavefrontData, cp ConverterParams) (string, error) {
 
 	/* relocate texture coordinate & edge indices in faces */
 	for i, face := range geom.Faces {
+		if len(face.Indices) < 3 {
+			continue
+		}
+
 		for j := 0; j < len(face.Indices); j += geom.FaceIndexSize {
 			if geom.FaceTexCoordIndex > 0 {
 				geom.Faces[i].Indices[j+geom.FaceTexCoordIndex] += geom.TexCoordOffset

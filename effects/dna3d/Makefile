@@ -1,7 +1,7 @@
 TOPDIR := $(realpath ../..)
 
-CLEAN-FILES := data/bobs.c data/bobs_gradient.c data/dna.{c,obj,mtl} \
-	data/necrocoq-??-{pal,data}.{c,png} data/necrocoq-??.c
+CLEAN-FILES := data/bobs.c data/bobs_gradient.c data/dna.* \
+	data/necrocoq-??-* data/necrocoq-??.c
 
 LIBS := lib3d
 
