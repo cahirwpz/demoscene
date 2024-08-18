@@ -45,6 +45,7 @@ SUBDIRS := \
 	stripes \
 	textscroll \
 	thunders \
+	texobj \
 	tiles8 \
 	tiles16 \
 	tilezoomer \
