@@ -87,6 +87,9 @@ static inline void _WaitBlitter(CustomPtrT custom_) {
 
 #define WaitBlitter() _WaitBlitter(custom)
 
+/* @brief Stops Blitter activity gracefully. */
+void BlitterStop(void);
+
 /* Blitter copy. */
 void BlitterCopySetup(const BitmapT *dst, u_short x, u_short y,
                       const BitmapT *src);

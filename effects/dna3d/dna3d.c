@@ -11,8 +11,6 @@
 
 #define screen_bplSize (WIDTH * HEIGHT / 8)
 
-#define TZ (-256)
-
 #include "data/bobs.c"
 #include "data/bobs_gradient.c"
 #include "data/dna.c"
@@ -29,12 +27,12 @@
 #include "data/necrocoq-09.c"
 #include "data/necrocoq-10.c"
 
-static Object3D *object;
-static CopListT *cp;
-static BitmapT *screen[2];
-static CopInsPairT *bplptr;
+static __code Object3D *object;
+static __code CopListT *cp;
+static __code BitmapT *screen[2];
+static __code CopInsPairT *bplptr;
 static CopInsT *linecol[necrocoq_height];
-static int active = 0;
+static __code int active = 0;
 
 static u_short *necrochicken_cols[11] = {
   necrocoq_00_cols_pixels,
@@ -78,6 +76,10 @@ static short envelope[envelope_length] = {
 static CopListT *MakeCopperList(void) {
   CopListT *cp = 
     NewCopList(100 + necrocoq_height * (necrocoq_00_cols_width + 10));
+
+  /* bitplane modulos for both playfields */
+  CopMove16(cp, bpl2mod, WIDTH / 8 * (necrocoq_depth - 1));
+  CopMove16(cp, bpl1mod, WIDTH / 8 * (DEPTH - 1));
 
   /* interleaved bitplanes setup */
   CopWait(cp, Y(-1), 0);
@@ -123,10 +125,14 @@ static CopListT *MakeCopperList(void) {
 }
 static void Init(void) {
   object = NewObject3D(&dna_helix);
-  object->translate.z = fx4i(TZ);
+  object->translate.z = fx4i(-256);
 
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR|BM_INTERLEAVED);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR|BM_INTERLEAVED);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_INTERLEAVED);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_INTERLEAVED);
+
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
+  BitmapClear(screen[0]);
+  BitmapClear(screen[1]);
 
   SetupDisplayWindow(MODE_LORES, X(32), Y(0), WIDTH, HEIGHT);
   SetupBitplaneFetch(MODE_LORES, X(32), WIDTH);
@@ -135,18 +141,17 @@ static void Init(void) {
 
   /* reverse playfield priorities */
   custom->bplcon2 = 0;
-  /* bitplane modulos for both playfields */
-  custom->bpl1mod = WIDTH / 8 * (DEPTH - 1);
-  custom->bpl2mod = WIDTH / 8 * (necrocoq_depth - 1);
 
   cp = MakeCopperList();
   CopListActivate(cp);
-  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill(void) {
+  BlitterStop();
+  CopperStop();
+
   DeleteCopList(cp);
-  DisableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
   DeleteObject3D(object);
@@ -550,4 +555,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Bobs3D, NULL, NULL, Init, Kill, Render, NULL);
+EFFECT(Dna3D, NULL, NULL, Init, Kill, Render, NULL);

@@ -1,3 +1,4 @@
+#include "custom.h"
 #include <effect.h>
 #include <blitter.h>
 #include <copper.h>
@@ -21,11 +22,12 @@
 #include "data/cube-tex4.c"
 
 static __code BitmapT *screen[2];
-static __code CopListT *cp;
-static __code CopInsPairT *bplptr;
+static __code CopListT *cp[2];
+static __code CopInsPairT *bplptr[2];
 static __code u_char *chunky;
 static __code short active;
 static __code volatile short c2p_phase;
+static __code short c2p_active;
 static __code void **c2p_bpl;
 static __code Object3D *object;
 static __code short *texture[5];
@@ -301,7 +303,7 @@ static void DrawObject(Object3D *object) {
 /* If you think you can speed it up (I doubt it) please first look into
  * `c2p_2x1_4bpl_pixels_per_byte_blitter.py` in `prototypes/c2p`. */
 
-#define C2P_LAST 12
+#define C2P_LAST 13
 
 static void ChunkyToPlanar(CustomPtrT custom_) {
   register void **bpl = c2p_bpl;
@@ -329,162 +331,175 @@ static void ChunkyToPlanar(CustomPtrT custom_) {
    * (WIDTH*2, HEIGHT, DEPTH) and will be placed in bpl[2] and bpl[3].
    */
 
-  custom_->intreq_ = INTF_BLIT;
 
-  switch (c2p_phase) {
-    case 0:
-      /* Initialize chunky to planar. */
-      custom_->bltafwm = -1;
-      custom_->bltalwm = -1;
+  for (; c2p_phase < C2P_LAST && !BlitterBusy(); c2p_phase++) {
+    switch (c2p_phase) {
+      case 0:
+        /* Initialize chunky to planar. */
+        custom_->bltafwm = -1;
+        custom_->bltalwm = -1;
 
-      custom_->bltamod = 0;
-      custom_->bltbmod = 0;
-      custom_->bltdmod = 0;
-      custom_->bltcdat = 0x3300;
+        custom_->bltamod = 0;
+        custom_->bltbmod = 0;
+        custom_->bltdmod = 0;
+        custom_->bltcdat = 0x3300;
 
-      custom_->bltapt = bpl[0] + BUFSIZE * 2 - 2;
-      custom_->bltbpt = bpl[0] + BUFSIZE * 2 - 2;
-      custom_->bltdpt = bpl[2] + BUFSIZE * 2 - 2;
-      
-      /* ((a << 6) & 0xCC00) | (b & ~0xCC00) */
-      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(6);
-      custom_->bltcon1 = BLITREVERSE;
+        custom_->bltapt = bpl[0] + BUFSIZE * 2 - 2;
+        custom_->bltbpt = bpl[0] + BUFSIZE * 2 - 2;
+        custom_->bltdpt = bpl[2] + BUFSIZE * 2 - 2;
 
-      /* overall size: BUFSIZE * 2 bytes (chunk buffer size) */
-      custom_->bltsize = BLTSIZE(WIDTH / 2, HEIGHT);
-      break; /* B */
+        /* ((a << 6) & 0xCC00) | (b & ~0xCC00) */
+        custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(6);
+        custom_->bltcon1 = BLITREVERSE;
 
-    case 1:
-      custom_->bltamod = 6;
-      custom_->bltbmod = 6;
-      custom_->bltdmod = 2;
+        /* overall size: BUFSIZE * 2 bytes (chunk buffer size) */
+        custom_->bltsize = BLTSIZE(WIDTH / 2, HEIGHT);
+        break; /* B */
 
-      custom_->bltapt = bpl[2];
-      custom_->bltbpt = bpl[2] + 4;
-      custom_->bltdpt = bpl[0];
-      custom_->bltcdat = 0xFF00;
+      case 1:
+        custom_->bltamod = 6;
+        custom_->bltbmod = 6;
+        custom_->bltdmod = 2;
 
-      /* (a & 0xFF00) | ((b >> 8) & ~0xFF00) */
-      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-      custom_->bltcon1 = BSHIFT(8);
+        custom_->bltapt = bpl[2];
+        custom_->bltbpt = bpl[2] + 4;
+        custom_->bltdpt = bpl[0];
+        custom_->bltcdat = 0xFF00;
 
-    case 2:
-      /* invoked twice, overall size: BUFSIZE / 2 bytes */
-      custom_->bltsize = BLTSIZE(1, BUFSIZE / 8);
-      break; /* C (even) */
+        /* (a & 0xFF00) | ((b >> 8) & ~0xFF00) */
+        custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
+        custom_->bltcon1 = BSHIFT(8);
 
-    case 3:
-      custom_->bltapt = bpl[2] + 2;
-      custom_->bltbpt = bpl[2] + 6;
-      custom_->bltdpt = bpl[0] + 2;
+      case 2:
+        /* invoked twice, overall size: BUFSIZE / 2 bytes */
+        custom_->bltsize = BLTSIZE(1, BUFSIZE / 8);
+        break; /* C (even) */
 
-    case 4:
-      /* invoked twice, overall size: BUFSIZE / 2 bytes */
-      custom_->bltsize = BLTSIZE(1, BUFSIZE / 8);
-      break; /* C (odd) */
+      case 3:
+        custom_->bltapt = bpl[2] + 2;
+        custom_->bltbpt = bpl[2] + 6;
+        custom_->bltdpt = bpl[0] + 2;
 
-    case 5:
-      custom_->bltamod = 2;
-      custom_->bltbmod = 2;
-      custom_->bltdmod = 0;
-      custom_->bltcdat = 0xF0F0;
+      case 4:
+        /* invoked twice, overall size: BUFSIZE / 2 bytes */
+        custom_->bltsize = BLTSIZE(1, BUFSIZE / 8);
+        break; /* C (odd) */
 
-      /* Swap 4x2, pass 1, high-bits. */
-      custom_->bltapt = bpl[0];
-      custom_->bltbpt = bpl[0] + 2;
-      custom_->bltdpt = bpl[1] + BUFSIZE / 2;
+      case 5:
+        custom_->bltamod = 2;
+        custom_->bltbmod = 2;
+        custom_->bltdmod = 0;
+        custom_->bltcdat = 0xF0F0;
 
-      /* (a & 0xF0F0) | ((b >> 4) & ~0xF0F0) */
-      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-      custom_->bltcon1 = BSHIFT(4);
+        /* Swap 4x2, pass 1, high-bits. */
+        custom_->bltapt = bpl[0];
+        custom_->bltbpt = bpl[0] + 2;
+        custom_->bltdpt = bpl[1] + BUFSIZE / 2;
 
-    case 6:
-      /* invoked twice, overall size: BUFSIZE / 2 bytes */
-      custom_->bltsize = BLTSIZE(1, BUFSIZE / 8);
-      break; /* D[0] */
+        /* (a & 0xF0F0) | ((b >> 4) & ~0xF0F0) */
+        custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
+        custom_->bltcon1 = BSHIFT(4);
 
-    case 7:
-      /* Swap 4x2, pass 2, low-bits. */
-      custom_->bltapt = bpl[1] - 4;
-      custom_->bltbpt = bpl[1] - 2;
-      custom_->bltdpt = bpl[1] + BUFSIZE / 2 - 2;
+      case 6:
+        /* invoked twice, overall size: BUFSIZE / 2 bytes */
+        custom_->bltsize = BLTSIZE(1, BUFSIZE / 8);
+        break; /* D[0] */
 
-      /* ((a << 4) & 0xF0F0) | (b & ~0xF0F0) */
-      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(4);
-      custom_->bltcon1 = BLITREVERSE;
+      case 7:
+        /* Swap 4x2, pass 2, low-bits. */
+        custom_->bltapt = bpl[1] - 4;
+        custom_->bltbpt = bpl[1] - 2;
+        custom_->bltdpt = bpl[1] + BUFSIZE / 2 - 2;
 
-    case 8:
-      /* invoked twice, overall size: BUFSIZE / 2 bytes */
-      custom_->bltsize = BLTSIZE(1, BUFSIZE / 8);
-      break;
+        /* ((a << 4) & 0xF0F0) | (b & ~0xF0F0) */
+        custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(4);
+        custom_->bltcon1 = BLITREVERSE;
 
-    case 9:
-      custom_->bltamod = 0;
-      custom_->bltbmod = 0;
-      custom_->bltdmod = 0;
-      custom_->bltcdat = 0xAAAA;
+      case 8:
+        /* invoked twice, overall size: BUFSIZE / 2 bytes */
+        custom_->bltsize = BLTSIZE(1, BUFSIZE / 8);
+        break;
 
-      custom_->bltapt = bpl[1];
-      custom_->bltbpt = bpl[1];
-      custom_->bltdpt = bpl[3];
+      case 9:
+        custom_->bltamod = 0;
+        custom_->bltbmod = 0;
+        custom_->bltdmod = 0;
+        custom_->bltcdat = 0xAAAA;
 
-      /* (a & 0xAAAA) | ((b >> 1) & ~0xAAAA) */
-      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-      custom_->bltcon1 = BSHIFT(1);
+        custom_->bltapt = bpl[1];
+        custom_->bltbpt = bpl[1];
+        custom_->bltdpt = bpl[3];
 
-      /* overall size: BUFSIZE bytes */
-      custom_->bltsize = BLTSIZE(4, BUFSIZE / 8);
-      break;
+        /* (a & 0xAAAA) | ((b >> 1) & ~0xAAAA) */
+        custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
+        custom_->bltcon1 = BSHIFT(1);
 
-    case 10:
-      custom_->bltapt = bpl[1] + BUFSIZE - 2;
-      custom_->bltbpt = bpl[1] + BUFSIZE - 2;
-      custom_->bltdpt = bpl[2] + BUFSIZE - 2;
-      custom_->bltcdat = 0xAAAA;
+        /* overall size: BUFSIZE bytes */
+        custom_->bltsize = BLTSIZE(4, BUFSIZE / 8);
+        break;
 
-      /* ((a << 1) & 0xAAAA) | (b & ~0xAAAA) */
-      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(1);
-      custom_->bltcon1 = BLITREVERSE;
+      case 10:
+        custom_->bltapt = bpl[1] + BUFSIZE - 2;
+        custom_->bltbpt = bpl[1] + BUFSIZE - 2;
+        custom_->bltdpt = bpl[2] + BUFSIZE - 2;
+        custom_->bltcdat = 0xAAAA;
 
-      /* overall size: BUFSIZE bytes */
-      custom_->bltsize = BLTSIZE(4, BUFSIZE / 8);
-      break;
+        /* ((a << 1) & 0xAAAA) | (b & ~0xAAAA) */
+        custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(1);
+        custom_->bltcon1 = BLITREVERSE;
 
-    case 11:
-      CopInsSet32(&bplptr[0], bpl[2]);
-      CopInsSet32(&bplptr[1], bpl[3]);
-      CopInsSet32(&bplptr[2], bpl[2] + BUFSIZE / 2);
-      CopInsSet32(&bplptr[3], bpl[3] + BUFSIZE / 2);
+        /* overall size: BUFSIZE bytes */
+        custom_->bltsize = BLTSIZE(4, BUFSIZE / 8);
+        break;
 
-      /* initialize rendering buffer */
-      custom_->bltdpt = bpl[0];
-#if 1
-      /* copy the background */
-      custom_->bltapt = background_pixels;
-      custom_->bltcon0 = (SRCA | DEST) | A_TO_D;
-#else
-      /* set all pixels to 0 */
-      custom_->bltadat = 0;
-      custom_->bltcon0 = DEST | A_TO_D;
-#endif
-      custom_->bltcon1 = 0;
+      case 11:
+        /* initialize rendering buffer - copy the background */
+        custom_->bltdpt = bpl[0];
+        custom_->bltapt = background_pixels;
+        custom_->bltcon0 = (SRCA | DEST) | A_TO_D;
+        custom_->bltcon1 = 0;
 
-      /* overall size: BUFSIZE * 2 bytes (chunk buffer size) */
-      custom_->bltsize = BLTSIZE(WIDTH / 2, HEIGHT);
-      break;
+        /* overall size: BUFSIZE * 2 bytes (chunk buffer size) */
+        custom_->bltsize = BLTSIZE(WIDTH / 2, HEIGHT);
+        break;
 
-    default:
-      break;
+      case 12:
+        {
+          CopInsPairT *ins = bplptr[c2p_active];
+          CopInsSet32(ins++, bpl[2]);
+          CopInsSet32(ins++, bpl[3]);
+          CopInsSet32(ins++, bpl[2] + BUFSIZE / 2);
+          CopInsSet32(ins++, bpl[3] + BUFSIZE / 2);
+          CopListRun(cp[c2p_active]);
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    custom_->intreq_ = INTF_BLIT;
   }
+}
 
-  c2p_phase++;
+static void ChunkyToPlanarStart(void) {
+  c2p_active = active;
+  c2p_phase = 0;
+  c2p_bpl = screen[active]->planes;
+  ChunkyToPlanar(custom);
+  active ^= 1;
+}
+
+static void ChunkyToPlanarWait(void) {
+  while (c2p_phase < C2P_LAST)
+    WaitBlitter();
 }
 
 static CopListT *MakeCopperList(short active) {
   CopListT *cp = NewCopList(HEIGHT * 2 * 3 + 50);
   short i;
 
-  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
+  bplptr[active] = CopSetupBitplanes(cp, screen[active], DEPTH);
   for (i = 0; i < HEIGHT * 2; i++) {
     CopWaitSafe(cp, Y(i), 0);
     /* Line doubling. */
@@ -494,13 +509,7 @@ static CopListT *MakeCopperList(short active) {
   return CopListFinish(cp);
 }
 
-static void Init(void) {
-  object = NewObject3D(&cube);
-  object->translate.z = fx4i(-250);
-
-  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, BM_CLEAR);
-  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, BM_CLEAR);
-
+static void Load(void) {
   ScrambleBackground();
 
   texture[0] = ScrambleTexture(texture_0_pixels);
@@ -509,40 +518,59 @@ static void Init(void) {
   texture[3] = ScrambleTexture(texture_3_pixels);
   texture[4] = ScrambleTexture(texture_4_pixels);
 
-  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH * 2, HEIGHT * 2);
-  LoadColors(texture_colors, 0);
-
-  cp = MakeCopperList(0);
-  CopListActivate(cp);
-
-  EnableDMA(DMAF_RASTER | DMAF_BLITTER);
-
-  active = 0;
-  c2p_bpl = NULL;
-  c2p_phase = 256;
-
-  SetIntVector(INTB_BLIT, (IntHandlerT)ChunkyToPlanar, (void *)custom);
-  EnableINT(INTF_BLIT);
+  object = NewObject3D(&cube);
+  object->translate.z = fx4i(-256);
 }
 
-static void Kill(void) {
-  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
-
-  DisableINT(INTF_BLIT);
-  ResetIntVector(INTB_BLIT);
-
-  DeleteCopList(cp);
-
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
+static void UnLoad(void) {
+  DeleteObject3D(object);
 
   MemFree(texture[0]);
   MemFree(texture[1]);
   MemFree(texture[2]);
   MemFree(texture[3]);
   MemFree(texture[4]);
+}
 
-  DeleteObject3D(object);
+static void Init(void) {
+  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, 0);
+
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
+  BitmapClear(screen[0]);
+  BitmapClear(screen[1]);
+  WaitBlitter();
+
+  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH * 2, HEIGHT * 2);
+  LoadColors(texture_colors, 0);
+
+  cp[0] = MakeCopperList(0);
+  cp[1] = MakeCopperList(1);
+
+  active = 0;
+  c2p_phase = 256;
+  ChunkyToPlanarStart();
+  ChunkyToPlanarWait();
+
+  SetIntVector(INTB_BLIT, (IntHandlerT)ChunkyToPlanar, (void *)custom);
+  EnableINT(INTF_BLIT);
+
+  CopListActivate(cp[0]);
+  EnableDMA(DMAF_RASTER);
+}
+
+static void Kill(void) {
+  CopperStop();
+
+  DisableINT(INTF_BLIT);
+  ResetIntVector(INTB_BLIT);
+
+  BlitterStop();
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
+
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 PROFILE(UpdateGeometry);
@@ -567,13 +595,8 @@ static void Render(void) {
   }
   ProfilerStop(DrawObject);
 
-  while (c2p_phase < C2P_LAST)
-    WaitBlitter();
-
-  c2p_phase = 0;
-  c2p_bpl = screen[active]->planes;
-  ChunkyToPlanar(custom);
-  active ^= 1;
+  ChunkyToPlanarWait();
+  ChunkyToPlanarStart();
 }
 
-EFFECT(TexTri, NULL, NULL, Init, Kill, Render, NULL);
+EFFECT(TexTri, Load, UnLoad, Init, Kill, Render, NULL);
