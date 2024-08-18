@@ -21,6 +21,8 @@ static __code int active = 0;
 #include "data/pattern-1-2.c"
 #include "data/pattern-1-3.c"
 #include "data/pattern-2-1.c"
+#include "data/pattern-2-2.c"
+#include "data/pattern-2-3.c"
 
 #include "data/kurak-head.c"
 
@@ -64,7 +66,7 @@ static CopListT *MakeCopperList(void) {
 
 static void Init(void) {
   object = NewObject3D(&kurak);
-  object->translate.z = fx4i(-250);
+  object->translate.z = fx4i(-256);
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
@@ -75,10 +77,10 @@ static void Init(void) {
   screen[1]->planes[DEPTH] = buffer->planes[0];
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
-
   BitmapClear(screen[0]);
   BitmapClear(screen[1]);
   BitmapClear(buffer);
+  WaitBlitter();
 
   SetupDisplayWindow(MODE_LORES, X(32), Y(0), WIDTH, HEIGHT);
   SetupBitplaneFetch(MODE_LORES, X(32), WIDTH);
@@ -173,6 +175,24 @@ static void TransformVertices(Object3D *object) {
     }
   } while (*group);
 }
+
+static __code void **patterns[2][3] = {
+  {
+    (void **)pattern_2_3.planes,
+    (void **)pattern_2_2.planes,
+    (void **)pattern_2_1.planes,
+  },
+  {
+    (void **)pattern_1_3.planes,
+    (void **)pattern_1_2.planes,
+    (void **)pattern_1_1.planes,
+  },
+};
+
+static __code short pattern_shade[16] = {
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 1, 1, 1, 2, 2, 2, 2
+};
 
 static void DrawObject(Object3D *object, void **planes,
                        CustomPtrT custom_ asm("a6")) {
@@ -368,14 +388,11 @@ static void DrawObject(Object3D *object, void **planes,
         void **srcbpl;
         void **dstbpl = planes;
         void *mask = planes[DEPTH] + bltstart;
+        short shade = pattern_shade[(short)FACE(ii)->flags];
+        short pat = FACE(ii)->material & 1;
         short i;
 
-        if (FACE(ii)->flags > 13)
-          srcbpl = (void **)pattern_1_1.planes;
-        else if (FACE(ii)->flags > 9)
-          srcbpl = (void **)pattern_1_2.planes;
-        else
-          srcbpl = (void **)pattern_1_3.planes;
+        srcbpl = patterns[pat][shade];
 
         for (i = 0; i < pattern_1_1_depth; i++) {
           void *src = *srcbpl++;
