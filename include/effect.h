@@ -47,7 +47,12 @@ extern short frameTillEnd;
 
 typedef void (*EffectFuncT)(void);
 
+#define EFFECT_MAGIC 0x47544e21 /* GTN! */
+
 typedef struct Effect {
+  /* Filled with 'GTN!' - marker for loader checks. */
+  u_int magic;
+  /* Effect C-symbol dumped to string. */
   const char *name;
   /*
    * Executed in background task when other effect is running.
@@ -87,13 +92,9 @@ void EffectKill(EffectT *effect);
 void EffectUnLoad(EffectT *effect);
 void EffectRun(EffectT *effect);
 
-#ifdef INTRO
-#undef ALIAS
-#define ALIAS(a, b)
-#endif
-
 #define EFFECT(NAME, L, U, I, K, R, V)                                         \
-  EffectT NAME##Effect = {                                                     \
+  __code EffectT NAME##Effect = {                                              \
+    .magic = EFFECT_MAGIC,                                                     \
     .name = #NAME,                                                             \
     .Load = (L),                                                               \
     .UnLoad = (U),                                                             \
@@ -101,8 +102,7 @@ void EffectRun(EffectT *effect);
     .Kill = (K),                                                               \
     .Render = (R),                                                             \
     .VBlank = (V)                                                              \
-  };                                                                           \
-  ALIAS(NAME##Effect, Effect);
+  };
 
 typedef struct Profile {
   const char *name;
