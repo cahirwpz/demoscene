@@ -1,6 +1,7 @@
 TOPDIR := $(realpath ..)
 
 SUBDIRS := \
+	abduction \
 	anim \
 	anim-polygons \
 	ball \
