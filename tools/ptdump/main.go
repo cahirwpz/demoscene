@@ -75,7 +75,7 @@ func main() {
 				row := mod.Patterns[pat][i]
 				frame := timings[j][i]
 				ts := fmt.Sprintf("%.2f", float64(frame) / 50.0)
-				fmt.Printf("%7ss | $%02x:%02x %s\n", ts, pat, i, row)
+				fmt.Printf("%7ss | %5d | $%02x:%02x %s\n", ts, frame, j, i, row)
 			}
 		}
 	} else {
