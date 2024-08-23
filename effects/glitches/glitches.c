@@ -39,7 +39,6 @@ static inline int fastrand(void) {
 
 static void MakeCopperList(CopListT *cp) {
   short i;
-  int mask;
   CopListReset(cp);
   CopSetupBitplanes(cp, &background, S_DEPTH);
 
@@ -51,10 +50,9 @@ static void MakeCopperList(CopListT *cp) {
         CopMove16(cp, bpldat[5], random());
       }
     case 1: // HALFBRITE
-      mask = random();
       CopMove16(cp, bpldat[5], 0);
       CopWaitSafe(cp, Y(0), 0);
-      CopMove16(cp, bpldat[4], mask);
+      CopMove16(cp, bpldat[4], random());
   }
 
   CopListFinish(cp);
