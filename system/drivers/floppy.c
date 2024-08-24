@@ -257,7 +257,7 @@ FileT *FloppyOpen(void) {
 
     f = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
     f->ops = &FloppyOps;
-    f->fdtmr = AcquireTimer(TIMER_CIAB_A);
+    f->fdtmr = AcquireTimer(TIMER_CIAA_A);
     f->encoded = MemAlloc(RAW_TRACK_SIZE, MEMF_CHIP);
     f->decoded = MemAlloc(TRACK_SIZE, MEMF_PUBLIC);
 
