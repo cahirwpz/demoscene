@@ -1,6 +1,7 @@
 #include <debug.h>
 #include <system/cpu.h>
 #include <system/trap.h>
+#include <system/task.h>
 
 static const char *const trapname[T_NTRAPS] = {
   [T_UNKNOWN] = "Bad Trap",
@@ -52,13 +53,16 @@ void TrapHandler(TrapFrameT *frame) {
   }
 
   /* clang-format off */
-  Log("Exception (in %s mode): %s!\n"
+#if MULTITASK
+  TaskDebug();
+#endif
+  Log("Exception at %p (in %s mode): %s!\n"
       " D0: %08x D1: %08x D2: %08x D3: %08x\n"
       " D4: %08x D5: %08x D6: %08x D7: %08x\n"
       " A0: %08x A1: %08x A2: %08x A3: %08x\n"
       " A4: %08x A5: %08x A6: %08x SP: %08x\n"
       " PC: %08x SR: %04x\n",
-      supervisor ? "supervisor" : "user", trapname[trap],
+      (void *)pc, supervisor ? "supervisor" : "user", trapname[trap],
       frame->d0, frame->d1, frame->d2, frame->d3,
       frame->d4, frame->d5, frame->d6, frame->d7,
       frame->a0, frame->a1, frame->a2, frame->a3,

@@ -48,6 +48,7 @@ void TaskResume(TaskT *tsk);
 void TaskResumeISR(TaskT *tsk);
 void TaskSuspend(TaskT *tsk);
 void TaskPrioritySet(TaskT *tsk, u_char prio);
+void TaskDebug(void);
 
 #ifdef _TASK_PRIVATE
 void ReadyAdd(TaskT *tsk);
