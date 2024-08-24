@@ -131,5 +131,7 @@ void UpdateObjectTransformation(Object3D *object);
 void UpdateFaceVisibility(Object3D *object);
 void UpdateVertexVisibility(Object3D *object);
 void SortFaces(Object3D *object);
+void SortFacesMinZ(Object3D *object);
+void AllFacesDoubleSided(Object3D *object);
 
 #endif

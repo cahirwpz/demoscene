@@ -1,6 +1,7 @@
 TOPDIR := $(realpath ../..)
 
 SOURCES := \
+	AllFacesDoubleSided.c \
 	Compose3D.c \
 	DeleteObject3D.c \
 	LoadIdentity3D.c \
@@ -9,6 +10,7 @@ SOURCES := \
 	NewObject3D.c \
 	Scale3D.c \
 	SortFaces.c \
+	SortFacesMinZ.c \
 	Transform3D.c \
 	Translate3D.c \
 	UpdateFaceVisibility.c \
