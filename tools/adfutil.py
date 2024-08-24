@@ -78,13 +78,19 @@ if __name__ == '__main__':
         if not executable:
             raise SystemExit('No AmigaHunk executable found!')
 
+    with open(args.image, 'rb') as img:
+        img = img.read()
+
+    if len(img) > FLOPPY - 2 * SECTOR:
+        img_len = len(img) // 1024
+        raise SystemExit(f'Image is to big to be written to a disk ({img_len} kB)!')
+
     with open(args.adf, 'wb') as adf:
         if bootblock:
             write_bb(adf, bootblock, executable)
 
         # Write file system image
-        with open(args.image, 'rb') as img:
-            adf.write(img.read())
+        adf.write(img)
 
         # Complete floppy disk image
         write_pad(adf, FLOPPY)
