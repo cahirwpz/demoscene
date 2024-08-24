@@ -54,8 +54,8 @@ void ReadyAdd(TaskT *tsk);
 #endif
 
 u_int TaskWait(u_int eventSet);
-void TaskNotifyISR(u_int eventSet);
-void TaskNotify(u_int eventSet);
+int TaskNotifyISR(u_int eventSet);
+int TaskNotify(u_int eventSet);
 
 static inline void TaskYield(void) { asm volatile("trap #0"); }
 

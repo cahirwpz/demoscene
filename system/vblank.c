@@ -1,3 +1,4 @@
+#include <debug.h>
 #include <system/interrupt.h>
 #include <system/task.h>
 #include <linkerset.h>
@@ -22,6 +23,7 @@ void TaskWaitVBlank(void) {
 }
 
 void InitVBlank(void) {
+  Log("[VBlank] Registered a wakeup handler.\n");
   AddIntServer(INTB_VERTB, VertBlankWakeup);
 }
 

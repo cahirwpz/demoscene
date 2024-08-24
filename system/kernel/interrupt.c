@@ -107,6 +107,7 @@ void RemIntServer(u_int irq, IntServerT *is) {
 static void RunIntChain(IntChainT *ic) {
   /* Call each server in turn. */
   IntServerT *is = ic->head;
+  ClearIRQ(ic->flag);
   do {
     is->code(is->data);
     is = is->next;

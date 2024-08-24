@@ -14,6 +14,16 @@ u_char BootDev;
 
 extern int main(void);
 
+static void IdleTaskLoop(__unused void *ptr) {
+  for (;;) {
+    Debug("Processor goes asleep with SR=%04x!", 0x2000);
+    CpuWait();
+  }
+}
+
+static __aligned(8) char IdleTaskStack[256];
+static TaskT IdleTask;
+
 void Loader(BootDataT *bd) {
   Log("[Loader] VBR at $%08x\n", (u_int)bd->bd_vbr);
   Log("[Loader] CPU model $%02x\n", bd->bd_cpumodel);
@@ -59,12 +69,12 @@ void Loader(BootDataT *bd) {
   ciab->ciacrb = 0;
 
   /* CIA-A & CIA-B: Clear pending interrupts. */
-  SampleICR(ciaa, CIAICRF_ALL);
-  SampleICR(ciab, CIAICRF_ALL);
+  (void)ciaa->_ciaicr;
+  (void)ciab->_ciaicr;
 
   /* CIA-A & CIA-B: Disable all interrupts. */
-  WriteICR(ciaa, CIAICRF_ALL);
-  WriteICR(ciab, CIAICRF_ALL);
+  ciaa->_ciaicr = CIAICRF_ALL;
+  ciab->_ciaicr = CIAICRF_ALL;
 
   /* Enable master bit in DMACON and INTENA */
   EnableDMA(DMAF_MASTER);
@@ -75,6 +85,8 @@ void Loader(BootDataT *bd) {
 
 #if MULTITASK
   TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
+  TaskInit(&IdleTask, "idle", IdleTaskStack, sizeof(IdleTaskStack));
+  TaskRun(&IdleTask, 3, IdleTaskLoop, NULL);
 #endif
   CallFuncList(&__INIT_LIST__);
 

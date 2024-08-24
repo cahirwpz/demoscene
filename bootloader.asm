@@ -40,7 +40,7 @@
 
 ; configurable parameters
 
-STACKSIZE       EQU     512     ; initial stack size for the program
+STACKSIZE       EQU     768     ; initial stack size for the program
 CHIPMAX         EQU     $200000 ; maximum size of chip memory (2MB)
 
 ; custom chips addresses
