@@ -1,12 +1,20 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
-	"ghostown.pl/misc"
+	"html/template"
 	"log"
 	"os"
-	"text/template"
+
+	pt "ghostown.pl/protracker"
+)
+
+var (
+	printHelp bool
+	timing    bool
 )
 
 var moduleReportTemplate = `Module Name: {{.Name}}
@@ -24,34 +32,31 @@ Patterns Order: [{{- range .Song}}{{.}} {{end}}]
 {{- end}}
 `
 
-func (cd ChanData) String() string {
-	var note string
-	if cd.Note != nil {
-		note = cd.Note.String()
-	} else {
-		note = " _ "
-	}
-	return fmt.Sprintf(" %s %02X %01X%02X ", note, cd.SampleNumber, cd.Effect,
-		cd.EffectParams)
-}
-
-func dumpModule(m Module, baseName string) {
+func dumpModule(m pt.Module) string {
 	t, err := template.New("export").Parse(moduleReportTemplate)
 	if err != nil {
 		log.Fatal(err)
 	}
-	file, err := os.Create(baseName + "_report.txt")
+	var b bytes.Buffer
+	err = t.Execute(&b, m)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = t.Execute(file, m)
-	file.Close()
+	return b.String()
+}
+
+func init() {
+	flag.BoolVar(&printHelp, "help", false,
+		"print help message and exit")
+	flag.BoolVar(&timing, "timing", false,
+		"print timing for each row in the song")
 }
 
 func main() {
 	flag.Parse()
 
-	if len(flag.Args()) == 0 {
+	if len(flag.Args()) == 0 || printHelp {
+		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
@@ -60,7 +65,26 @@ func main() {
 		log.Fatal(err)
 	}
 
-	baseName := misc.PathWithoutExt(flag.Arg(0))
+	writer := bufio.NewWriter(os.Stdout)
+	mod := pt.ReadModule(file)
 
-	dumpModule(ReadModule(file), baseName)
+	if timing {
+		timings := pt.CalculateTimings(mod)
+		for j, pat := range mod.Song {
+			for i := 0; i < 64; i++ {
+				row := mod.Patterns[pat][i]
+				frame := timings[j][i]
+				ts := fmt.Sprintf("%.2f", float64(frame) / 50.0)
+				fmt.Printf("%7ss | $%02x:%02x %s\n", ts, pat, i, row)
+			}
+		}
+	} else {
+		_, err = writer.WriteString(dumpModule(mod))
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+	}
+
+	writer.Flush()
 }

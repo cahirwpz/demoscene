@@ -20,6 +20,7 @@ SOURCES := \
 	BlitterLine.c \
 	BlitterSetArea.c \
 	BlitterSetMaskArea.c \
+	BlitterStop.c \
 	WordMask.c
 
 include $(TOPDIR)/build/lib.mk

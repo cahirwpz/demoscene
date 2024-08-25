@@ -88,6 +88,7 @@ func ParseWavefrontMtl(filename string) ([]*WavefrontMtl, error) {
 			}
 			mtl = &WavefrontMtl{Name: fields[0]}
 			idx++
+		case "map_Kd":
 		case "Ka":
 		case "Ks":
 		case "Kd":
@@ -96,6 +97,7 @@ func ParseWavefrontMtl(filename string) ([]*WavefrontMtl, error) {
 		case "d":
 		case "Ni":
 		case "Ns":
+		case "Tf":
 		default:
 			return nil, fmt.Errorf("unknown command '%s' in line %d", cmd, lc)
 		}

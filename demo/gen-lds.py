@@ -2,7 +2,9 @@
 
 import argparse
 import json
+from contextlib import redirect_stdout
 from string import Template
+from io import StringIO
 
 
 LinkerScript = Template("""
@@ -54,30 +56,27 @@ SECTIONS
   ${effects}
 }""")
 
-PerEffect = Template("""
-  /* ${name} effect */
 
-  .text.${name} :
-  {
-    ${objects} (.text .text.*)
-  }
-  .data.${name} :
-  {
-    ${objects} (.data)
-  }
-  .bss.${name} :
-  {
-    ${objects} (.bss)
-  }
-  .datachip.${name} :
-  {
-    ${objects} (.datachip)
-  }
-  .bsschip.${name} :
-  {
-    ${objects} (.bsschip)
-  }
-""")
+Sections = [('.text', '.text .text.*'), ('.data', '.data'), ('.bss', '.bss'),
+            ('.datachip', '.datachip'), ('.bsschip', '.bsschip')]
+
+
+def per_effect(name: str, objects: list[str]) -> str:
+    f = StringIO()
+
+    with redirect_stdout(f):
+        print(f"  /* {name} effect */")
+        print()
+
+        for dst, src in Sections:
+            print(f"  {dst}.{name} :")
+            print("  {")
+            for object in objects:
+                print(f"    {object} ({src})")
+            print("  }")
+
+    return f.getvalue()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -94,11 +93,11 @@ if __name__ == '__main__':
     objects = set()
     effects = []
     for k, v in loadables.items():
-        effects.append(PerEffect.substitute(name=k, objects=" ".join(v)))
+        effects.append(per_effect(k, v))
         objects = objects.union(set(v))
 
     if objects:
-        excluded = 'EXCLUDED_FILE(%s)' % " ".join(objects)
+        excluded = 'EXCLUDE_FILE(%s)' % " ".join(objects)
     else:
         excluded = ''
 

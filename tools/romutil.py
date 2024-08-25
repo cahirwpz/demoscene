@@ -23,6 +23,7 @@ from fsutil import SECTOR, write_pad, Filesystem
 
 ROMADDR = 0xf80000
 ROMSIZE = 0x080000
+ROMFOOTER = 16
 
 
 def write_startup(rom, startup, exe):
@@ -38,7 +39,7 @@ def write_startup(rom, startup, exe):
 
 
 def write_footer(rom):
-    rom.seek(-16, os.SEEK_END)
+    rom.seek(-ROMFOOTER, os.SEEK_END)
     rom.write(bytes.fromhex('471848194f1a531b541c4f1d571e4e1f'))
 
 
@@ -70,13 +71,39 @@ if __name__ == '__main__':
     if not executable:
         raise SystemExit('No AmigaHunk executable found!')
 
-    with open(args.rom, 'wb') as rom:
-        write_startup(rom, startup, executable)
+    rom = BytesIO()
+    write_startup(rom, startup, executable)
 
-        # Write file system image
-        with open(args.image, 'rb') as img:
-            rom.write(img.read())
+    # Startup and executable must fit into first 512kB
+    assert rom.tell() <= ROMSIZE - ROMFOOTER
 
-        # Complete ROM disk image
+    # Read file system image
+    with open(args.image, 'rb') as f:
+        img = f.read()
+
+    # 1024kB ROM is tricky to handle: first half is mapped at
+    # 0xe00000, second half is mapped at 0xf80000 and should
+    # look like normal Kickstart ROM
+
+    if rom.tell() + len(img) > ROMSIZE - ROMFOOTER:
+        # 1024kB: Complete ROM disk image
+        hi_size = ROMSIZE - ROMFOOTER - rom.tell()
+        lo_size = len(img) - hi_size
+        rom.write(img[:hi_size])
         write_pad(rom, ROMSIZE)
         write_footer(rom)
+        rom.write(img[hi_size:])
+        write_pad(rom, ROMSIZE)
+
+        with open(args.rom, 'wb') as f:
+            # swap halves
+            f.write(rom.getvalue()[ROMSIZE:ROMSIZE*2])
+            f.write(rom.getvalue()[:ROMSIZE])
+    else:
+        # 512kB: Complete ROM disk image
+        rom.write(img)
+        write_pad(rom, ROMSIZE)
+        write_footer(rom)
+
+        with open(args.rom, 'wb') as f:
+            f.write(rom.getvalue())

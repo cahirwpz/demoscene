@@ -26,8 +26,6 @@
 /* definitions for blitter control register 1 */
 #define LINEMODE __BIT(0)
 
-#define BSHIFT(x) (((x) & 15) << 12)
-
 /* bltcon1 in normal mode */
 #define OVFLAG __BIT(5)
 #define FILL_XOR __BIT(4)
@@ -88,6 +86,9 @@ static inline void _WaitBlitter(CustomPtrT custom_) {
 }
 
 #define WaitBlitter() _WaitBlitter(custom)
+
+/* @brief Stops Blitter activity gracefully. */
+void BlitterStop(void);
 
 /* Blitter copy. */
 void BlitterCopySetup(const BitmapT *dst, u_short x, u_short y,

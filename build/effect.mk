@@ -5,6 +5,7 @@ SOURCES = $(EFFECT).c
 endif
 
 LOADABLES ?= $(EFFECT).exe
+DEMO ?=
 
 LIBS += libblit libgfx libmisc libc
 LDEXTRA = $(TOPDIR)/system/system.a
@@ -44,9 +45,17 @@ $(TOPDIR)/%.bin: FORCE
 
 include $(TOPDIR)/build/common.mk
 
+ifeq ($(DEMO), 1)
+CFLAGS := $(filter-out -msmall-code, $(CFLAGS))
+endif
+
+ifneq (,$(wildcard $(EFFECT).c))
+LDFLAGS_EXTRA ?= -defsym=_Effect=_$(shell sed -ne 's/EFFECT.\([^,]*\).*/\1/p' $(EFFECT).c)Effect
+endif
+
 $(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(MAIN) $(OBJECTS) $(LDEXTRA) $(LDSCRIPT)
 	@echo "[LD] $(addprefix $(DIR),$(OBJECTS)) -> $(DIR)$@"
-	$(LD) $(LDFLAGS) -L$(TOPDIR)/system -T$(LDSCRIPT) -Map=$@.map -o $@ \
+	$(LD) $(LDFLAGS) $(LDFLAGS_EXTRA) -L$(TOPDIR)/system -T$(LDSCRIPT) -Map=$@.map -o $@ \
 		--start-group $(filter-out %.lds,$^) --end-group
 	$(CP) $@ $@.dbg
 	$(STRIP) $@

@@ -1,6 +1,7 @@
 TOPDIR := $(realpath ..)
 
 SUBDIRS := \
+	abduction \
 	anim \
 	anim-polygons \
 	ball \
@@ -12,6 +13,7 @@ SUBDIRS := \
 	carrion \
 	circles \
 	credits \
+	dna3d \
 	empty \
 	flatshade \
 	flatshade-convex \
@@ -41,9 +43,11 @@ SUBDIRS := \
 	sea-anemone \
 	shapes \
 	showpchg \
+	stencil3d \
 	stripes \
 	textscroll \
 	thunders \
+	texobj \
 	tiles8 \
 	tiles16 \
 	tilezoomer \

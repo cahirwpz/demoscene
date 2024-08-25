@@ -8,9 +8,12 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+
+	pt "ghostown.pl/protracker"
 )
 
 var printHelp bool
+var timings pt.Timings
 
 const (
 	TrkCtrl = -2 // control key
@@ -74,18 +77,27 @@ func parseFrame(token string) (frame int64, err error) {
 			return
 		}
 
-		frame, err = strconv.ParseInt(token[1:], 16, 16)
+		pat, err := strconv.ParseInt(token[1:3], 16, 16)
 		if err != nil {
-			return
+			return 0, err
 		}
 
-		if frame&0xC0 != 0 {
+		pos, err := strconv.ParseInt(token[3:5], 16, 16)
+		if err != nil {
+			return 0, err
+		}
+
+		if pos&0xC0 != 0 {
 			err = &parseError{"not a valid pattern row"}
-			return
+			return 0, err
 		}
 
-		frame = frame&63 | (frame>>2)&-64
-		frame *= FramesPerRow
+		if len(timings) > 0 {
+			frame = int64(timings[pat][pos])
+		} else {
+			frame = pos&63 | (pat>>2)&-64
+			frame *= FramesPerRow
+		}
 	} else {
 		var f float64
 		f, err = strconv.ParseFloat(token, 64)
@@ -134,19 +146,20 @@ func parseTrack(tokens []string, track *Track) (err error) {
 
 	if len(tokens) == 3 && tokens[2][0] == '!' {
 		typ := tokens[2][1:]
-		if typ == "step" {
+		switch typ {
+		case "step":
 			track.AddItem(TrkCtrl, TrkStep)
-		} else if typ == "linear" {
+		case "linear":
 			track.AddItem(TrkCtrl, TrkLinear)
-		} else if typ == "smooth" {
+		case "smooth":
 			track.AddItem(TrkCtrl, TrkSmooth)
-		} else if typ == "quadratic" {
+		case "quadratic":
 			track.AddItem(TrkCtrl, TrkQuadratic)
-		} else if typ == "trigger" {
+		case "trigger":
 			track.AddItem(TrkCtrl, TrkTrigger)
-		} else if typ == "event" {
+		case "event":
 			track.AddItem(TrkCtrl, TrkEvent)
-		} else {
+		default:
 			return &parseError{"unknown track type"}
 		}
 	}
@@ -156,13 +169,18 @@ func parseTrack(tokens []string, track *Track) (err error) {
 	return nil
 }
 
-func parseSyncFile(path string) []Track {
+func openFile(path string) *os.File {
 	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer file.Close()
 
+	return file
+}
+
+func parseSyncFile(path string) []Track {
+	file := openFile(path)
+	defer file.Close()
 	scanner := bufio.NewScanner(file)
 
 	var tracks []Track
@@ -188,6 +206,12 @@ func parseSyncFile(path string) []Track {
 		// Split track data into tokens
 		tokens := strings.Fields(line)
 
+		if tokens[0] == "@module" {
+			module := pt.ReadModule(openFile(tokens[1]))
+			timings = pt.CalculateTimings(module)
+			continue
+		}
+
 		// Create new track
 		if tokens[0] == "@track" {
 			prevFrame = -1
@@ -206,7 +230,7 @@ func parseSyncFile(path string) []Track {
 			continue
 		}
 
-		if err = parseTrack(tokens, track); err != nil {
+		if err := parseTrack(tokens, track); err != nil {
 			log.Println(origLine)
 			log.Fatalf("Parse error at line %d: %s", num, err)
 		}
@@ -253,8 +277,6 @@ func exportTracks(tracks []Track) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	return
 }
 
 func init() {

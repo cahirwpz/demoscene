@@ -47,7 +47,12 @@ extern short frameTillEnd;
 
 typedef void (*EffectFuncT)(void);
 
+#define EFFECT_MAGIC 0x47544e21 /* GTN! */
+
 typedef struct Effect {
+  /* Filled with 'GTN!' - marker for loader checks. */
+  u_int magic;
+  /* Effect C-symbol dumped to string. */
   const char *name;
   /*
    * Executed in background task when other effect is running.
@@ -87,13 +92,9 @@ void EffectKill(EffectT *effect);
 void EffectUnLoad(EffectT *effect);
 void EffectRun(EffectT *effect);
 
-#ifdef INTRO
-#undef ALIAS
-#define ALIAS(a, b)
-#endif
-
 #define EFFECT(NAME, L, U, I, K, R, V)                                         \
-  EffectT NAME##Effect = {                                                     \
+  __code EffectT NAME##Effect = {                                              \
+    .magic = EFFECT_MAGIC,                                                     \
     .name = #NAME,                                                             \
     .Load = (L),                                                               \
     .UnLoad = (U),                                                             \
@@ -101,14 +102,14 @@ void EffectRun(EffectT *effect);
     .Kill = (K),                                                               \
     .Render = (R),                                                             \
     .VBlank = (V)                                                              \
-  };                                                                           \
-  ALIAS(NAME##Effect, Effect);
+  };
 
 typedef struct Profile {
   const char *name;
   u_int lines, total;
   u_short min, max;
   u_short count;
+  u_short reportFrame;
 } ProfileT;
 
 #if PROFILER
@@ -120,6 +121,7 @@ typedef struct Profile {
     .min = 65535,                                                              \
     .max = 0,                                                                  \
     .count = 0,                                                                \
+    .reportFrame = 0,                                                          \
   };
 
 #define ProfilerStart(NAME) _ProfilerStart(_##NAME##_profile)

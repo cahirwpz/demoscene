@@ -6,13 +6,15 @@
 #include <2d.h>
 #include <pixmap.h>
 
-extern char SqrtTab8[256];
-
 /* 3D transformations */
 
 typedef struct Point3D {
   short x, y, z;
 } Point3D;
+
+typedef struct UVCoord {
+  short u, v;
+} UVCoordT;
 
 typedef struct Node3D {
   /* one if vertex belongs to a face that is visible,
@@ -53,6 +55,7 @@ void Transform3D(Matrix3D *M, Point3D *out, Point3D *in, short n);
  */
 typedef struct Mesh3D {
   short vertices;
+  short texcoords;
   short edges;
   short faces;
   short materials;
@@ -117,6 +120,7 @@ static inline void *_getptr(void *ptr, short i, const short o) {
 #define NODE3D(i) ((Node3D *)_getptr(_objdat, i, -2))
 #define POINT(i) ((Point3D *)_getptr(_objdat, i, offsetof(Node3D, point) - 2))
 #define VERTEX(i) ((Point3D *)_getptr(_objdat, i, offsetof(Node3D, vertex) - 2))
+#define UVCOORD(i) ((UVCoordT *)_getptr(_objdat, i, 0))
 #define EDGE(i) ((EdgeT *)_getptr(_objdat, i, 0))
 #define FACE(i) ((FaceT *)_getptr(_objdat, i, 0))
 
@@ -127,5 +131,7 @@ void UpdateObjectTransformation(Object3D *object);
 void UpdateFaceVisibility(Object3D *object);
 void UpdateVertexVisibility(Object3D *object);
 void SortFaces(Object3D *object);
+void SortFacesMinZ(Object3D *object);
+void AllFacesDoubleSided(Object3D *object);
 
 #endif

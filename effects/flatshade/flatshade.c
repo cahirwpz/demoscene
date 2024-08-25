@@ -218,7 +218,7 @@ static void DrawObject(Object3D *object, void **planes,
 
     {
       short bltstart, bltend;
-      u_short bltmod, bltsize;
+      short bltmod, bltsize;
 
       {
         short minX, minY, maxX, maxY;
@@ -254,9 +254,12 @@ static void DrawObject(Object3D *object, void **planes,
         } while (--m != -1);
 
         /* Align to word boundary. */
-        minX = (minX & ~15) >> 3;
+        minX &= ~15;
+        minX >>= 3;
         /* to avoid case where a line is on right edge */
-        maxX = ((maxX + 16) & ~15) >> 3;
+        maxX += 16;
+        maxX &= ~15;
+        maxX >>= 3;
 
         {
           short w = maxX - minX;
@@ -291,9 +294,8 @@ static void DrawObject(Object3D *object, void **planes,
         void *src = scrbpl[0] + bltstart;
         char mask = 1 << (DEPTH - 1);
         char color = FACE(ii)->flags;
-        short n = DEPTH;
 
-        while (--n >= 0) {
+        do {
           void *dst = *(--dstbpl) + bltstart;
           u_short bltcon0;
 
@@ -312,7 +314,7 @@ static void DrawObject(Object3D *object, void **planes,
           custom_->bltsize = bltsize;
 
           mask >>= 1;
-        }
+        } while (mask);
       }
 
       /* Clear working area. */

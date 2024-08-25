@@ -13,11 +13,11 @@
 #define YOFF ((256 - HEIGHT) / 2)
 #define DEPTH 4
 
-static BitmapT *screen;
-static CopInsPairT *bplptr;
-static CopListT *cp;
-static short active = 0;
-static short maybeSkipFrame = 0;
+static __code BitmapT *screen;
+static __code CopInsPairT *bplptr;
+static __code CopListT *cp;
+static __code short active = 0;
+static __code short maybeSkipFrame = 0;
 
 #include "data/dancing.c"
 #include "data/dancing-pal.c"
@@ -57,6 +57,72 @@ static void Kill(void) {
   DeleteBitmap(screen);
 }
 
+static inline void DrawEdge(short *coords, void *dst,
+                            CustomPtrT custom_ asm("a6")) {
+  static __chip short tmp;
+
+  short bltcon0, bltcon1, bltsize, bltbmod, bltamod;
+  short dmin, dmax, derr, offset;
+  int bltapt;
+
+  short x0 = *coords++;
+  short y0 = *coords++;
+  short x1 = *coords++;
+  short y1 = *coords++;
+
+  if (y0 == y1)
+    return;
+
+  if (y0 > y1) {
+    swapr(x0, x1);
+    swapr(y0, y1);
+  }
+
+  dmax = x1 - x0;
+  if (dmax < 0)
+    dmax = -dmax;
+
+  dmin = y1 - y0;
+  if (dmax >= dmin) {
+    if (x0 >= x1)
+      bltcon1 = AUL | SUD | LINEMODE | ONEDOT;
+    else
+      bltcon1 = SUD | LINEMODE | ONEDOT;
+  } else {
+    if (x0 >= x1)
+      bltcon1 = SUL | LINEMODE | ONEDOT;
+    else
+      bltcon1 = LINEMODE | ONEDOT;
+    swapr(dmax, dmin);
+  }
+
+  offset = ((y0 << 5) + (y0 << 3) + (x0 >> 3)) & ~1;
+
+  bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
+  bltcon1 |= rorw(x0 & 15, 4);
+
+  dmin <<= 1;
+  derr = dmin - dmax;
+  if (derr < 0)
+    bltcon1 |= SIGNFLAG;
+
+  bltamod = derr - dmax;
+  bltbmod = dmin;
+  bltsize = (dmax << 6) + 66;
+  bltapt = derr;
+
+  _WaitBlitter(custom_);
+
+  custom_->bltcon0 = bltcon0;
+  custom_->bltcon1 = bltcon1;
+  custom_->bltapt = (void *)bltapt;
+  custom_->bltbmod = bltbmod;
+  custom_->bltamod = bltamod;
+  custom_->bltcpt = dst + offset;
+  custom_->bltdpt = &tmp;
+  custom_->bltsize = bltsize;
+}
+
 /* Get (x,y) on screen position from linear memory repr */
 #define CalculateXY(data, x, y)         \
   asm("clrl  %0\n\t"                    \
@@ -67,32 +133,40 @@ static void Kill(void) {
       : "=d" (x), "=r" (y), "+a" (data) \
       : "i" (WIDTH));
 
-static void DrawFrame(void) {
+static void DrawFrame(void *dst, CustomPtrT custom_ asm("a6")) {
+  static __code Point2D points[128];
   short *data = dancing_frame[current_frame];
   short n;
 
-  WaitBlitter();
+  _WaitBlitter(custom_);
+
+  /* prepare for line drawing */
+  custom_->bltafwm = 0xffff;
+  custom_->bltalwm = 0xffff;
+  custom_->bltbdat = 0xffff;
+  custom_->bltadat = 0x8000;
+  custom_->bltcmod = WIDTH / 8;
+  custom_->bltdmod = WIDTH / 8;
 
   while ((n = *data++)) {
-    /* (x/y) previous */
-    short xp, yp;
-    /* (x/y) end */
-    short xe, ye;
-    /* (x/y) first in line strip */
-    short xf, yf;
-
-    /* first vert in line strip */
-    CalculateXY(data, xp, yp);
-    xf = xp, yf = yp;
-
-    while (--n > 0) {
-      CalculateXY(data, xe, ye);
-      BlitterLine(xp, yp, xe, ye);
-      xp = xe, yp = ye;
+    {
+      short *point = (short *)points;
+      short k = n;
+      while (--k >= 0) {
+        short x = 0, y = 0;
+        CalculateXY(data, x, y);
+        *point++ = x;
+        *point++ = y;
+      }
+      *point++ = points[0].x;
+      *point++ = points[0].y;
     }
 
-    /* last vert in line strip */
-    BlitterLine(xp, yp, xf, yf);
+    {
+      Point2D *point = points;
+      while (--n >= 0)
+        DrawEdge((short *)point++, dst, custom_);
+    }
   }
 
   if (++current_frame > dancing_frames - 5)
@@ -114,8 +188,7 @@ static void Render(void) {
   ProfilerStart(AnimRender);
   {
     BlitterClear(screen, active);
-    BlitterLineSetup(screen, active, LINE_EOR | LINE_ONEDOT);
-    DrawFrame();
+    DrawFrame(screen->planes[active], custom);
     BlitterFill(screen, active);
   }
   ProfilerStop(AnimRender);

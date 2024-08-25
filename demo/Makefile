@@ -24,6 +24,8 @@ LOADABLES := spooky-town.exe
 MAIN := #
 
 CPPFLAGS += -DDELTA=$(DELTA) -I.
+DEMO := 1
+export DEMO
 
 PNG2C.loader := --bitmap loader,64x64x1 --palette loader,2
 

@@ -7,9 +7,8 @@
 
 struct File {
   FileOpsT *ops;
-  const void *buf;
+  const MemBlockT *blocks;
   u_int offset;
-  int length;
 };
 
 static int MemRead(FileT *f, void *buf, u_int nbyte);
@@ -23,11 +22,10 @@ static FileOpsT MemOps = {
   .close = MemClose
 };
 
-FileT *MemOpen(const void *buf, u_int length) {
+FileT *MemOpen(const MemBlockT *blocks) {
   FileT *f = MemAlloc(sizeof(FileT), MEMF_PUBLIC);
   f->ops = &MemOps;
-  f->buf = buf;
-  f->length = length;
+  f->blocks = blocks;
   f->offset = 0;
   return f;
 }
@@ -37,32 +35,57 @@ static void MemClose(FileT *f) {
 }
 
 static int MemRead(FileT *f, void *buf, u_int nbyte) {
-  int start = f->offset;
-  int nread = nbyte;
+  const MemBlockT *block = f->blocks;
+  u_int offset = f->offset;
+  u_int nread = 0;
 
   Debug("$%p $%p %d+%d", f, buf, f->offset, nbyte);
 
-  if (start + nread > f->length)
-    nread = f->length - start;
+  for (; block->length && nbyte > 0; block++) {
+    u_int todo;
 
-  memcpy(buf, f->buf + start, nread);
-  f->offset += nread;
+    if (offset > block->length) {
+      offset -= block->length;
+      continue;
+    }
+
+    if (offset + nbyte > block->length) {
+      todo = block->length - offset;
+    } else {
+      todo = nbyte;
+    }
+
+    memcpy(buf, block->addr + offset, todo);
+    buf += todo;
+    nread += todo;
+    nbyte -= todo;
+    f->offset += todo;
+
+    offset += todo - block->length;
+  }
+
   return nread;
 }
 
 static int MemSeek(FileT *f, int offset, int whence) {
+  const MemBlockT *block = f->blocks;
+  int length;
+
+  for (length = 0; block->length; block++)
+    length += block->length;
+
   if (whence == SEEK_CUR) {
     offset += f->offset;
   } else if (whence == SEEK_END) {
-    offset += f->length;
+    offset += length;
   } else if (whence != SEEK_SET) {
     return EINVAL;
   }
 
   if (offset < 0) {
     offset = 0;
-  } else if (offset > f->length) {
-    offset = f->length;
+  } else if (offset > length) {
+    offset = length;
   }
 
   f->offset = offset;
