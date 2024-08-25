@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"path/filepath"
 	"flag"
 	"log"
 	"os"
@@ -42,6 +43,11 @@ type Track struct {
 	Items   []TrackItem
 	First   *TrackItem
 	Last    *TrackItem
+}
+
+type Event struct {
+	Name  string
+	Frame int
 }
 
 func (t Track) Name() string {
@@ -179,12 +185,11 @@ func openFile(path string) *os.File {
 	return file
 }
 
-func parseSyncFile(path string) []Track {
+func parseSyncFile(path string, data *SyncData) {
 	file := openFile(path)
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 
-	var tracks []Track
 	var track *Track = nil
 	num := 0
 
@@ -213,6 +218,23 @@ func parseSyncFile(path string) []Track {
 			continue
 		}
 
+		if tokens[0] == "@event" {
+			var frame int64
+			var err error
+
+			if len(timings) == 0 {
+				log.Fatal("@module directive must be used before @event")
+			}
+			if len(tokens) < 3 {
+				log.Fatalf("Event in line %d expects 2 arguments!", num)
+			}
+			if frame, err = parseFrame(tokens[2]); err != nil {
+				log.Fatalf("Parse error at line %d: %s", num, err)
+			}
+			data.Events = append(data.Events, Event{tokens[1], int(frame)})
+			continue
+		}
+
 		// Create new track
 		if tokens[0] == "@track" {
 			prevFrame = -1
@@ -226,7 +248,7 @@ func parseSyncFile(path string) []Track {
 				log.Fatalf("Track '%s' has no frames!", track.RawName)
 			}
 			track.AddItem(TrkEnd, 0)
-			tracks = append(tracks, *track)
+			data.Tracks = append(data.Tracks, *track)
 			track = nil
 			continue
 		}
@@ -240,11 +262,11 @@ func parseSyncFile(path string) []Track {
 	if track != nil {
 		log.Fatalf("Last track '%s' has not been closed!", track.RawName)
 	}
-
-	return tracks
 }
 
 var tracksTemplate = `
+{{- range .Events }}#define {{$.Name}}_{{.Name}} {{ .Frame }}
+{{ end }}
 {{- range .Tracks }}
 TrackT {{ .Name }} = {
   .curr = NULL,
@@ -270,18 +292,19 @@ static TrackT *AllTracks[] = {
 {{- end }}
 `
 
-type Output struct {
+type SyncData struct {
+	Name   string
+	Events []Event
 	Tracks []Track
 	List   bool
 }
 
-func exportTracks(tracks []Track) {
+func exportTracks(data SyncData) {
 	t, err := template.New("export").Parse(tracksTemplate)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	data := Output{tracks, exportList}
 	err = t.Execute(os.Stdout, data)
 	if err != nil {
 		log.Fatal(err)
@@ -301,5 +324,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	exportTracks(parseSyncFile(flag.Arg(0)))
+	path := flag.Arg(0)
+	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	data := SyncData{Name: name, List: exportList}
+	parseSyncFile(flag.Arg(0), &data)
+	exportTracks(data)
 }

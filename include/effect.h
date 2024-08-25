@@ -45,6 +45,12 @@ extern short frameFromStart;
 extern short frameTillEnd;
 #endif
 
+#ifndef DEMO
+void TimeWarp(u_short frame);
+#else
+#define TimeWarp(x)
+#endif
+
 typedef void (*EffectFuncT)(void);
 
 #define EFFECT_MAGIC 0x47544e21 /* GTN! */
