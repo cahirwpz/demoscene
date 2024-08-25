@@ -13,6 +13,7 @@ import (
 )
 
 var printHelp bool
+var exportList bool
 var timings pt.Timings
 
 const (
@@ -244,7 +245,7 @@ func parseSyncFile(path string) []Track {
 }
 
 var tracksTemplate = `
-{{- range . }}
+{{- range .Tracks }}
 TrackT {{ .Name }} = {
   .curr = NULL,
   .next = NULL,
@@ -259,13 +260,20 @@ TrackT {{ .Name }} = {
   }
 };
 {{ end }}
+{{- if .List }}
 static TrackT *AllTracks[] = {
-{{- range . }}
+{{- range .Tracks }}
   &{{ .Name }},
 {{- end }}
   NULL
 };
+{{- end }}
 `
+
+type Output struct {
+	Tracks []Track
+	List   bool
+}
 
 func exportTracks(tracks []Track) {
 	t, err := template.New("export").Parse(tracksTemplate)
@@ -273,7 +281,8 @@ func exportTracks(tracks []Track) {
 		log.Fatal(err)
 	}
 
-	err = t.Execute(os.Stdout, tracks)
+	data := Output{tracks, exportList}
+	err = t.Execute(os.Stdout, data)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -281,6 +290,7 @@ func exportTracks(tracks []Track) {
 
 func init() {
 	flag.BoolVar(&printHelp, "help", false, "print help message and exit")
+	flag.BoolVar(&exportList, "list", false, "export list of all tracks")
 }
 
 func main() {
