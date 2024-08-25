@@ -11,5 +11,6 @@ CopListT *CopListFinish(CopListT *list) {
     if (used > list->length)
       PANIC();
   }
+  list->finished = -1;
   return list;
 }

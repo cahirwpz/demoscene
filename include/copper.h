@@ -43,6 +43,7 @@ typedef struct {
   CopInsT *curr;
   u_short length;
   u_char  overflow; /* -1 if Vertical Position counter overflowed */
+  u_char  finished; /* -1 if correctly terminated */
   CopInsT entry[0]; 
 } CopListT;
 

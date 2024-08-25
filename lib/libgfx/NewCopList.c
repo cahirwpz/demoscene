@@ -7,5 +7,6 @@ CopListT *NewCopList(int length) {
   list->length = length;
   list->curr = list->entry;
   list->overflow = 0;
+  list->finished = 0;
   return list;
 }
