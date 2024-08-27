@@ -11,7 +11,7 @@
 #define HEIGHT 64
 #define DEPTH 4
 
-#include "data/dragon-bg.c"
+#include "data/test-bg.c"
 #include "data/speccy.c"
 #include "data/tearing-table.c"
 
