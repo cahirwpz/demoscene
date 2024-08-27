@@ -23,12 +23,15 @@ static int active = 1;
 // 0 - tv static
 // 1 - halfbrite
 // 2 - tearing
-static CopListT *cp[3][2];
+// 3 - bounce
+static CopListT *cp[3][3];
+static CopInsPairT *bplptr;
 
 typedef struct State {
   CopInsT *tvstatic;
   CopInsT *halfbrite;
   CopInsT *tearing;
+  CopInsT *bounce;
 } StateT;
 static StateT state[2];
 
@@ -57,6 +60,18 @@ static inline int fastrand(void) {
 #define random fastrand
 
 #define COPLIST_SIZE (HEIGHT * 22 + 100)
+
+static CopListT *MakeCopperListBounce(StateT *state) {
+  CopListT *cp = NewCopList(COPLIST_SIZE);
+  bplptr = CopSetupBitplanes(cp, &background, S_DEPTH);
+
+  state->bounce = CopMove16(cp, bplcon1, 0x0000);
+  CopMove16(cp, bpldat[4], 0xffff);
+  CopMove16(cp, bpldat[5], 0x00);
+  CopInsSet32(&bplptr[0], background.planes[0]+10);
+
+  return CopListFinish(cp);
+}
 
 static CopListT *MakeCopperListStatic(StateT *state) {
   short i;
@@ -153,11 +168,16 @@ static void Init(void) {
 
   cp[0][0] = MakeCopperListStatic(&state[0]);
   cp[0][1] = MakeCopperListStatic(&state[1]);
+
   cp[1][0] = MakeCopperListHalfbrite(&state[0]);
   cp[1][1] = MakeCopperListHalfbrite(&state[1]);
+
   cp[2][0] = MakeCopperListTearing(&state[0]);
   cp[2][1] = MakeCopperListTearing(&state[1]);
-  CopListActivate(cp[0][0]);
+
+  cp[3][0] = MakeCopperListBounce(&state[0]);
+  cp[3][1] = MakeCopperListBounce(&state[1]);
+  CopListActivate(cp[3][0]);
 
   EnableDMA(DMAF_RASTER);
   KeyboardInit();
@@ -190,9 +210,9 @@ static bool HandleEvent(void) {
     active_glitch = 2; // TEARING
   }
 
-  // if (ev.key.code == KEY_4) {
-  //   active_glitch = 3; // SHAKING
-  // }
+  if (ev.key.code == KEY_4) {
+    active_glitch = 3; // BOUNCE
+  }
 
   if (ev.key.code == KEY_A) {
     if (animationFrame == -1) {
