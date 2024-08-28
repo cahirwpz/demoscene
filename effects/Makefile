@@ -28,6 +28,7 @@ SUBDIRS := \
 	kbtest \
 	layers \
 	lines \
+	magnifying-glass \
 	metaballs \
 	multipipe \
 	neons \
