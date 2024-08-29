@@ -326,7 +326,7 @@ func main() {
 
 	path := flag.Arg(0)
 	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
-	data := SyncData{Name: name, List: exportList}
+	data := SyncData{Name: strings.ReplaceAll(name, "-", "_"), List: exportList}
 	parseSyncFile(flag.Arg(0), &data)
 	exportTracks(data)
 }
