@@ -10,4 +10,6 @@ u_short ColorTransition(u_short from, u_short to, u_short step);
 
 u_short HsvToRgb(short h, short s, short v);
 
+void FadeBlack(const u_short *colors, short count, u_int start, short step);
+
 #endif
