@@ -23,4 +23,8 @@ static inline void WaitLine(uint32_t line) {
 
 static inline void WaitVBlank(void) { WaitLine(303); }
 
+static inline short IsAGA(void) {
+  return ((custom->vposr_ >> 24) & 0x7f) == 0x23;
+}
+
 #endif /* !__CUSTOM_H__ */
