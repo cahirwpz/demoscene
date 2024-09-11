@@ -70,6 +70,9 @@ short TrackValueGet(TrackT *track, short frame) {
 
       if (next->frame == END_KEY)
         return curr->value;
+
+      if (track->type == TRACK_EVENT)
+        break;
     }
   }
 
