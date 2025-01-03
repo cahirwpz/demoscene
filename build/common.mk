@@ -51,7 +51,6 @@ CP := cp -a
 RM := rm -v -f
 PYTHON3 := PYTHONPATH="$(TOPDIR)/tools/pylib:$$PYTHONPATH" python3
 ADFUTIL := $(TOPDIR)/tools/adfutil.py
-ROMUTIL := $(TOPDIR)/tools/romutil.py
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 LAUNCH := $(PYTHON3) $(TOPDIR)/tools/launch.py

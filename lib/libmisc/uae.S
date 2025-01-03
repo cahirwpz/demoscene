@@ -5,5 +5,6 @@ ENTRY(_UaeTrap)
 END(_UaeTrap)
 
 STRONG_ALIAS(_UaeLog, _UaeTrap)
+STRONG_ALIAS(_UaeWarpMode, _UaeTrap)
 
 # vim: ft=gas:ts=8:sw=8:noet:

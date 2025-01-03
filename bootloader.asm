@@ -92,8 +92,6 @@ COMP_ZX0        EQU     3
         LABEL	SEG_START
         LABEL	SEG_SIZE
 
-        ifnd    ROM
-
         XDEF    Entry
         XDEF    KillOS
 
@@ -220,8 +218,6 @@ KillOS:
         ; jump into second phase code relocated at the beginning of memory
         jmp     $8.w
 
-        endif
-
 ; Normalize memory layout by moving executable file image at well known
 ; position. Set up primitive memory manager and relocate executable file.
 ;
@@ -258,7 +254,6 @@ Start:
 
 .novbr  move.l  d0,BD_VBR(a6)
 
-        ifnd    ROM
         ; reserve space for executable file image
         move.l  d2,d0
         moveq   #MF_CHIP,d1
@@ -271,7 +266,6 @@ Start:
         move.l  d2,d0
         bsr     CopyMem
         move.l  (sp)+,d3
-        endif
 
         ; move hunks around and relocate them
         move.l  d3,a0
@@ -279,11 +273,9 @@ Start:
         move.l  d0,BD_HUNK(a6)          ; first hunk of executable file
 
         ; free up space taken by executable file image
-        ifnd    ROM
         move.l  d3,a0
         move.l  d2,d0
         bsr     FreeMem
-        endif
 
         ; if VBR was relocated free space used by initial exception vector
         tst.l   BD_VBR(a6)

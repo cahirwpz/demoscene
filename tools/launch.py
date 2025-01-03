@@ -41,7 +41,7 @@ class FSUAE(Launchable):
     def __init__(self):
         super().__init__('fs-uae', HerePath('tools', GDBSERVER))
 
-    def configure(self, floppy=None, rom=None, debug=False):
+    def configure(self, floppy=None, debug=False):
         self.options.extend(['-e', 'fs-uae'])
         if debug:
             self.options.append('-g')
@@ -49,10 +49,9 @@ class FSUAE(Launchable):
         self.options.append('--')
         if floppy:
             self.options.append('--floppy_drive_0=' + os.path.realpath(floppy))
-        if rom:
-            self.options.append('--kickstart_file=' + os.path.realpath(rom))
         if debug:
             self.options.append('--use_debugger=1')
+        self.options.append('--warp_mode=1')
         self.options.append(HerePath('effects', 'Config.fs-uae'))
 
 
@@ -88,8 +87,6 @@ class GDB(Launchable):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Launch effect in FS-UAE emulator.')
-    parser.add_argument('-r', '--rom', metavar='ROM', type=str,
-                        help='Replace Amiga Kickstart with provided ROM.')
     parser.add_argument('-f', '--floppy', metavar='ADF', type=str,
                         help='Floppy disk image in ADF format.')
     parser.add_argument('-e', '--executable', metavar='EXE', type=str,
@@ -106,16 +103,12 @@ if __name__ == '__main__':
     if args.floppy and not os.path.isfile(args.floppy):
         raise SystemExit('%s: file does not exist!' % args.floppy)
 
-    # Check if rom file exists
-    if args.rom and not os.path.isfile(args.rom):
-        raise SystemExit('%s: file does not exist!' % args.rom)
-
     # Check if executable file exists.
     if args.debug and not os.path.isfile(args.executable):
         raise SystemExit('%s: file does not exist!' % args.executable)
 
     uae = FSUAE()
-    uae.configure(floppy=args.floppy, rom=args.rom, debug=args.debug)
+    uae.configure(floppy=args.floppy, debug=args.debug)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)

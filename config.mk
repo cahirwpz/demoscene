@@ -14,7 +14,7 @@ LOGOUT := 2
 #      be formatted with Old Filesystem (KS1.3) and contain special bootblock
 #      that maximizes amount of chip memory. Executable file will be started
 #      automatically facilitating `startup-sequence` feature of AmigaDOS.
-# 0 => Executable files must be started from ROM or ADF since they require
+# 0 => Executable files must be started from ADF since they require
 #      custom environment created by bootstrap code.
 AMIGAOS := 0
 

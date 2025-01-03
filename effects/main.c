@@ -1,5 +1,6 @@
 #include <custom.h>
 #include <effect.h>
+#include <uae.h>
 #include <system/interrupt.h>
 #include <system/task.h>
 
@@ -45,6 +46,7 @@ int main(void) {
 
   EffectLoad(&Effect);
   EffectInit(&Effect);
+  UaeWarpMode(0);
   EffectRun(&Effect);
   EffectKill(&Effect);
   EffectUnLoad(&Effect);

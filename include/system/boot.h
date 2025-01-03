@@ -16,7 +16,7 @@ typedef struct BootData {
   void *bd_vbr;         /* Vector Base Register (for 68010+) */
   void *bd_stkbot;      /* Stack bottom pointer */
   u_int bd_stksz;       /* Stack size */
-  u_char bd_bootdev;    /* 0=floppy, 1=rom/baremetal, 2=ram/amigaos */
+  u_char bd_bootdev;    /* 0=floppy, 1=ram/amigaos */
   u_char bd_cpumodel;   /* Processor model */
   u_short bd_nregions;  /* Number of memory regions */
   MemRegionT bd_region[0];
