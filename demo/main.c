@@ -189,12 +189,6 @@ int main(void) {
   PtInstallCIA();
   PtInit(Module, Samples, 0);
 
-  {
-    TrackT **trkp = AllTracks;
-    while (*trkp)
-      TrackInit(*trkp++);
-  }
-
   LoadEffects(AllEffects);
 
   RunEffects();
