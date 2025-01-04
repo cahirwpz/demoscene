@@ -2,15 +2,17 @@
 
 import argparse
 import os
-import os.path
-import shutil
 import shlex
 import subprocess
+from pathlib import Path
 from libtmux import Server, Session, exc
 
 
 def HerePath(*components):
-    return os.path.join(os.getenv('TOPDIR', ''), *components)
+    path = Path(os.getenv('TOPDIR', ''), *components)
+    if not path.exists():
+        print(f"warning: '{path}' does not exists")
+    return str(path)
 
 
 SOCKET = 'fsuae'
@@ -41,14 +43,16 @@ class FSUAE(Launchable):
     def __init__(self):
         super().__init__('fs-uae', HerePath('tools', GDBSERVER))
 
-    def configure(self, floppy=None, debug=False):
+    def configure(self, floppy=None, log='', debug=False):
         self.options.extend(['-e', 'fs-uae'])
         if debug:
             self.options.append('-g')
+        if log:
+            self.options.extend(['-l', log])
         # Now options for FS-UAE.
         self.options.append('--')
         if floppy:
-            self.options.append('--floppy_drive_0=' + os.path.realpath(floppy))
+            self.options.append('--floppy_drive_0={}'.format(Path(floppy).resolve()))
         if debug:
             self.options.append('--use_debugger=1')
         self.options.append('--warp_mode=1')
@@ -100,15 +104,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Check if floppy disk image file exists
-    if args.floppy and not os.path.isfile(args.floppy):
+    if args.floppy and not Path(args.floppy).is_file():
         raise SystemExit('%s: file does not exist!' % args.floppy)
 
     # Check if executable file exists.
-    if args.debug and not os.path.isfile(args.executable):
+    if args.debug and not Path(args.executable).is_file():
         raise SystemExit('%s: file does not exist!' % args.executable)
 
     uae = FSUAE()
-    uae.configure(floppy=args.floppy, debug=args.debug)
+    uae.configure(floppy=args.floppy,
+                  log=Path(args.floppy).stem + '.log',
+                  debug=args.debug)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)

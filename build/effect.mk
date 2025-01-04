@@ -19,7 +19,7 @@ VBRMOVE = $(TOPDIR)/vbrmove
 
 EXTRA-FILES += $(EFFECT).adf
 CLEAN-FILES += $(LOADABLES)
-CLEAN-FILES += $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map
+CLEAN-FILES += $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map $(EFFECT).log
 
 all: build
 
