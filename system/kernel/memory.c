@@ -365,7 +365,7 @@ static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
   return new_ptr;
 }
 
-#if MEMDEBUG
+#ifdef MEMDEBUG
 #define Msg(...) if (verbose) Log(__VA_ARGS__)
 
 static void ArenaCheck(ArenaT *ar, int verbose) {
@@ -483,7 +483,7 @@ void *MemResize(void *old_ptr, u_int size) {
   return NULL;
 }
 
-#if MEMDEBUG
+#ifdef MEMDEBUG
 void MemCheck(int verbose) {
   ArenaT *ar;
   for (ar = FirstArena; ar != NULL; ar = ar->succ)

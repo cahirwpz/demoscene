@@ -1,4 +1,5 @@
 #include <asm.h>
+#include <config.h>
 #include <custom_regdef.h>
 
 .macro  FIRST   intb
@@ -71,7 +72,7 @@ ENTRY(EnterIntr)
 END(EnterIntr)
 
 ENTRY(LeaveIntr)
-#if MULTITASK
+#ifdef MULTITASK
         /*
          * Check if we need to reschedule a task - usually as a result waking
          * up a higher priorty task while running interrupt service routine.
@@ -142,7 +143,7 @@ END(DummyInterruptHandler)
         rte                             /* restore SR and PC */
 .endm
 
-#if MULTITASK
+#ifdef MULTITASK
 ENTRY(YieldHandler)
         SAVECTX
         jsr     _L(TaskSwitch)

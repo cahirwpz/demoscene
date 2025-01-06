@@ -1,3 +1,4 @@
+#include <config.h>
 #include <debug.h>
 #include <system/cpu.h>
 #include <system/trap.h>
@@ -53,7 +54,7 @@ void TrapHandler(TrapFrameT *frame) {
   }
 
   /* clang-format off */
-#if MULTITASK
+#ifdef MULTITASK
   TaskDebug();
 #endif
   Log("Exception at %p (in %s mode): %s!\n"

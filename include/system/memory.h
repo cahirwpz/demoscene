@@ -1,6 +1,7 @@
 #ifndef __SYSTEM_MEMORY_H__
 #define __SYSTEM_MEMORY_H__
 
+#include <config.h>
 #include <types.h>
 
 #ifndef MEMF_PUBLIC
@@ -25,7 +26,7 @@
 #endif
 
 #ifdef _SYSTEM
-#if MEMDEBUG
+#ifdef MEMDEBUG
 void MemCheck(int verbose);
 u_int MemAvail(u_int attributes);
 #else

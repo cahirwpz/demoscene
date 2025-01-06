@@ -1,6 +1,7 @@
 #ifndef __SYSTEM_DEBUG_H__
 #define __SYSTEM_DEBUG_H__
 
+#include <config.h>
 #include <cdefs.h>
 
 #ifdef UAE

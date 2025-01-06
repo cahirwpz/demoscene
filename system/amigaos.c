@@ -13,6 +13,8 @@
 #undef Debug
 #include <proto/graphics.h>
 
+#include <config.h>
+
 #include <system/boot.h>
 #include <system/cpu.h>
 #include <system/exception.h>
@@ -108,8 +110,8 @@ static __code struct {
 } old;
 
 /* Memory for framework allocator. */
-static __aligned(4) __bss_chip char ChipMem[CHIPMEM_KB * 1024];
-static __aligned(4) char FastMem[FASTMEM_KB * 1024];
+static __aligned(4) __bss_chip char ChipMem[CHIPMEM * 1024];
+static __aligned(4) char FastMem[FASTMEM * 1024];
 
 /* Normally BootDataT is provided by the boot loader. Since we were started
  * from AmigaOS we have to fill this structure and pass it to Loader. */

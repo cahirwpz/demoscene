@@ -1,3 +1,4 @@
+#include <config.h>
 #include <debug.h>
 #include <system/cpu.h>
 #include <system/exception.h>
@@ -25,7 +26,7 @@ void SetIntVector(u_int irq, IntHandlerT code, void *data) {
   iv->data = data;
 }
 
-#if MULTITASK
+#ifdef MULTITASK
 #define IntrNest CurrentTask->intrNest
 #else
 static __code short IntrNest = 0;

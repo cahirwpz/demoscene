@@ -1,4 +1,5 @@
-#include "debug.h"
+#include <config.h>
+#include <debug.h>
 
 #if !defined(UAE) && LOGOUT > 0
 #include <stdarg.h>

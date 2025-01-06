@@ -1,6 +1,7 @@
 #ifndef __EFFECT_H__
 #define __EFFECT_H__
 
+#include <config.h>
 #include <types.h>
 #include <string.h>
 #include <stab.h>
@@ -118,7 +119,7 @@ typedef struct Profile {
   u_short reportFrame;
 } ProfileT;
 
-#if PROFILER
+#ifdef PROFILER
 #define PROFILE(NAME)                                                          \
   static ProfileT *_##NAME##_profile = &(ProfileT){                            \
     .name = #NAME,                                                             \
@@ -138,7 +139,7 @@ typedef struct Profile {
 #define ProfilerStop(NAME)
 #endif
 
-#if MULTITASK
+#ifdef MULTITASK
 /* Puts a task into sleep waiting for Vertical Blank interrupt.
  * Let's background task do its job. */
 void TaskWaitVBlank(void);

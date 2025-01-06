@@ -1,3 +1,4 @@
+#include <config.h>
 #include <system/boot.h>
 #include <system/exception.h>
 #include <system/trap.h>
@@ -30,7 +31,11 @@ void SetupExceptionVector(BootDataT *bd) {
   ExcVec[EXC_FMTERR] = FmtErrTrap;
 
   /* Intialize TRAP instruction handlers. */
-  ExcVec[EXC_TRAP(0)] = MULTITASK ? YieldHandler : TrapInstTrap;
+#ifdef MULTITASK
+  ExcVec[EXC_TRAP(0)] = YieldHandler;
+#else
+  ExcVec[EXC_TRAP(0)] = TrapInstTrap;
+#endif
 
   for (i = EXC_TRAP(1); i <= EXC_TRAP(15); i++)
     ExcVec[i] = TrapInstTrap;

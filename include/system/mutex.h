@@ -1,12 +1,13 @@
 #ifndef __SYSTEM_MUTEX_H__
 #define __SYSTEM_MUTEX_H__
 
+#include <config.h>
 #include <types.h>
 #include <system/queue.h>
 
 struct Task;
 
-#if MULTITASK
+#ifdef MULTITASK
 typedef struct Mutex {
   volatile struct Task *owner;
   TAILQ_HEAD(, Task) waitList;

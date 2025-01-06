@@ -28,18 +28,9 @@ LDSCRIPT ?= $(TOPDIR)/system/amiga.lds
 
 # Don't reload library base for each call
 CPPFLAGS += -D__CONSTLIBBASEDECL__=const
-CPPFLAGS += -DCHIPMEM_KB=$(CHIPMEM) -DFASTMEM_KB=$(FASTMEM) -DLOGOUT=$(LOGOUT)
-CPPFLAGS += -DPROFILER=$(PROFILER) -DMULTITASK=$(MULTITASK) -DMEMDEBUG=$(MEMDEBUG)
 
-include $(TOPDIR)/config.mk
-
-ifeq ($(UAE), 1)
-CPPFLAGS += -DUAE
-endif
-
-ifeq ($(AMIGAOS), 1)
-CPPFLAGS += -DAMIGAOS
-endif
+# Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
+VERBOSE ?= 0
 
 ifeq ($(VERBOSE), 0)
 .SILENT:

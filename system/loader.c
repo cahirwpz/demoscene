@@ -1,3 +1,4 @@
+#include <config.h>
 #include <debug.h>
 #include <system/amigahunk.h>
 #include <system/autoinit.h>
@@ -83,7 +84,7 @@ void Loader(BootDataT *bd) {
   /* Lower interrupt priority level to nominal. */
   SetIPL(IPL_NONE);
 
-#if MULTITASK
+#ifdef MULTITASK
   TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
   TaskInit(&IdleTask, "idle", IdleTaskStack, sizeof(IdleTaskStack));
   TaskRun(&IdleTask, 3, IdleTaskLoop, NULL);

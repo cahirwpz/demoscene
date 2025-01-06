@@ -1,4 +1,5 @@
 #include <asm.h>
+#include <config.h>
 
 ENTRY(start)
 #ifdef AMIGAOS
