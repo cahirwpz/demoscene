@@ -13,7 +13,7 @@ AR	:= m68k-amigaos-ar
 RANLIB	:= m68k-amigaos-ranlib
 VASM	:= vasm -quiet
 
-ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-ggdb3
+ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-gstabs+
 VASMFLAGS	+= -m68010 -quiet -I$(TOPDIR)/include
 LDFLAGS	:= -amiga-debug-hunk --orphan-handling=error
 CFLAGS	= -ggdb3 -ffreestanding -fno-common $(OFLAGS) $(WFLAGS)

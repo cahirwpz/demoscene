@@ -59,7 +59,7 @@ static void Kill(void) {
 
 static inline void DrawEdge(short *coords, void *dst,
                             CustomPtrT custom_ asm("a6")) {
-  static __chip short tmp;
+  static __data_chip short tmp;
 
   short bltcon0, bltcon1, bltsize, bltbmod, bltamod;
   short dmin, dmax, derr, offset;
