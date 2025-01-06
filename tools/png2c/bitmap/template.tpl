@@ -1,4 +1,8 @@
-static {{ if not .CpuOnly }}__data_chip{{ end }} u_short _{{ .Name }}_bpl[] = {
+#ifndef {{ .Name }}_bpl_section
+#define {{ .Name }}_bpl_section {{ if not .CpuOnly }}__data_chip{{ else }}__data{{ end }} 
+#endif
+
+static {{ .Name }}_bpl_section u_short _{{ .Name }}_bpl[] = {
   {{ range .BplData }}
   {{- . -}},
   {{ end -}}

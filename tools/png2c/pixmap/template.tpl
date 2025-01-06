@@ -1,4 +1,8 @@
-static {{ if .Displayable }}__data_chip {{ end }}{{ .PixType }} {{ .Name }}_pixels[{{ .Size }}] = {
+#ifndef {{ .Name }}_pixels_section
+#define {{ .Name }}_pixels_section {{ if .Displayable }}__data_chip{{ else }}__data{{ end }}
+#endif
+
+static {{ .Name }}_pixels_section {{ .PixType }} {{ .Name }}_pixels[{{ .Size }}] = {
   {{ range .PixData }}
     {{- . -}},
   {{ end -}}

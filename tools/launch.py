@@ -52,7 +52,8 @@ class FSUAE(Launchable):
         # Now options for FS-UAE.
         self.options.append('--')
         if floppy:
-            self.options.append('--floppy_drive_0={}'.format(Path(floppy).resolve()))
+            self.options.append(
+                '--floppy_drive_0={}'.format(Path(floppy).resolve()))
         if debug:
             self.options.append('--use_debugger=1')
         self.options.append('--warp_mode=1')

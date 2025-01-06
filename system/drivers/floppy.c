@@ -290,6 +290,7 @@ static void FloppyClose(FileT *f) {
   ClearIRQ(INTF_DSKBLK);
   ResetIntVector(INTB_DSKBLK);
   ReleaseTimer(f->fdtmr);
+  MemFree(f->decoded);
   MemFree(f->encoded);
   MemFree(f);
 }

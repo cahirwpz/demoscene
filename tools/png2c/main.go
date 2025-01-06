@@ -96,7 +96,6 @@ func main() {
 
 			out += b.Make(pm, cfg, opts)
 		}
-
 	}
 
 	if len(pixmapVar) > 0 {

@@ -493,9 +493,24 @@ void MemCheck(int verbose) {
 u_int MemAvail(u_int attributes) {
   ArenaT *ar;
   u_int avail = 0;
-  for (ar = FirstArena; ar != NULL; ar = ar->succ)
-    if (ar->attributes & attributes)
+  for (ar = FirstArena; ar != NULL; ar = ar->succ) {
+    if (!(ar->attributes & attributes))
+      continue;
+
+    if (attributes & MEMF_LARGEST) {
+      WordT *bt;
+
+      for (bt = ar->start; bt < ar->end; bt = BtNext(bt)) {
+        if (BtFree(bt)) {
+          unsigned sz = BtSize(bt) - USEDBLK_SZ;
+          if (sz > avail)
+            avail= sz;
+        }
+      }
+    } else {
       avail += ar->totalFree;
+    }
+  }
   return avail;
 }
 #endif

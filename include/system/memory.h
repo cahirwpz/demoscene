@@ -19,6 +19,11 @@
 #define MEMF_CLEAR (1L << 16)
 #endif
 
+#ifndef MEMF_LARGEST
+/* MemAvail: return the largest chunk size */
+#define MEMF_LARGEST (1L << 17)
+#endif
+
 #ifdef _SYSTEM
 #if MEMDEBUG
 void MemCheck(int verbose);

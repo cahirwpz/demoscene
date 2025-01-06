@@ -115,7 +115,7 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
         else
           hunkType = " BSS";
 
-        Log("%s: %p - %p\n", hunkType, hunk->data, hunk->data + hunk->size);
+        Log("[Hunk] %s: $%x (size: %d)\n", hunkType, (int)hunk->data, hunk->size);
         Debug("%s: crc32: $%08x", hunkType, crc32(hunk->data, hunk->size));
       }
     } else if (hunkId == HUNK_DEBUG) {

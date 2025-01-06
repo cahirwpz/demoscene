@@ -15,7 +15,7 @@ VASM	:= vasm -quiet
 
 ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-ggdb3
 VASMFLAGS	+= -m68010 -quiet -I$(TOPDIR)/include
-LDFLAGS	:= -amiga-debug-hunk
+LDFLAGS	:= -amiga-debug-hunk --orphan-handling=error
 CFLAGS	= -ggdb3 -ffreestanding -fno-common $(OFLAGS) $(WFLAGS)
 OFLAGS	:= -m68000 -msmall-code -mregparm=2
 # The '-O2' option does not turn on optimizations '-funroll-loops',
