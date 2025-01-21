@@ -91,7 +91,7 @@ static void SetupLines(short f) {
   /* first line */
   {
     int y = (short)twister.bytesPerRow * y0;
-    void **planes = twister.planes;
+    void *const *planes = twister.planes;
     CopInsPairT *_bplptr = bplptr[active];
     short n = DEPTH;
 

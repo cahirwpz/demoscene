@@ -11,7 +11,7 @@ static {{ .Name }}_pixels_section {{ .PixType }} {{ .Name }}_pixels[{{ .Size }}]
 #define {{ .Name }}_width {{ .Width }}
 #define {{ .Name }}_height {{ .Height }}
 {{ if not .OnlyData }}
-static const __data PixmapT {{ .Name }} = {
+static const __rodata PixmapT {{ .Name }} = {
   .type = {{ .Type }},
   .width = {{ .Width }},
   .height = {{ .Height }},

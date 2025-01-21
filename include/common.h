@@ -147,11 +147,37 @@ static inline int rorl(int a, short b) {
 #define swapr(a, b) \
   asm ("exg %0,%1" : "+r" (a), "+r" (b))
 
-#define pushl(a) \
-  asm ("movel %0,%-" :: "r" (a))
+/* Store byte/word/longword `d` under `p` with postincrement. */
+#define stbi(p, d)                \
+  asm volatile("move.b %2,(%0)+"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_char)d))
 
-#define popl(a) \
-  asm ("movel %+,%0" : "=r" (a))
+#define stwi(p, d)                \
+  asm volatile("move.w %2,(%0)+"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_short)d))
+
+#define stli(p, d)                \
+  asm volatile("move.l %2,(%0)+"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_long)d))
+
+/* Store byte/word/longword `d` under `p` with predecrement. */
+#define stbd(p, d)                \
+  asm volatile("move.b %2,-(%0)"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_char)d))
+
+#define stwd(p, d)                \
+  asm volatile("move.w %2,-(%0)"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_short)d))
+
+#define stld(p, d)                \
+  asm volatile("move.l %2,-(%0)"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_long)d))
 
 static inline void *GetSP(void) {
   void *sp;

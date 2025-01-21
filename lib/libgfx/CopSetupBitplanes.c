@@ -12,7 +12,7 @@ CopInsPairT *CopSetupBitplanes(CopListT *list, const BitmapT *bitmap,
     modulo = (short)bitmap->bytesPerRow * n;
 
   {
-    void **planes = bitmap->planes;
+    void *const *planes = bitmap->planes;
     int i = 0;
 
     do {

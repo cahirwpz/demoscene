@@ -17,7 +17,7 @@ static short active = 0;
 typedef struct {
   short width, height;
   short current, count;
-  u_char *frame[0];
+  u_char *frame[__FLEX_ARRAY];
 } AnimSpanT;
 
 #include "data/running-pal.c"

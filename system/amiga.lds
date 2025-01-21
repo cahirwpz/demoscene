@@ -14,6 +14,8 @@ SECTIONS
     __text = .;
     *(.text)
     *(.text.*)
+    *(.rodata)
+    *(.rodata.*)
   }
   __text_size = SIZEOF(.text);
   . = ALIGN(0x0);

@@ -1,4 +1,8 @@
+#define __cplusplus
+#include <exec/types.h>
+#undef __cplusplus
 #include <exec/execbase.h>
+#define __NOLIBBASE__
 #include <graphics/gfxbase.h>
 
 #include <hardware/adkbits.h>
@@ -28,7 +32,8 @@
 extern struct Custom volatile _custom;
 #define custom (&_custom)
 
-/* We need graphics.library base in order to call some functions. */
+/* We need exec.library & graphics.library base to call some functions. */
+extern struct ExecBase *__CONSTLIBBASEDECL__ SysBase;
 static struct GfxBase *__CONSTLIBBASEDECL__ GfxBase;
 
 static void WaitVBlank(void) {

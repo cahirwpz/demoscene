@@ -15,7 +15,7 @@ static {{ .Name }}_bpl_section u_short _{{ .Name }}_bpl[] = {
 #define {{ .Name }}_bplSize {{ .BplSize }}
 #define {{ .Name }}_size {{ .Size}}
 {{ if not .OnlyData }}
-{{ if not .Shared }}static {{ end }}const __data BitmapT {{ .Name }} = {
+{{ if not .Shared }}static {{ end }}const __rodata BitmapT {{ .Name }} = {
   .width = {{ .Width }},
   .height = {{ .Height }},
   .depth = {{ .Depth }},

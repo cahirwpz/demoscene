@@ -22,7 +22,7 @@ static BitmapT *scroll;
 static short last_line = -1;
 static char *line_start;
 
-extern uint8_t binary_data_text_scroll_txt_start[];
+extern char binary_data_text_scroll_txt_start[];
 #define text binary_data_text_scroll_txt_start
 
 #include "data/text-scroll-font.c"

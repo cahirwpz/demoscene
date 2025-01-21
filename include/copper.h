@@ -86,16 +86,16 @@ static inline void *CopInsPtr(CopListT *list) {
   ins = _CopInsMove32(ins, CSREG(reg), (int)(data))
 
 static inline CopInsT *_CopInsMove16(CopInsT *ins, short reg, short data) {
-  *((u_short *)ins)++ = reg;
-  *((u_short *)ins)++ = data;
+  stwi(ins, reg);
+  stwi(ins, data);
   return ins;
 }
 
 static inline CopInsPairT *_CopInsMove32(CopInsT *ins, short reg, int data) {
-  *((u_short *)ins)++ = reg + 2;
-  *((u_short *)ins)++ = data;
-  *((u_short *)ins)++ = reg;
-  *((u_short *)ins)++ = swap16(data);
+  stwi(ins, reg + 2);
+  stwi(ins, data);
+  stwi(ins, reg);
+  stwi(ins, swap16(data));
   return (CopInsPairT *)ins;
 }
 
@@ -134,9 +134,9 @@ static inline CopInsPairT *_CopMove32(CopListT *list, short reg, int data) {
   ins = _CopInsWait(ins, vp, hp)
 
 static inline CopInsT *_CopInsWait(CopInsT *ins, short vp, short hp) {
-  *((u_char *)ins)++ = vp;
-  *((u_char *)ins)++ = hp | 1;
-  *((u_short *)ins)++ = 0xfffe;
+  stbi(ins, vp);
+  stbi(ins, hp | 1);
+  stwi(ins, 0xfffe);
   return ins;
 }
 
@@ -154,11 +154,11 @@ static inline CopInsT *CopWaitSafe(CopListT *list, short vp, short hp) {
   if (vp > 255 && !list->overflow) {
     list->overflow = -1;
     /* Wait for last waitable position to control when overflow occurs. */
-    *((u_int *)ins)++ = 0xffdffffe;
+    stli(ins, 0xffdffffe);
   }
-  *((u_char *)ins)++ = vp;
-  *((u_char *)ins)++ = hp | 1;
-  *((u_short *)ins)++ = 0xfffe;
+  stbi(ins, vp);
+  stbi(ins, hp | 1);
+  stwi(ins, 0xfffe);
   list->curr = ins;
   return pos;
 }
@@ -168,10 +168,10 @@ static inline CopInsT *CopWaitMask(CopListT *list, short vp, short hp,
                                    short vpmask, short hpmask) {
   CopInsT *pos = list->curr;
   CopInsT *ins = list->curr;
-  *((u_char *)ins)++ = vp;
-  *((u_char *)ins)++ = hp | 1;
-  *((u_char *)ins)++ = 0x80 | vpmask;
-  *((u_char *)ins)++ = hpmask & 0xfe;
+  stbi(ins, vp);
+  stbi(ins, hp | 1);
+  stbi(ins, 0x80 | vpmask);
+  stbi(ins, hpmask & 0xfe);
   list->curr = ins;
   return pos;
 }
@@ -186,9 +186,9 @@ static inline CopInsT *CopWaitMask(CopListT *list, short vp, short hp,
 static inline CopInsT *CopSkip(CopListT *list, short vp, short hp) {
   CopInsT *pos = list->curr;
   CopInsT *ins = list->curr;
-  *((u_char *)ins)++ = vp;
-  *((u_char *)ins)++ = hp | 1;
-  *((u_short *)ins)++ = 0xffff;
+  stbi(ins, vp);
+  stbi(ins, hp | 1);
+  stwi(ins, 0xffff);
   list->curr = ins;
   return pos;
 }
@@ -198,10 +198,10 @@ static inline CopInsT *CopSkipMask(CopListT *list, short vp, short hp,
                                    short vpmask, short hpmask) {
   CopInsT *pos = list->curr;
   CopInsT *ins = list->curr;
-  *((u_char *)ins)++ = vp;
-  *((u_char *)ins)++ = hp | 1;
-  *((u_char *)ins)++ = 0x80 | vpmask;
-  *((u_char *)ins)++ = hpmask | 1;
+  stbi(ins, vp);
+  stbi(ins, hp | 1);
+  stbi(ins, 0x80 | vpmask);
+  stbi(ins, hpmask | 1);
   list->curr = ins;
   return pos;
 }

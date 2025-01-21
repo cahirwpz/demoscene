@@ -65,7 +65,10 @@ typedef struct Effect {
    * Executed in background task when other effect is running.
    * Precalculates data for the effect to be launched.
    */
-  EffectFuncT Load;
+  union {
+    EffectFuncT Func;
+    intptr_t Status;
+  } Load;
   /*
    * Frees all resources allocated by "Load" step.
    */
@@ -77,7 +80,10 @@ typedef struct Effect {
    *    (setup for display window, display data fetch, palette, sprites, etc.)
    * 3) Set up interrupts and DMA channels (copper, blitter, etc.)
    */
-  EffectFuncT Init;
+  union {
+    EffectFuncT Func;
+    intptr_t Status;
+  } Init;
   /*
    * Frees all resources allocated by "Init" step.
    */
@@ -103,9 +109,9 @@ void EffectRun(EffectT *effect);
   __code EffectT NAME##Effect = {                                              \
     .magic = EFFECT_MAGIC,                                                     \
     .name = #NAME,                                                             \
-    .Load = (L),                                                               \
+    .Load = { .Func = (L) },                                                   \
     .UnLoad = (U),                                                             \
-    .Init = (I),                                                               \
+    .Init = { .Func = (I) },                                                   \
     .Kill = (K),                                                               \
     .Render = (R),                                                             \
     .VBlank = (V)                                                              \

@@ -1,6 +1,7 @@
 #ifndef __SYNC_H__
 #define __SYNC_H__
 
+#include "cdefs.h"
 #include "common.h"
 
 /* First four types are based upon their counterparts in GNU rocket! */
@@ -38,7 +39,7 @@ typedef struct Track {
   short delta;
   bool pending;
   /* public: provided by user */
-  TrackKeyT data[0];
+  TrackKeyT data[__FLEX_ARRAY];
 } TrackT;
 
 void TrackInit(TrackT *track);

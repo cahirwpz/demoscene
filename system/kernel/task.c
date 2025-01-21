@@ -1,4 +1,5 @@
 #include <debug.h>
+#include <common.h>
 #include <string.h>
 #include <strings.h>
 #include <system/cpu.h>
@@ -49,10 +50,8 @@ void TaskInit(TaskT *tsk, const char *name, void *stkptr, u_int stksz) {
  */
 
 /* Macros for task stack initialization. */
-#define PushLong(v)                                                            \
-  { *--(u_int *)sp = (u_int)(v); }
-#define PushWord(v)                                                            \
-  { *--(u_short *)sp = (u_short)(v); }
+#define PushLong(v) stld(sp, v)
+#define PushWord(v) stwd(sp, v)
 
 void TaskRun(TaskT *tsk, u_char prio, void (*fn)(void *), void *arg) {
   void *sp = tsk->stkUpper;

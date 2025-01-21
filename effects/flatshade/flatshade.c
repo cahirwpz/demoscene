@@ -54,7 +54,7 @@ static void Kill(void) {
   short t1 = (*v++) + x;                        \
   int t2 = (*v++) * z;                          \
   v++;                                          \
-  D = ((t0 * t1 + t2 - x * y) >> 4) + E;        \
+  D = ((t0 * t1 + t2 - xy) >> 4) + E;           \
 }
 
 #define MULVERTEX2(D) {                         \
@@ -62,7 +62,7 @@ static void Kill(void) {
   short t1 = (*v++) + x;                        \
   int t2 = (*v++) * z;                          \
   short t3 = (*v++);                            \
-  D = normfx(t0 * t1 + t2 - x * y) + t3;        \
+  D = normfx(t0 * t1 + t2 - xy) + t3;           \
 }
 
 static void TransformVertices(Object3D *object) {

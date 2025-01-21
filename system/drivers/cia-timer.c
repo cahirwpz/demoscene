@@ -35,15 +35,15 @@ static void NotifyTimeout(CIATimerT *timer) {
 #define CIAB ciab
 
 #define TIMER(CIA, TIMER)                                                      \
-  [TIMER_##CIA##_##TIMER] = {                                                  \
+  [TIMER_ ## CIA ## _ ## TIMER] = {                                            \
       .name = #CIA "-" #TIMER,                                                 \
       .server = _INTSERVER(0, (IntFuncT)CIATimerHandler,                       \
-                           &Timers[TIMER_##CIA##_##TIMER]),                    \
+                           &Timers[TIMER_ ## CIA ## _ ## TIMER]),              \
       .timeout = NULL,                                                         \
       .cia = CIA,                                                              \
-      .event = EVF_##CIAA##(CIAICRF_T##TIMER),                                 \
-      .num = TIMER_##CIA##_##TIMER,                                            \
-      .icr = CIAICRF_T##TIMER,                                                 \
+      .event = EVF_CIAA(CIAICRF_T ## TIMER),                                   \
+      .num = TIMER_ ## CIA ## _ ##TIMER,                                       \
+      .icr = CIAICRF_T ## TIMER,                                               \
   }
 
 static CIATimerT Timers[4] = {TIMER(CIAA, A), TIMER(CIAA, B), TIMER(CIAB, A),

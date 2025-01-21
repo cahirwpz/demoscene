@@ -40,7 +40,7 @@ typedef u_short SprWordT[2];
 typedef struct SprData {
   u_short pos;
   u_short ctl;
-  SprWordT data[0];
+  SprWordT data[__FLEX_ARRAY];
 } SprDataT;
 
 typedef struct Sprite {

@@ -106,7 +106,7 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
         }
       }
       {
-        const char *hunkType;
+        __unused const char *hunkType;
 
         if (hunkId == HUNK_CODE)
           hunkType = "CODE";

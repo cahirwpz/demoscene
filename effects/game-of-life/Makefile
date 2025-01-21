@@ -11,7 +11,9 @@ data/%-electrons.c: data/%-electrons.png
 	@echo "[PNG] $(DIR)$< -> $(DIR)$@"
 	$(PYTHON3) $(ELECTRONS2C) $< $@ || (rm -f $@ && exit 1)
 
-CLEAN-FILES := data/p46basedprng.c data/cell-gradient.c data/logo-electrons.c
+CLEAN-FILES := data/p46basedprng.c data/cell-gradient.c \
+	data/logo-electrons.c data/electric-lifeforms.c
+
 PNG2C.p46basedprng := --bitmap p46basedprng,156x75x1
 PNG2C.electric-lifeforms := --bitmap logo,160x128x1
 PNG2C.cell-gradient := --pixmap gradient,4x64x12

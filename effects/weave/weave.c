@@ -47,7 +47,7 @@ static StateT state[2];
 #define BARS 4
 
 /* These numbers must be odd due to optimizations. */
-static char StripePhase[STRIPES] = { 4, 24, 16, 8, 12 };
+static u_char StripePhase[STRIPES] = { 4, 24, 16, 8, 12 };
 static char StripePhaseIncr[STRIPES] = { 8, -10, 14, -6, 6 };
 
 static inline void CopSpriteSetHP(CopListT *cp, short n) {

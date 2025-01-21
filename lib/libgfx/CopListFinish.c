@@ -3,7 +3,7 @@
 
 CopListT *CopListFinish(CopListT *list) {
   CopInsT *ins = list->curr;
-  *((u_int *)ins)++ = 0xfffffffe;
+  stli(ins, 0xfffffffe);
   list->curr = ins;
   {
     ptrdiff_t used = (ptrdiff_t)(list->curr - list->entry);

@@ -2,6 +2,7 @@
 #define __SYSTEM_BOOT_H__
 
 #include <types.h>
+#include <cdefs.h>
 
 struct Hunk;
 
@@ -19,7 +20,7 @@ typedef struct BootData {
   u_char bd_bootdev;    /* 0=floppy, 1=ram/amigaos */
   u_char bd_cpumodel;   /* Processor model */
   u_short bd_nregions;  /* Number of memory regions */
-  MemRegionT bd_region[0];
+  MemRegionT bd_region[__FLEX_ARRAY];
 } BootDataT;
 
 extern u_char BootDev;

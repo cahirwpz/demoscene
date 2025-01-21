@@ -31,36 +31,40 @@ static void SendEffectStatus(EffectT *effect) {
 
 #define DONE 1
 
+bool EffectIsRunning(EffectT *effect) {
+  return (effect->Init.Status & DONE) ? true : false; 
+}
+
 void EffectLoad(EffectT *effect) {
-  if ((intptr_t)effect->Load & DONE)
+  if (effect->Load.Status & DONE)
     return;
 
-  if (effect->Load) {
+  if (effect->Load.Func) {
     Log("[Effect] Loading '%s'\n", effect->name);
-    effect->Load();
+    effect->Load.Func();
     ShowMemStats();
   }
 
-  (intptr_t)effect->Load |= DONE; 
+  effect->Load.Status |= DONE; 
   SendEffectStatus(effect);
 }
 
 void EffectInit(EffectT *effect) {
-  if ((intptr_t)effect->Init & DONE)
+  if (effect->Init.Status & DONE)
     return;
 
-  if (effect->Init) {
+  if (effect->Init.Func) {
     Log("[Effect] Initializing '%s'\n", effect->name);
-    effect->Init();
+    effect->Init.Func();
     ShowMemStats();
   }
 
-  (intptr_t)effect->Init |= DONE;
+  effect->Init.Status |= DONE;
   SendEffectStatus(effect);
 }
 
 void EffectKill(EffectT *effect) {
-  if (!((intptr_t)effect->Init & DONE))
+  if (!(effect->Init.Status & DONE))
     return;
 
   if (effect->Kill) {
@@ -69,12 +73,12 @@ void EffectKill(EffectT *effect) {
     ShowMemStats();
   }
 
-  (intptr_t)effect->Init ^= DONE;
+  effect->Init.Status ^= DONE;
   SendEffectStatus(effect);
 }
 
 void EffectUnLoad(EffectT *effect) {
-  if (!((intptr_t)effect->Load & DONE))
+  if (!(effect->Load.Status & DONE))
     return;
 
   if (effect->UnLoad) {
@@ -83,7 +87,7 @@ void EffectUnLoad(EffectT *effect) {
     ShowMemStats();
   }
 
-  (intptr_t)effect->Load ^= DONE;
+  effect->Load.Status ^= DONE;
   SendEffectStatus(effect);
 }
 
