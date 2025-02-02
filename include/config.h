@@ -11,15 +11,19 @@
  */
 #define UAE
 
-#ifndef UAE
 /*
- * Redirect diagnostic and log messages to:
- * 0 => null output (drop messages)
- * 1 => parallel port
- * 2 => serial port
+ * Level of debugging built into the production.
+ * 0 => only Panic works, diagnostic messages are NOT recorded
+ * 1 => Log / Assert / Panic work, diagnostic messages are recorded
+ * 2 => as above, but additionaly Assume / Debug work (system only)
  */
-#define LOGOUT 2
-#endif
+#define DEBUG 1
+
+/*
+ * Enable dynamic memory allocation debugging incl. nice diagnostic printout
+ * when memory corruption is detected or we run out of memory.
+ */
+#define MEMDEBUG
 
 /*
  * Defined:
@@ -45,12 +49,6 @@
  * that loads data from disk while the effects are running.
  */
 #define MULTITASK
-
-/*
- * Enable dynamic memory allocation debugging incl. nice diagnostic printout
- * when memory corruption is detected or we run out of memory.
- */
-#define MEMDEBUG
 
 /*
  * [Valid only when AMIGAOS is defined!]

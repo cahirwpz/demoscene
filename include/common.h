@@ -144,6 +144,22 @@ static inline int rorl(int a, short b) {
   return r;
 }
 
+static inline short rolw(short a, short b) {
+  short r;
+  asm("rol.w %2,%0"
+      : "=d" (r)
+      : "0" (a), "dI" (b));
+  return r;
+}
+
+static inline int roll(int a, short b) {
+  int r;
+  asm("rol.l %2,%0"
+      : "=d" (r)
+      : "0" (a), "dI" (b));
+  return r;
+}
+
 #define swapr(a, b) \
   asm ("exg %0,%1" : "+r" (a), "+r" (b))
 

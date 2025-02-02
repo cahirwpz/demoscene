@@ -1,4 +1,4 @@
-; Copyright (C) 2020-2024 Krystian Bacławski
+; Copyright (C) 2020-2025 Krystian Bacławski
 ;
 ; Permission is hereby granted, free of charge, to any person obtaining a copy
 ; of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,16 @@
         include 'exec/libraries.i'
         include 'dos/dosextens.i'
         include 'dos/doshunks.i'
+        include 'graphics/text.i'
         include 'devices/trackdisk.i'
         include 'hardware/custom.i'
+        include 'lvo/exec_lib.i'
+        include 'lvo/graphics_lib.i'
 
 ; Export some symbols so they appear in disassembly.
 
+        XDEF    Entry
+        XDEF    KillOS
         XDEF    Start
         XDEF    Panic
         XDEF    CopyMem
@@ -37,6 +42,9 @@
         XDEF    AllocMem
         XDEF    FreeMem
         XDEF    SetupHunkFile
+        XDEF    UnZX0
+        XDEF    GfxName
+        XDEF    TopazName
 
 ; configurable parameters
 
@@ -48,13 +56,6 @@ CHIPMAX         EQU     $200000 ; maximum size of chip memory (2MB)
 CUSTOM          EQU     $dff000
 CIAA            EQU     $bfe001
 CIAB            EQU     $bfd000
-
-; jump vector entires from exec.library
-
-_LVOSuperState          EQU     -150
-_LVOAllocMem            EQU     -198
-_LVODoIO                EQU     -456
-_LVOCacheControl        EQU     -648
 
 ; These flags are not related to AmigaOS memory management.
 
@@ -72,6 +73,7 @@ COMP_ZX0        EQU     3
  STRUCTURE BD,0                 ; Boot Data
         APTR    BD_HUNK
         APTR    BD_VBR
+        APTR    BD_TOPAZ
         APTR    BD_STKBOT
         LONG    BD_STKSZ
         BYTE    BD_BOOTDEV
@@ -149,6 +151,21 @@ Entry:
         JSRLIB  CacheControl
 .nocache
 
+        ; open graphics.library
+        lea     GfxName(pc),a1
+        JSRLIB  OldOpenLibrary
+        move.l  d0,a6
+
+        ; extract topaz8 font data
+        pea     $00080001       ; 8.w FS_NORMAL.b FPF_ROMFONT.b
+        pea     TopazName(pc)
+        move.l  sp,a0
+        JSRLIB  OpenFont
+        move.l  d0,a0
+        move.l  tf_CharData(a0),d4
+
+        move.l  $4.w,a6
+
 ; Let's kill AmigaOS before we normalize memory layout. That involves:
 ;
 ; 1) Destroying initial AmigaOS interrupt vector, that's always there,
@@ -158,6 +175,7 @@ Entry:
 ; Useful registers we carry to this phase:
 ;   [d2] executable length in bytes (rounded up to sector size)
 ;   [d3] pointer to executable file image
+;   [d4] pointer to topaz.font(8) character data (modulo: 192)
 ;
 ; We cannot yet normalize executable file image position since that could
 ; overwrite currently running code.
@@ -168,19 +186,19 @@ KillOS:
         JSRLIB  SuperState              ; enter supervisor mode
         or.w    #$0700,sr               ; set highest priority level
 
-        ; copy boot loader at $8.w
+        ; copy boot loader at $100.w (user defined vectors)
         lea     Start(pc),a0
-        lea     $8.w,a2
+        lea     $100.w,a2
         move.w  #(End-Start)/2-1,d0
 .loop   move.w  (a0)+,(a2)+
         dbra    d0,.loop
 
+        ; BOOTDATA structure above is placed just after the end of boot loader.
+        ; [a2] boot loader data
+        move.l  d4,BD_TOPAZ(a2)
+
         ; Useful data extracted from ExecBase includes memory regions
         ; and processor model flags.
-        ;
-        ; BOOTDATA structure above is placed just after the end of boot loader.
-
-        ; [a2] boot loader data
         lea     BD_BOOTDEV(a2),a3
 
         ; start from floppy drive
@@ -216,7 +234,15 @@ KillOS:
         lea     $400.w,sp
 
         ; jump into second phase code relocated at the beginning of memory
-        jmp     $8.w
+        jmp     $100.w
+
+GfxName:
+        dc.b    'graphics.library',0
+
+TopazName:
+        dc.b    'topaz.font', 0
+
+        even
 
 ; Normalize memory layout by moving executable file image at well known
 ; position. Set up primitive memory manager and relocate executable file.
@@ -325,7 +351,7 @@ CopyMem:
         rts
 
 ; Clears memory.
-; 
+;
 ; Arguments:
 ;   [a0] pointer to cleared block
 ;   [d0] number of 4B words

@@ -90,5 +90,5 @@ void TrapHandler(TrapFrameT *frame) {
         (read ? "read" : "write"), addr);
   }
 
-  PANIC();
+  Panic("System crashed!");
 }

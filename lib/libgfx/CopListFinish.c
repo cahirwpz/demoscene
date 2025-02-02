@@ -7,9 +7,9 @@ CopListT *CopListFinish(CopListT *list) {
   list->curr = ins;
   {
     ptrdiff_t used = (ptrdiff_t)(list->curr - list->entry);
-    Log("Used copper list %p slots: %ld/%d\n", list, used, list->length);
+    Log("[CopList] %p: used slots %ld/%d\n", list, used, list->length);
     if (used > list->length)
-      PANIC();
+      Panic("[CopList] Overflow detected!");
   }
   list->finished = -1;
   return list;

@@ -15,6 +15,7 @@ typedef struct __packed MemRegion {
 typedef struct BootData {
   struct Hunk *bd_hunk; /* First hunk of executable file */
   void *bd_vbr;         /* Vector Base Register (for 68010+) */
+  void *bd_topaz;       /* topaz.font(8) character data */
   void *bd_stkbot;      /* Stack bottom pointer */
   u_int bd_stksz;       /* Stack size */
   u_char bd_bootdev;    /* 0=floppy, 1=ram/amigaos */

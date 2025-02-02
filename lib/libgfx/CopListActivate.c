@@ -2,10 +2,8 @@
 #include <copper.h>
 
 void CopListActivate(CopListT *list) {
-  if ((list->curr - list->entry) > list->length)
-    PANIC();
   if (list->finished == 0)
-    PANIC();
+    Panic("[CopList] Cannot activate list that is not finished!");
   /* Write copper list address. */
   custom->cop1lc = (u_int)list->entry;
   /* Enable copper DMA */

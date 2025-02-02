@@ -11,7 +11,7 @@ void InitTrackmo(void) {
   if (BootDev == 0) {
     dev = FloppyOpen();
   } else {
-    PANIC();
+    Panic("[Trackmo] Not configured to run from: %d!", BootDev);
   }
   InitFileSys(dev);
 }

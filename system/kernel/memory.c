@@ -435,10 +435,9 @@ void *MemAlloc(u_int size, u_int attributes) {
   }
 
   if (bt == NULL) {
-    Log("[Memory] Failed to allocate %dB of %s memory.\n",
-        size, MemoryName(attributes));
     MemCheck(1);
-    HALT();
+    Panic("[Memory] Failed to allocate %dB of %s memory!",
+          size, MemoryName(attributes));
   }
 
   ptr = BtPayload(bt);

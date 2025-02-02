@@ -123,6 +123,7 @@ static __aligned(4) char FastMem[FASTMEM * 1024];
 static BootDataT BootData = {
   .bd_hunk = NULL,
   .bd_vbr = NULL,
+  .bd_topaz = NULL,
   .bd_bootdev = 2,
   .bd_cpumodel = CPU_68000,
   .bd_stkbot = NULL,
@@ -165,6 +166,13 @@ BootDataT *SaveOS(void) {
   /* Workaround for const-ness of GfxBase declaration. */
   *(struct GfxBase **)&GfxBase =
     (struct GfxBase *)OpenLibrary("graphics.library", 33);
+
+  {
+    struct TextAttr textattr = { (char *)"topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
+    struct TextFont *topaz8 = OpenFont(&textattr);
+    bd->bd_topaz = topaz8->tf_CharData;
+    CloseFont(topaz8);
+  }
 
   old.resCiaA = OpenResource(CIAANAME);
   old.resCiaB = OpenResource(CIABNAME);

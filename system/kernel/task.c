@@ -232,9 +232,8 @@ void TaskSwitch(TaskT *curtsk) {
   curtsk = ReadyChoose();
   Debug("Switching to " TI_FMT ".", TI_ARGS(curtsk));
   if (*(u_int *)curtsk->stkLower != STACK_CANARY) {
-    Log("[TaskSwitch] Stack overflow detected for '%s' task (size: %d)!\n",
-        curtsk->name, (int)(curtsk->stkUpper - curtsk->stkLower));
-    PANIC();
+    Panic("[TaskSwitch] Stack overflow detected for '%s' task (size: %d)!",
+          curtsk->name, (int)(curtsk->stkUpper - curtsk->stkLower));
   }
   CurrentTask = curtsk;
 }
