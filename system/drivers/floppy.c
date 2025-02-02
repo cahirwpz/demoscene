@@ -59,6 +59,7 @@ struct File {
   short trackNum;
   CIATimerT *fdtmr;
 
+  short drvNum;
   short trkInBuf;
   SectorT *encoded;
   u_char *decoded;
@@ -113,39 +114,41 @@ static inline bool HeadsAtTrack0(void) {
   return !(ciaa->ciapra & CIAF_DSKTRACK0);
 }
 
-static void FloppyMotorOn(void) {
+static void FloppyMotorOn(FileT *f) {
   u_char *ciaprb = (u_char *)&ciab->ciaprb;
+  char dsksel = CIAB_DSKSEL0 + f->drvNum;
 
-  bset(ciaprb, CIAB_DSKSEL0);
+  bset(ciaprb, dsksel);
   bclr(ciaprb, CIAB_DSKMOTOR);
-  bclr(ciaprb, CIAB_DSKSEL0);
+  bclr(ciaprb, dsksel);
 
   WaitDiskReady();
 }
 
-static void FloppyMotorOff(void) {
+static void FloppyMotorOff(FileT *f) {
   u_char *ciaprb = (u_char *)&ciab->ciaprb;
+  char dsksel = CIAB_DSKSEL0 + f->drvNum;
 
-  bset(ciaprb, CIAB_DSKSEL0);
+  bset(ciaprb, dsksel);
   bset(ciaprb, CIAB_DSKMOTOR);
-  bclr(ciaprb, CIAB_DSKSEL0);
+  bclr(ciaprb, dsksel);
 }
 
 #define DISK_SETTLE TIMER_MS(15)
 
-static void FloppyTrackRead(FileT *f, short num) {
-  if (f->trackNum == num)
+static void FloppyTrackRead(FileT *f, short trknum) {
+  if (f->trackNum == trknum)
     return;
 
   if (f->trackNum == -1)
     f->trackNum = 0;
 
-  if ((num ^ f->trackNum) & 1)
-    ChangeDiskSide(f, num & 1);
+  if ((trknum ^ f->trackNum) & 1)
+    ChangeDiskSide(f, trknum & 1);
 
-  if (num != f->trackNum) {
-    HeadsStepDirection(f, num > f->trackNum);
-    while (num != f->trackNum)
+  if (trknum != f->trackNum) {
+    HeadsStepDirection(f, trknum > f->trackNum);
+    while (trknum != f->trackNum)
       StepHeads(f);
   }
 
@@ -155,7 +158,7 @@ static void FloppyTrackRead(FileT *f, short num) {
   ClearIRQ(INTF_DSKBLK);
   EnableDMA(DMAF_DISK);
 
-  Debug("Read track %d", num);
+  Debug("Read track %d", trknum);
 
   custom->dskpt = (void *)f->encoded;
   /* Write track size twice to initiate DMA transfer. */
@@ -186,7 +189,7 @@ static SectorT *FindSectorHeader(void *ptr) {
   return HeaderToSector(data);
 }
 
-static void FloppyTrackDecode(FileT *f) {
+static bool FloppyTrackDecode(FileT *f, short trknum) {
   register u_int mask asm("d7") = 0x55555555;
   u_short *data = (u_short *)f->encoded;
   u_int *buf = (u_int *)f->decoded;
@@ -203,6 +206,11 @@ static void FloppyTrackDecode(FileT *f) {
     SectorInfoT info;
 
     *(u_int *)&info = DecodeLong(sector->info[0], sector->info[1], mask);
+    if (info.trackNum != trknum) {
+      Log("[Floppy] Reading from wrong track %d (expected %d)!\n",
+          info.trackNum, trknum);
+      return false;
+    }
 
     Debug("sector=%p, #sector=%d, #track=%d",
           sector, info.sectorNum, info.trackNum);
@@ -228,6 +236,8 @@ static void FloppyTrackDecode(FileT *f) {
     if (info.gapDist == 1 && secnum > 1)
       sector = FindSectorHeader(sector);
   } while (--secnum);
+
+  return true;
 }
 
 static void DiskBlockInterrupt(__unused void *ptr) {
@@ -247,7 +257,7 @@ static FileOpsT FloppyOps = {
 
 static MUTEX(FloppyMtx);
 
-FileT *FloppyOpen(void) {
+FileT *FloppyOpen(int num) {
   static FileT *f = NULL;
 
   MutexLock(&FloppyMtx);
@@ -257,6 +267,7 @@ FileT *FloppyOpen(void) {
 
     f = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
     f->ops = &FloppyOps;
+    f->drvNum = num;
     f->fdtmr = AcquireTimer(TIMER_CIAA_A);
     f->encoded = MemAlloc(RAW_TRACK_SIZE, MEMF_CHIP);
     f->decoded = MemAlloc(TRACK_SIZE, MEMF_PUBLIC);
@@ -269,7 +280,7 @@ FileT *FloppyOpen(void) {
     ClearIRQ(INTF_DSKBLK);
     EnableINT(INTF_DSKBLK);
 
-    FloppyMotorOn();
+    FloppyMotorOn(f);
     HeadsStepDirection(f, OUTWARDS);
     while (!HeadsAtTrack0())
       StepHeads(f);
@@ -277,6 +288,8 @@ FileT *FloppyOpen(void) {
     ChangeDiskSide(f, LOWER);
     f->trackNum = -1;
     f->trkInBuf = -1;
+
+    Log("[Floppy] Drive DF%d ready!\n", f->drvNum);
   }
 
   MutexUnlock(&FloppyMtx);
@@ -285,7 +298,7 @@ FileT *FloppyOpen(void) {
 }
 
 static void FloppyClose(FileT *f) {
-  FloppyMotorOff();
+  FloppyMotorOff(f);
   DisableINT(INTF_DSKBLK);
   ClearIRQ(INTF_DSKBLK);
   ResetIntVector(INTB_DSKBLK);
@@ -316,7 +329,9 @@ static int FloppyRead(FileT *f, void *buf, u_int nbyte) {
 
     if (trknum != f->trkInBuf) {
       FloppyTrackRead(f, trknum);
-      FloppyTrackDecode(f);
+      if (!FloppyTrackDecode(f, trknum)) {
+        Panic("[Floppy] Read error at track %d!", trknum);
+      }
       f->trkInBuf = trknum;
     }
 
@@ -329,7 +344,7 @@ static int FloppyRead(FileT *f, void *buf, u_int nbyte) {
     left -= size;
     f->pos += size;
   }
-  
+
   return nbyte - left; /* how much did we read? */
 }
 

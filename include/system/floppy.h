@@ -9,6 +9,6 @@ struct File;
 #define NTRACKS 160
 #define TRACK_SIZE (NSECTORS * SECTOR_SIZE)
 
-struct File *FloppyOpen(void);
+struct File *FloppyOpen(int num);
 
 #endif /* !__SYSTEM_FLOPPY_H__ */

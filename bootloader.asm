@@ -123,6 +123,14 @@ ExecInfo:
 Entry:
         move.l  a1,-(sp)                ; trackdisk.device IORequest
 
+        ; identify boot device (0-3)
+        movem.l IO_DEVICE(a1),a0/a1     ; IO_DEVICE/IO_UNIT
+        lea     DD_SIZE+2+4*4(a0),a0    ; internal TDU0-3 pointers (DD_SIZE+2)
+        moveq   #4-1,d5                 ; NUMUNITS-1
+.unit:  cmp.l   -(a0),a1
+        dbeq    d5,.unit
+
+        ; info about executable file to load
         movem.w ExecInfo(pc),d2/d4
         lsl.l   #8,d2                   ; [d2] executable length in bytes
         lsl.l   #8,d4                   ; [d4] executable start in bytes
@@ -176,6 +184,7 @@ Entry:
 ;   [d2] executable length in bytes (rounded up to sector size)
 ;   [d3] pointer to executable file image
 ;   [d4] pointer to topaz.font(8) character data (modulo: 192)
+;   [d5] boot floppy drive device number
 ;
 ; We cannot yet normalize executable file image position since that could
 ; overwrite currently running code.
@@ -202,7 +211,7 @@ KillOS:
         lea     BD_BOOTDEV(a2),a3
 
         ; start from floppy drive
-        clr.b   (a3)+
+        move.b  d5,(a3)+
         ; save processor model
         move.b  AttnFlags+1(a6),(a3)+
 

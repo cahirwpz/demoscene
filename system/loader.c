@@ -32,6 +32,7 @@ void Loader(BootDataT *bd) {
   Log("[Loader] CPU model $%02x\n", bd->bd_cpumodel);
   Log("[Loader] Stack at $%08x (%d bytes)\n",
       (u_int)bd->bd_stkbot, bd->bd_stksz);
+  Log("[Loader] Boot device number: %d\n", (int)bd->bd_bootdev);
 
   CpuModel = bd->bd_cpumodel;
   BootDev = bd->bd_bootdev;
@@ -68,7 +69,8 @@ void Loader(BootDataT *bd) {
   /* CIA-A & CIA-B: Stop timers and return to default settings. */
   ciaa->ciacra = 0;
   ciaa->ciacrb = 0;
-  ciab->ciacra = 0;
+  /* unselect all drives */
+  ciab->ciacra = CIAB_DSKSEL3|CIAB_DSKSEL2|CIAB_DSKSEL1|CIAB_DSKSEL0;
   ciab->ciacrb = 0;
 
   /* CIA-A & CIA-B: Clear pending interrupts. */
@@ -99,6 +101,6 @@ void Loader(BootDataT *bd) {
   }
 
   CallFuncList(&__EXIT_LIST__);
-  
+
   Log("[Loader] Shutdown complete!\n");
 }
