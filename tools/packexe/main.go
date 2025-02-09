@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"bytes"
 	"flag"
 	"fmt"
@@ -55,11 +56,31 @@ func setCompAlgo(s string) {
 	}
 }
 
-func packData(input *bytes.Buffer, algo CompAlgo) (*bytes.Buffer, hunk.CompType) {
+func checksum(data []byte) uint32 {
+	var sum uint32 = 0
+	for i := 0; i < len(data); i += 4 {
+		sum += binary.BigEndian.Uint32(data[i:i+4])
+	}
+	return sum
+}
+
+func computeChecksum(data []byte) []byte {
+	cksum := make([]byte, 4)
+	sum := (checksum(data) ^ 0xffffffff) + 1
+	binary.BigEndian.PutUint32(cksum, sum)
+	return cksum
+}
+
+func verifyChecksum(data []byte, cksum []byte) {
+	sum := checksum(data) + binary.BigEndian.Uint32(cksum)
+	if sum != 0 {
+		panic("Incorrect checksum!")
+	}
+}
+
+func packData(data []byte, algo CompAlgo) ([]byte, hunk.CompType) {
 	var packed []byte
 	var comp hunk.CompType
-
-	data := input.Bytes()
 
 	switch algo {
 	case Zx0:
@@ -75,13 +96,11 @@ func packData(input *bytes.Buffer, algo CompAlgo) (*bytes.Buffer, hunk.CompType)
 		panic("unknown compression algorithm")
 	}
 
-	return bytes.NewBuffer(packed), comp
+	return packed, comp
 }
 
-func unpackData(input *bytes.Buffer, comp hunk.CompType) *bytes.Buffer {
+func unpackData(data []byte, comp hunk.CompType) []byte {
 	var unpacked []byte
-
-	data := input.Bytes()
 
 	switch comp {
 	case hunk.COMP_ZX0:
@@ -92,7 +111,7 @@ func unpackData(input *bytes.Buffer, comp hunk.CompType) *bytes.Buffer {
 		panic("unknown compression algorithm")
 	}
 
-	return bytes.NewBuffer(unpacked)
+	return unpacked
 }
 
 func FileSize(path string) int64 {
@@ -110,17 +129,19 @@ func packHunk(hd *hunk.HunkBin, hunkNum int, header *hunk.HunkHeader) {
 		return
 	}
 
+	cksum := computeChecksum(hd.Data.Bytes())
+
 	fmt.Printf("Compressing hunk %d (%s): %d", hunkNum,
 		hd.Type().String(), hd.Data.Len())
-	packed, comp := packData(hd.Data, compAlgo)
-	fmt.Printf(" -> %d\n", packed.Len())
+	packed, comp := packData(hd.Data.Bytes(), compAlgo)
+	fmt.Printf(" -> %d\n", len(packed))
 
-	if packed.Len() >= hd.Data.Len() {
+	if len(packed) >= hd.Data.Len() {
 		println("Skipping compression...")
 		return
 	}
 
-	hd.Data = packed
+	hd.Data = bytes.NewBuffer(append(cksum, packed...))
 	hd.Comp = comp
 	/* add extra 8 bytes for in-place decompression */
 	header.Specifiers[hunkNum] += 2
@@ -133,10 +154,14 @@ func unpackHunk(hd *hunk.HunkBin, hunkNum int, header *hunk.HunkHeader) {
 		return
 	}
 
+	cksum, packed := hd.Data.Bytes()[:4], hd.Data.Bytes()[4:]
+
 	fmt.Printf("Decompressing hunk %d (%s): %d", hunkNum,
-		hd.Type().String(), hd.Data.Len())
-	hd.Data = unpackData(hd.Data, hd.Comp)
-	fmt.Printf(" -> %d\n", hd.Data.Len())
+		hd.Type().String(), len(packed))
+	unpacked := unpackData(packed, hd.Comp)
+	fmt.Printf(" -> %d\n", len(unpacked))
+	verifyChecksum(unpacked, cksum)
+	hd.Data = bytes.NewBuffer(unpacked)
 	hd.Comp = 0
 	header.Specifiers[hunkNum] -= 2
 }

@@ -3,11 +3,10 @@
 import argparse
 import os
 import stat
-from array import array
 from collections import UserList
 from fnmatch import fnmatch
 from struct import pack, unpack
-from io import BytesIO
+from zlib import crc32
 
 #
 # On disk format description:
@@ -19,6 +18,7 @@ from io import BytesIO
 #   [BYTE] #type   : type of file (1: executable, 0: regular)
 #   [WORD] #start  : sector where the file begins (0..1759)
 #   [LONG] #length : size of the file in bytes (up to 1MiB)
+#   [LONG] #cksum  : crc32 checksum on file data
 #   [STRING] #name : name of the file (NUL terminated)
 #
 # sector (n)..(n+k-1): content of files
@@ -44,13 +44,14 @@ def write_pad(fh, alignment=None):
 
 
 class FileEntry(object):
-    __slots__ = ('name', 'offset', 'exe', 'size', 'data')
+    __slots__ = ('name', 'offset', 'exe', 'size', 'cksum', 'data')
 
-    def __init__(self, name, offset, exe, size=0, data=None):
+    def __init__(self, name, offset, exe, size, cksum, data=None):
         self.name = name
         self.offset = offset
         self.exe = exe
         self.size = size
+        self.cksum = cksum
         self.data = data
 
     def __str__(self):
@@ -58,10 +59,6 @@ class FileEntry(object):
         if self.exe:
             s += ' (executable)'
         return s
-
-    def __len__(self):
-        assert self.size == len(self.data)
-        return self.size
 
 
 class Filesystem(UserList):
@@ -71,12 +68,12 @@ class Filesystem(UserList):
 
         entries = []
         while dir_len > 0:
-            reclen, exe, offset, size = unpack('>BBHI', fh.read(8))
-            name = fh.read(reclen - 8).decode().rstrip('\0')
+            reclen, exe, offset, size, cksum = unpack('>BBHII', fh.read(12))
+            name = fh.read(reclen - 12).decode().rstrip('\0')
             dir_len -= reclen
-            entries.append(FileEntry(name, offset * SECTOR, exe, size))
+            entries.append(FileEntry(name, offset * SECTOR, exe, size, cksum))
 
-        for i, entry in enumerate(entries):
+        for entry in entries:
             fh.seek(entry.offset)
             entry.data = fh.read(entry.size)
 
@@ -103,7 +100,7 @@ class Filesystem(UserList):
                 data = fh.read()
 
             exe = bool(os.stat(path).st_mode & stat.S_IEXEC)
-            entry = FileEntry(name, file_off, exe, len(data), data)
+            entry = FileEntry(name, file_off, exe, len(data), crc32(data), data)
             entries.append(entry)
 
             # Determine file position
@@ -113,7 +110,7 @@ class Filesystem(UserList):
 
     def save(self, path):
         # Determine directory size
-        dir_len = sum(align(8 + len(entry.name) + 1, 2) for entry in self.data)
+        dir_len = sum(align(12 + len(entry.name) + 1, 2) for entry in self.data)
 
         # Calculate starting position of files in the file system image
         files_pos = align(dir_len)
@@ -124,10 +121,12 @@ class Filesystem(UserList):
             # Write directory entries
             for entry in self.data:
                 start = sectors(entry.offset + files_pos)
-                reclen = align(8 + len(entry.name) + 1, 2)
+                reclen = align(12 + len(entry.name) + 1, 2)
                 name = entry.name.encode('ascii') + b'\0'
-                fh.write(pack('>BBHI%ds' % len(name),
-                              reclen, int(entry.exe), start, len(entry), name))
+                is_exe = int(entry.exe)
+                fh.write(pack('>BBHII%ds' % len(name),
+                              reclen, is_exe, start,
+                              entry.size, entry.cksum, name))
                 write_pad(fh, 2)
             # Finish off directory by aligning it to sector boundary
             write_pad(fh)

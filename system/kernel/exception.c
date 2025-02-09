@@ -37,6 +37,8 @@ void SetupExceptionVector(BootDataT *bd) {
   ExcVec[EXC_TRAP(0)] = TrapInstTrap;
 #endif
 
-  for (i = EXC_TRAP(1); i <= EXC_TRAP(15); i++)
+  for (i = EXC_TRAP(1); i < EXC_TRAP(15); i++)
     ExcVec[i] = TrapInstTrap;
+
+  ExcVec[EXC_TRAP(15)] = CrashHandler;
 }

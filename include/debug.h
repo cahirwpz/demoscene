@@ -8,6 +8,9 @@
 /* Halt the processor by masking all interrupts and waiting for NMI. */
 #define HALT() { asm volatile("stop #0x2700"); }
 
+/* Invoke CrashHandler in order to display diagnostic screen. */
+#define CRASH() { asm volatile("trap #15"); }
+
 #include <system/debug.h>
 
 #endif

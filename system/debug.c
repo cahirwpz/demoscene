@@ -2,9 +2,11 @@
 #include <common.h>
 #include <custom.h>
 #include <debug.h>
+#include <system/boot.h>
 #include <system/cia.h>
 #include <system/interrupt.h>
-#include <system/boot.h>
+#include <system/mutex.h>
+#include <system/task.h>
 
 #if !defined(UAE) && DEBUG >= 1
 #include <stdarg.h>
@@ -13,7 +15,7 @@
 #define CRASHLOG_SIZE 4096 /* must be power of two */
 
 typedef struct CrashLog {
-  short head, tail;
+  short tail, head;
   char buffer[CRASHLOG_SIZE];
 } CrashLogT;
 
@@ -27,14 +29,17 @@ void CrashInit(BootDataT *bd) {
   ChipMem = (u_char *)0x400;
 }
 
-void CrashPutChar(void *ptr, char data) {
+static void CrashPutChar(void *ptr, char data) {
   struct CrashLog *cl = ptr;
+  short tail = cl->tail;
 
-  cl->buffer[cl->tail++] = data;
-  cl->tail &= CRASHLOG_SIZE - 1;
-  if (cl->tail == cl->head)
+  cl->buffer[tail++] = data;
+  tail &= CRASHLOG_SIZE - 1;
+  cl->tail = tail;
+  if (tail == cl->head) {
     cl->head++;
-  cl->head &= CRASHLOG_SIZE - 1;
+    cl->head &= CRASHLOG_SIZE - 1;
+  }
 }
 
 /*
@@ -151,8 +156,18 @@ static void DumpCrash(u_char *screen, CrashLogT *cl) {
 }
 
 static void ResetHardware(CustomPtrT custom_) {
+  u_short intena = custom_->intenar;
+  u_short intreq = custom_->intreqr;
+  u_short dmacon = custom_->dmaconr;
+
   custom_->intena_ = INTF_ALL;
   custom_->dmacon = DMAF_ALL;
+
+  Log("\n[Panic] INTENA: $%04x INTREQ: $%04x DMACON: $%04x\n", intena, intreq, dmacon);
+
+#ifdef MULTITASK
+  TaskDebug();
+#endif
 
   /* Reset sprites. */
   {
@@ -167,10 +182,11 @@ static void ResetHardware(CustomPtrT custom_) {
   /* Stop floppy motor. */
   {
     u_char *ciaprb = (u_char *)&ciab->ciaprb;
+    u_char dsksel = CIAB_DSKSEL0 + BootDev;
 
-    bset(ciaprb, CIAB_DSKSEL0);
+    bset(ciaprb, dsksel);
     bset(ciaprb, CIAB_DSKMOTOR);
-    bclr(ciaprb, CIAB_DSKSEL0);
+    bclr(ciaprb, dsksel);
   }
 }
 
@@ -205,22 +221,18 @@ __noreturn void Crash(void) {
     continue;
 }
 
+static MUTEX(DebugMtx);
+
 void Log(const char *format, ...) {
   va_list args;
 
-  va_start(args, format);
-  kvprintf(CrashPutChar, (void *)&CrashLog, format, args);
-  va_end(args);
-}
-
-__noreturn void Panic(const char *format, ...) {
-  va_list args;
+  MutexLock(&DebugMtx);
 
   va_start(args, format);
   kvprintf(CrashPutChar, (void *)&CrashLog, format, args);
   va_end(args);
 
-  Crash();
+  MutexUnlock(&DebugMtx);
 }
 
 const char hex[] = "0123456789abcdef";
@@ -236,6 +248,8 @@ static inline void PrintChar(char c) {
 void HexDump(const void *_ptr, u_int len) {
   const u_char *ptr = _ptr;
   u_int addr = 0;
+
+  MutexLock(&DebugMtx);
 
   for (addr = 0; addr < len; addr++) {
     /* print address */
@@ -266,6 +280,8 @@ void HexDump(const void *_ptr, u_int len) {
   if (addr & 15) {
     PrintChar('\n');
   }
+
+  MutexUnlock(&DebugMtx);
 }
 #else
 void CrashInit(BootDataT *bd) {
@@ -273,6 +289,8 @@ void CrashInit(BootDataT *bd) {
 }
 
 __noreturn void Crash(void) {
+  /* TODO fix emulator to flush stdout before HALT */
+  UaeLog("\n");
   HALT();
   for(;;);
 }

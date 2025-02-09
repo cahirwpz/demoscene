@@ -128,7 +128,7 @@ END(DummyInterruptHandler)
         /* assumes SR and PC are already pushed on stack */
         or.w    #0x0700,sr              /* mask all interrupts */
         movem.l d0-a6,-(sp)             /* save D0-A6 registers */
-        move.l  usp,a0;                 /* save USP register */
+        move.l  usp,a0                  /* save USP register */
         move.l  a0,-(sp)
         move.l  _L(CurrentTask),a0      /* load current task pointer */
         move.l  sp,(a0)                 /* save stack pointer */
@@ -150,5 +150,10 @@ ENTRY(YieldHandler)
         LOADCTX
 END(YieldHandler)
 #endif
+
+ENTRY(CrashHandler)
+        SAVECTX
+        jmp     _L(Crash)
+END(CrashHandler)
 
 # vim: ft=gas:ts=8:sw=8:noet:

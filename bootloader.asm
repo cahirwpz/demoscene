@@ -556,7 +556,16 @@ SetupHunkFile:
         bsr     CopyMem
         bra     .parse
 
-.hunzx0 bsr     UnZX0
+.hunzx0 move.l  (a0)+,d1        ; checksum value
+        movem.l d1/a1,-(sp)
+        bsr     UnZX0
+        movem.l (sp)+,d1/a0
+
+.loop   add.l   (a0)+,d1        ; compute checksum
+        cmp.l   a1,a0
+        blt.s   .loop
+        tst.l   d1              ; should sum up to zero
+        bne     Panic
         bra     .parse
 
 .hbss   addq.l  #4,a2           ; skip bss length

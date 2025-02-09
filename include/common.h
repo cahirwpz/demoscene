@@ -59,7 +59,9 @@ static inline short getword(const void *tab, short idx) {
 /* assumes that abs(idx) < 16384 */
 static inline int getlong(const void *tab, short idx) {
   int res;
-  idx <<= 2;
+  idx += idx;
+  asm("" ::: "memory");
+  idx += idx;
   asm("movel (%2,%1:w),%0"
       : "=r" (res)
       : "d" (idx), "a" (tab));
@@ -93,6 +95,23 @@ static inline short div16(int a, short b) {
 
 static inline short mod16(int a, short b) {
   short r;
+  asm("divs %2,%0\n\t"
+      "swap %0"
+      : "=d" (r)
+      : "0" (a), "dm" (b));
+  return r;
+}
+
+static inline u_short udiv16(u_int a, u_short b) {
+  u_short r;
+  asm("divu %2,%0"
+      : "=d" (r)
+      : "0" (a), "dm" (b));
+  return r;
+}
+
+static inline u_short umod16(u_int a, u_short b) {
+  u_short r;
   asm("divs %2,%0\n\t"
       "swap %0"
       : "=d" (r)

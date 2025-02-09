@@ -8,12 +8,16 @@
 
 void InitTrackmo(void) {
   FileT *dev = NULL;
-  if (BootDev == 0) {
-    dev = FloppyOpen();
+  if (BootDev != 0xff) {
+    dev = FloppyOpen(BootDev);
   } else {
     Panic("[Trackmo] Not configured to run from: %d!", BootDev);
   }
   InitFileSys(dev);
+}
+
+void CheckTrackmo(void) {
+  CheckFileSys();
 }
 
 void KillTrackmo(void) {

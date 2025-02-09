@@ -214,7 +214,7 @@ static bool FloppyTrackDecode(FileT *f, short trknum) {
 
     Debug("sector=%p, #sector=%d, #track=%d",
           sector, info.sectorNum, info.trackNum);
-    Assume(info.sectorNum < NSECTORS && info.trackNum < NTRACKS);
+    Assert(info.sectorNum < NSECTORS);
 
     /* Decode sector! */
     {
@@ -311,6 +311,8 @@ static void FloppyClose(FileT *f) {
 static int FloppyRead(FileT *f, void *buf, u_int nbyte) {
   int left = nbyte;
 
+  MutexLock(&FloppyMtx);
+
   Assume(f != NULL);
   Assume(f->pos >= 0 && f->pos <= FLOPPY_SIZE);
 
@@ -344,6 +346,8 @@ static int FloppyRead(FileT *f, void *buf, u_int nbyte) {
     left -= size;
     f->pos += size;
   }
+
+  MutexUnlock(&FloppyMtx);
 
   return nbyte - left; /* how much did we read? */
 }

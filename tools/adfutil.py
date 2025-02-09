@@ -15,7 +15,7 @@ from fsutil import SECTOR, write_pad, sectors, Filesystem
 #  [LONG] 'DOS\0'
 #  [LONG] checksum
 #  [WORD] start of executable file, sector aligned, shifted right by 8
-#  [WORD] offset of executable file, sector aligned, shifte right by 8
+#  [WORD] offset of executable file, sector aligned, shifted right by 8
 #  ...    boot code
 #
 # sector 2..: file system image
