@@ -235,6 +235,8 @@ static bool FloppyTrackDecode(FileT *f, short trknum) {
     /* Is there a gap to skip after the sector? */
     if (info.gapDist == 1 && secnum > 1)
       sector = FindSectorHeader(sector);
+
+    Assert((intptr_t)sector - (uintptr_t)f->encoded < RAW_TRACK_SIZE);
   } while (--secnum);
 
   return true;

@@ -155,15 +155,53 @@ static void DumpCrash(u_char *screen, CrashLogT *cl) {
   }
 }
 
-static void ResetHardware(CustomPtrT custom_) {
+static void DumpCustom(CustomPtrT custom_) {
+  u_int vpos = custom_->vposr_ & 0x1ffff;
   u_short intena = custom_->intenar;
   u_short intreq = custom_->intreqr;
   u_short dmacon = custom_->dmaconr;
+  u_short adkcon = custom_->adkconr;
 
   custom_->intena_ = INTF_ALL;
   custom_->dmacon = DMAF_ALL;
 
-  Log("\n[Panic] INTENA: $%04x INTREQ: $%04x DMACON: $%04x\n", intena, intreq, dmacon);
+  Log("[Custom] INTENA $%04x INTREQ $%04x DMACON $%04x ADKCON $%04x VPOS $%05x\n",
+      intena, intreq, dmacon, adkcon, vpos);
+}
+
+static void DumpCIA(CIAPtrT cia_, const char *id) {
+  u_char icr = SampleICR(cia_, CIAICRF_ALL);
+  u_int tod = 0;
+  u_short ta = 0;
+  u_short tb = 0;
+
+  Log("[%s] ICR $%02x CRA $%02x CRB $%02x PRA $%02x PRB $%02x DDRA $%02x DDRB $%02x\n",
+      id, icr, cia_->ciacra, cia_->ciacrb, cia_->ciapra, cia_->ciaprb, cia_->ciaddra, cia_->ciaddrb);
+
+  ta |= cia_->ciatahi;
+  ta <<= 8;
+  ta |= cia_->ciatalo;
+
+  tb |= cia_->ciatbhi;
+  tb <<= 8;
+  tb |= cia_->ciatblo;
+
+  tod |= cia_->ciatodhi;
+  tod <<= 8;
+  tod |= cia_->ciatodmid;
+  tod <<= 8;
+  tod |= cia_->ciatodlow;
+
+  Log("[%s] TA $%04x TB $%04x TOD $%06x\n",
+      id, ta, tb, tod);
+}
+
+static void ResetHardware(CustomPtrT custom_) {
+  CrashPutChar(&CrashLog, '\n');
+
+  DumpCustom(custom_);
+  DumpCIA(ciaa, "CIA-A");
+  DumpCIA(ciab, "CIA-B");
 
 #ifdef MULTITASK
   TaskDebug();
@@ -235,7 +273,7 @@ void Log(const char *format, ...) {
   MutexUnlock(&DebugMtx);
 }
 
-const char hex[] = "0123456789abcdef";
+static const char hex[] = "0123456789abcdef";
 
 static inline void PrintHex(char i) {
   CrashPutChar(&CrashLog, hex[i & 15]);

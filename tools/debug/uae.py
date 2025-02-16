@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import signal
+import traceback
 
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import PromptSession
@@ -305,7 +306,8 @@ async def UaeDebugger(uaedbg):
             pass
         except EOFError:
             pass
-        except Exception:
+        except Exception as ex:
+            traceback.print_exc()
             print('Debugger bug!')
     print('Quitting...')
 
