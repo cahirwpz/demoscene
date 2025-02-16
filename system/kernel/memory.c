@@ -1,5 +1,4 @@
 #include <cdefs.h>
-#include <checksum.h>
 #include <common.h>
 #include <debug.h>
 #include <limits.h>
@@ -28,7 +27,6 @@ typedef enum {
   USED = 1,     /* this block is used */
   PREVFREE = 2, /* previous block is free */
   ISLAST = 4,   /* last block in an arena */
-  CHECKSUM = 8, /* block has checksum instead of canary */
 } BtFlagsT;
 
 /* Stored in payload of free blocks. */
@@ -52,7 +50,7 @@ typedef struct Arena {
 #define Head(ar) (&(ar)->freeList)
 
 static inline WordT BtSize(WordT *bt) {
-  return *bt & ~(USED | PREVFREE | ISLAST | CHECKSUM);
+  return *bt & ~(USED | PREVFREE | ISLAST);
 }
 
 static inline int BtUsed(WordT *bt) {
@@ -84,7 +82,7 @@ static inline int BtHasCanary(WordT *bt) {
 }
 
 static inline BtFlagsT BtGetFlags(WordT *bt) {
-  return *bt & (PREVFREE | ISLAST | CHECKSUM);
+  return *bt & (PREVFREE | ISLAST);
 }
 
 static inline BtFlagsT BtGetPrevFree(WordT *bt) {
@@ -93,10 +91,6 @@ static inline BtFlagsT BtGetPrevFree(WordT *bt) {
 
 static inline BtFlagsT BtGetIsLast(WordT *bt) {
   return *bt & ISLAST;
-}
-
-static inline BtFlagsT BtHasChecksum(WordT *bt) {
-  return *bt & CHECKSUM;
 }
 
 static inline void BtClrIsLast(WordT *bt) {
@@ -109,14 +103,6 @@ static inline void BtClrPrevFree(WordT *bt) {
 
 static inline void BtSetPrevFree(WordT *bt) {
   *bt |= PREVFREE;
-}
-
-static inline void BtClrChecksum(WordT *bt) {
-  *bt &= ~CHECKSUM;
-}
-
-static inline void BtSetChecksum(WordT *bt) {
-  *bt |= CHECKSUM;
 }
 
 static inline void *BtPayload(WordT *bt) {
@@ -134,16 +120,8 @@ static inline WordT *BtPrev(WordT *bt) {
 }
 
 static void BtCheck(WordT *bt) {
-  if (BtHasChecksum(bt)) {
-#ifdef MEMDEBUG
-    if (Checksum(*BtFooter(bt), BtPayload(bt), BtSize(bt) - FREEBLK_SZ)) {
-      Panic("[Memory] Block %p has been corrupted!", BtPayload(bt));
-    }
-#endif
-  } else {
-    if (!BtHasCanary(bt)) {
-      Panic("[Memory] Canary of %p block damaged!", BtPayload(bt));
-    }
+  if (!BtHasCanary(bt)) {
+    Panic("[Memory] Canary of %p block damaged!", BtPayload(bt));
   }
 }
 
@@ -513,13 +491,6 @@ void *MemResize(void *old_ptr, u_int size) {
 }
 
 #ifdef MEMDEBUG
-void MemReadOnly(void *ptr) {
-  WordT *bt = BtFromPtr(ptr);
-  BtCheck(bt);
-  BtSetChecksum(bt);
-  *BtFooter(bt) = -Checksum(0, BtPayload(bt), BtSize(bt) - FREEBLK_SZ);
-}
-
 void MemCheck(int verbose) {
   ArenaT *ar;
   for (ar = FirstArena; ar != NULL; ar = ar->succ)

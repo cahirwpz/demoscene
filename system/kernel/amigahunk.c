@@ -1,5 +1,4 @@
 #include <debug.h>
-#include <checksum.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -109,17 +108,12 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
         if (comp != COMP_NONE) {
           int offset = hunk->size - size;
           u_int *buf = (u_int *)&hunk->data[offset];
-          u_int cksum;
           FileRead(fh, buf, size);
-          cksum = *buf++;
           /* in-place decompression, watch out for delta */
           if (comp == COMP_ZX0) {
             zx0_decompress(buf, hunk->data);
           } else if (comp == COMP_LZSA) {
             lzsa_depack_stream(buf, hunk->data);
-          }
-          if (Checksum(cksum, (u_int *)hunk->data, hunk->size - 8)) {
-            Panic("Invalid checksum!");
           }
         } else {
           FileRead(fh, hunk->data, size);
