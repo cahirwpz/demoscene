@@ -12,6 +12,8 @@
 #include <system/task.h>
 #include <system/timer.h>
 
+#define CIAF_DSKDESEL (CIAF_DSKSEL0|CIAF_DSKSEL1|CIAF_DSKSEL2|CIAF_DSKSEL3)
+
 #define LOWER 0
 #define UPPER 1
 
@@ -55,11 +57,11 @@ struct File {
   FileOpsT *ops;
   int pos;
 
-  short headDir;
-  short trackNum;
+  short headDir;    /* determine PRB.DSKDIREC bit */
+  short trackNum;   /* determine PRB.DSKSIDE bit */
   CIATimerT *fdtmr;
 
-  short drvNum;
+  u_char prb;       /* caches CIAB PRB register */
   short trkInBuf;
   SectorT *encoded;
   u_char *decoded;
@@ -72,41 +74,63 @@ static inline void WaitDiskReady(void) {
 #define STEP_SETTLE TIMER_MS(3)
 
 static void StepHeads(FileT *f) {
-  u_char *ciaprb = (u_char *)&ciab->ciaprb;
+  volatile u_char *cia = (u_char *)&ciab->ciaprb;
+  u_char prb = f->prb;
 
-  bclr(ciaprb, CIAB_DSKSTEP);
-  bset(ciaprb, CIAB_DSKSTEP);
-
-  WaitTimerSleep(f->fdtmr, STEP_SETTLE);
+  *cia = prb | CIAF_DSKDESEL;
+  *cia = prb & ~CIAF_DSKSTEP;
+  *cia = prb;
 
   f->trackNum += f->headDir;
+
+  WaitTimerSleep(f->fdtmr, STEP_SETTLE);
 }
 
 #define DIRECTION_REVERSE_SETTLE TIMER_MS(18)
 
 static void HeadsStepDirection(FileT *f, short inwards) {
-  u_char *ciaprb = (u_char *)&ciab->ciaprb;
+  u_char prb = f->prb;
 
   if (inwards) {
-    bclr(ciaprb, CIAB_DSKDIREC);
+    prb &= ~CIAF_DSKDIREC;
     f->headDir = 2;
   } else {
-    bset(ciaprb, CIAB_DSKDIREC);
+    prb |= CIAF_DSKDIREC;
     f->headDir = -2;
+  }
+
+  f->prb = prb;
+ 
+  /* Update CIA-B PRB */
+  {
+    volatile u_char *cia = (u_char *)&ciab->ciaprb;
+
+    *cia = prb | CIAF_DSKDESEL;
+    *cia = prb;
   }
 
   WaitTimerSleep(f->fdtmr, DIRECTION_REVERSE_SETTLE);
 }
 
-static inline void ChangeDiskSide(FileT *f, short upper) {
-  u_char *ciaprb = (u_char *)&ciab->ciaprb;
+static void ChangeDiskSide(FileT *f, short upper) {
+  u_char prb = f->prb;
 
   if (upper) {
-    bclr(ciaprb, CIAB_DSKSIDE);
+    prb &= ~CIAF_DSKSIDE;
     f->trackNum++;
   } else {
-    bset(ciaprb, CIAB_DSKSIDE);
+    prb |= CIAF_DSKSIDE;
     f->trackNum--;
+  }
+
+  f->prb = prb;
+
+  /* Update CIA-B PRB */
+  {
+    volatile u_char *cia = (u_char *)&ciab->ciaprb;
+
+    *cia = prb | CIAF_DSKDESEL;
+    *cia = prb;
   }
 }
 
@@ -115,23 +139,29 @@ static inline bool HeadsAtTrack0(void) {
 }
 
 static void FloppyMotorOn(FileT *f) {
-  u_char *ciaprb = (u_char *)&ciab->ciaprb;
-  char dsksel = CIAB_DSKSEL0 + f->drvNum;
+  volatile u_char *cia = (u_char *)&ciab->ciaprb;
+  u_char prb = f->prb;
 
-  bset(ciaprb, dsksel);
-  bclr(ciaprb, CIAB_DSKMOTOR);
-  bclr(ciaprb, dsksel);
+  *cia = prb | CIAF_DSKDESEL;
+  *cia = prb & ~CIAF_DSKMOTOR;
+  *cia = prb;
 
+  f->prb = prb & ~CIAF_DSKMOTOR;
+
+  /* TODO Or wait 500ms? */
   WaitDiskReady();
 }
 
 static void FloppyMotorOff(FileT *f) {
-  u_char *ciaprb = (u_char *)&ciab->ciaprb;
-  char dsksel = CIAB_DSKSEL0 + f->drvNum;
+  volatile u_char *cia = (u_char *)&ciab->ciaprb;
+  u_char prb = f->prb;
 
-  bset(ciaprb, dsksel);
-  bset(ciaprb, CIAB_DSKMOTOR);
-  bclr(ciaprb, dsksel);
+  *cia = prb | CIAF_DSKDESEL;
+  *cia = prb | CIAF_DSKMOTOR;
+  *cia = prb;
+
+  /* TODO: Wait for motor to turn off? */
+  f->prb = prb | CIAF_DSKMOTOR;
 }
 
 #define DISK_SETTLE TIMER_MS(15)
@@ -269,13 +299,17 @@ FileT *FloppyOpen(int num) {
 
     f = MemAlloc(sizeof(FileT), MEMF_PUBLIC|MEMF_CLEAR);
     f->ops = &FloppyOps;
-    f->drvNum = num;
     f->fdtmr = AcquireTimer(TIMER_CIAA_A);
     f->encoded = MemAlloc(RAW_TRACK_SIZE, MEMF_CHIP);
     f->decoded = MemAlloc(TRACK_SIZE, MEMF_PUBLIC);
 
     custom->dsksync = DSK_SYNC;
     custom->adkcon = ADKF_SETCLR | ADKF_MFMPREC | ADKF_WORDSYNC | ADKF_FAST;
+
+    /* Default value of CIAB PRB value that selects controlled floppy drive. */
+    f->prb = CIAF_DSKMOTOR | CIAF_DSKSTEP | CIAF_DSKDESEL;
+    f->prb &= ~__BIT(CIAB_DSKSEL0 + num);
+    ciab->ciaprb = f->prb;
 
     DisableDMA(DMAF_DISK);
     SetIntVector(INTB_DSKBLK, DiskBlockInterrupt, NULL);
@@ -291,7 +325,7 @@ FileT *FloppyOpen(int num) {
     f->trackNum = -1;
     f->trkInBuf = -1;
 
-    Log("[Floppy] Drive DF%d ready!\n", f->drvNum);
+    Log("[Floppy] Drive DF%d ready!\n", num);
   }
 
   MutexUnlock(&FloppyMtx);
