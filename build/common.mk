@@ -46,6 +46,7 @@ FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 LAUNCH := $(PYTHON3) $(TOPDIR)/tools/launch.py
 CONV2D := $(TOPDIR)/tools/conv2d.py
+DRNG2C := $(TOPDIR)/tools/drng2c/drng2c
 GRADIENT := $(TOPDIR)/tools/gradient.py
 TMXCONV := $(TOPDIR)/tools/tmxconv/tmxconv
 PCHG2C := $(TOPDIR)/tools/pchg2c/pchg2c
