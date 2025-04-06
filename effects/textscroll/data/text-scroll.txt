@@ -1,151 +1,85 @@
-                                   IT WAS 
-                             THE FINAL VERSION OF
-
-                             SUNGLASSES AT NIGHT
+                                  COCKBUSTERS
                                       BY
-                             GHOSTOWN and WHELPZ
+                                   GHOSTOWN
 
 
-                              AMIGA 500 OCS DEMO
-                          PARTY VERSION WAS RELEASED 
-                        AT RIVERWASH 2014 DEMO COMPO
-                          RACIBORZ 19-21 . 09 . 2014
-
-                          FINAL VERSION WAS RELEASED 
-                      at PAYBACK 2015 - HELSINKI, FINLAND
-                          AND SHOWN OUT OF COMPETITION.
+                             AMIGA 500 OCS TRACKMO
+                            RELEASED AT XENIUM 2024
                                             
+                                  MAIN CODING:
+                                     CAHIR
 
-                                   CREDITS:
+                                    CODING:
+                              CODI, POLPROG, ZUKO
 
-                                    CODER:
-                                    CAHIR
+                               ADDITIONAL CODING:
+                                     SPOOK
 
-                                   PAINTER:
+                                PIXEL DIRECTOR:
                                     SLAYER
 
-                                     DJ:
+                              ADDITIONAL GRAPHICS:
+                                     YUMI
+
+                               BLENDER MAGICIANS:
+                                 SLIZGI & CODI
+
+                                  BANJO MAN:
                                    JAZZCAT
 
+                                   TOOLING:
+                             PTPLAYER BY FRANK WILLE
+                          ZX0 & LZSA BY EMMANUEL MARTY
 
-                         GHOSTOWN SEND GREETINGS TO:
-
-                         ADA                 ARTWAY
-                         BLACK SUN              DCS
-                         DECREE           DEKADENCE
-                         DESIRE        DINX PROJECT
-                         D.T.A.  SOFTWARE    STUDIO
-                         ELUDE               FLOPPY
-                         FOCUS DESIGN       FUTURIS
-                         INSANE              LAMERS
-                         LEMON              LOONIES
-                         MOODS PLATEAU         MAWI
-                         NAH-KOLOR              RNO
-                         SKARLA          SPACEBALLS
-                         SPECCY.PL         TRACTION
-                         TULOU          WANTED TEAM
-                         UP ROUGH            Y_CREW
+            SPECIAL THANKS TO CARRION FOR SHARING HIS COPPER SECRETS!
 
 
-                              CAHIR ON THE KEYS:
+                                  GREETINGS
 
-  "Sunglasses at Night" was almost entirely written in hand optimized C with
-very few assembly inlines - "9/10 of the time is spent in 1/10 of the code" :P
-
-                                <advertisment>
-                  The demo is open sourced and available at:
-
-          https://github.com/cahirwpz/demoscene/tree/sunglasses/a500
-
-Now... go there, download it, learn how to use it and make some cool demo for
-  next demoscene party! Another thing worth to mention: I maintain GCC cross
- compiler targeting classic Amiga. Sources and build script are available at:
-
-              https://github.com/cahirwpz/m68k-amigaos-toolchain
-
-  If you think you're into compilers and linkers, please drop me a message.
-                               </advertisment>
-
- Thanks go to Photon/Scoopex for updated P61 routine, sp/ctz for fast blitter
-         c2p idea and Keir Fraser for extremely fast deflate routine.
-
-   Personal greetings fly to: Argasek, Fei, Kiero, Dakota, Hakon, Voyager,
-  Epyon, Hilander, people at II UWr and friends from Google (hey, Han Shen!)
+   BINARY                      BOOM!      NAH-KOLOR                 NUKLEUS
+   COSMIC ORBS             CRAP TEAM      ONSLAUGHT                     RNO
+   DESIRE                  EPHIDRENA      SKARLA                 SPACEBALLS     
+   FLEX                       FLOPPY      SPECCY.PL                  OXYRON
+   FOCUS DESIGN              FUTURIS      TRACTION                    TULOU
+   HAUJOBB                    INSANE      TEK                          TRSI
+   JOKER TEAM                 LAMERS      UN AMOR                    UNIQUE
+   LEMON.                    LOONIES      UP ROUGH                     VOID
+   MAWI                MOODS PLATEAU      Y-CREW                    ZYMOSIS
 
 
-                             JAZZCAT ON THE KEYS:
+                             CAHIR ON THE KEYBOARD
 
- It's been a while since I've written a scrolltext! Just some quick greetings
-                  to the following guys (no special order):
+I'M STILL SURPRISED THAT THIS DEMO WORKS AT ALL. ONLY A WEEK BEFORE THE PARTY
+I MANAGED TO FIX ALL REMAINING BUGS IN THE SMALL OPERATING SYSTEM THAT RUNS 
+THIS TRACKMO. THERE ARE TWO IMPORTANT THREADS. BOTH RUN CONCURRENTLY SO THE NEW
+EFFECT IS BEING LOADED INTO MEMORY, DECOMPRESSED AND RELOCATED, WHILE THE MAIN 
+THREAD RENDERS THE PREVIOUS EFFECT.
 
-                Bodzio - thanks for 20 years of you know what!, 
+WE HAVEN'T MADE FULL USE OF THIS "TECHNOLOGY" - SO EXPECT MORE TO FOLLOW ;)
+SIGNIFICANT ENHANCEMENTS WERE MADE IN MY 3D RENDERING CODE, AGAIN WITH SOME
+ROOM FOR IMPROVEMENT. THANKS TO CARRION WE STARTED USING COLORFUL 2-BITPLANE
+IMAGES THAT MADE OUR BACKGROUNDS WAY MORE INTERESTING.
 
-                 Horneusz - jest tylko jedna racja - ipsacja!, 
+            ALL IN ALL OUR INITIAL EXPECTATIONS WERE GREATLY EXCEEDED.
+                   WE ARE TRULY PROUD OF THIS TRACKMO. ENJOY!
 
-                     AceMan - what about Uploads list, man?, 
-
-                           PSK - american beers rule!, 
-
-                 Chaser - Primator + capsaicin = oh-fucking-yeah, 
-
-                        Z5 - you know that we love you, 
-
-                         Novel - hellos from Mr. Delay, 
-
-               Corial - thanks for your kind wordson S&M soundtrack, 
-
-                   Blueberry - any news regarding Tycho Brache?, 
-
-                       Britelite - did you enjoy Zubrowka?, 
-
-                            Michu - still snuffin'?, 
-
-                    Jok - looking forward to see you today!, 
-
-                        Flops - what about your demo?, 
-
-                            ITU - to kiedy pijemy?,
-  
-                                   Serpent 
-              - I was disappointed to discover that "Vare" demo 
-                      had nothing to do with you at all!, 
-
-          Axel - still have some of the spices you sent me 8 years ago!, 
-
-                 Asle - will have something for you soon, chief!, 
-
-            X-Ceed - what about a new Amiga demo soundtrack someday, 
-
-                   Sachy - troll znowu koduje, niesamowite!.
+                AS ALWAYS, I SEND LOTS OF HUGS & KISSES TO ALICE,
+       FOR HER SUPPORT THROUGHOUT WHOLE DEMO-MAKING PROCESS. THANK YOU <3
 
 
-                             SLAYER ON THE KEYS:
+                      JAZZCAT & SLAYER ON THE KEYBOARD
 
-After 1,5 yrs of "demoscene rehab" we decided to make another stuff. We did it
-very quickly. inspired by swimming in the Adriatic sea, 3 bottles of Bushmills 
-                           and some newwave music.
+       WE'D LIKE TO WELCOME OUR NEW MEMBERS: POLPROG, ZUKO,  AND SLIZGI!
+                            YOU ARE ALL AWESOME!! 
 
-           Personal greetz fly to Sosabowski and all graphic friends: 
-Codi, Cosh, Darklight, Jok, Farfar, Veto, Prowler, Sim1, Substrate and Piesiu.
+             AND REMEMBER - THE EARTH IS FLAT, BECAUSE YOU ARE FAT!
 
-                    Do Amiga demos or get the fuck out! :P 
+                SEE YOU ALL AT BOOM PARTY IN TUCHOLA NEXT YEAR. 
 
 
+                    A FEW WORDS FROM POLPROG, SPOOK & YUMI
 
+                FAREWELL AOJIRU, YOU LEFT THE PARTY WAY TOO SOON.
+                            WE MISS YOU EVERY DAY. 
 
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-
-
-
-
-
-
-
-
-                                   THE END
-                                                                   
+                      KYA, GET WELL SOON! WE LOVE YOU!
