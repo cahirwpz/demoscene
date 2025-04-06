@@ -14,13 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          lfs: true
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v3
+          lfs: false
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: 3.12
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -34,7 +34,7 @@ jobs:
     container: cahirwpz/demoscene:latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: true
       - name: Setup GoLang
@@ -47,7 +47,7 @@ jobs:
           . /root/demoscene/bin/activate
           make
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: effects
           path: effects/*/*.adf

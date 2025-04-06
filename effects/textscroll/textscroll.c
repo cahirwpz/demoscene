@@ -9,34 +9,41 @@
 #define DEPTH 1
 
 #define SIZE 8
+#define SPEED 1
 
 #define COLUMNS (WIDTH / SIZE)
 #define LINES   (HEIGHT / SIZE)
 
-static short active = 0;
+static __code short active = 0;
 
-static CopListT *cp[2];
-static CopInsPairT *linebpl[2][HEIGHT];
-static BitmapT *scroll;
+static __code CopListT *cp[2];
+static __code CopInsPairT *(*linebpl)[2][HEIGHT];
+static __code BitmapT *scroll;
 
-static short last_line = -1;
-static char *line_start;
+static __code short last_line = -1;
+static __code char *line_start;
 
-extern uint8_t binary_data_text_scroll_txt_start[];
-#define text binary_data_text_scroll_txt_start
+extern char Text[];
 
 #include "data/text-scroll-font.c"
+#include "data/background.c"
 
-static CopListT *MakeCopperList(short n) {
+static CopListT *MakeCopperList(CopInsPairT **linebpl) {
   CopListT *cp = NewCopList(100 + 3 * HEIGHT);
-  CopSetupBitplanes(cp, scroll, DEPTH);
+  CopSetupBitplanes(cp, scroll, DEPTH + background_depth);
   {
-    u_short i;
     void *ptr = scroll->planes[0];
+    short y;
 
-    for (i = 0; i < HEIGHT; i++, ptr += scroll->bytesPerRow) {
-      CopWaitSafe(cp, Y(i), 0);
-      linebpl[n][i] = CopMove32(cp, bplpt[0], ptr);
+    for (y = 0; y < HEIGHT; y++, ptr += scroll->bytesPerRow) {
+      CopWaitSafe(cp, Y(y), 0);
+      if ((y & 7) == 0) {
+        if (y <= 6 * 8)
+          CopSetColor(cp, 1, font_colors[7 - (y >> 3)]);
+        if (HEIGHT - y <= 6 * 8)
+          CopSetColor(cp, 1, font_colors[7 - ((HEIGHT - y) >> 3)]);
+      }
+      linebpl[y] = CopMove32(cp, bplpt[0], ptr);
     }
   }
   return CopListFinish(cp);
@@ -44,26 +51,37 @@ static CopListT *MakeCopperList(short n) {
 
 static void Init(void) {
   scroll = NewBitmap(WIDTH, HEIGHT + 16, 1, BM_CLEAR);
+  scroll->planes[1] = _background_bpl;
 
-  EnableDMA(DMAF_BLITTER);
-  BitmapClear(scroll);
+  line_start = Text;
 
-  line_start = text;
-
-  SetupPlayfield(MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
+  SetupDisplayWindow(MODE_HIRES, X(0), Y(0), WIDTH, HEIGHT);
+  SetupBitplaneFetch(MODE_HIRES, X(0), WIDTH);
+  SetupMode(MODE_DUALPF|MODE_HIRES, DEPTH + background_depth);
   LoadColors(font_colors, 0);
+  LoadColors(background_colors, IsAGA() ? 16 : 8);
 
-  cp[0] = MakeCopperList(0);
-  cp[1] = MakeCopperList(1);
+  /* reverse playfield priorities */
+  custom->bplcon2 = 0;
+  /* AGA fix */
+  custom->bplcon3 = BPLCON3_PF2OF0;
+
+  linebpl = MemAlloc(sizeof(CopInsPairT *) * 2 * HEIGHT, MEMF_PUBLIC);
+  cp[0] = MakeCopperList((*linebpl)[0]);
+  cp[1] = MakeCopperList((*linebpl)[1]);
 
   CopListActivate(cp[active]);
 
-  EnableDMA(DMAF_RASTER);
+  EnableDMA(DMAF_RASTER|DMAF_BLITTER);
 }
 
 static void Kill(void) {
+  CopperStop();
+  BlitterStop();
+
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
+  MemFree(linebpl);
   DeleteBitmap(scroll);
 }
 
@@ -90,11 +108,11 @@ static void RenderLine(u_char *dst, char *line, short size) {
 }
 
 static void SetupLinePointers(void) {
-  CopInsPairT **ins = linebpl[active];
+  CopInsPairT **ins = (*linebpl)[active];
   void *plane = scroll->planes[0];
   int stride = scroll->bytesPerRow;
   int bplsize = scroll->bplSize;
-  short y = (int)(frameCount / 2 + 8) % (short)scroll->height;
+  short y = (int)(frameCount / SPEED + 8) % (short)scroll->height;
   void *start = plane + (short)stride * y;
   void *end = plane + bplsize;
   short n = HEIGHT;
@@ -116,7 +134,7 @@ static char *NextLine(char *str) {
 
 static void RenderNextLineIfNeeded(void) {
   Area2D rect = {0, 0, WIDTH, SIZE};
-  short s = frameCount / 16;
+  short s = frameCount / (SPEED * 8);
 
   if (s > last_line) {
     void *ptr = scroll->planes[0];

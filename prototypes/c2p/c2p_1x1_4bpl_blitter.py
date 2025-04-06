@@ -53,6 +53,7 @@ def c2p(bitplane_output=True):
              Channel(D, 0, 3), Channel(D, 1, 3), Channel(E[1], 0, 0))
         Blit(lambda a, b: ((a << 1) & ~m3) | (b & m3), N // 4, 1,
              Channel(D, 2, 3), Channel(D, 3, 3), Channel(E[3], 0, 0))
+
         print("Bitplanes:")
         Array.Print("[0]:", *E[0])
         Array.Print("[1]:", *E[1])

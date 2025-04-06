@@ -2,6 +2,7 @@
 #include <common.h>
 #include <string.h>
 #include <types.h>
+#include <crc32.h>
 #include <system/errno.h>
 #include <system/file.h>
 #include <system/filesys.h>
@@ -17,6 +18,7 @@ typedef struct FileEntry {
   u_char   type;     /* type of file (1: executable, 0: regular) */
   u_short  start;    /* sector where the file begins (0..1759) */
   u_int    size;     /* file size in bytes (up to 1MiB) */
+  u_int    cksum;    /* crc32 checksum on file data */
   char     name[0];  /* name of the file (NUL terminated) */
 } FileEntryT;
 
@@ -110,7 +112,7 @@ static int FsRead(FileT *f, void *buf, u_int nbyte) {
 static int FsSeek(FileT *f, int offset, int whence) {
   if (f->flags & IOF_ERR)
     return EIO;
-  
+
   Debug("$%p %d %d", f, offset, whence);
 
   f->flags &= ~IOF_EOF;
@@ -176,39 +178,30 @@ void KillFileSys(void) {
   }
 }
 
-#if 0
-int GetFileSize(const char *path) {
-  FileEntryT *entry;
-  if ((entry = LookupFile(path)))
-    return entry->size;
-  return ENOENT;
-}
+static void ChecksumFile(const char *path, u_int size, u_int cksum) {
+  FileT *f = OpenFile(path);
+  u_char *data = MemAlloc(size, MEMF_PUBLIC);
+  u_int actual_cksum;
 
-int GetCursorPos(FileT *f) {
-  Assume(f != NULL);
-  if (f->flags & IOF_ERR)
-    return EIO;
-  return f->pos;
-}
+  FileRead(f, data, size);
+  FileClose(f);
+  actual_cksum = crc32(data, size);
+  MemFree(data);
 
-void *LoadFile(const char *path, u_int memoryFlags) {
-  char *data = NULL;
-  int size = GetFileSize(path);
-
-  if (size > 0 && (data = MemAlloc(size + 1, memoryFlags))) {
-    FileT *f = OpenFile(path);
-
-    if (!FileRead(f, data, size)) {
-      MemFree(data);
-      data = NULL;
-    } else {
-      /* Add extra byte and mark the end of file by zero. */
-      data[size] = 0;
-    }
-
-    FileClose(f);
+  if (actual_cksum != cksum) {
+    Panic("[FileSys] File '%s' is corrupted - crc32: %08x!", path, actual_cksum);
   }
-
-  return data;
 }
-#endif
+
+void CheckFileSys(void) {
+  FileEntryT *fe = FileSysRootDir;
+
+  Log("[FileSys] Checking data consistency.\n");
+
+  do {
+    Log("[FileSys] Checking file '%s' of %d bytes (crc32: %08x)\n",
+        fe->name, fe->size, fe->cksum);
+    ChecksumFile(fe->name, fe->size, fe->cksum);
+    fe = NextFileEntry(fe);
+  } while (fe->reclen);
+}

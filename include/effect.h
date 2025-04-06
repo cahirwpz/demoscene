@@ -1,6 +1,7 @@
 #ifndef __EFFECT_H__
 #define __EFFECT_H__
 
+#include <config.h>
 #include <types.h>
 #include <string.h>
 #include <stab.h>
@@ -45,6 +46,12 @@ extern short frameFromStart;
 extern short frameTillEnd;
 #endif
 
+#ifndef DEMO
+void TimeWarp(u_short frame);
+#else
+#define TimeWarp(x)
+#endif
+
 typedef void (*EffectFuncT)(void);
 
 #define EFFECT_MAGIC 0x47544e21 /* GTN! */
@@ -58,7 +65,10 @@ typedef struct Effect {
    * Executed in background task when other effect is running.
    * Precalculates data for the effect to be launched.
    */
-  EffectFuncT Load;
+  union {
+    EffectFuncT Func;
+    intptr_t Status;
+  } Load;
   /*
    * Frees all resources allocated by "Load" step.
    */
@@ -70,7 +80,10 @@ typedef struct Effect {
    *    (setup for display window, display data fetch, palette, sprites, etc.)
    * 3) Set up interrupts and DMA channels (copper, blitter, etc.)
    */
-  EffectFuncT Init;
+  union {
+    EffectFuncT Func;
+    intptr_t Status;
+  } Init;
   /*
    * Frees all resources allocated by "Init" step.
    */
@@ -96,9 +109,9 @@ void EffectRun(EffectT *effect);
   __code EffectT NAME##Effect = {                                              \
     .magic = EFFECT_MAGIC,                                                     \
     .name = #NAME,                                                             \
-    .Load = (L),                                                               \
+    .Load = { .Func = (L) },                                                   \
     .UnLoad = (U),                                                             \
-    .Init = (I),                                                               \
+    .Init = { .Func = (I) },                                                   \
     .Kill = (K),                                                               \
     .Render = (R),                                                             \
     .VBlank = (V)                                                              \
@@ -112,7 +125,7 @@ typedef struct Profile {
   u_short reportFrame;
 } ProfileT;
 
-#if PROFILER
+#ifdef PROFILER
 #define PROFILE(NAME)                                                          \
   static ProfileT *_##NAME##_profile = &(ProfileT){                            \
     .name = #NAME,                                                             \
@@ -132,7 +145,7 @@ typedef struct Profile {
 #define ProfilerStop(NAME)
 #endif
 
-#if MULTITASK
+#ifdef MULTITASK
 /* Puts a task into sleep waiting for Vertical Blank interrupt.
  * Let's background task do its job. */
 void TaskWaitVBlank(void);

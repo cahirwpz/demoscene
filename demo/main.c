@@ -6,6 +6,7 @@
 #include <palette.h>
 #include <sync.h>
 #include <sprite.h>
+#include <uae.h>
 #include <system/task.h>
 #include <system/interrupt.h>
 
@@ -46,8 +47,6 @@ static void LoadEffects(EffectT **effects) {
   EffectT *effect;
   for (effect = *effects; effect; effect = *effects++) { 
     EffectLoad(effect);
-    if (effect->Load)
-      ShowMemStats();
   }
 }
 
@@ -55,29 +54,6 @@ static void UnLoadEffects(EffectT **effects) {
   EffectT *effect;
   for (effect = *effects; effect; effect = *effects++) { 
     EffectUnLoad(effect);
-  }
-}
-
-void FadeBlack(const u_short *colors, short count, u_int start, short step) {
-  volatile short *reg = &custom->color[start];
-  
-  if (step < 0)
-    step = 0;
-  if (step > 15)
-    step = 15;
-
-  while (--count >= 0) {
-    short to = *colors++;
-
-    short r = ((to >> 4) & 0xf0) | step;
-    short g = (to & 0xf0) | step;
-    short b = ((to << 4) & 0xf0) | step;
-
-    r = colortab[r];
-    g = colortab[g];
-    b = colortab[b];
-    
-    *reg++ = (r << 4) | g | (b >> 4);
   }
 }
 
@@ -173,35 +149,10 @@ static void DecodeSamples(u_char *smp, int size) {
 
 extern void LoadDemo(void);
 
-#define ROMADDR 0xf80000
-#define ROMSIZE 0x07fff0
-#define ROMEXTADDR 0xe00000
-#define ROMEXTSIZE 0x080000
-
-static const MemBlockT rom[] = {
-  {(const void *)ROMADDR, ROMSIZE},
-  {(const void *)ROMEXTADDR, ROMEXTSIZE},
-  {NULL, 0}
-};
-
 int main(void) {
   /* NOP that triggers fs-uae debugger to stop and inform GDB that it should
    * fetch segments locations to relocate symbol information read from file. */
   asm volatile("exg %d7,%d7");
-
-  {
-    FileT *dev = NULL;
-
-    if (BootDev == 0) /* floppy */ {
-        dev = FloppyOpen();
-    } else if (BootDev == 1) /* rom/baremetal */ {
-        dev = MemOpen(rom);
-    } else {
-        PANIC();
-    }
-
-    InitFileSys(dev);
-  }
 
   ResetSprites();
   LoadDemo();
@@ -212,14 +163,8 @@ int main(void) {
   PtInstallCIA();
   PtInit(Module, Samples, 0);
 
-  {
-    TrackT **trkp = AllTracks;
-    while (*trkp)
-      TrackInit(*trkp++);
-  }
-
   LoadEffects(AllEffects);
-
+  UaeWarpMode(0);
   RunEffects();
 
   PtEnd();

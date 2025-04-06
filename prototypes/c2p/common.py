@@ -69,7 +69,7 @@ class Word(object):
 
     def __init__(self, value_or_width):
         if isinstance(value_or_width, int):
-            self._value = [Bit.Const(0) for i in range(value_or_width)]
+            self._value = [Bit(0, "0m") for i in range(value_or_width)]
             self._width = value_or_width
         else:
             self._value = list(value_or_width)
@@ -141,7 +141,19 @@ class Array(object):
                 fn("IJKL", color="33;1m"),
                 fn("MNOP", color="34;1m"),
                 fn("QRST", color="35;1m"),
-                fn("UVWX", color="36;1m")]
+                fn("UVWX", color="36;1m"),
+                fn("abcd", color="31;7m"),
+                fn("efgh", color="32;7m"),
+                fn("ijkl", color="33;7m"),
+                fn("mnop", color="34;7m"),
+                fn("qrst", color="35;7m"),
+                fn("uvwx", color="36;7m"),
+                fn("ABCD", color="31;1;7m"),
+                fn("EFGH", color="32;1;7m"),
+                fn("IJKL", color="33;1;7m"),
+                fn("MNOP", color="34;1;7m"),
+                fn("QRST", color="35;1;7m"),
+                fn("UVWX", color="36;1;7m")]
 
     @staticmethod
     def Zero(size, bits):

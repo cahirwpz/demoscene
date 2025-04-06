@@ -28,6 +28,7 @@ SOURCES := \
 	DeleteCopList.c \
 	DeletePixmap.c \
 	EndSprite.c \
+	FadeBlack.c \
 	HsvToRgb.c \
 	InitSharedBitmap.c \
 	InsideArea.c \

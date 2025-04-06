@@ -2,6 +2,7 @@ ahxWaves filter=lfs diff=lfs merge=lfs -text
 *.akp filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
 *.BIN filter=lfs diff=lfs merge=lfs -text
+*.csv filter=lfs diff=lfs merge=lfs -text
 *.mod filter=lfs diff=lfs merge=lfs -text
 *.p61 filter=lfs diff=lfs merge=lfs -text
 *.ahx filter=lfs diff=lfs merge=lfs -text

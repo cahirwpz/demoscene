@@ -16,6 +16,4 @@ static inline short TillNextKeyFrame(TrackT *track) {
   return NextKeyFrame(track) - frameCount;
 }
 
-void FadeBlack(const u_short *colors, short count, u_int start, short step);
-
 #endif /* !__DEMO_H__ */

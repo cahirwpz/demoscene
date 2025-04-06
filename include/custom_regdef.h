@@ -237,6 +237,9 @@ struct Custom {
 #define BPLCON3_ZDCLKEN __BIT(2)   /* zd pin outputs a 14mhz clock*/
 #define BPLCON3_BRDNTRAN __BIT(4)  /* border is opaque */
 #define BPLCON3_BRDNBLNK __BIT(5)  /* border is opaque */
+#define BPLCON3_PF2OF2 __BIT(10)   /* second playfield's offset in coltab */
+#define BPLCON3_PF2OF1 __BIT(11)
+#define BPLCON3_PF2OF0 __BIT(12)
 
 /* read definitions for dmaconr */
 /* bits 0-8 correspnd to dmaconw definitions */

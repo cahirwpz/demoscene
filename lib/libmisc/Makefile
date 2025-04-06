@@ -1,6 +1,7 @@
 TOPDIR := $(realpath ../..)
 
 SOURCES := \
+	checksum.asm \
 	console.c \
 	crc32.c \
 	file.c \

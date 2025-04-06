@@ -3,7 +3,7 @@
 BitmapT *BitmapMakeMask(const BitmapT *bitmap) {
   BitmapT *mask = NewBitmap(bitmap->width, bitmap->height, 1, 0);
   u_short bltsize = (bitmap->height << 6) | (bitmap->bytesPerRow >> 1);
-  void **planes = bitmap->planes;
+  void *const *planes = bitmap->planes;
   void *dst = mask->planes[0];
   short n = bitmap->depth;
 

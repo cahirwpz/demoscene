@@ -46,8 +46,8 @@ static void SetupLayers(CopListT *cp) {
 #define STEP 8
 
 static void SetupRaster(CopListT *cp) {
-  short *bg_pal = bg_gradient_pixels;
-  short *fg_pal = fg_gradient_pixels;
+  u_short *bg_pal = bg_gradient_pixels;
+  u_short *fg_pal = fg_gradient_pixels;
   short wrap_bg = -1;
   short wrap_fg = -1;
   short y, y_bg, y_fg;

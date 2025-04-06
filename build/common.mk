@@ -13,11 +13,11 @@ AR	:= m68k-amigaos-ar
 RANLIB	:= m68k-amigaos-ranlib
 VASM	:= vasm -quiet
 
-ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-ggdb3
+ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-gstabs+
 VASMFLAGS	+= -m68010 -quiet -I$(TOPDIR)/include
-LDFLAGS	:= -amiga-debug-hunk
+LDFLAGS	:= -amiga-debug-hunk --orphan-handling=error
 CFLAGS	= -ggdb3 -ffreestanding -fno-common $(OFLAGS) $(WFLAGS)
-OFLAGS	:= -m68000 -msmall-code -mregparm=2
+OFLAGS	:= -m68000 -mregparm=2 -freg-struct-return
 # The '-O2' option does not turn on optimizations '-funroll-loops',
 # '-funroll-all-loops' and `-fstrict-aliasing'.
 OFLAGS	+= -O2 -fomit-frame-pointer -fstrength-reduce
@@ -28,18 +28,9 @@ LDSCRIPT ?= $(TOPDIR)/system/amiga.lds
 
 # Don't reload library base for each call
 CPPFLAGS += -D__CONSTLIBBASEDECL__=const
-CPPFLAGS += -DCHIPMEM_KB=$(CHIPMEM) -DFASTMEM_KB=$(FASTMEM) -DLOGOUT=$(LOGOUT)
-CPPFLAGS += -DPROFILER=$(PROFILER) -DMULTITASK=$(MULTITASK) -DMEMDEBUG=$(MEMDEBUG)
 
-include $(TOPDIR)/config.mk
-
-ifeq ($(UAE), 1)
-CPPFLAGS += -DUAE
-endif
-
-ifeq ($(AMIGAOS), 1)
-CPPFLAGS += -DAMIGAOS
-endif
+# Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
+VERBOSE ?= 0
 
 ifeq ($(VERBOSE), 0)
 .SILENT:
@@ -51,11 +42,12 @@ CP := cp -a
 RM := rm -v -f
 PYTHON3 := PYTHONPATH="$(TOPDIR)/tools/pylib:$$PYTHONPATH" python3
 ADFUTIL := $(TOPDIR)/tools/adfutil.py
-ROMUTIL := $(TOPDIR)/tools/romutil.py
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 LAUNCH := $(PYTHON3) $(TOPDIR)/tools/launch.py
+ANIM2C := $(TOPDIR)/tools/anim2c.py
 CONV2D := $(TOPDIR)/tools/conv2d.py
+DRNG2C := $(TOPDIR)/tools/drng2c/drng2c
 GRADIENT := $(TOPDIR)/tools/gradient.py
 TMXCONV := $(TOPDIR)/tools/tmxconv/tmxconv
 PCHG2C := $(TOPDIR)/tools/pchg2c/pchg2c

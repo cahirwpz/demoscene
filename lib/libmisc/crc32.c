@@ -6,6 +6,7 @@
  * See README for more details.
  */
 
+#include <common.h>
 #include <crc32.h>
 
 /*
@@ -59,11 +60,14 @@ static const u_int crc32_table[256] = {
     0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d};
 
 u_int crc32(const u_char *frame, size_t frame_len) {
-  size_t i;
   u_int crc = 0xFFFFFFFF;
+  register int n asm("d3") = frame_len - 1;
 
-  for (i = 0; i < frame_len; i++)
-    crc = crc32_table[(crc ^ frame[i]) & 0xff] ^ (crc >> 8);
+  do {
+    u_char byte = *frame++;
+    byte ^= crc;
+    crc = getlong(crc32_table, byte) ^ (crc >> 8);
+  } while (--n >= 0);
 
   return ~crc;
 }

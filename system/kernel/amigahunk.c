@@ -1,5 +1,4 @@
 #include <debug.h>
-#include <crc32.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -87,26 +86,9 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
       comp = n = ReadLong(fh);
       n &= SIZE_MASK;
       comp &= COMP_MASK;
-      if (hunkId != HUNK_BSS) {
-        int size = n * sizeof(int);
 
-        /* Compression type is added by packexe tool and notifies that the hunk
-         * is compressed with LZSA or ZX0 algorithm. */
-        if (comp != COMP_NONE) {
-          int offset = hunk->size - size;
-          FileRead(fh, hunk->data + offset, size);
-          /* in-place decompression, watch out for delta */
-          if (comp == COMP_ZX0) {
-            zx0_decompress(hunk->data + offset, hunk->data);
-          } else if (comp == COMP_LZSA) {
-            lzsa_depack_stream(hunk->data + offset, hunk->data);
-          }
-        } else {
-          FileRead(fh, hunk->data, size);
-        }
-      }
       {
-        const char *hunkType;
+        __unused const char *hunkType;
 
         if (hunkId == HUNK_CODE)
           hunkType = "CODE";
@@ -115,8 +97,27 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
         else
           hunkType = " BSS";
 
-        Log("%s: %p - %p\n", hunkType, hunk->data, hunk->data + hunk->size);
-        Debug("%s: crc32: $%08x", hunkType, crc32(hunk->data, hunk->size));
+        Log("[Hunk] %s: $%x (size: %d)\n", hunkType, (int)hunk->data, hunk->size);
+      }
+
+      if (hunkId != HUNK_BSS) {
+        int size = n * sizeof(int);
+
+        /* Compression type is added by packexe tool and notifies that the hunk
+         * is compressed with LZSA or ZX0 algorithm. */
+        if (comp != COMP_NONE) {
+          int offset = hunk->size - size;
+          u_int *buf = (u_int *)&hunk->data[offset];
+          FileRead(fh, buf, size);
+          /* in-place decompression, watch out for delta */
+          if (comp == COMP_ZX0) {
+            zx0_decompress(buf, hunk->data);
+          } else if (comp == COMP_LZSA) {
+            lzsa_depack_stream(buf, hunk->data);
+          }
+        } else {
+          FileRead(fh, hunk->data, size);
+        }
       }
     } else if (hunkId == HUNK_DEBUG) {
       n = ReadLong(fh);
@@ -173,6 +174,8 @@ HunkT *LoadHunkList(FileT *fh) {
 
   hunkCount = last - first + 1;
   hunkArray = alloca(sizeof(HunkT *) * (hunkCount + SharedHunks.count));
+
+  Log("[Hunk] Loading %d hunks\n", hunkCount);
 
   if (SharedHunks.count)
     memcpy(&hunkArray[hunkCount],

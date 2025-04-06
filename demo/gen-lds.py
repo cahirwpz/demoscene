@@ -3,6 +3,7 @@
 import argparse
 import json
 from contextlib import redirect_stdout
+from itertools import chain
 from string import Template
 from io import StringIO
 
@@ -54,6 +55,14 @@ SECTIONS
   }
   __bss_chip_size = SIZEOF(.bsschip);
   ${effects}
+  .stab :
+  {
+    *(.stab)
+  }
+  .stabstr :
+  {
+    *(.stabstr)
+  }
 }""")
 
 
@@ -61,14 +70,16 @@ Sections = [('.text', '.text .text.*'), ('.data', '.data'), ('.bss', '.bss'),
             ('.datachip', '.datachip'), ('.bsschip', '.bsschip')]
 
 
-def per_effect(name: str, objects: list[str]) -> str:
+def per_effect(name: str, objects: list[str], sections: list[str]) -> str:
     f = StringIO()
 
     with redirect_stdout(f):
         print(f"  /* {name} effect */")
         print()
 
-        for dst, src in Sections:
+        extra = [(s, s) for s in sections]
+
+        for dst, src in chain(Sections, extra):
             print(f"  {dst}.{name} :")
             print("  {")
             for object in objects:
@@ -93,8 +104,8 @@ if __name__ == '__main__':
     objects = set()
     effects = []
     for k, v in loadables.items():
-        effects.append(per_effect(k, v))
-        objects = objects.union(set(v))
+        effects.append(per_effect(k, v["objects"], v.get("sections", [])))
+        objects = objects.union(set(v["objects"]))
 
     if objects:
         excluded = 'EXCLUDE_FILE(%s)' % " ".join(objects)

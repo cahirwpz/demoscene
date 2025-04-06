@@ -8,18 +8,9 @@
 /* Halt the processor by masking all interrupts and waiting for NMI. */
 #define HALT() { asm volatile("stop #0x2700"); }
 
-/* Use whenever a program should generate a fatal error. This will break into
- * debugger for program inspection and stop instruction execution. */
-#define PANIC() { BREAK(); HALT(); }
+/* Invoke CrashHandler in order to display diagnostic screen. */
+#define CRASH() { asm volatile("trap #15"); }
 
 #include <system/debug.h>
 
-#ifdef NDEBUG
-#define Assert(e) {}
-#else
-#define Assert(e) { if (!(e))                                                  \
-   Panic("Assertion \"%s\" failed: file \"%s\", line %d, function \"%s\"!\n",  \
-         #e, __FILE__, __LINE__, __func__); }
 #endif
-
-#endif 

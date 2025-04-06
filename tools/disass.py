@@ -541,6 +541,8 @@ class ObjectInfo:
                 symbols.append(Symbol(secname, addr, '_' + name))
 
             if n_type == 'FUN':
+                if n_str[0] == '':
+                    continue
                 is_fn = n_str[1][0] in 'fF'
                 fns.append((n_value, n_str[0] if is_fn else None))
                 if is_fn:

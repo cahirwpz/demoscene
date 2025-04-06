@@ -187,13 +187,13 @@ static void MoveTiles(void *src, void *dst, short xshift, short yshift) {
 
       WaitBlitter();
 
-      *((short *)ptr)++ = bltcon1;
-      *((int *)ptr)++ = mask;
-      *((int *)ptr)++ = (int)dstpt;
-      *((int *)ptr)++ = (int)srcpt;
+      stwi(ptr, bltcon1);
+      stli(ptr, mask);
+      stli(ptr, dstpt);
+      stli(ptr, srcpt);
       ptr += 4;
-      *((int *)ptr)++ = (int)dstpt;
-      *((short *)ptr)++ = BLTSIZE;
+      stli(ptr, dstpt);
+      stwi(ptr, BLTSIZE);
     }
 #else
     WaitBlitter();

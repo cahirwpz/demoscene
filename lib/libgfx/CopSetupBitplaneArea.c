@@ -4,7 +4,7 @@ void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
                           const BitmapT *bitmap, short x, short y __unused,
                           const Area2D *area)
 {
-  void **planes = bitmap->planes;
+  void *const *planes = bitmap->planes;
   int start;
   short modulo;
   short w;

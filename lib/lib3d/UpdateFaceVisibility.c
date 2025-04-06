@@ -50,6 +50,8 @@ void UpdateFaceVisibility(Object3D *object) {
             : "+d"(px), "+d"(py), "+d"(pz));
         s = px;
         /* (short)s is in range 1-511 */
+        if (s > 511)
+          s = 511;
 #endif
         v = swap16(v); /* v >>= 16, ignore upper word */
         /* (short)v is in range 0-255 */

@@ -55,11 +55,9 @@ func setCompAlgo(s string) {
 	}
 }
 
-func packData(input *bytes.Buffer, algo CompAlgo) (*bytes.Buffer, hunk.CompType) {
+func packData(data []byte, algo CompAlgo) ([]byte, hunk.CompType) {
 	var packed []byte
 	var comp hunk.CompType
-
-	data := input.Bytes()
 
 	switch algo {
 	case Zx0:
@@ -75,13 +73,11 @@ func packData(input *bytes.Buffer, algo CompAlgo) (*bytes.Buffer, hunk.CompType)
 		panic("unknown compression algorithm")
 	}
 
-	return bytes.NewBuffer(packed), comp
+	return packed, comp
 }
 
-func unpackData(input *bytes.Buffer, comp hunk.CompType) *bytes.Buffer {
+func unpackData(data []byte, comp hunk.CompType) []byte {
 	var unpacked []byte
-
-	data := input.Bytes()
 
 	switch comp {
 	case hunk.COMP_ZX0:
@@ -92,7 +88,7 @@ func unpackData(input *bytes.Buffer, comp hunk.CompType) *bytes.Buffer {
 		panic("unknown compression algorithm")
 	}
 
-	return bytes.NewBuffer(unpacked)
+	return unpacked
 }
 
 func FileSize(path string) int64 {
@@ -112,15 +108,15 @@ func packHunk(hd *hunk.HunkBin, hunkNum int, header *hunk.HunkHeader) {
 
 	fmt.Printf("Compressing hunk %d (%s): %d", hunkNum,
 		hd.Type().String(), hd.Data.Len())
-	packed, comp := packData(hd.Data, compAlgo)
-	fmt.Printf(" -> %d\n", packed.Len())
+	packed, comp := packData(hd.Data.Bytes(), compAlgo)
+	fmt.Printf(" -> %d\n", len(packed))
 
-	if packed.Len() >= hd.Data.Len() {
+	if len(packed) >= hd.Data.Len() {
 		println("Skipping compression...")
 		return
 	}
 
-	hd.Data = packed
+	hd.Data = bytes.NewBuffer( packed)
 	hd.Comp = comp
 	/* add extra 8 bytes for in-place decompression */
 	header.Specifiers[hunkNum] += 2
@@ -134,9 +130,10 @@ func unpackHunk(hd *hunk.HunkBin, hunkNum int, header *hunk.HunkHeader) {
 	}
 
 	fmt.Printf("Decompressing hunk %d (%s): %d", hunkNum,
-		hd.Type().String(), hd.Data.Len())
-	hd.Data = unpackData(hd.Data, hd.Comp)
-	fmt.Printf(" -> %d\n", hd.Data.Len())
+		hd.Type().String(), len(hd.Data.Bytes()))
+	unpacked := unpackData(hd.Data.Bytes(), hd.Comp)
+	fmt.Printf(" -> %d\n", len(unpacked))
+	hd.Data = bytes.NewBuffer(unpacked)
 	hd.Comp = 0
 	header.Specifiers[hunkNum] -= 2
 }

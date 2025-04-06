@@ -76,8 +76,8 @@ static void MakeCopperList(CopListT *cp) {
   CopLoadColors(cp, dance_colors, 8);
   CopSetupMode(cp, MODE_DUALPF, 6);
   {
-    void **planes0 = floor.planes;
-    void **planes1 = foreground->planes;
+    void *const *planes0 = floor.planes;
+    void *const *planes1 = foreground->planes;
     short i;
 
     for (i = 0; i < 6;) {

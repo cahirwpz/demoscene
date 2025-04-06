@@ -1,4 +1,8 @@
+#define __cplusplus
+#include <exec/types.h>
+#undef __cplusplus
 #include <exec/execbase.h>
+#define __NOLIBBASE__
 #include <graphics/gfxbase.h>
 
 #include <hardware/adkbits.h>
@@ -13,6 +17,8 @@
 #undef Debug
 #include <proto/graphics.h>
 
+#include <config.h>
+
 #include <system/boot.h>
 #include <system/cpu.h>
 #include <system/exception.h>
@@ -26,7 +32,8 @@
 extern struct Custom volatile _custom;
 #define custom (&_custom)
 
-/* We need graphics.library base in order to call some functions. */
+/* We need exec.library & graphics.library base to call some functions. */
+extern struct ExecBase *__CONSTLIBBASEDECL__ SysBase;
 static struct GfxBase *__CONSTLIBBASEDECL__ GfxBase;
 
 static void WaitVBlank(void) {
@@ -108,15 +115,16 @@ static __code struct {
 } old;
 
 /* Memory for framework allocator. */
-static __aligned(4) __bss_chip char ChipMem[CHIPMEM_KB * 1024];
-static __aligned(4) char FastMem[FASTMEM_KB * 1024];
+static __aligned(4) __bss_chip char ChipMem[CHIPMEM * 1024];
+static __aligned(4) char FastMem[FASTMEM * 1024];
 
 /* Normally BootDataT is provided by the boot loader. Since we were started
  * from AmigaOS we have to fill this structure and pass it to Loader. */
 static BootDataT BootData = {
   .bd_hunk = NULL,
   .bd_vbr = NULL,
-  .bd_bootdev = 2,
+  .bd_topaz = NULL,
+  .bd_bootdev = -1,
   .bd_cpumodel = CPU_68000,
   .bd_stkbot = NULL,
   .bd_stksz = 0,
@@ -158,6 +166,13 @@ BootDataT *SaveOS(void) {
   /* Workaround for const-ness of GfxBase declaration. */
   *(struct GfxBase **)&GfxBase =
     (struct GfxBase *)OpenLibrary("graphics.library", 33);
+
+  {
+    struct TextAttr textattr = { (char *)"topaz.font", 8, FS_NORMAL, FPF_ROMFONT };
+    struct TextFont *topaz8 = OpenFont(&textattr);
+    bd->bd_topaz = topaz8->tf_CharData;
+    CloseFont(topaz8);
+  }
 
   old.resCiaA = OpenResource(CIAANAME);
   old.resCiaB = OpenResource(CIABNAME);

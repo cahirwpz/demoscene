@@ -1,7 +1,7 @@
 TOPDIR := $(realpath ../..)
 
 CLEAN-FILES := data/flares32.c data/pilka.c \
-	data/carrion-metro-{pal,data}.{c,png}
+	data/carrion-metro-pal.* data/carrion-metro-data.*
 
 LIBS := lib3d
 

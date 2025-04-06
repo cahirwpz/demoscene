@@ -14,6 +14,8 @@ SECTIONS
     __text = .;
     *(.text)
     *(.text.*)
+    *(.rodata)
+    *(.rodata.*)
   }
   __text_size = SIZEOF(.text);
   . = ALIGN(0x0);
@@ -22,12 +24,14 @@ SECTIONS
     __data = .;
     CONSTRUCTORS
     *(.data)
+    *(.data.*)
   }
   __data_size = SIZEOF(.data);
   .bss :
   {
     __bss = .;
     *(.bss)
+    *(.bss.*)
     *(COMMON)
   }
   __bss_size = SIZEOF(.bss);
@@ -35,12 +39,22 @@ SECTIONS
   {
     __data_chip = .;
     *(.datachip)
+    *(.datachip.*)
   }
   __data_chip_size = SIZEOF(.datachip);
   .bsschip :
   {
     __bss_chip = .;
     *(.bsschip)
+    *(.bsschip.*)
   }
   __bss_chip_size = SIZEOF(.bsschip);
+  .stab :
+  {
+    *(.stab)
+  }
+  .stabstr :
+  {
+    *(.stabstr)
+  }
 }
