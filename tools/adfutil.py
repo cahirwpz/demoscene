@@ -83,7 +83,8 @@ if __name__ == '__main__':
 
     if len(img) > FLOPPY - 2 * SECTOR:
         img_len = len(img) // 1024
-        raise SystemExit(f'Image is to big to be written to a disk ({img_len} kB)!')
+        raise SystemExit(
+            f'Image is to big to be written to a disk ({img_len} kB)!')
 
     with open(args.adf, 'wb') as adf:
         if bootblock:

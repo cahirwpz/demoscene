@@ -100,7 +100,8 @@ class Filesystem(UserList):
                 data = fh.read()
 
             exe = bool(os.stat(path).st_mode & stat.S_IEXEC)
-            entry = FileEntry(name, file_off, exe, len(data), crc32(data), data)
+            entry = FileEntry(
+                name, file_off, exe, len(data), crc32(data), data)
             entries.append(entry)
 
             # Determine file position
@@ -110,7 +111,8 @@ class Filesystem(UserList):
 
     def save(self, path):
         # Determine directory size
-        dir_len = sum(align(12 + len(entry.name) + 1, 2) for entry in self.data)
+        dir_len = sum(
+            align(12 + len(entry.name) + 1, 2) for entry in self.data)
 
         # Calculate starting position of files in the file system image
         files_pos = align(dir_len)
