@@ -29,6 +29,7 @@ SUBDIRS := \
 	kbtest \
 	layers \
 	lines \
+	loader \
 	magnifying-glass \
 	metaballs \
 	multipipe \
