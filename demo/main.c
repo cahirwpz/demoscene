@@ -47,8 +47,6 @@ static void LoadEffects(EffectT **effects) {
   EffectT *effect;
   for (effect = *effects; effect; effect = *effects++) { 
     EffectLoad(effect);
-    if (effect->Load)
-      ShowMemStats();
   }
 }
 
@@ -155,18 +153,6 @@ int main(void) {
   /* NOP that triggers fs-uae debugger to stop and inform GDB that it should
    * fetch segments locations to relocate symbol information read from file. */
   asm volatile("exg %d7,%d7");
-
-  {
-    FileT *dev = NULL;
-
-    if (BootDev == 0) /* floppy */ {
-        dev = FloppyOpen();
-    } else {
-        PANIC();
-    }
-
-    InitFileSys(dev);
-  }
 
   ResetSprites();
   LoadDemo();
