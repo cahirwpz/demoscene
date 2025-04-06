@@ -25,6 +25,7 @@ static __code int active = 0;
 #include "data/pattern-2-3.c"
 
 #include "data/kurak-head.c"
+#include "data/cock-anim.c"
 
 static CopListT *MakeCopperList(void) {
   CopListT *cp =
@@ -44,30 +45,31 @@ static CopListT *MakeCopperList(void) {
 
   {
     u_short *data = background_cols_pixels;
+    short k = IsAGA() ? 8 : 0;
     short i;
 
     for (i = 0; i < background_height; i++) {
-      short bgcol = *data++;
-
-      /* Start exchanging palette colors at the end of previous line. */
-      CopWaitSafe(cp, Y(i - 1), HP(320 - 32 - 4));
-      CopMove16(cp, color[0], 0);
-
-      CopWaitSafe(cp, Y(i), HP(0));
-      CopMove16(cp, color[9], *data++);
-      CopMove16(cp, color[10], *data++);
-      CopMove16(cp, color[11], *data++);
-      CopMove16(cp, color[0], bgcol);
+      CopWaitSafe(cp, Y(i), 0);
+      CopMove16(cp, color[0], *data++);
+      CopMove16(cp, color[9+k], *data++);
+      CopMove16(cp, color[10+k], *data++);
+      CopMove16(cp, color[11+k], *data++);
     }
   }
 
   return CopListFinish(cp);
 }
 
-static void Init(void) {
+static void Load(void) {
   object = NewObject3D(&kurak);
   object->translate.z = fx4i(-256);
+}
 
+static void UnLoad(void) {
+  DeleteObject3D(object);
+}
+
+static void Init(void) {
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
   buffer = NewBitmap(WIDTH, HEIGHT, 1, 0);
@@ -90,6 +92,8 @@ static void Init(void) {
 
   /* reverse playfield priorities */
   custom->bplcon2 = 0;
+  /* AGA fix */
+  custom->bplcon3 = BPLCON3_PF2OF0;
 
   cp = MakeCopperList();
   CopListActivate(cp);
@@ -103,7 +107,6 @@ static void Kill(void) {
   DeleteBitmap(screen[1]);
   DeleteBitmap(buffer);
   DeleteCopList(cp);
-  DeleteObject3D(object);
 }
 
 #define MULVERTEX1(D, E)                                                       \
@@ -384,6 +387,11 @@ static void DrawObject(Object3D *object, void **planes,
         custom_->bltsize = bltsize;
       }
 
+#if 0
+      Assert(FACE(ii)->flags <= 16);
+      Assert(FACE(ii)->flags >= 0);
+#endif
+
       {
         void **srcbpl;
         void **dstbpl = planes;
@@ -404,6 +412,7 @@ static void DrawObject(Object3D *object, void **planes,
 
           custom_->bltcon0 = bltcon0;
           custom_->bltcon1 = 0;
+          custom_->bltbmod = bltmod - WIDTH / 16;
           custom_->bltapt = mask;
           custom_->bltbpt = src;
           custom_->bltcpt = dst;
@@ -450,9 +459,22 @@ PROFILE(Draw);
 static void Render(void) {
   BitmapClearFast(screen[active]);
 
+  {
+    short *frame = cock_anim[frameCount % cock_anim_frames];
+    object->translate.x = *frame++;
+    object->translate.y = *frame++;
+    object->translate.z = *frame++;
+    object->translate.z += fx4i(-256);
+    object->rotate.x = *frame++;
+    object->rotate.y = *frame++;
+    object->rotate.z = *frame++;
+    object->scale.x = *frame++;
+    object->scale.y = *frame++;
+    object->scale.z = *frame++;
+  }
+
   ProfilerStart(Transform);
   {
-    object->rotate.x = object->rotate.y = object->rotate.z = frameCount * 8;
     UpdateObjectTransformation(object);
     UpdateFaceVisibility(object);
     UpdateVertexVisibility(object);
@@ -472,4 +494,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Stencil3D, NULL, NULL, Init, Kill, Render, NULL);
+EFFECT(Stencil3D, Load, UnLoad, Init, Kill, Render, NULL);
