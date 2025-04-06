@@ -83,6 +83,10 @@ data/%.c: data/%.sync
 	@echo "[SYNC] $(DIR)$< -> $(DIR)$@"
 	$(SYNC2C) $(SYNC2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
+data/%.c: data/%.csv
+	@echo "[ANIM2C] $(DIR)$< -> $(DIR)$@"
+	$(ANIM2C) $(ANIM2C.$*) $< > $@ || (rm -f $@ && exit 1)
+
 EXTRA-FILES += $(EFFECT).img
 CLEAN-FILES += $(EFFECT).img
 

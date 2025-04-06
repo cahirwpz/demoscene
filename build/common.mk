@@ -45,6 +45,7 @@ ADFUTIL := $(TOPDIR)/tools/adfutil.py
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 LAUNCH := $(PYTHON3) $(TOPDIR)/tools/launch.py
+ANIM2C := $(TOPDIR)/tools/anim2c.py
 CONV2D := $(TOPDIR)/tools/conv2d.py
 DRNG2C := $(TOPDIR)/tools/drng2c/drng2c
 GRADIENT := $(TOPDIR)/tools/gradient.py
