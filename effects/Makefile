@@ -12,6 +12,7 @@ SUBDIRS := \
 	butterfly-gears \
 	carrion \
 	circles \
+	color-cycling \
 	credits \
 	dna3d \
 	empty \
