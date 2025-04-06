@@ -4,8 +4,8 @@
 #include <fx.h>
 #include <pixmap.h>
 #include <sprite.h>
+#include <color.h>
 #include <system/memory.h>
-#include <c2p_1x1_4.h>
 
 #define S_WIDTH 320
 #define S_HEIGHT 256
@@ -18,18 +18,18 @@ static __code PixmapT *segment_p;
 static __code BitmapT *segment_bp;
 static __code u_char *texture_hi;
 static __code u_char *texture_lo;
-static __code BitmapT *screen;
 static __code SprDataT *sprdat;
 static __code SpriteT sprite[8];
 static __code CopListT *cp;
 
 #include "data/logo-gtn.c"
 #include "data/ball.c"
+#include "data/ball-anim.c"
 
 #define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
-void (*UVMapRender)(u_char *chunky asm("a0"),
-                    u_char *textureHi asm("a1"),
-                    u_char *textureLo asm("a2"));
+static __code void (*UVMapRender)(u_char *chunky asm("a0"),
+                                  u_char *textureHi asm("a1"),
+                                  u_char *textureLo asm("a2"));
 
 static void ChunkyToPlanar(PixmapT *input, BitmapT *output);
 
@@ -50,7 +50,7 @@ static void MakeUVMapRenderCode(void) {
     } else {
       *code++ = 0x7000;  /* 7000      | moveq  #0,d0 */
     }
-     if ((uv = *data++) >= 0) {
+    if ((uv = *data++) >= 0) {
       *code++ = 0x802a;  /* 802a yyyy | or.b   yyyy(a2),d0 */
       *code++ = uv;
     }
@@ -64,29 +64,28 @@ static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(80);
   CopInsPairT *sprptr = CopSetupSprites(cp);
   short i;
-  CopSetupBitplanes(cp, screen, S_DEPTH);
+  CopSetupBitplanes(cp, &logo_bp, S_DEPTH);
   for (i = 0; i < 8; i++)
     CopInsSetSprite(&sprptr[i], &sprite[i]);
   return CopListFinish(cp);
+}
+
+static void Load(void) {
+  UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
+  MakeUVMapRenderCode();
+}
+
+static void UnLoad(void) {
+  MemFree(UVMapRender);
 }
 
 static void Init(void) {
   // segment_bp and segment_p are bitmap and pixmap for the magnified segment
   segment_bp = NewBitmap(WIDTH, HEIGHT, S_DEPTH, BM_CLEAR);
   segment_p = NewPixmap(WIDTH, HEIGHT, PM_CMAP4, MEMF_CHIP);
-  screen = NewBitmap(S_WIDTH, S_HEIGHT, S_DEPTH, BM_CLEAR);
 
   texture_hi = MemAlloc(WIDTH*HEIGHT, MEMF_CHIP);
   texture_lo = MemAlloc(WIDTH*HEIGHT, MEMF_CHIP);
-
-  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
-
-  //Copy logo bitmap to background
-  memcpy(screen->planes[0], logo_bp.planes[0],
-         S_WIDTH * S_HEIGHT * S_DEPTH / 8);
-
-  UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
-  MakeUVMapRenderCode();
 
   sprdat = MemAlloc(SprDataSize(64, 2) * 8 * 2, MEMF_CHIP | MEMF_CLEAR);
 
@@ -102,24 +101,24 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
   LoadColors(logo_pal_colors, 0);
+  FadeBlack(logo_pal_colors, 16, 0, 8);
   LoadColors(logo_pal_colors, 16);
 
   cp = MakeCopperList();
   CopListActivate(cp);
 
-  EnableDMA(DMAF_RASTER | DMAF_SPRITE);
+  EnableDMA(DMAF_RASTER | DMAF_SPRITE | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
 static void Kill(void) {
-  DisableDMA(DMAF_BLITTER | DMAF_BLITHOG | DMAF_RASTER | DMAF_SPRITE);
+  CopperStop();
+  BlitterStop();
 
   DeleteCopList(cp);
-  MemFree(UVMapRender);
   MemFree(sprdat);
 
   MemFree(texture_hi);
   MemFree(texture_lo);
-  DeleteBitmap(screen);
   DeletePixmap(segment_p);
   DeleteBitmap(segment_bp);
 }
@@ -405,8 +404,8 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
 }
 
 static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
-  short x = X((S_WIDTH - WIDTH) / 2) + xo;
-  short y = Y((S_HEIGHT - HEIGHT) / 2) + yo;
+  short x = X(xo);
+  short y = Y(yo);
   short n = 4;
 
   while (--n >= 0) {
@@ -543,16 +542,19 @@ PROFILE(CropPixmapBlitter);
 PROFILE(PlanarToSprite);
 
 static void Render(void) {
-  short xo = normfx(SIN(frameCount * 8) * 0x50);
-  short yo = normfx(COS(frameCount * 7) * 0x20) + 0x10;
+  short xo, yo;
+
+  {
+    short *frame;
+    short pos = frameCount % ball_anim_frames;
+    frame = ball_anim[pos];
+    xo = S_WIDTH - *frame++ - WIDTH;
+    yo = *frame++;
+  }
 
   {
     ProfilerStart(CropPixmapBlitter);
-    CropPixmapBlitter(&logo,
-                      xo + S_WIDTH / 2 - WIDTH / 2 + 1,
-                      yo + S_HEIGHT / 2 - HEIGHT / 2,
-                      WIDTH, HEIGHT,
-                      texture_hi,texture_lo);
+    CropPixmapBlitter(&logo, xo, yo, WIDTH, HEIGHT, texture_hi, texture_lo);
     ProfilerStop(CropPixmapBlitter);
 
     ProfilerStart(UVMapRender);
@@ -573,4 +575,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(MagnifyingGlass, NULL, NULL, Init, Kill, Render, NULL);
+EFFECT(MagnifyingGlass, Load, UnLoad, Init, Kill, Render, NULL);
