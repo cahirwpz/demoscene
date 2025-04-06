@@ -9,13 +9,15 @@
 #define WIDTH 160
 #define HEIGHT 100
 #define DEPTH 4
-#define FULLPIXEL 1
 
-static u_short *textureHi, *textureLo;
-static BitmapT *screen[2];
-static u_short active = 0;
-static CopListT *cp;
-static CopInsPairT *bplptr;
+static __code BitmapT *screen[2];
+static __code CopInsPairT *bplptr[2];
+static __code CopListT *cp[2];
+static __code short active = 0;
+static __code volatile short c2p_phase;
+static __code short c2p_active;
+static __code void **c2p_bpl;
+static __code u_short *textureHi, *textureLo;
 
 #include "data/rork-128.c"
 
@@ -31,11 +33,9 @@ static u_short PixelLo[16] = {
   0x2020, 0x2121, 0x2222, 0x2323, 0x3030, 0x3131, 0x3232, 0x3333, 
 };
 
-static void PixmapToTexture(const PixmapT *image,
-                            u_short *imageHi, u_short *imageLo) 
-{
-  u_char *data = image->pixels;
-  short n = image->width * image->height;
+static void PixmapToTexture(u_short *imageHi, u_short *imageLo) {
+  u_char *data = texture_pixels;
+  short n = texture_width * texture_height;
   /*
    * Since texturing loop may iterate over whole texture (offset = 0...16383),
    * and starting point may be set up at any position (start = 0...16383),
@@ -57,18 +57,15 @@ static void PixmapToTexture(const PixmapT *image,
   }
 }
 
-static struct {
-  short phase;
-  void **bpl;
-} c2p = { 256, NULL };
-
 #define BLTSIZE ((WIDTH / 2) * HEIGHT) /* 8000 bytes */
 
 /* If you think you can speed it up (I doubt it) please first look into
  * `c2p_2x1_4bpl_mangled_fast_blitter.py` in `prototypes/c2p`. */
 
-static void ChunkyToPlanar(void) {
-  register void **bpl asm("a0") = c2p.bpl;
+#define C2P_LAST 7
+
+static void ChunkyToPlanar(CustomPtrT custom_) {
+  register void **bpl = c2p_bpl;
 
   /*
    * Our chunky buffer of size (WIDTH/2, HEIGHT/2) is stored in bpl[0].
@@ -94,155 +91,168 @@ static void ChunkyToPlanar(void) {
    * (WIDTH, HEIGHT/2, DEPTH) and will be placed in bpl[2] and bpl[3].
    */
 
-  ClearIRQ(INTF_BLIT);
+  custom_->intreq_ = INTF_BLIT;
 
-  switch (c2p.phase) {
+  switch (c2p_phase++) {
     case 0:
       /* Initialize chunky to planar. */
-      custom->bltamod = 2;
-      custom->bltbmod = 2;
-      custom->bltdmod = 0;
-      custom->bltcdat = 0xF0F0;
-      custom->bltafwm = -1;
-      custom->bltalwm = -1;
+      custom_->bltamod = 2;
+      custom_->bltbmod = 2;
+      custom_->bltdmod = 0;
+      custom_->bltcdat = 0xF0F0;
+      custom_->bltafwm = -1;
+      custom_->bltalwm = -1;
 
       /* Swap 4x2, pass 1, high-bits. */
-      custom->bltapt = bpl[0];
-      custom->bltbpt = bpl[0] + 2;
-      custom->bltdpt = bpl[1] + BLTSIZE / 2;
+      custom_->bltapt = bpl[0];
+      custom_->bltbpt = bpl[0] + 2;
+      custom_->bltdpt = bpl[1] + BLTSIZE / 2;
 
       /* (a & 0xF0F0) | ((b >> 4) & ~0xF0F0) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-      custom->bltcon1 = BSHIFT(4);
+      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
+      custom_->bltcon1 = BSHIFT(4);
 
     case 1:
       /* overall size: BLTSIZE / 2 bytes */
-      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
+      custom_->bltsize = 1 | ((BLTSIZE / 8) << 6);
       break;
 
     case 2:
       /* Swap 4x2, pass 2, low-bits. */
-      custom->bltapt = bpl[1] - 4;
-      custom->bltbpt = bpl[1] - 2;
-      custom->bltdpt = bpl[1] + BLTSIZE / 2 - 2;
+      custom_->bltapt = bpl[1] - 4;
+      custom_->bltbpt = bpl[1] - 2;
+      custom_->bltdpt = bpl[1] + BLTSIZE / 2 - 2;
 
       /* ((a << 4) & 0xF0F0) | (b & ~0xF0F0) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(4);
-      custom->bltcon1 = BLITREVERSE;
+      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(4);
+      custom_->bltcon1 = BLITREVERSE;
 
     case 3:
       /* overall size: BLTSIZE / 2 bytes */
-      custom->bltsize = 1 | ((BLTSIZE / 8) << 6);
+      custom_->bltsize = 1 | ((BLTSIZE / 8) << 6);
       break;
 
     case 4:
-      custom->bltamod = 0;
-      custom->bltbmod = 0;
-      custom->bltdmod = 0;
-      custom->bltcdat = 0xAAAA;
+      custom_->bltamod = 0;
+      custom_->bltbmod = 0;
+      custom_->bltdmod = 0;
+      custom_->bltcdat = 0xAAAA;
 
-      custom->bltapt = bpl[1];
-      custom->bltbpt = bpl[1];
-      custom->bltdpt = bpl[3];
+      custom_->bltapt = bpl[1];
+      custom_->bltbpt = bpl[1];
+      custom_->bltdpt = bpl[3];
 
-#if FULLPIXEL
       /* (a & 0xAAAA) | ((b >> 1) & ~0xAAAA) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
-      custom->bltcon1 = BSHIFT(1);
-#else
-      /* (a & 0xAAAA) */
-      custom->bltcon0 = (SRCA | DEST) | (ABC | ANBC);
-      custom->bltcon1 = 0;
-#endif
+      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC);
+      custom_->bltcon1 = BSHIFT(1);
       /* overall size: BLTSIZE bytes */
-      custom->bltsize = 4 | ((BLTSIZE / 8) << 6);
+      custom_->bltsize = 4 | ((BLTSIZE / 8) << 6);
       break;
 
     case 5:
-      custom->bltapt = bpl[1] + BLTSIZE - 2;
-      custom->bltbpt = bpl[1] + BLTSIZE - 2;
-      custom->bltdpt = bpl[2] + BLTSIZE - 2;
-      custom->bltcdat = 0xAAAA;
+      custom_->bltapt = bpl[1] + BLTSIZE - 2;
+      custom_->bltbpt = bpl[1] + BLTSIZE - 2;
+      custom_->bltdpt = bpl[2] + BLTSIZE - 2;
+      custom_->bltcdat = 0xAAAA;
 
-#if FULLPIXEL
       /* ((a << 1) & 0xAAAA) | (b & ~0xAAAA) */
-      custom->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(1);
-      custom->bltcon1 = BLITREVERSE;
-#else
-      /* (a & ~0xAAAA) */
-      custom->bltcon0 = (SRCA | DEST) | (ABNC | ANBNC);
-      custom->bltcon1 = BLITREVERSE;
-#endif
+      custom_->bltcon0 = (SRCA | SRCB | DEST) | (ABC | ABNC | ANBC | NABNC) | ASHIFT(1);
+      custom_->bltcon1 = BLITREVERSE;
       /* overall size: BLTSIZE bytes */
-      custom->bltsize = 4 | ((BLTSIZE / 8) << 6);
+      custom_->bltsize = 4 | ((BLTSIZE / 8) << 6);
       break;
 
     case 6:
-      CopInsSet32(&bplptr[0], bpl[2]);
-      CopInsSet32(&bplptr[1], bpl[3]);
-      CopInsSet32(&bplptr[2], bpl[2] + BLTSIZE / 2);
-      CopInsSet32(&bplptr[3], bpl[3] + BLTSIZE / 2);
+      {
+        CopInsPairT *ins = bplptr[c2p_active];
+        CopInsSet32(ins++, bpl[2]);
+        CopInsSet32(ins++, bpl[3]);
+        CopInsSet32(ins++, bpl[2] + BLTSIZE / 2);
+        CopInsSet32(ins++, bpl[3] + BLTSIZE / 2);
+        CopListRun(cp[c2p_active]);
+      }
       break;
 
     default:
       break;
   }
-
-  c2p.phase++;
 }
 
-static CopListT *MakeCopperList(void) {
-  CopListT *cp = NewCopList(HEIGHT * 2 * (4 - FULLPIXEL) + 50);
+static void ChunkyToPlanarStart(void) {
+  c2p_active = active;
+  c2p_phase = 0;
+  c2p_bpl = screen[active]->planes;
+  ChunkyToPlanar(custom);
+  active ^= 1;
+}
+
+static void ChunkyToPlanarWait(void) {
+  while (BlitterBusy() || c2p_phase < C2P_LAST)
+    continue;
+}
+
+static CopListT *MakeCopperList(short active) {
+  CopListT *cp = NewCopList(HEIGHT * 2 * 3 + 50);
   short i;
 
-  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
+  bplptr[active] = CopSetupBitplanes(cp, screen[active], DEPTH);
   for (i = 0; i < HEIGHT * 2; i++) {
     CopWaitSafe(cp, Y(i + 28), 0);
     /* Line doubling. */
     CopMove16(cp, bpl1mod, (i & 1) ? 0 : -40);
     CopMove16(cp, bpl2mod, (i & 1) ? 0 : -40);
-#if !FULLPIXEL
-    /* Alternating shift by one for bitplane data. */
-    CopMove16(cp, bplcon1, (i & 1) ? 0x0010 : 0x0021);
-#endif
   }
   return CopListFinish(cp);
 }
 
+static void Load(void) {
+  textureHi = MemAlloc(texture_width * texture_height * 4, MEMF_PUBLIC);
+  textureLo = MemAlloc(texture_width * texture_height * 4, MEMF_PUBLIC);
+  PixmapToTexture(textureHi, textureLo);
+}
+
+static void UnLoad(void) {
+  MemFree(textureHi);
+  MemFree(textureLo);
+}
+
 static void Init(void) {
-  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, BM_CLEAR);
-  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, BM_CLEAR);
+  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, 0);
 
-  textureHi = MemAlloc(texture.width * texture.height * 4, MEMF_PUBLIC);
-  textureLo = MemAlloc(texture.width * texture.height * 4, MEMF_PUBLIC);
-  PixmapToTexture(&texture, textureHi, textureLo);
-
-  EnableDMA(DMAF_BLITTER);
-
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
   BitmapClear(screen[0]);
   BitmapClear(screen[1]);
+  WaitBlitter();
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
   LoadColors(texture_colors, 0);
 
-  cp = MakeCopperList();
-  CopListActivate(cp);
+  cp[0] = MakeCopperList(0);
+  cp[1] = MakeCopperList(1);
+  CopListActivate(cp[1]);
 
-  EnableDMA(DMAF_RASTER);
-
-  SetIntVector(INTB_BLIT, (IntHandlerT)ChunkyToPlanar, NULL);
+  SetIntVector(INTB_BLIT, (IntHandlerT)ChunkyToPlanar, (void *)custom);
+  ClearIRQ(INTF_BLIT);
   EnableINT(INTF_BLIT);
+
+  active = 0;
+  ChunkyToPlanarStart();
+  ChunkyToPlanarWait();
+
+  CopListActivate(cp[0]);
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill(void) {
-  DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
+  CopperStop();
 
   DisableINT(INTF_BLIT);
   ResetIntVector(INTB_BLIT);
 
-  DeleteCopList(cp);
-  MemFree(textureHi);
-  MemFree(textureLo);
+  BlitterStop();
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
 
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
@@ -267,7 +277,7 @@ PROFILE(Rotator);
  * position and length of one side, hence other sides can be easily calculated.
  */
 static void Rotator(void) {
-  short radius = 128 + (COS(frameCount * 17) >> 7);
+  short radius = 128 + 32 + (COS(frameCount * 17) >> 7);
   short alfa = frameCount * 11;
   short beta = alfa + SIN_HALF_PI + (SIN(frameCount * 13) >> 3);
 
@@ -303,10 +313,9 @@ static void Render(void) {
   Rotator();
   ProfilerStop(Rotator);
 
-  c2p.phase = 0;
-  c2p.bpl = screen[active]->planes;
-  ChunkyToPlanar();
-  active ^= 1;
+  ChunkyToPlanarWait();
+  TaskWaitVBlank();
+  ChunkyToPlanarStart();
 }
 
-EFFECT(Rotator, NULL, NULL, Init, Kill, Render, NULL);
+EFFECT(Rotator, Load, UnLoad, Init, Kill, Render, NULL);
