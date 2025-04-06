@@ -21,6 +21,7 @@ SUBDIRS := \
 	floor \
 	floor-old \
 	fire-rgb \
+	forest \
 	game-of-life \
 	glitch \
 	growing-tree \
