@@ -112,31 +112,61 @@ static void PutStr(u_char *pos, const char *str) {
 
 static const char InfoStr[] =
   "It crashed! Send screenshots to cahirwpz at Discord. Press LMB!";
-static __code char PageStr[] = "[Page ?]";
+static __code char PageStr[] = "[Page ?/?]";
+static __code short npages = 1;
 
 static void DumpStatus(u_char *screen) {
   static __code short page = 0;
   page++;
   PageStr[6] = page + '0';
+  PageStr[8] = npages + '0';
   PutStr(MoveTo(screen, 0, 0), InfoStr);
-  PutStr(MoveTo(screen, 72, 0), PageStr);
+  PutStr(MoveTo(screen, 70, 0), PageStr);
+}
+
+static short CountPages(CrashLogT *cl) {
+  short i = cl->head;
+  short pages = 1;
+  short y = 1;
+  short x = 0;
+
+  while (i != cl->tail) {
+    char c = cl->buffer[i++];
+
+    i &= CRASHLOG_SIZE - 1;
+
+    if ((c == '\n') || (x == 80)) {
+      x = 0;
+      y++;
+      if (y >= HEIGHT / FONTH) {
+        y = 1;
+        pages++;
+      }
+      if (c == '\n')
+        continue;
+    }
+
+    x++;
+  }
+
+  return pages;
 }
 
 static void DumpCrash(u_char *screen, CrashLogT *cl) {
+  short i = cl->head;
   u_char *pos;
-  short y;
+  short x = 0, y = 1;
 
-  y = 1;
   DumpStatus(screen);
   pos = MoveTo(screen, 0, y);
 
-  while (cl->head != cl->tail) {
-    char c = cl->buffer[cl->head];
+  while (i != cl->tail) {
+    char c = cl->buffer[i++];
 
-    cl->head++;
-    cl->head &= CRASHLOG_SIZE - 1;
+    i &= CRASHLOG_SIZE - 1;
 
-    if (c == '\n') {
+    if ((c == '\n') || (x == 80)) {
+      x = 0;
       pos = MoveTo(screen, 0, ++y);
       if (y >= HEIGHT / FONTH) {
         while (!LeftMouseButton())
@@ -148,10 +178,12 @@ static void DumpCrash(u_char *screen, CrashLogT *cl) {
         DumpStatus(screen);
         pos = MoveTo(screen, 0, y);
       }
-      continue;
+      if (c == '\n')
+        continue;
     }
 
     PutChar(pos++, c);
+    x++;
   }
 }
 
@@ -253,6 +285,7 @@ __noreturn void Crash(void) {
   custom->cop1lc = (u_int)cp;
   EnableDMA(DMAF_MASTER | DMAF_COPPER | DMAF_RASTER);
 
+  npages = CountPages(&CrashLog);
   DumpCrash(screen, &CrashLog);
   HALT();
   for (;;)
