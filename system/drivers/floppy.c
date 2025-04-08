@@ -191,11 +191,14 @@ static void FloppyTrackRead(FileT *f, short trknum) {
   Debug("Read track %d", trknum);
 
   custom->dskpt = (void *)f->encoded;
+
+  IntrDisable();
   /* Write track size twice to initiate DMA transfer. */
   custom->dsklen = DSK_DMAEN | (RAW_TRACK_SIZE / sizeof(short));
   custom->dsklen = DSK_DMAEN | (RAW_TRACK_SIZE / sizeof(short));
-
+  /* Wait for transfer to finish. */
   TaskWait(INTF_DSKBLK);
+  IntrEnable();
 
   custom->dsklen = 0;
   DisableDMA(DMAF_DISK);
