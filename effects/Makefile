@@ -14,6 +14,7 @@ SUBDIRS := \
 	circles \
 	color-cycling \
 	credits \
+	darkroom \
 	dna3d \
 	empty \
 	flatshade \
