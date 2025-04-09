@@ -11,14 +11,13 @@
 #define HEIGHT 256
 #define DEPTH 1
 
-/* XXX: Always consult this value with AmigaKlang output,
- * otherwise you'll experience a really nasty debugging session. */
-#define AKLANG_BUFLEN 36864
-
 #include "data/lat2-08.c"
 
 extern u_char Module[];
 extern u_char Samples[];
+#ifdef DELTA
+extern u_char SamplesSize[];
+#endif
 
 static BitmapT *screen;
 static CopListT *cp;
@@ -27,13 +26,43 @@ static ConsoleT console;
 /* Extra variables to enhance replayer functionality */
 static bool stopped = true;
 
+#ifdef AKLANG
 extern u_int AK_Progress;
 void AK_Generate(void *TmpBuf asm("a1"));
+#endif
+
+#ifdef DELTA
+static void DecodeSamples(u_char *smp, int size) {
+  u_char data = *smp++;
+  short n = (size + 7) / 8 - 1;
+  short k = size & 7;
+
+  Log("[Load] Decoding delta samples (%d bytes)\n", size);
+
+  switch (k) {
+  case 0: do { data += *smp; *smp++ = data;
+  case 7:      data += *smp; *smp++ = data;
+  case 6:      data += *smp; *smp++ = data;
+  case 5:      data += *smp; *smp++ = data;
+  case 4:      data += *smp; *smp++ = data;
+  case 3:      data += *smp; *smp++ = data;
+  case 2:      data += *smp; *smp++ = data;
+  case 1:      data += *smp; *smp++ = data;
+          } while (--n != -1);
+  }
+}
+#endif
 
 static void Load(void) {
+#ifdef AKLANG
   void *TmpBuf = MemAlloc(AKLANG_BUFLEN, MEMF_PUBLIC);
+  Log("[Load] Generating Amiga Klang samples (%d bytes)!\n", AKLANG_BUFLEN);
   AK_Generate(TmpBuf);
   MemFree(TmpBuf);
+#endif
+#ifdef DELTA
+  DecodeSamples(Samples, (int)SamplesSize);
+#endif
 }
 
 static void Init(void) {

@@ -11,12 +11,7 @@ LIBS := libpt
 
 include $(TOPDIR)/build/effect.mk
 
-CLEAN-FILES += data/$(MODULE)*.o data/$(MODULE).smp data/$(MODULE).trk
-
-data/%.trk data/%.smp: data/%.mod
-	$(PYTHON3) $(TOPDIR)/effects/playpt/data/ptsplit.py $^
-	mv data/$*.mod.trk data/$*.trk
-	mv data/$*.mod.smp data/$*.smp
+CLEAN-FILES += data/$(MODULE).smp data/$(MODULE).trk
 
 OBJCOPY-CHIP := --rename-section .data=.datachip,alloc,load,data,contents
 
@@ -35,4 +30,3 @@ data/%.smp.o: data/%.smp
 	  --redefine-sym _binary_data_$(subst -,_,$*)_smp_end=_LoaderSamplesEnd \
 	  --redefine-sym _binary_data_$(subst -,_,$*)_smp_size=_LoaderSamplesSize \
 	  $^ $@
-

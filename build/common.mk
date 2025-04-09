@@ -53,6 +53,7 @@ TMXCONV := $(TOPDIR)/tools/tmxconv/tmxconv
 PCHG2C := $(TOPDIR)/tools/pchg2c/pchg2c
 PNG2C := $(TOPDIR)/tools/png2c/png2c
 PSF2C := $(TOPDIR)/tools/psf2c.py
+PTSPLIT := $(PYTHON3) $(TOPDIR)/tools/ptsplit.py
 SYNC2C := $(TOPDIR)/tools/sync2c/sync2c
 SVG2C := $(TOPDIR)/tools/svg2c/svg2c
 PACKEXE := $(TOPDIR)/tools/packexe/packexe

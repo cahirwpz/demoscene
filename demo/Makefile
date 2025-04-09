@@ -1,23 +1,22 @@
 TOPDIR := $(realpath ..)
 
-DELTA := 1
-
 DEMONAME = Demo
 MODULE := JazzCat-ElectricLifeforms
 
-OBJECTS := data/$(MODULE).trk.o
+OBJECTS := data/$(MODULE).trk.o data/$(MODULE).smp.o
 
-ifeq ($(DELTA), 1)
-OBJECTS += data/$(MODULE)-Delta.smp.o
-else
-OBJECTS += data/$(MODULE).smp.o
+DELTA := 1
+
+ifeq ($(DELTA),1)
+CPPFLAGS += -DDELTA
+PTSPLIT.$(MODULE) := --delta
 endif
 
 LDSCRIPT := demo.lds
 
 LIBS := libpt
 
-CLEAN-FILES := data/$(MODULE)*.o data/$(MODULE).{smp,trk}* data/loader.c
+CLEAN-FILES := data/$(MODULE).smp data/$(MODULE).trk data/loader.c
 
 SOURCES := main.c load.c empty.c
 LOADABLES := spooky-town.exe
@@ -35,11 +34,6 @@ $(LOADABLES): demo.exe
 	@echo "[SPLITEXE] $^ -> $(LOADABLES)"
 	$(SPLITEXE) $^ $(LOADABLES)
 
-data/%.trk data/%.smp: data/%.mod
-	$(PYTHON3) $(TOPDIR)/effects/playpt/data/ptsplit.py $^
-	mv data/$*.mod.trk data/$*.trk
-	mv data/$*.mod.smp data/$*.smp
-
 demo.lds: demo.json
 	@echo "[LDS] $< -> $@"
 	$(PYTHON3) gen-lds.py $< $@
@@ -55,10 +49,6 @@ data/%.trk.o: data/%.trk
 	  --redefine-sym _binary_data_$(subst -,_,$*)_trk_end=_ModuleEnd \
 	  --redefine-sym _binary_data_$(subst -,_,$*)_trk_size=_ModuleSize \
 	  $^ $@
-
-data/%-Delta.smp: data/%.smp
-	@echo "[DELTA] $(DIR)$< -> $(DIR)$@"
-	$(PYTHON3) delta.py $< $@
 
 data/%.smp.o: data/%.smp
 	@echo "[OBJCOPY] $(DIR)$< -> $(DIR)$@"
