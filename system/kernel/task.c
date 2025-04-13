@@ -171,8 +171,8 @@ void TaskPrioritySet(TaskT *tsk, u_char prio) {
 
 u_int TaskWait(u_int eventSet) {
   TaskT *tsk = CurrentTask;
+  Assert(GetIPL() > IPL_NONE);
   Assume(eventSet != 0);
-  IntrDisable();
   tsk->waitpt = __builtin_return_address(0);
   tsk->eventSet = eventSet;
   tsk->state = TS_BLOCKED;
@@ -183,7 +183,6 @@ u_int TaskWait(u_int eventSet) {
   eventSet = tsk->eventSet;
   tsk->waitpt = NULL;
   tsk->eventSet = 0;
-  IntrEnable();
   return eventSet;
 }
 

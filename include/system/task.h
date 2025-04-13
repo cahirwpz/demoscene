@@ -64,6 +64,7 @@ void ReadyAdd(TaskT *tsk);
 void MaybePreempt(void);
 #endif
 
+/* Must be called with interrupts disabled. */
 u_int TaskWait(u_int eventSet);
 int TaskNotifyISR(u_int eventSet);
 int TaskNotify(u_int eventSet);

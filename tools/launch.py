@@ -57,7 +57,7 @@ class FSUAE(Launchable):
         if debug:
             self.options.append('--use_debugger=1')
         self.options.append('--warp_mode=1')
-        self.options.append(HerePath('effects', 'Config.fs-uae'))
+        self.options.append(HerePath('config.fs-uae'))
 
 
 class SOCAT(Launchable):

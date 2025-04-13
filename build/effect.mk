@@ -87,6 +87,14 @@ data/%.c: data/%.csv
 	@echo "[ANIM2C] $(DIR)$< -> $(DIR)$@"
 	$(ANIM2C) $(ANIM2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
+data/%.trk: data/%.mod
+	@echo "[PTSPLIT] $(DIR)$< -> $(DIR)$@"
+	$(PTSPLIT) --extract=trk $(PTSPLIT.$*) -o $@ $^
+
+data/%.smp: data/%.mod
+	@echo "[PTSPLIT] $(DIR)$< -> $(DIR)$@"
+	$(PTSPLIT) --extract=smp $(PTSPLIT.$*) -o $@ $^
+
 EXTRA-FILES += $(EFFECT).img
 CLEAN-FILES += $(EFFECT).img
 
@@ -94,9 +102,9 @@ CLEAN-FILES += $(EFFECT).img
 	@echo "[IMG] $(addprefix $(DIR),$<) -> $(DIR)$@"
 	$(FSUTIL) create $@ $(filter-out %bootloader.bin,$^)
 
-%.adf: %.img $(BOOTLOADER) 
+%.adf: %.img $(BOOTLOADER)
 	@echo "[ADF] $(DIR)$< -> $(DIR)$@"
-	$(ADFUTIL) -b $(BOOTLOADER) $< $@ 
+	$(ADFUTIL) -b $(BOOTLOADER) $< $@
 
 %-dos.adf: %.exe $(BOOTBLOCK)
 	@echo "[ADF] $(DIR)$< -> $(DIR)$@"
