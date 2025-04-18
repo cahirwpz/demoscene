@@ -1,26 +1,21 @@
 # To build and publish image run following commands:
-# > docker build -t cahirwpz/demoscene:latest .
+# > docker image build -t cahirwpz/demoscene:latest .
 # > docker login
 # > docker push cahirwpz/demoscene:latest
 
-FROM debian:buster-backports
+FROM debian:bookworm-backports
 
 WORKDIR /root
 
-ADD http://circleci.com/api/v1/project/cahirwpz/demoscene-toolchain/latest/artifacts/0/demoscene-toolchain.tar.gz \
+ADD https://github.com/cahirwpz/demoscene-toolchain/releases/download/2024-04-07/demoscene-toolchain.tar.gz \
     demoscene-toolchain.tar.gz
-ADD https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh \
-    script.deb.sh
 RUN apt-get -q update && apt-get upgrade -y
-RUN apt-get install -y --no-install-recommends gnupg && bash script.deb.sh
-RUN apt-get install -y --no-install-recommends \
-            ctags cscope git-lfs optipng gcc g++ make libc6-i386 golang-1.13 \
-            python3 python3-setuptools python3-prompt-toolkit \
-            python3-pil python3-pip python3-wheel python3-dev
+RUN apt-get install -y --no-install-recommends -t bookworm-backports \
+            universal-ctags cscope git-lfs optipng gcc g++ make golang \
+            python3 python3-pip python3-venv python3-dev socat tmux
+COPY requirements.txt .
+RUN python3 -m venv --upgrade-deps demoscene
+ENV PATH="/root/demoscene/bin:$PATH"
+RUN pip3 install -r requirements.txt
+RUN git lfs install
 RUN tar -C / -xvzf demoscene-toolchain.tar.gz && rm demoscene-toolchain.tar.gz
-RUN pip3 install pycodestyle zopflipy
-
-# If you're trying to install the environment manually on your computer,
-# then you need some extra things:
-# > pip3 install libtmux pygments prompt_toolkit
-# > apt-get install socat tmux

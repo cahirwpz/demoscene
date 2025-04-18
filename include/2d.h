@@ -9,10 +9,6 @@
 #define PF_TOP    4
 #define PF_BOTTOM 8
 
-typedef struct Edge {
-  u_short p0, p1;
-} EdgeT;
-
 typedef struct IndexList {
   short count;
   short indices[0];

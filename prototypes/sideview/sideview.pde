@@ -13,6 +13,7 @@ int palette[][];
 
 void settings() {
   size(WIDTH, HEIGHT);
+  noSmooth();
 }
 
 void drawLine(int y, float x, float w, float l, int palnum) {
@@ -42,7 +43,6 @@ void clearLine(int y) {
 void setup() {
   background(0);
   loadPixels();
-  noSmooth();
   
   palette = new int[2][2];
   palette[0][0] = color(170, 40, 170);

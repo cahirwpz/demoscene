@@ -1,31 +1,24 @@
+/* Based on divsi3.S from NetBSD */
+
 #include <asm.h>
 
 ENTRY(__divsi3)
-        move.l  d2,-(sp)
-
-        moveq.l #1,d2		/* sign of result stored in d2 (=1 or =-1) */
-        move.l  12(sp),d1	/* d1 = divisor */
-        jpl     .L1
-        neg.l   d1
-        neg.b   d2		/* change sign because divisor < 0 */
-.L1:    move.l  8(sp),d0	/* d0 = dividend */
-        jpl     .L2
-        neg.l   d0
-        neg.b   d2
-
-.L2:    move.l  d1,-(sp)
-        move.l  d0,-(sp)
-        jsr     _L(__udivsi3)   /* divide abs(dividend) by abs(divisor) */
-        addq.l  #8,sp
-
-        tst.b   d2
-        jpl     .L3
-        neg.l   d0
-
-.L3:    move.l  (sp)+,d2
-        rts
+	/* NB: this requires that __udivsi3 preserve a0 */
+	move.l	4(sp),d1	/* load the dividend */
+	bpl.s	1f
+	neg.l	4(sp)		/* store abs(dividend) */
+1:	move.l	8(sp),d0	/* load the divisor */
+	bpl.s	2f
+	neg.l	8(sp)		/* store abs(divisor) */
+2:	eor.l	d1,d0
+	bpl.s	3f		/* branch if sgn(divisor) == sgn(dividend) */
+	move.l	(sp)+,a0	/* pop return address */
+	pea	.Lret(pc)	/* push our return address */
+3:	jmp	_L(__udivsi3)
+.Lret:	neg.l	d0		/* negate quotient */
+	jmp	(a0)
 END(__divsi3)
 
-STRONG_ALIAS(__ldivs,__divsi3)
+STRONG_ALIAS(ldivs,__divsi3)
 
 # vim: ft=gas:ts=8:sw=8:noet:

@@ -15,13 +15,16 @@ BREAK = 0xCF47  # no-op: 'exg.l d7,d7'
 
 
 async def UaeLaunch(loop, args):
+    log_file = open(args.log, 'w') if args.log else None
+
     # Create the subprocess, redirect the standard I/O to respective pipes
     uaeproc = UaeProcess(
         await asyncio.create_subprocess_exec(
             args.emulator, *args.params,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE))
+            stderr=asyncio.subprocess.PIPE),
+        log_file)
 
     gdbserver = None
 
@@ -30,6 +33,7 @@ async def UaeLaunch(loop, args):
             await GdbStub(GdbConnection(reader, writer), uaeproc).run()
         except Exception:
             traceback.print_exc()
+            input('Press enter to quit...')
             # TODO: Better handling of gdbserver client disconnection
             #       Now it simply throws ValueError(data) exception
             #       in gdb.py:31 [recv_ack]
@@ -50,8 +54,6 @@ async def UaeLaunch(loop, args):
     if args.gdbserver:
         await GdbListen()
     else:
-        # Call FS-UAE debugger on CTRL+C
-        loop.add_signal_handler(signal.SIGINT, uaeproc.interrupt)
         prompt_task = asyncio.ensure_future(UaeDebugger(uaeproc))
 
     await uaeproc.wait()
@@ -61,15 +63,17 @@ async def UaeLaunch(loop, args):
 
 
 if __name__ == '__main__':
+    # XXX: change from INFO to DEBUG to display messages exchanged between
+    # fs-uae and code in `debug/uae.py`, gdb and code in `debug/gdb.py`
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)s: %(message)s')
     # logging.getLogger('asyncio').setLevel(logging.DEBUG)
 
     if sys.platform == 'win32':
         loop = asyncio.ProactorEventLoop()
-        asyncio.set_event_loop(loop)
     else:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.SelectorEventLoop()
+    asyncio.set_event_loop(loop)
     # loop.set_debug(True)
 
     parser = argparse.ArgumentParser(
@@ -78,6 +82,8 @@ if __name__ == '__main__':
                         help='Path to FS-UAE emulator binary.')
     parser.add_argument('-g', '--gdbserver', action='store_true',
                         help='Configure and run gdbserver on localhost:8888')
+    parser.add_argument('-l', '--log', type=str, default=None,
+                        help='Log stdout to a given file.')
     parser.add_argument('params', nargs='*', type=str,
                         help='Parameters passed to FS-UAE emulator.')
     args = parser.parse_args()

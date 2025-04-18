@@ -10,6 +10,7 @@ SUBDIRS := \
 	libgui \
 	libgfx \
 	libmisc \
-	libp61
+	libp61 \
+	libpt
 
 include $(TOPDIR)/build/common.mk

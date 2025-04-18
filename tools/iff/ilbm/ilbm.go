@@ -1,6 +1,6 @@
 package ilbm
 
-import ".."
+import "ghostown.pl/iff"
 
 func init() {
 	// Add recognized chunks to global list
@@ -9,6 +9,7 @@ func init() {
 	iff.ParsedChunks["CMAP"] = makeCMAP
 	iff.ParsedChunks["BODY"] = makeBODY
 	iff.ParsedChunks["CAMG"] = makeCAMG
+	iff.ParsedChunks["DRNG"] = makeDRNG
 
 	// Ignore JUNK chunk
 	iff.IgnoredChunks["JUNK"] = true

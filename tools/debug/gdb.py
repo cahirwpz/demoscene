@@ -141,8 +141,29 @@ class GdbStub():
             # Notify the target that GDB is prepared to serve symbol
             # lookup requests.
             self.gdb.send_ack('OK')
+        elif packet.startswith('Rcmd,'):
+            # Forwards input from `monitor` command to UAE debugger.
+            raw_cmd = packet.split(',', maxsplit=1)[1]
+            cmd = bytes.fromhex(raw_cmd).decode('utf-8')
+            lines = await self.uae.communicate(cmd)
+            text = '\n'.join(lines) + '\n'
+            self.gdb.send_ack(text.encode('utf-8').hex())
 
         return True
+
+    def handle_file(self, packet):
+        # Minimal support for `remote get` command to transfer empty files.
+        cmd, args = packet[0], packet[1].split(',')
+        if cmd == 'setfs':
+            self.gdb.send_ack('F0')
+        elif cmd == 'open':
+            self.gdb.send_ack('F0')
+        elif cmd == 'close':
+            self.gdb.send_ack('F0')
+        elif cmd == 'pread':
+            self.gdb.send_ack('F0;')  # `pread` command requires semicolon
+        else:
+            self.gdb.send_ack('')
 
     @staticmethod
     def binary_decode(data):
@@ -281,7 +302,10 @@ class GdbStub():
         elif packet[0] == 'v':
             # The correct reply to an unknown 'v' packet is to return the
             # empty string.
-            self.gdb.send_ack('')
+            if packet.startswith('vFile:'):
+                self.handle_file(packet.split(':')[1:])
+            else:
+                self.gdb.send_ack('')
 
         return True
 

@@ -1,9 +1,9 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "pixmap.h"
-#include "fx.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <pixmap.h>
+#include <system/memory.h>
 
 #define WIDTH (320 - 32)
 #define HEIGHT 256
@@ -65,14 +65,14 @@ static void Load(void) {
  * trigger. Thus they must be placed just before the end of scan line.
  * UAE copper debugger facility was used to find the right spot.
  */
-static void MakeCopperList(CopListT *cp, CopInsT **row) {
+static CopListT *MakeCopperList(CopInsT **row) {
+  CopListT *cp = NewCopList(80 + (HTILES + 5) * VTILES);
   short x, y;
 
-  CopInit(cp);
   CopWaitV(cp, VP(0));
 
   for (y = 0; y < VTILES; y++) {
-    CopInsT *location = CopMove32(cp, cop2lc, 0);
+    CopInsPairT *location = CopMove32(cp, cop2lc, 0);
     CopInsT *label = CopWaitH(cp, VP(y * 4), HP(-4));
     CopInsSet32(location, label);
     row[y] = CopSetColor(cp, 0, 0);
@@ -83,15 +83,12 @@ static void MakeCopperList(CopListT *cp, CopInsT **row) {
     CopMove16(cp, copjmp2, 0);
   }
 
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  cp[0] = NewCopList(80 + (HTILES + 5) * VTILES);
-  cp[1] = NewCopList(80 + (HTILES + 5) * VTILES);
-
-  MakeCopperList(cp[0], chunky[0]);
-  MakeCopperList(cp[1], chunky[1]);
+  cp[0] = MakeCopperList(chunky[0]);
+  cp[1] = MakeCopperList(chunky[1]);
 
   CopListActivate(cp[1]);
 }
@@ -177,4 +174,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(plasma, Load, NULL, Init, Kill, Render);
+EFFECT(Plasma, Load, NULL, Init, Kill, Render, NULL);

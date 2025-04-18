@@ -1,20 +1,13 @@
 TOPDIR = $(realpath .)
 
-SUBDIRS = tools lib effects
-SUBDIRS = tools lib loader effects
-EXTRA-FILES = tags cscope.out
-CLEAN-FILES = bootloader.bin 
+SUBDIRS = tools lib system effects demo
+CLEAN-FILES = bootloader.bin addchip.bootblock.bin vbrmove
 
-all: bootloader.bin build
+all: bootloader.bin addchip.bootblock.bin vbrmove build
+
+addchip.bootblock.bin: VASMFLAGS += -phxass -cnop=0
 
 include $(TOPDIR)/build/common.mk
 
-bootloader.bin: ASFLAGS += -phxass
-
-FILES := $(shell find include lib -iname '*.c' -or -iname '*.h')
-
-tags:
-	ctags -R $(FILES)
-
-cscope.out:
-	cscope -b $(FILES)
+gdb-dashboard:
+	wget -O $@ https://raw.githubusercontent.com/cyrus-and/gdb-dashboard/master/.gdbinit

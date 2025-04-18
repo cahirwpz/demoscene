@@ -1,0 +1,9 @@
+---
+BasedOnStyle: LLVM
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+ConstructorInitializerIndentWidth: 2
+ContinuationIndentWidth: 2
+IndentCaseBlocks: true
+IndentCaseLabels: true
+SortIncludes: Never

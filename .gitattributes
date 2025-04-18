@@ -1,6 +1,8 @@
 ahxWaves filter=lfs diff=lfs merge=lfs -text
+*.akp filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
 *.BIN filter=lfs diff=lfs merge=lfs -text
+*.csv filter=lfs diff=lfs merge=lfs -text
 *.mod filter=lfs diff=lfs merge=lfs -text
 *.p61 filter=lfs diff=lfs merge=lfs -text
 *.ahx filter=lfs diff=lfs merge=lfs -text
@@ -11,3 +13,9 @@ ahxWaves filter=lfs diff=lfs merge=lfs -text
 *.ilbm filter=lfs diff=lfs merge=lfs -text
 *.psfu filter=lfs diff=lfs merge=lfs -text
 *.tmx filter=lfs diff=lfs merge=lfs -text
+*.svg filter=lfs diff=lfs merge=lfs -text
+*.blend filter=lfs diff=lfs merge=lfs -text
+*.vlw filter=lfs diff=lfs merge=lfs -text
+*.xz filter=lfs diff=lfs merge=lfs -text
+*.raw filter=lfs diff=lfs merge=lfs -text
+go.mod !filter !diff !merge text

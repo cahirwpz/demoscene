@@ -1,9 +1,10 @@
 #include "effect.h"
 #include "console.h"
 #include "copper.h"
-#include "event.h"
-#include "keyboard.h"
-#include "file.h"
+#include <system/event.h>
+#include <system/keyboard.h>
+#include <system/file.h>
+#include <system/serial.h>
 
 #define WIDTH 640
 #define HEIGHT 256
@@ -17,16 +18,15 @@ static ConsoleT console;
 static FileT *ser;
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  cp = NewCopList(100);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);
   SetColor(1, 0xfff);
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopEnd(cp);
+  cp = NewCopList(100);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
@@ -34,7 +34,7 @@ static void Init(void) {
   ConsolePutStr(&console, "Press ESC key to exit!\n");
   ConsoleDrawCursor(&console);
 
-  ser = SerialOpen(9600, O_NONBLOCK);
+  ser = OpenSerial(9600, O_NONBLOCK);
   KeyboardInit();
 }
 
@@ -107,4 +107,4 @@ static void Render(void) {
   exitLoop = !HandleEvent();
 }
 
-EFFECT(kbtest, NULL, NULL, Init, Kill, Render);
+EFFECT(KbdTest, NULL, NULL, Init, Kill, Render, NULL);

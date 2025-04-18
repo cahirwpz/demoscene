@@ -154,4 +154,5 @@ def c2p_2_1_4_stingray():
 
 
 # c2p_2_1_4_mangled()
-# c2p_2_1_4_stingray()
+c2p_2_1_4_stingray()
+# c2p_2_1_4()

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"../hunk"
 	"flag"
 	"fmt"
+	"ghostown.pl/hunk"
 	"os"
 )
 

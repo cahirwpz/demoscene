@@ -1,0 +1,3 @@
+CONVERT_OPTS="-negate"
+VTRACER_OPTS="--colormode bw --corner_threshold 15 --color_precision 4 --filter_speckle 5 --gradient_step 0 --mode polygon"
+SVGANIM_OPTS=""

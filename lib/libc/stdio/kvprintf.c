@@ -36,7 +36,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "common.h"
+#include <stdlib.h>
+#include <common.h>
 
 /*
  * Standaloneified version of the FreeBSD kernel printf family.
@@ -44,16 +45,9 @@
 
 #define MAXNBUF (sizeof(long) * 8 + 1)
 
-static inline int toupper(int ch) {
-	if (ch >= 'a' && ch <= 'z')
-		return (ch - 0x20);
-	return (ch);
-}
-
 /* This is actually used with radix [2..36] */
-char const hex2ascii_data[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-
-#define hex2ascii(hex) (hex2ascii_data[hex])
+const char hex2ascii_lower[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+const char hex2ascii_upper[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 /*
  * Put a NUL-terminated ASCII number (base <= 36) in a buffer in reverse
@@ -62,19 +56,21 @@ char const hex2ascii_data[] = "0123456789abcdefghijklmnopqrstuvwxyz";
  * The buffer pointed to by `nbuf' must have length >= MAXNBUF.
  */
 static char *
-ksprintn(char *nbuf, u_long num, int base, int *lenp, int upper)
+ksprintn(char *nbuf, u_long num asm("d2"), int base asm("d3"), int *lenp, int upper)
 {
-	char *p, c;
+  const char *hex2ascii = upper ? hex2ascii_upper : hex2ascii_lower;
+  char *p;
 
-	p = nbuf;
-	*p = '\0';
-	do {
-		c = hex2ascii(num % base);
-		*++p = upper ? toupper(c) : c;
-	} while (num /= base);
-	if (lenp)
-		*lenp = p - nbuf;
-	return (p);
+  p = nbuf;
+  *p = '\0';
+  do {
+    ldiv_t r = ldivu(num, base);
+    num = r.quot;
+    *++p = hex2ascii[r.rem];
+  } while (num);
+  if (lenp)
+    *lenp = p - nbuf;
+  return (p);
 }
 
 /*
@@ -216,8 +212,8 @@ reswitch:	switch (ch = (u_char)*fmt++) {
 			if (!width)
 				width = 16;
 			while(width--) {
-				PCHAR(hex2ascii(*up >> 4));
-				PCHAR(hex2ascii(*up & 0x0f));
+				PCHAR(hex2ascii_lower[*up >> 4]);
+				PCHAR(hex2ascii_lower[*up & 0x0f]);
 				up++;
 				if (width)
 					for (q=p;*q;q++)

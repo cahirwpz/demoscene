@@ -1,5 +1,5 @@
-#ifndef _CUSTOM_REGDEF_H_
-#define _CUSTOM_REGDEF_H_
+#ifndef __CUSTOM_REGDEF_H__
+#define __CUSTOM_REGDEF_H__
 
 #include <cdefs.h>
 
@@ -147,6 +147,8 @@ struct Custom {
 #define intena 0x09a
 #define intreqr 0x01e
 #define intreq 0x09c
+#define serdatr 0x018
+#define serdat 0x030
 
 #endif
 
@@ -223,7 +225,11 @@ struct Custom {
 #define BPLCON2_ZDBPSEL2 __BIT(14) /* ZDBPEN genlock mode */
 #define BPLCON2_PF2PRI __BIT(6)
 #define BPLCON2_PF2P2 __BIT(5)
+#define BPLCON2_PF2P1 __BIT(4)
+#define BPLCON2_PF2P0 __BIT(3)
 #define BPLCON2_PF1P2 __BIT(2)
+#define BPLCON2_PF1P1 __BIT(1)
+#define BPLCON2_PF1P0 __BIT(0)
 
 /* defines for bplcon3 register */
 #define BPLCON3_EXTBLNKEN __BIT(0) /* external blank enable */
@@ -231,6 +237,9 @@ struct Custom {
 #define BPLCON3_ZDCLKEN __BIT(2)   /* zd pin outputs a 14mhz clock*/
 #define BPLCON3_BRDNTRAN __BIT(4)  /* border is opaque */
 #define BPLCON3_BRDNBLNK __BIT(5)  /* border is opaque */
+#define BPLCON3_PF2OF2 __BIT(10)   /* second playfield's offset in coltab */
+#define BPLCON3_PF2OF1 __BIT(11)
+#define BPLCON3_PF2OF0 __BIT(12)
 
 /* read definitions for dmaconr */
 /* bits 0-8 correspnd to dmaconw definitions */
@@ -335,4 +344,4 @@ struct Custom {
 #define OUTLX __BIT(9)  /* Output enable for bit 8 */
 #define DATLX __BIT(8)  /* Data for port 1, pin 5 (middle mouse button) */
 
-#endif /* !_CUSTOM_REGDEF_H_ */
+#endif /* !__CUSTOM_REGDEF_H__ */

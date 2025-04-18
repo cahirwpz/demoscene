@@ -1,14 +1,18 @@
 TOPDIR := $(realpath ../..)
 
 SOURCES := \
+	checksum.asm \
 	console.c \
-	debug.c \
-	debug-putchar.S \
+	crc32.c \
+	file.c \
 	fx.c \
 	inflate.S \
+	lzsa.asm \
 	sintab.c \
 	sort.c \
-	uae.S
+	sync.c \
+	uae.S \
+	unzx0.asm
 
 SOURCES_GEN := sintab.c
 

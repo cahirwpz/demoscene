@@ -1,8 +1,8 @@
-#include "effect.h"
-#include "copper.h"
-#include "memory.h"
-#include "gfx.h"
-#include "blitter.h"
+#include <effect.h>
+#include <blitter.h>
+#include <copper.h>
+#include <gfx.h>
+#include <system/memory.h>
 
 #define TILEW 16
 #define TILEH 16
@@ -16,7 +16,7 @@
 #define HTILES (WIDTH / TILEW)
 #define TILESIZE (TILEW * TILEH * DEPTH / 8)
 
-static CopInsT *bplptr[2][DEPTH];
+static CopInsPairT *bplptr[2];
 static BitmapT *screen[2];
 static CopInsT *bplcon1[2];
 static CopListT *cp[2];
@@ -51,34 +51,32 @@ static void Load(void) {
   }
 }
 
-static void MakeCopperList(CopListT *cp, int i) {
-  CopInit(cp);
-  CopSetupMode(cp, MODE_LORES, DEPTH);
-  CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(0), WIDTH - 16, HEIGHT - 16);
-  CopSetupBitplaneFetch(cp, MODE_LORES, X(-16), WIDTH);
-  CopSetupBitplanes(cp, bplptr[i], screen[i], DEPTH);
+static CopListT *MakeCopperList(int i) {
+  CopListT *cp = NewCopList(100);
+  bplptr[i] = CopSetupBitplanes(cp, screen[i], DEPTH);
   bplcon1[i] = CopMove16(cp, bplcon1, 0);
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
   /* extra memory for horizontal scrolling */
-  short extra = div16(tilemap_width * TILEW, WIDTH);
+  short extra = tilemap_width * TILEW / WIDTH;
 
   Log("Allocate %d extra lines!\n", extra);
 
   /* Use interleaved mode to limit number of issued blitter operations. */
-  screen[0] = NewBitmapCustom(WIDTH, HEIGHT + extra, DEPTH,
-                              BM_CLEAR | BM_DISPLAYABLE | BM_INTERLEAVED);
-  screen[1] = NewBitmapCustom(WIDTH, HEIGHT + extra, DEPTH,
-                              BM_CLEAR | BM_DISPLAYABLE | BM_INTERLEAVED);
+  screen[0] = NewBitmap(WIDTH, HEIGHT + extra, DEPTH,
+                        BM_CLEAR | BM_INTERLEAVED);
+  screen[1] = NewBitmap(WIDTH, HEIGHT + extra, DEPTH,
+                        BM_CLEAR | BM_INTERLEAVED);
 
-  LoadPalette(&tiles_pal, 0);
+  SetupMode(MODE_LORES, DEPTH);
+  SetupDisplayWindow(MODE_LORES, X(0), Y(0), WIDTH - 16, HEIGHT - 16);
+  SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH);
+  LoadColors(tiles_colors, 0);
 
-  cp[0] = NewCopList(100);
-  MakeCopperList(cp[0], 0);
-  cp[1] = NewCopList(100);
-  MakeCopperList(cp[1], 1);
+  cp[0] = MakeCopperList(0);
+  cp[1] = MakeCopperList(1);
 
   CopListActivate(cp[1]);
 
@@ -187,12 +185,12 @@ static void Render(void) {
 
     {
       short i;
-      CopInsT **_bplptr = bplptr[active];
+      CopInsPairT *_bplptr = bplptr[active];
       void **_planes = screen[active]->planes;
       int offset = x << 1;
 
       for (i = 0; i < DEPTH; i++)
-        CopInsSet32(_bplptr[i], _planes[i] + offset);
+        CopInsSet32(&_bplptr[i], _planes[i] + offset);
     }
     CopInsSet16(bplcon1[active], pixel | (pixel << 4));
     CopListRun(cp[active]);
@@ -203,4 +201,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(tiles16, Load, NULL, Init, Kill, Render);
+EFFECT(Tiles16, Load, NULL, Init, Kill, Render, NULL);

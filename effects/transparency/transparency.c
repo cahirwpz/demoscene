@@ -16,9 +16,6 @@ static CopInsT *pal;
 #include "data/ghostown-logo.c"
 #include "data/transparency-bg.c"
 
-#define pal1 background_pal.colors
-#define pal2 logo_pal.colors
-
 static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
                              const BitmapT *src, short s)
 {
@@ -50,19 +47,18 @@ static void BitplaneCopyFast(BitmapT *dst, short d, u_short x, u_short y,
 }
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   EnableDMA(DMAF_BLITTER);
   BitmapCopy(screen, 0, 0, &background);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&background_pal, 0);
+  LoadColors(background_colors, 0);
 
   cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
+  CopSetupBitplanes(cp, screen, DEPTH);
   pal = CopLoadColor(cp, 8, 31, 0);
-  CopEnd(cp);
+  CopListFinish(cp);
 
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
@@ -83,9 +79,10 @@ static void Render(void) {
   BitplaneCopyFast(screen, 4, 80 + xo, 64 + yo, &logo, 1);
   
   for (i = 0; i < 24; i++)
-    CopInsSet16(pal + i, ColorTransition(pal1[i & 7], pal2[i / 8 + 1], s));
+    CopInsSet16(pal + i, ColorTransition(background_colors[i & 7],
+                                         logo_colors[i / 8 + 1], s));
 
   TaskWaitVBlank();
 }
 
-EFFECT(transparency, NULL, NULL, Init, Kill, Render);
+EFFECT(Transparency, NULL, NULL, Init, Kill, Render, NULL);

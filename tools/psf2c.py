@@ -123,7 +123,7 @@ def dumpFont(path, name):
     print('  .depth = 1,')
     print('  .bytesPerRow = 2,')
     print('  .bplSize = %d,' % (2 * font.height // 8))
-    print('  .flags = BM_DISPLAYABLE|BM_STATIC,')
+    print('  .flags = BM_STATIC,')
     print('  .planes = {')
     print('    _%s_glyphs' % name)
     print('  }')

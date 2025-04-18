@@ -1,51 +1,59 @@
 #include <circle.h>
 
-void Circle(const BitmapT *bitmap, int plane, short xc, short yc, short r) {
-  int stride = bitmap->bytesPerRow;
+static inline void Plot(u_char *pixels, int pos) {
+  bset(pixels + (pos >> 3), ~pos);
+}
 
-  u_char *pixels = bitmap->planes[plane] + yc * (short)stride;
-  u_char *q0 = pixels;
-  u_char *q1 = pixels;
-  u_char *q2 = pixels - r * (short)stride;
-  u_char *q3 = pixels + r * (short)stride;
+void Circle(const BitmapT *bitmap, int plane, short x0, short y0, short r) {
+  u_char *pixels = bitmap->planes[plane];
+  int width = bitmap->bytesPerRow << 3;
+  short f = 1 - r;
+  short ddF_x = 0;
+  short ddF_y = -(r << 1);
+  register int x asm("d6") = 0;
+  register int y asm("d7") = r;
+  register int q0 asm("a3");
+  register int q1 asm("a4");
+  int q2;
+  int q3;
 
-  short x = -r;
-  short y = 0;
-  short err = 2 * (1 - r);
+  {
+    int base = mul16(y0, width) + x0;
+    int yr = mul16(r, width);
 
-  short x0 = xc - x;
-  short x1 = xc + x;
-  short x2 = xc;
-  short x3 = xc;
+    q0 = base + yr;
+    q1 = base - yr;
+    q2 = base;
+    q3 = base;
+  }
 
-  do {
-    /* (xc - x, yc + y) */
-    bset(q0 + (x0 >> 3), ~x0);
-    
-    /* (xc + x, yc - y) */
-    bset(q1 + (x1 >> 3), ~x1);
+  Plot(pixels, q0);
+  Plot(pixels, q1);
+  Plot(pixels, q2 + r);
+  Plot(pixels, q3 - r);
 
-    /* (xc + y, yc + x) */
-    bset(q2 + (x2 >> 3), ~x2);
- 
-    /* (xc - y, yc - x) */
-    bset(q3 + (x3 >> 3), ~x3);
-
-    if (err <= y) {
-      q0 += stride;
-      q1 -= stride;
-      x2++;
-      x3--;
-      y++;
-      err += y * 2 + 1;
+  while (x < y) {
+    if (f >= 0) {
+      y--;
+      q0 -= width;
+      q1 += width;
+      ddF_y += 2;
+      f += ddF_y;
     }
-    if (err > x) {
-      q2 += stride;
-      q3 -= stride;
-      x0--;
-      x1++;
-      x++;
-      err += x * 2 + 1;
-    }
-  } while (x < 0);
+    x++;
+    q2 += width;
+    q3 -= width;
+    ddF_x += 2;
+    f += ddF_x + 1;    
+
+    Plot(pixels, q0 + x);
+    Plot(pixels, q0 - x);
+    Plot(pixels, q1 + x);
+    Plot(pixels, q1 - x);
+
+    Plot(pixels, q2 + y);
+    Plot(pixels, q2 - y);
+    Plot(pixels, q3 + y);
+    Plot(pixels, q3 - y);
+  }
 }

@@ -1,14 +1,13 @@
-#include "effect.h"
-#include "interrupt.h"
-#include "cia.h"
-#include "timer.h"
-#include "memory.h"
-#include "ahx.h"
-#include "console.h"
-#include "copper.h"
-#include "keyboard.h"
-#include "event.h"
-#include "blitter.h"
+#include <effect.h>
+#include <ahx.h>
+#include <blitter.h>
+#include <console.h>
+#include <copper.h>
+#include <system/event.h>
+#include <system/interrupt.h>
+#include <system/keyboard.h>
+#include <system/memory.h>
+#include <system/timer.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -46,7 +45,7 @@ static void InitWaveScope(void) {
 
   for (i = 0; i < 4; i++) {
     memset(&wavescope.channel[i], 0, sizeof(WaveScopeChanT));
-    wavescope.channel[i].bm = NewBitmap(64, 64, 1);
+    wavescope.channel[i].bm = NewBitmap(64, 64, 1, 0);
   }
 
   for (i = 0; i < 64; i++) {
@@ -63,7 +62,7 @@ static void InitWaveScope(void) {
     }
   }
 
-  bm = NewBitmap(64, 32, 1);
+  bm = NewBitmap(64, 32, 1, BM_CLEAR);
   BlitterLineSetup(bm, 0, LINE_EOR|LINE_ONEDOT);
   BlitterLine(32, 0, 1, 31);
   BlitterLine(32, 0, 63, 31);
@@ -167,16 +166,15 @@ static void DrawFrames(void) {
 }
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);
   SetColor(1, 0xfff);
 
   cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopEnd(cp);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
 
   ConsoleInit(&console, &latin2, screen);
@@ -218,15 +216,12 @@ static void Kill(void) {
 
 static bool HandleEvent(void);
 
-static void Render(void) {
-  int lines = ReadLineCounter();
+static void RenderScreen(void) {
   short i;
 
   ConsoleSetCursor(&console, 0, 3);
   ConsolePrint(&console, "Position : %02d/%02d\n\n",
                Ahx.Public->Pos, Ahx.Public->Row);
-
-  Log("Playing %d!\n", Ahx.Public->Playing);
 
   if (Ahx.Public->Playing) {
     WaitLine(Y(96));
@@ -240,8 +235,14 @@ static void Render(void) {
       BitmapCopy(screen, x, y, wavescope.channel[i].bm);
     }
   }
-  
-  Log("playahx: %d\n", ReadLineCounter() - lines);
+}
+
+PROFILE(PlayAHX);
+
+static void Render(void) {
+  ProfilerStart(PlayAHX);
+  RenderScreen(); 
+  ProfilerStop(PlayAHX);
 
   TaskWaitVBlank();
 
@@ -280,4 +281,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(playahx, NULL, NULL, Init, Kill, Render);
+EFFECT(PlayAHX, NULL, NULL, Init, Kill, Render, NULL);

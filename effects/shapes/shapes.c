@@ -1,31 +1,25 @@
-#include "effect.h"
-#include "2d.h"
-#include "blitter.h"
-#include "copper.h"
-#include "fx.h"
-#include "memory.h"
+#include <effect.h>
+#include <2d.h>
+#include <blitter.h>
+#include <copper.h>
+#include <fx.h>
+#include <system/memory.h>
 
 #define WIDTH  320
 #define HEIGHT 256
 #define DEPTH  4
 
 static BitmapT *screen;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static CopListT *cp;
 static short plane, planeC;
 
 #include "data/shapes-pal.c"
 #include "data/night.c"
 
-static void Load(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-}
-
-static void UnLoad(void) {
-  DeleteBitmap(screen);
-}
-
 static void Init(void) {
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+
   /* Set up clipping window. */
   ClipWin.minX = fx4i(0);
   ClipWin.maxX = fx4i(319);
@@ -39,12 +33,11 @@ static void Init(void) {
   BitmapClear(screen);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&shapes_pal, 0);
+  LoadColors(shapes_colors, 0);
 
   cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopEnd(cp);
+  bplptr = CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER);
@@ -54,6 +47,7 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   DeleteCopList(cp);
+  DeleteBitmap(screen);
 }
 
 static Point2D tmpPoint[2][16];
@@ -104,26 +98,32 @@ static void DrawShape(ShapeT *shape) {
   }
 }
 
-static void Render(void) {
-  // int lines = ReadLineCounter();
-  short i, a = frameCount * 64;
-  Matrix2D t;
+PROFILE(Shapes);
 
-  BlitterClear(screen, plane);
-  LoadIdentity2D(&t);
-  Rotate2D(&t, frameCount * 8);
-  Scale2D(&t, fx12f(1.0) + SIN(a) / 2, fx12f(1.0) + COS(a) / 2);
-  Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
-  Transform2D(&t, shape.viewPoint, shape.origPoint, shape.points);
-  PointsInsideBox(shape.viewPoint, shape.viewPointFlags, shape.points);
-  BlitterLineSetup(screen, plane, LINE_EOR|LINE_ONEDOT);
-  DrawShape(&shape);
-  BlitterFill(screen, plane);
-  // Log("shape: %d\n", ReadLineCounter() - lines);
+static void Render(void) {
+  short i;
+
+  ProfilerStart(Shapes);
+  {
+    short a = frameCount * 64;
+    Matrix2D t;
+
+    BlitterClear(screen, plane);
+    LoadIdentity2D(&t);
+    Rotate2D(&t, frameCount * 8);
+    Scale2D(&t, fx12f(1.0) + SIN(a) / 2, fx12f(1.0) + COS(a) / 2);
+    Translate2D(&t, fx4i(screen->width / 2), fx4i(screen->height / 2));
+    Transform2D(&t, shape.viewPoint, shape.origPoint, shape.points);
+    PointsInsideBox(shape.viewPoint, shape.viewPointFlags, shape.points);
+    BlitterLineSetup(screen, plane, LINE_EOR|LINE_ONEDOT);
+    DrawShape(&shape);
+    BlitterFill(screen, plane);
+  }
+  ProfilerStop(Shapes);
 
   for (i = 0; i < DEPTH; i++) {
     short j = (plane + i) % DEPTH;
-    CopInsSet32(bplptr[i], screen->planes[j]);
+    CopInsSet32(&bplptr[i], screen->planes[j]);
   }
 
   TaskWaitVBlank();
@@ -134,4 +134,4 @@ static void Render(void) {
   planeC ^= 1;
 }
 
-EFFECT(shapes, Load, UnLoad, Init, Kill, Render);
+EFFECT(Shapes, NULL, NULL, Init, Kill, Render, NULL);

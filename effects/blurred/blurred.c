@@ -1,10 +1,10 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "2d.h"
-#include "fx.h"
-#include "circle.h"
+#include <effect.h>
+#include <2d.h>
+#include <blitter.h>
+#include <circle.h>
+#include <copper.h>
+#include <fx.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -16,44 +16,38 @@ static u_short active = 0;
 
 static BitmapT *carry;
 static BitmapT *buffer;
-static CopInsT *bplptr[2][DEPTH];
+static CopInsPairT *bplptr[2];
 static CopListT *cp;
 
 #include "data/blurred-pal-1.c"
 #include "data/blurred-pal-2.c"
 #include "data/blurred-clip.c"
 
-static void Load(void) {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-}
-
-static void UnLoad(void) {
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
-}
-
 static short iterCount = 0;
 
-static void MakeCopperList(CopListT *cp) {
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(200);
   short i;
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr[active], screen[active], DEPTH);
+  bplptr[0] = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopWait(cp, Y(-18), 0);
-  CopLoadPal(cp, &blurred_1_pal, 0);
+  CopLoadColors(cp, blurred_1_colors, 0);
   CopWait(cp, Y(127), 0);
   CopMove16(cp, dmacon, DMAF_RASTER);
-  CopLoadPal(cp, &blurred_2_pal, 0);
+  CopLoadColors(cp, blurred_2_colors, 0);
   CopWait(cp, Y(128), 0);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
+  bplptr[1] = CopInsPtr(cp);
   for (i = 0; i < DEPTH; i++)
-    bplptr[1][i] = CopMove32(cp, bplpt[i], screen[active]->planes[i] - WIDTH / 16);
-  CopEnd(cp);
+    CopMove32(cp, bplpt[i], screen[0]->planes[i] - WIDTH / 16);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
   short i;
+
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
 
@@ -68,13 +62,12 @@ static void Init(void) {
     BitmapCopy(screen[i], WIDTH / 2, 0, &clip);
   }
 
-  buffer = NewBitmap(SIZE, SIZE, 4);
-  carry = NewBitmap(SIZE, SIZE, 2);
+  buffer = NewBitmap(SIZE, SIZE, 4, 0);
+  carry = NewBitmap(SIZE, SIZE, 2, 0);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
-  cp = NewCopList(200);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }
@@ -85,6 +78,8 @@ static void Kill(void) {
   DeleteCopList(cp);
   DeleteBitmap(carry);
   DeleteBitmap(buffer);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 static void RotatingTriangle(short t, short phi, short size) {
@@ -132,12 +127,12 @@ static void Render(void) {
   
 
   ITER(i, 0, DEPTH - 1, {
-    CopInsSet32(bplptr[0][i], screen[active]->planes[i]);
-    CopInsSet32(bplptr[1][i], screen[active]->planes[i] - WIDTH / 16);
+    CopInsSet32(&bplptr[0][i], screen[active]->planes[i]);
+    CopInsSet32(&bplptr[1][i], screen[active]->planes[i] - WIDTH / 16);
     });
 
   TaskWaitVBlank();
   active ^= 1;
 }
 
-EFFECT(blurred, Load, UnLoad, Init, Kill, Render);
+EFFECT(Blurred, NULL, NULL, Init, Kill, Render, NULL);

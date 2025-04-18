@@ -1,10 +1,9 @@
 #include <debug.h>
 #include <copper.h>
-#include <memory.h>
+#include <system/memory.h>
 
 void DeleteCopList(CopListT *list) {
-  int unused = list->length - (list->curr - list->entry);
-  if (unused >= 100)
-    Log("Unused copper list entries: %d.\n", unused);
+  if (list->finished && *(u_int *)list->curr == 0xfffffffe)
+    Panic("[CopList] End instruction was damaged!");
   MemFree(list);
 }

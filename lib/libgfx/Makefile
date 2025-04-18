@@ -10,14 +10,15 @@ SOURCES := \
 	ColorTab.c \
 	ColorTransition.c \
 	CopListActivate.c \
+	CopListFinish.c \
+	CopListReset.c \
 	CopLoadColor.c \
-	CopLoadPal.c \
+	CopLoadColorArray.c \
+	CopperStop.c \
 	CopSetupBitplaneArea.c \
 	CopSetupBitplaneFetch.c \
 	CopSetupBitplanes.c \
 	CopSetupDisplayWindow.c \
-	CopSetupDualPlayfield.c \
-	CopSetupManualSprites.c \
 	CopSetupMode.c \
 	CopSetupSprites.c \
 	CopUpdateBitplanes.c \
@@ -26,19 +27,25 @@ SOURCES := \
 	DeleteBitmap.c \
 	DeleteCopList.c \
 	DeletePixmap.c \
-	DeleteSprite.c \
+	EndSprite.c \
+	FadeBlack.c \
+	HsvToRgb.c \
 	InitSharedBitmap.c \
 	InsideArea.c \
-	LoadPalette.c \
-	NewBitmapCustom.c \
+	LoadColorArray.c \
+	MakeSprite.c \
+	NewBitmap.c \
 	NewCopList.c \
 	NewPixmap.c \
-	NewSprite.c \
-	NullSprite.c \
+	NullSprData.c \
 	PixmapScramble_4_1.c \
 	PixmapScramble_4_2.c \
+	ResetSprites.c \
+	SetupBitplaneFetch.c \
+	SetupDisplayWindow.c \
+	SetupMode.c \
 	SetupPlayfield.c \
-	UpdateSprite.c \
+	SpriteUpdatePos.c \
 	c2p_1x1_4.asm
 
 include $(TOPDIR)/build/lib.mk

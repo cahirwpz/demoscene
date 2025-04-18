@@ -1,7 +1,9 @@
 package ilbm
 
-import ".."
-import "fmt"
+import (
+	"fmt"
+	"ghostown.pl/iff"
+)
 
 type CAMG struct {
 	mode uint32

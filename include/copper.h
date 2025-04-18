@@ -35,83 +35,114 @@ typedef union {
 } CopInsT;
 
 typedef struct {
+  CopInsT lo;
+  CopInsT hi;
+} CopInsPairT;
+
+typedef struct {
   CopInsT *curr;
   u_short length;
   u_char  overflow; /* -1 if Vertical Position counter overflowed */
+  u_char  finished; /* -1 if correctly terminated */
   CopInsT entry[0]; 
 } CopListT;
 
-CopListT *NewCopList(u_short length);
+/* @brief Returns a new copper list of `length` entries ready to be used. */
+CopListT *NewCopList(int length);
+
+/* @brief Reclaim memory used by the copper list. */
 void DeleteCopList(CopListT *list);
 
-static inline void CopInit(CopListT *list) {
-  list->curr = list->entry;
-  list->overflow = 0;
-}
+/* @brief Reuse existing copper list by resetting to initial state. */
+CopListT *CopListReset(CopListT *list);
 
-static inline void CopEnd(CopListT *list) {
-  CopInsT *ins = list->curr;
-  *((u_int *)ins)++ = 0xfffffffe;
-  list->curr = ins;
-}
+/* @brief Finish off copper list by inserting special WAIT instruction. */
+CopListT *CopListFinish(CopListT *list);
 
 /* @brief Enable copper and activate copper list.
  * @warning This function busy-waits for vertical blank. */
 void CopListActivate(CopListT *list);
+
+/* @brief Stop executing current copper list immediately.
+ * @note Disables all systems that depend on being refreshed by Copper
+ *       on frame-by-frame basis (bitplanes & sprites). */
+void CopperStop(void);
 
 /* @brief Set up copper list to start after vertical blank. */
 static inline void CopListRun(CopListT *list) {
   custom->cop1lc = (u_int)list->entry;
 }
 
+/* @brief Return a pointer to the current copper instruction pointer. */
+static inline void *CopInsPtr(CopListT *list) {
+  return list->curr;
+}
+
 /* Low-level functions */
 #define CSREG(reg) offsetof(struct Custom, reg)
-#define CopMove16(cp, reg, data) CopMoveWord((cp), CSREG(reg), (data))
-#define CopMove32(cp, reg, data) CopMoveLong((cp), CSREG(reg), (int)(data))
+#define CopInsMove16(ins, reg, data) \
+  ins = _CopInsMove16(ins, CSREG(reg), (data))
+#define CopInsMove32(ins, reg, data) \
+  ins = _CopInsMove32(ins, CSREG(reg), (int)(data))
 
-static inline CopInsT *CopMoveWord(CopListT *list, short reg, short data) {
-  CopInsT *pos = list->curr;
-  CopInsT *ins = list->curr;
-  *((u_short *)ins)++ = reg;
-  *((u_short *)ins)++ = data;
-  list->curr = ins;
-  return pos;
+static inline CopInsT *_CopInsMove16(CopInsT *ins, short reg, short data) {
+  stwi(ins, reg);
+  stwi(ins, data);
+  return ins;
+}
+
+static inline CopInsPairT *_CopInsMove32(CopInsT *ins, short reg, int data) {
+  stwi(ins, reg + 2);
+  stwi(ins, data);
+  stwi(ins, reg);
+  stwi(ins, swap16(data));
+  return (CopInsPairT *)ins;
 }
 
 static inline void CopInsSet16(CopInsT *ins, short data) {
   ins->move.data = data;
 }
 
-static inline CopInsT *CopMoveLong(CopListT *list, short reg, int data) {
-  CopInsT *pos = list->curr;
-  CopInsT *ins = list->curr;
-  *((u_short *)ins)++ = reg + 2;
-  *((u_short *)ins)++ = data;
-  *((u_short *)ins)++ = reg;
-  *((u_short *)ins)++ = swap16(data);
-  list->curr = ins;
-  return pos;
-}
-
-static inline void CopInsSet32(CopInsT *ins, void *data) {
+static inline void CopInsSet32(CopInsPairT *ins, void *data) {
   asm volatile("movew %0,%2\n"
                "swap  %0\n"
                "movew %0,%1\n"
                : "+d" (data)
-               : "m" (ins[1].move.data), "m" (ins[0].move.data));
+               : "m" (ins->hi.move.data), "m" (ins->lo.move.data));
+}
+
+#define CopMove16(cp, reg, data) _CopMove16((cp), CSREG(reg), (data))
+#define CopMove32(cp, reg, data) _CopMove32((cp), CSREG(reg), (int)(data))
+
+static inline CopInsT *_CopMove16(CopListT *list, short reg, short data) {
+  CopInsT *pos = list->curr;
+  list->curr = _CopInsMove16(list->curr, reg, data);
+  return pos;
+}
+
+static inline CopInsPairT *_CopMove32(CopListT *list, short reg, int data) {
+  CopInsPairT *pos = (CopInsPairT *)list->curr;
+  list->curr = (CopInsT *)_CopInsMove32(list->curr, reg, data);
+  return pos;
 }
 
 /* Official way to represent no-op copper instruction. */
-#define CopNoOp(cp) CopMoveWord(cp, 0x1FE, 0)
+#define CopNoOp(cp) _CopMove16(cp, 0x1FE, 0)
 
 /* Wait for raster beam position to be greater or equal to (vp, hp). */
+#define CopInsWait(ins, vp, hp) \
+  ins = _CopInsWait(ins, vp, hp)
+
+static inline CopInsT *_CopInsWait(CopInsT *ins, short vp, short hp) {
+  stbi(ins, vp);
+  stbi(ins, hp | 1);
+  stwi(ins, 0xfffe);
+  return ins;
+}
+
 static inline CopInsT *CopWait(CopListT *list, short vp, short hp) {
   CopInsT *pos = list->curr;
-  CopInsT *ins = list->curr;
-  *((u_char *)ins)++ = vp;
-  *((u_char *)ins)++ = hp | 1;
-  *((u_short *)ins)++ = 0xfffe;
-  list->curr = ins;
+  CopInsWait(list->curr, vp, hp);
   return pos;
 }
 
@@ -123,11 +154,11 @@ static inline CopInsT *CopWaitSafe(CopListT *list, short vp, short hp) {
   if (vp > 255 && !list->overflow) {
     list->overflow = -1;
     /* Wait for last waitable position to control when overflow occurs. */
-    *((u_int *)ins)++ = 0xffdffffe;
+    stli(ins, 0xffdffffe);
   }
-  *((u_char *)ins)++ = vp;
-  *((u_char *)ins)++ = hp | 1;
-  *((u_short *)ins)++ = 0xfffe;
+  stbi(ins, vp);
+  stbi(ins, hp | 1);
+  stwi(ins, 0xfffe);
   list->curr = ins;
   return pos;
 }
@@ -137,10 +168,10 @@ static inline CopInsT *CopWaitMask(CopListT *list, short vp, short hp,
                                    short vpmask, short hpmask) {
   CopInsT *pos = list->curr;
   CopInsT *ins = list->curr;
-  *((u_char *)ins)++ = vp;
-  *((u_char *)ins)++ = hp | 1;
-  *((u_char *)ins)++ = 0x80 | vpmask;
-  *((u_char *)ins)++ = hpmask & 0xfe;
+  stbi(ins, vp);
+  stbi(ins, hp | 1);
+  stbi(ins, 0x80 | vpmask);
+  stbi(ins, hpmask & 0xfe);
   list->curr = ins;
   return pos;
 }
@@ -155,9 +186,9 @@ static inline CopInsT *CopWaitMask(CopListT *list, short vp, short hp,
 static inline CopInsT *CopSkip(CopListT *list, short vp, short hp) {
   CopInsT *pos = list->curr;
   CopInsT *ins = list->curr;
-  *((u_char *)ins)++ = vp;
-  *((u_char *)ins)++ = hp | 1;
-  *((u_short *)ins)++ = 0xffff;
+  stbi(ins, vp);
+  stbi(ins, hp | 1);
+  stwi(ins, 0xffff);
   list->curr = ins;
   return pos;
 }
@@ -167,10 +198,10 @@ static inline CopInsT *CopSkipMask(CopListT *list, short vp, short hp,
                                    short vpmask, short hpmask) {
   CopInsT *pos = list->curr;
   CopInsT *ins = list->curr;
-  *((u_char *)ins)++ = vp;
-  *((u_char *)ins)++ = hp | 1;
-  *((u_char *)ins)++ = 0x80 | vpmask;
-  *((u_char *)ins)++ = hpmask | 1;
+  stbi(ins, vp);
+  stbi(ins, hp | 1);
+  stbi(ins, 0x80 | vpmask);
+  stbi(ins, hpmask | 1);
   list->curr = ins;
   return pos;
 }
@@ -179,22 +210,28 @@ static inline CopInsT *CopSkipMask(CopListT *list, short vp, short hp,
 #define CopSkipV(cp, vp) CopSkipMask((cp), (vp), 0, 255, 0)
 
 /* High-level functions */
-CopInsT *CopLoadPal(CopListT *list, const PaletteT *palette, short start);
 CopInsT *CopLoadColor(CopListT *list, short start, short end, short color);
 
+/* Load `ncols` colors from array `col`. A range of color register will be set
+ * starting from `start` ending at `start + ncols - 1`. */
+CopInsT *CopLoadColorArray(CopListT *list, const u_short *colors, short count,
+                           int start);
+
+#define CopLoadColors(list, colors, start) \
+  CopLoadColorArray((list), (colors), nitems(colors), (start))
+
 void CopSetupMode(CopListT *list, u_short mode, u_short depth);
+/* Arguments must be always specified in low resolution coordinates. */
 void CopSetupDisplayWindow(CopListT *list, u_short mode, 
                            u_short xs, u_short ys, u_short w, u_short h);
 void CopSetupBitplaneFetch(CopListT *list, u_short mode,
                            u_short xs, u_short w);
-void CopSetupBitplanes(CopListT *list, CopInsT **bplptr,
-                       const BitmapT *bitmap, u_short depth);
+CopInsPairT *CopSetupBitplanes(CopListT *list, const BitmapT *bitmap,
+                               u_short depth);
 void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
                           const BitmapT *bitmap, short x, short y,
                           const Area2D *area);
-void CopUpdateBitplanes(CopInsT **bplptr, const BitmapT *bitmap, short n);
-void CopSetupDualPlayfield(CopListT *list, CopInsT **bplptr,
-                           const BitmapT *pf1, const BitmapT *pf2);
+void CopUpdateBitplanes(CopInsPairT *bplptr, const BitmapT *bitmap, short n);
 
 static inline CopInsT *CopSetColor(CopListT *list, short i, short value) {
   return CopMove16(list, color[i], value);

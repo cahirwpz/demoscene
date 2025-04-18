@@ -4,12 +4,10 @@
 #include "common.h"
 #include "custom.h"
 
-typedef struct Palette {
-  u_short count;
-  u_short colors[0];
-} PaletteT;
+void LoadColorArray(const u_short *colors, short count, int start);
 
-void LoadPalette(const PaletteT *palette, u_int start);
+#define LoadColors(colors, start) \
+  LoadColorArray((colors), nitems(colors), (start))
 
 static inline void SetColor(u_short i, u_short rgb) {
   custom->color[i] = rgb;

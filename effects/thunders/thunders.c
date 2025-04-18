@@ -1,12 +1,12 @@
-#include "effect.h"
-#include "blitter.h"
-#include "copper.h"
-#include "memory.h"
-#include "fx.h"
-#include "color.h"
-#include "pixmap.h"
-#include "sprite.h"
+#include <effect.h>
+#include <blitter.h>
+#include <color.h>
+#include <copper.h>
+#include <fx.h>
+#include <pixmap.h>
+#include <sprite.h>
 #include <stdlib.h>
+#include <system/memory.h>
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -25,11 +25,12 @@
 #define FAR_Y (HEIGHT * NEAR_Z / FAR_Z)
 #define FAR_W (WIDTH * FAR_Z / 256)
 
-static BitmapT *screen0, *screen1;
-static CopListT *cp0, *cp1;
+static BitmapT *screen[2];
+static CopListT *cp[2];
 static u_short tileColor[SIZE * SIZE];
 static short tileCycle[SIZE * SIZE];
 static short tileEnergy[SIZE * SIZE];
+static short active;
 
 #include "data/thunders.c"
 #include "data/thunders-floor.c"
@@ -83,7 +84,7 @@ static void Load(void) {
     short xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
     short yo = Y((HEIGHT - 128) / 2);
 
-    UpdateSprite(thunder[i], xo, yo);
+    SpriteUpdatePos(&thunder[i], xo, yo);
   }
 
   FloorPrecalc();
@@ -91,40 +92,35 @@ static void Load(void) {
   ITER(i, 0, SIZE * SIZE - 1, tileCycle[i] = random() & SIN_MASK);
 }
 
-static void MakeCopperList(CopListT *cp, BitmapT *screen) {
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetupSprites(cp, NULL);
-  CopEnd(cp);
+static CopListT *MakeCopperList(short i) {
+  CopListT *cp = NewCopList((HEIGHT - FAR_Y) * 16 + 200);
+  CopSetupBitplanes(cp, screen[i], DEPTH);
+  (void)CopSetupSprites(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   ITER(k, 0, 7, SetColor(k, BGCOL));
 
-  cp0 = NewCopList((HEIGHT - FAR_Y) * 16 + 200);
-  cp1 = NewCopList((HEIGHT - FAR_Y) * 16 + 200);
+  cp[0] = MakeCopperList(0);
+  cp[1] = MakeCopperList(1);
+  CopListActivate(cp[1]);
 
-  MakeCopperList(cp0, screen0);
-  MakeCopperList(cp1, screen1);
-
-  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
-
-  CopListActivate(cp1);
-  EnableDMA(DMAF_RASTER | DMAF_SPRITE);
+  EnableDMA(DMAF_RASTER | DMAF_SPRITE | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_SPRITE | DMAF_BLITTER | DMAF_BLITHOG);
 
-  DeleteCopList(cp0);
-  DeleteCopList(cp1);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
 
-  DeleteBitmap(screen0);
-  DeleteBitmap(screen1);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 static void DrawLine(void *data asm("a2"), short x1 asm("d2"), short y1 asm("d3"), short x2 asm("d4"), short y2 asm("d5")) {
@@ -227,7 +223,7 @@ static void DrawStripes(short xo, short kxo) {
       short c = mod16(kxo, 7) + 1;
 
       while (--i >= 0) {
-        void *plane = screen0->planes[i];
+        void *plane = screen[active]->planes[i];
 
         if (c & (1 << i)) {
           DrawLine(plane, left->x1, FAR_Y, left->x2, left->y2);
@@ -242,7 +238,7 @@ static void DrawStripes(short xo, short kxo) {
 }
 
 static void FillStripes(u_short plane) {
-  void *bltpt = screen0->planes[plane] + (HEIGHT * WIDTH) / 8 - 2;
+  void *bltpt = screen[active]->planes[plane] + (HEIGHT * WIDTH) / 8 - 2;
   u_short bltsize = ((HEIGHT - FAR_Y - 1) << 6) | (WIDTH >> 4);
 
   WaitBlitter();
@@ -377,12 +373,10 @@ static void ColorizeLowerHalf(CopListT *cp, short yi, short kyo) {
   }
 }
 
-static void MakeFloorCopperList(short yo, short kyo) {
-  CopListT *cp = cp0;
-
-  CopInit(cp);
+static void MakeFloorCopperList(CopListT *cp, short yo, short kyo) {
+  CopListReset(cp);
   {
-    void **planes = screen0->planes;
+    void **planes = screen[active]->planes;
     CopMove32(cp, bplpt[0], (*planes++) + WIDTH * (HEIGHT - 1) / 8);
     CopMove32(cp, bplpt[1], (*planes++) + WIDTH * (HEIGHT - 1) / 8);
     CopMove32(cp, bplpt[2], (*planes++) + WIDTH * (HEIGHT - 1) / 8);
@@ -390,26 +384,17 @@ static void MakeFloorCopperList(short yo, short kyo) {
   CopMove16(cp, bpl1mod, - (WIDTH * 2) / 8);
   CopMove16(cp, bpl2mod, - (WIDTH * 2) / 8);
 
-  CopSetupSprites(cp, NULL);
- 
   {
+    CopInsPairT *sprptr = CopSetupSprites(cp);
     short i = mod16(frameCount, 10) * 2;
-    u_short *thunder0 = thunder[i]->data;
-    u_short *thunder1 = thunder[i+1]->data;
 
-    CopMove32(cp, sprpt[0], thunder0);
-    CopMove32(cp, sprpt[1], thunder1);
-    CopMove32(cp, sprpt[2], NullSprite);
-    CopMove32(cp, sprpt[3], NullSprite);
-    CopMove32(cp, sprpt[4], NullSprite);
-    CopMove32(cp, sprpt[5], NullSprite);
-    CopMove32(cp, sprpt[6], NullSprite);
-    CopMove32(cp, sprpt[7], NullSprite);
+    CopInsSetSprite(&sprptr[0], &thunder[i]);
+    CopInsSetSprite(&sprptr[1], &thunder[i+1]);
   }
 
   /* Clear out the colors. */
   CopSetColor(cp, 0, BGCOL);
-  CopLoadPal(cp, &thunder_pal, 16);
+  CopLoadColors(cp, thunder_colors, 16);
 
   FillStripes(1);
   ColorizeUpperHalf(cp, yo, kyo);
@@ -421,7 +406,7 @@ static void MakeFloorCopperList(short yo, short kyo) {
   FillStripes(2);
   ColorizeLowerHalf(cp, yo, kyo);
 
-  CopEnd(cp);
+  CopListFinish(cp);
 }
 
 PROFILE(Thunders);
@@ -429,7 +414,7 @@ PROFILE(Thunders);
 static void Render(void) {
   ProfilerStart(Thunders);
 
-  BitmapClearArea(screen0, &((Area2D){0, FAR_Y, WIDTH, HEIGHT - FAR_Y}));
+  BitmapClearArea(screen[active], &((Area2D){0, FAR_Y, WIDTH, HEIGHT - FAR_Y}));
 
   {
     short xo = (N / 4) + normfx(SIN(frameCount * 16) * N * 15 / 64);
@@ -445,15 +430,14 @@ static void Render(void) {
     DrawStripes(xo, kxo);
     FillStripes(0);
     ControlTileColors();
-    MakeFloorCopperList(yo & (TILESIZE - 1), kyo);
+    MakeFloorCopperList(cp[active], yo & (TILESIZE - 1), kyo);
   }
 
   ProfilerStop(Thunders);
 
-  CopListRun(cp0);
+  CopListRun(cp[active]);
   TaskWaitVBlank();
-  { CopListT *tmp = cp0; cp0 = cp1; cp1 = tmp; }
-  { BitmapT *tmp = screen0; screen0 = screen1; screen1 = tmp; }
+  active ^= 1;
 }
 
-EFFECT(thunders, Load, NULL, Init, Kill, Render);
+EFFECT(Thunders, Load, NULL, Init, Kill, Render, NULL);
