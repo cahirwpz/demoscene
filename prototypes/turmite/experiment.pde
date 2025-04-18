@@ -80,6 +80,7 @@ class RandomPlay implements Experiment {
     }
     if (key == 'd') {
       t.dump();
+      t.dumpJSON("dumps.json");
     }
   }
 
@@ -118,8 +119,7 @@ class AdditivePlay implements Experiment {
   String status() {
     return String.format(
       "Additive Turmite Experiment\n" +
-      "next [e]xperiment, next [t]ile, [r]eset\n" +
-      "");
+      "next [e]xperiment, next [t]ile, [r]eset\n");
   }
 }
 
@@ -149,5 +149,105 @@ class GenerationPlay implements Experiment {
       "Generation Count Turmite Experiment\n" +
       "next [e]xperiment, next [t]ile, [r]eset\n" +
       "");
+  }
+}
+
+class FromJSONPlay implements Experiment {
+  int index;
+  String filename;
+  color[] pal = { #000000, #002664, #146CFD, #8CE0FF, #FAAF05, #F3631B };
+  int[][][][] rules;
+
+  FromJSONPlay(String fname) {
+    filename = fname;
+  }
+
+  void setup() {
+    rules = rulesFromJSON(filename);
+    board.tileClass = BasicTile.class;
+    board.fadeaway = false;
+    board.showhead = true;
+    board.nsteps = 64;
+    resetExperiment();
+  }
+
+  int[][][][] rulesFromJSON(String filename) {
+    JSONArray dump = loadJSONArray(filename);
+    int[][][][] rules = new int[dump.size()][][][];
+
+    for (int i = 0; i < dump.size(); i++) {
+      JSONArray turmite = dump.getJSONArray(i);
+      rules[i] = new int[turmite.size()][][];
+
+      for (int j = 0; j < turmite.size(); j++) {
+        JSONArray outer = turmite.getJSONArray(j);
+        rules[i][j] = new int[outer.size()][3];
+
+        for (int k = 0; k < outer.size(); k++) {
+          JSONArray inner = outer.getJSONArray(k);
+          rules[i][j][k][0] = inner.getInt(0);
+          rules[i][j][k][1] = inner.getInt(1);
+          rules[i][j][k][2] = inner.getInt(2);
+        }
+      }
+    }
+    return rules;
+  }
+
+  void resetExperiment() {
+    turmites.clear();
+    board.reset();
+    Turmite t;
+
+    if (rules.length > 0) {
+      t = new Turmite(rules[index], pal);
+    } else {
+      int[][][] placeholderRules = {{{0, 0, 0}}};
+      t = new Turmite(placeholderRules, pal);
+    }
+    t.position(board.w / 2, board.h / 2);
+    t.reset();
+    turmites.add(t);
+  }
+
+  void keyPressed() {
+    if (key == 'n') {
+      index = (index + 1) % rules.length;
+      resetExperiment();
+    } else if (key == 'p') {
+      index = (index - 1 + rules.length) % rules.length;
+      resetExperiment();
+    } else if (key == 'o') {
+      paused = true;
+      selectInput("Select a file to process:", "fileSelected");
+    }
+  }
+
+  void mousePressed(int x, int y) {
+    if (image == null) return;
+
+    Turmite t = turmites.get(0);
+    for (int ix = 0; ix < image.width; ix++) {
+      for (int iy = 0; iy < image.height; iy++) {
+        int pos = (y + iy - image.height / 2) * board.w + (x + ix - image.width / 2);
+        int val = image.pixels[iy * image.width + ix];
+
+        if (pos < 0 || pos >= board.tiles.length) continue;
+        if ((val & 0xffffff) == 0) continue;
+
+        board.tiles[pos].ci = 1;
+        board.tiles[pos].life = 127;
+        board.tiles[pos].owner = t;
+      }
+    }
+  }
+
+  String status() {
+    return String.format(
+      "Turmites from %s\n" +
+      "next [e]xperiment, next [t]ile, [r]eset\n" +
+      "[n]ext turmite, [p]rev turmite, [o]pen image\n" +
+      "p[a]use, LMB place image, index: %d", 
+      filename, index);
   }
 }

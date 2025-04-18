@@ -1,4 +1,6 @@
+#include <config.h>
 #include <debug.h>
+#include <system/cpu.h>
 #include <system/exception.h>
 #include <system/interrupt.h>
 #include <system/task.h>
@@ -18,11 +20,29 @@ IntVecT IntVec;
 extern void DummyInterruptHandler(void *);
 
 /* Set up ISR for given interrupt number. */
-void SetIntVector(u_int irq asm("d0"), IntHandlerT code asm("a0"),
-                  void *data asm("a1")) {
+void SetIntVector(u_int irq, IntHandlerT code, void *data) {
   IntVecEntryT *iv = &IntVec[irq];
+  if (custom->intenar & (1 << irq))
+    Panic("[Intr] Swapping handler when interrupt %d is enabled!", irq);
   iv->code = code ? code : DummyInterruptHandler;
   iv->data = data;
+}
+
+#ifdef MULTITASK
+#define IntrNest CurrentTask->intrNest
+#else
+static __code short IntrNest = 0;
+#endif
+
+void IntrEnable(void) {
+  Assume(IntrNest > 0);
+  if (--IntrNest == 0)
+    CpuIntrEnable();
+}
+
+void IntrDisable(void) {
+  CpuIntrDisable();
+  IntrNest++;
 }
 
 /* List of interrupt servers. */
@@ -47,11 +67,10 @@ static IntChainT *GetIntChain(u_int irq) {
     return PortsChain;
   if (irq == INTB_EXTER)
     return ExterChain;
-  PANIC();
-  return NULL;
+  Panic("[Intr] No interrupt chain %d!", irq);
 }
 
-void AddIntServer(u_int irq asm("d0"), IntServerT *is asm("a0")) {
+void AddIntServer(u_int irq, IntServerT *is) {
   IntChainT *ic = GetIntChain(irq);
   IntServerT **is_p;
   IntrDisable();
@@ -68,7 +87,7 @@ void AddIntServer(u_int irq asm("d0"), IntServerT *is asm("a0")) {
   IntrEnable();
 }
 
-void RemIntServer(u_int irq asm("d0"), IntServerT *is asm("a0")) {
+void RemIntServer(u_int irq, IntServerT *is) {
   IntChainT *ic = GetIntChain(irq);
   IntServerT **is_p;
   IntrDisable();
@@ -90,6 +109,7 @@ void RemIntServer(u_int irq asm("d0"), IntServerT *is asm("a0")) {
 static void RunIntChain(IntChainT *ic) {
   /* Call each server in turn. */
   IntServerT *is = ic->head;
+  ClearIRQ(ic->flag);
   do {
     is->code(is->data);
     is = is->next;

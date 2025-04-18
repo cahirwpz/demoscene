@@ -104,7 +104,7 @@ static void MouseIntHandler(void *data) {
 
 INTSERVER(MouseServer, -5, (IntFuncT)MouseIntHandler, (void *)&MouseData);
 
-void MouseInit(Box2D *win asm("a0")) {
+void MouseInit(Box2D *win) {
   Log("[Mouse] Initialize driver!\n");
 
   /* Settings from MouseData structure. */

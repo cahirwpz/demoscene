@@ -85,9 +85,8 @@ def parse_coord_pair_seq(path):
     return path, seq
 
 
-def parse_path(path, polys):
+def parse_path(path, color_index, polys):
     verts = []
-
     while len(path):
         cmd, path = path[0], path[1:]
         if cmd in "MmLl":
@@ -104,13 +103,28 @@ def parse_path(path, polys):
             seq_to_coords(seq, cmd, verts)
         elif cmd in "Zz":
             # closepath::= ("Z"|"z")
-            polys.append(verts)
+            polys.append([color_index, verts])
             verts = []
         else:
             raise ValueError(f"Unknown drawto command '{cmd}'!")
 
 
-def read_anim(path):
+def torgb(c: str) -> tuple[int, int, int]:
+    r = int(c[1:3], 16)
+    g = int(c[3:5], 16)
+    b = int(c[5:7], 16)
+    return (r, g, b)
+
+
+def rgb12(color: str) -> str:
+    r, g, b = torgb(color)
+    r = (r + 7) >> 4
+    g = (g + 7) >> 4
+    b = (b + 7) >> 4
+    return f"{r:x}{g:x}{b:x}"
+
+
+def read_anim(path, background):
     ET.register_namespace('', XMLNS["svg"])
     tree = ET.parse(path)
     svg_element = tree.getroot()
@@ -125,42 +139,71 @@ def read_anim(path):
 
     frames = []
     for frame in anim:
+        colors = []
+        if background is not None:
+            colors.append(background)
+        for element in frame[0]:
+            color = element.attrib.get('fill', '#000000')
+            if color not in colors:
+                colors.append(color)
+
         polys = []
         for element in frame[0]:
-            parse_path(element.attrib["d"], polys)
-        frames.append(polys)
+            color = element.attrib.get('fill', '#000000')
+            if color == background:
+                continue
+            color_index = colors.index(color)
+            path = element.attrib["d"]
+            parse_path(path, color_index, polys)
+
+        frames.append([[rgb12(color) for color in colors], polys])
+
     return frames, int(width), int(height)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-            description="Converts .svg into .c animation file for "
-                        "anim-polygons effect.")
+        description="Converts .svg into .c animation file for "
+                    "anim-polygons effect.")
     parser.add_argument(
-            "animation",
-            help="Path to .svg file generated using pipeline described "
-                 "in prototypes/anim_polygons_data/ directory.",
-            type=str)
+        "-c", "--has-colors", action="store_true",
+        help="Enable color SVG handling.")
+    parser.add_argument(
+        "-b", "--background", type=str,
+        help="Remove all polygons with this color and set it as background "
+             "(format #RRGGBB)")
+    parser.add_argument(
+        "animation",
+        help="Path to .svg file generated using pipeline described "
+             "in prototypes/anim_polygons_data/ directory.",
+        type=str)
     args = parser.parse_args()
-    frames, width, height = read_anim(args.animation)
+    frames, width, height = read_anim(args.animation, args.background)
     name, _ = os.path.splitext(os.path.basename(args.animation))
 
     wrapper = TextWrapper(initial_indent=' ' * 2,
                           subsequent_indent=' ' * 4,
                           width=80)
 
-    for fn, polys in enumerate(frames):
+    for num, (colors, polys) in enumerate(frames):
         count = sum(len(poly) for poly in polys) + 1
 
-        print('static short %s_frame%d[] = {' % (name, fn))
+        print('static short %s_frame%d[] = {' % (name, num))
 
-        for poly in polys:
-            verts = [len(poly)]
+        if args.has_colors:
+            colors = [f'0x{c[1:]:03}' for c in colors]
+            print('  0x%04x, %s,' % (len(colors), ', '.join(colors)))
+
+        for color, poly in polys:
+            if not args.has_colors:
+                color = 0
+            code = (color << 8) | len(poly)
+            verts = [f'0x{code:04x}']
             for x, y in poly:
                 x = min(max(0, x), width - 1)
                 y = min(max(0, y), height - 1)
-                verts.append(y * width + x)
-            for line in wrapper.wrap(', '.join(map(str, verts)) + ','):
+                verts.append(str(y * width + x))
+            for line in wrapper.wrap(', '.join(verts) + ','):
                 print(line)
 
         print('  0,')
@@ -170,6 +213,6 @@ if __name__ == '__main__':
     print('#define %s_frames %d' % (name, len(frames)))
     print('')
     print('static short *%s_frame[] = {' % name)
-    for fn, _ in enumerate(frames):
-        print('  %s_frame%d,' % (name, fn))
+    for num, _ in enumerate(frames):
+        print('  %s_frame%d,' % (name, num))
     print('};')

@@ -385,6 +385,8 @@
     else                                                                       \
       (head)->tqh_last = (elm)->field.tqe_prev;                                \
     *(elm)->field.tqe_prev = (elm)->field.tqe_next;                            \
+    (elm)->field.tqe_prev = NULL;                                              \
+    (elm)->field.tqe_next = NULL;                                              \
   } while (0)
 
 #define TAILQ_REPLACE(head, elm, elm2, field)                                  \

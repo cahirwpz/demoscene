@@ -1,22 +1,20 @@
 TOPDIR := $(realpath ..)
 
-# AMIGAOS => save & restore AmigaOS context
-#            (for intros or trackmos that can be launched from AmigaOS)
-# TRACKMO => initialize file system and floppy device driver
-CPPFLAGS += -DTRACKMO -D_SYSTEM
+CPPFLAGS += -D_SYSTEM
 
 LIBNAME := system
 SOURCES := \
 	amigaos.c \
 	autoinit.c \
 	debug.c \
-	debug-putchar.S \
+	dputchar.S \
+	kickfix.S \
+	kputchar.S \
 	effect.c \
-	jumptab.S \
 	loader.c \
-	main.c \
 	profiler.c \
-	syscall.S \
+	trackmo.c \
+	vblank.c \
 	drivers/cia-frame.c \
 	drivers/cia-icr.c \
 	drivers/cia-line.c \
@@ -45,8 +43,3 @@ CFLAGS.amigaos = -Wno-strict-prototypes
 BUILD-FILES = crt0.o
 		
 include $(TOPDIR)/build/lib.mk
-
-syscall.S jumptab.S: system-api.py system-api.in 
-	python3 system-api.py system-api.in syscall.S jumptab.S
-
-CLEAN-FILES += jumptab.S jumptab.o syscall.S syscall.o

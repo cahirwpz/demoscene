@@ -19,15 +19,14 @@ typedef struct CIATimer CIATimerT;
 typedef void (*CIATimeoutT)(CIATimerT *timer);
 
 /* Procedures for handling one-shot delays with high resolution timers. */
-SYSCALL1(AcquireTimer, CIATimerT *, u_int, num, d0);
-SYSCALL1NR(ReleaseTimer, CIATimerT *, timer, a0);
+CIATimerT *AcquireTimer(u_int num);
+void ReleaseTimer(CIATimerT *timer);
 
-SYSCALL4NR(SetupTimer, CIATimerT *, timer, a0, CIATimeoutT, timeout, a1,
-           u_short, delay, d0, u_short, flags, d1);
+void SetupTimer(CIATimerT *timer, CIATimeoutT timeout,
+                u_short delay, u_short flags);
 
 /* Consider using wrapper macros below instead of this procedure. */
-SYSCALL3NR(WaitTimerGeneric, CIATimerT *, timer, a0,
-           u_short, ticks, d0, bool, spin, d1);
+void WaitTimerGeneric(CIATimerT *timer, u_short ticks, bool spin);
 
 /* Busy wait while waiting for timer to underflow.
  * Should wait no more than couple handred microseconds.

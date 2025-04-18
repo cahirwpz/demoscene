@@ -2,16 +2,10 @@ package hunk
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 	"os"
 )
-
-func readWord(r io.Reader) (x uint16) {
-	if binary.Read(r, binary.BigEndian, &x) != nil {
-		panic("no data")
-	}
-	return
-}
 
 func readLong(r io.Reader) (x uint32) {
 	if binary.Read(r, binary.BigEndian, &x) != nil {
@@ -61,7 +55,7 @@ func readString(r io.Reader) string {
 }
 
 func readArrayOfString(r io.Reader) []string {
-	x := make([]string, 1)
+	var x []string
 	for {
 		s := readString(r)
 		if s == "" {
@@ -74,11 +68,12 @@ func readArrayOfString(r io.Reader) []string {
 
 func ReadFile(path string) (hunks []Hunk, err error) {
 	file, err := os.Open(path)
-	defer file.Close()
 
 	if err != nil {
-		return
+		return nil, err
 	}
+
+	defer file.Close()
 
 	var hunkId HunkType
 	var name string
@@ -99,12 +94,10 @@ func ReadFile(path string) (hunks []Hunk, err error) {
 			hunk = readHunkUnit(file)
 		case HUNK_NAME:
 			hunk = readHunkName(file)
-			hs := hunk.(HunkStr)
+			hs := hunk.(*HunkStr)
 			name = hs.Name
-		case HUNK_CODE:
-			hunk = readHunkCode(file)
-		case HUNK_DATA:
-			hunk = readHunkData(file)
+		case HUNK_CODE, HUNK_DATA:
+			hunk = readHunkBin(file, hunkId)
 		case HUNK_BSS:
 			hunk = readHunkBss(file)
 		case HUNK_RELOC32:
@@ -116,9 +109,10 @@ func ReadFile(path string) (hunks []Hunk, err error) {
 		case HUNK_EXT:
 			hunk = readHunkExt(file)
 		case HUNK_END:
-			hunk = HunkEnd{}
+			hunk = &HunkEnd{}
 		default:
-			panic(HunkNameMap[hunkId])
+			ret, _ := file.Seek(0, io.SeekCurrent)
+			panic(fmt.Sprintf("Hunk 0x%x at 0x%x not supported", uint32(hunkId), ret))
 		}
 		hunks = append(hunks, hunk)
 	}

@@ -13,19 +13,18 @@ int NoSeek(FileT *f __unused, int offset __unused, int whence __unused) {
   return ENOTSUP;
 }
 
-int FileRead(FileT *f asm("a0"), void *buf asm("a1"), u_int nbyte asm("d0")) {
+int FileRead(FileT *f, void *buf, u_int nbyte) {
   return f->ops->read(f, buf, nbyte);
 }
 
-int FileWrite(FileT *f asm("a0"), const void *buf asm("a1"),
-              u_int nbyte asm("d0")) {
+int FileWrite(FileT *f, const void *buf, u_int nbyte) {
   return f->ops->write(f, buf, nbyte);
 }
 
-int FileSeek(FileT *f asm("a0"), int offset asm("d0"), int whence asm("d1")) {
+int FileSeek(FileT *f, int offset, int whence) {
   return f->ops->seek(f, offset, whence);
 }
 
-void FileClose(FileT *f asm("a0")) {
+void FileClose(FileT *f) {
   f->ops->close(f);
 }

@@ -38,9 +38,7 @@ typedef union Event {
 void PushEventISR(EventT *event);
 #endif
 
-#include <system/syscall.h>
-
-SYSCALL1NR(PushEvent, EventT *, event, a0);
-SYSCALL1(PopEvent, bool, EventT *,event, a0);
+void PushEvent(EventT *event);
+bool PopEvent(EventT *event);
 
 #endif /* !__SYSTEM_EVENT_H__ */

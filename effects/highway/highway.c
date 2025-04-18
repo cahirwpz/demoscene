@@ -31,9 +31,8 @@ typedef struct {
 static Car cars[CARS];
 
 static CopListT *cp;
-static u_short active = 0;
-static CopInsT *sprptr[8];
-static CopInsT *bplptr[2][DEPTH];
+static short active = 0;
+static CopInsPairT *bplptr[2];
 static BitmapT *carry;
 
 #include "data/car-left-2.c"
@@ -45,21 +44,22 @@ static BitmapT *carry;
 
 static BitmapT *lanes[2];
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
-  CopSetupSprites(cp, sprptr);
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(300);
+  CopInsPairT *sprptr = CopSetupSprites(cp);
+  short i;
 
-  CopSetupBitplanes(cp, NULL, &city_top, DEPTH);
+  CopSetupBitplanes(cp, &city_top, DEPTH);
   CopWait(cp, Y(-18), 0);
-  CopLoadPal(cp, &city_top_pal, 0);
+  CopLoadColors(cp, city_top_colors, 0);
 
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
 
   {
     CopWait(cp, Y(LANEL_Y - 2), 8);
     CopMove16(cp, dmacon, DMAF_RASTER);
-    CopLoadPal(cp, &car_left_pal, 0);
-    CopSetupBitplanes(cp, bplptr[0], lanes[active], DEPTH);
+    CopLoadColors(cp, car_left_colors, 0);
+    bplptr[0] = CopSetupBitplanes(cp, lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
 
@@ -84,8 +84,8 @@ static void MakeCopperList(CopListT *cp) {
 
   {
     CopWait(cp, Y(LANER_Y - 1), 8);
-    CopLoadPal(cp, &car_right_pal, 0);
-    CopSetupBitplanes(cp, bplptr[1], lanes[active], DEPTH);
+    CopLoadColors(cp, car_right_colors, 0);
+    bplptr[1] = CopSetupBitplanes(cp, lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
 
@@ -97,36 +97,35 @@ static void MakeCopperList(CopListT *cp) {
 
   {
     CopWait(cp, Y(LANER_Y + LANE_H + 1), 8);
-    CopLoadPal(cp, &city_bottom_pal, 0);
-    CopSetupBitplanes(cp, NULL, &city_bottom, DEPTH);
+    CopLoadColors(cp, city_bottom_colors, 0);
+    CopSetupBitplanes(cp, &city_bottom, DEPTH);
     CopWait(cp, Y(LANER_Y + LANE_H + 2), 8);
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   }
 
-  CopEnd(cp);
+  for (i = 0; i < 8; i++) {
+    CopInsSetSprite(&sprptr[i], &sprite[i]);
+    SpriteUpdatePos(&sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4));
+  }
 
-  ITER(i, 0, 7, CopInsSetSprite(sprptr[i], sprite[i]));
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, DEPTH);
-  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, DEPTH);
-  carry = NewBitmap(HSIZE + 16, VSIZE, 2);
+  lanes[0] = NewBitmap(LANE_W, LANE_H * 2, DEPTH, BM_CLEAR);
+  lanes[1] = NewBitmap(LANE_W, LANE_H * 2, DEPTH, BM_CLEAR);
+  carry = NewBitmap(HSIZE + 16, VSIZE, 2, 0);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
-  LoadPalette(&sprite_pal, 16);
-  LoadPalette(&sprite_pal, 20);
-  LoadPalette(&sprite_pal, 24);
-  LoadPalette(&sprite_pal, 28);
+  LoadColors(sprite_colors, 16);
+  LoadColors(sprite_colors, 20);
+  LoadColors(sprite_colors, 24);
+  LoadColors(sprite_colors, 28);
 
-  cp = NewCopList(300);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
-
-  ITER(i, 0, 7,
-       SpriteUpdatePos(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4)));
 }
 
 static void Kill(void) {
@@ -207,8 +206,8 @@ static void Render(void) {
     for (i = 0; i < DEPTH; i++) {
       void *bplpt = lanes[active]->planes[i] + 4;
       u_short stride = lanes[active]->bytesPerRow;
-      CopInsSet32(bplptr[0][i], bplpt);
-      CopInsSet32(bplptr[1][i], bplpt + stride * LANE_H);
+      CopInsSet32(&bplptr[0][i], bplpt);
+      CopInsSet32(&bplptr[1][i], bplpt + stride * LANE_H);
     }
   }
 
@@ -216,4 +215,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(highway, NULL, NULL, Init, Kill, Render);
+EFFECT(HighWay, NULL, NULL, Init, Kill, Render, NULL);

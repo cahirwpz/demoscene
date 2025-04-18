@@ -3,8 +3,18 @@ static Board board;
 static int active = 0;
 static int experiment = 0;
 
+boolean paused = false;
+PImage image;
+
+Random random = new Random();
+
 Experiment[] experiments = {
-  new DualPlay(), new RandomPlay(), new AdditivePlay(), new GenerationPlay()
+  new FromJSONPlay("wolfram.json"), // extracted from https://demonstrations.wolfram.com/Turmites/ 
+  new AdditivePlay(),
+  new GenerationPlay(),
+  new DualPlay(),
+  new RandomPlay(),
+  new FromJSONPlay("dumps.json"),
 };
 
 void setup() {
@@ -31,6 +41,7 @@ void status() {
 
 void draw() {
   board.simulate();
+
   status();
 }
 
@@ -42,11 +53,13 @@ void reset() {
 
 
 void keyPressed() {
-  if (key == 'e') {
+  if (key == 'r') {
     board.reset();
   } else if (key == 't') {
     board.nextTileClass();
-  } else if (key == 'n') {
+  } else if (key == 'a') {
+    paused = !paused;
+  } else if (key == 'e') {
     experiment++;
     if (experiment >= experiments.length) {
       experiment = 0;
@@ -60,5 +73,12 @@ void keyPressed() {
 void mousePressed() {
   if (mouseX < 512 && mouseY < 512) {
     experiments[experiment].mousePressed(mouseX / 4, mouseY / 4);
+  }
+}
+
+void fileSelected(File selection) {
+  if (selection != null) {
+    image = loadImage(selection.getPath());
+    paused = false;
   }
 }

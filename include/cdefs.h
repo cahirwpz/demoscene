@@ -14,9 +14,31 @@
 #define __noreturn __attribute__((noreturn))
 #undef __aligned
 #define __aligned(x) __attribute__((aligned(x)))
+#if __GNUC_PREREQ__(6, 5)
+#define __section(x) __attribute__((section(x)))
+#else
+#define __section(x) __attribute__((section(".section " ## x)))
+#endif
 
-#define __data_chip __attribute__((section(".datachip")))
-#define __bss_chip __attribute__((section(".bsschip")))
+#if __GNUC_PREREQ__(6, 5)
+#define __FLEX_ARRAY
+#else
+#define __FLEX_ARRAY 0
+#endif
+
+/* Annotate variable to be put into text section. This should be used only on
+ * scalar variable if you want it to be accessed with PC-relative addressing.
+ * This saves 4 cycles / 2 bytes of instruction memory / 1 relocation. */
+#define __code __section(".text")
+/* Annotate initialized variable to be put into memory section. */
+#define __data __section(".data")
+#define __rodata __section(".rodata")
+/* Annotate initialized variable to be put into memory accessible
+ * by custom chipset. */
+#define __data_chip __section(".datachip")
+/* Annotate uninitialized variable to be put into memory accessible
+ * by custom chipset. */
+#define __bss_chip __section(".bsschip")
 
 #if __GNUC_PREREQ__(4, 1)
 #define __returns_twice __attribute__((returns_twice))
@@ -40,7 +62,7 @@
 
 #define __DECONST(type, var) ((type)(unsigned long)(const void *)(var))
 
-#define offsetof(st, m) ((u_int)((char *)&((st *)0)->m - (char *)0))
+#define offsetof(st, m) ((int)((char *)&((st *)0)->m - (char *)0))
 
 #define alloca __builtin_alloca
 

@@ -45,7 +45,7 @@ static void InitWaveScope(void) {
 
   for (i = 0; i < 4; i++) {
     memset(&wavescope.channel[i], 0, sizeof(WaveScopeChanT));
-    wavescope.channel[i].bm = NewBitmap(64, 64, 1);
+    wavescope.channel[i].bm = NewBitmap(64, 64, 1, 0);
   }
 
   for (i = 0; i < 64; i++) {
@@ -62,7 +62,7 @@ static void InitWaveScope(void) {
     }
   }
 
-  bm = NewBitmap(64, 32, 1);
+  bm = NewBitmap(64, 32, 1, BM_CLEAR);
   BlitterLineSetup(bm, 0, LINE_EOR|LINE_ONEDOT);
   BlitterLine(32, 0, 1, 31);
   BlitterLine(32, 0, 63, 31);
@@ -166,16 +166,15 @@ static void DrawFrames(void) {
 }
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);
   SetColor(1, 0xfff);
 
   cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopEnd(cp);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
 
   ConsoleInit(&console, &latin2, screen);
@@ -282,4 +281,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(playahx, NULL, NULL, Init, Kill, Render);
+EFFECT(PlayAHX, NULL, NULL, Init, Kill, Render, NULL);

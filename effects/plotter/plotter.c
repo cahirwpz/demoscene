@@ -17,7 +17,7 @@
 #define MAX_H 96
 
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static BitmapT *screen[2];
 static u_short active = 0;
 
@@ -29,30 +29,30 @@ static BitmapT *flare[8];
 static void Init(void) {
   short i;
 
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   EnableDMA(DMAF_BLITTER);
 
   for (i = 0; i < 8; i++) {
     Area2D flare_area = { 0, i * SIZE, SIZE, SIZE };
-    flare[i] = NewBitmap(SIZE, SIZE, DEPTH);
+    flare[i] = NewBitmap(SIZE, SIZE, DEPTH, 0);
+    BitmapClear(flare[i]);
     BitmapCopyArea(flare[i], 0, 0, &flares, &flare_area);
   }
 
-  carry = NewBitmap(SIZE + 16, SIZE, 2);
-  cp = NewCopList(50);
+  carry = NewBitmap(SIZE + 16, SIZE, 2, 0);
 
   for (i = 0; i < 2; i++)
     BitmapClear(screen[i]);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&flares_pal, 0);
+  LoadColors(flares_colors, 0);
 
-  CopInit(cp);
+  cp = NewCopList(50);
   CopWait(cp, Y(-1), 0);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
-  CopEnd(cp);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }
@@ -93,9 +93,9 @@ static void Render(void) {
                   &((Area2D){0, 0, MAX_W * 2 + SIZE, MAX_H * 2 + SIZE}));
   DrawPlotter();
 
-  ITER(i, 0, DEPTH - 1, CopInsSet32(bplptr[i], screen[active]->planes[i]));
+  ITER(i, 0, DEPTH - 1, CopInsSet32(&bplptr[i], screen[active]->planes[i]));
   TaskWaitVBlank();
   active ^= 1;
 }
 
-EFFECT(plotter, NULL, NULL, Init, Kill, Render);
+EFFECT(Plotter, NULL, NULL, Init, Kill, Render, NULL);

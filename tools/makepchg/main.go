@@ -1,9 +1,9 @@
 package main
 
 import (
-	"../misc"
 	"flag"
 	"fmt"
+	"ghostown.pl/misc"
 	"image"
 	"image/color"
 	"image/draw"

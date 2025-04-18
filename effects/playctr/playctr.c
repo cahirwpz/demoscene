@@ -4,7 +4,6 @@
 #include <console.h>
 #include <copper.h>
 #include <system/event.h>
-#include <system/interrupt.h>
 #include <system/keyboard.h>
 #include <system/memory.h>
 
@@ -49,29 +48,26 @@ static void UnLoad(void) {
   MemFree(module);
 }
 
-static int CinterMusic(void) {
+static void CinterMusic(void) {
   if (stopped)
-    return 0;
+    return;
   CinterPlay1(player);
   CinterPlay2(player);
-  return 0;
+  return;
 }
-
-INTSERVER(CinterMusicServer, 10, (IntFuncT)CinterMusic, NULL);
 
 static void Init(void) {
   KeyboardInit();
 
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);
   SetColor(1, 0xfff);
 
   cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopEnd(cp);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
 
   ConsoleInit(&console, &latin2, screen);
 
@@ -83,8 +79,6 @@ static void Init(void) {
   CinterInit(module, instruments, player);
   musicStart = player->c_MusicPointer;
 
-  AddIntServer(INTB_VERTB, CinterMusicServer);
-
   ConsoleSetCursor(&console, 0, 0);
   ConsolePutStr(&console, 
                 "Pause (SPACE) -10s (LEFT) +10s (RIGHT)\n"
@@ -94,8 +88,6 @@ static void Init(void) {
 }
 
 static void Kill(void) {
-  RemIntServer(INTB_VERTB, CinterMusicServer);
-
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_AUDIO);
 
   DeleteCopList(cp);
@@ -173,4 +165,4 @@ static bool HandleEvent(void) {
   return true;
 }
 
-EFFECT(playctr, Load, UnLoad, Init, Kill, Render);
+EFFECT(PlayCinter, Load, UnLoad, Init, Kill, Render, CinterMusic);

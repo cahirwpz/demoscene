@@ -1,0 +1,12 @@
+--target=m68k-linux-gnu
+-Wall
+-nostdinc++
+-ffreestanding
+-fno-common
+-I./include
+-Dasm(args...)=
+-D__chip=
+-D__data_chip=
+-D__data_bss=
+-D__data=
+-D__code=

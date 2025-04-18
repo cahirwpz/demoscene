@@ -10,8 +10,11 @@ SOURCES := \
 	ColorTab.c \
 	ColorTransition.c \
 	CopListActivate.c \
+	CopListFinish.c \
+	CopListReset.c \
 	CopLoadColor.c \
-	CopLoadPal.c \
+	CopLoadColorArray.c \
+	CopperStop.c \
 	CopSetupBitplaneArea.c \
 	CopSetupBitplaneFetch.c \
 	CopSetupBitplanes.c \
@@ -25,16 +28,19 @@ SOURCES := \
 	DeleteCopList.c \
 	DeletePixmap.c \
 	EndSprite.c \
+	FadeBlack.c \
+	HsvToRgb.c \
 	InitSharedBitmap.c \
 	InsideArea.c \
-	LoadPalette.c \
+	LoadColorArray.c \
 	MakeSprite.c \
-	NewBitmapCustom.c \
+	NewBitmap.c \
 	NewCopList.c \
 	NewPixmap.c \
 	NullSprData.c \
 	PixmapScramble_4_1.c \
 	PixmapScramble_4_2.c \
+	ResetSprites.c \
 	SetupBitplaneFetch.c \
 	SetupDisplayWindow.c \
 	SetupMode.c \

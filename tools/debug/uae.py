@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import asyncio
+import logging
 import signal
+import traceback
 
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import PromptSession
@@ -52,6 +54,9 @@ def ParseProcessorState(lines):
     regs = Registers()
     lines = [line.strip() for line in lines]
 
+    if lines[0].startswith('Cycles'):
+        lines.pop(0)
+
     # Read general purpose and supervisor registers,
     # until you hit Status Register info.
     # 'D0 000424B9   D1 00000000   D2 00000000   D3 00000000'
@@ -90,7 +95,7 @@ def ParseProcessorState(lines):
     regs['PC'] = int(lines.pop(0).split()[0], 16)
 
     # 'Next PC: 00fc0614'
-    assert lines.pop(0).startswith('Next PC')
+    assert lines[-1].startswith('Next PC')
 
     return regs
 
@@ -199,12 +204,12 @@ class UaeCommandsMixin():
     async def insert_breakpoint(self, addr):
         # {f <address>} Add/remove breakpoint.
         lines = await self.communicate('f %X' % addr)
-        assert lines and lines[0] == 'Breakpoint added'
+        assert lines and lines[0] == 'Breakpoint added.'
 
     async def remove_breakpoint(self, addr):
         # {f <address>} Add/remove breakpoint.
         lines = await self.communicate('f %X' % addr)
-        assert lines and lines[0] == 'Breakpoint removed'
+        assert lines and lines[0] == 'Breakpoint removed.'
 
     async def insert_watchpoint(self, addr, size, kind='I'):
         # w <num> <address> <length> <R/W/I/F/C> [<value>[.x]]
@@ -257,7 +262,8 @@ class UaeCommandsMixin():
         # Exception 27, PC=00C15AC6
         while lines[0].startswith('Exception'):
             line = lines.pop(0)
-            data['exception'] = int(line[10:].split(',')[0])
+            if not line.endswith('breakpoint'):
+                data['exception'] = int(line[10:].split(',')[0])
         # just processor state
         data['regs'] = ParseProcessorState(lines)
         return data
@@ -268,6 +274,10 @@ class UaeCommandsMixin():
 
 
 async def UaeDebugger(uaedbg):
+    # Call FS-UAE debugger on CTRL+C
+    loop = asyncio.get_event_loop()
+    loop.add_signal_handler(signal.SIGINT, uaedbg.interrupt)
+
     history = InMemoryHistory()
     session = PromptSession('(debug) ', history=history)
     with patch_stdout():
@@ -276,11 +286,16 @@ async def UaeDebugger(uaedbg):
             while lines is not None:
                 for line in lines:
                     print(line)
+                    uaedbg.write_log(line + '\n')
                 try:
                     cmd = ''
                     while not cmd:
                         cmd = await session.prompt_async()
                         cmd.strip()
+                        # prompt_async removes our SIGINT handler :(
+                        loop.add_signal_handler(signal.SIGINT,
+                                                uaedbg.interrupt)
+                    uaedbg.write_log(f'(debug) {cmd}\n')
                     uaedbg.send(cmd)
                 except EOFError:
                     uaedbg.resume()
@@ -292,14 +307,16 @@ async def UaeDebugger(uaedbg):
         except EOFError:
             pass
         except Exception as ex:
+            traceback.print_exc()
             print('Debugger bug!')
     print('Quitting...')
 
 
 class UaeProcess(UaeCommandsMixin):
 
-    def __init__(self, proc):
+    def __init__(self, proc, log_file=None):
         self.proc = proc
+        self.log_file = log_file
         self.watchpoints = {}
 
     @property
@@ -311,6 +328,8 @@ class UaeProcess(UaeCommandsMixin):
         return self.proc.stdin
 
     def interrupt(self):
+        print('Interrupted with CTRL+C')
+        self.write_log('Interrupted with CTRL+C\n')
         self.proc.send_signal(signal.SIGINT)
 
     def terminate(self):
@@ -323,7 +342,13 @@ class UaeProcess(UaeCommandsMixin):
         self.send(cmd)
         return await self.recv()
 
+    def write_log(self, line):
+        if not self.log_file:
+            return
+        self.log_file.write(line)
+
     def send(self, cmd):
+        logging.debug('(uae) <- ' + repr(cmd))
         self.writer.write(cmd.encode() + b'\n')
 
     async def recv(self):
@@ -332,19 +357,24 @@ class UaeProcess(UaeCommandsMixin):
         while True:
             try:
                 raw_text = await self.reader.readuntil(b'>')
-            except asyncio.IncompleteReadError as ex:
+            except asyncio.IncompleteReadError:
                 raise EOFError
             text += raw_text.decode()
             # finished by debugger prompt ?
             if text.endswith('\n>'):
                 text = text[:-2]
-                return [line.rstrip() for line in text.splitlines()]
+                lines = [line.rstrip() for line in text.splitlines()]
+                for line in lines:
+                    logging.debug('(uae) -> ' + repr(line))
+                return lines
 
     async def logger(self):
         try:
             while not self.proc.stdout.at_eof():
                 raw_text = await self.proc.stdout.readline()
-                print(raw_text.decode(), end='')
+                text = raw_text.decode()
+                print(text, end='')
+                self.write_log(text)
         except asyncio.CancelledError:
             pass
         except asyncio.IncompleteReadError:

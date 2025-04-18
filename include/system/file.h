@@ -29,14 +29,11 @@ int NoWrite(FileT *f, const void *buf, u_int nbyte);
 int NoSeek(FileT *f, int offset, int whence);
 #endif
 
-#include <system/syscall.h>
-
 /* These behave like read/write/lseek known from UNIX */
-SYSCALL3(FileRead, int, FileT *, file, a0, void *, buf, a1, u_int, nbyte, d0);
-SYSCALL3(FileWrite, int, FileT *, file, a0, const void *, buf, a1,
-         u_int, nbyte, d0);
-SYSCALL3(FileSeek, int, FileT *, file, a0, int, offset, d0, int, whence, d1);
-SYSCALL1NR(FileClose, FileT *, file, a0);
+int FileRead(FileT *file, void *buf, u_int nbyte);
+int FileWrite(FileT *file, const void *buf, u_int nbyte);
+int FileSeek(FileT *file, int offset, int whence);
+void FileClose(FileT *file);
 
 void FilePutChar(FileT *f, char c);
 int FileGetChar(FileT *f);

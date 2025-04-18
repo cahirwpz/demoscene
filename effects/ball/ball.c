@@ -18,14 +18,13 @@ static PixmapT *chunky;
 static BitmapT *bitmap;
 static SprDataT *sprdat;
 static SpriteT sprite[2][8];
-static CopInsT *sprptr[8];
 
 #include "data/dragon-bg.c"
 #include "data/texture-15.c"
 #include "data/ball.c"
 
-static u_short active = 0;
-static CopListT *cp;
+static short active = 0;
+static CopListT *cp[2];
 
 #define UVMapRenderSize (WIDTH * HEIGHT / 2 * 10 + 2)
 void (*UVMapRender)(u_char *chunky asm("a0"),
@@ -79,22 +78,19 @@ static void MakeUVMapRenderCode(void) {
   *code++ = 0x4e75; /* rts */
 }
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, &background, S_DEPTH);
-  CopSetupSprites(cp, sprptr);
-  CopEnd(cp);
+static CopListT *MakeCopperList(int active) {
+  CopListT *cp = NewCopList(80);
+  CopInsPairT *sprptr = CopSetupSprites(cp);
+  short i;
 
-  {
-    short i;
-
-    for (i = 0; i < 8; i++)
-      CopInsSetSprite(sprptr[i], &sprite[active][i]);
-  }
+  CopSetupBitplanes(cp, &background, S_DEPTH);
+  for (i = 0; i < 8; i++)
+    CopInsSetSprite(&sprptr[i], &sprite[active][i]);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  bitmap = NewBitmap(WIDTH, HEIGHT, S_DEPTH);
+  bitmap = NewBitmap(WIDTH, HEIGHT, S_DEPTH, BM_CLEAR);
   chunky = NewPixmap(WIDTH, HEIGHT, PM_CMAP4, MEMF_CHIP);
 
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
@@ -124,12 +120,12 @@ static void Init(void) {
   }
 
   SetupPlayfield(MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
-  LoadPalette(&background_pal, 0);
-  LoadPalette(&texture_pal, 16);
+  LoadColors(background_colors, 0);
+  LoadColors(texture_colors, 16);
 
-  cp = NewCopList(80);
-  MakeCopperList(cp);
-  CopListActivate(cp);
+  cp[0] = MakeCopperList(0);
+  cp[1] = MakeCopperList(1);
+  CopListActivate(cp[0]);
 
   EnableDMA(DMAF_RASTER | DMAF_SPRITE);
 }
@@ -137,7 +133,8 @@ static void Init(void) {
 static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER | DMAF_SPRITE);
 
-  DeleteCopList(cp);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
   DeletePixmap(textureHi);
   DeletePixmap(textureLo);
   MemFree(UVMapRender);
@@ -308,7 +305,6 @@ static void BitmapToSprite(BitmapT *input, SpriteT sprite[8]) {
 static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
   short x = X((S_WIDTH - WIDTH) / 2) + xo;
   short y = Y((S_HEIGHT - HEIGHT) / 2) + yo;
-  CopInsT **ptr = sprptr;
   short n = 4;
 
   while (--n >= 0) {
@@ -317,9 +313,6 @@ static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
 
     SpriteUpdatePos(spr0, x, y);
     SpriteUpdatePos(spr1, x, y);
-
-    CopInsSetSprite(*ptr++, spr0);
-    CopInsSetSprite(*ptr++, spr1);
 
     x += 16;
   }
@@ -340,6 +333,7 @@ static void Render(void) {
     ChunkyToPlanar(chunky, bitmap);
     BitmapToSprite(bitmap, sprite[active]);
     PositionSprite(sprite[active], xo / 2, yo / 2);
+    CopListActivate(cp[active]);
   }
   ProfilerStop(UVMapRender);
 
@@ -347,4 +341,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(ball, NULL, NULL, Init, Kill, Render);
+EFFECT(Ball, NULL, NULL, Init, Kill, Render, NULL);

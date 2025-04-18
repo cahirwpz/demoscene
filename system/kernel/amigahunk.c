@@ -1,9 +1,12 @@
 #include <debug.h>
-#include <crc32.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
+#include <lzsa.h>
+#include <zx0.h>
 #include <system/amigahunk.h>
+#include <system/boot.h>
 #include <system/file.h>
 #include <system/memory.h>
 
@@ -18,6 +21,19 @@
 
 #define HUNKF_CHIP __BIT(30)
 #define HUNKF_FAST __BIT(31)
+
+#define COMP_NONE (0 * __BIT(28))
+#define COMP_LZSA (1 * __BIT(28))
+#define COMP_ZX0 (3 * __BIT(28))
+#define COMP_MASK (__BIT(29) | __BIT(28))
+
+#define FLAG_MASK (HUNKF_CHIP | HUNKF_FAST)
+#define SIZE_MASK (~(COMP_MASK | FLAG_MASK))
+
+static struct {
+  int count;
+  HunkT **array;
+} SharedHunks = { 0, NULL };
 
 static long ReadLong(FileT *fh) {
   long v = 0;
@@ -63,15 +79,16 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
   bool hunkRoot = true;
 
   while ((hunkId = ReadLong(fh))) {
-    int n;
+    int n, comp;
 
     if (hunkId == HUNK_CODE || hunkId == HUNK_DATA || hunkId == HUNK_BSS) {
       hunkRoot = true;
-      n = ReadLong(fh);
-      if (hunkId != HUNK_BSS)
-        FileRead(fh, hunk->data, n * sizeof(int));
+      comp = n = ReadLong(fh);
+      n &= SIZE_MASK;
+      comp &= COMP_MASK;
+
       {
-        const char *hunkType;
+        __unused const char *hunkType;
 
         if (hunkId == HUNK_CODE)
           hunkType = "CODE";
@@ -80,8 +97,27 @@ static bool LoadHunks(FileT *fh, HunkT **hunkArray) {
         else
           hunkType = " BSS";
 
-        Log("%s: %p - %p\n", hunkType, hunk->data, hunk->data + hunk->size);
-        Debug("%s: crc32: $%08x", hunkType, crc32(hunk->data, hunk->size));
+        Log("[Hunk] %s: $%x (size: %d)\n", hunkType, (int)hunk->data, hunk->size);
+      }
+
+      if (hunkId != HUNK_BSS) {
+        int size = n * sizeof(int);
+
+        /* Compression type is added by packexe tool and notifies that the hunk
+         * is compressed with LZSA or ZX0 algorithm. */
+        if (comp != COMP_NONE) {
+          int offset = hunk->size - size;
+          u_int *buf = (u_int *)&hunk->data[offset];
+          FileRead(fh, buf, size);
+          /* in-place decompression, watch out for delta */
+          if (comp == COMP_ZX0) {
+            zx0_decompress(buf, hunk->data);
+          } else if (comp == COMP_LZSA) {
+            lzsa_depack_stream(buf, hunk->data);
+          }
+        } else {
+          FileRead(fh, hunk->data, size);
+        }
       }
     } else if (hunkId == HUNK_DEBUG) {
       n = ReadLong(fh);
@@ -137,7 +173,13 @@ HunkT *LoadHunkList(FileT *fh) {
   last = ReadLong(fh);
 
   hunkCount = last - first + 1;
-  hunkArray = alloca(sizeof(HunkT *) * hunkCount);
+  hunkArray = alloca(sizeof(HunkT *) * (hunkCount + SharedHunks.count));
+
+  Log("[Hunk] Loading %d hunks\n", hunkCount);
+
+  if (SharedHunks.count)
+    memcpy(&hunkArray[hunkCount],
+           SharedHunks.array, sizeof(HunkT *) * SharedHunks.count);
 
   if (AllocHunks(fh, hunkArray, hunkCount))
     if (LoadHunks(fh, hunkArray))
@@ -153,4 +195,21 @@ void FreeHunkList(HunkT *hunk) {
     MemFree(hunk);
     hunk = next;
   } while (hunk);
+}
+
+void SetupSharedHunks(HunkT *hunk) {
+  HunkT **array;
+  HunkT *h;
+  int n, i;
+
+  for (h = hunk, n = 0; h != NULL; h = h->next, n++);
+
+  array = MemAlloc(sizeof(HunkT *) + n * sizeof(HunkT *), MEMF_PUBLIC);
+  for (h = hunk, i = 0; h != NULL; h = h->next, i++)
+    array[i] = h;
+
+  if (SharedHunks.array)
+    MemFree(SharedHunks.array);
+  SharedHunks.count = n;
+  SharedHunks.array = array;
 }

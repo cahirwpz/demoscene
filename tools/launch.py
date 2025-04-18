@@ -2,15 +2,17 @@
 
 import argparse
 import os
-import os.path
-import shutil
 import shlex
 import subprocess
-from libtmux import Server, Session
+from pathlib import Path
+from libtmux import Server, Session, exc
 
 
 def HerePath(*components):
-    return os.path.join(os.getenv('TOPDIR', ''), *components)
+    path = Path(os.getenv('TOPDIR', ''), *components)
+    if not path.exists():
+        print(f"warning: '{path}' does not exists")
+    return str(path)
 
 
 SOCKET = 'fsuae'
@@ -32,6 +34,7 @@ class Launchable():
 
     def start(self, session):
         cmd = ' '.join([self.cmd] + list(map(shlex.quote, self.options)))
+        # XXX: print `cmd` to display command and its arguments
         self.window = session.new_window(
             attach=False, window_name=self.name, window_shell=cmd)
 
@@ -40,19 +43,21 @@ class FSUAE(Launchable):
     def __init__(self):
         super().__init__('fs-uae', HerePath('tools', GDBSERVER))
 
-    def configure(self, floppy=None, rom=None, debug=False):
+    def configure(self, floppy=None, log='', debug=False):
         self.options.extend(['-e', 'fs-uae'])
         if debug:
             self.options.append('-g')
+        if log:
+            self.options.extend(['-l', log])
         # Now options for FS-UAE.
         self.options.append('--')
         if floppy:
-            self.options.append('--floppy_drive_0=' + os.path.realpath(floppy))
-        if rom:
-            self.options.append('--kickstart_file=' + os.path.realpath(rom))
+            self.options.append(
+                '--floppy_drive_0={}'.format(Path(floppy).resolve()))
         if debug:
             self.options.append('--use_debugger=1')
-        self.options.append(HerePath('effects', 'Config.fs-uae'))
+        self.options.append('--warp_mode=1')
+        self.options.append(HerePath('config.fs-uae'))
 
 
 class SOCAT(Launchable):
@@ -87,8 +92,6 @@ class GDB(Launchable):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Launch effect in FS-UAE emulator.')
-    parser.add_argument('-r', '--rom', metavar='ROM', type=str,
-                        help='Replace Amiga Kickstart with provided ROM.')
     parser.add_argument('-f', '--floppy', metavar='ADF', type=str,
                         help='Floppy disk image in ADF format.')
     parser.add_argument('-e', '--executable', metavar='EXE', type=str,
@@ -102,19 +105,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Check if floppy disk image file exists
-    if args.floppy and not os.path.isfile(args.floppy):
+    if args.floppy and not Path(args.floppy).is_file():
         raise SystemExit('%s: file does not exist!' % args.floppy)
 
-    # Check if rom file exists
-    if args.rom and not os.path.isfile(args.rom):
-        raise SystemExit('%s: file does not exist!' % args.rom)
-
     # Check if executable file exists.
-    if args.debug and not os.path.isfile(args.executable):
+    if args.debug and not Path(args.executable).is_file():
         raise SystemExit('%s: file does not exist!' % args.executable)
 
     uae = FSUAE()
-    uae.configure(floppy=args.floppy, rom=args.rom, debug=args.debug)
+    uae.configure(floppy=args.floppy,
+                  log=Path(args.floppy).stem + '.log',
+                  debug=args.debug)
 
     ser_port = SOCAT('serial')
     ser_port.configure(tcp_port=8000)
@@ -148,6 +149,8 @@ if __name__ == '__main__':
             session.select_window(debugger.name)
         else:
             session.select_window(args.window or par_port.name)
-        session.attach_session()
+        Session.attach(session)
+    except exc.TmuxObjectDoesNotExist:
+        pass
     finally:
-        server.kill_server()
+        Server.kill(server)

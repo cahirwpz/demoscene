@@ -18,16 +18,15 @@ static ConsoleT console;
 static FileT *ser;
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  cp = NewCopList(100);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_HIRES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);
   SetColor(1, 0xfff);
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopEnd(cp);
+  cp = NewCopList(100);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 
@@ -108,4 +107,4 @@ static void Render(void) {
   exitLoop = !HandleEvent();
 }
 
-EFFECT(kbtest, NULL, NULL, Init, Kill, Render);
+EFFECT(KbdTest, NULL, NULL, Init, Kill, Render, NULL);

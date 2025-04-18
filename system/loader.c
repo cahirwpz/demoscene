@@ -1,31 +1,52 @@
+#include <config.h>
 #include <debug.h>
-#include <custom.h>
-#include <string.h>
 #include <system/amigahunk.h>
 #include <system/autoinit.h>
 #include <system/boot.h>
 #include <system/cia.h>
 #include <system/cpu.h>
 #include <system/exception.h>
-#include <system/filesys.h>
-#include <system/file.h>
-#include <system/floppy.h>
 #include <system/interrupt.h>
-#include <system/memfile.h>
 #include <system/memory.h>
 #include <system/task.h>
 
 u_char CpuModel = CPU_68000;
+u_char BootDev;
 
 extern int main(void);
-extern u_char JumpTable[];
-extern u_char JumpTableSize[];
+
+static void IdleTaskLoop(__unused void *ptr) {
+  for (;;) {
+    Debug("Processor goes asleep with SR=%04x!", 0x2000);
+    CpuWait();
+  }
+}
+
+static __aligned(8) char IdleTaskStack[256];
+static TaskT IdleTask;
 
 void Loader(BootDataT *bd) {
+  CrashInit(bd);
+
   Log("[Loader] VBR at $%08x\n", (u_int)bd->bd_vbr);
   Log("[Loader] CPU model $%02x\n", bd->bd_cpumodel);
   Log("[Loader] Stack at $%08x (%d bytes)\n",
       (u_int)bd->bd_stkbot, bd->bd_stksz);
+  Log("[Loader] Boot device number: %d\n", (int)bd->bd_bootdev);
+
+  CpuModel = bd->bd_cpumodel;
+  BootDev = bd->bd_bootdev;
+  ExcVecBase = bd->bd_vbr;
+
+  {
+    short i;
+
+    for (i = 0; i < bd->bd_nregions; i++) {
+      MemRegionT *mr = &bd->bd_region[i];
+      uintptr_t lower = mr->mr_lower ? mr->mr_lower : 1;
+      AddMemory((void *)lower, mr->mr_upper - lower, mr->mr_attr);
+    }
+  }
 
 #ifndef AMIGAOS
   Log("[Loader] Executable file segments:\n");
@@ -37,39 +58,28 @@ void Loader(BootDataT *bd) {
       hunk = hunk->next;
     } while (hunk);
   }
+
+  Log("[Loader] Setup shared hunks.\n");
+  SetupSharedHunks(bd->bd_hunk);
 #endif
-
-  CpuModel = bd->bd_cpumodel;
-  ExcVecBase = bd->bd_vbr;
-
-  {
-    short i;
-
-    for (i = 0; i < bd->bd_nregions; i++) {
-      MemRegionT *mr = &bd->bd_region[i];
-      AddMemory((void *)mr->mr_lower, mr->mr_upper - mr->mr_lower, mr->mr_attr);
-    }
-  }
 
   SetupExceptionVector(bd);
   SetupInterruptVector();
 
-  /* Set up system interface. */
-  memcpy(&ExcVec[EXC_TRAP(16)], JumpTable, (u_int)JumpTableSize);
-
   /* CIA-A & CIA-B: Stop timers and return to default settings. */
   ciaa->ciacra = 0;
   ciaa->ciacrb = 0;
-  ciab->ciacra = 0;
+  /* unselect all drives */
+  ciab->ciacra = CIAB_DSKSEL3|CIAB_DSKSEL2|CIAB_DSKSEL1|CIAB_DSKSEL0;
   ciab->ciacrb = 0;
 
   /* CIA-A & CIA-B: Clear pending interrupts. */
-  SampleICR(ciaa, CIAICRF_ALL);
-  SampleICR(ciab, CIAICRF_ALL);
+  (void)ciaa->_ciaicr;
+  (void)ciab->_ciaicr;
 
   /* CIA-A & CIA-B: Disable all interrupts. */
-  WriteICR(ciaa, CIAICRF_ALL);
-  WriteICR(ciab, CIAICRF_ALL);
+  ciaa->_ciaicr = CIAICRF_ALL;
+  ciab->_ciaicr = CIAICRF_ALL;
 
   /* Enable master bit in DMACON and INTENA */
   EnableDMA(DMAF_MASTER);
@@ -78,28 +88,19 @@ void Loader(BootDataT *bd) {
   /* Lower interrupt priority level to nominal. */
   SetIPL(IPL_NONE);
 
+#ifdef MULTITASK
   TaskInit(CurrentTask, "main", bd->bd_stkbot, bd->bd_stksz);
-#ifdef TRACKMO
-  {
-    FileT *dev;
-    if (bd->bd_bootdev)
-      dev = MemOpen((const void *)0xf80000, 0x80000);
-    else
-      dev = FloppyOpen();
-    InitFileSys(dev);
-  }
+  TaskInit(&IdleTask, "idle", IdleTaskStack, sizeof(IdleTaskStack));
+  TaskRun(&IdleTask, 3, IdleTaskLoop, NULL);
 #endif
   CallFuncList(&__INIT_LIST__);
 
   {
-    int retval = main();
+    __unused int retval = main();
     Log("[Loader] main() returned %d.\n", retval);
   }
 
   CallFuncList(&__EXIT_LIST__);
-#ifdef TRACKMO
-  KillFileSys();
-#endif
-  
+
   Log("[Loader] Shutdown complete!\n");
 }

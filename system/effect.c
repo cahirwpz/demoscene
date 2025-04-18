@@ -2,6 +2,10 @@
 #include <effect.h>
 #include <system/cia.h>
 
+short frameCount = 0;
+short lastFrameCount = 0;
+bool exitLoop = false;
+
 #define SHOW_MEMORY_STATS 0
 #define REMOTE_CONTROL 0
 
@@ -25,36 +29,42 @@ static void SendEffectStatus(EffectT *effect) {
 # define SendEffectStatus(x)
 #endif
 
+#define DONE 1
+
+bool EffectIsRunning(EffectT *effect) {
+  return (effect->Init.Status & DONE) ? true : false; 
+}
+
 void EffectLoad(EffectT *effect) {
-  if (effect->state & EFFECT_LOADED)
+  if (effect->Load.Status & DONE)
     return;
 
-  if (effect->Load) {
+  if (effect->Load.Func) {
     Log("[Effect] Loading '%s'\n", effect->name);
-    effect->Load();
+    effect->Load.Func();
     ShowMemStats();
   }
 
-  effect->state |= EFFECT_LOADED;
+  effect->Load.Status |= DONE; 
   SendEffectStatus(effect);
 }
 
 void EffectInit(EffectT *effect) {
-  if (effect->state & EFFECT_READY)
+  if (effect->Init.Status & DONE)
     return;
 
-  if (effect->Init) {
+  if (effect->Init.Func) {
     Log("[Effect] Initializing '%s'\n", effect->name);
-    effect->Init();
+    effect->Init.Func();
     ShowMemStats();
   }
 
-  effect->state |= EFFECT_READY;
+  effect->Init.Status |= DONE;
   SendEffectStatus(effect);
 }
 
 void EffectKill(EffectT *effect) {
-  if (!(effect->state & EFFECT_READY))
+  if (!(effect->Init.Status & DONE))
     return;
 
   if (effect->Kill) {
@@ -63,12 +73,12 @@ void EffectKill(EffectT *effect) {
     ShowMemStats();
   }
 
-  effect->state &= ~EFFECT_READY;
+  effect->Init.Status ^= DONE;
   SendEffectStatus(effect);
 }
 
 void EffectUnLoad(EffectT *effect) {
-  if (!(effect->state & EFFECT_LOADED))
+  if (!(effect->Load.Status & DONE))
     return;
 
   if (effect->UnLoad) {
@@ -77,12 +87,12 @@ void EffectUnLoad(EffectT *effect) {
     ShowMemStats();
   }
 
-  effect->state &= ~EFFECT_LOADED;
+  effect->Load.Status ^= DONE;
   SendEffectStatus(effect);
 }
 
 void EffectRun(EffectT *effect) {
-  SetFrameCounter(0);
+  SetFrameCounter(frameCount);
 
   lastFrameCount = ReadFrameCounter();
 
@@ -90,8 +100,12 @@ void EffectRun(EffectT *effect) {
     int t = ReadFrameCounter();
     exitLoop = LeftMouseButton();
     frameCount = t;
-    if (effect->Render)
+    if ((lastFrameCount != frameCount) && effect->Render)
       effect->Render();
     lastFrameCount = t;
   } while (!exitLoop);
+}
+
+void TimeWarp(u_short frame) {
+  frameCount = frame;
 }

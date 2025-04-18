@@ -102,11 +102,9 @@ static void InitCopperListBall(CopListT *cp, int y, int yInc) {
 
 static void MakeBallCopperList(BallCopListT *ballCp) {
   CopListT *cp = NewCopList(INSTRUCTIONS_PER_BALL * 2 + 100);
-  ballCp->cp = cp;
-  CopInit(cp);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  CopLoadPal(cp, &testscreen_pal, 0);
-  CopSetupBitplanes(cp, NULL, &testscreen, testscreen.depth);
+  CopLoadColors(cp, testscreen_colors, 0);
+  CopSetupBitplanes(cp, &testscreen, testscreen.depth);
 
   ballCp->upperBallCopper = cp->curr;
   InitCopperListBall(cp, Y0 + 2, 2);
@@ -117,7 +115,7 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
   ballCp->lowestBallCopper = cp->curr;
   InitCopperListBall(cp, Y0 + 166, 1);
 
-  CopEnd(cp);
+  ballCp->cp = CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -203,4 +201,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(butterfly_gears, NULL, NULL, Init, Kill, Render);
+EFFECT(ButterflyGears, NULL, NULL, Init, Kill, Render, NULL);

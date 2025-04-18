@@ -29,9 +29,9 @@
 #define O4 224
 
 typedef struct State {
-  CopInsT *sprite;
+  CopInsPairT *sprite;
   /* at the beginning: 4 bitplane pointers and bplcon1 */
-  CopInsT *bar;
+  CopInsPairT *bar;
   /* for each bar moves to bplcon1, bpl1mod and bpl2mod */
   CopInsT *bar_change[4];
   /* for each line five horizontal positions */
@@ -47,7 +47,7 @@ static StateT state[2];
 #define BARS 4
 
 /* These numbers must be odd due to optimizations. */
-static char StripePhase[STRIPES] = { 4, 24, 16, 8, 12 };
+static u_char StripePhase[STRIPES] = { 4, 24, 16, 8, 12 };
 static char StripePhaseIncr[STRIPES] = { 8, -10, 14, -6, 6 };
 
 static inline void CopSpriteSetHP(CopListT *cp, short n) {
@@ -55,14 +55,14 @@ static inline void CopSpriteSetHP(CopListT *cp, short n) {
   CopMove16(cp, spr[n * 2 + 1].pos, 0);
 }
 
-static void MakeCopperList(CopListT *cp, StateT *state) {
+#define COPLIST_SIZE (HEIGHT * 22 + 100)
+
+static CopListT *MakeCopperList(StateT *state) {
+  CopListT *cp = NewCopList(COPLIST_SIZE);
   short b, y;
 
-  CopInit(cp);
-
   /* Setup initial bitplane pointers. */
-  state->bar = cp->curr;
-  CopMove32(cp, bplpt[0], NULL);
+  state->bar = CopMove32(cp, bplpt[0], NULL);
   CopMove32(cp, bplpt[1], NULL);
   CopMove32(cp, bplpt[2], NULL);
   CopMove32(cp, bplpt[3], NULL);
@@ -83,9 +83,8 @@ static void MakeCopperList(CopListT *cp, StateT *state) {
   CopMove32(cp, sprpt[7], &stripes3_sprdat);
 
   CopWait(cp, Y(-1), 0);
-
-  state->sprite = cp->curr;
-  CopMove32(cp, sprpt[0], stripes0_sprdat.data); /* up */
+  
+  state->sprite = CopMove32(cp, sprpt[0], stripes0_sprdat.data); /* up */
   CopMove32(cp, sprpt[1], stripes1_sprdat.data);
   CopMove32(cp, sprpt[2], stripes2_sprdat.data); /* down */
   CopMove32(cp, sprpt[3], stripes3_sprdat.data);
@@ -104,9 +103,9 @@ static void MakeCopperList(CopListT *cp, StateT *state) {
      * instructions (bpl1mod, bpl2mod, bplcon1) per raster line. */
     if (my == 8) {
       if (y & 64) {
-        CopLoadPal(cp, &bar_pal, 0);
+        CopLoadColors(cp, bar_colors, 0);
       } else {
-        CopLoadPal(cp, &bar2_pal, 0);
+        CopLoadColors(cp, bar2_colors, 0);
       }
     } else if (my == 16) {
       /* Advance bitplane pointers to display consecutive lines. */
@@ -153,7 +152,7 @@ static void MakeCopperList(CopListT *cp, StateT *state) {
     }
   }
 
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void UpdateBarState(StateT *state) {
@@ -162,16 +161,16 @@ static void UpdateBarState(StateT *state) {
   short bx = w + normfx(SIN(f) * w);
 
   {
-    CopInsT *ins = state->bar;
+    CopInsPairT *ins = state->bar;
 
     short offset = (bx >> 3) & -2;
     short shift = ~bx & 15;
 
     CopInsSet32(&ins[0], bar.planes[0] + offset);
-    CopInsSet32(&ins[2], bar.planes[1] + offset);
-    CopInsSet32(&ins[4], bar.planes[2] + offset);
-    CopInsSet32(&ins[6], bar.planes[3] + offset);
-    CopInsSet16(&ins[8], (shift << 4) | shift);
+    CopInsSet32(&ins[1], bar.planes[1] + offset);
+    CopInsSet32(&ins[2], bar.planes[2] + offset);
+    CopInsSet32(&ins[3], bar.planes[3] + offset);
+    CopInsSet16((CopInsT *)&ins[4], (shift << 4) | shift);
   }
 
   {
@@ -197,18 +196,18 @@ static void UpdateBarState(StateT *state) {
 }
 
 static void UpdateSpriteState(StateT *state) {
-  CopInsT *ins = state->sprite;
+  CopInsPairT *ins = state->sprite;
   int fu = frameCount & 63;
   int fd = (~frameCount) & 63;
 
-  CopInsSet32(ins + 0, stripes0_sprdat.data + fu); /* up */
-  CopInsSet32(ins + 2, stripes1_sprdat.data + fu);
-  CopInsSet32(ins + 4, stripes2_sprdat.data + fd); /* down */
-  CopInsSet32(ins + 6, stripes3_sprdat.data + fd);
-  CopInsSet32(ins + 8, stripes0_sprdat.data + fu); /* up */
-  CopInsSet32(ins + 10, stripes1_sprdat.data + fu);
-  CopInsSet32(ins + 12, stripes2_sprdat.data + fd); /* down */
-  CopInsSet32(ins + 14, stripes3_sprdat.data + fd);
+  CopInsSet32(ins++, stripes0_sprdat.data + fu); /* up */
+  CopInsSet32(ins++, stripes1_sprdat.data + fu);
+  CopInsSet32(ins++, stripes2_sprdat.data + fd); /* down */
+  CopInsSet32(ins++, stripes3_sprdat.data + fd);
+  CopInsSet32(ins++, stripes0_sprdat.data + fu); /* up */
+  CopInsSet32(ins++, stripes1_sprdat.data + fu);
+  CopInsSet32(ins++, stripes2_sprdat.data + fd); /* down */
+  CopInsSet32(ins++, stripes3_sprdat.data + fd);
 }
 
 #define HPOFF(x) HP(x + 32)
@@ -256,34 +255,27 @@ static void MakeSinTab8(void) {
     sintab8[i] = (sintab[j] + 512) >> 10;
 }
 
-#define COPLIST_SIZE (HEIGHT * 22 + 100)
-
 static void Init(void) {
   MakeSinTab8();
 
   SetupDisplayWindow(MODE_LORES, X(16), Y(0), WIDTH, HEIGHT);
   SetupBitplaneFetch(MODE_LORES, X(0), WIDTH + 16);
   SetupMode(MODE_LORES, DEPTH);
-  LoadPalette(&bar_pal, 0);
-  LoadPalette(&stripes_pal, 16);
+  LoadColors(bar_colors, 0);
+  LoadColors(stripes_colors, 16);
 
   /* Place sprites 0-3 above playfield, and 4-7 below playfield. */
   custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P1 | BPLCON2_PF1P1;
 
-  SpriteUpdatePos(&stripes0, X(0), Y(0));
-  SpriteUpdatePos(&stripes1, X(0), Y(0));
-  SpriteUpdatePos(&stripes2, X(0), Y(0));
-  SpriteUpdatePos(&stripes3, X(0), Y(0));
+  SpriteUpdatePos(&stripes[0], X(0), Y(0));
+  SpriteUpdatePos(&stripes[1], X(0), Y(0));
+  SpriteUpdatePos(&stripes[2], X(0), Y(0));
+  SpriteUpdatePos(&stripes[3], X(0), Y(0));
 
-  cp[0] = NewCopList(COPLIST_SIZE);
-  cp[1] = NewCopList(COPLIST_SIZE);
-
-  MakeCopperList(cp[0], &state[0]);
-  MakeCopperList(cp[1], &state[1]);
+  cp[0] = MakeCopperList(&state[0]);
+  cp[1] = MakeCopperList(&state[1]);
   CopListActivate(cp[0]);
 
-  Log("CopperList: %ld instructions left\n",
-      COPLIST_SIZE - (cp[0]->curr - cp[0]->entry));
   EnableDMA(DMAF_RASTER|DMAF_SPRITE);
 }
 
@@ -308,4 +300,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(weave, NULL, NULL, Init, Kill, Render);
+EFFECT(Weave, NULL, NULL, Init, Kill, Render, NULL);

@@ -8,9 +8,7 @@
 #define LMB_RELEASED 4
 #define RMB_RELEASED 8
 
-#include <system/syscall.h>
-
-SYSCALL1NR(MouseInit, Box2D *, win, a0);
-SYSCALL0NR(MouseKill);
+void MouseInit(Box2D *win);
+void MouseKill(void);
 
 #endif /* !__SYSTEM_MOUSE_H__ */

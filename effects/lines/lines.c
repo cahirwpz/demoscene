@@ -29,16 +29,15 @@ static BitmapT *screen;
 static CopListT *cp;
 
 static void Load(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);
   SetColor(1, 0xfff);
 
   cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopEnd(cp);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
 }
 
 static void UnLoad(void) {
@@ -101,4 +100,4 @@ static void Render(void) {
   ProfilerStop(Lines);
 }
 
-EFFECT(lines, Load, UnLoad, Init, NULL, Render);
+EFFECT(Lines, Load, UnLoad, Init, NULL, Render, NULL);

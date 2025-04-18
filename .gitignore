@@ -16,8 +16,10 @@ gdb-dashboard
 *.exe
 *.exe.dbg
 *.exe.map
+*.obj
 *.rom
 *.7z
+*.dSYM
 
 # AmigaOS files
 *.info
@@ -55,6 +57,8 @@ gdb-dashboard
 *.tga
 *.thx
 *.tmx
+*.trk
+*.zx0
 ahxWaves*
 p61.*
 smp.*
@@ -64,6 +68,9 @@ effects/*/data/*.[ch]
 *.taghl
 tags
 cscope.out
+
+# specific binary files
+vbrmove
 
 # Whitelisted files 
 !README.gdb.png

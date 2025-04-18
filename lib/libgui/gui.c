@@ -272,7 +272,7 @@ static void WidgetInit(GuiStateT *gui, WidgetT *wg, WidgetT *parent) {
     WidgetInit(gui, wg->frame.widget, wg);
   } else if (wg->type == WT_IMAGE) {
     if (!wg->image.bm)
-      Panic("No image attached to widget at %p!\n", wg);
+      Panic("No image attached to widget at %p!", wg);
   }
 }
 
@@ -344,7 +344,7 @@ static void WidgetCalcSize(GuiStateT *gui, WidgetT *wg, short w, short h) {
     HEIGHT(wg) = max(h, size.h);
   } else if (wg->type == WT_IMAGE) {
     if (!wg->image.bm)
-      Panic("No image attached to widget at %p!\n", wg);
+      Panic("No image attached to widget at %p!", wg);
     WIDTH(wg) = max(w, wg->image.bm->width);
     HEIGHT(wg) = max(h, wg->image.bm->height);
   }

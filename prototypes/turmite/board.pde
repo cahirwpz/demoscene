@@ -115,8 +115,9 @@ class Board {
         tiles[i].age();
       }
     }
-
-    moveTurmites();
+    
+    if (!paused) { moveTurmites(); }
+    
     draw();
   }
 }

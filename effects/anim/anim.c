@@ -10,42 +10,34 @@
 #define DEPTH  4
 
 static BitmapT *screen;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static CopListT *cp;
 static short active = 0;
 
 typedef struct {
   short width, height;
   short current, count;
-  u_char *frame[0];
+  u_char *frame[__FLEX_ARRAY];
 } AnimSpanT;
 
 #include "data/running-pal.c"
 #include "data/running.c"
 
-static void Load(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
+static void Init(void) {
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1, 0);
 
   Log("Animation has %d frames %d x %d.\n", 
       running.count, running.width, running.height);
-}
 
-static void UnLoad(void) {
-  DeleteBitmap(screen);
-}
-
-static void Init(void) {
   EnableDMA(DMAF_BLITTER);
   BitmapClear(screen);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&running_pal, 0);
+  LoadColors(running_colors, 0);
 
   cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopEnd(cp);
-
+  bplptr = CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }
@@ -54,6 +46,7 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   DeleteCopList(cp);
+  DeleteBitmap(screen);
 }
 
 static void DrawSpans(u_char *bpl) {
@@ -100,7 +93,7 @@ static void Render(void) {
       short i = (active + n + 1 - DEPTH) % (DEPTH + 1);
       if (i < 0)
         i += DEPTH + 1;
-      CopInsSet32(bplptr[n], screen->planes[i]);
+      CopInsSet32(&bplptr[n], screen->planes[i]);
     }
   }
 
@@ -109,4 +102,4 @@ static void Render(void) {
   active = (active + 1) % (DEPTH + 1);
 }
 
-EFFECT(anim, Load, UnLoad, Init, Kill, Render);
+EFFECT(Anim, NULL, NULL, Init, Kill, Render, NULL);

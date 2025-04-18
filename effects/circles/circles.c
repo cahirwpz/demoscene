@@ -9,30 +9,29 @@
 static BitmapT *screen;
 static CopListT *cp;
 
-static void Load(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  cp = NewCopList(100);
+static void Init(void) {
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0x000);
   SetColor(1, 0xfff);
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopEnd(cp);
+  cp = NewCopList(100);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
+
+  CopListActivate(cp);
+  EnableDMA(DMAF_RASTER);
 }
 
-static void UnLoad(void) {
+static void Kill(void) {
   DeleteCopList(cp);
   DeleteBitmap(screen);
 }
 
 PROFILE(DrawCircle);
 
-static void Init(void) {
-  CopListActivate(cp);
-  EnableDMA(DMAF_RASTER);
-
+static void Render(void) {
   ProfilerStart(DrawCircle);
   {
     short r;
@@ -41,6 +40,7 @@ static void Init(void) {
       Circle(screen, 0, screen->width / 2, screen->height / 2, r);
   }
   ProfilerStop(DrawCircle);
+  TaskWaitVBlank();
 }
 
-EFFECT(circles, Load, UnLoad, Init, NULL, NULL);
+EFFECT(Circles, NULL, NULL, Init, Kill, Render, NULL);

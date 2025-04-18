@@ -1,18 +1,19 @@
 #include <system/cia.h>
 #include <system/task.h>
+#include <system/cpu.h>
 
 /* All TOD registers latch on a read of MSB event and remain latched
  * until after a read of LSB event. */
 
 u_int ReadFrameCounter(void) {
   u_int res = 0;
-  IntrDisable();
+  u_short ipl = SetIPL(SR_IM);
   res |= ciaa->ciatodhi;
   res <<= 8;
   res |= ciaa->ciatodmid;
   res <<= 8;
   res |= ciaa->ciatodlow;
-  IntrEnable();
+  (void)SetIPL(ipl);
   return res;
 }
 
@@ -20,9 +21,9 @@ u_int ReadFrameCounter(void) {
  * clock will not start again until after a write to the LSB event register. */
 
 void SetFrameCounter(u_int frame) {
-  IntrDisable();
+  u_short ipl = SetIPL(SR_IM);
   ciaa->ciatodhi = frame >> 16;
   ciaa->ciatodmid = frame >> 8;
   ciaa->ciatodlow = frame;
-  IntrEnable();
+  (void)SetIPL(ipl);
 }

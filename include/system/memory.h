@@ -1,6 +1,7 @@
 #ifndef __SYSTEM_MEMORY_H__
 #define __SYSTEM_MEMORY_H__
 
+#include <config.h>
 #include <types.h>
 
 #ifndef MEMF_PUBLIC
@@ -19,16 +20,27 @@
 #define MEMF_CLEAR (1L << 16)
 #endif
 
+#ifndef MEMF_LARGEST
+/* MemAvail: return the largest chunk size */
+#define MEMF_LARGEST (1L << 17)
+#endif
+
 #ifdef _SYSTEM
-void MemCheck(int verbose);
-u_int MemAvail(u_int attributes);
 void AddMemory(void *ptr, u_int byteSize, u_int attributes);
 #endif
 
-#include <system/syscall.h>
+void *MemAlloc(u_int byteSize, u_int attributes);
+void *MemResize(void *memoryBlock, u_int byteSize);
+void MemFree(void *memoryBlock);
 
-SYSCALL2(MemAlloc, void *, u_int, byteSize, d0, u_int, attributes, d1);
-SYSCALL2(MemResize, void *, void *, memoryBlock, a0, u_int, byteSize, d0);
-SYSCALL1NR(MemFree, void *, memoryBlock, a0);
+#ifdef MEMDEBUG
+void MemCheck(int verbose);
+u_int MemAvail(u_int attributes);
+/* Computes block checksum and stores it internally.
+ * When the block is freed the checksum will be verified. */
+#else
+#define MemCheck(verbose) { (void)verbose; }
+#define MemAvail(attributes) { (void)attributes; }
+#endif
 
 #endif /* !__SYSTEM_MEMORY_H__ */

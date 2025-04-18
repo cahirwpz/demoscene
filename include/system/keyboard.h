@@ -113,9 +113,7 @@ typedef enum {
   MOD_AMIGA = MOD_LAMIGA | MOD_RAMIGA
 } __attribute__((packed)) KeyModT;
 
-#include <system/syscall.h>
-
-SYSCALL0NR(KeyboardInit);
-SYSCALL0NR(KeyboardKill);
+void KeyboardInit(void);
+void KeyboardKill(void);
 
 #endif /* !__SYSTEM_KEYBOARD_H__ */

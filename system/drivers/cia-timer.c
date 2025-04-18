@@ -11,6 +11,7 @@ static uint8_t InUse;
 
 /* Defines timer state after it has been acquired. */
 struct CIATimer {
+  const char *name;
   IntServerT server;
   CIATimeoutT timeout;
   CIAPtrT cia;
@@ -21,6 +22,7 @@ struct CIATimer {
 
 /* Interrupt handler for CIA timers. */
 static void CIATimerHandler(CIATimerT *timer) {
+  Debug("Timeout on %s.", timer->name);
   if (SampleICR(timer->cia, timer->icr))
     timer->timeout(timer);
 }
@@ -33,21 +35,22 @@ static void NotifyTimeout(CIATimerT *timer) {
 #define CIAB ciab
 
 #define TIMER(CIA, TIMER)                                                      \
-  [TIMER_##CIA##_##TIMER] = {                                                  \
+  [TIMER_ ## CIA ## _ ## TIMER] = {                                            \
+      .name = #CIA "-" #TIMER,                                                 \
       .server = _INTSERVER(0, (IntFuncT)CIATimerHandler,                       \
-                           &Timers[TIMER_##CIA##_##TIMER]),                    \
+                           &Timers[TIMER_ ## CIA ## _ ## TIMER]),              \
       .timeout = NULL,                                                         \
       .cia = CIA,                                                              \
-      .event = EVF_##CIAA##(CIAICRF_T##TIMER),                                 \
-      .num = TIMER_##CIA##_##TIMER,                                            \
-      .icr = CIAICRF_T##TIMER,                                                 \
+      .event = EVF_CIAA(CIAICRF_T ## TIMER),                                   \
+      .num = TIMER_ ## CIA ## _ ##TIMER,                                       \
+      .icr = CIAICRF_T ## TIMER,                                               \
   }
 
 static CIATimerT Timers[4] = {TIMER(CIAA, A), TIMER(CIAA, B), TIMER(CIAB, A),
                               TIMER(CIAB, B)};
 static MUTEX(TimerMtx);
 
-CIATimerT *AcquireTimer(u_int num asm("d0")) {
+CIATimerT *AcquireTimer(u_int num) {
   CIATimerT *timer = NULL;
   u_int i;
 
@@ -76,7 +79,7 @@ CIATimerT *AcquireTimer(u_int num asm("d0")) {
   return timer;
 }
 
-void ReleaseTimer(CIATimerT *timer asm("a0")) {
+void ReleaseTimer(CIATimerT *timer) {
   MutexLock(&TimerMtx);
   {
     u_int irq = (timer->num & 2) ? INTB_EXTER : INTB_PORTS;
@@ -101,8 +104,8 @@ static void LoadTimer(CIAPtrT cia, u_char icr, u_short delay, u_short flags) {
   }
 }
 
-void SetupTimer(CIATimerT *timer asm("a0"), CIATimeoutT timeout asm("a1"),
-                u_short delay asm("d0"), u_short flags asm("d1"))
+void SetupTimer(CIATimerT *timer, CIATimeoutT timeout,
+                u_short delay, u_short flags)
 {
   CIAPtrT cia = timer->cia;
   u_char icr = timer->icr;
@@ -113,10 +116,11 @@ void SetupTimer(CIATimerT *timer asm("a0"), CIATimeoutT timeout asm("a1"),
   WriteICR(cia, CIAICRF_SETCLR | icr);
 }
 
-void WaitTimerGeneric(CIATimerT *timer asm("a0"),
-                      u_short delay asm("d0"), bool spin asm("d1")) {
+void WaitTimerGeneric(CIATimerT *timer, u_short delay, bool spin) {
   CIAPtrT cia = timer->cia;
   u_char icr = timer->icr;
+
+  Debug("%s for %d ticks on %s.", spin ? "Spin" : "Wait", delay, timer->name);
 
   /* Turn off interrupt while the timer is being set up. */
   WriteICR(cia, icr);
