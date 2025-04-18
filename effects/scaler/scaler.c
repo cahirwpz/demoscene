@@ -2,8 +2,6 @@
 #include "custom.h"
 #include "copper.h"
 #include "bitmap.h"
-#include "palette.h"
-#include "profiler.h"
 
 #include "data/stars-die.c"
 
@@ -33,7 +31,7 @@ static void VerticalScalerForward(CopListT *cp, short ys, short height) {
   }
 }
 
-static void CopSetupBitplanesReverse(CopListT *list, CopInsT **bplptr,
+static void CopSetupBitplanesReverse(CopListT *list, CopInsPairT **bplptr,
                                      const BitmapT *bitmap, u_short depth)
 {
   short bytesPerLine = bitmap->bytesPerRow;
@@ -50,7 +48,7 @@ static void CopSetupBitplanesReverse(CopListT *list, CopInsT **bplptr,
     short reg = CSREG(bplpt);
 
     do {
-      CopInsT *ins = CopMoveLong(list, reg, (int)(*planes++) + start);
+      CopInsPairT *ins = _CopMove32(list, reg, (int)(*planes++) + start);
 
       if (bplptr)
         *bplptr++ = ins;
@@ -95,20 +93,20 @@ static void VerticalScalerReverse(CopListT *cp, short ys, short height) {
 static void MakeCopperList(CopListT *cp, short height) {
   short ys = (LINES - abs(height)) / 2;
 
-  CopInit(cp);
+  CopListReset(cp);
   CopSetupDisplayWindow(cp, MODE_LORES, X(0), Y(ys), image.width, abs(height));
   if (height > 0) {
-    CopSetupBitplanes(cp, NULL, &image, image.depth);
+    CopSetupBitplanes(cp, &image, image.depth);
     VerticalScalerForward(cp, ys, height);
   } else if (height < 0) {
     CopSetupBitplanesReverse(cp, NULL, &image, image.depth);
     VerticalScalerReverse(cp, ys, -height);
   }
-  CopEnd(cp);
+  CopListFinish(cp);
 }
 
 static void Init(void) {
-  LoadPalette(&image_pal, 0);
+  LoadColors(image_colors, 0);
   SetupPlayfield(MODE_LORES, image.depth,
                  X(0), Y(0), image.width, image.height);
 
@@ -145,4 +143,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(scaler, NULL, NULL, Init, Kill, Render);
+EFFECT(scaler, NULL, NULL, Init, Kill, Render, NULL);
