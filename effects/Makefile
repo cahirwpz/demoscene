@@ -10,6 +10,7 @@ SUBDIRS := \
 	blurred3d \
 	bumpmap-rgb \
 	butterfly-gears \
+	cathedral \
 	carrion \
 	circles \
 	color-cycling \
