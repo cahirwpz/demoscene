@@ -79,17 +79,22 @@ static __code const u_short phase_bltcon0[32][2] = {
 };
 
 static __code CopListT *cp;
-static __code BitmapT *screen;
+static __code BitmapT *screen[2];
+static __code CopInsPairT *bplptr;
 static __code BitmapT *mask;
+static __code short active = 0;
 
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(32);
-  CopSetupBitplanes(cp, screen, cathedral_light_depth);
+  CopWait(cp, Y(-1), 0);
+  bplptr = CopSetupBitplanes(cp, screen[0], cathedral_light_depth);
   return CopListFinish(cp);
 }
 
 static void Init(void) {
-  screen = NewBitmap(cathedral_light_width, cathedral_light_height, cathedral_light_depth, 0);
+  screen[0] = NewBitmap(cathedral_light_width, cathedral_light_height, cathedral_light_depth, 0);
+  screen[1] = NewBitmap(cathedral_light_width, cathedral_light_height, cathedral_light_depth, 0);
+
   mask = NewBitmap(cathedral_light_width, cathedral_light_height, 1, 0);
 
   SetupPlayfield(MODE_LORES, cathedral_light_depth,
@@ -106,7 +111,8 @@ static void Kill(void) {
   CopperStop();
   DeleteCopList(cp);
   DeleteBitmap(mask);
-  DeleteBitmap(screen);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 static void CalculateMask(BitmapT *mask, const BitmapT *transition, short phase) {
@@ -168,11 +174,20 @@ static void Render(void) {
   ProfilerStart(Draw);
   {
     CalculateMask(mask, &transition, f >> 2);
-    BlitterCopySelect(screen, src, dst, mask);
+    BlitterCopySelect(screen[active], src, dst, mask);
   }
   ProfilerStop(Draw);
 
   TaskWaitVBlank();
+
+  {
+    short i;
+
+    for (i = 0; i < cathedral_light_depth; i++)
+      CopInsSet32(&bplptr[i], screen[active]->planes[i]);
+
+    active ^= 1;
+  }
 }
 
 EFFECT(Cathedral, NULL, NULL, Init, Kill, Render, NULL);
