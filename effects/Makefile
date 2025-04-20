@@ -43,6 +43,7 @@ SUBDIRS := \
 	playpt \
 	plotter \
 	prisms \
+	roller \
 	rotator \
 	sea-anemone \
 	shapes \
