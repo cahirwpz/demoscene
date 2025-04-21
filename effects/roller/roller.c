@@ -15,7 +15,7 @@
 static __code CopListT *cp;
 
 // For now, only 32 transitions (2 rows of texture)
-#define NTRANSITIONS 32
+#define NTRANSITIONS (5*16)
 static CopInsT *ciTransition[NTRANSITIONS];
 
 #include "data/roller-bg.c"
@@ -27,8 +27,8 @@ typedef u_short palentry_t;
 static CopListT *MakeCopperList(CopListT *cp) {
   palentry_t *p = texture_pal_colors;
   short i, j;
-  CopSetupBitplanes(cp, &roller_bp, S_DEPTH); //+6w
-  CopWait(cp, 10, 0); //+1w
+  CopSetupBitplanes(cp, &roller_bp, S_DEPTH);
+  CopSetColor(cp, 0, 0x000);
   
   
   for(i = 0; i < NTRANSITIONS; i++){
@@ -36,8 +36,13 @@ static CopListT *MakeCopperList(CopListT *cp) {
     ciTransition[i] = cp->curr;
     CopWait(cp, 0x55, 0); // vpos is overwritten in Render
 
+    // VPOS=255 is in the middle of the roller, so we have to insert this
+    // and then take care to sync it when rolling
+    if(i == -1)
+      CopWait(cp, 255, 0);
+    
     // XXX: change texture to cmap4.
-    for(j = 0; j < 16; j++){
+    for(j = 1; j < 16; j++){
       CopSetColor(cp, j, p[texture_bp_pixels[(i*16 + j) % (256)]]);
     }
   }
@@ -104,7 +109,8 @@ static void Render(void) {
   // Patch the coppper instructions in memory
   for(i = 0; i < NTRANSITIONS; i++) {
     //ciTransition[i]->wait.vp = 0x80 + (framen>>1) + 4*i;
-    ciTransition[i]->wait.vp = 0x60 + (framen>>1) + 4*i;
+    
+    ciTransition[i]->wait.vp = (0x50 + (framen>>1) + 2*i);
   }
 
   framen++;
