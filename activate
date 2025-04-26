@@ -12,6 +12,7 @@ PACKAGES=(git-lfs optipng gcc g++ make golang
 for package in "${PACKAGES[@]}"; do
   if ! dpkg -l ${package} 1>/dev/null 2>/dev/null; then
     echo "Package ${package} is not installed!"
+    echo "Run: sudo apt-get install ${package}"
     exec ${SHELL}
   fi
 done

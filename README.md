@@ -12,8 +12,10 @@ This tutorial works **only** on *Debian 12* or *Ubuntu 24.04* Linux for
 unsupported distribution, system or architecture, then you are on your own –
 good luck!
 
-**IMPORTANT!** This Amiga framework is for people that are well familiar with
-Linux terminal and standard Linux C developer tools (`gcc`, `python`, `make`).
+**IMPORTANT!** This Amiga framework is for people that are familiar with Linux
+terminal and standard Linux C developer tools (`gcc`, `python`, `make`). Please
+read carefully the documentation to save yourself time on pointless
+troubleshooting.
 
 The current build status of the repository is ![Build status](https://github.com/cahirwpz/demoscene/actions/workflows/default.yml/badge.svg).
 
@@ -50,6 +52,14 @@ Amiga programs to:
 * invoke debugger at given breakpoints,
 * turn on/off warp mode to skip long initialization times.
 
+You must provide [Kickstart ROMs](https://fs-uae.net/docs/kickstarts) for the
+emulator to function correctly. `fs-uae` will automatically find the correct
+kickstart ROMs for all Amiga models if you have copied the `.rom` files into
+its [kickstart-dir](https://fs-uae.net/docs/options/kickstarts-dir).
+
+**IMPORTANT!** My framework does not work with **AROS ROM**, which is not fully
+compatible with AmigaOS. The bootloader will just crash!
+
 ## Compiling source code
 
 Using terminal change directory to cloned repository and issue `make` command.
@@ -65,19 +75,35 @@ you don't have time to debug the issue.
 
 ## Running the effect under emulator
 
-You must provide [Kickstart ROMs](https://fs-uae.net/docs/kickstarts) for
-the emulator to function correctly. `fs-uae` will automatically find the correct kickstart
-ROMs for all Amiga models if you have copied the `.rom` files into its
-[kickstart-dir](https://fs-uae.net/docs/options/kickstarts-dir).
+1. Change current working directory to `effects/ball/` (or other effect in this
+   directory) or `demo/`.
 
-**IMPORTANT!** My framework does not work with AROS ROM – the bootloader will fail!
+2. Issue `make run` command.
 
-After that, navigate to any effect's directory and issue `make run` command.
-**run** make target prepares all files in `data` directory, builds executable
-file, creates ADF floppy image from binary files, adds custom bootloader to ADF
-and runs the *launcher* tool, which in turn spawns the *fs-uae* emulator,
-extends *UAE built-in debugger* (press F10 key to trigger it), and redirects
-messages from Amiga parallel/serial port to Unix terminal.
+   **run** target for `make` prepares all files in `data` directory, builds
+   executable file, creates ADF floppy image from binary files, adds custom
+   bootloader to ADF and runs the [launcher](tools/launch.py) tool.
+
+3. Terminal multiplexer
+   [tmux](https://github.com/tmux/tmux/wiki/Getting-Started) is started. It
+   creates 3 panes:
+    * `fs-uae` - with messages from the emulator and *UAE built-in debugger*.
+    * `serial` - supports bi-directional communication over emulated serial
+      port (9600 bauds).
+    * `parallel` - support uni-directional communication over emulated parallel
+      port (fast).
+    To switch between panes use `CTRL+b n`, where `n` stands for pane number.
+
+4. All messages written to `fs-uae` pane will be saved to corresponding log
+   file, that is - for effect `ball`, file `ball.log` will be created.
+
+5. *(optional)* You can interrupt emulated program by pressing CTRL+C in
+   `fs-uae` pane. You'll enter *UAE built-in debugger*. Type `?` for help, or
+   type `g` to continue execution.
+
+6. To stop emulation either close `fs-uae` window, or press `CTRL+b d` in
+   terminal. The latter choice detaches *tmux* from terminal, which initiates
+   session shutdown.
 
 ## Debugging the effect under emulator
 
