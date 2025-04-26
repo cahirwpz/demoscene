@@ -49,7 +49,7 @@ You need an emulator to test Amiga binaries. Don't worry
 [fs-uae](https://fs-uae.net) patched emulator, and you should have it already installed.
 
 **IMPORTANT!** *fs-uae* provided has been heavily
-[patched](https://github.com/cahirwpz/demoscene-toolchain/tree/master/patches).
+[patched](https://github.com/cahirwpz/demoscene-toolchain/tree/master/patches/fs-uae).
 The patches provide betted debugger integration and via [UAE
 traps](https://github.com/cahirwpz/demoscene/blob/master/include/uae.h) enable
 Amiga programs to:
@@ -60,8 +60,8 @@ Amiga programs to:
 
 ## Compiling source code
 
-Navigate to the [demoscene](https://github.com/cahirwpz/demoscene) repository
-and issue `make` command. If your build process fails, then:
+Using terminal change directory to cloned repository and issue `make` command.
+If your build process fails, then:
 
 * double verify your build environment is set up correctly,
 * issue `make clean` in the main directory and try again,
