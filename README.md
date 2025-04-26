@@ -7,23 +7,23 @@
 
 ## How to run and debug effects?
 
-This tutorial works on *Debian 12* or *Ubuntu 24.04* Linux on *x86-64*
+This tutorial works on *Debian 12* or *Ubuntu 24.04* Linux for *x86-64*
 architecture. It's not impossible to reproduce all steps also on *aarch64*
 architecture and *macOS*, but it will be likely an order of magnitude more
 difficult. I have not tried to reproduce it on *Windows* using *Cygwin* and I
-leave this exercise for tough people with endless patience -- good luck!
+leave this exercise for tough people with endless patience – good luck!
 
 I assume you've got some former experience with Unix-like command line.
 
 **IMPORTANT!** Each time I push a commit to the repository a preconfigured
 virtual machine is started and builds libraries and effects. The repository
-contents is guaranteed to successfully build in well defined environment that is
-provided by VM image prepared with [Docker](https://www.docker.com/)!
+contents is guaranteed to successfully build in well defined environment that
+is provided by VM image prepared with [Docker](https://www.docker.com/)!
 
 The current build status of the repository is
 ![Build status](https://github.com/cahirwpz/demoscene/actions/workflows/default.yml/badge.svg).
 If you have problems with your local build environment **it's yours
-responsibility** to fix it.
+responsibility** to fix it!
 
 ## Setting up build environment
 
@@ -33,7 +33,7 @@ responsibility** to fix it.
 2. If you haven't had [Git LFS](https://git-lfs.github.com/) installed
    previously, run `git lfs install` to enable Git support for binary files. If
    you don't do this, you'll get text files in place of graphics, audio and other
-   binary files. This will result in file converters to fail in weird manner.
+   binary files. This will result in various file converters failing.
 
 3. Clone *demoscene* repository. If you forgot (2) this is the right moment to
    fix binary files by issuing `git lfs pull` command.
@@ -44,15 +44,19 @@ responsibility** to fix it.
 
 ## The Amiga emulator
 
-You need an emulator to test Amiga binaries. Luckily, [demoscene-toolchain](https://github.com/cahirwpz/demoscene-toolchain)
-provides [fs-uae](https://fs-uae.net) emulator, so you already should have it.
+You need an emulator to test Amiga binaries. Don't worry
+[demoscene-toolchain](https://github.com/cahirwpz/demoscene-toolchain) provides
+[fs-uae](https://fs-uae.net) patched emulator, and you should have it already installed.
 
-**IMPORTANT!** Vanilla `fs-uae` doesn't provide features that are
-required for full experience. The emulator has been
-[patched](https://github.com/cahirwpz/demoscene-toolchain/tree/master/patches),
-which enables Amiga programs to efficiently output diagnostic messages using
-[UAE traps](https://github.com/cahirwpz/demoscene/blob/master/include/uae.h)
-and provides various fixes for debugger integration.
+**IMPORTANT!** *fs-uae* provided has been heavily
+[patched](https://github.com/cahirwpz/demoscene-toolchain/tree/master/patches).
+The patches provide betted debugger integration and via [UAE
+traps](https://github.com/cahirwpz/demoscene/blob/master/include/uae.h) enable
+Amiga programs to:
+
+* efficiently output diagnostic messages on Linux console,
+* invoke debugger at given breakpoints,
+* turn on/off warp mode to skip long initialization times.
 
 ## Compiling source code
 
@@ -63,16 +67,18 @@ and issue `make` command. If your build process fails, then:
 * issue `make clean` in the main directory and try again,
 * make a fresh clone of repository and try again.
 
-If all of the above fails please ping `cahirwpz` on Discord.
-Prepare exact steps to reproduce error, I'll ignore messages
-that says "it just does not work".
+If all of the above fails please ping `cahirwpz` on Discord. Prepare exact
+steps to reproduce error. Please respect my time and don't ping me because
+you don't have time to debug the issue.
 
 ## Running the effect under emulator
 
-You have to provide [Kickstart ROMs](https://fs-uae.net/docs/kickstarts) for
-the emulator to operate. `fs-uae` will automatically find the correct kickstart
+You must provide [Kickstart ROMs](https://fs-uae.net/docs/kickstarts) for
+the emulator to function correctly. `fs-uae` will automatically find the correct kickstart
 ROMs for all Amiga models if you have copied the `.rom` files into its
 [kickstart-dir](https://fs-uae.net/docs/options/kickstarts-dir).
+
+**IMPORTANT!** My framework does not work with AROS ROM – the bootloader will fail!
 
 After that, navigate to any effect's directory and issue `make run` command.
 **run** make target prepares all files in `data` directory, builds executable
