@@ -5,25 +5,17 @@
 
 > "Everything should be as simple as possible, but no simpler." - Albert Einstein
 
-## How to run and debug effects?
+## Introduction
 
-This tutorial works on *Debian 12* or *Ubuntu 24.04* Linux for *x86-64*
-architecture. It's not impossible to reproduce all steps also on *aarch64*
-architecture and *macOS*, but it will be likely an order of magnitude more
-difficult. I have not tried to reproduce it on *Windows* using *Cygwin* and I
-leave this exercise for tough people with endless patience – good luck!
+This tutorial works **only** on *Debian 12* or *Ubuntu 24.04* Linux for
+*x86-64* architecture. This is the easiest option, period. If you choose other
+unsupported distribution, system or architecture, then you are on your own –
+good luck!
 
-I assume you've got some former experience with Unix-like command line.
+**IMPORTANT!** This Amiga framework is for people that are well familiar with
+Linux terminal and standard Linux C developer tools (`gcc`, `python`, `make`).
 
-**IMPORTANT!** Each time I push a commit to the repository a preconfigured
-virtual machine is started and builds libraries and effects. The repository
-contents is guaranteed to successfully build in well defined environment that
-is provided by VM image prepared with [Docker](https://www.docker.com/)!
-
-The current build status of the repository is
-![Build status](https://github.com/cahirwpz/demoscene/actions/workflows/default.yml/badge.svg).
-If you have problems with your local build environment **it's yours
-responsibility** to fix it!
+The current build status of the repository is ![Build status](https://github.com/cahirwpz/demoscene/actions/workflows/default.yml/badge.svg).
 
 ## Setting up build environment
 
