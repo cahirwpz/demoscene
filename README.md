@@ -7,76 +7,79 @@
 
 ## How to run and debug effects?
 
-This tutorial should work on *macOS* and *Linux*. It may be possible to
-reproduce all steps also on *Windows*, but it will be likely an order of
-magnitude more difficult. I assume you have some former experience with
-Unix-like command line.
+This tutorial works on *Debian 12* or *Ubuntu 24.04* Linux on *x86-64*
+architecture. It's not impossible to reproduce all steps also on *aarch64*
+architecture and *macOS*, but it will be likely an order of magnitude more
+difficult. I have not tried to reproduce it on *Windows* using *Cygwin* and I
+leave this exercise for tough people with endless patience -- good luck!
+
+I assume you've got some former experience with Unix-like command line.
 
 **IMPORTANT!** Each time I push a commit to the repository a preconfigured
 virtual machine is started and builds libraries and effects. The repository
 contents is guaranteed to successfully build in well defined environment that is
-provided by VM image prepared with [Docker](https://www.docker.com/)! If you
-have some problems on your local machine **it's yours responsibility** to fix
-it, unless following icon does say that build failed:
-![Build status](https://github.com/cahirwpz/demoscene/actions/workflows/default.yml/badge.svg)
+provided by VM image prepared with [Docker](https://www.docker.com/)!
+
+The current build status of the repository is
+![Build status](https://github.com/cahirwpz/demoscene/actions/workflows/default.yml/badge.svg).
+If you have problems with your local build environment **it's yours
+responsibility** to fix it.
 
 ## Setting up build environment
 
-You need to reproduce the build environment I mentioned above. Fortunately
-*Dockerfiles* list all commands required to do so, at least on *Debian 12
-(Buster)* for *x86-64* architecture. This is a good starting point for most of
-you.  Please only consider lines starting with `ADD` and `RUN` – please refer to
-[Dockerfile](https://docs.docker.com/engine/reference/builder/#run)
-documentation if needed.
+1. Download [demoscene-toolchain](https://github.com/cahirwpz/demoscene-toolchain/releases/)
+   *deb* package and install it with all its dependencies.
 
-1. Start with [demoscene-toolchain](https://github.com/cahirwpz/demoscene-toolchain/blob/master/Dockerfile)
-   *Dockerfile*. When the toolchain is built you must set up your `PATH`
-   environment variable correctly. If you installed the toolchain in
-   `${HOME}/amiga` then add `export PATH=${PATH}:${HOME}/amiga/bin` to your
-   favorite shell initialization file (`.bashrc`, `.zshrc`, etc.). To validate
-   your setup, please issue `which m68k-amigaos-gcc` command which should print
-   where the compiler has been installed.
+2. If you haven't had [Git LFS](https://git-lfs.github.com/) installed
+   previously, run `git lfs install` to enable Git support for binary files. If
+   you don't do this, you'll get text files in place of graphics, audio and other
+   binary files. This will result in file converters to fail in weird manner.
 
-2. Follow up with [demoscene](https://github.com/cahirwpz/demoscene/blob/master/Dockerfile)
-   *Dockerfile*. If you haven't had [Git LFS](https://git-lfs.github.com/)
-   installed previously, you'll have to issue `git lfs install` command. Then
-   clone *demoscene* repository once again to pull in binary files, otherwise
-   you'll get links instead of real data – which you can fix by issuing
-   `git lfs pull` command.
+3. Clone *demoscene* repository. If you forgot (2) this is the right moment to
+   fix binary files by issuing `git lfs pull` command.
+
+4. Each time you open a new terminal, go into the repository main directory and
+   run `source activate`. This verifies that your build environment is set up
+   correctly. It may require you to install extra packages.
 
 ## The Amiga emulator
 
 You need an emulator to test Amiga binaries. Luckily, [demoscene-toolchain](https://github.com/cahirwpz/demoscene-toolchain)
-provides [fs-uae](https://fs-uae.net) emulator. Now, **important** thing –
-vanilla `fs-uae` doesn't provide features that are required for full experience.
-The emulator has been
+provides [fs-uae](https://fs-uae.net) emulator, so you already should have it.
+
+**IMPORTANT!** Vanilla `fs-uae` doesn't provide features that are
+required for full experience. The emulator has been
 [patched](https://github.com/cahirwpz/demoscene-toolchain/tree/master/patches),
 which enables Amiga programs to efficiently output diagnostic messages using
-[UAE traps](https://github.com/cahirwpz/demoscene/blob/master/include/uae.h) and
-provides various fixes for debugger integration. The emulator is installed in
-the same directory as the compiler. Since this directory has already been added
-to your `PATH` environment variable you should be able to use it without
-troubles. To verify that, please issue `which fs-uae` command and confirm that
-it prints correct installation path.
+[UAE traps](https://github.com/cahirwpz/demoscene/blob/master/include/uae.h)
+and provides various fixes for debugger integration.
 
 ## Compiling source code
 
 Navigate to the [demoscene](https://github.com/cahirwpz/demoscene) repository
-you've just cloned and issue `make` command. If you build process fails, please
-verify that you have performed all steps listed above correctly. If `make`
-happens to complain about missing command – find the software package and
-install it. You cannot expect us to help you set up your environment!
+and issue `make` command. If your build process fails, then:
+
+* double verify your build environment is set up correctly,
+* issue `make clean` in the main directory and try again,
+* make a fresh clone of repository and try again.
+
+If all of the above fails please ping `cahirwpz` on Discord.
+Prepare exact steps to reproduce error, I'll ignore messages
+that says "it just does not work".
 
 ## Running the effect under emulator
 
-At first, you have to provide [Kickstart ROMs](https://fs-uae.net/docs/kickstarts) for the emulator to operate. `fs-uae` will automatically find the correct kickstart ROMs for all Amiga models if you have copied the `.rom` files into its [kickstart-dir](https://fs-uae.net/docs/options/kickstarts-dir).
+You have to provide [Kickstart ROMs](https://fs-uae.net/docs/kickstarts) for
+the emulator to operate. `fs-uae` will automatically find the correct kickstart
+ROMs for all Amiga models if you have copied the `.rom` files into its
+[kickstart-dir](https://fs-uae.net/docs/options/kickstarts-dir).
 
 After that, navigate to any effect's directory and issue `make run` command.
 **run** make target prepares all files in `data` directory, builds executable
 file, creates ADF floppy image from binary files, adds custom bootloader to ADF
 and runs the *launcher* tool, which in turn spawns the *fs-uae* emulator,
 extends *UAE built-in debugger* (press F10 key to trigger it), and redirects
-messages from Amiga parallel port to Unix terminal.
+messages from Amiga parallel/serial port to Unix terminal.
 
 ## Debugging the effect under emulator
 
