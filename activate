@@ -17,7 +17,7 @@ for package in ${PACKAGES}; do
 done
 
 EXECUTABLES=(m68k-amigaos-gcc m68k-amigaos-ld m68k-amigaos-as
-  vasm lzsa salvador Shrinkler)
+  fs-uae vasm lzsa salvador Shrinkler)
 
 for executable in ${EXECUTABLES}; do
   if ! [ -x ${PREFIX}/bin/${executable} ]; then \
