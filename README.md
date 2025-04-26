@@ -40,9 +40,9 @@ The current build status of the repository is ![Build status](https://github.com
 
 You need an emulator to test Amiga binaries. Don't worry
 [demoscene-toolchain](https://github.com/cahirwpz/demoscene-toolchain) provides
-[fs-uae](https://fs-uae.net) patched emulator, and you should have it already installed.
+[fs-uae](https://fs-uae.net) emulator, and you should have it already installed.
 
-**IMPORTANT!** *fs-uae* provided has been heavily
+My version of *fs-uae* has been heavily
 [patched](https://github.com/cahirwpz/demoscene-toolchain/tree/master/patches/fs-uae).
 The patches provide betted debugger integration and via [UAE
 traps](https://github.com/cahirwpz/demoscene/blob/master/include/uae.h) enable
@@ -52,12 +52,13 @@ Amiga programs to:
 * invoke debugger at given breakpoints,
 * turn on/off warp mode to skip long initialization times.
 
-You must provide [Kickstart ROMs](https://fs-uae.net/docs/kickstarts) for the
-emulator to function correctly. `fs-uae` will automatically find the correct
-kickstart ROMs for all Amiga models if you have copied the `.rom` files into
-its [kickstart-dir](https://fs-uae.net/docs/options/kickstarts-dir).
+**IMPORTANT!** You must provide [Kickstart
+ROMs](https://fs-uae.net/docs/kickstarts) for the emulator to function
+correctly. `fs-uae` will automatically find the correct kickstart ROMs for all
+Amiga models if you have copied the `.rom` files into its
+[kickstart-dir](https://fs-uae.net/docs/options/kickstarts-dir).
 
-**IMPORTANT!** My framework does not work with **AROS ROM**, which is not fully
+My framework does not work with **AROS ROM**, which is not fully
 compatible with AmigaOS. The bootloader will just crash!
 
 ## Compiling source code
