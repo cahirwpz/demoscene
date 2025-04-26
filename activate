@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # This file must be used with "source activate"
 
 PREFIX=${PREFIX:-/opt/amiga}
@@ -9,7 +9,7 @@ PREFIX=${PREFIX:-/opt/amiga}
 PACKAGES=(git-lfs optipng gcc g++ make golang
   python3 python3-pip python3-venv python3-dev socat tmux)
 
-for package in ${PACKAGES}; do
+for package in "${PACKAGES[@]}"; do
   if ! dpkg -l ${package} 1>/dev/null 2>/dev/null; then
     echo "Package ${package} not installed!"
     exit 1
@@ -19,7 +19,7 @@ done
 EXECUTABLES=(m68k-amigaos-gcc m68k-amigaos-ld m68k-amigaos-as
   fs-uae vasm lzsa salvador Shrinkler)
 
-for executable in ${EXECUTABLES}; do
+for executable in "${EXECUTABLES[@]}"; do
   if ! [ -x ${PREFIX}/bin/${executable} ]; then \
     echo "No ${executable} found in ${PREFIX}!"
     echo "Please install latest demoscene-toolchain deb package from:"
