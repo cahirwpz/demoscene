@@ -11,8 +11,8 @@ PACKAGES=(git-lfs optipng gcc g++ make golang
 
 for package in "${PACKAGES[@]}"; do
   if ! dpkg -l ${package} 1>/dev/null 2>/dev/null; then
-    echo "Package ${package} not installed!"
-    exit 1
+    echo "Package ${package} is not installed!"
+    exec ${SHELL}
   fi
 done
 
@@ -24,7 +24,7 @@ for executable in "${EXECUTABLES[@]}"; do
     echo "No ${executable} found in ${PREFIX}!"
     echo "Please install latest demoscene-toolchain deb package from:"
     echo "https://github.com/cahirwpz/demoscene-toolchain/releases/"
-    exit 1
+    exec ${SHELL}
   fi
 done
 
