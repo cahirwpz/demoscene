@@ -2,6 +2,10 @@ export TOPDIR
 
 MAKEFLAGS += --no-builtin-rules
 
+ifndef DEMOSCENE_ROOT
+$(error You forgot to run 'source activate', please consult README.md)
+endif
+
 DIR := $(patsubst $(TOPDIR)%,%,$(realpath $(CURDIR)))
 DIR := $(patsubst /%,%/,$(DIR))
 

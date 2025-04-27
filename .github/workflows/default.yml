@@ -43,8 +43,9 @@ jobs:
           go-version: '>=1.22.0'
           cache-dependency-path: tools/**/go.sum
       - name: Build everything
+        shell: bash
         run: |
-          . /root/demoscene/bin/activate
+          PREFIX=/usr/local . ./activate
           make
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
