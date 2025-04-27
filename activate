@@ -6,34 +6,45 @@ PREFIX=${PREFIX:-/opt/amiga}
 [ -e /etc/debian_version ] || \
   echo "Warning: Unsupported Linux distribution!"
 
-PACKAGES=(git-lfs optipng gcc g++ make golang
-  python3 python3-pip python3-venv python3-dev socat tmux)
+function demoscene_check() {
+  local PACKAGES
+  PACKAGES=(git-lfs optipng gcc g++ make golang
+    python3 python3-pip python3-venv python3-dev socat tmux)
 
-for package in "${PACKAGES[@]}"; do
-  if ! dpkg -l ${package} 1>/dev/null 2>/dev/null; then
-    echo "Package ${package} is not installed!"
-    echo "Run: sudo apt-get install ${package}"
-    exec ${SHELL}
-  fi
-done
+  local package
+  for package in "${PACKAGES[@]}"; do
+    if ! dpkg -l ${package} 1>/dev/null 2>/dev/null; then
+      echo "Package ${package} is not installed!"
+      echo "Run: sudo apt-get install ${package}"
+      return 1
+    fi
+  done
 
-EXECUTABLES=(m68k-amigaos-gcc m68k-amigaos-ld m68k-amigaos-as
-  fs-uae vasm lzsa salvador Shrinkler)
+  local EXECUTABLES
+  EXECUTABLES=(m68k-amigaos-gcc m68k-amigaos-ld m68k-amigaos-as m68k-amigaos-gdb
+    fs-uae vasm lzsa salvador Shrinkler)
 
-for executable in "${EXECUTABLES[@]}"; do
-  if ! [ -x ${PREFIX}/bin/${executable} ]; then \
-    echo "No ${executable} found in ${PREFIX}!"
-    echo "Please install latest demoscene-toolchain deb package from:"
-    echo "https://github.com/cahirwpz/demoscene-toolchain/releases/"
-    exec ${SHELL}
-  fi
-done
+  local executable
+  for executable in "${EXECUTABLES[@]}"; do
+    if ! [ -x ${PREFIX}/bin/${executable} ]; then \
+      echo "No ${executable} found in ${PREFIX}!"
+      echo "Please install latest demoscene-toolchain deb package from:"
+      echo "https://github.com/cahirwpz/demoscene-toolchain/releases/"
+      return 1
+    fi
+  done
 
-PATH=${PREFIX}/bin:${PATH}
-export PATH
+  return 0
+}
 
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip -q install -U -r requirements.txt
+if demoscene_check; then
+  PATH=${PREFIX}/bin:${PATH}
+  export PATH
 
-echo "Demoscene environment is ready in $(pwd)!"
+  python3 -m venv .venv
+  source .venv/bin/activate
+  python3 -m pip -q install -U -r requirements.txt
+
+  echo "Demoscene build environment is ready in $(pwd)!"
+  export DEMOSCENE_ROOT=$(pwd)
+fi
