@@ -207,7 +207,7 @@ struct Custom {
 #define VSYNCTRUE __BIT(1)   /* vertical sync true */
 #define HSYNCTRUE __BIT(0)   /* horizontal sync true */
 
-#define BPLCON0_BPU(d) (((d) & 7) << 12)
+#define BPLCON0_BPU(d) ((((d) & 7) << 12) | (((d) & 8) << 1))
 #define BPLCON0_COLOR __BIT(9)
 #define BPLCON0_LACE __BIT(2)
 #define BPLCON0_DBLPF __BIT(10)
@@ -237,9 +237,15 @@ struct Custom {
 #define BPLCON3_ZDCLKEN __BIT(2)   /* zd pin outputs a 14mhz clock*/
 #define BPLCON3_BRDNTRAN __BIT(4)  /* border is opaque */
 #define BPLCON3_BRDNBLNK __BIT(5)  /* border is opaque */
+#define BPLCON3_SPRES0 __BIT(6)    /* Determine resolution of all 8 sprites */
+#define BPLCON3_SPRES1 __BIT(7)    /* 00:default, 01:lores, 10:hires, 11:shres */
+#define BPLCON3_LOCT __BIT(9)
 #define BPLCON3_PF2OF2 __BIT(10)   /* second playfield's offset in coltab */
 #define BPLCON3_PF2OF1 __BIT(11)
 #define BPLCON3_PF2OF0 __BIT(12)
+#define BPLCON3_BANK0 __BIT(13)
+#define BPLCON3_BANK1 __BIT(14)
+#define BPLCON3_BANK2 __BIT(14)
 
 /* read definitions for dmaconr */
 /* bits 0-8 correspnd to dmaconw definitions */
