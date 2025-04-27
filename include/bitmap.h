@@ -17,7 +17,7 @@
 #define BM_FLAGMASK     0x7F
 
 /* Maximum number of bitplanes kept in bitmap structure. */
-#define BM_NPLANES 7
+#define BM_NPLANES 8
 
 typedef struct Bitmap {
   u_short width;
