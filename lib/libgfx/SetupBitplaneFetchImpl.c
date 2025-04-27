@@ -1,14 +1,15 @@
 #ifdef __COPPER_H__
 #define STORE(reg, val) CopMove16(list, reg, val)
 
-void CopSetupBitplaneFetch(CopListT *list, u_short mode, u_short xs, u_short w)
+void CopSetupBitplaneFetch(CopListT *list, u_short mode, hpos xstart, u_short w)
 #else
 #define STORE(reg, val) custom->reg = val
 
-void SetupBitplaneFetch(u_short mode, u_short xs, u_short w)
+void SetupBitplaneFetch(u_short mode, hpos xstart, u_short w)
 #endif
 {
   u_char ddfstrt, ddfstop;
+  short xs = xstart.hpos;
 
   /* DDFSTRT and DDFSTOP have resolution of 4 clocks.
    *

@@ -45,13 +45,13 @@ static const BitmapT *member[5] = {
   &txt_cahir, &txt_slay, &txt_jazz, &txt_dkl, &txt_codi
 };
 
-#define DISCO_X X((320 - disco.width) / 2)
-#define DISCO_Y Y(0)
+#define DISCO_X ((320 - disco.width) / 2)
+#define DISCO_Y 0
 
-#define LOGO_Y Y(256 - 64)
+#define LOGO_Y (256 - 64)
 
-#define FLOOR_X X((320 - floor.width) / 2)
-#define FLOOR_Y Y(64)
+#define FLOOR_X ((320 - floor.width) / 2)
+#define FLOOR_Y 64
 
 static void MakeCopperList(CopListT *cp) {
   CopListReset(cp);
@@ -59,19 +59,19 @@ static void MakeCopperList(CopListT *cp) {
   CopMove16(cp, dmacon, DMAF_RASTER);
 
   /* Display disco ball. */
-  CopWaitSafe(cp, DISCO_Y - 1, 0);
+  CopWaitSafe(cp, Y(DISCO_Y - 1), HP(0));
   CopLoadColors(cp, disco_colors, 0);
   CopSetupMode(cp, MODE_LORES, disco.depth);
   CopSetupBitplanes(cp, &disco, disco.depth);
-  CopSetupBitplaneFetch(cp, MODE_LORES, DISCO_X, disco.width);
+  CopSetupBitplaneFetch(cp, MODE_LORES, X(DISCO_X), disco.width);
 
-  CopWaitSafe(cp, DISCO_Y, 0);
+  CopWaitSafe(cp, Y(DISCO_Y), HP(0));
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  CopWaitSafe(cp, DISCO_Y + disco.height - 1, LASTHP);
+  CopWaitSafe(cp, Y(DISCO_Y + disco.height - 1), LASTHP);
   CopMove16(cp, dmacon, DMAF_RASTER);
 
   /* Display logo & credits. */
-  CopWaitSafe(cp, FLOOR_Y - 1, 0);
+  CopWaitSafe(cp, Y(FLOOR_Y - 1), HP(0));
   CopLoadColors(cp, floor_colors, 0);
   CopLoadColors(cp, dance_colors, 8);
   CopSetupMode(cp, MODE_DUALPF, 6);
@@ -88,11 +88,11 @@ static void MakeCopperList(CopListT *cp) {
     CopMove16(cp, bpl1mod, 0);
     CopMove16(cp, bpl2mod, 0);
   }
-  CopSetupBitplaneFetch(cp, MODE_LORES, FLOOR_X, floor.width);
+  CopSetupBitplaneFetch(cp, MODE_LORES, X(FLOOR_X), floor.width);
 
-  CopWaitSafe(cp, FLOOR_Y, 0);
+  CopWaitSafe(cp, Y(FLOOR_Y), HP(0));
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  CopWaitSafe(cp, FLOOR_Y + floor.height, LASTHP);
+  CopWaitSafe(cp, Y(FLOOR_Y + floor.height), LASTHP);
   CopMove16(cp, dmacon, DMAF_RASTER);
 
   /* Display logo and textual credits. */
@@ -101,15 +101,15 @@ static void MakeCopperList(CopListT *cp) {
      * visible (on ECS) while 'lower' bitmap is on the left side of the screen.
      * I found 'X(56) / 2' to be the least working horizontal position,
      * but I cannot provide any sound explanation why is it so? */
-    CopWaitSafe(cp, LOGO_Y - 1, X(56) / 2);
+    CopWaitSafe(cp, Y(LOGO_Y - 1), X(56));
     CopLoadColorArray(cp, lower_pal, logo_colors_count, 0);
     CopSetupMode(cp, MODE_LORES, lower->depth);
     CopSetupBitplaneArea(cp, MODE_LORES, lower->depth,
                          lower, X(lower_pos.x), Y(lower_pos.y), &lower_area);
 
-    CopWaitSafe(cp, LOGO_Y, 0);
+    CopWaitSafe(cp, Y(LOGO_Y), HP(0));
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-    CopWaitSafe(cp, LOGO_Y + lower->height - 1, LASTHP);
+    CopWaitSafe(cp, Y(LOGO_Y + lower->height - 1), LASTHP);
     CopMove16(cp, dmacon, DMAF_RASTER);
   }
 

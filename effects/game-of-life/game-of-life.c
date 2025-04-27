@@ -324,10 +324,10 @@ static CopListT *MakeCopperList(void) {
     // vertical pixel doubling
     CopMove16(cp, bpl1mod, -prev_states[0]->bytesPerRow);
     CopMove16(cp, bpl2mod, -prev_states[0]->bytesPerRow);
-    CopWaitSafe(cp, Y(i), 0);
+    CopWaitSafe(cp, Y(i), HP(0));
     CopMove16(cp, bpl1mod, 0);
     CopMove16(cp, bpl2mod, 0);
-    CopWaitSafe(cp, Y(i + 1), 0);
+    CopWaitSafe(cp, Y(i + 1), HP(0));
   }
   return CopListFinish(cp);
 }

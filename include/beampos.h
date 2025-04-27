@@ -11,21 +11,27 @@ typedef struct vpos {
   short vpos;
 } vpos;
 
-/* Beam position defs for PAL display window setup. */
-#define X(x) ((x) + 0x81)
-#define Y(y) ((y) + 0x2c)
+#define HP(x) (hpos){.hpos = (x)}
+#define VP(y) (vpos){.vpos = (y)}
 
-/* Beam position defs for PAL copper waiting position. */
-#define HP(x) (X(x) / 2)
-#define VP(y) (Y(y) & 255)
+#define _XS 0x81
+#define _YS 0x2c
+
+#define _X(x) ((x) + _XS)
+#define _Y(y) ((y) + _YS)
+
+/* Beam position defs for PAL signal. */
+#define X(x) HP(_X(x))
+#define Y(y) VP(_Y(y))
 
 /* Last horizontal beam position copper can reliably wait on. */
-#define LASTHP 0xDE
+#define LASTHP HP(0xDE << 1)
 
-static inline void WaitLine(uint32_t line) {
+static inline void WaitLine(vpos vp) {
+  uint32_t line = vp.vpos;
   while ((custom->vposr_ & 0x1ff00) != ((line << 8) & 0x1ff00));
 }
 
-static inline void WaitVBlank(void) { WaitLine(303); }
+static inline void WaitVBlank(void) { WaitLine(VP(303)); }
 
 #endif /* !__BEAMPOS_H__ */

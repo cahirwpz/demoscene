@@ -97,7 +97,7 @@ static void SetupRaster(CopListT *cp) {
     if (!f)
       continue;
 
-    CopWaitSafe(cp, Y(y), 0);
+    CopWaitSafe(cp, Y(y), HP(0));
 
     if (f & 1)
       CopMove16(cp, bpl1mod,

@@ -1,7 +1,9 @@
 #include <sprite.h>
 
-void SpriteUpdatePos(SpriteT *spr, short hstart, short vstart) {
+void SpriteUpdatePos(SpriteT *spr, hpos hstart, vpos vstart) {
   u_char *raw = (u_char *)spr->sprdat;
+  short hs = hstart.hpos;
+  short vs = vstart.vpos;
 
   /*
    * SPRxPOS:
@@ -9,8 +11,8 @@ void SpriteUpdatePos(SpriteT *spr, short hstart, short vstart) {
    *  Bits 7-0 contain the high 8 bits of HSTART
    */
 
-  *raw++ = vstart;
-  *raw++ = (u_short)hstart >> 1;
+  *raw++ = vs;
+  *raw++ = (u_short)hs >> 1;
  
   /*
    * SPRxCTL:
@@ -23,14 +25,14 @@ void SpriteUpdatePos(SpriteT *spr, short hstart, short vstart) {
    */
 
   {
-    u_short vstop = vstart + spr->height;
-    u_char lowctl = hstart & 1;
-    
+    u_short vstop = vs + spr->height;
+    u_char lowctl = hs & 1;
+
     *raw++ = vstop;
 
     if (spr->attached)
       lowctl += 0x80;
-    if (vstart & 0x100)
+    if (vs & 0x100)
       lowctl += 4;
     if (vstop & 0x100)
       lowctl += 2;

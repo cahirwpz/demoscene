@@ -36,7 +36,7 @@ static CopListT *MakeCopperList(CopInsPairT **linebpl) {
     short y;
 
     for (y = 0; y < HEIGHT; y++, ptr += scroll->bytesPerRow) {
-      CopWaitSafe(cp, Y(y), 0);
+      CopWaitSafe(cp, Y(y), HP(0));
       if ((y & 7) == 0) {
         if (y <= 6 * 8)
           CopSetColor(cp, 1, font_colors[7 - (y >> 3)]);

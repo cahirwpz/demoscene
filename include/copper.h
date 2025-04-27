@@ -131,14 +131,16 @@ static inline CopInsPairT *_CopMove32(CopListT *list, short reg, int data) {
 #define CopInsWait(ins, vp, hp) \
   ins = _CopInsWait(ins, vp, hp)
 
-static inline CopInsT *_CopInsWait(CopInsT *ins, short vp, short hp) {
-  stbi(ins, vp);
-  stbi(ins, hp | 1);
+static inline CopInsT *_CopInsWait(CopInsT *ins, vpos vp, hpos hp) {
+  short _vp = vp.vpos;
+  short _hp = hp.hpos >> 1;
+  stbi(ins, _vp);
+  stbi(ins, _hp | 1);
   stwi(ins, 0xfffe);
   return ins;
 }
 
-static inline CopInsT *CopWait(CopListT *list, short vp, short hp) {
+static inline CopInsT *CopWait(CopListT *list, vpos vp, hpos hp) {
   CopInsT *pos = list->curr;
   CopInsWait(list->curr, vp, hp);
   return pos;
@@ -146,66 +148,73 @@ static inline CopInsT *CopWait(CopListT *list, short vp, short hp) {
 
 /* Handles Copper Vertical Position counter overflow, by inserting CopWaitEOL
  * at first WAIT instruction with VP >= 256. */
-static inline CopInsT *CopWaitSafe(CopListT *list, short vp, short hp) {
+static inline CopInsT *CopWaitSafe(CopListT *list, vpos vp, hpos hp) {
   CopInsT *pos = list->curr;
   CopInsT *ins = list->curr;
-  if (vp > 255 && !list->overflow) {
+  short _vp = vp.vpos;
+  short _hp = hp.hpos >> 1;
+  if (_vp > 255 && !list->overflow) {
     list->overflow = -1;
     /* Wait for last waitable position to control when overflow occurs. */
     stli(ins, 0xffdffffe);
   }
-  stbi(ins, vp);
-  stbi(ins, hp | 1);
+  stbi(ins, _vp);
+  stbi(ins, _hp | 1);
   stwi(ins, 0xfffe);
   list->curr = ins;
   return pos;
 }
 
 /* Similar to CopWait, but masks bits in beam position counters. */
-static inline CopInsT *CopWaitMask(CopListT *list, short vp, short hp,
+static inline CopInsT *CopWaitMask(CopListT *list, vpos vp, hpos hp,
                                    short vpmask, short hpmask) {
   CopInsT *pos = list->curr;
   CopInsT *ins = list->curr;
-  stbi(ins, vp);
-  stbi(ins, hp | 1);
+  short _vp = vp.vpos;
+  short _hp = hp.hpos >> 1;
+  short _hpmask = hpmask >> 1;
+  stbi(ins, _vp);
+  stbi(ins, _hp | 1);
   stbi(ins, 0x80 | vpmask);
-  stbi(ins, hpmask & 0xfe);
+  stbi(ins, _hpmask & 0xfe);
   list->curr = ins;
   return pos;
 }
 
 /* The most significant bit of vertical position cannot be masked out (overlaps
  * with blitter-finished-disable bit), so we have to pass upper bit as well. */
-#define CopWaitH(cp, vp, hp) CopWaitMask((cp), (vp) & 128, (hp), 0, 255)
-#define CopWaitV(cp, vp) CopWaitMask((cp), (vp), 0, 255, 0)
+#define CopWaitH(cp, vp, hp) \
+  CopWaitMask((cp), VP((vp).vpos & 128), (hp), 0, 255)
 
 /* Skip next instruction if the video beam has already reached a specified
  * (vp, hp) position. */
-static inline CopInsT *CopSkip(CopListT *list, short vp, short hp) {
+static inline CopInsT *CopSkip(CopListT *list, vpos vp, hpos hp) {
   CopInsT *pos = list->curr;
   CopInsT *ins = list->curr;
-  stbi(ins, vp);
-  stbi(ins, hp | 1);
+  short _vp = vp.vpos;
+  short _hp = hp.hpos >> 1;
+  stbi(ins, _vp);
+  stbi(ins, _hp | 1);
   stwi(ins, 0xffff);
   list->curr = ins;
   return pos;
 }
 
 /* Similar to CopSkip, but masks bits in beam position counters. */
-static inline CopInsT *CopSkipMask(CopListT *list, short vp, short hp, 
+static inline CopInsT *CopSkipMask(CopListT *list, vpos vp, hpos hp,
                                    short vpmask, short hpmask) {
   CopInsT *pos = list->curr;
   CopInsT *ins = list->curr;
-  stbi(ins, vp);
-  stbi(ins, hp | 1);
+  short _vp = vp.vpos;
+  short _hp = hp.hpos >> 1;
+  short _hpmask = hpmask >> 1;
+  stbi(ins, _vp);
+  stbi(ins, _hp | 1);
   stbi(ins, 0x80 | vpmask);
-  stbi(ins, hpmask | 1);
+  stbi(ins, _hpmask | 1);
   list->curr = ins;
   return pos;
 }
-
-#define CopSkipH(cp, vp, hp) CopSkipMask((cp), (vp) & 128, (hp), 0, 255)
-#define CopSkipV(cp, vp) CopSkipMask((cp), (vp), 0, 255, 0)
 
 /* High-level functions */
 CopInsT *CopLoadColor(CopListT *list, short start, short end, short color);
@@ -220,14 +229,14 @@ CopInsT *CopLoadColorArray(CopListT *list, const u_short *colors, short count,
 
 void CopSetupMode(CopListT *list, u_short mode, u_short depth);
 /* Arguments must be always specified in low resolution coordinates. */
-void CopSetupDisplayWindow(CopListT *list, u_short mode, 
-                           u_short xs, u_short ys, u_short w, u_short h);
+void CopSetupDisplayWindow(CopListT *list, u_short mode,
+                           hpos xstart, vpos ystart, u_short width, u_short height);
 void CopSetupBitplaneFetch(CopListT *list, u_short mode,
-                           u_short xs, u_short w);
+                           hpos xstart, u_short width);
 CopInsPairT *CopSetupBitplanes(CopListT *list, const BitmapT *bitmap,
                                u_short depth);
 void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
-                          const BitmapT *bitmap, short x, short y,
+                          const BitmapT *bitmap, hpos xstart, vpos ystart,
                           const Area2D *area);
 void CopUpdateBitplanes(CopInsPairT *bplptr, const BitmapT *bitmap, short n);
 
