@@ -45,7 +45,7 @@ jobs:
       - name: Build everything
         shell: bash
         run: |
-          PREFIX=/usr/local . ./activate
+          . ./activate -p /usr/local
           make
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
