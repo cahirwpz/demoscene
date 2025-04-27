@@ -17,9 +17,7 @@
 
 /* Don't change these settings without reading a note about copper chunky! */
 #define Y(y) ((y) + 0x2c)
-#define VP(y) (Y(y) & 255)
 #define X(x) ((x) + 0x88)
-#define HP(x) (X(x) / 2)
 
 static CopInsT *chunky[2][VTILES];
 static CopListT *cp[2];

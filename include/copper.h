@@ -2,6 +2,7 @@
 #define __COPPER_H__
 
 #include <gfx.h>
+#include <beampos.h>
 #include <playfield.h>
 
 /* Copper instructions assumptions for PAL systems:
@@ -11,15 +12,12 @@
  * > Vertical Position range is 0..311
  *   Keep it mind that 'vp' counter overflows at 255 !
  *
- * > Horizontal Position range is in 0..266
+ * > Horizontal Position range is in 0..226
  *   In fact WAIT & SKIP uses 'hp' without the least significant bit !
  *
  * MOVE & SKIP take 2 color clocks
  * WAIT takes 3 color clocks (last to wake up)
  */
-
-/* Last Horizontal Position in line one can reliably wait on. */
-#define LASTHP 0xDE
 
 typedef union {
   struct {

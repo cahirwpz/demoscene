@@ -17,12 +17,6 @@ static inline bool RightMouseButton(void) {
   return !(custom->potinp & DATLY);
 }
 
-static inline void WaitLine(uint32_t line) {
-  while ((custom->vposr_ & 0x1ff00) != ((line << 8) & 0x1ff00));
-}
-
-static inline void WaitVBlank(void) { WaitLine(303); }
-
 static inline short IsAGA(void) {
   return ((custom->vposr_ >> 24) & 0x7f) == 0x23;
 }
