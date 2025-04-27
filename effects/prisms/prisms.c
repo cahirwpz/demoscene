@@ -126,7 +126,7 @@ static CopListT *MakeCopperList(CopLineT **line) {
   short i;
 
   for (i = 0; i < HEIGHT; i++) {
-    CopWait(cp, Y(i - 1), 0xDE);
+    CopWait(cp, Y(i - 1), LASTHP);
     line[i] = (CopLineT *)CopSetColor(cp, 1, 0);
     CopMove16(cp, bplcon2, 0);
     CopMove32(cp, bplpt[0], rowAddr[0]);

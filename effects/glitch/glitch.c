@@ -53,7 +53,7 @@ static CopListT *MakeCopperList(void) {
 
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   for (i = 0; i < HEIGHT; i++) {
-    CopWait(cp, Y(YSTART + i), 0);
+    CopWait(cp, Y(YSTART + i), HP(0));
     /* Alternating shift by one for bitplane data. */
     line[i] = CopMove16(cp, bplcon1, 0);
   }

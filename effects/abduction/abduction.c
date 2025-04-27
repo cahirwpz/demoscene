@@ -47,7 +47,7 @@ static short counter = 0;
 
 static short ufo_pos = 25;
 static short coq_pos = 255-24;
-static short beam_pos[2] = {X(137), X(167)};
+static hpos beam_pos[2] = {X(137), X(167)};
 
 static short active_pal = 0;
 static short beam_pal[4][7] = {
@@ -166,8 +166,11 @@ static void RetractBeam(void) {
       SwitchBeamPal();
       ++idx;
 
-    SpriteUpdatePos(&side_beam_l, ++beam_pos[0], Y(56));
-    SpriteUpdatePos(&side_beam_r, --beam_pos[1], Y(56));
+    beam_pos[0].hpos++;
+    beam_pos[1].hpos--;
+
+    SpriteUpdatePos(&side_beam_l, beam_pos[0], Y(56));
+    SpriteUpdatePos(&side_beam_r, beam_pos[1], Y(56));
 
     if (h >= 64) {
       BitmapClearArea(screen[0], &ring_area);
@@ -175,10 +178,10 @@ static void RetractBeam(void) {
       h -= 16;
     }
 
-    if (beam_pos[0] >= X(137+15)) {
-      SpriteUpdatePos(&side_beam_l, 0, 0);
-      SpriteUpdatePos(&side_beam_r, 0, 0);
-      SpriteUpdatePos(&coq, 0, 0);
+    if (beam_pos[0].hpos >= 137 + 15 + DIWHP) {
+      SpriteUpdatePos(&side_beam_l, HP(0), VP(0));
+      SpriteUpdatePos(&side_beam_r, HP(0), VP(0));
+      SpriteUpdatePos(&coq, HP(0), VP(0));
       phase = ESCAPE;
     }
   }

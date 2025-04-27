@@ -22,11 +22,11 @@
 #define BELOW 0
 #define ABOVE BPLCON2_PF2P2
 
-#define O0 0
-#define O1 56
-#define O2 112
-#define O3 172
-#define O4 224
+#define O0 (DIWHP + 0)
+#define O1 (DIWHP + 56)
+#define O2 (DIWHP + 112)
+#define O3 (DIWHP + 172)
+#define O4 (DIWHP + 224)
 
 typedef struct State {
   CopInsPairT *sprite;
@@ -82,8 +82,8 @@ static CopListT *MakeCopperList(StateT *state) {
   CopMove32(cp, sprpt[6], &stripes2_sprdat); /* down */
   CopMove32(cp, sprpt[7], &stripes3_sprdat);
 
-  CopWait(cp, Y(-1), 0);
-  
+  CopWait(cp, Y(-1), HP(0));
+ 
   state->sprite = CopMove32(cp, sprpt[0], stripes0_sprdat.data); /* up */
   CopMove32(cp, sprpt[1], stripes1_sprdat.data);
   CopMove32(cp, sprpt[2], stripes2_sprdat.data); /* down */
@@ -94,10 +94,10 @@ static CopListT *MakeCopperList(StateT *state) {
   CopMove32(cp, sprpt[7], stripes3_sprdat.data);
 
   for (y = 0, b = 0; y < HEIGHT; y++) {
-    short vp = Y(y);
+    vpos vp = Y(y);
     short my = y & 63;
 
-    CopWaitSafe(cp, vp, 0);
+    CopWaitSafe(cp, vp, HP(0));
 
     /* With current solution bitplane setup takes at most 3 copper move
      * instructions (bpl1mod, bpl2mod, bplcon1) per raster line. */
@@ -133,20 +133,20 @@ static CopListT *MakeCopperList(StateT *state) {
         p0 = ABOVE, p1 = BELOW;
       }
 
-      CopWait(cp, vp, HP(O0) + 2);
+      CopWait(cp, vp, HP(O0 + 4));
       state->stripes[y] = cp->curr;
       CopSpriteSetHP(cp, 0);
       CopMove16(cp, bplcon2, p0);
-      CopWait(cp, vp, HP(O1) + 2);
+      CopWait(cp, vp, HP(O1 + 4));
       CopSpriteSetHP(cp, 1);
       CopMove16(cp, bplcon2, p1);
-      CopWait(cp, vp, HP(O2) + 2);
+      CopWait(cp, vp, HP(O2 + 4));
       CopSpriteSetHP(cp, 2);
       CopMove16(cp, bplcon2, p0);
-      CopWait(cp, vp, HP(O3) + 2);
+      CopWait(cp, vp, HP(O3 + 4));
       CopSpriteSetHP(cp, 3);
       CopMove16(cp, bplcon2, p1);
-      CopWait(cp, vp, HP(O4) + 2);
+      CopWait(cp, vp, HP(O4 + 4));
       CopSpriteSetHP(cp, 0);
       CopMove16(cp, bplcon2, p0);
     }
@@ -210,7 +210,7 @@ static void UpdateSpriteState(StateT *state) {
   CopInsSet32(ins++, stripes3_sprdat.data + fd);
 }
 
-#define HPOFF(x) HP(x + 32)
+#define HPOFF(x) ((x + 32) / 2)
 
 static void UpdateStripeState(StateT *state) {
   static const char offset[STRIPES] = {

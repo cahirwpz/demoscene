@@ -25,7 +25,7 @@ static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(100 + carrion_height * (carrion_cols_width + 3));
 
   /* interleaved bitplanes setup */
-  CopWait(cp, Y(-1), 0);
+  CopWait(cp, Y(-1), HP(0));
 
   bplptr = CopMove32(cp, bplpt[0], screen[1]->planes[0]);
   CopMove32(cp, bplpt[1], carrion.planes[0]);

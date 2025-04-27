@@ -82,7 +82,7 @@ static CopListT *MakeCopperList(void) {
   CopMove16(cp, bpl1mod, WIDTH / 8 * (DEPTH - 1));
 
   /* interleaved bitplanes setup */
-  CopWait(cp, Y(-1), 0);
+  CopWait(cp, Y(-1), HP(0));
 
   bplptr = CopMove32(cp, bplpt[0], screen[1]->planes[0]);
   CopMove32(cp, bplpt[1], necrocoq.planes[0]);

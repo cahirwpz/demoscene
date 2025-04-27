@@ -289,7 +289,7 @@ static CopListT *MakeCopperList(void) {
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopLoadColor(cp, 0, 15, 0);
   for (i = 0; i < HEIGHT * 4; i++) {
-    CopWaitSafe(cp, Y(i), 0);
+    CopWaitSafe(cp, Y(i), HP(0));
     /* Line quadrupling. */
     CopMove16(cp, bpl1mod, ((i & 3) != 3) ? -40 : 0);
     CopMove16(cp, bpl2mod, ((i & 3) != 3) ? -40 : 0);

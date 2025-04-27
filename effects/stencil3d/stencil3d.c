@@ -35,7 +35,7 @@ static CopListT *MakeCopperList(void) {
   CopMove16(cp, bpl1mod, 0);
   CopMove16(cp, bpl2mod, 0);
 
-  CopWait(cp, Y(-1), 0);
+  CopWait(cp, Y(-1), HP(0));
 
   bplptr = CopMove32(cp, bplpt[0], screen[1]->planes[0]);
   CopMove32(cp, bplpt[1], background.planes[0]);
@@ -49,7 +49,7 @@ static CopListT *MakeCopperList(void) {
     short i;
 
     for (i = 0; i < background_height; i++) {
-      CopWaitSafe(cp, Y(i), 0);
+      CopWaitSafe(cp, Y(i), HP(0));
       CopMove16(cp, color[0], *data++);
       CopMove16(cp, color[9+k], *data++);
       CopMove16(cp, color[10+k], *data++);
