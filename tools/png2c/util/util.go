@@ -41,7 +41,7 @@ func CutImage(startX, startY, width, height int, img image.Config, pix []uint8) 
 }
 
 func GetDepth(pix []uint8) int {
-	return int(math.Ceil(math.Log2(float64(slices.Max(pix) + 1))))
+	return int(math.Ceil(math.Log2(float64(int(slices.Max(pix)) + 1))))
 }
 
 func DecodePNG(file []byte) (image.Image, image.Config, error) {
