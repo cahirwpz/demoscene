@@ -33,6 +33,7 @@ SOURCES := \
 	InitSharedBitmap.c \
 	InsideArea.c \
 	LoadColorArray.c \
+	LoadColorArrayAGA.c \
 	MakeSprite.c \
 	NewBitmap.c \
 	NewCopList.c \
