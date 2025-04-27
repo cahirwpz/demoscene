@@ -29,8 +29,13 @@ func Make(in *image.Paletted, cfg image.Config, opts map[string]any) string {
 
 	// Calculate the color data
 	for _, v := range pal {
-		c := util.RGB12(v)
-		o.ColorsData = append(o.ColorsData, fmt.Sprintf("0x%03x", c))
+		if o.Aga {
+			c := util.RGB24(v)
+			o.ColorsData = append(o.ColorsData, fmt.Sprintf("0x%06x", c))
+		} else {
+			c := util.RGB12(v)
+			o.ColorsData = append(o.ColorsData, fmt.Sprintf("0x%03x", c))
+		}
 	}
 
 	// Compile the template
@@ -49,6 +54,9 @@ func bindParams(p map[string]any) (out Opts) {
 	if v, ok := p["store_unused"]; ok {
 		out.StoreUnused = v.(bool)
 	}
+	if v, ok := p["aga"]; ok {
+		out.Aga = v.(bool)
+	}
 
 	return out
 }
@@ -58,6 +66,7 @@ type Opts struct {
 	Count       int
 	Shared      bool
 	StoreUnused bool
+	Aga         bool
 	// Template-specific data.
 	ColorsData []string
 }
