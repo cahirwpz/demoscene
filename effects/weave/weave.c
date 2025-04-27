@@ -22,11 +22,11 @@
 #define BELOW 0
 #define ABOVE BPLCON2_PF2P2
 
-#define O0 _X(0)
-#define O1 _X(56)
-#define O2 _X(112)
-#define O3 _X(172)
-#define O4 _X(224)
+#define O0 (DIWHP + 0)
+#define O1 (DIWHP + 56)
+#define O2 (DIWHP + 112)
+#define O3 (DIWHP + 172)
+#define O4 (DIWHP + 224)
 
 typedef struct State {
   CopInsPairT *sprite;

@@ -3,26 +3,27 @@
 
 #include <custom.h>
 
+/* Horizontal beam position in low resolution pixels (0...453) */
 typedef struct hpos {
   short hpos;
 } hpos;
 
+#define HP(x) (hpos){.hpos = (x)}
+
+/* Vertical beam position in low resolution pixels (0..311) */
 typedef struct vpos {
   short vpos;
 } vpos;
 
-#define HP(x) (hpos){.hpos = (x)}
 #define VP(y) (vpos){.vpos = (y)}
 
-#define _XS 0x81
-#define _YS 0x2c
+/* Default display window upper-left corner position for PAL signal. */
+#define DIWHP 0x81
+#define DIWVP 0x2c
 
-#define _X(x) ((x) + _XS)
-#define _Y(y) ((y) + _YS)
-
-/* Beam position defs for PAL signal. */
-#define X(x) HP(_X(x))
-#define Y(y) VP(_Y(y))
+/* Beam position relative to display window upper-left corner. */
+#define X(x) HP((x) + DIWHP)
+#define Y(y) VP((y) + DIWVP)
 
 /* Last horizontal beam position copper can reliably wait on. */
 #define LASTHP HP(0xDE << 1)

@@ -178,7 +178,7 @@ static void RetractBeam(void) {
       h -= 16;
     }
 
-    if (beam_pos[0].hpos >= _X(137+15)) {
+    if (beam_pos[0].hpos >= 137 + 15 + DIWHP) {
       SpriteUpdatePos(&side_beam_l, X(0), Y(0));
       SpriteUpdatePos(&side_beam_r, X(0), Y(0));
       SpriteUpdatePos(&coq, X(0), Y(0));

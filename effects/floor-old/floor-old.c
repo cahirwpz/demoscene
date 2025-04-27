@@ -154,7 +154,7 @@ static void Kill(void) {
 
 static void ClearLine(short k) {
   u_char *pos = linePos[active][k];
-  u_char x = (k < 4 ? CPX : (_X(WIDTH) >> 1)) | 1;
+  u_char x = (k < 4 ? CPX : ((WIDTH + DIWHP) >> 1)) | 1;
   short n = (HEIGHT - FAR_Y) / 8;
 
   while (--n >= 0) {
@@ -196,7 +196,7 @@ static void ClearFloor(void) {
 static inline void CopperLine(u_char *pos, short x1, short y2, int delta) {
   if (y2 > FAR_Y) {
     short n = y2 - FAR_Y + 1;
-    int x = (_X(x1) / 2) << 16;
+    int x = ((x1 + DIWHP) / 2) << 16;
     register u_char one asm("d7") = 1;
 
     while (--n >= 0) {
