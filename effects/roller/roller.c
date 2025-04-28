@@ -17,11 +17,11 @@ static __code CopListT *cp;
 
 // 16 transitions = 1 row of texture
 #define NTRANSITIONS (5*16)
-#define VPSTART 0xD0 //(0xc8 - 32)
+#define VPSTART (0xc8 - 32)
 #define ROWHEIGHT 2
 #define __ANIMATE 1
 
-static CopInsT *ciTransition[NTRANSITIONS*2];
+static CopInsT *ciTransition[NTRANSITIONS*3];
 
 #include "data/roller-bg.c"
 #include "data/magland16.c"
@@ -36,22 +36,15 @@ static CopListT *MakeCopperList(CopListT *cp) {
   short ffcross = 0;
   (void) i; (void) ffcross;
   CopSetupBitplanes(cp, &roller_bp, S_DEPTH);
-  CopSetColor(cp, 0, 0x000);
-#if 0
-  // Test - all green before vp = 0xff
-  for(j = 1; j < 16; j++){
-      CopSetColor(cp, j, 0x0F0);
-      (void) p;
-  }
-#endif
- 
+
   CopSetColor(cp, 0, 0xFFF);
+
+  // cp->curr points to the copper instruction that's about to be inserted
   k = 0;
-  for(i = 0; i < NTRANSITIONS*2;){
-    // cp->curr now points to the CopWait that's about to happen
-   
+  for(i = 0; i < NTRANSITIONS*3;){
     vp += ROWHEIGHT;
-    
+    ciTransition[i++] = cp->curr;
+    CopWait(cp, vp, 0x00); // vpos, hpos is overwritten in Render
     ciTransition[i++] = cp->curr;
     CopWait(cp, vp, 0x00); // vpos, hpos is overwritten in Render
     ciTransition[i++] = cp->curr;
@@ -77,7 +70,7 @@ static void UnLoad(void) {
 
 static void Init(void) {
   //TimeWarp(roller_start);
-  
+  //TODO: calculate copper list length
   CopListT *cp = NewCopList(0x1600);
   SetupPlayfield(MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
 
@@ -123,23 +116,26 @@ static void Render(void) {
   static short framen = 0;
   short i = 0;
   // Patch the coppper instructions in memory
-  short vpos = VPSTART + (framen>>5);
+  short vpos = VPSTART + (framen>>2);
   short ffcross = 0;
 
-  (void) ffcross; (void) vpos; (void) i;
 #if __ANIMATE
-  for(i = 0; i < NTRANSITIONS*2; ++i) {
+  for(i = 0; i < NTRANSITIONS*3; ++i) {
+    // TODO: lines closer to viewer should be taller to keep perspective
     vpos +=  ROWHEIGHT;
 
     // Calculate where the crossing now occurs
     if(!ffcross && vpos > 0xff){     
       ffcross = 1;
-      // Insert safe wait
       ciTransition[i]->wait.vp = vpos & 0xFF;
       ciTransition[i]->wait.hp = 0x01;
       i++;
+      // Insert safe wait
       ciTransition[i]->wait.vp = 0xFF;
       ciTransition[i]->wait.hp = 0xDF;
+      i++;
+      ciTransition[i]->wait.vp = vpos & 0xFF;
+      ciTransition[i]->wait.hp = 0x01;
            
       Log("VPOS overflow at wait number %d\n", i);
     } else {
@@ -148,14 +144,15 @@ static void Render(void) {
       i++;
       ciTransition[i]->wait.vp = vpos & 0xFF;
       ciTransition[i]->wait.hp = 0x0F;
-
+      i++;
+      ciTransition[i]->wait.vp = vpos & 0xFF;
+      ciTransition[i]->wait.hp = 0x0F;
     }
 
   }
 #endif
   framen++;
-  framen &= 0xFF;
-  (void) ciTransition;
+  framen &= 0x3F;
   TaskWaitVBlank();
 }
 
