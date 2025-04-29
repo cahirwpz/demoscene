@@ -68,7 +68,8 @@
 
 #define align(x, n) (((x) + (n)-1) & (-(n)))
 
-#define __BIT(x) (1L << (x))
+/* __BIT(n): n-th bit, where __BIT(0) == 0x1. */
+#define __BIT(__n) (1L << (__n))
 
 #define __CONCAT1(x, y) x##y
 #define __CONCAT(x, y) __CONCAT1(x, y)

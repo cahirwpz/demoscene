@@ -18,7 +18,7 @@ static inline bool RightMouseButton(void) {
 }
 
 static inline short IsAGA(void) {
-  return ((custom->vposr_ >> 24) & 0x7f) == 0x23;
+  return ((custom->vposr >> 8) & CHIPID_MASK) == CHIPID_ALICE_V3;
 }
 
 #endif /* !__CUSTOM_H__ */
