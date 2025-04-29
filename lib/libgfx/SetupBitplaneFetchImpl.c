@@ -38,11 +38,11 @@ void SetupBitplaneFetch(u_short mode, hpos xstart, u_short w)
   ddfstop = ddfstrt + w - 8;
 
   /* Found in UAE source code - DDFSTRT & DDFSTOP matching for:
-   * - ECS: does not require DMA or DIW enabled, 
+   * - ECS: does not require DMA or DIW enabled,
    * - OCS: requires DMA and DIW enabled. */
 
   STORE(ddfstrt, ddfstrt);
   STORE(ddfstop, ddfstop);
-  STORE(bplcon1, ((xs & 15) << 4) | (xs & 15));
+  STORE(bplcon1, BPLCON1_PF2H(xs) | BPLCON1_PF1H(xs));
   STORE(fmode, 0);
 }
