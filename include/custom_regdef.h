@@ -95,7 +95,7 @@ struct Custom {
   uint16_t bplcon0;
   uint16_t bplcon1;
   uint16_t bplcon2;
-  uint16_t bplcon3;
+  uint16_t bplcon3; /* please use SetBplcon3 function */
   uint16_t bpl1mod;
   uint16_t bpl2mod;
   uint16_t bplcon4;

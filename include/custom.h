@@ -21,4 +21,6 @@ static inline short IsAGA(void) {
   return ((custom->vposr >> 8) & CHIPID_MASK) == CHIPID_ALICE_V3;
 }
 
+u_short SetBplcon3(u_short val, u_short mask);
+
 #endif /* !__CUSTOM_H__ */

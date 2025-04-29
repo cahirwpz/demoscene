@@ -30,9 +30,9 @@ func Make(in *image.Paletted, cfg image.Config, opts map[string]any) string {
 	// Calculate the color data
 	for _, v := range pal {
 		if o.Aga {
-			r, g, b, _ := v.RGBA()
-			r >>= 8; g >>= 8; b >>= 8
-			o.ColorsData = append(o.ColorsData, fmt.Sprintf("{0x%02x, 0x%02x, 0x%02x}", r, g, b))
+			hi := util.RGB12(v)
+			lo := util.RGB12Lo(v)
+			o.ColorsData = append(o.ColorsData, fmt.Sprintf("{0x%03x, 0x%03x}", hi, lo))
 		} else {
 			c := util.RGB12(v)
 			o.ColorsData = append(o.ColorsData, fmt.Sprintf("0x%03x", c))

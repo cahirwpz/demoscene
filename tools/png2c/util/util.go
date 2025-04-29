@@ -96,7 +96,7 @@ func RGB12(c color.Color) uint {
 	return uint(((r & 0xf000) >> 4) | ((g & 0xf000) >> 8) | ((b & 0xf000) >> 12))
 }
 
-func RGB24(c color.Color) uint {
+func RGB12Lo(c color.Color) uint {
 	r, g, b, _ := c.RGBA() // 16-bit components
-	return uint(((r & 0xff00) << 8) | (g & 0xff00) | ((b & 0xff00) >> 8))
+	return uint((r & 0x0f00) | ((g & 0x0f00) >> 4) | ((b & 0x0f00) >> 8))
 }

@@ -15,9 +15,7 @@ static inline void SetColor(u_short i, u_short rgb) {
 }
 
 /* Palette handling for AGA with RGB24 colors. */
-typedef struct rgb {
-  u_char r, g, b;
-} __packed rgb;
+typedef struct { u_short hi, lo; } rgb;
 
 void LoadColorArrayAGA(const rgb *colors, short count, int start);
 
@@ -25,12 +23,10 @@ void LoadColorArrayAGA(const rgb *colors, short count, int start);
   LoadColorArrayAGA((colors), nitems(colors), (start))
 
 static inline void SetColorAGA(u_short i, rgb c) {
-  u_short hi = ((c.r & 0xf0) << 4) | (c.g & 0xf0) | ((c.b & 0xf0) >> 4);
-  u_short lo = ((c.r & 0x0f) << 8) | ((c.g & 0x0f) << 4) | (c.b & 0x0f);
-  custom->bplcon3 = ((i << 8) & 0xe000);
-  custom->color[i & 31] = hi;
-  custom->bplcon3 = ((i << 8) & 0xe000) | BPLCON3_LOCT;
-  custom->color[i & 31] = lo;
+  SetBplcon3((i << 8) & BPLCON3_BANK(7), BPLCON3_BANK(7) | BPLCON3_LOCT);
+  custom->color[i & 31] = c.hi;
+  SetBplcon3(((i << 8) & BPLCON3_BANK(7)) | BPLCON3_LOCT, BPLCON3_BANK(7) | BPLCON3_LOCT);
+  custom->color[i & 31] = c.lo;
 }
 
 #endif /* !__PALETTE_H__ */

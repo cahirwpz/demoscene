@@ -24,6 +24,7 @@ SOURCES := \
 	CopUpdateBitplanes.c \
 	CpuEdge.c \
 	CpuLine.c \
+	CustomRegisters.c \
 	DeleteBitmap.c \
 	DeleteCopList.c \
 	DeletePixmap.c \
