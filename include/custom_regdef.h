@@ -223,7 +223,7 @@ struct Custom {
 #define BPLCON0_COLOR __BIT(9)  /* Enables color burst output signal */
 #define BPLCON0_DBLPF __BIT(10) /* Double playfield */
 #define BPLCON0_HOMOD __BIT(11) /* Hold and modify mode */
-#define BPLCON0_BPU(d) ((((d) & 7) << 12) | (((d) & 8) << 1))
+#define BPLCON0_BPU(x) ((((x) & 7) << 12) | (((x) & 8) << 1))
 #define BPLCON0_HIRES __BIT(15) /* Hi-res mode (70ns) */
 
 /* defines for bplcon1 register
@@ -241,17 +241,22 @@ struct Custom {
  * https://www.winnicki.net/amiga/memmap/BPLCON2.html */
 #define BPLCON2_ZDCTEN __BIT(10)   /* colormapped genlock bit */
 #define BPLCON2_ZDBPEN __BIT(11)   /* use bitplane as genlock bits */
-#define BPLCON2_ZDBPSEL0 __BIT(12) /* three bits to select one */
-#define BPLCON2_ZDBPSEL1 __BIT(13) /* of 8 bitplanes in */
-#define BPLCON2_ZDBPSEL2 __BIT(14) /* ZDBPEN genlock mode */
+#define BPLCON2_ZDBPSEL(x) (((x) & 7) << 12) /* select one of 8 pitplanes
+                                              * in ZDBPEN genlock mode */
 #define BPLCON2_KILLEHB __BIT(9)   /* Disables extra half brite mode */
 #define BPLCON2_PF2PRI __BIT(6)    /* Gives PF2 priority over PF1 */
-#define BPLCON2_PF2P2 __BIT(5)     /* PF2 priority with resp. to sprites */
-#define BPLCON2_PF2P1 __BIT(4)
-#define BPLCON2_PF2P0 __BIT(3)
-#define BPLCON2_PF1P2 __BIT(2)     /* PF1 priority with resp. to sprites */
-#define BPLCON2_PF1P1 __BIT(1)
-#define BPLCON2_PF1P0 __BIT(0)
+/* Playfield 1 priority over sprites */
+#define BPLCON2_PF1P_BOTTOM 4 /* PF1 below SP0-7 */
+#define BPLCON2_PF1P_SP67 3   /* PF1 above SP6-7 and below SP0-5 */
+#define BPLCON2_PF1P_SP47 2   /* PF1 above SP4-7 and below SP0-3 */
+#define BPLCON2_PF1P_SP27 1   /* PF1 above SP2-7 and below SP0-1 */
+#define BPLCON2_PF1P_SP07 0   /* PF1 above SP0-7 */
+/* Playfield 2 priority over sprites */
+#define BPLCON2_PF2P_BOTTOM (4 << 3) /* PF2 below SP0-7 */
+#define BPLCON2_PF2P_SP67 (3 << 3)   /* PF2 above SP6-7 and below SP0-5 */
+#define BPLCON2_PF2P_SP47 (2 << 3)   /* PF2 above SP4-7 and below SP0-3 */
+#define BPLCON2_PF2P_SP27 (1 << 3)   /* PF2 above SP2-7 and below SP0-1 */
+#define BPLCON2_PF2P_SP07 (0 << 3)   /* PF2 above SP0-7 */
 
 /* defines for bplcon3 register
  * https://www.winnicki.net/amiga/memmap/BPLCON3.html */

@@ -590,7 +590,7 @@ static CopListT *MakeCopperList(void) {
 
   // Moon behind trees
   CopWait(cp, VP(0), HP(0));
-  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF1P0 | BPLCON2_PF1P1 | BPLCON2_PF2P0 | BPLCON2_PF2P1);
+  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF1P_SP67 | BPLCON2_PF2P_SP67);
 
   // Moon colors
   CopSetColor(cp, 29, 0x444);
@@ -620,7 +620,7 @@ static CopListT *MakeCopperList(void) {
   CopSetColor(cp, 31, 0xDDD);
 
   // Ghost between playfields
-  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF2P0 | BPLCON2_PF2P1 | BPLCON2_PF1P2);
+  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF2P_SP67 | BPLCON2_PF1P_BOTTOM);
 
   // Duplicate lines
   for (i = 0; i < 6; ++i) {

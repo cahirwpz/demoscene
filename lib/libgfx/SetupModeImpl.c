@@ -10,7 +10,8 @@ void SetupMode(u_short mode, u_short depth)
 {
   STORE(bplcon0, BPLCON0_BPU(depth) | BPLCON0_COLOR | mode);
   STORE(bplcon1, 0);
-  STORE(bplcon2, BPLCON2_PF2P2 | BPLCON2_PF1P2 | BPLCON2_PF2PRI);
+  /* default video priority: PF2 > PF1 > SP07 */
+  STORE(bplcon2, BPLCON2_PF2P_SP07 | BPLCON2_PF1P_SP07 | BPLCON2_PF2PRI);
   /* for compatibility with AGA */
   STORE(bplcon3, BPLCON3_PF2OF(3) | BPLCON3_SPRES(0));
 }

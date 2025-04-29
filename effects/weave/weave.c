@@ -19,9 +19,6 @@
 #define DEPTH 4
 #define NSPRITES 8
 
-#define BELOW 0
-#define ABOVE BPLCON2_PF2P2
-
 #define O0 (DIWHP + 0)
 #define O1 (DIWHP + 56)
 #define O2 (DIWHP + 112)
@@ -128,9 +125,9 @@ static CopListT *MakeCopperList(StateT *state) {
       short p0, p1;
 
       if (y & 64) {
-        p0 = BELOW, p1 = ABOVE;
+        p0 = BPLCON2_PF2P_SP07, p1 = BPLCON2_PF2P_BOTTOM;
       } else {
-        p0 = ABOVE, p1 = BELOW;
+        p0 = BPLCON2_PF2P_BOTTOM, p1 = BPLCON2_PF2P_SP07;
       }
 
       CopWait(cp, vp, HP(O0 + 4));
@@ -264,8 +261,8 @@ static void Init(void) {
   LoadColors(bar_colors, 0);
   LoadColors(stripes_colors, 16);
 
-  /* Place sprites 0-3 above playfield, and 4-7 below playfield. */
-  custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P1 | BPLCON2_PF1P1;
+  /* Place sprites 0-1 above playfield, and 2-7 below playfield. */
+  custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P_SP27 | BPLCON2_PF1P_SP27;
 
   SpriteUpdatePos(&stripes[0], X(0), Y(0));
   SpriteUpdatePos(&stripes[1], X(0), Y(0));
