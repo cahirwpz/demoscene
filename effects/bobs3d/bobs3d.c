@@ -24,6 +24,8 @@ static int active = 0;
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(100 + carrion_height * (carrion_cols_width + 3));
 
+  CopMove16(cp, color[0], carrion_cols_pixels[0]);
+
   /* interleaved bitplanes setup */
   CopWait(cp, Y(-1), HP(0));
 
@@ -41,7 +43,7 @@ static CopListT *MakeCopperList(void) {
       short bgcol = *data++;
 
       /* Start exchanging palette colors at the end of previous line. */
-      CopWaitSafe(cp, Y(i-1), HP(320 - 32 - 4));
+      CopWaitSafe(cp, Y(i-1), HP(454));
       CopMove16(cp, color[0], 0);
 
       CopWaitSafe(cp, Y(i), HP(0));
@@ -66,8 +68,6 @@ static void Init(void) {
   SetupMode(MODE_DUALPF, DEPTH + carrion_depth);
   LoadColors(bobs_colors, 0);
 
-  /* reverse playfield priorities */
-  custom->bplcon2 = 0;
   /* bitplane modulos for both playfields */
   custom->bpl1mod = WIDTH / 8 * (DEPTH - 1);
   custom->bpl2mod = WIDTH / 8 * (carrion_depth - 1);

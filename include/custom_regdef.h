@@ -403,8 +403,8 @@ struct Custom {
 #define OUTLX __BIT(9)  /* Output enable for bit 8 */
 #define DATLX __BIT(8)  /* Data for port 1, pin 5 (middle mouse button) */
 
-/* defines for vposr register */
-/* https://www.winnicki.net/amiga/memmap/VPOSR.html */
+/* defines for vposr register
+ * https://www.winnicki.net/amiga/memmap/VPOSR.html */
 #define CHIPID_NTSC 0x10
 #define CHIPID_PAL 0x00
 #define CHIPID_AGNUS 0x00
@@ -414,8 +414,8 @@ struct Custom {
 #define CHIPID_ALICE_V3 0x23
 #define CHIPID_MASK 0x7f
 
-/* defines for fmode register (AGA-only) */
-/* https://www.winnicki.net/amiga/memmap/FMODE.html */
+/* defines for fmode register (AGA-only)
+ * https://www.winnicki.net/amiga/memmap/FMODE.html */
 #define FMODE_SSCAN2 __BIT(15) /* Global enable for sprite scan-doubling */
 #define FMODE_BSCAN2 __BIT(14) /* Enables the use of 2nd P/F modulus on an
                                 * alternate line basis to support bitplane

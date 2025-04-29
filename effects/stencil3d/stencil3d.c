@@ -89,9 +89,6 @@ static void Init(void) {
   LoadColors(pattern_1_colors, 0);
   LoadColors(pattern_2_colors, 4);
 
-  /* reverse playfield priorities */
-  custom->bplcon2 = 0;
-
   cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);

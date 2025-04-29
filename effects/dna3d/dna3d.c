@@ -139,9 +139,6 @@ static void Init(void) {
   SetupMode(MODE_DUALPF, DEPTH + necrocoq_depth);
   LoadColors(bobs_colors, 0);
 
-  /* reverse playfield priorities */
-  custom->bplcon2 = 0;
-
   cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
