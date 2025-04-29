@@ -263,8 +263,9 @@ struct Custom {
 #define BPLCON3_ZDCLKEN __BIT(2)   /* ZD pin outputs a 14mhz clock (ECSENA=1) */
 #define BPLCON3_BRDNTRAN __BIT(4)  /* Border area is transparent (ECSENA=1) */
 #define BPLCON3_BRDNBLNK __BIT(5)  /* Border area is blanked (ECSENA=1) */
-#define BPLCON3_SPRES0 __BIT(6)    /* Determine resolution of all 8 sprites */
-#define BPLCON3_SPRES1 __BIT(7)    /* 00:default, 01:lores, 10:hires, 11:shres */
+#define BPLCON3_SPRES(x) (((x) & 3) << 6) /* Determine resolution of all
+                                           * sprites 0:default, 1:lores,
+                                           * 2:hires, 3:shres */
 #define BPLCON3_LOCT __BIT(9)      /* Causes write to COLORx registers to write
                                     * to lower order bits of RGB components */
 #define BPLCON3_PF2OF(x) (((x) & 7) << 10) /* Bitplane color table offset when
