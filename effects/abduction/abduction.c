@@ -270,7 +270,8 @@ static void Init(void) {
   cp = MakeCopperList();
   CopListActivate(cp);
 
-  custom->bplcon2 = BPLCON2_PF2PRI;
+  /* video priorities: SP07 > PF2 > PF1 */
+  custom->bplcon2 = BPLCON2_PF1P_BOTTOM | BPLCON2_PF2P_BOTTOM | BPLCON2_PF2PRI;
 
   DrawBackground(screen[0]);
   DrawBackground(screen[1]);

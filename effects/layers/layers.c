@@ -152,10 +152,6 @@ static void Init(void) {
   SetupDisplayWindow(MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
   SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH + 16);
   SetupMode(MODE_DUALPF, DEPTH);
-#if 0
-  /* Reverse playfields priorities (for testing) */
-  custom->bplcon2 = 0;
-#endif
 
   cp[0] = NewCopList(500);
   cp[1] = NewCopList(500);

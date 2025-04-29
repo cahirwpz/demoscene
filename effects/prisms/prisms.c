@@ -299,7 +299,9 @@ static void DrawVisibleSpans(SpanInfoT *si, CopLineT **lineTab) {
     short depth = *wp++;
     short width = *wp++;
     short color = *wp++;
-    short bplcon2 = (depth > centerZ) ? BPLCON2_PF1P2|BPLCON2_PF2P2 : 0;
+    short bplcon2 = (depth > centerZ)
+      ? (BPLCON2_PF1P_BOTTOM | BPLCON2_PF2P_BOTTOM)
+      : (BPLCON2_PF1P_SP07 | BPLCON2_PF2P_SP07);
     CopLineT *lineIns = *lineTab++;
 
     CopInsSet16(&lineIns->color, color);

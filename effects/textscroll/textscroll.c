@@ -1,3 +1,4 @@
+#include "custom_regdef.h"
 #include <effect.h>
 #include <blitter.h>
 #include <copper.h>
@@ -59,12 +60,7 @@ static void Init(void) {
   SetupBitplaneFetch(MODE_HIRES, X(0), WIDTH);
   SetupMode(MODE_DUALPF|MODE_HIRES, DEPTH + background_depth);
   LoadColors(font_colors, 0);
-  LoadColors(background_colors, IsAGA() ? 16 : 8);
-
-  /* reverse playfield priorities */
-  custom->bplcon2 = 0;
-  /* AGA fix */
-  custom->bplcon3 = BPLCON3_PF2OF0;
+  LoadColors(background_colors, 8);
 
   linebpl = MemAlloc(sizeof(CopInsPairT *) * 2 * HEIGHT, MEMF_PUBLIC);
   cp[0] = MakeCopperList((*linebpl)[0]);

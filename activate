@@ -1,10 +1,39 @@
 #!/bin/bash
 # This file must be used with "source activate"
 
-PREFIX=${PREFIX:-/opt/amiga}
-
 [ -e /etc/debian_version ] || \
   echo "Warning: Unsupported Linux distribution!"
+
+function demoscene_config {
+  MODEL=A500
+  PREFIX=/opt/amiga
+
+  local opt
+  while getopts "m:p:" opt $@; do
+    case ${opt} in
+      m)
+        case ${OPTARG} in
+          A500|A1200)
+            MODEL="${OPTARG}"
+            ;;
+          *)
+            echo "Unknown Amiga model: ${OPTARG}!"
+            return 1
+            ;;
+        esac
+        ;;
+      p)
+        PREFIX="${OPTARG}"
+        ;;
+      \?)
+        return 1
+        ;;
+    esac
+  done
+
+  export MODEL
+  return 0
+}
 
 function demoscene_check {
   local PACKAGES
@@ -37,14 +66,26 @@ function demoscene_check {
   return 0
 }
 
-if demoscene_check; then
-  PATH=${PREFIX}/bin:${PATH}
-  export PATH
+function demoscene_activate {
+  export PATH=${PREFIX}/bin:${PATH}
 
   python3 -m venv .venv
   source .venv/bin/activate
   python3 -m pip -q install -U -r requirements.txt
+}
 
-  echo "Demoscene build environment is ready in $(pwd)!"
-  export DEMOSCENE_ROOT=$(pwd)
+if demoscene_config $@; then
+  if demoscene_check; then
+    demoscene_activate
+
+    echo "Demoscene build environment in $(pwd) configured for ${MODEL}!"
+    export DEMOSCENE_ROOT=$(pwd)
+  fi
+else
+  echo ""
+  echo "Usage: source activate -m MODEL -p PREFIX"
+  echo ""
+  echo "Where:"
+  echo " MODEL is A500 or A1200 (default: A500)"
+  echo " PREFIX points to toolchain installation (default: /opt/amiga)"
 fi

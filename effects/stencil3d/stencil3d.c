@@ -45,15 +45,14 @@ static CopListT *MakeCopperList(void) {
 
   {
     u_short *data = background_cols_pixels;
-    short k = IsAGA() ? 8 : 0;
     short i;
 
     for (i = 0; i < background_height; i++) {
       CopWaitSafe(cp, Y(i), HP(0));
       CopMove16(cp, color[0], *data++);
-      CopMove16(cp, color[9+k], *data++);
-      CopMove16(cp, color[10+k], *data++);
-      CopMove16(cp, color[11+k], *data++);
+      CopMove16(cp, color[9], *data++);
+      CopMove16(cp, color[10], *data++);
+      CopMove16(cp, color[11], *data++);
     }
   }
 
@@ -89,11 +88,6 @@ static void Init(void) {
   SetupMode(MODE_DUALPF, DEPTH + background_depth);
   LoadColors(pattern_1_colors, 0);
   LoadColors(pattern_2_colors, 4);
-
-  /* reverse playfield priorities */
-  custom->bplcon2 = 0;
-  /* AGA fix */
-  custom->bplcon3 = BPLCON3_PF2OF0;
 
   cp = MakeCopperList();
   CopListActivate(cp);
