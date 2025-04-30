@@ -10,9 +10,11 @@
 #define MODE_LACE __BIT(2)       /* BPLCON0_LACE */
 #define MODE_HAM __BIT(11)       /* BPLCON0_HOMOD */
 /* for AGA */
-#define MODE_SHRES __BIT(6)      /* BPLCON0_SHRES */
-#define MODE_FMODE(x) ((x) & 3)  /* FMODE_BPAGEM, FMODE_BLP32 */
-#define MODE_LINEDBL __BIT(14)   /* FMODE_BSCAN2 */
+#define MODE_SHRES __BIT(6)            /* BPLCON0_SHRES */
+#define MODE_16BIT 0
+#define MODE_32BIT __BIT(0)            /* FMODE_BLP32 */
+#define MODE_64BIT (__BIT(0)|__BIT(1)) /* FMODE_BPAGEM,FMODE_BLP32 */
+#define MODE_LINEDBL __BIT(14)         /* FMODE_BSCAN2 */
 
 /* Configures ddfstrt/ddfstop/bplcon1/fmode registers */
 void SetupBitplaneFetch(u_short mode, hpos xstart, u_short width);

@@ -1,3 +1,15 @@
+#include <common.h>
+
+#define FMODE_MASK (FMODE_BPAGEM|FMODE_BLP32|FMODE_BSCAN2)
+
+#define BUS16 0
+#define BUS32 1
+#define BUS64 2
+
+#define LORES 0
+#define HIRES 1
+#define SHRES 2
+
 #ifdef __COPPER_H__
 #define STORE(reg, val) CopMove16(list, reg, val)
 
@@ -8,10 +20,35 @@ void CopSetupBitplaneFetch(CopListT *list, u_short mode, hpos xstart, u_short w)
 void SetupBitplaneFetch(u_short mode, hpos xstart, u_short w)
 #endif
 {
-  u_char ddfstrt, ddfstop;
-  short xs = xstart.hpos;
+  u_short ddfstrt, ddfstop;
+  short xs = xstart.hpos << 2; /* convert to shres */
+  short fetchstart, fetchsize, prefetch;
 
-  /* DDFSTRT and DDFSTOP have resolution of 4 clocks.
+  short bus = mode & 3;
+  short res = LORES;
+
+  if (bus == 3)
+    bus = BUS64;
+
+  if (mode & MODE_SHRES) {
+    res = SHRES;
+  } else if (mode & MODE_HIRES) {
+    res = HIRES;
+    w <<= 1; /* convert from hires to shres */
+  } else {
+    w <<= 2; /* convert from lores to shres */
+  }
+
+  /* Method is taken from amifb.c Linux driver */
+  fetchstart = 256 >> (bus + res);
+  fetchsize = 64 << max(bus - res, 0);
+  prefetch = 64 >> max(res - bus, 0);
+
+  ddfstrt = ((xs - 4) & -fetchstart) - prefetch;
+  ddfstop = ddfstrt + w - fetchsize;
+
+  /*
+   * DDFSTRT and DDFSTOP have resolution of 4 clocks.
    *
    * Only bits 7..2 of DDFSTRT and DDFSTOP are meaningful on OCS!
    *
@@ -19,30 +56,14 @@ void SetupBitplaneFetch(u_short mode, hpos xstart, u_short w)
    * 16 pixels, because hardware fetches bitplanes in 16-bit word units.
    * Bitplane fetcher uses 4 clocks for HiRes (1 clock = 4 pixels) and 8 clocks
    * for LoRes (1 clock = 2 pixels) to fetch enough data to display it.
-   *
-   * HS = Horizontal Start, W = Width (divisible by 16)
-   *
-   * For LoRes: DDFSTART = HS / 2 - 8.5, DDFSTOP = DDFSTRT + W / 2 - 8
-   * For HiRes: DDFSTART = HS / 2 - 4.5, DDFSTOP = DDFSTRT + W / 4 - 8 */
- 
-  if (mode & MODE_HIRES) {
-    xs -= 9;
-    w >>= 2;
-    ddfstrt = (xs >> 1) & ~3; /* 4 clock resolution */
-  } else {
-    xs -= 17;
-    w >>= 1;
-    ddfstrt = (xs >> 1) & ~7; /* 8 clock resolution */
-  }
-
-  ddfstop = ddfstrt + w - 8;
+   */
 
   /* Found in UAE source code - DDFSTRT & DDFSTOP matching for:
    * - ECS: does not require DMA or DIW enabled,
    * - OCS: requires DMA and DIW enabled. */
 
-  STORE(ddfstrt, ddfstrt);
-  STORE(ddfstop, ddfstop);
+  STORE(ddfstrt, ddfstrt >> 3);
+  STORE(ddfstop, ddfstop >> 3);
   STORE(bplcon1, BPLCON1_PF2H(xs) | BPLCON1_PF1H(xs));
-  STORE(fmode, fmode(0, FMODE_BPAGEM | FMODE_BLP32));
+  STORE(fmode, fmode(mode, FMODE_BPAGEM | FMODE_BLP32 | FMODE_BSCAN2));
 }
