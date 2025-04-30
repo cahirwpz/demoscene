@@ -101,7 +101,6 @@ static CopListT *MakeCopperList(void) {
 
       /* Start exchanging palette colors at the end of previous line. */
       CopWaitSafe(cp, Y(i-1), HP(320 - 32 - 4));
-      CopMove16(cp, color[0], 0);
       fgcol = *pf1_data++;
       CopMove16(cp, color[1], fgcol);
       fgcol = *pf1_data++;
