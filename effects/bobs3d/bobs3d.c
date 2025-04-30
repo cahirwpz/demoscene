@@ -43,10 +43,10 @@ static CopListT *MakeCopperList(void) {
       short bgcol = *data++;
 
       /* Start exchanging palette colors at the end of previous line. */
-      CopWaitSafe(cp, Y(i-1), HP(454));
+      CopWaitSafe(cp, Y(i-1), X(320-32));
       CopMove16(cp, color[0], 0);
 
-      CopWaitSafe(cp, Y(i), HP(0));
+      CopWaitSafe(cp, Y(i), X(0));
       CopMove16(cp, color[9], *data++);
       CopMove16(cp, color[10], *data++);
       CopMove16(cp, color[11], *data++);
