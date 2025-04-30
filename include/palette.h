@@ -23,9 +23,11 @@ void LoadColorArrayAGA(const rgb *colors, short count, int start);
   LoadColorArrayAGA((colors), nitems(colors), (start))
 
 static inline void SetColorAGA(u_short i, rgb c) {
-  SetBplcon3((i << 8) & BPLCON3_BANK(7), BPLCON3_BANK(7) | BPLCON3_LOCT);
+  custom->bplcon3 = bplcon3((i << 8) & BPLCON3_BANK(7),
+                            BPLCON3_BANK(7) | BPLCON3_LOCT);
   custom->color[i & 31] = c.hi;
-  SetBplcon3(((i << 8) & BPLCON3_BANK(7)) | BPLCON3_LOCT, BPLCON3_BANK(7) | BPLCON3_LOCT);
+  custom->bplcon3 = bplcon3(((i << 8) & BPLCON3_BANK(7)) | BPLCON3_LOCT,
+                            BPLCON3_BANK(7) | BPLCON3_LOCT);
   custom->color[i & 31] = c.lo;
 }
 

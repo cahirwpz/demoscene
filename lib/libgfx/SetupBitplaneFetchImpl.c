@@ -44,5 +44,5 @@ void SetupBitplaneFetch(u_short mode, hpos xstart, u_short w)
   STORE(ddfstrt, ddfstrt);
   STORE(ddfstop, ddfstop);
   STORE(bplcon1, BPLCON1_PF2H(xs) | BPLCON1_PF1H(xs));
-  STORE(fmode, 0);
+  STORE(fmode, fmode(0, FMODE_BPAGEM | FMODE_BLP32));
 }
