@@ -22,7 +22,7 @@ void SetupBitplaneFetch(u_short mode, hpos xstart, u_short w)
 {
   u_short ddfstrt, ddfstop;
   short xs = xstart.hpos << 2; /* convert to shres */
-  short fetchstart, fetchsize, prefetch;
+  short fetchstart, fetchsize, prefetch, shift;
 
   short bus = mode & 3;
   short res = LORES;
@@ -40,12 +40,15 @@ void SetupBitplaneFetch(u_short mode, hpos xstart, u_short w)
   }
 
   /* Method is taken from amifb.c Linux driver */
-  fetchstart = 256 >> (bus + res);
+  fetchstart = 16 << (bus - res + 2);
   fetchsize = 64 << max(bus - res, 0);
   prefetch = 64 >> max(res - bus, 0);
+  xs -= 4;
 
-  ddfstrt = ((xs - 4) & -fetchstart) - prefetch;
+  ddfstrt = (xs & -fetchstart) - prefetch;
   ddfstop = ddfstrt + w - fetchsize;
+
+  shift = (xs & (fetchstart - 1)) >> 2;
 
   /*
    * DDFSTRT and DDFSTOP have resolution of 4 clocks.
