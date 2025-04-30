@@ -6,7 +6,7 @@
 
 struct Hunk;
 
-typedef struct __packed MemRegion {
+typedef struct MemRegion {
   uintptr_t mr_lower;
   uintptr_t mr_upper;
   u_short mr_attr;

@@ -232,6 +232,7 @@ KillOS:
         move.l  d0,(a3)+                ; upper address rounded up to 2^16
         add.w   #1,BD_NREGIONS(a2)      ; increase number of regions
         move.w  MH_ATTRIBUTES(a1),(a3)+
+        clr.w   (a3)+                   ; MemRegionT padding
 .skipmh cmp.l   LH_TAILPRED(a0),a1
         bne     .memory
 
@@ -374,14 +375,17 @@ ClearMem:
 ; Allocate block of memory using memory regions data structure.
 ;
 ; Arguments:
-;   [d0] memory block size (aligned to 8 byte boundary)
+;   [d0] memory block size
 ;   [d1] memory flags (MB_* flags)
 ;   [a6] boot loader data
 ;
 ; Result:
-;   [d0] allocated block of memory
+;   [d0] allocated block of memory (aligned to 8 byte boundary)
 
 AllocMem:
+        addq.l  #7,d0
+        and.w   #-8,d0          ; align to 8 bytes
+
         movem.l d2-d5,-(sp)
         lea     BD_NREGIONS(a6),a0 ; [a0] memory regions
         move.w  (a0)+,d5        ; [d5] #regions
