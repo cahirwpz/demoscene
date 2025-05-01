@@ -86,7 +86,7 @@ static __code short active = 0;
 
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(32);
-  CopWait(cp, Y(-1), 0);
+  CopWait(cp, Y(-1), HP(0));
   bplptr = CopSetupBitplanes(cp, screen[0], cathedral_light_depth);
   return CopListFinish(cp);
 }
