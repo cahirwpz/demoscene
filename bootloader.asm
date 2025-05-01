@@ -85,11 +85,12 @@ COMP_ZX0        EQU     3
  STRUCTURE MR,0                 ; Memory Region
         APTR    MR_LOWER
         APTR    MR_UPPER
-        WORD	MR_ATTR
+        WORD    MR_ATTR
+        ALIGNLONG
         LABEL   MR_SIZE
 
  STRUCTURE SEG,0                ; Amiga Hunk
-        LONG	SEG_LEN 
+        LONG	SEG_LEN
         APTR	SEG_NEXT
         LABEL	SEG_START
         LABEL	SEG_SIZE
@@ -406,7 +407,7 @@ AllocMem:
         bge     .found
 
 .iter   ; move to the next region
-        add.w	#MR_SIZE,a0
+        add.w   #MR_SIZE,a0
         subq.l  #1,d5
         bgt     .lookup
 

@@ -10,7 +10,7 @@ typedef struct MemRegion {
   uintptr_t mr_lower;
   uintptr_t mr_upper;
   u_short mr_attr;
-} MemRegionT;
+} __aligned(4) MemRegionT;
 
 typedef struct BootData {
   struct Hunk *bd_hunk; /* First hunk of executable file */
