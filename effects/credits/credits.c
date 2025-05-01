@@ -75,6 +75,8 @@ static void MakeCopperList(CopListT *cp) {
   CopLoadColors(cp, floor_colors, 0);
   CopLoadColors(cp, dance_colors, 8);
   CopSetupMode(cp, MODE_DUALPF, 6);
+  CopMove16(cp, bplcon2, BPLCON2_PF2PRI);
+
   {
     void *const *planes0 = floor.planes;
     void *const *planes1 = foreground->planes;
@@ -99,7 +101,7 @@ static void MakeCopperList(CopListT *cp) {
   if (lower) {
     /* There're some differences between OCS and ECS that make an artifact
      * visible (on ECS) while 'lower' bitmap is on the left side of the screen.
-     * I found 'X(56) / 2' to be the least working horizontal position,
+     * I found 'X(56)' to be the least working horizontal position,
      * but I cannot provide any sound explanation why is it so? */
     CopWaitSafe(cp, Y(LOGO_Y - 1), X(56));
     CopLoadColorArray(cp, lower_pal, logo_colors_count, 0);
