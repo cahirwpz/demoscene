@@ -14,10 +14,10 @@
 #define VTILES (HEIGHT / 8)
 
 /* Don't change these settings without reading a note about copper chunky! */
-#undef _YS
-#define _YS 0x28
-#undef _XS
-#define _XS 0x84
+#undef DIWVP
+#define DIWVP 0x28
+#undef DIWHP
+#define DIWHP 0x84
 
 static CopInsPairT *bplptr;
 static CopInsT *chunky[VTILES];

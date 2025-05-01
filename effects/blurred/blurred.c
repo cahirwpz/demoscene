@@ -65,6 +65,9 @@ static void Init(void) {
   buffer = NewBitmap(SIZE, SIZE, 4, 0);
   carry = NewBitmap(SIZE, SIZE, 2, 0);
 
+  BitmapClear(buffer);
+  BitmapClear(carry);
+
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
   cp = MakeCopperList();

@@ -13,10 +13,10 @@
 #define VTILES (HEIGHT / 4)
 
 /* Don't change these settings without reading a note about copper chunky! */
-#undef _YS
-#define _YS 0x2c
-#undef _XS
-#define _XS 0x88
+#undef DIWVP
+#define DIWVP 0x2c
+#undef DIWHP
+#define DIWHP 0x88
 
 static CopInsT *chunky[2][VTILES];
 static CopListT *cp[2];

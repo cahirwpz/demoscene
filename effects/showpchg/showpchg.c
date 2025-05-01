@@ -28,7 +28,7 @@ static CopListT *MakeCopperList(void) {
       }
 
       /* Start exchanging palette colors at the end of line. */
-      CopWait(cp, Y(i), X(face.width + 16));
+      CopWait(cp, Y(i), X(face.width - 8));
     }
   }
 

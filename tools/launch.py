@@ -43,7 +43,7 @@ class FSUAE(Launchable):
     def __init__(self):
         super().__init__('fs-uae', HerePath('tools', GDBSERVER))
 
-    def configure(self, floppy=None, log='', debug=False):
+    def configure(self, floppy=None, model=None, log='', debug=False):
         self.options.extend(['-e', 'fs-uae'])
         if debug:
             self.options.append('-g')
@@ -54,6 +54,8 @@ class FSUAE(Launchable):
         if floppy:
             self.options.append(
                 '--floppy_drive_0={}'.format(Path(floppy).resolve()))
+        if model:
+            self.options.append(f'--amiga_model={model}')
         if debug:
             self.options.append('--use_debugger=1')
         self.options.append('--warp_mode=1')
@@ -102,6 +104,9 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--window', metavar='WIN', type=str,
                         default='fs-uae',
                         help='Select tmux window name to switch to.')
+    parser.add_argument('-m', '--model', choices=['A500', 'A1200'],
+                        default=os.getenv('MODEL', 'A500'),
+                        help='Emulate given Amiga computer model.')
     args = parser.parse_args()
 
     # Check if floppy disk image file exists
@@ -114,6 +119,7 @@ if __name__ == '__main__':
 
     uae = FSUAE()
     uae.configure(floppy=args.floppy,
+                  model=args.model,
                   log=Path(args.floppy).stem + '.log',
                   debug=args.debug)
 

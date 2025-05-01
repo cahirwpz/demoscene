@@ -26,11 +26,11 @@ static short active = 0;
 static CopListT *MakeCopperList(short n) {
   CopListT *cp = NewCopList(100 + HEIGHT * 5 + (31 * HEIGHT / 3));
   CopInsPairT *sprptr = CopSetupSprites(cp);
-  short *pixels = texture.pixels;
+  u_short *pixels = texture_pixels;
   short i, j, k;
 
   bplptr[n] = CopSetupBitplanes(cp, &twister, DEPTH);
-  
+
   CopMove16(cp, dmacon, DMAF_SETCLR|DMAF_RASTER);
   CopSetColor(cp, 0, gradient_colors[0]);
 
@@ -58,11 +58,9 @@ static CopListT *MakeCopperList(short n) {
 }
 
 static void Init(void) {
-  EnableDMA(DMAF_BLITTER);
-
-  SetupPlayfield(MODE_LORES, DEPTH, X(STARTX), Y(0), WIDTH, HEIGHT);
-  custom->diwstrt = 0x2c81;
-  custom->diwstop = 0x2bc1;
+  SetupBitplaneFetch(MODE_LORES, X(STARTX), WIDTH);
+  SetupMode(MODE_LORES, DEPTH);
+  SetupDisplayWindow(MODE_LORES, X(0), Y(0), 320, HEIGHT);
 
   cp[0] = MakeCopperList(0);
   cp[1] = MakeCopperList(1);
@@ -77,6 +75,9 @@ static void Init(void) {
 }
 
 static void Kill(void) {
+  ResetSprites();
+  CopperStop();
+
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
 }
@@ -90,7 +91,7 @@ static void SetupLines(short f) {
 
   /* first line */
   {
-    int y = (short)twister.bytesPerRow * y0;
+    int y = (short)twister_bytesPerRow * y0;
     void *const *planes = twister.planes;
     CopInsPairT *_bplptr = bplptr[active];
     short n = DEPTH;
@@ -117,54 +118,51 @@ static void SetupLines(short f) {
 }
 
 static void SetupTexture(CopInsT **colors, short y) {
-  short *pixels = texture.pixels;
-  short height = texture.height;
-  short width = texture.width;
-  short n = height;
+  u_short *pixels = texture_pixels;
+  short n = texture_height;
 
-  y %= height;
-
-  pixels += y * width;
+  y = mod16(y, texture_height);
+  pixels += y * texture_width;
 
   while (--n >= 0) {
-    short *ins = (short *)(*colors++) + 1;
+    short *ins = (short *)*colors++;
 
-    ins[0] = *pixels++;
-    ins[2] = *pixels++;
-    ins[4] = *pixels++;
-    ins[6] = *pixels++;
-    ins[8] = *pixels++;
-    ins[10] = *pixels++;
-    ins[12] = *pixels++;
-    ins[14] = *pixels++;
-    ins[16] = *pixels++;
-    ins[18] = *pixels++;
-    ins[20] = *pixels++;
-    ins[22] = *pixels++;
-    ins[24] = *pixels++;
-    ins[26] = *pixels++;
-    ins[28] = *pixels++;
-    ins[30] = *pixels++;
-    ins[32] = *pixels++;
-    ins[34] = *pixels++;
-    ins[36] = *pixels++;
-    ins[38] = *pixels++;
-    ins[40] = *pixels++;
-    ins[42] = *pixels++;
-    ins[44] = *pixels++;
-    ins[46] = *pixels++;
-    ins[48] = *pixels++;
-    ins[50] = *pixels++;
-    ins[52] = *pixels++;
-    ins[54] = *pixels++;
-    ins[56] = *pixels++;
-    ins[58] = *pixels++;
-    ins[60] = *pixels++;
+    ins[1] = *pixels++;
+    ins[3] = *pixels++;
+    ins[5] = *pixels++;
+    ins[7] = *pixels++;
+    ins[9] = *pixels++;
+    ins[11] = *pixels++;
+    ins[13] = *pixels++;
+    ins[15] = *pixels++;
+    ins[17] = *pixels++;
+    ins[19] = *pixels++;
+    ins[21] = *pixels++;
+    ins[23] = *pixels++;
+    ins[25] = *pixels++;
+    ins[27] = *pixels++;
+    ins[29] = *pixels++;
+    ins[31] = *pixels++;
+    ins[33] = *pixels++;
+    ins[35] = *pixels++;
+    ins[37] = *pixels++;
+    ins[39] = *pixels++;
+    ins[41] = *pixels++;
+    ins[43] = *pixels++;
+    ins[45] = *pixels++;
+    ins[47] = *pixels++;
+    ins[49] = *pixels++;
+    ins[51] = *pixels++;
+    ins[53] = *pixels++;
+    ins[55] = *pixels++;
+    ins[57] = *pixels++;
+    ins[59] = *pixels++;
+    ins[61] = *pixels++;
 
     y++;
 
-    if (y >= height) {
-      pixels = texture.pixels;
+    if (y >= texture_height) {
+      pixels = texture_pixels;
       y = 0;
     }
   }
