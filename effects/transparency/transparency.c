@@ -120,7 +120,7 @@ static CopListT *MakeCopperList(void) {
   CopMove16(cp, bplcon1, 0);
 
   midpoint = CopInsPtr(cp);
-  CopWait(cp, Y(stardust_1_height) - 1, 0);
+  CopWait(cp, Y(stardust_1_height - 1), HP(0));
   CopMove16(cp, bpl1mod, -stardust_1_bytesPerRow - 320 / 8);
   CopListFinish(cp);
 
@@ -171,7 +171,7 @@ static void Render(void) {
     CopInsSet16(bplshift, ~xo & 15);
     CopInsSet32(&bplptr[0], stardust[f]->planes[0] + offset);
     CopInsSet32(&bplptr[2], stardust[f]->planes[1] + offset);
-    midpoint->wait.vp = Y(stardust_1_height) - 1 - yo;
+    midpoint->wait.vp = DIWVP + stardust_1_height - 1 - yo;
   }
 
   TaskWaitVBlank();
