@@ -207,8 +207,8 @@ static void Escape(void) {
 
 static CopListT *MakeCopperList(void) {
   cp = NewCopList(128);
-  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
 
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   sprptr = CopSetupSprites(cp);
 
   CopInsSetSprite(&sprptr[0], &coq);
@@ -223,7 +223,7 @@ static CopListT *MakeCopperList(void) {
 
   beam_pal_cp = CopLoadColors(cp, beam_pal[0], 21);
 
-  return cp;
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -270,8 +270,8 @@ static void Init(void) {
   cp = MakeCopperList();
   CopListActivate(cp);
 
-  /* video priorities: SP07 > PF2 > PF1 */
-  custom->bplcon2 = BPLCON2_PF1P_BOTTOM | BPLCON2_PF2P_BOTTOM | BPLCON2_PF2PRI;
+  /* video priorities: PF1 > PF2 > SP07 */
+  custom->bplcon2 = BPLCON2_PF1P_SP07 | BPLCON2_PF2P_SP07;
 
   DrawBackground(screen[0]);
   DrawBackground(screen[1]);
