@@ -404,16 +404,15 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
 }
 
 static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
-  short x = X(xo);
-  short y = Y(yo);
+  short x = xo;
   short n = 4;
 
   while (--n >= 0) {
     SpriteT *spr0 = sprite++;
     SpriteT *spr1 = sprite++;
 
-    SpriteUpdatePos(spr0, x, y);
-    SpriteUpdatePos(spr1, x, y);
+    SpriteUpdatePos(spr0, X(x), Y(yo));
+    SpriteUpdatePos(spr1, X(x), Y(yo));
 
     x += 16;
   }

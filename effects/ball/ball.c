@@ -303,16 +303,16 @@ static void BitmapToSprite(BitmapT *input, SpriteT sprite[8]) {
 }
 
 static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
-  short x = X((S_WIDTH - WIDTH) / 2) + xo;
-  short y = Y((S_HEIGHT - HEIGHT) / 2) + yo;
+  short x = (S_WIDTH - WIDTH) / 2 + xo;
+  short y = (S_HEIGHT - HEIGHT) / 2 + yo;
   short n = 4;
 
   while (--n >= 0) {
     SpriteT *spr0 = sprite++;
     SpriteT *spr1 = sprite++;
 
-    SpriteUpdatePos(spr0, x, y);
-    SpriteUpdatePos(spr1, x, y);
+    SpriteUpdatePos(spr0, X(x), Y(y));
+    SpriteUpdatePos(spr1, X(x), Y(y));
 
     x += 16;
   }
