@@ -50,7 +50,7 @@ static CopListT *MakeCopperList(void) {
     CopWaitSafe(cp, Y(i), HP(0));
 
     for (j = 0; j < 8; j++)
-      CopMove16(cp, spr[j].pos, SPRPOS((X(16*j+32)).hpos, (Y(i)).vpos));
+      CopMove16(cp, spr[j].pos, SPRPOS(DIWHP + 16*j + 32, DIWVP + i));
 
     cols++;
     c0 = *cols++;
@@ -70,9 +70,9 @@ static CopListT *MakeCopperList(void) {
     CopMove16(cp, color[30], c1);
     CopMove16(cp, color[31], c2);
 
-    CopWaitSafe(cp, Y(i), HP(128));
+    CopWaitSafe(cp, Y(i), X(128));
     for (j = 0; j < 8; j++)
-      CopMove16(cp, spr[j].pos, SPRPOS((X(16*j+128+32)).hpos, (Y(i)).vpos));
+      CopMove16(cp, spr[j].pos, SPRPOS(DIWHP + 16*j + 128 + 32, DIWVP + i));
   }
 
   CopListFinish(cp);
