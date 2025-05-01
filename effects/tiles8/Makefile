@@ -6,7 +6,7 @@ CLEAN-FILES := data/twist.c data/twist.png data/tiles-c.c  \
 
 PNG2C.twist := --pixmap twist,38x32x8
 PNG2C.twist-colors := --pixmap colors,256x1x12
-PNG2C.tiles-c := --bitmap tilegfx,16x128x1 --palette tilegfx_pal,2
+PNG2C.tiles-c := --bitmap tilegfx,16x128x1 --palette tilegfx,2
 
 include $(TOPDIR)/build/effect.mk
 

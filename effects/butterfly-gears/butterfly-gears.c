@@ -11,8 +11,7 @@
 
 #define ROTZOOM_W 24
 #define ROTZOOM_H 24
-#define COPWAIT_X 1
-#define Y0 Y((256-280)/2)
+#define Y0 ((256 - 280) / 2)
 #define COPPER_HALFROW_INSTRUCTIONS (ROTZOOM_W/2+2)
 #define INSTRUCTIONS_PER_BALL (COPPER_HALFROW_INSTRUCTIONS * ROTZOOM_H * 3)
 #define DEBUG_COLOR_WRITES 0
@@ -67,7 +66,7 @@ static void InitCopperListBall(CopListT *cp, int y, int yInc) {
   short i;
 
   for (i=0; i<ROTZOOM_H; i++) {
-    CopWait(cp, y, COPWAIT_X);
+    CopWait(cp, Y(y), HP(0));
     SETCOLOR(3);
     SETCOLOR(5);
     SETCOLOR(7);
@@ -82,7 +81,7 @@ static void InitCopperListBall(CopListT *cp, int y, int yInc) {
     SETCOLOR(28);
     CopNoOp(cp);
     y += yInc;
-    CopWait(cp, y, COPWAIT_X);
+    CopWait(cp, Y(y), HP(0));
     SETCOLOR(2);
     SETCOLOR(4);
     SETCOLOR(6);
@@ -102,11 +101,9 @@ static void InitCopperListBall(CopListT *cp, int y, int yInc) {
 
 static void MakeBallCopperList(BallCopListT *ballCp) {
   CopListT *cp = NewCopList(INSTRUCTIONS_PER_BALL * 2 + 100);
-  ballCp->cp = cp;
-  CopInit(cp);
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-  CopLoadPal(cp, &testscreen_pal, 0);
-  CopSetupBitplanes(cp, NULL, &testscreen, testscreen.depth);
+  CopLoadColors(cp, testscreen_colors, 0);
+  CopSetupBitplanes(cp, &testscreen, testscreen.depth);
 
   ballCp->upperBallCopper = cp->curr;
   InitCopperListBall(cp, Y0 + 2, 2);
@@ -117,12 +114,12 @@ static void MakeBallCopperList(BallCopListT *ballCp) {
   ballCp->lowestBallCopper = cp->curr;
   InitCopperListBall(cp, Y0 + 166, 1);
 
-  CopEnd(cp);
+  ballCp->cp = CopListFinish(cp);
 }
 
 static void Init(void) {
   SetupMode(MODE_LORES, testscreen.depth);
-  SetupDisplayWindow(MODE_LORES, X(0), Y0, 320, 280);
+  SetupDisplayWindow(MODE_LORES, X(0), Y(Y0), 320, 280);
   SetupBitplaneFetch(MODE_LORES, X(0), testscreen.width);
 
   MakeBallCopperList(&ballCopList1);
@@ -203,4 +200,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(ButterflyGears, NULL, NULL, Init, Kill, Render);
+EFFECT(ButterflyGears, NULL, NULL, Init, Kill, Render, NULL);

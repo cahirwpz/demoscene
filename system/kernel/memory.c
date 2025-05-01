@@ -119,7 +119,13 @@ static inline WordT *BtPrev(WordT *bt) {
   return (void *)bt - BtSize(ft);
 }
 
-static const char *MemoryName(u_int attributes) {
+static void BtCheck(WordT *bt) {
+  if (!BtHasCanary(bt)) {
+    Panic("[Memory] Canary of %p block damaged!", BtPayload(bt));
+  }
+}
+
+__unused static const char *MemoryName(u_int attributes) {
   if (attributes & MEMF_CHIP)
     return "chip";
   if (attributes & MEMF_FAST)
@@ -199,6 +205,7 @@ void AddMemory(void *ptr, u_int size, u_int attributes) {
   u_int sz = (uintptr_t)end - (uintptr_t)ar->start;
   WordT *bt = ar->start;
 
+  Assume(ar != NULL);
   Assume(end > (void *)ar->start + FREEBLK_SZ);
 
   ar->succ = NULL;
@@ -269,7 +276,9 @@ static void ArenaMemFree(ArenaT *ar, void *ptr) {
 
   bt = BtFromPtr(ptr);
 
-  Assume(BtUsed(bt) && BtHasCanary(bt)); /* Is block free and has canary? */
+  /* Is block free and has canary? */
+  Assume(BtUsed(bt));
+  BtCheck(bt);
 
   /* Mark block as free. */
   memsz = BtSize(bt) - USEDBLK_SZ;
@@ -364,6 +373,7 @@ static void *ArenaMemResize(ArenaT *ar, void *old_ptr, u_int size) {
   return new_ptr;
 }
 
+#ifdef MEMDEBUG
 #define Msg(...) if (verbose) Log(__VA_ARGS__)
 
 static void ArenaCheck(ArenaT *ar, int verbose) {
@@ -380,7 +390,7 @@ static void ArenaCheck(ArenaT *ar, int verbose) {
 
   for (; bt < ar->end; prev = bt, bt = BtNext(bt)) {
     int flag = !!BtGetPrevFree(bt);
-    int is_last = !!BtGetIsLast(bt);
+    __unused int is_last = !!BtGetIsLast(bt);
     Msg("$%08lx: [%c%c:%ld] %c\n", (uintptr_t)bt, "FU"[BtUsed(bt)], " P"[flag],
         BtSize(bt), " *"[is_last]);
     if (BtFree(bt)) {
@@ -392,7 +402,7 @@ static void ArenaCheck(ArenaT *ar, int verbose) {
       dangling++;
     } else {
       Assume(flag == prevfree); /* PREVFREE flag mismatch? */
-      Assume(BtHasCanary(bt)); /* Canary damaged? */
+      BtCheck(bt); /* Canary damaged? */
       prevfree = 0;
     }
   }
@@ -410,6 +420,7 @@ static void ArenaCheck(ArenaT *ar, int verbose) {
 
   MutexUnlock(&MemMtx);
 }
+#endif
 
 static ArenaT *ArenaOf(void *ptr) {
   ArenaT *ar;
@@ -432,10 +443,9 @@ void *MemAlloc(u_int size, u_int attributes) {
   }
 
   if (bt == NULL) {
-    Log("[Memory] Failed to allocate %dB of %s memory.\n",
-        size, MemoryName(attributes));
     MemCheck(1);
-    HALT();
+    Panic("[Memory] Failed to allocate %dB of %s memory!",
+          size, MemoryName(attributes));
   }
 
   ptr = BtPayload(bt);
@@ -480,6 +490,7 @@ void *MemResize(void *old_ptr, u_int size) {
   return NULL;
 }
 
+#ifdef MEMDEBUG
 void MemCheck(int verbose) {
   ArenaT *ar;
   for (ar = FirstArena; ar != NULL; ar = ar->succ)
@@ -489,8 +500,24 @@ void MemCheck(int verbose) {
 u_int MemAvail(u_int attributes) {
   ArenaT *ar;
   u_int avail = 0;
-  for (ar = FirstArena; ar != NULL; ar = ar->succ)
-    if (ar->attributes & attributes)
+  for (ar = FirstArena; ar != NULL; ar = ar->succ) {
+    if (!(ar->attributes & attributes))
+      continue;
+
+    if (attributes & MEMF_LARGEST) {
+      WordT *bt;
+
+      for (bt = ar->start; bt < ar->end; bt = BtNext(bt)) {
+        if (BtFree(bt)) {
+          unsigned sz = BtSize(bt) - USEDBLK_SZ;
+          if (sz > avail)
+            avail= sz;
+        }
+      }
+    } else {
       avail += ar->totalFree;
+    }
+  }
   return avail;
 }
+#endif

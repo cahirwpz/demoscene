@@ -1,6 +1,7 @@
 TOPDIR := $(realpath ..)
 
 SUBDIRS := \
+	abduction \
 	anim \
 	anim-polygons \
 	ball \
@@ -9,13 +10,21 @@ SUBDIRS := \
 	blurred3d \
 	bumpmap-rgb \
 	butterfly-gears \
+	cathedral \
+	carrion \
 	circles \
+	color-cycling \
 	credits \
+	darkroom \
+	dna3d \
 	empty \
 	flatshade \
 	flatshade-convex \
 	floor \
 	floor-old \
+	fire-rgb \
+	forest \
+	game-of-life \
 	glitch \
 	growing-tree \
 	gui \
@@ -23,6 +32,8 @@ SUBDIRS := \
 	kbtest \
 	layers \
 	lines \
+	loader \
+	magnifying-glass \
 	metaballs \
 	multipipe \
 	neoncity \
@@ -38,14 +49,17 @@ SUBDIRS := \
 	sea-anemone \
 	shapes \
 	showpchg \
+	stencil3d \
 	stripes \
 	textscroll \
 	thunders \
+	texobj \
 	tiles8 \
 	tiles16 \
 	tilezoomer \
 	transparency \
 	twister-rgb \
+	turmite \
 	uvlight \
 	uvmap \
 	uvmap-rgb \

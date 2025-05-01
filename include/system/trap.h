@@ -86,6 +86,7 @@ void FmtErrTrap(void);
 void TrapInstTrap(void);
 
 void YieldHandler(void);
+void CrashHandler(void);
 #endif
 
 #endif /* !__SYSTEM_TRAP_H__ */

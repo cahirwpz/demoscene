@@ -9,11 +9,17 @@ if __name__ == '__main__':
     image = Image.open(sys.argv[1])
     image = image.convert('L')
 
-    print('u_short %s[] = {' % sys.argv[2])
+    name = sys.argv[2]
+    width, height = image.size
 
-    for y in range(image.size[1]):
+    print(f'#define {name}_width {width}')
+    print(f'#define {name}_height {height}')
+    print()
+    print(f'static u_short {name}[{name}_width * {name}_height] = {{')
+
+    for y in range(height):
         sys.stdout.write(' ')
-        for x in range(image.size[0]):
+        for x in range(width):
             this = image.getpixel((x, y))
             if y < image.size[1] - 1:
                 down = image.getpixel((x, y + 1))

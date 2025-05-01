@@ -12,7 +12,7 @@
 #define DEPTH 2
 
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static BitmapT *screen;
 
 #include "data/fruit.c"
@@ -60,7 +60,7 @@ static inline int fastrand(void) {
 #define random fastrand
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, 0xfff);
@@ -69,9 +69,8 @@ static void Init(void) {
   SetColor(3, 0xf00);
 
   cp = NewCopList(50);
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopEnd(cp);
+  bplptr = CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER | DMAF_BLITTER);
@@ -323,4 +322,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(GrowingTree, NULL, NULL, Init, Kill, Render);
+EFFECT(GrowingTree, NULL, NULL, Init, Kill, Render, NULL);

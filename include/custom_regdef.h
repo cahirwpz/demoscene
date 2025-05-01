@@ -7,6 +7,7 @@
 
 #include <types.h>
 
+/* Complete map: https://www.winnicki.net/amiga/memmap/ */
 struct Custom {
   uint16_t bltddat;
   uint16_t dmaconr;
@@ -14,7 +15,7 @@ struct Custom {
     struct {
       uint16_t vposr;
       uint16_t vhposr;
-    } s_vpos;
+    } s_vposr;
     uint32_t vposr_;
   } u_vposr;
   uint16_t dskdatr;
@@ -94,7 +95,7 @@ struct Custom {
   uint16_t bplcon0;
   uint16_t bplcon1;
   uint16_t bplcon2;
-  uint16_t bplcon3;
+  uint16_t bplcon3; /* please use SetBplcon3 function */
   uint16_t bpl1mod;
   uint16_t bpl2mod;
   uint16_t bplcon4;
@@ -152,6 +153,8 @@ struct Custom {
 
 #endif
 
+/* defines for intena(r) register
+ * https://www.winnicki.net/amiga/memmap/INTENA.html */
 #define INTB_SETCLR 15  /* Set/Clear control bit. Determines if bits */
                         /* written with a one get set or cleared. Bits */
                         /* written with a zero are always unchanged */
@@ -192,7 +195,8 @@ struct Custom {
 
 #define INTF_ALL 0x3FFF
 
-/* defines for beamcon register */
+/* defines for beamcon0 register
+ * https://www.winnicki.net/amiga/memmap/BEAMCON0.html */
 #define VARVBLANK __BIT(12)  /* Variable vertical blank enable */
 #define LOLDIS __BIT(11)     /* long line disable */
 #define CSCBLANKEN __BIT(10) /* redirect composite sync */
@@ -207,39 +211,90 @@ struct Custom {
 #define VSYNCTRUE __BIT(1)   /* vertical sync true */
 #define HSYNCTRUE __BIT(0)   /* horizontal sync true */
 
-#define BPLCON0_BPU(d) (((d) & 7) << 12)
-#define BPLCON0_COLOR __BIT(9)
-#define BPLCON0_LACE __BIT(2)
-#define BPLCON0_DBLPF __BIT(10)
-#define BPLCON0_HOMOD __BIT(11)
-#define BPLCON0_HIRES __BIT(15)
+/* defines for bplcon0 register
+ * https://www.winnicki.net/amiga/memmap/BPLCON0.html */
+#define BPLCON0_ECSENA __BIT(0) /* Some bits from BPLCON3 are inhibited,
+                                 * when the value is 0. (ECS/AGA-only) */
+#define BPLCON0_ERSY __BIT(1)   /* External resync */
+#define BPLCON0_LACE __BIT(2)   /* Interlace enable */
+#define BPLCON0_LPEN __BIT(3)   /* Light pen enable */
+#define BPLCON0_SHRES __BIT(6)  /* Super hi-res mode (35ns) */
+#define BPLCON0_GAUD __BIT(8)   /* Genlock audio enable */
+#define BPLCON0_COLOR __BIT(9)  /* Enables color burst output signal */
+#define BPLCON0_DBLPF __BIT(10) /* Double playfield */
+#define BPLCON0_HOMOD __BIT(11) /* Hold and modify mode */
+#define BPLCON0_BPU(x) ((((x) & 7) << 12) | (((x) & 8) << 1))
+#define BPLCON0_HIRES __BIT(15) /* Hi-res mode (70ns) */
 
-/* new defines for bplcon0 */
-#define USE_BPLCON3 1
+/* defines for bplcon1 register
+ * https://www.winnicki.net/amiga/memmap/BPLCON1.html */
+/* AGA: Playfield 1 & 2 horizontal scroll values (0..255) in 35ns pixels */
+#define BPLCON1_PF2H_AGA(x) \
+  ((((x) & 0xc0) << 8) | (((x) & 0x03) << 12) | (((x) & 0x3f) << 2))
+#define BPLCON1_PF1H_AGA(x) \
+  ((((x) & 0xc0) << 4) | (((x) & 0x03) << 8) | (((x) & 0x3f) >> 2))
+/* OCS: Playfield 1 & 2 horicontal scroll values (0..15) in 140ns pixels */
+#define BPLCON1_PF2H(x) (((x) & 15) << 4)
+#define BPLCON1_PF1H(x) ((x) & 15)
 
-/* new defines for bplcon2 */
+/* defines for bplcon2 register
+ * https://www.winnicki.net/amiga/memmap/BPLCON2.html */
 #define BPLCON2_ZDCTEN __BIT(10)   /* colormapped genlock bit */
 #define BPLCON2_ZDBPEN __BIT(11)   /* use bitplane as genlock bits */
-#define BPLCON2_ZDBPSEL0 __BIT(12) /* three bits to select one */
-#define BPLCON2_ZDBPSEL1 __BIT(13) /* of 8 bitplanes in */
-#define BPLCON2_ZDBPSEL2 __BIT(14) /* ZDBPEN genlock mode */
-#define BPLCON2_PF2PRI __BIT(6)
-#define BPLCON2_PF2P2 __BIT(5)
-#define BPLCON2_PF2P1 __BIT(4)
-#define BPLCON2_PF2P0 __BIT(3)
-#define BPLCON2_PF1P2 __BIT(2)
-#define BPLCON2_PF1P1 __BIT(1)
-#define BPLCON2_PF1P0 __BIT(0)
+#define BPLCON2_ZDBPSEL(x) (((x) & 7) << 12) /* select one of 8 pitplanes
+                                              * in ZDBPEN genlock mode */
+#define BPLCON2_KILLEHB __BIT(9)   /* Disables extra half brite mode */
+#define BPLCON2_PF2PRI __BIT(6)    /* Gives PF2 priority over PF1 */
+/* Playfield 1 priority over sprites */
+#define BPLCON2_PF1P_BOTTOM 4 /* PF1 below SP0-7 */
+#define BPLCON2_PF1P_SP67 3   /* PF1 above SP6-7 and below SP0-5 */
+#define BPLCON2_PF1P_SP47 2   /* PF1 above SP4-7 and below SP0-3 */
+#define BPLCON2_PF1P_SP27 1   /* PF1 above SP2-7 and below SP0-1 */
+#define BPLCON2_PF1P_SP07 0   /* PF1 above SP0-7 */
+/* Playfield 2 priority over sprites */
+#define BPLCON2_PF2P_BOTTOM (4 << 3) /* PF2 below SP0-7 */
+#define BPLCON2_PF2P_SP67 (3 << 3)   /* PF2 above SP6-7 and below SP0-5 */
+#define BPLCON2_PF2P_SP47 (2 << 3)   /* PF2 above SP4-7 and below SP0-3 */
+#define BPLCON2_PF2P_SP27 (1 << 3)   /* PF2 above SP2-7 and below SP0-1 */
+#define BPLCON2_PF2P_SP07 (0 << 3)   /* PF2 above SP0-7 */
 
-/* defines for bplcon3 register */
-#define BPLCON3_EXTBLNKEN __BIT(0) /* external blank enable */
-#define BPLCON3_EXTBLKZD __BIT(1)  /* external blank ored into trnsprncy */
-#define BPLCON3_ZDCLKEN __BIT(2)   /* zd pin outputs a 14mhz clock*/
-#define BPLCON3_BRDNTRAN __BIT(4)  /* border is opaque */
-#define BPLCON3_BRDNBLNK __BIT(5)  /* border is opaque */
+/* defines for bplcon3 register
+ * https://www.winnicki.net/amiga/memmap/BPLCON3.html */
+#define BPLCON3_EXTBLNKEN __BIT(0) /* Causes BLANK output to be programmable
+                                    * instead of reflecting internal fixed
+                                    * decodes (ECSENA=1) */
+#define BPLCON3_BRDSPRT __BIT(1)   /* Enables sprites outside the display
+                                    * window (ECSENA=1) */
+#define BPLCON3_ZDCLKEN __BIT(2)   /* ZD pin outputs a 14mhz clock (ECSENA=1) */
+#define BPLCON3_BRDNTRAN __BIT(4)  /* Border area is transparent (ECSENA=1) */
+#define BPLCON3_BRDNBLNK __BIT(5)  /* Border area is blanked (ECSENA=1) */
+#define BPLCON3_SPRES(x) (((x) & 3) << 6) /* Determine resolution of all
+                                           * sprites 0:default, 1:lores,
+                                           * 2:hires, 3:shres */
+#define BPLCON3_LOCT __BIT(9)      /* Causes write to COLORx registers to write
+                                    * to lower order bits of RGB components */
+#define BPLCON3_PF2OF(x) (((x) & 7) << 10) /* Bitplane color table offset when
+                                            * PF2 has priority in DBLPF mode */
+#define BPLCON3_BANK(x) (((x) & 7) << 13)  /* Selects one of eight color banks */
 
-/* read definitions for dmaconr */
-/* bits 0-8 correspnd to dmaconw definitions */
+/* defines for bplcon4 register
+ * https://www.winnicki.net/amiga/memmap/BPLCON4.html */
+/* This 8 bit field is XOR`ed with the 8 bit plane color address,
+ * thereby altering the color address sent to the color table.
+ * Default value: 0x00 */
+#define BPLCON4_BPLAM(x) ((x) << 8)
+/* 4 Bit field provides the 4 high order color table address bits
+ * for even sprites: SPR0,SPR2,SPR4,SPR6.
+ * Default value: 0b0001 */
+#define BPLCON4_ESPRM(x) (((x) & 15) << 4)
+/* 4 Bit field provides the 4 high order color table address bits
+ * for odd sprites: SPR1,SPR3,SPR5,SPR7.
+ * Default value: 0b0001 */
+#define BPLCON4_OSPRM(x) ((x) & 15)
+
+/* defines for dmaconr register (read-only)
+ * bits 0-8 correspnd to dmaconw definitions
+ * https://www.winnicki.net/amiga/memmap/DMACON.html */
 #define DMAF_BLTDONE 0x4000
 #define DMAF_BLTNZERO 0x2000
 
@@ -258,7 +313,8 @@ struct Custom {
 #define DMAB_BLTNZERO 13
 #define DMAB_SETCLR 15
 
-/* write definitions for dmaconw */
+/* defines for dmacon register (write-only)
+ * https://www.winnicki.net/amiga/memmap/DMACON.html */
 #define DMAF(x) __BIT(DMAB_##x)
 
 #define DMAF_SETCLR DMAF(SETCLR)
@@ -277,7 +333,8 @@ struct Custom {
 #define DMAF_AUDIO 0x000F
 #define DMAF_ALL 0x01FF
 
-/* defines for adkcon register */
+/* defines for adkcon register
+ * https://www.winnicki.net/amiga/memmap/ADKCON.html */
 #define ADKB_SETCLR 15   /* standard set/clear bit */
 #define ADKB_PRECOMP1 14 /* two bits of precompensation */
 #define ADKB_PRECOMP0 13
@@ -319,19 +376,24 @@ struct Custom {
 #define ADKF_PRE280NS (ADKF_PRECOMP1)                 /* 280 ns of precomp */
 #define ADKF_PRE560NS (ADKF_PRECOMP0 | ADKF_PRECOMP1) /* 560 ns of precomp */
 
-/* defines for dsklen register */
+/* defines for dsklen register
+ * https://www.winnicki.net/amiga/memmap/DSKLEN.html */
 #define DSK_DMAEN __BIT(15)
 #define DSK_WRITE __BIT(14)
 
-/* defines for dsksync register */
+/* defines for dsksync register
+ * https://www.winnicki.net/amiga/memmap/DSKSYNC.html */
 #define DSK_SYNC 0x4489
 
-/* defines for serdat register */
-#define SERDATF_RBF __BIT(14)
-#define SERDATF_TBE __BIT(13)
-#define SERDATF_TSRE __BIT(12)
+/* defines for serdatr register
+ * https://www.winnicki.net/amiga/memmap/SERDATR.html */
+#define SERDATF_OVRUN __BIT(15) /* Serial port receiver overrun */
+#define SERDATF_RBF __BIT(14)   /* Serial port receive buffer full */
+#define SERDATF_TBE __BIT(13)   /* Serial port transmit buffer empty */
+#define SERDATF_TSRE __BIT(12)  /* Serial port transmit shift reg. empty */
 
-/* defines for potgo register */
+/* defines for potgor register
+ * https://www.winnicki.net/amiga/memmap/POTGO.html */
 #define OUTRY __BIT(15) /* Output enable for bit 14 (1=output) */
 #define DATRY __BIT(14) /* Data for port 2, pin 9 */
 #define OUTRX __BIT(13) /* Output enable for bit 12 */
@@ -340,5 +402,31 @@ struct Custom {
 #define DATLY __BIT(10) /* Data for port 1, pin 9 (right mouse button) */
 #define OUTLX __BIT(9)  /* Output enable for bit 8 */
 #define DATLX __BIT(8)  /* Data for port 1, pin 5 (middle mouse button) */
+
+/* defines for vposr register
+ * https://www.winnicki.net/amiga/memmap/VPOSR.html */
+#define CHIPID_NTSC 0x10
+#define CHIPID_PAL 0x00
+#define CHIPID_AGNUS 0x00
+#define CHIPID_FAT_AGNUS 0x20
+#define CHIPID_FAT_AGNUS_V5 0x21
+#define CHIPID_ALICE 0x22
+#define CHIPID_ALICE_V3 0x23
+#define CHIPID_MASK 0x7f
+
+/* defines for fmode register (AGA-only)
+ * https://www.winnicki.net/amiga/memmap/FMODE.html */
+#define FMODE_SSCAN2 __BIT(15) /* Global enable for sprite scan-doubling */
+#define FMODE_BSCAN2 __BIT(14) /* Enables the use of 2nd P/F modulus on an
+                                * alternate line basis to support bitplane
+                                * scan-doubling. */
+#define FMODE_SPAGEM __BIT(3) /* Sprite page mode (double CAS) */
+#define FMODE_SPR32 __BIT(2)  /* Sprite 32 bit wide mode */
+#define FMODE_BPAGEM __BIT(1) /* Bitplane Page Mode (double CAS) */
+#define FMODE_BLP32 __BIT(0)  /* Bitplane 32 bit wide mode */
+
+/* defines for copcon register
+ * https://www.winnicki.net/amiga/memmap/COPCON.html */
+#define COPCON_CDANG __BIT(0) /* Allows Copper access to all registers */
 
 #endif /* !__CUSTOM_REGDEF_H__ */

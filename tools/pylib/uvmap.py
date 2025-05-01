@@ -115,16 +115,21 @@ class UVMap(object):
                 data.append(0xffff)
         if fn:
             data = fn(data)
-        print('u_short %s[%d] = {' % (name, self.width * self.height))
-        for i in range(0, self.width * self.height, self.width):
+        w, h = self.width, self.height
+        print(f'#define {name}_width {w}')
+        print(f'#define {name}_height {h}')
+        print()
+        print(f'static u_short {name}[{name}_width * {name}_height] = {{')
+        for i in range(0, w * h, self.width):
             row = ['0x%04x' % val for val in data[i:i + self.width]]
             print('  %s,' % ', '.join(row))
         print('};')
 
-    def save_uv(self, name):
+    def save_uv(self, name, scale=256):
+        size = self.texsize
         im = Image.new('L', (self.width, self.height))
-        im.putdata([frpart(u) * 256 for u in self.umap])
+        im.putdata([int(frpart(u) * scale) % size for u in self.umap])
         im.save(name + '-u.png', 'PNG')
         im = Image.new('L', (self.width, self.height))
-        im.putdata([frpart(v) * 256 for v in self.vmap])
+        im.putdata([int(frpart(v) * scale) % size for v in self.vmap])
         im.save(name + '-v.png', 'PNG')

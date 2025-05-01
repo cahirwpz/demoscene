@@ -8,6 +8,7 @@ SOURCES := \
 	autoinit.c \
 	debug.c \
 	dputchar.S \
+	kickfix.S \
 	kputchar.S \
 	effect.c \
 	loader.c \

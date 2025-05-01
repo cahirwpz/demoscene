@@ -49,31 +49,28 @@ static void GenerateColorShades(void) {
   }
 }
 
-static void MakeCopperList(CopListT *cp, CopInsT **line) {
+static CopListT *MakeCopperList(CopInsT **line) {
+  CopListT *cp = NewCopList(HEIGHT * 2 + 100);
   short i;
 
-  CopInit(cp);
   CopSetColor(cp, 0, BGCOL);
 
   for (i = 0; i < HEIGHT; i++) {
-    CopWaitSafe(cp, Y(i), 8);
+    CopWaitSafe(cp, Y(i), HP(16));
     *line++ = CopSetColor(cp, 0, 0);
   }
 
-  CopWait(cp, Y(256), 8);
+  CopWait(cp, Y(256), HP(16));
   CopSetColor(cp, 0, BGCOL);
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
   GenerateStripes();
   GenerateColorShades();
 
-  cp[0] = NewCopList(HEIGHT * 2 + 100);
-  cp[1] = NewCopList(HEIGHT * 2 + 100);
-
-  MakeCopperList(cp[0], lineColor[0]);
-  MakeCopperList(cp[1], lineColor[1]);
+  cp[0] = MakeCopperList(lineColor[0]);
+  cp[1] = MakeCopperList(lineColor[1]);
 
   CopListActivate(cp[0]);
 }
@@ -186,4 +183,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Stripes, NULL, NULL, Init, Kill, Render);
+EFFECT(Stripes, NULL, NULL, Init, Kill, Render, NULL);

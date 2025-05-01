@@ -43,15 +43,19 @@ typedef struct {
   short color;
 } SpanInfoT;
 
+typedef struct {
+  CopInsT color;
+  CopInsT bplpri;
+  CopInsPairT bplptr;
+} CopLineT;
+
 static CopListT *cp[2];
-static CopInsT *clines[2][HEIGHT];
+static CopLineT *copLines[2][HEIGHT];
 static BitmapT *stripes;
 static void *rowAddr[WIDTH / 2];
 static SpanInfoT spanInfo[HEIGHT];
 static PrismT prisms[PRISMS];
 static short active = 0;
-
-static CopInsT *sprptr[8];
 
 static u_short colorSet[NCOLORS] = {
   0xC0F, 0xF0C, 0x80F, 0xF08
@@ -116,26 +120,28 @@ static void GenerateColorShades(void) {
   }
 }
 
-static void MakeCopperList(CopListT *cp, CopInsT **cline) {
+static CopListT *MakeCopperList(CopLineT **line) {
+  CopListT *cp = NewCopList(HEIGHT * 5 + 200);
+  CopInsPairT *sprptr = CopSetupSprites(cp);
   short i;
 
-  CopInit(cp);
-  CopSetupSprites(cp, sprptr);
-
   for (i = 0; i < HEIGHT; i++) {
-    CopWait(cp, Y(i - 1), 0xDE);
-    cline[i] = CopSetColor(cp, 1, 0);
+    CopWait(cp, Y(i - 1), LASTHP);
+    line[i] = (CopLineT *)CopSetColor(cp, 1, 0);
     CopMove16(cp, bplcon2, 0);
     CopMove32(cp, bplpt[0], rowAddr[0]);
   }
 
-  CopEnd(cp);
+  for (i = 0; i < 8; i++) {
+    CopInsSetSprite(&sprptr[i], &sprite[i]);
+    SpriteUpdatePos(&sprite[i], X(96 + 16 * i), Y((256 - 24) / 2));
+  }
 
-  ITER(i, 0, 7, CopInsSetSprite(sprptr[i], &sprite[i]));
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  stripes = NewBitmap(WIDTH, WIDTH / 2, 1);
+  stripes = NewBitmap(WIDTH, WIDTH / 2, 1, BM_CLEAR);
 
   GeneratePrisms();
   GenerateColorShades();
@@ -143,18 +149,13 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
   SetColor(0, BGCOL);
-  LoadPalette(&sprite_pal, 16);
-  LoadPalette(&sprite_pal, 20);
-  LoadPalette(&sprite_pal, 24);
-  LoadPalette(&sprite_pal, 28);
+  LoadColors(sprite_colors, 16);
+  LoadColors(sprite_colors, 20);
+  LoadColors(sprite_colors, 24);
+  LoadColors(sprite_colors, 28);
 
-  cp[0] = NewCopList(HEIGHT * 5 + 200);
-  cp[1] = NewCopList(HEIGHT * 5 + 200);
-
-  MakeCopperList(cp[0], clines[0]);
-  MakeCopperList(cp[1], clines[1]);
-
-  ITER(i, 0, 7, SpriteUpdatePos(&sprite[i], X(96 + 16 * i), Y((256 - 24) / 2)));
+  cp[0] = MakeCopperList(copLines[0]);
+  cp[1] = MakeCopperList(copLines[1]);
 
   CopListActivate(cp[0]);
   EnableDMA(DMAF_RASTER | DMAF_SPRITE);
@@ -290,7 +291,7 @@ static void DrawPrismFaces(PrismT *prism, SpanInfoT *spanInfo) {
 }
 
 
-static void DrawVisibleSpans(SpanInfoT *si, CopInsT **cline) {
+static void DrawVisibleSpans(SpanInfoT *si, CopLineT **lineTab) {
   short n = HEIGHT;
 
   while (--n >= 0) {
@@ -298,12 +299,14 @@ static void DrawVisibleSpans(SpanInfoT *si, CopInsT **cline) {
     short depth = *wp++;
     short width = *wp++;
     short color = *wp++;
-    short bplcon2 = (depth > centerZ) ? BPLCON2_PF1P2|BPLCON2_PF2P2 : 0;
-    CopInsT *ins = *cline++;
+    short bplcon2 = (depth > centerZ)
+      ? (BPLCON2_PF1P_BOTTOM | BPLCON2_PF2P_BOTTOM)
+      : (BPLCON2_PF1P_SP07 | BPLCON2_PF2P_SP07);
+    CopLineT *lineIns = *lineTab++;
 
-    CopInsSet16(ins, color);
-    CopInsSet16(ins + 1, bplcon2);
-    CopInsSet32(ins + 2, (void *)getlong(rowAddr, width));
+    CopInsSet16(&lineIns->color, color);
+    CopInsSet16(&lineIns->bplpri, bplcon2);
+    CopInsSet32(&lineIns->bplptr, (void *)getlong(rowAddr, width));
 
     si = (SpanInfoT *)wp;
   }
@@ -325,7 +328,7 @@ static void RenderPrisms(short rotate) {
     prism++;
   }
 
-  DrawVisibleSpans(spanInfo, clines[active]);
+  DrawVisibleSpans(spanInfo, copLines[active]);
 }
 
 PROFILE(RenderPrisms);
@@ -342,4 +345,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Prisms, NULL, NULL, Init, Kill, Render);
+EFFECT(Prisms, NULL, NULL, Init, Kill, Render, NULL);

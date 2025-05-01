@@ -9,15 +9,18 @@ SOURCES := \
 	BitmapDecSaturated.c \
 	BitmapIncSaturated.c \
 	BitmapMakeMask.c \
+	BitmapOr.c \
 	BitmapSetArea.c \
 	BlitterCopy.c \
 	BlitterCopyArea.c \
 	BlitterCopyFast.c \
 	BlitterCopyMasked.c \
 	BlitterFillArea.c \
+	BlitterOr.c \
 	BlitterLine.c \
 	BlitterSetArea.c \
 	BlitterSetMaskArea.c \
-	WordMask.c \
+	BlitterStop.c \
+	WordMask.c
 
 include $(TOPDIR)/build/lib.mk

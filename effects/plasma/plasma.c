@@ -12,14 +12,11 @@
 #define HTILES (WIDTH / 8)
 #define VTILES (HEIGHT / 4)
 
-#undef X
-#undef Y
-
 /* Don't change these settings without reading a note about copper chunky! */
-#define Y(y) ((y) + 0x2c)
-#define VP(y) (Y(y) & 255)
-#define X(x) ((x) + 0x88)
-#define HP(x) (X(x) / 2)
+#undef _YS
+#define _YS 0x2c
+#undef _XS
+#define _XS 0x88
 
 static CopInsT *chunky[2][VTILES];
 static CopListT *cp[2];
@@ -65,33 +62,30 @@ static void Load(void) {
  * trigger. Thus they must be placed just before the end of scan line.
  * UAE copper debugger facility was used to find the right spot.
  */
-static void MakeCopperList(CopListT *cp, CopInsT **row) {
+static CopListT *MakeCopperList(CopInsT **row) {
+  CopListT *cp = NewCopList(80 + (HTILES + 5) * VTILES);
   short x, y;
 
-  CopInit(cp);
-  CopWaitV(cp, VP(0));
+  CopWait(cp, Y(0), HP(0));
 
   for (y = 0; y < VTILES; y++) {
-    CopInsT *location = CopMove32(cp, cop2lc, 0);
-    CopInsT *label = CopWaitH(cp, VP(y * 4), HP(-4));
+    CopInsPairT *location = CopMove32(cp, cop2lc, 0);
+    CopInsT *label = CopWaitH(cp, Y(y * 4), X(-4));
     CopInsSet32(location, label);
     row[y] = CopSetColor(cp, 0, 0);
     for (x = 0; x < HTILES - 1; x++)
       CopSetColor(cp, 0, 0); /* Last CopIns finishes at HP=0xD2 */
     CopSetColor(cp, 0, 0); /* set background to black, finishes at HP=0xD6 */
-    CopSkip(cp, VP(y * 4 + 3), 0xDE); /* finishes at HP=0xDE */
+    CopSkip(cp, Y(y * 4 + 3), LASTHP); /* finishes at HP=0xDE */
     CopMove16(cp, copjmp2, 0);
   }
 
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  cp[0] = NewCopList(80 + (HTILES + 5) * VTILES);
-  cp[1] = NewCopList(80 + (HTILES + 5) * VTILES);
-
-  MakeCopperList(cp[0], chunky[0]);
-  MakeCopperList(cp[1], chunky[1]);
+  cp[0] = MakeCopperList(chunky[0]);
+  cp[1] = MakeCopperList(chunky[1]);
 
   CopListActivate(cp[1]);
 }
@@ -177,4 +171,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(Plasma, Load, NULL, Init, Kill, Render);
+EFFECT(Plasma, Load, NULL, Init, Kill, Render, NULL);

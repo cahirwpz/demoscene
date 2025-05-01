@@ -7,6 +7,7 @@ struct File;
 
 #ifdef _SYSTEM
 void InitFileSys(struct File *dev);
+void CheckFileSys(void);
 void KillFileSys(void);
 #endif
 

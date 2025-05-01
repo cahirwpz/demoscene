@@ -1,7 +1,7 @@
 #include <system/cia.h>
 
-static u_char _ICREnabled[2]; /* enabled interrupts mask */
-static u_char _ICRPending[2]; /* pending interrupts mask */
+static __code u_char _ICREnabled[2]; /* enabled interrupts mask */
+static __code u_char _ICRPending[2]; /* pending interrupts mask */
 
 /* If lower CIA address bit is set it's CIA-A, otherwise CIA-B. */
 #define ICREnabled(cia) &_ICREnabled[(intptr_t)cia & 1]

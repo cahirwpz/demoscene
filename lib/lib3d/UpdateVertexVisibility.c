@@ -2,30 +2,27 @@
 #include <3d.h>
 
 void UpdateVertexVisibility(Object3D *object) {
-  char *vertexFlags = object->vertexFlags;
-  char *faceFlags = object->faceFlags;
-  IndexListT **faces = object->mesh->face;
-  short n = object->mesh->faces;
+  register char s asm("d3") = 1;
 
-  bzero(vertexFlags, object->mesh->vertices);
+  void *_objdat = object->objdat;
+  register short *group asm("a2") = object->faceGroups;
+  short f;
 
-  while (--n >= 0) {
-    IndexListT *face = *faces++;
+  do {
+    while ((f = *group++)) {
+      if (FACE(f)->flags >= 0) {
+        register FaceIndexT *index asm("a3") = FACE(f)->indices;
+        short vertices = FACE(f)->count - 3;
+        short i;
 
-    if (*faceFlags++ >= 0) {
-      short *vi = face->indices;
-      short count = face->count;
+        /* Face has at least (and usually) three vertices / edges. */
+        i = index->vertex; index++; NODE3D(i)->flags = s;
+        i = index->vertex; index++; NODE3D(i)->flags = s;
 
-      /* Face has at least (and usually) three vertices. */
-      switch (count) {
-        case 6: vertexFlags[*vi++] = -1;
-        case 5: vertexFlags[*vi++] = -1;
-        case 4: vertexFlags[*vi++] = -1;
-        case 3: vertexFlags[*vi++] = -1;
-                vertexFlags[*vi++] = -1;
-                vertexFlags[*vi++] = -1;
-        default: break;
+        do {
+          i = index->vertex; index++; NODE3D(i)->flags = s;
+        } while (--vertices != -1);
       }
     }
-  }
+  } while (*group);
 }

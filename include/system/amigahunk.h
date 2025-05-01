@@ -13,5 +13,6 @@ typedef struct Hunk {
 
 HunkT *LoadHunkList(struct File *file);
 void FreeHunkList(HunkT *hunklist);
+void SetupSharedHunks(HunkT *hunklist);
 
 #endif /* !__SYSTEM_AMIGAHUNK_H__ */

@@ -1,0 +1,8 @@
+github.com/JoshVarga/svgparser v0.0.0-20200804023048-5eaba627a7d1 h1:RAQocNl+YQYGPt5yh4SR5zFUIHKrXnLhjIGhHO4Vwnc=
+github.com/JoshVarga/svgparser v0.0.0-20200804023048-5eaba627a7d1/go.mod h1:tMmgUTWcco9d1ZmK7zjxuTv7XWZhyutXIsgu0uJ3gDw=
+github.com/joshvarga/svgparser v0.0.0-20200804023048-5eaba627a7d1 h1:nv2n9UzqqLLe40j2YpqwVotVtugdHbFmGS4vm9S/LTs=
+github.com/joshvarga/svgparser v0.0.0-20200804023048-5eaba627a7d1/go.mod h1:L7A8o4juotPcM0GC/A1DV4tjbRgp9QCsC6hmmoljed0=
+golang.org/x/net v0.35.0 h1:T5GQRQb2y08kTAByq9L4/bz8cipCdA8FbRTXewonqY8=
+golang.org/x/net v0.35.0/go.mod h1:EglIi67kWsHKlRzzVMUD93VMSWGFOMSZgxFjparz1Qk=
+golang.org/x/text v0.22.0 h1:bofq7m3/HAFvbF51jz3Q9wLg3jkvSPuiZu/pD1XwgtM=
+golang.org/x/text v0.22.0/go.mod h1:YRoo4H8PVmsu+E3Ou7cqLVH8oXWIHVoX0jqUWALQhfY=

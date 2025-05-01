@@ -11,6 +11,7 @@ static uint8_t InUse;
 
 /* Defines timer state after it has been acquired. */
 struct CIATimer {
+  const char *name;
   IntServerT server;
   CIATimeoutT timeout;
   CIAPtrT cia;
@@ -21,6 +22,7 @@ struct CIATimer {
 
 /* Interrupt handler for CIA timers. */
 static void CIATimerHandler(CIATimerT *timer) {
+  Debug("Timeout on %s.", timer->name);
   if (SampleICR(timer->cia, timer->icr))
     timer->timeout(timer);
 }
@@ -33,14 +35,15 @@ static void NotifyTimeout(CIATimerT *timer) {
 #define CIAB ciab
 
 #define TIMER(CIA, TIMER)                                                      \
-  [TIMER_##CIA##_##TIMER] = {                                                  \
+  [TIMER_ ## CIA ## _ ## TIMER] = {                                            \
+      .name = #CIA "-" #TIMER,                                                 \
       .server = _INTSERVER(0, (IntFuncT)CIATimerHandler,                       \
-                           &Timers[TIMER_##CIA##_##TIMER]),                    \
+                           &Timers[TIMER_ ## CIA ## _ ## TIMER]),              \
       .timeout = NULL,                                                         \
       .cia = CIA,                                                              \
-      .event = EVF_##CIAA##(CIAICRF_T##TIMER),                                 \
-      .num = TIMER_##CIA##_##TIMER,                                            \
-      .icr = CIAICRF_T##TIMER,                                                 \
+      .event = EVF_CIAA(CIAICRF_T ## TIMER),                                   \
+      .num = TIMER_ ## CIA ## _ ##TIMER,                                       \
+      .icr = CIAICRF_T ## TIMER,                                               \
   }
 
 static CIATimerT Timers[4] = {TIMER(CIAA, A), TIMER(CIAA, B), TIMER(CIAB, A),
@@ -116,6 +119,8 @@ void SetupTimer(CIATimerT *timer, CIATimeoutT timeout,
 void WaitTimerGeneric(CIATimerT *timer, u_short delay, bool spin) {
   CIAPtrT cia = timer->cia;
   u_char icr = timer->icr;
+
+  Debug("%s for %d ticks on %s.", spin ? "Spin" : "Wait", delay, timer->name);
 
   /* Turn off interrupt while the timer is being set up. */
   WriteICR(cia, icr);

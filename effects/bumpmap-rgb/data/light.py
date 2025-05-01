@@ -5,18 +5,20 @@ import sys
 
 
 if __name__ == '__main__':
-    size = (128, 128)
+    name = sys.argv[1]
+    width = 128
+    height = 128
 
-    print('const u_short light_w = 128;')
-    print('const u_short light_h = 128;')
+    print(f'#define {name}_width {width}')
+    print(f'#define {name}_height {height}')
     print('')
-    print('u_char %s[] = {' % sys.argv[1])
+    print(f'static u_char {name}[{name}_width * {name}_height] = {{')
 
-    for i in range(size[0]):
+    for j in range(height):
         sys.stdout.write(' ')
-        for j in range(size[1]):
-            x = lerp(-1.5, 1.5, float(i) / size[0])
-            y = lerp(-1.5, 1.5, float(j) / size[1])
+        for i in range(width):
+            x = lerp(-1.5, 1.5, float(i) / width)
+            y = lerp(-1.5, 1.5, float(j) / height)
             pixel = 1.0 - dist(0.0, 0.0, x, y)
             sys.stdout.write(' 0x%02x,' % int(
                 constrain(pixel, 0.0, 1.0) * 255))

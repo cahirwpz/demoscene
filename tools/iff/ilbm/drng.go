@@ -49,7 +49,7 @@ func (drng *DRNG) Read(r iff.Reader) {
 	ntrue := r.ReadU8()
 	nregs := r.ReadU8()
 
-	drng.Dcolor = make([]DColor, ntrue, ntrue)
+	drng.Dcolor = make([]DColor, ntrue)
 	for i := 0; uint8(i) < ntrue; i++ {
 		drng.Dcolor[i].Cell = r.ReadU8()
 		drng.Dcolor[i].R = r.ReadU8()
@@ -57,7 +57,7 @@ func (drng *DRNG) Read(r iff.Reader) {
 		drng.Dcolor[i].B = r.ReadU8()
 	}
 
-	drng.Dindex = make([]DIndex, nregs, nregs)
+	drng.Dindex = make([]DIndex, nregs)
 	for i := 0; uint8(i) < nregs; i++ {
 		drng.Dindex[i].Cell = r.ReadU8()
 		drng.Dindex[i].Index = r.ReadU8()

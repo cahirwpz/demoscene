@@ -27,8 +27,17 @@ typedef TAILQ_HEAD(, Task) TaskListT;
 #define EVF_CIAB(x) ((x) << 19)
 #define EVF_SWI(x) ((x) << 23)
 
+typedef struct TaskContext {
+  u_int sp;
+  u_int d0, d1, d2, d3, d4, d5, d6, d7;
+  u_int a0, a1, a2, a3, a4, a5, a6;
+  u_short sr;
+  u_int pc __aligned(2);
+} TaskContextT;
+
 struct Task {
-  void *currSP; /* Points to task context pushed on top of the stack. */
+  TaskContextT *ctx; /* Points to task context pushed on top of the stack. */
+  void *waitpt;      /* Return address from TaskWait for BLOCKED tasks. */
   TAILQ_ENTRY(Task) node; /* Ready tasks are stored on ReadyList. */
   u_char state;           /* Task state - one of TS_* constants. */
   u_char prio;    /* Task priority - 0 is the highest, 255 is the lowest. */
@@ -48,14 +57,17 @@ void TaskResume(TaskT *tsk);
 void TaskResumeISR(TaskT *tsk);
 void TaskSuspend(TaskT *tsk);
 void TaskPrioritySet(TaskT *tsk, u_char prio);
+void TaskDebug(void);
 
 #ifdef _TASK_PRIVATE
 void ReadyAdd(TaskT *tsk);
+void MaybePreempt(void);
 #endif
 
+/* Must be called with interrupts disabled. */
 u_int TaskWait(u_int eventSet);
-void TaskNotifyISR(u_int eventSet);
-void TaskNotify(u_int eventSet);
+int TaskNotifyISR(u_int eventSet);
+int TaskNotify(u_int eventSet);
 
 static inline void TaskYield(void) { asm volatile("trap #0"); }
 

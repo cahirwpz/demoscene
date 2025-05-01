@@ -13,8 +13,9 @@
 #include "data/bg-gradient.c"
 #include "data/fg-gradient.c"
 
-static CopListT *cp0, *cp1;
+static CopListT *cp[2];
 static short fg_y, bg_y, fg_x, bg_x;
+static short active = 0;
 
 #define bg_bplmod ((background_width - (WIDTH + 16)) / 8)
 #define fg_bplmod ((foreground_width - (WIDTH + 16)) / 8)
@@ -45,8 +46,8 @@ static void SetupLayers(CopListT *cp) {
 #define STEP 8
 
 static void SetupRaster(CopListT *cp) {
-  short *bg_pal = bg_gradient_pixels;
-  short *fg_pal = fg_gradient_pixels;
+  u_short *bg_pal = bg_gradient_pixels;
+  u_short *fg_pal = fg_gradient_pixels;
   short wrap_bg = -1;
   short wrap_fg = -1;
   short y, y_bg, y_fg;
@@ -96,7 +97,7 @@ static void SetupRaster(CopListT *cp) {
     if (!f)
       continue;
 
-    CopWaitSafe(cp, Y(y), 0);
+    CopWaitSafe(cp, Y(y), HP(0));
 
     if (f & 1)
       CopMove16(cp, bpl1mod,
@@ -141,33 +142,28 @@ static void SetupRaster(CopListT *cp) {
 }
 
 static void MakeCopperList(CopListT *cp) {
-
-  CopInit(cp);
+  CopListReset(cp);
   SetupLayers(cp);
   SetupRaster(cp);
-  CopEnd(cp);
+  CopListFinish(cp);
 }
 
 static void Init(void) {
   SetupDisplayWindow(MODE_LORES, X(0), Y(0), WIDTH, HEIGHT);
   SetupBitplaneFetch(MODE_LORES, X(-16), WIDTH + 16);
   SetupMode(MODE_DUALPF, DEPTH);
-#if 0
-  /* Reverse playfields priorities (for testing) */
-  custom->bplcon2 = 0;
-#endif
 
-  cp0 = NewCopList(500);
-  cp1 = NewCopList(500);
-  MakeCopperList(cp0);
-  CopListActivate(cp0);
+  cp[0] = NewCopList(500);
+  cp[1] = NewCopList(500);
+  MakeCopperList(cp[0]);
+  CopListActivate(cp[0]);
   EnableDMA(DMAF_RASTER);
 }
 
 static void Kill(void) {
   DisableDMA(DMAF_RASTER);
-  DeleteCopList(cp0);
-  DeleteCopList(cp1);
+  DeleteCopList(cp[0]);
+  DeleteCopList(cp[1]);
 }
 
 PROFILE(MakeCopperList);
@@ -184,12 +180,12 @@ static void Render(void) {
   fg_x = normfx(SIN(frameCount * 12) * fg_w) + fg_w;
 
   ProfilerStart(MakeCopperList);
-  MakeCopperList(cp1);
+  MakeCopperList(cp[active]);
   ProfilerStop(MakeCopperList);
 
-  CopListRun(cp1);
+  CopListRun(cp[active]);
   TaskWaitVBlank();
-  swapr(cp0, cp1);
+  active ^= 1;
 }
 
-EFFECT(Credits, NULL, NULL, Init, Kill, Render);
+EFFECT(Credits, NULL, NULL, Init, Kill, Render, NULL);

@@ -13,11 +13,11 @@
 #define YOFF ((256 - HEIGHT) / 2)
 #define DEPTH 4
 
-static BitmapT *screen;
-static CopInsT *bplptr[DEPTH];
-static CopListT *cp;
-static short active = 0;
-static short maybeSkipFrame = 0;
+static __code BitmapT *screen;
+static __code CopInsPairT *bplptr;
+static __code CopListT *cp;
+static __code short active = 0;
+static __code short maybeSkipFrame = 0;
 
 #include "data/dancing.c"
 #include "data/dancing-pal.c"
@@ -25,29 +25,28 @@ static short maybeSkipFrame = 0;
 /* Reading polygon data */
 static short current_frame = 0;
 
-static void MakeCopperList(CopListT *cp) {
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(100 + gradient.height * (gradient.width + 1));
+  bplptr = CopSetupBitplanes(cp, screen, DEPTH);
   {
     short *pixels = gradient.pixels;
     short i, j;
 
     for (i = 0; i < HEIGHT / 10; i++) {
-      CopWait(cp, Y(YOFF + i * 10 - 1), 0xde);
+      CopWait(cp, Y(YOFF + i * 10 - 1), LASTHP);
       for (j = 0; j < 16; j++) CopSetColor(cp, j, *pixels++);
     }
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH + 1, BM_CLEAR);
   EnableDMA(DMAF_BLITTER);
   BitmapClear(screen);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(YOFF), WIDTH, HEIGHT);
-  cp = NewCopList(100 + gradient.height * (gradient.width + 1));
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER);
 }
@@ -56,6 +55,72 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
   DeleteCopList(cp);
   DeleteBitmap(screen);
+}
+
+static inline void DrawEdge(short *coords, void *dst,
+                            CustomPtrT custom_ asm("a6")) {
+  static __data_chip short tmp;
+
+  short bltcon0, bltcon1, bltsize, bltbmod, bltamod;
+  short dmin, dmax, derr, offset;
+  int bltapt;
+
+  short x0 = *coords++;
+  short y0 = *coords++;
+  short x1 = *coords++;
+  short y1 = *coords++;
+
+  if (y0 == y1)
+    return;
+
+  if (y0 > y1) {
+    swapr(x0, x1);
+    swapr(y0, y1);
+  }
+
+  dmax = x1 - x0;
+  if (dmax < 0)
+    dmax = -dmax;
+
+  dmin = y1 - y0;
+  if (dmax >= dmin) {
+    if (x0 >= x1)
+      bltcon1 = AUL | SUD | LINEMODE | ONEDOT;
+    else
+      bltcon1 = SUD | LINEMODE | ONEDOT;
+  } else {
+    if (x0 >= x1)
+      bltcon1 = SUL | LINEMODE | ONEDOT;
+    else
+      bltcon1 = LINEMODE | ONEDOT;
+    swapr(dmax, dmin);
+  }
+
+  offset = ((y0 << 5) + (y0 << 3) + (x0 >> 3)) & ~1;
+
+  bltcon0 = rorw(x0 & 15, 4) | BC0F_LINE_EOR;
+  bltcon1 |= rorw(x0 & 15, 4);
+
+  dmin <<= 1;
+  derr = dmin - dmax;
+  if (derr < 0)
+    bltcon1 |= SIGNFLAG;
+
+  bltamod = derr - dmax;
+  bltbmod = dmin;
+  bltsize = (dmax << 6) + 66;
+  bltapt = derr;
+
+  _WaitBlitter(custom_);
+
+  custom_->bltcon0 = bltcon0;
+  custom_->bltcon1 = bltcon1;
+  custom_->bltapt = (void *)bltapt;
+  custom_->bltbmod = bltbmod;
+  custom_->bltamod = bltamod;
+  custom_->bltcpt = dst + offset;
+  custom_->bltdpt = &tmp;
+  custom_->bltsize = bltsize;
 }
 
 /* Get (x,y) on screen position from linear memory repr */
@@ -68,32 +133,40 @@ static void Kill(void) {
       : "=d" (x), "=r" (y), "+a" (data) \
       : "i" (WIDTH));
 
-static void DrawFrame(void) {
+static void DrawFrame(void *dst, CustomPtrT custom_ asm("a6")) {
+  static __code Point2D points[128];
   short *data = dancing_frame[current_frame];
   short n;
 
-  WaitBlitter();
+  _WaitBlitter(custom_);
+
+  /* prepare for line drawing */
+  custom_->bltafwm = 0xffff;
+  custom_->bltalwm = 0xffff;
+  custom_->bltbdat = 0xffff;
+  custom_->bltadat = 0x8000;
+  custom_->bltcmod = WIDTH / 8;
+  custom_->bltdmod = WIDTH / 8;
 
   while ((n = *data++)) {
-    /* (x/y) previous */
-    short xp, yp;
-    /* (x/y) end */
-    short xe, ye;
-    /* (x/y) first in line strip */
-    short xf, yf;
-
-    /* first vert in line strip */
-    CalculateXY(data, xp, yp);
-    xf = xp, yf = yp;
-
-    while (--n > 0) {
-      CalculateXY(data, xe, ye);
-      BlitterLine(xp, yp, xe, ye);
-      xp = xe, yp = ye;
+    {
+      short *point = (short *)points;
+      short k = n;
+      while (--k >= 0) {
+        short x = 0, y = 0;
+        CalculateXY(data, x, y);
+        *point++ = x;
+        *point++ = y;
+      }
+      *point++ = points[0].x;
+      *point++ = points[0].y;
     }
 
-    /* last vert in line strip */
-    BlitterLine(xp, yp, xf, yf);
+    {
+      Point2D *point = points;
+      while (--n >= 0)
+        DrawEdge((short *)point++, dst, custom_);
+    }
   }
 
   if (++current_frame > dancing_frames - 5)
@@ -115,8 +188,7 @@ static void Render(void) {
   ProfilerStart(AnimRender);
   {
     BlitterClear(screen, active);
-    BlitterLineSetup(screen, active, LINE_EOR | LINE_ONEDOT);
-    DrawFrame();
+    DrawFrame(screen->planes[active], custom);
     BlitterFill(screen, active);
   }
   ProfilerStop(AnimRender);
@@ -127,7 +199,7 @@ static void Render(void) {
     while (--n >= 0) {
       short i = mod16(active + n + 1 - DEPTH, DEPTH + 1);
       if (i < 0) i += DEPTH + 1;
-      CopInsSet32(bplptr[n], screen->planes[i]);
+      CopInsSet32(&bplptr[n], screen->planes[i]);
     }
   }
 
@@ -136,4 +208,4 @@ static void Render(void) {
   maybeSkipFrame = 1;
 }
 
-EFFECT(AnimPolygons, NULL, NULL, Init, Kill, Render);
+EFFECT(AnimPolygons, NULL, NULL, Init, Kill, Render, NULL);

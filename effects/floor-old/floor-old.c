@@ -70,49 +70,41 @@ static void FloorPrecalc(void) {
     vert[i].y2 = near_y;
 
     if (near_y != FAR_Y)
-      vert[i].delta = ((X(near_x) / 2 - X(far_x) / 2) << 16) / (near_y - FAR_Y);
+      vert[i].delta = ((near_x / 2 - far_x / 2) << 16) / (near_y - FAR_Y);
   }
 
   for (i = 0; i < N; i++) {
     short z = FAR_Z + ((NEAR_Z - FAR_Z) * i) / N;
-    
+ 
     horiz[i] = HEIGHT * NEAR_Z / z;
   }
 }
 
 static void Load(void) {
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH);
-
   FloorPrecalc();
 
   ITER(i, 0, 255, cycleStart[i] = random() & 63);
 }
 
-static void UnLoad(void) {
-  DeleteBitmap(screen[0]);
-  DeleteBitmap(screen[1]);
-}
-
-static void MakeCopperList(CopListT *cp, short num) {
+static CopListT *MakeCopperList(short num) {
+  CopListT *cp = NewCopList((HEIGHT - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
   CopInsT *ins;
   short i, j;
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen[num], DEPTH);
+  CopSetupBitplanes(cp, screen[num], DEPTH);
   CopLoadColor(cp, 0, 3, 0);
 
   for (i = 0; i < FAR_Y; i++) {
     short s = i * 15 / FAR_Y;
 
-    CopWait(cp, Y(i), 0);
+    CopWait(cp, Y(i), HP(0));
     CopSetColor(cp, 3, ColorTransition(0, 0xADF, s));
   }
 
   for (i = FAR_Y; i < HEIGHT; i++) {
-    CopWait(cp, Y(i), CPX);
+    CopWait(cp, Y(i), HP(CPX));
     for (j = 0; j < SIZE; j++) {
-      ins = CopWait(cp, Y(i), CPX);
+      ins = CopWait(cp, Y(i), HP(CPX));
       if (i == FAR_Y)
         linePos[num][j] = ((u_char*)ins) + 1;
       ins = CopSetColor(cp, (j & 1) + 1, (j & 1) ? 0xff0 : 0x0ff);
@@ -121,13 +113,16 @@ static void MakeCopperList(CopListT *cp, short num) {
     }
   }
 
-  CopWait(cp, Y(i) & 255, 0);
+  CopWait(cp, Y(i), HP(0));
   CopLoadColor(cp, 0, 3, 0);
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
   short i;
+
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
 
   EnableDMA(DMAF_BLITTER);
 
@@ -142,11 +137,8 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
-  cp[0] = NewCopList((HEIGHT - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
-  cp[1] = NewCopList((HEIGHT - FAR_Y) * STRIDE / sizeof(CopInsT) + 300);
-
-  MakeCopperList(cp[0], 0);
-  MakeCopperList(cp[1], 1);
+  cp[0] = MakeCopperList(0);
+  cp[1] = MakeCopperList(1);
   CopListActivate(cp[active]);
   EnableDMA(DMAF_RASTER);
 }
@@ -156,11 +148,13 @@ static void Kill(void) {
 
   DeleteCopList(cp[0]);
   DeleteCopList(cp[1]);
+  DeleteBitmap(screen[0]);
+  DeleteBitmap(screen[1]);
 }
 
 static void ClearLine(short k) {
   u_char *pos = linePos[active][k];
-  u_char x = (k < 4 ? CPX : (X(WIDTH) >> 1)) | 1;
+  u_char x = (k < 4 ? CPX : ((WIDTH + DIWHP) >> 1)) | 1;
   short n = (HEIGHT - FAR_Y) / 8;
 
   while (--n >= 0) {
@@ -202,7 +196,7 @@ static void ClearFloor(void) {
 static inline void CopperLine(u_char *pos, short x1, short y2, int delta) {
   if (y2 > FAR_Y) {
     short n = y2 - FAR_Y + 1;
-    int x = (X(x1) / 2) << 16;
+    int x = ((x1 + DIWHP) / 2) << 16;
     register u_char one asm("d7") = 1;
 
     while (--n >= 0) {
@@ -467,4 +461,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(FloorOld, Load, UnLoad, Init, Kill, Render);
+EFFECT(FloorOld, Load, NULL, Init, Kill, Render, NULL);

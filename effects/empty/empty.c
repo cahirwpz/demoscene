@@ -27,4 +27,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(Empty, NULL, NULL, Init, Kill, Render);
+EFFECT(Empty, NULL, NULL, Init, Kill, Render, NULL);

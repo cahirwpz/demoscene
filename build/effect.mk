@@ -4,21 +4,22 @@ ifndef SOURCES
 SOURCES = $(EFFECT).c
 endif
 
+LOADABLES ?= $(EFFECT).exe
+DEMO ?=
+
 LIBS += libblit libgfx libmisc libc
 LDEXTRA = $(TOPDIR)/system/system.a
 LDEXTRA += $(foreach lib,$(LIBS),$(TOPDIR)/lib/$(lib)/$(lib).a)
 
-CRT0 = $(TOPDIR)/system/crt0.o $(TOPDIR)/effects/main.o
+CRT0 = $(TOPDIR)/system/crt0.o
+MAIN ?= $(TOPDIR)/effects/main.o
 BOOTLOADER = $(TOPDIR)/bootloader.bin
-ROMSTARTUP = $(TOPDIR)/a500rom.bin
 BOOTBLOCK = $(TOPDIR)/addchip.bootblock.bin
+VBRMOVE = $(TOPDIR)/vbrmove
 
-EXTRA-FILES += $(DATA_GEN) $(EFFECT).adf
-CLEAN-FILES += $(DATA_GEN) $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map
-
-ifeq ($(AMIGAOS), 0)
-EXTRA-FILES += $(EFFECT).img $(EFFECT).rom
-endif
+EXTRA-FILES += $(EFFECT).adf
+CLEAN-FILES += $(LOADABLES)
+CLEAN-FILES += $(EFFECT).exe $(EFFECT).exe.dbg $(EFFECT).exe.map $(EFFECT).log
 
 all: build
 
@@ -43,16 +44,24 @@ $(TOPDIR)/%.bin: FORCE
 
 include $(TOPDIR)/build/common.mk
 
-$(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(OBJECTS) $(LDEXTRA) $(LDSCRIPT)
+ifeq ($(DEMO), 1)
+CFLAGS := $(filter-out -msmall-code, $(CFLAGS))
+endif
+
+ifneq (,$(wildcard $(EFFECT).c))
+LDFLAGS_EXTRA ?= -defsym=_Effect=_$(shell sed -ne 's/EFFECT.\([^,]*\).*/\1/p' $(EFFECT).c)Effect
+endif
+
+$(EFFECT).exe.dbg $(EFFECT).exe: $(CRT0) $(MAIN) $(OBJECTS) $(LDEXTRA) $(LDSCRIPT)
 	@echo "[LD] $(addprefix $(DIR),$(OBJECTS)) -> $(DIR)$@"
-	$(LD) $(LDFLAGS) -L$(TOPDIR)/system -T$(LDSCRIPT) -Map=$@.map -o $@ \
+	$(LD) $(LDFLAGS) $(LDFLAGS_EXTRA) -L$(TOPDIR)/system -T$(LDSCRIPT) -Map=$@.map -o $@ \
 		--start-group $(filter-out %.lds,$^) --end-group
 	$(CP) $@ $@.dbg
 	$(STRIP) $@
 
-data/%.c: data/%.lwo
-	@echo "[LWO] $(DIR)$< -> $(DIR)$@"
-	$(LWO2C) $(LWO2C.$*) -f $< $@
+data/%.c: data/%.obj
+	@echo "[MODEL/OBJ] $(DIR)$< -> $(DIR)$@"
+	$(OBJ2C) $(OBJ2C.$*) $< $@
 
 data/%.c: data/%.psfu
 	@echo "[PSF] $(DIR)$^ -> $(DIR)$@"
@@ -62,6 +71,10 @@ data/%.c: data/%.png
 	@echo "[PNG] $(DIR)$< -> $(DIR)$@"
 	$(PNG2C) $(PNG2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
+data/%.c: data/%.svg
+	@echo "[SVG] $(DIR)$< -> $(DIR)$@"
+	$(SVG2C) $(SVG2C.$*) -o $@ $<
+
 data/%.c: data/%.2d
 	@echo "[2D] $(DIR)$< -> $(DIR)$@"
 	$(CONV2D) $(CONV2D.$*) $< > $@ || (rm -f $@ && exit 1)
@@ -70,44 +83,47 @@ data/%.c: data/%.sync
 	@echo "[SYNC] $(DIR)$< -> $(DIR)$@"
 	$(SYNC2C) $(SYNC2C.$*) $< > $@ || (rm -f $@ && exit 1)
 
-ifeq ($(AMIGAOS), 0)
-%.img: %.exe $(DATA) $(DATA_GEN)
-	@echo "[IMG] $(addprefix $(DIR),$*.exe $(DATA) $(DATA_GEN)) -> $(DIR)$@"
+data/%.c: data/%.csv
+	@echo "[ANIM2C] $(DIR)$< -> $(DIR)$@"
+	$(ANIM2C) $(ANIM2C.$*) $< > $@ || (rm -f $@ && exit 1)
+
+data/%.trk: data/%.mod
+	@echo "[PTSPLIT] $(DIR)$< -> $(DIR)$@"
+	$(PTSPLIT) --extract=trk $(PTSPLIT.$*) -o $@ $^
+
+data/%.smp: data/%.mod
+	@echo "[PTSPLIT] $(DIR)$< -> $(DIR)$@"
+	$(PTSPLIT) --extract=smp $(PTSPLIT.$*) -o $@ $^
+
+EXTRA-FILES += $(EFFECT).img
+CLEAN-FILES += $(EFFECT).img
+
+%.img: $(LOADABLES) $(DATA)
+	@echo "[IMG] $(addprefix $(DIR),$<) -> $(DIR)$@"
 	$(FSUTIL) create $@ $(filter-out %bootloader.bin,$^)
 
-%.adf: %.img $(BOOTLOADER) 
+%.adf: %.img $(BOOTLOADER)
 	@echo "[ADF] $(DIR)$< -> $(DIR)$@"
-	$(ADFUTIL) -b $(BOOTLOADER) $< $@ 
+	$(ADFUTIL) -b $(BOOTLOADER) $< $@
 
-%.rom: %.img $(ROMSTARTUP)
-	@echo "[ROM] $(DIR)$< -> $(DIR)$@"
-	$(ROMUTIL) $(ROMSTARTUP) $< $@ 
-else
-%.adf: %.exe $(BOOTBLOCK)
+%-dos.adf: %.exe $(BOOTBLOCK)
 	@echo "[ADF] $(DIR)$< -> $(DIR)$@"
 	echo $< > startup-sequence
 	xdftool $@ format dos + write $< + makedir s + write startup-sequence s
 	dd if=$(BOOTBLOCK) of=$@ conv=notrunc status=none
 	rm startup-sequence
-endif
 
 # Default debugger - can be changed by passing DEBUGGER=xyz to make.
 DEBUGGER ?= gdb
 
-run-floppy: $(EFFECT).exe.dbg $(EFFECT).adf
+run: $(EFFECT).exe.dbg $(EFFECT).adf
 	$(LAUNCH) -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
-debug-floppy: $(EFFECT).exe.dbg $(EFFECT).adf $(TOPDIR)/gdb-dashboard
+debug: $(EFFECT).exe.dbg $(EFFECT).adf $(TOPDIR)/gdb-dashboard
 	$(LAUNCH) -d $(DEBUGGER) -f $(EFFECT).adf -e $(EFFECT).exe.dbg
-
-run: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf
-	$(LAUNCH) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
-
-debug: $(EFFECT).rom $(EFFECT).exe.dbg $(EFFECT).adf $(TOPDIR)/gdb-dashboard
-	$(LAUNCH) -d $(DEBUGGER) -r $(EFFECT).rom -e $(EFFECT).exe.dbg -f $(EFFECT).adf
 
 $(TOPDIR)/gdb-dashboard:
 	make -C $(TOPDIR) gdb-dashboard
 
-.PHONY: run debug run-floppy debug-floppy
+.PHONY: run debug
 .PRECIOUS: $(BOOTLOADER) $(BOOTBLOCK) $(EFFECT).img

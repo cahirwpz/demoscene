@@ -10,22 +10,16 @@
 #define DEPTH  4
 
 static BitmapT *screen;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 static CopListT *cp;
 static short plane, planeC;
 
 #include "data/shapes-pal.c"
 #include "data/night.c"
 
-static void Load(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
-}
-
-static void UnLoad(void) {
-  DeleteBitmap(screen);
-}
-
 static void Init(void) {
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+
   /* Set up clipping window. */
   ClipWin.minX = fx4i(0);
   ClipWin.maxX = fx4i(319);
@@ -39,12 +33,11 @@ static void Init(void) {
   BitmapClear(screen);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&shapes_pal, 0);
+  LoadColors(shapes_colors, 0);
 
   cp = NewCopList(100);
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopEnd(cp);
+  bplptr = CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER);
@@ -54,6 +47,7 @@ static void Kill(void) {
   DisableDMA(DMAF_COPPER | DMAF_RASTER | DMAF_BLITTER);
 
   DeleteCopList(cp);
+  DeleteBitmap(screen);
 }
 
 static Point2D tmpPoint[2][16];
@@ -129,7 +123,7 @@ static void Render(void) {
 
   for (i = 0; i < DEPTH; i++) {
     short j = (plane + i) % DEPTH;
-    CopInsSet32(bplptr[i], screen->planes[j]);
+    CopInsSet32(&bplptr[i], screen->planes[j]);
   }
 
   TaskWaitVBlank();
@@ -140,4 +134,4 @@ static void Render(void) {
   planeC ^= 1;
 }
 
-EFFECT(Shapes, Load, UnLoad, Init, Kill, Render);
+EFFECT(Shapes, NULL, NULL, Init, Kill, Render, NULL);

@@ -15,13 +15,16 @@ BREAK = 0xCF47  # no-op: 'exg.l d7,d7'
 
 
 async def UaeLaunch(loop, args):
+    log_file = open(args.log, 'w') if args.log else None
+
     # Create the subprocess, redirect the standard I/O to respective pipes
     uaeproc = UaeProcess(
         await asyncio.create_subprocess_exec(
             args.emulator, *args.params,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE))
+            stderr=asyncio.subprocess.PIPE),
+        log_file)
 
     gdbserver = None
 
@@ -79,6 +82,8 @@ if __name__ == '__main__':
                         help='Path to FS-UAE emulator binary.')
     parser.add_argument('-g', '--gdbserver', action='store_true',
                         help='Configure and run gdbserver on localhost:8888')
+    parser.add_argument('-l', '--log', type=str, default=None,
+                        help='Log stdout to a given file.')
     parser.add_argument('params', nargs='*', type=str,
                         help='Parameters passed to FS-UAE emulator.')
     args = parser.parse_args()

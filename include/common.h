@@ -34,6 +34,8 @@
 #define roundup(x, y) ((((x) + ((y) - 1)) / (y)) * (y))
 #define rounddown(x, y) (((x) / (y)) * (y))
 
+#define nitems(x) (sizeof((x)) / sizeof((x)[0]))
+
 #define VA_NARGS_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
 #define VA_NARGS(...) VA_NARGS_IMPL(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
 
@@ -47,7 +49,7 @@
 /* assumes that abs(idx) < 32768 */
 static inline short getword(const void *tab, short idx) {
   short res;
-  idx <<= 1;
+  idx += idx;
   asm("movew (%2,%1:w),%0"
       : "=r" (res)
       : "d" (idx), "a" (tab));
@@ -57,7 +59,9 @@ static inline short getword(const void *tab, short idx) {
 /* assumes that abs(idx) < 16384 */
 static inline int getlong(const void *tab, short idx) {
   int res;
-  idx <<= 2;
+  idx += idx;
+  asm("" ::: "memory");
+  idx += idx;
   asm("movel (%2,%1:w),%0"
       : "=r" (res)
       : "d" (idx), "a" (tab));
@@ -91,6 +95,23 @@ static inline short div16(int a, short b) {
 
 static inline short mod16(int a, short b) {
   short r;
+  asm("divs %2,%0\n\t"
+      "swap %0"
+      : "=d" (r)
+      : "0" (a), "dm" (b));
+  return r;
+}
+
+static inline u_short udiv16(u_int a, u_short b) {
+  u_short r;
+  asm("divu %2,%0"
+      : "=d" (r)
+      : "0" (a), "dm" (b));
+  return r;
+}
+
+static inline u_short umod16(u_int a, u_short b) {
+  u_short r;
   asm("divs %2,%0\n\t"
       "swap %0"
       : "=d" (r)
@@ -142,14 +163,56 @@ static inline int rorl(int a, short b) {
   return r;
 }
 
+static inline short rolw(short a, short b) {
+  short r;
+  asm("rol.w %2,%0"
+      : "=d" (r)
+      : "0" (a), "dI" (b));
+  return r;
+}
+
+static inline int roll(int a, short b) {
+  int r;
+  asm("rol.l %2,%0"
+      : "=d" (r)
+      : "0" (a), "dI" (b));
+  return r;
+}
+
 #define swapr(a, b) \
   asm ("exg %0,%1" : "+r" (a), "+r" (b))
 
-#define pushl(a) \
-  asm ("movel %0,%-" :: "r" (a))
+/* Store byte/word/longword `d` under `p` with postincrement. */
+#define stbi(p, d)                \
+  asm volatile("move.b %2,(%0)+"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_char)d))
 
-#define popl(a) \
-  asm ("movel %+,%0" : "=r" (a))
+#define stwi(p, d)                \
+  asm volatile("move.w %2,(%0)+"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_short)d))
+
+#define stli(p, d)                \
+  asm volatile("move.l %2,(%0)+"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_long)d))
+
+/* Store byte/word/longword `d` under `p` with predecrement. */
+#define stbd(p, d)                \
+  asm volatile("move.b %2,-(%0)"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_char)d))
+
+#define stwd(p, d)                \
+  asm volatile("move.w %2,-(%0)"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_short)d))
+
+#define stld(p, d)                \
+  asm volatile("move.l %2,-(%0)"  \
+      : "=a" (p)                  \
+      : "0" (p), "dmi" ((u_long)d))
 
 static inline void *GetSP(void) {
   void *sp;

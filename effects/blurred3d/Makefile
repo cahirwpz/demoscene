@@ -5,6 +5,6 @@ CLEAN-FILES := data/blurred3d-pal.c data/szescian.c
 LIBS := lib3d
 
 PNG2C.blurred3d-pal := --pixmap gradient,16x33x12
-LWO2C.szescian := --scale 93.0
+OBJ2C.szescian := --scale 93.0 --mesh-name szescian
 
 include $(TOPDIR)/build/effect.mk

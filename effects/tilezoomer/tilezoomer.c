@@ -32,7 +32,7 @@ static BitmapT *screen1;
 #endif
 static int active = 0;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH + SHADOW];
+static CopInsPairT *bplptr;
 
 /* for each tile following array stores source and destination offsets relative
  * to the beginning of a bitplane */
@@ -73,22 +73,35 @@ static void CalculateTiles(int *tile, short rotation, short zoom) {
   }
 }
 
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(100);
+#if MOTIONBLUR
+  bplptr = CopSetupBitplanes(cp, screen0, SHADOW);
+  CopMove16(cp, bpl1mod, MARGIN / 8);
+  CopMove16(cp, bpl2mod, MARGIN / 8);
+#else
+  bplptr = CopSetupBitplanes(cp, screen0, DEPTH);
+  /* Screen bitplanes are interleaved! */
+  CopMove16(cp, bpl1mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
+  CopMove16(cp, bpl2mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
+#endif
+  return CopListFinish(cp);
+}
+
 static void Init(void) {
   CalculateTiles(tiles, ROTATION, ZOOM);
 
 #if MOTIONBLUR
-  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH + SHADOW);
+  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH + SHADOW, BM_CLEAR);
 #else
-  screen0 = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
-                            BM_CLEAR|BM_DISPLAYABLE|BM_INTERLEAVED);
-  screen1 = NewBitmapCustom(WIDTH, HEIGHT, DEPTH,
-                            BM_CLEAR|BM_DISPLAYABLE|BM_INTERLEAVED);
+  screen0 = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR | BM_INTERLEAVED);
+  screen1 = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR | BM_INTERLEAVED);
 #endif
 
 #if MOTIONBLUR
   SetupPlayfield(MODE_LORES, SHADOW, X(MARGIN), Y((256 - HEIGHT + MARGIN) / 2),
                  WIDTH - MARGIN, HEIGHT - MARGIN);
-  LoadPalette(&tilezoomer_pal, 0);
+  LoadColors(tilezoomer_colors, 0);
 #else
   SetupPlayfield(MODE_LORES, DEPTH, X(MARGIN), Y((256 - HEIGHT + MARGIN) / 2),
                  WIDTH - MARGIN, HEIGHT - MARGIN);
@@ -98,20 +111,7 @@ static void Init(void) {
   SetColor(3, 0xccf);
 #endif
 
-  cp = NewCopList(100);
-  CopInit(cp);
-#if MOTIONBLUR
-  CopSetupBitplanes(cp, bplptr, screen0, SHADOW);
-  CopMove16(cp, bpl1mod, MARGIN / 8);
-  CopMove16(cp, bpl2mod, MARGIN / 8);
-#else
-  CopSetupBitplanes(cp, bplptr, screen0, DEPTH);
-  /* Screen bitplanes are interleaved! */
-  CopMove16(cp, bpl1mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
-  CopMove16(cp, bpl2mod, (WIDTH * (DEPTH - 1) + MARGIN) / 8);
-#endif
-  CopEnd(cp);
-
+  cp = MakeCopperList();
   CopListActivate(cp);
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
 }
@@ -187,13 +187,13 @@ static void MoveTiles(void *src, void *dst, short xshift, short yshift) {
 
       WaitBlitter();
 
-      *((short *)ptr)++ = bltcon1;
-      *((int *)ptr)++ = mask;
-      *((int *)ptr)++ = (int)dstpt;
-      *((int *)ptr)++ = (int)srcpt;
+      stwi(ptr, bltcon1);
+      stli(ptr, mask);
+      stli(ptr, dstpt);
+      stli(ptr, srcpt);
       ptr += 4;
-      *((int *)ptr)++ = (int)dstpt;
-      *((short *)ptr)++ = BLTSIZE;
+      stli(ptr, dstpt);
+      stwi(ptr, BLTSIZE);
     }
 #else
     WaitBlitter();
@@ -215,14 +215,14 @@ static void UpdateBitplanePointers(void) {
 #if MOTIONBLUR
   short j = active;
   for (i = SHADOW - 1; i >= 0; i--) {
-    CopInsSet32(bplptr[i], screen0->planes[j] + offset);
+    CopInsSet32(&bplptr[i], screen0->planes[j] + offset);
     j--;
     if (j < 0)
       j += DEPTH + SHADOW;
   }
 #else
   for (i = 0; i < DEPTH; i++)
-    CopInsSet32(bplptr[i], screen1->planes[i] + offset);
+    CopInsSet32(&bplptr[i], screen1->planes[i] + offset);
 #endif
 }
 
@@ -269,4 +269,4 @@ static void Render(void) {
 #endif
 }
 
-EFFECT(TileZoomer, NULL, NULL, Init, Kill, Render);
+EFFECT(TileZoomer, NULL, NULL, Init, Kill, Render, NULL);

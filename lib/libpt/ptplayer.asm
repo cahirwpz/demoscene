@@ -2,8 +2,8 @@
 ;*    ----- Protracker V2.3B Playroutine -----	  *
 ;**************************************************
 ;
-; Version 6.2
-; Written by Frank Wille in 2013, 2016, 2017, 2018, 2019, 2020, 2021, 2022.
+; Version 6.4
+; Written by Frank Wille in 2013, 2016-2024.
 ;
 ; I, the copyright holder of this work, hereby release it into the
 ; public domain. This applies worldwide.
@@ -13,14 +13,14 @@
 ; Barfly-Asm, SNMA, AsmOne, AsmPro.
 ;
 ; The small data model can be enabled by defining the symbol SDATA. In
-; this case all functions expect a4 to be initialised with the small
+; this case all functions expect a4 to be initialized with the small
 ; data base register. Interrupt functions restore a4 from _LinkerDB.
 ; Small data may work with vasm and PhxAss only.
 ;
 ; Exported functions and variables:
 ; (CUSTOM is the custom-chip register set base address $dff000.)
 ;
-; _mt_install_cia(a6=CUSTOM, a0=VectorBase, d0=PALflag.b)
+; _mt_install(a6=CUSTOM, a0=VectorBase, d0=PALflag.b) [OSCOMPAT=0]
 ;   Install a CIA-B interrupt for calling mt_music or mt_sfxonly.
 ;   The music module is replayed via mt_music when _mt_Enable is non-zero.
 ;   Otherwise the interrupt handler calls mt_sfxonly to play sound
@@ -28,9 +28,22 @@
 ;   VBR register. A non-zero PALflag selects PAL-clock for the CIA timers
 ;   (NTSC otherwise).
 ;
-; _mt_remove_cia(a6=CUSTOM)
+; ok(d0) = _mt_install() [OSCOMPAT=1]
+;   Register CIA-B interrupts with AmigaOS for calling mt_music or
+;   mt_sfxonly. Allocate all Paula audio channels via audio.device.
+;   The music module is replayed via mt_music when _mt_Enable is non-zero.
+;   Otherwise the interrupt handler calls mt_sfxonly to play sound
+;   effects only.
+;   Returns true (1) on success, false (0) otherwise. You must not call
+;   _mt_remove(), when _mt_install() failed!
+;
+; _mt_remove(a6=CUSTOM) [OSCOMPAT=0]
 ;   Remove the CIA-B music interrupt, restore the previous handler and
 ;   reset the CIA timer registers to their original values.
+;
+; _mt_remove() [OSCOMPAT=1]
+;   Unregister the CIA-B interrupts handlers and deallocate all
+;   audio channels.
 ;
 ; _mt_init(a6=CUSTOM, a0=TrackerModule, a1=Samples|NULL, d0=InitialSongPos.b)
 ;   Initialize a new module.
@@ -45,7 +58,7 @@
 ;             d0=SampleLength.w, d1=SamplePeriod.w, d2=SampleVolume.w)
 ;   Request playing of an external sound effect on the most unused channel.
 ;   This function is for compatibility with the old API only.
-;   You should call _mt_playfx instead. MINIMAL=0 only.
+;   You may prefer _mt_playfx instead. MINIMAL=0 only.
 ;
 ; channelStatus(d0) = _mt_playfx(a6=CUSTOM, a0=SfxStructurePointer)
 ;   Request playing of a prioritized external sound effect, either on a
@@ -78,63 +91,77 @@
 ;   total length calculation, but excluded when actually playing the loop.
 ;   MINIMAL=0 only.
 ;
-; _mt_stopfx(a6=CUSTOM, d0=Channel.b)
+; _mt_stopfx(a6=CUSTOM, d0=Channel.b) [MINIMAL=0]
 ;   Immediately stop a currently playing sound effect on a channel (0..3)
 ;   and make it available for music, or other effects, again. This is the
-;   only way to stop a looped sound effect (_mt_loopfx), besides stopping
-;   replay completely (_mt_end). MINIMAL=0 only.
+;   only way to stop a looped sound effect (_mt_loopfx) besides stopping
+;   replay completely (_mt_end).
 ;
-; _mt_musicmask(a6=CUSTOM, d0=ChannelMask.b)
-;   Bits set in the mask define which specific channels are reserved
+; _mt_musicmask(a6=CUSTOM, d0=ChannelMask.b) [MINIMAL=0]
+;   Bits set in the ChannelMask define which specific channels are reserved
 ;   for music only. Set bit 0 for channel 0, ..., bit 3 for channel 3.
 ;   When calling _mt_soundfx or _mt_playfx with automatic channel selection
 ;   (sfx_cha=-1) then these masked channels will never be picked.
-;   The mask defaults to 0. MINIMAL=0 only.
+;   The mask defaults to 0.
 ;
-; _mt_mastervol(a6=CUSTOM, d0=MasterVolume.w)
+; _mt_mastervol(a6=CUSTOM, d0=MasterVolume.w) [MINIMAL=0]
 ;   Set a master volume from 0 to 64 for all music channels.
 ;   Note that the master volume does not affect the volume of external
-;   sound effects (which is desired). MINIMAL=0 only.
+;   sound effects (which is desired).
 ;
-; _mt_samplevol(d0=SampleNumber.w, d1=Volume.b)
+; _mt_samplevol(d0=SampleNumber.w, d1=Volume.b) [MINIMAL=0]
 ;   Redefine a sample's volume. May also be done while the song is playing.
 ;   Warning: Does not check arguments for valid range! You must have done
 ;   _mt_init before calling this function!
 ;   The new volume is persistent. Even when the song is restarted.
-;   MINIMAL=0 only.
 ;
-; _mt_channelmask(a6=CUSTOM, d0=ChannelMask.b)
-;  Bits cleared in the mask define which specific channels are muted
+; _mt_channelmask(a6=CUSTOM, d0=ChannelMask.b) [MINIMAL=0]
+;  Bits cleared in the ChannelMask define which specific channels are muted
 ;  for music replay. Clear bit 0 for channel 0, ..., bit 3 for channel 3.
+;  Additionally a cleared bit prevents any access to the sample pointers
+;  of this channel.
 ;  The mask defaults to all channels unmuted (bits set) and is reset to
-;  this state on _mt_init and _mt_end. MINIMAL=0 only.
+;  this state on _mt_init and _mt_end.
 ;
 ; _mt_music(a6=CUSTOM)
 ;   The replayer routine. Can be called from your own VBlank interrupt
 ;   handler when VBLANK_MUSIC is set. Is otherwise called automatically
-;   by Timer-A interrupts after _mt_install_cia.
+;   by Timer-A interrupts after _mt_install.
+;
+; _mt_dmaon() [NO_TIMERS=1]
+;   MUST be called ca. 550 ticks after calling _mt_music. Enables Audio
+;   DMA to play a new note.
+;
+; _mt_setrep() [NO_TIMERS=1]
+;   MUST be called ca. 550 ticks after calling _mt_dmaon. Sets the
+;   repetition pointers and lengths for looped samples.
 ;
 ; Byte Variables:
 ;
-; _mt_Enable
+; _mt_Enable [VBLANK_MUSIC=0]
 ;   Set this byte to non-zero to play music, zero to pause playing.
 ;   Note that you can still play sound effects, while music is stopped.
-;   It is set to 0 by _mt_install_cia.
+;   It is set to 0 by _mt_install.
 ;
 ; _mt_E8Trigger
 ;   This byte reflects the value of the last E8 command.
 ;   It is reset to 0 after _mt_init.
 ;
-; _mt_MusicChannels
+; _mt_MusicChannels [MINIMAL=0]
 ;   This byte defines the number of channels which should be dedicated
 ;   for playing music. So sound effects will never use more
 ;   than 4 - _mt_MusicChannels channels at once. Defaults to 0.
-;   MINIMAL=0 only.
 ;
 
-; Optionally you can build a minimal version, which includes just
-; the player. No sound effects insert, no master volume, no sample
-; volume, etc. Define the symbol MINIMAL=1 for it.
+; Set this if you want to build a version which uses AmigaOS to
+; register interrupts and reserve audio channels.
+	ifnd	OSCOMPAT
+OSCOMPAT	equ	0
+	endc
+
+; Optionally you can build a minimal version, which includes only
+; the basic player. No sound effects insertion, no master volume, no
+; sample volume, etc. Define the symbol MINIMAL=1 for it.
 	ifnd	MINIMAL
 MINIMAL		equ	0
 	endc
@@ -146,19 +173,40 @@ MINIMAL		equ	0
 ENABLE_SAWRECT	equ	1
 	endc
 
-; Set this if you can guarantee that the word at $0 is cleared and if
-; you want to use if for idle-looping of samples.
+; Set this if you can guarantee that the word at $0 is cleared, and if
+; you want to use it for idle-looping of samples.
 	ifnd	NULL_IS_CLEARED
 NULL_IS_CLEARED	equ	0
 	endc
 
-; This disables initialization of CIA Timer-A interrupts for music
+; Setting NO_TIMERS disables the use of both CIA-B timers completely, which
+; means that the player doesn't depend on level-6 EXTER interrupts anymore.
+; NO_TIMERS=1 automatically includes VBLANK_MUSIC=1 (see below).
+; With NO_TIMERS set, your main program has to call all music subroutines
+; itself. The typical procedure in a VERTB-based main loop would be:
+; 1. call _mt_music
+; 2. wait at least 550 ticks, then call _mt_dmaon
+; 3. wait at least 550 ticks again, then call _mt_setrep
+; The last two steps could for example be performed by Copper interrupts.
+	ifnd	NO_TIMERS
+NO_TIMERS	equ	0
+	else
+	ifne	NO_TIMERS
+	ifd	VBLANK_MUSIC
+	ifeq	VBLANK_MUSIC
+	fail	"NO_TIMERS=1 requires VBLANK_MUSIC=1"
+	endc
+	endc	; VBLANK_MUSIC
+	endc	; NO_TIMERS=1
+	endc	; NO_TIMERS
+
+; This disables only initialization of CIA Timer-A interrupts for music
 ; replay, which means you cannot set the tempo with the F-command
 ; anymore and you have to call _mt_music yourself out of your own
 ; VBlank interrupt handler. Also sound effects will no longer work,
 ; when no music is playing (_mt_Enable=0).
 	ifnd	VBLANK_MUSIC
-VBLANK_MUSIC	equ	0
+VBLANK_MUSIC	equ	NO_TIMERS
 	endc
 
 ; Delay in CIA-ticks, which guarantees that at least one Audio-DMA
@@ -166,6 +214,21 @@ VBLANK_MUSIC	equ	0
 ; 496 should be the correct value. But there are some A1200 which
 ; need at least 550.
 DMADELAY	equ	576		; was 496
+
+
+; exec.library (OSCOMPAT)
+_LVOAllocSignal	equ	-330
+_LVOFreeSignal	equ	-336
+_LVOOpenDevice	equ	-444
+_LVOCloseDevice	equ	-450
+_LVOOpenResource equ	-498
+
+; cia.resource (OSCOMPAT)
+_LVOAddICRVector equ	-6
+_LVORemICRVector equ	-12
+_LVOAbleICR	equ	-18
+CIAICRB_TA	equ	0
+CIAICRB_TB	equ	1
 
 
 ; Custom chip registers
@@ -271,6 +334,19 @@ n_reserved2	rs.b	3
 n_sizeof	rs.b	0
 
 
+DISABLE	macro
+	ifeq	NO_TIMERS
+	move.w	#$4000,INTENA(a6)
+	endc
+	endm
+
+ENABLE	macro
+	ifeq	NO_TIMERS
+	move.w	#$c000,INTENA(a6)
+	endc
+	endm
+
+
 	ifd	SDATA
 	xref	_LinkerDB		; small data base from linker
 	near	a4
@@ -279,8 +355,374 @@ n_sizeof	rs.b	0
 
 
 
+	ifne	OSCOMPAT
 ;---------------------------------------------------------------------------
+	xdef	_mt_install
+_mt_install:
+; Register a CIA-B interrupt with AmigaOS for calling mt_music.
+; Reserve all audio channels for our use.
+; -> d0.l = status (1 for success, 0 for error)
+
+	move.l	a6,-(sp)
+
+	ifnd	SDATA
+	move.l	a4,-(sp)
+	lea	mt_data(pc),a4
+	endc
+
+	; open audio.device and allocate all four audio channels
+	move.l	4.w,a6
+	moveq	#-1,d0
+	jsr	_LVOAllocSignal(a6)
+	lea	mt_ioport+20(pc),a0
+	move.b	d0,-5(a0)		; MP_SIGBIT
+	bmi	.fail
+	move.l	a0,8(a0)		; NewList MP_MSGLIST
+	addq.l	#4,a0
+	clr.l	(a0)
+	move.l	a0,-(a0)
+	move.l	276(a6),-(a0)		; MP_SIGTASK = ThisTask
+	lea	mt_audio_name(pc),a0
+	lea	mt_ioaudio(pc),a1
+	moveq	#0,d0
+	moveq	#0,d1
+	jsr	_LVOOpenDevice(a6)
+	tst.b	d0
+	bne	.no_device
+
+	ifeq	NO_TIMERS
+	; attempt to allocate CIA-B timers A and B
+	lea	mt_ciab_name(pc),a1
+	jsr	_LVOOpenResource(a6)
+	tst.l	d0
+	beq	.no_rsrc
+
+	move.l	d0,a6
+
+	clr.b	mt_Enable(a4)
+	lea	TB_toggle(pc),a0
+	clr.b	(a0)
+
+	ifeq	VBLANK_MUSIC
+	moveq	#CIAICRB_TA,d0
+	lea	mt_extern_timer_a_is(pc),a1
+	jsr	_LVOAddICRVector(a6)
+	tst.l	d0
+	bne	.no_timer_a
+	endc	; !VBLANK_MUSIC
+
+	moveq	#CIAICRB_TB,d0
+	lea	mt_extern_timer_b_is(pc),a1
+	jsr	_LVOAddICRVector(a6)
+	tst.l	d0
+	bne	.no_timer_b
+
+	; TimerA and TimerB interrupt disable
+	ifne	VBLANK_MUSIC
+	moveq	#$2,d0			; TimerB only for VBLANK_MUSIC
+	else
+	moveq	#$3,d0
+	endc
+	jsr	_LVOAbleICR(a6)
+
+	lea	CIAB,a0
+
+	; Stop Timer B
+	moveq	#0,d0
+	move.b	d0,CIACRB(a0)
+
+	ifeq	VBLANK_MUSIC
+	; Stop Timer A
+	move.b	d0,CIACRA(a0)
+
+	; determine if 02 clock for timers is based on PAL or NTSC
+	move.l	4.w,a1
+	cmp.b	#50,531(a1)		; PowerSupplyFrequency
+	beq	.1
+	move.l	#1789773,d0             ; NTSC
+	bra	.2
+.1:	move.l	#1773447,d0             ; PAL
+.2:	move.l	d0,mt_timerval(a4)
+
+	; load TimerA in continuous mode for the default tempo of 125
+	divu	#125,d0
+	move.b	d0,CIATALO(a0)
+	lsr.w	#8,d0
+	move.b	d0,CIATAHI(a0)
+	move.b	#$11,CIACRA(a0)		; load timer, start continuous
+	endc	; !VBLANK_MUSIC
+
+	; load TimerB with DMADELAY ticks for setting DMA and repeat
+	move.b	#DMADELAY&255,CIATBLO(a0)
+	move.b	#DMADELAY>>8,CIATBHI(a0)
+
+	; TimerA and TimerB interrupt enable
+	ifne	VBLANK_MUSIC
+	move.w	#$82,d0			; TimerB only for VBLANK_MUSIC
+	else
+	move.w	#$83,d0
+	endc
+	jsr	_LVOAbleICR(a6)
+
+	endc	; !NO_TIMERS
+
+	; reset the player
+	pea	.popout(pc)
+	ifnd	SDATA
+	move.l	a4,-(sp)
+	endc
+	lea	CUSTOM,a6
+	bra	mt_reset
+
+	ifeq	NO_TIMERS
+.no_timer_b:
+	ifeq	VBLANK_MUSIC
+	moveq	#CIAICRB_TA,d0
+	lea	mt_extern_timer_a_is(pc),a1
+	jsr	_LVORemICRVector(a6)
+.no_timer_a:
+	endc	; !VBLANK_MUSIC
+	endc	; !NO_TIMERS
+
+	move.l	4.w,a6
+.no_rsrc:
+	lea	mt_ioaudio(pc),a1
+	jsr	_LVOCloseDevice(a6)
+.no_device:
+	moveq	#0,d0
+	move.b	mt_ioport+15(pc),d0
+	jsr	_LVOFreeSignal(a6)
+.fail:
+	moveq	#0,d0			; Indicate failure
+	bra	.out
+.popout:
+	moveq	#1,d0			; Indicate success
+.out:
+	ifnd	SDATA
+	move.l	(sp)+,a4
+	endc
+	move.l	(sp)+,a6
+	rts
+
+
+mt_ioport:
+	dc.l	0,0
+	dc.b	4,0			; MT_MSGPORT
+	dc.l	0
+	dc.b	0,-1			; PA_SIGNAL
+	dc.l	0
+.head:	dc.l	.tail
+.tail:	dc.l	0
+	dc.l	.head
+
+mt_ioaudio:
+	dc.l	0,0
+	dc.b	7,127			; NT_REPLYMSG, ADALLOC_MAXPREC
+	dc.l	0,mt_ioport
+	dc.w	.end-mt_ioaudio
+	dc.l	0,0
+	dc.w	$20			; ADCMD_ALLOCATE
+	dc.b	$40,0			; ADIOF_NOWAIT
+	dc.w	0			; ioa_AllocKey
+	dc.l	mt_ch_alloc		; ioa_Data
+	dc.l	1			; ioa_Length
+	dc.w	0,0,0
+	ds.b	20			; ioa_WriteMsg
+.end:
+
+	ifeq	NO_TIMERS
+	ifeq	VBLANK_MUSIC
+mt_extern_timer_a_is:
+	dc.l	0,0
+	dc.b	2			; NT_INTERRUPT
+	dc.b	0			; priority
+	dc.l	mt_timer_int_name
+	dc.l	0
+	dc.l	mt_cia_timer_a_code
+	endc	; !VBLANK_MUSIC
+
+mt_extern_timer_b_is:
+	dc.l	0,0
+	dc.b	2			; NT_INTERRUPT
+	dc.b	0			; priority
+	dc.l	mt_timer_int_name
+	dc.l	0
+	dc.l	mt_cia_timer_b_code
+
+mt_ciab_name:
+	dc.b	"ciab.resource",0
+mt_timer_int_name:
+	dc.b	"ptplayer timer",0
+	endc	; !NO_TIMERS
+
+mt_audio_name:
+	dc.b	"audio.device",0
+mt_ch_alloc:
+	dc.b	%1111			; allocate all four channels
+	even
+
+
+;---------------------------------------------------------------------------
+	xdef	_mt_remove
+_mt_remove:
+; Unregister our CIA-B interrupt with AmigaOS. Free all audio channels.
+
+	move.l	a6,-(sp)
+
+	ifeq	NO_TIMERS
+	move.l	4.w,a6
+	lea	mt_ciab_name(pc),a1
+	jsr	_LVOOpenResource(a6)
+	tst.l	d0
+	beq	.nociares
+
+	move.l	d0,a6
+
+	; TimerA and TimerB interrupt disable
+	ifne	VBLANK_MUSIC
+	moveq	#$02,d0			; TimerB only for VBLANK_MUSIC
+	else
+	moveq	#$03,d0
+	endc
+	jsr	_LVOAbleICR(a6)
+
+	moveq	#CIAICRB_TB,d0
+	lea	mt_extern_timer_b_is(pc),a1
+	jsr	_LVORemICRVector(a6)
+
+	ifeq	VBLANK_MUSIC
+	moveq	#CIAICRB_TA,d0
+	lea	mt_extern_timer_a_is(pc),a1
+	jsr	_LVORemICRVector(a6)
+	endc	; !VBLANK_MUSIC
+.nociares:
+	endc	; !NO_TIMERS
+
+	; close audio.device, free channels
+	move.l	4.w,a6
+	lea	mt_ioaudio(pc),a1
+	jsr	_LVOCloseDevice(a6)
+	moveq	#0,d0
+	move.b	mt_ioport+15(pc),d0
+	jsr	_LVOFreeSignal(a6)
+
+	move.l	(sp)+,a6
+	rts
+
+
+	ifeq	NO_TIMERS
+	ifeq	VBLANK_MUSIC
+;---------------------------------------------------------------------------
+mt_cia_timer_a_code:
+; TimerA interrupt calls mt_music at a selectable tempo (Fxx command),
+; which defaults to 50 times per second.
+
+	movem.l	d2-d7/a2-a6,-(sp)
+	lea	CUSTOM,a6
+	ifd	SDATA
+	lea	_LinkerDB,a4
+	else
+	lea	mt_data(pc),a4
+	endc
+
+	; do music when enabled
+	tst.b	mt_Enable(a4)
+	ifeq	MINIMAL
+	beq	.2
+	else
+	beq	.1
+	endc
+
+	bsr	mt_music		; music with sfx inserted
+.1:	movem.l (sp)+,d2-d7/a2-a6
+	rts
+
+	ifeq	MINIMAL
+.2:	bsr	mt_sfxonly		; no music, only sfx
+	movem.l	(sp)+,d2-d7/a2-a6
+	rts
+	endc
+	endc	; !VBLANK_MUSIC
+
+
+;---------------------------------------------------------------------------
+mt_cia_timer_b_code:
+; Handle one-shot TimerB interrupt.
+; TB_toggle-technique suggested by Ross/EAB.
+
+	lea	TB_toggle(pc),a0
+	not.b	(a0)
+	lea	CUSTOM+INTREQ,a0
+	beq	mt_TimerBsetrep
+
+	; restart timer for repeat, enable audio DMA after DMADELAY ticks
+	move.b	#$19,CIAB+CIACRB
+	move.w	mt_dmaon(pc),DMACON-INTREQ(a0)
+	rts
+
+TB_toggle:
+	dc.b    0
+	even
+
+
+mt_TimerBsetrep:
+; Oneshot TimerB interrupt to set repeat samples after another DMADELAY ticks.
+
+	move.l	a4,-(sp)
+
+	ifd	SDATA
+	lea	_LinkerDB,a4
+	else
+	lea	mt_data(pc),a4
+	endc
+
+	; clear possible audio interrupt flags
+	moveq	#0,d0
+	or.b	mt_dmaon+1(pc),d0
+	lsl.w	#7,d0
+	move.w	d0,(a0)
+
+	; set repeat sample pointers and lengths
+	ifne	MINIMAL
+	move.l	mt_chan1+n_loopstart(a4),AUD0LC-INTREQ(a0)
+	move.w	mt_chan1+n_replen(a4),AUD0LEN-INTREQ(a0)
+	move.l	mt_chan2+n_loopstart(a4),AUD1LC-INTREQ(a0)
+	move.w	mt_chan2+n_replen(a4),AUD1LEN-INTREQ(a0)
+	move.l	mt_chan3+n_loopstart(a4),AUD2LC-INTREQ(a0)
+	move.w	mt_chan3+n_replen(a4),AUD2LEN-INTREQ(a0)
+	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
+	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
+
+	else	; !MINIMAL
+	tst.b	mt_chan1+n_enable(a4)
+	beq	.1
+	move.l	mt_chan1+n_loopstart(a4),AUD0LC-INTREQ(a0)
+	move.w	mt_chan1+n_replen(a4),AUD0LEN-INTREQ(a0)
+.1:	tst.b	mt_chan2+n_enable(a4)
+	beq	.2
+	move.l	mt_chan2+n_loopstart(a4),AUD1LC-INTREQ(a0)
+	move.w	mt_chan2+n_replen(a4),AUD1LEN-INTREQ(a0)
+.2:	tst.b	mt_chan3+n_enable(a4)
+	beq	.3
+	move.l	mt_chan3+n_loopstart(a4),AUD2LC-INTREQ(a0)
+	move.w	mt_chan3+n_replen(a4),AUD2LEN-INTREQ(a0)
+.3:	tst.b	mt_chan4+n_enable(a4)
+	beq	.4
+	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
+	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
+.4:
+	endc
+
+	move.l	(sp)+,a4
+	rts
+	endc	; !NO_TIMERS
+
+
+	else	!OSCOMPAT
+;---------------------------------------------------------------------------
+	xdef	_mt_install
 	xdef	_mt_install_cia
+_mt_install:
 _mt_install_cia:
 ; Install a CIA-B interrupt for calling mt_music.
 ; a6 = CUSTOM
@@ -294,6 +736,7 @@ _mt_install_cia:
 
 	clr.b	mt_Enable(a4)
 
+	ifeq	NO_TIMERS
 	; remember level 6 vector and interrupt enable
 	lea	$78(a0),a0
 	move.l	a0,mt_Lev6Int(a4)
@@ -356,16 +799,20 @@ _mt_install_cia:
 
 	; enable level 6 interrupts
 	move.w	#$a000,INTENA(a6)
+	endc	; !NO_TIMERS
 
 	bra	mt_reset
 
 
 ;---------------------------------------------------------------------------
 	xdef	_mt_remove_cia
+	xdef	_mt_remove
 _mt_remove_cia:
+_mt_remove:
 ; Remove CIA-B music interrupt and restore the old vector.
 ; a6 = CUSTOM
 
+	ifeq	NO_TIMERS
 	ifnd	SDATA
 	move.l	a4,-(sp)
 	lea	mt_data(pc),a4
@@ -401,9 +848,11 @@ _mt_remove_cia:
 	ifnd	SDATA
 	move.l	(sp)+,a4
 	endc
+	endc	; !NO_TIMERS
 	rts
 
 
+	ifeq	NO_TIMERS
 ;---------------------------------------------------------------------------
 mt_TimerAInt:
 ; TimerA interrupt calls mt_music at a selectable tempo (Fxx command),
@@ -474,17 +923,9 @@ mt_TimerBInt:
 	nop
 	rte
 
-mt_dmaon:
-	dc.w	$8000
-TB_toggle:
-	dc.b	0
-	even
 
-
-;---------------------------------------------------------------------------
 mt_TimerBsetrep:
 ; Oneshot TimerB interrupt to set repeat samples after another DMADELAY ticks.
-; a0 = INTREQ
 
 	; clear EXTER and possible audio interrupt flags
 	move.l	a4,-(sp)
@@ -495,12 +936,14 @@ mt_TimerBsetrep:
 	move.w	d0,(a0)
 	move.l	a4,d0
 
-	; set repeat sample pointers and lengths
 	ifd	SDATA
 	lea	_LinkerDB,a4
 	else
 	lea	mt_data(pc),a4
 	endc
+
+	; set repeat sample pointers and lengths
+	ifne	MINIMAL
 	move.l	mt_chan1+n_loopstart(a4),AUD0LC-INTREQ(a0)
 	move.w	mt_chan1+n_replen(a4),AUD0LEN-INTREQ(a0)
 	move.l	mt_chan2+n_loopstart(a4),AUD1LC-INTREQ(a0)
@@ -510,10 +953,107 @@ mt_TimerBsetrep:
 	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
 	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
 
+	else	; !MINIMAL
+	tst.b	mt_chan1+n_enable(a4)
+	beq	.1
+	move.l	mt_chan1+n_loopstart(a4),AUD0LC-INTREQ(a0)
+	move.w	mt_chan1+n_replen(a4),AUD0LEN-INTREQ(a0)
+.1:	tst.b	mt_chan2+n_enable(a4)
+	beq	.2
+	move.l	mt_chan2+n_loopstart(a4),AUD1LC-INTREQ(a0)
+	move.w	mt_chan2+n_replen(a4),AUD1LEN-INTREQ(a0)
+.2:	tst.b	mt_chan3+n_enable(a4)
+	beq	.3
+	move.l	mt_chan3+n_loopstart(a4),AUD2LC-INTREQ(a0)
+	move.w	mt_chan3+n_replen(a4),AUD2LEN-INTREQ(a0)
+.3:	tst.b	mt_chan4+n_enable(a4)
+	beq	.4
+	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
+	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
+.4:
+	endc
+
 	move.l	(sp)+,a4
 	move.l	(sp)+,a0
 	nop
 	rte
+
+TB_toggle:
+	dc.b	0
+	even
+	endc	; !NO_TIMERS
+	endc	; !OSCOMPAT
+
+
+	ifne	NO_TIMERS
+;---------------------------------------------------------------------------
+	xdef	_mt_dmaon
+_mt_dmaon:
+; Enable audio DMA after some delay.
+; Called by main program, for example out of a copper-interrupt.
+
+	move.w	mt_dmaon(pc),CUSTOM+DMACON
+	rts
+
+
+	xdef	_mt_setrep
+_mt_setrep:
+; Set repeat sample pointers and lengths.
+; Called by main program, for example out of a copper-interrupt.
+
+	movem.l	a0/a4,-(sp)
+
+	; reset audio interrupt flags
+	lea	CUSTOM+INTREQ,a0
+	move.l	d0,a4
+	move.w	mt_dmaon(pc),d0
+	lsl.w	#7,d0
+	move.w	d0,(a0)
+	move.l	a4,d0
+
+	ifd	SDATA
+	lea	_LinkerDB,a4
+	else
+	lea	mt_data(pc),a4
+	endc
+
+	; set repeat sample pointers and lengths
+	ifne	MINIMAL
+	move.l	mt_chan1+n_loopstart(a4),AUD0LC-INTREQ(a0)
+	move.w	mt_chan1+n_replen(a4),AUD0LEN-INTREQ(a0)
+	move.l	mt_chan2+n_loopstart(a4),AUD1LC-INTREQ(a0)
+	move.w	mt_chan2+n_replen(a4),AUD1LEN-INTREQ(a0)
+	move.l	mt_chan3+n_loopstart(a4),AUD2LC-INTREQ(a0)
+	move.w	mt_chan3+n_replen(a4),AUD2LEN-INTREQ(a0)
+	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
+	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
+
+	else	; !MINIMAL
+	tst.b	mt_chan1+n_enable(a4)
+	beq	.1
+	move.l	mt_chan1+n_loopstart(a4),AUD0LC-INTREQ(a0)
+	move.w	mt_chan1+n_replen(a4),AUD0LEN-INTREQ(a0)
+.1:	tst.b	mt_chan2+n_enable(a4)
+	beq	.2
+	move.l	mt_chan2+n_loopstart(a4),AUD1LC-INTREQ(a0)
+	move.w	mt_chan2+n_replen(a4),AUD1LEN-INTREQ(a0)
+.2:	tst.b	mt_chan3+n_enable(a4)
+	beq	.3
+	move.l	mt_chan3+n_loopstart(a4),AUD2LC-INTREQ(a0)
+	move.w	mt_chan3+n_replen(a4),AUD2LEN-INTREQ(a0)
+.3:	tst.b	mt_chan4+n_enable(a4)
+	beq	.4
+	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
+	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
+.4:
+	endc
+
+	movem.l	(sp)+,a0/a4
+	rts
+	endc	; NO_TIMERS
+
+mt_dmaon:
+	dc.w	$8000
 
 
 ;---------------------------------------------------------------------------
@@ -589,7 +1129,7 @@ _mt_init:
 	endc
 
 mt_reset:
-; a4 must be initialised with base register
+; a4 must be initialized with base register
 
 	; reset speed and counters
 	move.b	#6,mt_Speed(a4)
@@ -616,7 +1156,7 @@ mt_reset:
 	move.b	#2,mt_chan3+n_index(a4)
 	move.b	#3,mt_chan4+n_index(a4)
 
-	; initialise channel DMA and interrupt bits
+	; initialize channel DMA and interrupt bits
 	move.w	#$0001,mt_chan1+n_dmabit(a4)
 	move.w	#$0002,mt_chan2+n_dmabit(a4)
 	move.w	#$0004,mt_chan3+n_dmabit(a4)
@@ -643,7 +1183,7 @@ _mt_end:
 ; Stop playing current module.
 ; a6 = CUSTOM
 
-	move.w	#$4000,INTENA(a6)
+	DISABLE
 	ifd	SDATA
 	clr.b	mt_Enable(a4)
 	lea	mt_chan1(a4),a0
@@ -672,7 +1212,7 @@ _mt_end:
 	move.w	d0,AUD2VOL(a6)
 	move.w	d0,AUD3VOL(a6)
 	move.w	#$000f,DMACON(a6)
-	move.w	#$c000,INTENA(a6)
+	ENABLE
 	rts
 
 
@@ -687,10 +1227,10 @@ resetch:
 	clr.b	n_sfxpri(a0)
 	clr.b	n_looped(a0)
 	clr.b	n_gliss(a0)
-        ifeq    MINIMAL
+	ifeq	MINIMAL
 	clr.b	n_musiconly(a0)
 	st	n_enable(a0)
-        endc
+	endc
 	rts
 
 
@@ -737,7 +1277,7 @@ _mt_playfx:
 	lea	mt_data(pc),a4
 	endc
 
-	move.w	#$4000,INTENA(a6)
+	DISABLE
 	moveq	#0,d0
 	move.b	sfx_cha(a0),d0
 	bpl	channelsfx		; use fixed channel for effect
@@ -779,28 +1319,28 @@ _mt_playfx:
 
 	move.l	(a1)+,d1
 	and.l	d3,d1
-	sne	d1
+	seq	d1
 	and.b	d1,d4
 	sub.b	d4,mt_chan1+n_freecnt(a4)
 	add.b	d4,d0
 
 	move.l	(a1)+,d1
 	and.l	d3,d1
-	sne	d1
+	seq	d1
 	and.b	d1,d5
 	sub.b	d5,mt_chan2+n_freecnt(a4)
 	add.b	d5,d0
 
 	move.l	(a1)+,d1
 	and.l	d3,d1
-	sne	d1
+	seq	d1
 	and.b	d1,d6
 	sub.b	d6,mt_chan3+n_freecnt(a4)
 	add.b	d6,d0
 
 	move.l	(a1)+,d1
 	and.l	d3,d1
-	sne	d1
+	seq	d1
 	and.b	d1,d7
 	sub.b	d7,mt_chan4+n_freecnt(a4)
 	add.b	d7,d0
@@ -931,11 +1471,8 @@ freecnt_valid:
 	beq	.11
 	cmp.b	d4,d2
 	blo	.11
-	lea	mt_chan1+n_freecnt(a4),a1
-	cmp.b	(a1),d3
-	bhi	.11
-	move.l	a1,a2
-	move.b	(a1),d3
+	lea	mt_chan1+n_freecnt(a4),a2
+	move.b	(a2),d3
 .11:	tst.b	d5
 	beq	.12
 	cmp.b	d5,d2
@@ -996,7 +1533,7 @@ set_sfx:
 	move.b	d2,n_sfxpri(a2)
 
 exit_playfx:
-	move.w	#$c000,INTENA(a6)
+	ENABLE
 	move.l	a2,d0			; ptr to selected channel or NULL
 
 	ifd	SDATA
@@ -1037,14 +1574,13 @@ _mt_loopfx:
 	add.w	d0,d0
 	add.w	channel_offsets(pc,d0.w),a1
 
-	move.w	#$4000,INTENA(a6)
+	DISABLE
 	move.l	(a0)+,n_sfxptr(a1)	; sfx_ptr
 	move.w	(a0)+,n_sfxlen(a1)	; sfx_len
 	move.w	(a0)+,n_sfxper(a1)	; sfx_per
 	move.w	(a0),n_sfxvol(a1)	; sfx_vol
 	st	n_sfxpri(a1)		; sfx_pri -1 enables looped mode
-	move.w	#$c000,INTENA(a6)
-
+	ENABLE
 	rts
 
 
@@ -1065,7 +1601,7 @@ _mt_stopfx:
 	add.w	d0,d0
 	add.w	channel_offsets(pc,d0.w),a0
 
-	move.w	#$4000,INTENA(a6)
+	DISABLE
 	tst.b	n_sfxpri(a0)
 	beq	.1			; no sfx playing anyway
 	moveq	#1,d0
@@ -1082,7 +1618,7 @@ _mt_stopfx:
 	clr.b	n_looped(a0)
 	subq.l	#2,n_sfxptr(a0)		; idle loop at sample-start - 2
 	endc
-.1:	move.w	#$c000,INTENA(a6)
+.1:	ENABLE
 
 	rts
 
@@ -1100,7 +1636,7 @@ _mt_musicmask:
 	lea	mt_data(pc),a4
 	endc
 
-	move.w	#$4000,INTENA(a6)
+	DISABLE
 
 	lsl.b	#5,d0
 	scs	mt_chan4+n_musiconly(a4)
@@ -1111,7 +1647,7 @@ _mt_musicmask:
 	add.b	d0,d0
 	scs	mt_chan1+n_musiconly(a4)
 
-	move.w	#$c000,INTENA(a6)
+	ENABLE
 
 	ifnd	SDATA
 	move.l	(sp)+,a4
@@ -1142,10 +1678,10 @@ _mt_mastervol:
 	add.w	d0,a0
 
 	; set new table and adapt all channel volumes immediately
-	move.w	#$4000,INTENA(a6)
+	DISABLE
 	move.l	a0,mt_MasterVolTab(a4)
 	bsr	set_all_volumes
-	move.w	#$c000,INTENA(a6)
+	ENABLE
 
 	ifnd	SDATA
 	move.l	(sp)+,a4
@@ -1165,7 +1701,7 @@ _mt_channelmask:
 	lea	mt_data(pc),a4
 	endc
 
-	move.w	#$4000,INTENA(a6)
+	DISABLE
 
 	lsl.b	#5,d0
 	scs	mt_chan4+n_enable(a4)
@@ -1178,7 +1714,7 @@ _mt_channelmask:
 	move.l	mt_MasterVolTab(a4),a0
 	bsr	set_all_volumes
 
-	move.w	#$c000,INTENA(a6)
+	ENABLE
 
 	ifnd	SDATA
 	move.l	(sp)+,a4
@@ -1196,24 +1732,40 @@ set_all_volumes:
 	move.b	(a0,d0.w),d0
 	and.b	mt_chan1+n_enable(a4),d0
 	move.w	d0,AUD0VOL(a6)
+	ifd	VOL0_UNLOOPS
+	bne	.1
+	clr.b	mt_chan1+n_looped(a4)
+	endc
 .1:	tst.b	mt_chan2+n_sfxpri(a4)
 	bne	.2
 	move.w	mt_chan2+n_volume(a4),d0
 	move.b	(a0,d0.w),d0
 	and.b	mt_chan2+n_enable(a4),d0
 	move.w	d0,AUD1VOL(a6)
+	ifd	VOL0_UNLOOPS
+	bne	.2
+	clr.b	mt_chan2+n_looped(a4)
+	endc
 .2:	tst.b	mt_chan3+n_sfxpri(a4)
 	bne	.3
 	move.w	mt_chan3+n_volume(a4),d0
 	move.b	(a0,d0.w),d0
 	and.b	mt_chan3+n_enable(a4),d0
 	move.w	d0,AUD2VOL(a6)
+	ifd	VOL0_UNLOOPS
+	bne	.3
+	clr.b	mt_chan3+n_looped(a4)
+	endc
 .3:	tst.b	mt_chan4+n_sfxpri(a4)
 	bne	.4
 	move.w	mt_chan4+n_volume(a4),d0
 	move.b	(a0,d0.w),d0
 	and.b	mt_chan4+n_enable(a4),d0
 	move.w	d0,AUD3VOL(a6)
+	ifd	VOL0_UNLOOPS
+	bne	.4
+	clr.b	mt_chan4+n_looped(a4)
+	endc
 .4:	rts
 
 
@@ -1315,10 +1867,12 @@ no_new_note:
 	lea	mt_chan4(a4),a2
 	bsr	mt_checkfx
 
+	ifeq	NO_TIMERS
 	; set one-shot TimerB interrupt for enabling DMA, when needed
 	move.b	mt_dmaon+1(pc),d0
 	beq	same_pattern
 	move.b	#$19,CIAB+CIACRB	; load/start timer B, one-shot
+	endc
 	bra	same_pattern
 
 get_new_note:
@@ -1350,10 +1904,12 @@ get_new_note:
 	bsr	mt_playvoice
 
 settb_step:
+	ifeq	NO_TIMERS
 	; set one-shot TimerB interrupt for enabling DMA, when needed
 	move.b	mt_dmaon+1(pc),d0
 	beq	pattern_step
 	move.b	#$19,CIAB+CIACRB	; load/start timer B, one-shot
+	endc
 
 pattern_step:
 	; next pattern line, handle delay and break
@@ -1440,9 +1996,11 @@ mt_sfxonly:
 	lea	mt_chan4(a4),a2
 	bsr	chan_sfx_only
 
+	ifeq	NO_TIMERS
 	move.b	mt_dmaon+1(pc),d0
 	beq	.1
 	move.b	#$19,CIAB+CIACRB	; load/start timer B, one-shot
+	endc
 
 .1:	rts
 
@@ -1986,7 +2544,7 @@ do_porta_up:
 	move.w	n_period(a2),d1
 	sub.w	d0,d1
 	cmp.w	#113,d1
-	bhs	.1
+	bge	.1
 	moveq	#113,d1
 .1:	move.w	d1,n_period(a2)
 	move.w	d1,AUDPER(a5)
@@ -2206,9 +2764,13 @@ mt_tremolo:
 	and.b	n_enable(a2),d0
 	endc
 	move.w	d0,AUDVOL(a5)
+	ifd	VOL0_UNLOOPS
+	bne	.12
+	move.b	d7,n_looped(a2)
+	endc
 
 	; increase tremolopos by speed
-	add.b	d4,n_tremolopos(a2)
+.12:	add.b	d4,n_tremolopos(a2)
 	rts
 
 
@@ -2226,26 +2788,31 @@ mt_volumeslide:
 	add.b	d4,d0
 vol_slide_up:
 	cmp.b	#64,d0
-	bls	set_vol
+	bls	set_pervol
 	moveq	#64,d0
-	bra	set_vol
+	bra	set_pervol
 
 	; slide down, until 0
 vol_slide_down:
 	sub.b	d1,d0
-	bpl	set_vol
+	bpl	set_pervol
 	moveq	#0,d0
 
+set_pervol:
+	move.w	n_period(a2),AUDPER(a5)
 set_vol:
 	move.w	d0,n_volume(a2)
-	move.w	n_period(a2),AUDPER(a5)
 	ifeq	MINIMAL
 	move.l	mt_MasterVolTab(a4),a0
 	move.b	(a0,d0.w),d0
 	and.b	n_enable(a2),d0
 	endc
 	move.w	d0,AUDVOL(a5)
-	rts
+	ifd	VOL0_UNLOOPS
+	bne	.1
+	move.b	d7,n_looped(a2)
+	endc
+.1:	rts
 
 
 mt_posjump:
@@ -2266,17 +2833,11 @@ mt_volchange:
 ; cmd C x y (xy = new volume)
 ; d4 = xy
 
-	cmp.w	#64,d4
-	bls	.1
-	moveq	#64,d4
-.1:	move.w	d4,n_volume(a2)
-	ifeq	MINIMAL
-	move.l	mt_MasterVolTab(a4),a0
-	move.b	(a0,d4.w),d4
-	and.b	n_enable(a2),d4
-	endc
-	move.w	d4,AUDVOL(a5)
-	rts
+	move.w	d4,d0
+	cmp.w	#64,d0
+	bls	set_vol
+	moveq	#64,d0
+	bra	set_vol
 
 
 mt_patternbrk:
@@ -2395,9 +2956,9 @@ mt_filter:
 
 	lsr.b	#1,d0
 	bcs	.1
-	bclr	#2,CIAA+CIAPRA
+	bclr	#1,CIAA+CIAPRA
 	rts
-.1:	bset	#2,CIAA+CIAPRA
+.1:	bset	#1,CIAA+CIAPRA
 mt_rts:
 	rts
 
@@ -2542,6 +3103,9 @@ mt_notecut:
 	bne	.1
 	move.w	d7,n_volume(a2)
 	move.w	d7,AUDVOL(a5)
+	ifd	VOL0_UNLOOPS
+	move.b	d7,n_looped(a2)
+	endc
 .1:	rts
 
 
@@ -3282,7 +3846,7 @@ MasterVolTab64:
 
 	ifd	SDATA
 
-	section	__MERGED,bss
+	section	'.bss',bss
 
 mt_chan1:
 	ds.b	n_sizeof

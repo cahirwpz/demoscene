@@ -14,36 +14,42 @@ type HunkHeader struct {
 	Specifiers []uint32
 }
 
-func readHunkHeader(r io.Reader) (h HunkHeader) {
-	h.Residents = readArrayOfString(r)
-	h.Hunks = readLong(r)
-	h.First = readLong(r)
-	h.Last = readLong(r)
-	n := h.Last - h.First + 1
-	h.Specifiers = make([]uint32, n)
+func readHunkHeader(r io.Reader) *HunkHeader {
+	residents := readArrayOfString(r)
+	hunks := readLong(r)
+	first := readLong(r)
+	last := readLong(r)
+	n := last - first + 1
+	specifiers := make([]uint32, n)
 	for i := 0; i < int(n); i++ {
-		h.Specifiers[i] = readLong(r)
+		specifiers[i] = readLong(r)
 	}
-	return
+	return &HunkHeader{residents, hunks, first, last, specifiers}
 }
 
 func (h HunkHeader) Type() HunkType {
 	return HUNK_HEADER
 }
 
+func (h HunkHeader) Write(w io.Writer) {
+	writeLong(w, uint32(HUNK_HEADER))
+	writeArrayOfString(w, h.Residents)
+	writeLong(w, h.Hunks)
+	writeLong(w, h.First)
+	writeLong(w, h.Last)
+	for _, v := range h.Specifiers {
+		writeLong(w, v)
+	}
+}
+
 func (h HunkHeader) String() string {
 	var sb strings.Builder
 	sb.WriteString("HUNK_HEADER\n")
 	fmt.Fprintf(&sb, "  Residents: %s\n", h.Residents)
-	for i, v := range h.Specifiers {
-		fmt.Fprintf(&sb, "  Hunk %d: %6d bytes", i+int(h.First), v<<2)
-		if v&HUNKF_CHIP != 0 {
-			sb.WriteString(" [MEMF_CHIP]\n")
-		} else if v&HUNKF_FAST != 0 {
-			sb.WriteString(" [MEMF_FAST]\n")
-		} else {
-			sb.WriteString(" [MEMF_PUBLIC]\n")
-		}
+	for i, spec := range h.Specifiers {
+		flag, size := hunkSpec(spec)
+		fmt.Fprintf(&sb, "  Hunk %d: %6d bytes [%s]\n", i+int(h.First), size,
+			flag.String())
 	}
 	return sb.String()
 }

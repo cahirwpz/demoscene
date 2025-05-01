@@ -2,6 +2,10 @@ export TOPDIR
 
 MAKEFLAGS += --no-builtin-rules
 
+ifndef DEMOSCENE_ROOT
+$(error You forgot to run 'source activate', please consult README.md)
+endif
+
 DIR := $(patsubst $(TOPDIR)%,%,$(realpath $(CURDIR)))
 DIR := $(patsubst /%,%/,$(DIR))
 
@@ -13,32 +17,32 @@ AR	:= m68k-amigaos-ar
 RANLIB	:= m68k-amigaos-ranlib
 VASM	:= vasm -quiet
 
-ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-ggdb3
-VASMFLAGS	+= -m68010 -quiet -I$(TOPDIR)/include
-LDFLAGS	:= -amiga-debug-hunk
+ifeq ($(MODEL),A1200)
+CPU_AS = 68020
+CPU_CC = 68020
+else
+CPU_AS = 68010
+CPU_CC = 68000
+endif
+
+ASFLAGS	:= -m$(CPU_AS) -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-gstabs+
+VASMFLAGS	+= -m$(CPU_AS) -quiet -I$(TOPDIR)/include
+LDFLAGS	:= -amiga-debug-hunk --orphan-handling=error
 CFLAGS	= -ggdb3 -ffreestanding -fno-common $(OFLAGS) $(WFLAGS)
-OFLAGS	:= -m68000 -msmall-code -mregparm=2
+OFLAGS	:= -m$(CPU_CC) -mregparm=2 -freg-struct-return
 # The '-O2' option does not turn on optimizations '-funroll-loops',
 # '-funroll-all-loops' and `-fstrict-aliasing'.
 OFLAGS	+= -O2 -fomit-frame-pointer -fstrength-reduce
 WFLAGS	:= -Wall -W -Werror -Wundef -Wsign-compare -Wredundant-decls
 WFLAGS	+= -Wnested-externs -Wwrite-strings -Wstrict-prototypes
 CPPFLAGS += -I$(TOPDIR)/include
-LDSCRIPT := $(TOPDIR)/system/amiga.lds
+LDSCRIPT ?= $(TOPDIR)/system/amiga.lds
 
 # Don't reload library base for each call
 CPPFLAGS += -D__CONSTLIBBASEDECL__=const
-CPPFLAGS += -DCHIPMEM_KB=$(CHIPMEM) -DFASTMEM_KB=$(FASTMEM) -DLOGOUT=$(LOGOUT)
 
-include $(TOPDIR)/config.mk
-
-ifeq ($(UAE), 1)
-CPPFLAGS += -DUAE
-endif
-
-ifeq ($(AMIGAOS), 1)
-CPPFLAGS += -DAMIGAOS
-endif
+# Pass "VERBOSE=1" at command line to display command being invoked by GNU Make
+VERBOSE ?= 0
 
 ifeq ($(VERBOSE), 0)
 .SILENT:
@@ -50,19 +54,24 @@ CP := cp -a
 RM := rm -v -f
 PYTHON3 := PYTHONPATH="$(TOPDIR)/tools/pylib:$$PYTHONPATH" python3
 ADFUTIL := $(TOPDIR)/tools/adfutil.py
-ROMUTIL := $(TOPDIR)/tools/romutil.py
 FSUTIL := $(TOPDIR)/tools/fsutil.py
 BINPATCH := $(TOPDIR)/tools/binpatch.py
 LAUNCH := $(PYTHON3) $(TOPDIR)/tools/launch.py
-LWO2C := $(TOPDIR)/tools/lwo2c.py $(QUIET)
+ANIM2C := $(TOPDIR)/tools/anim2c.py
 CONV2D := $(TOPDIR)/tools/conv2d.py
+DRNG2C := $(TOPDIR)/tools/drng2c/drng2c
 GRADIENT := $(TOPDIR)/tools/gradient.py
 TMXCONV := $(TOPDIR)/tools/tmxconv/tmxconv
 MAKETMX := $(TOPDIR)/tools/maketmx/maketmx
 PCHG2C := $(TOPDIR)/tools/pchg2c/pchg2c
-PNG2C := $(TOPDIR)/tools/png2c.py
+PNG2C := $(TOPDIR)/tools/png2c/png2c
 PSF2C := $(TOPDIR)/tools/psf2c.py
+PTSPLIT := $(PYTHON3) $(TOPDIR)/tools/ptsplit.py
 SYNC2C := $(TOPDIR)/tools/sync2c/sync2c
+SVG2C := $(TOPDIR)/tools/svg2c/svg2c
+PACKEXE := $(TOPDIR)/tools/packexe/packexe
+SPLITEXE := $(TOPDIR)/tools/splitexe/splitexe
+OBJ2C := $(TOPDIR)/tools/obj2c/obj2c
 STRIP := m68k-amigaos-strip -s
 OBJCOPY := m68k-amigaos-objcopy
 
@@ -70,7 +79,8 @@ OBJCOPY := m68k-amigaos-objcopy
 SOURCES_C = $(filter %.c,$(SOURCES))
 SOURCES_S = $(filter %.S,$(SOURCES))
 SOURCES_ASM = $(filter %.asm,$(SOURCES))
-OBJECTS += $(SOURCES_C:%.c=%.o) $(SOURCES_S:%.S=%.o) $(SOURCES_ASM:%.asm=%.o)
+OBJECTS += $(filter-out $(LOADABLES),\
+             $(SOURCES_C:%.c=%.o) $(SOURCES_S:%.S=%.o) $(SOURCES_ASM:%.asm=%.o))
 
 DEPENDENCY-FILES += $(foreach f, $(SOURCES_C),\
 		      $(dir $(f))$(patsubst %.c,.%.D,$(notdir $(f))))
@@ -79,7 +89,7 @@ DEPENDENCY-FILES += $(foreach f, $(SOURCES_S),\
 
 $(DEPENDENCY-FILES): $(SOURCES_GEN)
 
-CLEAN-FILES += $(DEPENDENCY-FILES) $(SOURCES_GEN) $(OBJECTS) $(DATA_GEN)
+CLEAN-FILES += $(DEPENDENCY-FILES) $(SOURCES_GEN) $(OBJECTS) $(LOADABLES)
 CLEAN-FILES += $(SOURCES:%=%~)
 
 # Disable all built-in recipes and define our own
@@ -97,15 +107,21 @@ CLEAN-FILES += $(SOURCES:%=%~)
 
 %.o: %.c
 	@echo "[CC] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $(CURDIR)/$<
+	$(CC) $(CFLAGS) $(CFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) \
+                -c -o $@ $(abspath $<)
 
 %.o: %.S
 	@echo "[AS] $(DIR)$< -> $(DIR)$@"
-	$(CC) $(ASFLAGS) $(ASFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) -c -o $@ $(CURDIR)/$<
+	$(CC) $(ASFLAGS) $(ASFLAGS.$*) $(CPPFLAGS) $(CPPFLAGS.$*) \
+                -c -o $@ $(abspath $<)
 
 %.o: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
 	$(VASM) -Fhunk $(VASMFLAGS) $(VASMFLAGS.$*) -o $@ $<
+
+%: %.asm
+	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
+	$(VASM) -Fhunkexe -nosym $(VASMFLAGS) $(VASMFLAGS.$*) -o $@ $<
 
 %.bin: %.asm
 	@echo "[VASM] $(DIR)$< -> $(DIR)$@"
@@ -131,7 +147,7 @@ clean-%: FORCE
 # Rules for build
 subdirs: $(foreach dir,$(SUBDIRS),build-$(dir))
 
-build: $(OBJECTS) $(BUILD-FILES) subdirs $(EXTRA-FILES) 
+build: $(OBJECTS) $(LOADABLES) $(BUILD-FILES) subdirs $(EXTRA-FILES) 
 
 clean: $(foreach dir,$(SUBDIRS),clean-$(dir)) 
 	$(RM) $(BUILD-FILES) $(EXTRA-FILES) $(CLEAN-FILES) *~ *.taghl

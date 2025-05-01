@@ -1,6 +1,7 @@
 #include <effect.h>
 #include <blitter.h>
 #include <copper.h>
+#include <fx.h>
 #include <pixmap.h>
 #include <system/interrupt.h>
 #include <system/memory.h>
@@ -14,25 +15,94 @@ static u_short active = 0;
 static u_short *texture;
 static u_short *chunky[2];
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 
 #include "data/texture-rgb.c"
 #include "data/uvmap-rgb.c"
 
-#define UVMapRenderSize (WIDTH * HEIGHT * 8 + 2)
-static void (*UVMapRender)(u_short *chunky asm("a0"), u_short *texture asm("a1"));
+#define UVMapRenderSize (uvmap_width * uvmap_height * 8 + 2)
+typedef void (*UVMapRenderT)(u_short *chunky asm("a0"),
+                             u_short *offsets asm("a1"),
+                             u_short *texture asm("a2"));
+static UVMapRenderT UVMapRender;
+static u_short UVMapOffsets[image_height];
+
+#define UVMapRenderBackupSize (HEIGHT * 4)
+static u_short *UVMapRenderBackup;
 
 static void MakeUVMapRenderCode(void) {
   u_short *code = (void *)UVMapRender;
-  u_short *data = uvmap;
-  short n = WIDTH * HEIGHT;
+  u_char *data = (void *)uvmap;
+  short n = uvmap_width * uvmap_height;
 
   while (--n >= 0) {
-    *code++ = 0x30e9; /* 30e9 xxxx | move.w xxxx(a1),(a0)+ */
-    *code++ = *data++;
+    /* both are already multiplied by 2 */
+    u_short u = *data++;
+    u_short v = *data++;
+
+    /* 3029 00uu | move.w $00uu(a1),d0 */
+    *code++ = 0x3029;
+ 
+    /* We're going to index 16-bit values. */
+    *code++ = u;
+
+    /* 30f2 00vv | move.w $vv(a2,d0.w),(a0)+ */
+    *code++ = 0x30f2;
+
+    /* Same as with `u`, though for 64..127 the value will be sign extended
+     * hence will wrap around. */
+    *code++ = v;
   }
 
   *code++ = 0x4e75; /* rts */
+}
+
+static void* UVMapRenderCrop(void *code, void *backup, short x, short y) {
+  u_short *data = code;
+  u_short *save = backup;
+  short i;
+
+  /* move to selected location */
+  data += (y * uvmap_width + x) * 4;
+  
+  /* save the pointer to rendering code */
+  code = data;
+
+  /* move to the first instruction that should be skipped */
+  data += WIDTH * 4;
+
+  for (i = 0; i < HEIGHT - 1; i++) {
+    /* 6000 xxxx | bra.w xxxx */
+    *save++ = *data;
+    *data++ = 0x6000;
+    *save++ = *data;
+    *data++ = (uvmap_width - WIDTH) * 8 - 2;
+    /* move to the next row */
+    data += (uvmap_width - 1) * 4 + 2;
+  }
+
+  *save++ = *data;
+  *data++ = 0x4e75; /* rts */
+  *save++ = *data;
+  *data++ = 0x4e75; /* rts */
+
+  return code;
+}
+
+static void UVMapRenderRestore(void *code, void *backup) {
+  u_short *data = code;
+  u_short *save = backup;
+  short i;
+
+  /* move to the first instruction that should be restored */
+  data += WIDTH * 4;
+
+  for (i = 0; i < HEIGHT; i++) {
+    *data++ = *save++;
+    *data++ = *save++;
+    /* move to the next row */
+    data += (uvmap_width - 1) * 4 + 2;
+  }
 }
 
 static u_short bluetab[16] = {
@@ -197,10 +267,10 @@ static void ChunkyToPlanar(void) {
       break;
 
     case 12:
-      CopInsSet32(bplptr[0], bpl[3]);
-      CopInsSet32(bplptr[1], bpl[2]);
-      CopInsSet32(bplptr[2], bpl[1]);
-      CopInsSet32(bplptr[3], bpl[0]);
+      CopInsSet32(&bplptr[0], bpl[3]);
+      CopInsSet32(&bplptr[1], bpl[2]);
+      CopInsSet32(&bplptr[2], bpl[1]);
+      CopInsSet32(&bplptr[3], bpl[0]);
       break;
 
     default:
@@ -212,26 +282,26 @@ static void ChunkyToPlanar(void) {
   ClearIRQ(INTF_BLIT);
 }
 
-static void MakeCopperList(CopListT *cp) {
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(1200);
   short i;
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH + (IsAGA() ? 2 : 0));
   CopLoadColor(cp, 0, 15, 0);
   for (i = 0; i < HEIGHT * 4; i++) {
-    CopWaitSafe(cp, Y(i), 0);
+    CopWaitSafe(cp, Y(i), HP(0));
     /* Line quadrupling. */
     CopMove16(cp, bpl1mod, ((i & 3) != 3) ? -40 : 0);
     CopMove16(cp, bpl2mod, ((i & 3) != 3) ? -40 : 0);
     /* Alternating shift by one for bitplane data. */
     CopMove16(cp, bplcon1, (i & 1) ? 0x0022 : 0x0000);
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
-  screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH);
+  screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH + (IsAGA() ? 2 : 0), 0);
+  screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH + (IsAGA() ? 2 : 0), 0);
 
   chunky[0] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);
   chunky[1] = MemAlloc((WIDTH * 4) * HEIGHT, MEMF_CHIP);
@@ -239,18 +309,26 @@ static void Init(void) {
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
   MakeUVMapRenderCode();
 
+  UVMapRenderBackup = MemAlloc(UVMapRenderBackupSize, MEMF_PUBLIC);
+
   EnableDMA(DMAF_BLITTER);
 
   BitmapClear(screen[0]);
   BitmapClear(screen[1]);
 
-  SetupPlayfield(MODE_HAM, 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
+  SetupPlayfield(MODE_HAM, IsAGA() ? 6 : 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
 
-  custom->bpldat[4] = 0x7777; // rgbb: 0111
-  custom->bpldat[5] = 0xcccc; // rgbb: 1100
+  if (IsAGA()) {
+    memset(screen[0]->planes[4], 0x77, WIDTH * 4 * HEIGHT / 8);
+    memset(screen[1]->planes[4], 0x77, WIDTH * 4 * HEIGHT / 8);
+    memset(screen[0]->planes[5], 0xcc, WIDTH * 4 * HEIGHT / 8);
+    memset(screen[1]->planes[5], 0xcc, WIDTH * 4 * HEIGHT / 8);
+  } else {
+    custom->bpldat[4] = 0x7777; // rgbb: 0111
+    custom->bpldat[5] = 0xcccc; // rgbb: 1100
+  }
 
-  cp = NewCopList(1200);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER);
@@ -266,6 +344,8 @@ static void Kill(void) {
   ResetIntVector(INTB_BLIT);
 
   DeleteCopList(cp);
+
+  MemFree(UVMapRenderBackup);
   MemFree(UVMapRender);
 
   MemFree(chunky[0]);
@@ -277,10 +357,32 @@ static void Kill(void) {
 
 PROFILE(UVMapRGB);
 
+static void ControlOffsets(void) {
+  u_char *off = (u_char *)UVMapOffsets;
+  short i;
+
+  for (i = 0; i < image_height; i++) {
+    short j;
+
+    j = SIN(frameCount * 128 - i * 64) >> 10;
+    // j = -4;
+    *off++ = (i + j + 4) & 127;
+
+    j = SIN(frameCount * 128 + i * 128) >> 10;
+    // j = -4;
+    *off++ = (j + 4) * 2;
+  }
+}
+
 static void Render(void) {
   ProfilerStart(UVMapRGB);
+  ControlOffsets();
   {
-    (*UVMapRender)(chunky[active], &texture[frameCount & 16383]);
+    short x = normfx(SIN(frameCount * 8) * WIDTH / 2) + WIDTH / 2;
+    short y = normfx(COS(frameCount * 8) * HEIGHT / 2) + HEIGHT / 2;
+    UVMapRenderT code = UVMapRenderCrop(UVMapRender, UVMapRenderBackup, x, y);
+    (*code)(chunky[active], UVMapOffsets, &texture[(frameCount * 2) & 16383]);
+    UVMapRenderRestore(code, UVMapRenderBackup);
   }
   ProfilerStop(UVMapRGB);
 
@@ -291,4 +393,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(UVMapRGB, Load, UnLoad, Init, Kill, Render);
+EFFECT(UVMapRGB, Load, UnLoad, Init, Kill, Render, NULL);

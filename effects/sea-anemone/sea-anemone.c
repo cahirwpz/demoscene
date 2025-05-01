@@ -16,7 +16,6 @@
 #define NARMS 31 /* must be power of two minus one */
 
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
 static BitmapT *screen;
 static BitmapT *circles[DIAMETER / 2];
 
@@ -162,7 +161,7 @@ static void Load(void) {
   for (r = 1; r <= DIAMETER / 2; r++) {
     short diameter = r * 2;
     short width = (diameter + 15) & -15;
-    BitmapT *circle = NewBitmap(width, diameter + 1, 1);
+    BitmapT *circle = NewBitmap(width, diameter + 1, 1, BM_CLEAR);
     *circlep++ = circle;
     CircleEdge(circle, 0, r, r, r);
     BlitterFill(circle, 0);
@@ -181,15 +180,14 @@ static void UnLoad(void) {
 }
 
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
-  LoadPalette(&anemone_pal, 0);
+  LoadColors(anemone_colors, 0);
 
   cp = NewCopList(50);
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen, DEPTH);
-  CopEnd(cp);
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopListFinish(cp);
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
@@ -310,4 +308,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(SeaAnemone, Load, UnLoad, Init, Kill, Render);
+EFFECT(SeaAnemone, Load, UnLoad, Init, Kill, Render, NULL);

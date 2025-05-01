@@ -14,7 +14,6 @@
 
 static BitmapT *screen;
 static CopListT *cp;
-static CopInsT *sprptr[8];
 
 #include "data/toggle_0.c"
 #include "data/toggle_1.c"
@@ -59,8 +58,18 @@ static void Load(void) {
   GuiInit(gui, &font);
 }
 
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(120);
+  CopInsPairT *sprptr = CopSetupSprites(cp);
+
+  CopSetupBitplanes(cp, screen, DEPTH);
+  CopInsSetSprite(&sprptr[0], &pointer);
+  SpriteUpdatePos(&pointer, X(0), Y(0));
+  return CopListFinish(cp);
+}
+
 static void Init(void) {
-  screen = NewBitmap(WIDTH, HEIGHT, DEPTH);
+  screen = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(0), WIDTH, HEIGHT);
 
@@ -70,17 +79,9 @@ static void Init(void) {
   SetColor(UI_FRAME_OUT, 0xeee);
   SetColor(UI_FG_INACTIVE, 0x24a);
   SetColor(UI_FG_ACTIVE, 0x46e);
-  LoadPalette(&pointer_pal, 16);
+  LoadColors(pointer_colors, 16);
 
-  cp = NewCopList(120);
-  CopInit(cp);
-  CopSetupBitplanes(cp, NULL, screen, DEPTH);
-  CopSetupSprites(cp, sprptr);
-  CopEnd(cp);
-
-  CopInsSetSprite(sprptr[0], &pointer);
-  SpriteUpdatePos(&pointer, X(0), Y(0));
-
+  cp = MakeCopperList();
   CopListActivate(cp);
 
   KeyboardInit();
@@ -137,4 +138,4 @@ static void Render(void) {
   exitLoop = !HandleEvent();
 }
 
-EFFECT(GUI, Load, NULL, Init, Kill, Render);
+EFFECT(GUI, Load, NULL, Init, Kill, Render, NULL);

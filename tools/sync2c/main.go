@@ -2,15 +2,20 @@ package main
 
 import (
 	"bufio"
+	"path/filepath"
 	"flag"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"text/template"
+
+	pt "ghostown.pl/protracker"
 )
 
 var printHelp bool
+var exportList bool
+var timings pt.Timings
 
 const (
 	TrkCtrl = -2 // control key
@@ -25,7 +30,7 @@ const (
 )
 
 const (
-	FramesPerRow = 6 // Assuming constant BPM of 125
+	FramesPerRow = 3 // Assuming constant BPM of 125
 )
 
 type TrackItem struct {
@@ -38,6 +43,11 @@ type Track struct {
 	Items   []TrackItem
 	First   *TrackItem
 	Last    *TrackItem
+}
+
+type Event struct {
+	Name  string
+	Frame int
 }
 
 func (t Track) Name() string {
@@ -71,9 +81,30 @@ func parseFrame(token string) (frame int64, err error) {
 	if token[0] == '$' {
 		if len(token) != 5 {
 			err = &parseError{"key must be 4 hex digit protracker song position"}
+			return
 		}
-		frame, err = strconv.ParseInt(token[1:], 16, 16)
-		frame *= FramesPerRow
+
+		pat, err := strconv.ParseInt(token[1:3], 16, 16)
+		if err != nil {
+			return 0, err
+		}
+
+		pos, err := strconv.ParseInt(token[3:5], 16, 16)
+		if err != nil {
+			return 0, err
+		}
+
+		if pos&0xC0 != 0 {
+			err = &parseError{"not a valid pattern row"}
+			return 0, err
+		}
+
+		if len(timings) > 0 {
+			frame = int64(timings[pat][pos])
+		} else {
+			frame = pos&63 | (pat>>2)&-64
+			frame *= FramesPerRow
+		}
 	} else {
 		var f float64
 		f, err = strconv.ParseFloat(token, 64)
@@ -82,12 +113,26 @@ func parseFrame(token string) (frame int64, err error) {
 		}
 	}
 
+	if prevFrame >= 0 {
+		delta := frame - prevFrame
+		if delta < 0 {
+			return 0, &parseError{
+				"frame numbers must be specified in ascending order"}
+		}
+		prevFrame = frame
+		frame = delta
+	} else {
+		prevFrame = frame
+	}
+
 	return frame, err
 }
 
 func parseValue(token string) (value int64, err error) {
-	return strconv.ParseInt(token, 10, 16)
+	return strconv.ParseInt(token, 0, 16)
 }
+
+var prevFrame int64
 
 func parseTrack(tokens []string, track *Track) (err error) {
 	var frame, value int64
@@ -105,25 +150,23 @@ func parseTrack(tokens []string, track *Track) (err error) {
 	if value, err = parseValue(tokens[1]); err != nil {
 		return err
 	}
-	if track.First != nil && track.First.Key > int(frame) {
-		return &parseError{"frame numbers must be specified in ascending order"}
-	}
 
 	if len(tokens) == 3 && tokens[2][0] == '!' {
 		typ := tokens[2][1:]
-		if typ == "step" {
+		switch typ {
+		case "step":
 			track.AddItem(TrkCtrl, TrkStep)
-		} else if typ == "linear" {
+		case "linear":
 			track.AddItem(TrkCtrl, TrkLinear)
-		} else if typ == "smooth" {
+		case "smooth":
 			track.AddItem(TrkCtrl, TrkSmooth)
-		} else if typ == "quadratic" {
+		case "quadratic":
 			track.AddItem(TrkCtrl, TrkQuadratic)
-		} else if typ == "trigger" {
+		case "trigger":
 			track.AddItem(TrkCtrl, TrkTrigger)
-		} else if typ == "event" {
+		case "event":
 			track.AddItem(TrkCtrl, TrkEvent)
-		} else {
+		default:
 			return &parseError{"unknown track type"}
 		}
 	}
@@ -133,16 +176,20 @@ func parseTrack(tokens []string, track *Track) (err error) {
 	return nil
 }
 
-func parseSyncFile(path string) []Track {
+func openFile(path string) *os.File {
 	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer file.Close()
 
+	return file
+}
+
+func parseSyncFile(path string, data *SyncData) {
+	file := openFile(path)
+	defer file.Close()
 	scanner := bufio.NewScanner(file)
 
-	var tracks []Track
 	var track *Track = nil
 	num := 0
 
@@ -165,8 +212,32 @@ func parseSyncFile(path string) []Track {
 		// Split track data into tokens
 		tokens := strings.Fields(line)
 
+		if tokens[0] == "@module" {
+			module := pt.ReadModule(openFile(tokens[1]))
+			timings = pt.CalculateTimings(module)
+			continue
+		}
+
+		if tokens[0] == "@event" {
+			var frame int64
+			var err error
+
+			if len(timings) == 0 {
+				log.Fatal("@module directive must be used before @event")
+			}
+			if len(tokens) < 3 {
+				log.Fatalf("Event in line %d expects 2 arguments!", num)
+			}
+			if frame, err = parseFrame(tokens[2]); err != nil {
+				log.Fatalf("Parse error at line %d: %s", num, err)
+			}
+			data.Events = append(data.Events, Event{tokens[1], int(frame)})
+			continue
+		}
+
 		// Create new track
 		if tokens[0] == "@track" {
+			prevFrame = -1
 			track = &Track{RawName: tokens[1]}
 			continue
 		}
@@ -177,12 +248,12 @@ func parseSyncFile(path string) []Track {
 				log.Fatalf("Track '%s' has no frames!", track.RawName)
 			}
 			track.AddItem(TrkEnd, 0)
-			tracks = append(tracks, *track)
+			data.Tracks = append(data.Tracks, *track)
 			track = nil
 			continue
 		}
 
-		if err = parseTrack(tokens, track); err != nil {
+		if err := parseTrack(tokens, track); err != nil {
 			log.Println(origLine)
 			log.Fatalf("Parse error at line %d: %s", num, err)
 		}
@@ -191,12 +262,12 @@ func parseSyncFile(path string) []Track {
 	if track != nil {
 		log.Fatalf("Last track '%s' has not been closed!", track.RawName)
 	}
-
-	return tracks
 }
 
 var tracksTemplate = `
-{{- range . }}
+{{- range .Events }}#define {{$.Name}}_{{.Name}} {{ .Frame }}
+{{ end }}
+{{- range .Tracks }}
 TrackT {{ .Name }} = {
   .curr = NULL,
   .next = NULL,
@@ -211,24 +282,38 @@ TrackT {{ .Name }} = {
   }
 };
 {{ end }}
+{{- if .List }}
+static TrackT *AllTracks[] = {
+{{- range .Tracks }}
+  &{{ .Name }},
+{{- end }}
+  NULL
+};
+{{- end }}
 `
 
-func exportTracks(tracks []Track) {
+type SyncData struct {
+	Name   string
+	Events []Event
+	Tracks []Track
+	List   bool
+}
+
+func exportTracks(data SyncData) {
 	t, err := template.New("export").Parse(tracksTemplate)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = t.Execute(os.Stdout, tracks)
+	err = t.Execute(os.Stdout, data)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	return
 }
 
 func init() {
 	flag.BoolVar(&printHelp, "help", false, "print help message and exit")
+	flag.BoolVar(&exportList, "list", false, "export list of all tracks")
 }
 
 func main() {
@@ -239,5 +324,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	exportTracks(parseSyncFile(flag.Arg(0)))
+	path := flag.Arg(0)
+	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	data := SyncData{Name: strings.ReplaceAll(name, "-", "_"), List: exportList}
+	parseSyncFile(flag.Arg(0), &data)
+	exportTracks(data)
 }

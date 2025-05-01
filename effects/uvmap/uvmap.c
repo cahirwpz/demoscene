@@ -14,7 +14,7 @@ static u_short *textureHi, *textureLo;
 static BitmapT *screen[2];
 static u_short active = 0;
 static CopListT *cp;
-static CopInsT *bplptr[DEPTH];
+static CopInsPairT *bplptr;
 
 #include "data/texture-16-1.c"
 #include "data/gradient.c"
@@ -67,7 +67,7 @@ static void MakeUVMapRenderCode(void) {
    * [a b c d e f g h] => [a b e f c d g h] */
   short n = WIDTH * HEIGHT / 32;
 
-  *code++ = 0x48a7; *code++ = 0x3f00; /* movem.w d2-d7,-(sp) */
+  *code++ = 0x48e7; *code++ = 0x3f00; /* movem.l d2-d7,-(sp) */
 
   while (n--) {
     short m;
@@ -87,7 +87,7 @@ static void MakeUVMapRenderCode(void) {
     *code++ = 0x48a0; *code++ = 0xff00; /* d0-d7,-(a0) */
   }
 
-  *code++ = 0x4c9f; *code++ = 0x00fc; /* movem.w (sp)+,d2-d7 */
+  *code++ = 0x4cdf; *code++ = 0x00fc; /* movem.l (sp)+,d2-d7 */
   *code++ = 0x4e75; /* rts */
 }
 
@@ -212,10 +212,10 @@ static void ChunkyToPlanar(void) {
       break;
 
     case 6:
-      CopInsSet32(bplptr[0], bpl[2]);
-      CopInsSet32(bplptr[1], bpl[3]);
-      CopInsSet32(bplptr[2], bpl[2] + BLTSIZE / 2);
-      CopInsSet32(bplptr[3], bpl[3] + BLTSIZE / 2);
+      CopInsSet32(&bplptr[0], bpl[2]);
+      CopInsSet32(&bplptr[1], bpl[3]);
+      CopInsSet32(&bplptr[2], bpl[2] + BLTSIZE / 2);
+      CopInsSet32(&bplptr[3], bpl[3] + BLTSIZE / 2);
       break;
 
     default:
@@ -225,16 +225,16 @@ static void ChunkyToPlanar(void) {
   c2p.phase++;
 }
 
-static void MakeCopperList(CopListT *cp) {
+static CopListT *MakeCopperList(void) {
+  CopListT *cp = NewCopList(900 + 256);
   short *pixels = gradient.pixels;
   short i, j;
 
-  CopInit(cp);
-  CopSetupBitplanes(cp, bplptr, screen[active], DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   for (j = 0; j < 16; j++)
     CopSetColor(cp, j, *pixels++);
   for (i = 0; i < HEIGHT * 2; i++) {
-    CopWaitSafe(cp, Y(i + 28), 0);
+    CopWaitSafe(cp, Y(i + 28), HP(0));
     /* Line doubling. */
     CopMove16(cp, bpl1mod, (i & 1) ? 0 : -40);
     CopMove16(cp, bpl2mod, (i & 1) ? 0 : -40);
@@ -246,12 +246,12 @@ static void MakeCopperList(CopListT *cp) {
       for (j = 0; j < 16; j++)
         CopSetColor(cp, j, *pixels++);
   }
-  CopEnd(cp);
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
-  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
-  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH);
+  screen[0] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, BM_CLEAR);
+  screen[1] = NewBitmap(WIDTH * 2, HEIGHT * 2, DEPTH, BM_CLEAR);
 
   UVMapRender = MemAlloc(UVMapRenderSize, MEMF_PUBLIC);
   MakeUVMapRenderCode();
@@ -267,8 +267,7 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(0), Y(28), WIDTH * 2, HEIGHT * 2);
 
-  cp = NewCopList(900 + 256);
-  MakeCopperList(cp);
+  cp = MakeCopperList();
   CopListActivate(cp);
 
   EnableDMA(DMAF_RASTER);
@@ -315,4 +314,4 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(UVMap, NULL, NULL, Init, Kill, Render);
+EFFECT(UVMap, NULL, NULL, Init, Kill, Render, NULL);

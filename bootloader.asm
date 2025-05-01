@@ -1,4 +1,4 @@
-; Copyright 2020 Krystian Bacławski
+; Copyright (C) 2020-2025 Krystian Bacławski
 ;
 ; Permission is hereby granted, free of charge, to any person obtaining a copy
 ; of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,16 @@
         include 'exec/libraries.i'
         include 'dos/dosextens.i'
         include 'dos/doshunks.i'
+        include 'graphics/text.i'
         include 'devices/trackdisk.i'
         include 'hardware/custom.i'
+        include 'lvo/exec_lib.i'
+        include 'lvo/graphics_lib.i'
 
 ; Export some symbols so they appear in disassembly.
 
+        XDEF    Entry
+        XDEF    KillOS
         XDEF    Start
         XDEF    Panic
         XDEF    CopyMem
@@ -37,10 +42,13 @@
         XDEF    AllocMem
         XDEF    FreeMem
         XDEF    SetupHunkFile
+        XDEF    UnZX0
+        XDEF    GfxName
+        XDEF    TopazName
 
 ; configurable parameters
 
-STACKSIZE       EQU     512     ; initial stack size for the program
+STACKSIZE       EQU     768     ; initial stack size for the program
 CHIPMAX         EQU     $200000 ; maximum size of chip memory (2MB)
 
 ; custom chips addresses
@@ -49,24 +57,23 @@ CUSTOM          EQU     $dff000
 CIAA            EQU     $bfe001
 CIAB            EQU     $bfd000
 
-; jump vector entires from exec.library
-
-_LVOSuperState          EQU     -150
-_LVOAllocMem            EQU     -198
-_LVODoIO                EQU     -456
-_LVOCacheControl        EQU     -648
-
 ; These flags are not related to AmigaOS memory management.
 
         BITDEF  M,CHIP,0        ; block must be in chip memory
         BITDEF  M,CLEAR,1       ; clear allocated block
         BITDEF  M,REVERSE,2     ; allocate from the top down
 
+; Compression type
+
+COMP_LZSA       EQU     1
+COMP_ZX0        EQU     3
+
 ; Boot loader data definition
 
  STRUCTURE BD,0                 ; Boot Data
         APTR    BD_HUNK
         APTR    BD_VBR
+        APTR    BD_TOPAZ
         APTR    BD_STKBOT
         LONG    BD_STKSZ
         BYTE    BD_BOOTDEV
@@ -78,16 +85,15 @@ _LVOCacheControl        EQU     -648
  STRUCTURE MR,0                 ; Memory Region
         APTR    MR_LOWER
         APTR    MR_UPPER
-        WORD	MR_ATTR
+        WORD    MR_ATTR
+        ALIGNLONG
         LABEL   MR_SIZE
 
  STRUCTURE SEG,0                ; Amiga Hunk
-        LONG	SEG_LEN 
+        LONG	SEG_LEN
         APTR	SEG_NEXT
         LABEL	SEG_START
         LABEL	SEG_SIZE
-
-        ifnd    ROM
 
         XDEF    Entry
         XDEF    KillOS
@@ -118,6 +124,14 @@ ExecInfo:
 Entry:
         move.l  a1,-(sp)                ; trackdisk.device IORequest
 
+        ; identify boot device (0-3)
+        movem.l IO_DEVICE(a1),a0/a1     ; IO_DEVICE/IO_UNIT
+        lea     DD_SIZE+2+4*4(a0),a0    ; internal TDU0-3 pointers (DD_SIZE+2)
+        moveq   #4-1,d5                 ; NUMUNITS-1
+.unit:  cmp.l   -(a0),a1
+        dbeq    d5,.unit
+
+        ; info about executable file to load
         movem.w ExecInfo(pc),d2/d4
         lsl.l   #8,d2                   ; [d2] executable length in bytes
         lsl.l   #8,d4                   ; [d4] executable start in bytes
@@ -146,6 +160,21 @@ Entry:
         JSRLIB  CacheControl
 .nocache
 
+        ; open graphics.library
+        lea     GfxName(pc),a1
+        JSRLIB  OldOpenLibrary
+        move.l  d0,a6
+
+        ; extract topaz8 font data
+        pea     $00080001       ; 8.w FS_NORMAL.b FPF_ROMFONT.b
+        pea     TopazName(pc)
+        move.l  sp,a0
+        JSRLIB  OpenFont
+        move.l  d0,a0
+        move.l  tf_CharData(a0),d4
+
+        move.l  $4.w,a6
+
 ; Let's kill AmigaOS before we normalize memory layout. That involves:
 ;
 ; 1) Destroying initial AmigaOS interrupt vector, that's always there,
@@ -155,6 +184,8 @@ Entry:
 ; Useful registers we carry to this phase:
 ;   [d2] executable length in bytes (rounded up to sector size)
 ;   [d3] pointer to executable file image
+;   [d4] pointer to topaz.font(8) character data (modulo: 192)
+;   [d5] boot floppy drive device number
 ;
 ; We cannot yet normalize executable file image position since that could
 ; overwrite currently running code.
@@ -165,23 +196,23 @@ KillOS:
         JSRLIB  SuperState              ; enter supervisor mode
         or.w    #$0700,sr               ; set highest priority level
 
-        ; copy boot loader at $8.w
+        ; copy boot loader at $100.w (user defined vectors)
         lea     Start(pc),a0
-        lea     $8.w,a2
+        lea     $100.w,a2
         move.w  #(End-Start)/2-1,d0
 .loop   move.w  (a0)+,(a2)+
         dbra    d0,.loop
 
+        ; BOOTDATA structure above is placed just after the end of boot loader.
+        ; [a2] boot loader data
+        move.l  d4,BD_TOPAZ(a2)
+
         ; Useful data extracted from ExecBase includes memory regions
         ; and processor model flags.
-        ;
-        ; BOOTDATA structure above is placed just after the end of boot loader.
-
-        ; [a2] boot loader data
         lea     BD_BOOTDEV(a2),a3
 
         ; start from floppy drive
-        clr.b   (a3)+
+        move.b  d5,(a3)+
         ; save processor model
         move.b  AttnFlags+1(a6),(a3)+
 
@@ -202,6 +233,7 @@ KillOS:
         move.l  d0,(a3)+                ; upper address rounded up to 2^16
         add.w   #1,BD_NREGIONS(a2)      ; increase number of regions
         move.w  MH_ATTRIBUTES(a1),(a3)+
+        clr.w   (a3)+                   ; MemRegionT padding
 .skipmh cmp.l   LH_TAILPRED(a0),a1
         bne     .memory
 
@@ -213,9 +245,15 @@ KillOS:
         lea     $400.w,sp
 
         ; jump into second phase code relocated at the beginning of memory
-        jmp     $8.w
+        jmp     $100.w
 
-        endif
+GfxName:
+        dc.b    'graphics.library',0
+
+TopazName:
+        dc.b    'topaz.font', 0
+
+        even
 
 ; Normalize memory layout by moving executable file image at well known
 ; position. Set up primitive memory manager and relocate executable file.
@@ -253,7 +291,6 @@ Start:
 
 .novbr  move.l  d0,BD_VBR(a6)
 
-        ifnd    ROM
         ; reserve space for executable file image
         move.l  d2,d0
         moveq   #MF_CHIP,d1
@@ -266,7 +303,6 @@ Start:
         move.l  d2,d0
         bsr     CopyMem
         move.l  (sp)+,d3
-        endif
 
         ; move hunks around and relocate them
         move.l  d3,a0
@@ -274,11 +310,9 @@ Start:
         move.l  d0,BD_HUNK(a6)          ; first hunk of executable file
 
         ; free up space taken by executable file image
-        ifnd    ROM
         move.l  d3,a0
         move.l  d2,d0
         bsr     FreeMem
-        endif
 
         ; if VBR was relocated free space used by initial exception vector
         tst.l   BD_VBR(a6)
@@ -328,7 +362,7 @@ CopyMem:
         rts
 
 ; Clears memory.
-; 
+;
 ; Arguments:
 ;   [a0] pointer to cleared block
 ;   [d0] number of 4B words
@@ -342,14 +376,17 @@ ClearMem:
 ; Allocate block of memory using memory regions data structure.
 ;
 ; Arguments:
-;   [d0] memory block size (aligned to 8 byte boundary)
+;   [d0] memory block size
 ;   [d1] memory flags (MB_* flags)
 ;   [a6] boot loader data
 ;
 ; Result:
-;   [d0] allocated block of memory
+;   [d0] allocated block of memory (aligned to 8 byte boundary)
 
 AllocMem:
+        addq.l  #7,d0
+        and.w   #-8,d0          ; align to 8 bytes
+
         movem.l d2-d5,-(sp)
         lea     BD_NREGIONS(a6),a0 ; [a0] memory regions
         move.w  (a0)+,d5        ; [d5] #regions
@@ -370,7 +407,7 @@ AllocMem:
         bge     .found
 
 .iter   ; move to the next region
-        add.w	#MR_SIZE,a0
+        add.w   #MR_SIZE,a0
         subq.l  #1,d5
         bgt     .lookup
 
@@ -493,8 +530,7 @@ SetupHunkFile:
         ; parse hunks
         move.l  sp,a3
         move.l  d2,d4
-.parse  move.w  (a2)+,d0        ; should always read zero
-        add.w   (a2)+,d0        ; hunk type
+.parse  move.l  (a2)+,d0        ; hunk type
         cmp.w   #HUNK_CODE,d0
         beq     .hdata
         cmp.w   #HUNK_DATA,d0
@@ -513,10 +549,19 @@ SetupHunkFile:
 .hdata  move.l  (a3),a1
         add.w   #SEG_START,a1
         move.l  (a2)+,d0
-        lsl.l   #2,d0           ; [d0] hunk size
+        rol.l   #4,d0           ; [d0] hunk size + flags + compression
+        moveq.l #15,d1
+        and.l   d0,d1           ; [d1] hunk flags + compression
+        and.w   #-16,d0         ; [d0] hunk size
+        lsr.l   #2,d0
         move.l  a2,a0
         add.l   d0,a2           ; move pointer to next hunk
+        cmp.w   #COMP_ZX0,d1    ; is compressed with ZX0?
+        beq.b   .hunzx0
         bsr     CopyMem
+        bra     .parse
+
+.hunzx0 bsr     UnZX0
         bra     .parse
 
 .hbss   addq.l  #4,a2           ; skip bss length
@@ -552,6 +597,83 @@ SetupHunkFile:
 
         movem.l (sp)+,d2-d4/a2-a3
         rts
+
+;  unzx0_68000.s - ZX0 decompressor for 68000 - 88 bytes
+;
+;  in:  a0 = start of compressed data
+;       a1 = start of decompression buffer
+;
+;  Copyright (C) 2021 Emmanuel Marty
+;  ZX0 compression (c) 2021 Einar Saukas, https://github.com/einar-saukas/ZX0
+;
+;  This software is provided 'as-is', without any express or implied
+;  warranty.  In no event will the authors be held liable for any damages
+;  arising from the use of this software.
+;
+;  Permission is granted to anyone to use this software for any purpose,
+;  including commercial applications, and to alter it and redistribute it
+;  freely, subject to the following restrictions:
+;
+;  1. The origin of this software must not be misrepresented; you must not
+;     claim that you wrote the original software. If you use this software
+;     in a product, an acknowledgment in the product documentation would be
+;     appreciated but is not required.
+;  2. Altered source versions must be plainly marked as such, and must not be
+;     misrepresented as being the original software.
+;  3. This notice may not be removed or altered from any source distribution.
+
+UnZX0:
+               movem.l a2/d2,-(sp)  ; preserve registers
+               moveq #-128,d1       ; initialize empty bit queue
+                                    ; plus bit to roll into carry
+               moveq #-1,d2         ; initialize rep-offset to 1
+
+.literals:     bsr.s .get_elias     ; read number of literals to copy
+               subq.l #1,d0         ; dbf will loop until d0 is -1, not 0
+.copy_lits:    move.b (a0)+,(a1)+   ; copy literal byte
+               dbf d0,.copy_lits    ; loop for all literal bytes
+               
+               add.b d1,d1          ; read 'match or rep-match' bit
+               bcs.s .get_offset    ; if 1: read offset, if 0: rep-match
+
+.rep_match:    bsr.s .get_elias     ; read match length (starts at 1)
+.do_copy:      subq.l #1,d0         ; dbf will loop until d0 is -1, not 0
+.do_copy_offs: move.l a1,a2         ; calculate backreference address
+               add.l d2,a2          ; (dest + negative match offset)               
+.copy_match:   move.b (a2)+,(a1)+   ; copy matched byte
+               dbf d0,.copy_match   ; loop for all matched bytes
+
+               add.b d1,d1          ; read 'literal or match' bit
+               bcc.s .literals      ; if 0: go copy literals
+
+.get_offset:   moveq #-2,d0         ; initialize value to $fe
+               bsr.s .elias_loop    ; read high byte of match offset
+               addq.b #1,d0         ; obtain negative offset high byte
+               beq.s .done          ; exit if EOD marker
+               move.w d0,d2         ; transfer negative high byte into d2
+               lsl.w #8,d2          ; shift it to make room for low byte
+
+               moveq #1,d0          ; initialize length value to 1
+               move.b (a0)+,d2      ; read low byte of offset + 1 bit of len
+               asr.l #1,d2          ; shift len bit into carry/offset in place
+               bcs.s .do_copy_offs  ; if len bit is set, no need for more
+               bsr.s .elias_bt      ; read rest of elias-encoded match length
+               bra.s .do_copy_offs  ; go copy match
+
+.get_elias:    moveq #1,d0          ; initialize value to 1
+.elias_loop:   add.b d1,d1          ; shift bit queue, high bit into carry
+               bne.s .got_bit       ; queue not empty, bits remain
+               move.b (a0)+,d1      ; read 8 new bits
+               addx.b d1,d1         ; shift bit queue, high bit into carry
+                                    ; and shift 1 from carry into bit queue
+
+.got_bit:      bcs.s .got_elias     ; done if control bit is 1
+.elias_bt:     add.b d1,d1          ; read data bit
+               addx.l d0,d0         ; shift data bit into value in d0
+               bra.s .elias_loop    ; keep reading
+
+.done:         movem.l (sp)+,a2/d2  ; restore preserved registers
+.got_elias:    rts
 
 End:
 

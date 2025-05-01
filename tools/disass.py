@@ -75,7 +75,7 @@ Section = Literal('.text') | Literal('.data') | Literal('.bss')
 Label = Group(
           Opt(HexDigits + Suppress(White())) +
           Opt(Suppress(HexDigits + White())) +
-          Suppress(Char('<')) + (Section | Regex('[A-Za-z0-9_]+')) +
+          Suppress(Char('<')) + (Section | Regex('[A-Za-z0-9_.]+')) +
           Opt(HexNumber) + Suppress(Char('>')))
 
 # data register direct
@@ -315,13 +315,13 @@ class InsnCost:
             if self.is_dreg(o1):
                 return self.operand_cost(4 if short else l_cost, size, o0)
             if self.is_dreg(o0):
-                return self.operand_cost(8 if short else 12, size, o0)
+                return self.operand_cost(8 if short else 12, size, o1)
 
         if mnemonic in ['eor']:
             if self.is_dreg(o1):
                 return self.operand_cost(4 if short else 8, size, o0)
             if self.is_dreg(o0):
-                return self.operand_cost(8 if short else 12, size, o0)
+                return self.operand_cost(8 if short else 12, size, o1)
 
         if mnemonic in ['cmp', 'cmpa']:
             if self.is_areg(o1):
@@ -391,7 +391,7 @@ class InsnCost:
 
         if mnemonic in ['bclr']:
             dynamic = self.is_dreg(o0)
-            if self.is_dreg(o1):
+            if not self.is_dreg(o1):
                 return self.operand_cost(8 if dynamic else 12, 'b', o1)
             return 10 if dynamic else 14
 
@@ -423,6 +423,12 @@ class InsnCost:
                 return self.MovemCost[type(o0)][0] + cnt
             cnt = o0.regcount() * (4 if short else 8)
             return self.MovemCost[type(o1)][1] + cnt
+
+        if mnemonic in ['addx', 'subx']:
+            if self.is_direct(o0):
+                return 4 if short else 8
+            else:
+                return 18 if short else 30
 
         if cost := self.MiscCost.get(mnemonic):
             return cost
@@ -535,6 +541,8 @@ class ObjectInfo:
                 symbols.append(Symbol(secname, addr, '_' + name))
 
             if n_type == 'FUN':
+                if n_str[0] == '':
+                    continue
                 is_fn = n_str[1][0] in 'fF'
                 fns.append((n_value, n_str[0] if is_fn else None))
                 if is_fn:
@@ -727,7 +735,7 @@ class Disassembler:
             return []
         try:
             return Operands.parse_string(s, parse_all=True).as_list()
-        except ParseException as ex:
+        except ParseException:
             return s
 
     def _rewrite_label(self, addend, name, addr, rel):

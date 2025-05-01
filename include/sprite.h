@@ -40,7 +40,7 @@ typedef u_short SprWordT[2];
 typedef struct SprData {
   u_short pos;
   u_short ctl;
-  SprWordT data[0];
+  SprWordT data[__FLEX_ARRAY];
 } SprDataT;
 
 typedef struct Sprite {
@@ -90,10 +90,13 @@ static inline int SprDataSize(u_short height, u_short nctrl) {
  * Information about sprite will be written back to `spr` structure.
  * Marks sprite as attached if `attached` is set to true.
  *
- * Returns a pointer to next usable sprite data (possibly uninitialized).
- * You should call MakeSprite or EndSprite on return value.
+ * `datp` will point to next usable sprite data (possibly uninitialized).
+ * You should call MakeSprite or EndSprite on this value.
+ *
+ * Returns pointer to first word of sprite data.
  */
-void MakeSprite(SprDataT **datp, u_int height, bool attached, SpriteT *spr);
+SprWordT *MakeSprite(SprDataT **datp, u_int height, bool attached,
+                     SpriteT *spr);
 
 /*
  * Terminate sprite data for DMA channel by writing zero long word after
@@ -102,11 +105,13 @@ void MakeSprite(SprDataT **datp, u_int height, bool attached, SpriteT *spr);
 void EndSprite(SprDataT **datp);
 
 /* Don't call it for null sprites. */
-void SpriteUpdatePos(SpriteT *spr, u_short hstart, u_short vstart);
+void SpriteUpdatePos(SpriteT *spr, hpos hstart, vpos vstart);
 
-void CopSetupSprites(CopListT *list, CopInsT **sprptr);
+CopInsPairT *CopSetupSprites(CopListT *list);
 
-static inline void CopInsSetSprite(CopInsT *sprptr, SpriteT *spr) {
+void ResetSprites(void);
+
+static inline void CopInsSetSprite(CopInsPairT *sprptr, SpriteT *spr) {
   CopInsSet32(sprptr, spr->sprdat);
 }
 

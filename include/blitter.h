@@ -26,8 +26,6 @@
 /* definitions for blitter control register 1 */
 #define LINEMODE __BIT(0)
 
-#define BSHIFT(x) (((x) & 15) << 12)
-
 /* bltcon1 in normal mode */
 #define OVFLAG __BIT(5)
 #define FILL_XOR __BIT(4)
@@ -89,6 +87,9 @@ static inline void _WaitBlitter(CustomPtrT custom_) {
 
 #define WaitBlitter() _WaitBlitter(custom)
 
+/* @brief Stops Blitter activity gracefully. */
+void BlitterStop(void);
+
 /* Blitter copy. */
 void BlitterCopySetup(const BitmapT *dst, u_short x, u_short y,
                       const BitmapT *src);
@@ -127,6 +128,17 @@ void BitmapCopyMasked(const BitmapT *dst, u_short x, u_short y,
                       const BitmapT *src, const BitmapT *mask);
 void BitmapCopyArea(const BitmapT *dst, u_short dx, u_short dy, 
                     const BitmapT *src, const Area2D *area);
+
+/* Blitter or operation. */
+/* TODO: does not behave correctly for unaligned `x` */
+void BlitterOrSetup(const BitmapT *dst, u_short x, u_short y,
+                      const BitmapT *src);
+void BlitterOrStart(short dstbpl, short srcbpl);
+
+#define BlitterOr(dst, dstbpl, x, y, src, srcbpl) ({  \
+  BlitterOrSetup((dst), (x), (y), (src));             \
+  BlitterOrStart((dstbpl), (srcbpl));                 \
+})
 
 /* Blitter fill. */
 void BlitterFillArea(const BitmapT *bitmap, short plane, const Area2D *area);
