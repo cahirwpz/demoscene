@@ -41,16 +41,16 @@ static CopListT *MakeCopperList(void) {
     SpriteUpdatePos(&background_1[i], X(16 * i), Y(0));
   }
 
-  CopWait(cp, Y(-1), 0);
+  CopWait(cp, Y(-1), HP(0));
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
 
   for (i = 0; i < HEIGHT; i++) {
     u_short c0, c1, c2;
 
-    CopWaitSafe(cp, Y(i), 0);
+    CopWaitSafe(cp, Y(i), HP(0));
 
     for (j = 0; j < 8; j++)
-      CopMove16(cp, spr[j].pos, SPRPOS(X(16*j+32), Y(i)));
+      CopMove16(cp, spr[j].pos, SPRPOS((X(16*j+32)).hpos, (Y(i)).vpos));
 
     cols++;
     c0 = *cols++;
@@ -72,7 +72,7 @@ static CopListT *MakeCopperList(void) {
 
     CopWaitSafe(cp, Y(i), HP(128));
     for (j = 0; j < 8; j++)
-      CopMove16(cp, spr[j].pos, SPRPOS(X(16*j+128+32), Y(i)));
+      CopMove16(cp, spr[j].pos, SPRPOS((X(16*j+128+32)).hpos, (Y(i)).vpos));
   }
 
   CopListFinish(cp);

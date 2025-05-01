@@ -35,7 +35,7 @@ static CopListT *MakeCopperList(short n) {
   CopSetColor(cp, 0, gradient_colors[0]);
 
   for (i = 0, k = 0; i < HEIGHT; i++) {
-    CopWaitSafe(cp, Y(i), 0);
+    CopWaitSafe(cp, Y(i), HP(0));
     bplmod[n][i] = CopMove16(cp, bpl1mod, -32);
     CopMove16(cp, bpl2mod, -32);
     CopMove16(cp, bpldat[0], 0);

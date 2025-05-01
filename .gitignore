@@ -14,8 +14,9 @@ gdb-dashboard
 *.adf
 *.img
 *.exe
-*.exe.dbg
-*.exe.map
+*.dbg
+*.map
+*.log
 *.obj
 *.rom
 *.7z
@@ -34,6 +35,7 @@ gdb-dashboard
 *.o
 *.a
 *.D
+.venv
 
 # data files
 *.2d
