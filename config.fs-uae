@@ -4,6 +4,8 @@ governor_warning = 0
 fade_in_duration = 0
 fade_out_duration = 0
 accuracy = 1
+# This option is overwritten by launch.py, use `MODEL=x make run` specify on
+# which Amiga you want to run an effect.
 amiga_model = A500
 # A500 A500+ A600 A1200 A1200/020 A3000 A4000/040
 # chip_memory = 512
