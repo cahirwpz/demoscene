@@ -249,4 +249,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(neoncity, NULL, NULL, Init, Kill, Render);
+EFFECT(neoncity, NULL, NULL, Init, Kill, Render, NULL);
