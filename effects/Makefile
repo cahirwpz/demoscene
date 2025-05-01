@@ -36,6 +36,7 @@ SUBDIRS := \
 	magnifying-glass \
 	metaballs \
 	multipipe \
+	neoncity \
 	neons \
 	plasma \
 	playahx \
