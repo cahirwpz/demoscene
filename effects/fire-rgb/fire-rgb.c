@@ -151,7 +151,7 @@ static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(1200);
   short i;
 
-  bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH + (IsAGA() ? 2 : 0));
   CopLoadColor(cp, 0, 15, 0);
   for (i = 0; i < HEIGHT * 4; i++) {
     CopWaitSafe(cp, Y(i), HP(0));
@@ -165,20 +165,27 @@ static CopListT *MakeCopperList(void) {
 }
 
 static void Init(void) {
-  screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH, BM_CLEAR);
-  screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH, BM_CLEAR);
+  screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH + (IsAGA() ? 2 : 0), 0);
+  screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH + (IsAGA() ? 2 : 0), 0);
   chunky[0] = MemAlloc(WIDTH * 4 * HEIGHT, MEMF_CHIP);
   chunky[1] = MemAlloc(WIDTH * 4 * HEIGHT, MEMF_CHIP);
-  fire = MemAlloc(WIDTH * HEIGHT * 2, MEMF_CHIP);
+  fire = MemAlloc(WIDTH * HEIGHT * 2, MEMF_CHIP|MEMF_CLEAR);
 
   EnableDMA(DMAF_BLITTER);
   BitmapClear(screen[0]);
   BitmapClear(screen[1]);
 
-  SetupPlayfield(MODE_HAM, 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
+  SetupPlayfield(MODE_HAM, IsAGA() ? 6 : 7, X(0), Y(0), WIDTH * 4 + 2, HEIGHT * 4);
 
-  custom->bpldat[4] = 0x7777; // rgbb: 0111
-  custom->bpldat[5] = 0xcccc; // rgbb: 1100
+  if (IsAGA()) {
+    memset(screen[0]->planes[4], 0x77, WIDTH * 4 * HEIGHT / 8);
+    memset(screen[1]->planes[4], 0x77, WIDTH * 4 * HEIGHT / 8);
+    memset(screen[0]->planes[5], 0xcc, WIDTH * 4 * HEIGHT / 8);
+    memset(screen[1]->planes[5], 0xcc, WIDTH * 4 * HEIGHT / 8);
+  } else {
+    custom->bpldat[4] = 0x7777; // rgbb: 0111
+    custom->bpldat[5] = 0xcccc; // rgbb: 1100
+  }
 
   cp = MakeCopperList();
   CopListActivate(cp);
