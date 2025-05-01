@@ -50,7 +50,7 @@ static void Init(void) {
   LoadColors(flares_colors, 0);
 
   cp = NewCopList(50);
-  CopWait(cp, Y(-1), 0);
+  CopWait(cp, Y(-1), HP(0));
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   CopListFinish(cp);
   CopListActivate(cp);

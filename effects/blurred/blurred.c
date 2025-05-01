@@ -30,12 +30,12 @@ static CopListT *MakeCopperList(void) {
   short i;
 
   bplptr[0] = CopSetupBitplanes(cp, screen[active], DEPTH);
-  CopWait(cp, Y(-18), 0);
+  CopWait(cp, Y(-18), HP(0));
   CopLoadColors(cp, blurred_1_colors, 0);
-  CopWait(cp, Y(127), 0);
+  CopWait(cp, Y(127), HP(0));
   CopMove16(cp, dmacon, DMAF_RASTER);
   CopLoadColors(cp, blurred_2_colors, 0);
-  CopWait(cp, Y(128), 0);
+  CopWait(cp, Y(128), HP(0));
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   bplptr[1] = CopInsPtr(cp);
   for (i = 0; i < DEPTH; i++)

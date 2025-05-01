@@ -82,7 +82,7 @@ static CopListT *MakeCopperList(void) {
   CopMove16(cp, bpl1mod, WIDTH / 8 * (DEPTH - 1));
 
   /* interleaved bitplanes setup */
-  CopWait(cp, Y(-1), 0);
+  CopWait(cp, Y(-1), HP(0));
 
   bplptr = CopMove32(cp, bplpt[0], screen[1]->planes[0]);
   CopMove32(cp, bplpt[1], necrocoq.planes[0]);
@@ -101,7 +101,6 @@ static CopListT *MakeCopperList(void) {
 
       /* Start exchanging palette colors at the end of previous line. */
       CopWaitSafe(cp, Y(i-1), HP(320 - 32 - 4));
-      CopMove16(cp, color[0], 0);
       fgcol = *pf1_data++;
       CopMove16(cp, color[1], fgcol);
       fgcol = *pf1_data++;
@@ -138,9 +137,6 @@ static void Init(void) {
   SetupBitplaneFetch(MODE_LORES, X(32), WIDTH);
   SetupMode(MODE_DUALPF, DEPTH + necrocoq_depth);
   LoadColors(bobs_colors, 0);
-
-  /* reverse playfield priorities */
-  custom->bplcon2 = 0;
 
   cp = MakeCopperList();
   CopListActivate(cp);

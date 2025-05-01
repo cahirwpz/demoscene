@@ -33,7 +33,7 @@ static CopListT *MakeCopperList(void) {
     short i, j;
 
     for (i = 0; i < HEIGHT / 10; i++) {
-      CopWait(cp, Y(YOFF + i * 10 - 1), 0xde);
+      CopWait(cp, Y(YOFF + i * 10 - 1), LASTHP);
       for (j = 0; j < 16; j++) CopSetColor(cp, j, *pixels++);
     }
   }

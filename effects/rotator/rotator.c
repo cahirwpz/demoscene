@@ -197,7 +197,7 @@ static CopListT *MakeCopperList(short active) {
 
   bplptr[active] = CopSetupBitplanes(cp, screen[active], DEPTH);
   for (i = 0; i < HEIGHT * 2; i++) {
-    CopWaitSafe(cp, Y(i + 28), 0);
+    CopWaitSafe(cp, Y(i + 28), HP(0));
     /* Line doubling. */
     CopMove16(cp, bpl1mod, (i & 1) ? 0 : -40);
     CopMove16(cp, bpl2mod, (i & 1) ? 0 : -40);

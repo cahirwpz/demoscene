@@ -18,7 +18,7 @@ SECTIONS
     *(.rodata.*)
   }
   __text_size = SIZEOF(.text);
-  . = ALIGN(0x0);
+  . = ALIGN(8);
   .data :
   {
     __data = .;
@@ -27,6 +27,7 @@ SECTIONS
     *(.data.*)
   }
   __data_size = SIZEOF(.data);
+  . = ALIGN(8);
   .bss :
   {
     __bss = .;
@@ -35,6 +36,7 @@ SECTIONS
     *(COMMON)
   }
   __bss_size = SIZEOF(.bss);
+  . = ALIGN(8);
   .datachip :
   {
     __data_chip = .;
@@ -42,6 +44,7 @@ SECTIONS
     *(.datachip.*)
   }
   __data_chip_size = SIZEOF(.datachip);
+  . = ALIGN(8);
   .bsschip :
   {
     __bss_chip = .;

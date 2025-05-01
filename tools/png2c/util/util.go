@@ -41,7 +41,7 @@ func CutImage(startX, startY, width, height int, img image.Config, pix []uint8) 
 }
 
 func GetDepth(pix []uint8) int {
-	return int(math.Ceil(math.Log2(float64(slices.Max(pix) + 1))))
+	return int(math.Ceil(math.Log2(float64(int(slices.Max(pix)) + 1))))
 }
 
 func DecodePNG(file []byte) (image.Image, image.Config, error) {
@@ -94,4 +94,9 @@ func Planar(pix []uint8, width, height, depth int, interleaved bool) []uint16 {
 func RGB12(c color.Color) uint {
 	r, g, b, _ := c.RGBA() // 16-bit components
 	return uint(((r & 0xf000) >> 4) | ((g & 0xf000) >> 8) | ((b & 0xf000) >> 12))
+}
+
+func RGB12Lo(c color.Color) uint {
+	r, g, b, _ := c.RGBA() // 16-bit components
+	return uint((r & 0x0f00) | ((g & 0x0f00) >> 4) | ((b & 0x0f00) >> 8))
 }
