@@ -69,7 +69,7 @@ static pixel GetPixel(vec3 uv) {
   vec3 rd = v3_normalize((vec3){uv.x, uv.y - 0.5, 1.0});
 
   // Hit the object
-  hit h = RayMarch(GetDist, ro, rd);
+  hit h = RayMarch(ro, rd);
 
   if (h.obj < 0)
     return NOPIXEL;
@@ -77,7 +77,7 @@ static pixel GetPixel(vec3 uv) {
   // Position at with the object was hit
   vec3 p = v3_add(ro, v3_mul(rd, h.dist));
 
-  float diff = GetLight(GetDist, p, lp);
+  float diff = GetLight(p, lp);
 
   return (pixel){
     .obj = 0,

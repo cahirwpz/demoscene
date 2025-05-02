@@ -271,9 +271,9 @@ static rgb texture(SDL_Surface *img, vec3 uv) {
 }
 
 /* Signed distance function */
-typedef hit sdf_t(vec3 p);
+static hit GetDist(vec3 p);
 
-static hit RayMarch(sdf_t sdf, vec3 ro, vec3 rd) {
+static hit RayMarch(vec3 ro, vec3 rd) {
   // distance from origin
   float dO = 0.0;
   hit h;
@@ -281,7 +281,7 @@ static hit RayMarch(sdf_t sdf, vec3 ro, vec3 rd) {
   for (int i = 0; i < MAX_STEPS; i++) {
     vec3 p = v3_add(ro, v3_mul(rd, dO));
     // distance to the scene
-    h = sdf(p);
+    h = GetDist(p);
     if (h.dist < SURF_DIST)
       return (hit){dO, h.obj};
     dO += h.dist;
@@ -295,21 +295,21 @@ static hit RayMarch(sdf_t sdf, vec3 ro, vec3 rd) {
   return (hit){dO, h.obj}; 
 }
 
-static vec3 GetNormal(sdf_t sdf, vec3 p) {
-  float d = sdf(p).dist;
+static vec3 GetNormal(vec3 p) {
+  float d = GetDist(p).dist;
   vec3 e = (vec3){0.01, 0.0};
-  vec3 n = (vec3){d - sdf(v3_sub(p, (vec3){e.x, e.y, e.y})).dist,
-                  d - sdf(v3_sub(p, (vec3){e.y, e.x, e.y})).dist,
-                  d - sdf(v3_sub(p, (vec3){e.y, e.y, e.x})).dist};
+  vec3 n = (vec3){d - GetDist(v3_sub(p, (vec3){e.x, e.y, e.y})).dist,
+                  d - GetDist(v3_sub(p, (vec3){e.y, e.x, e.y})).dist,
+                  d - GetDist(v3_sub(p, (vec3){e.y, e.y, e.x})).dist};
   return v3_normalize(n);
 }
 
-static __unused float GetLight(sdf_t sdf, vec3 p, vec3 lp) {
+static __unused float GetLight(vec3 p, vec3 lp) {
   vec3 l = v3_normalize(v3_sub(lp, p));
-  vec3 n = GetNormal(sdf, p);
+  vec3 n = GetNormal(p);
   vec3 ro = v3_add(p, v3_mul(n, SURF_DIST));
 
-  float d = RayMarch(sdf, ro, l).dist;
+  float d = RayMarch(ro, l).dist;
 
   float diff = v3_dot(n, l);
   if (d < v3_length(lp))

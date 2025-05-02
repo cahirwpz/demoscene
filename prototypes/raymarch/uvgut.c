@@ -36,7 +36,7 @@ static pixel GetPixel(vec3 uv) {
   vec3 co = v3_normalize((vec3){uv.x, uv.y, 2.0});
   vec3 rd = m4_translate(co, ca);
 
-  hit h = RayMarch(GetDist, ro, rd);
+  hit h = RayMarch(ro, rd);
   if (h.obj < 0)
     return NOPIXEL;
 
@@ -58,6 +58,8 @@ static pixel GetPixel(vec3 uv) {
     tuv.y *= 4.;
     px.uv = v3_add(tuv, (vec3){iTime * 0.1, -iTime * 0.25});
   }
+
+  px.uv = v3_mul(px.uv, 2.0f);
 
   return px;
 }
