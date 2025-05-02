@@ -242,7 +242,6 @@ static __unused float CylinderDist(vec3 p, vec3 a, vec3 b, float r) {
 typedef struct hit {
   float dist;
   int obj;
-  vec3 uv;
 } hit;
 
 typedef struct rgb {
@@ -268,7 +267,7 @@ static rgb texture(SDL_Surface *img, vec3 uv) {
   int u = (uv.x - floorf(uv.x)) * img->w;
   int v = (uv.y - floorf(uv.y)) * img->h;
   Uint32 c = tex[v * img->w + u];
-  return (rgb){(c >> 16) & 0xff, (c >> 8) & 0xff, c & 255};
+  return (rgb){(c >> 24) & 0xff, (c >> 16) & 0xff, (c >> 8) & 255};
 }
 
 /* Signed distance function */
@@ -305,7 +304,7 @@ static vec3 GetNormal(sdf_t sdf, vec3 p) {
   return v3_normalize(n);
 }
 
-static float GetLight(sdf_t sdf, vec3 p, vec3 lp) {
+static __unused float GetLight(sdf_t sdf, vec3 p, vec3 lp) {
   vec3 l = v3_normalize(v3_sub(lp, p));
   vec3 n = GetNormal(sdf, p);
   vec3 ro = v3_add(p, v3_mul(n, SURF_DIST));
@@ -400,10 +399,12 @@ static void Render(SDL_Surface *canvas) {
   SDL_Log("Render took %dms\n", end - start);
 }
 
-static __unused SDL_Surface *LoadTexture(const char *path) {
+static __unused void LoadTexture(int i, const char *path) {
   SDL_Surface *loaded;
   SDL_Surface *native;
   SDL_PixelFormat *pixelfmt;
+
+  SDL_assert(i >= 0 && i <= NCHANNELS);
 
   if (!(loaded = IMG_Load(path))) {
     SDL_Log("Unable to load image %s! SDL_image Error: %s\n",
@@ -415,7 +416,7 @@ static __unused SDL_Surface *LoadTexture(const char *path) {
   native = SDL_ConvertSurface(loaded, pixelfmt, 0);
   SDL_FreeFormat(pixelfmt);
   SDL_FreeSurface(loaded);
-  return native;
+  iChannel[i] = native;
 }
 
 static void PerFrame(void) {
