@@ -45,6 +45,7 @@ SUBDIRS := \
 	plotter \
 	prisms \
 	rotator \
+	scaler \
 	sea-anemone \
 	shapes \
 	showpchg \
