@@ -16,8 +16,8 @@ static __code CopListT *cp;
 
 
 // 16 transitions = 1 row of texture
-#define NTRANSITIONS (5*16)
-#define VPSTART (0xc8 - 32)
+#define NTRANSITIONS (8*16)
+#define VPSTART (0xc8 - (2*54))
 #define ROWHEIGHT 2
 #define __ANIMATE 1
 
@@ -49,11 +49,13 @@ static CopListT *MakeCopperList(CopListT *cp) {
     CopWait(cp, vp, 0x00); // vpos, hpos is overwritten in Render
     ciTransition[i++] = cp->curr;
     CopWait(cp, vp, 0x00); // vpos, hpos is overwritten in Render
-    
+
+    //CopSetColor(cp, 0, 0xF00);
     // XXX: change texture to cmap4.
     for(j = 1; j < 16; j++){
-      CopSetColor(cp, j, p[texture_bp_pixels[(k*16 + j) % (256)]]);
+      CopSetColor(cp, j, p[texture_bp_pixels[(k*16 + j) % (texture_bp_width * texture_bp_height)]]);
     }
+    //CopSetColor(cp, 0, 0x0F0);
     k++;
   }
 
@@ -116,7 +118,7 @@ static void Render(void) {
   static short framen = 0;
   short i = 0;
   // Patch the coppper instructions in memory
-  short vpos = VPSTART + (framen>>2);
+  short vpos = VPSTART + (framen>>1);
   short ffcross = 0;
 
 #if __ANIMATE
@@ -152,7 +154,7 @@ static void Render(void) {
   }
 #endif
   framen++;
-  framen &= 0x3F;
+  framen = framen % (ROWHEIGHT * texture_bp_height * 2);
   TaskWaitVBlank();
 }
 
