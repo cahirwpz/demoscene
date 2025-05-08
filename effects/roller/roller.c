@@ -19,13 +19,22 @@ static __code CopListT *cp;
 #define NTRANSITIONS (8*16)
 #define VPSTART (0xc8 - (2*54))
 #define ROWHEIGHT 2
+
+// Debug / work in progress switches
+// Disable animation (do not rewrite copperlist in Render)
 #define __ANIMATE 1
+// Handle changing color 0
+#define __HANDLEBG 0
+
+// Narrow the area where we set color 0 to pallete
+#define LFRAME (0x3E + 2)
+#define RFRAME (0xDF - 2)
+
 
 static CopInsT *ciTransition[NTRANSITIONS*3];
 
 #include "data/roller-bg.c"
 #include "data/magland16.c"
-
 
 typedef u_short palentry_t;
 
@@ -34,28 +43,51 @@ static CopListT *MakeCopperList(CopListT *cp) {
   short i, j, k;
   short vp = VPSTART;
   short ffcross = 0;
-  (void) i; (void) ffcross;
+  (void) i; (void) ffcross; (void) ciTransition; (void) vp;
   CopSetupBitplanes(cp, &roller_bp, S_DEPTH);
+  CopSetColor(cp, 0, 0x000);
 
-  CopSetColor(cp, 0, 0xFFF);
+  CopWaitV(cp, vp);
 
+  //XXX: These waits are currently broken for vp>0xFF 
   // cp->curr points to the copper instruction that's about to be inserted
   k = 0;
   for(i = 0; i < NTRANSITIONS*3;){
+   
     vp += ROWHEIGHT;
-    ciTransition[i++] = cp->curr;
-    CopWait(cp, vp, 0x00); // vpos, hpos is overwritten in Render
-    ciTransition[i++] = cp->curr;
-    CopWait(cp, vp, 0x00); // vpos, hpos is overwritten in Render
-    ciTransition[i++] = cp->curr;
-    CopWait(cp, vp, 0x00); // vpos, hpos is overwritten in Render
 
-    //CopSetColor(cp, 0, 0xF00);
+    //CopSetColor(cp, 0, 0xF0F);
+    
+    ciTransition[i++] = cp->curr;
+    CopWait(cp, vp, 0); // vpos, hpos is overwritten in Render
+    ciTransition[i++] = cp->curr;
+    CopWait(cp, vp, 0); // vpos, hpos is overwritten in Render
+    ciTransition[i++] = cp->curr;
+    CopWait(cp, vp, 0); // vpos, hpos is overwritten in Render
+
+#if __HANDLEBG == 1
+
+    CopWaitMask(cp, 0x80, LFRAME, 0x00, 0xFF);
+    CopSetColor(cp, 0, 0xF00);
+#endif
+    
+    // Set colors from texture
     // XXX: change texture to cmap4.
     for(j = 1; j < 16; j++){
       CopSetColor(cp, j, p[texture_bp_pixels[(k*16 + j) % (texture_bp_width * texture_bp_height)]]);
     }
-    //CopSetColor(cp, 0, 0x0F0);
+
+#if __HANDLEBG == 1
+    CopWaitMask(cp, 0x80, RFRAME, 0x00, 0xFF);
+    CopSetColor(cp, 0, 0x000);
+    
+    CopWaitMask(cp, 0x80, LFRAME, 0x00, 0xFF);
+    CopSetColor(cp, 0, 0xF00);
+    CopWaitMask(cp, 0x80, RFRAME, 0x00, 0xFF);
+    CopSetColor(cp, 0, 0x000);
+    
+#endif  
+    
     k++;
   }
 
@@ -73,14 +105,14 @@ static void UnLoad(void) {
 static void Init(void) {
   //TimeWarp(roller_start);
   //TODO: calculate copper list length
-  CopListT *cp = NewCopList(0x1600);
+  CopListT *cp = NewCopList(0x3000);
   SetupPlayfield(MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
 
   cp = MakeCopperList(cp);
   CopListActivate(cp);
 
-  EnableDMA(DMAF_RASTER | DMAF_SPRITE | DMAF_BLITTER | DMAF_BLITHOG);
-
+  //EnableDMA(DMAF_RASTER | DMAF_SPRITE | DMAF_BLITTER | DMAF_BLITHOG);
+  EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
   (void) roller_pal_colors;
 }
 
@@ -120,6 +152,9 @@ static void Render(void) {
   // Patch the coppper instructions in memory
   short vpos = VPSTART + (framen>>1);
   short ffcross = 0;
+  (void) ffcross;
+  (void) vpos;
+  (void) i;
 
 #if __ANIMATE
   for(i = 0; i < NTRANSITIONS*3; ++i) {
@@ -138,7 +173,8 @@ static void Render(void) {
       i++;
       ciTransition[i]->wait.vp = vpos & 0xFF;
       ciTransition[i]->wait.hp = 0x01;
-           
+
+      
       Log("VPOS overflow at wait number %d\n", i);
     } else {
       ciTransition[i]->wait.vp = vpos & 0xFF;
@@ -149,6 +185,7 @@ static void Render(void) {
       i++;
       ciTransition[i]->wait.vp = vpos & 0xFF;
       ciTransition[i]->wait.hp = 0x0F;
+
     }
 
   }
