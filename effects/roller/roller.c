@@ -17,15 +17,14 @@ static __code CopListT *cp;
 
 // 16 transitions = 1 row of texture
 #define NTRANSITIONS (8*16)
-#define VPSTART (0xc8 - (2*54))
-#define ROWHEIGHT 2
+#define VPSTART 0xC8    // (0xc8 - (2*54))
+#define ROWHEIGHT 1
 
 // Debug / work in progress switches
 // Disable animation (do not rewrite copperlist in Render)
 #define __ANIMATE 1
-// Handle changing color 0
-#define __HANDLEBG 0
-
+// Handle setting background color when outside bitplanes
+#define __HANDLEBG 1
 // Narrow the area where we set color 0 to pallete
 #define LFRAME (0x3E + 2)
 #define RFRAME (0xDF - 2)
@@ -47,47 +46,53 @@ static CopListT *MakeCopperList(CopListT *cp) {
   CopSetupBitplanes(cp, &roller_bp, S_DEPTH);
   CopSetColor(cp, 0, 0x000);
 
-  CopWaitV(cp, vp);
+ 
 
-  //XXX: These waits are currently broken for vp>0xFF 
+  /*
+
+    Inserting CopWaitMask for the right edge of the screen breaks current vp overflow fix
+    the VP overflow CopWait should be the last one in the line
+
+    So, like this:
+    
+    *ciTran++ = CopWait(cp, vp, 0);   // [1]
+    color0 = RED
+    CopWaitMask( HP = LFRAME)
+    [ set 16 colors ]
+    CopWaitMask( HP = RFRAME)
+    color 0 = RED
+
+    *ciTran++ = CopWait(cp, vp, 0);  // [2]
+
+    The copWait [2] will be written to vp=FF,hp=DF when vp = 0xFF
+    and will be the same as [1] in other cases
+
+   */
   // cp->curr points to the copper instruction that's about to be inserted
   k = 0;
   for(i = 0; i < NTRANSITIONS*3;){
-   
-    vp += ROWHEIGHT;
-
-    //CopSetColor(cp, 0, 0xF0F);
     
+    vp += 1;
     ciTransition[i++] = cp->curr;
-    CopWait(cp, vp, 0); // vpos, hpos is overwritten in Render
-    ciTransition[i++] = cp->curr;
-    CopWait(cp, vp, 0); // vpos, hpos is overwritten in Render
-    ciTransition[i++] = cp->curr;
-    CopWait(cp, vp, 0); // vpos, hpos is overwritten in Render
-
-#if __HANDLEBG == 1
-
-    CopWaitMask(cp, 0x80, LFRAME, 0x00, 0xFF);
-    CopSetColor(cp, 0, 0xF00);
+    CopWait(cp, vp, 0);
+    
+#if __HANDLEBG     
+    CopSetColor(cp, 0, 0xF00); 
+    CopWaitMask(cp, vp, LFRAME, 0x00, 0xFF); // vpos, hpos is overwritten in Rende
 #endif
-    
     // Set colors from texture
     // XXX: change texture to cmap4.
-    for(j = 1; j < 16; j++){
+    for(j = 0; j < 16; j++){
       CopSetColor(cp, j, p[texture_bp_pixels[(k*16 + j) % (texture_bp_width * texture_bp_height)]]);
     }
-
-#if __HANDLEBG == 1
-    CopWaitMask(cp, 0x80, RFRAME, 0x00, 0xFF);
-    CopSetColor(cp, 0, 0x000);
-    
-    CopWaitMask(cp, 0x80, LFRAME, 0x00, 0xFF);
+#if __HANDLEBG    
+    CopWaitMask(cp, vp, RFRAME, 0x00, 0xFF); // vpos, hpos is overwritten in Render
     CopSetColor(cp, 0, 0xF00);
-    CopWaitMask(cp, 0x80, RFRAME, 0x00, 0xFF);
-    CopSetColor(cp, 0, 0x000);
-    
-#endif  
-    
+#endif
+    ciTransition[i++] = cp->curr;
+    CopWait(cp, vp, 0);
+    ciTransition[i++] = cp->curr;
+    CopWait(cp, vp, 0);
     k++;
   }
 
@@ -157,37 +162,42 @@ static void Render(void) {
   (void) i;
 
 #if __ANIMATE
+  
   for(i = 0; i < NTRANSITIONS*3; ++i) {
     // TODO: lines closer to viewer should be taller to keep perspective
-    vpos +=  ROWHEIGHT;
-
+    vpos +=  1;
+    
+#if 1
     // Calculate where the crossing now occurs
     if(!ffcross && vpos > 0xff){     
       ffcross = 1;
+
       ciTransition[i]->wait.vp = vpos & 0xFF;
-      ciTransition[i]->wait.hp = 0x01;
+      ciTransition[i]->wait.hp = 1;
       i++;
       // Insert safe wait
       ciTransition[i]->wait.vp = 0xFF;
       ciTransition[i]->wait.hp = 0xDF;
+      
       i++;
       ciTransition[i]->wait.vp = vpos & 0xFF;
-      ciTransition[i]->wait.hp = 0x01;
-
+      ciTransition[i]->wait.hp = 1;
+      
       
       Log("VPOS overflow at wait number %d\n", i);
     } else {
       ciTransition[i]->wait.vp = vpos & 0xFF;
-      ciTransition[i]->wait.hp = 0x01;
+      ciTransition[i]->wait.hp =  1;
       i++;
       ciTransition[i]->wait.vp = vpos & 0xFF;
-      ciTransition[i]->wait.hp = 0x0F;
+      ciTransition[i]->wait.hp =  1;
       i++;
       ciTransition[i]->wait.vp = vpos & 0xFF;
-      ciTransition[i]->wait.hp = 0x0F;
+      ciTransition[i]->wait.hp =  1;
 
     }
-
+#endif
+    
   }
 #endif
   framen++;
