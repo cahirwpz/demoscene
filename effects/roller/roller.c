@@ -74,11 +74,11 @@ static CopListT *MakeCopperList(CopListT *cp) {
     
     vp += 1;
     ciTransition[i++] = cp->curr;
-    CopWait(cp, vp, 0);
+    CopWait(cp, VP(vp), HP(0));
     
 #if __HANDLEBG     
     CopSetColor(cp, 0, 0xF00); 
-    CopWaitMask(cp, vp, LFRAME, 0x00, 0xFF); // vpos, hpos is overwritten in Rende
+    CopWaitMask(cp, VP(vp), HP(LFRAME), 0x00, 0xFF); // vpos, hpos is overwritten in Rende
 #endif
     // Set colors from texture
     // XXX: change texture to cmap4.
@@ -86,13 +86,13 @@ static CopListT *MakeCopperList(CopListT *cp) {
       CopSetColor(cp, j, p[texture_bp_pixels[(k*16 + j) % (texture_bp_width * texture_bp_height)]]);
     }
 #if __HANDLEBG    
-    CopWaitMask(cp, vp, RFRAME, 0x00, 0xFF); // vpos, hpos is overwritten in Render
+    CopWaitMask(cp, VP(vp), HP(RFRAME), 0x00, 0xFF); // vpos, hpos is overwritten in Render
     CopSetColor(cp, 0, 0xF00);
 #endif
     ciTransition[i++] = cp->curr;
-    CopWait(cp, vp, 0);
+    CopWait(cp, VP(vp), HP(0));
     ciTransition[i++] = cp->curr;
-    CopWait(cp, vp, 0);
+    CopWait(cp, VP(vp), HP(0));
     k++;
   }
 
