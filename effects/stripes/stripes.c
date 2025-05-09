@@ -56,11 +56,11 @@ static CopListT *MakeCopperList(CopInsT **line) {
   CopSetColor(cp, 0, BGCOL);
 
   for (i = 0; i < HEIGHT; i++) {
-    CopWaitSafe(cp, Y(i), 8);
+    CopWaitSafe(cp, Y(i), HP(16));
     *line++ = CopSetColor(cp, 0, 0);
   }
 
-  CopWait(cp, Y(256), 8);
+  CopWait(cp, Y(256), HP(16));
   CopSetColor(cp, 0, BGCOL);
   return CopListFinish(cp);
 }

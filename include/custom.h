@@ -17,14 +17,24 @@ static inline bool RightMouseButton(void) {
   return !(custom->potinp & DATLY);
 }
 
-static inline void WaitLine(uint32_t line) {
-  while ((custom->vposr_ & 0x1ff00) != ((line << 8) & 0x1ff00));
+static inline short IsAGA(void) {
+  return ((custom->vposr >> 8) & CHIPID_MASK) == CHIPID_ALICE_V3;
 }
 
-static inline void WaitVBlank(void) { WaitLine(303); }
+/* Following variables mirror corresponding register values, since the
+ * registers are write-only. */
+extern u_short __bplcon3;
+extern u_short __fmode;
 
-static inline short IsAGA(void) {
-  return ((custom->vposr_ >> 24) & 0x7f) == 0x23;
+/* Change bits selected by `mask` to values in `val`. Returns value that may be
+ * either written directly to register or to copper MOVE instruction. */
+
+static inline u_short bplcon3(u_short val, u_short mask) {
+  return __bplcon3 = (val & mask) | (__bplcon3 & ~mask);
+}
+
+static inline u_short fmode(u_short val, u_short mask) {
+  return __fmode = (val & mask) | (__fmode & ~mask);
 }
 
 #endif /* !__CUSTOM_H__ */

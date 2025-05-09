@@ -13,14 +13,11 @@
 #define HTILES (WIDTH / 8)
 #define VTILES (HEIGHT / 8)
 
-#undef X
-#undef Y
-
 /* Don't change these settings without reading a note about copper chunky! */
-#define Y(y) ((y) + 0x28)
-#define VP(y) (Y(y) & 255)
-#define X(x) ((x) + 0x84)
-#define HP(x) (X(x) / 2)
+#undef _YS
+#define _YS 0x28
+#undef _XS
+#define _XS 0x84
 
 static CopInsPairT *bplptr;
 static CopInsT *chunky[VTILES];
@@ -57,7 +54,7 @@ static CopListT *MakeCopperList(void) {
 
   /* X(-1) to align with copper induced color changes */
   bplptr = CopSetupBitplanes(cp, screen[1], DEPTH);
-  CopWaitV(cp, VP(0));
+  CopWait(cp, Y(0), HP(0));
 
   /* Copper Chunky.
    *
@@ -80,12 +77,12 @@ static CopListT *MakeCopperList(void) {
     short x, y;
     for (y = 0; y < VTILES; y++) {
       CopInsPairT *location = CopMove32(cp, cop2lc, 0);
-      CopInsT *label = CopWaitH(cp, VP(y * 8), HP(-4));
+      CopInsT *label = CopWaitH(cp, Y(y * 8), X(-4));
       CopInsSet32(location, label);
       chunky[y] = CopSetColor(cp, 1, 0);
       for (x = 0; x < HTILES - 1; x++)
         CopSetColor(cp, 1, 0); /* Last CopIns finishes at HP=0xD6 */
-      CopSkip(cp, VP(y * 8 + 7), 0xDE); /* finishes at HP=0xDE */
+      CopSkip(cp, Y(y * 8 + 7), LASTHP); /* finishes at HP=0xDE */
       CopMove16(cp, copjmp2, 0);
     }
   }

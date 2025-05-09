@@ -106,7 +106,7 @@ static CopListT *MakeCopperList(CopLineT **line) {
   CopSetColor(cp, 0, 0x000);
   CopSetColor(cp, 1, 0x000);
   for (i = 0; i < HEIGHT; i++) {
-    CopWaitSafe(cp, Y(i), 0);
+    CopWaitSafe(cp, Y(i), HP(0));
     line[i] = (CopLineT *)CopMove16(cp, bplcon1, 0x00);
     CopMove32(cp, bplpt[0], data + EMPTY * CWIDTH / 8);
     CopMove32(cp, bplpt[1], data + FULL * CWIDTH / 8);

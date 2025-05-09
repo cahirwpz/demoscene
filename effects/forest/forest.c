@@ -141,14 +141,14 @@ static void MoveTrees(u_int* arg) {
 static void MoveBranches(short bp[4][2]) {
   short i, j;
 
-  SpriteUpdatePos(&tree1[0],   X(bp[0][0]), Y(-16));
-  SpriteUpdatePos(&tree1[1],   X(bp[0][1]), Y(-16));
+  SpriteUpdatePos(&tree1[0], X(bp[0][0]), Y(-16));
+  SpriteUpdatePos(&tree1[1], X(bp[0][1]), Y(-16));
 
-  SpriteUpdatePos(&tree2[0],   X(bp[1][0]), Y(-16));
-  SpriteUpdatePos(&tree2[1],   X(bp[1][1]), Y(-16));
+  SpriteUpdatePos(&tree2[0], X(bp[1][0]), Y(-16));
+  SpriteUpdatePos(&tree2[1], X(bp[1][1]), Y(-16));
 
-  SpriteUpdatePos(&tree3[0],   X(bp[2][0]), Y(-16));
-  SpriteUpdatePos(&tree3[1],   X(bp[2][1]), Y(-16));
+  SpriteUpdatePos(&tree3[0], X(bp[2][0]), Y(-16));
+  SpriteUpdatePos(&tree3[1], X(bp[2][1]), Y(-16));
 
   for (i = 0; i <= 2; ++i) {
     for (j = 0; j <= 1; ++j) {
@@ -546,14 +546,14 @@ static void SetupSprites(void) {
   CopInsSetSprite(&sprptr[4], &tree3[0]);
   CopInsSetSprite(&sprptr[5], &tree3[1]);
 
-  SpriteUpdatePos(&tree1[0],   X(branchesPos[0][0]), Y(-16));
-  SpriteUpdatePos(&tree1[1],   X(branchesPos[0][1]), Y(-16));
+  SpriteUpdatePos(&tree1[0], X(branchesPos[0][0]), Y(-16));
+  SpriteUpdatePos(&tree1[1], X(branchesPos[0][1]), Y(-16));
 
-  SpriteUpdatePos(&tree2[0],   X(branchesPos[1][0]), Y(-16));
-  SpriteUpdatePos(&tree2[1],   X(branchesPos[1][1]), Y(-16));
+  SpriteUpdatePos(&tree2[0], X(branchesPos[1][0]), Y(-16));
+  SpriteUpdatePos(&tree2[1], X(branchesPos[1][1]), Y(-16));
 
-  SpriteUpdatePos(&tree3[0],   X(branchesPos[2][0]), Y(-16));
-  SpriteUpdatePos(&tree3[1],   X(branchesPos[2][1]), Y(-16));
+  SpriteUpdatePos(&tree3[0], X(branchesPos[2][0]), Y(-16));
+  SpriteUpdatePos(&tree3[1], X(branchesPos[2][1]), Y(-16));
 }
 
 static CopListT *MakeCopperList(void) {
@@ -589,8 +589,8 @@ static CopListT *MakeCopperList(void) {
   SetupSprites();
 
   // Moon behind trees
-  CopWait(cp, 0, 0);
-  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF1P0 | BPLCON2_PF1P1 | BPLCON2_PF2P0 | BPLCON2_PF2P1);
+  CopWait(cp, VP(0), HP(0));
+  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF1P_SP67 | BPLCON2_PF2P_SP67);
 
   // Moon colors
   CopSetColor(cp, 29, 0x444);
@@ -598,13 +598,13 @@ static CopListT *MakeCopperList(void) {
   CopSetColor(cp, 31, 0xBBB);
 
   // Duplicate lines
-  CopWaitSafe(cp, Y(0), 0);
+  CopWaitSafe(cp, Y(0), HP(0));
   CopMove16(cp, bpl1mod, -40);
   CopMove16(cp, bpl2mod, -40);
 
   // Background gradient
   for (i = 0; i < 12; ++i) {
-    CopWait(cp, Y(i * 8), 0);
+    CopWait(cp, Y(i * 8), HP(0));
     CopSetColor(cp, 0, backgroundGradient[i]);
     // Bat Colors
     if (i * 8 == 48) {
@@ -620,14 +620,14 @@ static CopListT *MakeCopperList(void) {
   CopSetColor(cp, 31, 0xDDD);
 
   // Ghost between playfields
-  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF2P0 | BPLCON2_PF2P1 | BPLCON2_PF1P2);
+  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF2P_SP67 | BPLCON2_PF1P_BOTTOM);
 
   // Duplicate lines
   for (i = 0; i < 6; ++i) {
-    CopWaitSafe(cp, Y(256 - groundLevel[i]), 0);
+    CopWaitSafe(cp, Y(256 - groundLevel[i]), HP(0));
     CopMove16(cp, bpl1mod, 0);
     CopMove16(cp, bpl2mod, 0);
-    CopWaitSafe(cp, Y(256 + GROUND_HEIGHT - groundLevel[i]), 0);
+    CopWaitSafe(cp, Y(256 + GROUND_HEIGHT - groundLevel[i]), HP(0));
     CopMove16(cp, bpl1mod, -40);
     CopMove16(cp, bpl2mod, -40);
   }

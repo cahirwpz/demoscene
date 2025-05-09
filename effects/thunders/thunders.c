@@ -81,10 +81,10 @@ static void Load(void) {
   short i;
 
   for (i = 0; i < 320 / 16; i++) {
-    short xo = X((WIDTH - 32) / 2) + (i & 1 ? 16 : 0);
-    short yo = Y((HEIGHT - 128) / 2);
+    short xo = (WIDTH - 32) / 2 + (i & 1 ? 16 : 0);
+    short yo = (HEIGHT - 128) / 2;
 
-    SpriteUpdatePos(&thunder[i], xo, yo);
+    SpriteUpdatePos(&thunder[i], X(xo), Y(yo));
   }
 
   FloorPrecalc();
@@ -302,7 +302,7 @@ static void ColorizeUpperHalf(CopListT *cp, short yi, short kyo) {
     short column = ((k + kyo) & (SIZE - 1));
     u_short *colors = pixels + (column * SIZE + 1) * sizeof(u_short);
 
-    CopWait(cp, Y(HEIGHT - y0), 0);
+    CopWait(cp, Y(HEIGHT - y0), HP(0));
     CopSetColor(cp, 1, *colors++);
     CopSetColor(cp, 2, *colors++);
     CopSetColor(cp, 3, *colors++);
@@ -321,7 +321,7 @@ static void ColorizeUpperHalf(CopListT *cp, short yi, short kyo) {
         yj = 0;
       y1 = horiz[yj];
 
-      CopWait(cp, Y(HEIGHT - y1), 0);
+      CopWait(cp, Y(HEIGHT - y1), HP(0));
       CopSetColor(cp, 1, BGCOL);
       CopSetColor(cp, 2, BGCOL);
       CopSetColor(cp, 3, BGCOL);
@@ -342,7 +342,7 @@ static void ColorizeLowerHalf(CopListT *cp, short yi, short kyo) {
     short column = ((k + kyo) & (SIZE - 1));
     u_short *colors = pixels + (column * SIZE + 1) * sizeof(u_short);
 
-    CopWaitSafe(cp, Y(y0), 0);
+    CopWaitSafe(cp, Y(y0), HP(0));
     CopSetColor(cp, 1, *colors++);
     CopSetColor(cp, 2, *colors++);
     CopSetColor(cp, 3, *colors++);
@@ -359,7 +359,7 @@ static void ColorizeLowerHalf(CopListT *cp, short yi, short kyo) {
         yj = 0;
       y1 = horiz[yj];
 
-      CopWaitSafe(cp, Y(y1), 0);
+      CopWaitSafe(cp, Y(y1), HP(0));
       CopSetColor(cp, 1, BGCOL);
       CopSetColor(cp, 2, BGCOL);
       CopSetColor(cp, 3, BGCOL);
@@ -399,7 +399,7 @@ static void MakeFloorCopperList(CopListT *cp, short yo, short kyo) {
   FillStripes(1);
   ColorizeUpperHalf(cp, yo, kyo);
 
-  CopWaitV(cp, Y(HEIGHT / 2 - 1));
+  CopWait(cp, Y(HEIGHT / 2 - 1), HP(0));
   CopMove16(cp, bpl1mod, 0);
   CopMove16(cp, bpl2mod, 0);
 

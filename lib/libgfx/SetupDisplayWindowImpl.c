@@ -1,12 +1,12 @@
 #ifdef __COPPER_H__
 #define STORE(reg, val) CopMove16(list, reg, val)
 
-void CopSetupDisplayWindow(CopListT *list, u_short mode, 
-                           u_short xs, u_short ys, u_short w, u_short h)
+void CopSetupDisplayWindow(CopListT *list, u_short mode,
+                           hpos xstart, vpos ystart, u_short w, u_short h)
 #else
 #define STORE(reg, val) custom->reg = val
 
-void SetupDisplayWindow(u_short mode, u_short xs, u_short ys,
+void SetupDisplayWindow(u_short mode, hpos xstart, vpos ystart,
                         u_short w, u_short h)
 #endif
 {
@@ -15,6 +15,8 @@ void SetupDisplayWindow(u_short mode, u_short xs, u_short ys,
   /* vstop   $80 .. $17f */
   /* hstop  $100 .. $1ff */
   u_char xe, ye;
+  u_short xs = xstart.hpos;
+  u_short ys = ystart.vpos;
 
   if (mode & MODE_HIRES)
     w >>= 1;
