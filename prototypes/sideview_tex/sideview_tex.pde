@@ -9,24 +9,33 @@ PImage pumpkin;
 PImage bookshelf;
 PImage lapis;
 
+PImage umap;
+PImage vmap;
+
 final boolean debug = false;
 final String sceneSelect = "hallway";
 
 ArrayList<Drawable> scene;
 
 void settings() {
-  size((int)(320 * scale), (int)(256 * scale));  
-}  
+  size((int)(320 * scale), (int)(256 * scale));
+}
 
 void setup() {
   loadPixels();
+
+  umap = createImage(width, height, ALPHA);
+  umap.loadPixels();
+  
+  vmap = createImage(width, height, ALPHA);
+  vmap.loadPixels();
 
   lapis = loadImage("lapis.png");
   pumpkin = loadImage("pumpkin.png");
   bookshelf = loadImage("bookshelf.png");
 
   scene = new ArrayList<Drawable>();
-  
+
   switch (sceneSelect) {
     case "hallway":
       // Segment(x0, z0, x1, z1)
@@ -34,12 +43,12 @@ void setup() {
       ceiling.addName("ceiling");
       ceiling.addTexture(lapis, 1.0, 1.0);
       scene.add(ceiling);
-      
+
       Segment wall = new Segment(-48, 256, 48, 256);
       wall.addName("wall");
       wall.addTexture(pumpkin, 1.0, 0.5);
       scene.add(wall);
-      
+
       Segment floor = new Segment(48, 256, 160, 128);
       floor.addName("floor");
       floor.addTexture(lapis, 1.0, 1.0);
@@ -52,7 +61,7 @@ void setup() {
       outer.addName("outer");
       outer.addTexture(lapis, 0.5, 1.0);
       scene.add(outer);
-  
+
       Circle inner = new Circle(0, 384 + 64, 96, Side.OUTER);
       inner.addName("inner");
       inner.addTexture(bookshelf, 1.0, -0.5);
@@ -65,15 +74,15 @@ PVector control(String name) {
   switch (name) {
     case "inner":
       return new PVector(frameCount / 32.0, 2.0 * sin(frameCount / 32.0));
-      
+
     case "outer":
       return new PVector(0, -4.0 * sin(frameCount / 64.0 + HALF_PI));
-    
+
     case "floor":
     case "ceiling":
     case "wall":
       return new PVector(frameCount / 32.0, 0);
-      
+
     default:
       return new PVector(0, 0);
   }
@@ -110,6 +119,11 @@ void draw() {
   }
 
   updatePixels();
+  
+  if (keyPressed) {
+    umap.save(sceneSelect + "-u.png");
+    vmap.save(sceneSelect + "-v.png");
+  }
 }
 
 float illumination(float x, float z) {
@@ -124,21 +138,28 @@ void drawLine(int sy, PVector uv, PVector uv_off, float z, float l, Texture tex)
 
   for (int sx = 0; sx < width; sx++) {
     float fu = ((float)sx / width - 0.5) * u + uv_off.x;
-    
+
     if (!debug) {
-      color texel = tex.getPixel(fu, fv);
+      int iu = tex.texU(fu);
+      int iv = tex.texV(fv);
+
+      umap.pixels[sy * width + sx] = iu;
+      vmap.pixels[sy * width + sx] = iv;
+
+      color texel = tex.pixel(iu, iv);
       color pixel;
-      
+
       if (l < 0) {
         pixel = lerpColor(color(0,0,0), texel, l + 1.0);
       } else {
         pixel = lerpColor(texel, color(255,255,255), l);
       }
+      
       pixels[sy * width + sx] = pixel;
     } else {
-      fu -= floor(fu);
-      fv -= floor(fv);
-      pixels[sy * width + sx] = color((int)(fu*256.0), (int)(fv*256.0), 0);
+      int iu = (int)((fu - floor(fu)) * 256);
+      int iv = (int)((fv - floor(fv)) * 256);
+      pixels[sy * width + sx] = color(iu, iv, 0);
     }
   }
 }
@@ -173,55 +194,59 @@ class Texture {
     us = _us;
     vs = _vs;
   }
- 
-  color getPixel(float u, float v) {
+
+  color pixel(int u, int v) {
+    return texture.pixels[v * texture.width + u];
+  }
+
+  int texU(float u) {
     u *= us;
+    return (int)((u - floor(u)) * texture.width);
+  }
+
+  int texV(float v) {
     v *= vs;
-    u -= floor(u);
-    v -= floor(v);
-    int iu = (int)(u * texture.width);
-    int iv = (int)(v * texture.height);
-    return texture.pixels[iv * texture.width + iu];
+    return (int)((v - floor(v)) * texture.height);
   }
 }
 
 class Line implements Drawable {
   /* General equation: A * x + B * y + C = 0 */
   private float a, b, c;
-  
+
   float x0, y0;
   float x1, y1;
-  
+
   private float len;
-  
+
   Line(float _x0, float _y0, float _x1, float _y1) {
     x0 = _x0 * scale;
     y0 = _y0 * scale;
     x1 = _x1 * scale;
     y1 = _y1 * scale;
-    
+
     a = y0 - y1;
     b = x1 - x0;
     c = (x0 - x1) * y0 + (y1 - y0) * x0;
 
     float dx = x1 - x0;
     float dy = y1 - y0;
-    
+
     len = sqrt(dx * dx + dy * dy);
   }
 
   Intersection intersection(Line other) {
     float x = (b * other.c - other.b * c) / (other.b * a - b * other.a);
     float y = - (a * x + c) / b;
-    
+
     float dx = x - x0;
     float dy = y - y0;
-    
+
     float v = sqrt(dx*dx + dy*dy) / len;
 
     return new Intersection(x, y, 1.0, v);
   }
-  
+
   public String toString() {
     return "Line(" + str(a) + ", " + str(b) + ", " + str(c) + ")";
   }
@@ -231,7 +256,7 @@ class Line implements Drawable {
   void addName(String _name) {
     name = _name;
   }
-  
+
   String name() {
     return name;
   }
@@ -286,7 +311,7 @@ class Circle implements Drawable {
   private float a, b;
   private float r;
   private Side side;
-  
+
   Circle(float _x, float _y, float _r, Side _side) {
     a = _x; b = _y; r = _r; side = _side;
   }
@@ -332,7 +357,7 @@ class Circle implements Drawable {
   void addName(String _name) {
     name = _name;
   }
-  
+
   String name() {
     return name;
   }
