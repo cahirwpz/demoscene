@@ -14,7 +14,6 @@
 
 static __code CopListT *cp;
 
-
 // 16 transitions = 1 row of texture
 #define NTRANSITIONS (8*16)
 #define VPSTART 0xC8    // (0xc8 - (2*54))
@@ -46,7 +45,7 @@ static CopListT *MakeCopperList(CopListT *cp) {
   CopSetupBitplanes(cp, &roller_bp, S_DEPTH);
   CopSetColor(cp, 0, 0x000);
 
- 
+
 
   /*
 
@@ -54,7 +53,7 @@ static CopListT *MakeCopperList(CopListT *cp) {
     the VP overflow CopWait should be the last one in the line
 
     So, like this:
-    
+
     *ciTran++ = CopWait(cp, vp, 0);   // [1]
     color0 = RED
     CopWaitMask( HP = LFRAME)
@@ -71,12 +70,12 @@ static CopListT *MakeCopperList(CopListT *cp) {
   // cp->curr points to the copper instruction that's about to be inserted
   k = 0;
   for(i = 0; i < NTRANSITIONS*3;){
-    
+
     vp += 1;
     ciTransition[i++] = cp->curr;
     CopWait(cp, VP(vp), HP(0));
-    
-#if __HANDLEBG     
+
+#if __HANDLEBG
     CopSetColor(cp, 0, 0xF00); 
     CopWaitMask(cp, VP(vp), HP(LFRAME), 0x00, 0xFF); // vpos, hpos is overwritten in Rende
 #endif
@@ -85,7 +84,7 @@ static CopListT *MakeCopperList(CopListT *cp) {
     for(j = 0; j < 16; j++){
       CopSetColor(cp, j, p[texture_bp_pixels[(k*16 + j) % (texture_bp_width * texture_bp_height)]]);
     }
-#if __HANDLEBG    
+#if __HANDLEBG
     CopWaitMask(cp, VP(vp), HP(RFRAME), 0x00, 0xFF); // vpos, hpos is overwritten in Render
     CopSetColor(cp, 0, 0xF00);
 #endif
@@ -99,24 +98,15 @@ static CopListT *MakeCopperList(CopListT *cp) {
   return CopListFinish(cp);
 }
 
-static void Load(void) {
-  
-}
-
-static void UnLoad(void) {
-  
-}
-
 static void Init(void) {
-  //TimeWarp(roller_start);
-  //TODO: calculate copper list length
+  // TODO: calculate copper list length
   CopListT *cp = NewCopList(0x3000);
   SetupPlayfield(MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
 
   cp = MakeCopperList(cp);
   CopListActivate(cp);
 
-  //EnableDMA(DMAF_RASTER | DMAF_SPRITE | DMAF_BLITTER | DMAF_BLITHOG);
+  // EnableDMA(DMAF_RASTER | DMAF_SPRITE | DMAF_BLITTER | DMAF_BLITHOG);
   EnableDMA(DMAF_RASTER | DMAF_BLITTER | DMAF_BLITHOG);
   (void) roller_pal_colors;
 }
@@ -146,10 +136,6 @@ static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
 }
 #endif
 
-static void VBlank(void) {
-
-}
-
 static void Render(void) {
 
   static short framen = 0;
@@ -162,11 +148,11 @@ static void Render(void) {
   (void) i;
 
 #if __ANIMATE
-  
+
   for(i = 0; i < NTRANSITIONS*3; ++i) {
     // TODO: lines closer to viewer should be taller to keep perspective
     vpos +=  1;
-    
+
 #if 1
     // Calculate where the crossing now occurs
     if(!ffcross && vpos > 0xff){     
@@ -178,12 +164,12 @@ static void Render(void) {
       // Insert safe wait
       ciTransition[i]->wait.vp = 0xFF;
       ciTransition[i]->wait.hp = 0xDF;
-      
+
       i++;
       ciTransition[i]->wait.vp = vpos & 0xFF;
       ciTransition[i]->wait.hp = 1;
-      
-      
+
+
       Log("VPOS overflow at wait number %d\n", i);
     } else {
       ciTransition[i]->wait.vp = vpos & 0xFF;
@@ -197,7 +183,7 @@ static void Render(void) {
 
     }
 #endif
-    
+
   }
 #endif
   framen++;
@@ -205,4 +191,4 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(Roller, Load, UnLoad, Init, Kill, Render, VBlank);
+EFFECT(Roller, NULL, NULL, Init, Kill, Render, NULL);
