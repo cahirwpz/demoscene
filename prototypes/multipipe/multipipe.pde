@@ -35,9 +35,9 @@ final int prec = 8;
 void calcLines() {
   int linesW = width + int(maxW * 2);
   int linesH = int((maxW - minW) * prec);
-  
+
   lines = createImage(linesW, linesH + 1, RGB);
-  
+
   for (int j = 0; j <= linesH; j++) {
     float w = lerp(minW, maxW, float(j) / linesH);
 
@@ -46,7 +46,7 @@ void calcLines() {
 
     float x = 0.0;
     int c = 0;
-           
+
     for (int i = 0; i < linesW; i++) {
       lines.set(i, j, color(c == 0 ? 0 : 255));
       x += 1.0;
@@ -62,13 +62,13 @@ class Stripe {
   int width;
   int line;
   int number;
-  
+
   Stripe(int _w, int _y, int _n) {
     width = _w;
     line = _y;
     number = _n;
   }
-  
+
   public String toString() {
     return "{ .w = " + str(width) + ", .y = " + str(line) + ", .n = " + str(number) + " }";
   }
@@ -86,15 +86,15 @@ void calcStripes() {
   pipe[0] = new Circle(0, 384, 128 + 32 + 12, Side.INNER);
   pipe[1] = new Circle(0, 384 + 32, 46, Side.INNER);
   pipe[2] = new Circle(0, 384 + 32, 46, Side.OUTER);
-  
+
   stripes = new ArrayList<Stripe>();
-    
+
   for (int y = 0; y < height; y++) {
     Line camera = new Line(0, 0, y - height / 2, focal_length);
 
     for (int j = 0; j < npipes; j++) { 
       Drawable p = pipe[j];
-      
+
       try {
         PVector meet = p.intersection(camera);
         float z = meet.y;
@@ -110,7 +110,7 @@ void calcStripes() {
 
 void setup() {
   frameRate(50);
-  
+
   colors = loadImage("colors.png");
   rgb12(colors);
   flares = loadImage("particles.png");
@@ -121,7 +121,7 @@ void setup() {
 
 void drawLine(int y, int x, int w, boolean swap, boolean transparent) {
   w -= int(minW * prec);
-  
+
   int c0, c1;
 
   if (swap) {
@@ -131,7 +131,7 @@ void drawLine(int y, int x, int w, boolean swap, boolean transparent) {
     c0 = colors.get(0, y);
     c1 = colors.get(1, y);
   }
-  
+
   for (int i = 0; i < width; i++) {
     boolean cs = lines.get(i + x, w) == color(0);
     int c = cs ? c0 : c1;
@@ -145,7 +145,7 @@ void drawLine(int y, int x, int w, boolean swap, boolean transparent) {
 
 void draw() {
   final int center = - int(prec * (width / 2.0));
-  
+
   for (Stripe s : stripes) {
     int w = s.width;
     int y = s.line;
@@ -159,7 +159,7 @@ void draw() {
       _x += w;
       _s += 1;
     }
-    
+
     drawLine(y, _x / prec, w, _s % 2 == 0, n > 1);
   }
 
