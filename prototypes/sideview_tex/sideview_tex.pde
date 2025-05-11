@@ -1,9 +1,8 @@
-final int WIDTH = 320*2;
-final int HEIGHT = 256*2;
+final float scale = 2.0;
 
 final float near_z = 256;
 final float far_z = 512;
-final float focal_length = 256;
+final float focal_length = 128 * scale;
 final float nstripes = 8.0;
 
 PImage pumpkin;
@@ -16,7 +15,7 @@ final String sceneSelect = "hallway";
 ArrayList<Drawable> scene;
 
 void settings() {
-  size(WIDTH, HEIGHT);  
+  size((int)(320 * scale), (int)(256 * scale));  
 }  
 
 void setup() {
@@ -31,17 +30,17 @@ void setup() {
   switch (sceneSelect) {
     case "hallway":
       // Segment(x0, z0, x1, z1)
-      Segment ceiling = new Segment(-96, 512, -320, 256);
+      Segment ceiling = new Segment(-48, 256, -160, 128);
       ceiling.addName("ceiling");
       ceiling.addTexture(lapis, 1.0, 1.0);
       scene.add(ceiling);
       
-      Segment wall = new Segment(-96, 512, 96, 512);
+      Segment wall = new Segment(-48, 256, 48, 256);
       wall.addName("wall");
       wall.addTexture(pumpkin, 1.0, 0.5);
       scene.add(wall);
       
-      Segment floor = new Segment(96, 512, 320, 256);
+      Segment floor = new Segment(48, 256, 160, 128);
       floor.addName("floor");
       floor.addTexture(lapis, 1.0, 1.0);
       scene.add(floor);
@@ -84,6 +83,7 @@ void draw() {
   for (int sy = 0; sy < height; sy++) {
     Line camera = new Line(0, 0, sy - height / 2, focal_length);
     Drawable obj = null;
+    float x = MAX_FLOAT;
     float z = MAX_FLOAT;
     PVector uv = null;
 
@@ -91,6 +91,7 @@ void draw() {
       try {
         Intersection ip = d.intersection(camera);
         if (z > ip.y) {
+          x = ip.x;
           z = ip.y;
           uv = new PVector(ip.u, ip.v);
           obj = d;
@@ -100,7 +101,9 @@ void draw() {
     }
 
     if (obj != null) {
-      drawLine(sy, uv, control(obj.name()), z, obj.texture());
+      float l = illumination(x, z);
+
+      drawLine(sy, uv, control(obj.name()), z, l, obj.texture());
     } else {
       clearLine(sy);
     }
@@ -109,22 +112,29 @@ void draw() {
   updatePixels();
 }
 
-float illumination(float z) {
-  z = constrain(z, near_z - 64, far_z + 64);
-  return lerp(1.0, 0.0, (z - near_z - 64) / (far_z - near_z + 128));
+float illumination(float x, float z) {
+  float diff = lerp(-0.5, 0.75, 2.0 * focal_length / (scale * constrain(z, near_z, far_z)));
+  float spec = cos(HALF_PI * abs(x) / sqrt(x * x + z * z));
+  return constrain(-0.75 + 1.0 * diff * (1.0 + pow(spec, 3)), -1.0, 1.0);
 }
 
-
-void drawLine(int sy, PVector uv, PVector uv_off, float z, Texture tex) {
-  float l = illumination(z);
-  float n = nstripes * uv.x / abs(focal_length / z);
+void drawLine(int sy, PVector uv, PVector uv_off, float z, float l, Texture tex) {
+  float u = nstripes * uv.x / abs(focal_length / z);
   float fv = nstripes * uv.y + uv_off.y;
 
   for (int sx = 0; sx < width; sx++) {
-    float fu = ((float)sx / width - 0.5) * n + uv_off.x;
+    float fu = ((float)sx / width - 0.5) * u + uv_off.x;
     
     if (!debug) {
-      pixels[sy * width + sx] = lerpColor(color(0,0,0), tex.getPixel(fu, fv), l);
+      color texel = tex.getPixel(fu, fv);
+      color pixel;
+      
+      if (l < 0) {
+        pixel = lerpColor(color(0,0,0), texel, l + 1.0);
+      } else {
+        pixel = lerpColor(texel, color(255,255,255), l);
+      }
+      pixels[sy * width + sx] = pixel;
     } else {
       fu -= floor(fu);
       fv -= floor(fv);
@@ -185,7 +195,11 @@ class Line implements Drawable {
   private float len;
   
   Line(float _x0, float _y0, float _x1, float _y1) {
-    x0 = _x0; y0 = _y0; x1 = _x1; y1 = _y1;
+    x0 = _x0 * scale;
+    y0 = _y0 * scale;
+    x1 = _x1 * scale;
+    y1 = _y1 * scale;
+    
     a = y0 - y1;
     b = x1 - x0;
     c = (x0 - x1) * y0 + (y1 - y0) * x0;
