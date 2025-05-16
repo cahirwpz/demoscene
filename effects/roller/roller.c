@@ -25,8 +25,8 @@ static __code CopListT *cp;
 // Handle setting background color when outside bitplanes
 #define __HANDLEBG 1
 // Narrow the area where we set color 0 to pallete
-#define LFRAME (0x3E + 2)
-#define RFRAME (0xDF - 2)
+#define LFRAME ((0x3E + 2) << 1)
+#define RFRAME ((0xDF - 2) << 1)
 
 
 static CopInsT *ciTransition[NTRANSITIONS*3];
@@ -41,58 +41,63 @@ static CopListT *MakeCopperList(CopListT *cp) {
   short i, j, k;
   short vp = VPSTART;
   short ffcross = 0;
-  (void) i; (void) ffcross; (void) ciTransition; (void) vp;
+  (void) i; (void) ffcross; (void) ciTransition; (void) vp; (void) j; (void) p;
   CopSetupBitplanes(cp, &roller_bp, S_DEPTH);
-  CopSetColor(cp, 0, 0x000);
+  CopSetColor(cp, 0, 0x033);
 
 
 
   /*
 
-    Inserting CopWaitMask for the right edge of the screen breaks current vp overflow fix
-    the VP overflow CopWait should be the last one in the line
-
-    So, like this:
-
-    *ciTran++ = CopWait(cp, vp, 0);   // [1]
-    color0 = RED
-    CopWaitMask( HP = LFRAME)
-    [ set 16 colors ]
-    CopWaitMask( HP = RFRAME)
-    color 0 = RED
-
-    *ciTran++ = CopWait(cp, vp, 0);  // [2]
-
-    The copWait [2] will be written to vp=FF,hp=DF when vp = 0xFF
-    and will be the same as [1] in other cases
 
    */
   // cp->curr points to the copper instruction that's about to be inserted
   k = 0;
-  for(i = 0; i < NTRANSITIONS*3;){
 
-    vp += 1;
+  /////CopWait(cp, VP(vp), HP(0x40));
+  for(i = 0; i < NTRANSITIONS *3 ; ) {
+
     ciTransition[i++] = cp->curr;
-    CopWait(cp, VP(vp), HP(0));
+    CopWaitMask(cp, VP(vp), HP(0x00), 0xFF, 0xFF);
+    
+    CopSetColor(cp, 0, 0xF00);
+    
+    ciTransition[i++] = cp->curr;
+    CopWaitMask(cp, VP(vp), HP(LFRAME), 0x00, 0xFF);
 
-#if __HANDLEBG
-    CopSetColor(cp, 0, 0xF00); 
-    CopWaitMask(cp, VP(vp), HP(LFRAME), 0x00, 0xFF); // vpos, hpos is overwritten in Rende
-#endif
-    // Set colors from texture
-    // XXX: change texture to cmap4.
     for(j = 0; j < 16; j++){
       CopSetColor(cp, j, p[texture_bp_pixels[(k*16 + j) % (texture_bp_width * texture_bp_height)]]);
     }
-#if __HANDLEBG
-    CopWaitMask(cp, VP(vp), HP(RFRAME), 0x00, 0xFF); // vpos, hpos is overwritten in Render
-    CopSetColor(cp, 0, 0xF00);
-#endif
+
     ciTransition[i++] = cp->curr;
-    CopWait(cp, VP(vp), HP(0));
-    ciTransition[i++] = cp->curr;
-    CopWait(cp, VP(vp), HP(0));
+    CopWait(cp, VP(vp), HP(RFRAME)); // This one cannot be masked
+    CopSetColor(cp, 0, 0x00F);
+
+    vp += 1;
     k++;
+
+//
+//    vp += 1;
+//    ciTransition[i++] = cp->curr;
+//    CopWait(cp, VP(vp), HP(0));
+//
+//#if __HANDLEBG
+//    CopSetColor(cp, 0, 0xF00); 
+//    CopWaitMask(cp, VP(vp), HP(LFRAME), 0x00, 0xFF); // vpos, hpos is overwritten in Rende
+//#endif
+//    // Set colors from texture
+//    // XXX: change texture to cmap4.
+//    for(j = 0; j < 16; j++){
+//      CopSetColor(cp, j, p[texture_bp_pixels[(k*16 + j) % (texture_bp_width * texture_bp_height)]]);
+//    }
+//#if __HANDLEBG
+//    CopWaitMask(cp, VP(vp), HP(RFRAME), 0x00, 0xFF); // vpos, hpos is overwritten in Render
+//    CopSetColor(cp, 0, 0xF00);
+//#endif
+//    ciTransition[i++] = cp->curr;
+//    CopWait(cp, VP(vp), HP(0));
+//    ciTransition[i++] = cp->curr;
+//    CopWait(cp, VP(vp), HP(0));
   }
 
   return CopListFinish(cp);
@@ -149,11 +154,21 @@ static void Render(void) {
 
 #if __ANIMATE
 
-  for(i = 0; i < NTRANSITIONS*3; ++i) {
+  for(i = 0; i < NTRANSITIONS*3;) {
     // TODO: lines closer to viewer should be taller to keep perspective
     vpos +=  1;
 
-#if 1
+
+    ciTransition[i++]->wait.vp = vpos & 0xFF;
+    ciTransition[i++]->wait.vp = vpos & 0xFF;
+    ciTransition[i++]->wait.vp = vpos & 0xFF;
+
+
+
+
+
+    
+#if 0
     // Calculate where the crossing now occurs
     if(!ffcross && vpos > 0xff){     
       ffcross = 1;
