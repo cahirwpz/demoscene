@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PYFILES=$(find . -name '*.py')
+PYFILES=$(find . -name '*.py' | grep -v \.venv)
 PYEXTRA=
 
 pycodestyle ${PYEXTRA} ${PYFILES}

@@ -91,7 +91,7 @@ if __name__ == "__main__":
                     print(f'Replaced with {pix[ci, y]}!')
             if ci >= 0:
                 data[x - args.ncols, y] = ci
- 
+
     if issues and not args.force:
         sys.exit('Image needs to be fixed!')
 
