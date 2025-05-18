@@ -48,6 +48,7 @@ SUBDIRS := \
 	sea-anemone \
 	shapes \
 	showpchg \
+	spooky-town \
 	stencil3d \
 	stripes \
 	textscroll \

@@ -26,9 +26,25 @@ import argparse
 import sys
 
 
+def closest(c, cols):
+    i = -1
+    dist = 256 * 256 * 3
+    for col, idx in cols.items():
+        r = c[0] - col[0]
+        g = c[1] - col[1]
+        b = c[2] - col[2]
+        d = r * r + g * g + b * b
+        if d < dist:
+            dist = d
+            i = idx
+    return i
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Split pallette per image line into colors and raw data.')
+    parser.add_argument('--force', action='store_true',
+                        help='Ignore color issues.')
     parser.add_argument('ncols', metavar='N', type=int,
                         help='Number of colors to be changed per scanline.')
     parser.add_argument('filename', type=str,
@@ -52,20 +68,32 @@ if __name__ == "__main__":
     pal = img_pal.load()
     data = img_data.load()
 
+    issues = False
     for y in range(height):
         cols = dict()
         for x in range(width):
             c = pix[x, y]
+
+            # palette columns
             if x < args.ncols:
                 pal[x, y] = c
                 if c not in cols:
                     cols[c] = x
-            else:
-                try:
-                    data[x - args.ncols, y] = cols[c]
-                except KeyError:
-                    sys.exit(f'Please fix the image at (x:{x},y:{y}) where '
-                             + f'{pix[x, y]} not in {list(cols.keys())}!')
+                continue
+
+            # image columns
+            ci = cols.get(c, -1)
+            if ci < 0:
+                print(f'Please fix the image at (x:{x},y:{y}) where '
+                      + f'{c} not in {list(cols.keys())}!')
+                if args.force:
+                    ci = closest(c, cols)
+                    print(f'Replaced with {pix[ci, y]}!')
+            if ci >= 0:
+                data[x - args.ncols, y] = ci
+ 
+    if issues and not args.force:
+        sys.exit('Image needs to be fixed!')
 
     img_data_pal = []
     for i in range(0, 256, 256 // args.ncols):
