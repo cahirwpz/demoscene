@@ -1,20 +1,26 @@
 #include "effect.h"
 #include "copper.h"
+#include "palette.h"
 #include "pixmap.h"
 #include "gfx.h"
+#include "sprite.h"
 
 #include "data/tree-pal.c"
 #include "data/tree-data.c"
+#include "data/witch.c"
 
 #define HEIGHT 256
 
 static __code CopListT *cp;
 static __code CopInsPairT *bplptr;
+static __code CopInsPairT *sprptr;
 static __code CopInsT *colorLine[HEIGHT];
+static __code SpriteT witchAlt[8];
 
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(100 + HEIGHT * (tree_cols_width + 3));
 
+  sprptr = CopSetupSprites(cp);
   CopWait(cp, Y(-1), HP(0));
   bplptr = CopSetupBitplanes(cp, &tree, tree_depth);
 
@@ -52,16 +58,49 @@ static CopListT *MakeCopperList(void) {
   return CopListFinish(cp);
 }
 
+static void SpriteDither(SpriteT *spr, u_int mask) {
+  u_int *data = (u_int *)&spr->sprdat->data[0];
+  short n = spr->height;
+
+  while (n-- > 0) {
+    *data++ &= mask;
+    mask = ~mask;
+  }
+}
+
 static void Init(void) {
   SetupPlayfield(MODE_LORES, tree_depth,
                  X(0), Y(0), tree_width, HEIGHT);
 
+  LoadColors(witch_colors, 16);
+  LoadColors(witch_colors, 20);
+  LoadColors(witch_colors, 24);
+  LoadColors(witch_colors, 28);
+
   cp = MakeCopperList();
   CopListActivate(cp);
-  EnableDMA(DMAF_RASTER);
+
+  {
+    short i;
+
+    for (i = 0; i < 8; i++) {
+      SpriteUpdatePos(&witch[i],
+                      X((320 - 128) / 2 + 16 * i),
+                      Y((256 - witch_height) / 2));
+      CopySprite(&witchAlt[i], &witch[i]);
+      SpriteDither(&witch[i], 0x55555555);
+      SpriteDither(&witchAlt[i], 0xAAAAAAAA);
+      (void)SpriteDither;
+
+      CopInsSetSprite(&sprptr[i], &witch[i]);
+    }
+  }
+
+  EnableDMA(DMAF_RASTER | DMAF_SPRITE);
 }
 
 static void Kill(void) {
+  ResetSprites();
   DeleteCopList(cp);
 }
 
@@ -97,4 +136,21 @@ static void Render(void) {
   TaskWaitVBlank();
 }
 
-EFFECT(SpookyTree, NULL, NULL, Init, Kill, Render, NULL);
+static void VBlank(void) {
+  static short active = 0;
+  short i;
+
+  if (active) {
+    for (i = 0; i < 8; i++) {
+      CopInsSetSprite(&sprptr[i], &witch[i]);
+    }
+  } else {
+    for (i = 0; i < 8; i++) {
+      CopInsSetSprite(&sprptr[i], &witchAlt[i]);
+    }
+  }
+
+  active ^= 1;
+}
+
+EFFECT(SpookyTree, NULL, NULL, Init, Kill, Render, VBlank);
