@@ -14,9 +14,9 @@
 
 static __code CopListT *cp;
 
-// 16 transitions = 1 row of texture
-#define NTRANSITIONS (8*16)
-#define VPSTART 0xC8    // (0xc8 - (2*54))
+// 16 transitions = 1 row of texture tiles
+#define NTRANSITIONS (7*16)
+#define VPSTART 0xC8
 #define ROWHEIGHT 1
 
 // Debug / work in progress switches
@@ -29,7 +29,8 @@ static __code CopListT *cp;
 #define RFRAME ((0xDF - 2) << 1)
 
 
-static CopInsT *ciTransition[NTRANSITIONS*3];
+//static CopInsT *ciTransition[NTRANSITIONS*3];
+static CopInsT *ciColor[NTRANSITIONS];
 
 #include "data/roller-bg.c"
 #include "data/magland16.c"
@@ -41,63 +42,30 @@ static CopListT *MakeCopperList(CopListT *cp) {
   short i, j, k;
   short vp = VPSTART;
   short ffcross = 0;
-  (void) i; (void) ffcross; (void) ciTransition; (void) vp; (void) j; (void) p;
+  (void) i; (void) ffcross; (void) ciColor; (void) vp; (void) j; (void) p;
   CopSetupBitplanes(cp, &roller_bp, S_DEPTH);
   CopSetColor(cp, 0, 0x033);
 
-
-
-  /*
-
-
-   */
-  // cp->curr points to the copper instruction that's about to be inserted
   k = 0;
 
   /////CopWait(cp, VP(vp), HP(0x40));
-  for(i = 0; i < NTRANSITIONS *3 ; ) {
+  for(i = 0; i < NTRANSITIONS; ) {
 
-    ciTransition[i++] = cp->curr;
     CopWaitMask(cp, VP(vp), HP(0x00), 0xFF, 0xFF);
-    
     CopSetColor(cp, 0, 0xF00);
-    
-    ciTransition[i++] = cp->curr;
     CopWaitMask(cp, VP(vp), HP(LFRAME), 0x00, 0xFF);
 
-    for(j = 0; j < 16; j++){
-      CopSetColor(cp, j, p[texture_bp_pixels[(k*16 + j) % (texture_bp_width * texture_bp_height)]]);
+    // Colors are overwritten in Render anyway
+    ciColor[i++] = CopSetColor(cp, 0, 0x000);
+    for(j = 1; j < 16; j++){
+      CopSetColor(cp, j, j << 4);
     }
-
-    ciTransition[i++] = cp->curr;
+    
     CopWait(cp, VP(vp), HP(RFRAME)); // This one cannot be masked
     CopSetColor(cp, 0, 0x00F);
 
     vp += 1;
-    k++;
 
-//
-//    vp += 1;
-//    ciTransition[i++] = cp->curr;
-//    CopWait(cp, VP(vp), HP(0));
-//
-//#if __HANDLEBG
-//    CopSetColor(cp, 0, 0xF00); 
-//    CopWaitMask(cp, VP(vp), HP(LFRAME), 0x00, 0xFF); // vpos, hpos is overwritten in Rende
-//#endif
-//    // Set colors from texture
-//    // XXX: change texture to cmap4.
-//    for(j = 0; j < 16; j++){
-//      CopSetColor(cp, j, p[texture_bp_pixels[(k*16 + j) % (texture_bp_width * texture_bp_height)]]);
-//    }
-//#if __HANDLEBG
-//    CopWaitMask(cp, VP(vp), HP(RFRAME), 0x00, 0xFF); // vpos, hpos is overwritten in Render
-//    CopSetColor(cp, 0, 0xF00);
-//#endif
-//    ciTransition[i++] = cp->curr;
-//    CopWait(cp, VP(vp), HP(0));
-//    ciTransition[i++] = cp->curr;
-//    CopWait(cp, VP(vp), HP(0));
   }
 
   return CopListFinish(cp);
@@ -142,67 +110,42 @@ static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
 #endif
 
 static void Render(void) {
-
+  // Patch the coppper instructions in memory
   static short framen = 0;
   short i = 0;
-  // Patch the coppper instructions in memory
-  short vpos = VPSTART + (framen>>1);
-  short ffcross = 0;
-  (void) ffcross;
-  (void) vpos;
-  (void) i;
+  u_char *pixel = 0; // pointer to texture pixel
+  (void) i; (void) pixel;
+  
+#if __ANIMATE 
+  for(i = 0; i < NTRANSITIONS;) {
+    // TODO: lines closer to viewer should be taller to match perspective
+      
+    //pixel = &texture_bp_pixels[(i*16 + framen) & 0xFF]; // funky, broken side movement
+    pixel = &texture_bp_pixels[(i - framen) << 4 & 0xFF];
 
-#if __ANIMATE
-
-  for(i = 0; i < NTRANSITIONS*3;) {
-    // TODO: lines closer to viewer should be taller to keep perspective
-    vpos +=  1;
-
-
-    ciTransition[i++]->wait.vp = vpos & 0xFF;
-    ciTransition[i++]->wait.vp = vpos & 0xFF;
-    ciTransition[i++]->wait.vp = vpos & 0xFF;
-
-
-
-
-
-    
-#if 0
-    // Calculate where the crossing now occurs
-    if(!ffcross && vpos > 0xff){     
-      ffcross = 1;
-
-      ciTransition[i]->wait.vp = vpos & 0xFF;
-      ciTransition[i]->wait.hp = 1;
-      i++;
-      // Insert safe wait
-      ciTransition[i]->wait.vp = 0xFF;
-      ciTransition[i]->wait.hp = 0xDF;
-
-      i++;
-      ciTransition[i]->wait.vp = vpos & 0xFF;
-      ciTransition[i]->wait.hp = 1;
-
-
-      Log("VPOS overflow at wait number %d\n", i);
-    } else {
-      ciTransition[i]->wait.vp = vpos & 0xFF;
-      ciTransition[i]->wait.hp =  1;
-      i++;
-      ciTransition[i]->wait.vp = vpos & 0xFF;
-      ciTransition[i]->wait.hp =  1;
-      i++;
-      ciTransition[i]->wait.vp = vpos & 0xFF;
-      ciTransition[i]->wait.hp =  1;
-
-    }
-#endif
-
+    // funroll loops :)
+    ciColor[i][0].move.data  = texture_pal_colors[*pixel++];
+    ciColor[i][1].move.data  = texture_pal_colors[*pixel++];
+    ciColor[i][2].move.data  = texture_pal_colors[*pixel++];
+    ciColor[i][3].move.data  = texture_pal_colors[*pixel++];
+    ciColor[i][4].move.data  = texture_pal_colors[*pixel++];
+    ciColor[i][5].move.data  = texture_pal_colors[*pixel++];
+    ciColor[i][6].move.data  = texture_pal_colors[*pixel++];
+    ciColor[i][7].move.data  = texture_pal_colors[*pixel++];
+    ciColor[i][8].move.data  = texture_pal_colors[*pixel++];
+    ciColor[i][9].move.data  = texture_pal_colors[*pixel++];
+    ciColor[i][10].move.data = texture_pal_colors[*pixel++];
+    ciColor[i][11].move.data = texture_pal_colors[*pixel++];
+    ciColor[i][12].move.data = texture_pal_colors[*pixel++];
+    ciColor[i][13].move.data = texture_pal_colors[*pixel++];
+    ciColor[i][14].move.data = texture_pal_colors[*pixel++];
+    ciColor[i][15].move.data = texture_pal_colors[*pixel++];
+  
+    i++;
   }
 #endif
   framen++;
-  framen = framen % (ROWHEIGHT * texture_bp_height * 2);
+  framen = framen & 0xF;
   TaskWaitVBlank();
 }
 
