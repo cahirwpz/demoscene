@@ -32,6 +32,17 @@ static __code CopListT *cp;
 //static CopInsT *ciTransition[NTRANSITIONS*3];
 static CopInsT *ciColor[NTRANSITIONS];
 
+#define LHSIZE 58
+static char lineheights[] = {1, 1, 1, 1,  1, 1, 1, 1,
+			     1, 1, 1, 1,  1, 1, 1, 1,
+			     1, 1, 1, 1,  1, 1, 1, 1,
+			     1, 2, 1, 2,  1, 2, 1, 2,
+			     1, 2, 1, 2,  2, 2, 2, 2,
+			     2, 2, 2, 2,  2, 2, 2, 2,
+			     3, 3, 3, 3,  4, 4, 4, 4,
+			     4, 4, 4, 4,  4, 4, 4, 4};
+
+  
 #include "data/roller-bg.c"
 #include "data/magland16.c"
 
@@ -112,17 +123,22 @@ static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
 static void Render(void) {
   // Patch the coppper instructions in memory
   static short framen = 0;
-  short i = 0;
+  short i = 0, lh = lineheights[0];
+  short j = 0;
+  char *lp = lineheights; // lp = lineheights pointer
   u_char *pixel = 0; // pointer to texture pixel
   (void) i; (void) pixel;
   
 #if __ANIMATE 
-  for(i = 0; i < NTRANSITIONS;) {
-    // TODO: lines closer to viewer should be taller to match perspective
-      
-    //pixel = &texture_bp_pixels[(i*16 + framen) & 0xFF]; // funky, broken side movement
-    pixel = &texture_bp_pixels[(i - framen) << 4 & 0xFF];
+  for(i = 0;;) {
+    //Make lines closer to viewer should be taller to match perspective
+    unsigned short index = ((j - framen) << 4) & 0x1FF;
+    // texture right now has size 16*54 = 864, but the % operation kills perf.
 
+    
+    //pixel = &texture_bp_pixels[(i*16 + framen) & 0xFF]; // funky, broken side movement
+    pixel = &texture_bp_pixels[index];
+    
     // funroll loops :)
     ciColor[i][0].move.data  = texture_pal_colors[*pixel++];
     ciColor[i][1].move.data  = texture_pal_colors[*pixel++];
@@ -140,12 +156,20 @@ static void Render(void) {
     ciColor[i][13].move.data = texture_pal_colors[*pixel++];
     ciColor[i][14].move.data = texture_pal_colors[*pixel++];
     ciColor[i][15].move.data = texture_pal_colors[*pixel++];
-  
+
+    lh--;
+    if(lh == 0) { lh = *lp; lp++; j++;}
+    
+    if(j > LHSIZE){
+      break;
+    }
+    
     i++;
   }
 #endif
   framen++;
-  framen = framen & 0xF;
+  //framen = framen & 0xF;
+  framen &= 0x3F;
   TaskWaitVBlank();
 }
 
