@@ -1,10 +1,13 @@
 TOPDIR := $(realpath ../..)
 
-CLEAN-FILES := data/tree-pal.* data/tree-data.* data/witch.c
+CLEAN-FILES := data/tree-pal.* data/tree-data.* \
+	data/ghost64x_01.c data/ghost64x_02.c data/ghost64x_03.c
 
 PNG2C.tree-data := --bitmap tree,320x1100x3
 PNG2C.tree-pal := --pixmap tree_cols,8x1100x12
-PNG2C.witch := --sprite witch,128,8 --palette witch,4
+PNG2C.ghost64x_01 := --sprite ghost1,80,4 --palette ghost,4
+PNG2C.ghost64x_02 := --sprite ghost2,80,4
+PNG2C.ghost64x_03 := --sprite ghost3,80,4
 
 include $(TOPDIR)/build/effect.mk
 

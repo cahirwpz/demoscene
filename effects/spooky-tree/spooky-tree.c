@@ -5,9 +5,14 @@
 #include "gfx.h"
 #include "sprite.h"
 
+#define _SYSTEM
+#include "system/cia.h"
+
 #include "data/tree-pal.c"
 #include "data/tree-data.c"
-#include "data/witch.c"
+#include "data/ghost64x_01.c"
+#include "data/ghost64x_02.c"
+#include "data/ghost64x_03.c"
 
 #define HEIGHT 256
 
@@ -15,7 +20,21 @@ static __code CopListT *cp;
 static __code CopInsPairT *bplptr;
 static __code CopInsPairT *sprptr;
 static __code CopInsT *colorLine[HEIGHT];
-static __code SpriteT witchAlt[8];
+static __code SpriteT ghost1Alt[4], ghost2Alt[4], ghost3Alt[4];
+
+static __code SpriteT *ghost[4] = {
+  ghost1,
+  ghost2,
+  ghost3,
+  ghost2,
+};
+
+static __code SpriteT *ghostAlt[4] = {
+  ghost1Alt,
+  ghost2Alt,
+  ghost3Alt,
+  ghost2Alt,
+};
 
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(100 + HEIGHT * (tree_cols_width + 3));
@@ -72,27 +91,28 @@ static void Init(void) {
   SetupPlayfield(MODE_LORES, tree_depth,
                  X(0), Y(0), tree_width, HEIGHT);
 
-  LoadColors(witch_colors, 16);
-  LoadColors(witch_colors, 20);
-  LoadColors(witch_colors, 24);
-  LoadColors(witch_colors, 28);
+  LoadColors(ghost_colors, 16);
+  LoadColors(ghost_colors, 20);
 
   cp = MakeCopperList();
   CopListActivate(cp);
 
   {
-    short i;
+    short i, j;
 
-    for (i = 0; i < 8; i++) {
-      SpriteUpdatePos(&witch[i],
-                      X((320 - 128) / 2 + 16 * i),
-                      Y((256 - witch_height) / 2));
-      CopySprite(&witchAlt[i], &witch[i]);
-      SpriteDither(&witch[i], 0x55555555);
-      SpriteDither(&witchAlt[i], 0xAAAAAAAA);
-      (void)SpriteDither;
+    for (j = 0; j < 3; j++) {
+      for (i = 0; i < 4; i++) {
+        SpriteUpdatePos(&ghost[j][i],
+                        X((320 - 64) / 2 + 16 * i),
+                        Y((256 - ghost1_height) / 2));
+        CopySprite(&ghostAlt[j][i], &ghost[j][i]);
+        SpriteDither(&ghost[j][i], 0x55555555);
+        SpriteDither(&ghostAlt[j][i], 0xAAAAAAAA);
+      }
+    }
 
-      CopInsSetSprite(&sprptr[i], &witch[i]);
+    for (i = 0; i < 4; i++) {
+      CopInsSetSprite(&sprptr[i], &ghost[0][i]);
     }
   }
 
@@ -138,15 +158,16 @@ static void Render(void) {
 
 static void VBlank(void) {
   static short active = 0;
+  short j = (ReadFrameCounter() >> 3) & 3;
   short i;
 
   if (active) {
-    for (i = 0; i < 8; i++) {
-      CopInsSetSprite(&sprptr[i], &witch[i]);
+    for (i = 0; i < 4; i++) {
+      CopInsSetSprite(&sprptr[i], &ghost[j][i]);
     }
   } else {
-    for (i = 0; i < 8; i++) {
-      CopInsSetSprite(&sprptr[i], &witchAlt[i]);
+    for (i = 0; i < 4; i++) {
+      CopInsSetSprite(&sprptr[i], &ghostAlt[j][i]);
     }
   }
 
