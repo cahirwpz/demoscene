@@ -13,6 +13,9 @@
 #include "data/ghost64x_01.c"
 #include "data/ghost64x_02.c"
 #include "data/ghost64x_03.c"
+#include "data/ghost32x_01.c"
+#include "data/ghost32x_02.c"
+#include "data/ghost32x_03.c"
 
 #define HEIGHT 256
 
@@ -21,6 +24,7 @@ static __code CopInsPairT *bplptr;
 static __code CopInsPairT *sprptr;
 static __code CopInsT *colorLine[HEIGHT];
 static __code SpriteT ghost1Alt[4], ghost2Alt[4], ghost3Alt[4];
+static __code SpriteT smallGhost1Alt[4], smallGhost2Alt[4], smallGhost3Alt[4];
 
 static __code SpriteT *ghost[4] = {
   ghost1,
@@ -35,6 +39,21 @@ static __code SpriteT *ghostAlt[4] = {
   ghost3Alt,
   ghost2Alt,
 };
+
+static __code SpriteT *smallGhost[4] = {
+  smallGhost1,
+  smallGhost2,
+  smallGhost3,
+  smallGhost2,
+};
+
+static __code SpriteT *smallGhostAlt[4] = {
+  smallGhost1Alt,
+  smallGhost2Alt,
+  smallGhost3Alt,
+  smallGhost2Alt,
+};
+
 
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(100 + HEIGHT * (tree_cols_width + 3));
@@ -87,12 +106,21 @@ static void SpriteDither(SpriteT *spr, u_int mask) {
   }
 }
 
+static void PrepSprite(SpriteT *sprA, SpriteT *sprB, hpos hp, vpos vp) {
+  SpriteUpdatePos(sprA, hp, vp);
+  CopySprite(sprB, sprA);
+  SpriteDither(sprA, 0x55555555);
+  SpriteDither(sprB, 0xAAAAAAAA);
+}
+
 static void Init(void) {
   SetupPlayfield(MODE_LORES, tree_depth,
                  X(0), Y(0), tree_width, HEIGHT);
 
   LoadColors(ghost_colors, 16);
   LoadColors(ghost_colors, 20);
+  LoadColors(smallGhost_colors, 24);
+  LoadColors(smallGhost_colors, 28);
 
   cp = MakeCopperList();
   CopListActivate(cp);
@@ -102,17 +130,22 @@ static void Init(void) {
 
     for (j = 0; j < 3; j++) {
       for (i = 0; i < 4; i++) {
-        SpriteUpdatePos(&ghost[j][i],
-                        X((320 - 64) / 2 + 16 * i),
-                        Y((256 - ghost1_height) / 2));
-        CopySprite(&ghostAlt[j][i], &ghost[j][i]);
-        SpriteDither(&ghost[j][i], 0x55555555);
-        SpriteDither(&ghostAlt[j][i], 0xAAAAAAAA);
+        PrepSprite(&ghost[j][i], &ghostAlt[j][i],
+                   X((320 - 64) / 2 + 16 * i),
+                   Y((256 - ghost1_height) / 2));
+      }
+      for (i = 0; i < 2; i++) {
+        PrepSprite(&smallGhost[j][i], &smallGhostAlt[j][i],
+                   X((320 - 256) / 2 + 16 * i),
+                   Y((256 - smallGhost1_height) / 2));
       }
     }
 
     for (i = 0; i < 4; i++) {
       CopInsSetSprite(&sprptr[i], &ghost[0][i]);
+    }
+    for (i = 0; i < 2; i++) {
+      CopInsSetSprite(&sprptr[i+4], &smallGhost[0][i]);
     }
   }
 
@@ -165,9 +198,15 @@ static void VBlank(void) {
     for (i = 0; i < 4; i++) {
       CopInsSetSprite(&sprptr[i], &ghost[j][i]);
     }
+    for (i = 0; i < 2; i++) {
+      CopInsSetSprite(&sprptr[i+4], &smallGhost[j][i]);
+    }
   } else {
     for (i = 0; i < 4; i++) {
       CopInsSetSprite(&sprptr[i], &ghostAlt[j][i]);
+    }
+    for (i = 0; i < 2; i++) {
+      CopInsSetSprite(&sprptr[i+4], &smallGhostAlt[j][i]);
     }
   }
 
