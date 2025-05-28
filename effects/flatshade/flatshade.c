@@ -22,9 +22,14 @@ static void Init(void) {
   cube = NewObject3D(&codi);
   cube->translate.z = fx4i(-250);
 
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
   buffer = NewBitmap(WIDTH, HEIGHT, 1, 0);
+
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
+  BitmapClear(screen[0]);
+  BitmapClear(screen[1]);
+  BitmapClear(buffer);
 
   /* keep the buffer as the last bitplane of both screens */
   screen[0]->planes[DEPTH] = buffer->planes[0];
@@ -37,7 +42,7 @@ static void Init(void) {
   bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
   CopListFinish(cp);
   CopListActivate(cp);
-  EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
+  EnableDMA(DMAF_RASTER);
 }
 
 static void Kill(void) {
