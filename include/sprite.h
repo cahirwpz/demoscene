@@ -77,6 +77,9 @@ static inline int SprDataSize(u_short height, u_short nctrl) {
   return (height + nctrl) * sizeof(u_int);
 }
 
+/* Determines height of the sprite based on `pos` and `ctl` words. */
+short SpriteHeight(SprDataT *sprdat);
+
 /*
  * Consumes space for `pos`, `ctr` and `height` long words of pixel data
  * from `dat` to construct storage for sprite data.
