@@ -65,10 +65,10 @@ static void Init(void) {
   cp[0] = MakeCopperList(0);
   cp[1] = MakeCopperList(1);
 
-  SpriteUpdatePos(&left_0, X(0), Y(0), left_info);
-  SpriteUpdatePos(&left_1, X(16), Y(0), left_info);
-  SpriteUpdatePos(&right_0, X(320 - 32), Y(0), right_info);
-  SpriteUpdatePos(&right_1, X(320 - 16), Y(0), right_info);
+  SpriteUpdatePos(&left_0, X(0), Y(0));
+  SpriteUpdatePos(&left_1, X(16), Y(0));
+  SpriteUpdatePos(&right_0, X(320 - 32), Y(0));
+  SpriteUpdatePos(&right_1, X(320 - 16), Y(0));
 
   CopListActivate(cp[1]);
   EnableDMA(DMAF_RASTER | DMAF_SPRITE);

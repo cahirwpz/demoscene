@@ -144,14 +144,14 @@ static void MoveTrees(u_int* arg) {
 static void MoveBranches(short bp[4][2]) {
   short i, j;
 
-  SpriteUpdatePos(&tree1_0, X(bp[0][0]), Y(-16), tree1_info);
-  SpriteUpdatePos(&tree1_1, X(bp[0][1]), Y(-16), tree1_info);
+  SpriteUpdatePos(&tree1_0, X(bp[0][0]), Y(-16));
+  SpriteUpdatePos(&tree1_1, X(bp[0][1]), Y(-16));
 
-  SpriteUpdatePos(&tree2_0, X(bp[1][0]), Y(-16), tree2_info);
-  SpriteUpdatePos(&tree2_1, X(bp[1][1]), Y(-16), tree2_info);
+  SpriteUpdatePos(&tree2_0, X(bp[1][0]), Y(-16));
+  SpriteUpdatePos(&tree2_1, X(bp[1][1]), Y(-16));
 
-  SpriteUpdatePos(&tree3_0, X(bp[2][0]), Y(-16), tree3_info);
-  SpriteUpdatePos(&tree3_1, X(bp[2][1]), Y(-16), tree3_info);
+  SpriteUpdatePos(&tree3_0, X(bp[2][0]), Y(-16));
+  SpriteUpdatePos(&tree3_1, X(bp[2][1]), Y(-16));
 
   for (i = 0; i <= 2; ++i) {
     for (j = 0; j <= 1; ++j) {
@@ -164,13 +164,13 @@ static void MoveBranches(short bp[4][2]) {
 }
 
 static void MoveMoon(SprDataT *spr[2]) {
-  SpriteUpdatePos(spr[0], X(16), Y(16), moon_info);
-  SpriteUpdatePos(spr[1], X(32), Y(16), moon_info);
+  SpriteUpdatePos(spr[0], X(16), Y(16));
+  SpriteUpdatePos(spr[1], X(32), Y(16));
 }
 
 static void MoveBat(SprDataT *spr[2]) {
-  SpriteUpdatePos(spr[0], X(batPos[0]), Y(batPos[1]), bat_info);
-  SpriteUpdatePos(spr[1], X(batPos[0]+16), Y(batPos[1]), bat_info);
+  SpriteUpdatePos(spr[0], X(batPos[0]), Y(batPos[1]));
+  SpriteUpdatePos(spr[1], X(batPos[0]+16), Y(batPos[1]));
 
   batPos[0] -= 1;
   if (batPos[0] < -64) {
@@ -179,8 +179,8 @@ static void MoveBat(SprDataT *spr[2]) {
 }
 
 static void MoveGhost(SprDataT *spr[2]) {
-  SpriteUpdatePos(spr[0], X(ghostData[0]),    Y(ghostData[1]), ghost_info);
-  SpriteUpdatePos(spr[1], X(ghostData[0]+16), Y(ghostData[1]), ghost_info);
+  SpriteUpdatePos(spr[0], X(ghostData[0]),    Y(ghostData[1]));
+  SpriteUpdatePos(spr[1], X(ghostData[0]+16), Y(ghostData[1]));
 
   ghostData[0] += 2;
   if (ghostData[0] > 320) {
@@ -532,14 +532,14 @@ static void SetupSprites(void) {
   EndSprite(&dat2_0);
   EndSprite(&dat2_1);
 
-  SpriteUpdatePos(&tree1_0, X(branchesPos[0][0]), Y(-16), tree1_info);
-  SpriteUpdatePos(&tree1_1, X(branchesPos[0][1]), Y(-16), tree1_info);
+  SpriteUpdatePos(&tree1_0, X(branchesPos[0][0]), Y(-16));
+  SpriteUpdatePos(&tree1_1, X(branchesPos[0][1]), Y(-16));
 
-  SpriteUpdatePos(&tree2_0, X(branchesPos[1][0]), Y(-16), tree2_info);
-  SpriteUpdatePos(&tree2_1, X(branchesPos[1][1]), Y(-16), tree2_info);
+  SpriteUpdatePos(&tree2_0, X(branchesPos[1][0]), Y(-16));
+  SpriteUpdatePos(&tree2_1, X(branchesPos[1][1]), Y(-16));
 
-  SpriteUpdatePos(&tree3_0, X(branchesPos[2][0]), Y(-16), tree3_info);
-  SpriteUpdatePos(&tree3_1, X(branchesPos[2][1]), Y(-16), tree3_info);
+  SpriteUpdatePos(&tree3_0, X(branchesPos[2][0]), Y(-16));
+  SpriteUpdatePos(&tree3_1, X(branchesPos[2][1]), Y(-16));
 }
 
 static CopListT *MakeCopperList(void) {

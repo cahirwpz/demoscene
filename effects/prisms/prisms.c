@@ -134,7 +134,7 @@ static CopListT *MakeCopperList(CopLineT **line) {
 
   for (i = 0; i < 8; i++) {
     CopInsSetSprite(&sprptr[i], sprite[i]);
-    SpriteUpdatePos(sprite[i], X(96 + 16 * i), Y((256 - 24) / 2), sprite_info);
+    SpriteUpdatePos(sprite[i], X(96 + 16 * i), Y((256 - 24) / 2));
   }
 
   return CopListFinish(cp);

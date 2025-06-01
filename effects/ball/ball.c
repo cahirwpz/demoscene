@@ -308,8 +308,8 @@ static void PositionSprite(SprDataT *sprite[8], short xo, short yo) {
   short n = 4;
 
   while (--n >= 0) {
-    SpriteUpdatePos(*sprite++, X(x), Y(y), 64, false);
-    SpriteUpdatePos(*sprite++, X(x), Y(y), 64, true);
+    SpriteUpdatePos(*sprite++, X(x), Y(y));
+    SpriteUpdatePos(*sprite++, X(x), Y(y));
 
     x += 16;
   }

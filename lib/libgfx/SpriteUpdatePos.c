@@ -1,8 +1,28 @@
 #include <sprite.h>
 
-void SpriteUpdatePos(SprDataT *sprdat, hpos hstart, vpos vstart, short height, bool attached) {
+static short SpriteHeight(SprDataT *sprdat) {
+  u_char *raw = (u_char *)sprdat;
+  short vstart, vstop, lowctl;
+
+  vstart = *raw++;
+  raw++;
+  vstop = *raw++;
+  lowctl = *raw++;
+
+  if (lowctl & 4)
+    vstart |= 0x100;
+  if (lowctl & 2)
+    vstop |= 0x100;
+
+  return vstop - vstart;
+}
+
+void SpriteUpdatePos(SprDataT *sprdat, hpos hstart, vpos vstart) {
+  u_char *raw = (u_char *)sprdat;
   short hs = hstart.hpos;
   short vs = vstart.vpos;
+  short height = SpriteHeight(sprdat);
+  short attached = sprdat->ctl & 0x80;
 
   /*
    * SPRxPOS:
@@ -27,7 +47,7 @@ void SpriteUpdatePos(SprDataT *sprdat, hpos hstart, vpos vstart, short height, b
     u_short vstop = vs + height;
     u_char lowctl = hs & 1;
 
-    stbi(sprdat, vstop);
+    *raw++ = vstop;
 
     if (attached)
       lowctl += 0x80;
@@ -35,6 +55,6 @@ void SpriteUpdatePos(SprDataT *sprdat, hpos hstart, vpos vstart, short height, b
       lowctl += 4;
     if (vstop & 0x100)
       lowctl += 2;
-    stbi(sprdat, lowctl);
+    *raw++ = lowctl;
   }
 }

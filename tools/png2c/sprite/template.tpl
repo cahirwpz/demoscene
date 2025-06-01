@@ -1,6 +1,4 @@
 #define {{.Name}}_height {{.Height}}
-#define {{.Name}}_attached {{.Attached}}
-#define {{.Name}}_info {{.Height}}, {{.Attached}}
 
 {{ range .Sprites -}}
 static __data_chip SprDataT {{.Name}} = {

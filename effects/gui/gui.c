@@ -64,7 +64,7 @@ static CopListT *MakeCopperList(void) {
 
   CopSetupBitplanes(cp, screen, DEPTH);
   CopInsSetSprite(&sprptr[0], &pointer);
-  SpriteUpdatePos(&pointer, X(0), Y(0), pointer_info);
+  SpriteUpdatePos(&pointer, X(0), Y(0));
   return CopListFinish(cp);
 }
 
@@ -114,7 +114,7 @@ static bool HandleEvent(void) {
       return false;
   } else if (ev->type == EV_MOUSE) {
     GuiHandleMouseEvent(gui, &ev->mouse);
-    SpriteUpdatePos(&pointer, X(ev->mouse.x), Y(ev->mouse.y), pointer_info);
+    SpriteUpdatePos(&pointer, X(ev->mouse.x), Y(ev->mouse.y));
   } else if (ev->type == EV_GUI) {
     WidgetT *wg = ev->gui.widget;
 

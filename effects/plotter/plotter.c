@@ -38,7 +38,7 @@ static CopListT *MakeCopperList(void) {
   sprptr = CopSetupSprites(cp);
   for (i = 0; i < 8; i++) {
     CopInsSetSprite(&sprptr[i], background_1[i]);
-    SpriteUpdatePos(background_1[i], X(16 * i), Y(0), background_1_info);
+    SpriteUpdatePos(background_1[i], X(16 * i), Y(0));
   }
 
   CopWait(cp, Y(-1), HP(0));
@@ -170,7 +170,7 @@ static void Render(void) {
 
     for (i = 0; i < 8; i++) {
       CopInsSetSprite(&sprptr[i], background[num][i]);
-      SpriteUpdatePos(background[num][i], X(16 * i), Y(0), background_1_info);
+      SpriteUpdatePos(background[num][i], X(16 * i), Y(0));
     }
   }
 }

@@ -264,10 +264,10 @@ static void Init(void) {
   /* Place sprites 0-1 above playfield, and 2-7 below playfield. */
   custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P_SP27 | BPLCON2_PF1P_SP27;
 
-  SpriteUpdatePos(&stripes_0, X(0), Y(0), stripes_info);
-  SpriteUpdatePos(&stripes_1, X(0), Y(0), stripes_info);
-  SpriteUpdatePos(&stripes_2, X(0), Y(0), stripes_info);
-  SpriteUpdatePos(&stripes_3, X(0), Y(0), stripes_info);
+  SpriteUpdatePos(&stripes_0, X(0), Y(0));
+  SpriteUpdatePos(&stripes_1, X(0), Y(0));
+  SpriteUpdatePos(&stripes_2, X(0), Y(0));
+  SpriteUpdatePos(&stripes_3, X(0), Y(0));
 
   cp[0] = MakeCopperList(&state[0]);
   cp[1] = MakeCopperList(&state[1]);

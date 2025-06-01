@@ -84,7 +84,7 @@ static void Load(void) {
     short xo = (WIDTH - 32) / 2 + (i & 1 ? 16 : 0);
     short yo = (HEIGHT - 128) / 2;
 
-    SpriteUpdatePos(thunder[i], X(xo), Y(yo), thunder_info);
+    SpriteUpdatePos(thunder[i], X(xo), Y(yo));
   }
 
   FloorPrecalc();

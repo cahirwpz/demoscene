@@ -102,7 +102,7 @@ static CopListT *MakeCopperList(void) {
 
   for (i = 0; i < 8; i++) {
     CopInsSetSprite(&sprptr[i], sprite[i]);
-    SpriteUpdatePos(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4), sprite_info);
+    SpriteUpdatePos(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4));
   }
 
   return CopListFinish(cp);
