@@ -1,11 +1,8 @@
-#include "effect.h"
-#include "copper.h"
-#include "gfx.h"
-#include "blitter.h"
-#include "circle.h"
-#include "fx.h"
-#include "2d.h"
-#include "sprite.h"
+#include <effect.h>
+#include <copper.h>
+#include <blitter.h>
+#include <fx.h>
+#include <sprite.h>
 #include <stdlib.h>
 
 #define WIDTH 320
@@ -104,8 +101,8 @@ static CopListT *MakeCopperList(void) {
   }
 
   for (i = 0; i < 8; i++) {
-    CopInsSetSprite(&sprptr[i], &sprite[i]);
-    SpriteUpdatePos(&sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4));
+    CopInsSetSprite(&sprptr[i], sprite[i]);
+    SpriteUpdatePos(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4), sprite_info);
   }
 
   return CopListFinish(cp);

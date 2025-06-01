@@ -1,8 +1,9 @@
 #define {{.Name}}_height {{.Height}}
-#define {{.Name}}_sprites {{.Count}}
+#define {{.Name}}_attached {{.Attached}}
+#define {{.Name}}_info {{.Height}}, {{.Attached}}
 
-{{ range .Sprites }}
-static __data_chip SprDataT {{.Name}}_sprdat = {
+{{ range .Sprites -}}
+static __data_chip SprDataT {{.Name}} = {
   .pos = SPRPOS(0, 0),
   .ctl = SPRCTL(0, 0, {{.Attached}}, {{.Height}}),
   .data = {
@@ -11,25 +12,14 @@ static __data_chip SprDataT {{.Name}}_sprdat = {
     {{ end -}}
   }
 };
-{{ end }}
+{{ end -}}
 
-{{ if eq .Count 1 }}
-static __data SpriteT {{.Name}} = {
-{{ range .Sprites }}
-  .sprdat = &{{.Name}}_sprdat,
-  .height = {{.Height}},
-  .attached = {{.Attached}},
-{{ end }}
-};
-{{else}}
-static __data SpriteT {{.Name}}[{{.Count}}] = {
+{{- if .Array }}
+#define {{.Name}}_sprites {{.Count}}
+
+static __data SprDataT *{{.Name}}[{{.Count}}] = {
   {{ range .Sprites -}}
-  {
-    .sprdat = &{{.Name}}_sprdat,
-    .height = {{.Height}},
-    .attached = {{.Attached}},
-  },
-  {{ end }}
+  &{{.Name}},
+  {{ end -}}
 };
-{{ end }}
-
+{{ end -}}

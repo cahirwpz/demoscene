@@ -17,7 +17,7 @@ static PixmapT *textureHi, *textureLo;
 static PixmapT *chunky;
 static BitmapT *bitmap;
 static SprDataT *sprdat;
-static SpriteT sprite[2][8];
+static SprDataT *sprite[2][8];
 
 #include "data/dragon-bg.c"
 #include "data/texture-15.c"
@@ -85,7 +85,7 @@ static CopListT *MakeCopperList(int active) {
 
   CopSetupBitplanes(cp, &background, S_DEPTH);
   for (i = 0; i < 8; i++)
-    CopInsSetSprite(&sprptr[i], &sprite[active][i]);
+    CopInsSetSprite(&sprptr[i], sprite[active][i]);
   return CopListFinish(cp);
 }
 
@@ -114,7 +114,7 @@ static void Init(void) {
 
     for (i = 0; i < 2; i++)
       for (j = 0; j < 8; j++) {
-        MakeSprite(&dat, 64, j & 1, &sprite[i][j]);
+        sprite[i][j] = MakeSprite(&dat, 64, j & 1);
         EndSprite(&dat);
       }
   }
@@ -265,7 +265,7 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
   }
 }
 
-static void BitmapToSprite(BitmapT *input, SpriteT sprite[8]) {
+static void BitmapToSprite(BitmapT *input, SprDataT *sprite[8]) {
   void *planes = input->planes[0];
   short bltsize = (input->height << 6) | 1;
   short i = 0;
@@ -280,8 +280,8 @@ static void BitmapToSprite(BitmapT *input, SpriteT sprite[8]) {
   custom->bltdmod = 2;
 
   for (i = 0; i < 4; i++) {
-    SprDataT *sprdat0 = (sprite++)->sprdat;
-    SprDataT *sprdat1 = (sprite++)->sprdat;
+    SprDataT *sprdat0 = *sprite++;
+    SprDataT *sprdat1 = *sprite++;
 
     WaitBlitter();
     custom->bltapt = planes + i * 2;
@@ -302,17 +302,14 @@ static void BitmapToSprite(BitmapT *input, SpriteT sprite[8]) {
   }
 }
 
-static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
+static void PositionSprite(SprDataT *sprite[8], short xo, short yo) {
   short x = (S_WIDTH - WIDTH) / 2 + xo;
   short y = (S_HEIGHT - HEIGHT) / 2 + yo;
   short n = 4;
 
   while (--n >= 0) {
-    SpriteT *spr0 = sprite++;
-    SpriteT *spr1 = sprite++;
-
-    SpriteUpdatePos(spr0, X(x), Y(y));
-    SpriteUpdatePos(spr1, X(x), Y(y));
+    SpriteUpdatePos(*sprite++, X(x), Y(y), 64, false);
+    SpriteUpdatePos(*sprite++, X(x), Y(y), 64, true);
 
     x += 16;
   }

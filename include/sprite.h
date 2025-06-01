@@ -43,12 +43,6 @@ typedef struct SprData {
   SprWordT data[__FLEX_ARRAY];
 } SprDataT;
 
-typedef struct Sprite {
-  SprDataT *sprdat;
-  u_short height;
-  bool attached;
-} SpriteT;
-
 /*
  * SPRxPOS:
  *  Bits 15-8 contain the low 8 bits of VSTART
@@ -67,10 +61,10 @@ typedef struct Sprite {
  */
 #define SPRCTL(X, Y, A, H)                                                     \
   (u_short)(                                                                   \
-   ((u_short)(((Y) + (H) + 1)) << 8) |                                         \
+   ((u_short)(((Y) + (H))) << 8) |                                             \
    ((A) ? 0x80 : 0) |                                                          \
    (((Y) >> 6) & 4) |                                                          \
-   (((u_short)((Y) + (H) + 1) >> 7) & 2) |                                     \
+   (((u_short)((Y) + (H)) >> 7) & 2) |                                         \
    ((X) & 1))
 
 extern SprDataT NullSprData[];
@@ -87,16 +81,14 @@ static inline int SprDataSize(u_short height, u_short nctrl) {
  * Consumes space for `pos`, `ctr` and `height` long words of pixel data
  * from `dat` to construct storage for sprite data.
  *
- * Information about sprite will be written back to `spr` structure.
  * Marks sprite as attached if `attached` is set to true.
  *
  * `datp` will point to next usable sprite data (possibly uninitialized).
  * You should call MakeSprite or EndSprite on this value.
  *
- * Returns pointer to first word of sprite data.
+ * Returns pointer to first control word of the sprite.
  */
-SprWordT *MakeSprite(SprDataT **datp, u_int height, bool attached,
-                     SpriteT *spr);
+SprDataT *MakeSprite(SprDataT **datp, short height, bool attached);
 
 /*
  * Terminate sprite data for DMA channel by writing zero long word after
@@ -105,14 +97,14 @@ SprWordT *MakeSprite(SprDataT **datp, u_int height, bool attached,
 void EndSprite(SprDataT **datp);
 
 /* Don't call it for null sprites. */
-void SpriteUpdatePos(SpriteT *spr, hpos hstart, vpos vstart);
+void SpriteUpdatePos(SprDataT *sprdat, hpos hstart, vpos vstart);
 
 CopInsPairT *CopSetupSprites(CopListT *list);
 
 void ResetSprites(void);
 
-static inline void CopInsSetSprite(CopInsPairT *sprptr, SpriteT *spr) {
-  CopInsSet32(sprptr, spr->sprdat);
+static inline void CopInsSetSprite(CopInsPairT *sprptr, SprDataT *sprdat) {
+  CopInsSet32(sprptr, sprdat);
 }
 
 #endif

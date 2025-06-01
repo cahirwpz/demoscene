@@ -28,7 +28,7 @@ func Make(in *image.Paletted, cfg image.Config, opts map[string]any) string {
 		log.Panicf("Image depth is %v, expected 2!", depth)
 	}
 
-	var stride int = ((o.Width + 15) & ^15) / 16
+	var stride = ((o.Width + 15) & ^15) / 16
 	// Binary data
 	bpl := util.Planar(in.Pix, o.Width, o.Height, depth, true)
 	n := o.Width / 16
@@ -42,7 +42,7 @@ func Make(in *image.Paletted, cfg image.Config, opts map[string]any) string {
 	for i := 0; i < n; i++ {
 		o.Sprites[i].Name = o.Name
 		if o.Width > 16 {
-			o.Sprites[i].Name += fmt.Sprintf("%v", i)
+			o.Sprites[i].Name += fmt.Sprintf("_%v", i)
 		}
 
 		o.Sprites[i].Attached = o.Attached && i%2 == 1
@@ -79,6 +79,9 @@ func bindParams(p map[string]any) (out Opts) {
 	out.Name = p["name"].(string)
 	out.Height = p["height"].(int)
 	out.Count = p["count"].(int)
+	if v, ok := p["array"]; ok {
+		out.Array = v.(bool)
+	}
 	if v, ok := p["attached"]; ok {
 		out.Attached = v.(bool)
 	}
@@ -89,6 +92,7 @@ func bindParams(p map[string]any) (out Opts) {
 
 type Opts struct {
 	Count int
+	Array bool
 	Sprite
 	// Template-specific data
 	Sprites []Sprite
