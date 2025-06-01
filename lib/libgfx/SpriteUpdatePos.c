@@ -10,8 +10,8 @@ void SpriteUpdatePos(SprDataT *sprdat, hpos hstart, vpos vstart, short height, b
    *  Bits 7-0 contain the high 8 bits of HSTART
    */
 
-  stbi(sprdat, vs);
-  stbi(sprdat, (u_short)hs >> 1);
+  *raw++ = vs;
+  *raw++ = (u_short)hs >> 1;
  
   /*
    * SPRxCTL:
