@@ -81,14 +81,14 @@ static CopListT *MakeCopperList(StateT *state) {
 
   CopWait(cp, Y(-1), HP(0));
  
-  state->sprite = CopMove32(cp, sprpt[0], stripes_0); /* up */
-  CopMove32(cp, sprpt[1], stripes_1);
-  CopMove32(cp, sprpt[2], stripes_2); /* down */
-  CopMove32(cp, sprpt[3], stripes_3);
-  CopMove32(cp, sprpt[4], stripes_0); /* up */
-  CopMove32(cp, sprpt[5], stripes_1);
-  CopMove32(cp, sprpt[6], stripes_2); /* down */
-  CopMove32(cp, sprpt[7], stripes_3);
+  state->sprite = CopMove32(cp, sprpt[0], stripes_0->data); /* up */
+  CopMove32(cp, sprpt[1], stripes_1->data);
+  CopMove32(cp, sprpt[2], stripes_2->data); /* down */
+  CopMove32(cp, sprpt[3], stripes_3->data);
+  CopMove32(cp, sprpt[4], stripes_0->data); /* up */
+  CopMove32(cp, sprpt[5], stripes_1->data);
+  CopMove32(cp, sprpt[6], stripes_2->data); /* down */
+  CopMove32(cp, sprpt[7], stripes_3->data);
 
   for (y = 0, b = 0; y < HEIGHT; y++) {
     vpos vp = Y(y);

@@ -1,7 +1,7 @@
 #include <sprite.h>
 
 CopInsPairT *CopSetupSprites(CopListT *list) {
-  SpriteT *spr = &NullSprData;
+  SpriteT *spr = NullSprData;
   CopInsPairT *sprptr = CopInsPtr(list);
   short n = 8;
   int i = 0;

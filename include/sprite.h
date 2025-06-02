@@ -69,7 +69,7 @@ typedef struct Sprite {
 
 #define SPREND() ((SprDataT){0, 0})
 
-extern SpriteT NullSprData;
+extern SpriteT NullSprData[];
 
 /*
  * Calculates space for sprite data to be fed into DMA channel.
@@ -80,7 +80,7 @@ static inline int SprDataSize(u_short height, u_short nctrl) {
 }
 
 /* Determines height of the sprite based on `pos` and `ctl` words. */
-short SpriteHeight(SpriteT *sprdat);
+short SpriteHeight(SpriteT *spr);
 
 /*
  * Consumes space for `pos`, `ctr` and `height` long words of pixel data
@@ -102,14 +102,14 @@ SpriteT *MakeSprite(SprDataT **datp, short height, bool attached);
 void EndSprite(SprDataT **datp);
 
 /* Don't call it for null sprites. */
-void SpriteUpdatePos(SpriteT *sprdat, hpos hstart, vpos vstart);
+void SpriteUpdatePos(SpriteT *spr, hpos hstart, vpos vstart);
 
 CopInsPairT *CopSetupSprites(CopListT *list);
 
 void ResetSprites(void);
 
-static inline void CopInsSetSprite(CopInsPairT *sprptr, SpriteT *sprdat) {
-  CopInsSet32(sprptr, sprdat);
+static inline void CopInsSetSprite(CopInsPairT *sprptr, SpriteT *spr) {
+  CopInsSet32(sprptr, spr);
 }
 
 #endif

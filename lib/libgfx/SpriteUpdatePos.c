@@ -1,10 +1,10 @@
 #include <sprite.h>
 
-void SpriteUpdatePos(SpriteT *sprdat, hpos hstart, vpos vstart) {
-  u_char *raw = (u_char *)sprdat;
+void SpriteUpdatePos(SpriteT *spr, hpos hstart, vpos vstart) {
+  u_char *raw = (u_char *)spr;
   short hs = hstart.hpos;
   short vs = vstart.vpos;
-  short height = SpriteHeight(sprdat);
+  short height = SpriteHeight(spr);
 
   /*
    * SPRxPOS:
