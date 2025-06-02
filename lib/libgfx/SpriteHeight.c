@@ -1,6 +1,6 @@
 #include <sprite.h>
 
-short SpriteHeight(SprDataT *sprdat) {
+short SpriteHeight(SpriteT *sprdat) {
   u_char *raw = (u_char *)sprdat;
   short vstart, vstop, height;
 

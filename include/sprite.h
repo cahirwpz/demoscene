@@ -35,13 +35,13 @@
  * well. Data for another channel would begin just after a terminator.
  */
 
-typedef u_short SprWordT[2];
+typedef u_short SprDataT[2];
 
-typedef struct SprData {
+typedef struct Sprite {
   u_short pos;
   u_short ctl;
-  SprWordT data[__FLEX_ARRAY];
-} SprDataT;
+  SprDataT data[__FLEX_ARRAY];
+} SpriteT;
 
 /*
  * SPRxPOS:
@@ -67,7 +67,9 @@ typedef struct SprData {
    (((u_short)((Y) + (H)) >> 7) & 2) |                                         \
    ((X) & 1))
 
-extern SprDataT NullSprData[];
+#define SPREND() ((SprDataT){0, 0})
+
+extern SpriteT NullSprData;
 
 /*
  * Calculates space for sprite data to be fed into DMA channel.
@@ -78,7 +80,7 @@ static inline int SprDataSize(u_short height, u_short nctrl) {
 }
 
 /* Determines height of the sprite based on `pos` and `ctl` words. */
-short SpriteHeight(SprDataT *sprdat);
+short SpriteHeight(SpriteT *sprdat);
 
 /*
  * Consumes space for `pos`, `ctr` and `height` long words of pixel data
@@ -91,7 +93,7 @@ short SpriteHeight(SprDataT *sprdat);
  *
  * Returns pointer to first control word of the sprite.
  */
-SprDataT *MakeSprite(SprDataT **datp, short height, bool attached);
+SpriteT *MakeSprite(SprDataT **datp, short height, bool attached);
 
 /*
  * Terminate sprite data for DMA channel by writing zero long word after
@@ -100,13 +102,13 @@ SprDataT *MakeSprite(SprDataT **datp, short height, bool attached);
 void EndSprite(SprDataT **datp);
 
 /* Don't call it for null sprites. */
-void SpriteUpdatePos(SprDataT *sprdat, hpos hstart, vpos vstart);
+void SpriteUpdatePos(SpriteT *sprdat, hpos hstart, vpos vstart);
 
 CopInsPairT *CopSetupSprites(CopListT *list);
 
 void ResetSprites(void);
 
-static inline void CopInsSetSprite(CopInsPairT *sprptr, SprDataT *sprdat) {
+static inline void CopInsSetSprite(CopInsPairT *sprptr, SpriteT *sprdat) {
   CopInsSet32(sprptr, sprdat);
 }
 

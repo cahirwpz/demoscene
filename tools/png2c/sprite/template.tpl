@@ -1,23 +1,25 @@
 #define {{.Name}}_height {{.Height}}
 
 {{ range .Sprites -}}
-static __data_chip SprDataT {{.Name}} = {
-  .pos = SPRPOS(0, 0),
-  .ctl = SPRCTL(0, 0, {{.Attached}}, {{.Height}}),
-  .data = {
-    {{ range .Data -}}
-    {{ . }}
-    {{ end -}}
-  }
+static __data_chip SprDataT {{.Name}}_sprdat[] = {
+  { SPRPOS(0, 0), SPRCTL(0, 0, {{.Attached}}, {{.Height}}) },
+  {{ range .Data -}}
+  {{ . }}
+  {{ end -}}
+  SPREND()
 };
+{{ end }}
+
+{{ range .Sprites -}}
+#define {{.Name}} ((SpriteT *){{.Name}}_sprdat)
 {{ end -}}
 
 {{- if .Array }}
 #define {{.Name}}_sprites {{.Count}}
 
-static __data SprDataT *{{.Name}}[{{.Count}}] = {
+static __data SpriteT *{{.Name}}[{{.Count}}] = {
   {{ range .Sprites -}}
-  &{{.Name}},
+  {{.Name}},
   {{ end -}}
 };
 {{ end -}}

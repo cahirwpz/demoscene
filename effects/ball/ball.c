@@ -17,7 +17,7 @@ static PixmapT *textureHi, *textureLo;
 static PixmapT *chunky;
 static BitmapT *bitmap;
 static SprDataT *sprdat;
-static SprDataT *sprite[2][8];
+static SpriteT *sprite[2][8];
 
 #include "data/dragon-bg.c"
 #include "data/texture-15.c"
@@ -265,7 +265,7 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
   }
 }
 
-static void BitmapToSprite(BitmapT *input, SprDataT *sprite[8]) {
+static void BitmapToSprite(BitmapT *input, SpriteT *sprite[8]) {
   void *planes = input->planes[0];
   short bltsize = (input->height << 6) | 1;
   short i = 0;
@@ -280,29 +280,29 @@ static void BitmapToSprite(BitmapT *input, SprDataT *sprite[8]) {
   custom->bltdmod = 2;
 
   for (i = 0; i < 4; i++) {
-    SprDataT *sprdat0 = *sprite++;
-    SprDataT *sprdat1 = *sprite++;
+    SpriteT *spr0 = *sprite++;
+    SpriteT *spr1 = *sprite++;
 
     WaitBlitter();
     custom->bltapt = planes + i * 2;
-    custom->bltdpt = &sprdat0->data[0][0];
+    custom->bltdpt = &spr0->data[0][0];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &sprdat0->data[0][1];
+    custom->bltdpt = &spr0->data[0][1];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &sprdat1->data[0][0];
+    custom->bltdpt = &spr1->data[0][0];
     custom->bltsize = bltsize;
 
     WaitBlitter();
-    custom->bltdpt = &sprdat1->data[0][1];
+    custom->bltdpt = &spr1->data[0][1];
     custom->bltsize = bltsize;
   }
 }
 
-static void PositionSprite(SprDataT *sprite[8], short xo, short yo) {
+static void PositionSprite(SpriteT *sprite[8], short xo, short yo) {
   short x = (S_WIDTH - WIDTH) / 2 + xo;
   short y = (S_HEIGHT - HEIGHT) / 2 + yo;
   short n = 4;

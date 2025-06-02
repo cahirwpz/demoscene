@@ -63,8 +63,6 @@ func Make(in *image.Paletted, cfg image.Config, opts map[string]any) string {
 			b := bpl[offset+j+stride]
 			words = append(words, fmt.Sprintf("{ 0x%04x, 0x%04x },", a, b))
 		}
-		words = append(words, "/* sprite channel terminator */")
-		words = append(words, "{ 0x0000, 0x0000 },")
 
 		o.Sprites[i].Data = words
 		o.Sprites[i].Height = o.Height

@@ -144,7 +144,7 @@ static void DrawPlotter(BitmapT *screen, short frameCount) {
   }
 }
 
-static __code SprDataT **background[3] = {
+static __code SpriteT **background[3] = {
   background_1,
   background_2,
   background_3,

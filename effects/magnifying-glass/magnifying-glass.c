@@ -19,7 +19,7 @@ static __code BitmapT *segment_bp;
 static __code u_char *texture_hi;
 static __code u_char *texture_lo;
 static __code SprDataT *sprdat;
-static __code SprDataT *sprite[8];
+static __code SpriteT *sprite[8];
 static __code CopListT *cp;
 
 #include "data/logo-gtn.c"
@@ -403,7 +403,7 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
   }
 }
 
-static void PositionSprite(SprDataT *sprite[8], short xo, short yo) {
+static void PositionSprite(SpriteT *sprite[8], short xo, short yo) {
   short x = xo;
   short n = 4;
 
@@ -459,7 +459,7 @@ static void CropPixmapBlitter(const PixmapT *input, u_short x0, u_short y0,
   }
 }
 
-static void PlanarToSprite(const BitmapT *planar, SprDataT *sprites[8]) {
+static void PlanarToSprite(const BitmapT *planar, SpriteT *sprites[8]) {
   /*
    * Copy out planar format into sprites
    * This function takes care of interlacing SPRxDATA and SPRxDATB registers
@@ -469,7 +469,7 @@ static void PlanarToSprite(const BitmapT *planar, SprDataT *sprites[8]) {
 
   for (i = 0; i < 4; i++) {
     // Sprite 0, plane 0
-    void *sprdat =  sprites[i*2]->data;
+    void *sprdat = sprites[i*2]->data;
     {
       WaitBlitter();
 

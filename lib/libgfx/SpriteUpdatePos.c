@@ -1,6 +1,6 @@
 #include <sprite.h>
 
-void SpriteUpdatePos(SprDataT *sprdat, hpos hstart, vpos vstart) {
+void SpriteUpdatePos(SpriteT *sprdat, hpos hstart, vpos vstart) {
   u_char *raw = (u_char *)sprdat;
   short hs = hstart.hpos;
   short vs = vstart.vpos;
