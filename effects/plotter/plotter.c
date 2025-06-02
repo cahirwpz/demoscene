@@ -37,8 +37,8 @@ static CopListT *MakeCopperList(void) {
 
   sprptr = CopSetupSprites(cp);
   for (i = 0; i < 8; i++) {
-    CopInsSetSprite(&sprptr[i], &background_1[i]);
-    SpriteUpdatePos(&background_1[i], X(16 * i), Y(0));
+    CopInsSetSprite(&sprptr[i], background_1[i]);
+    SpriteUpdatePos(background_1[i], X(16 * i), Y(0));
   }
 
   CopWait(cp, Y(-1), HP(0));
@@ -144,7 +144,7 @@ static void DrawPlotter(BitmapT *screen, short frameCount) {
   }
 }
 
-static __code SpriteT *background[3] = {
+static __code SpriteT **background[3] = {
   background_1,
   background_2,
   background_3,
@@ -169,8 +169,8 @@ static void Render(void) {
     short num = mod16(div16(frameCount, 5), 3);
 
     for (i = 0; i < 8; i++) {
-      CopInsSetSprite(&sprptr[i], &background[num][i]);
-      SpriteUpdatePos(&background[num][i], X(16 * i), Y(0));
+      CopInsSetSprite(&sprptr[i], background[num][i]);
+      SpriteUpdatePos(background[num][i], X(16 * i), Y(0));
     }
   }
 }

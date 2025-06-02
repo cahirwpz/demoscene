@@ -138,7 +138,7 @@ static void Abduct(void) {
   if (counter % 3 == 0) {
     if (coq_pos > 32) {
       --coq_pos;
-      SpriteUpdatePos(&coq,  X(152), Y(coq_pos));
+      SpriteUpdatePos(coq,  X(152), Y(coq_pos));
     } else {
       phase = RETRACT_BEAM;
     }
@@ -169,8 +169,8 @@ static void RetractBeam(void) {
     beam_pos[0].hpos++;
     beam_pos[1].hpos--;
 
-    SpriteUpdatePos(&side_beam_l, beam_pos[0], Y(56));
-    SpriteUpdatePos(&side_beam_r, beam_pos[1], Y(56));
+    SpriteUpdatePos(side_beam_l, beam_pos[0], Y(56));
+    SpriteUpdatePos(side_beam_r, beam_pos[1], Y(56));
 
     if (h >= 64) {
       BitmapClearArea(screen[0], &ring_area);
@@ -179,9 +179,9 @@ static void RetractBeam(void) {
     }
 
     if (beam_pos[0].hpos >= 137 + 15 + DIWHP) {
-      SpriteUpdatePos(&side_beam_l, HP(0), VP(0));
-      SpriteUpdatePos(&side_beam_r, HP(0), VP(0));
-      SpriteUpdatePos(&coq, HP(0), VP(0));
+      SpriteUpdatePos(side_beam_l, HP(0), VP(0));
+      SpriteUpdatePos(side_beam_r, HP(0), VP(0));
+      SpriteUpdatePos(coq, HP(0), VP(0));
       phase = ESCAPE;
     }
   }
@@ -211,15 +211,15 @@ static CopListT *MakeCopperList(void) {
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   sprptr = CopSetupSprites(cp);
 
-  CopInsSetSprite(&sprptr[0], &coq);
-  CopInsSetSprite(&sprptr[2], &mid_beam);
-  CopInsSetSprite(&sprptr[4], &side_beam_l);
-  CopInsSetSprite(&sprptr[5], &side_beam_r);
+  CopInsSetSprite(&sprptr[0], coq);
+  CopInsSetSprite(&sprptr[2], mid_beam);
+  CopInsSetSprite(&sprptr[4], side_beam_l);
+  CopInsSetSprite(&sprptr[5], side_beam_r);
 
-  SpriteUpdatePos(&coq,         X(152), Y(coq_pos));
-  SpriteUpdatePos(&mid_beam,    X(152), Y(56));
-  SpriteUpdatePos(&side_beam_l, X(137), Y(56));
-  SpriteUpdatePos(&side_beam_r, X(167), Y(56));
+  SpriteUpdatePos(coq,         X(152), Y(coq_pos));
+  SpriteUpdatePos(mid_beam,    X(152), Y(56));
+  SpriteUpdatePos(side_beam_l, X(137), Y(56));
+  SpriteUpdatePos(side_beam_r, X(167), Y(56));
 
   beam_pal_cp = CopLoadColors(cp, beam_pal[0], 21);
 
