@@ -123,6 +123,7 @@ func main() {
 				pms.Param{Name: "height", CastType: pms.TYPE_INT},
 				pms.Param{Name: "count", CastType: pms.TYPE_INT},
 				pms.Param{Name: "attached", CastType: pms.TYPE_BOOL, Value: false},
+				pms.Param{Name: "array", CastType: pms.TYPE_BOOL, Value: false},
 			)
 			out += sprite.Make(pm, cfg, opts)
 		}

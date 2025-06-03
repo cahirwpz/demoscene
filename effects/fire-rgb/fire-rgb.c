@@ -167,8 +167,8 @@ static CopListT *MakeCopperList(void) {
 static void Init(void) {
   screen[0] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH + (IsAGA() ? 2 : 0), 0);
   screen[1] = NewBitmap(WIDTH * 4, HEIGHT, DEPTH + (IsAGA() ? 2 : 0), 0);
-  chunky[0] = MemAlloc(WIDTH * 4 * HEIGHT, MEMF_CHIP);
-  chunky[1] = MemAlloc(WIDTH * 4 * HEIGHT, MEMF_CHIP);
+  chunky[0] = MemAlloc(WIDTH * 4 * HEIGHT, MEMF_CHIP|MEMF_CLEAR);
+  chunky[1] = MemAlloc(WIDTH * 4 * HEIGHT, MEMF_CHIP|MEMF_CLEAR);
   fire = MemAlloc(WIDTH * HEIGHT * 2, MEMF_CHIP|MEMF_CLEAR);
 
   EnableDMA(DMAF_BLITTER);

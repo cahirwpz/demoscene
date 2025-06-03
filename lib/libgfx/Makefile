@@ -47,6 +47,7 @@ SOURCES := \
 	SetupDisplayWindow.c \
 	SetupMode.c \
 	SetupPlayfield.c \
+	SpriteHeight.c \
 	SpriteUpdatePos.c \
 	c2p_1x1_4.asm
 

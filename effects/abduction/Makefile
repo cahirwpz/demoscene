@@ -1,6 +1,7 @@
 TOPDIR := $(realpath ../..)
 
-CLEAN-FILES := data/beam.c data/coq.c data/ring.c data/ufo.c data/bkg.c data/mid_beam.c data/side_beam_l.c data/side_beam_r.c
+CLEAN-FILES := data/beam.c data/coq.c data/ring.c data/ufo.c data/bkg.c \
+  data/mid_beam.c data/side_beam_l.c data/side_beam_r.c
 
 PNG2C.bkg  := --bitmap bkg,320x256x1
 PNG2C.ufo  := --bitmap ufo,104x39x4
