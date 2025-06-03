@@ -16,7 +16,7 @@ static __code CopListT *cp;
 
 // 16 transitions = 1 row of texture tiles
 #define NTRANSITIONS (7*16)
-#define VPSTART 0xC8
+#define VPSTART 0xBC
 #define ROWHEIGHT 1
 
 // Debug / work in progress switches
@@ -32,17 +32,18 @@ static __code CopListT *cp;
 //static CopInsT *ciTransition[NTRANSITIONS*3];
 static CopInsT *ciColor[NTRANSITIONS];
 
+// maximum 58 - otherwise we drop FPS
 #define LHSIZE 58
 static char lineheights[] = {1, 1, 1, 1,  1, 1, 1, 1,
 			     1, 1, 1, 1,  1, 1, 1, 1,
 			     1, 1, 1, 1,  1, 1, 1, 1,
 			     1, 2, 1, 2,  1, 2, 1, 2,
 			     1, 2, 1, 2,  2, 2, 2, 2,
-			     2, 2, 2, 2,  2, 2, 2, 2,
+			     2, 2, 2, 2,  2, 3, 2, 3,
 			     3, 3, 3, 3,  4, 4, 4, 4,
 			     4, 4, 4, 4,  4, 4, 4, 4};
 
-  
+
 #include "data/roller-bg.c"
 #include "data/magland16.c"
 
@@ -55,25 +56,24 @@ static CopListT *MakeCopperList(CopListT *cp) {
   short ffcross = 0;
   (void) i; (void) ffcross; (void) ciColor; (void) vp; (void) j; (void) p;
   CopSetupBitplanes(cp, &roller_bp, S_DEPTH);
-  CopSetColor(cp, 0, 0x033);
+  CopSetColor(cp, 0, 0x000);
 
   k = 0;
 
-  /////CopWait(cp, VP(vp), HP(0x40));
   for(i = 0; i < NTRANSITIONS; ) {
 
     CopWaitMask(cp, VP(vp), HP(0x00), 0xFF, 0xFF);
-    CopSetColor(cp, 0, 0xF00);
+    CopSetColor(cp, 0, 0x000);
     CopWaitMask(cp, VP(vp), HP(LFRAME), 0x00, 0xFF);
 
     // Colors are overwritten in Render anyway
     ciColor[i++] = CopSetColor(cp, 0, 0x000);
     for(j = 1; j < 16; j++){
-      CopSetColor(cp, j, j << 4);
+      CopSetColor(cp, j, 0x000);
     }
-    
+
     CopWait(cp, VP(vp), HP(RFRAME)); // This one cannot be masked
-    CopSetColor(cp, 0, 0x00F);
+    CopSetColor(cp, 0, 0x000);
 
     vp += 1;
 
@@ -84,7 +84,7 @@ static CopListT *MakeCopperList(CopListT *cp) {
 
 static void Init(void) {
   // TODO: calculate copper list length
-  CopListT *cp = NewCopList(0x3000);
+  CopListT *cp = NewCopList(0x1000);
   SetupPlayfield(MODE_LORES, S_DEPTH, X(0), Y(0), S_WIDTH, S_HEIGHT);
 
   cp = MakeCopperList(cp);
@@ -125,20 +125,19 @@ static void Render(void) {
   static short framen = 0;
   short i = 0, lh = lineheights[0];
   short j = 0;
-  char *lp = lineheights; // lp = lineheights pointer
+  char *lp = lineheights;
   u_char *pixel = 0; // pointer to texture pixel
   (void) i; (void) pixel;
-  
-#if __ANIMATE 
+
+#if __ANIMATE
   for(i = 0;;) {
     //Make lines closer to viewer should be taller to match perspective
     unsigned short index = ((j - framen) << 4) & 0x1FF;
     // texture right now has size 16*54 = 864, but the % operation kills perf.
 
-    
-    //pixel = &texture_bp_pixels[(i*16 + framen) & 0xFF]; // funky, broken side movement
+
     pixel = &texture_bp_pixels[index];
-    
+
     // funroll loops :)
     ciColor[i][0].move.data  = texture_pal_colors[*pixel++];
     ciColor[i][1].move.data  = texture_pal_colors[*pixel++];
@@ -157,18 +156,18 @@ static void Render(void) {
     ciColor[i][14].move.data = texture_pal_colors[*pixel++];
     ciColor[i][15].move.data = texture_pal_colors[*pixel++];
 
+    // Next line?
     lh--;
     if(lh == 0) { lh = *lp; lp++; j++;}
-    
+
     if(j > LHSIZE){
       break;
     }
-    
+
     i++;
   }
 #endif
   framen++;
-  //framen = framen & 0xF;
   framen &= 0x3F;
   TaskWaitVBlank();
 }
