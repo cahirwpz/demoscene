@@ -6,9 +6,6 @@
 #include <system/interrupt.h>
 #include <common.h>
 
-// #include "data/v_lines.h"
-
-
 #define WIDTH  320
 #define HEIGHT 256
 #define DEPTH  3
@@ -445,7 +442,7 @@ static CopListT *MakeCopperList(void) {
 
   for (i = 0; i < HEIGHT; i++) {
     line = buffer[line_sel[i]];
-    CopWaitSafe(cp, Y(i), 0);
+    CopWaitSafe(cp, Y(i), X(-DIWHP));
     cop_lines[i][0] = CopMove32(cp, bplpt[0], line);
     cop_lines[i][1] = CopMove32(cp, bplpt[1], line + (WIDTH / 8));
     cop_lines[i][2] = CopMove32(cp, bplpt[2], line + (WIDTH / 8) * 2);
@@ -505,8 +502,6 @@ static void Kill(void) {
 PROFILE(Darkroom);
 
 static void Render(void) {
-  (void)CalculateBuffer;
-  (void)HorizontalLines;
   ProfilerStart(Darkroom);
   {
     CalculateFirstLine(buffer, v_lines);              // 1860c [26r]
