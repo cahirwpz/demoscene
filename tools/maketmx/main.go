@@ -12,6 +12,7 @@ import (
 	"image/draw"
 	"log"
 	"os"
+	"path"
 )
 
 const (
@@ -185,6 +186,7 @@ func main() {
 	reportTileCount(tileCount, tilePos)
 
 	name := misc.PathWithoutExt(flag.Arg(0))
+	basename := path.Base(name)
 
 	misc.SavePNG(name+"_tiles.png", tiles)
 
@@ -201,18 +203,18 @@ func main() {
 		TileHeight:  N}
 	outputMap.TileSet = tmx.TiledTileSet{
 		FirstGid:   1,
-		Name:       name + "_tiles",
+		Name:       basename + "_tiles",
 		TileWidth:  N,
 		TileHeight: N,
 		Spacing:    0,
 		TileCount:  len(tilePos),
 		Columns:    1}
 	outputMap.TileSet.Image = tmx.TiledImage{
-		Source: name + "_tiles.png",
+		Source: basename + "_tiles.png",
 		Width:  tiles.Bounds().Max.X,
 		Height: tiles.Bounds().Max.Y}
 	outputMap.Layer = tmx.TiledLayer{
-		Name:   name + "_map",
+		Name:   basename + "_map",
 		Width:  width / N,
 		Height: height / N}
 	outputMap.Layer.Data = tmx.NewTiledData(dumpTileMap(tileMap, width/N, height/N))
