@@ -6,16 +6,15 @@
 #include <system/interrupt.h>
 #include <common.h>
 
-#define WIDTH  320
+#define WIDTH 320
 #define HEIGHT 256
-#define DEPTH  3
+#define DEPTH 3
 
-#define V_LINE_WIDTH  14
-#define H_LINE_WIDTH  7
+#define V_LINE_WIDTH 14
+#define H_LINE_WIDTH 7
 #define NO_OF_V_LINES 8
 #define NO_OF_H_LINES 6
-#define MAX_SPEED     4
-
+#define MAX_SPEED 4
 
 static CopListT *cp;
 static CopInsPairT *bplptr;
@@ -24,63 +23,49 @@ static short active = 0;
 
 static CopInsPairT *cop_lines[HEIGHT][3];
 
-// buffer contains all possible lines for each frame (base line + light intensity from 0 to 7)
+// buffer contains all possible lines for each frame (base line + light
+// intensity from 0 to 7)
 static u_char __data_chip *buffer[8];
 // line_sel describes which line from buffer to choose for each line on screen
 static short line_sel[HEIGHT];
 
-// {position, thickness} 
+// {position, thickness}
 static short v_lines[NO_OF_V_LINES][2] = {
-  {0, 7},
-  {70, 14},
-  {140, 9},
-  {166, 14},
-  {236, 9},
-  {306, 7},
-  {30, 9},
-  {290, 14},
+  {0, 7}, {70, 14}, {140, 9}, {166, 14}, {236, 9}, {306, 7}, {30, 9}, {290, 14},
 };
 // Only position, all harizontal lines have the same thickness (for now)
-static short h_lines[NO_OF_H_LINES] = {
-  0,
-  60,
-  120,
-  129,
-  189,
-  230
-};
-
+static short h_lines[NO_OF_H_LINES] = {0, 60, 120, 129, 189, 230};
 
 static void CalculateFirstLine(u_char *buf[8], short vl[NO_OF_V_LINES][2]) {
   /*
    * Calculate first line by adding light intensity of vertical lines.
    */
   short word, offset, aux, thickness;
-  u_short* V_LINE;
+  u_short *V_LINE;
   short i, j;
   short *ptr;
-  short *line0 = (short*)buf[0];
-  short *line1 = (short*)(buf[0] + (WIDTH / 8));
-  short *line2 = (short*)(buf[0] + (WIDTH / 8) * 2);
+  short *line0 = (short *)buf[0];
+  short *line1 = (short *)(buf[0] + (WIDTH / 8));
+  short *line2 = (short *)(buf[0] + (WIDTH / 8) * 2);
   short *lines[3] = {line0, line1, line2};
 
   // V_LINE_n where n means line thickness in pixels
 
   static u_short V_LINE_14[3] = {
-    13107 << 2,  // bin: 11001100110011
+    13107 << 2, // bin: 11001100110011
     3900 << 2,  // bin: 00111100111100
-    192 << 2,  // bin: 00000011000000
+    192 << 2,   // bin: 00000011000000
   };
 
   static u_short V_LINE_9[3] = {
-    341 << 7,  // bin: 101010101
-    198 << 7,  // bin: 011000110
+    341 << 7, // bin: 101010101
+    198 << 7, // bin: 011000110
     56 << 7,  // bin: 000111000
   };
 
   static u_short V_LINE_7[3] = {
-    85 << 9,  // bin: 1010101
-    54 << 9,  // bin: 0110110
+    85 << 9, // bin: 1010101
+    54 << 9, // bin: 0110110
     8 << 9,  // bin: 0001000
   };
 
@@ -99,20 +84,18 @@ static void CalculateFirstLine(u_char *buf[8], short vl[NO_OF_V_LINES][2]) {
 
   if (thickness == 14) {
     V_LINE = V_LINE_14;
-  } else if (thickness == 9)
-  {
+  } else if (thickness == 9) {
     V_LINE = V_LINE_9;
   } else {
     V_LINE = V_LINE_7;
   }
-  
 
   /* Draw first beam */
   for (i = 0; i < 3; ++i) {
     ptr = lines[i];
     ptr[word] = V_LINE[i] >> offset;
     if (offset > (16 - thickness)) {
-      ptr[word+1] = V_LINE[i] << (16 - offset);
+      ptr[word + 1] = V_LINE[i] << (16 - offset);
     }
   }
 
@@ -126,8 +109,7 @@ static void CalculateFirstLine(u_char *buf[8], short vl[NO_OF_V_LINES][2]) {
 
     if (thickness == 14) {
       V_LINE = V_LINE_14;
-    } else if (thickness == 9)
-    {
+    } else if (thickness == 9) {
       V_LINE = V_LINE_9;
     } else {
       V_LINE = V_LINE_7;
@@ -139,8 +121,8 @@ static void CalculateFirstLine(u_char *buf[8], short vl[NO_OF_V_LINES][2]) {
     ptr[word] = ptr[word] ^ w1;
     if (offset > (16 - V_LINE_WIDTH)) {
       w2 = V_LINE[0] << (16 - offset);
-      c2 = ptr[word+1] & w2;
-      ptr[word+1] = ptr[word+1] ^ w2;
+      c2 = ptr[word + 1] & w2;
+      ptr[word + 1] = ptr[word + 1] ^ w2;
     }
 
     ptr = lines[1];
@@ -151,8 +133,8 @@ static void CalculateFirstLine(u_char *buf[8], short vl[NO_OF_V_LINES][2]) {
     c1 = ((aux ^ w1) & c1) ^ (aux & w1);
     if (offset > (16 - V_LINE_WIDTH)) {
       w2 = V_LINE[1] << (16 - offset);
-      aux = ptr[word+1];
-      ptr[word+1] = ptr[word+1] ^ w2 ^ c2;
+      aux = ptr[word + 1];
+      ptr[word + 1] = ptr[word + 1] ^ w2 ^ c2;
       c2 = ((aux ^ w2) & c2) ^ (aux & w2);
     }
 
@@ -163,43 +145,40 @@ static void CalculateFirstLine(u_char *buf[8], short vl[NO_OF_V_LINES][2]) {
     c1 = ((aux ^ w1) & c1) ^ (aux & w1);
     if (offset > (16 - V_LINE_WIDTH)) {
       w2 = V_LINE[2] << (16 - offset);
-      aux = ptr[word+1];
-      ptr[word+1] = ptr[word+1] ^ w2 ^ c2;
+      aux = ptr[word + 1];
+      ptr[word + 1] = ptr[word + 1] ^ w2 ^ c2;
       c2 = ((aux ^ w2) & c2) ^ (aux & w2);
     }
-    
+
     ptr[word] |= c1;
-    ptr[word+1] |= c2;
+    ptr[word + 1] |= c2;
     ptr = lines[0];
     ptr[word] |= c1;
-    ptr[word+1] |= c2;
+    ptr[word + 1] |= c2;
     ptr = lines[1];
     ptr[word] |= c1;
-    ptr[word+1] |= c2;
+    ptr[word + 1] |= c2;
   }
 }
 
 static void CalculateBuffer(u_char *buf[8]) {
   /*
-   * Add all possible light intensity (from 0 to (2^DEPTH)-1 to base line with vertical lines)
+   * Add all possible light intensity (from 0 to (2^DEPTH)-1 to base line with
+   * vertical lines)
    */
-  static short __data_chip carry[2][WIDTH/16];
+  static short __data_chip carry[2][WIDTH / 16];
 
-  static const short lines_bltadat [8][3] = {
-    {0x0000, 0x0000, 0x0000},
-    {0xFFFF, 0x0000, 0x0000},
-    {0x0000, 0xFFFF, 0x0000},
-    {0xFFFF, 0xFFFF, 0x0000},
-    {0x0000, 0x0000, 0xFFFF},
-    {0xFFFF, 0x0000, 0xFFFF},
-    {0x0000, 0xFFFF, 0xFFFF},
-    {0xFFFF, 0xFFFF, 0xFFFF},
+  static const short lines_bltadat[8][3] = {
+    {0x0000, 0x0000, 0x0000}, {0xFFFF, 0x0000, 0x0000},
+    {0x0000, 0xFFFF, 0x0000}, {0xFFFF, 0xFFFF, 0x0000},
+    {0x0000, 0x0000, 0xFFFF}, {0xFFFF, 0x0000, 0xFFFF},
+    {0x0000, 0xFFFF, 0xFFFF}, {0xFFFF, 0xFFFF, 0xFFFF},
   };
 
   short *base_line[3] = {
-    (short*) buf[0],
-    (short*)(buf[0] + (WIDTH / 8)),
-    (short*)(buf[0] + (WIDTH / 8) * 2),
+    (short *)buf[0],
+    (short *)(buf[0] + (WIDTH / 8)),
+    (short *)(buf[0] + (WIDTH / 8) * 2),
   };
 
   short i;
@@ -213,17 +192,17 @@ static void CalculateBuffer(u_char *buf[8]) {
   custom->bltbdat = -1;
   custom->bltcdat = -1;
   custom->bltddat = -1;
-  
+
   custom->bltafwm = -1;
   custom->bltalwm = -1;
-  
+
   custom->bltcon1 = 0;
-  
+
   for (i = 1; i < 8; ++i) {
     short *dest_line[3] = {
-      (short*)buf[i],
-      (short*)(buf[i] + (WIDTH / 8)),
-      (short*)(buf[i] + (WIDTH / 8) * 2),
+      (short *)buf[i],
+      (short *)(buf[i] + (WIDTH / 8)),
+      (short *)(buf[i] + (WIDTH / 8) * 2),
     };
 
     /* BITPLANE 0 */
@@ -253,7 +232,8 @@ static void CalculateBuffer(u_char *buf[8]) {
     custom->bltcpt = carry[0];
     custom->bltdpt = carry[1];
 
-    custom->bltcon0 = (SRCB | SRCC | DEST) | (NABC | ANBC | ABNC | ABC); // FULL ADDER CARRY
+    custom->bltcon0 =
+      (SRCB | SRCC | DEST) | (NABC | ANBC | ABNC | ABC); // FULL ADDER CARRY
 
     custom->bltsize = (1 << 6) | 20;
     WaitBlitter();
@@ -263,7 +243,8 @@ static void CalculateBuffer(u_char *buf[8]) {
     custom->bltcpt = carry[0];
     custom->bltdpt = dest_line[1];
 
-    custom->bltcon0 = (SRCB | SRCC | DEST) | (NANBC | NABNC | ANBNC | ABC); // FULL ADDER
+    custom->bltcon0 =
+      (SRCB | SRCC | DEST) | (NANBC | NABNC | ANBNC | ABC); // FULL ADDER
 
     custom->bltsize = (1 << 6) | 20;
     WaitBlitter();
@@ -275,7 +256,8 @@ static void CalculateBuffer(u_char *buf[8]) {
     custom->bltcpt = carry[1];
     custom->bltdpt = carry[0];
 
-    custom->bltcon0 = (SRCB | SRCC | DEST) | (NABC | ANBC | ABNC | ABC); // FULL ADDER CARRY
+    custom->bltcon0 =
+      (SRCB | SRCC | DEST) | (NABC | ANBC | ABNC | ABC); // FULL ADDER CARRY
 
     custom->bltsize = (1 << 6) | 20;
     WaitBlitter();
@@ -339,7 +321,7 @@ static void HorizontalLines(short *ls) {
 
   for (i = 0; i < HEIGHT; ++i) {
     if (*(ls++) > 7) {
-      *(ls-1) = 7;
+      *(ls - 1) = 7;
     }
   }
 }
@@ -354,9 +336,7 @@ static void Move(short hl[NO_OF_H_LINES], short vl[NO_OF_V_LINES][2]) {
     1, 2, 1, -1, -2, -1,
   };
 
-  static short mv[NO_OF_V_LINES] = {
-    1, 2, 1, -3, -2, -1, 1, -3
-  };
+  static short mv[NO_OF_V_LINES] = {1, 2, 1, -3, -2, -1, 1, -3};
 
   if (frameCount % 2 == 0) {
     return;
@@ -376,7 +356,6 @@ static void Move(short hl[NO_OF_H_LINES], short vl[NO_OF_V_LINES][2]) {
   vl[5][0] += mv[5];
   vl[6][0] += mv[6];
   vl[7][0] += mv[7];
-
 
   for (i = 0; i < NO_OF_H_LINES; ++i) {
     if (hl[i] > HEIGHT - 7) {
@@ -401,27 +380,31 @@ static void Move(short hl[NO_OF_H_LINES], short vl[NO_OF_V_LINES][2]) {
   }
 }
 
-static void UpdateCopperLines(u_char **buf, short *ls, CopInsPairT *cl[HEIGHT][3]) {
+static void UpdateCopperLines(u_char **buf, short *ls,
+                              CopInsPairT *cl[HEIGHT][3]) {
   /*
    * Update copper list so correct lines from buffer are displayed.
-   * Note that most of the lines will still be "base line", so there is no need to update them.
+   * Note that most of the lines will still be "base line", so there is no need
+   * to update them.
    */
   short i, j;
 
   for (i = 0; i < NO_OF_H_LINES; ++i) {
     short pos = h_lines[i] - MAX_SPEED;
-    short* L;
+    short *L;
     CopInsPairT **clp;
 
-    if (pos < 0) continue;
+    if (pos < 0)
+      continue;
 
     clp = &(cl[pos][0]);
     L = &(ls[pos]);
 
     for (j = 0; j < H_LINE_WIDTH + 2 * MAX_SPEED; ++j) {
-      void* line = buf[*(L++)];
+      void *line = buf[*(L++)];
 
-      if (pos > 255) break;
+      if (pos > 255)
+        break;
 
       CopInsSet32(*clp++, line);
       CopInsSet32(*clp++, line + (WIDTH / 8) * 1);
@@ -432,10 +415,9 @@ static void UpdateCopperLines(u_char **buf, short *ls, CopInsPairT *cl[HEIGHT][3
   }
 }
 
-
 static CopListT *MakeCopperList(void) {
   short i = 0;
-  void* line;
+  void *line;
 
   cp = NewCopList(4096);
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
@@ -504,11 +486,11 @@ PROFILE(Darkroom);
 static void Render(void) {
   ProfilerStart(Darkroom);
   {
-    CalculateFirstLine(buffer, v_lines);              // 1860c [26r]
-    CalculateBuffer(buffer);                          // 2406c [55r]
-    HorizontalLines(line_sel);                        // 406c  [57r]
-    Move(h_lines, v_lines);                           // 996c  [3r]
-    UpdateCopperLines(buffer, line_sel, cop_lines);   // 592c  [50r]
+    CalculateFirstLine(buffer, v_lines);            // 1860c [26r]
+    CalculateBuffer(buffer);                        // 2406c [55r]
+    HorizontalLines(line_sel);                      // 406c  [57r]
+    Move(h_lines, v_lines);                         // 996c  [3r]
+    UpdateCopperLines(buffer, line_sel, cop_lines); // 592c  [50r]
   }
   ProfilerStop(Darkroom); // Total: 190r
 
