@@ -295,28 +295,26 @@ static void CalculateBuffer(u_char *buf[8]) {
   }
 }
 
-static void HorizontalLines(short *ls) {
+static void HorizontalLines(short ls[HEIGHT], short hl[NO_OF_H_LINES]) {
   /*
    * Fill line_sel with correct buffer line index
    */
   short i;
 
-  for (i = 0; i < HEIGHT; ++i) {
-    ls[i] = 0;
-  }
+  memset(ls, 0, sizeof(short) * HEIGHT);
 
   for (i = 0; i < NO_OF_H_LINES; ++i) {
-    short *pos = &ls[h_lines[i]];
+    short *pos = &ls[*hl++];
 
-    *(pos++) += 1;
-    *(pos++) += 2;
-    *(pos++) += 3;
-    *(pos++) += 4;
-    *(pos++) += 5;
-    *(pos++) += 4;
-    *(pos++) += 3;
-    *(pos++) += 2;
-    *(pos++) += 1;
+    pos[0] += 1;
+    pos[1] += 2;
+    pos[2] += 3;
+    pos[3] += 4;
+    pos[4] += 5;
+    pos[5] += 4;
+    pos[6] += 3;
+    pos[7] += 2;
+    pos[8] += 1;
   }
 
   for (i = 0; i < HEIGHT; ++i) {
@@ -488,11 +486,11 @@ static void Render(void) {
   {
     CalculateFirstLine(buffer, v_lines);            // 1860c [26r]
     CalculateBuffer(buffer);                        // 2406c [55r]
-    HorizontalLines(line_sel);                      // 406c  [57r]
+    HorizontalLines(line_sel, h_lines);             // 344c  [29r]
     Move(h_lines, v_lines);                         // 996c  [3r]
     UpdateCopperLines(buffer, line_sel, cop_lines); // 592c  [50r]
   }
-  ProfilerStop(Darkroom); // Total: 190r
+  ProfilerStop(Darkroom); // Total: 162r
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(&bplptr[i], screen[active]->planes[i]));
 
