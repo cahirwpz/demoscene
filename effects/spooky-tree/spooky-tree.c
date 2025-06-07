@@ -1,9 +1,10 @@
-#include "effect.h"
-#include "copper.h"
-#include "palette.h"
-#include "pixmap.h"
-#include "gfx.h"
-#include "sprite.h"
+#include <effect.h>
+#include <copper.h>
+#include <palette.h>
+#include <pixmap.h>
+#include <gfx.h>
+#include <sprite.h>
+#include <system/memory.h>
 
 #define _SYSTEM
 #include "system/cia.h"
@@ -23,31 +24,31 @@ static __code CopListT *cp;
 static __code CopInsPairT *bplptr;
 static __code CopInsPairT *sprptr;
 static __code CopInsT *colorLine[HEIGHT];
-static __code SpriteT ghost1Alt[4], ghost2Alt[4], ghost3Alt[4];
-static __code SpriteT smallGhost1Alt[4], smallGhost2Alt[4], smallGhost3Alt[4];
+static __code SpriteT *ghost1Alt[4], *ghost2Alt[4], *ghost3Alt[4];
+static __code SpriteT *smallGhost1Alt[4], *smallGhost2Alt[4], *smallGhost3Alt[4];
 
-static __code SpriteT *ghost[4] = {
+static __code SpriteT **ghost[4] = {
   ghost1,
   ghost2,
   ghost3,
   ghost2,
 };
 
-static __code SpriteT *ghostAlt[4] = {
+static __code SpriteT **ghostAlt[4] = {
   ghost1Alt,
   ghost2Alt,
   ghost3Alt,
   ghost2Alt,
 };
 
-static __code SpriteT *smallGhost[4] = {
+static __code SpriteT **smallGhost[4] = {
   smallGhost1,
   smallGhost2,
   smallGhost3,
   smallGhost2,
 };
 
-static __code SpriteT *smallGhostAlt[4] = {
+static __code SpriteT **smallGhostAlt[4] = {
   smallGhost1Alt,
   smallGhost2Alt,
   smallGhost3Alt,
@@ -96,9 +97,16 @@ static CopListT *MakeCopperList(void) {
   return CopListFinish(cp);
 }
 
+static SpriteT *CopySprite(SpriteT *orig) {
+  int size = SprDataSize(SpriteHeight(orig), 2);
+  SpriteT *copy = MemAlloc(size, MEMF_CHIP);
+  memcpy(copy, orig, size);
+  return copy;
+}
+
 static void SpriteDither(SpriteT *spr, u_int mask) {
-  u_int *data = (u_int *)&spr->sprdat->data[0];
-  short n = spr->height;
+  u_int *data = (u_int *)&spr->data[0];
+  short n = SpriteHeight(spr);
 
   while (n-- > 0) {
     *data++ &= mask;
@@ -106,11 +114,13 @@ static void SpriteDither(SpriteT *spr, u_int mask) {
   }
 }
 
-static void PrepSprite(SpriteT *sprA, SpriteT *sprB, hpos hp, vpos vp) {
+static SpriteT *PrepSprite(SpriteT *sprA, hpos hp, vpos vp) {
+  SpriteT *sprB;
   SpriteUpdatePos(sprA, hp, vp);
-  CopySprite(sprB, sprA);
+  sprB = CopySprite(sprA);
   SpriteDither(sprA, 0x55555555);
   SpriteDither(sprB, 0xAAAAAAAA);
+  return sprB;
 }
 
 static void Init(void) {
@@ -130,22 +140,22 @@ static void Init(void) {
 
     for (j = 0; j < 3; j++) {
       for (i = 0; i < 4; i++) {
-        PrepSprite(&ghost[j][i], &ghostAlt[j][i],
-                   X((320 - 64) / 2 + 16 * i),
-                   Y((256 - ghost1_height) / 2));
+        ghostAlt[j][i] = PrepSprite(ghost[j][i],
+                                    X((320 - 64) / 2 + 16 * i),
+                                    Y((256 - ghost1_height) / 2));
       }
       for (i = 0; i < 2; i++) {
-        PrepSprite(&smallGhost[j][i], &smallGhostAlt[j][i],
-                   X((320 - 256) / 2 + 16 * i),
-                   Y((256 - smallGhost1_height) / 2));
+        smallGhostAlt[j][i] = PrepSprite(smallGhost[j][i],
+                                         X((320 - 256) / 2 + 16 * i),
+                                         Y((256 - smallGhost1_height) / 2));
       }
     }
 
     for (i = 0; i < 4; i++) {
-      CopInsSetSprite(&sprptr[i], &ghost[0][i]);
+      CopInsSetSprite(&sprptr[i], ghost[0][i]);
     }
     for (i = 0; i < 2; i++) {
-      CopInsSetSprite(&sprptr[i+4], &smallGhost[0][i]);
+      CopInsSetSprite(&sprptr[i+4], smallGhost[0][i]);
     }
   }
 
@@ -196,17 +206,17 @@ static void VBlank(void) {
 
   if (active) {
     for (i = 0; i < 4; i++) {
-      CopInsSetSprite(&sprptr[i], &ghost[j][i]);
+      CopInsSetSprite(&sprptr[i], ghost[j][i]);
     }
     for (i = 0; i < 2; i++) {
-      CopInsSetSprite(&sprptr[i+4], &smallGhost[j][i]);
+      CopInsSetSprite(&sprptr[i+4], smallGhost[j][i]);
     }
   } else {
     for (i = 0; i < 4; i++) {
-      CopInsSetSprite(&sprptr[i], &ghostAlt[j][i]);
+      CopInsSetSprite(&sprptr[i], ghostAlt[j][i]);
     }
     for (i = 0; i < 2; i++) {
-      CopInsSetSprite(&sprptr[i+4], &smallGhostAlt[j][i]);
+      CopInsSetSprite(&sprptr[i+4], smallGhostAlt[j][i]);
     }
   }
 

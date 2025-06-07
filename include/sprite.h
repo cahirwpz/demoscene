@@ -101,9 +101,6 @@ SpriteT *MakeSprite(SprDataT **datp, short height, bool attached);
  */
 void EndSprite(SprDataT **datp);
 
-/* Makes a copy of sprite data by allocating chip memory. */
-void CopySprite(SpriteT *copy, SpriteT *orig);
-
 /* Don't call it for null sprites. */
 void SpriteUpdatePos(SpriteT *spr, hpos hstart, vpos vstart);
 

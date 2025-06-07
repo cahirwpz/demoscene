@@ -15,7 +15,6 @@ SOURCES := \
 	CopLoadColor.c \
 	CopLoadColorArray.c \
 	CopperStop.c \
-	CopySprite.c \
 	CopSetupBitplaneArea.c \
 	CopSetupBitplaneFetch.c \
 	CopSetupBitplanes.c \
