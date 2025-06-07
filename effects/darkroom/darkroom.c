@@ -29,14 +29,15 @@ static u_char __data_chip *buffer[8];
 // line_sel describes which line from buffer to choose for each line on screen
 static short line_sel[HEIGHT];
 
+typedef struct line { short pos; short width; } line;
 // {position, thickness}
-static short v_lines[NO_OF_V_LINES][2] = {
+static line v_lines[NO_OF_V_LINES] = {
   {0, 7}, {70, 14}, {140, 9}, {166, 14}, {236, 9}, {306, 7}, {30, 9}, {290, 14},
 };
 // Only position, all harizontal lines have the same thickness (for now)
 static short h_lines[NO_OF_H_LINES] = {0, 60, 120, 129, 189, 230};
 
-static void CalculateFirstLine(u_char *buf[8], short vl[NO_OF_V_LINES][2]) {
+static void CalculateFirstLine(u_char *buf[8], line vl[NO_OF_V_LINES]) {
   /*
    * Calculate first line by adding light intensity of vertical lines.
    */
@@ -78,9 +79,9 @@ static void CalculateFirstLine(u_char *buf[8], short vl[NO_OF_V_LINES][2]) {
   }
 
   /* Calculate coordinates */
-  word = vl[0][0] >> 4;
-  offset = vl[0][0] - (word << 4);
-  thickness = vl[0][1];
+  word = vl[0].pos >> 4;
+  offset = vl[0].pos - (word << 4);
+  thickness = vl[0].width;
 
   if (thickness == 14) {
     V_LINE = V_LINE_14;
@@ -103,9 +104,9 @@ static void CalculateFirstLine(u_char *buf[8], short vl[NO_OF_V_LINES][2]) {
   for (i = 1; i < NO_OF_V_LINES; ++i) {
     u_short w1, w2, c1, c2 = 0;
 
-    word = vl[i][0] >> 4;
-    offset = vl[i][0] - (word << 4);
-    thickness = vl[i][1];
+    word = vl[i].pos >> 4;
+    offset = vl[i].pos - (word << 4);
+    thickness = vl[i].width;
 
     if (thickness == 14) {
       V_LINE = V_LINE_14;
@@ -324,7 +325,7 @@ static void HorizontalLines(short ls[HEIGHT], short hl[NO_OF_H_LINES]) {
   }
 }
 
-static void Move(short hl[NO_OF_H_LINES], short vl[NO_OF_V_LINES][2]) {
+static void Move(short hl[NO_OF_H_LINES], line vl[NO_OF_V_LINES]) {
   /*
    * Change position of each line.
    */
@@ -334,26 +335,20 @@ static void Move(short hl[NO_OF_H_LINES], short vl[NO_OF_V_LINES][2]) {
     1, 2, 1, -1, -2, -1,
   };
 
-  static short mv[NO_OF_V_LINES] = {1, 2, 1, -3, -2, -1, 1, -3};
+  static short mv[NO_OF_V_LINES] = {
+    1, 2, 1, -3, -2, -1, 1, -3
+  };
 
   if (frameCount % 2 == 0) {
     return;
   }
+
   hl[0] += mh[0];
   hl[1] += mh[1];
   hl[2] += mh[2];
   hl[3] += mh[3];
   hl[4] += mh[4];
   hl[5] += mh[5];
-
-  vl[0][0] += mv[0];
-  vl[1][0] += mv[1];
-  vl[2][0] += mv[2];
-  vl[3][0] += mv[3];
-  vl[4][0] += mv[4];
-  vl[5][0] += mv[5];
-  vl[6][0] += mv[6];
-  vl[7][0] += mv[7];
 
   for (i = 0; i < NO_OF_H_LINES; ++i) {
     if (hl[i] > HEIGHT - 7) {
@@ -366,13 +361,22 @@ static void Move(short hl[NO_OF_H_LINES], short vl[NO_OF_V_LINES][2]) {
     }
   }
 
+  vl[0].pos += mv[0];
+  vl[1].pos += mv[1];
+  vl[2].pos += mv[2];
+  vl[3].pos += mv[3];
+  vl[4].pos += mv[4];
+  vl[5].pos += mv[5];
+  vl[6].pos += mv[6];
+  vl[7].pos += mv[7];
+
   for (i = 0; i < NO_OF_V_LINES; ++i) {
-    if (vl[i][0] > WIDTH - vl[i][1]) {
-      vl[i][0] = WIDTH - vl[i][1];
+    if (vl[i].pos > WIDTH - vl[i].width) {
+      vl[i].pos = WIDTH - vl[i].width;
       mv[i] *= -1;
     }
-    if (vl[i][0] < 0) {
-      vl[i][0] = 0;
+    if (vl[i].pos < 0) {
+      vl[i].pos = 0;
       mv[i] *= -1;
     }
   }
