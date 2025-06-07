@@ -46,64 +46,41 @@ static void CalculateFirstLine(line buf[3], linedesc vl[NO_OF_V_LINES]) {
   /*
    * Calculate first line by adding light intensity of vertical lines.
    */
-  short word, offset, aux, thickness;
   short i;
-  short *ptr;
 
   // V_LINE_n where n means line thickness in pixels
 
-  static const u_short V_LINE_14[3] = {
-    13107 << 2, // bin: 11001100110011
-    3900 << 2,  // bin: 00111100111100
-    192 << 2,   // bin: 00000011000000
+  static const u_int V_LINE_14[3] = {
+    13107 << 18, // bin: 11001100110011
+    3900 << 18,  // bin: 00111100111100
+    192 << 18,   // bin: 00000011000000
   };
 
-  static const u_short V_LINE_9[3] = {
-    341 << 7, // bin: 101010101
-    198 << 7, // bin: 011000110
-    56 << 7,  // bin: 000111000
+  static const u_int V_LINE_9[3] = {
+    341 << 23, // bin: 101010101
+    198 << 23, // bin: 011000110
+    56 << 23,  // bin: 000111000
   };
 
-  static const u_short V_LINE_7[3] = {
-    85 << 9, // bin: 1010101
-    54 << 9, // bin: 0110110
-    8 << 9,  // bin: 0001000
+  static const u_int V_LINE_7[3] = {
+    85 << 25, // bin: 1010101
+    54 << 25, // bin: 0110110
+    8 << 25,  // bin: 0001000
   };
 
-  const u_short *V_LINE;
+  const u_int *V_LINE;
 
   /* Set first line to 0 */
   memset(buf, 0, 3 * sizeof(line));
 
-  /* Calculate coordinates */
-  word = vl[0].pos >> 4;
-  offset = vl[0].pos - (word << 4);
-  thickness = vl[0].width;
-
-  if (thickness == 14) {
-    V_LINE = V_LINE_14;
-  } else if (thickness == 9) {
-    V_LINE = V_LINE_9;
-  } else {
-    V_LINE = V_LINE_7;
-  }
-
-  /* Draw first beam */
-  for (i = 0; i < 3; ++i) {
-    ptr = buf[i];
-    ptr[word] = V_LINE[i] >> offset;
-    if (offset > (16 - thickness)) {
-      ptr[word + 1] = V_LINE[i] << (16 - offset);
-    }
-  }
-
   /* Add rest of the beams */
-  for (i = 1; i < NO_OF_V_LINES; ++i) {
-    u_short w1, w2, c1, c2 = 0;
+  for (i = 0; i < NO_OF_V_LINES; ++i) {
+    u_int *ptr0, *ptr1, *ptr2;
+    u_int w, v, c = 0;
 
-    word = vl[i].pos >> 4;
-    offset = vl[i].pos - (word << 4);
-    thickness = vl[i].width;
+    short word = vl[i].pos >> 4;
+    short offset = vl[i].pos - (word << 4);
+    short thickness = vl[i].width;
 
     if (thickness == 14) {
       V_LINE = V_LINE_14;
@@ -113,49 +90,31 @@ static void CalculateFirstLine(line buf[3], linedesc vl[NO_OF_V_LINES]) {
       V_LINE = V_LINE_7;
     }
 
-    ptr = buf[0];
-    w1 = V_LINE[0] >> offset;
-    c1 = ptr[word] & w1;
-    ptr[word] = ptr[word] ^ w1;
-    if (offset > (16 - V_LINE_WIDTH)) {
-      w2 = V_LINE[0] << (16 - offset);
-      c2 = ptr[word + 1] & w2;
-      ptr[word + 1] = ptr[word + 1] ^ w2;
-    }
+    /* sum on bitplane 0 */
+    ptr0 = (u_int *)&buf[0][word];
+    w = V_LINE[0] >> offset;
+    v = *ptr0;
+    *ptr0 = v ^ w;
+    c = v & w;
 
-    ptr = buf[1];
-    w1 = V_LINE[1] >> offset;
+    /* sum on bitplane 1 */
+    ptr1 = (u_int *)&buf[1][word];
+    w = V_LINE[1] >> offset;
+    v = *ptr1;
+    *ptr1 = v ^ w ^ c;
+    c = ((v ^ w) & c) ^ (v & w);
 
-    aux = ptr[word];
-    ptr[word] = (ptr[word] ^ w1) ^ c1;
-    c1 = ((aux ^ w1) & c1) ^ (aux & w1);
-    if (offset > (16 - V_LINE_WIDTH)) {
-      w2 = V_LINE[1] << (16 - offset);
-      aux = ptr[word + 1];
-      ptr[word + 1] = ptr[word + 1] ^ w2 ^ c2;
-      c2 = ((aux ^ w2) & c2) ^ (aux & w2);
-    }
+    /* sum on bitplane 2 */
+    ptr2 = (u_int *)&buf[2][word];
+    w = V_LINE[2] >> offset;
+    v = *ptr2;
+    *ptr2 = v ^ w ^ c;
+    c = ((v ^ w) & c) ^ (v & w);
 
-    ptr = buf[2];
-    w1 = V_LINE[2] >> offset;
-    aux = ptr[word];
-    ptr[word] = ptr[word] ^ w1 ^ c1;
-    c1 = ((aux ^ w1) & c1) ^ (aux & w1);
-    if (offset > (16 - V_LINE_WIDTH)) {
-      w2 = V_LINE[2] << (16 - offset);
-      aux = ptr[word + 1];
-      ptr[word + 1] = ptr[word + 1] ^ w2 ^ c2;
-      c2 = ((aux ^ w2) & c2) ^ (aux & w2);
-    }
-
-    ptr[word] |= c1;
-    ptr[word + 1] |= c2;
-    ptr = buf[0];
-    ptr[word] |= c1;
-    ptr[word + 1] |= c2;
-    ptr = buf[1];
-    ptr[word] |= c1;
-    ptr[word + 1] |= c2;
+    /* saturation */
+    *ptr0 |= c;
+    *ptr1 |= c;
+    *ptr2 |= c;
   }
 }
 
@@ -459,13 +418,13 @@ PROFILE(Darkroom);
 static void Render(void) {
   ProfilerStart(Darkroom);
   {
-    CalculateFirstLine(buffer[0], v_lines);            // 1860c [26r]
-    CalculateBuffer(buffer);                        // 1806c [55r]
-    HorizontalLines(line_sel, h_lines);             // 344c  [29r]
-    Move(h_lines, v_lines);                         // 996c  [3r]
-    UpdateCopperLines(buffer, line_sel, cop_lines); // 592c  [50r]
+    CalculateFirstLine(buffer[0], v_lines);
+    CalculateBuffer(buffer);
+    HorizontalLines(line_sel, h_lines);
+    Move(h_lines, v_lines);
+    UpdateCopperLines(buffer, line_sel, cop_lines);
   }
-  ProfilerStop(Darkroom); // Total: 162r
+  ProfilerStop(Darkroom); // Total: 144r
 
   ITER(i, 0, DEPTH - 1, CopInsSet32(&bplptr[i], screen[active]->planes[i]));
 
