@@ -22,25 +22,20 @@ static __code CopListT *cp;
 // Debug / work in progress switches
 // Disable animation (do not rewrite copperlist in Render)
 #define __ANIMATE 1
-// Handle setting background color when outside bitplanes
-#define __HANDLEBG 1
 // Narrow the area where we set color 0 to pallete
 #define LFRAME ((0x3E + 2) << 1)
 #define RFRAME ((0xDF - 2) << 1)
 
 static CopInsT *ciColor[NTRANSITIONS];
 
-// maximum 58 - otherwise we drop FPS
 #define LHSIZE 58
-static char lineheights[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+static short lineheights[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                              1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 2,
                              1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 3,
                              3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4};
 
 #include "data/roller-bg.c"
 #include "data/magland16.c"
-
-typedef u_short palentry_t;
 
 static CopListT *MakeCopperList(CopListT *cp) {
   short i, j;
@@ -87,7 +82,7 @@ static void Kill(void) {
 
 // Patch the coppper instructions in memory
 static void Animate(short framen) {
-  char *lp = lineheights;
+  short *lp = lineheights;
   short lh = lineheights[0];
   short i, j;
  
@@ -95,26 +90,26 @@ static void Animate(short framen) {
     // Make lines closer to viewer should be taller to match perspective
     short index = ((j - framen) << 4) & 0x1FF;
     // texture right now has size 16*54 = 864, but the % operation kills perf.
-    u_char *pixel = &texture_bp_pixels[index];
+    u_short *pixel = &texture_bp_pixels[index];
     CopInsT *ci = ciColor[i];
 
     // funroll loops :)
-    CopInsSet16(&ci[0], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[1], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[2], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[3], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[4], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[5], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[6], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[7], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[8], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[9], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[10], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[11], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[12], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[13], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[14], texture_pal_colors[*pixel++]);
-    CopInsSet16(&ci[15], texture_pal_colors[*pixel++]);
+    CopInsSet16(&ci[0], *pixel++);
+    CopInsSet16(&ci[1], *pixel++);
+    CopInsSet16(&ci[2], *pixel++);
+    CopInsSet16(&ci[3], *pixel++);
+    CopInsSet16(&ci[4], *pixel++);
+    CopInsSet16(&ci[5], *pixel++);
+    CopInsSet16(&ci[6], *pixel++);
+    CopInsSet16(&ci[7], *pixel++);
+    CopInsSet16(&ci[8], *pixel++);
+    CopInsSet16(&ci[9], *pixel++);
+    CopInsSet16(&ci[10], *pixel++);
+    CopInsSet16(&ci[11], *pixel++);
+    CopInsSet16(&ci[12], *pixel++);
+    CopInsSet16(&ci[13], *pixel++);
+    CopInsSet16(&ci[14], *pixel++);
+    CopInsSet16(&ci[15], *pixel++);
 
     // Next line?
     lh--;
