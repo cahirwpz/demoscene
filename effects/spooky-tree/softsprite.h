@@ -17,7 +17,7 @@ typedef struct SprChan {
   SprDataT *curr;
   short length;
   short lastY; /* initially -1 */
-  SprDataT word[__FLEX_ARRAY];
+  SpriteT *spr;
 } SprChanT;
 
 static int SoftSpriteCompare(const SoftSpriteT *s1, const SoftSpriteT *s2) {
@@ -43,7 +43,7 @@ static void SoftSpriteSort(SoftSpriteT *arr, short n) {
      * Move elements of arr[0..i-1], that are greater than `tmp`,
      * to one position ahead of their current position.
      */
-    while (j >= 0 && SoftSpriteCompare(&arr[j], &key) < 0) {
+    while (j >= 0 && SoftSpriteCompare(&arr[j], &key) > 0) {
       arr[j + 1] = arr[j];
       j = j - 1;
     }
@@ -52,17 +52,16 @@ static void SoftSpriteSort(SoftSpriteT *arr, short n) {
 }
 
 static void SprChanReset(SprChanT *chan) {
-  chan->curr = chan->word;
+  chan->curr = (SprDataT *)chan->spr;
   chan->lastY = -1;
-  chan->word[0][0] = 0;
-  chan->word[0][1] = 0;
+  chan->spr->ctl = 0;
+  chan->spr->pos = 0;
 }
 
-SprChanT *AllocSprChan(int lines) {
-  SprChanT *chan = MemAlloc(sizeof(SprChanT) + lines * sizeof(SprDataT), MEMF_CHIP);
+void InitSprChan(SprChanT *chan, int lines) {
+  chan->spr = MemAlloc(lines * sizeof(SprDataT), MEMF_CHIP);
   chan->length = lines;
   SprChanReset(chan);
-  return chan;
 }
 
 static void ResetAllSprChan(SprChanT *chans) {
@@ -126,11 +125,13 @@ static void AppendSprite(SpriteT *dst, short y, short h, SpriteT *src) {
  * 4. Terminate all SprChan (EndSprite)
  */
 
-void RenderSprites(SprChanT *chans, SoftSpriteT *swsprs, int n) {
+void RenderSprites(SprChanT chans[8], SoftSpriteT *swsprs, int n) {
+  short i;
+
   SoftSpriteSort(swsprs, n);
   ResetAllSprChan(chans);
 
-  while (--n >= 0) {
+  for (i = 0; i < n; i++) {
     SoftSpriteT *swspr = swsprs++;
     SprChanT *chan;
     SpriteT *spr;
@@ -139,6 +140,8 @@ void RenderSprites(SprChanT *chans, SoftSpriteT *swsprs, int n) {
     short sy = swspr->y;
     short skip = 0;
     short sh = SpriteHeight(swspr->spr);
+
+    Log("[%d] sx = %d, sy = %d, sh = %d\n", i, sx, sy, sh);
 
     /* left edge */
     if (sx + 16 <= 0)

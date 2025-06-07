@@ -12,8 +12,8 @@
 #include "data/tree-pal.c"
 #include "data/tree-data.c"
 #include "data/ghost64x_01.c"
-#include "data/ghost64x_02.c"
-#include "data/ghost64x_03.c"
+//#include "data/ghost64x_02.c"
+//#include "data/ghost64x_03.c"
 #include "data/ghost32x_01.c"
 #include "data/ghost32x_02.c"
 #include "data/ghost32x_03.c"
@@ -26,38 +26,8 @@
 static __code CopListT *cp;
 static __code CopInsPairT *bplptr;
 static __code CopInsPairT *sprptr;
+static __code SprChanT sprchan[2][8];
 static __code CopInsT *colorLine[HEIGHT];
-static __code SpriteT *ghost1Alt[4], *ghost2Alt[4], *ghost3Alt[4];
-static __code SpriteT *smallGhost1Alt[4], *smallGhost2Alt[4], *smallGhost3Alt[4];
-
-static __code SpriteT **ghost[4] = {
-  ghost1,
-  ghost2,
-  ghost3,
-  ghost2,
-};
-
-static __code SpriteT **ghostAlt[4] = {
-  ghost1Alt,
-  ghost2Alt,
-  ghost3Alt,
-  ghost2Alt,
-};
-
-static __code SpriteT **smallGhost[4] = {
-  smallGhost1,
-  smallGhost2,
-  smallGhost3,
-  smallGhost2,
-};
-
-static __code SpriteT **smallGhostAlt[4] = {
-  smallGhost1Alt,
-  smallGhost2Alt,
-  smallGhost3Alt,
-  smallGhost2Alt,
-};
-
 
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(100 + HEIGHT * (tree_cols_width + 3));
@@ -100,12 +70,9 @@ static CopListT *MakeCopperList(void) {
   return CopListFinish(cp);
 }
 
-static SpriteT *CopySprite(SpriteT *orig) {
-  int size = SprDataSize(SpriteHeight(orig), 2);
-  SpriteT *copy = MemAlloc(size, MEMF_CHIP);
-  memcpy(copy, orig, size);
-  return copy;
-}
+#if 0
+SpriteDither(sprA, 0x55555555);
+SpriteDither(sprB, 0xAAAAAAAA);
 
 static void SpriteDither(SpriteT *spr, u_int mask) {
   u_int *data = (u_int *)&spr->data[0];
@@ -116,14 +83,113 @@ static void SpriteDither(SpriteT *spr, u_int mask) {
     mask = ~mask;
   }
 }
+#endif
 
-static SpriteT *PrepSprite(SpriteT *sprA, hpos hp, vpos vp) {
-  SpriteT *sprB;
-  SpriteUpdatePos(sprA, hp, vp);
-  sprB = CopySprite(sprA);
-  SpriteDither(sprA, 0x55555555);
-  SpriteDither(sprB, 0xAAAAAAAA);
-  return sprB;
+#define softsprites_count 16
+static __code SoftSpriteT softsprites[16] = {
+  /* small ghost top-left */
+  {
+    .x = 32 + 16 * 0,
+    .y = 32,
+    .spr = smallGhost1_0,
+  },
+  {
+    .x = 32 + 16 * 1,
+    .y = 32,
+    .spr = smallGhost1_1,
+  },
+  /* small ghost top-right */
+  {
+    .x = 256 + 16 * 0,
+    .y = 32,
+    .spr = smallGhost1_0,
+  },
+  {
+    .x = 256 + 16 * 1,
+    .y = 32,
+    .spr = smallGhost1_1,
+  },
+  /* small ghost bottom-left */
+  {
+    .x = 32 + 16 * 0,
+    .y = 192,
+    .spr = smallGhost3_0,
+  },
+  {
+    .x = 32 + 16 * 1,
+    .y = 192,
+    .spr = smallGhost3_1,
+  },
+  /* small ghost bottom-right */
+  {
+    .x = 256 + 16 * 0,
+    .y = 192,
+    .spr = smallGhost3_0,
+  },
+  {
+    .x = 256 + 16 * 1,
+    .y = 192,
+    .spr = smallGhost3_1,
+  },
+  /* small ghost center-left */
+  {
+    .x = 32 + 16 * 0,
+    .y = (256 - smallGhost1_height) / 2,
+    .spr = smallGhost2_0,
+  },
+  {
+    .x = 32 + 16 * 1,
+    .y = (256 - smallGhost1_height) / 2,
+    .spr = smallGhost2_1,
+  },
+  /* small ghost center-right */
+  {
+    .x = 256 + 16 * 0,
+    .y = (256 - smallGhost1_height) / 2,
+    .spr = smallGhost2_0,
+  },
+  {
+    .x = 256 + 16 * 1,
+    .y = (256 - smallGhost1_height) / 2,
+    .spr = smallGhost2_1,
+  },
+  /* big ghost */
+  {
+    .x = (320 - 64) / 2 + 16 * 0,
+    .y = (256 - ghost1_height) / 2,
+    .spr = ghost1_0,
+  },
+  {
+    .x = (320 - 64) / 2 + 16 * 1,
+    .y = (256 - ghost1_height) / 2,
+    .spr = ghost1_1,
+  },
+  {
+    .x = (320 - 64) / 2 + 16 * 2,
+    .y = (256 - ghost1_height) / 2,
+    .spr = ghost1_2,
+  },
+  {
+    .x = (320 - 64) / 2 + 16 * 3,
+    .y = (256 - ghost1_height) / 2,
+    .spr = ghost1_3,
+  },
+};
+
+static void InitSprites(void) {
+  short i;
+
+  for (i = 0; i < 8; i++) {
+    InitSprChan(&sprchan[0][i], HEIGHT + 10);
+    InitSprChan(&sprchan[1][i], HEIGHT + 10);
+  }
+
+  RenderSprites(sprchan[0], softsprites, softsprites_count);
+  RenderSprites(sprchan[1], softsprites, softsprites_count);
+
+  for (i = 0; i < 8; i++) {
+    CopInsSetSprite(&sprptr[i], sprchan[0][i].spr);
+  }
 }
 
 static void Init(void) {
@@ -138,29 +204,7 @@ static void Init(void) {
   cp = MakeCopperList();
   CopListActivate(cp);
 
-  {
-    short i, j;
-
-    for (j = 0; j < 3; j++) {
-      for (i = 0; i < 4; i++) {
-        ghostAlt[j][i] = PrepSprite(ghost[j][i],
-                                    X((320 - 64) / 2 + 16 * i),
-                                    Y((256 - ghost1_height) / 2));
-      }
-      for (i = 0; i < 2; i++) {
-        smallGhostAlt[j][i] = PrepSprite(smallGhost[j][i],
-                                         X((320 - 256) / 2 + 16 * i),
-                                         Y((256 - smallGhost1_height) / 2));
-      }
-    }
-
-    for (i = 0; i < 4; i++) {
-      CopInsSetSprite(&sprptr[i], ghost[0][i]);
-    }
-    for (i = 0; i < 2; i++) {
-      CopInsSetSprite(&sprptr[i+4], smallGhost[0][i]);
-    }
-  }
+  InitSprites();
 
   EnableDMA(DMAF_RASTER | DMAF_SPRITE);
 }
@@ -204,23 +248,11 @@ static void Render(void) {
 
 static void VBlank(void) {
   static short active = 0;
-  short j = (ReadFrameCounter() >> 3) & 3;
+  // short j = (ReadFrameCounter() >> 3) & 3;
   short i;
 
-  if (active) {
-    for (i = 0; i < 4; i++) {
-      CopInsSetSprite(&sprptr[i], ghost[j][i]);
-    }
-    for (i = 0; i < 2; i++) {
-      CopInsSetSprite(&sprptr[i+4], smallGhost[j][i]);
-    }
-  } else {
-    for (i = 0; i < 4; i++) {
-      CopInsSetSprite(&sprptr[i], ghostAlt[j][i]);
-    }
-    for (i = 0; i < 2; i++) {
-      CopInsSetSprite(&sprptr[i+4], smallGhostAlt[j][i]);
-    }
+  for (i = 0; i < 8; i++) {
+    CopInsSetSprite(&sprptr[i], sprchan[active][i].spr);
   }
 
   active ^= 1;
