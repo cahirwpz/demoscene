@@ -70,25 +70,25 @@ static CopListT *MakeCopperList(StateT *state) {
   CopMove16(cp, bpl2mod, -WIDTH / 8 - 2);
 
   /* Load default sprite settings */
-  CopMove32(cp, sprpt[0], &stripes0_sprdat); /* up */
-  CopMove32(cp, sprpt[1], &stripes1_sprdat);
-  CopMove32(cp, sprpt[2], &stripes2_sprdat); /* down */
-  CopMove32(cp, sprpt[3], &stripes3_sprdat);
-  CopMove32(cp, sprpt[4], &stripes0_sprdat); /* up */
-  CopMove32(cp, sprpt[5], &stripes1_sprdat);
-  CopMove32(cp, sprpt[6], &stripes2_sprdat); /* down */
-  CopMove32(cp, sprpt[7], &stripes3_sprdat);
+  CopMove32(cp, sprpt[0], stripes_0); /* up */
+  CopMove32(cp, sprpt[1], stripes_1);
+  CopMove32(cp, sprpt[2], stripes_2); /* down */
+  CopMove32(cp, sprpt[3], stripes_3);
+  CopMove32(cp, sprpt[4], stripes_0); /* up */
+  CopMove32(cp, sprpt[5], stripes_1);
+  CopMove32(cp, sprpt[6], stripes_2); /* down */
+  CopMove32(cp, sprpt[7], stripes_3);
 
   CopWait(cp, Y(-1), HP(0));
  
-  state->sprite = CopMove32(cp, sprpt[0], stripes0_sprdat.data); /* up */
-  CopMove32(cp, sprpt[1], stripes1_sprdat.data);
-  CopMove32(cp, sprpt[2], stripes2_sprdat.data); /* down */
-  CopMove32(cp, sprpt[3], stripes3_sprdat.data);
-  CopMove32(cp, sprpt[4], stripes0_sprdat.data); /* up */
-  CopMove32(cp, sprpt[5], stripes1_sprdat.data);
-  CopMove32(cp, sprpt[6], stripes2_sprdat.data); /* down */
-  CopMove32(cp, sprpt[7], stripes3_sprdat.data);
+  state->sprite = CopMove32(cp, sprpt[0], stripes_0->data); /* up */
+  CopMove32(cp, sprpt[1], stripes_1->data);
+  CopMove32(cp, sprpt[2], stripes_2->data); /* down */
+  CopMove32(cp, sprpt[3], stripes_3->data);
+  CopMove32(cp, sprpt[4], stripes_0->data); /* up */
+  CopMove32(cp, sprpt[5], stripes_1->data);
+  CopMove32(cp, sprpt[6], stripes_2->data); /* down */
+  CopMove32(cp, sprpt[7], stripes_3->data);
 
   for (y = 0, b = 0; y < HEIGHT; y++) {
     vpos vp = Y(y);
@@ -197,14 +197,14 @@ static void UpdateSpriteState(StateT *state) {
   int fu = frameCount & 63;
   int fd = (~frameCount) & 63;
 
-  CopInsSet32(ins++, stripes0_sprdat.data + fu); /* up */
-  CopInsSet32(ins++, stripes1_sprdat.data + fu);
-  CopInsSet32(ins++, stripes2_sprdat.data + fd); /* down */
-  CopInsSet32(ins++, stripes3_sprdat.data + fd);
-  CopInsSet32(ins++, stripes0_sprdat.data + fu); /* up */
-  CopInsSet32(ins++, stripes1_sprdat.data + fu);
-  CopInsSet32(ins++, stripes2_sprdat.data + fd); /* down */
-  CopInsSet32(ins++, stripes3_sprdat.data + fd);
+  CopInsSet32(ins++, stripes_0->data + fu); /* up */
+  CopInsSet32(ins++, stripes_1->data + fu);
+  CopInsSet32(ins++, stripes_2->data + fd); /* down */
+  CopInsSet32(ins++, stripes_3->data + fd);
+  CopInsSet32(ins++, stripes_0->data + fu); /* up */
+  CopInsSet32(ins++, stripes_1->data + fu);
+  CopInsSet32(ins++, stripes_2->data + fd); /* down */
+  CopInsSet32(ins++, stripes_3->data + fd);
 }
 
 #define HPOFF(x) ((x + 32) / 2)
@@ -264,10 +264,10 @@ static void Init(void) {
   /* Place sprites 0-1 above playfield, and 2-7 below playfield. */
   custom->bplcon2 = BPLCON2_PF2PRI | BPLCON2_PF2P_SP27 | BPLCON2_PF1P_SP27;
 
-  SpriteUpdatePos(&stripes[0], X(0), Y(0));
-  SpriteUpdatePos(&stripes[1], X(0), Y(0));
-  SpriteUpdatePos(&stripes[2], X(0), Y(0));
-  SpriteUpdatePos(&stripes[3], X(0), Y(0));
+  SpriteUpdatePos(stripes_0, X(0), Y(0));
+  SpriteUpdatePos(stripes_1, X(0), Y(0));
+  SpriteUpdatePos(stripes_2, X(0), Y(0));
+  SpriteUpdatePos(stripes_3, X(0), Y(0));
 
   cp[0] = MakeCopperList(&state[0]);
   cp[1] = MakeCopperList(&state[1]);

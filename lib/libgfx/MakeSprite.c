@@ -1,13 +1,9 @@
 #include <sprite.h>
 
-SprWordT *MakeSprite(SprDataT **datp, u_int height, bool attached, SpriteT *spr)
-{
-  SprDataT *dat = *datp;
-  *datp = (SprDataT *)&dat->data[height];
-  spr->sprdat = dat;
-  spr->height = height;
-  spr->attached = attached;
-  dat->pos = SPRPOS(0, 0);
-  dat->ctl = SPRCTL(0, 0, attached, height);
-  return &dat->data[0];
+SpriteT *MakeSprite(SprDataT **datp, short height, bool attached) {
+  SpriteT *spr = (SpriteT *)*datp;
+  *datp = &spr->data[height];
+  spr->pos = SPRPOS(0, 0);
+  spr->ctl = SPRCTL(0, 0, attached, height);
+  return spr;
 }

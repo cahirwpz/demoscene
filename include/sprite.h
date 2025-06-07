@@ -35,18 +35,12 @@
  * well. Data for another channel would begin just after a terminator.
  */
 
-typedef u_short SprWordT[2];
-
-typedef struct SprData {
-  u_short pos;
-  u_short ctl;
-  SprWordT data[__FLEX_ARRAY];
-} SprDataT;
+typedef u_short SprDataT[2];
 
 typedef struct Sprite {
-  SprDataT *sprdat;
-  u_short height;
-  bool attached;
+  u_short pos;
+  u_short ctl;
+  SprDataT data[__FLEX_ARRAY];
 } SpriteT;
 
 /*
@@ -67,13 +61,15 @@ typedef struct Sprite {
  */
 #define SPRCTL(X, Y, A, H)                                                     \
   (u_short)(                                                                   \
-   ((u_short)(((Y) + (H) + 1)) << 8) |                                         \
+   ((u_short)(((Y) + (H))) << 8) |                                             \
    ((A) ? 0x80 : 0) |                                                          \
    (((Y) >> 6) & 4) |                                                          \
-   (((u_short)((Y) + (H) + 1) >> 7) & 2) |                                     \
+   (((u_short)((Y) + (H)) >> 7) & 2) |                                         \
    ((X) & 1))
 
-extern SprDataT NullSprData[];
+#define SPREND() ((SprDataT){0, 0})
+
+extern SpriteT NullSprData[];
 
 /*
  * Calculates space for sprite data to be fed into DMA channel.
@@ -83,20 +79,21 @@ static inline int SprDataSize(u_short height, u_short nctrl) {
   return (height + nctrl) * sizeof(u_int);
 }
 
+/* Determines height of the sprite based on `pos` and `ctl` words. */
+short SpriteHeight(SpriteT *spr);
+
 /*
  * Consumes space for `pos`, `ctr` and `height` long words of pixel data
  * from `dat` to construct storage for sprite data.
  *
- * Information about sprite will be written back to `spr` structure.
  * Marks sprite as attached if `attached` is set to true.
  *
  * `datp` will point to next usable sprite data (possibly uninitialized).
  * You should call MakeSprite or EndSprite on this value.
  *
- * Returns pointer to first word of sprite data.
+ * Returns pointer to first control word of the sprite.
  */
-SprWordT *MakeSprite(SprDataT **datp, u_int height, bool attached,
-                     SpriteT *spr);
+SpriteT *MakeSprite(SprDataT **datp, short height, bool attached);
 
 /*
  * Terminate sprite data for DMA channel by writing zero long word after
@@ -115,7 +112,7 @@ CopInsPairT *CopSetupSprites(CopListT *list);
 void ResetSprites(void);
 
 static inline void CopInsSetSprite(CopInsPairT *sprptr, SpriteT *spr) {
-  CopInsSet32(sprptr, spr->sprdat);
+  CopInsSet32(sprptr, spr);
 }
 
 #endif
