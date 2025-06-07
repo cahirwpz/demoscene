@@ -28,6 +28,7 @@ static __code CopInsPairT *bplptr;
 static __code CopInsPairT *sprptr;
 static __code SprChanT sprchan[2][8];
 static __code CopInsT *colorLine[HEIGHT];
+static __code short active = 0;
 
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(100 + HEIGHT * (tree_cols_width + 3));
@@ -85,8 +86,8 @@ static void SpriteDither(SpriteT *spr, u_int mask) {
 }
 #endif
 
-#define softsprites_count 16
-static __code SoftSpriteT softsprites[16] = {
+#define softsprites_count 24
+static __code SoftSpriteT softsprites[24] = {
   /* small ghost top-left */
   {
     .x = 32 + 16 * 0,
@@ -95,6 +96,28 @@ static __code SoftSpriteT softsprites[16] = {
   },
   {
     .x = 32 + 16 * 1,
+    .y = 32,
+    .spr = smallGhost1_1,
+  },
+  /* small ghost top-mid-left */
+  {
+    .x = 112 + 16 * 0,
+    .y = 32,
+    .spr = smallGhost1_0,
+  },
+  {
+    .x = 112 + 16 * 1,
+    .y = 32,
+    .spr = smallGhost1_1,
+  },
+  /* small ghost top-mid-right */
+  {
+    .x = 176 + 16 * 0,
+    .y = 32,
+    .spr = smallGhost1_0,
+  },
+  {
+    .x = 176 + 16 * 1,
     .y = 32,
     .spr = smallGhost1_1,
   },
@@ -117,6 +140,28 @@ static __code SoftSpriteT softsprites[16] = {
   },
   {
     .x = 32 + 16 * 1,
+    .y = 192,
+    .spr = smallGhost3_1,
+  },
+  /* small ghost bottom-mid-left */
+  {
+    .x = 112 + 16 * 0,
+    .y = 192,
+    .spr = smallGhost3_0,
+  },
+  {
+    .x = 112 + 16 * 1,
+    .y = 192,
+    .spr = smallGhost3_1,
+  },
+  /* small ghost bottom-mid-right */
+  {
+    .x = 176 + 16 * 0,
+    .y = 192,
+    .spr = smallGhost3_0,
+  },
+  {
+    .x = 176 + 16 * 1,
     .y = 192,
     .spr = smallGhost3_1,
   },
@@ -204,6 +249,7 @@ static void Init(void) {
   cp = MakeCopperList();
   CopListActivate(cp);
 
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
   InitSprites();
 
   EnableDMA(DMAF_RASTER | DMAF_SPRITE);
@@ -211,6 +257,9 @@ static void Init(void) {
 
 static void Kill(void) {
   ResetSprites();
+  CopperStop();
+  BlitterStop();
+
   DeleteCopList(cp);
 }
 
@@ -233,6 +282,8 @@ static void UpdateColorLines(short line) {
   }
 }
 
+PROFILE(SpookyTree);
+
 static void Render(void) {
   short line = mod16(frameCount, tree_height - HEIGHT);
   short i;
@@ -241,21 +292,25 @@ static void Render(void) {
     CopInsSet32(&bplptr[i], tree.planes[i] + tree_bytesPerRow * line);
   }
 
+  ProfilerStart(SpookyTree);
+  {
+    RenderSprites(sprchan[active], softsprites, softsprites_count);
+    active ^= 1;
+  }
+  ProfilerStop(SpookyTree);
+
   UpdateColorLines(line);
 
   TaskWaitVBlank();
 }
 
 static void VBlank(void) {
-  static short active = 0;
   // short j = (ReadFrameCounter() >> 3) & 3;
   short i;
 
   for (i = 0; i < 8; i++) {
     CopInsSetSprite(&sprptr[i], sprchan[active][i].spr);
   }
-
-  active ^= 1;
 }
 
 EFFECT(SpookyTree, NULL, NULL, Init, Kill, Render, VBlank);
