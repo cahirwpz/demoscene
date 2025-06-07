@@ -18,7 +18,10 @@
 #include "data/ghost32x_02.c"
 #include "data/ghost32x_03.c"
 
+#define WIDTH 320
 #define HEIGHT 256
+
+#include "softsprite.h"
 
 static __code CopListT *cp;
 static __code CopInsPairT *bplptr;
