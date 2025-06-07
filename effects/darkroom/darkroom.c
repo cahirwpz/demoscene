@@ -23,9 +23,10 @@ static short active = 0;
 
 static CopInsPairT *cop_lines[HEIGHT][3];
 
+#define LINEW (WIDTH / 8)
 // buffer contains all possible lines for each frame (base line + light
 // intensity from 0 to 7)
-static u_char __data_chip *buffer[8];
+static u_char *buffer[8];
 // line_sel describes which line from buffer to choose for each line on screen
 static short line_sel[HEIGHT];
 
@@ -42,33 +43,34 @@ static void CalculateFirstLine(u_char *buf[8], line vl[NO_OF_V_LINES]) {
    * Calculate first line by adding light intensity of vertical lines.
    */
   short word, offset, aux, thickness;
-  u_short *V_LINE;
   short i, j;
   short *ptr;
   short *line0 = (short *)buf[0];
-  short *line1 = (short *)(buf[0] + (WIDTH / 8));
-  short *line2 = (short *)(buf[0] + (WIDTH / 8) * 2);
+  short *line1 = (short *)(buf[0] + LINEW);
+  short *line2 = (short *)(buf[0] + LINEW * 2);
   short *lines[3] = {line0, line1, line2};
 
   // V_LINE_n where n means line thickness in pixels
 
-  static u_short V_LINE_14[3] = {
+  static const u_short V_LINE_14[3] = {
     13107 << 2, // bin: 11001100110011
     3900 << 2,  // bin: 00111100111100
     192 << 2,   // bin: 00000011000000
   };
 
-  static u_short V_LINE_9[3] = {
+  static const u_short V_LINE_9[3] = {
     341 << 7, // bin: 101010101
     198 << 7, // bin: 011000110
     56 << 7,  // bin: 000111000
   };
 
-  static u_short V_LINE_7[3] = {
+  static const u_short V_LINE_7[3] = {
     85 << 9, // bin: 1010101
     54 << 9, // bin: 0110110
     8 << 9,  // bin: 0001000
   };
+
+  const u_short *V_LINE;
 
   /* Set first line to 0 */
   for (i = 0; i < 3; ++i) {
@@ -167,7 +169,7 @@ static void CalculateBuffer(u_char *buf[8]) {
    * Add all possible light intensity (from 0 to (2^DEPTH)-1 to base line with
    * vertical lines)
    */
-  static short __data_chip carry[2][WIDTH / 16];
+  static short __data_chip carry[2][LINEW / 2];
 
   static const short lines_bltadat[8][3] = {
     {0x0000, 0x0000, 0x0000}, {0xFFFF, 0x0000, 0x0000},
@@ -178,8 +180,8 @@ static void CalculateBuffer(u_char *buf[8]) {
 
   short *base_line[3] = {
     (short *)buf[0],
-    (short *)(buf[0] + (WIDTH / 8)),
-    (short *)(buf[0] + (WIDTH / 8) * 2),
+    (short *)(buf[0] + LINEW),
+    (short *)(buf[0] + LINEW * 2),
   };
 
   short i;
@@ -202,8 +204,8 @@ static void CalculateBuffer(u_char *buf[8]) {
   for (i = 1; i < 8; ++i) {
     short *dest_line[3] = {
       (short *)buf[i],
-      (short *)(buf[i] + (WIDTH / 8)),
-      (short *)(buf[i] + (WIDTH / 8) * 2),
+      (short *)(buf[i] + LINEW),
+      (short *)(buf[i] + LINEW * 2),
     };
 
     /* BITPLANE 0 */
@@ -409,8 +411,8 @@ static void UpdateCopperLines(u_char **buf, short *ls,
         break;
 
       CopInsSet32(*clp++, line);
-      CopInsSet32(*clp++, line + (WIDTH / 8) * 1);
-      CopInsSet32(*clp++, line + (WIDTH / 8) * 2);
+      CopInsSet32(*clp++, line + LINEW);
+      CopInsSet32(*clp++, line + LINEW * 2);
 
       ++pos;
     }
@@ -428,8 +430,8 @@ static CopListT *MakeCopperList(void) {
     line = buffer[line_sel[i]];
     CopWaitSafe(cp, Y(i), X(-DIWHP));
     cop_lines[i][0] = CopMove32(cp, bplpt[0], line);
-    cop_lines[i][1] = CopMove32(cp, bplpt[1], line + (WIDTH / 8));
-    cop_lines[i][2] = CopMove32(cp, bplpt[2], line + (WIDTH / 8) * 2);
+    cop_lines[i][1] = CopMove32(cp, bplpt[1], line + LINEW);
+    cop_lines[i][2] = CopMove32(cp, bplpt[2], line + LINEW * 2);
   }
 
   CopListFinish(cp);
@@ -440,7 +442,7 @@ static CopListT *MakeCopperList(void) {
 static void Load(void) {
   short i;
   for (i = 0; i < 8; ++i) {
-    buffer[i] = MemAlloc(3 * (WIDTH / 8), MEMF_CHIP | MEMF_CLEAR);
+    buffer[i] = MemAlloc(3 * LINEW, MEMF_CHIP | MEMF_CLEAR);
   }
 }
 
