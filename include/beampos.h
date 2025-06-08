@@ -21,6 +21,13 @@ typedef struct vpos {
 #define DIWHP 0x81
 #define DIWVP 0x2c
 
+typedef struct DispWin {
+  hpos left;
+  vpos top;
+  hpos right;
+  vpos bottom;
+} DispWinT;
+
 /* Beam position relative to display window upper-left corner. */
 #define X(x) HP((x) + DIWHP)
 #define Y(y) VP((y) + DIWVP)

@@ -8,7 +8,8 @@
 #include <system/memory.h>
 
 typedef struct SoftSprite {
-  short x, y;
+  hpos hp;
+  vpos vp;
   SpriteT *spr;
 } SoftSpriteT;
 
@@ -16,7 +17,7 @@ typedef struct SoftSprite {
  * SprChanT represents data attached to single sprite DMA channel.
  */
 typedef struct SprChan {
-  short lastY; /* initially -1 */
+  short lastVP; /* initially -1 */
   short length;
   SprDataT *curr;
   SpriteT *spr;
@@ -30,7 +31,7 @@ static void SoftSpriteSort(SoftSpriteT *first, short n) {
     SoftSpriteT *curr = ptr;
     SoftSpriteT *prev = ptr - 1;
     SoftSpriteT this = *ptr++;
-    while ((prev >= first) && (prev->y > this.y))
+    while ((prev >= first) && (prev->vp.vpos > this.vp.vpos))
       *curr-- = *prev--;
     *curr = this;
   }
@@ -38,11 +39,11 @@ static void SoftSpriteSort(SoftSpriteT *first, short n) {
 
 static inline void SprChanReset(SprChanT *chan) {
   chan->curr = (SprDataT *)chan->spr;
-  chan->lastY = -1;
+  chan->lastVP = -1;
   *(u_int *)chan->spr = 0;
 }
 
-void InitSprChan(SprChanT *chan, int lines) {
+static void InitSprChan(SprChanT *chan, int lines) {
   chan->spr = MemAlloc(lines * sizeof(SprDataT), MEMF_CHIP);
   chan->length = lines;
   SprChanReset(chan);
@@ -56,12 +57,12 @@ static inline void ResetAllSprChan(SprChanT *chan) {
   }
 }
 
-static inline SprChanT *AcquireSprChan(SprChanT *chan, short y, short h) {
+static inline SprChanT *AcquireSprChan(SprChanT *chan, short vp, short height) {
   short n = 8;
 
   while (--n >= 0) {
-    if (chan->lastY < y) {
-      chan->lastY = y + h + 1;
+    if (chan->lastVP < vp) {
+      chan->lastVP = vp + height + 1;
       return chan;
     }
     chan++;
@@ -90,10 +91,8 @@ static inline void AppendSprite(SpriteT *dst, short y, short h, SpriteT *src) {
   WaitBlitter();
 }
 
-static inline void SpriteSetHeader(SpriteT *spr, hpos hstart, vpos vstart, short height) {
+static inline void SpriteSetHeader(SpriteT *spr, short hs, short vs, short height) {
   u_char *raw = (u_char *)spr;
-  short hs = hstart.hpos;
-  short vs = vstart.vpos;
 
   *raw++ = vs;
   *raw++ = (u_short)hs >> 1;
@@ -133,50 +132,48 @@ static inline void SpriteSetHeader(SpriteT *spr, hpos hstart, vpos vstart, short
  * 4. Terminate all SprChan (EndSprite)
  */
 
-void RenderSprites(SprChanT chans[8], SoftSpriteT *swsprs, int n) {
-  short i;
-
+static void RenderSprites(SprChanT chans[8], SoftSpriteT *swsprs, short n, DispWinT *diw) {
   SoftSpriteSort(swsprs, n);
   ResetAllSprChan(chans);
 
-  for (i = 0; i < n; i++) {
+  do {
     SoftSpriteT *swspr = swsprs++;
     SprChanT *chan;
     SpriteT *spr;
 
-    short sx = swspr->x;
-    short sy = swspr->y;
+    short hs = swspr->hp.hpos;
+    short vs = swspr->vp.vpos;
     short skip = 0;
-    short sh = SpriteHeight(swspr->spr);
+    short height = SpriteHeight(swspr->spr);
 
     /* left edge */
-    if (sx + 16 <= 0)
+    if (hs + 16 <= diw->left.hpos)
       continue;
     /* right edge */
-    if (sx >= WIDTH)
+    if (hs >= diw->right.hpos)
       continue;
     /* top edge */
-    if (sy < 0) {
-      sh += sy;
-      skip -= sy;
-      sy = 0;
+    if (vs < diw->top.vpos) {
+      skip = diw->top.vpos - vs;
+      height -= skip;
+      vs += skip;
     }
     /* bottom edge */
-    if (sy + sh >= HEIGHT)
-      sh -= sy + sh - HEIGHT;
-    if (sh <= 0)
+    if (vs + height >= diw->bottom.vpos)
+      height = diw->bottom.vpos - vs;
+    if (height <= 0)
       continue;
 
-    if (!(chan = AcquireSprChan(chans, sy, sh)))
+    if (!(chan = AcquireSprChan(chans, vs, height)))
       continue;
 
     /* Allocate space for sprite */
     spr = (SpriteT *)chan->curr;
-    chan->curr = &spr->data[sh];
+    chan->curr = &spr->data[height];
 
-    AppendSprite(spr, skip, sh, swspr->spr);
-    SpriteSetHeader(spr, X(sx), Y(sy), sh);
-  }
+    AppendSprite(spr, skip, height, swspr->spr);
+    SpriteSetHeader(spr, hs, vs, height);
+  } while (--n > 0);
 
   FinishAllSprChan(chans);
 }

@@ -90,136 +90,138 @@ static void SpriteDither(SpriteT *spr, u_int mask) {
 static __code SoftSpriteT softsprites[24] = {
   /* small ghost top-left */
   {
-    .x = 32 + 16 * 0,
-    .y = 32,
+    .hp = X(32 + 16 * 0),
+    .vp = Y(32),
     .spr = smallGhost1_0,
   },
   {
-    .x = 32 + 16 * 1,
-    .y = 32,
+    .hp = X(32 + 16 * 1),
+    .vp = Y(32),
     .spr = smallGhost1_1,
   },
   /* small ghost top-mid-left */
   {
-    .x = 112 + 16 * 0,
-    .y = 32,
+    .hp = X(112 + 16 * 0),
+    .vp = Y(32),
     .spr = smallGhost1_0,
   },
   {
-    .x = 112 + 16 * 1,
-    .y = 32,
+    .hp = X(112 + 16 * 1),
+    .vp = Y(32),
     .spr = smallGhost1_1,
   },
   /* small ghost top-mid-right */
   {
-    .x = 176 + 16 * 0,
-    .y = 32,
+    .hp = X(176 + 16 * 0),
+    .vp = Y(32),
     .spr = smallGhost1_0,
   },
   {
-    .x = 176 + 16 * 1,
-    .y = 32,
+    .hp = X(176 + 16 * 1),
+    .vp = Y(32),
     .spr = smallGhost1_1,
   },
   /* small ghost top-right */
   {
-    .x = 256 + 16 * 0,
-    .y = 32,
+    .hp = X(256 + 16 * 0),
+    .vp = Y(32),
     .spr = smallGhost1_0,
   },
   {
-    .x = 256 + 16 * 1,
-    .y = 32,
+    .hp = X(256 + 16 * 1),
+    .vp = Y(32),
     .spr = smallGhost1_1,
   },
   /* small ghost bottom-left */
   {
-    .x = 32 + 16 * 0,
-    .y = 192,
+    .hp = X(32 + 16 * 0),
+    .vp = Y(192),
     .spr = smallGhost3_0,
   },
   {
-    .x = 32 + 16 * 1,
-    .y = 192,
+    .hp = X(32 + 16 * 1),
+    .vp = Y(192),
     .spr = smallGhost3_1,
   },
   /* small ghost bottom-mid-left */
   {
-    .x = 112 + 16 * 0,
-    .y = 192,
+    .hp = X(112 + 16 * 0),
+    .vp = Y(192),
     .spr = smallGhost3_0,
   },
   {
-    .x = 112 + 16 * 1,
-    .y = 192,
+    .hp = X(112 + 16 * 1),
+    .vp = Y(192),
     .spr = smallGhost3_1,
   },
   /* small ghost bottom-mid-right */
   {
-    .x = 176 + 16 * 0,
-    .y = 192,
+    .hp = X(176 + 16 * 0),
+    .vp = Y(192),
     .spr = smallGhost3_0,
   },
   {
-    .x = 176 + 16 * 1,
-    .y = 192,
+    .hp = X(176 + 16 * 1),
+    .vp = Y(192),
     .spr = smallGhost3_1,
   },
   /* small ghost bottom-right */
   {
-    .x = 256 + 16 * 0,
-    .y = 192,
+    .hp = X(256 + 16 * 0),
+    .vp = Y(192),
     .spr = smallGhost3_0,
   },
   {
-    .x = 256 + 16 * 1,
-    .y = 192,
+    .hp = X(256 + 16 * 1),
+    .vp = Y(192),
     .spr = smallGhost3_1,
   },
   /* small ghost center-left */
   {
-    .x = 32 + 16 * 0,
-    .y = (256 - smallGhost1_height) / 2,
+    .hp = X(32 + 16 * 0),
+    .vp = Y((256 - smallGhost1_height) / 2),
     .spr = smallGhost2_0,
   },
   {
-    .x = 32 + 16 * 1,
-    .y = (256 - smallGhost1_height) / 2,
+    .hp = X(32 + 16 * 1),
+    .vp = Y((256 - smallGhost1_height) / 2),
     .spr = smallGhost2_1,
   },
   /* small ghost center-right */
   {
-    .x = 256 + 16 * 0,
-    .y = (256 - smallGhost1_height) / 2,
+    .hp = X(256 + 16 * 0),
+    .vp = Y((256 - smallGhost1_height) / 2),
     .spr = smallGhost2_0,
   },
   {
-    .x = 256 + 16 * 1,
-    .y = (256 - smallGhost1_height) / 2,
+    .hp = X(256 + 16 * 1),
+    .vp = Y((256 - smallGhost1_height) / 2),
     .spr = smallGhost2_1,
   },
   /* big ghost */
   {
-    .x = (320 - 64) / 2 + 16 * 0,
-    .y = (256 - ghost1_height) / 2,
+    .hp = X((320 - 64) / 2 + 16 * 0),
+    .vp = Y((256 - ghost1_height) / 2),
     .spr = ghost1_0,
   },
   {
-    .x = (320 - 64) / 2 + 16 * 1,
-    .y = (256 - ghost1_height) / 2,
+    .hp = X((320 - 64) / 2 + 16 * 1),
+    .vp = Y((256 - ghost1_height) / 2),
     .spr = ghost1_1,
   },
   {
-    .x = (320 - 64) / 2 + 16 * 2,
-    .y = (256 - ghost1_height) / 2,
+    .hp = X((320 - 64) / 2 + 16 * 2),
+    .vp = Y((256 - ghost1_height) / 2),
     .spr = ghost1_2,
   },
   {
-    .x = (320 - 64) / 2 + 16 * 3,
-    .y = (256 - ghost1_height) / 2,
+    .hp = X((320 - 64) / 2 + 16 * 3),
+    .vp = Y((256 - ghost1_height) / 2),
     .spr = ghost1_3,
   },
 };
+
+static DispWinT diw = {X(0), Y(0), X(WIDTH), Y(HEIGHT) };
 
 static void InitSprites(void) {
   short i;
@@ -229,8 +231,8 @@ static void InitSprites(void) {
     InitSprChan(&sprchan[1][i], HEIGHT + 10);
   }
 
-  RenderSprites(sprchan[0], softsprites, softsprites_count);
-  RenderSprites(sprchan[1], softsprites, softsprites_count);
+  RenderSprites(sprchan[0], softsprites, softsprites_count, &diw);
+  RenderSprites(sprchan[1], softsprites, softsprites_count, &diw);
 
   for (i = 0; i < 8; i++) {
     CopInsSetSprite(&sprptr[i], sprchan[0][i].spr);
@@ -294,7 +296,7 @@ static void Render(void) {
 
   ProfilerStart(SpookyTree);
   {
-    RenderSprites(sprchan[active], softsprites, softsprites_count);
+    RenderSprites(sprchan[active], softsprites, softsprites_count, &diw);
     active ^= 1;
   }
   ProfilerStop(SpookyTree);
