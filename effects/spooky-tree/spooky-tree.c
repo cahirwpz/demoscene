@@ -12,11 +12,25 @@
 #include "data/tree-pal.c"
 #include "data/tree-data.c"
 #include "data/ghost64x_01.c"
-//#include "data/ghost64x_02.c"
-//#include "data/ghost64x_03.c"
+#include "data/ghost64x_02.c"
+#include "data/ghost64x_03.c"
 #include "data/ghost32x_01.c"
 #include "data/ghost32x_02.c"
 #include "data/ghost32x_03.c"
+
+static SpriteT *bigGhost[3][4] = {
+  { ghost1_0, ghost1_1, ghost1_2, ghost1_3 },
+  { ghost2_0, ghost2_1, ghost2_2, ghost2_3 },
+  { ghost3_0, ghost3_1, ghost3_2, ghost3_3 },
+};
+
+static SpriteT *smallGhost[3][2] = {
+  { smallGhost1_0, smallGhost1_1 },
+  { smallGhost2_0, smallGhost2_1 },
+  { smallGhost3_0, smallGhost3_1 },
+};
+
+static __code short spriteFrame[4] = {0, 1, 2, 1 };
 
 #define WIDTH 320
 #define HEIGHT 256
@@ -88,42 +102,44 @@ static void SpriteDither(SpriteT *spr, u_int mask) {
 
 static SOFTSPRITEARRAY(sprites, 24);
 
-static void InitSpriteArray(SoftSpriteArrayT *sprites) {
+static void InitSpriteArray(SoftSpriteArrayT *sprites, short i) {
+  sprites->count = 0;
+
   /* small ghost top-left */
-  AddSprite(sprites, smallGhost1_0, X(32 + 16 * 0), Y(32));
-  AddSprite(sprites, smallGhost1_1, X(32 + 16 * 1), Y(32));
+  AddSprite(sprites, smallGhost[i][0], X(32 + 16 * 0), Y(32));
+  AddSprite(sprites, smallGhost[i][1], X(32 + 16 * 1), Y(32));
   /* small ghost top-mid-left */
-  AddSprite(sprites, smallGhost1_0, X(112 + 16 * 0), Y(32));
-  AddSprite(sprites, smallGhost1_1, X(112 + 16 * 1), Y(32));
+  AddSprite(sprites, smallGhost[i][0], X(112 + 16 * 0), Y(32));
+  AddSprite(sprites, smallGhost[i][1], X(112 + 16 * 1), Y(32));
   /* small ghost top-mid-right */
-  AddSprite(sprites, smallGhost1_0, X(176 + 16 * 0), Y(32));
-  AddSprite(sprites, smallGhost1_1, X(176 + 16 * 1), Y(32));
+  AddSprite(sprites, smallGhost[i][0], X(176 + 16 * 0), Y(32));
+  AddSprite(sprites, smallGhost[i][1], X(176 + 16 * 1), Y(32));
   /* small ghost top-right */
-  AddSprite(sprites, smallGhost1_0, X(256 + 16 * 0), Y(32));
-  AddSprite(sprites, smallGhost1_1, X(256 + 16 * 1), Y(32));
+  AddSprite(sprites, smallGhost[i][0], X(256 + 16 * 0), Y(32));
+  AddSprite(sprites, smallGhost[i][1], X(256 + 16 * 1), Y(32));
   /* small ghost bottom-left */
-  AddSprite(sprites, smallGhost3_0, X(32 + 16 * 0), Y(192));
-  AddSprite(sprites, smallGhost3_1, X(32 + 16 * 1), Y(192));
+  AddSprite(sprites, smallGhost[i][0], X(32 + 16 * 0), Y(192));
+  AddSprite(sprites, smallGhost[i][1], X(32 + 16 * 1), Y(192));
   /* small ghost bottom-mid-left */
-  AddSprite(sprites, smallGhost3_0, X(112 + 16 * 0), Y(192));
-  AddSprite(sprites, smallGhost3_1, X(112 + 16 * 1), Y(192));
+  AddSprite(sprites, smallGhost[i][0], X(112 + 16 * 0), Y(192));
+  AddSprite(sprites, smallGhost[i][1], X(112 + 16 * 1), Y(192));
   /* small ghost bottom-mid-right */
-  AddSprite(sprites, smallGhost3_0, X(176 + 16 * 0), Y(192));
-  AddSprite(sprites, smallGhost3_1, X(176 + 16 * 1), Y(192));
+  AddSprite(sprites, smallGhost[i][0], X(176 + 16 * 0), Y(192));
+  AddSprite(sprites, smallGhost[i][1], X(176 + 16 * 1), Y(192));
   /* small ghost bottom-right */
-  AddSprite(sprites, smallGhost3_0, X(256 + 16 * 0), Y(192));
-  AddSprite(sprites, smallGhost3_1, X(256 + 16 * 1), Y(192));
+  AddSprite(sprites, smallGhost[i][0], X(256 + 16 * 0), Y(192));
+  AddSprite(sprites, smallGhost[i][1], X(256 + 16 * 1), Y(192));
   /* small ghost center-left */
-  AddSprite(sprites, smallGhost2_0, X(32 + 16 * 0), Y((256 - smallGhost1_height) / 2));
-  AddSprite(sprites, smallGhost2_1, X(32 + 16 * 1), Y((256 - smallGhost1_height) / 2));
+  AddSprite(sprites, smallGhost[i][0], X(32 + 16 * 0), Y((256 - smallGhost1_height) / 2));
+  AddSprite(sprites, smallGhost[i][1], X(32 + 16 * 1), Y((256 - smallGhost1_height) / 2));
   /* small ghost center-right */
-  AddSprite(sprites, smallGhost2_0, X(256 + 16 * 0), Y((256 - smallGhost1_height) / 2));
-  AddSprite(sprites, smallGhost2_1, X(256 + 16 * 1), Y((256 - smallGhost1_height) / 2));
+  AddSprite(sprites, smallGhost[i][0], X(256 + 16 * 0), Y((256 - smallGhost1_height) / 2));
+  AddSprite(sprites, smallGhost[i][1], X(256 + 16 * 1), Y((256 - smallGhost1_height) / 2));
   /* big ghost */
-  AddSprite(sprites, ghost1_0, X(128 + 16 * 0), Y((256 - ghost1_height) / 2));
-  AddSprite(sprites, ghost1_1, X(128 + 16 * 1), Y((256 - ghost1_height) / 2));
-  AddSprite(sprites, ghost1_2, X(128 + 16 * 2), Y((256 - ghost1_height) / 2));
-  AddSprite(sprites, ghost1_3, X(128 + 16 * 3), Y((256 - ghost1_height) / 2));
+  AddSprite(sprites, bigGhost[i][0], X(128 + 16 * 0), Y((256 - ghost1_height) / 2));
+  AddSprite(sprites, bigGhost[i][1], X(128 + 16 * 1), Y((256 - ghost1_height) / 2));
+  AddSprite(sprites, bigGhost[i][2], X(128 + 16 * 2), Y((256 - ghost1_height) / 2));
+  AddSprite(sprites, bigGhost[i][3], X(128 + 16 * 3), Y((256 - ghost1_height) / 2));
 }
 
 static DispWinT diw = {X(0), Y(0), X(WIDTH), Y(HEIGHT) };
@@ -137,7 +153,7 @@ static void Init(void) {
   LoadColors(smallGhost_colors, 24);
   LoadColors(smallGhost_colors, 28);
 
-  InitSpriteArray(&sprites);
+  InitSpriteArray(&sprites, 0);
 
   cp = MakeCopperList();
   CopListActivate(cp);
@@ -200,6 +216,7 @@ static void Render(void) {
 
   ProfilerStart(SpookyTree);
   {
+    InitSpriteArray(&sprites, spriteFrame[(frameCount >> 3) & 3]);
     RenderSprites(sprchan[active], &sprites, &diw);
     active ^= 1;
   }
