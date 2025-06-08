@@ -3,6 +3,7 @@
 #include <palette.h>
 #include <pixmap.h>
 #include <gfx.h>
+#include <fx.h>
 #include <sprite.h>
 #include <system/memory.h>
 
@@ -128,48 +129,34 @@ static void AppendSpriteDitherB(SprDataT *dst, SprDataT *src, short height) {
   WaitBlitter();
 }
 
-static SOFTSPRITEARRAY(sprites, 24);
+static SOFTSPRITEARRAY(sprites, 8 * 2 + 4);
 
 static void InitSpriteArray(SoftSpriteArrayT *sprites, short i) {
+  SpriteT **small = smallGhost[i];
+  SpriteT **big = bigGhost[i];
+
   SoftSpriteArrayReset(sprites);
 
   sprites->append = (frameCount & 1) ? AppendSpriteDitherA : AppendSpriteDitherB;
 
-  /* small ghost top-left */
-  AddSprite(sprites, smallGhost[i][0], X(32 + 16 * 0), Y(32));
-  AddSprite(sprites, smallGhost[i][1], X(32 + 16 * 1), Y(32));
-  /* small ghost top-mid-left */
-  AddSprite(sprites, smallGhost[i][0], X(112 + 16 * 0), Y(32));
-  AddSprite(sprites, smallGhost[i][1], X(112 + 16 * 1), Y(32));
-  /* small ghost top-mid-right */
-  AddSprite(sprites, smallGhost[i][0], X(176 + 16 * 0), Y(32));
-  AddSprite(sprites, smallGhost[i][1], X(176 + 16 * 1), Y(32));
-  /* small ghost top-right */
-  AddSprite(sprites, smallGhost[i][0], X(256 + 16 * 0), Y(32));
-  AddSprite(sprites, smallGhost[i][1], X(256 + 16 * 1), Y(32));
-  /* small ghost bottom-left */
-  AddSprite(sprites, smallGhost[i][0], X(32 + 16 * 0), Y(192));
-  AddSprite(sprites, smallGhost[i][1], X(32 + 16 * 1), Y(192));
-  /* small ghost bottom-mid-left */
-  AddSprite(sprites, smallGhost[i][0], X(112 + 16 * 0), Y(192));
-  AddSprite(sprites, smallGhost[i][1], X(112 + 16 * 1), Y(192));
-  /* small ghost bottom-mid-right */
-  AddSprite(sprites, smallGhost[i][0], X(176 + 16 * 0), Y(192));
-  AddSprite(sprites, smallGhost[i][1], X(176 + 16 * 1), Y(192));
-  /* small ghost bottom-right */
-  AddSprite(sprites, smallGhost[i][0], X(256 + 16 * 0), Y(192));
-  AddSprite(sprites, smallGhost[i][1], X(256 + 16 * 1), Y(192));
-  /* small ghost center-left */
-  AddSprite(sprites, smallGhost[i][0], X(32 + 16 * 0), Y((256 - smallGhost1_height) / 2));
-  AddSprite(sprites, smallGhost[i][1], X(32 + 16 * 1), Y((256 - smallGhost1_height) / 2));
-  /* small ghost center-right */
-  AddSprite(sprites, smallGhost[i][0], X(256 + 16 * 0), Y((256 - smallGhost1_height) / 2));
-  AddSprite(sprites, smallGhost[i][1], X(256 + 16 * 1), Y((256 - smallGhost1_height) / 2));
+  /* small ghosts */
+  for (i = 0; i < 8; i++) {
+    short xo = 160 - 16 + normfx(SIN((i * SIN_PI >> 2) + (frameCount * 8)) * (160 - 32));
+    short yo = 128 - 16 + normfx(COS((i * SIN_PI >> 2) + (frameCount * 8)) * (128 - 32));
+
+    AddSprite(sprites, small[0], X(xo + 16 * 0), Y(yo));
+    AddSprite(sprites, small[1], X(xo + 16 * 1), Y(yo));
+  }
+
   /* big ghost */
-  AddSprite(sprites, bigGhost[i][0], X(128 + 16 * 0), Y((256 - ghost1_height) / 2));
-  AddSprite(sprites, bigGhost[i][1], X(128 + 16 * 1), Y((256 - ghost1_height) / 2));
-  AddSprite(sprites, bigGhost[i][2], X(128 + 16 * 2), Y((256 - ghost1_height) / 2));
-  AddSprite(sprites, bigGhost[i][3], X(128 + 16 * 3), Y((256 - ghost1_height) / 2));
+  {
+    short xo = ((WIDTH - 64) / 2) + normfx(SIN(-frameCount * 16) * 16);
+    short yo = ((HEIGHT - ghost1_height) / 2) + normfx(COS(-frameCount * 16) * 16);
+    AddSprite(sprites, big[0], X(xo + 16 * 0), Y(yo));
+    AddSprite(sprites, big[1], X(xo + 16 * 1), Y(yo));
+    AddSprite(sprites, big[2], X(xo + 16 * 2), Y(yo));
+    AddSprite(sprites, big[3], X(xo + 16 * 3), Y(yo));
+  }
 }
 
 static DispWinT diw = {X(0), Y(0), X(WIDTH), Y(HEIGHT) };
