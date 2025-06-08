@@ -49,6 +49,7 @@ SUBDIRS := \
 	sea-anemone \
 	shapes \
 	showpchg \
+	spooky-tree \
 	stencil3d \
 	stripes \
 	textscroll \
