@@ -111,6 +111,25 @@ static inline void SpriteSetHeader(SpriteT *spr, short hs, short vs, short heigh
   }
 }
 
+typedef struct SoftSpriteArray {
+  short count;
+  SoftSpriteT *sprites;
+} SoftSpriteArrayT;
+
+#define SOFTSPRITEARRAY(NAME, SIZE)         \
+  SoftSpriteArrayT NAME = {                 \
+    .count = 0,                             \
+    .sprites = (SoftSpriteT[SIZE]) {}       \
+  }
+
+static inline void AddSprite(SoftSpriteArrayT *array, SpriteT *spr, hpos hp, vpos vp) {
+  SoftSpriteT *swspr = &array->sprites[array->count++];
+
+  swspr->spr = spr;
+  swspr->hp = hp;
+  swspr->vp = vp;
+}
+
 /*
  * For simplicity it's assumed that no Copper based HW trick will be used.
  * Moreover all sprites are 3-colors in the same palette. Input bitmaps are
@@ -132,12 +151,15 @@ static inline void SpriteSetHeader(SpriteT *spr, short hs, short vs, short heigh
  * 4. Terminate all SprChan (EndSprite)
  */
 
-static void RenderSprites(SprChanT chans[8], SoftSpriteT *swsprs, short n, DispWinT *diw) {
-  SoftSpriteSort(swsprs, n);
+static void RenderSprites(SprChanT chans[8], SoftSpriteArrayT *array, DispWinT *diw) {
+  SoftSpriteT *sprites = array->sprites;
+  short n = array->count;
+
+  SoftSpriteSort(sprites, n);
   ResetAllSprChan(chans);
 
   do {
-    SoftSpriteT *swspr = swsprs++;
+    SoftSpriteT *swspr = sprites++;
     SprChanT *chan;
     SpriteT *spr;
 
