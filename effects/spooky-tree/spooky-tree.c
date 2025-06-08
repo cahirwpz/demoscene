@@ -6,9 +6,6 @@
 #include <sprite.h>
 #include <system/memory.h>
 
-#define _SYSTEM
-#include "system/cia.h"
-
 #include "data/tree-pal.c"
 #include "data/tree-data.c"
 #include "data/ghost64x_01.c"
@@ -42,7 +39,7 @@ static __code CopInsPairT *bplptr;
 static __code CopInsPairT *sprptr;
 static __code SprChanT sprchan[2][8];
 static __code CopInsT *colorLine[HEIGHT];
-static __code short active = 0;
+static __code short active = 1;
 
 static CopListT *MakeCopperList(void) {
   CopListT *cp = NewCopList(100 + HEIGHT * (tree_cols_width + 3));
@@ -85,25 +82,58 @@ static CopListT *MakeCopperList(void) {
   return CopListFinish(cp);
 }
 
-#if 0
-SpriteDither(sprA, 0x55555555);
-SpriteDither(sprB, 0xAAAAAAAA);
+static void AppendSpriteDitherA(SprDataT *dst, SprDataT *src, short height) {
+  height >>= 1;
 
-static void SpriteDither(SpriteT *spr, u_int mask) {
-  u_int *data = (u_int *)&spr->data[0];
-  short n = SpriteHeight(spr);
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+  custom->bltapt = src++;
+  custom->bltamod = 4;
+  custom->bltbdat = 0x5555;
+  custom->bltdpt = dst++;
+  custom->bltdmod = 4;
+  custom->bltcon0 = (SRCA | DEST) | A_AND_B;
+  custom->bltcon1 = 0;
+  custom->bltsize = (height << 6) | 2;
+  WaitBlitter();
 
-  while (n-- > 0) {
-    *data++ &= mask;
-    mask = ~mask;
-  }
+  custom->bltapt = src;
+  custom->bltbdat = 0xAAAA;
+  custom->bltdpt = dst;
+  custom->bltcon0 = (SRCA | DEST) | A_AND_B;
+  custom->bltsize = (height << 6) | 2;
+  WaitBlitter();
 }
-#endif
+
+static void AppendSpriteDitherB(SprDataT *dst, SprDataT *src, short height) {
+  height >>= 1;
+
+  custom->bltafwm = -1;
+  custom->bltalwm = -1;
+  custom->bltapt = src++;
+  custom->bltamod = 4;
+  custom->bltbdat = 0xAAAA;
+  custom->bltdpt = dst++;
+  custom->bltdmod = 4;
+  custom->bltcon0 = (SRCA | DEST) | A_AND_B;
+  custom->bltcon1 = 0;
+  custom->bltsize = (height << 6) | 2;
+  WaitBlitter();
+
+  custom->bltapt = src;
+  custom->bltbdat = 0x5555;
+  custom->bltdpt = dst;
+  custom->bltcon0 = (SRCA | DEST) | A_AND_B;
+  custom->bltsize = (height << 6) | 2;
+  WaitBlitter();
+}
 
 static SOFTSPRITEARRAY(sprites, 24);
 
 static void InitSpriteArray(SoftSpriteArrayT *sprites, short i) {
-  sprites->count = 0;
+  SoftSpriteArrayReset(sprites);
+
+  sprites->append = (frameCount & 1) ? AppendSpriteDitherA : AppendSpriteDitherB;
 
   /* small ghost top-left */
   AddSprite(sprites, smallGhost[i][0], X(32 + 16 * 0), Y(32));
@@ -204,7 +234,8 @@ static void UpdateColorLines(short line) {
   }
 }
 
-PROFILE(SpookyTree);
+PROFILE(Sprites);
+PROFILE(ColorLines);
 
 static void Render(void) {
   short line = mod16(frameCount, tree_height - HEIGHT);
@@ -214,21 +245,24 @@ static void Render(void) {
     CopInsSet32(&bplptr[i], tree.planes[i] + tree_bytesPerRow * line);
   }
 
-  ProfilerStart(SpookyTree);
+  ProfilerStart(Sprites);
   {
     InitSpriteArray(&sprites, spriteFrame[(frameCount >> 3) & 3]);
     RenderSprites(sprchan[active], &sprites, &diw);
-    active ^= 1;
   }
-  ProfilerStop(SpookyTree);
+  ProfilerStop(Sprites);
 
-  UpdateColorLines(line);
+  ProfilerStart(ColorLines);
+  {
+    UpdateColorLines(line);
+  }
+  ProfilerStop(ColorLines);
 
+  active ^= 1;
   TaskWaitVBlank();
 }
 
 static void VBlank(void) {
-  // short j = (ReadFrameCounter() >> 3) & 3;
   short i;
 
   for (i = 0; i < 8; i++) {

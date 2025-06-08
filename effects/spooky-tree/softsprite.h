@@ -80,15 +80,16 @@ static inline void FinishAllSprChan(SprChanT *chan) {
   }
 }
 
-static inline void AppendSprite(SpriteT *dst, short y, short h, SpriteT *src) {
+static void AppendSpriteBlitter(SprDataT *dst, SprDataT *src, short height) {
+  WaitBlitter();
+
   custom->bltafwm = -1;
   custom->bltalwm = -1;
-  custom->bltapt = &src->data[y];
-  custom->bltdpt = &dst->data[0];
+  custom->bltapt = src;
+  custom->bltdpt = dst;
   custom->bltcon0 = (SRCA | DEST) | A_TO_D;
   custom->bltcon1 = 0;
-  custom->bltsize = (h << 6) | 2;
-  WaitBlitter();
+  custom->bltsize = (height << 6) | 2;
 }
 
 static inline void SpriteSetHeader(SpriteT *spr, short hs, short vs, short height) {
@@ -111,23 +112,36 @@ static inline void SpriteSetHeader(SpriteT *spr, short hs, short vs, short heigh
   }
 }
 
+typedef void (*AppendSpriteT)(SprDataT *dst, SprDataT *src, short h);
+
 typedef struct SoftSpriteArray {
   short count;
+  AppendSpriteT append;
+  SoftSpriteT *last;
   SoftSpriteT *sprites;
 } SoftSpriteArrayT;
 
 #define SOFTSPRITEARRAY(NAME, SIZE)         \
   SoftSpriteArrayT NAME = {                 \
     .count = 0,                             \
+    .append = AppendSpriteBlitter,          \
+    .last = NULL,                           \
     .sprites = (SoftSpriteT[SIZE]) {}       \
   }
 
+static inline void SoftSpriteArrayReset(SoftSpriteArrayT *array) {
+  array->count = 0;
+  array->last = array->sprites;
+}
+
 static inline void AddSprite(SoftSpriteArrayT *array, SpriteT *spr, hpos hp, vpos vp) {
-  SoftSpriteT *swspr = &array->sprites[array->count++];
+  SoftSpriteT *swspr = array->last++;
 
   swspr->spr = spr;
   swspr->hp = hp;
   swspr->vp = vp;
+
+  array->count++;
 }
 
 /*
@@ -153,6 +167,7 @@ static inline void AddSprite(SoftSpriteArrayT *array, SpriteT *spr, hpos hp, vpo
 
 static void RenderSprites(SprChanT chans[8], SoftSpriteArrayT *array, DispWinT *diw) {
   SoftSpriteT *sprites = array->sprites;
+  AppendSpriteT append = array->append;
   short n = array->count;
 
   SoftSpriteSort(sprites, n);
@@ -161,7 +176,6 @@ static void RenderSprites(SprChanT chans[8], SoftSpriteArrayT *array, DispWinT *
   do {
     SoftSpriteT *swspr = sprites++;
     SprChanT *chan;
-    SpriteT *spr;
 
     short hs = swspr->hp.hpos;
     short vs = swspr->vp.vpos;
@@ -190,11 +204,13 @@ static void RenderSprites(SprChanT chans[8], SoftSpriteArrayT *array, DispWinT *
       continue;
 
     /* Allocate space for sprite */
-    spr = (SpriteT *)chan->curr;
-    chan->curr = &spr->data[height];
+    {
+      SpriteT *spr = (SpriteT *)chan->curr;
+      chan->curr = &spr->data[height];
 
-    AppendSprite(spr, skip, height, swspr->spr);
-    SpriteSetHeader(spr, hs, vs, height);
+      append(&spr->data[0], &swspr->spr->data[skip], height);
+      SpriteSetHeader(spr, hs, vs, height);
+    }
   } while (--n > 0);
 
   FinishAllSprChan(chans);
