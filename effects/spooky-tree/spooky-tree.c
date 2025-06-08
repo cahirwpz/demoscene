@@ -33,7 +33,7 @@ static __code short spriteFrame[4] = {0, 1, 2, 1 };
 #define WIDTH 320
 #define HEIGHT 256
 
-#include "softsprite.h"
+#include <utils/softsprite.h>
 
 static __code CopListT *cp;
 static __code CopInsPairT *bplptr;

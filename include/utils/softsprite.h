@@ -2,7 +2,6 @@
 #define __SOFT_SPRITE_H__
 
 #include <types.h>
-#include <stdlib.h>
 #include <sprite.h>
 #include <blitter.h>
 #include <system/memory.h>
