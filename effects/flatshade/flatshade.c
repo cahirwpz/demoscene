@@ -25,6 +25,28 @@ static __code int active = 0;
 #include "data/stripe-4.c"
 #include "data/codi.c"
 
+static void Load(void) {
+  short i;
+
+  /* stripe 1-3 have 96 lines, and stripe 4 48 lines
+   * we need to copy them to create 384 lines long sprites */
+
+  memcpy(&stripe_4_0->data[48],&stripe_4_0->data[0], 48 * sizeof(SprDataT));
+
+  for (i = 96; i < 384; i += 96) {
+    memcpy(&stripe_1_0->data[i],&stripe_1_0->data[0], 96 * sizeof(SprDataT));
+    memcpy(&stripe_1_1->data[i],&stripe_1_1->data[0], 96 * sizeof(SprDataT));
+    memcpy(&stripe_2_0->data[i],&stripe_2_0->data[0], 96 * sizeof(SprDataT));
+    memcpy(&stripe_2_1->data[i],&stripe_2_1->data[0], 96 * sizeof(SprDataT));
+    memcpy(&stripe_3_0->data[i],&stripe_3_0->data[0], 96 * sizeof(SprDataT));
+    memcpy(&stripe_3_1->data[i],&stripe_3_1->data[0], 96 * sizeof(SprDataT));
+    memcpy(&stripe_3_0->data[i],&stripe_3_0->data[0], 96 * sizeof(SprDataT));
+    memcpy(&stripe_3_1->data[i],&stripe_3_1->data[0], 96 * sizeof(SprDataT));
+    memcpy(&stripe_4_0->data[i],&stripe_4_0->data[0], 96 * sizeof(SprDataT));
+    memcpy(&stripe_4_1->data[i],&stripe_4_1->data[0], 96 * sizeof(SprDataT));
+  }
+}
+
 static CopListT *MakeCopperList(void) {
   CopListT *cp;
   short i, j;
@@ -464,4 +486,4 @@ static void VBlank(void) {
   SpriteUpdatePos(stripe_4_1, X(32 + 16 * 7), Y(16 - f3));
 }
 
-EFFECT(FlatShade, NULL, NULL, Init, Kill, Render, VBlank);
+EFFECT(FlatShade, Load, NULL, Init, Kill, Render, VBlank);
