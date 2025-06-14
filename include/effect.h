@@ -7,23 +7,6 @@
 #include <stab.h>
 #include <debug.h>
 
-/* Definitions below are useful for copper list construction. */
-#ifndef X
-#define X(x) ((x) + 0x81) /* horizontal beam position (display window) */
-#endif
-
-#ifndef HP
-#define HP(x) (X(x) / 2) /* horizontal beam position (copper) */
-#endif
-
-#ifndef Y
-#define Y(y) ((y) + 0x2c) /* vertical beam position (display window) */
-#endif
-
-#ifndef VP
-#define VP(y) (Y(y) & 255) /* vertical beam position (copper) */
-#endif
-
 /*
  * Number of frames (50Hz) from time point when Render() was called first.
  */

@@ -2,6 +2,10 @@ export TOPDIR
 
 MAKEFLAGS += --no-builtin-rules
 
+ifndef DEMOSCENE_ROOT
+$(error You forgot to run 'source activate', please consult README.md)
+endif
+
 DIR := $(patsubst $(TOPDIR)%,%,$(realpath $(CURDIR)))
 DIR := $(patsubst /%,%/,$(DIR))
 
@@ -13,11 +17,19 @@ AR	:= m68k-amigaos-ar
 RANLIB	:= m68k-amigaos-ranlib
 VASM	:= vasm -quiet
 
-ASFLAGS	:= -m68010 -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-gstabs+
-VASMFLAGS	+= -m68010 -quiet -I$(TOPDIR)/include
+ifeq ($(MODEL),A1200)
+CPU_AS = 68020
+CPU_CC = 68020
+else
+CPU_AS = 68010
+CPU_CC = 68000
+endif
+
+ASFLAGS	:= -m$(CPU_AS) -Wa,--register-prefix-optional -Wa,--bitwise-or -Wa,-gstabs+
+VASMFLAGS	+= -m$(CPU_AS) -quiet -I$(TOPDIR)/include
 LDFLAGS	:= -amiga-debug-hunk --orphan-handling=error
 CFLAGS	= -ggdb3 -ffreestanding -fno-common $(OFLAGS) $(WFLAGS)
-OFLAGS	:= -m68000 -mregparm=2 -freg-struct-return
+OFLAGS	:= -m$(CPU_CC) -mregparm=2 -freg-struct-return
 # The '-O2' option does not turn on optimizations '-funroll-loops',
 # '-funroll-all-loops' and `-fstrict-aliasing'.
 OFLAGS	+= -O2 -fomit-frame-pointer -fstrength-reduce

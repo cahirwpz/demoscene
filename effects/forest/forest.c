@@ -17,15 +17,18 @@
 #include "data/moonbatghost1.c"
 #include "data/moonbatghost2.c"
 
+#define moon_info 32, false
+#define bat_info 19, false
+#define ghost_info 46, false
 
 #define WIDTH 320
 #define HEIGHT 97  // 1 line for trees + 6 layers * 16 lines for ground
 #define DEPTH 4
 #define GROUND_HEIGHT 16
 
-
-static SpriteT batspr[2][2];
-static SpriteT ghostspr[2][2];
+static SpriteT *moonspr[2][2];
+static SpriteT *batspr[2][2];
+static SpriteT *ghostspr[2][2];
 static BitmapT *screen[2];
 static CopInsPairT *bplptr;
 static CopInsPairT *sprptr;
@@ -112,13 +115,13 @@ static struct layer {
 static void SwitchSprites(void) {
   if (ghostData[0] & 0x10) {
     spract = 0;
-    CopInsSetSprite(&sprptr[6], &moonbatghost1[0]);
-    CopInsSetSprite(&sprptr[7], &moonbatghost1[1]);
+    CopInsSetSprite(&sprptr[6], moonbatghost1_0);
+    CopInsSetSprite(&sprptr[7], moonbatghost1_1);
     ghostData[1]--;
   } else {
     spract = 1;
-    CopInsSetSprite(&sprptr[6], &moonbatghost2[0]);
-    CopInsSetSprite(&sprptr[7], &moonbatghost2[1]);
+    CopInsSetSprite(&sprptr[6], moonbatghost2_0);
+    CopInsSetSprite(&sprptr[7], moonbatghost2_1);
     ghostData[1]++;
   }
 }
@@ -141,14 +144,14 @@ static void MoveTrees(u_int* arg) {
 static void MoveBranches(short bp[4][2]) {
   short i, j;
 
-  SpriteUpdatePos(&tree1[0],   X(bp[0][0]), Y(-16));
-  SpriteUpdatePos(&tree1[1],   X(bp[0][1]), Y(-16));
+  SpriteUpdatePos(tree1_0, X(bp[0][0]), Y(-16));
+  SpriteUpdatePos(tree1_1, X(bp[0][1]), Y(-16));
 
-  SpriteUpdatePos(&tree2[0],   X(bp[1][0]), Y(-16));
-  SpriteUpdatePos(&tree2[1],   X(bp[1][1]), Y(-16));
+  SpriteUpdatePos(tree2_0, X(bp[1][0]), Y(-16));
+  SpriteUpdatePos(tree2_1, X(bp[1][1]), Y(-16));
 
-  SpriteUpdatePos(&tree3[0],   X(bp[2][0]), Y(-16));
-  SpriteUpdatePos(&tree3[1],   X(bp[2][1]), Y(-16));
+  SpriteUpdatePos(tree3_0, X(bp[2][0]), Y(-16));
+  SpriteUpdatePos(tree3_1, X(bp[2][1]), Y(-16));
 
   for (i = 0; i <= 2; ++i) {
     for (j = 0; j <= 1; ++j) {
@@ -160,9 +163,14 @@ static void MoveBranches(short bp[4][2]) {
   }
 }
 
-static void MoveBat(SpriteT spr[2]) {
-  SpriteUpdatePos(&spr[0], X(batPos[0]), Y(batPos[1]));
-  SpriteUpdatePos(&spr[1], X(batPos[0]+16), Y(batPos[1]));
+static void MoveMoon(SpriteT *spr[2]) {
+  SpriteUpdatePos(spr[0], X(16), Y(16));
+  SpriteUpdatePos(spr[1], X(32), Y(16));
+}
+
+static void MoveBat(SpriteT *spr[2]) {
+  SpriteUpdatePos(spr[0], X(batPos[0]), Y(batPos[1]));
+  SpriteUpdatePos(spr[1], X(batPos[0]+16), Y(batPos[1]));
 
   batPos[0] -= 1;
   if (batPos[0] < -64) {
@@ -170,9 +178,9 @@ static void MoveBat(SpriteT spr[2]) {
   }
 }
 
-static void MoveGhost(SpriteT spr[2]) {
-  SpriteUpdatePos(&spr[0], X(ghostData[0]),    Y(ghostData[1]));
-  SpriteUpdatePos(&spr[1], X(ghostData[0]+16), Y(ghostData[1]));
+static void MoveGhost(SpriteT *spr[2]) {
+  SpriteUpdatePos(spr[0], X(ghostData[0]),    Y(ghostData[1]));
+  SpriteUpdatePos(spr[1], X(ghostData[0]+16), Y(ghostData[1]));
 
   ghostData[0] += 2;
   if (ghostData[0] > 320) {
@@ -416,6 +424,7 @@ static void ClearBitplanes(void **planes, struct layer lr[6]) {
   MoveForest(&lr[0], 0);
   if (layers[0].speed == 0) {
     SwitchSprites();
+    MoveMoon(moonspr[spract]);
     MoveGhost(ghostspr[spract]);
     MoveBat(batspr[spract]);
     MoveBranches(branchesPos);
@@ -493,67 +502,44 @@ static void SetupColors(void) {
 }
 
 static void SetupSprites(void) {
-  SprDataT *dat;
-  sprptr = CopSetupSprites(cp);
+  SprDataT *dat1_0 = (SprDataT *)moonbatghost1_0;
+  SprDataT *dat1_1 = (SprDataT *)moonbatghost1_1;
+  SprDataT *dat2_0 = (SprDataT *)moonbatghost2_0;
+  SprDataT *dat2_1 = (SprDataT *)moonbatghost2_1;
 
   /* Moon, bat, ghost */
-  dat = &moonbatghost10_sprdat;
-  MakeSprite(&dat, 32, false, &moonbatghost1[0]);
-  dat = &moonbatghost11_sprdat;
-  MakeSprite(&dat, 32, false, &moonbatghost1[1]);
-  dat = &moonbatghost20_sprdat;
-  MakeSprite(&dat, 32, false, &moonbatghost2[0]);
-  dat = &moonbatghost21_sprdat;
-  MakeSprite(&dat, 32, false, &moonbatghost2[1]);
+  moonspr[0][0] = MakeSprite(&dat1_0, moon_info);
+  moonspr[0][1] = MakeSprite(&dat1_1, moon_info);
+  moonspr[1][0] = MakeSprite(&dat2_0, moon_info);
+  moonspr[1][1] = MakeSprite(&dat2_1, moon_info);
 
   /* Bat, active == 0 */
-  dat = (SprDataT*)moonbatghost1[0].sprdat->data[32];
-  MakeSprite(&dat, 19, false, &batspr[0][0]);
-  dat = (SprDataT*)moonbatghost1[1].sprdat->data[32];
-  MakeSprite(&dat, 19, false, &batspr[0][1]);
+  batspr[0][0] = MakeSprite(&dat1_0, bat_info);
+  batspr[0][1] = MakeSprite(&dat1_1, bat_info);
   /* Bat, active == 1 */
-  dat = (SprDataT*)moonbatghost2[0].sprdat->data[32];
-  MakeSprite(&dat, 19, false, &batspr[1][0]);
-  dat = (SprDataT*)moonbatghost2[1].sprdat->data[32];
-  MakeSprite(&dat, 19, false, &batspr[1][1]);
+  batspr[1][0] = MakeSprite(&dat2_0, bat_info);
+  batspr[1][1] = MakeSprite(&dat2_1, bat_info);
 
   /* Ghost, active == 0 */
-  dat = (SprDataT*)moonbatghost1[0].sprdat->data[52];
-  MakeSprite(&dat, 46, false, &ghostspr[0][0]);
-  dat = (SprDataT*)moonbatghost1[1].sprdat->data[52];
-  MakeSprite(&dat, 46, false, &ghostspr[0][1]);
+  ghostspr[0][0] = MakeSprite(&dat1_0, ghost_info);
+  ghostspr[0][1] = MakeSprite(&dat1_1, ghost_info);
   /* Ghost, active == 1 */
-  dat = (SprDataT*)moonbatghost2[0].sprdat->data[52];
-  MakeSprite(&dat, 46, false, &ghostspr[1][0]);
-  dat = (SprDataT*)moonbatghost2[1].sprdat->data[52];
-  MakeSprite(&dat, 46, false, &ghostspr[1][1]);
+  ghostspr[1][0] = MakeSprite(&dat2_0, ghost_info);
+  ghostspr[1][1] = MakeSprite(&dat2_1, ghost_info);
 
-  CopInsSetSprite(&sprptr[6], &moonbatghost1[0]);
-  CopInsSetSprite(&sprptr[7], &moonbatghost1[1]);
+  EndSprite(&dat1_0);
+  EndSprite(&dat1_1);
+  EndSprite(&dat2_0);
+  EndSprite(&dat2_1);
 
-  SpriteUpdatePos(&moonbatghost1[0], X(16), Y(16));
-  SpriteUpdatePos(&moonbatghost1[1], X(32), Y(16));
-  SpriteUpdatePos(&moonbatghost2[0], X(16), Y(16));
-  SpriteUpdatePos(&moonbatghost2[1], X(32), Y(16));
+  SpriteUpdatePos(tree1_0, X(branchesPos[0][0]), Y(-16));
+  SpriteUpdatePos(tree1_1, X(branchesPos[0][1]), Y(-16));
 
-  /* Branches */
-  CopInsSetSprite(&sprptr[0], &tree1[0]);
-  CopInsSetSprite(&sprptr[1], &tree1[1]);
+  SpriteUpdatePos(tree2_0, X(branchesPos[1][0]), Y(-16));
+  SpriteUpdatePos(tree2_1, X(branchesPos[1][1]), Y(-16));
 
-  CopInsSetSprite(&sprptr[2], &tree2[0]);
-  CopInsSetSprite(&sprptr[3], &tree2[1]);
-
-  CopInsSetSprite(&sprptr[4], &tree3[0]);
-  CopInsSetSprite(&sprptr[5], &tree3[1]);
-
-  SpriteUpdatePos(&tree1[0],   X(branchesPos[0][0]), Y(-16));
-  SpriteUpdatePos(&tree1[1],   X(branchesPos[0][1]), Y(-16));
-
-  SpriteUpdatePos(&tree2[0],   X(branchesPos[1][0]), Y(-16));
-  SpriteUpdatePos(&tree2[1],   X(branchesPos[1][1]), Y(-16));
-
-  SpriteUpdatePos(&tree3[0],   X(branchesPos[2][0]), Y(-16));
-  SpriteUpdatePos(&tree3[1],   X(branchesPos[2][1]), Y(-16));
+  SpriteUpdatePos(tree3_0, X(branchesPos[2][0]), Y(-16));
+  SpriteUpdatePos(tree3_1, X(branchesPos[2][1]), Y(-16));
 }
 
 static CopListT *MakeCopperList(void) {
@@ -584,13 +570,25 @@ static CopListT *MakeCopperList(void) {
 
   cp = NewCopList(128);
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
+  sprptr = CopSetupSprites(cp);
 
-  // Sprites
-  SetupSprites();
+  /* Branches */
+  CopInsSetSprite(&sprptr[0], tree1_0);
+  CopInsSetSprite(&sprptr[1], tree1_1);
+
+  CopInsSetSprite(&sprptr[2], tree2_0);
+  CopInsSetSprite(&sprptr[3], tree2_1);
+
+  CopInsSetSprite(&sprptr[4], tree3_0);
+  CopInsSetSprite(&sprptr[5], tree3_1);
+
+  /* Moon + bat + ghost */
+  CopInsSetSprite(&sprptr[6], moonbatghost1_0);
+  CopInsSetSprite(&sprptr[7], moonbatghost1_1);
 
   // Moon behind trees
-  CopWait(cp, 0, 0);
-  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF1P0 | BPLCON2_PF1P1 | BPLCON2_PF2P0 | BPLCON2_PF2P1);
+  CopWait(cp, VP(0), HP(0));
+  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF1P_SP67 | BPLCON2_PF2P_SP67);
 
   // Moon colors
   CopSetColor(cp, 29, 0x444);
@@ -598,13 +596,13 @@ static CopListT *MakeCopperList(void) {
   CopSetColor(cp, 31, 0xBBB);
 
   // Duplicate lines
-  CopWaitSafe(cp, Y(0), 0);
+  CopWaitSafe(cp, Y(0), HP(0));
   CopMove16(cp, bpl1mod, -40);
   CopMove16(cp, bpl2mod, -40);
 
   // Background gradient
   for (i = 0; i < 12; ++i) {
-    CopWait(cp, Y(i * 8), 0);
+    CopWait(cp, Y(i * 8), HP(0));
     CopSetColor(cp, 0, backgroundGradient[i]);
     // Bat Colors
     if (i * 8 == 48) {
@@ -620,14 +618,14 @@ static CopListT *MakeCopperList(void) {
   CopSetColor(cp, 31, 0xDDD);
 
   // Ghost between playfields
-  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF2P0 | BPLCON2_PF2P1 | BPLCON2_PF1P2);
+  CopMove16(cp, bplcon2, BPLCON2_PF2PRI | BPLCON2_PF2P_SP67 | BPLCON2_PF1P_BOTTOM);
 
   // Duplicate lines
   for (i = 0; i < 6; ++i) {
-    CopWaitSafe(cp, Y(256 - groundLevel[i]), 0);
+    CopWaitSafe(cp, Y(256 - groundLevel[i]), HP(0));
     CopMove16(cp, bpl1mod, 0);
     CopMove16(cp, bpl2mod, 0);
-    CopWaitSafe(cp, Y(256 + GROUND_HEIGHT - groundLevel[i]), 0);
+    CopWaitSafe(cp, Y(256 + GROUND_HEIGHT - groundLevel[i]), HP(0));
     CopMove16(cp, bpl1mod, -40);
     CopMove16(cp, bpl2mod, -40);
   }
@@ -645,6 +643,7 @@ static void Init(void) {
   SetupPlayfield(MODE_DUALPF, DEPTH, X(0), Y(0), WIDTH, 256);
 
   SetupColors();
+  SetupSprites();
 
   cp = MakeCopperList();
   CopListActivate(cp);

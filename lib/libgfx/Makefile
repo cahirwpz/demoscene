@@ -24,6 +24,7 @@ SOURCES := \
 	CopUpdateBitplanes.c \
 	CpuEdge.c \
 	CpuLine.c \
+	CustomRegisters.c \
 	DeleteBitmap.c \
 	DeleteCopList.c \
 	DeletePixmap.c \
@@ -33,6 +34,7 @@ SOURCES := \
 	InitSharedBitmap.c \
 	InsideArea.c \
 	LoadColorArray.c \
+	LoadColorArrayAGA.c \
 	MakeSprite.c \
 	NewBitmap.c \
 	NewCopList.c \
@@ -45,6 +47,7 @@ SOURCES := \
 	SetupDisplayWindow.c \
 	SetupMode.c \
 	SetupPlayfield.c \
+	SpriteHeight.c \
 	SpriteUpdatePos.c \
 	c2p_1x1_4.asm
 

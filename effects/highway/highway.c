@@ -1,11 +1,8 @@
-#include "effect.h"
-#include "copper.h"
-#include "gfx.h"
-#include "blitter.h"
-#include "circle.h"
-#include "fx.h"
-#include "2d.h"
-#include "sprite.h"
+#include <effect.h>
+#include <copper.h>
+#include <blitter.h>
+#include <fx.h>
+#include <sprite.h>
 #include <stdlib.h>
 
 #define WIDTH 320
@@ -50,23 +47,23 @@ static CopListT *MakeCopperList(void) {
   short i;
 
   CopSetupBitplanes(cp, &city_top, DEPTH);
-  CopWait(cp, Y(-18), 0);
+  CopWait(cp, Y(-18), HP(0));
   CopLoadColors(cp, city_top_colors, 0);
 
   CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
 
   {
-    CopWait(cp, Y(LANEL_Y - 2), 8);
+    CopWait(cp, Y(LANEL_Y - 2), HP(16));
     CopMove16(cp, dmacon, DMAF_RASTER);
     CopLoadColors(cp, car_left_colors, 0);
     bplptr[0] = CopSetupBitplanes(cp, lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
 
-    CopWait(cp, Y(LANEL_Y), 8);
+    CopWait(cp, Y(LANEL_Y), HP(16));
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
 
-    CopWait(cp, Y(LANEL_Y + LANE_H), 8);
+    CopWait(cp, Y(LANEL_Y + LANE_H), HP(16));
     CopMove16(cp, dmacon, DMAF_RASTER);
   }
 
@@ -83,29 +80,29 @@ static CopListT *MakeCopperList(void) {
   }
 
   {
-    CopWait(cp, Y(LANER_Y - 1), 8);
+    CopWait(cp, Y(LANER_Y - 1), HP(16));
     CopLoadColors(cp, car_right_colors, 0);
     bplptr[1] = CopSetupBitplanes(cp, lanes[active], DEPTH);
     CopMove16(cp, bpl1mod, 8);
     CopMove16(cp, bpl2mod, 8);
 
-    CopWait(cp, Y(LANER_Y), 8);
+    CopWait(cp, Y(LANER_Y), HP(16));
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
-    CopWait(cp, Y(LANER_Y + LANE_H), 8);
+    CopWait(cp, Y(LANER_Y + LANE_H), HP(16));
     CopMove16(cp, dmacon, DMAF_RASTER);
   }
 
   {
-    CopWait(cp, Y(LANER_Y + LANE_H + 1), 8);
+    CopWait(cp, Y(LANER_Y + LANE_H + 1), HP(16));
     CopLoadColors(cp, city_bottom_colors, 0);
     CopSetupBitplanes(cp, &city_bottom, DEPTH);
-    CopWait(cp, Y(LANER_Y + LANE_H + 2), 8);
+    CopWait(cp, Y(LANER_Y + LANE_H + 2), HP(16));
     CopMove16(cp, dmacon, DMAF_SETCLR | DMAF_RASTER);
   }
 
   for (i = 0; i < 8; i++) {
-    CopInsSetSprite(&sprptr[i], &sprite[i]);
-    SpriteUpdatePos(&sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4));
+    CopInsSetSprite(&sprptr[i], sprite[i]);
+    SpriteUpdatePos(sprite[i], X(96 + 16 * i), Y(LANEL_Y + LANE_H + 4));
   }
 
   return CopListFinish(cp);

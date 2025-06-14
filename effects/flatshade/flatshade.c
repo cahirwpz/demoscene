@@ -1,3 +1,4 @@
+#include "beampos.h"
 #include "effect.h"
 #include "blitter.h"
 #include "copper.h"
@@ -33,17 +34,17 @@ static CopListT *MakeCopperList(void) {
   sprptr = CopSetupSprites(cp);
 
   for (i = 16; i < HEIGHT + 16; i++) {
-    CopWaitSafe(cp, Y(i), 0);
+    CopWaitSafe(cp, Y(i), HP(0));
 
     for (j = 0; j < 4; j++) {
-      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(22 + 24*j), Y(i)));
-      CopMove16(cp, spr[j*2+1].pos, SPRPOS(X(22 + 24*j + 16), Y(i)));
+      CopMove16(cp, spr[j*2+0].pos, SPRPOS(DIWHP + 22 + 24*j, DIWVP + i));
+      CopMove16(cp, spr[j*2+1].pos, SPRPOS(DIWHP + 22 + 24*j + 16, DIWVP + i));
     }
 
     CopWaitSafe(cp, Y(i), HP(128));
     for (j = 3; j >= 0; j--) {
-      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(256+8 - 24*j + 0), Y(i)));
-      CopMove16(cp, spr[j*2+1].pos, SPRPOS(X(256+8 - 24*j + 16), Y(i)));
+      CopMove16(cp, spr[j*2+0].pos, SPRPOS(DIWHP + 256+8 - 24*j + 0, DIWVP + i));
+      CopMove16(cp, spr[j*2+1].pos, SPRPOS(DIWHP + 256+8 - 24*j + 16, DIWVP + i));
     }
   }
 
@@ -55,9 +56,14 @@ static void Init(void) {
   cube = NewObject3D(&codi);
   cube->translate.z = fx4i(-300);
 
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
   buffer = NewBitmap(WIDTH, HEIGHT, 1, 0);
+
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
+  BitmapClear(screen[0]);
+  BitmapClear(screen[1]);
+  BitmapClear(buffer);
 
   /* keep the buffer as the last bitplane of both screens */
   screen[0]->planes[DEPTH] = buffer->planes[0];
@@ -76,23 +82,23 @@ static void Init(void) {
   cp = MakeCopperList();
   CopListActivate(cp);
 
-  CopInsSetSprite(&sprptr[0], &stripe_1[0]);
-  CopInsSetSprite(&sprptr[1], &stripe_1[1]);
-  CopInsSetSprite(&sprptr[2], &stripe_2[0]);
-  CopInsSetSprite(&sprptr[3], &stripe_2[1]);
-  CopInsSetSprite(&sprptr[4], &stripe_3[0]);
-  CopInsSetSprite(&sprptr[5], &stripe_3[1]);
-  CopInsSetSprite(&sprptr[6], &stripe_4[0]);
-  CopInsSetSprite(&sprptr[7], &stripe_4[1]);
+  CopInsSetSprite(&sprptr[0], stripe_1_0);
+  CopInsSetSprite(&sprptr[1], stripe_1_1);
+  CopInsSetSprite(&sprptr[2], stripe_2_0);
+  CopInsSetSprite(&sprptr[3], stripe_2_1);
+  CopInsSetSprite(&sprptr[4], stripe_3_0);
+  CopInsSetSprite(&sprptr[5], stripe_3_1);
+  CopInsSetSprite(&sprptr[6], stripe_4_0);
+  CopInsSetSprite(&sprptr[7], stripe_4_1);
 
-  SpriteUpdatePos(&stripe_1[0], X(32 + 16 * 0), Y(16));
-  SpriteUpdatePos(&stripe_1[1], X(32 + 16 * 1), Y(16));
-  SpriteUpdatePos(&stripe_2[0], X(32 + 16 * 2), Y(16));
-  SpriteUpdatePos(&stripe_2[1], X(32 + 16 * 3), Y(16));
-  SpriteUpdatePos(&stripe_3[0], X(32 + 16 * 4), Y(16));
-  SpriteUpdatePos(&stripe_3[1], X(32 + 16 * 5), Y(16));
-  SpriteUpdatePos(&stripe_4[0], X(32 + 16 * 6), Y(16));
-  SpriteUpdatePos(&stripe_4[1], X(32 + 16 * 7), Y(16));
+  SpriteUpdatePos(stripe_1_0, X(32 + 16 * 0), Y(16));
+  SpriteUpdatePos(stripe_1_1, X(32 + 16 * 1), Y(16));
+  SpriteUpdatePos(stripe_2_0, X(32 + 16 * 2), Y(16));
+  SpriteUpdatePos(stripe_2_1, X(32 + 16 * 3), Y(16));
+  SpriteUpdatePos(stripe_3_0, X(32 + 16 * 4), Y(16));
+  SpriteUpdatePos(stripe_3_1, X(32 + 16 * 5), Y(16));
+  SpriteUpdatePos(stripe_4_0, X(32 + 16 * 6), Y(16));
+  SpriteUpdatePos(stripe_4_1, X(32 + 16 * 7), Y(16));
 
   EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_SPRITE | DMAF_BLITHOG);
 }
@@ -448,14 +454,14 @@ static void VBlank(void) {
   f2 = (frameCount * 6 / 8) % 24;
   f3 = (frameCount * 5 / 8) % 20;
 
-  SpriteUpdatePos(&stripe_1[0], X(32 + 16 * 0), Y(16 - f0));
-  SpriteUpdatePos(&stripe_1[1], X(32 + 16 * 1), Y(16 - f0));
-  SpriteUpdatePos(&stripe_2[0], X(32 + 16 * 2), Y(16 - f1));
-  SpriteUpdatePos(&stripe_2[1], X(32 + 16 * 3), Y(16 - f1));
-  SpriteUpdatePos(&stripe_3[0], X(32 + 16 * 4), Y(16 - f2));
-  SpriteUpdatePos(&stripe_3[1], X(32 + 16 * 5), Y(16 - f2));
-  SpriteUpdatePos(&stripe_4[0], X(32 + 16 * 6), Y(16 - f3));
-  SpriteUpdatePos(&stripe_4[1], X(32 + 16 * 7), Y(16 - f3));
+  SpriteUpdatePos(stripe_1_0, X(32 + 16 * 0), Y(16 - f0));
+  SpriteUpdatePos(stripe_1_1, X(32 + 16 * 1), Y(16 - f0));
+  SpriteUpdatePos(stripe_2_0, X(32 + 16 * 2), Y(16 - f1));
+  SpriteUpdatePos(stripe_2_1, X(32 + 16 * 3), Y(16 - f1));
+  SpriteUpdatePos(stripe_3_0, X(32 + 16 * 4), Y(16 - f2));
+  SpriteUpdatePos(stripe_3_1, X(32 + 16 * 5), Y(16 - f2));
+  SpriteUpdatePos(stripe_4_0, X(32 + 16 * 6), Y(16 - f3));
+  SpriteUpdatePos(stripe_4_1, X(32 + 16 * 7), Y(16 - f3));
 }
 
 EFFECT(FlatShade, NULL, NULL, Init, Kill, Render, VBlank);

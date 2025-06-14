@@ -1,6 +1,7 @@
 TOPDIR := $(realpath ../..)
 
-CLEAN-FILES := data/flatshade-pal.c data/codi.c data/pilka.c
+CLEAN-FILES := data/flatshade-pal.c data/codi.c data/pilka.c \
+	data/stripe-?.c
 
 LIBS := lib3d
 

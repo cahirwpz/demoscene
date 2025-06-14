@@ -72,7 +72,7 @@ static CopListT *MakeCopperList(CopInsT **line) {
   CopSetupBitplanes(cp, &floor, DEPTH);
 
   for (i = 0; i < HEIGHT; i++) {
-    CopWait(cp, Y(i), 0);
+    CopWait(cp, Y(i), HP(0));
     line[i] = CopMove16(cp, bplcon1, 0);
 
     if ((i & 7) == 0) {

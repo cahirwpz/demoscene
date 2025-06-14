@@ -1,7 +1,7 @@
 #include <copper.h>
 
 void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
-                          const BitmapT *bitmap, short x, short y __unused,
+                          const BitmapT *bitmap, hpos x, vpos y __unused,
                           const Area2D *area)
 {
   void *const *planes = bitmap->planes;
@@ -17,7 +17,7 @@ void CopSetupBitplaneArea(CopListT *list, u_short mode, u_short depth,
       w = 32;
     start = bitmap->bytesPerRow * area->y + ((area->x >> 3) & ~1);
     modulo = bitmap->bytesPerRow - ((w >> 3) & ~1);
-    x -= (area->x & 15);
+    x.hpos -= (area->x & 15);
   } else {
     w = (bitmap->width + 15) & ~15;
     start = 0;
