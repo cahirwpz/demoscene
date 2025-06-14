@@ -1,6 +1,7 @@
 #include <effect.h>
 #include <blitter.h>
 #include <color.h>
+#include <sprite.h>
 #include <copper.h>
 #include <pixmap.h>
 #include <system/interrupt.h>
@@ -11,17 +12,19 @@
 #define DEPTH 4
 #define OPTIMIZED 1
 
-static BitmapT *screen[2];
-static u_short active = 0;
-static u_short *shademap;
-static u_short *chunky[2];
-static CopListT *cp;
-static CopInsPairT *bplptr;
-static u_short *texture;
+static __code BitmapT *screen[2];
+static __code u_short active = 0;
+static __code u_short *shademap;
+static __code u_short *chunky[2];
+static __code CopListT *cp;
+static __code CopInsPairT *bplptr;
+static __code CopInsPairT *sprptr;
+static __code u_short *texture;
 
 #include "data/torus-map.c"
 #include "data/torus-light.c"
 #include "data/texture.c"
+#include "data/skull.c"
 
 #if OPTIMIZED
 #define UVMapRenderSize (WIDTH * HEIGHT * 8 + 2)
@@ -49,48 +52,67 @@ static void MakeUVMapRenderCode(void) {
 
   *code++ = 0x4e75; /* rts */
 }
+#else
+static void UVMapRender(u_short *chunky, u_short *texture, u_short *shade) {
+  u_short *data = uvmap;
+  u_char *lmap = light_pixels;
+  short n = WIDTH * HEIGHT;
+
+  while (--n >= 0) {
+    short uv = *data++;
+    short l = *lmap++;
+
+    if (uv & 1) {
+      chunky++;
+    } else {
+      short c = *(short *)((void *)texture + uv) | l;
+      *chunky++ = *(u_short *)((void *)shade + c);
+    }
+  }
+}
 #endif
 
+#define F(a, b, c, d) (((a) << 12) | ((b) << 8) | ((c) << 4) | (d))
+
 static u_short bluetab[16] = {
-  0x0000, 0x0003, 0x0030, 0x0033, 0x0300, 0x0303, 0x0330, 0x0333,
-  0x3000, 0x3003, 0x3030, 0x3033, 0x3300, 0x3303, 0x3330, 0x3333,
+  F(0,0,0,0), F(0,0,0,3), F(0,0,3,0), F(0,0,3,3),
+  F(0,3,0,0), F(0,3,0,3), F(0,3,3,0), F(0,3,3,3),
+  F(3,0,0,0), F(3,0,0,3), F(3,0,3,0), F(3,0,3,3),
+  F(3,3,0,0), F(3,3,0,3), F(3,3,3,0), F(3,3,3,3),
 };
 
 static u_short greentab[16] = {
-  0x0000, 0x0004, 0x0040, 0x0044, 0x0400, 0x0404, 0x0440, 0x0444,
-  0x4000, 0x4004, 0x4040, 0x4044, 0x4400, 0x4404, 0x4440, 0x4444,
+  F(0,0,0,0), F(0,0,0,4), F(0,0,4,0), F(0,0,4,4),
+  F(0,4,0,0), F(0,4,0,4), F(0,4,4,0), F(0,4,4,4),
+  F(4,0,0,0), F(4,0,0,4), F(4,0,4,0), F(4,0,4,4),
+  F(4,4,0,0), F(4,4,0,4), F(4,4,4,0), F(4,4,4,4),
 };
 
 static u_short redtab[16] = {
-  0x0000, 0x0008, 0x0080, 0x0088, 0x0800, 0x0808, 0x0880, 0x0888,
-  0x8000, 0x8008, 0x8080, 0x8088, 0x8800, 0x8808, 0x8880, 0x8888,
+  F(0,0,0,0), F(0,0,0,8), F(0,0,8,0), F(0,0,8,8),
+  F(0,8,0,0), F(0,8,0,8), F(0,8,8,0), F(0,8,8,8),
+  F(8,0,0,0), F(8,0,0,8), F(8,0,8,0), F(8,0,8,8),
+  F(8,8,0,0), F(8,8,0,8), F(8,8,8,0), F(8,8,8,8),
 };
 
-static void DataScramble(u_short *data, short n) {
-  u_char *in = (u_char *)data;
-  u_short *out = data;
+#undef F
 
-  while (--n >= 0) {
-    short ri = *in++;
-    short gi = *in++;
-    short bi = gi;
+static inline u_int PixelScramble(u_short data) {
+  short ri = (data >> 8) & 15;
+  short gi = (data >> 4) & 15;
+  short bi = data & 15;
 
-    /* [-- -- -- -- 11 10  9  8  7  6  5  4  3  2  1  0] */
-    /* [-- -- -- -- r0 r1 r2 r3 g0 g1 g2 g3 b0 b1 b2 b3] */
-    /* [11  7  3  3 10  6  2  2  9  5  1  1  8  4  0  0] */
-    /* [r0 g0 b0 b0 r1 g1 b1 b1 r2 g2 b2 b2 r3 g3 b3 b3] */
-
-    gi >>= 4;
-    bi &= 15;
-
-    *out++ = getword(redtab, ri) + getword(greentab, gi) + getword(bluetab, bi);
-  }
+  /* [-- -- -- -- 11 10  9  8  7  6  5  4  3  2  1  0] */
+  /* [-- -- -- -- r0 r1 r2 r3 g0 g1 g2 g3 b0 b1 b2 b3] */
+  /* [11  7  3  3 10  6  2  2  9  5  1  1  8  4  0  0] */
+  /* [r0 g0 b0 b0 r1 g1 b1 b1 r2 g2 b2 b2 r3 g3 b3 b3] */
+  return getword(redtab, ri) + getword(greentab, gi) + getword(bluetab, bi);
 }
 
 static void Load(void) {
   {
-    u_char *src = light.pixels;
-    u_char *dst = light.pixels;
+    u_char *src = light_pixels;
+    u_char *dst = light_pixels;
     short n = WIDTH * HEIGHT;
 
     while (--n >= 0)
@@ -106,17 +128,18 @@ static void Load(void) {
 
     while (--n >= 0) {
       u_short c = *cp++;
-      for (i = 0; i < 16; i++)
-        *dst++ = ColorTransition(0, c, i);
-      for (i = 0; i < 16; i++)
-        *dst++ = ColorTransition(c, 0xfff, i);
+      for (i = 0; i < 16; i++) {
+        *dst++ = PixelScramble(ColorTransition(0, c, i));
+      }
+      for (i = 0; i < 16; i++) {
+        *dst++ = PixelScramble(ColorTransition(c, 0xfff, i));
+      }
     }
   }
-  DataScramble(shademap, texture_colors_count * 32);
 
   texture = MemAlloc(128 * 128 * 2 * sizeof(u_short), MEMF_PUBLIC);
   {
-    u_char *src = texture_raw.pixels;
+    u_char *src = texture_raw_pixels;
     u_short *dst = texture;
     short n = 128 * 128;
 
@@ -261,6 +284,7 @@ static CopListT *MakeCopperList(void) {
   short i;
 
   bplptr = CopSetupBitplanes(cp, screen[active], DEPTH + (IsAGA() ? 2 : 0));
+  sprptr = CopSetupSprites(cp);
   CopLoadColor(cp, 0, 15, 0);
   for (i = 0; i < HEIGHT * 4; i++) {
     CopWaitSafe(cp, Y(i), HP(0));
@@ -302,17 +326,28 @@ static void Init(void) {
     custom->bpldat[5] = 0xcccc; // rgbb: 1100
   }
 
+  LoadColors(sprite_colors, 16);
+
   cp = MakeCopperList();
   CopListActivate(cp);
 
-  EnableDMA(DMAF_RASTER);
+  {
+    short i;
+    for (i = 0; i < 8; i++) {
+      CopInsSetSprite(&sprptr[i], skull[i]);
+      SpriteUpdatePos(skull[i], X(16 * (i >> 1) + 256), Y(0));
+    }
+  }
+
+  EnableDMA(DMAF_RASTER|DMAF_SPRITE);
 
   SetIntVector(INTB_BLIT, (IntHandlerT)ChunkyToPlanar, NULL);
   EnableINT(INTF_BLIT);
 }
 
 static void Kill(void) {
-  DisableDMA(DMAF_COPPER | DMAF_RASTER);
+  ResetSprites();
+  CopperStop();
 
   DisableINT(INTF_BLIT);
   ResetIntVector(INTB_BLIT);
@@ -336,26 +371,7 @@ static void Render(void) {
 #if OPTIMIZED
   (*UVMapRender)(chunky[active], &texture[frameCount & 16383], shademap);
 #else
-  {
-    void *shade = shademap;
-    void *tex = &texture[frameCount & 16383];
-    u_short *data = uvmap.pixels;
-    u_char *lmap = light->pixels;
-    u_short *dst = chunky[active];
-    short n = WIDTH * HEIGHT;
-
-    while (--n >= 0) {
-      u_short d = *data;
-      if (d & 1) {
-        data++;
-        lmap++;
-        dst++;
-      } else {
-        short c = *(short *)(tex + *data++) | *lmap++;
-        *dst++ = *(u_short *)(shade + c);
-      }
-    }
-  }
+  UVMapRender(chunky[active], &texture[frameCount & 16383], shademap);
 #endif
   ProfilerStop(UVLight);
 
