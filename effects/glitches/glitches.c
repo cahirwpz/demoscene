@@ -82,7 +82,7 @@ static CopListT *MakeCopperListStatic(StateT *state) {
   CopMove16(cp, bpldat[4], 0xffff);
   CopMove16(cp, bpldat[5], 0x00);
   for (i = 0; i < S_HEIGHT; i++) {
-    CopWaitSafe(cp, Y(i), 0);
+    CopWaitSafe(cp, Y(i), HP(0));
     CopMove16(cp, bpldat[5], NULL);
   }
 
@@ -95,7 +95,7 @@ static CopListT *MakeCopperListHalfbrite(StateT *state) {
 
   state->halfbrite = CopMove16(cp, bplcon1, 0x0000);
   CopMove16(cp, bpldat[5], 0x00);
-  CopWaitSafe(cp, Y(0), 0);
+  CopWaitSafe(cp, Y(0), HP(0));
   CopMove16(cp, bpldat[4], 0xffff);
 
   return CopListFinish(cp);
@@ -111,14 +111,14 @@ static CopListT *MakeCopperListTearing(StateT *state) {
   CopMove16(cp, bpldat[4], 0x00);
   CopMove16(cp, bpldat[5], 0x00);
   for (i = 0; i < 15; i++) {
-    CopWaitSafe(cp, Y(i+70), 0);
+    CopWaitSafe(cp, Y(i+70), HP(0));
     CopMove16(cp, bplcon1, NULL);
   }
   for (i = 16; i < 31; i++) { // TODO: clean up into one for loop
-    CopWaitSafe(cp, Y(i+offset), 0);
+    CopWaitSafe(cp, Y(i+offset), HP(0));
     CopMove16(cp, bplcon1, NULL);
   }
-  CopWaitSafe(cp, Y(31+offset), 0);
+  CopWaitSafe(cp, Y(31+offset), HP(0));
   CopMove16(cp, bplcon1, 0);
 
   return CopListFinish(cp);
