@@ -91,26 +91,6 @@ static void AppendSpriteBlitter(SprDataT *dst, SprDataT *src, short height) {
   custom->bltsize = (height << 6) | 2;
 }
 
-static inline void SpriteSetHeader(SpriteT *spr, short hs, short vs, short height) {
-  u_char *raw = (u_char *)spr;
-
-  *raw++ = vs;
-  *raw++ = (u_short)hs >> 1;
-
-  {
-    u_short vstop = vs + height;
-    u_char lowctl = hs & 1;
-
-    *raw++ = vstop;
-
-    if (vs >= 0x100)
-      lowctl += 4;
-    if (vstop >= 0x100)
-      lowctl += 2;
-    *raw++ = lowctl;
-  }
-}
-
 typedef void (*AppendSpriteT)(SprDataT *dst, SprDataT *src, short h);
 
 typedef struct SoftSpriteArray {
@@ -208,7 +188,7 @@ static void RenderSprites(SprChanT chans[8], SoftSpriteArrayT *array, DispWinT *
       chan->curr = &spr->data[height];
 
       append(&spr->data[0], &swspr->spr->data[skip], height);
-      SpriteSetHeader(spr, hs, vs, height);
+      SpriteSetHeader(spr, hs, vs, false, height);
     }
   } while (--n > 0);
 

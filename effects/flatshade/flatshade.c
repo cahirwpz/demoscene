@@ -62,47 +62,37 @@ static void Load(void) {
 }
 
 static void SaveStripes(short offset[8]) {
+  SpriteT **sprite = stripe;
+  StripeBackupT *backup = stripeBackup;
   short i;
 
   for (i = 0; i < 8; i++) {
-    short off = offset[i];
-    u_int *data = (u_int *)&stripe[i]->data[off];
+    short off = *offset++;
+    SpriteT *spr = *sprite++;
+    u_int *data = (u_int *)spr->data[off];
 
-    stripeBackup[i].header = data[-1];
-    stripeBackup[i].footer = data[HEIGHT];
-    stripeBackup[i].offset = off;
+    backup->header = data[-1];
+    backup->footer = data[HEIGHT];
+    backup->offset = off;
+
+    backup++;
   }
 }
 
 static void RestoreStripes(void) {
+  StripeBackupT *backup = stripeBackup;
+  SpriteT **sprite = stripe;
   short i;
 
   for (i = 0; i < 8; i++) {
-    short off = stripeBackup[i].offset;
-    u_int *data = (u_int *)&stripe[i]->data[off];
+    short off = backup->offset;
+    SpriteT *spr = *sprite++;
+    u_int *data = (u_int *)&spr->data[off];
 
-    data[-1] = stripeBackup[i].header;
-    data[HEIGHT] = stripeBackup[i].footer;
-  }
-}
+    data[-1] = backup->header;
+    data[HEIGHT] = backup->footer;
 
-static inline void SpriteSetHeader(SpriteT *spr, short hs, short vs, short height) {
-  u_char *raw = (u_char *)spr;
-
-  *raw++ = vs;
-  *raw++ = (u_short)hs >> 1;
-
-  {
-    u_short vstop = vs + height;
-    u_char lowctl = hs & 1;
-
-    *raw++ = vstop;
-
-    if (vs >= 0x100)
-      lowctl += 4;
-    if (vstop >= 0x100)
-      lowctl += 2;
-    *raw++ = lowctl;
+    backup++;
   }
 }
 
@@ -114,9 +104,7 @@ static void UpdateStripes(short offset[8]) {
 
   for (i = 0; i < 8; i++) {
     SpriteT *spr = (SpriteT *)&stripe[i]->data[offset[i] - 1];
-    // spr->pos = SPRPOS(X(32 + 16 * i).hpos, Y(0).vpos);
-    // spr->ctl = SPRCTL(X(32 + 16 * i).hpos, Y(0).vpos, HEIGHT, false);
-    SpriteSetHeader(spr, X(32 + 16 * i).hpos, Y(0).vpos, HEIGHT);
+    SpriteSetHeader(spr, X(32 + 16 * i).hpos, Y(0).vpos, false, HEIGHT);
     *(u_int *)&spr->data[HEIGHT] = 0;
     custom->sprpt[i] = spr;
   }
@@ -134,8 +122,8 @@ static CopListT *MakeCopperList(void) {
     CopWait(cp, Y(i-1), HP(454-64));
 
     for (j = 0; j < 4; j++) {
-      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(32 + 32*j + 0).hpos, Y(i).vpos));
-      CopMove16(cp, spr[j*2+1].pos, SPRPOS(X(32 + 32*j + 16).hpos, Y(i).vpos));
+      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(32 + 26*j + 0).hpos, Y(i).vpos));
+      CopMove16(cp, spr[j*2+1].pos, SPRPOS(X(32 + 26*j + 16).hpos, Y(i).vpos));
     }
 
     CopMove16(cp, color[17], *pixels++);
@@ -153,8 +141,8 @@ static CopListT *MakeCopperList(void) {
 
     CopWait(cp, Y(i), X(128+8));
     for (j = 3; j >= 0; j--) {
-      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(256 - 32*j + 0).hpos, Y(i).vpos));
-      CopMove16(cp, spr[j*2+1].pos, SPRPOS(X(256 - 32*j + 16).hpos, Y(i).vpos));
+      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(256 - 26*j + 0).hpos, Y(i).vpos));
+      CopMove16(cp, spr[j*2+1].pos, SPRPOS(X(256 - 26*j + 16).hpos, Y(i).vpos));
     }
   }
 
@@ -164,7 +152,7 @@ static CopListT *MakeCopperList(void) {
 
 static void Init(void) {
   cube = NewObject3D(&codi);
-  cube->translate.z = fx4i(-300);
+  cube->translate.z = fx4i(-350);
 
   screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
   screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
@@ -539,7 +527,6 @@ static void Render(void) {
 }
 
 static void VBlank(void) {
-#if 0
   static short frameCount = 0;
   frameCount += 3;
 
@@ -547,7 +534,7 @@ static void VBlank(void) {
   offset[2] = offset[3] = (frameCount * 7 / 8) % 96;
   offset[4] = offset[5] = (frameCount * 6 / 8) % 96;
   offset[6] = offset[7] = (frameCount * 5 / 8) % 48;
-#endif
+
   UpdateStripes(offset);
 }
 

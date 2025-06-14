@@ -101,6 +101,28 @@ SpriteT *MakeSprite(SprDataT **datp, short height, bool attached);
  */
 void EndSprite(SprDataT **datp);
 
+static inline void SpriteSetHeader(SpriteT *spr, short hs, short vs, bool attached, short height) {
+  u_char *raw = (u_char *)spr;
+
+  *raw++ = vs;
+  *raw++ = (u_short)hs >> 1;
+
+  {
+    u_short vstop = vs + height;
+    u_char lowctl = hs & 1;
+
+    *raw++ = vstop;
+
+    if (attached)
+      lowctl += 0x80;
+    if (vs >= 0x100)
+      lowctl += 4;
+    if (vstop >= 0x100)
+      lowctl += 2;
+    *raw++ = lowctl;
+  }
+}
+
 /* Don't call it for null sprites. */
 void SpriteUpdatePos(SpriteT *spr, hpos hstart, vpos vstart);
 
