@@ -7,7 +7,7 @@
 #include "fx.h"
 
 #define WIDTH  256
-#define HEIGHT (256-32)
+#define HEIGHT 256
 #define DEPTH  4
 
 static __code Object3D *cube;
@@ -23,45 +23,113 @@ static __code int active = 0;
 #include "data/stripe-2.c"
 #include "data/stripe-3.c"
 #include "data/stripe-4.c"
+#include "data/stripe-colors.c"
 #include "data/codi.c"
 
+static __code SpriteT *stripe[8] = {
+  stripe_1_0,
+  stripe_1_1,
+  stripe_2_0,
+  stripe_2_1,
+  stripe_3_0,
+  stripe_3_1,
+  stripe_4_0,
+  stripe_4_1,
+};
+
+typedef struct StripeBackup {
+  u_int header;
+  u_int footer;
+  short offset;
+} StripeBackupT;
+
+static __code short offset[8];
+static __code StripeBackupT stripeBackup[8];
+
 static void Load(void) {
-  short i;
+  short i, j;
 
   /* stripe 1-3 have 96 lines, and stripe 4 48 lines
    * we need to copy them to create 384 lines long sprites */
 
-  memcpy(&stripe_4_0->data[48],&stripe_4_0->data[0], 48 * sizeof(SprDataT));
+  memcpy(&stripe[6]->data[48], &stripe[6]->data[0], 48 * sizeof(SprDataT));
+  memcpy(&stripe[7]->data[48], &stripe[7]->data[0], 48 * sizeof(SprDataT));
 
   for (i = 96; i < 384; i += 96) {
-    memcpy(&stripe_1_0->data[i],&stripe_1_0->data[0], 96 * sizeof(SprDataT));
-    memcpy(&stripe_1_1->data[i],&stripe_1_1->data[0], 96 * sizeof(SprDataT));
-    memcpy(&stripe_2_0->data[i],&stripe_2_0->data[0], 96 * sizeof(SprDataT));
-    memcpy(&stripe_2_1->data[i],&stripe_2_1->data[0], 96 * sizeof(SprDataT));
-    memcpy(&stripe_3_0->data[i],&stripe_3_0->data[0], 96 * sizeof(SprDataT));
-    memcpy(&stripe_3_1->data[i],&stripe_3_1->data[0], 96 * sizeof(SprDataT));
-    memcpy(&stripe_3_0->data[i],&stripe_3_0->data[0], 96 * sizeof(SprDataT));
-    memcpy(&stripe_3_1->data[i],&stripe_3_1->data[0], 96 * sizeof(SprDataT));
-    memcpy(&stripe_4_0->data[i],&stripe_4_0->data[0], 96 * sizeof(SprDataT));
-    memcpy(&stripe_4_1->data[i],&stripe_4_1->data[0], 96 * sizeof(SprDataT));
+    for (j = 0; j < 8; j++) {
+      memcpy(&stripe[j]->data[i],&stripe[j]->data[0], 96 * sizeof(SprDataT));
+    }
+  }
+}
+
+static void SaveStripes(short offset[8]) {
+  short i;
+
+  for (i = 0; i < 8; i++) {
+    short off = *offset++;
+    u_int *data = (u_int *)&stripe[i]->data[off];
+
+    stripeBackup[i].header = data[-1];
+    stripeBackup[i].footer = data[HEIGHT];
+    stripeBackup[i].offset = off;
+  }
+}
+
+static void RestoreStripes(void) {
+  short i;
+
+  for (i = 0; i < 8; i++) {
+    short off = stripeBackup[i].offset;
+    u_int *data = (u_int *)&stripe[i]->data[off];
+
+    data[-1] = stripeBackup[i].header;
+    data[HEIGHT] = stripeBackup[i].footer;
+  }
+}
+
+static void UpdateStripes(short offset[8]) {
+  short i;
+
+  RestoreStripes();
+  SaveStripes(offset);
+
+  for (i = 0; i < 8; i++) {
+    short off = *offset++;
+    SpriteT *spr = (SpriteT *)&stripe[i]->data[off - 1];
+    spr->pos = SPRPOS(DIWHP + 32 + 16 * i, DIWVP);
+    spr->ctl = SPRCTL(DIWHP + 32 + 16 * i, DIWVP, HEIGHT, false);
+    CopInsSetSprite(&sprptr[i], spr);
   }
 }
 
 static CopListT *MakeCopperList(void) {
   CopListT *cp;
+  u_short *pixels = gradient_pixels;
   short i, j;
 
-  cp = NewCopList(32 + HEIGHT * (9 + 9));
+  cp = NewCopList(64 + HEIGHT * (9 + 9 + 12));
   bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
   sprptr = CopSetupSprites(cp);
 
-  for (i = 16; i < HEIGHT + 16; i++) {
-    CopWait(cp, Y(i-1), LASTHP);
+  for (i = 0; i < HEIGHT; i++) {
+    CopWait(cp, Y(i-1), HP(454 - 64));
 
     for (j = 0; j < 4; j++) {
-      CopMove16(cp, spr[j*2+0].pos, SPRPOS(DIWHP + 32 + 32*j, DIWVP + i));
-      CopMove16(cp, spr[j*2+1].pos, SPRPOS(DIWHP + 32 + 32*j + 16, DIWVP + i));
+      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(32 + 32*j).hpos, Y(i).vpos));
+      CopMove16(cp, spr[j*2+1].pos, SPRPOS(X(32 + 32*j + 16).hpos, Y(i).vpos));
     }
+    CopMove16(cp, color[17], *pixels++);
+    CopMove16(cp, color[18], *pixels++);
+    CopMove16(cp, color[19], *pixels++);
+    CopMove16(cp, color[21], *pixels++);
+    CopMove16(cp, color[22], *pixels++);
+    CopMove16(cp, color[23], *pixels++);
+    CopMove16(cp, color[25], *pixels++);
+    CopMove16(cp, color[26], *pixels++);
+    CopMove16(cp, color[27], *pixels++);
+    CopMove16(cp, color[29], *pixels++);
+    CopMove16(cp, color[30], *pixels++);
+    CopMove16(cp, color[31], *pixels++);
 
     CopWait(cp, Y(i), X(128+8));
     for (j = 3; j >= 0; j--) {
@@ -91,7 +159,7 @@ static void Init(void) {
   screen[0]->planes[DEPTH] = buffer->planes[0];
   screen[1]->planes[DEPTH] = buffer->planes[0];
 
-  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(16), WIDTH, HEIGHT);
+  SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   LoadColors(flatshade_colors, 0);
   LoadColors(stripe_1_colors, 16);
   LoadColors(stripe_2_colors, 20);
@@ -104,25 +172,10 @@ static void Init(void) {
   cp = MakeCopperList();
   CopListActivate(cp);
 
-  CopInsSetSprite(&sprptr[0], stripe_1_0);
-  CopInsSetSprite(&sprptr[1], stripe_1_1);
-  CopInsSetSprite(&sprptr[2], stripe_2_0);
-  CopInsSetSprite(&sprptr[3], stripe_2_1);
-  CopInsSetSprite(&sprptr[4], stripe_3_0);
-  CopInsSetSprite(&sprptr[5], stripe_3_1);
-  CopInsSetSprite(&sprptr[6], stripe_4_0);
-  CopInsSetSprite(&sprptr[7], stripe_4_1);
+  SaveStripes(offset);
+  UpdateStripes(offset);
 
-  SpriteUpdatePos(stripe_1_0, X(32 + 16 * 0), Y(16));
-  SpriteUpdatePos(stripe_1_1, X(32 + 16 * 1), Y(16));
-  SpriteUpdatePos(stripe_2_0, X(32 + 16 * 2), Y(16));
-  SpriteUpdatePos(stripe_2_1, X(32 + 16 * 3), Y(16));
-  SpriteUpdatePos(stripe_3_0, X(32 + 16 * 4), Y(16));
-  SpriteUpdatePos(stripe_3_1, X(32 + 16 * 5), Y(16));
-  SpriteUpdatePos(stripe_4_0, X(32 + 16 * 6), Y(16));
-  SpriteUpdatePos(stripe_4_1, X(32 + 16 * 7), Y(16));
-
-  EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_SPRITE | DMAF_BLITHOG);
+  EnableDMA(DMAF_RASTER | DMAF_SPRITE | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
 static void Kill(void) {
@@ -230,7 +283,7 @@ static void DrawObject(Object3D *object, void **planes,
 
         /* skip vertex index */
         index++;
-          
+
         {
           short i = *index++; /* edge index */
           short *edge = &EDGE(i)->point[0];
@@ -466,24 +519,17 @@ static void Render(void) {
 }
 
 static void VBlank(void) {
+#if 0
   static short frameCount = 0;
-  short f0, f1, f2, f3;
-
   frameCount += 3;
 
-  f0 = (frameCount) % 32;
-  f1 = (frameCount * 7 / 8) % 28;
-  f2 = (frameCount * 6 / 8) % 24;
-  f3 = (frameCount * 5 / 8) % 20;
+  offset[0] = offset[1] = (frameCount) % 96;
+  offset[2] = offset[3] = (frameCount * 7 / 8) % 96;
+  offset[4] = offset[5] = (frameCount * 6 / 8) % 96;
+  offset[6] = offset[7] = (frameCount * 5 / 8) % 48;
+#endif
 
-  SpriteUpdatePos(stripe_1_0, X(32 + 16 * 0), Y(16 - f0));
-  SpriteUpdatePos(stripe_1_1, X(32 + 16 * 1), Y(16 - f0));
-  SpriteUpdatePos(stripe_2_0, X(32 + 16 * 2), Y(16 - f1));
-  SpriteUpdatePos(stripe_2_1, X(32 + 16 * 3), Y(16 - f1));
-  SpriteUpdatePos(stripe_3_0, X(32 + 16 * 4), Y(16 - f2));
-  SpriteUpdatePos(stripe_3_1, X(32 + 16 * 5), Y(16 - f2));
-  SpriteUpdatePos(stripe_4_0, X(32 + 16 * 6), Y(16 - f3));
-  SpriteUpdatePos(stripe_4_1, X(32 + 16 * 7), Y(16 - f3));
+  UpdateStripes(offset);
 }
 
 EFFECT(FlatShade, Load, NULL, Init, Kill, Render, VBlank);
