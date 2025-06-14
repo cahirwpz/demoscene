@@ -10,6 +10,7 @@ SUBDIRS := \
 	blurred3d \
 	bumpmap-rgb \
 	butterfly-gears \
+	cathedral \
 	carrion \
 	circles \
 	color-cycling \
@@ -44,10 +45,12 @@ SUBDIRS := \
 	playpt \
 	plotter \
 	prisms \
+	roller \
 	rotator \
 	sea-anemone \
 	shapes \
 	showpchg \
+	spooky-tree \
 	stencil3d \
 	stripes \
 	textscroll \

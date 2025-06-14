@@ -1,6 +1,8 @@
+#include "beampos.h"
 #include "effect.h"
 #include "blitter.h"
 #include "copper.h"
+#include "sprite.h"
 #include "3d.h"
 #include "fx.h"
 
@@ -8,23 +10,158 @@
 #define HEIGHT 256
 #define DEPTH  4
 
-static Object3D *cube;
-static CopListT *cp;
-static CopInsPairT *bplptr;
-static BitmapT *screen[2];
-static BitmapT *buffer;
-static int active = 0;
+static __code Object3D *cube;
+static __code CopListT *cp;
+static __code CopInsPairT *bplptr;
+static __code BitmapT *screen[2];
+static __code BitmapT *buffer;
+static __code int active = 0;
 
 #include "data/flatshade-pal.c"
+#include "data/stripe-1.c"
+#include "data/stripe-2.c"
+#include "data/stripe-3.c"
+#include "data/stripe-4.c"
+#include "data/stripe-colors.c"
 #include "data/codi.c"
+
+static __code SpriteT *stripe[8] = {
+  stripe_1_0,
+  stripe_1_1,
+  stripe_2_0,
+  stripe_2_1,
+  stripe_3_0,
+  stripe_3_1,
+  stripe_4_0,
+  stripe_4_1,
+};
+
+typedef struct StripeBackup {
+  u_int header;
+  u_int footer;
+  short offset;
+} StripeBackupT;
+
+static __code short offset[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+static __code StripeBackupT stripeBackup[8];
+
+static void Load(void) {
+  short i, j;
+
+  /* stripe 1-3 have 96 lines, and stripe 4 48 lines
+   * we need to copy them to create 384 lines long sprites */
+
+  memcpy(&stripe[6]->data[48], &stripe[6]->data[0], 48 * sizeof(SprDataT));
+  memcpy(&stripe[7]->data[48], &stripe[7]->data[0], 48 * sizeof(SprDataT));
+
+  for (i = 96; i < 384; i += 96) {
+    for (j = 0; j < 8; j++) {
+      memcpy(&stripe[j]->data[i],&stripe[j]->data[0], 96 * sizeof(SprDataT));
+    }
+  }
+}
+
+static void SaveStripes(short offset[8]) {
+  SpriteT **sprite = stripe;
+  StripeBackupT *backup = stripeBackup;
+  short i;
+
+  for (i = 0; i < 8; i++) {
+    short off = *offset++;
+    SpriteT *spr = *sprite++;
+    u_int *data = (u_int *)spr->data[off];
+
+    backup->header = data[-1];
+    backup->footer = data[HEIGHT];
+    backup->offset = off;
+
+    backup++;
+  }
+}
+
+static void RestoreStripes(void) {
+  StripeBackupT *backup = stripeBackup;
+  SpriteT **sprite = stripe;
+  short i;
+
+  for (i = 0; i < 8; i++) {
+    short off = backup->offset;
+    SpriteT *spr = *sprite++;
+    u_int *data = (u_int *)&spr->data[off];
+
+    data[-1] = backup->header;
+    data[HEIGHT] = backup->footer;
+
+    backup++;
+  }
+}
+
+static void UpdateStripes(short offset[8]) {
+  short i;
+
+  RestoreStripes();
+  SaveStripes(offset);
+
+  for (i = 0; i < 8; i++) {
+    SpriteT *spr = (SpriteT *)&stripe[i]->data[offset[i] - 1];
+    SpriteSetHeader(spr, X(32 + 16 * i).hpos, Y(0).vpos, false, HEIGHT);
+    *(u_int *)&spr->data[HEIGHT] = 0;
+    custom->sprpt[i] = spr;
+  }
+}
+
+static CopListT *MakeCopperList(void) {
+  CopListT *cp;
+  u_short *pixels = gradient_pixels;
+  short i, j;
+
+  cp = NewCopList(64 + HEIGHT * (9 + 9 + 12));
+  bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
+
+  for (i = 0; i < HEIGHT; i++) {
+    CopWait(cp, Y(i-1), HP(454-64));
+
+    for (j = 0; j < 4; j++) {
+      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(32 + 26*j + 0).hpos, Y(i).vpos));
+      CopMove16(cp, spr[j*2+1].pos, SPRPOS(X(32 + 26*j + 16).hpos, Y(i).vpos));
+    }
+
+    CopMove16(cp, color[17], *pixels++);
+    CopMove16(cp, color[18], *pixels++);
+    CopMove16(cp, color[19], *pixels++);
+    CopMove16(cp, color[21], *pixels++);
+    CopMove16(cp, color[22], *pixels++);
+    CopMove16(cp, color[23], *pixels++);
+    CopMove16(cp, color[25], *pixels++);
+    CopMove16(cp, color[26], *pixels++);
+    CopMove16(cp, color[27], *pixels++);
+    CopMove16(cp, color[29], *pixels++);
+    CopMove16(cp, color[30], *pixels++);
+    CopMove16(cp, color[31], *pixels++);
+
+    CopWait(cp, Y(i), X(128+8));
+    for (j = 3; j >= 0; j--) {
+      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(256 - 26*j + 0).hpos, Y(i).vpos));
+      CopMove16(cp, spr[j*2+1].pos, SPRPOS(X(256 - 26*j + 16).hpos, Y(i).vpos));
+    }
+  }
+
+  CopListFinish(cp);
+  return cp;
+}
 
 static void Init(void) {
   cube = NewObject3D(&codi);
-  cube->translate.z = fx4i(-250);
+  cube->translate.z = fx4i(-350);
 
-  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
-  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, BM_CLEAR);
+  screen[0] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH, HEIGHT, DEPTH, 0);
   buffer = NewBitmap(WIDTH, HEIGHT, 1, 0);
+
+  EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
+  BitmapClear(screen[0]);
+  BitmapClear(screen[1]);
+  BitmapClear(buffer);
 
   /* keep the buffer as the last bitplane of both screens */
   screen[0]->planes[DEPTH] = buffer->planes[0];
@@ -32,15 +169,26 @@ static void Init(void) {
 
   SetupPlayfield(MODE_LORES, DEPTH, X(32), Y(0), WIDTH, HEIGHT);
   LoadColors(flatshade_colors, 0);
+  LoadColors(stripe_1_colors, 16);
+  LoadColors(stripe_2_colors, 20);
+  LoadColors(stripe_3_colors, 24);
+  LoadColors(stripe_4_colors, 28);
 
-  cp = NewCopList(80);
-  bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
-  CopListFinish(cp);
+  // Sprites are below foreground
+  custom->bplcon2 = 0;
+
+  cp = MakeCopperList();
   CopListActivate(cp);
-  EnableDMA(DMAF_BLITTER | DMAF_RASTER | DMAF_BLITHOG);
+
+  SaveStripes(offset);
+  UpdateStripes(offset);
+
+  EnableDMA(DMAF_RASTER | DMAF_SPRITE | DMAF_BLITTER | DMAF_BLITHOG);
 }
 
 static void Kill(void) {
+  CopperStop();
+  ResetSprites();
   DisableDMA(DMAF_RASTER);
   DeleteBitmap(screen[0]);
   DeleteBitmap(screen[1]);
@@ -143,7 +291,7 @@ static void DrawObject(Object3D *object, void **planes,
 
         /* skip vertex index */
         index++;
-          
+
         {
           short i = *index++; /* edge index */
           short *edge = &EDGE(i)->point[0];
@@ -299,10 +447,11 @@ static void DrawObject(Object3D *object, void **planes,
           void *dst = *(--dstbpl) + bltstart;
           u_short bltcon0;
 
-          if (color & mask)
+          if (color & mask) {
             bltcon0 = (SRCA | SRCB | DEST) | A_OR_B;
-           else
+          } else {
             bltcon0 = (SRCA | SRCB | DEST) | (NABC | NABNC);
+          }
 
           _WaitBlitter(custom_);
 
@@ -377,4 +526,16 @@ static void Render(void) {
   active ^= 1;
 }
 
-EFFECT(FlatShade, NULL, NULL, Init, Kill, Render, NULL);
+static void VBlank(void) {
+  static short frameCount = 0;
+  frameCount += 3;
+
+  offset[0] = offset[1] = (frameCount) % 96;
+  offset[2] = offset[3] = (frameCount * 7 / 8) % 96;
+  offset[4] = offset[5] = (frameCount * 6 / 8) % 96;
+  offset[6] = offset[7] = (frameCount * 5 / 8) % 48;
+
+  UpdateStripes(offset);
+}
+
+EFFECT(FlatShade, Load, NULL, Init, Kill, Render, VBlank);

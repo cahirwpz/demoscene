@@ -28,7 +28,7 @@ static CopListT *MakeCopperList(void) {
       }
 
       /* Start exchanging palette colors at the end of line. */
-      CopWait(cp, Y(i), X(face.width + 16));
+      CopWait(cp, Y(i), X(face.width - 8));
     }
   }
 
@@ -38,10 +38,10 @@ static CopListT *MakeCopperList(void) {
 static void Init(void) {
   short w = face.width;
   short h = face.height;
-  short xs = X((WIDTH - w) / 2);
-  short ys = Y((HEIGHT - h) / 2);
+  short xs = (WIDTH - w) / 2;
+  short ys = (HEIGHT - h) / 2;
 
-  SetupPlayfield(MODE_HAM, DEPTH, xs, ys, w, h);
+  SetupPlayfield(MODE_HAM, DEPTH, X(xs), Y(ys), w, h);
 
   cp = MakeCopperList();
   CopListActivate(cp);
