@@ -34,17 +34,17 @@ static CopListT *MakeCopperList(void) {
   sprptr = CopSetupSprites(cp);
 
   for (i = 16; i < HEIGHT + 16; i++) {
-    CopWaitSafe(cp, Y(i), HP(0));
+    CopWait(cp, Y(i-1), LASTHP);
 
     for (j = 0; j < 4; j++) {
-      CopMove16(cp, spr[j*2+0].pos, SPRPOS(DIWHP + 22 + 24*j, DIWVP + i));
-      CopMove16(cp, spr[j*2+1].pos, SPRPOS(DIWHP + 22 + 24*j + 16, DIWVP + i));
+      CopMove16(cp, spr[j*2+0].pos, SPRPOS(DIWHP + 32 + 32*j, DIWVP + i));
+      CopMove16(cp, spr[j*2+1].pos, SPRPOS(DIWHP + 32 + 32*j + 16, DIWVP + i));
     }
 
-    CopWaitSafe(cp, Y(i), HP(128));
+    CopWait(cp, Y(i), X(128+8));
     for (j = 3; j >= 0; j--) {
-      CopMove16(cp, spr[j*2+0].pos, SPRPOS(DIWHP + 256+8 - 24*j + 0, DIWVP + i));
-      CopMove16(cp, spr[j*2+1].pos, SPRPOS(DIWHP + 256+8 - 24*j + 16, DIWVP + i));
+      CopMove16(cp, spr[j*2+0].pos, SPRPOS(DIWHP + 256 - 32*j + 0, DIWVP + i));
+      CopMove16(cp, spr[j*2+1].pos, SPRPOS(DIWHP + 256 - 32*j + 16, DIWVP + i));
     }
   }
 
