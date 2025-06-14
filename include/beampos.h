@@ -8,14 +8,14 @@ typedef struct hpos {
   short hpos;
 } hpos;
 
-#define HP(x) (hpos){.hpos = (x)}
+#define HP(x) ((hpos){.hpos = (x)})
 
 /* Vertical beam position in low resolution pixels (0..311) */
 typedef struct vpos {
   short vpos;
 } vpos;
 
-#define VP(y) (vpos){.vpos = (y)}
+#define VP(y) ((vpos){.vpos = (y)})
 
 /* Default display window upper-left corner position for PAL signal. */
 #define DIWHP 0x81
