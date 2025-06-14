@@ -47,7 +47,7 @@ static short counter = 0;
 
 static short ufo_pos = 25;
 static short coq_pos = 255-24;
-static short beam_pos[2] = {X(137), X(167)};
+static hpos beam_pos[2] = {X(137), X(167)};
 
 static short active_pal = 0;
 static short beam_pal[4][7] = {
@@ -138,7 +138,7 @@ static void Abduct(void) {
   if (counter % 3 == 0) {
     if (coq_pos > 32) {
       --coq_pos;
-      SpriteUpdatePos(&coq,  X(152), Y(coq_pos));
+      SpriteUpdatePos(coq,  X(152), Y(coq_pos));
     } else {
       phase = RETRACT_BEAM;
     }
@@ -166,8 +166,11 @@ static void RetractBeam(void) {
       SwitchBeamPal();
       ++idx;
 
-    SpriteUpdatePos(&side_beam_l, ++beam_pos[0], Y(56));
-    SpriteUpdatePos(&side_beam_r, --beam_pos[1], Y(56));
+    beam_pos[0].hpos++;
+    beam_pos[1].hpos--;
+
+    SpriteUpdatePos(side_beam_l, beam_pos[0], Y(56));
+    SpriteUpdatePos(side_beam_r, beam_pos[1], Y(56));
 
     if (h >= 64) {
       BitmapClearArea(screen[0], &ring_area);
@@ -175,10 +178,10 @@ static void RetractBeam(void) {
       h -= 16;
     }
 
-    if (beam_pos[0] >= X(137+15)) {
-      SpriteUpdatePos(&side_beam_l, 0, 0);
-      SpriteUpdatePos(&side_beam_r, 0, 0);
-      SpriteUpdatePos(&coq, 0, 0);
+    if (beam_pos[0].hpos >= 137 + 15 + DIWHP) {
+      SpriteUpdatePos(side_beam_l, HP(0), VP(0));
+      SpriteUpdatePos(side_beam_r, HP(0), VP(0));
+      SpriteUpdatePos(coq, HP(0), VP(0));
       phase = ESCAPE;
     }
   }
@@ -204,23 +207,23 @@ static void Escape(void) {
 
 static CopListT *MakeCopperList(void) {
   cp = NewCopList(128);
-  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
 
+  bplptr = CopSetupBitplanes(cp, screen[active], DEPTH);
   sprptr = CopSetupSprites(cp);
 
-  CopInsSetSprite(&sprptr[0], &coq);
-  CopInsSetSprite(&sprptr[2], &mid_beam);
-  CopInsSetSprite(&sprptr[4], &side_beam_l);
-  CopInsSetSprite(&sprptr[5], &side_beam_r);
+  CopInsSetSprite(&sprptr[0], coq);
+  CopInsSetSprite(&sprptr[2], mid_beam);
+  CopInsSetSprite(&sprptr[4], side_beam_l);
+  CopInsSetSprite(&sprptr[5], side_beam_r);
 
-  SpriteUpdatePos(&coq,         X(152), Y(coq_pos));
-  SpriteUpdatePos(&mid_beam,    X(152), Y(56));
-  SpriteUpdatePos(&side_beam_l, X(137), Y(56));
-  SpriteUpdatePos(&side_beam_r, X(167), Y(56));
+  SpriteUpdatePos(coq,         X(152), Y(coq_pos));
+  SpriteUpdatePos(mid_beam,    X(152), Y(56));
+  SpriteUpdatePos(side_beam_l, X(137), Y(56));
+  SpriteUpdatePos(side_beam_r, X(167), Y(56));
 
   beam_pal_cp = CopLoadColors(cp, beam_pal[0], 21);
 
-  return cp;
+  return CopListFinish(cp);
 }
 
 static void Init(void) {
@@ -267,7 +270,8 @@ static void Init(void) {
   cp = MakeCopperList();
   CopListActivate(cp);
 
-  custom->bplcon2 = BPLCON2_PF2PRI;
+  /* video priorities: PF1 > PF2 > SP07 */
+  custom->bplcon2 = BPLCON2_PF1P_SP07 | BPLCON2_PF2P_SP07;
 
   DrawBackground(screen[0]);
   DrawBackground(screen[1]);

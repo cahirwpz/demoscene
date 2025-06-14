@@ -20,9 +20,9 @@ void drawLine(int y, float x, float w, float l, int palnum) {
   float ds = 1.0 / abs(w);
   float s = -width / 2.0 * ds - x;
   int sc = (int)floor(s);
-  
+
   s -= sc;
-         
+
   for (int i = 0; i < width; i++) {
     s += ds;
     if (s > x + 0.0001) /* damn mantissa noise! */ {
@@ -43,7 +43,7 @@ void clearLine(int y) {
 void setup() {
   background(0);
   loadPixels();
-  
+
   palette = new int[2][2];
   palette[0][0] = color(170, 40, 170);
   palette[1][0] = color(0, 110, 255);
@@ -53,20 +53,20 @@ void setup() {
 
 void draw() {
   ArrayList<Drawable> sl = new ArrayList<Drawable>();
-  
+
   //sl.add(new Segment(-96, 512, -320, 256));
   //sl.add(new Segment(-96, 512, 96, 512));
   //sl.add(new Segment(96, 512, 320, 256));
 
   sl.add(new Circle(0, 384, 256 + 32, Side.INNER));
   sl.add(new Circle(0, 384 + 64, 96, Side.OUTER));
-  
+
   for (int i = 0; i < height; i++) {
     Line camera = new Line(0, 0, i - height / 2, focal_length);
     boolean present = false;
     float z = MAX_FLOAT;
     int palnum = 0;
-    
+
     for (int j = 0; j < sl.size(); j++) {
       Drawable s = sl.get(j);
       try {
@@ -79,7 +79,7 @@ void draw() {
       } catch(ArithmeticException e) {
       }
     }
-    
+
     if (present) {
       /* calculate stripe width */
       /* 3d -> 2d */
@@ -94,7 +94,7 @@ void draw() {
       clearLine(i);
     }
   }
-  
+
   updatePixels();
 }
 
@@ -105,10 +105,10 @@ interface Drawable {
 class Line {
   /* General equation: A * x + B * y + C = 0 */
   float a, b, c;
-  
+
   float x0, y0;
   float x1, y1;
-  
+
   Line(float _x0, float _y0, float _x1, float _y1) {
     x0 = _x0; y0 = _y0; x1 = _x1; y1 = _y1;
     a = y0 - y1;
@@ -124,7 +124,7 @@ class Line {
     float y = - (a * x + c) / b;
     return new PVector(x, y);
   }
-  
+
   public String toString() {
     return "Line(" + str(a) + ", " + str(b) + ", " + str(c) + ")";
   }
@@ -132,25 +132,25 @@ class Line {
 
 class Segment extends Line implements Drawable {
   /* Parametric equation: p0 + (p1 - p0) * t = 0, t \in [0,1] */
-  
+
   Segment(float x0, float y0, float x1, float y1) {
     super(x0, y0, x1, y1);
   }
-    
+
   PVector intersection(Line line) {
     PVector pk = super.intersection(line);
-        
+
     float tx = (pk.x - x0) / dx();
     float ty = (pk.y - y0) / dy();
-    
+
     if (tx < 0 || tx > 1)
       throw new ArithmeticException();
     if (ty < 0 || ty > 1)
       throw new ArithmeticException();
-    
+
     return pk;
   }
-  
+
   public String toString() {
     return "Segment(" + str(x0) + ", " + str(y0) + " -> " + str(x1) + ", " + str(y1) + ")";
   }
@@ -169,7 +169,7 @@ class Circle implements Drawable {
   float a, b;
   float r;
   Side side;
-  
+
   Circle(float _x, float _y, float _r, Side _side) {
     a = _x; b = _y; r = _r; side = _side;
   }
@@ -186,15 +186,15 @@ class Circle implements Drawable {
     float dr2 = sq(dx) + sq(dy);
     float D = x0 * y1 - x1 * y0;
     float Delta = sq(r) * dr2 - sq(D);
-    
+
     if (Delta < 0) {
       throw new ArithmeticException();
     }
-    
+
     if (Delta == 0) {
       return new PVector(D * dy / dr2 + a, -D * dx / dr2 + b);
     }
-    
+
     float xi = (D * dy + sgn(dy) * dx * sqrt(Delta)) / dr2;
     float yi = (-D * dx + abs(dy) * sqrt(Delta)) / dr2;
 
@@ -202,7 +202,7 @@ class Circle implements Drawable {
     float yj = (-D * dx - abs(dy) * sqrt(Delta)) / dr2;
 
     boolean which = (side == Side.OUTER) ? (yi < yj) : (yj < yi);
-    
+
     if (which) {
       return new PVector(xi + a, yi + b);  
     } else {

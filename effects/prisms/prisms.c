@@ -126,15 +126,15 @@ static CopListT *MakeCopperList(CopLineT **line) {
   short i;
 
   for (i = 0; i < HEIGHT; i++) {
-    CopWait(cp, Y(i - 1), 0xDE);
+    CopWait(cp, Y(i - 1), LASTHP);
     line[i] = (CopLineT *)CopSetColor(cp, 1, 0);
     CopMove16(cp, bplcon2, 0);
     CopMove32(cp, bplpt[0], rowAddr[0]);
   }
 
   for (i = 0; i < 8; i++) {
-    CopInsSetSprite(&sprptr[i], &sprite[i]);
-    SpriteUpdatePos(&sprite[i], X(96 + 16 * i), Y((256 - 24) / 2));
+    CopInsSetSprite(&sprptr[i], sprite[i]);
+    SpriteUpdatePos(sprite[i], X(96 + 16 * i), Y((256 - 24) / 2));
   }
 
   return CopListFinish(cp);
@@ -299,7 +299,9 @@ static void DrawVisibleSpans(SpanInfoT *si, CopLineT **lineTab) {
     short depth = *wp++;
     short width = *wp++;
     short color = *wp++;
-    short bplcon2 = (depth > centerZ) ? BPLCON2_PF1P2|BPLCON2_PF2P2 : 0;
+    short bplcon2 = (depth > centerZ)
+      ? (BPLCON2_PF1P_BOTTOM | BPLCON2_PF2P_BOTTOM)
+      : (BPLCON2_PF1P_SP07 | BPLCON2_PF2P_SP07);
     CopLineT *lineIns = *lineTab++;
 
     CopInsSet16(&lineIns->color, color);

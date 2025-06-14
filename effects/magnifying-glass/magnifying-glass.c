@@ -19,7 +19,7 @@ static __code BitmapT *segment_bp;
 static __code u_char *texture_hi;
 static __code u_char *texture_lo;
 static __code SprDataT *sprdat;
-static __code SpriteT sprite[8];
+static __code SpriteT *sprite[8];
 static __code CopListT *cp;
 
 #include "data/logo-gtn.c"
@@ -66,7 +66,7 @@ static CopListT *MakeCopperList(void) {
   short i;
   CopSetupBitplanes(cp, &logo_bp, S_DEPTH);
   for (i = 0; i < 8; i++)
-    CopInsSetSprite(&sprptr[i], &sprite[i]);
+    CopInsSetSprite(&sprptr[i], sprite[i]);
   return CopListFinish(cp);
 }
 
@@ -94,7 +94,7 @@ static void Init(void) {
     short j;
 
     for (j = 0; j < 8; j++) {
-      MakeSprite(&dat, 64, j & 1, &sprite[j]);
+      sprite[j] = MakeSprite(&dat, 64, j & 1);
       EndSprite(&dat);
     }
   }
@@ -403,17 +403,13 @@ static void ChunkyToPlanar(PixmapT *input, BitmapT *output) {
   }
 }
 
-static void PositionSprite(SpriteT sprite[8], short xo, short yo) {
-  short x = X(xo);
-  short y = Y(yo);
+static void PositionSprite(SpriteT *sprite[8], short xo, short yo) {
+  short x = xo;
   short n = 4;
 
   while (--n >= 0) {
-    SpriteT *spr0 = sprite++;
-    SpriteT *spr1 = sprite++;
-
-    SpriteUpdatePos(spr0, x, y);
-    SpriteUpdatePos(spr1, x, y);
+    SpriteUpdatePos(*sprite++, X(x), Y(yo));
+    SpriteUpdatePos(*sprite++, X(x), Y(yo));
 
     x += 16;
   }
@@ -463,7 +459,7 @@ static void CropPixmapBlitter(const PixmapT *input, u_short x0, u_short y0,
   }
 }
 
-static void PlanarToSprite(const BitmapT *planar, SpriteT *sprites){
+static void PlanarToSprite(const BitmapT *planar, SpriteT *sprites[8]) {
   /*
    * Copy out planar format into sprites
    * This function takes care of interlacing SPRxDATA and SPRxDATB registers
@@ -473,7 +469,7 @@ static void PlanarToSprite(const BitmapT *planar, SpriteT *sprites){
 
   for (i = 0; i < 4; i++) {
     // Sprite 0, plane 0
-    void *sprdat =  sprites[i*2].sprdat->data;
+    void *sprdat = sprites[i*2]->data;
     {
       WaitBlitter();
 
@@ -502,7 +498,7 @@ static void PlanarToSprite(const BitmapT *planar, SpriteT *sprites){
       custom->bltsize = BLTSIZE_VAL(1, HEIGHT);
     }
 
-    sprdat = sprites[i*2 + 1].sprdat->data;
+    sprdat = sprites[i*2 + 1]->data;
 
     // Sprite 1, plane 2
     {

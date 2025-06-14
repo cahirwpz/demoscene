@@ -33,18 +33,18 @@ static CopListT *MakeCopperList(void) {
     short i, j;
 
     for (i = 0; i < HEIGHT / 8; i++) {
-      CopWait(cp, Y(STARTY + i * 8 - 1), 0xde);
+      CopWait(cp, Y(STARTY + i * 8 - 1), LASTHP);
       for (j = 0; j < 16; j++) {
         CopSetColor(cp, j, *pixels++);
       }
     }
 
-    CopWait(cp, Y(STARTY + HEIGHT - 1), 0xde);
+    CopWait(cp, Y(STARTY + HEIGHT - 1), LASTHP);
     CopMove16(cp, bpl1mod, - WIDTH * 5 / 8);
     CopMove16(cp, bpl2mod, - WIDTH * 5 / 8);
 
     for (i = 0; i < HEIGHT / 16; i++) {
-      CopWait(cp, Y(STARTY + HEIGHT + i * 4 - 1), 0xde);
+      CopWait(cp, Y(STARTY + HEIGHT + i * 4 - 1), LASTHP);
       for (j = 0; j < 16; j++) {
         CopSetColor(cp, j, *pixels++);
       }
@@ -58,12 +58,17 @@ static void Init(void) {
   cube = NewObject3D(&szescian);
   cube->translate.z = fx4i(-250);
 
-  screen[0] = NewBitmap(WIDTH, HEIGHT + 1, DEPTH, BM_CLEAR);
-  screen[1] = NewBitmap(WIDTH, HEIGHT + 1, DEPTH, BM_CLEAR);
+  screen[0] = NewBitmap(WIDTH, HEIGHT + 1, DEPTH, 0);
+  screen[1] = NewBitmap(WIDTH, HEIGHT + 1, DEPTH, 0);
   carry = NewBitmap(WIDTH, HEIGHT, 2, 0);
   scratchpad = NewBitmap(WIDTH, HEIGHT, 2, 0);
 
   EnableDMA(DMAF_BLITTER | DMAF_BLITHOG);
+
+  BitmapClear(carry);
+  BitmapClear(scratchpad);
+  BitmapClear(screen[0]);
+  BitmapClear(screen[1]);
 
   SetupPlayfield(MODE_LORES, DEPTH, X(STARTX), Y(STARTY), WIDTH, HEIGHT * 5 / 4);
 
