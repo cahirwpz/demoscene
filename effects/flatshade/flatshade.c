@@ -13,7 +13,6 @@
 static __code Object3D *cube;
 static __code CopListT *cp;
 static __code CopInsPairT *bplptr;
-static __code CopInsPairT *sprptr;
 static __code BitmapT *screen[2];
 static __code BitmapT *buffer;
 static __code int active = 0;
@@ -43,7 +42,7 @@ typedef struct StripeBackup {
   short offset;
 } StripeBackupT;
 
-static __code short offset[8];
+static __code short offset[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 static __code StripeBackupT stripeBackup[8];
 
 static void Load(void) {
@@ -66,7 +65,7 @@ static void SaveStripes(short offset[8]) {
   short i;
 
   for (i = 0; i < 8; i++) {
-    short off = *offset++;
+    short off = offset[i];
     u_int *data = (u_int *)&stripe[i]->data[off];
 
     stripeBackup[i].header = data[-1];
@@ -87,6 +86,26 @@ static void RestoreStripes(void) {
   }
 }
 
+static inline void SpriteSetHeader(SpriteT *spr, short hs, short vs, short height) {
+  u_char *raw = (u_char *)spr;
+
+  *raw++ = vs;
+  *raw++ = (u_short)hs >> 1;
+
+  {
+    u_short vstop = vs + height;
+    u_char lowctl = hs & 1;
+
+    *raw++ = vstop;
+
+    if (vs >= 0x100)
+      lowctl += 4;
+    if (vstop >= 0x100)
+      lowctl += 2;
+    *raw++ = lowctl;
+  }
+}
+
 static void UpdateStripes(short offset[8]) {
   short i;
 
@@ -94,11 +113,12 @@ static void UpdateStripes(short offset[8]) {
   SaveStripes(offset);
 
   for (i = 0; i < 8; i++) {
-    short off = *offset++;
-    SpriteT *spr = (SpriteT *)&stripe[i]->data[off - 1];
-    spr->pos = SPRPOS(DIWHP + 32 + 16 * i, DIWVP);
-    spr->ctl = SPRCTL(DIWHP + 32 + 16 * i, DIWVP, HEIGHT, false);
-    CopInsSetSprite(&sprptr[i], spr);
+    SpriteT *spr = (SpriteT *)&stripe[i]->data[offset[i] - 1];
+    // spr->pos = SPRPOS(X(32 + 16 * i).hpos, Y(0).vpos);
+    // spr->ctl = SPRCTL(X(32 + 16 * i).hpos, Y(0).vpos, HEIGHT, false);
+    SpriteSetHeader(spr, X(32 + 16 * i).hpos, Y(0).vpos, HEIGHT);
+    *(u_int *)&spr->data[HEIGHT] = 0;
+    custom->sprpt[i] = spr;
   }
 }
 
@@ -109,15 +129,15 @@ static CopListT *MakeCopperList(void) {
 
   cp = NewCopList(64 + HEIGHT * (9 + 9 + 12));
   bplptr = CopSetupBitplanes(cp, screen[0], DEPTH);
-  sprptr = CopSetupSprites(cp);
 
   for (i = 0; i < HEIGHT; i++) {
-    CopWait(cp, Y(i-1), HP(454 - 64));
+    CopWait(cp, Y(i-1), HP(454-64));
 
     for (j = 0; j < 4; j++) {
-      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(32 + 32*j).hpos, Y(i).vpos));
+      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(32 + 32*j + 0).hpos, Y(i).vpos));
       CopMove16(cp, spr[j*2+1].pos, SPRPOS(X(32 + 32*j + 16).hpos, Y(i).vpos));
     }
+
     CopMove16(cp, color[17], *pixels++);
     CopMove16(cp, color[18], *pixels++);
     CopMove16(cp, color[19], *pixels++);
@@ -133,8 +153,8 @@ static CopListT *MakeCopperList(void) {
 
     CopWait(cp, Y(i), X(128+8));
     for (j = 3; j >= 0; j--) {
-      CopMove16(cp, spr[j*2+0].pos, SPRPOS(DIWHP + 256 - 32*j + 0, DIWVP + i));
-      CopMove16(cp, spr[j*2+1].pos, SPRPOS(DIWHP + 256 - 32*j + 16, DIWVP + i));
+      CopMove16(cp, spr[j*2+0].pos, SPRPOS(X(256 - 32*j + 0).hpos, Y(i).vpos));
+      CopMove16(cp, spr[j*2+1].pos, SPRPOS(X(256 - 32*j + 16).hpos, Y(i).vpos));
     }
   }
 
@@ -528,7 +548,6 @@ static void VBlank(void) {
   offset[4] = offset[5] = (frameCount * 6 / 8) % 96;
   offset[6] = offset[7] = (frameCount * 5 / 8) % 48;
 #endif
-
   UpdateStripes(offset);
 }
 
