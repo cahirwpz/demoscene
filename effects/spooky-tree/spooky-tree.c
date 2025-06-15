@@ -199,6 +199,14 @@ static void Kill(void) {
   CopperStop();
   BlitterStop();
 
+  {
+    short i;
+    for (i = 0; i < 8; i++) {
+      KillSprChan(&sprchan[0][i]);
+      KillSprChan(&sprchan[1][i]);
+    }
+  }
+
   DeleteCopList(cp);
 }
 
