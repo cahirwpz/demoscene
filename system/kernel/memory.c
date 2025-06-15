@@ -156,7 +156,7 @@ static inline u_int BlockSize(u_int size) {
   return roundup(size + USEDBLK_SZ, ALIGNMENT);
 }
 
-#if 1
+#if 0
 /* First fit */
 static WordT *ArenaFindFit(ArenaT *ar, u_int reqsz) {
   NodeT *n;
@@ -170,10 +170,11 @@ static WordT *ArenaFindFit(ArenaT *ar, u_int reqsz) {
 #else
 /* Best fit */
 static WordT *ArenaFindFit(ArenaT *ar, u_int reqsz) {
+  NodeT *n;
   WordT *best = NULL;
   u_int bestsz = INT_MAX;
 
-  for (NodeT *n = Head->next; n != Head; n = n->next) {
+  for (n = Head(ar)->next; n != Head(ar); n = n->next) {
     WordT *bt = BtFromPtr(n);
     u_int sz = BtSize(bt);
     if (sz == reqsz)
