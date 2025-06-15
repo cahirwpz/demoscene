@@ -48,6 +48,11 @@ static void InitSprChan(SprChanT *chan, int lines) {
   SprChanReset(chan);
 }
 
+static void KillSprChan(SprChanT *chan) {
+  MemFree(chan->spr);
+  chan->spr = NULL;
+}
+
 static inline void ResetAllSprChan(SprChanT *chan) {
   short n = 8;
 

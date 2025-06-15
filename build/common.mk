@@ -146,7 +146,7 @@ clean-%: FORCE
 # Rules for build
 subdirs: $(foreach dir,$(SUBDIRS),build-$(dir))
 
-build: $(OBJECTS) $(LOADABLES) $(BUILD-FILES) subdirs $(EXTRA-FILES) 
+build: subdirs $(OBJECTS) $(LOADABLES) $(BUILD-FILES) $(EXTRA-FILES) 
 
 clean: $(foreach dir,$(SUBDIRS),clean-$(dir)) 
 	$(RM) $(BUILD-FILES) $(EXTRA-FILES) $(CLEAN-FILES) *~ *.taghl

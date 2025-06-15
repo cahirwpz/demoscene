@@ -1,0 +1,27 @@
+#  1 - SPOOKY-TREE
+#  2 - DARKROOM
+#  3 - 
+#  4 - 
+#  5 - 
+#  6 - 
+#  7 - 
+#  8 - 
+#  9 - 
+# 10 - 
+# 11 - 
+# 12 - 
+# 13 - PROTRACKER
+
+@module playpt/data/JazzCat-XenoCoq.mod
+
+@track EffectNumber
+$0000  1 !step   # spooky tree (*)
+$0200  2         # darkroom
+$243f -1         # the end
+@end
+
+@track EffectLoader
+$0001   2 !event
+$0201  -1
+$243f  -2
+@end

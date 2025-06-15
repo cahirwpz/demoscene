@@ -91,6 +91,10 @@ void EffectUnLoad(EffectT *effect) {
   SendEffectStatus(effect);
 }
 
+short ReadFrameCount(void) {
+  return ReadFrameCounter();
+}
+
 void EffectRun(EffectT *effect) {
   SetFrameCounter(frameCount);
 
