@@ -10,5 +10,13 @@
       "playpt/data/JazzCat-XenoCoq.trk.o",
       "playpt/data/JazzCat-XenoCoq.smp.o",
       "playpt/playpt.o"]
+  },
+  "SpookyTree": {
+    "objects": [
+      "spooky-tree/spooky-tree.o"]
+  },
+  "Darkroom": {
+    "objects": [
+      "darkroom/darkroom.o"]
   }
 }

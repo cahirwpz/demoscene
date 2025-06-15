@@ -1,7 +1,7 @@
 TOPDIR := $(realpath ..)
 
 # the order here must be the same as in demo.json !!!
-SUBDIRS := loader playpt
+SUBDIRS := loader playpt spooky-tree darkroom
 
 SOURCES := main.c
 LOADABLES := cockbusters.exe $(foreach dir, $(SUBDIRS), $(dir).exe)

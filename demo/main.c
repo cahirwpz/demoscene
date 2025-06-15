@@ -31,18 +31,8 @@ static void ShowMemStats(void) {
 }
 
 #define EXE_LOADER 0
-#define EXE_DNA3D 1
-#define EXE_STENCIL3D 2
-#define EXE_COCK_FOLK 3
-#define EXE_TEXOBJ 4
-#define EXE_FLOWER3D 5
-#define EXE_LOGO 6
-#define EXE_ROTATOR 7
-#define EXE_TEXTSCROLL 8
-#define EXE_ABDUCTION 9
-#define EXE_COCK_TECHNO 10
-#define EXE_LOGO_GTN 11
-#define EXE_COCK_FREEDOM 12
+#define EXE_SPOOKYTREE 1
+#define EXE_DARKROOM 2
 #define EXE_PROTRACKER 13
 #define EXE_LAST 14
 
@@ -56,18 +46,8 @@ typedef struct ExeFile {
 
 static __code ExeFileT ExeFile[EXE_LAST] = {
   EXEFILE(EXE_LOADER, "loader.exe"),
-  EXEFILE(EXE_DNA3D, "dna3d.exe"),
-  EXEFILE(EXE_STENCIL3D, "stencil3d.exe"),
-  EXEFILE(EXE_COCK_FOLK, "cock-folk.exe"),
-  EXEFILE(EXE_TEXOBJ, "texobj.exe"),
-  EXEFILE(EXE_FLOWER3D, "flower3d.exe"),
-  EXEFILE(EXE_LOGO, "color-cycling.exe"),
-  EXEFILE(EXE_ROTATOR, "rotator.exe"),
-  EXEFILE(EXE_TEXTSCROLL, "textscroll.exe"),
-  EXEFILE(EXE_ABDUCTION, "abduction.exe"),
-  EXEFILE(EXE_COCK_TECHNO, "cock-techno.exe"),
-  EXEFILE(EXE_COCK_FREEDOM, "cock-freedom.exe"),
-  EXEFILE(EXE_LOGO_GTN, "magnifying-glass.exe"),
+  EXEFILE(EXE_SPOOKYTREE, "spooky-tree.exe"),
+  EXEFILE(EXE_DARKROOM, "darkroom.exe"),
   EXEFILE(EXE_PROTRACKER, "playpt.exe"),
 };
 
@@ -144,8 +124,7 @@ static void BgTaskLoop(__unused void *ptr) {
     switch (BgTaskState) {
       case BG_INIT:
         LoadExe(EXE_PROTRACKER);
-        LoadExe(EXE_LOGO_GTN);
-        LoadExe(EXE_FLOWER3D);
+        LoadExe(EXE_SPOOKYTREE);
 
         Log("[BgTask] Done initial loading!\n");
         BgTaskState = BG_IDLE;
