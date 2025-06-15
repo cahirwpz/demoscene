@@ -1,2 +1,14 @@
 {
+  "Loader": {
+    "objects": [
+      "loader/data/JazzCat-CockbustersLoader.smp.o",
+      "loader/data/JazzCat-CockbustersLoader.trk.o",
+      "loader/loader.o"]
+  },
+  "Protracker": {
+    "objects": [
+      "playpt/data/JazzCat-XenoCoq.trk.o",
+      "playpt/data/JazzCat-XenoCoq.smp.o",
+      "playpt/playpt.o"]
+  }
 }

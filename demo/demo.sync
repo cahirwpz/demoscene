@@ -1,0 +1,56 @@
+#  1 - DNA3D
+#  2 - STENCIL3D
+#  3 - COCK_FOLK
+#  4 - TEXOBJ
+#  5 - FLOWER3D
+#  6 - LOGO
+#  7 - ROTATOR
+#  8 - TEXTSCROLL
+#  9 - ABDUCTION
+# 10 - COCK_TECHNO
+# 11 - LOGO_GTN
+# 12 - COCK_FREEDOM
+# 13 - PROTRACKER
+
+@module playpt/data/JazzCat-XenoCoq.mod
+
+@track EffectNumber
+$0000 11 !step  # logo ghostown (*)
+$0200 5         # flower3d (*)
+$0600 3         # anim-cock folk
+$0a00 9         # abduction
+$0c00 1         # dna3d
+$1000 6         # logo
+$1200 12        # anim-cock techno
+$1400 2         # stencil3d
+$1600 7         # rotator
+$1800 4         # textured object
+$1c00 10        # anim-cock techno
+$2000 8         # text scroll
+$243f -1        # the end
+@end
+
+@track EffectLoader
+$0001   3 !event
+$0200 -11
+$0201   9
+$0202   1
+$0600  -5
+$0601   6
+$0a00  -3
+$0a01  12
+$0c00  -9
+$0c01   2
+$1000  -1
+$1001   7
+$1200  -6
+$1201   4
+$1600 -12
+$1601  -2
+$1602  10
+$1800  -7
+$1c00  -4
+$1c01   8
+$2000 -10
+$243f  -8
+@end
