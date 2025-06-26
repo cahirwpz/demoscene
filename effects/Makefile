@@ -6,6 +6,7 @@ SUBDIRS := \
 	anim-polygons \
 	ball \
 	bobs3d \
+	blitzblit \
 	blurred \
 	blurred3d \
 	bumpmap-rgb \
