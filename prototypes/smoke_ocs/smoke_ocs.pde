@@ -1,8 +1,13 @@
 final int SIZE = 32;
 final int LIFESPAN = 40;
+final int WIDTH = 320;
+final int HEIGHT = 256;
+final int DEPTH = 5;
 
+OrigChipSet ocs;
 ParticleSystem ps;
 Bitplane bob;
+Bitplane screen[];
 
 class Particle {
   PVector loc;
@@ -39,7 +44,7 @@ class Particle {
     
     for (int i = 0; i < 5; i++) {
       if ((c & (1 << i)) != 0)
-        bpl[i].or(bob, x, y);
+        Blit.or(screen[i], bob, x, y);
     }
   }
 
@@ -48,35 +53,41 @@ class Particle {
   }
 }
 
+void settings() {
+  size(OcsRasterWidth, OcsRasterHeight);
+}
+
 void setup() {
-  size(320, 256);
-  frameRate(60.0);
+  frameRate(OcsFrameRate);
 
-  ps = new ParticleSystem(50, new PVector(width / 2, height - 40));
+  ocs = new OrigChipSet();
+  ps = new ParticleSystem(50, new PVector(WIDTH / 2, HEIGHT - 40));
 
-  bob = new Bitplane(SIZE, SIZE);
-  bob.circleE(SIZE / 2, SIZE / 2, SIZE / 2 - 1);
-  bob.fill();
-  
-  initOCS(5);
+  screen = ocs.chip.allocBitmap(WIDTH, HEIGHT, DEPTH);
+  bob = ocs.chip.allocBitplane(SIZE, SIZE);
+  Draw.circleE(bob, SIZE / 2, SIZE / 2, SIZE / 2 - 1);
+  Blit.fill(bob);
 
   for (int i = 0; i < 32; i++)
-    palette[i] = lerpColor(#000000, #ffffff, float(i) / 31);
+    ocs.setColor(i, lerpColor(#000000, #ffffff, float(i) / 31));
 }
 
 void draw() {
-  float t = frameCount / 60.0;
+  float t = 0.2 * sin(PI * frameCount / OcsFrameRate);
 
-  for (int i = 0; i < 5; i++)
-    bpl[i].zeros();
+  for (int i = 0; i < 5; i++) {
+    Blit.zeros(screen[i]);
+  }
 
-  PVector wind = new PVector(0, -0.2);
+  PVector wind = new PVector(t, -0.2);
   ps.applyForce(wind);
   ps.run();
   ps.addParticles(1);
 
-  updateOCS();
+  ocs.setupScreen(screen, 0, DEPTH);
+  ocs.setupDisplayWindow(HPOS(0), VPOS(0), WIDTH, HEIGHT);
+  ocs.setupBitplaneFetch(HPOS(0), WIDTH);
+  ocs.update();
   
-  println(frameRate);
+  // println(frameRate);
 }
-

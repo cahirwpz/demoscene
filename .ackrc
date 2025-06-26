@@ -3,3 +3,5 @@
 --cpp
 --python
 --make
+--java
+--type-add=java:ext:pde
