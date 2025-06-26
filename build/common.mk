@@ -62,6 +62,7 @@ CONV2D := $(TOPDIR)/tools/conv2d.py
 DRNG2C := $(TOPDIR)/tools/drng2c/drng2c
 GRADIENT := $(TOPDIR)/tools/gradient.py
 TMXCONV := $(TOPDIR)/tools/tmxconv/tmxconv
+MAKETMX := $(TOPDIR)/tools/maketmx/maketmx
 PCHG2C := $(TOPDIR)/tools/pchg2c/pchg2c
 PNG2C := $(TOPDIR)/tools/png2c/png2c
 PSF2C := $(TOPDIR)/tools/psf2c.py
